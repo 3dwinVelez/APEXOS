@@ -1,0 +1,8 @@
+{
+  "name": "@apex-os/types",
+  "version": "2.0.0",
+  "private": true,
+  "main": "index.ts",
+  "types": "index.ts"
+}
+

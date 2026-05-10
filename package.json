@@ -1,0 +1,22 @@
+{
+  "name": "apex-os",
+  "version": "2.0.0",
+  "private": true,
+  "description": "APEX OS 2.0 - El Sistema Operativo para Empresas",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:api": "npm --workspace apps/api run dev",
+    "dev:web": "npm --workspace apps/web run dev",
+    "lint": "npm --workspace apps/web run lint",
+    "prisma:validate": "npm --workspace apps/api run prisma:validate",
+    "brain:dev": "cd services/brain && uvicorn main:app --reload --port 8000"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
+

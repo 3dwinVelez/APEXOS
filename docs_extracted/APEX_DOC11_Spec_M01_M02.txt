@@ -1,0 +1,1347 @@
+DOC-11 — ESPECIFICACIÓN FUNCIONAL MVP
+Módulos M-01 Inventario y M-02 Compras. Cada función está completamente definida: firma, validaciones, lógica paso a paso, respuesta exitosa, errores posibles, efectos secundarios y eventos al BRAIN.
+🔴 CRÍTICO: Este documento es la fuente de verdad para el agente. Si algo no está aquí, no se implementa. Si hay duda, prevalece este documento sobre los anteriores.
+MÓDULO M-01 — INVENTARIO Y ALMACÉN
+Archivo: src/modules/inventory/service.js — Contiene todas las funciones de negocio. Las rutas en routes.js solo llaman a estas funciones.
+Función 1: createItem()
+FIRMA:
+async function createItem(tenantId, userId, data) → Item
+PARÁMETROS DE ENTRADA (data):
+  code         String  OBLIGATORIO. Único por tenant. Ej: "PROD-001"
+  name         String  OBLIGATORIO. Nombre descriptivo.
+  type         String  OBLIGATORIO. Valores válidos:
+                       "product" | "service" | "asset"
+                       | "component" | "raw_material"
+  unit         String  OBLIGATORIO. Ej: "UND","KG","LT","MT","HR"
+  category_id  Int?    Opcional. Debe existir en Category del tenant.
+  unit_cost    Float   OBLIGATORIO. >= 0.
+  unit_price   Float   OBLIGATORIO. >= 0.
+  tax_rate     Float   Opcional. Default: 0. Valores: 0, 5, 19 (Colombia).
+  stock_min    Float   Opcional. Default: 0. Punto de reorden.
+  stock_max    Float?  Opcional. Null = sin límite.
+  weight_kg    Float   Opcional. Default: 0.
+  volume_m3    Float   Opcional. Default: 0.
+  metadata     Object  Opcional. Campos específicos por industria.
+VALIDACIONES (en orden — fallar rápido):
+  1. code no puede estar vacío ni contener espacios.
+  2. code debe ser único para el tenant (buscar en DB antes de crear).
+  3. name no puede estar vacío.
+  4. type debe ser uno de los 5 valores válidos.
+  5. unit_cost y unit_price >= 0.
+  6. Si tax_rate existe, debe ser 0, 5 o 19.
+  7. Si stock_max existe, debe ser > stock_min.
+  8. Si category_id existe, verificar que pertenece al tenant.
+LÓGICA PASO A PASO:
+  1. Ejecutar todas las validaciones. Si falla alguna → error 400.
+  2. prisma.item.create() con tenant_id inyectado por middleware.
+  3. stock_current inicia en 0 siempre.
+  4. abc_class inicia en "C" siempre.
+  5. active inicia en true siempre.
+  6. Retornar el item creado con todos sus campos.
+RESPUESTA EXITOSA (201):
+  {
+    id: 1,
+    tenant_id: "uuid",
+    code: "PROD-001",
+    name: "Arroz Diana 500g",
+    type: "product",
+    unit: "UND",
+    unit_cost: 2500,
+    unit_price: 3200,
+    tax_rate: 0,
+    stock_current: 0,
+    stock_min: 10,
+    stock_max: 500,
+    abc_class: "C",
+    active: true,
+    created_at: "2026-05-10T14:30:00Z"
+  }
+ERRORES POSIBLES:
+  { error: "El código PROD-001 ya existe", code: "DUPLICATE_CODE" }       409
+  { error: "El código no puede contener espacios", code: "INVALID_CODE" } 400
+  { error: "Tipo inválido: widget", code: "INVALID_TYPE" }                400
+  { error: "La categoría no existe", code: "CATEGORY_NOT_FOUND" }         404
+  { error: "stock_max debe ser mayor a stock_min", code: "INVALID_STOCK" }400
+EFECTOS SECUNDARIOS:
+  - Ninguno. createItem no mueve stock, no crea movimientos,
+    no genera asientos contables.
+EVENTO BRAIN: Ninguno en creación.
+// IMPLEMENTACIÓN COMPLETA:
+async function createItem(tenantId, userId, data) {
+  const {
+    code, name, type, unit, category_id,
+    unit_cost, unit_price, tax_rate = 0,
+    stock_min = 0, stock_max = null,
+    weight_kg = 0, volume_m3 = 0, metadata = {}
+  } = data;
+  // Validaciones
+  if (!code || code.includes(" "))
+    throw { status: 400, code: "INVALID_CODE",
+            error: "El código es obligatorio y no puede tener espacios" };
+  const VALID_TYPES = ["product","service","asset","component","raw_material"];
+  if (!VALID_TYPES.includes(type))
+    throw { status: 400, code: "INVALID_TYPE",
+            error: `Tipo inválido: ${type}` };
+  if (unit_cost < 0 || unit_price < 0)
+    throw { status: 400, code: "INVALID_PRICE",
+            error: "Los precios no pueden ser negativos" };
+  if (![0, 5, 19].includes(tax_rate))
+    throw { status: 400, code: "INVALID_TAX",
+            error: "tax_rate debe ser 0, 5 o 19" };
+  if (stock_max !== null && stock_max <= stock_min)
+    throw { status: 400, code: "INVALID_STOCK",
+            error: "stock_max debe ser mayor a stock_min" };
+  if (category_id) {
+    const cat = await prisma.category.findFirst({
+      where: { id: category_id, tenant_id: tenantId }
+    });
+    if (!cat) throw { status: 404, code: "CATEGORY_NOT_FOUND",
+                      error: "La categoría no existe" };
+  }
+  // Verificar código único
+  const existing = await prisma.item.findFirst({
+    where: { tenant_id: tenantId, code }
+  });
+  if (existing) throw { status: 409, code: "DUPLICATE_CODE",
+                        error: `El código ${code} ya existe` };
+  return prisma.item.create({
+    data: {
+      tenant_id: tenantId,
+      code: code.toUpperCase().trim(),
+      name: name.trim(),
+      type, unit, category_id,
+      unit_cost, unit_price, tax_rate,
+      stock_current: 0,
+      stock_min, stock_max,
+      weight_kg, volume_m3,
+      abc_class: "C",
+      active: true,
+      metadata
+    }
+  });
+}
+Función 2: updateItem()
+FIRMA:
+async function updateItem(tenantId, itemId, data) → Item
+CAMPOS ACTUALIZABLES (solo los enviados se modifican):
+  name, unit_cost, unit_price, tax_rate, stock_min,
+  stock_max, weight_kg, volume_m3, category_id, metadata
+CAMPOS NO ACTUALIZABLES NUNCA:
+  code        → El código es inmutable una vez creado.
+  type        → El tipo es inmutable.
+  stock_current → Solo se modifica via stockMove() o adjustStock().
+  tenant_id   → Nunca.
+VALIDACIONES:
+  1. El item debe existir y pertenecer al tenant.
+  2. Si tax_rate en data → debe ser 0, 5 o 19.
+  3. Si stock_max en data → debe ser > stock_min actual o nuevo.
+  4. Si category_id en data → debe pertenecer al tenant.
+  5. No se puede actualizar un item inactivo (active=false).
+LÓGICA:
+  1. Obtener item verificando tenant_id.
+  2. Si item.active === false → error 422.
+  3. Ejecutar validaciones de los campos enviados.
+  4. prisma.item.update() solo con los campos presentes en data.
+  5. Retornar item actualizado.
+RESPUESTA EXITOSA (200): El item completo actualizado.
+ERRORES POSIBLES:
+  { error: "Item no encontrado", code: "NOT_FOUND" }               404
+  { error: "No se puede editar un item inactivo", code: "INACTIVE" }422
+EFECTOS SECUNDARIOS: Ninguno.
+EVENTO BRAIN: Ninguno.
+// IMPLEMENTACIÓN COMPLETA:
+async function updateItem(tenantId, itemId, data) {
+  const item = await prisma.item.findFirst({
+    where: { id: itemId, tenant_id: tenantId }
+  });
+  if (!item) throw { status: 404, code: "NOT_FOUND",
+                     error: "Item no encontrado" };
+  if (!item.active) throw { status: 422, code: "INACTIVE",
+                            error: "No se puede editar un item inactivo" };
+  // Eliminar campos protegidos si el caller los incluyó por error
+  const { code, type, stock_current, tenant_id, ...safeData } = data;
+  // Validar tax_rate si viene
+  if (safeData.tax_rate !== undefined &&
+      ![0, 5, 19].includes(safeData.tax_rate))
+    throw { status: 400, code: "INVALID_TAX",
+            error: "tax_rate debe ser 0, 5 o 19" };
+  // Validar stock_max
+  const newMin = safeData.stock_min ?? item.stock_min;
+  const newMax = safeData.stock_max ?? item.stock_max;
+  if (newMax !== null && newMax <= newMin)
+    throw { status: 400, code: "INVALID_STOCK",
+            error: "stock_max debe ser mayor a stock_min" };
+  // Validar category_id
+  if (safeData.category_id) {
+    const cat = await prisma.category.findFirst({
+      where: { id: safeData.category_id, tenant_id: tenantId }
+    });
+    if (!cat) throw { status: 404, code: "CATEGORY_NOT_FOUND",
+                      error: "La categoría no existe" };
+  }
+  return prisma.item.update({
+    where: { id: itemId },
+    data: safeData
+  });
+}
+Función 3: listItems()
+FIRMA:
+async function listItems(tenantId, filters) → { data, total, page, pages }
+FILTROS DISPONIBLES:
+  search      String?  Busca en code y name (ILIKE %search%)
+  type        String?  Filtrar por tipo
+  category_id Int?     Filtrar por categoría
+  abc_class   String?  "A" | "B" | "C"
+  low_stock   Boolean? Si true: solo items donde stock_current <= stock_min
+  active      Boolean  Default: true (nunca mostrar inactivos por defecto)
+  page        Int      Default: 1
+  limit       Int      Default: 20. Máximo: 100.
+  sort_by     String   Default: "name". Opciones: "name","code","stock_current"
+  sort_dir    String   Default: "asc". Opciones: "asc","desc"
+LÓGICA:
+  1. Construir el where dinámicamente según filtros.
+  2. Ejecutar findMany y count en Promise.all.
+  3. Calcular pages = Math.ceil(total / limit).
+  4. Retornar paginado.
+RESPUESTA EXITOSA (200):
+  {
+    data: [ ...items ],
+    total: 150,
+    page: 1,
+    pages: 8
+  }
+// IMPLEMENTACIÓN COMPLETA:
+async function listItems(tenantId, filters = {}) {
+  const {
+    search, type, category_id, abc_class,
+    low_stock = false,
+    active = true,
+    page = 1, limit = 20,
+    sort_by = "name", sort_dir = "asc"
+  } = filters;
+  const safePage  = Math.max(1, +page);
+  const safeLimit = Math.min(100, Math.max(1, +limit));
+  const where = { tenant_id: tenantId, active };
+  if (search) {
+    where.OR = [
+      { code: { contains: search, mode: "insensitive" } },
+      { name: { contains: search, mode: "insensitive" } }
+    ];
+  }
+  if (type)        where.type        = type;
+  if (category_id) where.category_id = +category_id;
+  if (abc_class)   where.abc_class   = abc_class;
+  if (low_stock) {
+    where.AND = [{ stock_current: { lte: prisma.item.fields.stock_min } }];
+    // Alternativa con queryRaw si Prisma no soporta columna vs columna:
+    // filtrar en memoria después del query
+  }
+  const SORT_WHITELIST = ["name","code","stock_current","unit_cost"];
+  const orderBy = SORT_WHITELIST.includes(sort_by)
+    ? { [sort_by]: sort_dir === "desc" ? "desc" : "asc" }
+    : { name: "asc" };
+  const [data, total] = await Promise.all([
+    prisma.item.findMany({
+      where,
+      orderBy,
+      skip:  (safePage - 1) * safeLimit,
+      take:  safeLimit,
+      include: { category: { select: { id: true, name: true } } }
+    }),
+    prisma.item.count({ where })
+  ]);
+  // Filtro low_stock en memoria si Prisma no puede comparar columnas
+  const result = low_stock
+    ? data.filter(i => i.stock_current <= i.stock_min)
+    : data;
+  return {
+    data: result,
+    total,
+    page: safePage,
+    pages: Math.ceil(total / safeLimit)
+  };
+}
+Función 4: stockMove() — LA MÁS CRÍTICA
+🔴 CRÍTICO: Esta función mueve stock entre ubicaciones. DEBE usar $transaction. Un fallo parcial aquí corrompe el inventario permanentemente.
+FIRMA:
+async function stockMove(tenantId, userId, data) → Movement
+PARÁMETROS (data):
+  item_id         Int     OBLIGATORIO.
+  from_location_id Int?   Opcional. Null = entrada externa (recepción).
+  to_location_id  Int?   Opcional. Null = salida externa (despacho).
+  qty             Float  OBLIGATORIO. > 0.
+  lot             String? Número de lote. Requerido si el item lo maneja.
+  reason          String? Motivo del movimiento.
+  transaction_id  Int?   ID de la Transaction que originó el movimiento.
+  cost            Float? Costo unitario. Si null, usar item.unit_cost.
+TIPOS DE MOVIMIENTO (inferido de from/to):
+  from=null, to=location  → tipo "in"   (entrada al almacén)
+  from=location, to=null  → tipo "out"  (salida del almacén)
+  from=loc, to=loc        → tipo "transfer" (traslado interno)
+VALIDACIONES:
+  1. item debe existir y pertenecer al tenant.
+  2. qty debe ser > 0.
+  3. Si from_location_id existe:
+     a. La ubicación debe pertenecer al tenant.
+     b. El stock en esa ubicación debe ser >= qty.
+     c. Si es lote específico: verificar lote en ItemLocation.
+  4. Si to_location_id existe:
+     a. La ubicación debe pertenecer al tenant.
+     b. La ubicación debe estar activa.
+  5. No se puede mover stock de/a la misma ubicación.
+LÓGICA DENTRO DE $TRANSACTION (todo o nada):
+  PASO 1: Si from_location_id (salida de una ubicación):
+    a. Buscar ItemLocation { item_id, location_id: from_location_id }.
+    b. Si no existe o qty < lo pedido → ERROR "INSUFFICIENT_STOCK".
+    c. UPDATE ItemLocation SET qty = qty - data.qty.
+    d. Si qty queda en 0 → mantener el registro (no eliminar).
+  PASO 2: Si to_location_id (entrada a una ubicación):
+    a. Buscar ItemLocation { item_id, location_id: to_location_id }.
+    b. Si existe → UPDATE ItemLocation SET qty = qty + data.qty.
+    c. Si no existe → CREATE ItemLocation con qty = data.qty.
+  PASO 3: Recalcular stock_current en Item:
+    SELECT SUM(qty) FROM ItemLocation WHERE item_id = data.item_id.
+    UPDATE Item SET stock_current = ese SUM.
+  PASO 4: Crear registro Movement con todos los datos.
+  PASO 5: Verificar si el nuevo stock_current <= stock_min.
+    Si sí → publicar evento BRAIN "LOW_STOCK_ALERT".
+RESPUESTA EXITOSA (201): El Movement creado.
+ERRORES POSIBLES:
+  { error: "Stock insuficiente. Disponible: 5, solicitado: 10",
+    code: "INSUFFICIENT_STOCK" }                                    422
+  { error: "Origen y destino no pueden ser la misma ubicación",
+    code: "SAME_LOCATION" }                                         400
+  { error: "Ubicación de destino inactiva", code: "INACTIVE_LOC" } 422
+EFECTOS SECUNDARIOS:
+  → ItemLocation actualizado (origen y/o destino)
+  → Item.stock_current recalculado
+  → Movement creado
+  → Si stock_current <= stock_min: evento BRAIN publicado
+// IMPLEMENTACIÓN COMPLETA:
+async function stockMove(tenantId, userId, data) {
+  const {
+    item_id, from_location_id, to_location_id,
+    qty, lot, reason, transaction_id, cost
+  } = data;
+  if (!qty || qty <= 0)
+    throw { status: 400, code: "INVALID_QTY",
+            error: "La cantidad debe ser mayor a 0" };
+  if (from_location_id && to_location_id &&
+      from_location_id === to_location_id)
+    throw { status: 400, code: "SAME_LOCATION",
+            error: "Origen y destino no pueden ser la misma ubicación" };
+  const item = await prisma.item.findFirst({
+    where: { id: item_id, tenant_id: tenantId }
+  });
+  if (!item) throw { status: 404, code: "NOT_FOUND",
+                     error: "Item no encontrado" };
+  // Determinar tipo
+  const type = !from_location_id ? "in"
+             : !to_location_id   ? "out"
+             : "transfer";
+  const movement = await prisma.$transaction(async (tx) => {
+    // PASO 1: Decrementar origen
+    if (from_location_id) {
+      const fromLoc = await tx.itemLocation.findFirst({
+        where: { item_id, location_id: from_location_id,
+                 tenant_id: tenantId,
+                 ...(lot ? { lot } : {}) }
+      });
+      if (!fromLoc || fromLoc.qty < qty)
+        throw { status: 422, code: "INSUFFICIENT_STOCK",
+                error: `Stock insuficiente. Disponible: ${fromLoc?.qty ?? 0}, solicitado: ${qty}` };
+      await tx.itemLocation.update({
+        where: { id: fromLoc.id },
+        data:  { qty: { decrement: qty } }
+      });
+    }
+    // PASO 2: Incrementar destino
+    if (to_location_id) {
+      const toLoc = await tx.location.findFirst({
+        where: { id: to_location_id, tenant_id: tenantId }
+      });
+      if (toLoc && !toLoc.active)
+        throw { status: 422, code: "INACTIVE_LOC",
+                error: "La ubicación de destino está inactiva" };
+      const existing = await tx.itemLocation.findFirst({
+        where: { item_id, location_id: to_location_id,
+                 tenant_id: tenantId,
+                 ...(lot ? { lot } : {}) }
+      });
+      if (existing) {
+        await tx.itemLocation.update({
+          where: { id: existing.id },
+          data:  { qty: { increment: qty } }
+        });
+      } else {
+        await tx.itemLocation.create({
+          data: { tenant_id: tenantId, item_id,
+                  location_id: to_location_id, qty, lot }
+        });
+      }
+    }
+    // PASO 3: Recalcular stock_current
+    const agg = await tx.itemLocation.aggregate({
+      where:  { item_id, tenant_id: tenantId },
+      _sum:   { qty: true }
+    });
+    const newStock = agg._sum.qty ?? 0;
+    await tx.item.update({
+      where: { id: item_id },
+      data:  { stock_current: newStock }
+    });
+    // PASO 4: Crear Movement
+    const mov = await tx.movement.create({
+      data: {
+        tenant_id:     tenantId,
+        type,
+        item_id,
+        from_location: from_location_id,
+        to_location:   to_location_id,
+        qty,
+        cost:          cost ?? item.unit_cost,
+        lot,
+        reason,
+        transaction_id,
+        created_by:    userId
+      }
+    });
+    // PASO 5: Alerta de stock bajo
+    if (newStock <= item.stock_min && type !== "in") {
+      setImmediate(() => {
+        require("../brain").publish("LOW_STOCK_ALERT", {
+          tenant_id: tenantId,
+          item_id,
+          item_name: item.name,
+          stock_current: newStock,
+          stock_min: item.stock_min
+        });
+      });
+    }
+    return mov;
+  });
+  return movement;
+}
+Función 5: adjustStock()
+FIRMA:
+async function adjustStock(tenantId, userId, data) → Movement
+USO: Ajuste de inventario por diferencia de conteo físico,
+     merma, daño, o corrección de error.
+PARÁMETROS (data):
+  item_id      Int    OBLIGATORIO.
+  location_id  Int    OBLIGATORIO. Dónde está el stock a ajustar.
+  qty_counted  Float  OBLIGATORIO. Cantidad contada físicamente.
+  reason       String OBLIGATORIO. Motivo del ajuste.
+LÓGICA:
+  1. Obtener stock actual en esa ubicación.
+     Si no existe ItemLocation → stock actual = 0.
+  2. diferencia = qty_counted - stock_actual.
+     Si diferencia = 0 → retornar sin hacer nada.
+  3. Si diferencia > 0 → tipo "in" (había más de lo registrado).
+  4. Si diferencia < 0 → tipo "out" (había menos de lo registrado).
+  5. Usar stockMove() internamente con from/to según tipo.
+  6. El Movement tendrá reason = "ADJUSTMENT: " + reason.
+RESPUESTA EXITOSA (201): Movement con type = "adjustment".
+IMPORTANTE: Generar asiento contable si diferencia < 0:
+  Débito: 51xx Pérdida por ajuste de inventario
+  Crédito: 14xx Inventario
+  (Llamar a accounting/service.js → journalEntry)
+async function adjustStock(tenantId, userId, data) {
+  const { item_id, location_id, qty_counted, reason } = data;
+  if (qty_counted < 0)
+    throw { status: 400, code: "INVALID_QTY",
+            error: "La cantidad contada no puede ser negativa" };
+  const item = await prisma.item.findFirst({
+    where: { id: item_id, tenant_id: tenantId }
+  });
+  if (!item) throw { status: 404, code: "NOT_FOUND",
+                     error: "Item no encontrado" };
+  const currentLoc = await prisma.itemLocation.findFirst({
+    where: { item_id, location_id, tenant_id: tenantId }
+  });
+  const stock_actual = currentLoc?.qty ?? 0;
+  const diferencia   = qty_counted - stock_actual;
+  if (diferencia === 0)
+    return { message: "Sin diferencia. No se realizó ajuste.", diferencia: 0 };
+  const movement = await prisma.$transaction(async (tx) => {
+    // Actualizar ItemLocation directamente (sin pasar por stockMove
+    // para evitar recursión — ajuste directo)
+    if (currentLoc) {
+      await tx.itemLocation.update({
+        where: { id: currentLoc.id },
+        data:  { qty: qty_counted }
+      });
+    } else {
+      await tx.itemLocation.create({
+        data: { tenant_id: tenantId, item_id, location_id, qty: qty_counted }
+      });
+    }
+    // Recalcular stock_current
+    const agg = await tx.itemLocation.aggregate({
+      where: { item_id, tenant_id: tenantId }, _sum: { qty: true }
+    });
+    await tx.item.update({
+      where: { id: item_id },
+      data:  { stock_current: agg._sum.qty ?? 0 }
+    });
+    // Crear Movement de tipo adjustment
+    return tx.movement.create({
+      data: {
+        tenant_id:  tenantId,
+        type:       "adjustment",
+        item_id,
+        from_location: diferencia < 0 ? location_id : null,
+        to_location:   diferencia > 0 ? location_id : null,
+        qty:        Math.abs(diferencia),
+        cost:       item.unit_cost,
+        reason:     `ADJUSTMENT: ${reason}`,
+        created_by: userId
+      }
+    });
+  });
+  // Asiento contable si hubo pérdida
+  if (diferencia < 0) {
+    const { journalEntry } = require("../accounting/service");
+    await journalEntry(tenantId, {
+      description: `Ajuste inventario: ${item.name}`,
+      entries: [
+        { account: "5195", debit: Math.abs(diferencia) * item.unit_cost },
+        { account: "1435", credit: Math.abs(diferencia) * item.unit_cost }
+      ]
+    });
+  }
+  return movement;
+}
+Función 6: getKardex()
+FIRMA:
+async function getKardex(tenantId, itemId, filters) → { data, total, balance }
+DESCRIPCIÓN: Historial cronológico de movimientos de un item.
+Incluye el saldo acumulado después de cada movimiento.
+FILTROS:
+  from_date   String?  ISO date "2026-01-01"
+  to_date     String?  ISO date "2026-05-31"
+  type        String?  "in"|"out"|"transfer"|"adjustment"
+  location_id Int?     Filtrar por ubicación específica
+  page        Int      Default: 1
+  limit       Int      Default: 50
+LÓGICA:
+  1. Verificar que el item pertenece al tenant.
+  2. Buscar Movements con los filtros.
+  3. Ordenar por created_at ASC siempre.
+  4. Calcular saldo corrido: empezar en 0,
+     + qty si type = "in" o "adjustment" positivo,
+     - qty si type = "out" o "adjustment" negativo.
+  5. Retornar movements con campo "balance" acumulado.
+RESPUESTA EXITOSA (200):
+  {
+    item: { id, code, name, unit },
+    data: [
+      {
+        id: 1,
+        type: "in",
+        qty: 100,
+        cost: 2500,
+        reason: "Recepción PO-000001",
+        created_at: "2026-01-15T10:30:00Z",
+        balance: 100   ← saldo acumulado después de este mov
+      },
+      {
+        id: 2,
+        type: "out",
+        qty: 30,
+        cost: 2500,
+        reason: "Venta SO-000001",
+        created_at: "2026-01-20T14:00:00Z",
+        balance: 70
+      }
+    ],
+    total: 2,
+    current_stock: 70
+  }
+Función 7: runSlotting()
+FIRMA:
+async function runSlotting(tenantId, placeId) → SlottingResult
+DESCRIPCIÓN: Clasifica todos los items en A, B o C según su
+velocidad de rotación en los últimos 12 meses.
+A = genera el 80% de las salidas (alta rotación)
+B = genera el siguiente 15% (rotación media)
+C = genera el 5% restante (baja rotación)
+LÓGICA:
+  1. Obtener todos los items activos del tenant.
+  2. Para cada item, sumar qty de Movements tipo "out"
+     en los últimos 12 meses.
+  3. Ordenar de mayor a menor velocidad.
+  4. Calcular velocidad total de todos los items.
+  5. Recorrer en orden, acumular % hasta llegar a 80% → clase A.
+     Continuar hasta 95% → clase B. El resto → clase C.
+  6. Actualizar abc_class en cada Item.
+  7. Retornar el resultado del análisis.
+RESULTADO:
+  {
+    run_at: "2026-05-10T...",
+    items_analyzed: 150,
+    breakdown: { A: 12, B: 23, C: 115 },
+    items: [
+      { id, code, name, velocity: 450, abc_class: "A" },
+      ...
+    ]
+  }
+IMPORTANTE: Esta operación puede tardar varios segundos si hay
+muchos items. Llamarla siempre desde un endpoint async.
+El resultado no bloquea al usuario — se ejecuta en background
+y se notifica via WebSocket cuando termina.
+Routes M-01 — src/modules/inventory/routes.js
+async function inventoryRoutes(fastify) {
+  const svc = require("./service");
+  const { requirePermission } = require("../../middleware/rbac");
+  const auth = [fastify.authenticate];
+  const authW = [fastify.authenticate, requirePermission("inventory","write")];
+  const authA = [fastify.authenticate, requirePermission("inventory","approve")];
+  // Listar items
+  fastify.get("/api/v1/inventory/items", { preHandler: auth },
+    async (req) => svc.listItems(req.user.tenant_id, req.query)
+  );
+  // Obtener un item
+  fastify.get("/api/v1/inventory/items/:id", { preHandler: auth },
+    async (req, reply) => {
+      const item = await prisma.item.findFirst({
+        where: { id: +req.params.id, tenant_id: req.user.tenant_id },
+        include: {
+          category: true,
+          locations: { include: { location: { include: { place: true } } } }
+        }
+      });
+      if (!item) return reply.code(404).send({ error: "No encontrado", code: "NOT_FOUND" });
+      return item;
+    }
+  );
+  // Crear item
+  fastify.post("/api/v1/inventory/items", { preHandler: authW },
+    async (req, reply) => {
+      const item = await svc.createItem(req.user.tenant_id, req.user.id, req.body);
+      return reply.code(201).send(item);
+    }
+  );
+  // Actualizar item
+  fastify.put("/api/v1/inventory/items/:id", { preHandler: authW },
+    async (req) =>
+      svc.updateItem(req.user.tenant_id, +req.params.id, req.body)
+  );
+  // Desactivar item (soft delete)
+  fastify.delete("/api/v1/inventory/items/:id", { preHandler: authA },
+    async (req) => {
+      const item = await prisma.item.findFirst({
+        where: { id: +req.params.id, tenant_id: req.user.tenant_id }
+      });
+      if (!item) return { error: "No encontrado" };
+      if (item.stock_current > 0)
+        return { error: "No se puede desactivar un item con stock > 0",
+                 code: "HAS_STOCK" };
+      return prisma.item.update({
+        where: { id: +req.params.id },
+        data:  { active: false }
+      });
+    }
+  );
+  // Mover stock
+  fastify.post("/api/v1/inventory/stock-move", { preHandler: authW },
+    async (req, reply) => {
+      const mov = await svc.stockMove(req.user.tenant_id, req.user.id, req.body);
+      return reply.code(201).send(mov);
+    }
+  );
+  // Ajuste de inventario
+  fastify.post("/api/v1/inventory/adjustment", { preHandler: authW },
+    async (req, reply) => {
+      const result = await svc.adjustStock(req.user.tenant_id, req.user.id, req.body);
+      return reply.code(201).send(result);
+    }
+  );
+  // Kardex de un item
+  fastify.get("/api/v1/inventory/items/:id/kardex", { preHandler: auth },
+    async (req) =>
+      svc.getKardex(req.user.tenant_id, +req.params.id, req.query)
+  );
+  // Ejecutar slotting ABC
+  fastify.post("/api/v1/inventory/slotting", { preHandler: authA },
+    async (req) => {
+      // Ejecutar en background, responder inmediato
+      setImmediate(() =>
+        svc.runSlotting(req.user.tenant_id, req.body.place_id)
+          .then(result => {
+            require("../../fabric/wsManager")
+              .notify(req.user.tenant_id, "SLOTTING_DONE", result);
+          })
+      );
+      return { message: "Slotting iniciado. Recibirás los resultados en tiempo real." };
+    }
+  );
+  // Valoración del inventario
+  fastify.get("/api/v1/inventory/valuation", { preHandler: auth },
+    async (req) => {
+      const items = await prisma.item.findMany({
+        where: { tenant_id: req.user.tenant_id, active: true },
+        select: { id:true, code:true, name:true,
+                  stock_current:true, unit_cost:true, abc_class:true }
+      });
+      const total_value = items.reduce(
+        (s, i) => s + (i.stock_current * i.unit_cost), 0
+      );
+      return {
+        total_value: Math.round(total_value * 100) / 100,
+        items_count: items.length,
+        items
+      };
+    }
+  );
+  // Ubicaciones con su contenido
+  fastify.get("/api/v1/inventory/locations", { preHandler: auth },
+    async (req) => {
+      const { place_id } = req.query;
+      return prisma.location.findMany({
+        where: {
+          tenant_id: req.user.tenant_id,
+          active: true,
+          ...(place_id ? { place_id: +place_id } : {})
+        },
+        include: {
+          place: { select: { id:true, name:true } },
+          items: {
+            where: { qty: { gt: 0 } },
+            include: { item: { select: { id:true, code:true, name:true, unit:true } } }
+          }
+        }
+      });
+    }
+  );
+}
+module.exports = inventoryRoutes;
+MÓDULO M-02 — COMPRAS Y PROVEEDORES
+Función 1: createSupplier()
+FIRMA:
+async function createSupplier(tenantId, userId, data) → Party
+DESCRIPCIÓN: Crea un proveedor. En APEX OS 2.0 los proveedores
+son Party con type = "supplier".
+PARÁMETROS (data):
+  name         String  OBLIGATORIO.
+  tax_id       String? NIT o cédula.
+  tax_type     String? "person" | "company". Default: "company".
+  email        String? Debe ser formato válido si viene.
+  phone        String? Sin formato forzado.
+  address      String?
+  city         String?
+  country      String  Default: "CO".
+  credit_limit Float   Default: 0.
+  credit_days  Int     Default: 0. Días de crédito que nos da.
+  metadata     Object  Puede incluir: lead_time_days, rating, bank_info.
+VALIDACIONES:
+  1. name no puede estar vacío.
+  2. Si email existe → validar formato básico.
+  3. Si tax_id existe → verificar que no haya otro supplier
+     con el mismo tax_id en el tenant.
+  4. credit_limit >= 0.
+  5. credit_days entre 0 y 365.
+LÓGICA:
+  1. Validaciones.
+  2. prisma.party.create() con type: "supplier".
+  3. balance inicia en 0 (lo que le debemos).
+  4. Retornar party creado.
+RESPUESTA EXITOSA (201): Party completo.
+EFECTOS SECUNDARIOS: Ninguno.
+EVENTO BRAIN: Ninguno.
+async function createSupplier(tenantId, userId, data) {
+  const {
+    name, tax_id, tax_type = "company",
+    email, phone, address, city, country = "CO",
+    credit_limit = 0, credit_days = 0,
+    metadata = {}
+  } = data;
+  if (!name?.trim())
+    throw { status: 400, code: "REQUIRED_FIELD",
+            error: "El nombre es obligatorio" };
+  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))
+    throw { status: 400, code: "INVALID_EMAIL",
+            error: "Formato de email inválido" };
+  if (credit_limit < 0)
+    throw { status: 400, code: "INVALID_LIMIT",
+            error: "El límite de crédito no puede ser negativo" };
+  if (credit_days < 0 || credit_days > 365)
+    throw { status: 400, code: "INVALID_DAYS",
+            error: "Los días de crédito deben estar entre 0 y 365" };
+  if (tax_id) {
+    const existing = await prisma.party.findFirst({
+      where: { tenant_id: tenantId, tax_id, type: "supplier" }
+    });
+    if (existing)
+      throw { status: 409, code: "DUPLICATE_TAX_ID",
+              error: `Ya existe un proveedor con el NIT ${tax_id}` };
+  }
+  return prisma.party.create({
+    data: {
+      tenant_id: tenantId,
+      type:      "supplier",
+      name:      name.trim(),
+      tax_id, tax_type, email, phone,
+      address, city, country,
+      credit_limit, credit_days,
+      balance: 0,
+      active:  true,
+      metadata
+    }
+  });
+}
+Función 2: createPurchaseOrder()
+FIRMA:
+async function createPurchaseOrder(tenantId, userId, data) → Transaction
+DESCRIPCIÓN: Crea una orden de compra. Es una Transaction
+con type = "purchase" y status = "draft".
+PARÁMETROS (data):
+  supplier_id  Int    OBLIGATORIO. ID del Party proveedor.
+  lines        Array  OBLIGATORIO. Al menos 1 línea.
+    lines[].item_id    Int    OBLIGATORIO.
+    lines[].qty        Float  OBLIGATORIO. > 0.
+    lines[].unit_cost  Float  OBLIGATORIO. >= 0.
+    lines[].unit       String Opcional. Default: el unit del Item.
+    lines[].notes      String Opcional.
+  expected_at  String? Fecha esperada de entrega ISO.
+  notes        String? Notas generales de la PO.
+ESTADOS DE UNA PO:
+  draft      → Borrador. Se puede editar y eliminar.
+  sent       → Enviada al proveedor. Solo lectura.
+  confirmed  → Proveedor confirmó.
+  partial    → Recepción parcial.
+  received   → Completamente recibida.
+  cancelled  → Cancelada.
+TRANSICIONES VÁLIDAS:
+  draft → sent | cancelled
+  sent  → confirmed | cancelled
+  confirmed → partial | received | cancelled
+  partial → received | cancelled
+  received → (estado final, sin transición)
+  cancelled → (estado final, sin transición)
+VALIDACIONES:
+  1. supplier_id debe existir y ser type="supplier" del tenant.
+  2. lines no puede estar vacío.
+  3. Cada línea: item_id debe existir en el tenant.
+  4. Cada línea: qty > 0.
+  5. Cada línea: unit_cost >= 0.
+CÁLCULOS AUTOMÁTICOS:
+  line.subtotal = qty × unit_cost
+  line.total    = subtotal (compras no tienen IVA en Colombia para
+                  empresas contribuyentes — el IVA es descontable)
+  transaction.subtotal = SUM(lines.subtotal)
+  transaction.total    = subtotal
+  transaction.balance  = total (lo que debemos al proveedor)
+GENERACIÓN DE NÚMERO:
+  Formato: PO-XXXXXX donde XXXXXX es el count+1 con padding 6 ceros.
+  Usar $transaction para evitar duplicados en concurrencia.
+RESPUESTA EXITOSA (201): Transaction con lines incluidas.
+async function createPurchaseOrder(tenantId, userId, data) {
+  const { supplier_id, lines, expected_at, notes } = data;
+  // Validar proveedor
+  const supplier = await prisma.party.findFirst({
+    where: { id: supplier_id, tenant_id: tenantId, type: "supplier", active: true }
+  });
+  if (!supplier)
+    throw { status: 404, code: "SUPPLIER_NOT_FOUND",
+            error: "Proveedor no encontrado" };
+  if (!lines?.length)
+    throw { status: 400, code: "NO_LINES",
+            error: "La orden debe tener al menos una línea" };
+  // Validar y enriquecer líneas
+  const enrichedLines = [];
+  for (const line of lines) {
+    if (!line.qty || line.qty <= 0)
+      throw { status: 400, code: "INVALID_QTY",
+              error: "La cantidad debe ser mayor a 0" };
+    if (line.unit_cost < 0)
+      throw { status: 400, code: "INVALID_COST",
+              error: "El costo no puede ser negativo" };
+    const item = await prisma.item.findFirst({
+      where: { id: line.item_id, tenant_id: tenantId, active: true }
+    });
+    if (!item)
+      throw { status: 404, code: "ITEM_NOT_FOUND",
+              error: `Item ${line.item_id} no encontrado` };
+    const subtotal = line.qty * line.unit_cost;
+    enrichedLines.push({
+      item_id:     item.id,
+      description: item.name,
+      qty:         line.qty,
+      unit:        line.unit || item.unit,
+      unit_cost:   line.unit_cost,
+      unit_price:  line.unit_cost,
+      tax_rate:    0,
+      tax_amount:  0,
+      subtotal,
+      total:       subtotal,
+      metadata:    { notes: line.notes }
+    });
+  }
+  const subtotal = enrichedLines.reduce((s, l) => s + l.subtotal, 0);
+  return prisma.$transaction(async (tx) => {
+    // Número único con lock
+    const count = await tx.transaction.count({
+      where: { tenant_id: tenantId, type: "purchase" }
+    });
+    const number = `PO-${String(count + 1).padStart(6, "0")}`;
+    return tx.transaction.create({
+      data: {
+        tenant_id:  tenantId,
+        type:       "purchase",
+        number,
+        party_id:   supplier_id,
+        status:     "draft",
+        subtotal,
+        tax_total:  0,
+        total:      subtotal,
+        balance:    subtotal,
+        currency:   "COP",
+        due_date:   expected_at ? new Date(expected_at) : null,
+        notes,
+        created_by: userId,
+        lines: { create: enrichedLines }
+      },
+      include: {
+        lines: true,
+        party: { select: { id:true, name:true, tax_id:true } }
+      }
+    });
+  });
+}
+Función 3: receivePurchaseOrder() — CRÍTICA
+🔴 CRÍTICO: Esta función recibe mercancía. Actualiza stock, crea movements y genera asiento contable. DEBE usar $transaction completa.
+FIRMA:
+async function receivePurchaseOrder(tenantId, userId, poId, data) → Transaction
+DESCRIPCIÓN: Registra la recepción física de mercancía de una PO.
+Puede ser recepción total o parcial.
+PARÁMETROS (data):
+  received_lines  Array  OBLIGATORIO. Líneas recibidas.
+    received_lines[].line_id       Int    ID de TransactionLine.
+    received_lines[].qty_received  Float  Cantidad física recibida.
+    received_lines[].location_id   Int    Dónde entra al almacén.
+    received_lines[].lot           String? Número de lote.
+    received_lines[].expiry        String? Fecha de vencimiento ISO.
+  notes  String?  Observaciones de la recepción.
+VALIDACIONES:
+  1. PO debe existir y pertenecer al tenant.
+  2. PO.status debe ser "draft", "sent", "confirmed" o "partial".
+     No se puede recibir una PO "received" o "cancelled".
+  3. Cada line_id debe pertenecer a la PO.
+  4. qty_received debe ser > 0.
+  5. qty_received no puede superar qty_pendiente de esa línea.
+  6. location_id debe existir y pertenecer al tenant.
+LÓGICA DENTRO DE $TRANSACTION:
+  PARA CADA LÍNEA RECIBIDA:
+    PASO 1: Obtener TransactionLine.
+    PASO 2: Calcular qty_pendiente = line.qty - qty_ya_recibida.
+            qty_ya_recibida = SUM(Movements donde transaction_id=poId
+            y item_id = line.item_id).
+    PASO 3: Si qty_received > qty_pendiente → error.
+    PASO 4: Llamar stockMove() con:
+              from_location_id: null (entrada externa)
+              to_location_id: data.location_id
+              qty: qty_received
+              cost: line.unit_cost
+              transaction_id: poId
+              lot, expiry
+  DESPUÉS DE TODAS LAS LÍNEAS:
+    PASO 5: Determinar nuevo status de la PO:
+      Si TODAS las líneas están 100% recibidas → "received"
+      Si al menos una está parcial → "partial"
+    PASO 6: Actualizar PO.status.
+  PASO 7: Generar asiento contable:
+    DÉBITO:  Cuenta 14 (Inventario) por el total recibido
+    CRÉDITO: Cuenta 22 (Cuentas por pagar) por el mismo valor
+  PASO 8: Actualizar Party.balance del proveedor:
+    balance += valor total recibido en esta recepción.
+RESPUESTA EXITOSA (200): La PO actualizada con su nuevo status.
+ERRORES POSIBLES:
+  { error: "La PO ya fue completamente recibida",
+    code: "ALREADY_RECEIVED" }                                   422
+  { error: "La PO fue cancelada",
+    code: "CANCELLED" }                                          422
+  { error: "Cantidad recibida supera lo pendiente (pendiente: 5)",
+    code: "QTY_EXCEEDED" }                                       422
+EFECTOS SECUNDARIOS:
+  → Stock de cada item aumenta en la ubicación indicada
+  → Movements creados (uno por línea)
+  → Item.stock_current recalculado
+  → PO.status actualizado
+  → LedgerEntry creado (asiento contable)
+  → Party.balance del proveedor incrementado
+EVENTO BRAIN: Si algún item supera stock_max → publicar
+"OVERSTOCK_ALERT" para ese item.
+async function receivePurchaseOrder(tenantId, userId, poId, data) {
+  const { received_lines, notes } = data;
+  const { journalEntry } = require("../accounting/service");
+  const po = await prisma.transaction.findFirst({
+    where: { id: poId, tenant_id: tenantId, type: "purchase" },
+    include: { lines: true }
+  });
+  if (!po)
+    throw { status: 404, code: "NOT_FOUND", error: "PO no encontrada" };
+  if (po.status === "received")
+    throw { status: 422, code: "ALREADY_RECEIVED",
+            error: "La PO ya fue completamente recibida" };
+  if (po.status === "cancelled")
+    throw { status: 422, code: "CANCELLED", error: "La PO fue cancelada" };
+  let totalRecibido = 0;
+  await prisma.$transaction(async (tx) => {
+    for (const recv of received_lines) {
+      const line = po.lines.find(l => l.id === recv.line_id);
+      if (!line)
+        throw { status: 400, code: "LINE_NOT_FOUND",
+                error: `Línea ${recv.line_id} no pertenece a esta PO` };
+      // Calcular ya recibido
+      const yaRecibido = await tx.movement.aggregate({
+        where: { transaction_id: poId, item_id: line.item_id,
+                 type: "in", tenant_id: tenantId },
+        _sum: { qty: true }
+      });
+      const pendiente = line.qty - (yaRecibido._sum.qty ?? 0);
+      if (recv.qty_received <= 0)
+        throw { status: 400, code: "INVALID_QTY",
+                error: "La cantidad recibida debe ser > 0" };
+      if (recv.qty_received > pendiente)
+        throw { status: 422, code: "QTY_EXCEEDED",
+                error: `Cantidad supera lo pendiente (pendiente: ${pendiente})` };
+      // Crear movement de entrada
+      await stockMove(tenantId, userId, {
+        item_id:        line.item_id,
+        from_location_id: null,
+        to_location_id: recv.location_id,
+        qty:            recv.qty_received,
+        cost:           line.unit_cost,
+        transaction_id: poId,
+        lot:            recv.lot,
+        reason:         `Recepción ${po.number}`
+      });
+      totalRecibido += recv.qty_received * line.unit_cost;
+    }
+    // Determinar nuevo status
+    const todosRecibidos = await Promise.all(po.lines.map(async (line) => {
+      const recibido = await tx.movement.aggregate({
+        where: { transaction_id: poId, item_id: line.item_id, type: "in" },
+        _sum: { qty: true }
+      });
+      return (recibido._sum.qty ?? 0) >= line.qty;
+    }));
+    const newStatus = todosRecibidos.every(Boolean) ? "received" : "partial";
+    await tx.transaction.update({
+      where: { id: poId },
+      data:  { status: newStatus, notes: notes || po.notes }
+    });
+    // Actualizar balance del proveedor
+    await tx.party.update({
+      where: { id: po.party_id },
+      data:  { balance: { increment: totalRecibido } }
+    });
+  });
+  // Asiento contable (fuera del $transaction de negocio
+  // para no mezclar transacciones — o incluirlo dentro si prefieres)
+  await journalEntry(tenantId, {
+    description:    `Recepción ${po.number}`,
+    transaction_id: poId,
+    entries: [
+      { account: "1435", debit:  totalRecibido },
+      { account: "2205", credit: totalRecibido }
+    ]
+  });
+  return prisma.transaction.findUnique({
+    where: { id: poId },
+    include: { lines: true, party: true }
+  });
+}
+Función 4: updatePOStatus()
+FIRMA:
+async function updatePOStatus(tenantId, userId, poId, newStatus) → Transaction
+TRANSICIONES VÁLIDAS (definidas aquí, aplicadas siempre):
+  draft     → sent | cancelled
+  sent      → confirmed | cancelled
+  confirmed → partial | received | cancelled
+  partial   → received | cancelled
+VALIDACIONES:
+  1. PO existe y pertenece al tenant.
+  2. La transición es válida según el mapa anterior.
+  3. Si newStatus = "cancelled" y la PO tiene recepciones
+     parciales → ERROR: no se puede cancelar con stock ya ingresado.
+LÓGICA:
+  1. Validar transición.
+  2. Si cancelled con recepciones → error.
+  3. Actualizar status.
+  4. Si cancelled → no reversar stock automáticamente.
+     El stock ya recibido permanece. El usuario debe hacer
+     un ajuste manual si es necesario.
+RESPUESTA EXITOSA (200): PO actualizada.
+const PO_TRANSITIONS = {
+  draft:     ["sent",    "cancelled"],
+  sent:      ["confirmed","cancelled"],
+  confirmed: ["partial", "received", "cancelled"],
+  partial:   ["received","cancelled"]
+};
+async function updatePOStatus(tenantId, userId, poId, newStatus) {
+  const po = await prisma.transaction.findFirst({
+    where: { id: poId, tenant_id: tenantId, type: "purchase" }
+  });
+  if (!po)
+    throw { status: 404, code: "NOT_FOUND", error: "PO no encontrada" };
+  const allowed = PO_TRANSITIONS[po.status] || [];
+  if (!allowed.includes(newStatus))
+    throw { status: 422, code: "INVALID_TRANSITION",
+            error: `Transición inválida: ${po.status} → ${newStatus}. Permitidas: ${allowed.join(", ")}` };
+  // Si cancela verificar que no tiene recepciones
+  if (newStatus === "cancelled") {
+    const recepciones = await prisma.movement.count({
+      where: { transaction_id: poId, type: "in" }
+    });
+    if (recepciones > 0)
+      throw { status: 422, code: "HAS_RECEIPTS",
+              error: "No se puede cancelar una PO con recepciones registradas" };
+  }
+  return prisma.transaction.update({
+    where: { id: poId },
+    data:  { status: newStatus }
+  });
+}
+Función 5: checkVMIAlerts()
+FIRMA:
+async function checkVMIAlerts(tenantId) → VMIAlert[]
+DESCRIPCIÓN: Detecta items que están por debajo de su punto de
+reorden (stock_min) y sugiere crear una PO al proveedor habitual.
+LÓGICA:
+  1. Buscar todos los items activos con stock_current <= stock_min.
+  2. Para cada item, buscar el proveedor habitual:
+     El último Party de tipo "supplier" que tuvo un Movement "in"
+     para ese item en los últimos 90 días.
+  3. Calcular qty_sugerida:
+     Si stock_max existe: qty_sugerida = stock_max - stock_current.
+     Si no: qty_sugerida = stock_min * 2 (regla conservadora).
+  4. Retornar lista de alertas.
+RESPUESTA:
+  [
+    {
+      item_id: 1,
+      item_code: "PROD-001",
+      item_name: "Arroz Diana 500g",
+      stock_current: 5,
+      stock_min: 10,
+      qty_sugerida: 45,
+      supplier_id: 3,
+      supplier_name: "Proveedor ABC",
+      urgency: "HIGH"  ← stock = 0, "MEDIUM" ← stock > 0
+    }
+  ]
+ESTA FUNCIÓN ES LLAMADA POR:
+  1. El cron diario (src/fabric/crons.js)
+  2. El endpoint GET /api/v1/purchases/vmi-alerts
+  3. El BRAIN después de cada recepción de PO
+async function checkVMIAlerts(tenantId) {
+  const lowItems = await prisma.$queryRaw`
+    SELECT i.id, i.code, i.name, i.stock_current,
+           i.stock_min, i.stock_max, i.unit_cost
+    FROM "Item" i
+    WHERE i.tenant_id = ${tenantId}
+      AND i.active = true
+      AND i.stock_current <= i.stock_min
+    ORDER BY i.stock_current ASC
+  `;
+  const alerts = [];
+  for (const item of lowItems) {
+    // Buscar proveedor habitual (último que suministró)
+    const lastMovement = await prisma.movement.findFirst({
+      where: {
+        tenant_id: tenantId,
+        item_id: item.id,
+        type: "in",
+        created_at: { gte: new Date(Date.now() - 90*24*3600*1000) },
+        transaction_id: { not: null }
+      },
+      orderBy: { created_at: "desc" },
+      include: {
+        transaction: {
+          include: { party: { select: { id:true, name:true } } }
+        }
+      }
+    });
+    const qty_sugerida = item.stock_max
+      ? item.stock_max - item.stock_current
+      : item.stock_min * 2;
+    alerts.push({
+      item_id:       item.id,
+      item_code:     item.code,
+      item_name:     item.name,
+      stock_current: item.stock_current,
+      stock_min:     item.stock_min,
+      qty_sugerida:  Math.ceil(qty_sugerida),
+      supplier_id:   lastMovement?.transaction?.party?.id ?? null,
+      supplier_name: lastMovement?.transaction?.party?.name ?? "Sin proveedor habitual",
+      urgency:       item.stock_current === 0 ? "HIGH" : "MEDIUM"
+    });
+  }
+  return alerts;
+}
+Routes M-02 — src/modules/purchases/routes.js
+async function purchasesRoutes(fastify) {
+  const svc = require("./service");
+  const { requirePermission } = require("../../middleware/rbac");
+  const auth  = [fastify.authenticate];
+  const authW = [fastify.authenticate, requirePermission("purchases","write")];
+  const authA = [fastify.authenticate, requirePermission("purchases","approve")];
+  // ── PROVEEDORES ──────────────────────────────────────────
+  // Listar proveedores
+  fastify.get("/api/v1/purchases/suppliers", { preHandler: auth },
+    async (req) => {
+      const { search, page = 1, limit = 20 } = req.query;
+      const where = { tenant_id: req.user.tenant_id,
+                      type: "supplier", active: true };
+      if (search) where.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { tax_id: { contains: search } }
+      ];
+      const [data, total] = await Promise.all([
+        prisma.party.findMany({
+          where, skip: (+page-1)*+limit, take: +limit,
+          orderBy: { name: "asc" }
+        }),
+        prisma.party.count({ where })
+      ]);
+      return { data, total, page: +page, pages: Math.ceil(total/+limit) };
+    }
+  );
+  // Crear proveedor
+  fastify.post("/api/v1/purchases/suppliers", { preHandler: authW },
+    async (req, reply) => {
+      const result = await svc.createSupplier(req.user.tenant_id, req.user.id, req.body);
+      return reply.code(201).send(result);
+    }
+  );
+  // Actualizar proveedor (solo campos seguros)
+  fastify.put("/api/v1/purchases/suppliers/:id", { preHandler: authW },
+    async (req) => {
+      const { type, tenant_id, balance, ...safeData } = req.body;
+      return prisma.party.update({
+        where: { id: +req.params.id }, data: safeData
+      });
+    }
+  );
+  // ── ÓRDENES DE COMPRA ────────────────────────────────────
+  // Listar POs
+  fastify.get("/api/v1/purchases/orders", { preHandler: auth },
+    async (req) => {
+      const { status, supplier_id, page = 1, limit = 20 } = req.query;
+      const where = { tenant_id: req.user.tenant_id, type: "purchase" };
+      if (status)      where.status   = status;
+      if (supplier_id) where.party_id = +supplier_id;
+      const [data, total] = await Promise.all([
+        prisma.transaction.findMany({
+          where,
+          skip: (+page-1)*+limit, take: +limit,
+          orderBy: { created_at: "desc" },
+          include: {
+            party: { select: { id:true, name:true } },
+            lines: true
+          }
+        }),
+        prisma.transaction.count({ where })
+      ]);
+      return { data, total, page: +page, pages: Math.ceil(total/+limit) };
+    }
+  );
+  // Obtener PO por ID
+  fastify.get("/api/v1/purchases/orders/:id", { preHandler: auth },
+    async (req, reply) => {
+      const po = await prisma.transaction.findFirst({
+        where: { id: +req.params.id,
+                 tenant_id: req.user.tenant_id, type: "purchase" },
+        include: { lines: true, party: true, documents: true }
+      });
+      if (!po) return reply.code(404).send({ error: "No encontrada", code: "NOT_FOUND" });
+      return po;
+    }
+  );
+  // Crear PO
+  fastify.post("/api/v1/purchases/orders", { preHandler: authW },
+    async (req, reply) => {
+      const po = await svc.createPurchaseOrder(req.user.tenant_id, req.user.id, req.body);
+      return reply.code(201).send(po);
+    }
+  );
+  // Cambiar estado de PO
+  fastify.put("/api/v1/purchases/orders/:id/status", { preHandler: authW },
+    async (req) =>
+      svc.updatePOStatus(req.user.tenant_id, req.user.id,
+                         +req.params.id, req.body.status)
+  );
+  // Recibir mercancía
+  fastify.post("/api/v1/purchases/orders/:id/receive", { preHandler: authW },
+    async (req) =>
+      svc.receivePurchaseOrder(req.user.tenant_id, req.user.id,
+                               +req.params.id, req.body)
+  );
+  // Alertas VMI
+  fastify.get("/api/v1/purchases/vmi-alerts", { preHandler: auth },
+    async (req) => svc.checkVMIAlerts(req.user.tenant_id)
+  );
+  // Historial de recepciones de una PO
+  fastify.get("/api/v1/purchases/orders/:id/receipts", { preHandler: auth },
+    async (req) => {
+      const po = await prisma.transaction.findFirst({
+        where: { id: +req.params.id, tenant_id: req.user.tenant_id }
+      });
+      if (!po) return { error: "No encontrada" };
+      return prisma.movement.findMany({
+        where: { transaction_id: +req.params.id, type: "in",
+                 tenant_id: req.user.tenant_id },
+        include: { item: { select: { code:true, name:true } } },
+        orderBy: { created_at: "desc" }
+      });
+    }
+  );
+}
+module.exports = purchasesRoutes;
+FLUJO DE INTEGRACIÓN M-01 + M-02
+Mapa exacto de qué llama a qué cuando ocurre cada evento importante.
+━━━ FLUJO: Crear item + Crear PO + Recibir mercancía ━━━━━━━
+ACTOR: Usuario de compras
+PASO 1: POST /api/v1/inventory/items
+  → inventory/routes.js → createItem()
+  → Crea Item con stock_current=0
+  → No toca contabilidad, no crea movimientos
+PASO 2: POST /api/v1/purchases/orders
+  → purchases/routes.js → createPurchaseOrder()
+  → Crea Transaction type="purchase" status="draft"
+  → NO toca stock, NO crea movements
+  → NO genera asiento contable aún
+PASO 3: PUT /api/v1/purchases/orders/:id/status { status: "sent" }
+  → updatePOStatus() → Transaction.status = "sent"
+  → Solo actualiza el status
+PASO 4: POST /api/v1/purchases/orders/:id/receive
+  → receivePurchaseOrder()
+    ↳ Dentro de $transaction:
+      ↳ stockMove() para cada línea → crea Movement type="in"
+        ↳ ItemLocation actualizada
+        ↳ Item.stock_current recalculado
+      ↳ Transaction.status → "partial" o "received"
+      ↳ Party.balance del proveedor aumenta
+    ↳ journalEntry() → LedgerEntry:
+        Débito 1435 (Inventario) / Crédito 2205 (Cuentas x pagar)
+━━━ ESTADOS FINALES DESPUÉS DEL FLUJO ━━━━━━━━━━━━━━━━━━━━━━
+Item:
+  stock_current = qty recibida
+  abc_class = "C" (sin cambios hasta correr slotting)
+ItemLocation:
+  qty = qty recibida en la ubicación indicada
+Movement:
+  type = "in"
+  from_location = null
+  to_location = location_id donde entró
+  transaction_id = id de la PO
+Transaction (PO):
+  status = "received" (si todo) o "partial"
+  balance = lo que le debemos (no cambia en recepción)
+Party (Proveedor):
+  balance = monto total recibido (cuánto le debemos)
+LedgerEntry:
+  Dos entradas: débito inventario + crédito cuentas por pagar
+✅ RESULTADO: Con M-01 y M-02 completamente implementados según esta especificación, el sistema puede gestionar inventario completo y el ciclo de compras de principio a fin. DOC-12 especifica M-03 Ventas, M-04 Facturación y M-07 Contabilidad para completar el MVP.

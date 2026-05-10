@@ -1,0 +1,1105 @@
+DOC-12 — ESPECIFICACIÓN FUNCIONAL MVP
+Módulos M-03 Ventas, M-04 Facturación y M-07 Contabilidad. Con estos tres módulos más M-01 y M-02 (DOC-11), el MVP está completo y cualquier empresa puede operar.
+📌 NOTA: PREREQUISITO: M-01 y M-02 deben estar implementados antes de M-03. M-07 debe estar implementado antes de M-04 (la facturación genera asientos contables automáticos).
+MÓDULO M-07 — CONTABILIDAD INTEGRADA
+Archivo: src/modules/accounting/service.js
+🔴 CRÍTICO: M-07 se implementa ANTES que M-03 y M-04. Es una dependencia. Sin contabilidad, las facturas y ventas no pueden generar sus asientos automáticos.
+Función 1: initChartOfAccounts()
+FIRMA:
+async function initChartOfAccounts(tenantId, country) → Account[]
+DESCRIPCIÓN: Crea el plan de cuentas inicial cuando se registra
+un nuevo tenant. Se llama AUTOMÁTICAMENTE desde auth/routes.js
+al crear el tenant. El usuario nunca la llama directamente.
+PARÁMETROS:
+  tenantId  String  ID del tenant recién creado.
+  country   String  "CO" (Colombia) por defecto.
+                    Futuro: "MX", "PE", etc.
+PLAN DE CUENTAS COLOMBIA (PUC — Decreto 2650):
+ACTIVOS (1):
+  1105  Caja
+  1110  Bancos
+  1305  Clientes (Cuentas por Cobrar)
+  1330  Anticipos y Avances
+  1435  Inventarios
+  1524  Equipo de Oficina
+  1540  Flota y Equipo de Transporte
+PASIVOS (2):
+  2105  Bancos Nacionales (Obligaciones Financieras)
+  2205  Proveedores (Cuentas por Pagar)
+  2335  Costos y Gastos por Pagar
+  2365  Retención en la Fuente por Pagar
+  2367  Impuesto a las Ventas Retenido
+  2408  IVA por Pagar
+  2610  Para Obligaciones Laborales
+PATRIMONIO (3):
+  3105  Capital Social
+  3605  Utilidad del Ejercicio
+  3610  Pérdida del Ejercicio
+INGRESOS (4):
+  4135  Comercio al Por Mayor y al Por Menor
+  4175  Servicios
+  4210  Financieros
+COSTOS (5):
+  5105  Costo de Ventas — Comercio
+  5195  Gastos de Inventario (ajustes, mermas)
+GASTOS (6):
+  5205  Sueldos y Salarios
+  5210  Horas Extras
+  5220  Auxilio de Transporte
+  5260  Aportes a EPS
+  5270  Aportes a Fondos de Pensiones
+  5290  Aportes SENA, ICBF, CCF
+  5320  Arrendamientos
+  5360  Servicios Públicos
+  5395  Otros Gastos Operacionales
+LÓGICA:
+  1. Verificar que el tenant no tiene cuentas ya.
+     Si las tiene → retornar las existentes sin crear nuevas.
+  2. Crear todas las cuentas del plan anterior en batch.
+  3. Retornar el array de cuentas creadas.
+const PUC_CO = [
+  { code:"1105", name:"Caja",                      type:"asset"    },
+  { code:"1110", name:"Bancos",                    type:"asset"    },
+  { code:"1305", name:"Clientes",                  type:"asset"    },
+  { code:"1330", name:"Anticipos y Avances",        type:"asset"    },
+  { code:"1435", name:"Inventarios",               type:"asset"    },
+  { code:"1524", name:"Equipo de Oficina",         type:"asset"    },
+  { code:"1540", name:"Flota y Equipo Transporte", type:"asset"    },
+  { code:"2105", name:"Obligaciones Financieras",  type:"liability"},
+  { code:"2205", name:"Proveedores",               type:"liability"},
+  { code:"2335", name:"Costos y Gastos por Pagar", type:"liability"},
+  { code:"2365", name:"Retención en la Fuente",    type:"liability"},
+  { code:"2408", name:"IVA por Pagar",             type:"liability"},
+  { code:"2610", name:"Obligaciones Laborales",    type:"liability"},
+  { code:"3105", name:"Capital Social",            type:"equity"   },
+  { code:"3605", name:"Utilidad del Ejercicio",    type:"equity"   },
+  { code:"4135", name:"Ingresos por Ventas",       type:"income"   },
+  { code:"4175", name:"Ingresos por Servicios",    type:"income"   },
+  { code:"5105", name:"Costo de Ventas",           type:"expense"  },
+  { code:"5195", name:"Gastos de Inventario",      type:"expense"  },
+  { code:"5205", name:"Sueldos y Salarios",        type:"expense"  },
+  { code:"5210", name:"Horas Extras",              type:"expense"  },
+  { code:"5220", name:"Auxilio de Transporte",     type:"expense"  },
+  { code:"5260", name:"Aportes EPS",               type:"expense"  },
+  { code:"5270", name:"Aportes Pensiones",         type:"expense"  },
+  { code:"5290", name:"Aportes SENA ICBF CCF",     type:"expense"  },
+  { code:"5320", name:"Arrendamientos",            type:"expense"  },
+  { code:"5360", name:"Servicios Públicos",        type:"expense"  },
+  { code:"5395", name:"Otros Gastos",              type:"expense"  },
+];
+async function initChartOfAccounts(tenantId, country = "CO") {
+  const existing = await prisma.account.count({
+    where: { tenant_id: tenantId }
+  });
+  if (existing > 0) {
+    return prisma.account.findMany({ where: { tenant_id: tenantId } });
+  }
+  const plan = country === "CO" ? PUC_CO : PUC_CO; // Expandir para MX, PE
+  await prisma.account.createMany({
+    data: plan.map(acc => ({
+      tenant_id:  tenantId,
+      code:       acc.code,
+      name:       acc.name,
+      type:       acc.type,
+      allows_tx:  true,
+      active:     true
+    }))
+  });
+  return prisma.account.findMany({
+    where: { tenant_id: tenantId },
+    orderBy: { code: "asc" }
+  });
+}
+Función 2: journalEntry() — LA MÁS IMPORTANTE DE CONTABILIDAD
+🔴 CRÍTICO: Esta función genera asientos contables. Toda operación financiera del sistema pasa por aquí. La partida doble debe cuadrar siempre. Si no cuadra, rechazar.
+FIRMA:
+async function journalEntry(tenantId, data) → LedgerEntry[]
+PARÁMETROS (data):
+  description    String  OBLIGATORIO. Descripción del asiento.
+  date           Date?   Opcional. Default: hoy.
+  transaction_id Int?    Opcional. Referencia a la Transaction.
+  entries        Array   OBLIGATORIO. Al menos 2 entradas.
+    entries[].account  String  Código de cuenta. Ej: "1305".
+                               Se busca por prefijo: startsWith("1305")
+    entries[].debit    Float?  Monto al débito. 0 si no aplica.
+    entries[].credit   Float?  Monto al crédito. 0 si no aplica.
+REGLA DE PARTIDA DOBLE:
+  SUM(débitos) DEBE = SUM(créditos)
+  Tolerancia: ±0.01 (por redondeos de decimales)
+  Si no cuadra → error 422 con detalle de la diferencia.
+NATURALEZA DE LAS CUENTAS:
+  Activo   → aumenta con débito, disminuye con crédito
+  Pasivo   → aumenta con crédito, disminuye con débito
+  Patrimonio → aumenta con crédito, disminuye con débito
+  Ingreso  → aumenta con crédito, disminuye con débito
+  Gasto    → aumenta con débito, disminuye con crédito
+LÓGICA:
+  1. Verificar partida doble.
+  2. Para cada entrada:
+     a. Buscar cuenta por código (startsWith).
+     b. Si no existe → ERROR 404 con código de cuenta.
+  3. Crear todos los LedgerEntry en $transaction.
+  4. El campo period = YYYY-MM de la fecha del asiento.
+  5. Retornar array de entradas creadas.
+RESPUESTA EXITOSA:
+  [
+    { id: 1, account_id: 5, debit: 1000000, credit: 0,
+      description: "Factura FV-000001", period: "2026-05" },
+    { id: 2, account_id: 8, debit: 0, credit: 1000000,
+      description: "Factura FV-000001", period: "2026-05" }
+  ]
+ERRORES POSIBLES:
+  { error: "Partida no cuadra: Débito 1000, Crédito 800",
+    code: "UNBALANCED_ENTRY" }                              422
+  { error: "Cuenta 9999 no encontrada",
+    code: "ACCOUNT_NOT_FOUND" }                            404
+async function journalEntry(tenantId, data) {
+  const { description, date = new Date(),
+          transaction_id, entries } = data;
+  // Verificar partida doble
+  const totalDebit  = entries.reduce((s,e) => s + (e.debit  || 0), 0);
+  const totalCredit = entries.reduce((s,e) => s + (e.credit || 0), 0);
+  if (Math.abs(totalDebit - totalCredit) > 0.01)
+    throw {
+      status: 422,
+      code:   "UNBALANCED_ENTRY",
+      error:  `Partida no cuadra: Débito ${totalDebit.toFixed(2)}, Crédito ${totalCredit.toFixed(2)}`
+    };
+  const period = new Date(date).toISOString().substring(0, 7); // "2026-05"
+  return prisma.$transaction(async (tx) => {
+    const created = [];
+    for (const entry of entries) {
+      // Buscar cuenta por código (prefijo)
+      const account = await tx.account.findFirst({
+        where: {
+          tenant_id: tenantId,
+          code:      { startsWith: entry.account },
+          active:    true
+        }
+      });
+      if (!account)
+        throw {
+          status: 404,
+          code:   "ACCOUNT_NOT_FOUND",
+          error:  `Cuenta ${entry.account} no encontrada`
+        };
+      const ledger = await tx.ledgerEntry.create({
+        data: {
+          tenant_id:      tenantId,
+          account_id:     account.id,
+          transaction_id: transaction_id || null,
+          date:           new Date(date),
+          debit:          entry.debit  || 0,
+          credit:         entry.credit || 0,
+          balance:        0, // se calcula en reportes, no en tiempo real
+          description,
+          period
+        }
+      });
+      created.push(ledger);
+    }
+    return created;
+  });
+}
+Función 3: getBalanceSheet()
+FIRMA:
+async function getBalanceSheet(tenantId, period) → BalanceSheet
+PARÁMETROS:
+  tenantId  String  ID del tenant.
+  period    String? "YYYY-MM". Si null → acumulado hasta hoy.
+LÓGICA:
+  1. Obtener todas las cuentas activas del tenant.
+  2. Para cada cuenta, sumar todos los LedgerEntry
+     hasta el period indicado (o hasta hoy).
+  3. Calcular saldo según naturaleza:
+     - Activo/Gasto: saldo = debit - credit
+     - Pasivo/Patrimonio/Ingreso: saldo = credit - debit
+  4. Agrupar por tipo.
+  5. Calcular totales.
+RESPUESTA:
+  {
+    period: "2026-05",
+    assets: {
+      total: 50000000,
+      accounts: [
+        { code: "1105", name: "Caja", balance: 5000000 },
+        { code: "1110", name: "Bancos", balance: 20000000 },
+        { code: "1305", name: "Clientes", balance: 15000000 },
+        { code: "1435", name: "Inventarios", balance: 10000000 }
+      ]
+    },
+    liabilities: { total: 20000000, accounts: [...] },
+    equity: { total: 30000000, accounts: [...] },
+    balanced: true  ← assets = liabilities + equity
+  }
+async function getBalanceSheet(tenantId, period = null) {
+  const dateFilter = period
+    ? { lte: new Date(period + "-31") }
+    : { lte: new Date() };
+  const accounts = await prisma.account.findMany({
+    where: { tenant_id: tenantId, active: true },
+    include: {
+      entries: {
+        where: { date: dateFilter }
+      }
+    },
+    orderBy: { code: "asc" }
+  });
+  const grouped = { assets: [], liabilities: [], equity: [],
+                    income: [], expense: [] };
+  for (const acc of accounts) {
+    const totalDebit  = acc.entries.reduce((s,e) => s + e.debit,  0);
+    const totalCredit = acc.entries.reduce((s,e) => s + e.credit, 0);
+    // Saldo según naturaleza
+    const debitNature = ["asset","expense"].includes(acc.type);
+    const balance = debitNature
+      ? totalDebit - totalCredit
+      : totalCredit - totalDebit;
+    if (balance === 0) continue; // No mostrar cuentas en cero
+    const group = acc.type === "asset"     ? "assets"
+                : acc.type === "liability" ? "liabilities"
+                : acc.type === "equity"    ? "equity"
+                : acc.type === "income"    ? "income"
+                : "expense";
+    grouped[group].push({
+      code: acc.code, name: acc.name,
+      balance: Math.round(balance * 100) / 100
+    });
+  }
+  const sum = arr => arr.reduce((s, a) => s + a.balance, 0);
+  const totalAssets      = sum(grouped.assets);
+  const totalLiabilities = sum(grouped.liabilities);
+  const totalEquity      = sum(grouped.equity);
+  return {
+    period:      period || new Date().toISOString().substring(0,7),
+    assets:      { total: Math.round(totalAssets*100)/100,      accounts: grouped.assets },
+    liabilities: { total: Math.round(totalLiabilities*100)/100, accounts: grouped.liabilities },
+    equity:      { total: Math.round(totalEquity*100)/100,      accounts: grouped.equity },
+    balanced:    Math.abs(totalAssets - (totalLiabilities + totalEquity)) < 1,
+  };
+}
+Función 4: getIncomeStatement()
+FIRMA:
+async function getIncomeStatement(tenantId, period) → IncomeStatement
+PARÁMETROS:
+  tenantId  String
+  period    String  "YYYY-MM" OBLIGATORIO para el P&G.
+LÓGICA:
+  1. Sumar LedgerEntry del tipo "income" en el period.
+  2. Sumar LedgerEntry del tipo "expense" en el period.
+     (Solo gastos tipo 5xxx)
+  3. Calcular gross_profit, operating_profit, net.
+RESPUESTA:
+  {
+    period: "2026-05",
+    income: {
+      total: 10000000,
+      accounts: [{ code:"4135", name:"Ventas", balance: 10000000 }]
+    },
+    cogs: {       ← Costo de Ventas (5105)
+      total: 6000000,
+      accounts: [{ code:"5105", name:"Costo Ventas", balance: 6000000 }]
+    },
+    gross_profit: 4000000,
+    gross_margin_pct: 40.00,
+    operating_expenses: {
+      total: 1500000,
+      accounts: [...]
+    },
+    operating_profit: 2500000,
+    net_margin_pct: 25.00
+  }
+async function getIncomeStatement(tenantId, period) {
+  const dateRange = {
+    gte: new Date(period + "-01"),
+    lte: new Date(period + "-31")
+  };
+  const accounts = await prisma.account.findMany({
+    where: {
+      tenant_id: tenantId,
+      active: true,
+      type: { in: ["income","expense"] }
+    },
+    include: {
+      entries: { where: { date: dateRange } }
+    },
+    orderBy: { code: "asc" }
+  });
+  const income = [], cogs = [], opex = [];
+  for (const acc of accounts) {
+    const debit  = acc.entries.reduce((s,e) => s + e.debit,  0);
+    const credit = acc.entries.reduce((s,e) => s + e.credit, 0);
+    const balance = acc.type === "income"
+      ? credit - debit
+      : debit - credit;
+    if (balance === 0) continue;
+    const item = { code: acc.code, name: acc.name,
+                   balance: Math.round(balance*100)/100 };
+    if (acc.type === "income")          income.push(item);
+    else if (acc.code.startsWith("5105") ||
+             acc.code.startsWith("5195")) cogs.push(item);
+    else                                 opex.push(item);
+  }
+  const totalIncome = income.reduce((s,a) => s + a.balance, 0);
+  const totalCOGS   = cogs.reduce((s,a)   => s + a.balance, 0);
+  const totalOPEX   = opex.reduce((s,a)   => s + a.balance, 0);
+  const grossProfit = totalIncome - totalCOGS;
+  const opProfit    = grossProfit - totalOPEX;
+  const pct = (n, d) => d > 0 ? Math.round(n/d*10000)/100 : 0;
+  return {
+    period,
+    income:              { total: Math.round(totalIncome*100)/100, accounts: income },
+    cogs:                { total: Math.round(totalCOGS*100)/100,   accounts: cogs },
+    gross_profit:        Math.round(grossProfit*100)/100,
+    gross_margin_pct:    pct(grossProfit, totalIncome),
+    operating_expenses:  { total: Math.round(totalOPEX*100)/100,   accounts: opex },
+    operating_profit:    Math.round(opProfit*100)/100,
+    net_margin_pct:      pct(opProfit, totalIncome)
+  };
+}
+Función 5: registerPayment()
+FIRMA:
+async function registerPayment(tenantId, userId, data) → Payment
+DESCRIPCIÓN: Registra un pago recibido de un cliente (abono a factura)
+o un pago realizado a un proveedor.
+PARÁMETROS (data):
+  transaction_id  Int?   ID de la factura o PO. Puede ser null.
+  party_id        Int?   ID del cliente o proveedor.
+  type            String OBLIGATORIO. "income" | "expense".
+  method          String OBLIGATORIO.
+                         "cash" | "transfer" | "card" | "check" | "other"
+  amount          Float  OBLIGATORIO. > 0.
+  date            String Opcional. Default: hoy.
+  reference       String? Número de transferencia, cheque, etc.
+  notes           String?
+LÓGICA:
+  1. Validar amount > 0.
+  2. Si transaction_id existe:
+     a. Obtener la Transaction.
+     b. Verificar que pertenece al tenant.
+     c. amount no puede superar transaction.balance.
+     d. Actualizar transaction.paid += amount.
+     e. Actualizar transaction.balance -= amount.
+     f. Si balance = 0 → transaction.status = "paid".
+  3. Si party_id existe:
+     a. Si type = "income"  → Party.balance -= amount (nos pagan, reduce lo que nos deben).
+     b. Si type = "expense" → Party.balance -= amount (pagamos, reduce lo que debemos).
+  4. Crear Payment.
+  5. Generar asiento contable:
+     Si type = "income":
+       Débito  1110 (Bancos) / amount
+       Crédito 1305 (Clientes) / amount
+     Si type = "expense":
+       Débito  2205 (Proveedores) / amount
+       Crédito 1110 (Bancos) / amount
+RESPUESTA EXITOSA (201): El Payment creado.
+ERRORES POSIBLES:
+  { error: "El pago supera el saldo pendiente (saldo: $500.000)",
+    code: "EXCEEDS_BALANCE" }                                     422
+async function registerPayment(tenantId, userId, data) {
+  const {
+    transaction_id, party_id, type, method,
+    amount, date = new Date(), reference, notes
+  } = data;
+  if (!amount || amount <= 0)
+    throw { status: 400, code: "INVALID_AMOUNT",
+            error: "El monto debe ser mayor a 0" };
+  if (!["income","expense"].includes(type))
+    throw { status: 400, code: "INVALID_TYPE",
+            error: "type debe ser income o expense" };
+  const VALID_METHODS = ["cash","transfer","card","check","other"];
+  if (!VALID_METHODS.includes(method))
+    throw { status: 400, code: "INVALID_METHOD",
+            error: `Método inválido. Válidos: ${VALID_METHODS.join(", ")}` };
+  return prisma.$transaction(async (tx) => {
+    // Actualizar Transaction si viene
+    if (transaction_id) {
+      const trx = await tx.transaction.findFirst({
+        where: { id: transaction_id, tenant_id: tenantId }
+      });
+      if (!trx)
+        throw { status: 404, code: "TX_NOT_FOUND",
+                error: "Transacción no encontrada" };
+      if (amount > trx.balance + 0.01)
+        throw { status: 422, code: "EXCEEDS_BALANCE",
+                error: `El pago supera el saldo pendiente (saldo: $${trx.balance.toLocaleString("es-CO")})` };
+      const newPaid    = trx.paid + amount;
+      const newBalance = Math.max(0, trx.balance - amount);
+      await tx.transaction.update({
+        where: { id: transaction_id },
+        data: {
+          paid:    newPaid,
+          balance: newBalance,
+          status:  newBalance < 0.01 ? "paid" : trx.status
+        }
+      });
+    }
+    // Actualizar balance del Party
+    if (party_id) {
+      await tx.party.update({
+        where: { id: party_id },
+        data: { balance: { decrement: amount } }
+      });
+    }
+    // Crear Payment
+    const payment = await tx.payment.create({
+      data: {
+        tenant_id: tenantId,
+        transaction_id, party_id, type, method,
+        amount,
+        date: new Date(date),
+        reference, notes,
+        created_by: userId
+      }
+    });
+    // Asiento contable
+    const entries = type === "income"
+      ? [{ account:"1110", debit: amount }, { account:"1305", credit: amount }]
+      : [{ account:"2205", debit: amount }, { account:"1110", credit: amount }];
+    await journalEntry(tenantId, {
+      description:    `Pago ${type === "income" ? "recibido" : "realizado"} - ${reference || method}`,
+      transaction_id,
+      date,
+      entries
+    });
+    return payment;
+  });
+}
+Routes M-07 — src/modules/accounting/routes.js
+async function accountingRoutes(fastify) {
+  const svc = require("./service");
+  const { requirePermission } = require("../../middleware/rbac");
+  const auth  = [fastify.authenticate];
+  const authW = [fastify.authenticate, requirePermission("accounting","write")];
+  const authA = [fastify.authenticate, requirePermission("accounting","approve")];
+  // Plan de cuentas
+  fastify.get("/api/v1/accounting/accounts", { preHandler: auth },
+    async (req) => prisma.account.findMany({
+      where: { tenant_id: req.user.tenant_id, active: true },
+      orderBy: { code: "asc" }
+    })
+  );
+  // Agregar cuenta personalizada
+  fastify.post("/api/v1/accounting/accounts", { preHandler: authA },
+    async (req, reply) => {
+      const { code, name, type, parent_id } = req.body;
+      const existing = await prisma.account.findFirst({
+        where: { tenant_id: req.user.tenant_id, code }
+      });
+      if (existing)
+        return reply.code(409).send({ error: "Código de cuenta ya existe", code: "DUPLICATE" });
+      return reply.code(201).send(await prisma.account.create({
+        data: { tenant_id: req.user.tenant_id, code, name, type,
+                parent_id, allows_tx: true, active: true }
+      }));
+    }
+  );
+  // Balance General
+  fastify.get("/api/v1/accounting/balance-sheet", { preHandler: auth },
+    async (req) => svc.getBalanceSheet(req.user.tenant_id, req.query.period)
+  );
+  // Estado de Resultados
+  fastify.get("/api/v1/accounting/income-statement", { preHandler: auth },
+    async (req) => {
+      const period = req.query.period ||
+        new Date().toISOString().substring(0, 7);
+      return svc.getIncomeStatement(req.user.tenant_id, period);
+    }
+  );
+  // Libro Mayor de una cuenta
+  fastify.get("/api/v1/accounting/ledger/:account_code", { preHandler: auth },
+    async (req) => {
+      const { period, page = 1, limit = 50 } = req.query;
+      const account = await prisma.account.findFirst({
+        where: { tenant_id: req.user.tenant_id,
+                 code: { startsWith: req.params.account_code } }
+      });
+      if (!account) return { error: "Cuenta no encontrada" };
+      const where = { account_id: account.id };
+      if (period) where.period = period;
+      const [entries, total] = await Promise.all([
+        prisma.ledgerEntry.findMany({
+          where, skip: (+page-1)*+limit, take: +limit,
+          orderBy: { date: "asc" }
+        }),
+        prisma.ledgerEntry.count({ where })
+      ]);
+      return { account, entries, total, page: +page, pages: Math.ceil(total/+limit) };
+    }
+  );
+  // Registrar pago
+  fastify.post("/api/v1/accounting/payments", { preHandler: authW },
+    async (req, reply) => {
+      const payment = await svc.registerPayment(
+        req.user.tenant_id, req.user.id, req.body
+      );
+      return reply.code(201).send(payment);
+    }
+  );
+}
+module.exports = accountingRoutes;
+MÓDULO M-03 — VENTAS Y CLIENTES
+Función 1: createCustomer()
+FIRMA:
+async function createCustomer(tenantId, userId, data) → Party
+DESCRIPCIÓN: Los clientes son Party con type = "customer".
+Misma lógica que createSupplier() pero con type diferente.
+PARÁMETROS (data): Iguales a createSupplier() con una diferencia:
+  credit_limit  Float  Default: 0. Límite que le otorgamos al cliente.
+  credit_days   Int    Default: 0. Días de crédito que le damos.
+  segment       String Opcional. "SMB"|"ENTERPRISE"|"VIP"|"RETAIL".
+VALIDACIONES: Mismas que createSupplier().
+EFECTOS SECUNDARIOS: Ninguno.
+EVENTO BRAIN: Ninguno en creación.
+async function createCustomer(tenantId, userId, data) {
+  const {
+    name, tax_id, tax_type = "company",
+    email, phone, address, city, country = "CO",
+    credit_limit = 0, credit_days = 0,
+    segment = "SMB", metadata = {}
+  } = data;
+  if (!name?.trim())
+    throw { status: 400, code: "REQUIRED_FIELD",
+            error: "El nombre es obligatorio" };
+  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))
+    throw { status: 400, code: "INVALID_EMAIL",
+            error: "Formato de email inválido" };
+  if (tax_id) {
+    const dup = await prisma.party.findFirst({
+      where: { tenant_id: tenantId, tax_id, type: "customer" }
+    });
+    if (dup)
+      throw { status: 409, code: "DUPLICATE_TAX_ID",
+              error: `Ya existe un cliente con el NIT/CC ${tax_id}` };
+  }
+  return prisma.party.create({
+    data: {
+      tenant_id: tenantId, type: "customer",
+      name: name.trim(), tax_id, tax_type,
+      email, phone, address, city, country,
+      credit_limit, credit_days, segment,
+      balance: 0, active: true, metadata
+    }
+  });
+}
+Función 2: createSaleOrder()
+FIRMA:
+async function createSaleOrder(tenantId, userId, data) → Transaction
+DESCRIPCIÓN: Crea una orden de venta. Es una Transaction
+con type = "sale". NO reserva stock. NO genera asiento contable.
+Solo cuando se factura (M-04) se afecta el stock y la contabilidad.
+PARÁMETROS (data):
+  customer_id   Int    OBLIGATORIO. ID del Party cliente.
+  lines         Array  OBLIGATORIO. Al menos 1 línea.
+    lines[].item_id     Int    OBLIGATORIO.
+    lines[].qty         Float  OBLIGATORIO. > 0.
+    lines[].unit_price  Float  Opcional. Default: item.unit_price.
+    lines[].discount    Float  Opcional. Porcentaje 0-100. Default: 0.
+    lines[].notes       String Opcional.
+  notes         String? Notas generales.
+ESTADOS DE UNA ORDEN DE VENTA:
+  draft      → Borrador. Editable.
+  confirmed  → Confirmada por el cliente.
+  invoiced   → Facturada (total o parcialmente).
+  cancelled  → Cancelada.
+TRANSICIONES VÁLIDAS:
+  draft     → confirmed | cancelled
+  confirmed → invoiced | cancelled
+  invoiced  → (final — no se cancela si tiene facturas)
+  cancelled → (final)
+VALIDACIONES:
+  1. customer_id debe existir, ser type="customer", activo.
+  2. lines no puede estar vacío.
+  3. Cada línea: item_id debe existir y estar activo.
+  4. Cada línea: qty > 0.
+  5. Cada línea: discount entre 0 y 100.
+  6. OPCIONAL: verificar crédito del cliente:
+     Si cliente.balance + total > cliente.credit_limit → WARNING
+     (no bloquear, solo advertir en la respuesta).
+CÁLCULOS POR LÍNEA:
+  price_after_discount = unit_price × (1 - discount/100)
+  subtotal = qty × price_after_discount
+  tax_amount = subtotal × (tax_rate/100)
+  total = subtotal + tax_amount
+CÁLCULOS DE CABECERA:
+  subtotal = SUM(lines.subtotal)
+  tax_total = SUM(lines.tax_amount)
+  total = subtotal + tax_total
+  balance = total (lo que nos deben)
+NÚMERO: SO-XXXXXX (igual que PO pero con prefix SO)
+async function createSaleOrder(tenantId, userId, data) {
+  const { customer_id, lines, notes } = data;
+  const customer = await prisma.party.findFirst({
+    where: { id: customer_id, tenant_id: tenantId,
+             type: "customer", active: true }
+  });
+  if (!customer)
+    throw { status: 404, code: "CUSTOMER_NOT_FOUND",
+            error: "Cliente no encontrado" };
+  if (!lines?.length)
+    throw { status: 400, code: "NO_LINES",
+            error: "La orden debe tener al menos una línea" };
+  const enrichedLines = [];
+  for (const line of lines) {
+    if (!line.qty || line.qty <= 0)
+      throw { status: 400, code: "INVALID_QTY",
+              error: "La cantidad debe ser mayor a 0" };
+    const discount = line.discount ?? 0;
+    if (discount < 0 || discount > 100)
+      throw { status: 400, code: "INVALID_DISCOUNT",
+              error: "El descuento debe estar entre 0 y 100" };
+    const item = await prisma.item.findFirst({
+      where: { id: line.item_id, tenant_id: tenantId, active: true }
+    });
+    if (!item)
+      throw { status: 404, code: "ITEM_NOT_FOUND",
+              error: `Item ${line.item_id} no encontrado` };
+    const unit_price          = line.unit_price ?? item.unit_price;
+    const price_after_discount = unit_price * (1 - discount / 100);
+    const subtotal            = line.qty * price_after_discount;
+    const tax_amount          = subtotal * (item.tax_rate / 100);
+    const total               = subtotal + tax_amount;
+    enrichedLines.push({
+      item_id:     item.id,
+      description: item.name,
+      qty:         line.qty,
+      unit:        item.unit,
+      unit_cost:   item.unit_cost,
+      unit_price,
+      discount,
+      tax_rate:    item.tax_rate,
+      tax_amount:  Math.round(tax_amount * 100) / 100,
+      subtotal:    Math.round(subtotal   * 100) / 100,
+      total:       Math.round(total      * 100) / 100,
+      metadata:    { notes: line.notes }
+    });
+  }
+  const subtotal  = enrichedLines.reduce((s,l) => s + l.subtotal,   0);
+  const tax_total = enrichedLines.reduce((s,l) => s + l.tax_amount, 0);
+  const total     = Math.round((subtotal + tax_total) * 100) / 100;
+  // Verificar crédito (advertencia, no bloqueo)
+  const creditWarning = customer.credit_limit > 0 &&
+    (customer.balance + total) > customer.credit_limit
+    ? `Advertencia: el total supera el límite de crédito del cliente ($${customer.credit_limit.toLocaleString("es-CO")})`
+    : null;
+  return prisma.$transaction(async (tx) => {
+    const count = await tx.transaction.count({
+      where: { tenant_id: tenantId, type: "sale" }
+    });
+    const number = `SO-${String(count + 1).padStart(6, "0")}`;
+    const so = await tx.transaction.create({
+      data: {
+        tenant_id:  tenantId, type: "sale",
+        number, party_id: customer_id,
+        status:     "draft",
+        subtotal:   Math.round(subtotal  * 100) / 100,
+        tax_total:  Math.round(tax_total * 100) / 100,
+        total, balance: total,
+        currency:   "COP",
+        notes,
+        created_by: userId,
+        lines: { create: enrichedLines }
+      },
+      include: { lines: true, party: true }
+    });
+    return { ...so, credit_warning: creditWarning };
+  });
+}
+MÓDULO M-04 — FACTURACIÓN
+🔴 CRÍTICO: La facturación es el evento más importante del sistema. Cuando se genera una factura: se mueve el stock (salida), se actualiza el balance del cliente, y se generan los asientos contables. Todo en una sola $transaction.
+Función 1: invoiceSaleOrder()
+FIRMA:
+async function invoiceSaleOrder(tenantId, userId, soId, data) → Transaction
+DESCRIPCIÓN: Convierte una Orden de Venta en Factura.
+Este es el momento en que el stock sale del almacén y
+la contabilidad se actualiza.
+PARÁMETROS (data):
+  invoice_lines  Array?  Opcional. Si null → factura todas las líneas.
+    invoice_lines[].line_id  Int    ID de la TransactionLine de la SO.
+    invoice_lines[].qty      Float  Cantidad a facturar (puede ser parcial).
+  location_id    Int?    De dónde sale el stock. Obligatorio si el
+                         item es type="product" o "raw_material".
+  due_date       String? Fecha de vencimiento ISO. Default: hoy.
+  notes          String?
+VALIDACIONES:
+  1. SO debe existir y pertenecer al tenant.
+  2. SO.status debe ser "draft" o "confirmed".
+     No se puede facturar una SO "cancelled" o "invoiced".
+  3. Si invoice_lines viene: cada line_id debe pertenecer a la SO.
+  4. qty a facturar no puede superar qty pendiente de la línea.
+  5. Para items tipo "product": verificar stock suficiente en location_id.
+LÓGICA DENTRO DE $TRANSACTION (TODO O NADA):
+  PASO 1: Crear la Transaction de tipo "invoice":
+    - Copiar las líneas (o las seleccionadas) de la SO.
+    - Número: FV-XXXXXX.
+    - balance = total (lo que nos debe el cliente).
+  PASO 2: Para cada línea de la factura:
+    Si item.type es "product", "component" o "raw_material":
+      a. Llamar stockMove() con:
+           from_location_id: location_id
+           to_location_id: null (sale del almacén)
+           qty: qty de la línea
+           transaction_id: invoice.id
+           cost: line.unit_cost
+      b. Si stock insuficiente → ERROR (rollback completo).
+  PASO 3: Actualizar Party.balance del cliente:
+    balance += invoice.total
+  PASO 4: Actualizar SO.status:
+    Si todas las líneas están 100% facturadas → "invoiced"
+    Si alguna está parcial → mantener "confirmed"
+  PASO 5: Asientos contables (journalEntry):
+    Para ingresos:
+      Débito  1305 / invoice.total     (Clientes — lo que nos deben)
+      Crédito 4135 / invoice.subtotal  (Ingresos por ventas)
+      Crédito 2408 / invoice.tax_total (IVA por pagar)
+    Para costo de ventas (por cada línea con item físico):
+      Débito  5105 / (qty × unit_cost) (Costo de ventas)
+      Crédito 1435 / (qty × unit_cost) (Inventarios)
+RESPUESTA EXITOSA (201): La Invoice creada con todas sus líneas.
+ERRORES POSIBLES:
+  { error: "Stock insuficiente para PROD-001 en la ubicación seleccionada",
+    code: "INSUFFICIENT_STOCK" }                                          422
+  { error: "La orden ya fue completamente facturada",
+    code: "ALREADY_INVOICED" }                                            422
+  { error: "No se puede facturar una orden cancelada",
+    code: "CANCELLED" }                                                   422
+EFECTOS SECUNDARIOS:
+  → Transaction invoice creada
+  → Stock de cada item físico decrementado
+  → Movement tipo "out" creado por cada línea física
+  → Item.stock_current recalculado
+  → Party.balance del cliente incrementado
+  → SO.status actualizado
+  → 2 asientos contables generados (ingresos + costo)
+async function invoiceSaleOrder(tenantId, userId, soId, data) {
+  const { invoice_lines, location_id, due_date, notes } = data;
+  const { journalEntry } = require("../accounting/service");
+  const so = await prisma.transaction.findFirst({
+    where: { id: soId, tenant_id: tenantId, type: "sale" },
+    include: { lines: { include: { item: true } }, party: true }
+  });
+  if (!so)
+    throw { status: 404, code: "NOT_FOUND", error: "Orden de venta no encontrada" };
+  if (so.status === "invoiced")
+    throw { status: 422, code: "ALREADY_INVOICED",
+            error: "La orden ya fue completamente facturada" };
+  if (so.status === "cancelled")
+    throw { status: 422, code: "CANCELLED",
+            error: "No se puede facturar una orden cancelada" };
+  // Determinar líneas a facturar
+  let linesToInvoice = so.lines;
+  if (invoice_lines?.length) {
+    linesToInvoice = invoice_lines.map(il => {
+      const soLine = so.lines.find(l => l.id === il.line_id);
+      if (!soLine)
+        throw { status: 400, code: "LINE_NOT_FOUND",
+                error: `Línea ${il.line_id} no pertenece a esta orden` };
+      return { ...soLine, qty: il.qty }; // Sobreescribir qty
+    });
+  }
+  // Verificar stock antes de abrir $transaction
+  const PHYSICAL_TYPES = ["product","component","raw_material"];
+  for (const line of linesToInvoice) {
+    if (PHYSICAL_TYPES.includes(line.item?.type)) {
+      if (!location_id)
+        throw { status: 400, code: "LOCATION_REQUIRED",
+                error: `Se requiere location_id para despachar ${line.item.name}` };
+      const stock = await prisma.itemLocation.findFirst({
+        where: { item_id: line.item_id, location_id,
+                 tenant_id: tenantId }
+      });
+      if (!stock || stock.qty < line.qty)
+        throw { status: 422, code: "INSUFFICIENT_STOCK",
+                error: `Stock insuficiente para ${line.item.code}. Disponible: ${stock?.qty ?? 0}` };
+    }
+  }
+  const invoice = await prisma.$transaction(async (tx) => {
+    const count = await tx.transaction.count({
+      where: { tenant_id: tenantId, type: "invoice" }
+    });
+    const number = `FV-${String(count + 1).padStart(6, "0")}`;
+    const subtotal  = linesToInvoice.reduce((s,l) => s + l.subtotal,   0);
+    const tax_total = linesToInvoice.reduce((s,l) => s + l.tax_amount, 0);
+    const total     = Math.round((subtotal + tax_total) * 100) / 100;
+    // Crear la factura
+    const inv = await tx.transaction.create({
+      data: {
+        tenant_id:  tenantId, type: "invoice",
+        number, party_id: so.party_id,
+        status:     "draft",
+        subtotal:   Math.round(subtotal  * 100) / 100,
+        tax_total:  Math.round(tax_total * 100) / 100,
+        total, balance: total,
+        due_date:   due_date ? new Date(due_date) : new Date(),
+        notes,
+        created_by: userId,
+        metadata:   { source_so: soId },
+        lines: {
+          create: linesToInvoice.map(l => ({
+            item_id:     l.item_id,
+            description: l.description,
+            qty:         l.qty,
+            unit:        l.unit,
+            unit_cost:   l.unit_cost,
+            unit_price:  l.unit_price,
+            discount:    l.discount,
+            tax_rate:    l.tax_rate,
+            tax_amount:  l.tax_amount,
+            subtotal:    l.subtotal,
+            total:       l.total
+          }))
+        }
+      },
+      include: { lines: { include: { item: true } } }
+    });
+    // Mover stock de cada línea física
+    let totalCOGS = 0;
+    for (const line of inv.lines) {
+      if (PHYSICAL_TYPES.includes(line.item?.type)) {
+        await stockMove(tenantId, userId, {
+          item_id:          line.item_id,
+          from_location_id: location_id,
+          to_location_id:   null,
+          qty:              line.qty,
+          cost:             line.unit_cost,
+          transaction_id:   inv.id,
+          reason:           `Factura ${number}`
+        });
+        totalCOGS += line.qty * line.unit_cost;
+      }
+    }
+    // Actualizar balance del cliente
+    await tx.party.update({
+      where: { id: so.party_id },
+      data:  { balance: { increment: total } }
+    });
+    // Actualizar status de la SO
+    await tx.transaction.update({
+      where: { id: soId },
+      data:  { status: "invoiced" }
+    });
+    return { inv, total, subtotal, tax_total, totalCOGS };
+  });
+  // Asientos contables (fuera del $transaction de negocio)
+  await journalEntry(tenantId, {
+    description:    `Factura ${invoice.inv.number}`,
+    transaction_id: invoice.inv.id,
+    entries: [
+      { account: "1305", debit:  invoice.total },
+      { account: "4135", credit: invoice.subtotal },
+      ...(invoice.tax_total > 0
+        ? [{ account: "2408", credit: invoice.tax_total }]
+        : [])
+    ]
+  });
+  // Asiento costo de ventas si hubo items físicos
+  if (invoice.totalCOGS > 0) {
+    await journalEntry(tenantId, {
+      description:    `Costo ventas ${invoice.inv.number}`,
+      transaction_id: invoice.inv.id,
+      entries: [
+        { account: "5105", debit:  invoice.totalCOGS },
+        { account: "1435", credit: invoice.totalCOGS }
+      ]
+    });
+  }
+  return invoice.inv;
+}
+Routes M-03 y M-04 — Completas
+// src/modules/sales/routes.js
+async function salesRoutes(fastify) {
+  const svc = require("./service");
+  const { requirePermission } = require("../../middleware/rbac");
+  const auth  = [fastify.authenticate];
+  const authW = [fastify.authenticate, requirePermission("sales","write")];
+  const authA = [fastify.authenticate, requirePermission("sales","approve")];
+  // ── CLIENTES ──────────────────────────────────────────────
+  fastify.get("/api/v1/sales/customers", { preHandler: auth },
+    async (req) => {
+      const { search, segment, page = 1, limit = 20 } = req.query;
+      const where = { tenant_id: req.user.tenant_id, type: "customer", active: true };
+      if (search) where.OR = [
+        { name:   { contains: search, mode: "insensitive" } },
+        { tax_id: { contains: search } }
+      ];
+      if (segment) where.segment = segment;
+      const [data, total] = await Promise.all([
+        prisma.party.findMany({ where, skip:(+page-1)*+limit, take:+limit, orderBy:{name:"asc"} }),
+        prisma.party.count({ where })
+      ]);
+      return { data, total, page:+page, pages:Math.ceil(total/+limit) };
+    }
+  );
+  fastify.post("/api/v1/sales/customers", { preHandler: authW },
+    async (req, reply) => reply.code(201).send(
+      await svc.createCustomer(req.user.tenant_id, req.user.id, req.body)
+    )
+  );
+  fastify.put("/api/v1/sales/customers/:id", { preHandler: authW },
+    async (req) => {
+      const { type, tenant_id, balance, ...safe } = req.body;
+      return prisma.party.update({ where:{id:+req.params.id}, data:safe });
+    }
+  );
+  // ── ÓRDENES DE VENTA ─────────────────────────────────────
+  fastify.get("/api/v1/sales/orders", { preHandler: auth },
+    async (req) => {
+      const { status, customer_id, page=1, limit=20 } = req.query;
+      const where = { tenant_id: req.user.tenant_id, type: "sale" };
+      if (status)      where.status   = status;
+      if (customer_id) where.party_id = +customer_id;
+      const [data, total] = await Promise.all([
+        prisma.transaction.findMany({
+          where, skip:(+page-1)*+limit, take:+limit,
+          orderBy:{created_at:"desc"},
+          include:{ party:{select:{id:true,name:true}}, lines:true }
+        }),
+        prisma.transaction.count({ where })
+      ]);
+      return { data, total, page:+page, pages:Math.ceil(total/+limit) };
+    }
+  );
+  fastify.get("/api/v1/sales/orders/:id", { preHandler: auth },
+    async (req, reply) => {
+      const so = await prisma.transaction.findFirst({
+        where:{ id:+req.params.id, tenant_id:req.user.tenant_id, type:"sale" },
+        include:{ lines:{ include:{ item:true } }, party:true }
+      });
+      if (!so) return reply.code(404).send({ error:"No encontrada", code:"NOT_FOUND" });
+      return so;
+    }
+  );
+  fastify.post("/api/v1/sales/orders", { preHandler: authW },
+    async (req, reply) => reply.code(201).send(
+      await svc.createSaleOrder(req.user.tenant_id, req.user.id, req.body)
+    )
+  );
+  fastify.put("/api/v1/sales/orders/:id/status", { preHandler: authW },
+    async (req) => {
+      const { status } = req.body;
+      const VALID = { draft:["confirmed","cancelled"], confirmed:["cancelled"] };
+      const so = await prisma.transaction.findFirst({
+        where:{ id:+req.params.id, tenant_id:req.user.tenant_id, type:"sale" }
+      });
+      if (!so) throw { status:404, code:"NOT_FOUND", error:"Orden no encontrada" };
+      if (!VALID[so.status]?.includes(status))
+        throw { status:422, code:"INVALID_TRANSITION",
+                error:`Transición inválida: ${so.status} → ${status}` };
+      return prisma.transaction.update({ where:{id:so.id}, data:{status} });
+    }
+  );
+  // ── FACTURACIÓN ──────────────────────────────────────────
+  fastify.post("/api/v1/sales/orders/:id/invoice", { preHandler: authA },
+    async (req, reply) => reply.code(201).send(
+      await svc.invoiceSaleOrder(
+        req.user.tenant_id, req.user.id, +req.params.id, req.body
+      )
+    )
+  );
+  // Listar facturas
+  fastify.get("/api/v1/sales/invoices", { preHandler: auth },
+    async (req) => {
+      const { status, customer_id, from_date, to_date, page=1, limit=20 } = req.query;
+      const where = { tenant_id: req.user.tenant_id, type: "invoice" };
+      if (status)      where.status   = status;
+      if (customer_id) where.party_id = +customer_id;
+      if (from_date || to_date) {
+        where.created_at = {};
+        if (from_date) where.created_at.gte = new Date(from_date);
+        if (to_date)   where.created_at.lte = new Date(to_date);
+      }
+      const [data, total] = await Promise.all([
+        prisma.transaction.findMany({
+          where, skip:(+page-1)*+limit, take:+limit,
+          orderBy:{created_at:"desc"},
+          include:{ party:{select:{id:true,name:true}} }
+        }),
+        prisma.transaction.count({ where })
+      ]);
+      return { data, total, page:+page, pages:Math.ceil(total/+limit) };
+    }
+  );
+  // Ver factura con líneas
+  fastify.get("/api/v1/sales/invoices/:id", { preHandler: auth },
+    async (req, reply) => {
+      const inv = await prisma.transaction.findFirst({
+        where:{ id:+req.params.id, tenant_id:req.user.tenant_id, type:"invoice" },
+        include:{ lines:{ include:{ item:true } }, party:true, payments:true }
+      });
+      if (!inv) return reply.code(404).send({ error:"No encontrada", code:"NOT_FOUND" });
+      return inv;
+    }
+  );
+}
+module.exports = salesRoutes;
+FLUJO COMPLETO MVP — DE LA COMPRA A LA VENTA
+━━━ FLUJO COMPLETO CON TODOS LOS EFECTOS ━━━━━━━━━━━━━━━━━━━
+ESTADO INICIAL:
+  Item PROD-001: stock_current = 0
+  Cliente "Empresa XYZ": balance = 0
+  Proveedor "Dist. ABC": balance = 0
+  Cuenta 1435 (Inventario): saldo = 0
+  Cuenta 4135 (Ingresos):   saldo = 0
+── COMPRA ──────────────────────────────────────────────────
+PASO 1: POST /api/v1/purchases/orders
+  → Crea PO-000001 por 100 unidades a $2.500 c/u = $250.000
+  → Estado: draft
+  → Efectos: NINGUNO en stock ni contabilidad
+PASO 2: PUT /api/v1/purchases/orders/1/status { status: "sent" }
+  → Estado PO: sent
+  → Efectos: NINGUNO
+PASO 3: POST /api/v1/purchases/orders/1/receive
+  → Recibe 100 unidades en Bodega Principal (loc_id: 1)
+  → Efectos:
+     ItemLocation: loc_1 → qty = 100
+     Item PROD-001: stock_current = 100
+     Movement #1: type="in", qty=100, transaction_id=PO-1
+     Transaction PO-000001: status = "received"
+     Party "Dist. ABC": balance = 250.000 (les debemos)
+     LedgerEntry #1: Débito 1435 $250.000 (Inventario sube)
+     LedgerEntry #2: Crédito 2205 $250.000 (Cuentas x pagar sube)
+── VENTA ──────────────────────────────────────────────────
+PASO 4: POST /api/v1/sales/orders
+  → Crea SO-000001 por 30 unidades a $4.000 c/u
+  → subtotal = $120.000, IVA 19% = $22.800, total = $142.800
+  → Estado: draft
+  → Efectos: NINGUNO en stock ni contabilidad
+PASO 5: PUT /api/v1/sales/orders/1/status { status: "confirmed" }
+  → Estado SO: confirmed
+  → Efectos: NINGUNO
+PASO 6: POST /api/v1/sales/orders/1/invoice { location_id: 1 }
+  → Crea FV-000001 por $142.800
+  → Efectos:
+     ItemLocation: loc_1 → qty = 70 (100 - 30)
+     Item PROD-001: stock_current = 70
+     Movement #2: type="out", qty=30, transaction_id=FV-1
+     Transaction SO-000001: status = "invoiced"
+     Transaction FV-000001: status = "draft", balance = $142.800
+     Party "Empresa XYZ": balance = $142.800 (nos deben)
+     LedgerEntry #3: Débito 1305 $142.800 (Clientes sube)
+     LedgerEntry #4: Crédito 4135 $120.000 (Ingresos)
+     LedgerEntry #5: Crédito 2408 $22.800  (IVA)
+     LedgerEntry #6: Débito 5105 $75.000   (Costo ventas: 30×$2.500)
+     LedgerEntry #7: Crédito 1435 $75.000  (Inventario baja)
+── COBRO ──────────────────────────────────────────────────
+PASO 7: POST /api/v1/accounting/payments
+  { type:"income", transaction_id:1, party_id:1,
+    method:"transfer", amount:142800 }
+  → Efectos:
+     Transaction FV-000001: paid=$142.800, balance=0, status="paid"
+     Party "Empresa XYZ": balance = 0 (pagaron)
+     LedgerEntry #8: Débito 1110 $142.800  (Bancos sube)
+     LedgerEntry #9: Crédito 1305 $142.800 (Clientes baja)
+── ESTADO FINAL ────────────────────────────────────────────
+  Item PROD-001: stock_current = 70
+  Cliente "Empresa XYZ": balance = 0 (sin deuda)
+  Proveedor "Dist. ABC": balance = 250.000 (les debemos)
+  Cuenta 1110 (Bancos):     saldo = +142.800
+  Cuenta 1305 (Clientes):   saldo = 0
+  Cuenta 1435 (Inventario): saldo = +175.000 (70 × $2.500)
+  Cuenta 2205 (Proveedores):saldo = +250.000
+  Cuenta 2408 (IVA):        saldo = +22.800
+  Cuenta 4135 (Ingresos):   saldo = +120.000
+  Cuenta 5105 (Costo vtas): saldo = +75.000
+  Utilidad bruta = $120.000 - $75.000 = $45.000 (37.5% margen)
+✅ RESULTADO: Con M-01, M-02, M-03, M-04 y M-07 completamente implementados según DOC-11 y DOC-12, el MVP de APEX OS 2.0 está funcional. Cualquier empresa puede comprar, vender, facturar y ver su situación financiera en tiempo real.

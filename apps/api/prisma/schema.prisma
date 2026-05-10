@@ -1,0 +1,698 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id             String        @id @default(uuid())
+  name           String
+  domain         String?       @unique
+  industry       String        @default("generic")
+  plan           String        @default("seed")
+  active_modules Json          @default("[]")
+  config         Json          @default("{}")
+  brain_model    String?
+  timezone       String        @default("America/Bogota")
+  currency       String        @default("COP")
+  tax_id         String?
+  country        String        @default("CO")
+  active         Boolean       @default(true)
+  created_at     DateTime      @default(now())
+  updated_at     DateTime      @updatedAt
+  subscription   Subscription?
+}
+
+model User {
+  id          Int       @id @default(autoincrement())
+  tenant_id   String
+  name        String
+  email       String
+  password    String
+  role_id     Int?
+  role        Role?     @relation(fields: [role_id], references: [id])
+  avatar      String?
+  active      Boolean   @default(true)
+  last_login  DateTime?
+  preferences Json      @default("{}")
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  employee    Employee?
+
+  @@unique([tenant_id, email])
+  @@index([tenant_id])
+}
+
+model Role {
+  id          Int          @id @default(autoincrement())
+  tenant_id   String
+  name        String
+  description String?
+  is_system   Boolean      @default(false)
+  permissions Permission[]
+  users       User[]
+
+  @@unique([tenant_id, name])
+  @@index([tenant_id])
+}
+
+model Permission {
+  id      Int    @id @default(autoincrement())
+  role_id Int
+  module  String
+  action  String
+  role    Role   @relation(fields: [role_id], references: [id], onDelete: Cascade)
+
+  @@unique([role_id, module, action])
+}
+
+model SoDRule {
+  id            Int    @id @default(autoincrement())
+  tenant_id     String
+  role_a        String
+  role_b        String
+  conflict_type String
+  description   String
+
+  @@index([tenant_id])
+}
+
+model AuditLog {
+  id         BigInt   @id @default(autoincrement())
+  tenant_id  String
+  user_id    Int?
+  session_id String?
+  action     String
+  module     String
+  entity     String
+  entity_id  String?
+  old_value  Json?
+  new_value  Json?
+  ip         String?
+  user_agent String?
+  timestamp  DateTime @default(now())
+
+  @@index([tenant_id, module, timestamp])
+  @@index([tenant_id, entity, entity_id])
+}
+
+model Party {
+  id           Int           @id @default(autoincrement())
+  tenant_id    String
+  type         String
+  name         String
+  legal_name   String?
+  tax_id       String?
+  tax_type     String?
+  email        String?
+  phone        String?
+  address      String?
+  city         String?
+  country      String        @default("CO")
+  segment      String?
+  credit_limit Float         @default(0)
+  credit_days  Int           @default(0)
+  balance      Float         @default(0)
+  rating       Float         @default(0)
+  active       Boolean       @default(true)
+  metadata     Json          @default("{}")
+  created_at   DateTime      @default(now())
+  updated_at   DateTime      @updatedAt
+  transactions Transaction[]
+  contacts     Contact[]
+
+  @@index([tenant_id, type])
+  @@index([tenant_id, tax_id])
+}
+
+model Contact {
+  id       Int     @id @default(autoincrement())
+  party_id Int
+  name     String
+  role     String?
+  email    String?
+  phone    String?
+  primary  Boolean @default(false)
+  party    Party   @relation(fields: [party_id], references: [id])
+}
+
+model Item {
+  id            Int               @id @default(autoincrement())
+  tenant_id     String
+  type          String
+  code          String
+  name          String
+  description   String?
+  category_id   Int?
+  category      Category?         @relation(fields: [category_id], references: [id])
+  unit          String            @default("UND")
+  unit_cost     Float             @default(0)
+  unit_price    Float             @default(0)
+  tax_rate      Float             @default(0)
+  stock_current Float             @default(0)
+  stock_min     Float             @default(0)
+  stock_max     Float?
+  weight_kg     Float             @default(0)
+  volume_m3     Float             @default(0)
+  abc_class     String            @default("C")
+  active        Boolean           @default(true)
+  metadata      Json              @default("{}")
+  created_at    DateTime          @default(now())
+  updated_at    DateTime          @updatedAt
+  locations     ItemLocation[]
+  bom_lines     BOMLine[]
+  movements     Movement[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, type])
+  @@index([tenant_id, active])
+}
+
+model Category {
+  id        Int    @id @default(autoincrement())
+  tenant_id String
+  name      String
+  parent_id Int?
+  type      String @default("item")
+  items     Item[]
+
+  @@unique([tenant_id, name, type])
+  @@index([tenant_id])
+}
+
+model Place {
+  id        Int        @id @default(autoincrement())
+  tenant_id String
+  type      String
+  name      String
+  code      String
+  address   String?
+  city      String?
+  country   String     @default("CO")
+  parent_id Int?
+  active    Boolean    @default(true)
+  metadata  Json       @default("{}")
+  locations Location[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, type])
+}
+
+model Location {
+  id          Int            @id @default(autoincrement())
+  tenant_id   String
+  place_id    Int
+  place       Place          @relation(fields: [place_id], references: [id])
+  code        String
+  aisle       String?
+  rack        String?
+  level       String?
+  bin         String?
+  zone        String         @default("general")
+  abc_class   String         @default("C")
+  capacity_kg Float          @default(0)
+  active      Boolean        @default(true)
+  items       ItemLocation[]
+
+  @@unique([tenant_id, place_id, code])
+  @@index([tenant_id])
+}
+
+model ItemLocation {
+  id          Int       @id @default(autoincrement())
+  tenant_id   String
+  item_id     Int
+  location_id Int
+  qty         Float     @default(0)
+  lot         String?
+  serial      String?
+  expiry      DateTime?
+  cost        Float?
+  item        Item      @relation(fields: [item_id], references: [id])
+  location    Location  @relation(fields: [location_id], references: [id])
+
+  @@unique([item_id, location_id, lot])
+  @@index([tenant_id])
+}
+
+model Transaction {
+  id            Int               @id @default(autoincrement())
+  tenant_id     String
+  type          String
+  number        String
+  party_id      Int?
+  party         Party?            @relation(fields: [party_id], references: [id])
+  place_id      Int?
+  status        String            @default("draft")
+  date          DateTime          @default(now())
+  due_date      DateTime?
+  subtotal      Float             @default(0)
+  tax_total     Float             @default(0)
+  discount      Float             @default(0)
+  total         Float             @default(0)
+  paid          Float             @default(0)
+  balance       Float             @default(0)
+  currency      String            @default("COP")
+  exchange_rate Float             @default(1)
+  notes         String?
+  metadata      Json              @default("{}")
+  created_by    Int?
+  created_at    DateTime          @default(now())
+  updated_at    DateTime          @updatedAt
+  lines         TransactionLine[]
+  movements     Movement[]
+  payments      Payment[]
+  documents     Document[]
+  e_invoice     EInvoice?
+
+  @@unique([tenant_id, type, number])
+  @@index([tenant_id, type, status])
+  @@index([tenant_id, party_id])
+  @@index([tenant_id, created_at])
+}
+
+model TransactionLine {
+  id             Int         @id @default(autoincrement())
+  transaction_id Int
+  item_id        Int?
+  description    String
+  qty            Float
+  unit           String      @default("UND")
+  unit_cost      Float       @default(0)
+  unit_price     Float
+  discount       Float       @default(0)
+  tax_rate       Float       @default(0)
+  tax_amount     Float       @default(0)
+  subtotal       Float
+  total          Float
+  metadata       Json        @default("{}")
+  transaction    Transaction @relation(fields: [transaction_id], references: [id], onDelete: Cascade)
+}
+
+model Movement {
+  id             Int          @id @default(autoincrement())
+  tenant_id      String
+  type           String
+  item_id        Int?
+  item           Item?        @relation(fields: [item_id], references: [id])
+  from_location  Int?
+  to_location    Int?
+  transaction_id Int?
+  transaction    Transaction? @relation(fields: [transaction_id], references: [id])
+  qty            Float
+  cost           Float        @default(0)
+  lot            String?
+  reason         String?
+  created_by     Int?
+  created_at     DateTime     @default(now())
+
+  @@index([tenant_id, item_id, created_at])
+  @@index([tenant_id, type, created_at])
+}
+
+model Resource {
+  id          Int         @id @default(autoincrement())
+  tenant_id   String
+  type        String
+  name        String
+  code        String
+  place_id    Int?
+  capacity    Float       @default(1)
+  unit        String      @default("UND")
+  cost_per_hr Float       @default(0)
+  active      Boolean     @default(true)
+  metadata    Json        @default("{}")
+  events      Event[]
+  thresholds  Threshold[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, type])
+}
+
+model Document {
+  id             Int          @id @default(autoincrement())
+  tenant_id      String
+  type           String
+  name           String
+  file_url       String?
+  file_size      Int?
+  mime_type      String?
+  transaction_id Int?
+  transaction    Transaction? @relation(fields: [transaction_id], references: [id])
+  party_id       Int?
+  metadata       Json         @default("{}")
+  created_by     Int?
+  created_at     DateTime     @default(now())
+
+  @@index([tenant_id, type])
+  @@index([tenant_id, created_at])
+}
+
+model Event {
+  id          Int       @id @default(autoincrement())
+  tenant_id   String
+  type        String
+  title       String
+  description String?
+  resource_id Int?
+  resource    Resource? @relation(fields: [resource_id], references: [id])
+  party_id    Int?
+  start_at    DateTime
+  end_at      DateTime?
+  all_day     Boolean   @default(false)
+  status      String    @default("scheduled")
+  priority    String    @default("normal")
+  assigned_to Int?
+  metadata    Json      @default("{}")
+  created_at  DateTime  @default(now())
+
+  @@index([tenant_id, type, start_at])
+  @@index([tenant_id, status])
+}
+
+model BOM {
+  id           Int       @id @default(autoincrement())
+  tenant_id    String
+  item_id      Int
+  version      String
+  status       String    @default("draft")
+  yield_pct    Float     @default(100)
+  notes        String?
+  created_by   Int
+  approved_by  Int?
+  effective_dt DateTime?
+  created_at   DateTime  @default(now())
+  lines        BOMLine[]
+
+  @@index([tenant_id, item_id])
+}
+
+model BOMLine {
+  id        Int     @id @default(autoincrement())
+  bom_id    Int
+  bom       BOM     @relation(fields: [bom_id], references: [id], onDelete: Cascade)
+  item_id   Int
+  item      Item    @relation(fields: [item_id], references: [id])
+  qty       Float
+  unit      String
+  scrap_pct Float   @default(0)
+  step      Int?
+  notes     String?
+}
+
+model WorkOrder {
+  id           Int       @id @default(autoincrement())
+  tenant_id    String
+  number       String
+  item_id      Int
+  bom_id       Int?
+  place_id     Int?
+  qty_planned  Float
+  qty_produced Float     @default(0)
+  qty_rejected Float     @default(0)
+  status       String    @default("planned")
+  priority     String    @default("normal")
+  start_at     DateTime?
+  end_at       DateTime?
+  cost_actual  Float     @default(0)
+  metadata     Json      @default("{}")
+  created_at   DateTime  @default(now())
+
+  @@unique([tenant_id, number])
+  @@index([tenant_id, status])
+}
+
+model Account {
+  id        Int           @id @default(autoincrement())
+  tenant_id String
+  code      String
+  name      String
+  type      String
+  parent_id Int?
+  level     Int           @default(1)
+  allows_tx Boolean       @default(true)
+  active    Boolean       @default(true)
+  entries   LedgerEntry[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, type])
+}
+
+model LedgerEntry {
+  id             Int      @id @default(autoincrement())
+  tenant_id      String
+  account_id     Int
+  account        Account  @relation(fields: [account_id], references: [id])
+  transaction_id Int?
+  date           DateTime
+  debit          Float    @default(0)
+  credit         Float    @default(0)
+  balance        Float    @default(0)
+  description    String
+  period         String
+  created_at     DateTime @default(now())
+
+  @@index([tenant_id, account_id, date])
+  @@index([tenant_id, period])
+}
+
+model Employee {
+  id            Int       @id @default(autoincrement())
+  tenant_id     String
+  user_id       Int?      @unique
+  user          User?     @relation(fields: [user_id], references: [id])
+  party_id      Int?
+  code          String?
+  position      String
+  department    String
+  salary_base   Float
+  salary_type   String    @default("monthly")
+  hire_date     DateTime
+  end_date      DateTime?
+  contract_type String    @default("indefinite")
+  active        Boolean   @default(true)
+  metadata      Json      @default("{}")
+  payrolls      Payroll[]
+  okrs          OKR[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, active])
+}
+
+model Payroll {
+  id            Int      @id @default(autoincrement())
+  tenant_id     String
+  employee_id   Int
+  employee      Employee @relation(fields: [employee_id], references: [id])
+  period        String
+  days_worked   Float
+  overtime_hrs  Float    @default(0)
+  absences      Float    @default(0)
+  gross         Float
+  deductions    Float
+  net           Float
+  employer_cost Float    @default(0)
+  detail        Json
+  status        String   @default("draft")
+  paid_at       DateTime?
+  created_at    DateTime @default(now())
+
+  @@unique([employee_id, period])
+  @@index([tenant_id, status])
+}
+
+model OKR {
+  id          Int      @id @default(autoincrement())
+  tenant_id   String
+  employee_id Int
+  employee    Employee @relation(fields: [employee_id], references: [id])
+  objective   String
+  key_results Json
+  period      String
+  score       Float    @default(0)
+  status      String   @default("active")
+
+  @@index([tenant_id, period])
+}
+
+model Payment {
+  id             Int          @id @default(autoincrement())
+  tenant_id      String
+  transaction_id Int?
+  transaction    Transaction? @relation(fields: [transaction_id], references: [id])
+  party_id       Int?
+  type           String
+  method         String
+  amount         Float
+  date           DateTime     @default(now())
+  reference      String?
+  account_id     Int?
+  notes          String?
+  created_by     Int?
+  created_at     DateTime     @default(now())
+
+  @@index([tenant_id, type, date])
+}
+
+model Subscription {
+  id             Int                   @id @default(autoincrement())
+  tenant_id      String                @unique
+  tenant         Tenant                @relation(fields: [tenant_id], references: [id])
+  plan           String
+  status         String                @default("active")
+  price_monthly  Float
+  billing_day    Int                   @default(1)
+  trial_ends     DateTime?
+  next_billing   DateTime?
+  payment_method Json?
+  created_at     DateTime              @default(now())
+  invoices       SubscriptionInvoice[]
+}
+
+model SubscriptionInvoice {
+  id              Int          @id @default(autoincrement())
+  subscription_id Int
+  subscription    Subscription @relation(fields: [subscription_id], references: [id])
+  period          String
+  amount          Float
+  status          String       @default("pending")
+  paid_at         DateTime?
+  created_at      DateTime     @default(now())
+}
+
+model BrainEvent {
+  id         BigInt   @id @default(autoincrement())
+  tenant_id  String
+  type       String
+  module     String
+  context    Json
+  suggestion Json?
+  accepted   Boolean?
+  feedback   String?
+  created_at DateTime @default(now())
+
+  @@index([tenant_id, module, created_at])
+}
+
+model BrainMetric {
+  id         BigInt   @id @default(autoincrement())
+  tenant_id  String
+  metric     String
+  value      Float
+  period     String
+  created_at DateTime @default(now())
+
+  @@index([tenant_id, metric, period])
+}
+
+model Workflow {
+  id          Int     @id @default(autoincrement())
+  tenant_id   String
+  name        String
+  entity      String
+  states      Json
+  transitions Json
+  active      Boolean @default(true)
+
+  @@index([tenant_id, entity])
+}
+
+model CustomField {
+  id        Int     @id @default(autoincrement())
+  tenant_id String
+  entity    String
+  name      String
+  label     String
+  type      String
+  options   Json?
+  required  Boolean @default(false)
+  active    Boolean @default(true)
+
+  @@unique([tenant_id, entity, name])
+}
+
+model Threshold {
+  id          Int      @id @default(autoincrement())
+  resource_id Int
+  resource    Resource @relation(fields: [resource_id], references: [id])
+  sensor      String
+  min_val     Float?
+  max_val     Float?
+  alert_type  String   @default("warning")
+}
+
+model SensorReading {
+  id          BigInt   @id @default(autoincrement())
+  tenant_id   String
+  resource_id Int
+  sensor      String
+  value       Float
+  unit        String?
+  timestamp   DateTime @default(now())
+
+  @@index([resource_id, sensor, timestamp])
+  @@index([tenant_id])
+}
+
+model EInvoiceConfig {
+  id                   Int      @id @default(autoincrement())
+  tenant_id            String   @unique
+  country              String
+  environment          String   @default("sandbox")
+  dian_software_id     String?
+  dian_software_pin    String?
+  dian_test_set_id     String?
+  dian_resolution_num  String?
+  dian_resolution_date DateTime?
+  dian_prefix          String?
+  dian_from_num        Int?
+  dian_to_num          Int?
+  dian_current_num     Int      @default(0)
+  sat_rfc              String?
+  sat_cert_b64         String?
+  sat_key_b64          String?
+  sat_cert_pass        String?
+  sat_regime           String?
+  sunat_ruc            String?
+  sunat_user           String?
+  sunat_pass           String?
+  sunat_ose            String?
+  cert_pkcs12_b64      String?
+  cert_password        String?
+  active               Boolean  @default(false)
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+}
+
+model EInvoice {
+  id               Int         @id @default(autoincrement())
+  tenant_id        String
+  transaction_id   Int         @unique
+  transaction      Transaction @relation(fields: [transaction_id], references: [id])
+  country          String
+  type             String
+  prefix           String?
+  number           Int
+  full_number      String
+  cufe             String?     @unique
+  qr_code          String?
+  uuid             String?     @unique
+  sat_seal         String?
+  cdr_content      String?
+  status           String      @default("pending")
+  rejection_reason String?
+  xml_url          String?
+  pdf_url          String?
+  signed_at        DateTime?
+  sent_at          DateTime?
+  accepted_at      DateTime?
+  created_at       DateTime    @default(now())
+  updated_at       DateTime    @updatedAt
+
+  @@index([tenant_id, status])
+  @@index([tenant_id, created_at])
+}
+
