@@ -9,6 +9,34 @@ export default async function ModulePage({ params }: { params: Promise<{ module:
   if (!module) notFound();
 
   const Icon = module.icon;
+  const inventoryActionLinks: Record<string, string> = {
+    "Crear artículo": "/dashboard/inventario/productos/nuevo",
+    "Registrar movimiento": "/dashboard/inventario/stock",
+    "Revisar stock crítico": "/dashboard/inventario/reportes"
+  };
+  const moduleActionLinks: Record<string, Record<string, string>> = {
+    inventario: inventoryActionLinks,
+    compras: {
+      "Crear orden de compra": "/dashboard/compras/ordenes/nueva",
+      "Recibir mercancía": "/dashboard/compras/ordenes/recibir",
+      "Consultar pendientes": "/dashboard/compras/ordenes/recibir"
+    },
+    ventas: {
+      "Crear cotización": "/dashboard/ventas/ordenes/nueva",
+      "Registrar pedido": "/dashboard/ventas/ordenes/nueva",
+      "Revisar oportunidades": "/dashboard/ventas/ordenes"
+    },
+    facturacion: {
+      "Emitir factura": "/dashboard/facturacion/emitir",
+      "Ver consecutivos": "/dashboard/facturacion/documentos",
+      "Revisar documentos": "/dashboard/facturacion/documentos"
+    },
+    contabilidad: {
+      "Ver plan de cuentas": "/dashboard/contabilidad/plan-cuentas",
+      "Consultar libro mayor": "/dashboard/contabilidad/reportes",
+      "Generar P&G": "/dashboard/contabilidad/reportes"
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -40,10 +68,17 @@ export default async function ModulePage({ params }: { params: Promise<{ module:
           <h2 className="mb-4 text-base font-semibold">Acciones disponibles</h2>
           <div className="space-y-2">
             {module.nextActions.map((action) => (
-              <button className="flex w-full items-center justify-between rounded-md border border-line px-3 py-2 text-left text-sm hover:bg-paper" key={action} type="button">
-                {action}
-                <ArrowRight size={16} className="text-apex" />
-              </button>
+              moduleActionLinks[slug]?.[action] ? (
+                <Link className="flex w-full items-center justify-between rounded-md border border-line px-3 py-2 text-left text-sm hover:bg-paper" href={moduleActionLinks[slug][action]} key={action}>
+                  {action}
+                  <ArrowRight size={16} className="text-apex" />
+                </Link>
+              ) : (
+                <button className="flex w-full items-center justify-between rounded-md border border-line px-3 py-2 text-left text-sm hover:bg-paper" key={action} type="button">
+                  {action}
+                  <ArrowRight size={16} className="text-apex" />
+                </button>
+              )
             ))}
           </div>
         </div>

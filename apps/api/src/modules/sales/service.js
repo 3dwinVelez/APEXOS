@@ -109,5 +109,19 @@ async function createSaleOrder(tenantId, userId, data) {
   }));
 }
 
-module.exports = { createCustomer, createSaleOrder };
+async function listCustomers(tenantId) {
+  return prisma.runWithTenant(tenantId, () => prisma.party.findMany({
+    where: { type: "customer", active: true },
+    orderBy: { name: "asc" }
+  }));
+}
 
+async function listSaleOrders(tenantId) {
+  return prisma.runWithTenant(tenantId, () => prisma.transaction.findMany({
+    where: { type: "sale" },
+    orderBy: { created_at: "desc" },
+    include: { party: true, lines: true }
+  }));
+}
+
+module.exports = { createCustomer, createSaleOrder, listCustomers, listSaleOrders };

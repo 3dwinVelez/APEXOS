@@ -228,11 +228,27 @@ async function checkVMIAlerts(tenantId) {
   });
 }
 
+async function listSuppliers(tenantId) {
+  return prisma.runWithTenant(tenantId, () => prisma.party.findMany({
+    where: { type: "supplier", active: true },
+    orderBy: { name: "asc" }
+  }));
+}
+
+async function listPurchaseOrders(tenantId) {
+  return prisma.runWithTenant(tenantId, () => prisma.transaction.findMany({
+    where: { type: "purchase" },
+    orderBy: { created_at: "desc" },
+    include: { party: true, lines: true }
+  }));
+}
+
 module.exports = {
+  listSuppliers,
+  listPurchaseOrders,
   createSupplier,
   createPurchaseOrder,
   receivePurchaseOrder,
   updatePOStatus,
   checkVMIAlerts
 };
-

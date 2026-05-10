@@ -7,6 +7,14 @@ async function salesRoutes(fastify) {
   fastify.addHook("preHandler", fastify.authenticate);
   fastify.addHook("preHandler", tenancy);
 
+  fastify.get("/sales/customers", {
+    preHandler: requirePermission("sales", "read")
+  }, async (request) => service.listCustomers(request.user.tenant_id));
+
+  fastify.get("/sales/orders", {
+    preHandler: requirePermission("sales", "read")
+  }, async (request) => service.listSaleOrders(request.user.tenant_id));
+
   fastify.post("/sales/customers", {
     schema: schema.customerSchema,
     preHandler: requirePermission("sales", "write")
@@ -19,4 +27,3 @@ async function salesRoutes(fastify) {
 }
 
 module.exports = salesRoutes;
-

@@ -16,12 +16,14 @@ export default function LoginPage() {
     event.preventDefault();
     setError(null);
     try {
+      localStorage.removeItem("token");
+      localStorage.removeItem("refresh");
       const data = await api<{ token: string; refresh: string }>("/api/v1/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password })
       });
       localStorage.setItem("token", data.token);
-      localStorage.setItem("refresh", data.refresh);
+      if (data.refresh) localStorage.setItem("refresh", data.refresh);
       router.push("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo iniciar sesión");

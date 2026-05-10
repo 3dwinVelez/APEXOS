@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
 
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -10,6 +10,13 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
       ...options.headers
     }
   });
+
+  if (response.status === 401 && typeof window !== "undefined") {
+    localStorage.removeItem("token");
+    localStorage.removeItem("refresh");
+    window.location.href = "/login";
+    throw new Error("Tu sesión expiró. Inicia sesión de nuevo.");
+  }
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({ error: response.statusText }));

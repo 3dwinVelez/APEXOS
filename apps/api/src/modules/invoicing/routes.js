@@ -7,6 +7,10 @@ async function invoicingRoutes(fastify) {
   fastify.addHook("preHandler", fastify.authenticate);
   fastify.addHook("preHandler", tenancy);
 
+  fastify.get("/invoicing/invoices", {
+    preHandler: requirePermission("invoicing", "read")
+  }, async (request) => service.listInvoices(request.user.tenant_id));
+
   fastify.post("/invoicing/sales-orders/:id/invoice", {
     schema: schema.invoiceSchema,
     preHandler: requirePermission("invoicing", "write")

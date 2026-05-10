@@ -130,4 +130,12 @@ async function invoiceSaleOrder(tenantId, userId, soId, data) {
   }));
 }
 
-module.exports = { invoiceSaleOrder };
+async function listInvoices(tenantId) {
+  return prisma.runWithTenant(tenantId, () => prisma.transaction.findMany({
+    where: { type: "invoice" },
+    orderBy: { created_at: "desc" },
+    include: { party: true, lines: true }
+  }));
+}
+
+module.exports = { invoiceSaleOrder, listInvoices };
