@@ -15,14 +15,24 @@ This repo intentionally does not import, connect to, or modify APEX 1.0. The fir
 
 ```powershell
 copy .env.example .env
-docker compose -f infra/docker-compose.yml up -d postgres redis minio
-npm install
-npm --workspace apps/api run prisma:generate
-npm --workspace apps/api run prisma:migrate
-npm run dev
+npm run setup:local
+npm run start:local
 ```
 
-In another terminal:
+Then open:
+
+- Web: http://localhost:3001
+- API health: http://localhost:3000/health
+- BRAIN health: http://localhost:8000/health
+
+Demo login:
+
+```text
+demo@apex.local
+test1234
+```
+
+If you want to run the BRAIN service outside Docker instead:
 
 ```powershell
 cd services/brain

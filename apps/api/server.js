@@ -1,3 +1,5 @@
+require("./src/core/loadEnv")();
+
 const fastify = require("fastify")({
   logger: {
     level: process.env.NODE_ENV === "production" ? "warn" : "info",
