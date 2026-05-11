@@ -2,6 +2,10 @@ const { Worker } = require("bullmq");
 const { connection } = require("../queues");
 const wsManager = require("../wsManager");
 
+if (!connection) {
+  return;
+}
+
 new Worker("apex-brain", async (job) => {
   const brainUrl = process.env.BRAIN_URL || "http://localhost:8000";
   const response = await fetch(`${brainUrl}/analyze`, {

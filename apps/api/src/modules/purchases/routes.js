@@ -11,9 +11,22 @@ async function purchasesRoutes(fastify) {
     preHandler: requirePermission("purchases", "read")
   }, async (request) => service.listSuppliers(request.user.tenant_id));
 
+  fastify.get("/purchases/suppliers/:id", {
+    preHandler: requirePermission("purchases", "read")
+  }, async (request) => service.getSupplier(request.user.tenant_id, Number(request.params.id)));
+
+  fastify.patch("/purchases/suppliers/:id", {
+    schema: schema.updateSupplierSchema,
+    preHandler: requirePermission("purchases", "write")
+  }, async (request) => service.updateSupplier(request.user.tenant_id, Number(request.params.id), request.body));
+
   fastify.get("/purchases/orders", {
     preHandler: requirePermission("purchases", "read")
   }, async (request) => service.listPurchaseOrders(request.user.tenant_id));
+
+  fastify.get("/purchases/orders/:id", {
+    preHandler: requirePermission("purchases", "read")
+  }, async (request) => service.getPurchaseOrder(request.user.tenant_id, Number(request.params.id)));
 
   fastify.post("/purchases/suppliers", {
     schema: schema.supplierSchema,
@@ -28,6 +41,26 @@ async function purchasesRoutes(fastify) {
   fastify.post("/purchases/orders/:id/receive", {
     preHandler: requirePermission("purchases", "approve")
   }, async (request) => service.receivePurchaseOrder(request.user.tenant_id, request.user.id, Number(request.params.id), request.body));
+
+  fastify.post("/purchases/orders/:id/approve", {
+    preHandler: requirePermission("purchases", "approve")
+  }, async (request) => service.approvePurchaseOrder(request.user.tenant_id, request.user.id, Number(request.params.id)));
+
+  fastify.post("/purchases/orders/:id/cancel", {
+    preHandler: requirePermission("purchases", "approve")
+  }, async (request) => service.cancelPurchaseOrder(request.user.tenant_id, request.user.id, Number(request.params.id)));
+
+  fastify.post("/purchases/orders/:id/duplicate", {
+    preHandler: requirePermission("purchases", "write")
+  }, async (request, reply) => reply.code(201).send(await service.duplicatePurchaseOrder(request.user.tenant_id, request.user.id, Number(request.params.id))));
+
+  fastify.post("/purchases/orders/:id/create-receipt", {
+    preHandler: requirePermission("purchases", "approve")
+  }, async (request) => service.createReceiptFromPurchaseOrder(request.user.tenant_id, request.user.id, Number(request.params.id)));
+
+  fastify.get("/purchases/orders/:id/receipts", {
+    preHandler: requirePermission("purchases", "read")
+  }, async (request) => service.listPurchaseOrderReceipts(request.user.tenant_id, Number(request.params.id)));
 
   fastify.patch("/purchases/orders/:id/status", {
     preHandler: requirePermission("purchases", "approve")

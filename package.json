@@ -19,6 +19,8 @@
     "seed:demo": "node scripts/seed-admin.js",
     "setup:local": "npm install && npm run check:local && npm run infra:up && npm run prisma:generate && npm run db:push && npm run seed:demo",
     "start:local": "npm run check:local && npm run infra:up && npm run dev",
+    "start:local:windows": "node scripts/start-local-windows.js",
+    "restart:local:windows": "node scripts/start-local-windows.js --restart",
     "lint": "npm --workspace apps/web run lint",
     "prisma:validate": "npm --workspace apps/api run prisma:validate",
     "brain:dev": "cd services/brain && uvicorn main:app --reload --port 8000"

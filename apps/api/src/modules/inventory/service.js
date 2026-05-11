@@ -29,8 +29,8 @@ async function createItem(tenantId, userId, data) {
   if ((unit_cost ?? 0) < 0 || (unit_price ?? 0) < 0) {
     throw appError(400, "INVALID_PRICE", "Los precios no pueden ser negativos");
   }
-  if (![0, 5, 19].includes(tax_rate)) {
-    throw appError(400, "INVALID_TAX", "tax_rate debe ser 0, 5 o 19");
+  if (tax_rate < 0 || tax_rate > 35) {
+    throw appError(400, "INVALID_TAX", "tax_rate debe estar entre 0 y 35");
   }
   if (stock_max !== null && stock_max <= stock_min) {
     throw appError(400, "INVALID_STOCK", "stock_max debe ser mayor a stock_min");
@@ -74,8 +74,8 @@ async function updateItem(tenantId, itemId, data) {
 
     const { code, type, stock_current, tenant_id, ...safeData } = data;
 
-    if (safeData.tax_rate !== undefined && ![0, 5, 19].includes(safeData.tax_rate)) {
-      throw appError(400, "INVALID_TAX", "tax_rate debe ser 0, 5 o 19");
+    if (safeData.tax_rate !== undefined && (safeData.tax_rate < 0 || safeData.tax_rate > 35)) {
+      throw appError(400, "INVALID_TAX", "tax_rate debe estar entre 0 y 35");
     }
 
     const newMin = safeData.stock_min ?? item.stock_min;

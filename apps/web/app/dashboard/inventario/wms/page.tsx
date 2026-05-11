@@ -137,14 +137,14 @@ const eventLabels: Record<WmsEvent, string> = {
 };
 
 const eventColors: Record<WmsEvent, string> = {
-  recibo: "bg-sky-50 text-sky-700",
-  almacen: "bg-indigo-50 text-indigo-700",
-  picking: "bg-emerald-50 text-emerald-700",
-  despacho: "bg-orange-50 text-orange-700",
-  conteo: "bg-violet-50 text-violet-700"
+  recibo: "bg-neutral-100 text-neutral-700",
+  almacen: "bg-neutral-100 text-neutral-700",
+  picking: "bg-neutral-100 text-neutral-700",
+  despacho: "bg-neutral-100 text-neutral-700",
+  conteo: "bg-neutral-100 text-neutral-700"
 };
 
-const zoneColors = ["bg-sky-500", "bg-cyan-500", "bg-amber-500", "bg-indigo-500", "bg-emerald-500", "bg-rose-500", "bg-orange-500", "bg-violet-500"];
+const zoneColors = ["bg-neutral-100", "bg-neutral-200", "bg-neutral-300"];
 
 const layerLabels: Record<LayoutLayer, string> = {
   estructura: "Estructura",
@@ -170,13 +170,13 @@ const layoutTools: { id: LayoutTool; label: string; hint: string }[] = [
 ];
 
 const initialZones: WarehouseZone[] = [
-  { id: 1, code: "REC", name: "Recibo", type: "recibo", occupancy: 48, x: 2, y: 8, w: 18, h: 20, color: "bg-sky-500" },
-  { id: 2, code: "STG", name: "Staging inbound", type: "staging", occupancy: 64, x: 22, y: 8, w: 17, h: 20, color: "bg-cyan-500" },
-  { id: 3, code: "QAR", name: "Cuarentena", type: "cuarentena", occupancy: 31, x: 41, y: 8, w: 13, h: 20, color: "bg-amber-500" },
-  { id: 4, code: "RSV", name: "Reserva pallet", type: "reserva", occupancy: 76, x: 5, y: 34, w: 42, h: 36, color: "bg-indigo-500" },
-  { id: 5, code: "PCK", name: "Forward picking", type: "picking", occupancy: 88, x: 52, y: 34, w: 20, h: 36, color: "bg-emerald-500" },
-  { id: 6, code: "PAC", name: "Packing", type: "packing", occupancy: 82, x: 75, y: 52, w: 20, h: 18, color: "bg-rose-500" },
-  { id: 7, code: "DSP", name: "Despacho", type: "despacho", occupancy: 71, x: 60, y: 76, w: 35, h: 18, color: "bg-orange-500" }
+  { id: 1, code: "REC", name: "Recibo", type: "recibo", occupancy: 48, x: 2, y: 8, w: 18, h: 20, color: "bg-neutral-100" },
+  { id: 2, code: "STG", name: "Staging inbound", type: "staging", occupancy: 64, x: 22, y: 8, w: 17, h: 20, color: "bg-neutral-200" },
+  { id: 3, code: "QAR", name: "Cuarentena", type: "cuarentena", occupancy: 31, x: 41, y: 8, w: 13, h: 20, color: "bg-neutral-100" },
+  { id: 4, code: "RSV", name: "Reserva pallet", type: "reserva", occupancy: 76, x: 5, y: 34, w: 42, h: 36, color: "bg-neutral-200" },
+  { id: 5, code: "PCK", name: "Forward picking", type: "picking", occupancy: 88, x: 52, y: 34, w: 20, h: 36, color: "bg-neutral-300" },
+  { id: 6, code: "PAC", name: "Packing", type: "packing", occupancy: 82, x: 75, y: 52, w: 20, h: 18, color: "bg-neutral-300" },
+  { id: 7, code: "DSP", name: "Despacho", type: "despacho", occupancy: 71, x: 60, y: 76, w: 35, h: 18, color: "bg-neutral-200" }
 ];
 
 const initialLocations: VisualLocation[] = [
@@ -351,6 +351,45 @@ const realtimeEvents = [
   "wms.layout.heatmap.updated"
 ];
 
+const wmsGuides: Record<View, { title: string; goal: string; steps: string[]; next: string }> = {
+  motor: {
+    title: "Convierte documentos en trabajo",
+    goal: "Empieza por los documentos que ya existen en compras, ventas e inventario. APEX los traduce en tareas operativas.",
+    steps: ["Revisa documentos pendientes", "Genera tareas por lote", "Valida prioridad y SLA"],
+    next: "Generar tareas desde documentos origen"
+  },
+  operacion: {
+    title: "Controla el turno",
+    goal: "La prioridad del supervisor es limpiar atrasos, asignar responsables y mantener el flujo sin cuellos de botella.",
+    steps: ["Filtra atrasadas o bloqueadas", "Selecciona tareas", "Asigna operador o cambia estado"],
+    next: "Resolver tareas atrasadas primero"
+  },
+  layout: {
+    title: "Opera desde el mapa",
+    goal: "Usa el plano para saber dónde actuar, no para decorar. Lo importante es ubicación, tarea activa, bloqueo y capacidad.",
+    steps: ["Busca SKU o ubicación", "Selecciona una ubicación", "Ejecuta la acción sugerida"],
+    next: "Revisar ubicaciones con tareas activas"
+  },
+  reglas: {
+    title: "Automatiza decisiones repetidas",
+    goal: "Configura reglas simples para que el sistema priorice y agrupe sin depender de un consultor.",
+    steps: ["Define el evento", "Elige disparador", "Guarda la regla y observa tareas"],
+    next: "Crear una regla de reposición o picking"
+  },
+  conteo: {
+    title: "Mantén inventario confiable",
+    goal: "El conteo debe guiar al operario a contar solo lo que importa y escalar diferencias cuando superan tolerancia.",
+    steps: ["Elige método", "Define alcance", "Confirma diferencia o ajuste"],
+    next: "Lanzar conteo ABC A"
+  },
+  mobile: {
+    title: "Hazlo escaneable",
+    goal: "Cada tarea móvil debe decirle al operario qué escanear, qué validar y cuál es el siguiente paso.",
+    steps: ["Escanea tarea", "Valida ubicación y SKU", "Confirma cantidad o excepción"],
+    next: "Probar flujo móvil de picking"
+  }
+};
+
 const mvpBacklog = [
   "Bandeja de documentos origen por flujo.",
   "Generación de WarehouseTask desde documentos ERP.",
@@ -371,7 +410,7 @@ const advancedBacklog = [
 ];
 
 export default function WmsPage() {
-  const [view, setView] = useState<View>("operacion");
+  const [view, setView] = useState<View>("layout");
   const [dark, setDark] = useState(false);
   const [eventFilter, setEventFilter] = useState<WmsEvent | "todos">("todos");
   const [taskFilter, setTaskFilter] = useState<TaskFilter>("todas");
@@ -396,7 +435,7 @@ export default function WmsPage() {
     ocupacion: true,
     abc: false,
     estado: true,
-    productos: true,
+    productos: false,
     tareas: true,
     alertas: true,
     capacidad: false
@@ -425,6 +464,8 @@ export default function WmsPage() {
       [location.code, location.sku, location.product, location.abc, location.status].some((value) => value.toLowerCase().includes(query))
     );
   }, [layoutSearch, locations]);
+
+  const currentGuide = wmsGuides[view];
 
   function addZone() {
     const next = zones.length + 1;
@@ -491,11 +532,11 @@ export default function WmsPage() {
 
   function loadPreset(preset: "u" | "i") {
     setZones(preset === "u" ? initialZones : [
-      { id: 101, code: "REC", name: "Recibo norte", type: "recibo", occupancy: 42, x: 2, y: 8, w: 18, h: 84, color: "bg-sky-500" },
-      { id: 102, code: "RSV", name: "Reserva central", type: "reserva", occupancy: 74, x: 25, y: 8, w: 34, h: 84, color: "bg-indigo-500" },
-      { id: 103, code: "PCK", name: "Picking rápido", type: "picking", occupancy: 83, x: 62, y: 8, w: 16, h: 60, color: "bg-emerald-500" },
-      { id: 104, code: "PAC", name: "Packing", type: "packing", occupancy: 68, x: 81, y: 8, w: 16, h: 28, color: "bg-rose-500" },
-      { id: 105, code: "DSP", name: "Despacho sur", type: "despacho", occupancy: 71, x: 81, y: 42, w: 16, h: 50, color: "bg-orange-500" }
+      { id: 101, code: "REC", name: "Recibo norte", type: "recibo", occupancy: 42, x: 2, y: 8, w: 18, h: 84, color: "bg-neutral-100" },
+      { id: 102, code: "RSV", name: "Reserva central", type: "reserva", occupancy: 74, x: 25, y: 8, w: 34, h: 84, color: "bg-neutral-200" },
+      { id: 103, code: "PCK", name: "Picking rápido", type: "picking", occupancy: 83, x: 62, y: 8, w: 16, h: 60, color: "bg-neutral-300" },
+      { id: 104, code: "PAC", name: "Packing", type: "packing", occupancy: 68, x: 81, y: 8, w: 16, h: 28, color: "bg-neutral-200" },
+      { id: 105, code: "DSP", name: "Despacho sur", type: "despacho", occupancy: 71, x: 81, y: 42, w: 16, h: 50, color: "bg-neutral-200" }
     ]);
     setLocations(preset === "u" ? initialLocations : initialLocations.map((location, index) => ({
       ...location,
@@ -662,6 +703,8 @@ export default function WmsPage() {
           );
         })}
       </nav>
+
+      <WorkflowGuide guide={currentGuide} />
 
       {view === "motor" ? (
         <div className="space-y-5">
@@ -947,7 +990,7 @@ export default function WmsPage() {
             <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
               <div>
                 <h2 className="text-base font-semibold">Diseñador 2D del almacén</h2>
-                <p className="text-sm text-neutral-500">Activa dibujo y haz clic en el plano para ubicar zonas. Ajusta tamaño y posición con precisión.</p>
+                <p className="text-sm text-neutral-500">Plano operativo para decidir dónde recibir, guardar, reponer, preparar y despachar.</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <button className={`inline-flex h-10 items-center gap-2 rounded-md border px-3 text-sm ${activeTool ? "border-apex bg-[#146C6312] text-apex" : "border-line hover:bg-paper"}`} onClick={() => setActiveTool((current) => current ? null : "zona")} type="button">
@@ -994,8 +1037,19 @@ export default function WmsPage() {
               ))}
             </div>
 
+            <SmartWarehouseGrid
+              layers={layers}
+              locations={highlightedLocations}
+              selectedLocationCode={selectedLocationCode}
+              onSelectLocation={(location) => {
+                setSelectedLocationCode(location.code);
+                setSelectedZoneId(location.zoneId);
+                setSelectedAssetId(null);
+              }}
+            />
+
             <button
-              className={`relative block min-h-[560px] w-full overflow-hidden rounded-md border text-left ${activeTool ? "cursor-crosshair ring-2 ring-apex/30" : "cursor-default"} ${dark ? "border-neutral-800 bg-neutral-900" : "border-line bg-[#f8faf8]"}`}
+              className={`hidden relative min-h-[560px] w-full overflow-hidden rounded-md border text-left ${activeTool ? "cursor-crosshair ring-2 ring-apex/30" : "cursor-default"} ${dark ? "border-neutral-800 bg-neutral-900" : "border-line bg-[#f7f7f4]"}`}
               onClick={(event) => {
                 if (!activeTool) return;
                 const rect = event.currentTarget.getBoundingClientRect();
@@ -1015,10 +1069,12 @@ export default function WmsPage() {
               onPointerUp={() => setDragging(null)}
               type="button"
             >
-              <div className="absolute inset-0 opacity-40" style={{ backgroundImage: "linear-gradient(#d6ddd8 1px, transparent 1px), linear-gradient(90deg, #d6ddd8 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
+              <div className="absolute inset-0 opacity-50" style={{ backgroundImage: "linear-gradient(#e3e0d7 1px, transparent 1px), linear-gradient(90deg, #e3e0d7 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
+              <div className="absolute inset-x-0 top-0 h-8 border-b border-neutral-300/70 bg-white/55" />
+              <div className="absolute inset-y-0 left-0 w-8 border-r border-neutral-300/70 bg-white/55" />
               <div className="absolute inset-0" style={{ transform: `scale(${layoutZoom / 100})`, transformOrigin: "top left" }}>
-              <div className="absolute left-3 top-3 z-20 rounded-md bg-white/90 px-2 py-1 text-xs text-neutral-600 shadow-sm">
-                {activeTool ? `Clic para colocar: ${layoutTools.find((tool) => tool.id === activeTool)?.label}` : "Selecciona o coloca elementos"}
+              <div className="absolute left-3 top-3 z-20 rounded-md border border-line bg-white/95 px-3 py-2 text-xs text-neutral-700 shadow-sm">
+                {activeTool ? `Coloca: ${layoutTools.find((tool) => tool.id === activeTool)?.label}` : selectedLocation ? `Siguiente: atender ${selectedLocation.code}` : "Busca, selecciona y ejecuta"}
               </div>
               {layers.estructura ? assets.map((asset) => (
                 <span
@@ -1042,7 +1098,7 @@ export default function WmsPage() {
               )) : null}
               {zones.map((zone) => (
                 <span
-                  className={`absolute rounded-md border p-2 text-left text-white shadow-sm transition hover:z-10 hover:-translate-y-0.5 ${selectedZoneId === zone.id ? "border-apex ring-2 ring-apex/30" : "border-white/70"} ${zone.color}`}
+                  className={`absolute rounded-md border p-2 text-left shadow-sm transition hover:z-10 hover:-translate-y-0.5 ${zoneVisualClass(zone, selectedZoneId === zone.id)}`}
                   key={zone.id}
                   onClick={(event) => {
                     event.stopPropagation();
@@ -1059,12 +1115,12 @@ export default function WmsPage() {
                 >
                   <span className="block text-xs font-semibold">{zone.code}</span>
                   <span className="block text-[11px] leading-tight">{zone.name}</span>
-                  <span className="absolute bottom-2 right-2 rounded bg-black/25 px-1.5 py-0.5 text-[10px]">{zone.occupancy}%</span>
+                  <span className="absolute bottom-2 right-2 rounded border border-neutral-300 bg-white/80 px-1.5 py-0.5 text-[10px] text-neutral-700">{zone.occupancy}%</span>
                 </span>
               ))}
               {highlightedLocations.map((location) => (
                 <span
-                  className={`absolute z-20 rounded-sm border shadow-sm ${locationVisualClass(location, layers)} ${selectedLocationCode === location.code ? "ring-2 ring-neutral-950" : ""}`}
+                  className={`absolute z-20 rounded-sm border shadow-sm ${locationVisualClass(location, layers)} ${selectedLocationCode === location.code ? "ring-2 ring-apex ring-offset-1" : ""}`}
                   key={location.code}
                   onClick={(event) => {
                     event.stopPropagation();
@@ -1072,13 +1128,13 @@ export default function WmsPage() {
                     setSelectedZoneId(location.zoneId);
                     setSelectedAssetId(null);
                   }}
-                  style={{ left: `${location.x}%`, top: `${location.y}%`, width: "3.4%", height: "4.8%" }}
+                  style={{ left: `${location.x}%`, top: `${location.y}%`, width: "3.2%", height: "4.5%" }}
                   title={`${location.code}\n${location.product}\nSKU ${location.sku}\nCantidad ${location.qty}\nOcupación ${location.occupancy}%\nABC ${location.abc}\nEstado ${location.status}\nTareas ${location.activeTasks}`}
                 >
-                  {layers.ocupacion ? <span className="absolute bottom-0 left-0 h-1 bg-white/80" style={{ width: `${location.occupancy}%` }} /> : null}
+                  {layers.ocupacion ? <span className="absolute bottom-0 left-0 h-1 bg-apex/70" style={{ width: `${location.occupancy}%` }} /> : null}
                   {layers.productos ? <span className="absolute left-[3px] top-[2px] max-w-[92%] truncate text-[8px] font-semibold leading-none">{location.sku}</span> : null}
-                  {layers.tareas && location.activeTasks > 0 ? <span className="absolute -right-1 -top-1 h-3 min-w-3 rounded-full bg-black px-1 text-center text-[8px] text-white">{location.activeTasks}</span> : null}
-                  {layers.alertas && ["alerta", "bloqueada", "cuarentena"].includes(location.status) ? <span className="absolute -bottom-1 -right-1 h-2 w-2 rounded-full bg-yellow-300" /> : null}
+                  {layers.tareas && location.activeTasks > 0 ? <span className="absolute -right-1 -top-1 h-3 min-w-3 rounded-full bg-neutral-950 px-1 text-center text-[8px] text-white">{location.activeTasks}</span> : null}
+                  {layers.alertas && ["alerta", "bloqueada", "cuarentena"].includes(location.status) ? <span className="absolute -bottom-1 -right-1 h-2.5 w-2.5 rounded-full border border-white bg-amber-500" /> : null}
                   {layers.capacidad ? <span className="absolute bottom-1 right-1 text-[7px] font-bold">{location.occupancy}%</span> : null}
                 </span>
               ))}
@@ -1093,8 +1149,15 @@ export default function WmsPage() {
 
           <aside className={`space-y-3 rounded-md border p-3 ${dark ? "border-neutral-800 bg-neutral-950" : "border-line bg-white"}`}>
             <div>
-              <h2 className="text-base font-semibold">Centro visual</h2>
-              <p className="text-sm text-neutral-500">Configura sin quitarle espacio al mapa.</p>
+              <h2 className="text-base font-semibold">Qué hacer ahora</h2>
+              <p className="text-sm text-neutral-500">{selectedLocation ? selectedLocation.product : "Selecciona una ubicación para ver el siguiente paso."}</p>
+            </div>
+            <div className="rounded-md border border-line bg-paper p-3 text-sm">
+              <p className="text-xs font-semibold uppercase text-neutral-500">Acción sugerida</p>
+              <p className="mt-1 font-medium">{selectedLocation ? nextLocationAction(selectedLocation) : "Buscar ubicación, SKU o tarea"}</p>
+              {selectedLocation ? (
+                <p className="mt-1 text-xs text-neutral-500">{selectedLocation.code} · {selectedLocation.qty}/{selectedLocation.capacityUnits} unidades · {selectedLocation.activeTasks} tareas</p>
+              ) : null}
             </div>
             <div className="grid gap-2">
               <PanelButton icon={Plus} label="Herramientas" detail={activeTool ? `Colocando ${layoutTools.find((tool) => tool.id === activeTool)?.label}` : "Zonas, racks, muelles, equipos"} onClick={() => setConfigModal("herramientas")} />
@@ -1407,6 +1470,243 @@ export default function WmsPage() {
   );
 }
 
+function WorkflowGuide({ guide }: { guide: { title: string; goal: string; steps: string[]; next: string } }) {
+  return (
+    <section className="grid gap-3 rounded-md border border-line bg-white p-4 lg:grid-cols-[1fr_auto] lg:items-center">
+      <div>
+        <p className="text-sm font-semibold text-apex">{guide.title}</p>
+        <p className="mt-1 text-sm text-neutral-600">{guide.goal}</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {guide.steps.map((step, index) => (
+            <span className="inline-flex h-8 items-center gap-2 rounded-md border border-line bg-paper px-2.5 text-xs text-neutral-700" key={step}>
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-white text-[11px] font-semibold text-apex">{index + 1}</span>
+              {step}
+            </span>
+          ))}
+        </div>
+      </div>
+      <div className="rounded-md border border-line bg-paper px-3 py-2 text-sm">
+        <span className="block text-xs font-semibold uppercase text-neutral-500">Siguiente</span>
+        <span className="font-medium">{guide.next}</span>
+      </div>
+    </section>
+  );
+}
+
+function SmartWarehouseGrid({
+  layers,
+  locations,
+  selectedLocationCode,
+  onSelectLocation
+}: {
+  layers: Record<LayoutLayer, boolean>;
+  locations: VisualLocation[];
+  selectedLocationCode: string;
+  onSelectLocation: (location: VisualLocation) => void;
+}) {
+  const locationByCode = new globalThis.Map(locations.map((location) => [location.code, location]));
+  const quickFind = (prefixes: string[]) => locations.find((location) => prefixes.some((prefix) => location.code.startsWith(prefix)));
+
+  return (
+    <section className="rounded-md border border-line bg-[#f7f7f4] p-3">
+      <div className="mb-3 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <p className="text-sm font-semibold">Cuadrícula inteligente</p>
+          <p className="text-xs text-neutral-500">Cada casilla es una ubicación física. Filtra, selecciona y configura como piezas de LEGO.</p>
+        </div>
+        <div className="flex flex-wrap gap-2 text-xs">
+          <LegendDot label="Libre" className="bg-white" />
+          <LegendDot label="Ocupada" className="bg-neutral-300" />
+          <LegendDot label="Llena" className="bg-neutral-600" />
+          <LegendDot label="Alerta" className="bg-amber-300" />
+          <LegendDot label="Tarea" className="bg-neutral-950" />
+        </div>
+      </div>
+
+      <div className="grid gap-3 xl:grid-cols-[1fr_180px]">
+        <div className="space-y-3">
+          <div className="grid grid-cols-[92px_1fr_120px] gap-2">
+            <ZoneBlock label="Recibo" detail="Muelle + staging" location={quickFind(["REC", "STG"])} onSelectLocation={onSelectLocation} />
+            <div className="rounded-md border border-line bg-white p-2">
+              <p className="mb-2 text-xs font-semibold uppercase text-neutral-500">Reserva pallet</p>
+              <RackMatrix zoneLabel="RSV" zoneId={4} rows={4} cols={14} locationByCode={locationByCode} locations={locations} selectedLocationCode={selectedLocationCode} onSelectLocation={onSelectLocation} layers={layers} />
+            </div>
+            <ZoneBlock label="Cuarentena" detail="QA" location={quickFind(["QAR"])} onSelectLocation={onSelectLocation} />
+          </div>
+
+          <AisleLabel label="Pasillo principal de tránsito seguro" />
+
+          <div className="grid gap-3 lg:grid-cols-[1fr_260px]">
+            <div className="rounded-md border border-line bg-white p-2">
+              <p className="mb-2 text-xs font-semibold uppercase text-neutral-500">Forward picking</p>
+              <RackMatrix zoneLabel="PCK" zoneId={5} rows={4} cols={12} locationByCode={locationByCode} locations={locations} selectedLocationCode={selectedLocationCode} onSelectLocation={onSelectLocation} layers={layers} />
+            </div>
+            <div className="space-y-3">
+              <div className="rounded-md border border-line bg-white p-2">
+                <p className="mb-2 text-xs font-semibold uppercase text-neutral-500">Packing / alistamiento</p>
+                <RackMatrix zoneLabel="PAC" zoneId={6} rows={3} cols={6} locationByCode={locationByCode} locations={locations} selectedLocationCode={selectedLocationCode} onSelectLocation={onSelectLocation} layers={layers} />
+              </div>
+              <ZoneBlock label="Oficinas" detail="Soporte operativo" />
+            </div>
+          </div>
+
+          <AisleLabel label="Pasillo de despacho" />
+
+          <div className="rounded-md border border-line bg-white p-2">
+            <p className="mb-2 text-xs font-semibold uppercase text-neutral-500">Despacho y rutas</p>
+            <RackMatrix zoneLabel="DSP" zoneId={7} rows={2} cols={16} locationByCode={locationByCode} locations={locations} selectedLocationCode={selectedLocationCode} onSelectLocation={onSelectLocation} layers={layers} />
+          </div>
+        </div>
+
+        <aside className="space-y-2">
+          <DockLane title="Muelle despacho" location={quickFind(["DSP"])} onSelectLocation={onSelectLocation} />
+          <DockLane title="Muelle recibo" location={quickFind(["REC", "STG"])} onSelectLocation={onSelectLocation} />
+          <div className="rounded-md border border-dashed border-neutral-400 bg-white p-3 text-xs text-neutral-600">
+            Las filas representan racks o bloques físicos. La codificación sigue zona, módulo, nivel y ubicación.
+          </div>
+        </aside>
+      </div>
+    </section>
+  );
+}
+
+function RackMatrix({
+  zoneLabel,
+  zoneId,
+  rows,
+  cols,
+  locationByCode,
+  locations,
+  selectedLocationCode,
+  onSelectLocation,
+  layers
+}: {
+  zoneLabel: string;
+  zoneId: number;
+  rows: number;
+  cols: number;
+  locationByCode: Map<string, VisualLocation>;
+  locations: VisualLocation[];
+  selectedLocationCode: string;
+  onSelectLocation: (location: VisualLocation) => void;
+  layers: Record<LayoutLayer, boolean>;
+}) {
+  return (
+    <div className="space-y-1.5">
+      {Array.from({ length: rows }, (_, rowIndex) => (
+        <div className="grid gap-1" key={`${zoneLabel}-${rowIndex}`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+          {Array.from({ length: cols }, (_, colIndex) => {
+            const code = `${zoneLabel}-M${String(colIndex + 1).padStart(2, "0")}-N${rowIndex + 1}-U01`;
+            const location = locationByCode.get(code) || findNearestLocation(locations, zoneId, rowIndex, colIndex, cols);
+            const selected = location?.code === selectedLocationCode;
+            return (
+              <LocationCell
+                code={code}
+                key={`${zoneLabel}-${rowIndex}-${colIndex}`}
+                layers={layers}
+                location={location}
+                selected={selected}
+                onSelectLocation={onSelectLocation}
+              />
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function LocationCell({
+  code,
+  location,
+  selected,
+  layers,
+  onSelectLocation
+}: {
+  code: string;
+  location?: VisualLocation;
+  selected: boolean;
+  layers: Record<LayoutLayer, boolean>;
+  onSelectLocation: (location: VisualLocation) => void;
+}) {
+  const className = location ? locationVisualClass(location, layers) : "border-neutral-300 bg-white text-neutral-400";
+  return (
+    <button
+      className={`relative aspect-square min-h-8 rounded-sm border text-[9px] font-semibold leading-none transition hover:border-apex hover:bg-[#146C6312] ${className} ${selected ? "ring-2 ring-apex ring-offset-1" : ""}`}
+      disabled={!location}
+      onClick={() => location ? onSelectLocation(location) : undefined}
+      title={location ? `${location.code}\n${location.product}\n${location.qty}/${location.capacityUnits}` : code}
+      type="button"
+    >
+      <span className="absolute left-1 top-1">{cellShortCode(location?.code || code)}</span>
+      {location && layers.ocupacion ? <span className="absolute inset-x-1 bottom-1 h-1 rounded bg-apex/70" style={{ width: `calc(${Math.max(8, location.occupancy)}% - 0.5rem)` }} /> : null}
+      {location && layers.tareas && location.activeTasks > 0 ? <span className="absolute -right-1 -top-1 h-3 min-w-3 rounded-full bg-neutral-950 px-1 text-[8px] text-white">{location.activeTasks}</span> : null}
+      {location && layers.alertas && ["alerta", "bloqueada", "cuarentena"].includes(location.status) ? <span className="absolute -bottom-1 -right-1 h-2.5 w-2.5 rounded-full border border-white bg-amber-500" /> : null}
+    </button>
+  );
+}
+
+function ZoneBlock({ label, detail, location, onSelectLocation }: { label: string; detail: string; location?: VisualLocation; onSelectLocation?: (location: VisualLocation) => void }) {
+  return (
+    <button
+      className="min-h-24 rounded-md border border-line bg-white p-2 text-left text-xs hover:border-apex disabled:hover:border-line"
+      disabled={!location}
+      onClick={() => location && onSelectLocation?.(location)}
+      type="button"
+    >
+      <span className="block font-semibold text-neutral-800">{label}</span>
+      <span className="mt-1 block text-neutral-500">{detail}</span>
+      {location ? <span className="mt-3 block rounded bg-paper px-2 py-1 font-medium text-neutral-700">{location.code}</span> : null}
+    </button>
+  );
+}
+
+function DockLane({ title, location, onSelectLocation }: { title: string; location?: VisualLocation; onSelectLocation: (location: VisualLocation) => void }) {
+  return (
+    <button
+      className="min-h-28 w-full rounded-md border border-line bg-white p-3 text-left text-xs hover:border-apex disabled:hover:border-line"
+      disabled={!location}
+      onClick={() => location ? onSelectLocation(location) : undefined}
+      type="button"
+    >
+      <span className="block font-semibold">{title}</span>
+      <span className="mt-2 block h-10 rounded border-2 border-dashed border-neutral-300 bg-paper" />
+      <span className="mt-2 block text-neutral-500">{location ? nextLocationAction(location) : "Sin tarea activa"}</span>
+    </button>
+  );
+}
+
+function AisleLabel({ label }: { label: string }) {
+  return (
+    <div className="flex h-8 items-center justify-center rounded-md border border-dashed border-neutral-300 bg-white text-xs font-medium uppercase text-neutral-500">
+      {label}
+    </div>
+  );
+}
+
+function LegendDot({ label, className }: { label: string; className: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-md border border-line bg-white px-2 py-1">
+      <span className={`h-2.5 w-2.5 rounded-sm border border-neutral-300 ${className}`} />
+      {label}
+    </span>
+  );
+}
+
+function cellShortCode(code: string) {
+  const match = code.match(/M(\d+)-N(\d+)/);
+  if (!match) return code.slice(0, 4);
+  return `${Number(match[1])}.${match[2]}`;
+}
+
+function findNearestLocation(locations: VisualLocation[], zoneId: number, rowIndex: number, colIndex: number, cols: number) {
+  const zoneLocations = locations.filter((location) => location.zoneId === zoneId);
+  if (!zoneLocations.length) return undefined;
+  const index = rowIndex * cols + colIndex;
+  if (index >= zoneLocations.length) return undefined;
+  return zoneLocations[index];
+}
+
 function StatusBadge({ status }: { status: TaskStatus }) {
   const labels: Record<TaskStatus, string> = {
     pendiente: "Pendiente",
@@ -1417,9 +1717,9 @@ function StatusBadge({ status }: { status: TaskStatus }) {
   };
   const classes: Record<TaskStatus, string> = {
     pendiente: "bg-neutral-100 text-neutral-700",
-    curso: "bg-sky-50 text-sky-700",
-    completa: "bg-emerald-50 text-emerald-700",
-    atrasada: "bg-rose-50 text-rose-700",
+    curso: "bg-neutral-100 text-neutral-700",
+    completa: "bg-neutral-100 text-neutral-700",
+    atrasada: "bg-amber-50 text-amber-800",
     bloqueada: "bg-amber-50 text-amber-700"
   };
   return <span className={`rounded-full px-2 py-1 text-xs ${classes[status]}`}>{labels[status]}</span>;
@@ -1531,26 +1831,42 @@ function SelectField({ label, value, options, onChange }: { label: string; value
   );
 }
 
+function zoneVisualClass(zone: WarehouseZone, selected: boolean) {
+  const selectedClass = selected ? "border-apex ring-2 ring-apex/30" : "border-neutral-300";
+  const occupancyClass = zone.occupancy >= 85 ? "bg-neutral-300 text-neutral-950" : zone.occupancy >= 65 ? "bg-neutral-200 text-neutral-900" : "bg-white text-neutral-800";
+  return `${selectedClass} ${occupancyClass}`;
+}
+
+function nextLocationAction(location: VisualLocation) {
+  if (location.status === "bloqueada") return "Resolver bloqueo antes de mover inventario";
+  if (location.status === "cuarentena") return "Validar calidad o liberar lote";
+  if (location.status === "alerta") return "Revisar tarea atrasada o congestión";
+  if (location.status === "vacia") return "Confirmar vacío y sugerir reposición";
+  if (location.occupancy >= 90) return "Evitar más ingreso y priorizar salida";
+  if (location.activeTasks > 0) return "Ejecutar tarea activa en mobile";
+  return "Ubicación disponible para operación";
+}
+
 function locationVisualClass(location: VisualLocation, layers: Record<LayoutLayer, boolean>) {
   if (layers.estado) {
-    if (location.status === "vacia") return "border-neutral-300 bg-neutral-200 text-neutral-700";
-    if (location.status === "bloqueada") return "border-red-700 bg-red-600 text-white";
-    if (location.status === "cuarentena") return "border-orange-700 bg-orange-500 text-white";
-    if (location.status === "alerta") return "border-yellow-700 bg-yellow-400 text-neutral-900";
-    if (location.status === "llena") return "border-blue-950 bg-blue-900 text-white";
+    if (location.status === "vacia") return "border-neutral-300 bg-white text-neutral-700";
+    if (location.status === "bloqueada") return "border-neutral-950 bg-neutral-900 text-white";
+    if (location.status === "cuarentena") return "border-amber-700 bg-amber-100 text-amber-950";
+    if (location.status === "alerta") return "border-amber-600 bg-amber-200 text-neutral-950";
+    if (location.status === "llena") return "border-neutral-700 bg-neutral-500 text-white";
   }
 
   if (layers.abc) {
-    if (location.abc === "A") return "border-emerald-800 bg-emerald-600 text-white";
-    if (location.abc === "B") return "border-sky-800 bg-sky-500 text-white";
-    return "border-neutral-500 bg-neutral-400 text-white";
+    if (location.abc === "A") return "border-neutral-950 bg-neutral-800 text-white";
+    if (location.abc === "B") return "border-neutral-600 bg-neutral-300 text-neutral-950";
+    return "border-neutral-400 bg-white text-neutral-700";
   }
 
   if (layers.ocupacion) {
-    if (location.occupancy === 0) return "border-neutral-300 bg-neutral-200 text-neutral-700";
-    if (location.occupancy >= 90) return "border-blue-950 bg-blue-900 text-white";
-    if (location.occupancy >= 60) return "border-blue-700 bg-blue-600 text-white";
-    return "border-blue-400 bg-blue-300 text-blue-950";
+    if (location.occupancy === 0) return "border-neutral-300 bg-white text-neutral-700";
+    if (location.occupancy >= 90) return "border-neutral-800 bg-neutral-600 text-white";
+    if (location.occupancy >= 60) return "border-neutral-500 bg-neutral-300 text-neutral-950";
+    return "border-neutral-300 bg-neutral-100 text-neutral-700";
   }
 
   return "border-neutral-400 bg-white text-neutral-700";
@@ -1575,9 +1891,9 @@ function NumberField({ label, value, min, max, onChange }: { label: string; valu
 function LayoutAssetShape({ asset }: { asset: LayoutAsset }) {
   if (asset.kind === "rack") {
     return (
-      <span className="block h-full w-full rounded-sm border border-sky-800 bg-sky-700/90 p-1 shadow-sm">
+      <span className="block h-full w-full rounded-sm border border-neutral-600 bg-neutral-500/90 p-1 shadow-sm">
         <span className="grid h-full grid-cols-6 gap-1">
-          {Array.from({ length: 12 }, (_, index) => <span className="rounded-sm bg-amber-200" key={index} />)}
+          {Array.from({ length: 12 }, (_, index) => <span className="rounded-sm bg-white/70" key={index} />)}
         </span>
         <span className="absolute -top-4 left-0 text-[10px] font-semibold text-neutral-700">{asset.label}</span>
       </span>
@@ -1587,7 +1903,7 @@ function LayoutAssetShape({ asset }: { asset: LayoutAsset }) {
   if (asset.kind === "camion") {
     return (
       <span className="block h-full w-full rounded-sm bg-neutral-800 shadow-md">
-        <span className="absolute right-0 top-0 h-full w-[28%] rounded-r-sm bg-orange-500" />
+        <span className="absolute right-0 top-0 h-full w-[28%] rounded-r-sm bg-neutral-500" />
         <span className="absolute left-2 top-1/2 h-[46%] w-[52%] -translate-y-1/2 rounded-sm bg-white" />
         <span className="absolute bottom-[-4px] left-[18%] h-2 w-2 rounded-full bg-neutral-950" />
         <span className="absolute bottom-[-4px] right-[22%] h-2 w-2 rounded-full bg-neutral-950" />
@@ -1606,7 +1922,7 @@ function LayoutAssetShape({ asset }: { asset: LayoutAsset }) {
   if (asset.kind === "montacargas") {
     return (
       <span className="block h-full w-full">
-        <span className="absolute bottom-1 left-1 h-[55%] w-[58%] rounded-sm bg-yellow-400" />
+        <span className="absolute bottom-1 left-1 h-[55%] w-[58%] rounded-sm bg-neutral-600" />
         <span className="absolute right-1 top-1 h-[78%] w-[16%] bg-neutral-800" />
         <span className="absolute bottom-0 left-1 h-2 w-2 rounded-full bg-neutral-950" />
         <span className="absolute bottom-0 right-2 h-2 w-2 rounded-full bg-neutral-950" />
@@ -1637,7 +1953,7 @@ function LayoutAssetShape({ asset }: { asset: LayoutAsset }) {
   }
 
   return (
-    <span className="flex h-full w-full items-center justify-center rounded-md border border-cyan-700 bg-cyan-300/80 text-[10px] font-semibold text-cyan-950">
+    <span className="flex h-full w-full items-center justify-center rounded-md border border-neutral-400 bg-white/80 text-[10px] font-semibold text-neutral-700">
       {asset.label}
     </span>
   );

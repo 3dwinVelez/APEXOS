@@ -13,4 +13,6 @@ venv/
 .venv/
 .pytest_cache/
 .DS_Store
+.local/
+logs/
 apps/api/prisma/migrations/

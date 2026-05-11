@@ -7,10 +7,14 @@ const createItemSchema = {
       name: { type: "string", minLength: 1 },
       type: { type: "string" },
       unit: { type: "string" },
+      category_id: { type: "integer" },
       unit_cost: { type: "number" },
       unit_price: { type: "number" },
+      tax_rate: { type: "number" },
       stock_min: { type: "number" },
       stock_max: { type: "number" },
+      weight_kg: { type: "number" },
+      volume_m3: { type: "number" },
       metadata: { type: "object", additionalProperties: true }
     }
   }

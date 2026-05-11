@@ -2,6 +2,10 @@ const { Worker } = require("bullmq");
 const prisma = require("../../core/prisma");
 const { connection } = require("../queues");
 
+if (!connection) {
+  return;
+}
+
 new Worker("apex-audit", async (job) => {
   const payload = job.data;
   await prisma.auditLog.create({
