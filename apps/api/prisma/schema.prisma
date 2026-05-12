@@ -477,9 +477,253 @@ model Employee {
   metadata      Json      @default("{}")
   payrolls      Payroll[]
   okrs          OKR[]
+  time_punches  TimePunch[]
+  workdays      ProcessedWorkday[]
 
   @@unique([tenant_id, code])
   @@index([tenant_id, active])
+}
+
+model WorkSchedule {
+  id                  Int       @id @default(autoincrement())
+  tenant_id           String
+  name                String
+  start_time          String
+  end_time            String
+  lunch_start_time    String?
+  lunch_end_time      String?
+  workable_days       Json      @default("[0,1,2,3,4]")
+  active              Boolean   @default(true)
+  created_at          DateTime  @default(now())
+  workdays            ProcessedWorkday[]
+
+  @@index([tenant_id, active])
+}
+
+model TimeRoute {
+  id                Int       @id @default(autoincrement())
+  tenant_id         String
+  date              DateTime
+  vehicle_plate     String?
+  employees         Json      @default("[]")
+  start_time        String?
+  end_time          String?
+  tolerance_minutes Int       @default(15)
+  per_diem          Float     @default(0)
+  notes             String?
+  status            String    @default("active")
+  created_at        DateTime  @default(now())
+
+  @@index([tenant_id, date])
+  @@index([tenant_id, status])
+}
+
+model GpsPing {
+  id              Int      @id @default(autoincrement())
+  tenant_id       String
+  user_name       String
+  employee_id     Int?
+  vehicle_plate   String?
+  route_id        Int?
+  latitude        Float
+  longitude       Float
+  accuracy_meters Float?
+  source          String   @default("mobile")
+  captured_at     DateTime @default(now())
+  metadata        Json     @default("{}")
+
+  @@index([tenant_id, user_name, captured_at])
+  @@index([tenant_id, route_id, captured_at])
+}
+
+model Vehicle {
+  id                    Int       @id @default(autoincrement())
+  tenant_id             String
+  plate                 String
+  model                 String?
+  type                  String?
+  brand                 String?
+  year                  Int?
+  color                 String?
+  engine_displacement   String?
+  load_capacity         String?
+  fuel                  String?
+  mileage               Int       @default(0)
+  serial_number         String?
+  engine_number         String?
+  soat_expires          DateTime?
+  technical_review_expires DateTime?
+  insurance_expires     DateTime?
+  owner                 String?
+  notes                 String?
+  status                String    @default("activo")
+  metadata              Json      @default("{}")
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+
+  @@unique([tenant_id, plate])
+  @@index([tenant_id, status])
+  @@index([tenant_id, type])
+}
+
+model TimePunch {
+  id                Int       @id @default(autoincrement())
+  tenant_id         String
+  employee_id       Int?
+  employee          Employee? @relation(fields: [employee_id], references: [id])
+  user_name         String
+  type              String
+  punched_at        DateTime  @default(now())
+  date              DateTime
+  time              String
+  latitude          Float?
+  longitude         Float?
+  accuracy_meters   Float?
+  vehicle_plate     String?
+  route_id          Int?
+  extra_minutes     Int       @default(0)
+  extra_reason      String?
+  extra_detail      String?
+  metadata          Json      @default("{}")
+  created_at        DateTime  @default(now())
+
+  @@index([tenant_id, employee_id, date])
+  @@index([tenant_id, user_name, date])
+}
+
+model ProcessedWorkday {
+  id                                      Int           @id @default(autoincrement())
+  tenant_id                               String
+  employee_id                             Int
+  employee                                Employee      @relation(fields: [employee_id], references: [id])
+  date                                    DateTime
+  schedule_id                             Int?
+  schedule                                WorkSchedule? @relation(fields: [schedule_id], references: [id])
+  route_id                                Int?
+  vehicle_plate                           String?
+  entry_at                                DateTime?
+  exit_at                                 DateTime?
+  lunch_start_at                          DateTime?
+  lunch_end_at                            DateTime?
+  total_minutes                           Int           @default(0)
+  lunch_minutes                           Int           @default(0)
+  ordinary_day_minutes                    Int           @default(0)
+  ordinary_night_minutes                  Int           @default(0)
+  ordinary_sunday_holiday_day_minutes     Int           @default(0)
+  ordinary_sunday_holiday_night_minutes   Int           @default(0)
+  overtime_day_minutes                    Int           @default(0)
+  overtime_night_minutes                  Int           @default(0)
+  overtime_sunday_holiday_day_minutes     Int           @default(0)
+  overtime_sunday_holiday_night_minutes   Int           @default(0)
+  alerts                                  Json          @default("[]")
+  inconsistent                            Boolean       @default(false)
+  created_at                              DateTime      @default(now())
+
+  @@unique([tenant_id, employee_id, date])
+  @@index([tenant_id, date])
+}
+
+model ServiceOrder {
+  id                 Int               @id @default(autoincrement())
+  tenant_id          String
+  number             String
+  reference_item_id  Int?
+  reference_id       Int?
+  reference          ServiceReference? @relation(fields: [reference_id], references: [id])
+  technician_id      Int?
+  service_type       String            @default("montaje")
+  status             String            @default("pendiente")
+  customer_name      String
+  customer_address   String
+  customer_phone     String?
+  invoice_number     String?
+  scheduled_date     DateTime?
+  started_at         DateTime?
+  closed_at          DateTime?
+  start_latitude     Float?
+  start_longitude    Float?
+  close_latitude     Float?
+  close_longitude    Float?
+  duration_minutes   Int?
+  notes              String?
+  no_execution_reason String?
+  created_by         Int?
+  metadata           Json              @default("{}")
+  created_at         DateTime          @default(now())
+  updated_at         DateTime          @updatedAt
+  incidents          ServiceIncident[]
+  photos             ServicePhoto[]
+
+  @@unique([tenant_id, number])
+  @@index([tenant_id, status])
+  @@index([tenant_id, scheduled_date])
+}
+
+model ServiceReference {
+  id                  Int             @id @default(autoincrement())
+  tenant_id           String
+  code                String
+  name                String
+  category            String          @default("muebles")
+  description         String?
+  estimated_minutes   Int             @default(60)
+  brand               String?
+  model               String?
+  active              Boolean         @default(true)
+  metadata            Json            @default("{}")
+  created_at          DateTime        @default(now())
+  updated_at          DateTime        @updatedAt
+  parts               ServiceReferencePart[]
+  orders              ServiceOrder[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, category])
+  @@index([tenant_id, active])
+}
+
+model ServiceReferencePart {
+  id              Int              @id @default(autoincrement())
+  tenant_id       String
+  reference_id    Int
+  reference       ServiceReference @relation(fields: [reference_id], references: [id], onDelete: Cascade)
+  name            String
+  quantity        Float            @default(1)
+  unit            String           @default("und")
+  description     String?
+  display_order   Int              @default(0)
+
+  @@index([tenant_id, reference_id])
+}
+
+model ServiceIncident {
+  id          Int          @id @default(autoincrement())
+  tenant_id   String
+  order_id    Int
+  order       ServiceOrder @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  description String
+  type        String       @default("averia")
+  action      String?
+  photo_url   String?
+  metadata    Json         @default("{}")
+  created_at  DateTime     @default(now())
+
+  @@index([tenant_id, order_id])
+}
+
+model ServicePhoto {
+  id          Int          @id @default(autoincrement())
+  tenant_id   String
+  order_id    Int
+  order       ServiceOrder @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  type        String
+  file_url    String?
+  base64_data String?
+  size_bytes  Int?
+  metadata    Json         @default("{}")
+  created_at  DateTime     @default(now())
+
+  @@index([tenant_id, order_id])
+  @@index([tenant_id, type])
 }
 
 model Payroll {

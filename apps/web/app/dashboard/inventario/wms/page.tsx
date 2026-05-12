@@ -569,7 +569,7 @@ export default function WmsPage() {
 
   function deleteSelectedZone() {
     setZones((current) => current.filter((zone) => zone.id !== selectedZoneId));
-    setSelectedZoneId(zones.find((zone) => zone.id !== selectedZoneId)?.id || 0);
+    setSelectedZoneId(zones.find((zone) => zone.id !== selectedZoneId).id || 0);
   }
 
   function updateSelectedZone(patch: Partial<WarehouseZone>) {
@@ -599,7 +599,7 @@ export default function WmsPage() {
     });
     const generatedCodes = new Set(generated.map((location) => location.code));
     setLocations((current) => [...current.filter((location) => !generatedCodes.has(location.code)), ...generated]);
-    setSelectedLocationCode(generated[0]?.code || "");
+    setSelectedLocationCode(generated[0].code || "");
   }
 
   function bulkUpdateZoneLocations(patch: Partial<Pick<VisualLocation, "status" | "abc" | "capacityUnits">>) {
@@ -1074,7 +1074,7 @@ export default function WmsPage() {
               <div className="absolute inset-y-0 left-0 w-8 border-r border-neutral-300/70 bg-white/55" />
               <div className="absolute inset-0" style={{ transform: `scale(${layoutZoom / 100})`, transformOrigin: "top left" }}>
               <div className="absolute left-3 top-3 z-20 rounded-md border border-line bg-white/95 px-3 py-2 text-xs text-neutral-700 shadow-sm">
-                {activeTool ? `Coloca: ${layoutTools.find((tool) => tool.id === activeTool)?.label}` : selectedLocation ? `Siguiente: atender ${selectedLocation.code}` : "Busca, selecciona y ejecuta"}
+                {activeTool ? `Coloca: ${layoutTools.find((tool) => tool.id === activeTool).label}` : selectedLocation ? `Siguiente: atender ${selectedLocation.code}` : "Busca, selecciona y ejecuta"}
               </div>
               {layers.estructura ? assets.map((asset) => (
                 <span
@@ -1160,7 +1160,7 @@ export default function WmsPage() {
               ) : null}
             </div>
             <div className="grid gap-2">
-              <PanelButton icon={Plus} label="Herramientas" detail={activeTool ? `Colocando ${layoutTools.find((tool) => tool.id === activeTool)?.label}` : "Zonas, racks, muelles, equipos"} onClick={() => setConfigModal("herramientas")} />
+              <PanelButton icon={Plus} label="Herramientas" detail={activeTool ? `Colocando ${layoutTools.find((tool) => tool.id === activeTool).label}` : "Zonas, racks, muelles, equipos"} onClick={() => setConfigModal("herramientas")} />
               <PanelButton icon={Map} label="Capas" detail={`${Object.values(layers).filter(Boolean).length} capas visibles`} onClick={() => setConfigModal("capas")} />
               <PanelButton icon={Warehouse} label="Zona" detail={selectedZone ? `${selectedZone.code} · ${selectedZone.name}` : "Selecciona una zona"} onClick={() => setConfigModal("zona")} disabled={!selectedZone} />
               <PanelButton icon={Package} label="Ubicación" detail={selectedLocation ? `${selectedLocation.sku} · ${selectedLocation.occupancy}%` : "Selecciona una ubicación"} onClick={() => setConfigModal("ubicacion")} disabled={!selectedLocation} />
@@ -1661,7 +1661,7 @@ function ZoneBlock({ label, detail, location, onSelectLocation }: { label: strin
   );
 }
 
-function DockLane({ title, location, onSelectLocation }: { title: string; location?: VisualLocation; onSelectLocation: (location: VisualLocation) => void }) {
+function DockLane({ title, location, onSelectLocation }: { title: string; location: VisualLocation; onSelectLocation: (location: VisualLocation) => void }) {
   return (
     <button
       className="min-h-28 w-full rounded-md border border-line bg-white p-3 text-left text-xs hover:border-apex disabled:hover:border-line"

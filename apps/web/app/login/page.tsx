@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { LogIn } from "lucide-react";
-import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
+import { LogIn } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,7 +26,7 @@ export default function LoginPage() {
       if (data.refresh) localStorage.setItem("refresh", data.refresh);
       router.push("/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo iniciar sesión");
+      setError(err instanceof Error ? err.message : "No se pudo iniciar sesion");
     }
   }
 
@@ -35,12 +35,12 @@ export default function LoginPage() {
       <form className="w-full max-w-sm rounded-md border border-line bg-white p-6" onSubmit={submit}>
         <h1 className="mb-6 text-2xl font-semibold">Entrar a APEX</h1>
         <label className="mb-3 block text-sm">
-          Correo electrónico
-          <input className="mt-1 h-10 w-full rounded-md border border-line px-3" value={email} onChange={(e) => setEmail(e.target.value)} />
+          Correo electronico
+          <input className="mt-1 h-10 w-full rounded-md border border-line px-3" value={email} onChange={(event) => setEmail(event.target.value)} />
         </label>
         <label className="mb-4 block text-sm">
-          Contraseña
-          <input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          Contrasena
+          <input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
         </label>
         {error ? <p className="mb-3 text-sm text-red-700">{error}</p> : null}
         <Button className="w-full" type="submit">

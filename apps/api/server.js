@@ -17,7 +17,10 @@ const MODULES = [
   "accounting",
   "purchases",
   "sales",
-  "invoicing"
+  "invoicing",
+  "hr",
+  "services",
+  "transport"
 ];
 
 function requireEnv(names) {
@@ -70,6 +73,9 @@ async function build() {
   fastify.register(require("./src/modules/purchases/routes"), { prefix: "/api/v1" });
   fastify.register(require("./src/modules/sales/routes"), { prefix: "/api/v1" });
   fastify.register(require("./src/modules/invoicing/routes"), { prefix: "/api/v1" });
+  fastify.register(require("./src/modules/hr/routes"), { prefix: "/api/v1" });
+  fastify.register(require("./src/modules/services/routes"), { prefix: "/api/v1" });
+  fastify.register(require("./src/modules/transport/routes"), { prefix: "/api/v1" });
 
   fastify.get("/brain/live", { websocket: true }, (connection, request) => {
     const tenantId = request.user?.tenant_id;

@@ -39,26 +39,26 @@ type InventoryItem = {
   unit: string;
   unit_cost: number;
   unit_price: number;
-  tax_rate?: number;
+  tax_rate: number;
   stock_current: number;
   stock_min: number;
-  stock_max?: number | null;
-  weight_kg?: number;
-  volume_m3?: number;
-  abc_class?: string;
-  metadata?: {
-    family?: string;
-    brand?: string;
-    channel?: string;
-    wms_profile?: string;
-    purchase_profile?: string;
-    sales_profile?: string;
-    costing_method?: string;
-    lot_control?: boolean;
-    expiry_control?: boolean;
-    serial_control?: boolean;
-    notes?: string;
-    currency?: string;
+  stock_max: number | null;
+  weight_kg: number;
+  volume_m3: number;
+  abc_class: string;
+  metadata: {
+    family: string;
+    brand: string;
+    channel: string;
+    wms_profile: string;
+    purchase_profile: string;
+    sales_profile: string;
+    costing_method: string;
+    lot_control: boolean;
+    expiry_control: boolean;
+    serial_control: boolean;
+    notes: string;
+    currency: string;
   };
 };
 
@@ -132,7 +132,7 @@ export default function NuevoProductoPage() {
   async function loadItems() {
     setLoading(true);
     try {
-      const response = await api<InventoryListResponse>("/api/v1/inventory/items?limit=100&sort_by=name");
+      const response = await api<InventoryListResponse>("/api/v1/inventory/itemslimit=100&sort_by=name");
       setItems(response.data || []);
       setSelectedItem((current) => current ? (response.data || []).find((item) => item.id === current.id) || (response.data || [])[0] || null : (response.data || [])[0] || null);
     } finally {
@@ -149,8 +149,8 @@ export default function NuevoProductoPage() {
       item.type,
       item.unit,
       item.abc_class || "",
-      item.metadata?.family || "",
-      item.metadata?.brand || ""
+      item.metadata.family || "",
+      item.metadata.brand || ""
     ].some((value) => value.toLowerCase().includes(needle)));
   }, [items, query]);
 
@@ -167,7 +167,7 @@ export default function NuevoProductoPage() {
 
   const margin = form.unit_price ? Math.round(((Number(form.unit_price) - Number(form.unit_cost)) / Number(form.unit_price)) * 100) : 0;
   const canSave = Boolean(form.code.trim() && form.name.trim() && form.type && form.unit);
-  const taxRates = taxRatesForCountry();
+  const taxRates = taxRatesForCountry("CO");
 
   function applyTemplate(template: (typeof templates)[number]) {
     setForm((current) => ({
@@ -236,7 +236,7 @@ export default function NuevoProductoPage() {
     }
   }
 
-  async function updateSelectedItem(patch: Partial<InventoryItem> & { metadata?: InventoryItem["metadata"] }) {
+  async function updateSelectedItem(patch: Partial<Omit<InventoryItem, "metadata">> & { metadata?: Partial<InventoryItem["metadata"]> }) {
     if (!selectedItem) return;
     setSaving(true);
     setError("");
@@ -456,7 +456,7 @@ export default function NuevoProductoPage() {
                 <div className="space-y-2">
                   {loading ? <p className="rounded-md border border-line p-3 text-sm text-neutral-500">Cargando productos...</p> : null}
                   {filteredItems.map((item) => (
-                    <button className={`w-full rounded-md border p-3 text-left text-sm hover:border-apex ${selectedItem?.id === item.id ? "border-apex bg-[#146C6312]" : "border-line"}`} key={item.id} onClick={() => setSelectedItem(item)} type="button">
+                    <button className={`w-full rounded-md border p-3 text-left text-sm hover:border-apex ${selectedItem.id === item.id ? "border-apex bg-[#146C6312]" : "border-line"}`} key={item.id} onClick={() => setSelectedItem(item)} type="button">
                       <span className="flex items-center justify-between gap-2">
                         <span className="truncate font-semibold">{item.code}</span>
                         <ItemStatus item={item} />
@@ -479,16 +479,16 @@ export default function NuevoProductoPage() {
                 <div className="rounded-md border border-line p-4">
                   <h3 className="mb-3 text-sm font-semibold">Flujo del producto</h3>
                   <TimelineItem icon={Tag} title="Maestro creado" detail="SKU, unidad, familia y reglas base" done={Boolean(selectedItem)} />
-                  <TimelineItem icon={ClipboardCheck} title="Compras" detail="OC, proveedor frecuente y costo" done={selectedItem?.metadata?.purchase_profile !== "no comprable"} />
-                  <TimelineItem icon={Warehouse} title="WMS" detail="Ubicacion, lote, vencimiento y putaway" done={selectedItem?.metadata?.wms_profile !== "no almacenable"} />
-                  <TimelineItem icon={ShoppingCart} title="Ventas" detail="Precio, impuesto y disponibilidad" done={selectedItem?.metadata?.sales_profile !== "no vendible"} />
-                  <TimelineItem icon={Receipt} title="Finanzas" detail="Costo, margen, inventario y COGS" done={Boolean(selectedItem?.unit_cost || selectedItem?.unit_price)} />
+                  <TimelineItem icon={ClipboardCheck} title="Compras" detail="OC, proveedor frecuente y costo" done={selectedItem.metadata.purchase_profile !== "no comprable"} />
+                  <TimelineItem icon={Warehouse} title="WMS" detail="Ubicacion, lote, vencimiento y putaway" done={selectedItem.metadata.wms_profile !== "no almacenable"} />
+                  <TimelineItem icon={ShoppingCart} title="Ventas" detail="Precio, impuesto y disponibilidad" done={selectedItem.metadata.sales_profile !== "no vendible"} />
+                  <TimelineItem icon={Receipt} title="Finanzas" detail="Costo, margen, inventario y COGS" done={Boolean(selectedItem.unit_cost || selectedItem.unit_price)} />
                 </div>
                 <div className="rounded-md border border-line p-4">
                   <h3 className="mb-3 text-sm font-semibold">Impacto actual</h3>
-                  <TraceLink icon={Boxes} label="Stock actual" value={`${selectedItem?.stock_current || 0} ${selectedItem?.unit || ""}`} />
+                  <TraceLink icon={Boxes} label="Stock actual" value={`${selectedItem.stock_current || 0} ${selectedItem.unit || ""}`} />
                   <TraceLink icon={DollarSign} label="Margen" value={`${selectedItem ? itemMargin(selectedItem) : 0}%`} />
-                  <TraceLink icon={Warehouse} label="Perfil WMS" value={selectedItem?.metadata?.wms_profile || "-"} />
+                  <TraceLink icon={Warehouse} label="Perfil WMS" value={selectedItem?.metadata.wms_profile || "-"} />
                   <TraceLink icon={Factory} label="Tipo operativo" value={selectedItem ? typeLabels[selectedItem.type] || selectedItem.type : "-"} />
                 </div>
               </div>
@@ -589,21 +589,22 @@ function SegmentedNav({ active, onChange }: { active: WorkspaceTab; onChange: (t
   );
 }
 
-function ProductProfile({ item, saving, onPatch }: { item: InventoryItem | null; saving: boolean; onPatch: (patch: Partial<InventoryItem> & { metadata?: InventoryItem["metadata"] }) => void }) {
+function ProductProfile({ item, saving, onPatch }: { item: InventoryItem | null; saving: boolean; onPatch: (patch: Partial<Omit<InventoryItem, "metadata">> & { metadata?: Partial<InventoryItem["metadata"]> }) => void }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({ unit_cost: 0, unit_price: 0, stock_min: 0, stock_max: 0, family: "", notes: "" });
 
   useEffect(() => {
+    if (!item) return;
     setDraft({
-      unit_cost: item?.unit_cost || 0,
-      unit_price: item?.unit_price || 0,
-      stock_min: item?.stock_min || 0,
-      stock_max: item?.stock_max || 0,
-      family: item?.metadata?.family || "",
-      notes: item?.metadata?.notes || ""
+      unit_cost: item.unit_cost || 0,
+      unit_price: item.unit_price || 0,
+      stock_min: item.stock_min || 0,
+      stock_max: item.stock_max || 0,
+      family: item.metadata.family || "",
+      notes: item.metadata.notes || ""
     });
     setEditing(false);
-  }, [item?.id, item?.unit_cost, item?.unit_price, item?.stock_min, item?.stock_max, item?.metadata?.family, item?.metadata?.notes]);
+  }, [item?.id, item?.unit_cost, item?.unit_price, item?.stock_min, item?.stock_max, item?.metadata.family, item?.metadata.notes]);
 
   if (!item) {
     return <div className="flex min-h-[360px] items-center justify-center rounded-md border border-dashed border-line bg-paper text-sm text-neutral-500">Selecciona o crea un producto.</div>;
@@ -661,23 +662,23 @@ function ProductProfile({ item, saving, onPatch }: { item: InventoryItem | null;
       <div className="grid gap-4 border-t border-line p-4 lg:grid-cols-2">
         <div>
           <h3 className="mb-3 text-sm font-semibold">Configuracion operativa</h3>
-          <InfoLine icon={Tag} label="Familia" value={item.metadata?.family || "Sin familia"} />
-          <InfoLine icon={Warehouse} label="WMS" value={item.metadata?.wms_profile || "almacenable"} />
-          <InfoLine icon={ClipboardCheck} label="Compras" value={item.metadata?.purchase_profile || "comprable"} />
-          <InfoLine icon={ShoppingCart} label="Ventas" value={item.metadata?.sales_profile || "vendible"} />
+          <InfoLine icon={Tag} label="Familia" value={item.metadata.family || "Sin familia"} />
+          <InfoLine icon={Warehouse} label="WMS" value={item.metadata.wms_profile || "almacenable"} />
+          <InfoLine icon={ClipboardCheck} label="Compras" value={item.metadata.purchase_profile || "comprable"} />
+          <InfoLine icon={ShoppingCart} label="Ventas" value={item.metadata.sales_profile || "vendible"} />
         </div>
         <div>
           <h3 className="mb-3 text-sm font-semibold">Señales</h3>
           <Signal icon={item.stock_current <= item.stock_min ? AlertTriangle : CheckCircle2} title="Stock" detail={item.stock_current <= item.stock_min ? "Requiere reposicion" : "Nivel operativo"} warn={item.stock_current <= item.stock_min} />
-          <Signal icon={DollarSign} title="Costo / precio" detail={`${money(item.unit_cost, item.metadata?.currency || "USD")} / ${money(item.unit_price, item.metadata?.currency || "USD")}`} />
-          <Signal icon={ShieldCheck} title="Trazabilidad" detail={item.metadata?.lot_control ? "Control por lote" : "Control estandar"} />
+          <Signal icon={DollarSign} title="Costo / precio" detail={`${money(item.unit_cost, item.metadata.currency || "USD")} / ${money(item.unit_price, item.metadata.currency || "USD")}`} />
+          <Signal icon={ShieldCheck} title="Trazabilidad" detail={item.metadata.lot_control ? "Control por lote" : "Control estandar"} />
         </div>
       </div>
     </div>
   );
 }
 
-function PanelHeader({ icon: Icon, title, detail, actions }: { icon: LucideIcon; title: string; detail?: string; actions?: React.ReactNode }) {
+function PanelHeader({ icon: Icon, title, detail, actions }: { icon: LucideIcon; title: string; detail: string; actions?: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-3 border-b border-line p-4 md:flex-row md:items-center md:justify-between">
       <div className="flex gap-3">
@@ -761,7 +762,7 @@ function PanelTab({ label, active, onClick }: { label: string; active: boolean; 
   );
 }
 
-function FlowStep({ icon: Icon, title, detail, active, warn }: { icon: LucideIcon; title: string; detail: string; active?: boolean; warn?: boolean }) {
+function FlowStep({ icon: Icon, title, detail, active, warn }: { icon: LucideIcon; title: string; detail: string; active: boolean; warn?: boolean }) {
   const activeClass = warn ? "bg-amber-50 text-amber-800" : "bg-[#146C6312] text-apex";
   return (
     <div className="flex gap-3 border-b border-line py-3 last:border-b-0">
@@ -776,7 +777,7 @@ function FlowStep({ icon: Icon, title, detail, active, warn }: { icon: LucideIco
   );
 }
 
-function TimelineItem({ icon: Icon, title, detail, done }: { icon: LucideIcon; title: string; detail: string; done?: boolean }) {
+function TimelineItem({ icon: Icon, title, detail, done }: { icon: LucideIcon; title: string; detail: string; done: boolean }) {
   return (
     <div className="flex gap-3 border-b border-line py-3 last:border-b-0">
       <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${done ? "bg-[#146C6312] text-apex" : "bg-neutral-100 text-neutral-500"}`}>
@@ -834,7 +835,7 @@ function Signal({ icon: Icon, title, detail, warn }: { icon: LucideIcon; title: 
 
 function ItemStatus({ item }: { item: InventoryItem }) {
   if (item.type !== "service" && item.stock_current <= item.stock_min) return <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[11px] text-amber-800"><AlertTriangle size={11} /> Critico</span>;
-  if (item.metadata?.wms_profile === "no almacenable") return <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-1 text-[11px] text-neutral-700"><FileText size={11} /> Servicio</span>;
+  if (item.metadata.wms_profile === "no almacenable") return <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-1 text-[11px] text-neutral-700"><FileText size={11} /> Servicio</span>;
   return <span className="inline-flex items-center gap-1 rounded-full bg-[#146C6312] px-2 py-1 text-[11px] text-apex"><Truck size={11} /> Activo</span>;
 }
 

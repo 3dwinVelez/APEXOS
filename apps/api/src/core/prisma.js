@@ -9,7 +9,10 @@ const prisma = new PrismaClient({
 const TENANT_MODELS = new Set([
   "User", "Role", "Party", "Item", "Place", "Location", "ItemLocation",
   "Transaction", "Movement", "Resource", "Document", "Event", "BOM",
-  "WorkOrder", "Employee", "Payroll", "Account", "LedgerEntry", "Payment",
+  "WorkOrder", "Employee", "WorkSchedule", "TimeRoute", "TimePunch",
+  "ProcessedWorkday", "GpsPing", "Vehicle", "ServiceOrder", "ServiceReference",
+  "ServiceReferencePart", "ServiceIncident", "ServicePhoto",
+  "Payroll", "Account", "LedgerEntry", "Payment",
   "BrainEvent", "BrainMetric", "CustomField", "AuditLog", "Workflow",
   "Category", "SensorReading", "OKR", "SoDRule", "EInvoice", "EInvoiceConfig"
 ]);
@@ -26,7 +29,7 @@ prisma.$use(async (params, next) => {
   const tenantId = currentTenantId();
   if (!tenantId || !TENANT_MODELS.has(params.model)) return next(params);
 
-  if (WRITE_OPS.has(params.action) && params.args?.data) {
+  if (WRITE_OPS.has(params.action) && params.args.data) {
     if (Array.isArray(params.args.data)) {
       params.args.data = params.args.data.map((row) => ({ ...row, tenant_id: tenantId }));
     } else {
@@ -45,7 +48,7 @@ prisma.$use(async (params, next) => {
 prisma.$use(async (params, next) => {
   const result = await next(params);
   if (params.model === "Item" && ["update", "updateMany"].includes(params.action)) {
-    const data = params.args?.data || {};
+    const data = params.args.data || {};
     if ("stock_current" in data) {
       setImmediate(() => require("./stockSyncHook").trigger(params).catch(() => undefined));
     }
@@ -66,4 +69,3 @@ prisma.runWithTenant = (tenantId, fn) => tenantStorage.run({ tenantId }, fn);
 prisma.currentTenantId = currentTenantId;
 
 module.exports = prisma;
-

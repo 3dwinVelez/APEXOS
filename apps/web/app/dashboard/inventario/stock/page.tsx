@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { InventoryNav } from "@/components/inventory-nav";
 import { api } from "@/lib/api";
 
-type Item = { id: number; code: string; name: string; stock_current: number; stock_min: number; stock_max?: number; unit?: string; abc_class?: string };
+type Item = { id: number; code: string; name: string; stock_current: number; stock_min: number; stock_max: number; unit: string; abc_class: string };
 type StockStatus = "todos" | "critico" | "ok" | "agotado";
 
 export default function StockPage() {

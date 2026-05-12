@@ -6,7 +6,7 @@ function addClient(tenantId, socket) {
 }
 
 function removeClient(tenantId, socket) {
-  clientsByTenant.get(tenantId)?.delete(socket);
+  clientsByTenant.get(tenantId).delete(socket);
 }
 
 function broadcast(tenantId, payload) {

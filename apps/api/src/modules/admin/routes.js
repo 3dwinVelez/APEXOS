@@ -8,7 +8,7 @@ async function adminRoutes(fastify) {
 
   fastify.get("/admin/export", {
     preHandler: requirePermission("admin", "export")
-  }, async (request) => service.exportTenantData(request.user.tenant_id));
+  }, async (request) => service.exportTenantData(request.user?.tenant_id));
 }
 
 module.exports = adminRoutes;

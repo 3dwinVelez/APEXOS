@@ -16,7 +16,7 @@ class WorkflowEngine {
 
     if (transition.requires) {
       const requiredRole = transition.requires.replace("role:", "");
-      if (user?.role?.name !== requiredRole && user?.role?.name !== "APEX_ADMIN") {
+      if (user.role.name !== requiredRole && user.role.name !== "APEX_ADMIN") {
         return { allowed: false, error: `Requiere rol: ${requiredRole}` };
       }
     }

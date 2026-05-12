@@ -1,5 +1,5 @@
 import { MODULES_BY_SLUG } from "@/lib/modules";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Brain, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -51,6 +51,25 @@ export default async function ModulePage({ params }: { params: Promise<{ module:
       <section className="rounded-md border border-line bg-white p-5">
         <h2 className="mb-2 text-lg font-semibold">Resumen operativo</h2>
         <p className="max-w-3xl text-sm leading-6 text-neutral-700">{module.summary}</p>
+      </section>
+      <section className="rounded-md border border-apex/20 bg-white p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-apex text-white">
+              <Brain size={18} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-apex">APEX AI Core conectado</p>
+              <p className="mt-1 max-w-3xl text-sm text-neutral-700">
+                Este modulo queda observado por la IA interna para explicar flujos, detectar riesgos, recomendar acciones y mantener trazabilidad segun permisos del usuario.
+              </p>
+            </div>
+          </div>
+          <Link className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-medium hover:bg-paper" href={`/dashboard/apex-aimodule=${slug}`}>
+            Ver inteligencia
+            <ArrowRight size={16} />
+          </Link>
+        </div>
       </section>
       <section className="grid gap-4 lg:grid-cols-2">
         <div className="rounded-md border border-line bg-white p-5">

@@ -19,41 +19,41 @@ type Step = {
 const FLOW: Step[] = [
   {
     id: "business",
-    question: "Hola, soy APEX. Cuéntame: ¿qué hace tu empresa?",
+    question: "Hola, soy APEX. Cuéntame: ¿qué hace tu empresa",
     type: "text",
     key: "business_description"
   },
   {
     id: "size",
-    question: "¿Cuántas personas trabajan contigo?",
+    question: "¿Cuántas personas trabajan contigo",
     type: "select",
     key: "team_size",
     options: ["Solo yo", "2-5 personas", "6-20 personas", "21-100 personas", "Más de 100"]
   },
   {
     id: "places",
-    question: "¿Tienes una sede o varias?",
+    question: "¿Tienes una sede o varias",
     type: "select",
     key: "places_count",
     options: ["Solo una", "2-3 sedes", "4 o más sedes", "Trabajo remoto / sin sede fija"]
   },
   {
     id: "sales",
-    question: "¿Cómo vendes principalmente?",
+    question: "¿Cómo vendes principalmente",
     type: "multiselect",
     key: "sales_channels",
     options: ["Local físico", "Internet / redes", "Empresas", "Teléfono / WhatsApp", "Domicilios"]
   },
   {
     id: "pains",
-    question: "¿Qué situaciones te quitan el sueño hoy?",
+    question: "¿Qué situaciones te quitan el sueño hoy",
     type: "multiselect",
     key: "pain_points",
     options: ["No sé cuánto gano", "Se acaban productos", "Precios inciertos", "Me cuesta cobrar", "Nómina compleja", "Costos poco claros", "Excel o cuadernos"]
   },
   {
     id: "goals",
-    question: "¿Qué quieres lograr en los próximos 12 meses?",
+    question: "¿Qué quieres lograr en los próximos 12 meses",
     type: "multiselect",
     key: "goals",
     options: ["Abrir sede", "Contratar personal", "Nuevos productos", "Vender por internet", "Mejorar márgenes", "Financiamiento", "Más tiempo libre"]
@@ -101,9 +101,9 @@ export default function OnboardingPage() {
               <div className="grid gap-3 md:grid-cols-2">
                 {suggestion.modules.map((module) => (
                   <div className="rounded-md border border-line bg-white p-3 text-sm" key={module}>
-                    <p className="font-semibold">{MODULES_BY_ID[module]?.name || module}</p>
+                    <p className="font-semibold">{MODULES_BY_ID[module].name || module}</p>
                     <p className="mt-1 text-xs text-neutral-500">{module}</p>
-                    <p className="mt-2 text-neutral-600">{MODULES_BY_ID[module]?.summary || "Módulo sugerido para tu operación."}</p>
+                    <p className="mt-2 text-neutral-600">{MODULES_BY_ID[module].summary || "Módulo sugerido para tu operación."}</p>
                   </div>
                 ))}
               </div>
@@ -119,7 +119,7 @@ export default function OnboardingPage() {
                 <textarea className="mb-4 min-h-32 w-full rounded-md border border-line p-3" value={text} onChange={(event) => setText(event.target.value)} />
               ) : (
                 <div className="mb-4 grid gap-2">
-                  {current.options?.map((option) => {
+                  {current.options.map((option) => {
                     const active = selected.includes(option);
                     return (
                       <button

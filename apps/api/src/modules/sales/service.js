@@ -12,7 +12,7 @@ async function createCustomer(tenantId, userId, data) {
     name, tax_id, tax_type = "company", email, phone, address, city, country = "CO",
     credit_limit = 0, credit_days = 0, segment = "SMB", metadata = {}
   } = data;
-  if (!name?.trim()) throw appError(400, "REQUIRED_FIELD", "El nombre es obligatorio");
+  if (!name.trim()) throw appError(400, "REQUIRED_FIELD", "El nombre es obligatorio");
   if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw appError(400, "INVALID_EMAIL", "Formato de email invalido");
   return prisma.runWithTenant(tenantId, async () => {
     if (tax_id) {

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { VentasNav } from "@/components/ventas-nav";
 
-type Customer = { id: number; name: string; tax_id?: string; email?: string; city?: string; country?: string };
+type Customer = { id: number; name: string; tax_id: string; email: string; city: string; country: string };
 
 export default function ClientesPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);

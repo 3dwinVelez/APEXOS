@@ -4,7 +4,7 @@ const bcrypt = require("bcrypt");
 const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
-const ALL_MODULES = Array.from({ length: 25 }, (_, index) => `M-${String(index + 1).padStart(2, "0")}`);
+const ALL_MODULES = Array.from({ length: 26 }, (_, index) => `M-${String(index + 1).padStart(2, "0")}`);
 
 async function main() {
   const email = "demo@apex.local";

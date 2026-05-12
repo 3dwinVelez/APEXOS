@@ -19,7 +19,7 @@ async function createItem(tenantId, userId, data) {
   if (!code || code.includes(" ")) {
     throw appError(400, "INVALID_CODE", "El codigo es obligatorio y no puede tener espacios");
   }
-  if (!name?.trim()) {
+  if (!name.trim()) {
     throw appError(400, "REQUIRED_NAME", "El nombre es obligatorio");
   }
   const validTypes = ["product", "service", "asset", "component", "raw_material"];

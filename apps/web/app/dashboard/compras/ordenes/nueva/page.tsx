@@ -31,17 +31,17 @@ import { api } from "@/lib/api";
 import { LATAM_CURRENCIES, currencyForCountry, money, taxRatesForCountry } from "@/lib/latam";
 import { ComprasNav } from "@/components/compras-nav";
 
-type Supplier = { id: number; name: string; tax_id?: string; email?: string; city?: string; country?: string; credit_days?: number };
+type Supplier = { id: number; name: string; tax_id: string; email: string; city: string; country: string; credit_days: number };
 type Item = {
   id: number;
   code: string;
   name: string;
-  unit?: string;
+  unit: string;
   unit_cost: number;
   stock_current: number;
   stock_min: number;
-  stock_max?: number;
-  abc_class?: string;
+  stock_max: number;
+  abc_class: string;
 };
 
 type PurchaseOrder = {
@@ -51,13 +51,13 @@ type PurchaseOrder = {
   total: number;
   subtotal: number;
   tax_total: number;
-  currency?: string;
-  due_date?: string;
-  party?: Supplier;
-  metadata?: { priority?: string; warehouse_id?: number; tags?: string[]; wms?: { inbound_order?: string } };
-  received_percent?: number;
-  pending_quantity?: number;
-  lines: Array<{ id: number; description: string; qty: number; unit_cost: number; total: number; received_quantity?: number; pending_quantity?: number }>;
+  currency: string;
+  due_date: string;
+  party: Supplier;
+  metadata: { priority: string; warehouse_id: number; tags: string[]; wms: { inbound_order: string } };
+  received_percent: number;
+  pending_quantity: number;
+  lines: Array<{ id: number; description: string; qty: number; unit_cost: number; total: number; received_quantity: number; pending_quantity: number }>;
 };
 
 type PoLine = {
@@ -74,8 +74,8 @@ type PoLine = {
   notes: string;
   stock_current: number;
   stock_min: number;
-  stock_max?: number;
-  abc_class?: string;
+  stock_max: number;
+  abc_class: string;
 };
 
 type WorkspaceTab = "crear" | "ordenes" | "trazabilidad";
@@ -145,7 +145,7 @@ export default function NuevaOCPage() {
   }
 
   const supplier = suppliers.find((entry) => entry.id === Number(form.supplier_id));
-  const taxRates = taxRatesForCountry(supplier?.country);
+  const taxRates = taxRatesForCountry(supplier?.country || "CO");
 
   const filteredItems = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -164,7 +164,7 @@ export default function NuevaOCPage() {
     return orders.filter((order) => {
       const byStatus = orderFilter === "all" || order.status === orderFilter;
       const needle = query.trim().toLowerCase();
-      const byQuery = !needle || [order.number, order.party?.name || "", order.status].some((value) => value.toLowerCase().includes(needle));
+      const byQuery = !needle || [order.number, order.party.name || "", order.status].some((value) => value.toLowerCase().includes(needle));
       return byStatus && byQuery;
     });
   }, [orders, orderFilter, query]);
@@ -347,7 +347,7 @@ export default function NuevaOCPage() {
                       <select className="h-10 w-full rounded-md border border-line px-3 text-sm" value={form.supplier_id} onChange={(e) => {
                         const supplierId = Number(e.target.value);
                         const selected = suppliers.find((entry) => entry.id === supplierId);
-                        setForm((p) => ({ ...p, supplier_id: supplierId, currency: currencyForCountry(selected?.country, p.currency) }));
+                        setForm((p) => ({ ...p, supplier_id: supplierId, currency: currencyForCountry(selected.country, p.currency) }));
                       }}>
                         <option value={0}>Seleccionar proveedor</option>
                         {suppliers.map((entry) => <option key={entry.id} value={entry.id}>{entry.name}</option>)}
@@ -496,7 +496,7 @@ export default function NuevaOCPage() {
                         <span className="font-semibold">{order.number}</span>
                         <StatusPill status={order.status} />
                       </span>
-                      <span className="mt-1 block truncate text-xs text-neutral-500">{order.party?.name || "Proveedor"} / {money(order.total, order.currency || currencyForCountry(order.party?.country))}</span>
+                      <span className="mt-1 block truncate text-xs text-neutral-500">{order.party.name || "Proveedor"} / {money(order.total, order.currency || currencyForCountry(order.party.country))}</span>
                     </button>
                   ))}
                 </div>
@@ -514,15 +514,15 @@ export default function NuevaOCPage() {
                   <h3 className="mb-3 text-sm font-semibold">Flujo operativo</h3>
                   <TimelineItem icon={FileText} title="OC creada" detail="Documento central de abastecimiento" done />
                   <TimelineItem icon={ClipboardCheck} title="Aprobacion" detail="Reglas por monto, proveedor o centro operativo" done={selectedOrder?.status !== "draft"} />
-                  <TimelineItem icon={Warehouse} title="WMS inbound" detail="Recepcion movil, conteo y putaway" done={Boolean(selectedOrder?.metadata?.wms?.inbound_order)} />
+                  <TimelineItem icon={Warehouse} title="WMS inbound" detail="Recepcion movil, conteo y putaway" done={Boolean(selectedOrder?.metadata.wms.inbound_order)} />
                   <TimelineItem icon={Receipt} title="Factura / CxP" detail="Referencia financiera y pagos" />
                 </div>
                 <div className="rounded-md border border-line p-4">
                   <h3 className="mb-3 text-sm font-semibold">Links operativos</h3>
-                  <TraceLink icon={Warehouse} label="Recepciones WMS" value={selectedOrder?.metadata?.wms?.inbound_order || "Pendiente"} />
-                  <TraceLink icon={Boxes} label="Inventario" value={`${selectedOrder?.lines?.length || 0} lineas conectadas`} />
-                  <TraceLink icon={Receipt} label="Finanzas" value={selectedOrder ? money(selectedOrder.total, selectedOrder.currency || currencyForCountry(selectedOrder.party?.country)) : "-"} />
-                  <TraceLink icon={Truck} label="Proveedor" value={selectedOrder?.party?.name || "Sin OC seleccionada"} />
+                  <TraceLink icon={Warehouse} label="Recepciones WMS" value={selectedOrder?.metadata.wms.inbound_order || "Pendiente"} />
+                  <TraceLink icon={Boxes} label="Inventario" value={`${selectedOrder?.lines.length || 0} lineas conectadas`} />
+                  <TraceLink icon={Receipt} label="Finanzas" value={selectedOrder ? money(selectedOrder.total, selectedOrder.currency || currencyForCountry(selectedOrder.party.country)) : "-"} />
+                  <TraceLink icon={Truck} label="Proveedor" value={selectedOrder?.party.name || "Sin OC seleccionada"} />
                 </div>
               </div>
             </section>
@@ -619,7 +619,7 @@ function SegmentedNav({ active, onChange }: { active: WorkspaceTab; onChange: (t
   );
 }
 
-function PanelHeader({ icon: Icon, title, detail, actions }: { icon: LucideIcon; title: string; detail?: string; actions?: React.ReactNode }) {
+function PanelHeader({ icon: Icon, title, detail, actions }: { icon: LucideIcon; title: string; detail: string; actions?: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-3 border-b border-line p-4 md:flex-row md:items-center md:justify-between">
       <div className="flex gap-3">
@@ -651,7 +651,7 @@ function SelectedOrderCard({ selectedOrder, onApprove, onDuplicate, onReceipt }:
         <div>
           <p className="text-sm text-neutral-500">Orden seleccionada</p>
           <h2 className="text-2xl font-semibold">{selectedOrder.number}</h2>
-          <p className="text-sm text-neutral-600">{selectedOrder.party?.name} / {statusLabels[selectedOrder.status] || selectedOrder.status}</p>
+          <p className="text-sm text-neutral-600">{selectedOrder.party.name} / {statusLabels[selectedOrder.status] || selectedOrder.status}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <ActionButton icon={Copy} label="Duplicar" variant="ghost" compact onClick={() => onDuplicate(selectedOrder)} />
@@ -662,8 +662,8 @@ function SelectedOrderCard({ selectedOrder, onApprove, onDuplicate, onReceipt }:
       <div className="grid gap-3 p-4 md:grid-cols-4">
         <HeaderMetric label="Recibido" value={`${selectedOrder.received_percent || 0}%`} />
         <HeaderMetric label="Pendiente" value={String(selectedOrder.pending_quantity || 0)} />
-        <HeaderMetric label="Total" value={money(selectedOrder.total, selectedOrder.currency || currencyForCountry(selectedOrder.party?.country))} />
-        <HeaderMetric label="Inbound" value={selectedOrder.metadata?.wms?.inbound_order || "pendiente"} />
+        <HeaderMetric label="Total" value={money(selectedOrder.total, selectedOrder.currency || currencyForCountry(selectedOrder.party.country))} />
+        <HeaderMetric label="Inbound" value={selectedOrder.metadata.wms.inbound_order || "pendiente"} />
       </div>
       <div className="border-t border-line p-4">
         <h3 className="mb-3 text-sm font-semibold">Lineas de compra</h3>

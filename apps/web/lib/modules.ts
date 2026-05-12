@@ -296,6 +296,28 @@ export const MODULES: ApexModule[] = [
     icon: FileCheck2
   },
   {
+    id: "M-26",
+    slug: "servicios",
+    name: "Servicios",
+    area: "Operación de campo",
+    status: "Base funcional",
+    summary: "Órdenes de servicio, técnicos, inspección, ejecución, novedades, evidencias, firma y cierre.",
+    capabilities: ["Órdenes de servicio", "Técnicos", "Inspección", "Evidencias y novedades"],
+    nextActions: ["Crear orden", "Iniciar servicio", "Cerrar servicio"],
+    icon: Wrench
+  },
+  {
+    id: "AI-CORE",
+    slug: "apex-ai",
+    name: "APEX AI Core",
+    area: "Inteligencia",
+    status: "Base funcional",
+    summary: "Capa cognitiva transversal: mentor, alertas, recomendaciones, contexto, permisos y trazabilidad para todo APEXOS.",
+    capabilities: ["Mentor por modulo", "Alertas inteligentes", "Recomendaciones auditables", "Contexto multi-tenant"],
+    nextActions: ["Ver tablero de inteligencia", "Generar recomendaciones", "Revisar senales criticas"],
+    icon: Brain
+  },
+  {
     id: "M-24",
     slug: "configuracion-inicial",
     name: "Configuración inicial",

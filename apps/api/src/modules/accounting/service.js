@@ -55,7 +55,7 @@ async function initChartOfAccounts(tenantId, country = "CO") {
 
 async function journalEntry(tenantId, data) {
   const { description, date = new Date(), transaction_id = null, entries = [] } = data;
-  if (!description?.trim()) throw appError(400, "REQUIRED_DESCRIPTION", "La descripcion del asiento es obligatoria");
+  if (!description.trim()) throw appError(400, "REQUIRED_DESCRIPTION", "La descripcion del asiento es obligatoria");
   if (entries.length < 2) throw appError(400, "MIN_ENTRIES", "El asiento requiere al menos dos lineas");
 
   const totalDebit = entries.reduce((sum, entry) => sum + (entry.debit || 0), 0);

@@ -4,7 +4,7 @@ const { brainQueue } = require("../../fabric/queues");
 const accountingService = require("../accounting/service");
 
 const SEED_MODULES = ["M-01", "M-03", "M-04", "M-05", "M-07", "M-22"];
-const ALL_MODULES = Array.from({ length: 25 }, (_, index) => `M-${String(index + 1).padStart(2, "0")}`);
+const ALL_MODULES = Array.from({ length: 26 }, (_, index) => `M-${String(index + 1).padStart(2, "0")}`);
 
 function publicUser(user) {
   return {
@@ -12,7 +12,7 @@ function publicUser(user) {
     name: user.name,
     email: user.email,
     tenant_id: user.tenant_id,
-    role: user.role?.name
+    role: user.role.name
   };
 }
 

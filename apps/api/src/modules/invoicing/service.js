@@ -21,7 +21,7 @@ async function invoiceSaleOrder(tenantId, userId, soId, data) {
       throw appError(422, "INVALID_STATUS", "La orden no puede ser facturada en su estado actual");
     }
 
-    const selected = invoice_lines?.length
+    const selected = invoice_lines.length
       ? saleOrder.lines.filter((line) => invoice_lines.some((entry) => entry.line_id === line.id))
       : saleOrder.lines;
     if (!selected.length) throw appError(400, "NO_LINES", "No hay lineas para facturar");
@@ -29,7 +29,7 @@ async function invoiceSaleOrder(tenantId, userId, soId, data) {
     const invoiceLineData = [];
     const stockCostLines = [];
     for (const soLine of selected) {
-      const requested = invoice_lines?.find((entry) => entry.line_id === soLine.id)?.qty ?? soLine.qty;
+      const requested = invoice_lines.find((entry) => entry.line_id === soLine.id)?.qty ?? soLine.qty;
       if (!requested || requested <= 0 || requested > soLine.qty) {
         throw appError(422, "INVALID_QTY", `Cantidad invalida para la linea ${soLine.id}`);
       }

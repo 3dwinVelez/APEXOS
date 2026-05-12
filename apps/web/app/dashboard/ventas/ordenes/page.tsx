@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { VentasNav } from "@/components/ventas-nav";
 
-type SaleOrder = { id: number; number: string; status: string; total: number; party?: { name?: string } };
+type SaleOrder = { id: number; number: string; status: string; total: number; party: { name: string } };
 
 export default function OrdenesVentaPage() {
   const [orders, setOrders] = useState<SaleOrder[]>([]);
@@ -25,7 +25,7 @@ export default function OrdenesVentaPage() {
         <div className="space-y-2 text-sm">
           {orders.map((o) => (
             <div key={o.id} className="rounded-md border border-line px-3 py-2">
-              {o.number} · {o.status} · ${o.total} · {o.party?.name || "Sin cliente"}
+              {o.number} · {o.status} · ${o.total} · {o.party.name || "Sin cliente"}
             </div>
           ))}
         </div>

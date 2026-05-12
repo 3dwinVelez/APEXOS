@@ -36,8 +36,8 @@ type SupplierMetrics = {
   pending_receipts: number;
   total_purchased: number;
   service_level: number;
-  last_order_at?: string | null;
-  last_order_number?: string | null;
+  last_order_at: string | null;
+  last_order_number: string | null;
 };
 
 type RecentOrder = {
@@ -45,26 +45,26 @@ type RecentOrder = {
   number: string;
   status: string;
   total: number;
-  currency?: string;
-  received_percent?: number;
-  pending_quantity?: number;
-  metadata?: { wms?: { inbound_order?: string } };
+  currency: string;
+  received_percent: number;
+  pending_quantity: number;
+  metadata: { wms: { inbound_order: string } };
 };
 
 type Supplier = {
   id: number;
   name: string;
-  tax_id?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  city?: string;
-  country?: string;
-  credit_limit?: number;
-  credit_days?: number;
-  metadata?: { segment?: string; category?: string; owner?: string; notes?: string; risk?: string };
-  metrics?: SupplierMetrics;
-  recent_orders?: RecentOrder[];
+  tax_id: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  country: string;
+  credit_limit: number;
+  credit_days: number;
+  metadata: { segment: string; category: string; owner: string; notes: string; risk: string };
+  metrics: SupplierMetrics;
+  recent_orders: RecentOrder[];
 };
 
 type WorkspaceTab = "directorio" | "nuevo" | "desempeno";
@@ -129,23 +129,23 @@ export default function ProveedoresPage() {
       supplier.email || "",
       supplier.city || "",
       supplier.country || "",
-      supplier.metadata?.segment || "",
-      supplier.metadata?.category || ""
+      supplier.metadata.segment || "",
+      supplier.metadata.category || ""
     ].some((value) => value.toLowerCase().includes(needle)));
   }, [query, suppliers]);
 
   const totals = useMemo(() => {
     return suppliers.reduce((acc, supplier) => ({
-      totalPurchased: acc.totalPurchased + Number(supplier.metrics?.total_purchased || 0),
-      openOrders: acc.openOrders + Number(supplier.metrics?.open_orders || 0),
-      pendingReceipts: acc.pendingReceipts + Number(supplier.metrics?.pending_receipts || 0)
+      totalPurchased: acc.totalPurchased + Number(supplier.metrics.total_purchased || 0),
+      openOrders: acc.openOrders + Number(supplier.metrics.open_orders || 0),
+      pendingReceipts: acc.pendingReceipts + Number(supplier.metrics.pending_receipts || 0)
     }), { totalPurchased: 0, openOrders: 0, pendingReceipts: 0 });
   }, [suppliers]);
 
   const canSave = Boolean(form.name.trim());
 
-  async function submit(e?: React.FormEvent) {
-    e?.preventDefault();
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
     setSaving(true);
     setError("");
     setOk("");
@@ -180,7 +180,7 @@ export default function ProveedoresPage() {
     }
   }
 
-  async function saveSupplierPatch(patch: Partial<Supplier> & { metadata?: Supplier["metadata"] }) {
+  async function saveSupplierPatch(patch: Partial<Supplier> & { metadata: Supplier["metadata"] }) {
     if (!selectedSupplier) return;
     setSaving(true);
     setError("");
@@ -359,15 +359,15 @@ export default function ProveedoresPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <h3 className="font-semibold">{supplier.name}</h3>
-                        <p className="text-xs text-neutral-500">{supplier.metadata?.category || "General"} / {supplier.country || "-"}</p>
+                        <p className="text-xs text-neutral-500">{supplier.metadata.category || "General"} / {supplier.country || "-"}</p>
                       </div>
                       <StatusDot supplier={supplier} />
                     </div>
                     <div className="mt-4 grid grid-cols-2 gap-2">
-                      <MiniMetric label="OC" value={String(supplier.metrics?.orders_count || 0)} />
-                      <MiniMetric label="Servicio" value={`${supplier.metrics?.service_level ?? 100}%`} />
-                      <MiniMetric label="Abiertas" value={String(supplier.metrics?.open_orders || 0)} />
-                      <MiniMetric label="Comprado" value={money(supplier.metrics?.total_purchased || 0)} />
+                      <MiniMetric label="OC" value={String(supplier.metrics.orders_count || 0)} />
+                      <MiniMetric label="Servicio" value={`${supplier.metrics.service_level ?? 100}%`} />
+                      <MiniMetric label="Abiertas" value={String(supplier.metrics.open_orders || 0)} />
+                      <MiniMetric label="Comprado" value={money(supplier.metrics.total_purchased || 0)} />
                     </div>
                   </div>
                 ))}
@@ -389,26 +389,26 @@ export default function ProveedoresPage() {
               {assistantPanel === "abastecimiento" ? (
                 <div className="space-y-2 text-sm">
                   <MetricRow label="Proveedor" value={selectedSupplier?.name || "Sin seleccion"} />
-                  <MetricRow label="OC abiertas" value={String(selectedSupplier?.metrics?.open_orders || 0)} />
-                  <MetricRow label="Pendiente WMS" value={String(selectedSupplier?.metrics?.pending_receipts || 0)} />
-                  <MetricRow label="Ultima OC" value={selectedSupplier?.metrics?.last_order_number || "-"} />
+                  <MetricRow label="OC abiertas" value={String(selectedSupplier?.metrics.open_orders || 0)} />
+                  <MetricRow label="Pendiente WMS" value={String(selectedSupplier?.metrics.pending_receipts || 0)} />
+                  <MetricRow label="Ultima OC" value={selectedSupplier?.metrics.last_order_number || "-"} />
                 </div>
               ) : null}
 
               {assistantPanel === "riesgo" ? (
                 <div>
                   <FlowStep icon={CheckCircle2} title="Datos minimos" detail="Documento, pais y contacto" active={Boolean(selectedSupplier?.tax_id && selectedSupplier?.email)} />
-                  <FlowStep icon={ShieldCheck} title="Compliance" detail="Segmento y responsable definidos" active={Boolean(selectedSupplier?.metadata?.owner)} />
-                  <FlowStep icon={AlertTriangle} title="Recepciones pendientes" detail="OC abiertas con saldo WMS" active={Boolean(selectedSupplier?.metrics?.pending_receipts)} warn />
+                  <FlowStep icon={ShieldCheck} title="Compliance" detail="Segmento y responsable definidos" active={Boolean(selectedSupplier?.metadata.owner)} />
+                  <FlowStep icon={AlertTriangle} title="Recepciones pendientes" detail="OC abiertas con saldo WMS" active={Boolean(selectedSupplier?.metrics.pending_receipts)} warn />
                 </div>
               ) : null}
 
               {assistantPanel === "finanzas" ? (
                 <div className="space-y-2 text-sm">
-                  <MetricRow label="Total comprado" value={money(selectedSupplier?.metrics?.total_purchased || 0)} />
+                  <MetricRow label="Total comprado" value={money(selectedSupplier?.metrics.total_purchased || 0)} />
                   <MetricRow label="Dias credito" value={`${selectedSupplier?.credit_days || 0} dias`} />
-                  <MetricRow label="Nivel servicio" value={`${selectedSupplier?.metrics?.service_level ?? 100}%`} />
-                  <MetricRow label="Moneda base" value={currencyForCountry(selectedSupplier?.country)} />
+                  <MetricRow label="Nivel servicio" value={`${selectedSupplier?.metrics.service_level ?? 100}%`} />
+                  <MetricRow label="Moneda base" value={currencyForCountry(selectedSupplier?.country || "CO")} />
                 </div>
               ) : null}
             </div>
@@ -454,20 +454,21 @@ function SegmentedNav({ active, onChange }: { active: WorkspaceTab; onChange: (t
   );
 }
 
-function SupplierProfile({ supplier, onPatch, saving }: { supplier: Supplier | null; onPatch: (patch: Partial<Supplier> & { metadata?: Supplier["metadata"] }) => void; saving: boolean }) {
+function SupplierProfile({ supplier, onPatch, saving }: { supplier: Supplier | null; onPatch: (patch: Partial<Supplier> & { metadata: Supplier["metadata"] }) => void; saving: boolean }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({ email: "", phone: "", city: "", credit_days: 0, notes: "" });
 
   useEffect(() => {
+    if (!supplier) return;
     setDraft({
-      email: supplier?.email || "",
-      phone: supplier?.phone || "",
-      city: supplier?.city || "",
-      credit_days: supplier?.credit_days || 0,
-      notes: supplier?.metadata?.notes || ""
+      email: supplier.email || "",
+      phone: supplier.phone || "",
+      city: supplier.city || "",
+      credit_days: supplier.credit_days || 0,
+      notes: supplier.metadata.notes || ""
     });
     setEditing(false);
-  }, [supplier?.id, supplier?.email, supplier?.phone, supplier?.city, supplier?.credit_days, supplier?.metadata?.notes]);
+  }, [supplier?.id, supplier?.email, supplier?.phone, supplier?.city, supplier?.credit_days, supplier?.metadata.notes]);
 
   if (!supplier) {
     return <div className="flex min-h-[360px] items-center justify-center rounded-md border border-dashed border-line bg-paper text-sm text-neutral-500">Selecciona o crea un proveedor.</div>;
@@ -488,10 +489,10 @@ function SupplierProfile({ supplier, onPatch, saving }: { supplier: Supplier | n
       </div>
 
       <div className="grid gap-3 p-4 md:grid-cols-4">
-        <HeaderMetric label="OC" value={String(supplier.metrics?.orders_count || 0)} />
-        <HeaderMetric label="Servicio" value={`${supplier.metrics?.service_level ?? 100}%`} />
-        <HeaderMetric label="Abiertas" value={String(supplier.metrics?.open_orders || 0)} />
-        <HeaderMetric label="Comprado" value={money(supplier.metrics?.total_purchased || 0)} />
+        <HeaderMetric label="OC" value={String(supplier.metrics.orders_count || 0)} />
+        <HeaderMetric label="Servicio" value={`${supplier.metrics.service_level ?? 100}%`} />
+        <HeaderMetric label="Abiertas" value={String(supplier.metrics.open_orders || 0)} />
+        <HeaderMetric label="Comprado" value={money(supplier.metrics.total_purchased || 0)} />
       </div>
 
       {editing ? (
@@ -514,7 +515,7 @@ function SupplierProfile({ supplier, onPatch, saving }: { supplier: Supplier | n
             </Field>
           </div>
           <div className="lg:col-span-2">
-            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white disabled:opacity-50" disabled={saving} onClick={() => onPatch({ email: draft.email, phone: draft.phone, city: draft.city, credit_days: draft.credit_days, metadata: { notes: draft.notes } })} type="button">
+            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white disabled:opacity-50" disabled={saving} onClick={() => onPatch({ email: draft.email, phone: draft.phone, city: draft.city, credit_days: draft.credit_days, metadata: { ...supplier.metadata, notes: draft.notes } })} type="button">
               <Save size={16} />
               Guardar cambios
             </button>
@@ -528,7 +529,7 @@ function SupplierProfile({ supplier, onPatch, saving }: { supplier: Supplier | n
           <InfoLine icon={Mail} label="Correo" value={supplier.email || "Pendiente"} />
           <InfoLine icon={Phone} label="Telefono" value={supplier.phone || "Pendiente"} />
           <InfoLine icon={MapPin} label="Ubicacion" value={`${supplier.city || "-"} / ${supplier.country || "-"}`} />
-          <InfoLine icon={ShieldCheck} label="Segmento" value={supplier.metadata?.segment || "Sin segmento"} />
+          <InfoLine icon={ShieldCheck} label="Segmento" value={supplier.metadata.segment || "Sin segmento"} />
         </div>
         <div>
           <h3 className="mb-3 text-sm font-semibold">Ultimas OC</h3>
@@ -553,7 +554,7 @@ function SupplierProfile({ supplier, onPatch, saving }: { supplier: Supplier | n
   );
 }
 
-function PanelHeader({ icon: Icon, title, detail, actions }: { icon: LucideIcon; title: string; detail?: string; actions?: React.ReactNode }) {
+function PanelHeader({ icon: Icon, title, detail, actions }: { icon: LucideIcon; title: string; detail: string; actions?: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-3 border-b border-line p-4 md:flex-row md:items-center md:justify-between">
       <div className="flex gap-3">
@@ -614,7 +615,7 @@ function PanelTab({ label, active, onClick }: { label: string; active: boolean; 
   );
 }
 
-function FlowStep({ icon: Icon, title, detail, active, warn }: { icon: LucideIcon; title: string; detail: string; active?: boolean; warn?: boolean }) {
+function FlowStep({ icon: Icon, title, detail, active, warn }: { icon: LucideIcon; title: string; detail: string; active: boolean; warn?: boolean }) {
   const activeClass = warn ? "bg-amber-50 text-amber-800" : "bg-[#146C6312] text-apex";
   return (
     <div className="flex gap-3 border-b border-line py-3 last:border-b-0">
@@ -644,6 +645,6 @@ function InfoLine({ icon: Icon, label, value }: { icon: LucideIcon; label: strin
 function StatusDot({ supplier }: { supplier: Supplier }) {
   const incomplete = !supplier.email || !supplier.tax_id;
   if (incomplete) return <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[11px] text-amber-800"><AlertTriangle size={11} /> Revisar</span>;
-  if ((supplier.metrics?.open_orders || 0) > 0) return <span className="inline-flex items-center gap-1 rounded-full bg-[#146C6312] px-2 py-1 text-[11px] text-apex"><Truck size={11} /> Activo</span>;
+  if ((supplier.metrics.open_orders || 0) > 0) return <span className="inline-flex items-center gap-1 rounded-full bg-[#146C6312] px-2 py-1 text-[11px] text-apex"><Truck size={11} /> Activo</span>;
   return <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-1 text-[11px] text-neutral-700"><Sparkles size={11} /> Listo</span>;
 }

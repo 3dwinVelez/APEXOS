@@ -57,7 +57,7 @@ export default function NuevaOVPage() {
         <select className="h-10 rounded-md border border-line px-3 text-sm" value={form.item_id} onChange={(e) => {
           const itemId = Number(e.target.value);
           const found = items.find((i) => i.id === itemId);
-          setForm((p) => ({ ...p, item_id: itemId, unit_price: found?.unit_price || 0 }));
+          setForm((p) => ({ ...p, item_id: itemId, unit_price: found.unit_price || 0 }));
         }} required>
           <option value={0}>Producto/servicio</option>
           {items.map((i) => <option key={i.id} value={i.id}>{i.code} · {i.name}</option>)}

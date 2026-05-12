@@ -14,7 +14,7 @@ async function createSupplier(tenantId, userId, data) {
     name, tax_id, tax_type = "company", email, phone, address, city, country = null,
     credit_limit = 0, credit_days = 0, metadata = {}
   } = data;
-  if (!name?.trim()) throw appError(400, "REQUIRED_FIELD", "El nombre es obligatorio");
+  if (!name.trim()) throw appError(400, "REQUIRED_FIELD", "El nombre es obligatorio");
   if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw appError(400, "INVALID_EMAIL", "Formato de email invalido");
   if (credit_limit < 0) throw appError(400, "INVALID_LIMIT", "El limite de credito no puede ser negativo");
   if (credit_days < 0 || credit_days > 365) throw appError(400, "INVALID_DAYS", "Los dias de credito deben estar entre 0 y 365");
@@ -180,7 +180,7 @@ async function updateSupplier(tenantId, supplierId, data) {
     return prisma.party.update({
       where: { id: supplier.id },
       data: {
-        name: data.name?.trim() || supplier.name,
+        name: data.name.trim() || supplier.name,
         tax_id: data.tax_id ?? supplier.tax_id,
         tax_type: data.tax_type ?? supplier.tax_type,
         email: data.email ?? supplier.email,
@@ -327,8 +327,8 @@ async function approvePurchaseOrder(tenantId, userId, poId) {
           approval: { status: "approved", approved_by: userId, approved_at: new Date().toISOString() },
           wms: {
             ...(metadata.wms || {}),
-            inbound_order: metadata.wms?.inbound_order || `INB-${po.number}`,
-            created_at: metadata.wms?.created_at || new Date().toISOString()
+            inbound_order: metadata.wms.inbound_order || `INB-${po.number}`,
+            created_at: metadata.wms.created_at || new Date().toISOString()
           }
         }
       },
@@ -350,15 +350,15 @@ async function duplicatePurchaseOrder(tenantId, userId, poId) {
     if (!po) throw appError(404, "NOT_FOUND", "PO no encontrada");
     return createPurchaseOrder(tenantId, userId, {
       supplier_id: po.party_id,
-      expected_at: po.metadata?.expected_at || null,
+      expected_at: po.metadata.expected_at || null,
       notes: po.notes || undefined,
-      warehouse_id: po.metadata?.warehouse_id || null,
-      priority: po.metadata?.priority || "normal",
+      warehouse_id: po.metadata.warehouse_id || null,
+      priority: po.metadata.priority || "normal",
       currency: po.currency || "USD",
-      payment_terms: po.metadata?.payment_terms || null,
-      tags: po.metadata?.tags || [],
-      freight: po.metadata?.freight || 0,
-      other_costs: po.metadata?.other_costs || 0,
+      payment_terms: po.metadata.payment_terms || null,
+      tags: po.metadata.tags || [],
+      freight: po.metadata.freight || 0,
+      other_costs: po.metadata.other_costs || 0,
       lines: po.lines.map((line) => ({
         item_id: line.item_id,
         qty: Number(line.qty),
@@ -366,8 +366,8 @@ async function duplicatePurchaseOrder(tenantId, userId, poId) {
         unit: line.unit,
         discount: Number(line.discount || 0),
         tax_rate: Number(line.tax_rate || 0),
-        expected_at: line.metadata?.expected_at || po.metadata?.expected_at || undefined,
-        notes: line.metadata?.notes || undefined
+        expected_at: line.metadata.expected_at || po.metadata.expected_at || undefined,
+        notes: line.metadata.notes || undefined
       }))
     });
   });
@@ -388,9 +388,9 @@ async function createReceiptFromPurchaseOrder(tenantId, userId, poId) {
       id: `INB-${po.number}`,
       po_id: po.id,
       po_number: po.number,
-      supplier: po.party?.name,
+      supplier: po.party.name,
       status: enriched.pending_quantity > 0 ? "ready_to_receive" : "completed",
-      warehouse_id: po.metadata?.warehouse_id || null,
+      warehouse_id: po.metadata.warehouse_id || null,
       lines: enriched.lines.map((line) => ({
         line_id: line.id,
         item_id: line.item_id,
@@ -450,8 +450,8 @@ async function checkVMIAlerts(tenantId) {
         stock_current: item.stock_current,
         stock_min: item.stock_min,
         qty_sugerida: qtySuggested,
-        supplier_id: lastMovement?.transaction?.party?.id || null,
-        supplier_name: lastMovement?.transaction?.party?.name || null,
+        supplier_id: lastMovement.transaction.party.id || null,
+        supplier_name: lastMovement.transaction.party.name || null,
         urgency: item.stock_current <= 0 ? "HIGH" : "MEDIUM"
       });
     }
@@ -494,8 +494,8 @@ function enrichSupplier(supplier, orders = []) {
       pending_receipts: pendingReceipts,
       total_purchased: totalPurchased,
       service_level: serviceLevel,
-      last_order_at: orders[0]?.created_at || null,
-      last_order_number: orders[0]?.number || null
+      last_order_at: orders[0].created_at || null,
+      last_order_number: orders[0].number || null
     },
     recent_orders: orders.slice(0, 6)
   };

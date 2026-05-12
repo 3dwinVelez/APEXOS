@@ -21,20 +21,20 @@ export const LATAM_COUNTRIES = [
 
 export const LATAM_CURRENCIES = Array.from(new Set(LATAM_COUNTRIES.map((country) => country.currency).concat("USD"))).sort();
 
-export function countryConfig(country?: string | null) {
+export function countryConfig(country: string | null) {
   return LATAM_COUNTRIES.find((entry) => entry.code === country);
 }
 
-export function currencyForCountry(country?: string | null, fallback = "USD") {
-  return countryConfig(country)?.currency || fallback;
+export function currencyForCountry(country: string | null, fallback = "USD") {
+  return countryConfig(country).currency || fallback;
 }
 
-export function taxIdLabel(country?: string | null) {
-  return countryConfig(country)?.taxId || "ID fiscal";
+export function taxIdLabel(country: string | null) {
+  return countryConfig(country).taxId || "ID fiscal";
 }
 
-export function taxRatesForCountry(country?: string | null) {
-  return countryConfig(country)?.taxRates || [0, 5, 8, 10, 12, 13, 15, 16, 18, 19, 21, 22];
+export function taxRatesForCountry(country: string | null) {
+  return countryConfig(country).taxRates || [0, 5, 8, 10, 12, 13, 15, 16, 18, 19, 21, 22];
 }
 
 export function money(value: number, currency = "USD") {

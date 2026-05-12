@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Building2 } from "lucide-react";
-import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
 import type { AuthResponse } from "@/lib/types";
+import { Building2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -35,8 +35,8 @@ export default function RegisterPage() {
         {[
           ["company_name", "Empresa"],
           ["name", "Tu nombre"],
-          ["email", "Correo electrónico"],
-          ["password", "Contraseña"]
+          ["email", "Correo electronico"],
+          ["password", "Contrasena"]
         ].map(([key, label]) => (
           <label className="mb-3 block text-sm" key={key}>
             {label}
@@ -54,7 +54,7 @@ export default function RegisterPage() {
             <option value="retail">Comercio</option>
             <option value="restaurant">Restaurante</option>
             <option value="manufacturing">Manufactura</option>
-            <option value="construction">Construcción</option>
+            <option value="construction">Construccion</option>
             <option value="health">Salud</option>
           </select>
         </label>
