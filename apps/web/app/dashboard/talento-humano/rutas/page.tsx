@@ -23,7 +23,7 @@ export default function RoutesPlanningPage() {
 
   async function load() {
     const [employeeData, vehicleData, routeData] = await Promise.all([
-      api<Employee[]>("/api/v1/hr/employeesactive=true").catch(() => []),
+      api<Employee[]>("/api/v1/hr/employees?active=true").catch(() => []),
       api<Vehicle[]>("/api/v1/transport/vehicles").catch(() => []),
       api<TimeRoute[]>("/api/v1/hr/routes").catch(() => [])
     ]);

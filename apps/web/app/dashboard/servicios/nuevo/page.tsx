@@ -7,11 +7,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 type ServiceReference = { id: number; code: string; name: string; category: string; estimated_minutes: number; brand: string; model: string; parts: Array<{ id: number; name: string; quantity: number; unit: string }> };
-type Employee = { id: number; code: string; metadata: { name: string }; user: { name: string } };
+type Employee = { id: number; code: string; name?: string; metadata?: { name?: string }; user?: { name?: string } };
 type ServiceOrder = { id: number; number: string };
 
 function techName(tech: Employee) {
-  return tech.metadata.name || tech.user.name || tech.code || `Tecnico ${tech.id}`;
+  return tech.name || tech.metadata?.name || tech.user?.name || tech.code || `Tecnico ${tech.id}`;
 }
 
 export default function NewServiceOrderPage() {
@@ -23,8 +23,8 @@ export default function NewServiceOrderPage() {
 
   useEffect(() => {
     Promise.all([
-      api<ServiceReference[]>("/api/v1/services/referencesactive=true").catch(() => []),
-      api<Employee[]>("/api/v1/hr/employeesposition=tecnico&active=true").catch(() => [])
+      api<ServiceReference[]>("/api/v1/services/references?active=true").catch(() => []),
+      api<Employee[]>("/api/v1/hr/employees?position=tecnico&active=true").catch(() => [])
     ]).then(([refs, techs]) => {
       setReferences(refs);
       setTechnicians(techs);

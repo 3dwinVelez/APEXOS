@@ -168,20 +168,58 @@ async function startOrder(tenantId, id, input = {}) {
   }));
 }
 
-async function moveToInspection(tenantId, id) {
-  return prisma.runWithTenant(tenantId, async () => prisma.serviceOrder.update({
-    where: { id: Number(id) },
-    data: { status: "inspeccion" },
-    include: orderInclude()
-  }));
+async function moveToInspection(tenantId, id, input = {}) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const order = await prisma.serviceOrder.findFirstOrThrow({ where: { id: Number(id) } });
+    const items = (input.items || []).map((item) => ({
+      part_id: Number(item.part_id),
+      name: item.name,
+      quantity: Number(item.quantity || 1),
+      unit: item.unit || "und",
+      status: item.status || "ok",
+      comment: item.comment || "",
+      action: item.action || "ninguna"
+    }));
+    const problems = items.filter((item) => item.status !== "ok");
+    return prisma.serviceOrder.update({
+      where: { id: Number(id) },
+      data: {
+        status: "inspeccion",
+        metadata: {
+          ...(order.metadata || {}),
+          inspection: {
+            items,
+            decision: input.decision || "pendiente",
+            problem_count: problems.length,
+            inspected_at: new Date().toISOString(),
+            ...(input.metadata || {})
+          }
+        }
+      },
+      include: orderInclude()
+    });
+  });
 }
 
 async function moveToExecution(tenantId, id) {
-  return prisma.runWithTenant(tenantId, async () => prisma.serviceOrder.update({
-    where: { id: Number(id) },
-    data: { status: "ejecucion" },
-    include: orderInclude()
-  }));
+  return prisma.runWithTenant(tenantId, async () => {
+    const order = await prisma.serviceOrder.findFirstOrThrow({ where: { id: Number(id) } });
+    return prisma.serviceOrder.update({
+      where: { id: Number(id) },
+      data: {
+        status: "ejecucion",
+        metadata: {
+          ...(order.metadata || {}),
+          inspection: {
+            ...((order.metadata || {}).inspection || {}),
+            decision: "armable",
+            moved_to_execution_at: new Date().toISOString()
+          }
+        }
+      },
+      include: orderInclude()
+    });
+  });
 }
 
 async function closeOrder(tenantId, id, input = {}) {
@@ -206,6 +244,7 @@ async function closeOrder(tenantId, id, input = {}) {
 
 async function closeNotExecuted(tenantId, id, input = {}) {
   return prisma.runWithTenant(tenantId, async () => {
+    const order = await prisma.serviceOrder.findFirstOrThrow({ where: { id: Number(id) } });
     const now = new Date();
     const reason = input.no_execution_reason || "No ejecutada";
     await prisma.serviceIncident.create({
@@ -225,7 +264,7 @@ async function closeNotExecuted(tenantId, id, input = {}) {
         close_latitude: input.latitude,
         close_longitude: input.longitude,
         no_execution_reason: reason,
-        metadata: { close_accuracy_meters: input.accuracy_meters, ...(input.metadata || {}) }
+        metadata: { ...(order.metadata || {}), close_accuracy_meters: input.accuracy_meters, ...(input.metadata || {}) }
       },
       include: orderInclude()
     });

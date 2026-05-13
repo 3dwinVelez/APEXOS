@@ -1,6 +1,7 @@
 "use client";
 
 import { api } from "@/lib/api";
+import { AI_ASSISTANCE_EVENT, AI_ASSISTANCE_KEY } from "@/components/brain/AiAssistanceToggle";
 import { AlertTriangle, Bell, Brain, CheckCircle2, ChevronRight, Lightbulb, Loader2, Sparkles, X, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -257,6 +258,7 @@ function writeSet(key: string, value: Set<string>) {
 
 export function AiExperienceLayer() {
   const pathname = usePathname();
+  const [enabled, setEnabled] = useState(true);
   const [insights, setInsights] = useState<BrainInsight[]>([]);
   const [loadingInsights, setLoadingInsights] = useState(false);
   const [trayOpen, setTrayOpen] = useState(false);
@@ -284,6 +286,24 @@ export function AiExperienceLayer() {
   }, [currentStep]);
 
   useEffect(() => {
+    const read = () => setEnabled(localStorage.getItem(AI_ASSISTANCE_KEY) !== "0");
+    read();
+    window.addEventListener(AI_ASSISTANCE_EVENT, read);
+    window.addEventListener("storage", read);
+    return () => {
+      window.removeEventListener(AI_ASSISTANCE_EVENT, read);
+      window.removeEventListener("storage", read);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!enabled) {
+      setCoachOpen(false);
+      setTrayOpen(false);
+      setInsights([]);
+      setLoadingInsights(false);
+      return;
+    }
     setStepIndex(0);
     const dismissed = readSet(insightKey);
     setDismissedInsights(dismissed);
@@ -292,11 +312,11 @@ export function AiExperienceLayer() {
     setCoachOpen(!guideSeen && steps.length > 0);
 
     setLoadingInsights(true);
-    api<BrainInsightsResponse>(`/api/v1/brain/insightslimit=12&module=${currentModule}`)
+    api<BrainInsightsResponse>(`/api/v1/brain/insights?limit=12&module=${currentModule}`)
       .then((response) => setInsights(response.data))
       .catch(() => setInsights([]))
       .finally(() => setLoadingInsights(false));
-  }, [currentModule, guideKey, insightKey, pathname, steps.length]);
+  }, [currentModule, enabled, guideKey, insightKey, pathname, steps.length]);
 
   useEffect(() => {
     if (!coachOpen) return;
@@ -338,6 +358,8 @@ export function AiExperienceLayer() {
   const viewportHeight = typeof window === "undefined" ? 720 : window.innerHeight;
   const coachTop = targetRect ? Math.min(viewportHeight - 210, Math.max(72, targetRect.top + targetRect.height + 12)) : 112;
   const coachLeft = targetRect ? Math.min(viewportWidth - 360, Math.max(16, targetRect.left)) : Math.max(16, viewportWidth - 390);
+
+  if (!enabled) return null;
 
   return (
     <>

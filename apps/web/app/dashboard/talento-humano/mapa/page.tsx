@@ -25,7 +25,7 @@ export default function LiveGpsMapPage() {
   async function load() {
     setLoading(true);
     try {
-      const data = await api<GpsPing[]>("/api/v1/hr/gps/activeminutes=120");
+      const data = await api<GpsPing[]>("/api/v1/hr/gps/active?minutes=120");
       setPings(data);
       setSelected((current) => current ? data.find((item) => item.user_name === current.user_name) || data[0] || null : data[0] || null);
     } finally {

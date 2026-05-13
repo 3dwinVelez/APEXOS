@@ -1,15 +1,22 @@
-const Redis = require("ioredis");
 const prisma = require("./prisma");
 
-const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379", {
-  maxRetriesPerRequest: 2,
-  lazyConnect: true
-});
+const redisDisabled = process.env.DISABLE_REDIS === "1";
+const redis = redisDisabled
+  ? null
+  : (() => {
+      const Redis = require("ioredis");
+      return new Redis(process.env.REDIS_URL || "redis://localhost:6379", {
+        maxRetriesPerRequest: 1,
+        enableOfflineQueue: false,
+        lazyConnect: true
+      });
+    })();
 const TTL = 300;
 
 async function getTenantFromCache(tenantId) {
   const key = `tenant:${tenantId}`;
   try {
+    if (!redis) throw new Error("Redis disabled");
     if (redis.status === "wait") await redis.connect();
     const cached = await redis.get(key);
     if (cached) return JSON.parse(cached);
@@ -20,6 +27,7 @@ async function getTenantFromCache(tenantId) {
   const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
   if (tenant) {
     try {
+      if (!redis) return tenant;
       await redis.setex(key, TTL, JSON.stringify(tenant));
     } catch {
       return tenant;
@@ -30,6 +38,7 @@ async function getTenantFromCache(tenantId) {
 
 async function invalidateTenantCache(tenantId) {
   try {
+    if (!redis) return undefined;
     await redis.del(`tenant:${tenantId}`);
   } catch {
     return undefined;
@@ -37,4 +46,3 @@ async function invalidateTenantCache(tenantId) {
 }
 
 module.exports = { getTenantFromCache, invalidateTenantCache };
-

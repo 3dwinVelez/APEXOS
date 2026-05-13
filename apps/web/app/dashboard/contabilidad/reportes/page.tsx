@@ -16,7 +16,7 @@ export default function ReportesContablesPage() {
   useEffect(() => {
     Promise.all([
       api<BalanceSheet>("/api/v1/accounting/reports/balance-sheet"),
-      api<IncomeStatement>(`/api/v1/accounting/reports/income-statementperiod=${period}`)
+      api<IncomeStatement>(`/api/v1/accounting/reports/income-statement?period=${period}`)
     ]).then(([b, i]) => {
       setBalance(b);
       setIncome(i);

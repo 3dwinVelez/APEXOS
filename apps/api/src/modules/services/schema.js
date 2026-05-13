@@ -62,6 +62,32 @@ const startSchema = {
   }
 };
 
+const inspectionSchema = {
+  body: {
+    type: "object",
+    properties: {
+      decision: { type: "string" },
+      items: {
+        type: "array",
+        items: {
+          type: "object",
+          required: ["part_id", "name", "status"],
+          properties: {
+            part_id: { type: "integer" },
+            name: { type: "string" },
+            quantity: { type: "number" },
+            unit: { type: "string" },
+            status: { type: "string" },
+            comment: { type: "string" },
+            action: { type: "string" }
+          }
+        }
+      },
+      metadata: { type: "object" }
+    }
+  }
+};
+
 const closeSchema = {
   body: {
     type: "object",
@@ -105,4 +131,4 @@ const photoSchema = {
   }
 };
 
-module.exports = { orderSchema, referenceSchema, startSchema, closeSchema, incidentSchema, photoSchema };
+module.exports = { orderSchema, referenceSchema, startSchema, inspectionSchema, closeSchema, incidentSchema, photoSchema };

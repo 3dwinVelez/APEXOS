@@ -55,7 +55,7 @@ export function BrainPanel() {
     setLoading(true);
     setError(null);
     try {
-      const response = await api<BrainInsightsResponse>("/api/v1/brain/insightslimit=5");
+      const response = await api<BrainInsightsResponse>("/api/v1/brain/insights?limit=5");
       setData(response);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible leer APEX AI Core.");

@@ -123,7 +123,13 @@ async function ensurePostgres() {
   }
 
   if (!(await isPortOpen(55432))) {
-    run("pg_ctl", [
+    const pidFile = path.join(pgData, "postmaster.pid");
+    if (fs.existsSync(pidFile)) {
+      fs.rmSync(pidFile, { force: true });
+      log("Removed stale Postgres pid file");
+    }
+
+    const pgStart = run("pg_ctl", [
       "-D",
       pgData,
       "-o",
@@ -131,7 +137,23 @@ async function ensurePostgres() {
       "-l",
       path.join(logsDir, "postgres-local.log"),
       "start"
-    ]);
+    ], { allowFailure: true });
+
+    if (pgStart.status !== 0) {
+      log("pg_ctl failed; starting postgres.exe directly");
+      const out = fs.openSync(path.join(logsDir, "postgres-local.log"), "a");
+      const err = fs.openSync(path.join(logsDir, "postgres-local.err.log"), "a");
+      const child = spawn("postgres", ["-D", pgData, "-p", "55432"], {
+        detached: true,
+        stdio: ["ignore", out, err],
+        windowsHide: true,
+        shell: false,
+        env: baseEnv()
+      });
+      child.unref();
+      log(`postgres pid ${child.pid}`);
+    }
+
     await waitForPort(55432);
   }
 
@@ -147,10 +169,22 @@ function ensureDependencies() {
 function startProcess(name, args, stdoutFile, stderrFile) {
   const out = fs.openSync(path.join(logsDir, stdoutFile), "w");
   const err = fs.openSync(path.join(logsDir, stderrFile), "w");
-  const command = process.platform === "win32" ? "cmd.exe" : npmCmd;
-  const commandArgs = process.platform === "win32" ? ["/d", "/s", "/c", [npmCmd, ...args].join(" ")] : args;
+  let command = npmCmd;
+  let commandArgs = args;
+  let cwd = root;
+
+  if (process.platform === "win32" && args.join(" ").includes("apps/api")) {
+    command = "C:\\Program Files\\nodejs\\node.exe";
+    commandArgs = ["server.js"];
+    cwd = path.join(root, "apps", "api");
+  } else if (process.platform === "win32" && args.join(" ").includes("apps/web")) {
+    command = "C:\\Program Files\\nodejs\\node.exe";
+    commandArgs = [path.join(root, "node_modules", "next", "dist", "bin", "next"), "dev", "-p", "3001"];
+    cwd = path.join(root, "apps", "web");
+  }
+
   const child = spawn(command, commandArgs, {
-    cwd: root,
+    cwd,
     detached: true,
     stdio: ["ignore", out, err],
     windowsHide: true,

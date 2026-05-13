@@ -83,8 +83,8 @@ export default function ApexAiPage() {
     setError(null);
     try {
       const [insightResponse, mentorResponse] = await Promise.all([
-        api<BrainInsightsResponse>("/api/v1/brain/insightslimit=20"),
-        api<MentorResponse>(`/api/v1/brain/mentormodule=${moduleId}`)
+        api<BrainInsightsResponse>("/api/v1/brain/insights?limit=20"),
+        api<MentorResponse>(`/api/v1/brain/mentor?module=${moduleId}`)
       ]);
       setInsights(insightResponse);
       setMentor(mentorResponse);

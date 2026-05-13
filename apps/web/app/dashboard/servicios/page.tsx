@@ -47,7 +47,7 @@ export default function ServicesPage() {
   const [query, setQuery] = useState("");
 
   async function load() {
-    const response = await api<OrdersResponse>(`/api/v1/services/orders${status ? `status=${status}` : ""}`);
+    const response = await api<OrdersResponse>(`/api/v1/services/orders${status ? `?status=${status}` : ""}`);
     setOrders(response.data);
     setKpis(response.kpis);
   }
@@ -60,7 +60,7 @@ export default function ServicesPage() {
     const term = query.trim().toLowerCase();
     if (!term) return orders;
     return orders.filter((order) =>
-      [order.number, order.customer_name, order.customer_address, order.reference.code, order.reference.name]
+      [order.number, order.customer_name, order.customer_address, order.reference?.code, order.reference?.name]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(term))
     );
@@ -116,7 +116,7 @@ export default function ServicesPage() {
                   <p className="mt-1 line-clamp-2 text-sm text-neutral-600">{order.customer_address}</p>
                   <div className="mt-3 flex flex-wrap gap-2 text-xs text-neutral-600">
                     <span className="rounded-md bg-paper px-2 py-1">{order.service_type}</span>
-                    <span className="rounded-md bg-paper px-2 py-1">{order.reference.code || "Sin ref."}</span>
+                    <span className="rounded-md bg-paper px-2 py-1">{order.reference?.code || "Sin ref."}</span>
                     <span className="rounded-md bg-paper px-2 py-1">{order.photos.length} fotos</span>
                     <span className="rounded-md bg-paper px-2 py-1">{order.incidents.length} novedades</span>
                   </div>

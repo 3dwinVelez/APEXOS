@@ -22,6 +22,7 @@ const MODULES = [
   "services",
   "transport"
 ];
+const DEFAULT_ALLOWED_ORIGINS = ["http://localhost:3001", "http://127.0.0.1:3001"];
 
 function requireEnv(names) {
   const missing = names.filter((name) => !process.env[name]);
@@ -32,6 +33,10 @@ function requireEnv(names) {
 
 async function build() {
   requireEnv(["DATABASE_URL", "JWT_SECRET"]);
+  const configuredOrigins = process.env.ALLOWED_ORIGINS?.split(",").map((origin) => origin.trim()).filter(Boolean) || [];
+  const allowedOrigins = process.env.NODE_ENV === "production"
+    ? configuredOrigins
+    : Array.from(new Set([...configuredOrigins, ...DEFAULT_ALLOWED_ORIGINS]));
 
   await fastify.register(require("@fastify/jwt"), {
     secret: process.env.JWT_SECRET,
@@ -39,7 +44,8 @@ async function build() {
   });
 
   await fastify.register(require("@fastify/cors"), {
-    origin: process.env.ALLOWED_ORIGINS?.split(",") || ["http://localhost:3001"],
+    origin: allowedOrigins.length ? allowedOrigins : DEFAULT_ALLOWED_ORIGINS,
+    methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     credentials: true
   });
 

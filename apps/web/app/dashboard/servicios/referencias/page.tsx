@@ -18,7 +18,7 @@ export default function ServiceReferencesPage() {
   const [form, setForm] = useState({ code: "", name: "", category: "muebles", description: "", estimated_minutes: 60, brand: "", model: "", active: true, parts: [{ name: "", quantity: 1, unit: "und", description: "" }] as Part[] });
 
   async function load() {
-    setReferences(await api<ServiceReference[]>(`/api/v1/services/references${category ? `category=${category}` : ""}`));
+    setReferences(await api<ServiceReference[]>(`/api/v1/services/references${category ? `?category=${category}` : ""}`));
   }
 
   useEffect(() => {
@@ -115,7 +115,7 @@ export default function ServiceReferencesPage() {
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             {references.map((reference) => (
-              <button className={`rounded-md border p-4 text-left hover:bg-paper ${selected.id === reference.id ? "border-apex" : "border-line"}`} key={reference.id} onClick={() => edit(reference)} type="button">
+              <button className={`rounded-md border p-4 text-left hover:bg-paper ${selected?.id === reference.id ? "border-apex" : "border-line"}`} key={reference.id} onClick={() => edit(reference)} type="button">
                 <div className="mb-2 flex items-center justify-between gap-2"><span className="text-xs font-semibold text-apex">{reference.category}</span><span className="rounded-md bg-paper px-2 py-1 text-xs">{reference.code}</span></div>
                 <h3 className="font-semibold">{reference.name}</h3>
                 <p className="mt-1 text-sm text-neutral-500">{reference.parts.length} pieza(s) · {reference.estimated_minutes} min</p>

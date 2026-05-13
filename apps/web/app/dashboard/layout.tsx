@@ -1,4 +1,5 @@
 import { AiExperienceLayer } from "@/components/brain/AiExperienceLayer";
+import { AiAssistanceToggle } from "@/components/brain/AiAssistanceToggle";
 import { Sidebar } from "@/components/shell/Sidebar";
 import { Brain, Sparkles } from "lucide-react";
 import Link from "next/link";
@@ -18,10 +19,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <p className="truncate text-xs text-neutral-600">Mentor, alertas y recomendaciones conectadas a todo el ecosistema.</p>
             </div>
           </div>
-          <Link className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-medium hover:bg-paper" href="/dashboard/apex-ai">
-            <Sparkles size={15} />
-            Ver inteligencia
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <AiAssistanceToggle />
+            <Link className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-medium hover:bg-paper" href="/dashboard/apex-ai">
+              <Sparkles size={15} />
+              Ver inteligencia
+            </Link>
+          </div>
         </div>
         {children}
       </main>
@@ -29,4 +33,3 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </div>
   );
 }
-

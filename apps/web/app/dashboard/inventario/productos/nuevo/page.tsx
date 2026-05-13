@@ -132,7 +132,7 @@ export default function NuevoProductoPage() {
   async function loadItems() {
     setLoading(true);
     try {
-      const response = await api<InventoryListResponse>("/api/v1/inventory/itemslimit=100&sort_by=name");
+      const response = await api<InventoryListResponse>("/api/v1/inventory/items?limit=100&sort_by=name");
       setItems(response.data || []);
       setSelectedItem((current) => current ? (response.data || []).find((item) => item.id === current.id) || (response.data || [])[0] || null : (response.data || [])[0] || null);
     } finally {
