@@ -2,7 +2,7 @@
 
 import { api } from "@/lib/api";
 import { getGpsFix, type GpsFix } from "@/lib/gps";
-import { ArrowLeft, CheckCircle2, MapPin, Truck } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ExternalLink, MapPin, Navigation, RefreshCw, Truck } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -23,6 +23,21 @@ function employeeName(employee: Employee) {
   return employee.metadata.name || employee.user.name || employee.code || "";
 }
 
+function mapsUrl(gps: GpsFix) {
+  return `https://www.google.com/maps?q=${gps.latitude},${gps.longitude}&z=17`;
+}
+
+function osmEmbedUrl(gps: GpsFix) {
+  const delta = 0.004;
+  const bbox = [
+    gps.longitude - delta,
+    gps.latitude - delta,
+    gps.longitude + delta,
+    gps.latitude + delta
+  ].join(",");
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${gps.latitude},${gps.longitude}`;
+}
+
 export default function MobilePunchPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -33,6 +48,7 @@ export default function MobilePunchPage() {
   const [message, setMessage] = useState("");
   const [gps, setGps] = useState<GpsFix | null>(null);
   const [gpsStatus, setGpsStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
+  const [view, setView] = useState<"marcar" | "historial">("marcar");
 
   async function load() {
     const [employeeData, vehicleData, routeData, attendanceData] = await Promise.all([
@@ -59,6 +75,28 @@ export default function MobilePunchPage() {
   const doneTypes = new Set(currentAttendance.punches.map((punch) => punch.type) || []);
   const nextType = currentAttendance.next_type || "entrada";
   const route = routes.find((item) => item.vehicle_plate === vehiclePlate && item.employees.includes(userName));
+
+  useEffect(() => {
+    if (!employee || !gps || !userName) return;
+    const timer = window.setInterval(() => {
+      getGpsFix(8000).then((fix) => {
+        setGps(fix);
+        setGpsStatus("ok");
+        return api("/api/v1/hr/gps/ping", {
+          method: "POST",
+          body: JSON.stringify({
+            user_name: userName,
+            employee_id: employee.id,
+            vehicle_plate: vehiclePlate,
+            route_id: route?.id,
+            ...fix,
+            source: "mobile_live_presence"
+          })
+        }).catch(() => undefined);
+      }).catch(() => undefined);
+    }, 30000);
+    return () => window.clearInterval(timer);
+  }, [employee?.id, gps, userName, vehiclePlate, route?.id]);
 
   async function refreshGps() {
     setGpsStatus("loading");
@@ -111,67 +149,105 @@ export default function MobilePunchPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md space-y-4 pb-8">
-      <header className="sticky top-0 z-10 -mx-4 border-b border-line bg-paper/95 px-4 py-3 backdrop-blur md:static md:mx-0 md:border-0 md:bg-transparent md:px-0">
-        <Link className="mb-3 inline-flex items-center gap-2 text-sm font-medium text-neutral-600 hover:text-apex" href="/dashboard/talento-humano"><ArrowLeft size={16} /> Control de horarios</Link>
+    <div className="mx-auto max-w-md space-y-4 pb-24 md:pb-8">
+      <header className="sticky top-0 z-20 -mx-4 border-b border-line bg-paper/95 px-4 py-3 backdrop-blur md:static md:mx-0 md:border-0 md:bg-transparent md:px-0">
+        <Link className="mb-3 inline-flex h-11 items-center gap-2 rounded-md pr-3 text-sm font-medium text-neutral-600 hover:text-apex" href="/dashboard/talento-humano"><ArrowLeft size={18} /> Control de horarios</Link>
         <p className="text-sm font-medium text-apex">Marcacion movil</p>
         <h1 className="text-2xl font-semibold">Mi jornada</h1>
       </header>
 
-      {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">{message}</div> : null}
+      {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-900">{message}</div> : null}
 
-      <section className="rounded-md border border-line bg-white p-4">
-        <div className="grid gap-3">
-          <select className="h-11 rounded-md border border-line px-3 text-sm" value={employee?.id || ""} onChange={(event) => setEmployeeId(Number(event.target.value))}>
-            {employees.map((item) => <option key={item.id} value={item.id}>{employeeName(item)}</option>)}
-          </select>
-          <select className="h-11 rounded-md border border-line px-3 text-sm" value={vehiclePlate} onChange={(event) => setVehiclePlate(event.target.value)}>
-            <option value="">Vehiculo</option>
-            {vehicles.map((item) => <option key={item.id} value={item.plate}>{item.plate} · {item.type || item.model || "Movil"}</option>)}
-          </select>
-        </div>
-        <div className="mt-3 rounded-md bg-paper p-3 text-sm text-neutral-600">
-          <Truck className="mr-2 inline text-apex" size={15} /> {route ? `Ruta ${route.id} · ${route.start_time || "--"} - ${route.end_time || "--"}` : "Sin ruta asignada para este vehiculo/equipo"}
-        </div>
-        <button className="mt-3 h-10 w-full rounded-md border border-line text-sm font-semibold hover:bg-paper" onClick={refreshGps} type="button">
-          {gpsStatus === "loading" ? "Obteniendo GPS..." : gpsStatus === "ok" && gps ? `GPS activo (${Math.round(gps.accuracy_meters || 0)}m)` : "Activar GPS obligatorio"}
+      <section className="grid grid-cols-2 gap-2 rounded-md border border-line bg-white p-1 shadow-sm">
+        <button className={`h-12 rounded-md text-base font-semibold ${view === "marcar" ? "bg-apex text-white" : "text-neutral-700"}`} onClick={() => setView("marcar")} type="button">
+          Marcar
         </button>
-        {gpsStatus === "error" ? <p className="mt-2 text-xs font-semibold text-red-700">GPS obligatorio para marcar. Habilita ubicacion en el navegador.</p> : null}
+        <button className={`h-12 rounded-md text-base font-semibold ${view === "historial" ? "bg-apex text-white" : "text-neutral-700"}`} onClick={() => setView("historial")} type="button">
+          Historial
+        </button>
       </section>
 
-      <section className="space-y-3">
-        {punchOrder.map((type) => {
-          const done = doneTypes.has(type);
-          const enabled = type === nextType && !!employee;
-          const cfg = punchLabels[type];
-          return (
-            <button className={`w-full rounded-md border p-4 text-left transition ${enabled ? "border-apex bg-white shadow-sm" : "border-line bg-white opacity-70"}`} disabled={!enabled} key={type} onClick={() => mark(type)} type="button">
-              <div className="flex items-center gap-3">
-                <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-md text-white ${done ? "bg-emerald-600" : enabled ? cfg.color : "bg-neutral-300"}`}>
-                  {done ? <CheckCircle2 size={21} /> : <MapPin size={20} />}
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold">{cfg.title}</p>
-                  <p className="mt-1 text-sm text-neutral-500">{done ? "Registrado correctamente" : enabled ? cfg.desc : "No disponible aun"}</p>
+      {view === "marcar" ? (
+        <>
+          <section className="rounded-md border border-line bg-white p-4 shadow-sm">
+            <div className="grid gap-3">
+              <label className="text-xs font-semibold uppercase text-neutral-500">Operario</label>
+              <select className="h-12 rounded-md border border-line px-3 text-base" value={employee?.id || ""} onChange={(event) => setEmployeeId(Number(event.target.value))}>
+                {employees.map((item) => <option key={item.id} value={item.id}>{employeeName(item)}</option>)}
+              </select>
+              <label className="text-xs font-semibold uppercase text-neutral-500">Vehiculo</label>
+              <select className="h-12 rounded-md border border-line px-3 text-base" value={vehiclePlate} onChange={(event) => setVehiclePlate(event.target.value)}>
+                <option value="">Vehiculo</option>
+                {vehicles.map((item) => <option key={item.id} value={item.plate}>{item.plate} · {item.type || item.model || "Movil"}</option>)}
+              </select>
+            </div>
+            <div className="mt-4 rounded-md bg-paper p-3 text-sm text-neutral-700">
+              <Truck className="mr-2 inline text-apex" size={15} /> {route ? `Ruta ${route.id} · ${route.start_time || "--"} - ${route.end_time || "--"}` : "Sin ruta asignada para este vehiculo/equipo"}
+            </div>
+            <button className="mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-md border border-line text-base font-semibold hover:bg-paper" onClick={refreshGps} type="button">
+              <RefreshCw className={gpsStatus === "loading" ? "animate-spin" : ""} size={17} />
+              {gpsStatus === "loading" ? "Obteniendo GPS..." : gpsStatus === "ok" && gps ? `GPS activo (${Math.round(gps.accuracy_meters || 0)}m)` : "Activar GPS obligatorio"}
+            </button>
+            {gpsStatus === "error" ? <p className="mt-2 text-xs font-semibold text-red-700">GPS obligatorio para marcar. Habilita ubicacion en el navegador.</p> : null}
+            {gps ? (
+              <div className="mt-3 overflow-hidden rounded-md border border-line bg-white">
+                <iframe className="h-44 w-full border-0" src={osmEmbedUrl(gps)} title="Mi ubicacion GPS" loading="lazy" />
+                <div className="flex items-center justify-between gap-2 p-3 text-xs text-neutral-600">
+                  <span><Navigation className="mr-1 inline text-apex" size={13} />{gps.latitude.toFixed(6)}, {gps.longitude.toFixed(6)} · {Math.round(gps.accuracy_meters || 0)}m</span>
+                  <a className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-3 text-xs font-semibold text-white" href={mapsUrl(gps)} target="_blank" rel="noreferrer">
+                    Mapa <ExternalLink size={13} />
+                  </a>
                 </div>
               </div>
-            </button>
-          );
-        })}
-      </section>
+            ) : null}
+          </section>
 
-      <section className="rounded-md border border-line bg-white p-4">
+          <section className="space-y-3">
+            {punchOrder.map((type) => {
+              const done = doneTypes.has(type);
+              const enabled = type === nextType && !!employee;
+              const cfg = punchLabels[type];
+              return (
+                <button className={`min-h-24 w-full rounded-md border p-4 text-left transition active:scale-[0.99] ${enabled ? "border-apex bg-white shadow-sm" : "border-line bg-white opacity-70"}`} disabled={!enabled} key={type} onClick={() => mark(type)} type="button">
+                  <div className="flex items-center gap-3">
+                    <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-md text-white ${done ? "bg-emerald-600" : enabled ? cfg.color : "bg-neutral-300"}`}>
+                      {done ? <CheckCircle2 size={24} /> : <MapPin size={23} />}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-base font-semibold">{cfg.title}</p>
+                      <p className="mt-1 text-sm text-neutral-500">{done ? "Registrado correctamente" : enabled ? cfg.desc : "No disponible aun"}</p>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </section>
+        </>
+      ) : null}
+
+      {view === "historial" ? <section className="rounded-md border border-line bg-white p-4 shadow-sm">
         <h2 className="mb-3 text-base font-semibold">Historial de hoy</h2>
         <div className="space-y-2">
           {currentAttendance.punches.map((punch) => (
-            <div className="flex items-center justify-between rounded-md bg-paper px-3 py-2 text-sm" key={punch.id}>
+            <div className="flex min-h-11 items-center justify-between rounded-md bg-paper px-3 py-2 text-sm" key={punch.id}>
               <span>{punchLabels[punch.type].title || punch.type}</span>
               <span className="font-semibold">{punch.time}</span>
             </div>
           ))}
           {!currentAttendance.punches.length ? <p className="text-sm text-neutral-500">Sin marcaciones hoy.</p> : null}
         </div>
-      </section>
+      </section> : null}
+
+      {view === "marcar" ? <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-white/95 p-3 backdrop-blur md:hidden">
+        <button
+          className={`h-14 w-full rounded-md text-base font-semibold text-white shadow-sm ${punchLabels[nextType]?.color || "bg-apex"} disabled:bg-neutral-300`}
+          disabled={!employee || !nextType}
+          onClick={() => mark(nextType)}
+          type="button"
+        >
+          {nextType ? punchLabels[nextType]?.title || "Registrar" : "Jornada completa"}
+        </button>
+      </div> : null}
     </div>
   );
 }

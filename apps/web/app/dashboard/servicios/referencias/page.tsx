@@ -1,6 +1,8 @@
 "use client";
 
 import { api } from "@/lib/api";
+import { ActionCard } from "@/components/ui/ActionCard";
+import { ModalFrame } from "@/components/ui/ModalFrame";
 import { ArrowLeft, Plus, Save } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -15,6 +17,7 @@ export default function ServiceReferencesPage() {
   const [selected, setSelected] = useState<ServiceReference | null>(null);
   const [category, setCategory] = useState("");
   const [message, setMessage] = useState("");
+  const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ code: "", name: "", category: "muebles", description: "", estimated_minutes: 60, brand: "", model: "", active: true, parts: [{ name: "", quantity: 1, unit: "und", description: "" }] as Part[] });
 
   async function load() {
@@ -28,6 +31,7 @@ export default function ServiceReferencesPage() {
   function reset() {
     setSelected(null);
     setForm({ code: "", name: "", category: "muebles", description: "", estimated_minutes: 60, brand: "", model: "", active: true, parts: [{ name: "", quantity: 1, unit: "und", description: "" }] });
+    setShowForm(true);
   }
 
   function edit(reference: ServiceReference) {
@@ -43,6 +47,7 @@ export default function ServiceReferencesPage() {
       active: reference.active,
       parts: reference.parts.length ? reference.parts.map((part) => ({ name: part.name, quantity: part.quantity, unit: part.unit, description: part.description || "" })) : [{ name: "", quantity: 1, unit: "und", description: "" }]
     });
+    setShowForm(true);
   }
 
   async function save() {
@@ -53,7 +58,9 @@ export default function ServiceReferencesPage() {
     const path = selected ? `/api/v1/services/references/${selected.id}` : "/api/v1/services/references";
     await api<ServiceReference>(path, { method: selected ? "PUT" : "POST", body: JSON.stringify(form) });
     setMessage(selected ? "Referencia actualizada." : "Referencia creada.");
-    reset();
+    setShowForm(false);
+    setSelected(null);
+    setForm({ code: "", name: "", category: "muebles", description: "", estimated_minutes: 60, brand: "", model: "", active: true, parts: [{ name: "", quantity: 1, unit: "und", description: "" }] });
     await load();
   }
 
@@ -66,14 +73,37 @@ export default function ServiceReferencesPage() {
           <h1 className="text-3xl font-semibold">Referencias de servicio</h1>
           <p className="mt-2 max-w-3xl text-sm text-neutral-600">Maestro espejo del legacy para categorias, tiempos estimados y piezas de inspeccion.</p>
         </div>
-        <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-medium hover:bg-paper" onClick={reset} type="button"><Plus size={16} /> Nueva referencia</button>
+        <button className="inline-flex h-11 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white" onClick={reset} type="button"><Plus size={16} /> Nueva referencia</button>
       </header>
 
       {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">{message}</div> : null}
 
-      <section className="grid gap-5 xl:grid-cols-[420px_1fr]">
-        <aside className="rounded-md border border-line bg-white p-4">
-          <h2 className="mb-3 text-base font-semibold">{selected ? "Editar referencia" : "Nueva referencia"}</h2>
+      <section className="grid gap-3 md:grid-cols-2">
+        <ActionCard title="Nueva referencia" detail="Crear modelo, piezas y tiempos de inspeccion." icon={Plus} onClick={reset} primary />
+        <ActionCard title="Filtrar maestro" detail={`${references.length} referencia(s) disponibles para servicios.`} icon={Save} onClick={() => undefined} />
+      </section>
+
+      <section className="rounded-md border border-line bg-white p-4">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div><h2 className="text-base font-semibold">Maestro</h2><p className="text-sm text-neutral-500">{references.length} referencia(s)</p></div>
+          <select className="h-10 rounded-md border border-line px-3 text-sm" value={category} onChange={(event) => setCategory(event.target.value)}>
+            <option value="">Todas las categorias</option>
+            {categories.map((item) => <option key={item} value={item}>{item}</option>)}
+          </select>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          {references.map((reference) => (
+            <button className={`rounded-md border p-4 text-left hover:bg-paper ${selected?.id === reference.id ? "border-apex" : "border-line"}`} key={reference.id} onClick={() => edit(reference)} type="button">
+              <div className="mb-2 flex items-center justify-between gap-2"><span className="text-xs font-semibold text-apex">{reference.category}</span><span className="rounded-md bg-paper px-2 py-1 text-xs">{reference.code}</span></div>
+              <h3 className="font-semibold">{reference.name}</h3>
+              <p className="mt-1 text-sm text-neutral-500">{reference.parts.length} pieza(s) · {reference.estimated_minutes} min</p>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {showForm ? (
+        <ModalFrame title={selected ? "Editar referencia" : "Nueva referencia"} onClose={() => setShowForm(false)}>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-2">
               <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Codigo *" value={form.code} onChange={(event) => setForm((prev) => ({ ...prev, code: event.target.value.toUpperCase() }))} />
@@ -103,27 +133,8 @@ export default function ServiceReferencesPage() {
             </div>
             <button className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-apex text-sm font-semibold text-white" onClick={save} type="button"><Save size={16} /> Guardar referencia</button>
           </div>
-        </aside>
-
-        <section className="rounded-md border border-line bg-white p-4">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div><h2 className="text-base font-semibold">Maestro</h2><p className="text-sm text-neutral-500">{references.length} referencia(s)</p></div>
-            <select className="h-10 rounded-md border border-line px-3 text-sm" value={category} onChange={(event) => setCategory(event.target.value)}>
-              <option value="">Todas las categorias</option>
-              {categories.map((item) => <option key={item} value={item}>{item}</option>)}
-            </select>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            {references.map((reference) => (
-              <button className={`rounded-md border p-4 text-left hover:bg-paper ${selected?.id === reference.id ? "border-apex" : "border-line"}`} key={reference.id} onClick={() => edit(reference)} type="button">
-                <div className="mb-2 flex items-center justify-between gap-2"><span className="text-xs font-semibold text-apex">{reference.category}</span><span className="rounded-md bg-paper px-2 py-1 text-xs">{reference.code}</span></div>
-                <h3 className="font-semibold">{reference.name}</h3>
-                <p className="mt-1 text-sm text-neutral-500">{reference.parts.length} pieza(s) · {reference.estimated_minutes} min</p>
-              </button>
-            ))}
-          </div>
-        </section>
-      </section>
+        </ModalFrame>
+      ) : null}
     </div>
   );
 }

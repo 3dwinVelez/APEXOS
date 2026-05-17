@@ -1,6 +1,6 @@
 "use client";
 
-import { Camera, FileUp, X } from "lucide-react";
+import { Camera, X } from "lucide-react";
 import { useRef, useState } from "react";
 
 export type CapturedFile = {
@@ -29,7 +29,6 @@ function readFile(file: File) {
 
 export function PhotoCapture({ label, required, capture = true, value, onChange }: Props) {
   const cameraRef = useRef<HTMLInputElement | null>(null);
-  const fileRef = useRef<HTMLInputElement | null>(null);
   const [error, setError] = useState("");
 
   async function select(file?: File) {
@@ -51,11 +50,11 @@ export function PhotoCapture({ label, required, capture = true, value, onChange 
   }
 
   return (
-    <div className="rounded-md border border-line bg-white p-3">
+    <div className="rounded-md border border-line bg-white p-3 shadow-sm">
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="text-sm font-semibold">{label}{required ? " *" : ""}</p>
         {value ? (
-          <button className="rounded-md p-1 text-neutral-500 hover:bg-paper" onClick={() => onChange(null)} type="button" aria-label="Quitar evidencia"><X size={15} /></button>
+          <button className="flex h-11 w-11 items-center justify-center rounded-md text-neutral-500 hover:bg-paper" onClick={() => onChange(null)} type="button" aria-label="Quitar evidencia"><X size={18} /></button>
         ) : null}
       </div>
       <input
@@ -66,31 +65,17 @@ export function PhotoCapture({ label, required, capture = true, value, onChange 
         type="file"
         onChange={(event) => select(event.target.files?.[0])}
       />
-      <input
-        accept="image/*"
-        className="hidden"
-        ref={fileRef}
-        type="file"
-        onChange={(event) => select(event.target.files?.[0])}
-      />
       {value ? (
         <div className="space-y-2">
-          <img alt={label} className="max-h-52 w-full rounded-md object-cover" src={value.base64} />
+          <img alt={label} className="max-h-64 w-full rounded-md object-cover" src={value.base64} />
           <p className="text-xs text-neutral-500">{value.name} - {Math.round(value.size / 1024)} KB</p>
         </div>
       ) : (
-        <div className="grid min-h-28 gap-2 sm:grid-cols-2">
-          {capture ? (
-            <button className="flex flex-col items-center justify-center gap-2 rounded-md border border-dashed border-line bg-paper px-3 py-5 text-sm font-semibold text-neutral-600 hover:border-apex hover:text-apex" onClick={() => cameraRef.current?.click()} type="button">
-              <Camera size={22} />
-              Tomar foto
-            </button>
-          ) : null}
-          <button className="flex flex-col items-center justify-center gap-2 rounded-md border border-dashed border-line bg-paper px-3 py-5 text-sm font-semibold text-neutral-600 hover:border-apex hover:text-apex" onClick={() => fileRef.current?.click()} type="button">
-            <FileUp size={22} />
-            Cargar archivo
-          </button>
-        </div>
+        <button className="flex min-h-32 w-full flex-col items-center justify-center gap-2 rounded-md border border-dashed border-line bg-paper px-3 py-5 text-base font-semibold text-neutral-700 hover:border-apex hover:text-apex" onClick={() => cameraRef.current?.click()} type="button">
+          <Camera size={28} />
+          Tomar foto
+          <span className="text-xs font-medium text-neutral-500">Abre la camara del dispositivo</span>
+        </button>
       )}
       {error ? <p className="mt-2 text-xs font-semibold text-red-700">{error}</p> : null}
     </div>

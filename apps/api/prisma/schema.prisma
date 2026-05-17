@@ -52,6 +52,7 @@ model Role {
   name        String
   description String?
   is_system   Boolean      @default(false)
+  metadata    Json         @default("{}")
   permissions Permission[]
   users       User[]
 

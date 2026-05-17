@@ -21,6 +21,8 @@
     "start:local": "npm run check:local && npm run infra:up && npm run dev",
     "start:local:windows": "node scripts/start-local-windows.js",
     "restart:local:windows": "node scripts/start-local-windows.js --restart",
+    "verify:web-assets": "node scripts/ensure-web-css.js --url http://localhost:3001/dashboard",
+    "verify:web-assets:dev": "set NEXT_DIST_DIR=.next-dev&& node scripts/ensure-web-css.js --url http://localhost:3001/dashboard",
     "lint": "npm --workspace apps/web run lint",
     "prisma:validate": "npm --workspace apps/api run prisma:validate",
     "brain:dev": "cd services/brain && uvicorn main:app --reload --port 8000"

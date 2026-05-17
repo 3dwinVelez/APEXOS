@@ -1,7 +1,7 @@
 function parseTimeMinutes(value) {
   if (!value) return null;
   const raw = String(value).trim().toUpperCase();
-  const match = raw.match(/^(\d{1,2}):(\d{2})(:\s*(AM|PM))$/);
+  const match = raw.match(/^(\d{1,2}):(\d{2})(?:\s*(AM|PM))?$/);
   if (!match) return null;
   let hour = Number(match[1]);
   const minute = Number(match[2]);

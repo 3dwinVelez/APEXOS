@@ -1,6 +1,8 @@
 "use client";
 
 import { api } from "@/lib/api";
+import { ActionCard } from "@/components/ui/ActionCard";
+import { ModalFrame } from "@/components/ui/ModalFrame";
 import { AlertTriangle, Fuel, Plus, Save, ShieldCheck, Truck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -37,6 +39,7 @@ export default function TransportPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedType, setSelectedType] = useState(vehicleTypes[0]);
   const [message, setMessage] = useState("");
+  const [showNew, setShowNew] = useState(false);
   const [form, setForm] = useState({
     plate: "",
     model: "",
@@ -74,6 +77,7 @@ export default function TransportPage() {
     await api("/api/v1/transport/vehicles", { method: "POST", body: JSON.stringify({ ...form, plate: form.plate.toUpperCase() }) });
     setMessage("Vehículo registrado en el maestro de Transporte.");
     setForm((current) => ({ ...current, plate: "", model: "", brand: "", owner: "", mileage: 0 }));
+    setShowNew(false);
     await load();
   }
 
@@ -81,10 +85,13 @@ export default function TransportPage() {
 
   return (
     <div className="space-y-5">
-      <header>
-        <p className="text-sm font-medium text-apex">M-14 · Logística</p>
-        <h1 className="text-3xl font-semibold">Transporte</h1>
-        <p className="mt-2 max-w-3xl text-sm text-neutral-600">Maestro transversal de vehículos para rutas, horarios, servicios, logística y seguimiento operativo.</p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-apex">M-14 · Logística</p>
+          <h1 className="text-3xl font-semibold">Transporte</h1>
+          <p className="mt-2 max-w-3xl text-sm text-neutral-600">Maestro transversal de vehículos para rutas, horarios, servicios, logística y seguimiento operativo.</p>
+        </div>
+        <button className="inline-flex h-11 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white" onClick={() => setShowNew(true)} type="button"><Plus size={17} /> Nuevo vehículo</button>
       </header>
 
       {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">{message}</div> : null}
@@ -96,10 +103,40 @@ export default function TransportPage() {
         <div className="rounded-md border border-line bg-white p-4"><Fuel className="mb-3 text-apex" size={18} /><p className="text-2xl font-semibold">{new Set(vehicles.map((v) => v.type).filter(Boolean)).size}</p><p className="text-sm text-neutral-500">Tipos de flota</p></div>
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[380px_1fr]">
-        <aside className="space-y-5">
-          <div className="rounded-md border border-line bg-white p-4">
-            <div className="mb-3 flex items-center gap-2"><Plus size={18} className="text-apex" /><h2 className="text-base font-semibold">Nuevo vehículo</h2></div>
+      <section className="grid gap-3 md:grid-cols-2">
+        <ActionCard title="Registrar vehículo" detail="Crear placa, tipo, documentos y datos base de operación." icon={Plus} onClick={() => setShowNew(true)} primary />
+        <ActionCard title="Revisar vencimientos" detail={`${docsRisk} vehículo(s) con documentos por revisar.`} icon={AlertTriangle} onClick={() => undefined} />
+      </section>
+
+      <section className="rounded-md border border-line bg-white p-4">
+        <h2 className="mb-4 text-base font-semibold">Flota registrada</h2>
+        <div className="grid gap-3 lg:grid-cols-2">
+          {vehicles.map((vehicle) => {
+            const risk = expired(vehicle.soat_expires) || expired(vehicle.technical_review_expires) || expired(vehicle.insurance_expires);
+            return (
+              <article className={`rounded-md border p-4 ${risk ? "border-red-200 bg-red-50" : "border-line"}`} key={vehicle.id}>
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xl font-semibold">{vehicle.plate}</p>
+                    <p className="text-sm text-neutral-600">{vehicle.brand} {vehicle.model} {vehicle.year ? `(${vehicle.year})` : ""}</p>
+                  </div>
+                  <span className="rounded-md bg-paper px-2 py-1 text-xs font-semibold">{vehicle.status}</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                  <div><p className="text-xs text-neutral-500">Tipo</p><p className="font-semibold">{vehicle.type || "-"}</p></div>
+                  <div><p className="text-xs text-neutral-500">Combustible</p><p className="font-semibold">{vehicle.fuel || "-"}</p></div>
+                  <div><p className="text-xs text-neutral-500">Capacidad</p><p className="font-semibold">{vehicle.load_capacity || "-"}</p></div>
+                </div>
+                {risk ? <p className="mt-3 text-xs font-semibold text-red-700">Documento vencido o por revisar.</p> : null}
+              </article>
+            );
+          })}
+          {!vehicles.length ? <p className="text-sm text-neutral-500">No hay vehículos registrados.</p> : null}
+        </div>
+      </section>
+
+      {showNew ? (
+        <ModalFrame title="Nuevo vehículo" onClose={() => setShowNew(false)}>
             <div className="grid grid-cols-2 gap-2">
               {vehicleTypes.map((type) => (
                 <button className={`rounded-md border p-3 text-left text-sm ${selectedType.type === type.type ? "border-apex bg-paper" : "border-line hover:bg-paper"}`} key={type.type} onClick={() => chooseType(type)} type="button">
@@ -124,36 +161,8 @@ export default function TransportPage() {
               </div>
               <button className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-apex px-3 text-sm font-medium text-white" onClick={save} type="button"><Save size={16} /> Registrar vehículo</button>
             </div>
-          </div>
-        </aside>
-
-        <section className="rounded-md border border-line bg-white p-4">
-          <h2 className="mb-4 text-base font-semibold">Flota registrada</h2>
-          <div className="grid gap-3 lg:grid-cols-2">
-            {vehicles.map((vehicle) => {
-              const risk = expired(vehicle.soat_expires) || expired(vehicle.technical_review_expires) || expired(vehicle.insurance_expires);
-              return (
-                <article className={`rounded-md border p-4 ${risk ? "border-red-200 bg-red-50" : "border-line"}`} key={vehicle.id}>
-                  <div className="mb-3 flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xl font-semibold">{vehicle.plate}</p>
-                      <p className="text-sm text-neutral-600">{vehicle.brand} {vehicle.model} {vehicle.year ? `(${vehicle.year})` : ""}</p>
-                    </div>
-                    <span className="rounded-md bg-paper px-2 py-1 text-xs font-semibold">{vehicle.status}</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 text-sm">
-                    <div><p className="text-xs text-neutral-500">Tipo</p><p className="font-semibold">{vehicle.type || "-"}</p></div>
-                    <div><p className="text-xs text-neutral-500">Combustible</p><p className="font-semibold">{vehicle.fuel || "-"}</p></div>
-                    <div><p className="text-xs text-neutral-500">Capacidad</p><p className="font-semibold">{vehicle.load_capacity || "-"}</p></div>
-                  </div>
-                  {risk ? <p className="mt-3 text-xs font-semibold text-red-700">Documento vencido o por revisar.</p> : null}
-                </article>
-              );
-            })}
-            {!vehicles.length ? <p className="text-sm text-neutral-500">No hay vehículos registrados.</p> : null}
-          </div>
-        </section>
-      </section>
+        </ModalFrame>
+      ) : null}
     </div>
   );
 }

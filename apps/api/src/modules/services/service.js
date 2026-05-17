@@ -1,5 +1,12 @@
 const prisma = require("../../core/prisma");
 
+function appError(statusCode, code, message) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  error.code = code;
+  return error;
+}
+
 function startOfDay(value) {
   const date = new Date(value);
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -12,6 +19,106 @@ async function nextNumber() {
 
 function orderInclude() {
   return { reference: { include: { parts: true } }, incidents: true, photos: true };
+}
+
+function photoLabel(type) {
+  const labels = {
+    fachada: "Fachada",
+    pieza_averiada: "Pieza averiada/faltante",
+    producto_abierto: "Producto abierto",
+    producto_cerrado: "Producto cerrado",
+    cliente: "Cliente recibe",
+    firma_cliente: "Firma del cliente",
+    no_ejecutada: "Evidencia no ejecutada"
+  };
+  return labels[type] || type;
+}
+
+async function requireEvidence(orderId, requiredTypes) {
+  const photos = await prisma.servicePhoto.findMany({ where: { order_id: Number(orderId) }, select: { type: true } });
+  const available = new Set(photos.map((photo) => photo.type));
+  const missing = requiredTypes.filter((type) => !available.has(type));
+  if (missing.length) {
+    throw appError(422, "SERVICE_EVIDENCE_REQUIRED", `Faltan evidencias para cerrar: ${missing.map(photoLabel).join(", ")}`);
+  }
+}
+
+function orderTimeline(order) {
+  const events = [
+    { label: "Orden creada", at: order.created_at },
+    { label: "Servicio iniciado", at: order.started_at },
+    { label: "Servicio cerrado", at: order.closed_at }
+  ].filter((event) => event.at);
+  return events.sort((a, b) => new Date(a.at) - new Date(b.at));
+}
+
+function reportForOrder(order) {
+  const inspection = order.metadata?.inspection || {};
+  return {
+    order,
+    timeline: orderTimeline(order),
+    inspection_items: inspection.items || [],
+    inspection_decision: inspection.decision || "",
+    evidence: order.photos.map((photo) => ({
+      id: photo.id,
+      type: photo.type,
+      label: photoLabel(photo.type),
+      file_url: photo.file_url,
+      has_base64: Boolean(photo.base64_data),
+      mime_type: photo.metadata?.mime_type || "",
+      file_name: photo.metadata?.file_name || "",
+      metadata: photo.metadata || {},
+      created_at: photo.created_at
+    })),
+    incidents: order.incidents,
+    totals: {
+      evidence: order.photos.length,
+      incidents: order.incidents.length,
+      inspection_items: (inspection.items || []).length
+    }
+  };
+}
+
+function pdfEscape(value) {
+  return String(value ?? "").replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+}
+
+function sanitizePdfLine(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\x20-\x7E]/g, "")
+    .slice(0, 96);
+}
+
+function buildSimplePdf(lines) {
+  const content = ["BT", "/F1 10 Tf", "50 790 Td", "14 TL"];
+  lines.slice(0, 48).forEach((line, index) => {
+    if (index > 0) content.push("T*");
+    content.push(`(${pdfEscape(sanitizePdfLine(line))}) Tj`);
+  });
+  content.push("ET");
+  const stream = content.join("\n");
+  const objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    `<< /Length ${Buffer.byteLength(stream)} >>\nstream\n${stream}\nendstream`
+  ];
+  let pdf = "%PDF-1.4\n";
+  const offsets = [0];
+  objects.forEach((object, index) => {
+    offsets.push(Buffer.byteLength(pdf));
+    pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+  });
+  const xrefOffset = Buffer.byteLength(pdf);
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  offsets.slice(1).forEach((offset) => {
+    pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+  });
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+  return Buffer.from(pdf);
 }
 
 function referenceInclude() {
@@ -48,6 +155,43 @@ async function getOrder(tenantId, id) {
     where: { id: Number(id) },
     include: orderInclude()
   }));
+}
+
+async function getOrderReport(tenantId, id) {
+  const order = await getOrder(tenantId, id);
+  return reportForOrder(order);
+}
+
+async function getOrderReportPdf(tenantId, id) {
+  const report = await getOrderReport(tenantId, id);
+  const order = report.order;
+  const lines = [
+    "APEXOS - Reporte de servicio",
+    `Orden: ${order.number}`,
+    `Estado: ${order.status}`,
+    `Cliente: ${order.customer_name}`,
+    `Direccion: ${order.customer_address}`,
+    `Telefono: ${order.customer_phone || "N/A"}`,
+    `Factura: ${order.invoice_number || "N/A"}`,
+    `Referencia: ${order.reference?.code || ""} ${order.reference?.name || ""}`,
+    `Tipo servicio: ${order.service_type}`,
+    `Inicio GPS: ${order.start_latitude || ""}, ${order.start_longitude || ""}`,
+    `Cierre GPS: ${order.close_latitude || ""}, ${order.close_longitude || ""}`,
+    `Duracion min: ${order.duration_minutes ?? "N/A"}`,
+    "",
+    "Linea de tiempo:",
+    ...report.timeline.map((event) => `${event.label}: ${new Date(event.at).toISOString()}`),
+    "",
+    "Inspeccion:",
+    ...report.inspection_items.map((item) => `${item.name}: ${item.status} ${item.comment || ""}`),
+    "",
+    "Novedades:",
+    ...(report.incidents.length ? report.incidents.map((item) => `${item.type}: ${item.description}`) : ["Sin novedades"]),
+    "",
+    "Evidencias:",
+    ...(report.evidence.length ? report.evidence.map((item) => `${item.label}: ${item.file_name || "captura adjunta"}`) : ["Sin evidencias"])
+  ];
+  return { fileName: `${order.number || `servicio-${id}`}.pdf`, buffer: buildSimplePdf(lines) };
 }
 
 async function createOrder(tenantId, user, input) {
@@ -225,6 +369,7 @@ async function moveToExecution(tenantId, id) {
 async function closeOrder(tenantId, id, input = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const order = await prisma.serviceOrder.findFirstOrThrow({ where: { id: Number(id) } });
+    await requireEvidence(id, ["producto_abierto", "producto_cerrado", "cliente", "firma_cliente"]);
     const now = new Date();
     const duration = order.started_at ? Math.max(Math.round((now - order.started_at) / 60000), 0) : null;
     return prisma.serviceOrder.update({
@@ -245,6 +390,10 @@ async function closeOrder(tenantId, id, input = {}) {
 async function closeNotExecuted(tenantId, id, input = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const order = await prisma.serviceOrder.findFirstOrThrow({ where: { id: Number(id) } });
+    if (!String(input.no_execution_reason || "").trim()) {
+      throw appError(400, "NO_EXECUTION_REASON_REQUIRED", "El motivo de no ejecucion es obligatorio");
+    }
+    await requireEvidence(id, ["no_ejecutada", "firma_cliente"]);
     const now = new Date();
     const reason = input.no_execution_reason || "No ejecutada";
     await prisma.serviceIncident.create({
@@ -311,6 +460,8 @@ async function listPhotos(tenantId, orderId) {
 module.exports = {
   listOrders,
   getOrder,
+  getOrderReport,
+  getOrderReportPdf,
   createOrder,
   listReferences,
   getReference,

@@ -13,6 +13,14 @@ async function servicesRoutes(fastify) {
   fastify.post("/services/references", { schema: schemas.referenceSchema, preHandler: requirePermission("services", "write") }, (request) => service.createReference(request.user?.tenant_id, request.body));
   fastify.put("/services/references/:id", { schema: schemas.referenceSchema, preHandler: requirePermission("services", "write") }, (request) => service.updateReference(request.user?.tenant_id, request.params.id, request.body));
   fastify.get("/services/orders/:id", { preHandler: requirePermission("services", "read") }, (request) => service.getOrder(request.user?.tenant_id, request.params.id));
+  fastify.get("/services/orders/:id/report", { preHandler: requirePermission("services", "read") }, (request) => service.getOrderReport(request.user?.tenant_id, request.params.id));
+  fastify.get("/services/orders/:id/report-pdf", { preHandler: requirePermission("services", "read") }, async (request, reply) => {
+    const pdf = await service.getOrderReportPdf(request.user?.tenant_id, request.params.id);
+    reply
+      .header("Content-Type", "application/pdf")
+      .header("Content-Disposition", `attachment; filename="${pdf.fileName}"`)
+      .send(pdf.buffer);
+  });
   fastify.post("/services/orders", { schema: schemas.orderSchema, preHandler: requirePermission("services", "write") }, (request) => service.createOrder(request.user?.tenant_id, request.user, request.body));
   fastify.patch("/services/orders/:id/start", { schema: schemas.startSchema, preHandler: requirePermission("services", "write") }, (request) => service.startOrder(request.user?.tenant_id, request.params.id, request.body));
   fastify.patch("/services/orders/:id/inspection", { schema: schemas.inspectionSchema, preHandler: requirePermission("services", "write") }, (request) => service.moveToInspection(request.user?.tenant_id, request.params.id, request.body));

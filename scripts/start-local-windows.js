@@ -35,7 +35,8 @@ function run(command, args, options = {}) {
     env: baseEnv(options.env),
     shell: process.platform === "win32" && command.toLowerCase().endsWith(".cmd"),
     encoding: "utf8",
-    stdio: "pipe"
+    stdio: "pipe",
+    timeout: options.timeoutMs
   });
 
   if (!options.quiet) {
@@ -157,7 +158,7 @@ async function ensurePostgres() {
     await waitForPort(55432);
   }
 
-  run("createdb", ["-h", "localhost", "-p", "55432", "-U", "apex", "apexos"], { allowFailure: true, quiet: true });
+  run("createdb", ["-h", "localhost", "-p", "55432", "-U", "apex", "apexos"], { allowFailure: true, quiet: true, timeoutMs: 10000 });
 }
 
 function ensureDependencies() {
@@ -179,8 +180,8 @@ function startProcess(name, args, stdoutFile, stderrFile) {
     cwd = path.join(root, "apps", "api");
   } else if (process.platform === "win32" && args.join(" ").includes("apps/web")) {
     command = "C:\\Program Files\\nodejs\\node.exe";
-    commandArgs = [path.join(root, "node_modules", "next", "dist", "bin", "next"), "dev", "-p", "3001"];
-    cwd = path.join(root, "apps", "web");
+    commandArgs = [path.join(root, "scripts", "dev-web.js")];
+    cwd = root;
   }
 
   const child = spawn(command, commandArgs, {
@@ -235,6 +236,8 @@ async function main() {
     startProcess("web", ["--workspace", "apps/web", "run", "dev"], "web-dev.out.log", "web-dev.err.log");
     await waitForPort(3001);
   }
+
+  run("node", ["scripts/ensure-web-css.js", "--url", "http://localhost:3001/dashboard"], { allowFailure: true });
 
   log("Ready");
   log("Web: http://localhost:3001");
