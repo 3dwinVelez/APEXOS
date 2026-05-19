@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
+import { touchSession } from "@/lib/sessionSecurity";
 import { getSupabaseConfigStatus, supabaseAuth } from "@/lib/supabaseClient";
 import { LogIn } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -43,6 +44,7 @@ export default function LoginPage() {
         localStorage.setItem("user_email", loginEmail);
         if (data.tenant?.active_modules) localStorage.setItem("tenant_active_modules", JSON.stringify(data.tenant.active_modules));
       }
+      touchSession();
       router.push("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo iniciar sesion");

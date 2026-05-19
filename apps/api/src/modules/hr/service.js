@@ -1,4 +1,5 @@
 const prisma = require("../../core/prisma");
+const { MAX_EVIDENCE_BYTES, assertSafeFile, normalizeFileName, secureStoragePath } = require("../../security/policy");
 const { normalizePunchType, processWorkday } = require("./timeLogic");
 
 const DEFAULT_PARAMS = {
@@ -393,16 +394,18 @@ async function submitPreoperationalChecklist(tenantId, user, id, input) {
         failures.push({ item, answer });
       }
       for (const evidence of answer.evidence || []) {
+        assertSafeFile(evidence, { maxBytes: MAX_EVIDENCE_BYTES });
+        const fileName = normalizeFileName(evidence.file_name || `${answer.item_key}.jpg`);
         evidenceRows.push({
           checklist_id: checklist.id,
           item_key: answer.item_key,
           evidence_type: evidence.evidence_type || "photo",
-          file_name: evidence.file_name || `${answer.item_key}.jpg`,
+          file_name: fileName,
           file_url: evidence.file_url || "",
           base64_data: evidence.base64_data || "",
           mime_type: evidence.mime_type || "",
           file_size: evidence.file_size || null,
-          storage_path: `routes/${checklist.route_id || "sin-ruta"}/preoperational_checklist/${checklist.id}/evidence/${answer.item_key}/${evidence.file_name || "archivo"}`,
+          storage_path: evidence.storage_path || secureStoragePath({ tenantId, module: "hr", entity: "preoperational", entityId: checklist.id, fileName }),
           uploaded_by: user?.id || null
         });
       }

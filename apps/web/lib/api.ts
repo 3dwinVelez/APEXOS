@@ -1,3 +1,5 @@
+import { assertActiveSession, clearSession, touchSession } from "./sessionSecurity";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
 
 function isSupabaseSession() {
@@ -14,6 +16,7 @@ function isSupabaseSession() {
 }
 
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
+  assertActiveSession();
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
   let response: Response;
 
@@ -31,8 +34,7 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   }
 
   if (response.status === 401 && typeof window !== "undefined" && !isSupabaseSession()) {
-    localStorage.removeItem("token");
-    localStorage.removeItem("refresh");
+    clearSession("unauthorized");
     window.location.href = "/login";
     throw new Error("Tu sesión expiró. Inicia sesión de nuevo.");
   }
@@ -45,5 +47,6 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
     const body = await response.json().catch(() => ({ error: response.statusText }));
     throw new Error(body.error || "La solicitud no pudo completarse");
   }
+  touchSession();
   return response.json() as Promise<T>;
 }

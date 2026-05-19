@@ -1,5 +1,6 @@
 const bcrypt = require("bcrypt");
 const prisma = require("../../core/prisma");
+const { assertPasswordPolicy } = require("../../security/policy");
 
 const PERMISSION_CATALOG = [
   { key: "dashboard", label: "Dashboard", actions: ["access", "view"], grants: { access: [["brain", "read"]], view: [["brain", "read"]] } },
@@ -239,7 +240,9 @@ async function listUsers(tenantId) {
 
 async function createUser(tenantId, input) {
   await ensureSystemRoles(tenantId);
-  const password = await bcrypt.hash(input.password || input.pas || "test1234", 12);
+  const rawPassword = input.password || input.pas || "";
+  assertPasswordPolicy(rawPassword);
+  const password = await bcrypt.hash(rawPassword, 12);
   return prisma.runWithTenant(tenantId, async () => {
     const role = input.role_id
       ? await prisma.role.findFirstOrThrow({ where: { id: Number(input.role_id) } })
@@ -292,7 +295,10 @@ async function updateUser(tenantId, id, input) {
       role_id: input.role_id ? Number(input.role_id) : current.role_id,
       active: input.active !== false && input.activo !== false
     };
-    if (input.password || input.pas) data.password = await bcrypt.hash(input.password || input.pas, 12);
+    if (input.password || input.pas) {
+      assertPasswordPolicy(input.password || input.pas);
+      data.password = await bcrypt.hash(input.password || input.pas, 12);
+    }
     await prisma.user.update({ where: { id: current.id }, data });
     const employeeData = {
       code: input.code || input.id_interno || current.employee?.code || `EMP-${current.id}`,

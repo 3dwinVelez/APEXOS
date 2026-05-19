@@ -1,4 +1,5 @@
 const { auditQueue } = require("./queues");
+const { redactSensitive } = require("../security/policy");
 
 function registerAuditHook(fastify) {
   fastify.addHook("onResponse", async (request, reply) => {
@@ -14,7 +15,7 @@ function registerAuditHook(fastify) {
       module: request.routeOptions.url.split("/")[3] || "unknown",
       entity: request.routeOptions.url || request.url,
       entity_id: request.params.id ? String(request.params.id) : undefined,
-      new_value: request.body || null,
+      new_value: request.body ? redactSensitive(request.body) : null,
       ip: request.ip,
       user_agent: request.headers["user-agent"],
       status_code: reply.statusCode
@@ -23,4 +24,3 @@ function registerAuditHook(fastify) {
 }
 
 module.exports = { registerAuditHook };
-

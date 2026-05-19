@@ -1,4 +1,5 @@
 const prisma = require("../../core/prisma");
+const { MAX_DOCUMENT_BYTES, assertSafeFile, normalizeFileName, secureStoragePath } = require("../../security/policy");
 
 const REQUIRED_DOCUMENTS = ["soat", "revision_tecnico_mecanica"];
 const EXPIRY_WARNING_DAYS = 30;
@@ -349,14 +350,16 @@ async function addVehicleDocument(tenantId, user, id, input) {
       error.statusCode = 400;
       throw error;
     }
+    assertSafeFile(input, { maxBytes: MAX_DOCUMENT_BYTES });
+    const fileName = normalizeFileName(input.file_name || input.name || `${documentType}-${vehicle.plate}`);
     const version = await prisma.vehicleDocument.count({ where: { vehicle_id: vehicle.id, document_type: documentType } }) + 1;
-    const storagePath = input.storage_path || `vehicles/${vehicle.id}/documents/${documentType}/${input.file_name || "archivo"}`;
+    const storagePath = input.storage_path || secureStoragePath({ tenantId, module: "transport", entity: "vehicle-documents", entityId: vehicle.id, fileName });
     const document = await prisma.vehicleDocument.create({
       data: {
         vehicle_id: vehicle.id,
         plate: vehicle.plate,
         document_type: documentType,
-        file_name: input.file_name || input.name || `${documentType}-${vehicle.plate}`,
+        file_name: fileName,
         file_url: input.file_url || "",
         storage_path: storagePath,
         base64_data: input.base64_data || "",

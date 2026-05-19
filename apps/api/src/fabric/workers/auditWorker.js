@@ -1,6 +1,7 @@
 const { Worker } = require("bullmq");
 const prisma = require("../../core/prisma");
 const { connection } = require("../queues");
+const { redactSensitive } = require("../../security/policy");
 
 if (!connection) {
   return;
@@ -16,10 +17,9 @@ new Worker("apex-audit", async (job) => {
       module: payload.module,
       entity: payload.entity,
       entity_id: payload.entity_id,
-      new_value: payload.new_value,
+      new_value: redactSensitive(payload.new_value),
       ip: payload.ip,
       user_agent: payload.user_agent
     }
   });
 }, { connection });
-

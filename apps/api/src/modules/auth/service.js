@@ -1,6 +1,9 @@
 const bcrypt = require("bcrypt");
 const prisma = require("../../core/prisma");
 const { brainQueue } = require("../../fabric/queues");
+const { assertLoginAllowed, registerLoginFailure, registerLoginSuccess } = require("../../security/authGuard");
+const jwt = require("../../security/jwt");
+const { assertPasswordPolicy } = require("../../security/policy");
 const accountingService = require("../accounting/service");
 
 const SEED_MODULES = ["M-01", "M-03", "M-04", "M-05", "M-07", "M-22"];
@@ -31,6 +34,7 @@ function publicTenant(tenant) {
 async function registerTenant(input, fastify) {
   const trialEnd = new Date();
   trialEnd.setDate(trialEnd.getDate() + 14);
+  assertPasswordPolicy(input.password);
   const password = await bcrypt.hash(input.password, 12);
 
   const result = await prisma.$transaction(async (tx) => {
@@ -88,24 +92,27 @@ async function registerTenant(input, fastify) {
     }).catch(() => undefined);
   });
 
-  const token = fastify.jwt.sign({
+  const token = jwt.sign({
     id: result.user.id,
     tenant_id: result.tenant.id,
     role: { name: result.role.name, permissions: result.role.permissions }
   }, { expiresIn: "8h" });
-  const refresh = fastify.jwt.sign({ id: result.user.id, tenant_id: result.tenant.id, type: "refresh" }, { expiresIn: "30d" });
+  const refresh = jwt.sign({ id: result.user.id, tenant_id: result.tenant.id, type: "refresh" }, { expiresIn: "30d" });
 
   return { token, refresh, tenant: publicTenant(result.tenant), user: publicUser({ ...result.user, role: result.role }) };
 }
 
-async function login(input, fastify) {
+async function login(input, fastify, request = {}) {
+  const email = input.email.toLowerCase();
+  assertLoginAllowed(email, request.ip);
   const user = await prisma.user.findFirst({
-    where: { email: input.email.toLowerCase() },
+    where: { email },
     include: { role: { include: { permissions: true } } }
   });
 
   if (!user || !(await bcrypt.compare(input.password, user.password))) {
-    const err = new Error("Credenciales incorrectas");
+    registerLoginFailure(email, request.ip);
+    const err = new Error("No fue posible iniciar sesion con esas credenciales.");
     err.statusCode = 401;
     throw err;
   }
@@ -115,10 +122,11 @@ async function login(input, fastify) {
     throw err;
   }
 
+  registerLoginSuccess(email, request.ip);
   await prisma.user.update({ where: { id: user.id }, data: { last_login: new Date() } });
   const tenant = await prisma.tenant.findUnique({ where: { id: user.tenant_id } });
-  const token = fastify.jwt.sign({ id: user.id, tenant_id: user.tenant_id, role: user.role }, { expiresIn: "8h" });
-  const refresh = fastify.jwt.sign({ id: user.id, tenant_id: user.tenant_id, type: "refresh" }, { expiresIn: "30d" });
+  const token = jwt.sign({ id: user.id, tenant_id: user.tenant_id, role: user.role }, { expiresIn: "8h" });
+  const refresh = jwt.sign({ id: user.id, tenant_id: user.tenant_id, type: "refresh" }, { expiresIn: "30d" });
 
   return { token, refresh, tenant: publicTenant(tenant), user: publicUser(user) };
 }
@@ -138,7 +146,7 @@ async function me(user) {
 }
 
 async function refresh(input, fastify) {
-  const payload = fastify.jwt.verify(input.refresh);
+  const payload = jwt.verify(input.refresh);
   if (payload.type !== "refresh") {
     const err = new Error("Token de renovación inválido");
     err.statusCode = 401;
@@ -154,7 +162,7 @@ async function refresh(input, fastify) {
     throw err;
   }
   return {
-    token: fastify.jwt.sign({ id: user.id, tenant_id: user.tenant_id, role: user.role }, { expiresIn: "8h" })
+    token: jwt.sign({ id: user.id, tenant_id: user.tenant_id, role: user.role }, { expiresIn: "8h" })
   };
 }
 

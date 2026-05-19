@@ -1,4 +1,5 @@
 const prisma = require("../../core/prisma");
+const { MAX_EVIDENCE_BYTES, assertSafeFile, normalizeFileName, secureStoragePath } = require("../../security/policy");
 
 function appError(statusCode, code, message) {
   const error = new Error(message);
@@ -445,6 +446,9 @@ async function addIncident(tenantId, orderId, input) {
 }
 
 async function addPhoto(tenantId, orderId, input) {
+  assertSafeFile(input, { maxBytes: MAX_EVIDENCE_BYTES });
+  const fileName = normalizeFileName(input.file_name || `${input.type}-${orderId}`);
+  const storagePath = input.storage_path || secureStoragePath({ tenantId, module: "services", entity: "orders", entityId: orderId, fileName });
   return prisma.runWithTenant(tenantId, async () => prisma.servicePhoto.create({
     data: {
       order_id: Number(orderId),
@@ -454,7 +458,8 @@ async function addPhoto(tenantId, orderId, input) {
       size_bytes: input.size_bytes,
       metadata: {
         mime_type: input.mime_type || "",
-        file_name: input.file_name || "",
+        file_name: fileName,
+        storage_path: storagePath,
         ...(input.metadata || {})
       }
     }

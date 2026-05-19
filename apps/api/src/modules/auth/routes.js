@@ -7,8 +7,11 @@ async function authRoutes(fastify) {
     return reply.code(201).send(result);
   });
 
-  fastify.post("/auth/login", { schema: schemas.loginSchema }, async (request) => {
-    return service.login(request.body, fastify);
+  fastify.post("/auth/login", {
+    schema: schemas.loginSchema,
+    config: { rateLimit: { max: 10, timeWindow: "1 minute" } }
+  }, async (request) => {
+    return service.login(request.body, fastify, request);
   });
 
   fastify.get("/auth/me", { preHandler: fastify.authenticate }, async (request) => {

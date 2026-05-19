@@ -1,6 +1,7 @@
 require("./src/core/loadEnv")();
 
 const fastify = require("fastify")({
+  bodyLimit: Number(process.env.API_BODY_LIMIT_BYTES || 25 * 1024 * 1024),
   logger: {
     level: process.env.NODE_ENV === "production" ? "warn" : "info",
     transport: process.env.NODE_ENV === "development" ? { target: "pino-pretty" } : undefined
@@ -38,11 +39,6 @@ async function build() {
     ? configuredOrigins
     : Array.from(new Set([...configuredOrigins, ...DEFAULT_ALLOWED_ORIGINS]));
 
-  await fastify.register(require("@fastify/jwt"), {
-    secret: process.env.JWT_SECRET,
-    sign: { algorithm: "HS256" }
-  });
-
   await fastify.register(require("@fastify/cors"), {
     origin: allowedOrigins.length ? allowedOrigins : DEFAULT_ALLOWED_ORIGINS,
     methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -55,6 +51,8 @@ async function build() {
     keyGenerator: (req) => req.user?.tenant_id || req.ip
   });
 
+  require("./src/security/headers").registerSecurityHeaders(fastify);
+
   await fastify.register(require("@fastify/websocket"));
   await fastify.register(require("@fastify/multipart"), {
     limits: { fileSize: 50 * 1024 * 1024 }
@@ -62,7 +60,18 @@ async function build() {
 
   fastify.decorate("authenticate", async (request, reply) => {
     try {
-      await request.jwtVerify();
+      const auth = request.headers.authorization || "";
+      const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+      request.user = require("./src/security/jwt").verify(token);
+      const tenantId = request.user?.tenant_id;
+      if (tenantId) {
+        const { getTenantFromCache } = require("./src/core/tenantCache");
+        const tenant = await getTenantFromCache(tenantId);
+        if (!tenant || !tenant.active) {
+          return reply.code(403).send({ error: "Cuenta suspendida o no encontrada", code: "EMPRESA_INACTIVA" });
+        }
+        request.tenant = tenant;
+      }
     } catch {
       return reply.code(401).send({ error: "Token inválido", code: "TOKEN_INVALIDO" });
     }
