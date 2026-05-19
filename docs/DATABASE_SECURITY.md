@@ -33,6 +33,16 @@ Las funciones son `security definer` para evitar recursion de RLS al consultar `
 - `plans`
 - `modules`
 - `plan_modules`
+- `service_references`
+- `service_reference_parts`
+- `vehicles`
+- `operational_routes`
+- `route_assignments`
+- `time_punches`
+- `gps_pings`
+- `service_orders`
+- `service_incidents`
+- `service_evidence`
 
 ## Politicas principales
 
@@ -42,6 +52,25 @@ Las funciones son `security definer` para evitar recursion de RLS al consultar `
 - `company_modules`: miembros ven modulos de su empresa; `owner/admin` administran modulos.
 - `employees`: miembros ven empleados solo si `talento_humano` esta habilitado; escrituras solo `owner/admin`.
 - `services`: miembros ven servicios solo si `servicios` esta habilitado; escrituras solo `owner/admin`.
+- `service_references`, `service_orders`, `service_incidents`, `service_evidence`: miembros operan solo si `servicios` esta habilitado.
+- `vehicles`: miembros consultan solo si `transporte` esta habilitado; escrituras administrativas.
+- `operational_routes`, `route_assignments`, `time_punches`, `gps_pings`: miembros consultan/registran solo si `talento_humano` esta habilitado.
+
+## Tablas operativas Supabase QA
+
+La migracion `20260518123000_operational_field_service_foundation.sql` prepara Supabase QA para pruebas funcionales reales con:
+
+- Referencias de servicio y piezas.
+- Vehiculos.
+- Rutas operativas y asignaciones.
+- Marcaciones.
+- Huellas GPS, incluyendo recuperacion offline.
+- Ordenes de servicio.
+- Novedades.
+- Evidencias y firma de cliente.
+- Vinculo `employees.user_id` para reconocer al usuario conectado.
+
+Estado actual: la migracion esta versionada, pero aun falta aplicarla a Supabase QA porque `DATABASE_URL` sigue apuntando a la base local `apexos`.
 
 ## Usuario QA
 

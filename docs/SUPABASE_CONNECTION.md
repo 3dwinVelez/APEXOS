@@ -135,11 +135,30 @@ Pendiente SQL real:
 - Crear tabla `company_admin_onboarding`.
 - Crear/actualizar vista `v_platform_companies` con campos de jerarquia.
 - Crear trigger `app_private.initialize_company_modules()` para futuras empresas.
+- Aplicar tablas operativas de servicios, rutas, marcaciones, GPS, evidencias y vehiculos.
 
 Para completar esto se requiere una de estas dos opciones:
 
 - Reautenticar el conector Supabase MCP de Codex.
 - Reemplazar `DATABASE_URL` por la cadena Postgres directa/pooler del proyecto QA `jbirkghkekuifgfsgquq`.
+
+Migracion operativa pendiente:
+
+- `20260518123000_operational_field_service_foundation.sql`
+
+Seed operativo Supabase pendiente:
+
+```bash
+npm run seed:supabase:ops
+```
+
+Validacion REST actual:
+
+- `service_orders`: no existe en QA.
+- `service_references`: no existe en QA.
+- `vehicles`: no existe en QA.
+- `time_punches`: no existe en QA.
+- `gps_pings`: no existe en QA.
 
 ## Database
 

@@ -10,6 +10,18 @@ Comando:
 npm run seed:ops
 ```
 
+Para Supabase QA:
+
+```bash
+npm run seed:supabase:ops
+```
+
+El seed Supabase requiere que antes se aplique la migracion:
+
+```text
+supabase/migrations/20260518123000_operational_field_service_foundation.sql
+```
+
 ## Organizaciones creadas
 
 - `SCJ`
@@ -89,3 +101,44 @@ No se muestran indicadores vacios cuando existe operacion sembrada.
   - cierre tarde sin justificacion: `422`.
   - cierre tarde con justificacion: OK.
   - `user_name` enviado como falso fue reemplazado por `SCJ-001`.
+
+## Estado Supabase QA
+
+Se preparo la migracion de tablas operativas y el seed REST para Supabase QA.
+
+Tablas incluidas:
+
+- `service_references`
+- `service_reference_parts`
+- `vehicles`
+- `operational_routes`
+- `route_assignments`
+- `time_punches`
+- `gps_pings`
+- `service_orders`
+- `service_incidents`
+- `service_evidence`
+
+El seed Supabase crea o reutiliza usuarios Auth para:
+
+- `admin@scj.qa`
+- `scj-001@scj.qa` hasta `scj-010@scj.qa`
+- `admin@puebla.qa`
+- `puebla-001@puebla.qa` hasta `puebla-010@puebla.qa`
+
+Clave temporal QA:
+
+```text
+ApexOS-QA-2026!
+```
+
+Validacion pendiente:
+
+- Aplicar la migracion SQL en Supabase QA.
+- Ejecutar `npm run seed:supabase:ops`.
+- Validar conteos por REST.
+
+Bloqueo actual:
+
+- `DATABASE_URL` aun apunta a base local `apexos`.
+- Supabase QA responde `404` para las tablas operativas porque la migracion SQL no ha sido aplicada.
