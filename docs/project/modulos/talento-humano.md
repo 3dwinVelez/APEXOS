@@ -37,3 +37,19 @@ Talento Humano debe separar operacion diaria, configuracion y seguimiento. Marca
 - Confirmar que el escenario `MAP-101` contiene una ruta historica cerrada con 2 tecnicos y 8 marcaciones georreferenciadas.
 - Confirmar que el escenario `MAP-202` conserva la ultima huella de una persona sin senal activa.
 - Crear ruta sin mezclar el listado principal con formularios abiertos.
+# Talento humano
+
+## Planeacion de rutas y checklist preoperacional
+
+- La creacion de personas ahora incluye clasificacion transversal `user_type`: conductor, auxiliar conductor, operario, tecnico, administrativo o supervisor.
+- Cuando un usuario/empleado clasificado como conductor marca `Inicio jornada`, APEXOS crea un checklist preoperacional obligatorio si existe ruta y vehiculo asignado.
+- El checklist pertenece a Planeacion de Rutas. Vehiculos solo aporta placa, sede, documentos, capacidad y score maestro.
+- Sin checklist aprobado la autorizacion de inicio de ruta queda bloqueada.
+- Las fallas criticas bloquean automaticamente la ruta y generan novedad/bloqueo.
+- Las fallas medias permiten continuar con registro, observacion y evidencia cuando aplique.
+- Se guardan respuestas, firma digital, GPS, kilometraje inicial, nivel de combustible/carga, evidencias y novedades.
+- El monitor central consume metricas preoperacionales: realizados hoy, pendientes, bloqueados, cumplimiento y aprobados con novedad.
+
+## Referencia normativa
+
+El flujo se alinea con la Resolucion 20223040040595 de 2022 PESV: procedimiento de inspeccion preoperacional diaria, control de registros/evidencias y articulacion con SST/seguridad vial.

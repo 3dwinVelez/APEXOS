@@ -53,6 +53,14 @@ function normalizeKey(value) {
   return String(value || "").trim().toLowerCase();
 }
 
+function employeeType(employee) {
+  return normalizeKey(employee?.user_type || employee?.position || employee?.metadata?.user_type || employee?.metadata?.classification);
+}
+
+function isDriver(employee) {
+  return ["conductor", "driver", "chofer"].includes(employeeType(employee));
+}
+
 function punchStatus(type) {
   const labels = {
     entrada: "En ruta",
@@ -61,6 +69,34 @@ function punchStatus(type) {
     salida: "Finalizo"
   };
   return labels[type] || "Sin iniciar";
+}
+
+const PREOP_TEMPLATE = [
+  { section: "Documental", item_key: "soat_vigente", label: "SOAT vigente", severity: "critica", blocks_route: true, evidence_required: false },
+  { section: "Documental", item_key: "tecnicomecanica_vigente", label: "Revision tecnico-mecanica vigente", severity: "critica", blocks_route: true, evidence_required: false },
+  { section: "Documental", item_key: "licencia_conductor_vigente", label: "Licencia del conductor vigente", severity: "critica", blocks_route: true, evidence_required: true },
+  { section: "Documental", item_key: "tarjeta_propiedad", label: "Licencia de transito / tarjeta disponible", severity: "media", blocks_route: false, evidence_required: false },
+  { section: "Exterior", item_key: "llantas_estado", label: "Llantas en buen estado", severity: "critica", blocks_route: true, evidence_required: true },
+  { section: "Exterior", item_key: "placas_visibles", label: "Placas visibles y legibles", severity: "critica", blocks_route: true, evidence_required: true },
+  { section: "Exterior", item_key: "sin_fugas_visibles", label: "Sin fugas visibles de aceite, combustible, refrigerante o aire", severity: "critica", blocks_route: true, evidence_required: true },
+  { section: "Luces", item_key: "luces_freno", label: "Luces de freno funcionando", severity: "critica", blocks_route: true, evidence_required: true },
+  { section: "Luces", item_key: "direccionales", label: "Direccionales funcionando", severity: "critica", blocks_route: true, evidence_required: true },
+  { section: "Luces", item_key: "luces_delanteras_traseras", label: "Luces delanteras y traseras funcionando", severity: "media", blocks_route: false, evidence_required: false },
+  { section: "Seguridad", item_key: "frenos", label: "Frenos funcionando correctamente", severity: "critica", blocks_route: true, evidence_required: true },
+  { section: "Seguridad", item_key: "direccion", label: "Direccion sin fallas", severity: "critica", blocks_route: true, evidence_required: true },
+  { section: "Seguridad", item_key: "cinturon", label: "Cinturon de seguridad en buen estado", severity: "critica", blocks_route: true, evidence_required: true },
+  { section: "Seguridad", item_key: "tablero_testigos", label: "Tablero sin testigos criticos encendidos", severity: "critica", blocks_route: true, evidence_required: true },
+  { section: "Fluidos", item_key: "niveles_fluidos", label: "Aceite, refrigerante, frenos e hidraulico en nivel aceptable", severity: "media", blocks_route: false, evidence_required: false },
+  { section: "Emergencia", item_key: "extintor", label: "Extintor vigente y cargado", severity: "critica", blocks_route: true, evidence_required: true },
+  { section: "Emergencia", item_key: "kit_carretera", label: "Botiquin, gato, cruceta, tacos y senalizacion disponibles", severity: "media", blocks_route: false, evidence_required: false },
+  { section: "Precargue", item_key: "zona_carga_segura", label: "Zona de carga segura y vehiculo apto para cargar", severity: "media", blocks_route: false, evidence_required: false },
+  { section: "Precargue", item_key: "carga_asegurada", label: "Carga distribuida, asegurada y sin sobrepeso aparente", severity: "critica", blocks_route: true, evidence_required: true },
+  { section: "Conductor", item_key: "conductor_apto", label: "Conductor apto, sin fatiga extrema ni condicion insegura", severity: "critica", blocks_route: true, evidence_required: false },
+  { section: "Conductor", item_key: "declaracion_responsable", label: "Acepta responsabilidad de inspeccion y no estar bajo efectos de alcohol o sustancias", severity: "critica", blocks_route: true, evidence_required: false }
+];
+
+function getPreoperationalTemplate() {
+  return { sections: Array.from(new Set(PREOP_TEMPLATE.map((item) => item.section))), items: PREOP_TEMPLATE };
 }
 
 function routeElapsedMinutes(route, latestPunch) {
@@ -143,7 +179,8 @@ async function createEmployee(tenantId, input) {
   return prisma.runWithTenant(tenantId, async () => prisma.employee.create({
     data: {
       code: input.code || `EMP-${Date.now()}`,
-      position: input.position || "empleado",
+      user_type: input.user_type || input.position || "operario",
+      position: input.position || input.user_type || "operario",
       department: input.department || "Operacion",
       salary_base: Number(input.salary_base || 0),
       salary_type: input.salary_type || "monthly",
@@ -154,6 +191,8 @@ async function createEmployee(tenantId, input) {
         document: input.document || "",
         company: input.company || "",
         labor_status: input.labor_status || "activo",
+        user_type: input.user_type || input.position || "operario",
+        classification: input.user_type || input.position || "operario",
         legacy: input.legacy || null
       }
     },
@@ -205,13 +244,14 @@ async function resolveEmployeeForPunch(tenantId, input) {
     data: {
       tenant_id: tenantId,
       code: name,
-      position: "empleado",
+      user_type: input.user_type || "operario",
+      position: input.position || "operario",
       department: "Operacion",
       salary_base: 0,
       salary_type: "monthly",
       hire_date: new Date(),
       contract_type: "indefinite",
-      metadata: { name, document: "", company: "APEX", labor_status: "activo", legacy: { autocreated_from: "marcacion" } }
+      metadata: { name, document: "", company: "APEX", labor_status: "activo", user_type: input.user_type || "operario", classification: input.user_type || "operario", legacy: { autocreated_from: "marcacion" } }
     }
   });
 }
@@ -235,6 +275,252 @@ async function getCurrentEmployee(tenantId, user) {
       throw err;
     }
     return employee;
+  });
+}
+
+async function resolveVehicleForRoute(plate) {
+  if (!plate) return null;
+  return prisma.vehicle.findFirst({ where: { plate } }).catch(() => null);
+}
+
+async function ensurePreoperationalChecklist({ tenantId, user, employee, route, punch, input }) {
+  if (!isDriver(employee) || !route?.vehicle_plate || normalizePunchType(input.type || input.tipo_marca) !== "entrada") return null;
+  const existing = await prisma.routePreoperationalChecklist.findFirst({
+    where: {
+      route_id: route.id,
+      driver_id: employee.id,
+      checklist_status: { in: ["pendiente", "en_proceso", "aprobado", "aprobado_con_novedad", "bloqueado"] }
+    },
+    include: { answers: true, evidence: true, findings: true },
+    orderBy: { created_at: "desc" }
+  });
+  if (existing) return existing;
+
+  const vehicle = await resolveVehicleForRoute(route.vehicle_plate);
+  const checklist = await prisma.routePreoperationalChecklist.create({
+    data: {
+      route_id: route.id,
+      punch_id: punch.id,
+      driver_id: employee.id,
+      driver_name: employeeDisplayName(employee),
+      user_id: user?.id || null,
+      vehicle_id: vehicle?.id || null,
+      plate: route.vehicle_plate,
+      sede: vehicle?.base_site || "",
+      checklist_status: "pendiente",
+      risk_level: "pendiente",
+      created_by: user?.id || null,
+      location_lat: input.latitude,
+      location_lng: input.longitude,
+      metadata: {
+        source: "time_punch",
+        pesv_reference: "Resolucion 20223040040595 de 2022",
+        vehicle_master: vehicle ? {
+          master_status: vehicle.master_status,
+          document_status: vehicle.document_status,
+          master_score: vehicle.master_score,
+          type: vehicle.type,
+          capacity: vehicle.capacity_value || vehicle.load_capacity,
+          base_site: vehicle.base_site
+        } : null
+      }
+    }
+  });
+  await prisma.routeStartAuthorization.create({
+    data: {
+      route_id: route.id,
+      checklist_id: checklist.id,
+      driver_id: employee.id,
+      plate: route.vehicle_plate,
+      status: "bloqueada",
+      reason: "Checklist preoperacional pendiente"
+    }
+  });
+  return prisma.routePreoperationalChecklist.findFirst({
+    where: { id: checklist.id },
+    include: { answers: true, evidence: true, findings: true }
+  });
+}
+
+async function getActivePreoperationalChecklist(tenantId, user, query = {}) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const employee = await getCurrentEmployee(tenantId, user).catch(() => null);
+    const where = {
+      ...(query.route_id ? { route_id: Number(query.route_id) } : {}),
+      ...(employee ? { driver_id: employee.id } : {}),
+      checklist_status: { in: ["pendiente", "en_proceso", "bloqueado"] }
+    };
+    const checklist = await prisma.routePreoperationalChecklist.findFirst({
+      where,
+      include: { answers: true, evidence: true, findings: true },
+      orderBy: { created_at: "desc" }
+    });
+    return { checklist, template: getPreoperationalTemplate() };
+  });
+}
+
+function answerIsFailure(answer) {
+  return ["no_cumple", "no cumple", "fail", "falla"].includes(normalizeKey(answer));
+}
+
+async function submitPreoperationalChecklist(tenantId, user, id, input) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const checklist = await prisma.routePreoperationalChecklist.findFirstOrThrow({ where: { id: Number(id) } });
+    const templateByKey = new Map(PREOP_TEMPLATE.map((item) => [item.item_key, item]));
+    const answers = input.answers || [];
+    if (answers.length < PREOP_TEMPLATE.length) {
+      const err = new Error("Debes responder todo el checklist preoperacional.");
+      err.statusCode = 422;
+      throw err;
+    }
+    const failures = [];
+    const evidenceRows = [];
+    for (const answer of answers) {
+      const item = templateByKey.get(answer.item_key);
+      if (!item) continue;
+      if (answerIsFailure(answer.answer)) {
+        const hasEvidence = Array.isArray(answer.evidence) && answer.evidence.length > 0;
+        if (!String(answer.observations || "").trim()) {
+          const err = new Error(`La novedad "${item.label}" requiere observacion.`);
+          err.statusCode = 422;
+          throw err;
+        }
+        if ((item.blocks_route || item.evidence_required) && !hasEvidence) {
+          const err = new Error(`La novedad "${item.label}" requiere evidencia.`);
+          err.statusCode = 422;
+          throw err;
+        }
+        failures.push({ item, answer });
+      }
+      for (const evidence of answer.evidence || []) {
+        evidenceRows.push({
+          checklist_id: checklist.id,
+          item_key: answer.item_key,
+          evidence_type: evidence.evidence_type || "photo",
+          file_name: evidence.file_name || `${answer.item_key}.jpg`,
+          file_url: evidence.file_url || "",
+          base64_data: evidence.base64_data || "",
+          mime_type: evidence.mime_type || "",
+          file_size: evidence.file_size || null,
+          storage_path: `routes/${checklist.route_id || "sin-ruta"}/preoperational_checklist/${checklist.id}/evidence/${answer.item_key}/${evidence.file_name || "archivo"}`,
+          uploaded_by: user?.id || null
+        });
+      }
+    }
+    const criticalFailures = failures.filter((failure) => failure.item.blocks_route || failure.item.severity === "critica");
+    const mediumFailures = failures.filter((failure) => !criticalFailures.includes(failure));
+    const status = criticalFailures.length ? "bloqueado" : mediumFailures.length ? "aprobado_con_novedad" : "aprobado";
+    const riskLevel = criticalFailures.length ? "critica" : mediumFailures.length ? "media" : "sin_riesgo";
+
+    await prisma.routePreoperationalChecklistAnswer.deleteMany({ where: { checklist_id: checklist.id } });
+    await prisma.routePreoperationalChecklistEvidence.deleteMany({ where: { checklist_id: checklist.id } });
+    await prisma.routePreoperationalFinding.deleteMany({ where: { checklist_id: checklist.id } });
+    await prisma.routePreoperationalChecklistAnswer.createMany({
+      data: answers.map((answer) => {
+        const item = templateByKey.get(answer.item_key) || {};
+        return {
+          checklist_id: checklist.id,
+          section: item.section || "General",
+          item_key: answer.item_key,
+          label: item.label || answer.item_key,
+          answer: answer.answer,
+          severity: item.severity || "baja",
+          blocks_route: Boolean(item.blocks_route),
+          evidence_required: Boolean(item.evidence_required),
+          observations: answer.observations || ""
+        };
+      })
+    });
+    if (evidenceRows.length) await prisma.routePreoperationalChecklistEvidence.createMany({ data: evidenceRows });
+    if (failures.length) {
+      await prisma.routePreoperationalFinding.createMany({
+        data: failures.map(({ item, answer }) => ({
+          checklist_id: checklist.id,
+          route_id: checklist.route_id,
+          plate: checklist.plate,
+          driver_id: checklist.driver_id,
+          item_key: item.item_key,
+          finding_type: item.section,
+          severity: item.severity,
+          description: answer.observations || item.label,
+          action_taken: criticalFailures.some((failure) => failure.item.item_key === item.item_key) ? "Ruta bloqueada automaticamente" : "Continua con novedad registrada",
+          status: criticalFailures.some((failure) => failure.item.item_key === item.item_key) ? "bloqueada" : "abierta"
+        }))
+      });
+    }
+
+    const updated = await prisma.routePreoperationalChecklist.update({
+      where: { id: checklist.id },
+      data: {
+        checklist_status: status,
+        risk_level: riskLevel,
+        completed_at: new Date(),
+        approved_at: status !== "bloqueado" ? new Date() : null,
+        blocked_at: status === "bloqueado" ? new Date() : null,
+        mileage_initial: input.mileage_initial,
+        fuel_level: input.fuel_level || "",
+        location_lat: input.location_lat,
+        location_lng: input.location_lng,
+        digital_signature: input.digital_signature || "",
+        observations: input.observations || ""
+      },
+      include: { answers: true, evidence: true, findings: true }
+    });
+    await prisma.routeStartAuthorization.updateMany({
+      where: { checklist_id: checklist.id },
+      data: {
+        status: status === "bloqueado" ? "bloqueada" : "autorizada",
+        reason: status === "bloqueado" ? "Falla critica en checklist preoperacional" : "Checklist preoperacional aprobado",
+        authorized_by: status === "bloqueado" ? null : user?.id || null,
+        authorized_at: status === "bloqueado" ? null : new Date()
+      }
+    });
+    if (status === "bloqueado") {
+      await prisma.routeBlockEvent.create({
+        data: {
+          route_id: checklist.route_id,
+          checklist_id: checklist.id,
+          driver_id: checklist.driver_id,
+          plate: checklist.plate,
+          reason: criticalFailures.map((failure) => failure.item.label).join("; "),
+          severity: "critica",
+          created_by: user?.id || null
+        }
+      });
+    }
+    return { checklist: updated, route_authorized: status !== "bloqueado", status, risk_level: riskLevel };
+  });
+}
+
+async function getPreoperationalMetrics(tenantId, query = {}) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const from = query.date ? startOfDay(query.date) : startOfDay();
+    const to = endOfDay(from);
+    const [today, pending, blocked, findings, routes] = await Promise.all([
+      prisma.routePreoperationalChecklist.findMany({ where: { created_at: { gte: from, lt: to } } }),
+      prisma.routePreoperationalChecklist.count({ where: { checklist_status: { in: ["pendiente", "en_proceso"] } } }),
+      prisma.routePreoperationalChecklist.count({ where: { checklist_status: "bloqueado", created_at: { gte: from, lt: to } } }),
+      prisma.routePreoperationalFinding.findMany({ where: { created_at: { gte: from, lt: to } } }),
+      prisma.timeRoute.findMany({ where: { date: { gte: from, lt: to } } })
+    ]);
+    const completed = today.filter((item) => ["aprobado", "aprobado_con_novedad", "bloqueado"].includes(item.checklist_status));
+    const avgMinutes = completed.length
+      ? Math.round(completed.reduce((sum, item) => sum + Math.max(0, ((item.completed_at || item.updated_at).getTime() - item.started_at.getTime()) / 60000), 0) / completed.length)
+      : 0;
+    const by = (field) => findings.reduce((acc, item) => ({ ...acc, [item[field] || "sin_dato"]: (acc[item[field] || "sin_dato"] || 0) + 1 }), {});
+    return {
+      checklists_today: today.length,
+      checklists_pending: pending,
+      routes_blocked: blocked,
+      critical_vehicle_findings: findings.filter((item) => item.severity === "critica").length,
+      drivers_without_route: 0,
+      average_completion_minutes: avgMinutes,
+      compliance_rate: routes.length ? Math.round((completed.length / routes.length) * 100) : 100,
+      approved_with_findings: today.filter((item) => item.checklist_status === "aprobado_con_novedad").length,
+      findings_by_type: by("finding_type"),
+      findings_by_plate: by("plate"),
+      findings_by_driver: by("driver_id")
+    };
   });
 }
 
@@ -294,6 +580,7 @@ async function createPunch(tenantId, input, user) {
         }
       });
     }
+    const preop = await ensurePreoperationalChecklist({ tenantId, user, employee, route, punch, input });
     return {
       ok: true,
       hora: timeString(punchedAt),
@@ -301,7 +588,10 @@ async function createPunch(tenantId, input, user) {
       minutos_extra: extraMinutes,
       alerta: extraMinutes > 0,
       punch,
-      next: nextPunchType(await latestPunchesForUser(resolvedUserName, punchedAt))
+      next: nextPunchType(await latestPunchesForUser(resolvedUserName, punchedAt)),
+      preoperational_required: Boolean(preop),
+      preoperational_checklist: preop ? { ...preop, id: Number(preop.id) } : null,
+      route_authorized: preop ? ["aprobado", "aprobado_con_novedad"].includes(preop.checklist_status) : true
     };
   });
 }
@@ -776,6 +1066,10 @@ module.exports = {
   createEmployee,
   listRoutes,
   createRoute,
+  getPreoperationalTemplate,
+  getActivePreoperationalChecklist,
+  submitPreoperationalChecklist,
+  getPreoperationalMetrics,
   getRouteTracking,
   getOperationsMap,
   createPunch,

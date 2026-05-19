@@ -16,6 +16,10 @@ async function hrRoutes(fastify) {
 
   fastify.get("/hr/routes", { preHandler: requirePermission("hr", "read") }, (request) => service.listRoutes(request.user?.tenant_id, request.query));
   fastify.post("/hr/routes", { schema: schemas.routeSchema, preHandler: requirePermission("hr", "write") }, (request) => service.createRoute(request.user?.tenant_id, request.body));
+  fastify.get("/hr/routes/preop/template", { preHandler: requirePermission("hr", "read") }, () => service.getPreoperationalTemplate());
+  fastify.get("/hr/routes/preop/active", { preHandler: requirePermission("hr", "read") }, (request) => service.getActivePreoperationalChecklist(request.user?.tenant_id, request.user, request.query));
+  fastify.get("/hr/routes/preop/metrics", { preHandler: requirePermission("hr", "read") }, (request) => service.getPreoperationalMetrics(request.user?.tenant_id, request.query));
+  fastify.post("/hr/routes/preop/:id/submit", { schema: schemas.preopSubmitSchema, preHandler: requirePermission("hr", "write") }, (request) => service.submitPreoperationalChecklist(request.user?.tenant_id, request.user, request.params.id, request.body));
   fastify.get("/hr/routes/:id/tracking", { preHandler: requirePermission("hr", "read") }, (request) => service.getRouteTracking(request.user?.tenant_id, request.params.id, request.query));
   fastify.get("/hr/operations-map", { preHandler: requirePermission("hr", "read") }, (request) => service.getOperationsMap(request.user?.tenant_id, request.query));
 

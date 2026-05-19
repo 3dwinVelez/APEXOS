@@ -467,6 +467,7 @@ model Employee {
   user          User?     @relation(fields: [user_id], references: [id])
   party_id      Int?
   code          String?
+  user_type     String    @default("operario")
   position      String
   department    String
   salary_base   Float
@@ -480,9 +481,12 @@ model Employee {
   okrs          OKR[]
   time_punches  TimePunch[]
   workdays      ProcessedWorkday[]
+  authorized_vehicles Vehicle[]
+  preop_checklists RoutePreoperationalChecklist[]
 
   @@unique([tenant_id, code])
   @@index([tenant_id, active])
+  @@index([tenant_id, user_type])
 }
 
 model WorkSchedule {
@@ -514,9 +518,152 @@ model TimeRoute {
   notes             String?
   status            String    @default("active")
   created_at        DateTime  @default(now())
+  preop_checklists  RoutePreoperationalChecklist[]
+  start_authorizations RouteStartAuthorization[]
+  block_events      RouteBlockEvent[]
 
   @@index([tenant_id, date])
   @@index([tenant_id, status])
+}
+
+model RoutePreoperationalChecklist {
+  id                 Int       @id @default(autoincrement())
+  tenant_id          String
+  route_id           Int?
+  route              TimeRoute? @relation(fields: [route_id], references: [id])
+  shift_id           Int?
+  punch_id           Int?
+  driver_id          Int?
+  driver             Employee? @relation(fields: [driver_id], references: [id])
+  driver_name        String?
+  user_id            Int?
+  vehicle_id         Int?
+  plate              String
+  sede               String?
+  checklist_status   String    @default("pendiente")
+  risk_level         String    @default("sin_riesgo")
+  started_at         DateTime  @default(now())
+  completed_at       DateTime?
+  approved_at        DateTime?
+  blocked_at         DateTime?
+  approved_by        Int?
+  created_by         Int?
+  location_lat       Float?
+  location_lng       Float?
+  digital_signature  String?
+  mileage_initial    Int?
+  fuel_level         String?
+  observations       String?
+  metadata           Json      @default("{}")
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+  answers            RoutePreoperationalChecklistAnswer[]
+  evidence           RoutePreoperationalChecklistEvidence[]
+  findings           RoutePreoperationalFinding[]
+
+  @@index([tenant_id, route_id, checklist_status])
+  @@index([tenant_id, driver_id, started_at])
+  @@index([tenant_id, plate, started_at])
+}
+
+model RoutePreoperationalChecklistAnswer {
+  id            Int       @id @default(autoincrement())
+  tenant_id     String
+  checklist_id  Int
+  checklist     RoutePreoperationalChecklist @relation(fields: [checklist_id], references: [id], onDelete: Cascade)
+  section       String
+  item_key      String
+  label         String
+  answer        String
+  severity      String
+  blocks_route  Boolean   @default(false)
+  evidence_required Boolean @default(false)
+  observations  String?
+  created_at    DateTime  @default(now())
+
+  @@index([tenant_id, checklist_id])
+  @@index([tenant_id, item_key])
+}
+
+model RoutePreoperationalChecklistEvidence {
+  id            Int       @id @default(autoincrement())
+  tenant_id     String
+  checklist_id  Int
+  checklist     RoutePreoperationalChecklist @relation(fields: [checklist_id], references: [id], onDelete: Cascade)
+  item_key      String?
+  evidence_type String
+  file_name     String
+  file_url      String?
+  storage_path  String?
+  base64_data   String?
+  mime_type     String?
+  file_size     Int?
+  uploaded_by   Int?
+  created_at    DateTime @default(now())
+  metadata      Json     @default("{}")
+
+  @@index([tenant_id, checklist_id])
+  @@index([tenant_id, evidence_type])
+}
+
+model RoutePreoperationalFinding {
+  id            Int       @id @default(autoincrement())
+  tenant_id     String
+  checklist_id  Int
+  checklist     RoutePreoperationalChecklist @relation(fields: [checklist_id], references: [id], onDelete: Cascade)
+  route_id      Int?
+  plate         String
+  driver_id     Int?
+  item_key      String?
+  finding_type  String
+  severity      String
+  description   String
+  action_taken  String?
+  status        String    @default("abierta")
+  responsible   String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@index([tenant_id, severity, status])
+  @@index([tenant_id, plate])
+  @@index([tenant_id, driver_id])
+}
+
+model RouteStartAuthorization {
+  id            Int       @id @default(autoincrement())
+  tenant_id     String
+  route_id      Int?
+  route         TimeRoute? @relation(fields: [route_id], references: [id])
+  checklist_id  Int?
+  driver_id     Int?
+  plate         String
+  status        String    @default("bloqueada")
+  reason        String?
+  authorized_by Int?
+  authorized_at DateTime?
+  created_at    DateTime @default(now())
+  metadata      Json     @default("{}")
+
+  @@index([tenant_id, route_id, status])
+  @@index([tenant_id, plate])
+}
+
+model RouteBlockEvent {
+  id            Int       @id @default(autoincrement())
+  tenant_id     String
+  route_id      Int?
+  route         TimeRoute? @relation(fields: [route_id], references: [id])
+  checklist_id  Int?
+  driver_id     Int?
+  plate         String
+  reason        String
+  severity      String
+  created_by    Int?
+  created_at    DateTime @default(now())
+  metadata      Json     @default("{}")
+
+  @@index([tenant_id, route_id, created_at])
+  @@index([tenant_id, plate])
 }
 
 model GpsPing {
@@ -543,28 +690,123 @@ model Vehicle {
   plate                 String
   model                 String?
   type                  String?
+  category              String?
   brand                 String?
+  line                  String?
   year                  Int?
   color                 String?
+  vin_chassis           String?
   engine_displacement   String?
+  cylinder_capacity     String?
   load_capacity         String?
+  capacity_value        Float?
+  capacity_unit         String?
+  volume_available      Float?
   fuel                  String?
+  body_type             String?
+  axle_count            Int?
   mileage               Int       @default(0)
   serial_number         String?
   engine_number         String?
+  soat_issued_at        DateTime?
   soat_expires          DateTime?
+  technical_review_issued_at DateTime?
   technical_review_expires DateTime?
+  property_card         String?
+  contractual_policy_expires DateTime?
+  extra_contractual_policy_expires DateTime?
+  cargo_registry        String?
+  special_permits       String?
+  normative_restrictions String?
   insurance_expires     DateTime?
   owner                 String?
+  ownership_type        String?
+  legal_owner           String?
+  owner_document        String?
+  linked_company        String?
+  cost_center           String?
+  base_site             String?
+  authorized_driver_id  Int?
+  authorized_driver     Employee? @relation(fields: [authorized_driver_id], references: [id])
+  authorized_driver_name String?
+  authorized_driver_document String?
+  authorized_driver_code String?
+  linked_at             DateTime?
+  unlinked_at           DateTime?
+  legal_notes           String?
   notes                 String?
   status                String    @default("activo")
+  master_status         String    @default("pendiente_documentacion")
+  document_status       String    @default("pendiente_documentacion")
+  master_score          Int       @default(0)
+  critical_expiry_at    DateTime?
+  active                Boolean   @default(true)
+  deleted_at            DateTime?
   metadata              Json      @default("{}")
   created_at            DateTime  @default(now())
   updated_at            DateTime  @updatedAt
+  documents             VehicleDocument[]
+  audit_logs            VehicleMasterAuditLog[]
 
   @@unique([tenant_id, plate])
+  @@index([tenant_id, vin_chassis])
   @@index([tenant_id, status])
+  @@index([tenant_id, master_status])
+  @@index([tenant_id, base_site])
+  @@index([tenant_id, authorized_driver_id])
+  @@index([tenant_id, ownership_type])
   @@index([tenant_id, type])
+}
+
+model VehicleDocument {
+  id              Int       @id @default(autoincrement())
+  tenant_id       String
+  vehicle_id      Int
+  vehicle         Vehicle   @relation(fields: [vehicle_id], references: [id], onDelete: Restrict)
+  plate           String
+  document_type   String
+  file_name       String
+  file_url        String?
+  storage_path    String?
+  base64_data     String?
+  mime_type       String?
+  file_size       Int?
+  issued_at       DateTime?
+  expires_at      DateTime?
+  document_status String    @default("pendiente_validacion")
+  uploaded_by     Int?
+  validated_by    Int?
+  uploaded_at     DateTime  @default(now())
+  validated_at    DateTime?
+  observations    String?
+  version         Int       @default(1)
+  active          Boolean   @default(true)
+  metadata        Json      @default("{}")
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  @@index([tenant_id, vehicle_id])
+  @@index([tenant_id, plate])
+  @@index([tenant_id, document_type, expires_at])
+  @@index([tenant_id, document_status])
+}
+
+model VehicleMasterAuditLog {
+  id          BigInt   @id @default(autoincrement())
+  tenant_id   String
+  vehicle_id  Int
+  vehicle     Vehicle  @relation(fields: [vehicle_id], references: [id], onDelete: Restrict)
+  plate       String
+  user_id     Int?
+  action      String
+  field       String?
+  old_value   Json?
+  new_value   Json?
+  reason      String?
+  created_at  DateTime @default(now())
+
+  @@index([tenant_id, vehicle_id, created_at])
+  @@index([tenant_id, plate])
 }
 
 model TimePunch {

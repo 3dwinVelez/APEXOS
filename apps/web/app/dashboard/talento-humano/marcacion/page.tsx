@@ -2,13 +2,20 @@
 
 import { api } from "@/lib/api";
 import { getGpsFix, type GpsFix } from "@/lib/gps";
+import { SignatureCapture } from "@/components/operations/SignatureCapture";
+import type { CapturedFile } from "@/components/operations/PhotoCapture";
 import { ArrowLeft, CheckCircle2, ExternalLink, MapPin, Navigation, RefreshCw, Truck } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-type Employee = { id: number; code: string; metadata: { name: string }; user: { name: string } };
+type Employee = { id: number; code: string; user_type?: string; position?: string; metadata: { name: string; user_type?: string }; user: { name: string } };
 type Attendance = { user_name: string; next_type: string | null; punches: Array<{ id: number; type: string; time: string; vehicle_plate: string }> };
 type TimeRoute = { id: number; vehicle_plate: string; employees: string[]; start_time: string; end_time: string };
+type PreopItem = { section: string; item_key: string; label: string; severity: string; blocks_route: boolean; evidence_required: boolean };
+type PreopChecklist = { id: number; route_id?: number; plate: string; checklist_status: string; risk_level: string };
+type PreopTemplate = { sections: string[]; items: PreopItem[] };
+type PreopAnswer = { answer: string; observations: string; evidence: CapturedFile | null };
+type PunchResponse = { preoperational_required?: boolean; preoperational_checklist?: PreopChecklist | null };
 
 const punchOrder = ["entrada", "inicio_almuerzo", "fin_almuerzo", "salida"];
 const punchLabels: Record<string, { title: string; desc: string; color: string }> = {
@@ -46,6 +53,13 @@ export default function MobilePunchPage() {
   const [gps, setGps] = useState<GpsFix | null>(null);
   const [gpsStatus, setGpsStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [view, setView] = useState<"marcar" | "historial">("marcar");
+  const [preop, setPreop] = useState<PreopChecklist | null>(null);
+  const [preopTemplate, setPreopTemplate] = useState<PreopTemplate>({ sections: [], items: [] });
+  const [preopAnswers, setPreopAnswers] = useState<Record<string, PreopAnswer>>({});
+  const [preopMessage, setPreopMessage] = useState("");
+  const [mileageInitial, setMileageInitial] = useState("");
+  const [fuelLevel, setFuelLevel] = useState("");
+  const [signature, setSignature] = useState<CapturedFile | null>(null);
 
   async function load() {
     const [me, routeData, attendanceData] = await Promise.all([
@@ -56,6 +70,12 @@ export default function MobilePunchPage() {
     setEmployee(me);
     setRoutes(routeData);
     setAttendance(attendanceData);
+    const active = await api<{ checklist: PreopChecklist | null; template: PreopTemplate }>("/api/v1/hr/routes/preop/active").catch(() => null);
+    if (active?.checklist) {
+      setPreop(active.checklist);
+      setPreopTemplate(active.template);
+      setPreopAnswers(Object.fromEntries(active.template.items.map((item) => [item.item_key, { answer: "cumple", observations: "", evidence: null }])));
+    }
   }
 
   useEffect(() => {
@@ -123,7 +143,7 @@ export default function MobilePunchPage() {
     if (!employee) return;
     const fix = gps || await refreshGps();
     if (!fix) return;
-    await api("/api/v1/hr/time-punches", {
+    const response = await api<PunchResponse>("/api/v1/hr/time-punches", {
       method: "POST",
       body: JSON.stringify({
         employee_id: employee.id,
@@ -139,8 +159,63 @@ export default function MobilePunchPage() {
         metadata: { source: "apexos-mobile", current_user_only: true }
       })
     });
+    if (response.preoperational_required && response.preoperational_checklist) {
+      const template = await api<PreopTemplate>("/api/v1/hr/routes/preop/template");
+      setPreop(response.preoperational_checklist);
+      setPreopTemplate(template);
+      setPreopAnswers(Object.fromEntries(template.items.map((item) => [item.item_key, { answer: "cumple", observations: "", evidence: null }])));
+      setPreopMessage("Checklist preoperacional obligatorio antes de iniciar ruta.");
+    }
     setExtraReason("");
     setMessage(`${punchLabels[type].title} registrado.`);
+    await load();
+  }
+
+  async function evidenceFile(file: File, itemKey: string) {
+    const reader = new FileReader();
+    reader.onload = () => setPreopAnswers((current) => ({ ...current, [itemKey]: { ...(current[itemKey] || { answer: "cumple", observations: "", evidence: null }), evidence: { base64: String(reader.result || ""), size: file.size, type: file.type, name: file.name } } }));
+    reader.readAsDataURL(file);
+  }
+
+  async function submitPreop() {
+    if (!preop) return;
+    const missing = preopTemplate.items.find((item) => {
+      const answer = preopAnswers[item.item_key];
+      if (!answer) return true;
+      if (answer.answer === "no_cumple" && !answer.observations.trim()) return true;
+      if (answer.answer === "no_cumple" && (item.blocks_route || item.evidence_required) && !answer.evidence) return true;
+      return false;
+    });
+    if (missing) {
+      setPreopMessage(`Completa observacion/evidencia requerida: ${missing.label}`);
+      return;
+    }
+    if (!signature) {
+      setPreopMessage("La declaracion responsable requiere firma digital.");
+      return;
+    }
+    const result = await api<{ status: string; route_authorized: boolean }>(`/api/v1/hr/routes/preop/${preop.id}/submit`, {
+      method: "POST",
+      body: JSON.stringify({
+        mileage_initial: Number(mileageInitial || 0),
+        fuel_level: fuelLevel,
+        location_lat: gps?.latitude,
+        location_lng: gps?.longitude,
+        digital_signature: signature.base64,
+        observations: preopMessage,
+        answers: preopTemplate.items.map((item) => {
+          const answer = preopAnswers[item.item_key];
+          return {
+            item_key: item.item_key,
+            answer: answer?.answer || "cumple",
+            observations: answer?.observations || "",
+            evidence: answer?.evidence ? [{ evidence_type: "photo", file_name: answer.evidence.name, base64_data: answer.evidence.base64, mime_type: answer.evidence.type, file_size: answer.evidence.size }] : []
+          };
+        })
+      })
+    });
+    setMessage(result.route_authorized ? "Checklist aprobado. Ruta habilitada." : "Ruta bloqueada por novedad critica.");
+    setPreop(null);
     await load();
   }
 
@@ -242,6 +317,65 @@ export default function MobilePunchPage() {
           {nextType ? punchLabels[nextType]?.title || "Registrar" : "Jornada completa"}
         </button>
       </div> : null}
+
+      {preop ? (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-neutral-950/50 p-3">
+          <section className="mx-auto max-w-3xl rounded-md bg-white p-4 shadow-xl">
+            <div className="mb-4 border-b border-line pb-3">
+              <p className="text-sm font-semibold text-apex">Planeacion de rutas</p>
+              <h2 className="text-xl font-semibold">Checklist preoperacional obligatorio</h2>
+              <p className="mt-1 text-sm text-neutral-600">Placa {preop.plate}. Sin aprobacion no se habilita el inicio de ruta.</p>
+            </div>
+            {preopMessage ? <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{preopMessage}</div> : null}
+            <div className="mb-4 grid gap-3 md:grid-cols-2">
+              <input className="h-11 rounded-md border border-line px-3 text-sm" placeholder="Kilometraje inicial" value={mileageInitial} onChange={(event) => setMileageInitial(event.target.value)} />
+              <input className="h-11 rounded-md border border-line px-3 text-sm" placeholder="Nivel combustible / carga" value={fuelLevel} onChange={(event) => setFuelLevel(event.target.value)} />
+            </div>
+            <div className="space-y-4">
+              {preopTemplate.sections.map((section) => (
+                <div className="rounded-md border border-line p-3" key={section}>
+                  <h3 className="mb-3 font-semibold">{section}</h3>
+                  <div className="space-y-3">
+                    {preopTemplate.items.filter((item) => item.section === section).map((item) => {
+                      const answer = preopAnswers[item.item_key] || { answer: "cumple", observations: "", evidence: null };
+                      return (
+                        <div className="rounded-md bg-paper p-3" key={item.item_key}>
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div>
+                              <p className="text-sm font-semibold">{item.label}</p>
+                              <p className={`text-xs font-semibold ${item.blocks_route ? "text-red-700" : "text-amber-700"}`}>{item.blocks_route ? "Critico: bloquea ruta" : "Novedad media"}</p>
+                            </div>
+                            <div className="grid grid-cols-3 gap-1 text-xs">
+                              {["cumple", "no_cumple", "no_aplica"].map((value) => (
+                                <button className={`h-9 rounded-md px-2 font-semibold ${answer.answer === value ? "bg-apex text-white" : "bg-white"}`} key={value} onClick={() => setPreopAnswers((current) => ({ ...current, [item.item_key]: { ...answer, answer: value } }))} type="button">
+                                  {value === "cumple" ? "Cumple" : value === "no_cumple" ? "No cumple" : "N/A"}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          {answer.answer === "no_cumple" ? (
+                            <div className="mt-3 grid gap-2 md:grid-cols-[1fr_220px]">
+                              <textarea className="min-h-20 rounded-md border border-line p-2 text-sm" placeholder="Describe la novedad y accion tomada" value={answer.observations} onChange={(event) => setPreopAnswers((current) => ({ ...current, [item.item_key]: { ...answer, observations: event.target.value } }))} />
+                              <label className="flex min-h-20 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-line bg-white p-2 text-center text-xs font-semibold">
+                                {answer.evidence ? answer.evidence.name : "Adjuntar evidencia"}
+                                <input className="hidden" type="file" accept="image/*,application/pdf,video/*" onChange={(event) => event.target.files?.[0] && evidenceFile(event.target.files[0], item.item_key)} />
+                              </label>
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4">
+              <SignatureCapture label="Firma / declaracion responsable del conductor" required value={signature} onChange={setSignature} />
+            </div>
+            <button className="mt-4 h-12 w-full rounded-md bg-apex text-base font-semibold text-white" onClick={submitPreop} type="button">Enviar checklist y validar ruta</button>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }

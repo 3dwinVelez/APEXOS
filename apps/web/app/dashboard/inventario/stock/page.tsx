@@ -81,10 +81,10 @@ export default function StockPage() {
           <div className="rounded-md border border-line bg-paper p-3 text-sm"><span className="block text-neutral-500">Críticas</span><strong className="text-xl">{criticalCount}</strong></div>
           <div className="rounded-md border border-line bg-paper p-3 text-sm"><span className="block text-neutral-500">Agotadas</span><strong className="text-xl">{outCount}</strong></div>
         </div>
-        <div className="overflow-x-auto">
+        <div className="max-h-[62vh] overflow-auto rounded-md border border-line">
           <table className="w-full min-w-[820px] text-sm">
-            <thead>
-              <tr className="border-b border-line text-left">
+            <thead className="sticky top-0 z-10 bg-white">
+              <tr className="border-b border-line text-left text-xs uppercase text-neutral-500">
                 <th className="py-2 pr-3">Código</th>
                 <th className="py-2 pr-3">Producto</th>
                 <th className="py-2 pr-3">ABC</th>
@@ -99,7 +99,7 @@ export default function StockPage() {
                 const itemStatus = item.stock_current <= 0 ? "Agotado" : item.stock_current <= item.stock_min ? "Crítico" : "OK";
                 const coverage = item.stock_max ? Math.round((item.stock_current / item.stock_max) * 100) : null;
                 return (
-                  <tr className="border-b border-line/60" key={item.id}>
+                  <tr className="border-b border-line/60 hover:bg-paper/70" key={item.id}>
                     <td className="py-2 pr-3 font-medium">{item.code}</td>
                     <td className="py-2 pr-3">{item.name}</td>
                     <td className="py-2 pr-3">{item.abc_class || "C"}</td>
@@ -121,4 +121,3 @@ export default function StockPage() {
     </div>
   );
 }
-

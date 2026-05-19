@@ -24,6 +24,42 @@ textarea {
   font: inherit;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  outline-color: #0f766e;
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1eee7;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d4cec2;
+  border: 2px solid #f1eee7;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #b9b0a0;
+}
+
 @keyframes apexCoachIn {
   from {
     opacity: 0;

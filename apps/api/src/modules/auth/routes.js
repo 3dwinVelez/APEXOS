@@ -11,10 +11,13 @@ async function authRoutes(fastify) {
     return service.login(request.body, fastify);
   });
 
+  fastify.get("/auth/me", { preHandler: fastify.authenticate }, async (request) => {
+    return service.me(request.user);
+  });
+
   fastify.post("/auth/refresh", { schema: schemas.refreshSchema }, async (request) => {
     return service.refresh(request.body, fastify);
   });
 }
 
 module.exports = authRoutes;
-

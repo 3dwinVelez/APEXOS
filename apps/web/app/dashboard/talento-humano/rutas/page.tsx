@@ -6,7 +6,7 @@ import { ArrowLeft, Clock, Plus, Route, Save, UserPlus, Users } from "lucide-rea
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-type Employee = { id: number; code: string; position: string; department: string; metadata: { name: string; document: string }; user: { name: string } };
+type Employee = { id: number; code: string; user_type?: string; position: string; department: string; metadata: { name: string; document: string; user_type?: string }; user: { name: string } };
 type Vehicle = { id: number; plate: string; type: string; model: string };
 type TimeRoute = { id: number; date: string; vehicle_plate: string; employees: string[]; start_time: string; end_time: string; status: string };
 type Modal = "route" | "employee" | null;
@@ -21,7 +21,7 @@ export default function RoutesPlanningPage() {
   const [routes, setRoutes] = useState<TimeRoute[]>([]);
   const [message, setMessage] = useState("");
   const [modal, setModal] = useState<Modal>(null);
-  const [employeeForm, setEmployeeForm] = useState({ name: "", document: "", code: "", position: "empleado", department: "Operacion" });
+  const [employeeForm, setEmployeeForm] = useState({ name: "", document: "", code: "", user_type: "operario", position: "operario", department: "Operacion" });
   const [form, setForm] = useState({ date: new Date().toISOString().slice(0, 10), vehicle_plate: "", employees: [] as string[], start_time: "08:00", end_time: "17:00", tolerance_minutes: 15, per_diem: 0, notes: "" });
 
   async function load() {
@@ -50,7 +50,7 @@ export default function RoutesPlanningPage() {
         labor_status: "activo"
       })
     });
-    setEmployeeForm({ name: "", document: "", code: "", position: "empleado", department: "Operacion" });
+    setEmployeeForm({ name: "", document: "", code: "", user_type: "operario", position: "operario", department: "Operacion" });
     setMessage("Persona creada para rutas, horarios y servicios.");
     setModal(null);
     await load();
@@ -130,9 +130,12 @@ export default function RoutesPlanningPage() {
             <input className="h-12 rounded-md border border-line px-3 text-base md:text-sm" placeholder="Nombre completo" value={employeeForm.name} onChange={(event) => setEmployeeForm((prev) => ({ ...prev, name: event.target.value }))} />
             <input className="h-12 rounded-md border border-line px-3 text-base md:text-sm" placeholder="Documento" value={employeeForm.document} onChange={(event) => setEmployeeForm((prev) => ({ ...prev, document: event.target.value }))} />
             <input className="h-12 rounded-md border border-line px-3 text-base md:text-sm" placeholder="Codigo" value={employeeForm.code} onChange={(event) => setEmployeeForm((prev) => ({ ...prev, code: event.target.value }))} />
-            <select className="h-12 rounded-md border border-line px-3 text-base md:text-sm" value={employeeForm.position} onChange={(event) => setEmployeeForm((prev) => ({ ...prev, position: event.target.value }))}>
-              <option value="empleado">Operario</option>
+            <select className="h-12 rounded-md border border-line px-3 text-base md:text-sm" value={employeeForm.user_type} onChange={(event) => setEmployeeForm((prev) => ({ ...prev, user_type: event.target.value, position: event.target.value }))}>
+              <option value="conductor">Conductor</option>
+              <option value="auxiliar_conductor">Auxiliar conductor</option>
+              <option value="operario">Operario</option>
               <option value="tecnico">Tecnico</option>
+              <option value="administrativo">Administrativo</option>
               <option value="supervisor">Supervisor</option>
             </select>
             <input className="h-12 rounded-md border border-line px-3 text-base md:col-span-2 md:text-sm" value={employeeForm.department} onChange={(event) => setEmployeeForm((prev) => ({ ...prev, department: event.target.value }))} />

@@ -80,6 +80,7 @@ const employeeSchema = {
       name: { type: "string" },
       code: { type: "string" },
       document: { type: "string" },
+      user_type: { type: "string" },
       position: { type: "string" },
       department: { type: "string" },
       salary_base: { type: "number" },
@@ -93,4 +94,46 @@ const employeeSchema = {
   }
 };
 
-module.exports = { scheduleSchema, punchSchema, routeSchema, gpsPingSchema, employeeSchema };
+const preopSubmitSchema = {
+  body: {
+    type: "object",
+    required: ["answers"],
+    properties: {
+      mileage_initial: { type: "integer" },
+      fuel_level: { type: "string" },
+      location_lat: { type: "number" },
+      location_lng: { type: "number" },
+      observations: { type: "string" },
+      digital_signature: { type: "string" },
+      allow_non_critical: { type: "boolean" },
+      answers: {
+        type: "array",
+        items: {
+          type: "object",
+          required: ["item_key", "answer"],
+          properties: {
+            item_key: { type: "string" },
+            answer: { type: "string" },
+            observations: { type: "string" },
+            evidence: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  evidence_type: { type: "string" },
+                  file_name: { type: "string" },
+                  base64_data: { type: "string" },
+                  file_url: { type: "string" },
+                  mime_type: { type: "string" },
+                  file_size: { type: "integer" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+};
+
+module.exports = { scheduleSchema, punchSchema, routeSchema, gpsPingSchema, employeeSchema, preopSubmitSchema };

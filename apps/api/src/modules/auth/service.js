@@ -16,6 +16,18 @@ function publicUser(user) {
   };
 }
 
+function publicTenant(tenant) {
+  if (!tenant) return null;
+  return {
+    id: tenant.id,
+    name: tenant.name,
+    industry: tenant.industry,
+    country: tenant.country,
+    currency: tenant.currency,
+    active_modules: tenant.active_modules || []
+  };
+}
+
 async function registerTenant(input, fastify) {
   const trialEnd = new Date();
   trialEnd.setDate(trialEnd.getDate() + 14);
@@ -83,7 +95,7 @@ async function registerTenant(input, fastify) {
   }, { expiresIn: "8h" });
   const refresh = fastify.jwt.sign({ id: result.user.id, tenant_id: result.tenant.id, type: "refresh" }, { expiresIn: "30d" });
 
-  return { token, refresh, tenant: result.tenant, user: publicUser({ ...result.user, role: result.role }) };
+  return { token, refresh, tenant: publicTenant(result.tenant), user: publicUser({ ...result.user, role: result.role }) };
 }
 
 async function login(input, fastify) {
@@ -104,10 +116,25 @@ async function login(input, fastify) {
   }
 
   await prisma.user.update({ where: { id: user.id }, data: { last_login: new Date() } });
+  const tenant = await prisma.tenant.findUnique({ where: { id: user.tenant_id } });
   const token = fastify.jwt.sign({ id: user.id, tenant_id: user.tenant_id, role: user.role }, { expiresIn: "8h" });
   const refresh = fastify.jwt.sign({ id: user.id, tenant_id: user.tenant_id, type: "refresh" }, { expiresIn: "30d" });
 
-  return { token, refresh, user: publicUser(user) };
+  return { token, refresh, tenant: publicTenant(tenant), user: publicUser(user) };
+}
+
+async function me(user) {
+  const current = await prisma.user.findUnique({
+    where: { id: user.id },
+    include: { role: { include: { permissions: true } } }
+  });
+  if (!current || !current.active) {
+    const err = new Error("Usuario no disponible");
+    err.statusCode = 401;
+    throw err;
+  }
+  const tenant = await prisma.tenant.findUnique({ where: { id: current.tenant_id } });
+  return { tenant: publicTenant(tenant), user: publicUser(current) };
 }
 
 async function refresh(input, fastify) {
@@ -131,4 +158,4 @@ async function refresh(input, fastify) {
   };
 }
 
-module.exports = { registerTenant, login, refresh };
+module.exports = { registerTenant, login, me, refresh };

@@ -208,8 +208,8 @@ export default function AdministracionPage() {
         </button>
       </section>
 
-      {section === "roles" ? <section className="grid gap-5 xl:grid-cols-[420px_1fr]">
-        <div className="rounded-md border border-line bg-white p-4">
+      {section === "roles" ? <section className="grid gap-5 xl:grid-cols-[360px_1fr]">
+        <div className="rounded-md border border-line bg-white p-4 xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] xl:overflow-y-auto">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Shield size={18} className="text-apex" />
@@ -247,9 +247,9 @@ export default function AdministracionPage() {
             <input className="h-10 rounded-md border border-line px-3 text-sm" disabled={Boolean(selectedRole?.is_system)} placeholder="Nombre del rol" value={roleForm.name} onChange={(event) => setRoleForm((prev) => ({ ...prev, name: event.target.value }))} />
             <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Descripcion" value={roleForm.description} onChange={(event) => setRoleForm((prev) => ({ ...prev, description: event.target.value }))} />
           </div>
-          <div className="overflow-x-auto">
+          <div className="max-h-[58vh] overflow-auto rounded-md border border-line">
             <table className="w-full min-w-[680px] text-sm">
-              <thead>
+              <thead className="sticky top-0 z-10 bg-white">
                 <tr className="border-b border-line text-left text-xs text-neutral-500">
                   <th className="py-2">Modulo</th>
                   {["access", "view", "create", "edit", "export", "approve"].map((action) => <th className="py-2 text-center" key={action}>{actionLabels[action]}</th>)}
@@ -276,8 +276,8 @@ export default function AdministracionPage() {
         </div>
       </section> : null}
 
-      {section === "usuarios" ? <section className="grid gap-5 xl:grid-cols-[420px_1fr]">
-        <div className="rounded-md border border-line bg-white p-4">
+      {section === "usuarios" ? <section className="grid gap-5 xl:grid-cols-[360px_1fr]">
+        <div className="rounded-md border border-line bg-white p-4 xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] xl:overflow-y-auto">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Users size={18} className="text-apex" />
