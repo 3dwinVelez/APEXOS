@@ -45,6 +45,60 @@ from public.companies c
 where c.name = 'Cliente Piloto QA';
 ```
 
+## Usuarios Admin Plataforma y SCJ
+
+Estado actual en QA:
+
+- `auth.users`: usuarios QA creados y confirmados.
+- Empresa `SCJ`: creada.
+- Plan `scj_operacion_inicial`: creado.
+- Modulos SCJ activos: `talento_humano`, `servicios`, `transporte`, `configuracion`, `administracion_apex`.
+- Submodulo global: `platform_admin` en `/dashboard/administracion/suscripciones`.
+
+Usuarios QA funcionales:
+
+- `admin@apexos.qa`: admin global APEX OS, registrado en `platform_admins` y owner de empresas QA existentes.
+- `scj@apexos.qa`: admin de empresa `SCJ`.
+
+No guardar contrasenas planas en documentacion versionada. Las claves temporales se entregan por conversacion al responsable de QA.
+
+Referencia de asociacion del usuario admin global:
+
+```sql
+insert into public.profiles (id, full_name, email, status)
+values ('ADMIN_AUTH_USER_ID', 'Administrador APEX OS', 'admin@example.com', 'active')
+on conflict (id) do update set
+  full_name = excluded.full_name,
+  email = excluded.email,
+  status = excluded.status,
+  updated_at = now();
+
+insert into public.platform_admins (user_id, status)
+values ('ADMIN_AUTH_USER_ID', 'active')
+on conflict (user_id) do update set status = 'active', updated_at = now();
+```
+
+Referencia de asociacion del usuario admin SCJ:
+
+```sql
+insert into public.profiles (id, full_name, email, status)
+values ('SCJ_AUTH_USER_ID', 'Administrador SCJ', 'scj@example.com', 'active')
+on conflict (id) do update set
+  full_name = excluded.full_name,
+  email = excluded.email,
+  status = excluded.status,
+  updated_at = now();
+
+insert into public.company_users (company_id, user_id, role, status)
+select c.id, 'SCJ_AUTH_USER_ID', 'admin', 'active'
+from public.companies c
+where c.name = 'SCJ'
+on conflict (company_id, user_id) do update set
+  role = excluded.role,
+  status = excluded.status,
+  updated_at = now();
+```
+
 ## Consultas utiles
 
 Empresas del usuario autenticado:

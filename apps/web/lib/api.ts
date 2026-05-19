@@ -1,5 +1,18 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
 
+function isSupabaseSession() {
+  if (typeof window === "undefined") return false;
+  if (localStorage.getItem("auth_provider") === "supabase") return true;
+  const token = localStorage.getItem("token");
+  if (!token?.includes(".")) return false;
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return String(payload.iss || "").includes("supabase") || String(payload.ref || "") === "jbirkghkekuifgfsgquq";
+  } catch {
+    return false;
+  }
+}
+
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
   let response: Response;
@@ -17,7 +30,7 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
     throw new Error("API no disponible. Inicia el backend en http://localhost:3000.");
   }
 
-  if (response.status === 401 && typeof window !== "undefined") {
+  if (response.status === 401 && typeof window !== "undefined" && !isSupabaseSession()) {
     localStorage.removeItem("token");
     localStorage.removeItem("refresh");
     window.location.href = "/login";

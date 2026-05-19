@@ -216,19 +216,53 @@ async function resolveEmployeeForPunch(tenantId, input) {
   });
 }
 
-async function createPunch(tenantId, input) {
+async function getCurrentEmployee(tenantId, user) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const employee = await prisma.employee.findFirst({
+      where: {
+        OR: [
+          { user_id: user?.id },
+          { user: { email: user?.email || "" } },
+          { user: { name: user?.name || "" } }
+        ]
+      },
+      include: { user: { select: { id: true, name: true, email: true } } }
+    });
+    if (!employee) {
+      const err = new Error("El usuario conectado no tiene empleado asociado.");
+      err.statusCode = 404;
+      err.code = "EMPLEADO_NO_ASOCIADO";
+      throw err;
+    }
+    return employee;
+  });
+}
+
+async function createPunch(tenantId, input, user) {
   return prisma.runWithTenant(tenantId, async () => {
     const punchedAt = input.punched_at ? new Date(input.punched_at) : new Date();
-    const employee = await resolveEmployeeForPunch(tenantId, input);
+    const currentEmployee = user?.id ? await prisma.employee.findFirst({
+      where: { OR: [{ user_id: user.id }, { user: { email: user.email || "" } }] },
+      include: { user: { select: { name: true, email: true } } }
+    }) : null;
+    const employee = currentEmployee || await resolveEmployeeForPunch(tenantId, input);
     const type = normalizePunchType(input.type || input.tipo_marca);
     const route = input.route_id ? await prisma.timeRoute.findFirst({ where: { id: Number(input.route_id) } }) : null;
     const extraMinutes = type === "salida" && route?.end_time
       ? Math.max(0, Math.round((punchedAt.getHours() * 60 + punchedAt.getMinutes()) - (Number(route.end_time.slice(0, 2)) * 60 + Number(route.end_time.slice(3, 5))) - Number(route.tolerance_minutes || 0)))
       : 0;
+    if (extraMinutes > 0 && !String(input.extra_reason || input.extra_detail || "").trim()) {
+      const err = new Error("Justifica por que estas marcando fuera de tu horario habitual.");
+      err.statusCode = 422;
+      err.code = "JUSTIFICACION_HORA_EXTRA_REQUERIDA";
+      err.details = { extra_minutes: extraMinutes };
+      throw err;
+    }
+    const resolvedUserName = employee.code || employee.user?.name || employee.user?.email || input.user_name;
     const punch = await prisma.timePunch.create({
       data: {
         employee_id: employee.id,
-        user_name: input.user_name,
+        user_name: resolvedUserName,
         type,
         punched_at: punchedAt,
         date: startOfDay(punchedAt),
@@ -248,7 +282,7 @@ async function createPunch(tenantId, input) {
       await prisma.gpsPing.create({
         data: {
           employee_id: employee.id,
-          user_name: input.user_name,
+          user_name: resolvedUserName,
           vehicle_plate: input.vehicle_plate || "",
           route_id: input.route_id,
           latitude: Number(input.latitude),
@@ -267,7 +301,7 @@ async function createPunch(tenantId, input) {
       minutos_extra: extraMinutes,
       alerta: extraMinutes > 0,
       punch,
-      next: nextPunchType(await latestPunchesForUser(input.user_name, punchedAt))
+      next: nextPunchType(await latestPunchesForUser(resolvedUserName, punchedAt))
     };
   });
 }
@@ -738,6 +772,7 @@ module.exports = {
   createSchedule,
   updateSchedule,
   listEmployees,
+  getCurrentEmployee,
   createEmployee,
   listRoutes,
   createRoute,

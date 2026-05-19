@@ -7,7 +7,6 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 type Employee = { id: number; code: string; metadata: { name: string }; user: { name: string } };
-type Vehicle = { id: number; plate: string; type: string; model: string };
 type Attendance = { user_name: string; next_type: string | null; punches: Array<{ id: number; type: string; time: string; vehicle_plate: string }> };
 type TimeRoute = { id: number; vehicle_plate: string; employees: string[]; start_time: string; end_time: string };
 
@@ -39,42 +38,37 @@ function osmEmbedUrl(gps: GpsFix) {
 }
 
 export default function MobilePunchPage() {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [employee, setEmployee] = useState<Employee | null>(null);
   const [routes, setRoutes] = useState<TimeRoute[]>([]);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
-  const [employeeId, setEmployeeId] = useState<number | null>(null);
-  const [vehiclePlate, setVehiclePlate] = useState("");
   const [message, setMessage] = useState("");
+  const [extraReason, setExtraReason] = useState("");
   const [gps, setGps] = useState<GpsFix | null>(null);
   const [gpsStatus, setGpsStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [view, setView] = useState<"marcar" | "historial">("marcar");
 
   async function load() {
-    const [employeeData, vehicleData, routeData, attendanceData] = await Promise.all([
-      api<Employee[]>("/api/v1/hr/employees?active=true").catch(() => []),
-      api<Vehicle[]>("/api/v1/transport/vehicles").catch(() => []),
+    const [me, routeData, attendanceData] = await Promise.all([
+      api<Employee>("/api/v1/hr/me").catch(() => null),
       api<TimeRoute[]>("/api/v1/hr/routes").catch(() => []),
       api<Attendance[]>("/api/v1/hr/attendance").catch(() => [])
     ]);
-    setEmployees(employeeData);
-    setVehicles(vehicleData);
+    setEmployee(me);
     setRoutes(routeData);
     setAttendance(attendanceData);
-    if (!employeeId && employeeData[0]) setEmployeeId(employeeData[0].id);
-    if (!vehiclePlate && vehicleData[0]) setVehiclePlate(vehicleData[0].plate);
   }
 
   useEffect(() => {
     load();
   }, []);
 
-  const employee = useMemo(() => employees.find((item) => item.id === employeeId) || employees[0] || null, [employees, employeeId]);
   const userName = employee ? employee.code || employeeName(employee) : "";
   const currentAttendance = attendance.find((item) => item.user_name === userName) || { user_name: userName, next_type: "entrada", punches: [] };
   const doneTypes = new Set(currentAttendance.punches.map((punch) => punch.type) || []);
   const nextType = currentAttendance.next_type || "entrada";
-  const route = routes.find((item) => item.vehicle_plate === vehiclePlate && item.employees.includes(userName));
+  const displayName = employee ? employeeName(employee) : "";
+  const route = routes.find((item) => item.employees.includes(userName)) || routes.find((item) => displayName && item.employees.includes(displayName));
+  const vehiclePlate = route?.vehicle_plate || "";
 
   useEffect(() => {
     if (!employee || !gps || !userName) return;
@@ -141,9 +135,11 @@ export default function MobilePunchPage() {
         accuracy_meters: fix.accuracy_meters,
         vehicle_plate: vehiclePlate,
         route_id: route?.id,
-        metadata: { source: "apexos-mobile" }
+        extra_reason: type === "salida" ? extraReason : undefined,
+        metadata: { source: "apexos-mobile", current_user_only: true }
       })
     });
+    setExtraReason("");
     setMessage(`${punchLabels[type].title} registrado.`);
     await load();
   }
@@ -171,19 +167,17 @@ export default function MobilePunchPage() {
         <>
           <section className="rounded-md border border-line bg-white p-4 shadow-sm">
             <div className="grid gap-3">
-              <label className="text-xs font-semibold uppercase text-neutral-500">Operario</label>
-              <select className="h-12 rounded-md border border-line px-3 text-base" value={employee?.id || ""} onChange={(event) => setEmployeeId(Number(event.target.value))}>
-                {employees.map((item) => <option key={item.id} value={item.id}>{employeeName(item)}</option>)}
-              </select>
-              <label className="text-xs font-semibold uppercase text-neutral-500">Vehiculo</label>
-              <select className="h-12 rounded-md border border-line px-3 text-base" value={vehiclePlate} onChange={(event) => setVehiclePlate(event.target.value)}>
-                <option value="">Vehiculo</option>
-                {vehicles.map((item) => <option key={item.id} value={item.plate}>{item.plate} · {item.type || item.model || "Movil"}</option>)}
-              </select>
+              <div className="rounded-md bg-paper p-3">
+                <p className="text-xs font-semibold uppercase text-neutral-500">Usuario conectado</p>
+                <p className="mt-1 text-base font-semibold">{employee ? employeeName(employee) : "Empleado no asociado"}</p>
+              </div>
             </div>
             <div className="mt-4 rounded-md bg-paper p-3 text-sm text-neutral-700">
               <Truck className="mr-2 inline text-apex" size={15} /> {route ? `Ruta ${route.id} · ${route.start_time || "--"} - ${route.end_time || "--"}` : "Sin ruta asignada para este vehiculo/equipo"}
             </div>
+            {nextType === "salida" ? (
+              <textarea className="mt-3 min-h-24 w-full rounded-md border border-line px-3 py-3 text-base" placeholder="Justificacion si estas cerrando fuera de tu horario habitual" value={extraReason} onChange={(event) => setExtraReason(event.target.value)} />
+            ) : null}
             <button className="mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-md border border-line text-base font-semibold hover:bg-paper" onClick={refreshGps} type="button">
               <RefreshCw className={gpsStatus === "loading" ? "animate-spin" : ""} size={17} />
               {gpsStatus === "loading" ? "Obteniendo GPS..." : gpsStatus === "ok" && gps ? `GPS activo (${Math.round(gps.accuracy_meters || 0)}m)` : "Activar GPS obligatorio"}

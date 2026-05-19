@@ -37,4 +37,12 @@
 - Se ejecuto flujo no ejecutado: iniciar, registrar pieza faltante, guardar inspeccion no armable, crear novedad, cargar evidencias y cerrar como no ejecutada.
 - Resultado verificado: 2 ordenes demo creadas, 1 cerrada y 1 no ejecutada.
 - Se valido sintaxis backend de servicios y typecheck web despues del ajuste de paneles/reporte.
+
+## 2026-05-18 - Seed operativo y tecnico conectado
+
+- Se creo seed operativo SCJ/Puebla con 100 referencias por organizacion y servicios en estados pendiente, en curso, inspeccion, ejecucion, cerrada, no ejecutada y cancelada.
+- Las ordenes demo incluyen evidencias, novedades y firma de cliente simulada para validar historial y reporte.
+- La pantalla de nueva orden ya no muestra lista de tecnicos para seleccion manual.
+- La API asigna la orden al tecnico autenticado cuando el usuario conectado no es admin/coordinador.
+- Se mantiene soporte para admin/coordinador en la creacion administrativa de ordenes.
 - Se valido typecheck web despues del ajuste visual de panel principal.

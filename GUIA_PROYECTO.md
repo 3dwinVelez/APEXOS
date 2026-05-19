@@ -246,3 +246,17 @@ El arranque web de desarrollo usa `.next-dev` y el build usa `.next`. Esto evita
 5. Abrir `http://localhost:3001`.
 6. Iniciar sesion con el usuario demo.
 7. Antes de cerrar cambios importantes, ejecutar typecheck, validacion de assets y build del frontend.
+
+
+Super usuario admin
+Correo: admin@apexos.qa
+Clave: ApexOS-QA-Admin-2026!
+Acceso: admin global APEX OS, panel de empresas/suscripciones y owner de empresas QA.
+
+
+
+Usuario empresa SCJ
+Correo: scj@apexos.qa
+Clave: ApexOS-QA-SCJ-2026!
+Acceso: empresa SCJ como admin.
+Módulos habilitados: talento_humano, servicios, transporte, configuracion, administracion_apex.

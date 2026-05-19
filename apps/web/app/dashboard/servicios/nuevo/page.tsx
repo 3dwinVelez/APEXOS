@@ -7,28 +7,16 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 type ServiceReference = { id: number; code: string; name: string; category: string; estimated_minutes: number; brand: string; model: string; parts: Array<{ id: number; name: string; quantity: number; unit: string }> };
-type Employee = { id: number; code: string; name?: string; metadata?: { name?: string }; user?: { name?: string } };
 type ServiceOrder = { id: number; number: string };
-
-function techName(tech: Employee) {
-  return tech.name || tech.metadata?.name || tech.user?.name || tech.code || `Tecnico ${tech.id}`;
-}
 
 export default function NewServiceOrderPage() {
   const router = useRouter();
   const [references, setReferences] = useState<ServiceReference[]>([]);
-  const [technicians, setTechnicians] = useState<Employee[]>([]);
   const [message, setMessage] = useState("");
-  const [form, setForm] = useState({ reference_id: "", technician_id: "", service_type: "montaje", customer_name: "", customer_address: "", customer_phone: "", invoice_number: "", scheduled_date: "", notes: "" });
+  const [form, setForm] = useState({ reference_id: "", service_type: "montaje", customer_name: "", customer_address: "", customer_phone: "", invoice_number: "", scheduled_date: "", notes: "" });
 
   useEffect(() => {
-    Promise.all([
-      api<ServiceReference[]>("/api/v1/services/references?active=true").catch(() => []),
-      api<Employee[]>("/api/v1/hr/employees?position=tecnico&active=true").catch(() => [])
-    ]).then(([refs, techs]) => {
-      setReferences(refs);
-      setTechnicians(techs);
-    });
+    api<ServiceReference[]>("/api/v1/services/references?active=true").then(setReferences).catch(() => setReferences([]));
   }, []);
 
   async function createOrder() {
@@ -41,7 +29,7 @@ export default function NewServiceOrderPage() {
       body: JSON.stringify({
         ...form,
         reference_id: Number(form.reference_id),
-        technician_id: form.technician_id ? Number(form.technician_id) : undefined
+        metadata: { assignment: "current_user" }
       })
     });
     router.push(`/dashboard/servicios/${order.id}`);
@@ -72,10 +60,6 @@ export default function NewServiceOrderPage() {
             <option value="montaje">Montaje</option>
             <option value="desmontaje">Desmontaje</option>
             <option value="ambos">Montaje y desmontaje</option>
-          </select>
-          <select className="h-12 rounded-md border border-line px-3 text-base md:h-10 md:text-sm" value={form.technician_id} onChange={(event) => setForm((prev) => ({ ...prev, technician_id: event.target.value }))}>
-            <option value="">Tecnico asignado</option>
-            {technicians.map((tech) => <option key={tech.id} value={tech.id}>{techName(tech)}</option>)}
           </select>
           <input className="h-12 rounded-md border border-line px-3 text-base md:h-10 md:text-sm" type="date" value={form.scheduled_date} onChange={(event) => setForm((prev) => ({ ...prev, scheduled_date: event.target.value }))} />
         </div>

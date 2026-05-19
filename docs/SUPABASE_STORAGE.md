@@ -127,6 +127,22 @@ const url = await getCompanyLogoUrl(company.logo_url);
 
 7. Repetir con avatar y servicio.
 
+## Validacion QA ejecutada
+
+- Buckets `company-assets`, `user-avatars` y `service-images` existen.
+- Los tres buckets son privados.
+- Los tres buckets tienen limite de `2097152` bytes.
+- Los tres buckets aceptan `image/png`, `image/jpeg` e `image/webp`.
+- `storage.objects` tiene RLS activo.
+- Existen politicas por bucket para lectura, insercion, actualizacion y borrado.
+- El acceso cruzado entre empresas fue bloqueado con RLS.
+
+Pendiente:
+
+- Subida binaria real desde Storage API con usuario QA autenticado.
+- Lectura real con URL firmada usando token real.
+- Reemplazo y eliminacion real via Storage API.
+
 ## Errores comunes
 
 `Configura NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY`:

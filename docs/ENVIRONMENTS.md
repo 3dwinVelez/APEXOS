@@ -15,6 +15,21 @@ Uso:
 - Validar control de modulos.
 - Validar flujos iniciales de `talento_humano` y `servicios`.
 
+Variables necesarias para el frontend:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://jbirkghkekuifgfsgquq.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+```
+
+Variable necesaria solo en servidor para crear usuarios Auth desde Admin Plataforma:
+
+```env
+SUPABASE_SERVICE_ROLE_KEY=
+```
+
+Esta clave no debe exponerse en navegador ni guardarse con valor real en Git.
+
 ## Legacy
 
 Los proyectos legacy no deben tocarse desde APEXOS.
@@ -29,4 +44,3 @@ Proyectos detectados:
 Produccion no se crea ni se modifica en esta fase.
 
 Toda configuracion futura de produccion debe salir de las mismas migraciones versionadas y con aprobacion explicita.
-

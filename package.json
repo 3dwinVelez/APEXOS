@@ -17,6 +17,7 @@
     "prisma:generate": "npm --workspace apps/api run prisma:generate",
     "db:push": "npx prisma db push --schema apps/api/prisma/schema.prisma --skip-generate",
     "seed:demo": "node scripts/seed-admin.js",
+    "seed:ops": "node scripts/seed-scj-puebla-ops.js",
     "setup:local": "npm install && npm run check:local && npm run infra:up && npm run prisma:generate && npm run db:push && npm run seed:demo",
     "start:local": "npm run check:local && npm run infra:up && npm run dev",
     "start:local:windows": "node scripts/start-local-windows.js",

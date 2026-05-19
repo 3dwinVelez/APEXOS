@@ -1,5 +1,4 @@
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+import { supabaseFetch, supabaseHeaders, supabaseUrl } from "./supabaseClient";
 
 export const IMAGE_MAX_BYTES = 2 * 1024 * 1024;
 export const IMAGE_MIME_TYPES = ["image/png", "image/jpeg", "image/webp"] as const;
@@ -11,23 +10,6 @@ type UploadResult = {
   path: string;
   storagePath: string;
 };
-
-function requireSupabaseConfig() {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    throw new Error("Configura NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.");
-  }
-}
-
-function authHeaders(contentType?: string) {
-  requireSupabaseConfig();
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-  if (!token) throw new Error("Sesion requerida para cargar imagenes.");
-  return {
-    apikey: SUPABASE_ANON_KEY,
-    Authorization: `Bearer ${token}`,
-    ...(contentType ? { "Content-Type": contentType } : {})
-  };
-}
 
 function validateImage(file: File) {
   if (!IMAGE_MIME_TYPES.includes(file.type as (typeof IMAGE_MIME_TYPES)[number])) {
@@ -53,7 +35,7 @@ function encodePath(path: string) {
 }
 
 function objectUrl(bucket: ImageBucket, path: string) {
-  return `${SUPABASE_URL}/storage/v1/object/${bucket}/${encodePath(path)}`;
+  return supabaseUrl(`/storage/v1/object/${bucket}/${encodePath(path)}`);
 }
 
 export function storagePath(bucket: ImageBucket, path: string) {
@@ -73,7 +55,7 @@ async function uploadImage(bucket: ImageBucket, path: string, file: File): Promi
   const response = await fetch(objectUrl(bucket, path), {
     method: "PUT",
     headers: {
-      ...authHeaders(file.type),
+      ...supabaseHeaders({ contentType: file.type }),
       "x-upsert": "true",
       "cache-control": "3600"
     },
@@ -88,24 +70,18 @@ async function uploadImage(bucket: ImageBucket, path: string, file: File): Promi
 
 export async function createSignedImageUrl(value: string, expiresIn = 3600) {
   const { bucket, path } = splitStoragePath(value);
-  const response = await fetch(`${SUPABASE_URL}/storage/v1/object/sign/${bucket}/${encodePath(path)}`, {
+  const data = await supabaseFetch<{ signedURL: string }>(`/storage/v1/object/sign/${bucket}/${encodePath(path)}`, {
     method: "POST",
-    headers: authHeaders("application/json"),
     body: JSON.stringify({ expiresIn })
   });
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({ message: response.statusText }));
-    throw new Error(body.message || "No fue posible obtener la imagen.");
-  }
-  const data = await response.json();
-  return data.signedURL?.startsWith("http") ? data.signedURL : `${SUPABASE_URL}${data.signedURL}`;
+  return data.signedURL?.startsWith("http") ? data.signedURL : supabaseUrl(data.signedURL);
 }
 
 export async function deleteImage(value: string) {
   const { bucket, path } = splitStoragePath(value);
   const response = await fetch(objectUrl(bucket, path), {
     method: "DELETE",
-    headers: authHeaders()
+    headers: supabaseHeaders()
   });
   if (!response.ok && response.status !== 404) {
     const body = await response.json().catch(() => ({ message: response.statusText }));

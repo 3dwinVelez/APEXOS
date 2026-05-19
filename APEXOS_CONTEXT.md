@@ -48,11 +48,15 @@ Todo ajuste de interfaz desde este punto debe seguir estos principios:
 - No mezclar creación, edición, consulta, configuración y monitoreo en el mismo bloque visual si eso genera ruido.
 - Los módulos deben abrir con un panel de control limpio: indicadores relevantes, acciones principales y accesos a subflujos.
 - Los formularios largos o auxiliares deben vivir en modales, paneles laterales o pantallas dedicadas.
+- La creacion o edicion de registros no debe quedar incrustada en listados o paneles de monitoreo; debe abrirse en ventana flotante, panel lateral o flujo dedicado para no saturar la pantalla principal.
+- Las acciones destructivas deben usar confirmacion explicita. En datos con historial operativo debe preferirse inactivar o suspender antes que eliminar definitivamente.
 - Las opciones disponibles deben ser evidentes para el usuario sin leer instrucciones extensas.
 - La experiencia móvil debe priorizar botones táctiles, lectura rápida y acciones de una mano.
 - El diseño debe ser ágil, atractivo, sobrio y profesional; evitar pantallas saturadas, textos innecesarios y controles compitiendo por atención.
 - No sacrificar funcionalidad ni rendimiento por decoración visual.
 - Mantener consistencia entre módulos: encabezados claros, KPIs compactos, acciones primarias destacadas, acciones secundarias agrupadas y listados fáciles de escanear.
+- El inicio debe ser dinamico por cliente: los indicadores y graficos deben salir de datos reales de la organizacion y de sus modulos activos; no se deben dejar KPIs vacios si existe operacion cargada.
+- Los flujos operativos deben reconocer inmediatamente al usuario conectado. Marcaciones y servicios no deben pedir seleccionar operario/tecnico cuando la accion corresponde al propio usuario autenticado.
 
 ---
 

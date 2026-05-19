@@ -1,7 +1,9 @@
 "use client";
 
 import { api } from "@/lib/api";
-import { Check, Plus, RefreshCw, Save, Shield, UserCog, Users } from "lucide-react";
+import { listPlatformCompanies } from "@/lib/supabaseQa";
+import { Building2, Check, Plus, RefreshCw, Save, Shield, SlidersHorizontal, UserCog, Users } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 type CatalogItem = { key: string; label: string; actions: string[] };
@@ -40,6 +42,7 @@ function emptyPermissions(catalog: CatalogItem[]) {
 
 export default function AdministracionPage() {
   const [section, setSection] = useState<"roles" | "usuarios">("roles");
+  const [platformAdminEnabled, setPlatformAdminEnabled] = useState(false);
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -51,7 +54,27 @@ export default function AdministracionPage() {
 
   const selectedRole = useMemo(() => roles.find((role) => role.id === selectedRoleId) || null, [roles, selectedRoleId]);
 
+  function isSupabaseSession() {
+    if (typeof window === "undefined") return false;
+    if (localStorage.getItem("auth_provider") === "supabase") return true;
+    const token = localStorage.getItem("token");
+    if (!token?.includes(".")) return false;
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+      return String(payload.iss || "").includes("supabase") || String(payload.ref || "") === "jbirkghkekuifgfsgquq";
+    } catch {
+      return false;
+    }
+  }
+
   async function load() {
+    if (isSupabaseSession()) {
+      setMessage("Sesion Supabase QA activa. Roles y usuarios legacy quedan disponibles solo para usuarios del backend local.");
+      setCatalog([]);
+      setRoles([]);
+      setUsers([]);
+      return;
+    }
     const [catalogData, rolesData, usersData] = await Promise.all([
       api<CatalogItem[]>("/api/v1/admin/permissions/catalog"),
       api<Role[]>("/api/v1/admin/roles"),
@@ -74,6 +97,9 @@ export default function AdministracionPage() {
 
   useEffect(() => {
     load().catch((error) => setMessage(error.message));
+    listPlatformCompanies(1)
+      .then((rows) => setPlatformAdminEnabled(rows.length > 0))
+      .catch(() => setPlatformAdminEnabled(false));
   }, []);
 
   function selectRole(role: Role) {
@@ -145,13 +171,33 @@ export default function AdministracionPage() {
           <p className="text-sm font-medium text-apex">Configuracion</p>
           <h1 className="text-3xl font-semibold">Usuarios y roles</h1>
         </div>
-        <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-medium hover:bg-paper" onClick={() => load()} type="button">
+        <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-medium hover:bg-paper" onClick={() => load().catch((error) => setMessage(error.message))} type="button">
           <RefreshCw size={16} />
           Actualizar
         </button>
       </header>
 
       {message ? <p className="rounded-md border border-line bg-white px-4 py-3 text-sm text-neutral-700">{message}</p> : null}
+
+      {platformAdminEnabled ? (
+        <section className="rounded-md border border-apex/30 bg-white p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-apex text-white">
+                <Building2 size={18} />
+              </div>
+              <div>
+                <h2 className="font-semibold">Administracion de empresas</h2>
+                <p className="mt-1 text-sm text-neutral-600">Gestiona empresas, suscripciones y modulos habilitados desde Admin APEXOS.</p>
+              </div>
+            </div>
+            <Link className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white hover:bg-[#0f5a52]" href="/dashboard/administracion/suscripciones">
+              <SlidersHorizontal size={16} />
+              Abrir empresas
+            </Link>
+          </div>
+        </section>
+      ) : null}
 
       <section className="grid grid-cols-2 gap-2 rounded-md border border-line bg-white p-1">
         <button className={`h-12 rounded-md text-sm font-semibold ${section === "roles" ? "bg-apex text-white" : "text-neutral-700"}`} onClick={() => setSection("roles")} type="button">

@@ -256,6 +256,19 @@ function writeSet(key: string, value: Set<string>) {
   localStorage.setItem(key, JSON.stringify(Array.from(value)));
 }
 
+function isSupabaseSession() {
+  if (typeof window === "undefined") return false;
+  if (localStorage.getItem("auth_provider") === "supabase") return true;
+  const token = localStorage.getItem("token");
+  if (!token?.includes(".")) return false;
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return String(payload.iss || "").includes("supabase") || String(payload.ref || "") === "jbirkghkekuifgfsgquq";
+  } catch {
+    return false;
+  }
+}
+
 export function AiExperienceLayer() {
   const pathname = usePathname();
   const [enabled, setEnabled] = useState(true);
@@ -310,6 +323,12 @@ export function AiExperienceLayer() {
 
     const guideSeen = localStorage.getItem(guideKey) === "1";
     setCoachOpen(!guideSeen && steps.length > 0);
+
+    if (isSupabaseSession()) {
+      setInsights([]);
+      setLoadingInsights(false);
+      return;
+    }
 
     setLoadingInsights(true);
     api<BrainInsightsResponse>(`/api/v1/brain/insights?limit=12&module=${currentModule}`)

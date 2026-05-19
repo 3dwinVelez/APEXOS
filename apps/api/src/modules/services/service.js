@@ -194,13 +194,24 @@ async function getOrderReportPdf(tenantId, id) {
   return { fileName: `${order.number || `servicio-${id}`}.pdf`, buffer: buildSimplePdf(lines) };
 }
 
+function canAssignAnyTechnician(user) {
+  const roleName = user?.role?.name || "";
+  return ["APEX_ADMIN", "Coordinador", "Admin", "Administrador"].includes(roleName);
+}
+
+async function currentEmployeeId(tenantId, user) {
+  if (!user?.id) return null;
+  const employee = await prisma.employee.findFirst({ where: { tenant_id: tenantId, user_id: user.id }, select: { id: true } });
+  return employee?.id || null;
+}
+
 async function createOrder(tenantId, user, input) {
   return prisma.runWithTenant(tenantId, async () => prisma.serviceOrder.create({
     data: {
       number: await nextNumber(),
       reference_item_id: input.reference_item_id,
       reference_id: input.reference_id,
-      technician_id: input.technician_id,
+      technician_id: canAssignAnyTechnician(user) ? input.technician_id : await currentEmployeeId(tenantId, user),
       service_type: input.service_type || "montaje",
       customer_name: input.customer_name,
       customer_address: input.customer_address,

@@ -67,4 +67,13 @@
   - `node scripts/seed-hr-map-demo.js`
   - `node scripts/validate-hr-map-demo.js`
 - Escenario validado `MAP-101`: ruta historica cerrada con 2 tecnicos, recorrido GPS y 8 marcaciones georreferenciadas.
+
+## 2026-05-18 - Usuario conectado y hora extra MVP
+
+- Se valido en APEX legacy la regla de cierre con hora extra: al cerrar jornada se compara la hora real contra fin de ruta mas tolerancia y contra jornada planeada.
+- Se clono para el MVP la parte operativa sin valores monetarios: si el cierre supera el horario planeado, la API calcula `extra_minutes`.
+- Si hay `extra_minutes` y no se envia justificacion, la API responde `422 JUSTIFICACION_HORA_EXTRA_REQUERIDA`.
+- La pantalla movil de marcacion ya no muestra lista de operarios; toma el empleado desde el usuario conectado.
+- La API ignora intentos de enviar otro `user_name` y guarda la marcacion con el empleado autenticado.
+- Se creo seed operativo SCJ/Puebla con rutas, GPS, marcaciones completas y casos de hora extra justificada.
 - Escenario validado `MAP-202`: ruta actual con persona sin senal activa visible mediante ultima huella GPS.

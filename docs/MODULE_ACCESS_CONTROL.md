@@ -17,6 +17,14 @@ Habilitados para el piloto QA:
 - `servicios`
 - `configuracion`
 
+Habilitados para SCJ QA:
+
+- `talento_humano`
+- `servicios`
+- `transporte`
+- `configuracion`
+- `administracion_apex`
+
 Visibles pero bloqueables inicialmente:
 
 - `inventario`
@@ -26,6 +34,16 @@ Visibles pero bloqueables inicialmente:
 - `finanzas`
 - `reportes`
 - `wms`
+
+## Modulos de plataforma
+
+Los modulos con `visibility_scope = 'platform'` no pertenecen a una empresa normal.
+
+Actualmente existe:
+
+- `platform_admin`: administra empresas, suscripciones y modulos habilitados por empresa.
+
+Solo usuarios activos en `public.platform_admins` pueden consultar u operar este submodulo.
 
 ## Regla operativa
 
@@ -47,3 +65,21 @@ app_private.has_company_module(company_id, 'codigo_modulo')
 `services` exige modulo `servicios`.
 
 Si el modulo esta bloqueado, RLS impide consultar, insertar, editar o borrar datos reales aunque el usuario pertenezca a la empresa.
+
+## Administracion por checks
+
+El panel `/dashboard/administracion/suscripciones` permite habilitar o bloquear modulos por empresa usando checks. Cada cambio actualiza `public.company_modules`; las politicas RLS y helpers de modulo garantizan que lo bloqueado no se pueda operar aunque la pantalla exista en frontend.
+
+## Catalogo completo APEXOS
+
+La migracion `20260518102000_complete_apexos_module_catalog_and_company_setup.sql` completa el catalogo tenant de QA con los 27 modulos visibles en la plataforma web. El selector de empresas debe consultar todos los modulos tenant activos del catalogo, no solo los modulos prioritarios iniciales.
+
+La migracion tambien crea `app_private.initialize_company_modules()` para inicializar automaticamente la matriz `company_modules` al crear una empresa nueva. Cada sociedad nace con su propio `company_id` y con sus modulos separados; por defecto quedan bloqueados salvo los que vengan habilitados por plan.
+
+El frontend mapea todos los slugs visibles de APEXOS a codigos de Supabase para que el menu lateral, el tablero principal y el panel de suscripciones respeten los bloqueos de la empresa activa.
+
+## Grupos empresariales y sociedades
+
+Una empresa puede representar un grupo empresarial, una sociedad legal, una unidad de negocio o una sucursal. La jerarquia se guarda en `companies.parent_company_id`.
+
+La separacion operativa sigue siendo por `company_id`: aunque una sociedad pertenezca a un grupo, sus usuarios, modulos habilitados y datos reales se controlan por la empresa especifica. El acceso cruzado entre sociedades no debe asumirse por pertenecer al mismo grupo; debe concederse de forma explicita mediante usuarios, roles y permisos.
