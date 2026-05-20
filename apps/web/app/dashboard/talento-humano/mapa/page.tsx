@@ -4,12 +4,13 @@ import { api } from "@/lib/api";
 import { ArrowLeft, CalendarDays, Clock, ExternalLink, LocateFixed, MapPin, RefreshCw, Route, Satellite, Users } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import type { PointerEvent } from "react";
 
 type GpsPoint = {
-  id: number;
+  id: string;
   user_name: string;
   vehicle_plate: string;
-  route_id: number | null;
+  route_id: string | null;
   latitude: number;
   longitude: number;
   accuracy_meters: number;
@@ -18,10 +19,10 @@ type GpsPoint = {
 
 type OperatorPoint = {
   key: string;
-  employee_id: number | null;
+  employee_id: string | null;
   user_name: string;
   name: string;
-  route_id: number;
+  route_id: string;
   route_label: string;
   vehicle_plate: string;
   latitude: number | null;
@@ -40,7 +41,7 @@ type OperatorPoint = {
 };
 
 type PunchPoint = {
-  id: number;
+  id: string;
   user_name: string;
   type: string;
   time: string;
@@ -49,13 +50,13 @@ type PunchPoint = {
   longitude: number;
   accuracy_meters: number | null;
   vehicle_plate: string;
-  route_id: number | null;
+  route_id: string | null;
   extra_minutes: number;
   metadata?: Record<string, unknown>;
 };
 
 type RouteSummary = {
-  id: number;
+  id: string;
   vehicle_plate: string;
   employees: string[];
   start_time: string;
@@ -79,6 +80,7 @@ type OperationsMap = {
 };
 
 const TILE_SIZE = 256;
+const LIVE_REFRESH_SECONDS = 10;
 const DEFAULT_CENTER = { latitude: 4.711, longitude: -74.0721 };
 const statusTone: Record<string, string> = {
   "En ruta": "bg-emerald-500",
@@ -123,6 +125,11 @@ function ageLabel(seconds: number | null) {
   return `hace ${Math.round(minutes / 60)}h`;
 }
 
+function currentAgeSeconds(person: OperatorPoint, now: number) {
+  if (!person.captured_at) return person.age_seconds;
+  return Math.max(0, Math.round((now - new Date(person.captured_at).getTime()) / 1000));
+}
+
 function project(latitude: number, longitude: number, zoom: number) {
   const sin = Math.sin((latitude * Math.PI) / 180);
   const scale = TILE_SIZE * 2 ** zoom;
@@ -130,6 +137,13 @@ function project(latitude: number, longitude: number, zoom: number) {
     x: ((longitude + 180) / 360) * scale,
     y: (0.5 - Math.log((1 + sin) / (1 - sin)) / (4 * Math.PI)) * scale
   };
+}
+
+function unproject(x: number, y: number, zoom: number) {
+  const scale = TILE_SIZE * 2 ** zoom;
+  const longitude = (x / scale) * 360 - 180;
+  const latitude = (180 / Math.PI) * Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / scale)));
+  return { latitude, longitude };
 }
 
 function tileUrl(x: number, y: number, zoom: number) {
@@ -199,18 +213,25 @@ export default function LiveGpsMapPage() {
   const [data, setData] = useState<OperationsMap | null>(null);
   const [mode, setMode] = useState<"vivo" | "historico">("vivo");
   const [selectedKey, setSelectedKey] = useState("");
-  const [routeId, setRouteId] = useState<number | "all">("all");
+  const [routeId, setRouteId] = useState<string | "all">("all");
   const [userName, setUserName] = useState("all");
   const [status, setStatus] = useState<"all" | "online" | "offline" | "nogps">("all");
   const [selectedMark, setSelectedMark] = useState<PunchPoint | null>(null);
   const [zoom, setZoom] = useState(13);
   const [loading, setLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [refreshIn, setRefreshIn] = useState(LIVE_REFRESH_SECONDS);
+  const [now, setNow] = useState(Date.now());
+  const [followSelected, setFollowSelected] = useState(true);
+  const [drag, setDrag] = useState<{ x: number; y: number; center: { latitude: number; longitude: number } } | null>(null);
 
   async function load() {
     setLoading(true);
     try {
       const response = await api<OperationsMap>(`/api/v1/hr/operations-map?date=${date}&minutes=${mode === "vivo" ? 30 : 1440}&footprint_days=30`);
       setData(response);
+      setLastUpdated(response.generated_at || new Date().toISOString());
+      setRefreshIn(LIVE_REFRESH_SECONDS);
       setSelectedKey((current) => current || response.people.find((person) => person.latitude != null)?.key || "");
     } finally {
       setLoading(false);
@@ -219,11 +240,19 @@ export default function LiveGpsMapPage() {
 
   useEffect(() => {
     load().catch(() => undefined);
-    const timer = mode === "vivo" ? window.setInterval(() => load().catch(() => undefined), 30000) : null;
+    const timer = mode === "vivo" ? window.setInterval(() => load().catch(() => undefined), LIVE_REFRESH_SECONDS * 1000) : null;
     return () => {
       if (timer) window.clearInterval(timer);
     };
   }, [date, mode]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+      if (mode === "vivo") setRefreshIn((value) => Math.max(0, value - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [mode]);
 
   useEffect(() => {
     if (mode === "vivo") setDate(today());
@@ -236,19 +265,44 @@ export default function LiveGpsMapPage() {
 
   const people = data?.people || [];
   const routes = data?.routes || [];
+  const activeWindowSeconds = (data?.active_window_minutes || 30) * 60;
   const users = useMemo(() => Array.from(new Set(people.map((person) => person.user_name).filter(Boolean))).sort(), [people]);
   const filteredPeople = useMemo(() => people.filter((person) => {
+    const liveOnline = currentAgeSeconds(person, now) != null && Number(currentAgeSeconds(person, now)) <= activeWindowSeconds;
     if (routeId !== "all" && person.route_id !== routeId) return false;
     if (userName !== "all" && person.user_name !== userName) return false;
-    if (status === "online") return person.online;
-    if (status === "offline") return person.latitude != null && person.longitude != null && !person.online;
+    if (status === "online") return liveOnline;
+    if (status === "offline") return person.latitude != null && person.longitude != null && !liveOnline;
     if (status === "nogps") return person.latitude == null || person.longitude == null;
     return true;
-  }), [people, routeId, userName, status]);
+  }), [activeWindowSeconds, now, people, routeId, userName, status]);
   const selected = filteredPeople.find((person) => person.key === selectedKey) || filteredPeople[0] || null;
-  const center = selected?.latitude != null && selected.longitude != null
+  const centerTarget = followSelected && selected?.latitude != null && selected.longitude != null
     ? { latitude: selected.latitude, longitude: selected.longitude }
     : centerFrom(filteredPeople);
+  const [center, setCenter] = useState(centerTarget);
+  useEffect(() => {
+    setCenter(centerTarget);
+  }, [centerTarget.latitude, centerTarget.longitude]);
+
+  function startPan(event: PointerEvent<HTMLElement>) {
+    if (event.target instanceof HTMLElement && event.target.closest("button,a,input,select")) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setFollowSelected(false);
+    setDrag({ x: event.clientX, y: event.clientY, center });
+  }
+
+  function movePan(event: PointerEvent<HTMLElement>) {
+    if (!drag) return;
+    const projected = project(drag.center.latitude, drag.center.longitude, zoom);
+    const next = unproject(projected.x - (event.clientX - drag.x), projected.y - (event.clientY - drag.y), zoom);
+    setCenter(next);
+  }
+
+  function stopPan(event: PointerEvent<HTMLElement>) {
+    if (drag) event.currentTarget.releasePointerCapture(event.pointerId);
+    setDrag(null);
+  }
   const routeTrails = (routeId === "all" ? routes : routes.filter((route) => route.id === routeId)).map((route) => ({
     ...route,
     punch_points: userName === "all" ? route.punch_points : (route.punch_points || []).filter((mark) => mark.user_name === userName),
@@ -280,6 +334,12 @@ export default function LiveGpsMapPage() {
             <CalendarDays size={15} />
             <input className="bg-transparent outline-none disabled:opacity-60" disabled={mode === "vivo"} type="date" value={date} onChange={(event) => setDate(event.target.value)} />
           </label>
+          {mode === "vivo" ? (
+            <span className="inline-flex h-10 items-center gap-2 rounded-md border border-emerald-300/30 bg-emerald-400/10 px-3 text-xs font-semibold text-emerald-200">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-300" />
+              Refresco {refreshIn}s
+            </span>
+          ) : null}
           <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white" onClick={load} type="button">
             <RefreshCw className={loading ? "animate-spin" : ""} size={15} /> Actualizar
           </button>
@@ -296,7 +356,7 @@ export default function LiveGpsMapPage() {
           </div>
 
           <div className="space-y-2 border-y border-white/10 p-3">
-            <select className="h-11 w-full rounded-md border border-white/10 bg-white/10 px-3 text-sm text-white" value={routeId} onChange={(event) => setRouteId(event.target.value === "all" ? "all" : Number(event.target.value))}>
+            <select className="h-11 w-full rounded-md border border-white/10 bg-white/10 px-3 text-sm text-white" value={routeId} onChange={(event) => setRouteId(event.target.value === "all" ? "all" : event.target.value)}>
               <option className="text-neutral-900" value="all">Todas las rutas</option>
               {routes.map((route) => <option className="text-neutral-900" key={route.id} value={route.id}>{route.vehicle_plate || "Sin placa"} · Ruta {route.id}</option>)}
             </select>
@@ -321,18 +381,18 @@ export default function LiveGpsMapPage() {
           <div className="min-h-0 flex-1 overflow-y-auto p-3">
             <div className="mb-2 flex items-center justify-between text-xs text-white/60">
               <span>{filteredPeople.length} persona(s)</span>
-              <span>{data?.generated_at ? new Date(data.generated_at).toLocaleTimeString() : "--"}</span>
+              <span>{lastUpdated ? `Actualizado ${new Date(lastUpdated).toLocaleTimeString()}` : "--"}</span>
             </div>
             <div className="space-y-2">
               {filteredPeople.map((person) => (
                 <button className={`w-full rounded-md border p-3 text-left transition ${selected?.key === person.key ? "border-sky-300 bg-white/15" : "border-white/10 bg-white/5 hover:bg-white/10"}`} key={person.key} onClick={() => setSelectedKey(person.key)} type="button">
                   <div className="flex items-center gap-3">
-                    <span className={`h-2.5 w-2.5 rounded-full ${statusTone[person.status] || "bg-neutral-400"}`} />
+                    <span className={`h-2.5 w-2.5 rounded-full ${currentAgeSeconds(person, now) != null && Number(currentAgeSeconds(person, now)) <= activeWindowSeconds ? "animate-pulse bg-emerald-400" : statusTone[person.status] || "bg-neutral-400"}`} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-semibold text-white">{person.name || person.user_name}</span>
                       <span className="block truncate text-xs text-white/60">{person.vehicle_plate || "Sin vehiculo"} · {person.route_label}</span>
                     </span>
-                    <span className="text-xs font-semibold text-white/70">{ageLabel(person.age_seconds)}</span>
+                    <span className="text-xs font-semibold text-white/70">{ageLabel(currentAgeSeconds(person, now))}</span>
                   </div>
                   <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-white/65">
                     <span><Clock className="mr-1 inline" size={12} />{minutesLabel(person.time_in_route_minutes)}</span>
@@ -345,7 +405,13 @@ export default function LiveGpsMapPage() {
           </div>
         </aside>
 
-        <section className="relative min-h-[58vh] overflow-hidden bg-[#dfe8ef] lg:min-h-0">
+        <section
+          className={`relative min-h-[58vh] overflow-hidden bg-[#dfe8ef] lg:min-h-0 ${drag ? "cursor-grabbing" : "cursor-grab"}`}
+          onPointerDown={startPan}
+          onPointerMove={movePan}
+          onPointerUp={stopPan}
+          onPointerCancel={stopPan}
+        >
           <MapTiles center={center} zoom={zoom} />
           {routeTrails.map((route) => <RouteTrail center={center} key={`gps-${route.id}`} points={route.pings || []} zoom={zoom} />)}
           {routeTrails.flatMap((route) => (route.marks_by_user || []).map((group, index) => (
@@ -355,15 +421,19 @@ export default function LiveGpsMapPage() {
           {filteredPeople.filter((person) => person.latitude != null && person.longitude != null).map((person) => {
             const offset = pointOffset({ latitude: Number(person.latitude), longitude: Number(person.longitude) }, center, zoom);
             const active = selected?.key === person.key;
+            const liveOnline = currentAgeSeconds(person, now) != null && Number(currentAgeSeconds(person, now)) <= activeWindowSeconds;
             return (
               <button
-                className={`absolute z-10 flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-full border-2 bg-white px-3 py-2 text-xs font-bold shadow-lg ${active ? "border-apex text-apex" : "border-white text-neutral-800"}`}
+                className={`absolute z-10 flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-full border-2 bg-white px-3 py-2 text-xs font-bold shadow-lg transition-[left,top,transform] duration-700 ease-out ${active ? "border-apex text-apex" : "border-white text-neutral-800"}`}
                 key={person.key}
                 onClick={() => setSelectedKey(person.key)}
                 style={{ left: `calc(50% + ${offset.x}px)`, top: `calc(50% + ${offset.y}px)` }}
                 type="button"
               >
-                <span className={`flex h-8 w-8 items-center justify-center rounded-full text-white ${statusTone[person.status] || "bg-neutral-500"}`}>{initials(person.name)}</span>
+                <span className="relative flex h-8 w-8 items-center justify-center">
+                  {liveOnline ? <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400/55" /> : null}
+                  <span className={`relative flex h-8 w-8 items-center justify-center rounded-full text-white ${liveOnline ? "bg-emerald-500" : statusTone[person.status] || "bg-neutral-500"}`}>{initials(person.name)}</span>
+                </span>
                 <span className="hidden sm:block">{person.name}</span>
               </button>
             );
@@ -389,7 +459,17 @@ export default function LiveGpsMapPage() {
           <div className="absolute left-4 top-4 z-20 flex gap-2">
             <button className="h-10 rounded-md bg-white px-3 text-sm font-semibold shadow" onClick={() => setZoom((value) => Math.min(value + 1, 18))} type="button">+</button>
             <button className="h-10 rounded-md bg-white px-3 text-sm font-semibold shadow" onClick={() => setZoom((value) => Math.max(value - 1, 8))} type="button">-</button>
+            <button className={`h-10 rounded-md px-3 text-sm font-semibold shadow ${followSelected ? "bg-apex text-white" : "bg-white text-neutral-800"}`} onClick={() => setFollowSelected((value) => !value)} type="button">
+              {followSelected ? "Siguiendo" : "Centrar"}
+            </button>
           </div>
+
+          {mode === "vivo" ? (
+            <div className="absolute left-4 top-16 z-20 rounded-md border border-emerald-200 bg-white/95 px-3 py-2 text-xs font-semibold text-emerald-700 shadow">
+              <span className="mr-2 inline-block h-2 w-2 animate-ping rounded-full bg-emerald-500" />
+              Rastreo en vivo activo
+            </div>
+          ) : null}
 
           <div className="absolute bottom-4 left-4 z-20 rounded-md bg-white/95 p-3 text-xs shadow-lg">
             <p className="font-semibold">OpenStreetMap · Zoom {zoom}</p>
@@ -407,7 +487,7 @@ export default function LiveGpsMapPage() {
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
                 <Info icon={Clock} label="Tiempo en ruta" value={minutesLabel(selected.time_in_route_minutes)} />
-                <Info icon={Satellite} label={selected.footprint_source === "last_known" ? "Ultima huella" : "Ultimo GPS"} value={ageLabel(selected.age_seconds)} />
+                <Info icon={Satellite} label={selected.footprint_source === "last_known" ? "Ultima huella" : "Ultimo GPS"} value={ageLabel(currentAgeSeconds(selected, now))} />
                 <Info icon={Route} label="Horario" value={`${selected.route_start_time || "--"} - ${selected.route_end_time || "--"}`} />
                 <Info icon={Users} label="Marcacion" value={`${selected.last_punch_time || "--"} · ${selected.last_punch_type}`} />
               </div>
