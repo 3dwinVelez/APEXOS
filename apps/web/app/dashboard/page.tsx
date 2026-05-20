@@ -46,7 +46,6 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (localStorage.getItem("auth_provider") === "supabase") return;
     Promise.all([
       api<ServicesSummary>("/api/v1/services/orders?limit=200").catch(() => null),
       api<OperationsMap>("/api/v1/hr/operations-map").catch(() => null),

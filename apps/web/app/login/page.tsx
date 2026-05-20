@@ -15,11 +15,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  async function login(form: HTMLFormElement | null) {
+  async function loginWithCredentials(loginEmail: string, loginPassword: string) {
     setError(null);
-    const formData = form ? new FormData(form) : new FormData();
-    const loginEmail = String(formData.get("email") || email).trim();
-    const loginPassword = String(formData.get("password") || password);
     try {
       localStorage.removeItem("token");
       localStorage.removeItem("refresh");
@@ -51,6 +48,19 @@ export default function LoginPage() {
     }
   }
 
+  async function login(form: HTMLFormElement | null) {
+    const formData = form ? new FormData(form) : new FormData();
+    const loginEmail = String(formData.get("email") || email).trim();
+    const loginPassword = String(formData.get("password") || password);
+    await loginWithCredentials(loginEmail, loginPassword);
+  }
+
+  async function loginDemo() {
+    setEmail("admin.demo@demo.apexos.local");
+    setPassword("ApexOS-Demo-2026!");
+    await loginWithCredentials("admin.demo@demo.apexos.local", "ApexOS-Demo-2026!");
+  }
+
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     await login(event.currentTarget);
@@ -73,6 +83,9 @@ export default function LoginPage() {
           <LogIn size={16} />
           Entrar
         </Button>
+        <button className="mt-3 h-10 w-full rounded-md border border-line bg-paper text-sm font-semibold text-neutral-700 hover:bg-white" type="button" onClick={loginDemo}>
+          Entrar a muestra SCJ
+        </button>
       </form>
     </main>
   );
