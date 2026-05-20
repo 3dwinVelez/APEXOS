@@ -36,15 +36,15 @@ async function adminRoutes(fastify) {
 
   fastify.post("/admin/users", {
     preHandler: requirePermission("admin", "write")
-  }, async (request, reply) => reply.code(201).send(await service.createUser(request.user?.tenant_id, request.body)));
+  }, async (request, reply) => reply.code(201).send(await service.createUser(request.user?.tenant_id, request.body, request.user?.id)));
 
   fastify.put("/admin/users/:id", {
     preHandler: requirePermission("admin", "write")
-  }, async (request) => service.updateUser(request.user?.tenant_id, request.params.id, request.body));
+  }, async (request) => service.updateUser(request.user?.tenant_id, request.params.id, request.body, request.user?.id));
 
   fastify.patch("/admin/users/:id/status", {
     preHandler: requirePermission("admin", "write")
-  }, async (request) => service.setUserActive(request.user?.tenant_id, request.params.id, request.body?.active ?? request.query?.active));
+  }, async (request) => service.setUserActive(request.user?.tenant_id, request.params.id, request.body?.active ?? request.query?.active, request.user?.id));
 }
 
 module.exports = adminRoutes;

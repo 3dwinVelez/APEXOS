@@ -81,6 +81,12 @@ function roleDto(role) {
 
 function userDto(user) {
   const employee = user.employee;
+  const metadata = employee?.metadata || {};
+  const access = metadata.access || {};
+  const employment = metadata.employment || {};
+  const operational = metadata.operational || {};
+  const documents = Array.isArray(metadata.documents) ? metadata.documents : [];
+  const auditTrail = Array.isArray(metadata.user_audit_trail) ? metadata.user_audit_trail : [];
   return {
     id: user.id,
     name: user.name,
@@ -104,13 +110,83 @@ function userDto(user) {
     salary_base: employee?.salary_base || 0,
     salario_base: employee?.salary_base || 0,
     labor_status: employee?.metadata?.labor_status || "activo",
-    estado_laboral: employee?.metadata?.labor_status || "activo"
+    estado_laboral: employee?.metadata?.labor_status || "activo",
+    first_names: metadata.first_names || user.name?.split(" ").slice(0, -1).join(" ") || user.name || "",
+    last_names: metadata.last_names || user.name?.split(" ").slice(-1).join(" ") || "",
+    document_type: metadata.document_type || "CC",
+    document_issue_date: metadata.document_issue_date || "",
+    document_issue_place: metadata.document_issue_place || "",
+    birth_date: metadata.birth_date || "",
+    gender: metadata.gender || "",
+    phone: metadata.phone || "",
+    address: metadata.address || "",
+    city: metadata.city || "",
+    state_region: metadata.state_region || "",
+    country: metadata.country || "Colombia",
+    user_status: metadata.user_status || (user.active ? "activo" : "inactivo"),
+    access_email: access.email || user.email,
+    additional_roles: access.additional_roles || "",
+    operational_profile: access.operational_profile || "",
+    site: access.site || "",
+    area: access.area || employee?.department || "",
+    manager: access.manager || "",
+    special_permissions: access.special_permissions || "",
+    require_password_change: Boolean(access.require_password_change),
+    mfa_status: access.mfa_status || "futuro",
+    last_access: user.last_login ? user.last_login.toISOString() : "",
+    session_status: access.session_status || "sin_sesion",
+    engagement_type: employment.engagement_type || "empleado",
+    hire_date: employee?.hire_date ? employee.hire_date.toISOString().slice(0, 10) : "",
+    end_date: employee?.end_date ? employee.end_date.toISOString().slice(0, 10) : "",
+    contract_type: employee?.contract_type || employment.contract_type || "indefinite",
+    cost_center: employment.cost_center || "",
+    workday: employment.workday || "",
+    base_shift: employment.base_shift || "",
+    transport_allowance: employment.transport_allowance || "",
+    arl_risk: employment.arl_risk || "",
+    eps: employment.eps || "",
+    pension_fund: employment.pension_fund || "",
+    compensation_fund: employment.compensation_fund || "",
+    bank: employment.bank || "",
+    bank_account_type: employment.bank_account_type || "",
+    bank_account_number: employment.bank_account_number || "",
+    labor_notes: employment.labor_notes || "",
+    operational_classification: operational.classification || "administrativo",
+    can_punch_time: Boolean(operational.can_punch_time),
+    can_receive_services: Boolean(operational.can_receive_services),
+    can_be_assigned_routes: Boolean(operational.can_be_assigned_routes),
+    can_manage_inventory: Boolean(operational.can_manage_inventory),
+    can_approve_documents: Boolean(operational.can_approve_documents),
+    can_authorize_exceptions: Boolean(operational.can_authorize_exceptions),
+    driver_license: operational.driver_license || "",
+    license_category: operational.license_category || "",
+    license_expires_at: operational.license_expires_at || "",
+    operational_restrictions: operational.restrictions || "",
+    base_site: operational.base_site || "",
+    operation_zone: operational.zone || "",
+    documents,
+    user_audit_trail: auditTrail
   };
 }
 
 function toBoolean(value) {
   if (typeof value === "string") return value === "true" || value === "1";
   return Boolean(value);
+}
+
+function userAuditSnapshot(user, employee) {
+  return {
+    user_id: user?.id,
+    name: user?.name,
+    email: user?.email,
+    role_id: user?.role_id,
+    active: user?.active,
+    employee_id: employee?.id || null,
+    code: employee?.code || "",
+    position: employee?.position || "",
+    department: employee?.department || "",
+    metadata: employee?.metadata || {}
+  };
 }
 
 async function upsertRoleFromLegacy(tenantId, data) {
@@ -238,7 +314,7 @@ async function listUsers(tenantId) {
   });
 }
 
-async function createUser(tenantId, input) {
+async function createUser(tenantId, input, actorId = null) {
   await ensureSystemRoles(tenantId);
   const rawPassword = input.password || input.pas || "";
   assertPasswordPolicy(rawPassword);
@@ -252,13 +328,82 @@ async function createUser(tenantId, input) {
       err.statusCode = 400;
       throw err;
     }
+    const fullName = input.name || input.nombre || `${input.first_names || ""} ${input.last_names || ""}`.trim();
+    const userStatus = input.user_status || input.labor_status || input.estado_laboral || "activo";
+    const active = !["inactivo", "suspendido", "retirado"].includes(userStatus) && input.active !== false && input.activo !== false;
+    const metadata = {
+      name: fullName,
+      first_names: input.first_names || "",
+      last_names: input.last_names || "",
+      document_type: input.document_type || "CC",
+      document: input.document || input.documento || input.doc || "",
+      document_issue_date: input.document_issue_date || "",
+      document_issue_place: input.document_issue_place || "",
+      birth_date: input.birth_date || "",
+      gender: input.gender || "",
+      phone: input.phone || "",
+      address: input.address || "",
+      city: input.city || "",
+      state_region: input.state_region || "",
+      country: input.country || "Colombia",
+      company: input.company || input.empresa || "APEX",
+      labor_status: userStatus,
+      user_status: userStatus,
+      access: {
+        email: input.access_email || input.email || input.username || input.user,
+        additional_roles: input.additional_roles || "",
+        operational_profile: input.operational_profile || "",
+        site: input.site || "",
+        area: input.area || input.department || "",
+        manager: input.manager || "",
+        special_permissions: input.special_permissions || "",
+        require_password_change: toBoolean(input.require_password_change),
+        mfa_status: input.mfa_status || "futuro",
+        session_status: input.session_status || "sin_sesion"
+      },
+      employment: {
+        engagement_type: input.engagement_type || "empleado",
+        contract_type: input.contract_type || "indefinite",
+        cost_center: input.cost_center || "",
+        workday: input.workday || "",
+        base_shift: input.base_shift || "",
+        transport_allowance: input.transport_allowance || "",
+        arl_risk: input.arl_risk || "",
+        eps: input.eps || "",
+        pension_fund: input.pension_fund || "",
+        compensation_fund: input.compensation_fund || "",
+        bank: input.bank || "",
+        bank_account_type: input.bank_account_type || "",
+        bank_account_number: input.bank_account_number || "",
+        labor_notes: input.labor_notes || ""
+      },
+      operational: {
+        classification: input.operational_classification || "administrativo",
+        can_punch_time: toBoolean(input.can_punch_time),
+        can_receive_services: toBoolean(input.can_receive_services),
+        can_be_assigned_routes: toBoolean(input.can_be_assigned_routes),
+        can_manage_inventory: toBoolean(input.can_manage_inventory),
+        can_approve_documents: toBoolean(input.can_approve_documents),
+        can_authorize_exceptions: toBoolean(input.can_authorize_exceptions),
+        driver_license: input.driver_license || "",
+        license_category: input.license_category || "",
+        license_expires_at: input.license_expires_at || "",
+        restrictions: input.operational_restrictions || "",
+        base_site: input.base_site || "",
+        zone: input.operation_zone || ""
+      },
+      documents: Array.isArray(input.documents) ? input.documents : [],
+      user_audit_trail: [{ at: new Date().toISOString(), action: "created", module: "administracion" }],
+      legacy: { migrated_from: "APEX", module: "personal" }
+    };
     const user = await prisma.user.create({
       data: {
         tenant_id: tenantId,
-        name: input.name || input.nombre,
+        name: fullName,
         email: (input.email || input.username || input.user).toLowerCase(),
         password,
         role_id: role?.id || null,
+        active,
         employee: {
           create: {
             tenant_id: tenantId,
@@ -268,32 +413,47 @@ async function createUser(tenantId, input) {
             salary_base: Number(input.salary_base || input.salario_base || input.salario || 0),
             salary_type: input.salary_type || "monthly",
             hire_date: input.hire_date ? new Date(input.hire_date) : new Date(),
+            end_date: input.end_date ? new Date(input.end_date) : null,
             contract_type: input.contract_type || "indefinite",
-            active: input.active !== false && input.activo !== false,
-            metadata: {
-              name: input.name || input.nombre,
-              document: input.document || input.documento || input.doc || "",
-              company: input.company || input.empresa || "APEX",
-              labor_status: input.labor_status || input.estado_laboral || "activo",
-              legacy: { migrated_from: "APEX", module: "personal" }
-            }
+            active,
+            metadata
           }
         }
       },
       include: { role: true, employee: true }
     });
+    await prisma.auditLog.create({
+      data: {
+        tenant_id: tenantId,
+        user_id: actorId,
+        action: "created",
+        module: "admin",
+        entity: "/api/v1/admin/users",
+        entity_id: String(user.id),
+        old_value: null,
+        new_value: userAuditSnapshot(user, user.employee)
+      }
+    });
     return userDto(user);
   });
 }
 
-async function updateUser(tenantId, id, input) {
+async function updateUser(tenantId, id, input, actorId = null) {
   return prisma.runWithTenant(tenantId, async () => {
     const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id) }, include: { employee: true } });
+    const previousSnapshot = userAuditSnapshot(current, current.employee);
+    const previousMetadata = current.employee?.metadata || {};
+    const previousAccess = previousMetadata.access || {};
+    const previousEmployment = previousMetadata.employment || {};
+    const previousOperational = previousMetadata.operational || {};
+    const userStatus = input.user_status || input.labor_status || input.estado_laboral || previousMetadata.user_status || previousMetadata.labor_status || "activo";
+    const active = !["inactivo", "suspendido", "retirado"].includes(userStatus) && input.active !== false && input.activo !== false;
+    const fullName = input.name || input.nombre || `${input.first_names || previousMetadata.first_names || ""} ${input.last_names || previousMetadata.last_names || ""}`.trim() || current.name;
     const data = {
-      name: input.name || input.nombre || current.name,
+      name: fullName,
       email: (input.email || input.username || current.email).toLowerCase(),
       role_id: input.role_id ? Number(input.role_id) : current.role_id,
-      active: input.active !== false && input.activo !== false
+      active
     };
     if (input.password || input.pas) {
       assertPasswordPolicy(input.password || input.pas);
@@ -305,13 +465,80 @@ async function updateUser(tenantId, id, input) {
       position: input.position || current.employee?.position || "empleado",
       department: input.department || current.employee?.department || "Operacion",
       salary_base: Number(input.salary_base || input.salario_base || current.employee?.salary_base || 0),
-      active: data.active,
+      contract_type: input.contract_type || current.employee?.contract_type || "indefinite",
+      hire_date: input.hire_date ? new Date(input.hire_date) : current.employee?.hire_date || new Date(),
+      end_date: input.end_date ? new Date(input.end_date) : null,
+      active,
       metadata: {
-        ...(current.employee?.metadata || {}),
+        ...previousMetadata,
         name: data.name,
+        first_names: input.first_names || previousMetadata.first_names || "",
+        last_names: input.last_names || previousMetadata.last_names || "",
+        document_type: input.document_type || previousMetadata.document_type || "CC",
         document: input.document || input.documento || current.employee?.metadata?.document || "",
+        document_issue_date: input.document_issue_date || previousMetadata.document_issue_date || "",
+        document_issue_place: input.document_issue_place || previousMetadata.document_issue_place || "",
+        birth_date: input.birth_date || previousMetadata.birth_date || "",
+        gender: input.gender || previousMetadata.gender || "",
+        phone: input.phone || previousMetadata.phone || "",
+        address: input.address || previousMetadata.address || "",
+        city: input.city || previousMetadata.city || "",
+        state_region: input.state_region || previousMetadata.state_region || "",
+        country: input.country || previousMetadata.country || "Colombia",
         company: input.company || input.empresa || current.employee?.metadata?.company || "APEX",
-        labor_status: input.labor_status || input.estado_laboral || current.employee?.metadata?.labor_status || "activo"
+        labor_status: userStatus,
+        user_status: userStatus,
+        access: {
+          ...previousAccess,
+          email: input.access_email || input.email || previousAccess.email || data.email,
+          additional_roles: input.additional_roles || previousAccess.additional_roles || "",
+          operational_profile: input.operational_profile || previousAccess.operational_profile || "",
+          site: input.site || previousAccess.site || "",
+          area: input.area || input.department || previousAccess.area || "",
+          manager: input.manager || previousAccess.manager || "",
+          special_permissions: input.special_permissions || previousAccess.special_permissions || "",
+          require_password_change: input.require_password_change === undefined ? Boolean(previousAccess.require_password_change) : toBoolean(input.require_password_change),
+          mfa_status: input.mfa_status || previousAccess.mfa_status || "futuro",
+          session_status: input.session_status || previousAccess.session_status || "sin_sesion"
+        },
+        employment: {
+          ...previousEmployment,
+          engagement_type: input.engagement_type || previousEmployment.engagement_type || "empleado",
+          contract_type: input.contract_type || previousEmployment.contract_type || "indefinite",
+          cost_center: input.cost_center || previousEmployment.cost_center || "",
+          workday: input.workday || previousEmployment.workday || "",
+          base_shift: input.base_shift || previousEmployment.base_shift || "",
+          transport_allowance: input.transport_allowance || previousEmployment.transport_allowance || "",
+          arl_risk: input.arl_risk || previousEmployment.arl_risk || "",
+          eps: input.eps || previousEmployment.eps || "",
+          pension_fund: input.pension_fund || previousEmployment.pension_fund || "",
+          compensation_fund: input.compensation_fund || previousEmployment.compensation_fund || "",
+          bank: input.bank || previousEmployment.bank || "",
+          bank_account_type: input.bank_account_type || previousEmployment.bank_account_type || "",
+          bank_account_number: input.bank_account_number || previousEmployment.bank_account_number || "",
+          labor_notes: input.labor_notes || previousEmployment.labor_notes || ""
+        },
+        operational: {
+          ...previousOperational,
+          classification: input.operational_classification || previousOperational.classification || "administrativo",
+          can_punch_time: input.can_punch_time === undefined ? Boolean(previousOperational.can_punch_time) : toBoolean(input.can_punch_time),
+          can_receive_services: input.can_receive_services === undefined ? Boolean(previousOperational.can_receive_services) : toBoolean(input.can_receive_services),
+          can_be_assigned_routes: input.can_be_assigned_routes === undefined ? Boolean(previousOperational.can_be_assigned_routes) : toBoolean(input.can_be_assigned_routes),
+          can_manage_inventory: input.can_manage_inventory === undefined ? Boolean(previousOperational.can_manage_inventory) : toBoolean(input.can_manage_inventory),
+          can_approve_documents: input.can_approve_documents === undefined ? Boolean(previousOperational.can_approve_documents) : toBoolean(input.can_approve_documents),
+          can_authorize_exceptions: input.can_authorize_exceptions === undefined ? Boolean(previousOperational.can_authorize_exceptions) : toBoolean(input.can_authorize_exceptions),
+          driver_license: input.driver_license || previousOperational.driver_license || "",
+          license_category: input.license_category || previousOperational.license_category || "",
+          license_expires_at: input.license_expires_at || previousOperational.license_expires_at || "",
+          restrictions: input.operational_restrictions || previousOperational.restrictions || "",
+          base_site: input.base_site || previousOperational.base_site || "",
+          zone: input.operation_zone || previousOperational.zone || ""
+        },
+        documents: Array.isArray(input.documents) ? input.documents : (Array.isArray(previousMetadata.documents) ? previousMetadata.documents : []),
+        user_audit_trail: [
+          ...(Array.isArray(previousMetadata.user_audit_trail) ? previousMetadata.user_audit_trail : []).slice(-9),
+          { at: new Date().toISOString(), action: "updated", module: "administracion", actor_id: actorId }
+        ]
       }
     };
     if (current.employee) {
@@ -320,14 +547,27 @@ async function updateUser(tenantId, id, input) {
       await prisma.employee.create({ data: { ...employeeData, tenant_id: tenantId, user_id: current.id, salary_type: "monthly", hire_date: new Date(), contract_type: "indefinite" } });
     }
     const user = await prisma.user.findFirstOrThrow({ where: { id: current.id }, include: { role: true, employee: true } });
+    await prisma.auditLog.create({
+      data: {
+        tenant_id: tenantId,
+        user_id: actorId,
+        action: "updated",
+        module: "admin",
+        entity: "/api/v1/admin/users",
+        entity_id: String(user.id),
+        old_value: previousSnapshot,
+        new_value: userAuditSnapshot(user, user.employee)
+      }
+    });
     return userDto(user);
   });
 }
 
-async function setUserActive(tenantId, id, active) {
+async function setUserActive(tenantId, id, active, actorId = null) {
   return prisma.runWithTenant(tenantId, async () => {
     const enabled = toBoolean(active);
     const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id) }, include: { employee: true } });
+    const previousSnapshot = userAuditSnapshot(current, current.employee);
     await prisma.user.update({
       where: { id: Number(id) },
       data: { active: enabled }
@@ -337,11 +577,31 @@ async function setUserActive(tenantId, id, active) {
         where: { id: current.employee.id },
         data: {
           active: enabled,
-          metadata: { ...(current.employee.metadata || {}), labor_status: enabled ? "activo" : "inactivo" }
+          metadata: {
+            ...(current.employee.metadata || {}),
+            labor_status: enabled ? "activo" : "inactivo",
+            user_status: enabled ? "activo" : "inactivo",
+            user_audit_trail: [
+              ...(Array.isArray(current.employee.metadata?.user_audit_trail) ? current.employee.metadata.user_audit_trail : []).slice(-9),
+              { at: new Date().toISOString(), action: enabled ? "activated" : "deactivated", module: "administracion", actor_id: actorId }
+            ]
+          }
         }
       });
     }
     const user = await prisma.user.findFirstOrThrow({ where: { id: Number(id) }, include: { role: true, employee: true } });
+    await prisma.auditLog.create({
+      data: {
+        tenant_id: tenantId,
+        user_id: actorId,
+        action: enabled ? "activated" : "deactivated",
+        module: "admin",
+        entity: "/api/v1/admin/users/status",
+        entity_id: String(user.id),
+        old_value: previousSnapshot,
+        new_value: userAuditSnapshot(user, user.employee)
+      }
+    });
     return userDto(user);
   });
 }
