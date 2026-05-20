@@ -80,6 +80,14 @@ export default function DashboardPage() {
   const serviceCompletion = summary.services.total ? Math.round((summary.services.closed / summary.services.total) * 100) : 100;
   const fieldCoverage = summary.people ? Math.round((summary.online / summary.people) * 100) : 0;
   const riskScore = Math.max(0, 100 - (summary.vehicleBlocked * 18 + summary.vehicleExpiring * 8 + summary.services.not_executed * 5));
+  const operationalLoad = summary.services.pending + summary.services.in_progress + summary.preopPending + summary.vehicleBlocked;
+  const controlHealth = Math.round((serviceCompletion + Math.max(fieldCoverage, summary.people ? fieldCoverage : 75) + summary.vehicleScore + summary.preopCompliance + riskScore) / 5);
+  const actionQueue = [
+    { label: "Servicios activos", value: summary.services.pending + summary.services.in_progress, tone: "bg-teal-600", detail: "Pendientes o en proceso" },
+    { label: "Riesgo documental", value: summary.vehicleBlocked + summary.vehicleExpiring, tone: "bg-amber-600", detail: "Bloqueados o por vencer" },
+    { label: "Bloqueos preop", value: summary.preopBlocked, tone: "bg-rose-600", detail: "Rutas detenidas" },
+    { label: "Novedades", value: summary.incidents, tone: "bg-slate-800", detail: "Requieren seguimiento" }
+  ];
 
   const commandCards = [
     { module: "servicios", label: "Servicios", value: serviceCompletion, primary: `${summary.services.in_progress + summary.services.pending}`, hint: "activos por resolver", icon: Wrench, color: "#0f766e" },
@@ -113,46 +121,82 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-5">
-      <header>
-        <p className="text-sm font-medium text-apex">APEX CORE</p>
-        <h1 className="text-3xl font-semibold">Monitor central</h1>
-        <p className="mt-2 max-w-3xl text-sm text-neutral-600">Indicadores dinamicos segun los modulos activos: operacion, servicios, flota, talento humano, IA y riesgos en una sola vista.</p>
-      </header>
-
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {commandCards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <div className="rounded-md border border-line bg-white p-4" key={card.label}>
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-sm text-neutral-500">{card.label}</p>
-                <Icon size={18} style={{ color: card.color }} />
-              </div>
-              <div className="flex items-end justify-between gap-3">
-                <div>
-                  <p className="text-2xl font-semibold">{card.primary}</p>
-                  <p className="mt-1 text-xs font-medium text-neutral-500">{card.hint}</p>
-                </div>
-                <div className="h-16 w-16">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RadialBarChart data={[{ value: card.value, fill: card.color }]} innerRadius="70%" outerRadius="100%" startAngle={90} endAngle={-270}>
-                      <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
-                      <RadialBar dataKey="value" cornerRadius={8} background />
-                    </RadialBarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
+      <header className="grid gap-4 xl:grid-cols-[1fr_360px]">
+        <div className="rounded-md border border-line bg-white p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-apex">APEX CORE</p>
+              <h1 className="mt-1 text-3xl font-semibold">Centro de control ejecutivo</h1>
+              <p className="mt-2 max-w-3xl text-sm text-neutral-600">Lectura unificada de operacion, campo, servicios, flota y preoperacional para decidir rapido que atender primero.</p>
             </div>
-          );
-        })}
-      </section>
+            <span className="inline-flex h-9 items-center gap-2 rounded-md bg-emerald-50 px-3 text-xs font-semibold text-emerald-700">
+              <CheckCircle2 size={14} /> QA Supabase activo
+            </span>
+          </div>
+
+          <div className="mt-5 grid gap-4 lg:grid-cols-[220px_1fr]">
+            <div className="rounded-md bg-neutral-950 p-4 text-white">
+              <p className="text-xs font-semibold uppercase tracking-wide text-white/55">Salud operativa</p>
+              <div className="mt-4 flex items-end gap-2">
+                <span className="text-5xl font-semibold">{controlHealth}</span>
+                <span className="pb-2 text-sm text-white/55">/100</span>
+              </div>
+              <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/15">
+                <div className="h-full rounded-full bg-emerald-400" style={{ width: `${Math.min(100, controlHealth)}%` }} />
+              </div>
+              <p className="mt-3 text-xs text-white/65">{operationalLoad} frente(s) con seguimiento abierto.</p>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              {commandCards.map((card) => {
+                const Icon = card.icon;
+                return (
+                  <div className="rounded-md border border-line bg-paper p-3" key={card.label}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-white" style={{ color: card.color }}><Icon size={17} /></span>
+                      <span className="text-xs font-semibold text-neutral-500">{card.value}%</span>
+                    </div>
+                    <p className="mt-3 text-2xl font-semibold">{card.primary}</p>
+                    <p className="text-sm font-medium text-neutral-700">{card.label}</p>
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white">
+                      <div className="h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, card.value))}%`, backgroundColor: card.color }} />
+                    </div>
+                    <p className="mt-2 text-xs text-neutral-500">{card.hint}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <aside className="rounded-md border border-line bg-white p-4">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold">Cola de decision</p>
+              <p className="text-xs text-neutral-500">Ordenada por impacto operativo</p>
+            </div>
+            <Sparkles className="text-apex" size={18} />
+          </div>
+          <div className="space-y-3">
+            {actionQueue.map((item) => (
+              <div className="rounded-md border border-line p-3" key={item.label}>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-semibold">{item.label}</span>
+                  <span className={`rounded-md px-2 py-1 text-xs font-bold text-white ${item.tone}`}>{item.value}</span>
+                </div>
+                <p className="mt-1 text-xs text-neutral-500">{item.detail}</p>
+              </div>
+            ))}
+          </div>
+        </aside>
+      </header>
 
       <section className="grid gap-5 lg:grid-cols-[1fr_360px]">
         <div className="rounded-md border border-line bg-white p-4">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <h2 className="text-base font-semibold">Pulso ejecutivo</h2>
-              <p className="text-sm text-neutral-600">Barras para volumen real y linea para salud porcentual.</p>
+              <p className="text-sm text-neutral-600">Volumen real frente a salud porcentual por frente operativo.</p>
             </div>
             <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
               <TrendingUp size={13} /> En vivo

@@ -69,20 +69,118 @@ async function supabaseApiFallback<T>(path: string): Promise<T | null> {
   }
 
   if (pathname === "/api/v1/hr/operations-map") {
-    const [routes, employees, pings] = await Promise.all([
-      supabaseApiFallback<Array<{ id: string; vehicle_plate: string; employees: string[]; status: string }>>("/api/v1/hr/routes"),
-      supabaseApiFallback<Array<{ id: string }>>("/api/v1/hr/employees?active=true"),
-      supabaseFetch<Array<{ id: string; user_name: string; captured_at: string }>>("/rest/v1/gps_pings?select=*&order=captured_at.desc")
+    const [routes, employees, assignments, pings, punches] = await Promise.all([
+      supabaseFetch<Array<{ id: string; code?: string; route_date: string; vehicle_plate?: string; start_time?: string; end_time?: string; status?: string }>>("/rest/v1/operational_routes?select=*&order=route_date.desc"),
+      supabaseFetch<Array<{ id: string; first_name?: string; last_name?: string; document_number?: string; user_type?: string; position?: string; metadata?: AnyRow }>>("/rest/v1/employees?select=*&status=eq.active"),
+      supabaseFetch<Array<{ route_id: string; employee_id: string; role?: string }>>("/rest/v1/route_assignments?select=*"),
+      supabaseFetch<Array<{ id: string; employee_id?: string; user_name: string; route_id?: string; vehicle_id?: string; latitude: number; longitude: number; accuracy_meters?: number; captured_at: string }>>("/rest/v1/gps_pings?select=*&order=captured_at.desc"),
+      supabaseFetch<Array<{ id: string; employee_id?: string; user_name: string; punch_type: string; punch_time?: string; punched_at: string; route_id?: string; vehicle_id?: string; vehicle_plate?: string; latitude?: number; longitude?: number; accuracy_meters?: number; extra_minutes?: number; metadata?: AnyRow }>>("/rest/v1/time_punches?select=*&order=punched_at.desc")
     ]);
+
+    const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
+    const latestPingByEmployee = new Map<string, (typeof pings)[number]>();
+    for (const ping of pings) {
+      const key = ping.employee_id || ping.user_name;
+      if (key && !latestPingByEmployee.has(key)) latestPingByEmployee.set(key, ping);
+    }
+    const latestPunchByEmployee = new Map<string, (typeof punches)[number]>();
+    for (const punch of punches) {
+      const key = punch.employee_id || punch.user_name;
+      if (key && !latestPunchByEmployee.has(key)) latestPunchByEmployee.set(key, punch);
+    }
+
+    const people = assignments.map((assignment) => {
+      const employee = employeeById.get(assignment.employee_id);
+      const route = routes.find((item) => item.id === assignment.route_id);
+      const name = fullName(employee || {});
+      const ping = latestPingByEmployee.get(assignment.employee_id) || latestPingByEmployee.get(name);
+      const punch = latestPunchByEmployee.get(assignment.employee_id) || latestPunchByEmployee.get(name);
+      const capturedAt = ping?.captured_at || punch?.punched_at || null;
+      const ageSeconds = capturedAt ? Math.max(0, Math.round((Date.now() - new Date(capturedAt).getTime()) / 1000)) : null;
+      const online = ageSeconds != null && ageSeconds <= Number(search.get("minutes") || 30) * 60;
+      const latitude = ping?.latitude ?? punch?.latitude ?? null;
+      const longitude = ping?.longitude ?? punch?.longitude ?? null;
+      return {
+        key: `${assignment.route_id}-${assignment.employee_id}`,
+        employee_id: assignment.employee_id,
+        user_name: name,
+        name,
+        route_id: assignment.route_id,
+        route_label: route?.code || `Ruta ${String(assignment.route_id).slice(0, 8)}`,
+        vehicle_plate: route?.vehicle_plate || "",
+        latitude,
+        longitude,
+        accuracy_meters: ping?.accuracy_meters ?? punch?.accuracy_meters ?? null,
+        captured_at: capturedAt,
+        age_seconds: ageSeconds,
+        online,
+        footprint_source: ping ? "live" : punch ? "punch" : "none",
+        last_punch_type: punch?.punch_type || "Sin iniciar",
+        last_punch_time: punch?.punch_time || (punch?.punched_at ? new Date(punch.punched_at).toLocaleTimeString() : ""),
+        status: online ? "En ruta" : latitude != null && longitude != null ? "Ultima marca" : "Sin GPS",
+        time_in_route_minutes: null,
+        route_start_time: route?.start_time || "",
+        route_end_time: route?.end_time || ""
+      };
+    });
+
+    const routeSummaries = routes.map((route) => {
+      const routeAssignments = assignments.filter((assignment) => assignment.route_id === route.id);
+      const routePeople = people.filter((person) => person.route_id === route.id);
+      const routePings = pings.filter((ping) => ping.route_id === route.id);
+      const routePunches = punches
+        .filter((punch) => punch.route_id === route.id && punch.latitude != null && punch.longitude != null)
+        .map((punch) => ({
+          id: punch.id,
+          user_name: punch.user_name,
+          type: punch.punch_type,
+          time: punch.punch_time || "",
+          punched_at: punch.punched_at,
+          latitude: Number(punch.latitude),
+          longitude: Number(punch.longitude),
+          accuracy_meters: punch.accuracy_meters ?? null,
+          vehicle_plate: route.vehicle_plate || "",
+          route_id: route.id,
+          extra_minutes: punch.extra_minutes || 0,
+          metadata: punch.metadata || {}
+        }));
+      const userNames = Array.from(new Set(routePunches.map((punch) => punch.user_name)));
+      return {
+        id: route.id,
+        vehicle_plate: route.vehicle_plate || "",
+        employees: routeAssignments.map((assignment) => fullName(employeeById.get(assignment.employee_id) || {})),
+        start_time: route.start_time || "",
+        end_time: route.end_time || "",
+        status: route.status || "planned",
+        assigned_count: routeAssignments.length,
+        online_count: routePeople.filter((person) => person.online).length,
+        with_gps_count: routePeople.filter((person) => person.latitude != null && person.longitude != null).length,
+        pings: routePings.map((ping) => ({ ...ping, vehicle_plate: route.vehicle_plate || "", route_id: route.id })),
+        punch_points: routePunches,
+        marks_by_user: userNames.map((user_name) => ({ user_name, marks: routePunches.filter((punch) => punch.user_name === user_name) }))
+      };
+    });
+
     return {
-      kpis: {
-        online: pings.length,
-        offline: Math.max(0, (employees?.length || 0) - pings.length),
-        routes: routes?.length || 0,
-        people: employees?.length || 0,
-        without_gps: Math.max(0, (employees?.length || 0) - pings.length)
+      date: search.get("date") || new Date().toISOString().slice(0, 10),
+      generated_at: new Date().toISOString(),
+      active_window_minutes: Number(search.get("minutes") || 30),
+      people,
+      routes: routeSummaries,
+      totals: {
+        routes: routeSummaries.length,
+        planned_people: people.length,
+        online: people.filter((person) => person.online).length,
+        without_gps: people.filter((person) => person.latitude == null || person.longitude == null).length,
+        offline: people.filter((person) => !person.online).length
       },
-      routes: routes || [],
+      kpis: {
+        online: people.filter((person) => person.online).length,
+        offline: people.filter((person) => !person.online).length,
+        routes: routeSummaries.length,
+        people: people.length,
+        without_gps: people.filter((person) => person.latitude == null || person.longitude == null).length
+      },
       pings
     } as T;
   }
