@@ -93,7 +93,9 @@ create trigger trg_initialize_company_modules
 after insert on public.companies
 for each row execute function app_private.initialize_company_modules();
 
-create or replace view public.v_platform_companies
+drop view if exists public.v_platform_companies;
+
+create view public.v_platform_companies
 with (security_invoker = true)
 as
 select

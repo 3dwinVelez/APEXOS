@@ -1,0 +1,3 @@
+-- Placeholder for an existing remote QA migration.
+-- The remote Supabase project already has this version in supabase_migrations.schema_migrations.
+-- Kept locally to reconcile CLI migration history without changing the database.

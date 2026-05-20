@@ -12,6 +12,11 @@
 - La firma del cliente se guarda como evidencia `firma_cliente` en PNG base64 con metadata de firmante y fecha.
 - El backend bloquea el cierre normal si faltan producto abierto, producto cerrado, foto del cliente o firma del cliente.
 - El backend bloquea el cierre no ejecutado si falta motivo, evidencia fotografica o firma del cliente.
+- La creacion/edicion de referencias queda como ficha tecnica: datos base, marca/modelo, tiempos, piezas de inspeccion y documentos tecnicos.
+- Las referencias permiten adjuntar manuales o guias en PDF/imagen usando `ServiceReference.metadata.manuals`, sin migracion de base de datos.
+- Los manuales/guias aparecen para el tecnico dentro de la inspeccion de piezas, antes de marcar OK, averiada o faltante.
+- Se agrega plantilla CSV para carga masiva de referencias; filas con el mismo codigo se agrupan como una referencia con varias piezas.
+- El backend expone importacion masiva por `/api/v1/services/references/import` y hace upsert por codigo.
 
 ## Regla de experiencia
 
@@ -23,5 +28,7 @@ Servicios debe operar como una experiencia de campo: pocas decisiones visibles a
 - Iniciar servicio con GPS.
 - Registrar inspeccion, ejecucion, novedades y fotos.
 - Capturar firma digital del cliente sobre el dispositivo movil.
+- Adjuntar manuales o guias a una referencia y visualizarlos durante la inspeccion del servicio.
+- Descargar plantilla CSV e importar referencias con piezas.
 - Cerrar o marcar no ejecutada solo con evidencias y firma completas.
 - Consultar historial y descargar PDF.

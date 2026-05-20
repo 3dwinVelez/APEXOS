@@ -4,13 +4,14 @@ import { PhotoCapture, type CapturedFile } from "@/components/operations/PhotoCa
 import { SignatureCapture } from "@/components/operations/SignatureCapture";
 import { api } from "@/lib/api";
 import { getGpsFix } from "@/lib/gps";
-import { ArrowLeft, Camera, CheckCircle2, Download, FileSignature, History, MapPin, Play, Search, Wrench, XCircle } from "lucide-react";
+import { ArrowLeft, BookOpen, Camera, CheckCircle2, Download, FileSignature, History, MapPin, Play, Search, Wrench, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 type ServiceReferencePart = { id: number; name: string; quantity: number; unit: string };
-type ServiceReference = { code: string; name: string; parts: ServiceReferencePart[] };
+type ReferenceManual = { title: string; file_name?: string; mime_type?: string; file_url?: string; base64_data?: string; notes?: string };
+type ServiceReference = { code: string; name: string; parts: ServiceReferencePart[]; manuals?: ReferenceManual[]; metadata?: { manuals?: ReferenceManual[] } };
 type InspectionStatus = "ok" | "averiada" | "faltante";
 type InspectionItem = { part_id: number; name: string; quantity: number; unit: string; status: InspectionStatus; comment: string; action: string };
 type ServicePhoto = { id: number; type: string; file_url?: string; base64_data?: string; metadata?: { mime_type?: string; file_name?: string; part_id?: number; part_name?: string; [key: string]: unknown }; created_at?: string };
@@ -77,6 +78,10 @@ function panelForStatus(status: string): Panel {
 function photoSrc(photo: ServicePhoto) {
   if (photo.base64_data) return photo.base64_data.startsWith("data:") ? photo.base64_data : `data:${photo.metadata?.mime_type || "image/jpeg"};base64,${photo.base64_data}`;
   return photo.file_url || "";
+}
+
+function manualHref(manual: ReferenceManual) {
+  return manual.base64_data || manual.file_url || "";
 }
 
 function mapLink(lat?: number, lon?: number) {
@@ -292,6 +297,7 @@ export default function ServiceOperationPage() {
   }, [order]);
 
   if (!order) return <div className="p-6 text-sm text-neutral-500">Cargando servicio...</div>;
+  const referenceManuals = order.reference?.manuals?.length ? order.reference.manuals : order.reference?.metadata?.manuals || [];
 
   return (
     <div className="mx-auto max-w-xl space-y-4 pb-28 md:pb-8">
@@ -341,6 +347,25 @@ export default function ServiceOperationPage() {
       {activePanel === "inspeccion" && ["en_curso", "inspeccion"].includes(order.status) ? (
         <section className="rounded-md border border-line bg-white p-4 shadow-sm">
           <h2 className="mb-3 text-base font-semibold">Inspeccion</h2>
+          {referenceManuals.length ? (
+            <div className="mb-3 rounded-md border border-sky-200 bg-sky-50 p-3">
+              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-sky-950">
+                <BookOpen size={16} /> Manuales y guias de la referencia
+              </div>
+              <div className="grid gap-2">
+                {referenceManuals.map((manual, index) => {
+                  const href = manualHref(manual);
+                  return (
+                    <div className="rounded-md border border-sky-100 bg-white p-3" key={`${manual.file_name || manual.title}-${index}`}>
+                      <p className="text-sm font-semibold">{manual.title || manual.file_name || `Documento ${index + 1}`}</p>
+                      {manual.notes ? <p className="mt-1 text-xs text-neutral-600">{manual.notes}</p> : null}
+                      {href ? <a className="mt-2 inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href={href} target="_blank" rel="noreferrer"><Download size={15} /> Ver documento</a> : null}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
           <div className="space-y-3">
             {inspection.map((part, index) => (
               <div className="rounded-md border border-line p-3" key={part.part_id}>

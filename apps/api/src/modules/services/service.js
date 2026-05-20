@@ -1,5 +1,5 @@
 const prisma = require("../../core/prisma");
-const { MAX_EVIDENCE_BYTES, assertSafeFile, normalizeFileName, secureStoragePath } = require("../../security/policy");
+const { MAX_DOCUMENT_BYTES, MAX_EVIDENCE_BYTES, assertSafeFile, normalizeFileName, secureStoragePath } = require("../../security/policy");
 
 function appError(statusCode, code, message) {
   const error = new Error(message);
@@ -126,6 +126,80 @@ function referenceInclude() {
   return { parts: { orderBy: { display_order: "asc" } } };
 }
 
+function referenceManuals(input = {}) {
+  const metadata = input.metadata && typeof input.metadata === "object" ? input.metadata : {};
+  const rawManuals = Array.isArray(input.manuals) ? input.manuals : Array.isArray(metadata.manuals) ? metadata.manuals : [];
+  return rawManuals
+    .filter((manual) => manual && (manual.file_url || manual.base64_data || manual.title || manual.file_name))
+    .slice(0, 12)
+    .map((manual, index) => {
+      if (manual.base64_data || manual.mime_type || manual.size_bytes) {
+        assertSafeFile({ mime_type: manual.mime_type, size_bytes: manual.size_bytes }, { maxBytes: MAX_DOCUMENT_BYTES });
+      }
+      const fileName = normalizeFileName(manual.file_name || manual.title || `manual-${index + 1}`);
+      return {
+        id: manual.id || `${Date.now()}-${index}`,
+        title: manual.title || fileName,
+        file_name: fileName,
+        mime_type: manual.mime_type || "",
+        size_bytes: Number(manual.size_bytes || 0),
+        file_url: manual.file_url || "",
+        base64_data: manual.base64_data || "",
+        notes: manual.notes || "",
+        uploaded_at: manual.uploaded_at || new Date().toISOString()
+      };
+    });
+}
+
+function referenceMetadata(input = {}, current = {}) {
+  const base = input.metadata && typeof input.metadata === "object" ? input.metadata : {};
+  return {
+    ...(current || {}),
+    ...base,
+    manuals: referenceManuals({ ...input, metadata: { ...(current || {}), ...base } }),
+    service_profile: {
+      requires_manual_review: Boolean(input.requires_manual_review || base.service_profile?.requires_manual_review),
+      ...(base.service_profile || {})
+    }
+  };
+}
+
+function referenceDto(row) {
+  const metadata = row.metadata || {};
+  return {
+    ...row,
+    metadata,
+    manuals: Array.isArray(metadata.manuals) ? metadata.manuals : [],
+    total_parts: row.parts.length,
+    total_pieces: row.parts.reduce((sum, part) => sum + Number(part.quantity || 0), 0)
+  };
+}
+
+function referenceData(tenantId, input, currentMetadata = {}) {
+  const active = input.active === undefined ? true : !(input.active === false || String(input.active).toLowerCase() === "false");
+  return {
+    code: input.code.toUpperCase().trim(),
+    name: input.name,
+    category: input.category || "muebles",
+    description: input.description || "",
+    estimated_minutes: Number(input.estimated_minutes || 60),
+    brand: input.brand || "",
+    model: input.model || "",
+    active,
+    metadata: referenceMetadata(input, currentMetadata),
+    parts: {
+      create: (input.parts || []).map((part, index) => ({
+        tenant_id: tenantId,
+        name: part.name,
+        quantity: Number(part.quantity || 1),
+        unit: part.unit || "und",
+        description: part.description || "",
+        display_order: part.display_order ?? index
+      }))
+    }
+  };
+}
+
 async function listOrders(tenantId, query = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const where = {};
@@ -232,81 +306,121 @@ async function listReferences(tenantId, query = {}) {
     const rows = await prisma.serviceReference.findMany({
       where: {
         ...(query.category ? { category: query.category } : {}),
-        ...(query.active == null ? {} : { active: query.active === "true" || query.active === true })
+        ...(query.active == null ? {} : { active: query.active === "true" || query.active === true }),
+        ...(query.search ? {
+          OR: [
+            { code: { contains: String(query.search), mode: "insensitive" } },
+            { name: { contains: String(query.search), mode: "insensitive" } },
+            { brand: { contains: String(query.search), mode: "insensitive" } },
+            { model: { contains: String(query.search), mode: "insensitive" } }
+          ]
+        } : {})
       },
       include: referenceInclude(),
       orderBy: { code: "asc" }
     });
-    return rows.map((row) => ({
-      ...row,
-      total_parts: row.parts.length,
-      total_pieces: row.parts.reduce((sum, part) => sum + Number(part.quantity || 0), 0)
-    }));
+    return rows.map(referenceDto);
   });
 }
 
 async function getReference(tenantId, id) {
-  return prisma.runWithTenant(tenantId, async () => prisma.serviceReference.findFirstOrThrow({
+  return prisma.runWithTenant(tenantId, async () => referenceDto(await prisma.serviceReference.findFirstOrThrow({
     where: { id: Number(id) },
     include: referenceInclude()
-  }));
+  })));
 }
 
 async function createReference(tenantId, input) {
   return prisma.runWithTenant(tenantId, async () => prisma.serviceReference.create({
-    data: {
-      code: input.code.toUpperCase().trim(),
-      name: input.name,
-      category: input.category || "muebles",
-      description: input.description || "",
-      estimated_minutes: Number(input.estimated_minutes || 60),
-      brand: input.brand || "",
-      model: input.model || "",
-      active: input.active !== false,
-      metadata: input.metadata || {},
-      parts: {
-        create: (input.parts || []).map((part, index) => ({
-          tenant_id: tenantId,
-          name: part.name,
-          quantity: Number(part.quantity || 1),
-          unit: part.unit || "und",
-          description: part.description || "",
-          display_order: part.display_order ?? index
-        }))
-      }
-    },
+    data: referenceData(tenantId, input),
     include: referenceInclude()
-  }));
+  }).then(referenceDto));
 }
 
 async function updateReference(tenantId, id, input) {
   return prisma.runWithTenant(tenantId, async () => {
+    const current = await prisma.serviceReference.findFirstOrThrow({ where: { id: Number(id) }, select: { metadata: true } });
     await prisma.serviceReferencePart.deleteMany({ where: { reference_id: Number(id) } });
-    return prisma.serviceReference.update({
+    return referenceDto(await prisma.serviceReference.update({
       where: { id: Number(id) },
-      data: {
-        code: input.code.toUpperCase().trim(),
-        name: input.name,
-        category: input.category || "muebles",
-        description: input.description || "",
-        estimated_minutes: Number(input.estimated_minutes || 60),
-        brand: input.brand || "",
-        model: input.model || "",
-        active: input.active !== false,
-        metadata: input.metadata || {},
-      parts: {
-        create: (input.parts || []).map((part, index) => ({
-          tenant_id: tenantId,
-          name: part.name,
-          quantity: Number(part.quantity || 1),
-          unit: part.unit || "und",
-            description: part.description || "",
-            display_order: part.display_order ?? index
-          }))
-        }
-      },
+      data: referenceData(tenantId, input, current.metadata || {}),
       include: referenceInclude()
-    });
+    }));
+  });
+}
+
+function normalizeBulkRows(rows = []) {
+  const grouped = new Map();
+  for (const row of rows) {
+    const code = String(row.code || "").trim().toUpperCase();
+    const name = String(row.name || "").trim();
+    if (!code || !name) continue;
+    const existing = grouped.get(code) || {
+      code,
+      name,
+      category: row.category || "muebles",
+      description: row.description || "",
+      estimated_minutes: Number(row.estimated_minutes || 60),
+      brand: row.brand || "",
+      model: row.model || "",
+      active: !(row.active === false || String(row.active).toLowerCase() === "false"),
+      parts: [],
+      manuals: []
+    };
+    if (row.part_name) {
+      existing.parts.push({
+        name: row.part_name,
+        quantity: Number(row.part_quantity || 1),
+        unit: row.part_unit || "und",
+        description: row.part_description || ""
+      });
+    }
+    if (row.manual_url || row.manual_title) {
+      existing.manuals.push({
+        title: row.manual_title || "Manual",
+        file_name: row.manual_title || "manual",
+        file_url: row.manual_url || "",
+        notes: row.manual_notes || ""
+      });
+    }
+    grouped.set(code, existing);
+  }
+  return Array.from(grouped.values()).map((row) => ({
+    ...row,
+    parts: row.parts.length ? row.parts : [{ name: "Validacion general", quantity: 1, unit: "und", description: "" }]
+  }));
+}
+
+async function bulkImportReferences(tenantId, input) {
+  const rows = normalizeBulkRows(input.rows || []);
+  if (!rows.length) throw appError(400, "EMPTY_REFERENCE_IMPORT", "La plantilla no contiene referencias validas");
+  return prisma.runWithTenant(tenantId, async () => {
+    const result = { created: 0, updated: 0, skipped: 0, references: [] };
+    for (const row of rows.slice(0, 500)) {
+      const current = await prisma.serviceReference.findFirst({ where: { code: row.code }, select: { id: true, metadata: true } });
+      try {
+        if (current) {
+          await prisma.serviceReferencePart.deleteMany({ where: { reference_id: current.id } });
+          const updated = await prisma.serviceReference.update({
+            where: { id: current.id },
+            data: referenceData(tenantId, row, current.metadata || {}),
+            include: referenceInclude()
+          });
+          result.updated += 1;
+          result.references.push(referenceDto(updated));
+        } else {
+          const created = await prisma.serviceReference.create({
+            data: referenceData(tenantId, row),
+            include: referenceInclude()
+          });
+          result.created += 1;
+          result.references.push(referenceDto(created));
+        }
+      } catch {
+        result.skipped += 1;
+      }
+    }
+    return result;
   });
 }
 
@@ -483,6 +597,7 @@ module.exports = {
   getReference,
   createReference,
   updateReference,
+  bulkImportReferences,
   startOrder,
   moveToInspection,
   moveToExecution,

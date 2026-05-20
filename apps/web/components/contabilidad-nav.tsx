@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const ITEMS = [
   { href: "/dashboard/contabilidad", label: "Resumen" },
   { href: "/dashboard/contabilidad/plan-cuentas", label: "Plan de cuentas" },
+  { href: "/dashboard/contabilidad/terceros", label: "Terceros" },
   { href: "/dashboard/contabilidad/reportes", label: "Reportes" }
 ];
 
@@ -24,4 +25,3 @@ export function ContabilidadNav() {
     </nav>
   );
 }
-

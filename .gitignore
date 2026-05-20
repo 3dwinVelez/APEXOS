@@ -16,4 +16,6 @@ venv/
 .DS_Store
 .local/
 logs/
+.npm-cache/
+supabase/.temp/
 apps/api/prisma/migrations/

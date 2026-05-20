@@ -11,6 +11,7 @@ async function servicesRoutes(fastify) {
   fastify.get("/services/references", { preHandler: requirePermission("services", "read") }, (request) => service.listReferences(request.user?.tenant_id, request.query));
   fastify.get("/services/references/:id", { preHandler: requirePermission("services", "read") }, (request) => service.getReference(request.user?.tenant_id, request.params.id));
   fastify.post("/services/references", { schema: schemas.referenceSchema, preHandler: requirePermission("services", "write") }, (request) => service.createReference(request.user?.tenant_id, request.body));
+  fastify.post("/services/references/import", { schema: schemas.referenceBulkImportSchema, preHandler: requirePermission("services", "write") }, (request) => service.bulkImportReferences(request.user?.tenant_id, request.body));
   fastify.put("/services/references/:id", { schema: schemas.referenceSchema, preHandler: requirePermission("services", "write") }, (request) => service.updateReference(request.user?.tenant_id, request.params.id, request.body));
   fastify.get("/services/orders/:id", { preHandler: requirePermission("services", "read") }, (request) => service.getOrder(request.user?.tenant_id, request.params.id));
   fastify.get("/services/orders/:id/report", { preHandler: requirePermission("services", "read") }, (request) => service.getOrderReport(request.user?.tenant_id, request.params.id));

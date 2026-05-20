@@ -31,6 +31,22 @@ const referenceSchema = {
       brand: { type: "string" },
       model: { type: "string" },
       active: { type: "boolean" },
+      manuals: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            id: { type: "string" },
+            title: { type: "string" },
+            file_name: { type: "string" },
+            mime_type: { type: "string" },
+            size_bytes: { type: "integer" },
+            file_url: { type: "string" },
+            base64_data: { type: "string" },
+            notes: { type: "string" }
+          }
+        }
+      },
       parts: {
         type: "array",
         items: {
@@ -46,6 +62,40 @@ const referenceSchema = {
         }
       },
       metadata: { type: "object" }
+    }
+  }
+};
+
+const referenceBulkImportSchema = {
+  body: {
+    type: "object",
+    required: ["rows"],
+    properties: {
+      rows: {
+        type: "array",
+        minItems: 1,
+        items: {
+          type: "object",
+          required: ["code", "name"],
+          properties: {
+            code: { type: "string" },
+            name: { type: "string" },
+            category: { type: "string" },
+            description: { type: "string" },
+            estimated_minutes: { type: "integer" },
+            brand: { type: "string" },
+            model: { type: "string" },
+            active: { type: "boolean" },
+            part_name: { type: "string" },
+            part_quantity: { type: "number" },
+            part_unit: { type: "string" },
+            part_description: { type: "string" },
+            manual_title: { type: "string" },
+            manual_url: { type: "string" },
+            manual_notes: { type: "string" }
+          }
+        }
+      }
     }
   }
 };
@@ -131,4 +181,4 @@ const photoSchema = {
   }
 };
 
-module.exports = { orderSchema, referenceSchema, startSchema, inspectionSchema, closeSchema, incidentSchema, photoSchema };
+module.exports = { orderSchema, referenceSchema, referenceBulkImportSchema, startSchema, inspectionSchema, closeSchema, incidentSchema, photoSchema };

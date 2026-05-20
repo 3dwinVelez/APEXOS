@@ -23,6 +23,64 @@ const journalEntrySchema = {
   }
 };
 
+const accountSchema = {
+  body: {
+    type: "object",
+    required: ["code", "name", "type"],
+    properties: {
+      code: { type: "string", minLength: 1 },
+      name: { type: "string", minLength: 1 },
+      type: { type: "string", enum: ["asset", "liability", "equity", "income", "expense", "cost", "order"] },
+      parent_id: { type: ["integer", "null"] },
+      level: { type: "integer", minimum: 1 },
+      allows_tx: { type: "boolean" },
+      active: { type: "boolean" }
+    }
+  }
+};
+
+const thirdPartySchema = {
+  body: {
+    type: "object",
+    required: ["name"],
+    properties: {
+      type: { type: "string" },
+      name: { type: "string", minLength: 1 },
+      legal_name: { type: "string" },
+      person_type: { type: "string", enum: ["natural", "juridica"] },
+      document_type: { type: "string" },
+      tax_id: { type: "string" },
+      tax_type: { type: "string" },
+      verification_digit: { type: ["integer", "null"] },
+      tax_responsibilities: { type: "array", items: { type: "string" } },
+      email: { type: "string" },
+      phone: { type: "string" },
+      address: { type: "string" },
+      city: { type: "string" },
+      department: { type: "string" },
+      dane_code: { type: "string" },
+      country: { type: "string" },
+      segment: { type: "string" },
+      credit_limit: { type: "number" },
+      credit_days: { type: "integer" },
+      active: { type: "boolean" },
+      role_flags: { type: "object", additionalProperties: true },
+      metadata: { type: "object", additionalProperties: true }
+    }
+  }
+};
+
+const periodSchema = {
+  body: {
+    type: "object",
+    required: ["status"],
+    properties: {
+      status: { type: "string", enum: ["open", "review", "closed"] },
+      notes: { type: "string" }
+    }
+  }
+};
+
 const paymentSchema = {
   body: {
     type: "object",
@@ -40,5 +98,4 @@ const paymentSchema = {
   }
 };
 
-module.exports = { journalEntrySchema, paymentSchema };
-
+module.exports = { journalEntrySchema, accountSchema, thirdPartySchema, periodSchema, paymentSchema };

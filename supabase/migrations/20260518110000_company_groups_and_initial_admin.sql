@@ -71,7 +71,9 @@ to authenticated
 using (app_private.is_platform_admin())
 with check (app_private.is_platform_admin());
 
-create or replace view public.v_platform_companies
+drop view if exists public.v_platform_companies;
+
+create view public.v_platform_companies
 with (security_invoker = true)
 as
 select

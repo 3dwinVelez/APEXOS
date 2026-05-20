@@ -19,6 +19,7 @@
     "seed:demo": "node scripts/seed-admin.js",
     "seed:ops": "node scripts/seed-scj-puebla-ops.js",
     "seed:supabase:ops": "node scripts/seed-supabase-ops.js",
+    "seed:supabase:active-demo": "node scripts/seed-supabase-active-demo.js",
     "setup:local": "npm install && npm run check:local && npm run infra:up && npm run prisma:generate && npm run db:push && npm run seed:demo",
     "start:local": "npm run check:local && npm run infra:up && npm run dev",
     "start:local:windows": "node scripts/start-local-windows.js",
