@@ -1,5 +1,6 @@
 import { AiExperienceLayer } from "@/components/brain/AiExperienceLayer";
 import { AiAssistanceToggle } from "@/components/brain/AiAssistanceToggle";
+import { MobileNav } from "@/components/shell/MobileNav";
 import { Sidebar } from "@/components/shell/Sidebar";
 import { Brain, Sparkles } from "lucide-react";
 import Link from "next/link";
@@ -8,7 +9,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen bg-paper md:flex">
       <Sidebar />
-      <main className="min-w-0 flex-1 overflow-x-hidden p-4 md:p-6">
+      <main className="min-w-0 flex-1 overflow-x-hidden p-3 pb-24 sm:p-4 md:p-6 md:pb-6">
         <div className="mb-4 hidden flex-wrap items-center justify-between gap-3 rounded-md border border-apex/15 bg-white px-4 py-3 md:flex">
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-apex text-white">
@@ -29,6 +30,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
         {children}
       </main>
+      <MobileNav />
       <AiExperienceLayer />
     </div>
   );

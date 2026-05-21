@@ -101,17 +101,17 @@ export function SignatureCapture({ label = "Firma del cliente", required, value,
 
   return (
     <div className="rounded-md border border-line bg-white p-3 shadow-sm">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <p className="text-sm font-semibold">{label}{required ? " *" : ""}</p>
-        <div className="flex gap-2">
+      <div className="mb-2 grid gap-2 sm:flex sm:items-center sm:justify-between">
+        <p className="min-w-0 text-sm font-semibold">{label}{required ? " *" : ""}</p>
+        <div className="flex flex-wrap gap-2">
           {hasStroke || value ? (
-            <button className="inline-flex h-10 items-center gap-1 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={clear} type="button">
+            <button className="inline-flex h-10 flex-1 items-center justify-center gap-1 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper sm:flex-none" onClick={clear} type="button">
               <RotateCcw size={14} />
               Limpiar
             </button>
           ) : null}
           {hasStroke && !value ? (
-            <button className="inline-flex h-10 items-center gap-1 rounded-md bg-apex px-3 text-xs font-semibold text-white" onClick={confirm} type="button">
+            <button className="inline-flex h-10 flex-1 items-center justify-center gap-1 rounded-md bg-apex px-3 text-xs font-semibold text-white sm:flex-none" onClick={confirm} type="button">
               <Check size={14} />
               Confirmar
             </button>
@@ -122,7 +122,7 @@ export function SignatureCapture({ label = "Firma del cliente", required, value,
       <div className={`relative rounded-md border-2 p-2 ${value ? "border-emerald-300 bg-emerald-50" : required && !hasStroke ? "border-dashed border-amber-300 bg-amber-50/50" : "border-dashed border-line bg-paper"}`}>
         <canvas
           ref={canvasRef}
-          className="h-48 w-full rounded-md bg-white touch-none"
+          className="h-44 w-full rounded-md bg-white touch-none sm:h-48"
           onPointerDown={start}
           onPointerMove={move}
           onPointerUp={stop}

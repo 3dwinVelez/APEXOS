@@ -217,21 +217,21 @@ export default function ServiceReferencesPage() {
   }
 
   return (
-    <div className="space-y-5">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <Link className="mb-3 inline-flex items-center gap-2 text-sm font-medium text-neutral-600 hover:text-apex" href="/dashboard/servicios"><ArrowLeft size={16} /> Volver a servicios</Link>
+    <div className="space-y-5 pb-24 md:pb-0">
+      <header className="sticky top-0 z-20 -mx-3 grid gap-3 border-b border-line bg-paper/95 px-3 py-3 backdrop-blur sm:-mx-4 sm:px-4 md:static md:mx-0 md:flex md:items-start md:justify-between md:border-0 md:bg-transparent md:px-0 md:py-0">
+        <div className="min-w-0">
+          <Link className="mb-3 inline-flex h-11 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-medium text-neutral-600 hover:text-apex md:border-0 md:bg-transparent md:px-0" href="/dashboard/servicios"><ArrowLeft size={16} /> Volver a servicios</Link>
           <p className="text-sm font-medium text-apex">Servicios</p>
-          <h1 className="text-3xl font-semibold">Referencias de servicio</h1>
+          <h1 className="text-2xl font-semibold md:text-3xl">Referencias de servicio</h1>
           <p className="mt-2 max-w-3xl text-sm text-neutral-600">Maestro tecnico para modelos, piezas, tiempos, manuales, guias y carga masiva por CSV.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button className="inline-flex h-11 items-center gap-2 rounded-md border border-line bg-white px-4 text-sm font-semibold hover:bg-paper" onClick={downloadTemplate} type="button"><Download size={16} /> Plantilla CSV</button>
-          <label className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-md border border-line bg-white px-4 text-sm font-semibold hover:bg-paper">
+        <div className="grid gap-2 sm:flex sm:flex-wrap">
+          <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md border border-line bg-white px-4 text-sm font-semibold hover:bg-paper sm:w-auto" onClick={downloadTemplate} type="button"><Download size={16} /> Plantilla CSV</button>
+          <label className="inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-line bg-white px-4 text-sm font-semibold hover:bg-paper sm:w-auto">
             <Upload size={16} /> Cargar CSV
             <input className="hidden" type="file" accept=".csv,text/csv" onChange={onCsv} />
           </label>
-          <button className="inline-flex h-11 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white" onClick={reset} type="button"><Plus size={16} /> Nueva referencia</button>
+          <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white sm:w-auto" onClick={reset} type="button"><Plus size={16} /> Nueva referencia</button>
         </div>
       </header>
 
@@ -251,25 +251,25 @@ export default function ServiceReferencesPage() {
         <ActionCard title="Documentos tecnicos" detail="Manuales visibles para el tecnico durante la inspeccion." icon={FileText} onClick={() => undefined} />
       </section>
 
-      <section className="rounded-md border border-line bg-white p-4">
+      <section className="rounded-md border border-line bg-white p-3 sm:p-4">
         <div className="mb-4 grid gap-3 md:grid-cols-[1fr_220px]">
           <label className="relative">
             <Search className="pointer-events-none absolute left-3 top-3 text-neutral-400" size={16} />
             <input className="h-10 w-full rounded-md border border-line pl-9 pr-3 text-sm" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por codigo, nombre, marca o modelo" />
           </label>
-          <select className="h-10 rounded-md border border-line px-3 text-sm" value={category} onChange={(event) => setCategory(event.target.value)}>
+          <select className="h-11 w-full rounded-md border border-line px-3 text-sm" value={category} onChange={(event) => setCategory(event.target.value)}>
             <option value="">Todas las categorias</option>
             {categories.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
         </div>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {references.map((reference) => (
-            <button className={`rounded-md border p-4 text-left transition hover:bg-paper ${selected?.id === reference.id ? "border-apex" : "border-line"}`} key={reference.id} onClick={() => edit(reference)} type="button">
+            <button className={`rounded-md border p-3 text-left transition hover:bg-paper sm:p-4 ${selected?.id === reference.id ? "border-apex" : "border-line"}`} key={reference.id} onClick={() => edit(reference)} type="button">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <span className="text-xs font-semibold uppercase text-apex">{reference.category}</span>
                 <span className="rounded-md bg-paper px-2 py-1 font-mono text-xs">{reference.code}</span>
               </div>
-              <h3 className="font-semibold">{reference.name}</h3>
+              <h3 className="break-words font-semibold">{reference.name}</h3>
               <p className="mt-1 text-sm text-neutral-500">{[reference.brand, reference.model].filter(Boolean).join(" / ") || "Sin marca/modelo"}</p>
               <div className="mt-3 flex flex-wrap gap-2 text-xs text-neutral-600">
                 <span className="rounded-md bg-paper px-2 py-1">{reference.parts.length} pieza(s)</span>
@@ -286,30 +286,30 @@ export default function ServiceReferencesPage() {
         <ModalFrame title={selected ? "Editar referencia" : "Nueva referencia"} onClose={() => setShowForm(false)} maxWidth="max-w-5xl">
           <div className="space-y-5">
             <section className="grid gap-3 md:grid-cols-4">
-              <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Codigo *" value={form.code} onChange={(event) => setForm((prev) => ({ ...prev, code: event.target.value.toUpperCase() }))} />
-              <select className="h-10 rounded-md border border-line px-3 text-sm" value={form.category} onChange={(event) => setForm((prev) => ({ ...prev, category: event.target.value }))}>
+              <input className="h-11 w-full rounded-md border border-line px-3 text-base md:text-sm" placeholder="Codigo *" value={form.code} onChange={(event) => setForm((prev) => ({ ...prev, code: event.target.value.toUpperCase() }))} />
+              <select className="h-11 w-full rounded-md border border-line px-3 text-base md:text-sm" value={form.category} onChange={(event) => setForm((prev) => ({ ...prev, category: event.target.value }))}>
                 {categories.map((item) => <option key={item} value={item}>{item}</option>)}
               </select>
-              <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Marca" value={form.brand} onChange={(event) => setForm((prev) => ({ ...prev, brand: event.target.value }))} />
-              <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Modelo" value={form.model} onChange={(event) => setForm((prev) => ({ ...prev, model: event.target.value }))} />
-              <input className="h-10 rounded-md border border-line px-3 text-sm md:col-span-3" placeholder="Nombre *" value={form.name} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))} />
-              <input className="h-10 rounded-md border border-line px-3 text-sm" type="number" min={1} value={form.estimated_minutes} onChange={(event) => setForm((prev) => ({ ...prev, estimated_minutes: Number(event.target.value) }))} />
-              <textarea className="min-h-20 rounded-md border border-line px-3 py-2 text-sm md:col-span-4" placeholder="Descripcion tecnica o alcance" value={form.description} onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))} />
+              <input className="h-11 w-full rounded-md border border-line px-3 text-base md:text-sm" placeholder="Marca" value={form.brand} onChange={(event) => setForm((prev) => ({ ...prev, brand: event.target.value }))} />
+              <input className="h-11 w-full rounded-md border border-line px-3 text-base md:text-sm" placeholder="Modelo" value={form.model} onChange={(event) => setForm((prev) => ({ ...prev, model: event.target.value }))} />
+              <input className="h-11 w-full rounded-md border border-line px-3 text-base md:col-span-3 md:text-sm" placeholder="Nombre *" value={form.name} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))} />
+              <input className="h-11 w-full rounded-md border border-line px-3 text-base md:text-sm" type="number" min={1} value={form.estimated_minutes} onChange={(event) => setForm((prev) => ({ ...prev, estimated_minutes: Number(event.target.value) }))} />
+              <textarea className="min-h-24 rounded-md border border-line px-3 py-2 text-base md:col-span-4 md:text-sm" placeholder="Descripcion tecnica o alcance" value={form.description} onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))} />
             </section>
 
             <section className="rounded-md border border-line p-3">
-              <div className="mb-3 flex items-center justify-between">
+              <div className="mb-3 grid gap-2 sm:flex sm:items-center sm:justify-between">
                 <div><h2 className="text-sm font-semibold">Piezas para inspeccion</h2><p className="text-xs text-neutral-500">Estas piezas aparecen al tecnico durante la validacion.</p></div>
-                <button className="rounded-md border border-line px-3 py-2 text-xs font-semibold hover:bg-paper" onClick={() => setForm((prev) => ({ ...prev, parts: [...prev.parts, { ...emptyPart }] }))} type="button">Agregar pieza</button>
+                <button className="h-11 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => setForm((prev) => ({ ...prev, parts: [...prev.parts, { ...emptyPart }] }))} type="button">Agregar pieza</button>
               </div>
               <div className="space-y-2">
                 {form.parts.map((part, index) => (
                   <div className="grid gap-2 md:grid-cols-[1fr_80px_90px_1fr_40px]" key={index}>
-                    <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Pieza *" value={part.name} onChange={(event) => setForm((prev) => ({ ...prev, parts: prev.parts.map((item, itemIndex) => itemIndex === index ? { ...item, name: event.target.value } : item) }))} />
-                    <input className="h-10 rounded-md border border-line px-2 text-sm" type="number" min={0.01} value={part.quantity} onChange={(event) => setForm((prev) => ({ ...prev, parts: prev.parts.map((item, itemIndex) => itemIndex === index ? { ...item, quantity: Number(event.target.value) } : item) }))} />
-                    <input className="h-10 rounded-md border border-line px-2 text-sm" value={part.unit} onChange={(event) => setForm((prev) => ({ ...prev, parts: prev.parts.map((item, itemIndex) => itemIndex === index ? { ...item, unit: event.target.value } : item) }))} />
-                    <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Nota de revision" value={part.description} onChange={(event) => setForm((prev) => ({ ...prev, parts: prev.parts.map((item, itemIndex) => itemIndex === index ? { ...item, description: event.target.value } : item) }))} />
-                    <button className="h-10 rounded-md border border-line text-sm hover:bg-paper" onClick={() => setForm((prev) => ({ ...prev, parts: prev.parts.filter((_, itemIndex) => itemIndex !== index) }))} type="button">-</button>
+                    <input className="h-11 rounded-md border border-line px-3 text-base md:text-sm" placeholder="Pieza *" value={part.name} onChange={(event) => setForm((prev) => ({ ...prev, parts: prev.parts.map((item, itemIndex) => itemIndex === index ? { ...item, name: event.target.value } : item) }))} />
+                    <input className="h-11 rounded-md border border-line px-2 text-base md:text-sm" type="number" min={0.01} value={part.quantity} onChange={(event) => setForm((prev) => ({ ...prev, parts: prev.parts.map((item, itemIndex) => itemIndex === index ? { ...item, quantity: Number(event.target.value) } : item) }))} />
+                    <input className="h-11 rounded-md border border-line px-2 text-base md:text-sm" value={part.unit} onChange={(event) => setForm((prev) => ({ ...prev, parts: prev.parts.map((item, itemIndex) => itemIndex === index ? { ...item, unit: event.target.value } : item) }))} />
+                    <input className="h-11 rounded-md border border-line px-3 text-base md:text-sm" placeholder="Nota de revision" value={part.description} onChange={(event) => setForm((prev) => ({ ...prev, parts: prev.parts.map((item, itemIndex) => itemIndex === index ? { ...item, description: event.target.value } : item) }))} />
+                    <button className="h-11 rounded-md border border-line text-base hover:bg-paper md:text-sm" onClick={() => setForm((prev) => ({ ...prev, parts: prev.parts.filter((_, itemIndex) => itemIndex !== index) }))} type="button">-</button>
                   </div>
                 ))}
               </div>
@@ -326,12 +326,12 @@ export default function ServiceReferencesPage() {
               <div className="grid gap-2 md:grid-cols-2">
                 {form.manuals.map((manual, index) => (
                   <div className="rounded-md border border-line p-3" key={`${manual.file_name}-${index}`}>
-                    <input className="h-9 w-full rounded-md border border-line px-2 text-sm font-medium" value={manual.title} onChange={(event) => setForm((prev) => ({ ...prev, manuals: prev.manuals.map((item, itemIndex) => itemIndex === index ? { ...item, title: event.target.value } : item) }))} />
+                    <input className="h-11 w-full rounded-md border border-line px-2 text-base font-medium md:text-sm" value={manual.title} onChange={(event) => setForm((prev) => ({ ...prev, manuals: prev.manuals.map((item, itemIndex) => itemIndex === index ? { ...item, title: event.target.value } : item) }))} />
                     <p className="mt-1 truncate text-xs text-neutral-500">{manual.file_name || manual.file_url}</p>
-                    <textarea className="mt-2 min-h-16 w-full rounded-md border border-line px-2 py-1 text-sm" placeholder="Notas de uso" value={manual.notes || ""} onChange={(event) => setForm((prev) => ({ ...prev, manuals: prev.manuals.map((item, itemIndex) => itemIndex === index ? { ...item, notes: event.target.value } : item) }))} />
-                    <div className="mt-2 flex gap-2">
-                      {manualHref(manual) ? <a className="inline-flex h-9 items-center rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" href={manualHref(manual)} target="_blank" rel="noreferrer">Abrir</a> : null}
-                      <button className="h-9 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => setForm((prev) => ({ ...prev, manuals: prev.manuals.filter((_, itemIndex) => itemIndex !== index) }))} type="button">Quitar</button>
+                    <textarea className="mt-2 min-h-20 w-full rounded-md border border-line px-2 py-2 text-base md:text-sm" placeholder="Notas de uso" value={manual.notes || ""} onChange={(event) => setForm((prev) => ({ ...prev, manuals: prev.manuals.map((item, itemIndex) => itemIndex === index ? { ...item, notes: event.target.value } : item) }))} />
+                    <div className="mt-2 grid gap-2 sm:flex">
+                      {manualHref(manual) ? <a className="inline-flex h-10 items-center justify-center rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" href={manualHref(manual)} target="_blank" rel="noreferrer">Abrir</a> : null}
+                      <button className="h-10 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => setForm((prev) => ({ ...prev, manuals: prev.manuals.filter((_, itemIndex) => itemIndex !== index) }))} type="button">Quitar</button>
                     </div>
                   </div>
                 ))}
@@ -339,9 +339,9 @@ export default function ServiceReferencesPage() {
               </div>
             </section>
 
-            <div className="flex justify-end gap-2 border-t border-line pt-4">
-              <button className="h-10 rounded-md border border-line px-4 text-sm" onClick={() => setShowForm(false)} type="button">Cancelar</button>
-              <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-60" disabled={saving} onClick={save} type="button"><Save size={16} /> Guardar referencia</button>
+            <div className="grid gap-2 border-t border-line pt-4 sm:flex sm:justify-end">
+              <button className="h-11 rounded-md border border-line px-4 text-sm" onClick={() => setShowForm(false)} type="button">Cancelar</button>
+              <button className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-60" disabled={saving} onClick={save} type="button"><Save size={16} /> Guardar referencia</button>
             </div>
           </div>
         </ModalFrame>
@@ -351,9 +351,9 @@ export default function ServiceReferencesPage() {
         <ModalFrame title="Carga masiva de referencias" onClose={() => setShowImport(false)} maxWidth="max-w-4xl">
           <div className="space-y-4">
             <p className="text-sm text-neutral-600">Usa la plantilla CSV. Varias filas con el mismo codigo se agrupan como una referencia con varias piezas.</p>
-            <div className="flex flex-wrap gap-2">
-              <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={downloadTemplate} type="button"><Download size={16} /> Descargar plantilla</button>
-              <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white">
+            <div className="grid gap-2 sm:flex sm:flex-wrap">
+              <button className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={downloadTemplate} type="button"><Download size={16} /> Descargar plantilla</button>
+              <label className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white">
                 <Upload size={16} /> Seleccionar CSV
                 <input className="hidden" type="file" accept=".csv,text/csv" onChange={onCsv} />
               </label>
@@ -373,7 +373,7 @@ export default function ServiceReferencesPage() {
                 </tbody>
               </table>
             </div>
-            <button className="h-10 w-full rounded-md bg-apex text-sm font-semibold text-white disabled:opacity-60" disabled={!importRows.length || saving} onClick={importCsv} type="button">Importar referencias</button>
+            <button className="h-11 w-full rounded-md bg-apex text-sm font-semibold text-white disabled:opacity-60" disabled={!importRows.length || saving} onClick={importCsv} type="button">Importar referencias</button>
           </div>
         </ModalFrame>
       ) : null}

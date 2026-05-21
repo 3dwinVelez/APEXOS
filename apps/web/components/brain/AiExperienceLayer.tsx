@@ -279,6 +279,7 @@ export function AiExperienceLayer() {
   const [stepIndex, setStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<Rect | null>(null);
   const [dismissedInsights, setDismissedInsights] = useState<Set<string>>(new Set());
+  const [isMobile, setIsMobile] = useState(false);
 
   const currentModule = moduleFromPath(pathname);
   const steps = useMemo(() => stepsForPath(pathname), [pathname]);
@@ -310,6 +311,13 @@ export function AiExperienceLayer() {
   }, []);
 
   useEffect(() => {
+    const sync = () => setIsMobile(window.innerWidth < 768);
+    sync();
+    window.addEventListener("resize", sync);
+    return () => window.removeEventListener("resize", sync);
+  }, []);
+
+  useEffect(() => {
     if (!enabled) {
       setCoachOpen(false);
       setTrayOpen(false);
@@ -322,7 +330,7 @@ export function AiExperienceLayer() {
     setDismissedInsights(dismissed);
 
     const guideSeen = localStorage.getItem(guideKey) === "1";
-    setCoachOpen(!guideSeen && steps.length > 0);
+    setCoachOpen(!isMobile && !guideSeen && steps.length > 0);
 
     if (isSupabaseSession()) {
       setInsights([]);
@@ -335,7 +343,7 @@ export function AiExperienceLayer() {
       .then((response) => setInsights(response.data))
       .catch(() => setInsights([]))
       .finally(() => setLoadingInsights(false));
-  }, [currentModule, enabled, guideKey, insightKey, pathname, steps.length]);
+  }, [currentModule, enabled, guideKey, insightKey, isMobile, pathname, steps.length]);
 
   useEffect(() => {
     if (!coachOpen) return;
@@ -396,8 +404,8 @@ export function AiExperienceLayer() {
             />
           ) : null}
           <div
-            className="pointer-events-auto absolute w-[340px] max-w-[calc(100vw-32px)] animate-[apexCoachIn_180ms_ease-out] rounded-md border border-line bg-white p-4 shadow-xl"
-            style={{ top: coachTop, left: coachLeft }}
+            className="pointer-events-auto fixed inset-x-3 bottom-24 animate-[apexCoachIn_180ms_ease-out] rounded-md border border-line bg-white p-3 shadow-xl md:absolute md:inset-auto md:w-[340px] md:max-w-[calc(100vw-32px)] md:p-4"
+            style={isMobile ? undefined : { top: coachTop, left: coachLeft }}
           >
             <div className="mb-3 flex items-start justify-between gap-3">
               <div className="flex items-start gap-2">
@@ -409,7 +417,7 @@ export function AiExperienceLayer() {
                   <h3 className="text-sm font-semibold">{currentStep.title}</h3>
                 </div>
               </div>
-              <button className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-paper" onClick={closeCoach} type="button" aria-label="Cerrar guia">
+              <button className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-line hover:bg-paper md:h-8 md:w-8 md:border-0" onClick={closeCoach} type="button" aria-label="Cerrar guia">
                 <X size={16} />
               </button>
             </div>
@@ -417,8 +425,8 @@ export function AiExperienceLayer() {
             <div className="mt-4 flex items-center justify-between gap-3">
               <span className="text-xs text-neutral-500">{stepIndex + 1} de {steps.length}</span>
               <div className="flex items-center gap-2">
-                <button className="h-9 rounded-md border border-line px-3 text-sm font-medium hover:bg-paper" onClick={closeCoach} type="button">Cerrar</button>
-                <button className="inline-flex h-9 items-center gap-2 rounded-md bg-apex px-3 text-sm font-medium text-white" onClick={nextStep} type="button">
+                <button className="h-11 rounded-md border border-line px-3 text-sm font-medium hover:bg-paper md:h-9" onClick={closeCoach} type="button">Cerrar</button>
+                <button className="inline-flex h-11 items-center gap-2 rounded-md bg-apex px-3 text-sm font-medium text-white md:h-9" onClick={nextStep} type="button">
                   {stepIndex >= steps.length - 1 ? "Finalizar" : "Siguiente"}
                   <ChevronRight size={15} />
                 </button>
@@ -428,15 +436,15 @@ export function AiExperienceLayer() {
         </div>
       ) : null}
 
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-3">
+      <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+84px)] right-3 z-50 flex flex-col items-end gap-3 md:bottom-4 md:right-4">
         {trayOpen ? (
-          <section className="w-[380px] max-w-[calc(100vw-32px)] animate-[apexTrayIn_160ms_ease-out] rounded-md border border-line bg-white shadow-xl">
+          <section className="w-[calc(100vw-24px)] max-w-[380px] animate-[apexTrayIn_160ms_ease-out] rounded-md border border-line bg-white shadow-xl">
             <div className="flex items-start justify-between gap-3 border-b border-line p-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-apex">Bandeja APEX AI</p>
                 <h3 className="text-base font-semibold">Recomendaciones para ti</h3>
               </div>
-              <button className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-paper" onClick={() => setTrayOpen(false)} type="button" aria-label="Cerrar bandeja">
+              <button className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-line hover:bg-paper md:h-8 md:w-8 md:border-0" onClick={() => setTrayOpen(false)} type="button" aria-label="Cerrar bandeja">
                 <X size={16} />
               </button>
             </div>

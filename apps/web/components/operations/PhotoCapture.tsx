@@ -52,7 +52,7 @@ export function PhotoCapture({ label, required, capture = true, value, onChange 
   return (
     <div className="rounded-md border border-line bg-white p-3 shadow-sm">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <p className="text-sm font-semibold">{label}{required ? " *" : ""}</p>
+        <p className="min-w-0 text-sm font-semibold">{label}{required ? " *" : ""}</p>
         {value ? (
           <button className="flex h-11 w-11 items-center justify-center rounded-md text-neutral-500 hover:bg-paper" onClick={() => onChange(null)} type="button" aria-label="Quitar evidencia"><X size={18} /></button>
         ) : null}
@@ -68,10 +68,10 @@ export function PhotoCapture({ label, required, capture = true, value, onChange 
       {value ? (
         <div className="space-y-2">
           <img alt={label} className="max-h-64 w-full rounded-md object-cover" src={value.base64} />
-          <p className="text-xs text-neutral-500">{value.name} - {Math.round(value.size / 1024)} KB</p>
+          <p className="break-words text-xs text-neutral-500">{value.name} - {Math.round(value.size / 1024)} KB</p>
         </div>
       ) : (
-        <button className="flex min-h-32 w-full flex-col items-center justify-center gap-2 rounded-md border border-dashed border-line bg-paper px-3 py-5 text-base font-semibold text-neutral-700 hover:border-apex hover:text-apex" onClick={() => cameraRef.current?.click()} type="button">
+        <button className="flex min-h-32 w-full flex-col items-center justify-center gap-2 rounded-md border border-dashed border-line bg-paper px-3 py-5 text-center text-base font-semibold text-neutral-700 hover:border-apex hover:text-apex" onClick={() => cameraRef.current?.click()} type="button">
           <Camera size={28} />
           Tomar foto
           <span className="text-xs font-medium text-neutral-500">Abre la camara del dispositivo</span>

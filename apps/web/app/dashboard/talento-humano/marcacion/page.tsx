@@ -220,9 +220,9 @@ export default function MobilePunchPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md space-y-4 pb-24 md:pb-8">
-      <header className="sticky top-0 z-20 -mx-4 border-b border-line bg-paper/95 px-4 py-3 backdrop-blur md:static md:mx-0 md:border-0 md:bg-transparent md:px-0">
-        <Link className="mb-3 inline-flex h-11 items-center gap-2 rounded-md pr-3 text-sm font-medium text-neutral-600 hover:text-apex" href="/dashboard/talento-humano"><ArrowLeft size={18} /> Control de horarios</Link>
+    <div className="mx-auto max-w-md space-y-4 pb-32 md:pb-8">
+      <header className="sticky top-0 z-20 -mx-3 border-b border-line bg-paper/95 px-3 py-3 backdrop-blur sm:-mx-4 sm:px-4 md:static md:mx-0 md:border-0 md:bg-transparent md:px-0">
+        <Link className="mb-3 inline-flex h-11 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-medium text-neutral-600 hover:text-apex md:border-0 md:bg-transparent md:px-0" href="/dashboard/talento-humano"><ArrowLeft size={18} /> Control de horarios</Link>
         <p className="text-sm font-medium text-apex">Marcacion movil</p>
         <h1 className="text-2xl font-semibold">Mi jornada</h1>
       </header>
@@ -240,11 +240,11 @@ export default function MobilePunchPage() {
 
       {view === "marcar" ? (
         <>
-          <section className="rounded-md border border-line bg-white p-4 shadow-sm">
+          <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
             <div className="grid gap-3">
               <div className="rounded-md bg-paper p-3">
                 <p className="text-xs font-semibold uppercase text-neutral-500">Usuario conectado</p>
-                <p className="mt-1 text-base font-semibold">{employee ? employeeName(employee) : "Empleado no asociado"}</p>
+                <p className="mt-1 break-words text-base font-semibold">{employee ? employeeName(employee) : "Empleado no asociado"}</p>
               </div>
             </div>
             <div className="mt-4 rounded-md bg-paper p-3 text-sm text-neutral-700">
@@ -260,10 +260,10 @@ export default function MobilePunchPage() {
             {gpsStatus === "error" ? <p className="mt-2 text-xs font-semibold text-red-700">GPS obligatorio para marcar. Habilita ubicacion en el navegador.</p> : null}
             {gps ? (
               <div className="mt-3 overflow-hidden rounded-md border border-line bg-white">
-                <iframe className="h-44 w-full border-0" src={osmEmbedUrl(gps)} title="Mi ubicacion GPS" loading="lazy" />
-                <div className="flex items-center justify-between gap-2 p-3 text-xs text-neutral-600">
-                  <span><Navigation className="mr-1 inline text-apex" size={13} />{gps.latitude.toFixed(6)}, {gps.longitude.toFixed(6)} · {Math.round(gps.accuracy_meters || 0)}m</span>
-                  <a className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-3 text-xs font-semibold text-white" href={mapsUrl(gps)} target="_blank" rel="noreferrer">
+                <iframe className="h-40 w-full border-0 sm:h-44" src={osmEmbedUrl(gps)} title="Mi ubicacion GPS" loading="lazy" />
+                <div className="grid gap-2 p-3 text-xs text-neutral-600 sm:flex sm:items-center sm:justify-between">
+                  <span className="min-w-0 break-words"><Navigation className="mr-1 inline text-apex" size={13} />{gps.latitude.toFixed(6)}, {gps.longitude.toFixed(6)} · {Math.round(gps.accuracy_meters || 0)}m</span>
+                  <a className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-apex px-3 text-xs font-semibold text-white sm:w-auto" href={mapsUrl(gps)} target="_blank" rel="noreferrer">
                     Mapa <ExternalLink size={13} />
                   </a>
                 </div>
@@ -282,7 +282,7 @@ export default function MobilePunchPage() {
                     <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-md text-white ${done ? "bg-emerald-600" : enabled ? cfg.color : "bg-neutral-300"}`}>
                       {done ? <CheckCircle2 size={24} /> : <MapPin size={23} />}
                     </div>
-                    <div className="flex-1">
+                    <div className="min-w-0 flex-1">
                       <p className="text-base font-semibold">{cfg.title}</p>
                       <p className="mt-1 text-sm text-neutral-500">{done ? "Registrado correctamente" : enabled ? cfg.desc : "No disponible aun"}</p>
                     </div>
@@ -294,7 +294,7 @@ export default function MobilePunchPage() {
         </>
       ) : null}
 
-      {view === "historial" ? <section className="rounded-md border border-line bg-white p-4 shadow-sm">
+      {view === "historial" ? <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
         <h2 className="mb-3 text-base font-semibold">Historial de hoy</h2>
         <div className="space-y-2">
           {currentAttendance.punches.map((punch) => (
@@ -307,7 +307,7 @@ export default function MobilePunchPage() {
         </div>
       </section> : null}
 
-      {view === "marcar" ? <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-white/95 p-3 backdrop-blur md:hidden">
+      {view === "marcar" ? <div className="fixed inset-x-0 bottom-0 z-50 border-t border-line bg-white/95 px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur md:hidden">
         <button
           className={`h-14 w-full rounded-md text-base font-semibold text-white shadow-sm ${punchLabels[nextType]?.color || "bg-apex"} disabled:bg-neutral-300`}
           disabled={!employee || !nextType}
@@ -319,17 +319,22 @@ export default function MobilePunchPage() {
       </div> : null}
 
       {preop ? (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-neutral-950/50 p-3">
-          <section className="mx-auto max-w-3xl rounded-md bg-white p-4 shadow-xl">
-            <div className="mb-4 border-b border-line pb-3">
-              <p className="text-sm font-semibold text-apex">Planeacion de rutas</p>
-              <h2 className="text-xl font-semibold">Checklist preoperacional obligatorio</h2>
-              <p className="mt-1 text-sm text-neutral-600">Placa {preop.plate}. Sin aprobacion no se habilita el inicio de ruta.</p>
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-neutral-950/50 p-0 sm:p-3">
+          <section className="min-h-dvh bg-white p-3 shadow-xl sm:mx-auto sm:min-h-0 sm:max-w-3xl sm:rounded-md sm:p-4">
+            <div className="sticky top-0 z-10 -mx-3 mb-4 border-b border-line bg-white/95 px-3 pb-3 pt-3 backdrop-blur sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:pt-0">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-apex">Planeacion de rutas</p>
+                  <h2 className="text-xl font-semibold">Checklist preoperacional obligatorio</h2>
+                  <p className="mt-1 text-sm text-neutral-600">Placa {preop.plate}. Sin aprobacion no se habilita el inicio de ruta.</p>
+                </div>
+                <button className="inline-flex h-10 shrink-0 items-center justify-center rounded-md border border-line px-3 text-sm font-semibold text-neutral-700" onClick={() => setPreop(null)} type="button">Volver</button>
+              </div>
             </div>
             {preopMessage ? <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{preopMessage}</div> : null}
             <div className="mb-4 grid gap-3 md:grid-cols-2">
-              <input className="h-11 rounded-md border border-line px-3 text-sm" placeholder="Kilometraje inicial" value={mileageInitial} onChange={(event) => setMileageInitial(event.target.value)} />
-              <input className="h-11 rounded-md border border-line px-3 text-sm" placeholder="Nivel combustible / carga" value={fuelLevel} onChange={(event) => setFuelLevel(event.target.value)} />
+              <input className="h-12 w-full rounded-md border border-line px-3 text-base md:text-sm" placeholder="Kilometraje inicial" value={mileageInitial} onChange={(event) => setMileageInitial(event.target.value)} />
+              <input className="h-12 w-full rounded-md border border-line px-3 text-base md:text-sm" placeholder="Nivel combustible / carga" value={fuelLevel} onChange={(event) => setFuelLevel(event.target.value)} />
             </div>
             <div className="space-y-4">
               {preopTemplate.sections.map((section) => (
@@ -340,14 +345,14 @@ export default function MobilePunchPage() {
                       const answer = preopAnswers[item.item_key] || { answer: "cumple", observations: "", evidence: null };
                       return (
                         <div className="rounded-md bg-paper p-3" key={item.item_key}>
-                          <div className="flex flex-wrap items-start justify-between gap-2">
-                            <div>
+                          <div className="grid gap-2 sm:flex sm:items-start sm:justify-between">
+                            <div className="min-w-0">
                               <p className="text-sm font-semibold">{item.label}</p>
                               <p className={`text-xs font-semibold ${item.blocks_route ? "text-red-700" : "text-amber-700"}`}>{item.blocks_route ? "Critico: bloquea ruta" : "Novedad media"}</p>
                             </div>
                             <div className="grid grid-cols-3 gap-1 text-xs">
                               {["cumple", "no_cumple", "no_aplica"].map((value) => (
-                                <button className={`h-9 rounded-md px-2 font-semibold ${answer.answer === value ? "bg-apex text-white" : "bg-white"}`} key={value} onClick={() => setPreopAnswers((current) => ({ ...current, [item.item_key]: { ...answer, answer: value } }))} type="button">
+                                <button className={`h-11 min-w-0 rounded-md px-1 font-semibold ${answer.answer === value ? "bg-apex text-white" : "bg-white"}`} key={value} onClick={() => setPreopAnswers((current) => ({ ...current, [item.item_key]: { ...answer, answer: value } }))} type="button">
                                   {value === "cumple" ? "Cumple" : value === "no_cumple" ? "No cumple" : "N/A"}
                                 </button>
                               ))}
@@ -355,8 +360,8 @@ export default function MobilePunchPage() {
                           </div>
                           {answer.answer === "no_cumple" ? (
                             <div className="mt-3 grid gap-2 md:grid-cols-[1fr_220px]">
-                              <textarea className="min-h-20 rounded-md border border-line p-2 text-sm" placeholder="Describe la novedad y accion tomada" value={answer.observations} onChange={(event) => setPreopAnswers((current) => ({ ...current, [item.item_key]: { ...answer, observations: event.target.value } }))} />
-                              <label className="flex min-h-20 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-line bg-white p-2 text-center text-xs font-semibold">
+                              <textarea className="min-h-24 rounded-md border border-line p-3 text-base md:text-sm" placeholder="Describe la novedad y accion tomada" value={answer.observations} onChange={(event) => setPreopAnswers((current) => ({ ...current, [item.item_key]: { ...answer, observations: event.target.value } }))} />
+                              <label className="flex min-h-24 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-line bg-white p-2 text-center text-xs font-semibold">
                                 {answer.evidence ? answer.evidence.name : "Adjuntar evidencia"}
                                 <input className="hidden" type="file" accept="image/*,application/pdf,video/*" onChange={(event) => event.target.files?.[0] && evidenceFile(event.target.files[0], item.item_key)} />
                               </label>
