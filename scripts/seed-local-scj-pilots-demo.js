@@ -27,7 +27,8 @@ async function ensureRole(tenantId) {
       { role_id: role.id, module: "hr", action: "read" },
       { role_id: role.id, module: "hr", action: "write" },
       { role_id: role.id, module: "transport", action: "read" },
-      { role_id: role.id, module: "services", action: "read" }
+      { role_id: role.id, module: "services", action: "read" },
+      { role_id: role.id, module: "projects", action: "read" }
     ],
     skipDuplicates: true
   });
@@ -41,7 +42,7 @@ async function main() {
     update: {
       name: "SCJ",
       active: true,
-      active_modules: ["M-17", "M-26", "M-14", "M-22"],
+      active_modules: ["M-17", "M-26", "M-14", "M-19", "M-22"],
       config: demoMeta({ source: "local_scj_pilots" })
     },
     create: {
@@ -49,7 +50,7 @@ async function main() {
       domain: "scj.qa",
       industry: "servicios_operativos",
       plan: "qa_operativo",
-      active_modules: ["M-17", "M-26", "M-14", "M-22"],
+      active_modules: ["M-17", "M-26", "M-14", "M-19", "M-22"],
       country: "CO",
       currency: "COP",
       timezone: "America/Bogota",

@@ -8,6 +8,7 @@ const MODULE_CODES = {
   inventory: ["M-01", "inventario"],
   invoicing: ["M-04", "facturacion"],
   purchases: ["M-02", "compras"],
+  projects: ["M-19", "proyectos"],
   sales: ["M-03", "ventas"],
   services: ["M-26", "servicios"],
   transport: ["M-14", "transporte"]

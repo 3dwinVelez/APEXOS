@@ -27,6 +27,13 @@ async function hrRoutes(fastify) {
   fastify.get("/hr/gps/history", { preHandler: requirePermission("hr", "read") }, (request) => service.listGpsHistory(request.user?.tenant_id, request.query));
   fastify.post("/hr/gps/ping", { schema: schemas.gpsPingSchema, preHandler: requirePermission("hr", "write") }, (request) => service.createGpsPing(request.user?.tenant_id, request.body));
 
+  fastify.get("/hr/activity-types", { preHandler: requirePermission("hr", "read") }, (request) => service.listActivityTypes(request.user?.tenant_id, request.query));
+  fastify.post("/hr/activity-types", { schema: schemas.activityTypeSchema, preHandler: requirePermission("hr", "write") }, (request) => service.createActivityType(request.user?.tenant_id, request.body));
+  fastify.patch("/hr/activity-types/:id", { schema: schemas.activityTypeSchema, preHandler: requirePermission("hr", "write") }, (request) => service.updateActivityType(request.user?.tenant_id, request.params.id, request.body));
+  fastify.get("/hr/work-sessions/current", { preHandler: requirePermission("hr", "read") }, (request) => service.getCurrentWorkSession(request.user?.tenant_id, request.user, request.query));
+  fastify.get("/hr/work-activities", { preHandler: requirePermission("hr", "read") }, (request) => service.listWorkActivities(request.user?.tenant_id, request.query));
+  fastify.post("/hr/work-activities", { schema: schemas.workActivitySchema, preHandler: requirePermission("hr", "write") }, (request) => service.createWorkActivity(request.user?.tenant_id, request.user, request.body));
+
   fastify.get("/hr/attendance", { preHandler: requirePermission("hr", "read") }, (request) => service.listAttendance(request.user?.tenant_id, request.query));
   fastify.get("/hr/me", { preHandler: requirePermission("hr", "read") }, (request) => service.getCurrentEmployee(request.user?.tenant_id, request.user));
   fastify.post("/hr/time-punches", { schema: schemas.punchSchema, preHandler: requirePermission("hr", "write") }, (request) => service.createPunch(request.user?.tenant_id, request.body, request.user));

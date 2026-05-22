@@ -17,6 +17,7 @@ const MODULES = [
   "inventory",
   "accounting",
   "purchases",
+  "projects",
   "sales",
   "invoicing",
   "hr",
@@ -86,6 +87,7 @@ async function build() {
   fastify.register(require("./src/modules/inventory/routes"), { prefix: "/api/v1" });
   fastify.register(require("./src/modules/accounting/routes"), { prefix: "/api/v1" });
   fastify.register(require("./src/modules/purchases/routes"), { prefix: "/api/v1" });
+  fastify.register(require("./src/modules/projects/routes"), { prefix: "/api/v1" });
   fastify.register(require("./src/modules/sales/routes"), { prefix: "/api/v1" });
   fastify.register(require("./src/modules/invoicing/routes"), { prefix: "/api/v1" });
   fastify.register(require("./src/modules/hr/routes"), { prefix: "/api/v1" });

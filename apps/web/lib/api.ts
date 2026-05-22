@@ -18,6 +18,21 @@ function isSupabaseSession() {
 
 type AnyRow = Record<string, unknown>;
 
+const fallbackActivityTypes = [
+  "Cargue de mercancia en bodega",
+  "Inicio de ruta",
+  "Entrega en tienda",
+  "Entrega en cliente",
+  "Recogida de mercancia",
+  "Devolucion de mercancia",
+  "Novedad en ruta",
+  "Vehiculo varado",
+  "Espera en punto",
+  "Reintento de entrega",
+  "Finalizacion de ruta",
+  "Apoyo operativo"
+].map((name, index) => ({ id: index + 1, name, active: true, sort_order: (index + 1) * 10 }));
+
 function fullName(row: { first_name?: string; last_name?: string; email?: string; id?: string; metadata?: AnyRow }) {
   const metadataName = typeof row.metadata?.name === "string" ? row.metadata.name : "";
   return [row.first_name, row.last_name].filter(Boolean).join(" ").trim() || metadataName || row.email || `Empleado ${String(row.id || "").slice(0, 8)}`;
@@ -40,10 +55,239 @@ function kpisForOrders(orders: Array<{ status?: string }>) {
   };
 }
 
-async function supabaseApiFallback<T>(path: string): Promise<T | null> {
+const adminPermissionCatalog = [
+  { key: "dashboard", label: "Inicio y tablero", actions: ["access", "view"] },
+  { key: "personal", label: "Usuarios y colaboradores", actions: ["access", "view", "create", "edit"] },
+  { key: "roles", label: "Roles y permisos", actions: ["access", "view", "create", "edit"] },
+  { key: "servicios", label: "Servicios", actions: ["access", "view", "create", "edit", "export"] },
+  { key: "horarios", label: "Marcaciones y rutas", actions: ["access", "view", "create", "edit", "approve"] },
+  { key: "vehiculos", label: "Vehiculos", actions: ["access", "view", "create", "edit"] },
+  { key: "referencias", label: "Referencias de servicio", actions: ["access", "view", "create", "edit"] },
+  { key: "proyectos", label: "Proyectos", actions: ["access", "view", "create", "edit"] },
+  { key: "reportes", label: "Reportes", actions: ["access", "view", "export"] },
+  { key: "configuracion", label: "Configuracion tenant", actions: ["access", "view", "create", "edit"] },
+  { key: "nomina", label: "Nomina futura", actions: ["access", "view", "create", "edit", "export"] }
+];
+
+function emptyAdminPermissions() {
+  return Object.fromEntries(adminPermissionCatalog.map((item) => [
+    item.key,
+    Object.fromEntries(item.actions.map((action) => [action, false]))
+  ]));
+}
+
+function defaultAdminRoles() {
+  const all = Object.fromEntries(adminPermissionCatalog.map((item) => [
+    item.key,
+    Object.fromEntries(item.actions.map((action) => [action, true]))
+  ]));
+  return [
+    { id: 1, name: "Administrador SCJ", description: "Administra usuarios, roles y operacion de la empresa.", active: true, is_system: true, permissions: all },
+    { id: 2, name: "Conductor / Operario", description: "Registra jornada, actividades y consulta servicios asignados.", active: true, is_system: true, permissions: { ...emptyAdminPermissions(), dashboard: { access: true, view: true }, horarios: { access: true, view: true, create: true, edit: false, approve: false }, servicios: { access: true, view: true, create: false, edit: true, export: false } } }
+  ];
+}
+
+function storedAdminRoles() {
+  if (typeof window === "undefined") return defaultAdminRoles();
+  const raw = localStorage.getItem("apexos_admin_roles_qa");
+  if (!raw) return defaultAdminRoles();
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length ? parsed : defaultAdminRoles();
+  } catch {
+    return defaultAdminRoles();
+  }
+}
+
+function saveStoredAdminRoles(roles: ReturnType<typeof defaultAdminRoles>) {
+  if (typeof window !== "undefined") localStorage.setItem("apexos_admin_roles_qa", JSON.stringify(roles));
+}
+
+function nextPunchFrom(types: string[]) {
+  if (!types.includes("entrada")) return "entrada";
+  if (!types.includes("inicio_almuerzo")) return "inicio_almuerzo";
+  if (!types.includes("fin_almuerzo")) return "fin_almuerzo";
+  if (!types.includes("salida")) return "salida";
+  return null;
+}
+
+function localDate(value = new Date()) {
+  return value.toISOString().slice(0, 10);
+}
+
+async function currentSupabaseEmployee() {
+  const rows = await supabaseFetch<Array<{
+    id: string;
+    company_id?: string;
+    user_id?: string;
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    position?: string;
+    user_type?: string;
+    metadata?: AnyRow;
+  }>>("/rest/v1/employees?select=*&order=created_at.desc&limit=1");
+  return rows[0] || null;
+}
+
+async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): Promise<T | null> {
   const [pathname, queryString = ""] = path.split("?");
   const search = new URLSearchParams(queryString);
   const active = search.get("active");
+  const method = String(options.method || "GET").toUpperCase();
+
+  if (pathname === "/api/v1/hr/activity-types") {
+    return fallbackActivityTypes as T;
+  }
+
+  if (pathname === "/api/v1/hr/work-sessions/current") {
+    const employee = await currentSupabaseEmployee();
+    if (!employee) return { session: null, active: false, activities: [], alerts: [] } as T;
+    const name = fullName(employee);
+    const code = String(employee.metadata?.code || employee.id.slice(0, 8));
+    const aliases = new Set([employee.id, employee.user_id, name, code, String(employee.metadata?.name || ""), String(employee.email || "")].filter(Boolean).map(String));
+    const punches = (await supabaseFetch<Array<{ id: string; employee_id?: string; user_id?: string; user_name: string; punch_type: string; punched_at: string; punch_time?: string; vehicle_plate?: string; route_id?: string; latitude?: number; longitude?: number; accuracy_meters?: number }>>(
+      `/rest/v1/time_punches?select=*&punch_date=eq.${localDate()}&order=punched_at.asc`
+    ).catch(() => [])).filter((punch) => aliases.has(String(punch.employee_id || "")) || aliases.has(String(punch.user_id || "")) || aliases.has(String(punch.user_name || "")));
+    const types = punches.map((punch) => punch.punch_type);
+    const activeSession = types.includes("entrada") && !types.includes("salida");
+    const activityRows = (await supabaseFetch<Array<{ id: string; employee_id?: string; user_id?: string; user_name: string; latitude: number; longitude: number; accuracy_meters?: number; captured_at: string; metadata?: AnyRow }>>(
+      "/rest/v1/gps_pings?select=*&source=eq.work_activity&order=captured_at.desc"
+    ).catch(() => [])).filter((row) => aliases.has(String(row.employee_id || "")) || aliases.has(String(row.user_id || "")) || aliases.has(String(row.user_name || "")));
+    const activities = activityRows.map((row, index) => ({
+      id: toNumberId(row.id),
+      activity_type_name: String(row.metadata?.activity_type_name || "Actividad operativa"),
+      observation: String(row.metadata?.observation || ""),
+      occurred_at: row.captured_at,
+      latitude: Number(row.latitude),
+      longitude: Number(row.longitude),
+      accuracy_meters: Number(row.accuracy_meters || 0),
+      evidence: row.metadata?.photo ? [{ base64_data: row.metadata.photo, file_name: String(row.metadata?.photo_name || "evidencia.jpg") }] : []
+    }));
+    const entry = punches.find((punch) => punch.punch_type === "entrada");
+    return {
+      session: activeSession ? {
+        id: toNumberId(entry?.id || employee.id),
+        status: "activa",
+        started_at: entry?.punched_at || new Date().toISOString(),
+        user_name: code || name
+      } : null,
+      active: activeSession,
+      activities,
+      alerts: activeSession && !activities.length ? [{ type: "sin_actividades", severity: "warning", message: "Jornada activa sin actividades registradas." }] : []
+    } as T;
+  }
+
+  if (pathname === "/api/v1/hr/time-punches" && method === "POST") {
+    const employee = await currentSupabaseEmployee();
+    if (!employee?.company_id) return null;
+    const body = JSON.parse(String(options.body || "{}"));
+    const now = body.punched_at ? new Date(body.punched_at) : new Date();
+    const name = fullName(employee);
+    let extraMinutes = 0;
+    if ((body.type || body.tipo_marca) === "salida" && body.route_id) {
+      const routeRows = await supabaseFetch<Array<{ route_date?: string; end_time?: string }>>(`/rest/v1/operational_routes?select=route_date,end_time&id=eq.${body.route_id}&limit=1`).catch(() => []);
+      const route = routeRows[0];
+      if (route?.route_date && route?.end_time) {
+        const plannedEnd = new Date(`${route.route_date}T${route.end_time}:00-05:00`);
+        extraMinutes = Math.max(0, Math.round((now.getTime() - plannedEnd.getTime()) / 60000));
+      }
+    }
+    const extraEvidence = body.extra_evidence ? {
+      name: body.extra_evidence.name,
+      type: body.extra_evidence.type,
+      size: body.extra_evidence.size,
+      base64_data: body.extra_evidence.base64
+    } : {};
+    const row = {
+      company_id: employee.company_id,
+      employee_id: employee.id,
+      user_id: employee.user_id || null,
+      route_id: body.route_id || null,
+      user_name: body.user_name || name,
+      punch_type: body.type || body.tipo_marca,
+      punched_at: now.toISOString(),
+      punch_date: localDate(now),
+      punch_time: now.toISOString().slice(11, 19),
+      latitude: body.latitude ?? null,
+      longitude: body.longitude ?? null,
+      accuracy_meters: body.accuracy_meters ?? null,
+      extra_minutes: extraMinutes,
+      extra_reason: body.extra_reason || null,
+      extra_detail: body.extra_detail || null,
+      extra_evidence: extraEvidence,
+      metadata: { ...(body.metadata || {}), extra_evidence: extraEvidence }
+    };
+    let inserted: Array<Record<string, unknown>>;
+    try {
+      inserted = await supabaseFetch<Array<Record<string, unknown>>>("/rest/v1/time_punches?select=*", {
+        method: "POST",
+        body: JSON.stringify(row),
+        headers: { Prefer: "return=representation" }
+      });
+    } catch (error) {
+      if (!String(error).includes("extra_evidence")) throw error;
+      const { extra_evidence: _extraEvidence, ...fallbackRow } = row;
+      inserted = await supabaseFetch<Array<Record<string, unknown>>>("/rest/v1/time_punches?select=*", {
+        method: "POST",
+        body: JSON.stringify(fallbackRow),
+        headers: { Prefer: "return=representation" }
+      });
+    }
+    const punches = await supabaseFetch<Array<{ punch_type: string }>>(`/rest/v1/time_punches?select=punch_type&employee_id=eq.${employee.id}&punch_date=eq.${localDate(now)}&order=punched_at.asc`).catch(() => []);
+    return {
+      ok: true,
+      hora: row.punch_time,
+      punch: inserted[0],
+      next: nextPunchFrom(punches.map((punch) => punch.punch_type)),
+      route_authorized: true,
+      preoperational_required: false,
+      preoperational_checklist: null
+    } as T;
+  }
+
+  if (pathname === "/api/v1/hr/work-activities" && method === "POST") {
+    const employee = await currentSupabaseEmployee();
+    if (!employee?.company_id) return null;
+    const body = JSON.parse(String(options.body || "{}"));
+    const type = fallbackActivityTypes.find((item) => item.id === Number(body.activity_type_id)) || fallbackActivityTypes[0];
+    const now = body.occurred_at ? new Date(body.occurred_at) : new Date();
+    const row = {
+      company_id: employee.company_id,
+      employee_id: employee.id,
+      user_id: employee.user_id || null,
+      route_id: body.route_id || null,
+      user_name: fullName(employee),
+      latitude: body.latitude,
+      longitude: body.longitude,
+      accuracy_meters: body.accuracy_meters ?? null,
+      source: "work_activity",
+      captured_at: now.toISOString(),
+      metadata: {
+        ...(body.metadata || {}),
+        activity_type_id: type.id,
+        activity_type_name: type.name,
+        observation: body.observation,
+        photo: body.photo?.base64,
+        photo_name: body.photo?.name
+      }
+    };
+    const inserted = await supabaseFetch<Array<{ id: string }>>("/rest/v1/gps_pings?select=*", {
+      method: "POST",
+      body: JSON.stringify(row),
+      headers: { Prefer: "return=representation" }
+    });
+    return {
+      id: toNumberId(inserted[0]?.id || now.toISOString()),
+      activity_type_name: type.name,
+      observation: body.observation,
+      occurred_at: now.toISOString(),
+      latitude: Number(body.latitude),
+      longitude: Number(body.longitude),
+      accuracy_meters: Number(body.accuracy_meters || 0),
+      evidence: body.photo ? [{ base64_data: body.photo.base64, file_name: body.photo.name }] : []
+    } as T;
+  }
 
   if (pathname === "/api/v1/hr/schedules") {
     return [] as T;
@@ -63,7 +307,7 @@ async function supabaseApiFallback<T>(path: string): Promise<T | null> {
     }
     return Array.from(grouped.entries()).map(([user_name, punches]) => ({
       user_name,
-      next_type: punches[0]?.type === "salida" ? null : "salida",
+      next_type: nextPunchFrom(punches.map((punch) => punch.type)),
       punches
     })) as T;
   }
@@ -73,8 +317,8 @@ async function supabaseApiFallback<T>(path: string): Promise<T | null> {
       supabaseFetch<Array<{ id: string; code?: string; route_date: string; vehicle_plate?: string; start_time?: string; end_time?: string; status?: string }>>("/rest/v1/operational_routes?select=*&order=route_date.desc"),
       supabaseFetch<Array<{ id: string; first_name?: string; last_name?: string; document_number?: string; user_type?: string; position?: string; metadata?: AnyRow }>>("/rest/v1/employees?select=*&status=eq.active"),
       supabaseFetch<Array<{ route_id: string; employee_id: string; role?: string }>>("/rest/v1/route_assignments?select=*"),
-      supabaseFetch<Array<{ id: string; employee_id?: string; user_name: string; route_id?: string; vehicle_id?: string; latitude: number; longitude: number; accuracy_meters?: number; captured_at: string }>>("/rest/v1/gps_pings?select=*&order=captured_at.desc"),
-      supabaseFetch<Array<{ id: string; employee_id?: string; user_name: string; punch_type: string; punch_time?: string; punched_at: string; route_id?: string; vehicle_id?: string; vehicle_plate?: string; latitude?: number; longitude?: number; accuracy_meters?: number; extra_minutes?: number; metadata?: AnyRow }>>("/rest/v1/time_punches?select=*&order=punched_at.desc")
+      supabaseFetch<Array<{ id: string; employee_id?: string; user_name: string; route_id?: string; vehicle_id?: string; latitude: number; longitude: number; accuracy_meters?: number; source?: string; captured_at: string; metadata?: AnyRow }>>("/rest/v1/gps_pings?select=*&order=captured_at.desc"),
+      supabaseFetch<Array<{ id: string; employee_id?: string; user_name: string; punch_type: string; punch_time?: string; punched_at: string; route_id?: string; vehicle_id?: string; vehicle_plate?: string; latitude?: number; longitude?: number; accuracy_meters?: number; extra_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: AnyRow; metadata?: AnyRow }>>("/rest/v1/time_punches?select=*&order=punched_at.desc")
     ]);
 
     const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
@@ -128,6 +372,23 @@ async function supabaseApiFallback<T>(path: string): Promise<T | null> {
       const routeAssignments = assignments.filter((assignment) => assignment.route_id === route.id);
       const routePeople = people.filter((person) => person.route_id === route.id);
       const routePings = pings.filter((ping) => ping.route_id === route.id);
+      const routeActivities = pings
+        .filter((ping) => ping.route_id === route.id && ping.source === "work_activity")
+        .map((activity) => ({
+          id: activity.id,
+          user_name: activity.user_name,
+          type: String(activity.metadata?.activity_type_name || "Actividad operativa"),
+          time: activity.captured_at ? new Date(activity.captured_at).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }) : "",
+          occurred_at: activity.captured_at,
+          latitude: Number(activity.latitude),
+          longitude: Number(activity.longitude),
+          accuracy_meters: activity.accuracy_meters ?? null,
+          vehicle_plate: route.vehicle_plate || "",
+          route_id: route.id,
+          observation: String(activity.metadata?.observation || ""),
+          evidence: activity.metadata?.photo ? [{ base64_data: String(activity.metadata.photo), file_name: String(activity.metadata?.photo_name || "evidencia.jpg") }] : [],
+          metadata: activity.metadata || {}
+        }));
       const routePunches = punches
         .filter((punch) => punch.route_id === route.id && punch.latitude != null && punch.longitude != null)
         .map((punch) => ({
@@ -142,6 +403,9 @@ async function supabaseApiFallback<T>(path: string): Promise<T | null> {
           vehicle_plate: route.vehicle_plate || "",
           route_id: route.id,
           extra_minutes: punch.extra_minutes || 0,
+          extra_reason: punch.extra_reason || "",
+          extra_detail: punch.extra_detail || "",
+          extra_evidence: punch.extra_evidence || punch.metadata?.extra_evidence || {},
           metadata: punch.metadata || {}
         }));
       const userNames = Array.from(new Set(routePunches.map((punch) => punch.user_name)));
@@ -157,6 +421,7 @@ async function supabaseApiFallback<T>(path: string): Promise<T | null> {
         with_gps_count: routePeople.filter((person) => person.latitude != null && person.longitude != null).length,
         pings: routePings.map((ping) => ({ ...ping, vehicle_plate: route.vehicle_plate || "", route_id: route.id })),
         punch_points: routePunches,
+        activity_points: routeActivities,
         marks_by_user: userNames.map((user_name) => ({ user_name, marks: routePunches.filter((punch) => punch.user_name === user_name) }))
       };
     });
@@ -200,16 +465,7 @@ async function supabaseApiFallback<T>(path: string): Promise<T | null> {
   }
 
   if (pathname === "/api/v1/hr/me") {
-    const rows = await supabaseFetch<Array<{
-      id: string;
-      first_name?: string;
-      last_name?: string;
-      email?: string;
-      position?: string;
-      user_type?: string;
-      metadata?: AnyRow;
-    }>>("/rest/v1/employees?select=*&order=created_at.desc&limit=1");
-    const row = rows[0];
+    const row = await currentSupabaseEmployee();
     if (!row) return null;
     const name = fullName(row);
     return {
@@ -395,6 +651,50 @@ async function supabaseApiFallback<T>(path: string): Promise<T | null> {
     })) as T;
   }
 
+  if (pathname === "/api/v1/projects/operational-center") {
+    const now = new Date().toISOString();
+    const project = {
+      id: 1,
+      name: "Implementacion operacional APEXOS",
+      objective: "Coordinar compromisos, entregables, bloqueos y recursos bajo MODELO APEX.",
+      status: "activo",
+      priority: "alta",
+      owner_name: "Direccion Operativa Demo",
+      target_date: "2026-06-15T05:00:00.000Z",
+      apex_score: 72,
+      score_status: "estable",
+      progress: 58,
+      validated_progress: 50,
+      commitments: [
+        { id: 1, title: "Validar flujo operativo de campo", description: "Servicios y marcaciones desde celular.", responsible_name: "Coordinador Demo", priority: "alta", target_date: "2026-05-24T05:00:00.000Z", status: "validacion" },
+        { id: 2, title: "Resolver visibilidad de ambiente", description: "Asegurar que el despliegue muestre cambios recientes.", responsible_name: "Soporte Demo", priority: "critica", target_date: "2026-05-20T05:00:00.000Z", status: "bloqueado" }
+      ],
+      deliverables: [
+        { id: 1, name: "Centro Operacional APEX", description: "Vista ejecutiva sin Gantt pesado.", responsible_name: "Producto Demo", target_date: "2026-05-28T05:00:00.000Z", status: "activo", validation: "Pendiente aprobacion", evidence_status: "pendiente" }
+      ],
+      risks: [
+        { id: 1, kind: "bloqueo", description: "Ambiente no refleja cambios hasta reconstruir contenedor.", impact: "alto", priority: "critica", responsible_name: "Soporte Demo", action_recommended: "Reconstruir web y validar hash.", status: "activo" }
+      ],
+      resources: [
+        { id: 1, person_id: 101, person_name: "Coordinador Demo", role: "Responsable de resultado", load_level: 70, availability: "disponible", responsibilities: "Cierre de compromisos", assignment_summary: { commitments: 1, deliverables: 0, risks: 0, open_items: 1 }, assignments: { commitments: [{ id: 1, title: "Validar flujo operativo de campo", status: "validacion", target_date: "2026-05-24T05:00:00.000Z" }], deliverables: [], risks: [] } },
+        { id: 2, person_id: null, person_name: "Soporte Demo", role: "Desbloqueo", load_level: 90, availability: "saturado", responsibilities: "Ambiente y despliegue", metadata: { source: "participante_externo", organization: "Aliado Demo" }, assignment_summary: { commitments: 1, deliverables: 0, risks: 1, open_items: 2 }, assignments: { commitments: [{ id: 2, title: "Resolver visibilidad de ambiente", status: "bloqueado", target_date: "2026-05-20T05:00:00.000Z" }], deliverables: [], risks: [{ id: 1, kind: "bloqueo", description: "Ambiente no refleja cambios hasta reconstruir contenedor.", status: "activo" }] } }
+      ],
+      generated_alerts: [
+        { type: "bloqueo_activo", title: "Bloqueo activo", description: "Ambiente no refleja cambios hasta reconstruir contenedor.", severity: "warning", action_suggested: "Reconstruir web y validar hash." }
+      ],
+      logs: [
+        { id: "1", action: "demo.supabase", summary: "Datos demo MODELO APEX cargados para sesion Supabase.", created_at: now }
+      ],
+      indicators: { open_commitments: 2, pending_deliverables: 1, active_blocks: 1, critical_risks: 1, saturated_resources: 1, next_commitments: 2 }
+    };
+    return {
+      active_project: project,
+      projects: [project],
+      portfolio: { total: 1, active: 1, blocked: 1, validation: 0, average_score: 72 },
+      next_actions: [{ title: "Atender bloqueo activo", description: "Ambiente no refleja cambios.", action: "Reconstruir y validar.", severity: "warning" }]
+    } as T;
+  }
+
   const serviceOrderDetailMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)$/);
   if (pathname === "/api/v1/services/orders" || serviceOrderDetailMatch) {
     const status = search.get("status");
@@ -450,22 +750,100 @@ async function supabaseApiFallback<T>(path: string): Promise<T | null> {
   }
 
   if (pathname === "/api/v1/admin/permissions/catalog") {
-    return [
-      { key: "admin", label: "Administracion", actions: ["read", "write"] },
-      { key: "hr", label: "Talento humano", actions: ["read", "write"] },
-      { key: "services", label: "Servicios", actions: ["read", "write"] },
-      { key: "transport", label: "Transporte", actions: ["read", "write"] }
-    ] as T;
+    return adminPermissionCatalog as T;
   }
 
   if (pathname === "/api/v1/admin/roles") {
-    return [
-      { id: 1, name: "Administrador demo", description: "Acceso demo SCJ", active: true, is_system: true, permissions: {} },
-      { id: 2, name: "Piloto demo", description: "Conductores y auxiliares demo", active: true, is_system: true, permissions: {} }
-    ] as T;
+    const roles = storedAdminRoles();
+    if (method === "POST") {
+      const body = JSON.parse(String(options.body || "{}"));
+      const role = {
+        id: Math.max(0, ...roles.map((item) => Number(item.id))) + 1,
+        name: body.name || body.nombre || "Nuevo rol",
+        description: body.description || body.descripcion || "",
+        active: body.active !== false && body.activo !== false,
+        is_system: false,
+        permissions: body.permissions || emptyAdminPermissions()
+      };
+      const next = [...roles, role];
+      saveStoredAdminRoles(next);
+      return role as T;
+    }
+    return roles as T;
+  }
+
+  const adminRoleMatch = pathname.match(/^\/api\/v1\/admin\/roles\/(\d+)(?:\/status)?$/);
+  if (adminRoleMatch) {
+    const roles = storedAdminRoles();
+    const roleId = Number(adminRoleMatch[1]);
+    const body = JSON.parse(String(options.body || "{}"));
+    const next = roles.map((role) => role.id === roleId ? {
+      ...role,
+      name: role.is_system ? role.name : (body.name || body.nombre || role.name),
+      description: body.description || body.descripcion || role.description,
+      active: pathname.endsWith("/status") ? Boolean(body.active ?? body.activo) : (body.active !== false && body.activo !== false),
+      permissions: body.permissions || role.permissions
+    } : role);
+    saveStoredAdminRoles(next);
+    return (next.find((role) => role.id === roleId) || null) as T;
   }
 
   if (pathname === "/api/v1/admin/users") {
+    const roles = storedAdminRoles();
+    if (method === "POST") {
+      const body = JSON.parse(String(options.body || "{}"));
+      const fullName = body.name || `${body.first_names || ""} ${body.last_names || ""}`.trim() || body.email || "Usuario demo";
+      const role = roles.find((item) => item.id === Number(body.role_id)) || roles[0];
+      const row = {
+        company_id: body.company_id || undefined,
+        first_name: body.first_names || fullName.split(" ")[0] || fullName,
+        last_name: body.last_names || fullName.split(" ").slice(1).join(" "),
+        document_type: body.document_type || "CC",
+        document_number: body.document || `QA-${Date.now()}`,
+        email: body.email,
+        phone: body.phone || "",
+        position: body.position || body.operational_classification || "operario",
+        department: body.department || body.area || "Operacion",
+        hire_date: body.hire_date || localDate(),
+        status: body.user_status === "inactivo" ? "inactive" : "active",
+        user_type: body.operational_classification || "operario",
+        metadata: {
+          is_demo: true,
+          demo_batch: "apexos_admin_user_created",
+          name: fullName,
+          code: body.code || `USR-${Date.now()}`,
+          role_id: role.id,
+          role_name: role.name,
+          document: body.document || "",
+          company: body.company || "SCJ",
+          access: { email: body.access_email || body.email, role_id: role.id, role_name: role.name, site: body.site || body.base_site || "", area: body.area || body.department || "" },
+          employment: { cost_center: body.cost_center || "", contract_type: body.contract_type || "" },
+          operational: { classification: body.operational_classification || "operario", base_site: body.base_site || "", zone: body.operation_zone || "" }
+        }
+      };
+      const companies = await supabaseFetch<Array<{ id: string }>>("/rest/v1/companies?select=id&name=eq.SCJ&limit=1").catch(() => []);
+      const payload = { ...row, company_id: row.company_id || companies[0]?.id };
+      const inserted = payload.company_id ? await supabaseFetch<Array<AnyRow>>("/rest/v1/employees?select=*", {
+        method: "POST",
+        body: JSON.stringify(payload),
+        headers: { Prefer: "return=representation" }
+      }).catch(() => null) : null;
+      const employee = inserted?.[0] || { ...payload, id: crypto.randomUUID?.() || String(Date.now()) };
+      return {
+        id: toNumberId(employee.id),
+        name: fullName,
+        email: String(employee.email || ""),
+        role_id: role.id,
+        role_name: role.name,
+        active: employee.status === "active",
+        code: String((employee.metadata as AnyRow)?.code || ""),
+        document: String(employee.document_number || ""),
+        company: "SCJ",
+        position: String(employee.position || ""),
+        department: String(employee.department || ""),
+        operational_classification: String(employee.user_type || "")
+      } as T;
+    }
     const employees = await supabaseFetch<Array<{
       id: string;
       first_name?: string;
@@ -480,12 +858,14 @@ async function supabaseApiFallback<T>(path: string): Promise<T | null> {
     }>>("/rest/v1/employees?select=*&order=created_at.desc");
     return employees.map((employee) => {
       const name = fullName(employee);
+      const roleId = Number(employee.metadata?.role_id || (employee.user_type === "conductor" ? 2 : 1));
+      const role = roles.find((item) => item.id === roleId) || roles[0];
       return {
         id: toNumberId(employee.id),
         name,
         email: employee.email || "",
-        role_id: employee.user_type === "conductor" ? 2 : 1,
-        role_name: employee.user_type === "conductor" ? "Piloto demo" : "Administrador demo",
+        role_id: role?.id || roleId,
+        role_name: String(employee.metadata?.role_name || role?.name || ""),
         active: employee.status === "active",
         code: String(employee.metadata?.code || employee.document_number || employee.id.slice(0, 8)),
         document: employee.document_number || String(employee.metadata?.document || ""),
@@ -509,7 +889,7 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
   let response: Response;
 
-  if ((!options.method || options.method === "GET") && isSupabaseSession()) {
+  if (isSupabaseSession()) {
     const fallback = await supabaseApiFallback<T>(path).catch(() => null);
     if (fallback) {
       touchSession();
@@ -537,6 +917,14 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   }
 
   if (!response.ok) {
+    if (isSupabaseSession()) {
+      const fallback = await supabaseApiFallback<T>(path, options).catch(() => null);
+      if (fallback) {
+        touchSession();
+        return fallback;
+      }
+    }
+
     if (response.status >= 500) {
       throw new Error("API no disponible. Inicia el backend en http://localhost:3000.");
     }

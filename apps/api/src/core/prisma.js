@@ -13,8 +13,11 @@ const TENANT_MODELS = new Set([
   "RoutePreoperationalChecklist", "RoutePreoperationalChecklistAnswer",
   "RoutePreoperationalChecklistEvidence", "RoutePreoperationalFinding",
   "RouteStartAuthorization", "RouteBlockEvent",
-  "ProcessedWorkday", "GpsPing", "Vehicle", "ServiceOrder", "ServiceReference",
+  "ProcessedWorkday", "GpsPing", "WorkSession", "ActivityType", "WorkActivity", "ActivityEvidence",
+  "Vehicle", "ServiceOrder", "ServiceReference",
   "VehicleDocument", "VehicleMasterAuditLog", "ServiceReferencePart", "ServiceIncident", "ServicePhoto",
+  "Project", "ProjectCommitment", "ProjectDeliverable", "ProjectRisk", "ProjectResourceAssignment",
+  "ProjectComment", "ProjectEvidence", "ProjectAlert", "ProjectLog",
   "Payroll", "Account", "LedgerEntry", "Payment",
   "BrainEvent", "BrainMetric", "CustomField", "AuditLog", "Workflow",
   "Category", "SensorReading", "OKR", "SoDRule", "EInvoice", "EInvoiceConfig"

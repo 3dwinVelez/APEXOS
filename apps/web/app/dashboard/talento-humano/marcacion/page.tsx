@@ -3,8 +3,8 @@
 import { api } from "@/lib/api";
 import { getGpsFix, type GpsFix } from "@/lib/gps";
 import { SignatureCapture } from "@/components/operations/SignatureCapture";
-import type { CapturedFile } from "@/components/operations/PhotoCapture";
-import { ArrowLeft, CheckCircle2, ExternalLink, MapPin, Navigation, RefreshCw, Truck } from "lucide-react";
+import { PhotoCapture, type CapturedFile } from "@/components/operations/PhotoCapture";
+import { Activity, AlertTriangle, ArrowLeft, Camera, CheckCircle2, ExternalLink, MapPin, Navigation, Plus, RefreshCw, Truck, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -16,6 +16,22 @@ type PreopChecklist = { id: number; route_id?: number; plate: string; checklist_
 type PreopTemplate = { sections: string[]; items: PreopItem[] };
 type PreopAnswer = { answer: string; observations: string; evidence: CapturedFile | null };
 type PunchResponse = { preoperational_required?: boolean; preoperational_checklist?: PreopChecklist | null };
+type ActivityType = { id: number; name: string; active: boolean };
+type WorkActivity = { id: number; activity_type_name: string; observation: string; occurred_at: string; latitude: number; longitude: number; accuracy_meters?: number; evidence?: Array<{ base64_data?: string; file_name?: string }> };
+type WorkSession = { id: number; active: boolean; session: { id: number; status: string; started_at: string; closed_at?: string } | null; activities: WorkActivity[]; alerts: Array<{ type: string; severity: string; message: string }> };
+
+const overtimeReasons = [
+  ["entrega_cliente_extendida", "Entrega extendida por solicitud del cliente"],
+  ["congestion_vial", "Congestion vial o cierre de via"],
+  ["reintento_entrega", "Reintento de entrega autorizado"],
+  ["novedad_operativa", "Novedad operativa en ruta"],
+  ["vehiculo_varado", "Vehiculo varado o falla mecanica"],
+  ["cargue_descargue_extendido", "Cargue o descargue extendido"],
+  ["validacion_inventario", "Validacion de inventario o piezas"],
+  ["servicio_critico", "Cierre de servicio critico"],
+  ["autorizacion_supervisor", "Extension autorizada por supervisor"],
+  ["clima_seguridad", "Clima, seguridad o condicion externa"]
+];
 
 const punchOrder = ["entrada", "inicio_almuerzo", "fin_almuerzo", "salida"];
 const punchLabels: Record<string, { title: string; desc: string; color: string }> = {
@@ -50,6 +66,8 @@ export default function MobilePunchPage() {
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [message, setMessage] = useState("");
   const [extraReason, setExtraReason] = useState("");
+  const [extraDetail, setExtraDetail] = useState("");
+  const [extraEvidence, setExtraEvidence] = useState<CapturedFile | null>(null);
   const [gps, setGps] = useState<GpsFix | null>(null);
   const [gpsStatus, setGpsStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [view, setView] = useState<"marcar" | "historial">("marcar");
@@ -60,16 +78,29 @@ export default function MobilePunchPage() {
   const [mileageInitial, setMileageInitial] = useState("");
   const [fuelLevel, setFuelLevel] = useState("");
   const [signature, setSignature] = useState<CapturedFile | null>(null);
+  const [session, setSession] = useState<WorkSession | null>(null);
+  const [activityTypes, setActivityTypes] = useState<ActivityType[]>([]);
+  const [activityModal, setActivityModal] = useState(false);
+  const [activityTypeId, setActivityTypeId] = useState("");
+  const [activityObservation, setActivityObservation] = useState("");
+  const [activityPhoto, setActivityPhoto] = useState<CapturedFile | null>(null);
+  const [activitySaving, setActivitySaving] = useState(false);
+  const [activityMessage, setActivityMessage] = useState("");
 
   async function load() {
-    const [me, routeData, attendanceData] = await Promise.all([
+    const [me, routeData, attendanceData, typesData, sessionData] = await Promise.all([
       api<Employee>("/api/v1/hr/me").catch(() => null),
       api<TimeRoute[]>("/api/v1/hr/routes").catch(() => []),
-      api<Attendance[]>("/api/v1/hr/attendance").catch(() => [])
+      api<Attendance[]>("/api/v1/hr/attendance").catch(() => []),
+      api<ActivityType[]>("/api/v1/hr/activity-types").catch(() => []),
+      api<WorkSession>("/api/v1/hr/work-sessions/current").catch(() => null)
     ]);
     setEmployee(me);
     setRoutes(routeData);
     setAttendance(attendanceData);
+    setActivityTypes(typesData);
+    setSession(sessionData);
+    if (!activityTypeId && typesData[0]) setActivityTypeId(String(typesData[0].id));
     const active = await api<{ checklist: PreopChecklist | null; template: PreopTemplate }>("/api/v1/hr/routes/preop/active").catch(() => null);
     if (active?.checklist) {
       setPreop(active.checklist);
@@ -89,6 +120,12 @@ export default function MobilePunchPage() {
   const displayName = employee ? employeeName(employee) : "";
   const route = routes.find((item) => item.employees.includes(userName)) || routes.find((item) => displayName && item.employees.includes(displayName));
   const vehiclePlate = route?.vehicle_plate || "";
+  const isClosingLate = (() => {
+    if (nextType !== "salida" || !route?.end_time) return false;
+    const [hour, minute] = route.end_time.split(":").map(Number);
+    const now = new Date();
+    return now.getHours() * 60 + now.getMinutes() > hour * 60 + minute;
+  })();
 
   useEffect(() => {
     if (!employee || !gps || !userName) return;
@@ -143,6 +180,10 @@ export default function MobilePunchPage() {
     if (!employee) return;
     const fix = gps || await refreshGps();
     if (!fix) return;
+    if (type === "salida" && isClosingLate && (!extraReason || !extraDetail.trim() || !extraEvidence)) {
+      setMessage("Cierre fuera de horario: selecciona motivo, escribe el sustento y adjunta evidencia fotografica.");
+      return;
+    }
     const response = await api<PunchResponse>("/api/v1/hr/time-punches", {
       method: "POST",
       body: JSON.stringify({
@@ -156,6 +197,8 @@ export default function MobilePunchPage() {
         vehicle_plate: vehiclePlate,
         route_id: route?.id,
         extra_reason: type === "salida" ? extraReason : undefined,
+        extra_detail: type === "salida" ? extraDetail : undefined,
+        extra_evidence: type === "salida" ? extraEvidence : undefined,
         metadata: { source: "apexos-mobile", current_user_only: true }
       })
     });
@@ -165,10 +208,79 @@ export default function MobilePunchPage() {
       setPreopTemplate(template);
       setPreopAnswers(Object.fromEntries(template.items.map((item) => [item.item_key, { answer: "cumple", observations: "", evidence: null }])));
       setPreopMessage("Checklist preoperacional obligatorio antes de iniciar ruta.");
+      setMessage("Completa el checklist preoperacional para habilitar la Entrada.");
+      return;
     }
     setExtraReason("");
+    setExtraDetail("");
+    setExtraEvidence(null);
     setMessage(`${punchLabels[type].title} registrado.`);
     await load();
+  }
+
+  async function openActivityModal() {
+    setActivityMessage("");
+    if (!session?.active) {
+      setMessage("Marca Entrada antes de registrar actividades.");
+      await load();
+      return;
+    }
+    setActivityModal(true);
+    if (!gps) {
+      void refreshGps();
+    }
+  }
+
+  async function saveActivity() {
+    setActivityMessage("");
+    if (!session?.active) {
+      setActivityMessage("No hay jornada activa. Marca Entrada antes de registrar actividades.");
+      await load();
+      return;
+    }
+    if (!activityTypeId) {
+      setActivityMessage("Selecciona el tipo de actividad.");
+      return;
+    }
+    if (!activityPhoto) {
+      setActivityMessage("Toma o adjunta una foto de evidencia para continuar.");
+      return;
+    }
+    if (!activityObservation.trim()) {
+      setActivityMessage("Escribe una observacion corta de la actividad.");
+      return;
+    }
+    const fix = gps || await refreshGps();
+    if (!fix) {
+      setActivityMessage("GPS obligatorio. Habilita la ubicacion del navegador y reintenta.");
+      return;
+    }
+    setActivitySaving(true);
+    try {
+      await api("/api/v1/hr/work-activities", {
+        method: "POST",
+        body: JSON.stringify({
+          activity_type_id: Number(activityTypeId),
+          latitude: fix.latitude,
+          longitude: fix.longitude,
+          accuracy_meters: fix.accuracy_meters,
+          route_id: route?.id,
+          vehicle_plate: vehiclePlate,
+          observation: activityObservation,
+          photo: activityPhoto,
+          metadata: { source: "apexos-mobile-activity" }
+        })
+      });
+      setActivityObservation("");
+      setActivityPhoto(null);
+      setActivityModal(false);
+      setMessage("Actividad registrada con evidencia.");
+      await load();
+    } catch (error) {
+      setActivityMessage(error instanceof Error ? error.message : "No fue posible registrar la actividad.");
+    } finally {
+      setActivitySaving(false);
+    }
   }
 
   async function evidenceFile(file: File, itemKey: string) {
@@ -217,6 +329,9 @@ export default function MobilePunchPage() {
     setMessage(result.route_authorized ? "Checklist aprobado. Ruta habilitada." : "Ruta bloqueada por novedad critica.");
     setPreop(null);
     await load();
+    if (result.route_authorized && nextType === "entrada") {
+      await mark("entrada");
+    }
   }
 
   return (
@@ -241,6 +356,26 @@ export default function MobilePunchPage() {
       {view === "marcar" ? (
         <>
           <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase text-neutral-500">Estado operativo</p>
+                <h2 className="mt-1 text-lg font-semibold">{session?.active ? "Jornada activa" : doneTypes.has("salida") ? "Jornada cerrada" : "Sin jornada activa"}</h2>
+                <p className="mt-1 text-sm text-neutral-600">{session?.active ? "Puedes registrar actividades con GPS, foto y observacion." : "Marca Entrada para iniciar trazabilidad operativa."}</p>
+              </div>
+              <span className={`rounded-md px-2 py-1 text-xs font-semibold ${session?.active ? "bg-emerald-50 text-emerald-700" : "bg-paper text-neutral-600"}`}>{session?.activities?.length || 0} actividades</span>
+            </div>
+            {session?.alerts?.length ? (
+              <div className="mt-3 space-y-2">
+                {session.alerts.slice(0, 2).map((alert) => <p className="rounded-md bg-amber-50 p-2 text-xs font-semibold text-amber-900" key={alert.type}><AlertTriangle className="mr-1 inline" size={13} />{alert.message}</p>)}
+              </div>
+            ) : null}
+            <button className="mt-3 inline-flex h-13 min-h-12 w-full items-center justify-center gap-2 rounded-md bg-apex px-4 text-base font-semibold text-white disabled:bg-neutral-300" disabled={!session?.active} onClick={openActivityModal} type="button">
+              <Plus size={18} /> Registrar actividad
+            </button>
+            {!session?.active ? <p className="mt-2 text-xs font-semibold text-neutral-500">Disponible despues de marcar Entrada.</p> : null}
+          </section>
+
+          <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
             <div className="grid gap-3">
               <div className="rounded-md bg-paper p-3">
                 <p className="text-xs font-semibold uppercase text-neutral-500">Usuario conectado</p>
@@ -250,8 +385,21 @@ export default function MobilePunchPage() {
             <div className="mt-4 rounded-md bg-paper p-3 text-sm text-neutral-700">
               <Truck className="mr-2 inline text-apex" size={15} /> {route ? `Ruta ${route.id} · ${route.start_time || "--"} - ${route.end_time || "--"}` : "Sin ruta asignada para este vehiculo/equipo"}
             </div>
-            {nextType === "salida" ? (
-              <textarea className="mt-3 min-h-24 w-full rounded-md border border-line px-3 py-3 text-base" placeholder="Justificacion si estas cerrando fuera de tu horario habitual" value={extraReason} onChange={(event) => setExtraReason(event.target.value)} />
+            {nextType === "salida" && isClosingLate ? (
+              <div className="mt-3 space-y-3 rounded-md border border-amber-200 bg-amber-50 p-3">
+                <div>
+                  <p className="text-sm font-semibold text-amber-950">Extension de horario detectada</p>
+                  <p className="mt-1 text-xs text-amber-900">Para cerrar jornada fuera del horario planeado debes seleccionar motivo, sustentar y adjuntar foto.</p>
+                </div>
+                <select className="h-12 w-full rounded-md border border-amber-200 bg-white px-3 text-base" value={extraReason} onChange={(event) => setExtraReason(event.target.value)}>
+                  <option value="">Motivo de extension *</option>
+                  {overtimeReasons.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+                <textarea className="min-h-24 w-full rounded-md border border-amber-200 bg-white px-3 py-3 text-base" placeholder="Sustento obligatorio: quien autorizo, punto, cliente o novedad" value={extraDetail} onChange={(event) => setExtraDetail(event.target.value)} />
+                <PhotoCapture label="Foto obligatoria de soporte de extension" required value={extraEvidence} onChange={setExtraEvidence} />
+              </div>
+            ) : nextType === "salida" ? (
+              <textarea className="mt-3 min-h-24 w-full rounded-md border border-line px-3 py-3 text-base" placeholder="Observacion opcional de cierre" value={extraDetail} onChange={(event) => setExtraDetail(event.target.value)} />
             ) : null}
             <button className="mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-md border border-line text-base font-semibold hover:bg-paper" onClick={refreshGps} type="button">
               <RefreshCw className={gpsStatus === "loading" ? "animate-spin" : ""} size={17} />
@@ -304,6 +452,20 @@ export default function MobilePunchPage() {
             </div>
           ))}
           {!currentAttendance.punches.length ? <p className="text-sm text-neutral-500">Sin marcaciones hoy.</p> : null}
+        </div>
+        <h3 className="mb-3 mt-5 text-base font-semibold">Timeline operativo</h3>
+        <div className="space-y-2">
+          {[...currentAttendance.punches.map((punch) => ({ kind: "marca", at: punch.time, title: punchLabels[punch.type]?.title || punch.type, detail: punch.vehicle_plate || "Marcacion" })),
+            ...(session?.activities || []).map((item) => ({ kind: "actividad", at: new Date(item.occurred_at).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }), title: item.activity_type_name, detail: item.observation }))
+          ].map((event, index) => (
+            <div className="flex gap-3 rounded-md bg-paper p-3" key={`${event.kind}-${index}`}>
+              <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${event.kind === "marca" ? "bg-apex" : "bg-emerald-600"}`}>{index + 1}</span>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold">{event.title}</p>
+                <p className="mt-1 text-xs text-neutral-500">{event.at} - {event.detail}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </section> : null}
 
@@ -378,6 +540,37 @@ export default function MobilePunchPage() {
               <SignatureCapture label="Firma / declaracion responsable del conductor" required value={signature} onChange={setSignature} />
             </div>
             <button className="mt-4 h-12 w-full rounded-md bg-apex text-base font-semibold text-white" onClick={submitPreop} type="button">Enviar checklist y validar ruta</button>
+          </section>
+        </div>
+      ) : null}
+
+      {activityModal ? (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-neutral-950/50 p-0 sm:p-3">
+          <section className="min-h-dvh bg-white p-3 shadow-xl sm:mx-auto sm:min-h-0 sm:max-w-md sm:rounded-md sm:p-4">
+            <div className="mb-4 flex items-start justify-between gap-3 border-b border-line pb-3">
+              <div>
+                <p className="text-sm font-semibold text-apex">Trazabilidad operativa</p>
+                <h2 className="text-xl font-semibold">Registrar actividad</h2>
+                <p className="mt-1 text-sm text-neutral-600">GPS, foto y observacion son obligatorios.</p>
+              </div>
+              <button className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-line" onClick={() => setActivityModal(false)} type="button" aria-label="Cerrar"><X size={18} /></button>
+            </div>
+            <div className="space-y-3">
+              {activityMessage ? <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{activityMessage}</div> : null}
+              <select className="h-12 w-full rounded-md border border-line bg-white px-3 text-base" value={activityTypeId} onChange={(event) => setActivityTypeId(event.target.value)}>
+                {activityTypes.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}
+              </select>
+              <button className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md border border-line text-base font-semibold" onClick={refreshGps} type="button">
+                <RefreshCw className={gpsStatus === "loading" ? "animate-spin" : ""} size={17} />
+                {gps ? `GPS listo (${Math.round(gps.accuracy_meters || 0)}m)` : "Capturar GPS"}
+              </button>
+              {gps && Number(gps.accuracy_meters || 0) > 80 ? <p className="rounded-md bg-amber-50 p-2 text-xs font-semibold text-amber-900">Precision baja. Puedes reintentar para mejorar auditoria.</p> : null}
+              <PhotoCapture label="Foto obligatoria de la actividad" required value={activityPhoto} onChange={setActivityPhoto} />
+              <textarea className="min-h-28 w-full rounded-md border border-line px-3 py-3 text-base" placeholder="Observacion obligatoria: detalle operativo, novedad o informacion de entrega" value={activityObservation} onChange={(event) => setActivityObservation(event.target.value)} />
+              <button className="h-12 w-full rounded-md bg-apex text-base font-semibold text-white disabled:bg-neutral-300" disabled={activitySaving} onClick={saveActivity} type="button">
+                {activitySaving ? "Guardando..." : gps ? "Guardar actividad" : "Capturar GPS y guardar"}
+              </button>
+            </div>
           </section>
         </div>
       ) : null}

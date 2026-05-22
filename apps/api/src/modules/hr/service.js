@@ -59,7 +59,7 @@ function employeeType(employee) {
 }
 
 function isDriver(employee) {
-  return ["conductor", "driver", "chofer"].includes(employeeType(employee));
+  return ["conductor", "driver", "chofer", "operador de ruta", "operador_ruta", "transportador"].includes(employeeType(employee));
 }
 
 function punchStatus(type) {
@@ -94,6 +94,21 @@ const PREOP_TEMPLATE = [
   { section: "Precargue", item_key: "carga_asegurada", label: "Carga distribuida, asegurada y sin sobrepeso aparente", severity: "critica", blocks_route: true, evidence_required: true },
   { section: "Conductor", item_key: "conductor_apto", label: "Conductor apto, sin fatiga extrema ni condicion insegura", severity: "critica", blocks_route: true, evidence_required: false },
   { section: "Conductor", item_key: "declaracion_responsable", label: "Acepta responsabilidad de inspeccion y no estar bajo efectos de alcohol o sustancias", severity: "critica", blocks_route: true, evidence_required: false }
+];
+
+const DEFAULT_ACTIVITY_TYPES = [
+  "Cargue de mercancia en bodega",
+  "Inicio de ruta",
+  "Entrega en tienda",
+  "Entrega en cliente",
+  "Recogida de mercancia",
+  "Devolucion de mercancia",
+  "Novedad en ruta",
+  "Vehiculo varado",
+  "Espera en punto",
+  "Reintento de entrega",
+  "Finalizacion de ruta",
+  "Apoyo operativo"
 ];
 
 function getPreoperationalTemplate() {
@@ -269,13 +284,43 @@ async function getCurrentEmployee(tenantId, user) {
       },
       include: { user: { select: { id: true, name: true, email: true } } }
     });
-    if (!employee) {
+    if (employee) return employee;
+    if (!user?.id) {
       const err = new Error("El usuario conectado no tiene empleado asociado.");
       err.statusCode = 404;
       err.code = "EMPLEADO_NO_ASOCIADO";
       throw err;
     }
-    return employee;
+    const roleName = String(user.role?.name || "").toLowerCase();
+    const inferredType = roleName.includes("conductor") || roleName.includes("driver")
+      ? "conductor"
+      : roleName.includes("transport")
+        ? "transportador"
+        : "operario";
+    return prisma.employee.create({
+      data: {
+        tenant_id: tenantId,
+        user_id: user.id,
+        code: user.email || `usuario-${user.id}`,
+        user_type: inferredType,
+        position: inferredType,
+        department: "Operacion",
+        salary_base: 0,
+        salary_type: "monthly",
+        hire_date: new Date(),
+        contract_type: "indefinite",
+        metadata: {
+          name: user.name || user.email || `Usuario ${user.id}`,
+          document: "",
+          company: "APEX",
+          labor_status: "activo",
+          user_type: inferredType,
+          classification: inferredType,
+          legacy: { autocreated_from: "hr_current_employee" }
+        }
+      },
+      include: { user: { select: { id: true, name: true, email: true } } }
+    });
   });
 }
 
@@ -301,7 +346,7 @@ async function ensurePreoperationalChecklist({ tenantId, user, employee, route, 
   const checklist = await prisma.routePreoperationalChecklist.create({
     data: {
       route_id: route.id,
-      punch_id: punch.id,
+      punch_id: punch?.id || null,
       driver_id: employee.id,
       driver_name: employeeDisplayName(employee),
       user_id: user?.id || null,
@@ -495,6 +540,202 @@ async function submitPreoperationalChecklist(tenantId, user, id, input) {
   });
 }
 
+async function ensureActivityTypes() {
+  const current = await prisma.activityType.findMany({ take: 1 });
+  if (current.length) return;
+  await prisma.activityType.createMany({
+    data: DEFAULT_ACTIVITY_TYPES.map((name, index) => ({
+      name,
+      description: "Catalogo operativo inicial APEXOS",
+      sort_order: (index + 1) * 10,
+      active: true,
+      metadata: { is_demo: true, system_seed: "apexos_operational_traceability" }
+    })),
+    skipDuplicates: true
+  });
+}
+
+async function listActivityTypes(tenantId, query = {}) {
+  return prisma.runWithTenant(tenantId, async () => {
+    await ensureActivityTypes();
+    return prisma.activityType.findMany({
+      where: query.active == null ? {} : { active: query.active === "true" || query.active === true },
+      orderBy: [{ sort_order: "asc" }, { name: "asc" }]
+    });
+  });
+}
+
+async function createActivityType(tenantId, input) {
+  return prisma.runWithTenant(tenantId, async () => prisma.activityType.create({
+    data: {
+      name: input.name,
+      description: input.description || "",
+      active: input.active !== false,
+      sort_order: Number(input.sort_order || 100),
+      metadata: input.metadata || {}
+    }
+  }));
+}
+
+async function updateActivityType(tenantId, id, input) {
+  return prisma.runWithTenant(tenantId, async () => prisma.activityType.update({
+    where: { id: Number(id) },
+    data: {
+      name: input.name,
+      description: input.description || "",
+      active: input.active !== false,
+      sort_order: Number(input.sort_order || 100),
+      metadata: input.metadata || {}
+    }
+  }));
+}
+
+async function findCurrentWorkSession({ employee, userName, date = new Date() }) {
+  return prisma.workSession.findFirst({
+    where: {
+      OR: [
+        { employee_id: employee?.id || -1 },
+        { user_name: userName || "" }
+      ],
+      date: { gte: startOfDay(date), lt: endOfDay(date) },
+      status: "activa"
+    },
+    orderBy: { started_at: "desc" },
+    include: { activities: { include: { activity_type: true, evidence: true }, orderBy: { occurred_at: "desc" }, take: 50 } }
+  });
+}
+
+async function getCurrentWorkSession(tenantId, user, query = {}) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const employee = await getCurrentEmployee(tenantId, user).catch(() => null);
+    const userName = query.user_name || employee?.code || employeeDisplayName(employee) || user?.name || user?.email || "";
+    const session = await findCurrentWorkSession({ employee, userName, date: query.date || new Date() });
+    const activities = session?.activities || [];
+    return {
+      session,
+      active: Boolean(session),
+      activities,
+      alerts: buildSessionAlerts(session, activities)
+    };
+  });
+}
+
+function buildSessionAlerts(session, activities = []) {
+  const alerts = [];
+  if (session && !activities.length) alerts.push({ type: "sin_actividades", severity: "warning", message: "Jornada activa sin actividades registradas." });
+  if (session && new Date().getTime() - new Date(session.started_at).getTime() > 12 * 3600000) alerts.push({ type: "jornada_sin_cierre", severity: "critica", message: "Jornada activa por mas de 12 horas sin cierre." });
+  for (const activity of activities) {
+    if (String(activity.activity_type_name || "").toLowerCase().includes("varado")) alerts.push({ type: "vehiculo_varado", severity: "critica", message: "Vehiculo varado reportado." });
+    if (String(activity.activity_type_name || "").toLowerCase().includes("novedad")) alerts.push({ type: "novedad_ruta", severity: "warning", message: "Novedad en ruta registrada." });
+    if (Number(activity.accuracy_meters || 0) > 80) alerts.push({ type: "gps_baja_precision", severity: "warning", message: "Actividad con baja precision GPS." });
+    if (!activity.evidence?.length) alerts.push({ type: "evidencia_faltante", severity: "warning", message: "Actividad sin evidencia." });
+  }
+  return alerts.slice(0, 10);
+}
+
+async function listWorkActivities(tenantId, query = {}) {
+  const day = query.date ? startOfDay(query.date) : startOfDay();
+  return prisma.runWithTenant(tenantId, async () => prisma.workActivity.findMany({
+    where: {
+      occurred_at: { gte: day, lt: endOfDay(day) },
+      ...(query.user_name ? { user_name: query.user_name } : {}),
+      ...(query.session_id ? { session_id: Number(query.session_id) } : {}),
+      ...(query.activity_type_id ? { activity_type_id: Number(query.activity_type_id) } : {})
+    },
+    include: { activity_type: true, evidence: true },
+    orderBy: { occurred_at: "desc" },
+    take: Math.min(Number(query.limit || 200), 500)
+  }));
+}
+
+async function createWorkActivity(tenantId, user, input) {
+  return prisma.runWithTenant(tenantId, async () => {
+    if (input.latitude == null || input.longitude == null) {
+      const err = new Error("GPS obligatorio para registrar actividad.");
+      err.statusCode = 422;
+      throw err;
+    }
+    if (!String(input.observation || "").trim()) {
+      const err = new Error("La observacion es obligatoria.");
+      err.statusCode = 422;
+      throw err;
+    }
+    if (!input.photo?.base64) {
+      const err = new Error("La foto es obligatoria.");
+      err.statusCode = 422;
+      throw err;
+    }
+    assertSafeFile({ base64_data: input.photo.base64, file_name: input.photo.name, mime_type: input.photo.type, file_size: input.photo.size }, { maxBytes: MAX_EVIDENCE_BYTES });
+    const employee = await getCurrentEmployee(tenantId, user).catch(() => null);
+    const userName = employee?.code || employeeDisplayName(employee) || user?.name || user?.email || "";
+    const session = await findCurrentWorkSession({ employee, userName });
+    if (!session) {
+      const err = new Error("No hay jornada activa. Marca Entrada antes de registrar actividades.");
+      err.statusCode = 422;
+      err.code = "JORNADA_ACTIVA_REQUERIDA";
+      throw err;
+    }
+    if (session.closed_at || session.status === "cerrada") {
+      const err = new Error("La jornada ya esta cerrada. No se pueden agregar actividades.");
+      err.statusCode = 422;
+      throw err;
+    }
+    const activityType = await prisma.activityType.findFirstOrThrow({ where: { id: Number(input.activity_type_id), active: true } });
+    const activity = await prisma.workActivity.create({
+      data: {
+        session_id: session.id,
+        activity_type_id: activityType.id,
+        activity_type_name: activityType.name,
+        employee_id: employee?.id || session.employee_id,
+        user_name: userName || session.user_name,
+        route_id: input.route_id || session.route_id,
+        vehicle_plate: input.vehicle_plate || session.vehicle_plate || "",
+        occurred_at: input.occurred_at ? new Date(input.occurred_at) : new Date(),
+        latitude: Number(input.latitude),
+        longitude: Number(input.longitude),
+        accuracy_meters: input.accuracy_meters,
+        approximate_address: input.approximate_address || "",
+        observation: input.observation,
+        alert_level: Number(input.accuracy_meters || 0) > 80 || activityType.name.toLowerCase().includes("varado") || activityType.name.toLowerCase().includes("novedad") ? "warning" : "normal",
+        metadata: input.metadata || {}
+      }
+    });
+    const fileName = normalizeFileName(input.photo.name || `actividad-${activity.id}.jpg`);
+    const uploaderKey = String(user?.id || session.employee_id || "operador").replace(/[^a-zA-Z0-9_-]/g, "");
+    await prisma.activityEvidence.create({
+      data: {
+        activity_id: activity.id,
+        evidence_type: "photo",
+        file_name: fileName,
+        base64_data: input.photo.base64,
+        mime_type: input.photo.type,
+        file_size: input.photo.size,
+        storage_path: secureStoragePath({ tenantId, module: "hr", entity: `work-sessions/${session.id}/users/${uploaderKey}/activities`, entityId: activity.id, fileName }),
+        uploaded_by: user?.id || null,
+        metadata: { storage_hint: "company_id/module/work_session_id/user_id/activity_id/file" }
+      }
+    });
+    await prisma.gpsPing.create({
+      data: {
+        employee_id: employee?.id || session.employee_id,
+        user_name: userName || session.user_name,
+        vehicle_plate: input.vehicle_plate || session.vehicle_plate || "",
+        route_id: input.route_id || session.route_id,
+        latitude: Number(input.latitude),
+        longitude: Number(input.longitude),
+        accuracy_meters: input.accuracy_meters,
+        source: "work_activity",
+        captured_at: activity.occurred_at,
+        metadata: { activity_id: activity.id, activity_type: activityType.name }
+      }
+    });
+    return prisma.workActivity.findFirst({
+      where: { id: activity.id },
+      include: { activity_type: true, evidence: true }
+    });
+  });
+}
+
 async function getPreoperationalMetrics(tenantId, query = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const from = query.date ? startOfDay(query.date) : startOfDay();
@@ -537,15 +778,50 @@ async function createPunch(tenantId, input, user) {
     const employee = currentEmployee || await resolveEmployeeForPunch(tenantId, input);
     const type = normalizePunchType(input.type || input.tipo_marca);
     const route = input.route_id ? await prisma.timeRoute.findFirst({ where: { id: Number(input.route_id) } }) : null;
+    const preopApproved = isDriver(employee) && route?.vehicle_plate && type === "entrada"
+      ? await prisma.routePreoperationalChecklist.findFirst({
+        where: {
+          route_id: route.id,
+          driver_id: employee.id,
+          checklist_status: { in: ["aprobado", "aprobado_con_novedad"] }
+        },
+        orderBy: { completed_at: "desc" }
+      })
+      : null;
+    if (isDriver(employee) && route?.vehicle_plate && type === "entrada" && !preopApproved) {
+      const preop = await ensurePreoperationalChecklist({ tenantId, user, employee, route, punch: null, input });
+      return {
+        ok: false,
+        preoperational_required: true,
+        preoperational_checklist: preop ? { ...preop, id: Number(preop.id) } : null,
+        route_authorized: false,
+        message: "Checklist preoperacional obligatorio antes de iniciar jornada."
+      };
+    }
     const extraMinutes = type === "salida" && route?.end_time
       ? Math.max(0, Math.round((punchedAt.getHours() * 60 + punchedAt.getMinutes()) - (Number(route.end_time.slice(0, 2)) * 60 + Number(route.end_time.slice(3, 5))) - Number(route.tolerance_minutes || 0)))
       : 0;
-    if (extraMinutes > 0 && !String(input.extra_reason || input.extra_detail || "").trim()) {
+    if (extraMinutes > 0 && (!String(input.extra_reason || "").trim() || !String(input.extra_detail || "").trim())) {
       const err = new Error("Justifica por que estas marcando fuera de tu horario habitual.");
       err.statusCode = 422;
       err.code = "JUSTIFICACION_HORA_EXTRA_REQUERIDA";
       err.details = { extra_minutes: extraMinutes };
       throw err;
+    }
+    if (extraMinutes > 0 && !input.extra_evidence?.base64) {
+      const err = new Error("Adjunta evidencia fotografica para sustentar la extension de horario.");
+      err.statusCode = 422;
+      err.code = "EVIDENCIA_HORA_EXTRA_REQUERIDA";
+      err.details = { extra_minutes: extraMinutes };
+      throw err;
+    }
+    if (input.extra_evidence?.base64) {
+      assertSafeFile({
+        base64_data: input.extra_evidence.base64,
+        file_name: input.extra_evidence.name,
+        mime_type: input.extra_evidence.type,
+        file_size: input.extra_evidence.size
+      }, { maxBytes: MAX_EVIDENCE_BYTES });
     }
     const resolvedUserName = employee.code || employee.user?.name || employee.user?.email || input.user_name;
     const punch = await prisma.timePunch.create({
@@ -564,6 +840,19 @@ async function createPunch(tenantId, input, user) {
         extra_minutes: extraMinutes,
         extra_reason: input.extra_reason,
         extra_detail: input.extra_detail,
+        extra_evidence: input.extra_evidence?.base64 ? {
+          name: normalizeFileName(input.extra_evidence.name || `extension-${employee.id}.jpg`),
+          type: input.extra_evidence.type || "image/jpeg",
+          size: input.extra_evidence.size || null,
+          base64_data: input.extra_evidence.base64,
+          storage_path: secureStoragePath({
+            tenantId,
+            module: "hr",
+            entity: "overtime-extensions",
+            entityId: employee.id,
+            fileName: input.extra_evidence.name || `extension-${employee.id}.jpg`
+          })
+        } : {},
         metadata: input.metadata || {}
       }
     });
@@ -582,6 +871,53 @@ async function createPunch(tenantId, input, user) {
           metadata: { type, ...(input.metadata || {}) }
         }
       });
+    }
+    const sessionData = {
+      employee_id: employee.id,
+      user_name: resolvedUserName,
+      date: startOfDay(punchedAt),
+      route_id: input.route_id,
+      vehicle_plate: input.vehicle_plate || "",
+      metadata: { source: "time_punch", ...(input.metadata || {}) }
+    };
+    if (type === "entrada") {
+      const approvedChecklist = await prisma.routePreoperationalChecklist.findFirst({
+        where: {
+          route_id: input.route_id || undefined,
+          driver_id: employee.id,
+          checklist_status: { in: ["aprobado", "aprobado_con_novedad"] }
+        },
+        orderBy: { completed_at: "desc" }
+      }).catch(() => null);
+      const existing = await prisma.workSession.findFirst({
+        where: { employee_id: employee.id, date: { gte: startOfDay(punchedAt), lt: endOfDay(punchedAt) }, status: "activa" },
+        orderBy: { started_at: "desc" }
+      });
+      if (existing) {
+        await prisma.workSession.update({
+          where: { id: existing.id },
+          data: { entry_punch_id: punch.id, started_at: punchedAt, route_id: input.route_id, vehicle_plate: input.vehicle_plate || existing.vehicle_plate, preop_checklist_id: approvedChecklist?.id || existing.preop_checklist_id }
+        });
+      } else {
+        await prisma.workSession.create({
+          data: { ...sessionData, status: "activa", started_at: punchedAt, entry_punch_id: punch.id, preop_checklist_id: approvedChecklist?.id || null }
+        });
+      }
+    } else {
+      const session = await prisma.workSession.findFirst({
+        where: { employee_id: employee.id, date: { gte: startOfDay(punchedAt), lt: endOfDay(punchedAt) }, status: "activa" },
+        orderBy: { started_at: "desc" }
+      });
+      if (session) {
+        const data = type === "inicio_almuerzo"
+          ? { lunch_started_at: punchedAt }
+          : type === "fin_almuerzo"
+            ? { lunch_ended_at: punchedAt }
+            : type === "salida"
+              ? { closed_at: punchedAt, exit_punch_id: punch.id, status: "cerrada" }
+              : {};
+        if (Object.keys(data).length) await prisma.workSession.update({ where: { id: session.id }, data });
+      }
     }
     const preop = await ensurePreoperationalChecklist({ tenantId, user, employee, route, punch, input });
     return {
@@ -703,7 +1039,7 @@ async function getOperationsMap(tenantId, query = {}) {
   const since = new Date(Date.now() - activeMinutes * 60000);
   const footprintSince = new Date(day.getTime() - footprintDays * 86400000);
   return prisma.runWithTenant(tenantId, async () => {
-    const [routes, employees, pings, lastFootprints, punches] = await Promise.all([
+    const [routes, employees, pings, lastFootprints, punches, activities] = await Promise.all([
       prisma.timeRoute.findMany({
         where: {
           date: { gte: day, lt: endOfDay(day) },
@@ -726,6 +1062,12 @@ async function getOperationsMap(tenantId, query = {}) {
       prisma.timePunch.findMany({
         where: { date: { gte: day, lt: endOfDay(day) } },
         orderBy: { punched_at: "desc" },
+        take: 2000
+      }),
+      prisma.workActivity.findMany({
+        where: { occurred_at: { gte: day, lt: endOfDay(day) } },
+        include: { activity_type: true, evidence: true },
+        orderBy: { occurred_at: "desc" },
         take: 2000
       })
     ]);
@@ -763,6 +1105,17 @@ async function getOperationsMap(tenantId, query = {}) {
       }
     }
 
+    const activitiesByRoute = new Map();
+    const latestActivityByUser = new Map();
+    for (const activity of activities) {
+      const userKey = normalizeKey(activity.user_name);
+      if (!latestActivityByUser.has(userKey)) latestActivityByUser.set(userKey, activity);
+      if (activity.route_id && activity.latitude != null && activity.longitude != null) {
+        if (!activitiesByRoute.has(Number(activity.route_id))) activitiesByRoute.set(Number(activity.route_id), []);
+        activitiesByRoute.get(Number(activity.route_id)).push(activity);
+      }
+    }
+
     const people = [];
     for (const route of routes) {
       const assigned = Array.isArray(route.employees) ? route.employees : [];
@@ -773,6 +1126,7 @@ async function getOperationsMap(tenantId, query = {}) {
         const lastFootprint = aliases.map((alias) => lastFootprintByUser.get(normalizeKey(alias))).find(Boolean);
         const latestPing = latestLivePing || lastFootprint;
         const latestPunch = aliases.map((alias) => latestPunchByUser.get(normalizeKey(alias))).find(Boolean);
+        const latestActivity = aliases.map((alias) => latestActivityByUser.get(normalizeKey(alias))).find(Boolean);
         const ageSeconds = latestPing ? Math.max(0, Math.round((Date.now() - new Date(latestPing.captured_at).getTime()) / 1000)) : null;
         const isOnline = Boolean(latestLivePing && new Date(latestLivePing.captured_at) >= since);
         people.push({
@@ -792,6 +1146,8 @@ async function getOperationsMap(tenantId, query = {}) {
           footprint_source: isOnline ? "live" : latestPing ? "last_known" : latestPunch?.latitude != null ? "punch" : "none",
           last_punch_type: latestPunch?.type || "sin_marcar",
           last_punch_time: latestPunch?.time || "",
+          last_activity_type: latestActivity?.activity_type_name || "",
+          last_activity_time: latestActivity ? timeString(latestActivity.occurred_at) : "",
           status: latestPing ? (isOnline ? punchStatus(latestPunch?.type) : "Sin senal") : latestPunch?.latitude != null ? "Ultima marca" : "Sin GPS",
           time_in_route_minutes: routeElapsedMinutes(route, latestPunch),
           route_start_time: route.start_time || "",
@@ -804,6 +1160,7 @@ async function getOperationsMap(tenantId, query = {}) {
       const assigned = people.filter((person) => person.route_id === route.id);
       const routePings = (pingsByRoute.get(route.id) || []).sort((a, b) => new Date(a.captured_at) - new Date(b.captured_at));
       const routePunches = (punchesByRoute.get(route.id) || []).sort((a, b) => new Date(a.punched_at) - new Date(b.punched_at));
+      const routeActivities = (activitiesByRoute.get(route.id) || []).sort((a, b) => new Date(a.occurred_at) - new Date(b.occurred_at));
       const marksByUser = new Map();
       for (const punch of routePunches) {
         if (!marksByUser.has(punch.user_name)) marksByUser.set(punch.user_name, []);
@@ -819,6 +1176,9 @@ async function getOperationsMap(tenantId, query = {}) {
           vehicle_plate: punch.vehicle_plate,
           route_id: punch.route_id,
           extra_minutes: punch.extra_minutes,
+          extra_reason: punch.extra_reason,
+          extra_detail: punch.extra_detail,
+          extra_evidence: punch.extra_evidence || {},
           metadata: punch.metadata || {}
         });
       }
@@ -844,7 +1204,25 @@ async function getOperationsMap(tenantId, query = {}) {
           vehicle_plate: punch.vehicle_plate,
           route_id: punch.route_id,
           extra_minutes: punch.extra_minutes,
+          extra_reason: punch.extra_reason,
+          extra_detail: punch.extra_detail,
+          extra_evidence: punch.extra_evidence || {},
           metadata: punch.metadata || {}
+        })),
+        activity_points: routeActivities.map((activity) => ({
+          id: activity.id,
+          user_name: activity.user_name,
+          type: activity.activity_type_name,
+          time: timeString(activity.occurred_at),
+          occurred_at: activity.occurred_at,
+          latitude: activity.latitude,
+          longitude: activity.longitude,
+          accuracy_meters: activity.accuracy_meters,
+          vehicle_plate: activity.vehicle_plate,
+          route_id: activity.route_id,
+          observation: activity.observation,
+          evidence: activity.evidence || [],
+          metadata: activity.metadata || {}
         })),
         marks_by_user: Array.from(marksByUser.entries()).map(([user_name, marks]) => ({ user_name, marks }))
       };
@@ -1077,6 +1455,12 @@ module.exports = {
   getOperationsMap,
   createPunch,
   createGpsPing,
+  listActivityTypes,
+  createActivityType,
+  updateActivityType,
+  getCurrentWorkSession,
+  listWorkActivities,
+  createWorkActivity,
   listActiveGps,
   listGpsHistory,
   listAttendance,

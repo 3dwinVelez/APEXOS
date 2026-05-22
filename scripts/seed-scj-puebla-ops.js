@@ -5,7 +5,7 @@ const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
 const PASSWORD = "ApexOS-QA-2026!";
-const MODULES = ["M-17", "M-26", "M-14", "M-22"];
+const MODULES = ["M-17", "M-26", "M-14", "M-19", "M-22"];
 const BASE_DATE = new Date("2026-05-18T05:00:00.000Z");
 const ORGS = [
   { key: "scj", name: "SCJ", domain: "scj.qa", city: "Bogota", lat: 4.711, lon: -74.0721 },
@@ -71,7 +71,7 @@ async function seedTenant(org) {
   });
 
   const adminRole = await ensureRole(tenant.id, "APEX_ADMIN", [["*", "*"]]);
-  const techRole = await ensureRole(tenant.id, "Tecnico", [["services", "read"], ["services", "write"], ["hr", "read"], ["hr", "write"], ["transport", "read"]]);
+  const techRole = await ensureRole(tenant.id, "Tecnico", [["services", "read"], ["services", "write"], ["hr", "read"], ["hr", "write"], ["transport", "read"], ["projects", "read"]]);
   const employeeRole = await ensureRole(tenant.id, "Empleado", [["hr", "read"], ["hr", "write"], ["services", "read"]]);
 
   await prisma.subscription.upsert({

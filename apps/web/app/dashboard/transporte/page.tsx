@@ -2,7 +2,7 @@
 
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { AlertTriangle, Archive, Gauge, Paperclip, Plus, Save, Search, ShieldCheck, Truck, type LucideIcon } from "lucide-react";
+import { AlertTriangle, Archive, Gauge, Paperclip, Plus, Save, Search, ShieldCheck, Truck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
@@ -354,31 +354,59 @@ export default function TransportPage() {
     warning: vehicles.filter((vehicle) => vehicle.master_status === "documento_proximo_a_vencer").length,
     avgScore: vehicles.length ? Math.round(vehicles.reduce((sum, vehicle) => sum + (vehicle.master_score || 0), 0) / vehicles.length) : 0
   }), [vehicles]);
+  const ready = vehicles.filter((vehicle) => vehicle.master_status === "apto_documentalmente").length;
+  const incomplete = vehicles.filter((vehicle) => (vehicle.master_score || 0) < 70).length;
+  const operationalScore = metrics.total ? Math.round(((ready * 100) + ((metrics.total - metrics.blocked - metrics.warning - ready) * 55)) / metrics.total) : 0;
+  const statusMessage = metrics.blocked
+    ? `${metrics.blocked} vehiculo(s) bloqueados requieren correccion documental antes de asignarse.`
+    : metrics.warning
+      ? `${metrics.warning} vehiculo(s) tienen documentos proximos a vencer.`
+      : "La flota no presenta bloqueos documentales criticos.";
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium text-apex">M-14 Logistica</p>
-          <h1 className="text-3xl font-semibold">Maestro de vehiculos</h1>
-          <p className="mt-2 max-w-3xl text-sm text-neutral-600">Fuente maestra transversal para Planeacion, Rutas, Conductores, Mantenimiento, Costos, IA APEX y reportes. Sin checklist ni operacion de ruta.</p>
+      <section className="overflow-hidden rounded-md bg-[#071417] text-white shadow-sm">
+        <div className="grid gap-5 p-5 lg:grid-cols-[1.05fr_0.95fr] lg:p-6">
+          <div className="flex min-h-[250px] flex-col justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">M-14 - Logistica</p>
+              <h1 className="mt-3 max-w-2xl text-3xl font-semibold md:text-4xl">Centro maestro de flota</h1>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/72">{statusMessage} Esta vista controla placas, documentos, conductor autorizado y disponibilidad para rutas, servicios y costos.</p>
+            </div>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <button className="inline-flex h-11 items-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-[#071417]" onClick={newVehicle} type="button"><Plus size={17} /> Nueva ficha</button>
+              <a className="inline-flex h-11 items-center gap-2 rounded-md border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="#flota-maestra"><Truck size={16} /> Ver flota</a>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <FleetIndicator icon={<Truck size={18} />} label="Vehiculos maestros" value={metrics.total} detail={`${ready} aptos documentalmente`} tone="emerald" />
+            <FleetIndicator icon={<ShieldCheck size={18} />} label="Score promedio" value={`${metrics.avgScore}/100`} detail={`${operationalScore}% estabilidad documental`} tone="sky" />
+            <FleetIndicator icon={<AlertTriangle size={18} />} label="Bloqueados" value={metrics.blocked} detail="No asignables a ruta" tone={metrics.blocked ? "red" : "emerald"} />
+            <FleetIndicator icon={<Gauge size={18} />} label="Proximos a vencer" value={metrics.warning} detail={`${incomplete} fichas incompletas`} tone={metrics.warning ? "amber" : "emerald"} />
+          </div>
         </div>
-        <button className="inline-flex h-11 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white" onClick={newVehicle} type="button"><Plus size={17} /> Nueva ficha</button>
-      </header>
+        <div className="grid border-t border-white/10 sm:grid-cols-4">
+          <HeroStat label="Aptos" value={ready} />
+          <HeroStat label="Bloqueados" value={metrics.blocked} />
+          <HeroStat label="Por vencer" value={metrics.warning} />
+          <HeroStat label="Incompletos" value={incomplete} />
+        </div>
+      </section>
 
       {message ? <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{message}</div> : null}
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard icon={Truck} label="Vehiculos maestros" value={metrics.total} hint="Placas registradas" />
-        <MetricCard icon={ShieldCheck} label="Score promedio" value={`${metrics.avgScore}/100`} hint="Calidad de ficha" />
-        <MetricCard icon={AlertTriangle} label="Bloqueados" value={metrics.blocked} hint="Riesgo documental" tone="danger" />
-        <MetricCard icon={Gauge} label="Proximos a vencer" value={metrics.warning} hint="Semaforo documental" tone="warning" />
+      <section className="grid gap-3 lg:grid-cols-4">
+        <ActionTile icon={<Plus size={20} />} title="Nueva ficha" detail="Crear placa con datos tecnicos, propiedad y documentos." onClick={newVehicle} primary />
+        <ActionTile icon={<ShieldCheck size={20} />} title="Control documental" detail="SOAT, tecnico-mecanica, polizas y adjuntos." href="#flota-maestra" />
+        <ActionTile icon={<Gauge size={20} />} title="Riesgo de vencimiento" detail="Prioriza fichas con semaforo amarillo o rojo." href="#flota-maestra" />
+        <ActionTile icon={<Truck size={20} />} title="Disponibilidad operativa" detail="Base para rutas, servicios y planeacion." href="/dashboard/talento-humano/rutas" />
       </section>
 
-      <section className="rounded-md border border-line bg-white p-4">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <section className="overflow-hidden rounded-md border border-line bg-white" id="flota-maestra">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line p-4">
           <div>
-            <h2 className="text-base font-semibold">Flota maestra</h2>
+            <h2 className="text-lg font-semibold">Flota maestra</h2>
             <p className="text-sm text-neutral-600">Datos listos para ser consumidos por Planeacion antes de iniciar una ruta.</p>
           </div>
           <label className="relative w-full sm:w-80">
@@ -386,15 +414,24 @@ export default function TransportPage() {
             <input className="h-10 w-full rounded-md border border-line pl-9 pr-3 text-sm" placeholder="Buscar placa, sede, tipo..." value={query} onChange={(event) => setQuery(event.target.value)} />
           </label>
         </div>
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid border-b border-line md:grid-cols-4">
+          <MonitorStrip label="Total flota" value={metrics.total} hint="Placas maestras" />
+          <MonitorStrip label="Aptos" value={ready} hint="Asignables" />
+          <MonitorStrip label="Bloqueos" value={metrics.blocked} hint="Riesgo alto" />
+          <MonitorStrip label="Score" value={`${metrics.avgScore}/100`} hint={scoreLabel(metrics.avgScore)} />
+        </div>
+        <div className="grid gap-3 p-4 lg:grid-cols-2">
           {filtered.map((vehicle) => (
-            <button className="rounded-md border border-line bg-white p-4 text-left transition hover:border-apex hover:bg-paper" key={vehicle.id} onClick={() => openVehicle(vehicle)} type="button">
+            <button className="group rounded-md border border-line bg-white p-4 text-left transition hover:-translate-y-0.5 hover:border-apex hover:bg-paper hover:shadow-sm" key={vehicle.id} onClick={() => openVehicle(vehicle)} type="button">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-2xl font-semibold">{vehicle.plate}</p>
+                  <p className="text-2xl font-semibold tracking-tight">{vehicle.plate}</p>
                   <p className="text-sm text-neutral-600">{vehicle.brand || "-"} {vehicle.line || vehicle.model || ""} {vehicle.year ? `(${vehicle.year})` : ""}</p>
                 </div>
                 <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${statusClass(vehicle.master_status)}`}>{statusLabel(vehicle.master_status)}</span>
+              </div>
+              <div className="mt-4 h-2 overflow-hidden rounded-full bg-paper">
+                <div className={`h-full ${vehicle.master_score >= 80 ? "bg-emerald-500" : vehicle.master_score >= 60 ? "bg-amber-500" : "bg-red-500"}`} style={{ width: `${Math.max(0, Math.min(100, vehicle.master_score || 0))}%` }} />
               </div>
               <div className="mt-4 grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
                 <Info label="Sede base" value={vehicle.base_site || "-"} />
@@ -402,10 +439,11 @@ export default function TransportPage() {
                 <Info label="Capacidad" value={vehicle.capacity_value ? `${vehicle.capacity_value} ${vehicle.capacity_unit || ""}` : vehicle.load_capacity || "-"} />
                 <Info label="Conductor" value={vehicle.authorized_driver_name || "-"} />
               </div>
-              <div className="mt-3 flex flex-wrap gap-2 text-xs">
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
                 <span className="rounded-md bg-paper px-2 py-1">SOAT: {vehicle.dashboard_metrics?.soat_days_remaining ?? "--"} dias</span>
                 <span className="rounded-md bg-paper px-2 py-1">Tec-mec: {vehicle.dashboard_metrics?.technical_review_days_remaining ?? "--"} dias</span>
                 <span className="rounded-md bg-paper px-2 py-1">{scoreLabel(vehicle.master_score || 0)}</span>
+                <span className="ml-auto text-xs font-semibold text-apex opacity-0 transition group-hover:opacity-100">Abrir ficha</span>
               </div>
             </button>
           ))}
@@ -559,16 +597,53 @@ export default function TransportPage() {
   );
 }
 
-function MetricCard({ icon: Icon, label, value, hint, tone = "neutral" }: { icon: LucideIcon; label: string; value: string | number; hint: string; tone?: "neutral" | "warning" | "danger" }) {
-  const className = tone === "danger" ? "text-red-700" : tone === "warning" ? "text-amber-700" : "text-apex";
+function FleetIndicator({ icon, label, value, detail, tone }: { icon: ReactNode; label: string; value: string | number; detail: string; tone: "emerald" | "sky" | "amber" | "red" }) {
+  const colors = {
+    emerald: "bg-emerald-400/12 text-emerald-200 border-emerald-300/20",
+    sky: "bg-sky-400/12 text-sky-200 border-sky-300/20",
+    amber: "bg-amber-400/12 text-amber-200 border-amber-300/20",
+    red: "bg-red-400/12 text-red-200 border-red-300/20"
+  };
   return (
-    <div className="rounded-md border border-line bg-white p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm text-neutral-500">{label}</p>
-        <Icon className={className} size={18} />
+    <div className={`rounded-md border p-4 ${colors[tone]}`}>
+      <div className="flex items-center justify-between gap-3">
+        <span className="flex h-10 w-10 items-center justify-center rounded-md bg-white/10">{icon}</span>
+        <p className="text-3xl font-semibold text-white">{value}</p>
       </div>
+      <p className="mt-4 text-sm font-semibold text-white">{label}</p>
+      <p className="mt-1 text-xs text-white/62">{detail}</p>
+    </div>
+  );
+}
+
+function HeroStat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="border-b border-white/10 p-4 sm:border-b-0 sm:border-r last:border-r-0">
       <p className="text-2xl font-semibold">{value}</p>
-      <p className="mt-1 text-xs font-medium text-neutral-500">{hint}</p>
+      <p className="mt-1 text-xs uppercase tracking-wide text-white/55">{label}</p>
+    </div>
+  );
+}
+
+function ActionTile({ icon, title, detail, href, onClick, primary = false }: { icon: ReactNode; title: string; detail: string; href?: string; onClick?: () => void; primary?: boolean }) {
+  const className = `rounded-md border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-sm ${primary ? "border-apex bg-[#146C6312]" : "border-line bg-white hover:border-apex"}`;
+  const content = (
+    <>
+      <span className={`flex h-10 w-10 items-center justify-center rounded-md ${primary ? "bg-apex text-white" : "bg-paper text-apex"}`}>{icon}</span>
+      <p className="mt-4 font-semibold">{title}</p>
+      <p className="mt-1 text-sm text-neutral-600">{detail}</p>
+    </>
+  );
+  if (href) return <a className={className} href={href}>{content}</a>;
+  return <button className={className} onClick={onClick} type="button">{content}</button>;
+}
+
+function MonitorStrip({ label, value, hint }: { label: string; value: string | number; hint: string }) {
+  return (
+    <div className="border-b border-line p-4 md:border-b-0 md:border-r last:border-r-0">
+      <p className="text-xs font-semibold uppercase text-neutral-500">{label}</p>
+      <p className="mt-2 text-2xl font-semibold">{value}</p>
+      <p className="mt-1 text-xs text-neutral-500">{hint}</p>
     </div>
   );
 }

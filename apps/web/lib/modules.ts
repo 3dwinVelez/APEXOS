@@ -58,7 +58,7 @@ export const MODULES: ApexModule[] = [
     slug: "compras",
     name: "Compras",
     area: "Operación",
-    status: "En construcción",
+    status: "Base funcional",
     summary: "Ordenes de compra, recepción de mercancía, proveedores y alertas de abastecimiento.",
     capabilities: ["Órdenes de compra", "Recepción", "Proveedores", "Abastecimiento sugerido"],
     nextActions: ["Crear orden de compra", "Recibir mercancía", "Consultar pendientes"],
@@ -245,10 +245,10 @@ export const MODULES: ApexModule[] = [
     slug: "proyectos",
     name: "Proyectos",
     area: "Gestión",
-    status: "En construcción",
-    summary: "Proyectos, hitos, avance de obra, CAPEX, costos y cronograma.",
-    capabilities: ["Hitos", "Cronograma", "CAPEX", "Avance"],
-    nextActions: ["Crear proyecto", "Actualizar avance", "Revisar presupuesto"],
+    status: "Base funcional",
+    summary: "Centro Operacional MODELO APEX para compromisos, entregables, bloqueos, riesgos, recursos y avance validado.",
+    capabilities: ["Centro Operacional", "APEX Score", "Compromisos", "Participantes temporales"],
+    nextActions: ["Abrir centro operacional", "Registrar compromiso", "Agregar participante"],
     icon: Building2
   },
   {
@@ -344,4 +344,3 @@ export const MODULES: ApexModule[] = [
 export const MODULES_BY_SLUG = Object.fromEntries(MODULES.map((module) => [module.slug, module]));
 export const MODULES_BY_ID = Object.fromEntries(MODULES.map((module) => [module.id, module]));
 export const ALL_MODULE_IDS = MODULES.map((module) => module.id);
-

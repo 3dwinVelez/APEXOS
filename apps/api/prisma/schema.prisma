@@ -489,6 +489,213 @@ model Employee {
   @@index([tenant_id, user_type])
 }
 
+model Project {
+  id             Int       @id @default(autoincrement())
+  tenant_id      String
+  code           String
+  name           String
+  objective      String
+  status         String    @default("pendiente")
+  priority       String    @default("media")
+  owner_id       Int?
+  owner_name     String?
+  start_date     DateTime?
+  target_date    DateTime?
+  closed_at      DateTime?
+  apex_score     Int       @default(0)
+  score_status   String    @default("estable")
+  progress       Int       @default(0)
+  validated_progress Int   @default(0)
+  metadata       Json      @default("{}")
+  created_by     Int?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+  commitments    ProjectCommitment[]
+  deliverables   ProjectDeliverable[]
+  risks          ProjectRisk[]
+  resources      ProjectResourceAssignment[]
+  comments       ProjectComment[]
+  evidence       ProjectEvidence[]
+  alerts         ProjectAlert[]
+  logs           ProjectLog[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, status])
+  @@index([tenant_id, priority])
+  @@index([tenant_id, target_date])
+}
+
+model ProjectCommitment {
+  id             Int       @id @default(autoincrement())
+  tenant_id      String
+  project_id     Int
+  project        Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  title          String
+  description    String?
+  responsible_id Int?
+  responsible_name String?
+  priority       String    @default("media")
+  target_date    DateTime?
+  status         String    @default("pendiente")
+  validated_at   DateTime?
+  closed_at      DateTime?
+  metadata       Json      @default("{}")
+  created_by     Int?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  @@index([tenant_id, project_id])
+  @@index([tenant_id, status, target_date])
+  @@index([tenant_id, responsible_id])
+}
+
+model ProjectDeliverable {
+  id             Int       @id @default(autoincrement())
+  tenant_id      String
+  project_id     Int
+  project        Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  commitment_id  Int?
+  name           String
+  description    String?
+  responsible_id Int?
+  responsible_name String?
+  target_date    DateTime?
+  status         String    @default("pendiente")
+  validation     String?
+  validated_at   DateTime?
+  evidence_status String   @default("pendiente")
+  metadata       Json      @default("{}")
+  created_by     Int?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  @@index([tenant_id, project_id])
+  @@index([tenant_id, status, target_date])
+  @@index([tenant_id, commitment_id])
+}
+
+model ProjectRisk {
+  id             Int       @id @default(autoincrement())
+  tenant_id      String
+  project_id     Int
+  project        Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  commitment_id  Int?
+  kind           String    @default("riesgo")
+  description    String
+  impact         String    @default("medio")
+  priority       String    @default("media")
+  responsible_id Int?
+  responsible_name String?
+  detected_at    DateTime  @default(now())
+  action_recommended String?
+  status         String    @default("activo")
+  resolved_at    DateTime?
+  metadata       Json      @default("{}")
+  created_by     Int?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  @@index([tenant_id, project_id])
+  @@index([tenant_id, kind, status])
+  @@index([tenant_id, priority])
+}
+
+model ProjectResourceAssignment {
+  id             Int       @id @default(autoincrement())
+  tenant_id      String
+  project_id     Int
+  project        Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  person_id      Int?
+  person_name    String
+  role           String
+  load_level     Int       @default(50)
+  availability   String    @default("disponible")
+  responsibilities String?
+  active         Boolean   @default(true)
+  metadata       Json      @default("{}")
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  @@index([tenant_id, project_id])
+  @@index([tenant_id, person_id])
+  @@index([tenant_id, availability])
+}
+
+model ProjectComment {
+  id             Int       @id @default(autoincrement())
+  tenant_id      String
+  project_id     Int
+  project        Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  entity_type    String    @default("project")
+  entity_id      Int?
+  comment        String
+  created_by     Int?
+  created_by_name String?
+  created_at     DateTime  @default(now())
+
+  @@index([tenant_id, project_id])
+  @@index([tenant_id, entity_type, entity_id])
+}
+
+model ProjectEvidence {
+  id             Int       @id @default(autoincrement())
+  tenant_id      String
+  project_id     Int
+  project        Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  entity_type    String
+  entity_id      Int?
+  title          String
+  file_url       String?
+  file_name      String?
+  mime_type      String?
+  storage_path   String?
+  metadata       Json      @default("{}")
+  uploaded_by    Int?
+  created_at     DateTime  @default(now())
+
+  @@index([tenant_id, project_id])
+  @@index([tenant_id, entity_type, entity_id])
+}
+
+model ProjectAlert {
+  id             Int       @id @default(autoincrement())
+  tenant_id      String
+  project_id     Int
+  project        Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  type           String
+  title          String
+  description    String?
+  severity       String    @default("info")
+  status         String    @default("activa")
+  action_suggested String?
+  entity_type    String?
+  entity_id      Int?
+  created_at     DateTime  @default(now())
+  resolved_at    DateTime?
+  metadata       Json      @default("{}")
+
+  @@index([tenant_id, project_id])
+  @@index([tenant_id, status, severity])
+}
+
+model ProjectLog {
+  id             BigInt    @id @default(autoincrement())
+  tenant_id      String
+  project_id     Int
+  project        Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  action         String
+  summary        String
+  entity_type    String?
+  entity_id      Int?
+  old_value      Json?
+  new_value      Json?
+  user_id        Int?
+  created_at     DateTime  @default(now())
+
+  @@index([tenant_id, project_id, created_at])
+  @@index([tenant_id, entity_type, entity_id])
+}
+
 model WorkSchedule {
   id                  Int       @id @default(autoincrement())
   tenant_id           String
@@ -684,6 +891,98 @@ model GpsPing {
   @@index([tenant_id, route_id, captured_at])
 }
 
+model WorkSession {
+  id              Int       @id @default(autoincrement())
+  tenant_id       String
+  employee_id     Int?
+  user_name       String
+  date            DateTime
+  status          String    @default("activa")
+  started_at      DateTime  @default(now())
+  lunch_started_at DateTime?
+  lunch_ended_at  DateTime?
+  closed_at       DateTime?
+  entry_punch_id  Int?
+  exit_punch_id   Int?
+  route_id        Int?
+  vehicle_plate   String?
+  preop_checklist_id Int?
+  metadata        Json      @default("{}")
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  activities      WorkActivity[]
+
+  @@index([tenant_id, employee_id, date])
+  @@index([tenant_id, user_name, date])
+  @@index([tenant_id, status])
+}
+
+model ActivityType {
+  id          Int       @id @default(autoincrement())
+  tenant_id   String
+  name        String
+  description String?
+  active      Boolean   @default(true)
+  sort_order  Int       @default(100)
+  metadata    Json      @default("{}")
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  activities  WorkActivity[]
+
+  @@unique([tenant_id, name])
+  @@index([tenant_id, active, sort_order])
+}
+
+model WorkActivity {
+  id                  Int       @id @default(autoincrement())
+  tenant_id           String
+  session_id          Int
+  session             WorkSession @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  activity_type_id    Int?
+  activity_type       ActivityType? @relation(fields: [activity_type_id], references: [id])
+  activity_type_name  String
+  employee_id         Int?
+  user_name           String
+  route_id            Int?
+  vehicle_plate       String?
+  occurred_at         DateTime  @default(now())
+  latitude            Float
+  longitude           Float
+  accuracy_meters     Float?
+  approximate_address String?
+  observation         String
+  status              String    @default("registrada")
+  alert_level         String    @default("normal")
+  metadata            Json      @default("{}")
+  created_at          DateTime  @default(now())
+  evidence            ActivityEvidence[]
+
+  @@index([tenant_id, session_id, occurred_at])
+  @@index([tenant_id, employee_id, occurred_at])
+  @@index([tenant_id, activity_type_id])
+  @@index([tenant_id, route_id, occurred_at])
+}
+
+model ActivityEvidence {
+  id            Int       @id @default(autoincrement())
+  tenant_id     String
+  activity_id   Int
+  activity      WorkActivity @relation(fields: [activity_id], references: [id], onDelete: Cascade)
+  evidence_type String    @default("photo")
+  file_name     String
+  file_url      String?
+  storage_path  String?
+  base64_data   String?
+  mime_type     String?
+  file_size     Int?
+  uploaded_by   Int?
+  created_at    DateTime  @default(now())
+  metadata      Json      @default("{}")
+
+  @@index([tenant_id, activity_id])
+  @@index([tenant_id, evidence_type])
+}
+
 model Vehicle {
   id                    Int       @id @default(autoincrement())
   tenant_id             String
@@ -827,6 +1126,7 @@ model TimePunch {
   extra_minutes     Int       @default(0)
   extra_reason      String?
   extra_detail      String?
+  extra_evidence     Json      @default("{}")
   metadata          Json      @default("{}")
   created_at        DateTime  @default(now())
 

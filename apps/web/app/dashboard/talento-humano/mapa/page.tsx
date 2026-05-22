@@ -52,6 +52,25 @@ type PunchPoint = {
   vehicle_plate: string;
   route_id: string | null;
   extra_minutes: number;
+  extra_reason?: string;
+  extra_detail?: string;
+  extra_evidence?: { base64_data?: string; file_name?: string; file_url?: string };
+  metadata?: Record<string, unknown>;
+};
+
+type ActivityPoint = {
+  id: string;
+  user_name: string;
+  type: string;
+  time: string;
+  occurred_at: string;
+  latitude: number;
+  longitude: number;
+  accuracy_meters: number | null;
+  vehicle_plate: string;
+  route_id: string | null;
+  observation: string;
+  evidence?: Array<{ base64_data?: string; file_name?: string }>;
   metadata?: Record<string, unknown>;
 };
 
@@ -67,6 +86,7 @@ type RouteSummary = {
   with_gps_count: number;
   pings: GpsPoint[];
   punch_points: PunchPoint[];
+  activity_points?: ActivityPoint[];
   marks_by_user: Array<{ user_name: string; marks: PunchPoint[] }>;
 };
 
@@ -97,6 +117,12 @@ const punchLabel: Record<string, string> = {
   inicio_almuerzo: "Almuerzo",
   fin_almuerzo: "Retorno",
   salida: "Cierre"
+};
+const punchTone: Record<string, string> = {
+  entrada: "bg-emerald-500",
+  inicio_almuerzo: "bg-amber-500",
+  fin_almuerzo: "bg-sky-500",
+  salida: "bg-violet-500"
 };
 
 function today() {
@@ -232,7 +258,6 @@ export default function LiveGpsMapPage() {
       setData(response);
       setLastUpdated(response.generated_at || new Date().toISOString());
       setRefreshIn(LIVE_REFRESH_SECONDS);
-      setSelectedKey((current) => current || response.people.find((person) => person.latitude != null)?.key || "");
     } finally {
       setLoading(false);
     }
@@ -276,7 +301,7 @@ export default function LiveGpsMapPage() {
     if (status === "nogps") return person.latitude == null || person.longitude == null;
     return true;
   }), [activeWindowSeconds, now, people, routeId, userName, status]);
-  const selected = filteredPeople.find((person) => person.key === selectedKey) || filteredPeople[0] || null;
+  const selected = filteredPeople.find((person) => person.key === selectedKey) || null;
   const centerTarget = followSelected && selected?.latitude != null && selected.longitude != null
     ? { latitude: selected.latitude, longitude: selected.longitude }
     : centerFrom(filteredPeople);
@@ -309,6 +334,7 @@ export default function LiveGpsMapPage() {
     marks_by_user: userName === "all" ? route.marks_by_user : (route.marks_by_user || []).filter((group) => group.user_name === userName)
   }));
   const visibleMarks = routeTrails.flatMap((route) => route.punch_points || []);
+  const visibleActivities = routeTrails.flatMap((route) => route.activity_points || []);
 
   return (
     <div className="-m-4 flex h-[calc(100vh-64px)] flex-col bg-[#0d1b2a] text-neutral-900 md:-m-6">
@@ -424,9 +450,13 @@ export default function LiveGpsMapPage() {
             const liveOnline = currentAgeSeconds(person, now) != null && Number(currentAgeSeconds(person, now)) <= activeWindowSeconds;
             return (
               <button
-                className={`absolute z-10 flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-full border-2 bg-white px-3 py-2 text-xs font-bold shadow-lg transition-[left,top,transform] duration-700 ease-out ${active ? "border-apex text-apex" : "border-white text-neutral-800"}`}
+                className={`absolute z-10 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 bg-white text-xs font-bold shadow-lg transition-[left,top,transform] duration-700 ease-out hover:scale-110 ${active ? "border-apex text-apex ring-4 ring-apex/20" : "border-white text-neutral-800"}`}
                 key={person.key}
-                onClick={() => setSelectedKey(person.key)}
+                onClick={() => {
+                  setSelectedKey(person.key);
+                  setSelectedMark(null);
+                  setFollowSelected(true);
+                }}
                 style={{ left: `calc(50% + ${offset.x}px)`, top: `calc(50% + ${offset.y}px)` }}
                 type="button"
               >
@@ -434,7 +464,6 @@ export default function LiveGpsMapPage() {
                   {liveOnline ? <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400/55" /> : null}
                   <span className={`relative flex h-8 w-8 items-center justify-center rounded-full text-white ${liveOnline ? "bg-emerald-500" : statusTone[person.status] || "bg-neutral-500"}`}>{initials(person.name)}</span>
                 </span>
-                <span className="hidden sm:block">{person.name}</span>
               </button>
             );
           })}
@@ -444,14 +473,49 @@ export default function LiveGpsMapPage() {
             const active = selectedMark?.id === mark.id;
             return (
               <button
-                className={`absolute z-20 flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 text-xs font-black shadow-lg ${active ? "border-apex bg-apex text-white" : "border-white bg-neutral-900 text-white"}`}
+                className={`absolute z-20 flex h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 text-[0px] shadow-md transition hover:scale-125 ${active ? "border-white bg-apex ring-4 ring-apex/25" : `border-white ${punchTone[mark.type] || "bg-neutral-900"}`}`}
                 key={`mark-${mark.id}`}
-                onClick={() => setSelectedMark(mark)}
+                onClick={() => {
+                  setSelectedMark(mark);
+                  setSelectedKey("");
+                }}
                 style={{ left: `calc(50% + ${offset.x}px)`, top: `calc(50% + ${offset.y}px)` }}
                 title={`${punchLabel[mark.type] || mark.type} ${mark.time}`}
                 type="button"
               >
                 {punchLabel[mark.type]?.[0] || "M"}
+              </button>
+            );
+          })}
+
+          {visibleActivities.map((activity, index) => {
+            const offset = pointOffset({ latitude: Number(activity.latitude), longitude: Number(activity.longitude) }, center, zoom);
+            return (
+              <button
+                className="absolute z-20 flex h-4 w-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-emerald-600 text-[0px] font-black text-white shadow-md transition hover:scale-150 hover:ring-4 hover:ring-emerald-500/25"
+                key={`activity-${activity.id}`}
+                onClick={() => {
+                  setSelectedKey("");
+                  setSelectedMark({
+                    id: `activity-${activity.id}`,
+                    user_name: activity.user_name,
+                    type: activity.type,
+                    time: activity.time,
+                    punched_at: activity.occurred_at,
+                    latitude: activity.latitude,
+                    longitude: activity.longitude,
+                    accuracy_meters: activity.accuracy_meters,
+                    vehicle_plate: activity.vehicle_plate,
+                    route_id: activity.route_id,
+                    extra_minutes: 0,
+                    metadata: { activity: true, observation: activity.observation, evidence: activity.evidence }
+                  });
+                }}
+                style={{ left: `calc(50% + ${offset.x}px)`, top: `calc(50% + ${offset.y}px)` }}
+                title={`${index + 1}. ${activity.type} ${activity.time}`}
+                type="button"
+              >
+                {index + 1}
               </button>
             );
           })}
@@ -474,6 +538,12 @@ export default function LiveGpsMapPage() {
           <div className="absolute bottom-4 left-4 z-20 rounded-md bg-white/95 p-3 text-xs shadow-lg">
             <p className="font-semibold">OpenStreetMap · Zoom {zoom}</p>
             <p className="mt-1 text-neutral-500">{center.latitude.toFixed(5)}, {center.longitude.toFixed(5)}</p>
+            <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-neutral-600">
+              <LegendDot className="bg-emerald-500" label="Ingreso / actividad" />
+              <LegendDot className="bg-amber-500" label="Almuerzo" />
+              <LegendDot className="bg-sky-500" label="Retorno" />
+              <LegendDot className="bg-violet-500" label="Cierre" />
+            </div>
           </div>
 
           {selected ? (
@@ -514,7 +584,10 @@ export default function LiveGpsMapPage() {
                 <p className="rounded-md bg-paper p-3">Hora: <span className="font-semibold">{selectedMark.time}</span> · {new Date(selectedMark.punched_at).toLocaleString()}</p>
                 <p className="rounded-md bg-paper p-3">Vehiculo: <span className="font-semibold">{selectedMark.vehicle_plate || "--"}</span> · Ruta {selectedMark.route_id || "--"}</p>
                 <p className="rounded-md bg-paper p-3">GPS: {selectedMark.latitude.toFixed(6)}, {selectedMark.longitude.toFixed(6)} · {Math.round(selectedMark.accuracy_meters || 0)}m</p>
-                {selectedMark.extra_minutes ? <p className="rounded-md bg-amber-50 p-3 text-amber-900">Extra: {selectedMark.extra_minutes} min</p> : null}
+                {selectedMark.metadata?.observation ? <p className="rounded-md bg-emerald-50 p-3 text-emerald-900">Observacion: {String(selectedMark.metadata.observation)}</p> : null}
+                {Array.isArray(selectedMark.metadata?.evidence) && selectedMark.metadata.evidence[0]?.base64_data ? <img alt="Evidencia operativa" className="max-h-48 rounded-md object-cover" src={String(selectedMark.metadata.evidence[0].base64_data)} /> : null}
+                {selectedMark.extra_minutes ? <p className="rounded-md bg-amber-50 p-3 text-amber-900">Extra: {selectedMark.extra_minutes} min · {selectedMark.extra_reason || "extension"}{selectedMark.extra_detail ? ` · ${selectedMark.extra_detail}` : ""}</p> : null}
+                {selectedMark.extra_evidence?.base64_data ? <img alt="Soporte hora extra" className="max-h-48 rounded-md object-cover" src={selectedMark.extra_evidence.base64_data} /> : null}
               </div>
               <a className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-apex text-sm font-semibold text-white" href={mapsUrl(selectedMark)} target="_blank" rel="noreferrer">Abrir marca en Google Maps <ExternalLink size={14} /></a>
             </div>
@@ -550,5 +623,14 @@ function Info({ icon: Icon, label, value }: { icon: typeof Clock; label: string;
       <p className="text-xs text-neutral-500"><Icon className="mr-1 inline" size={13} />{label}</p>
       <p className="mt-1 font-semibold">{value}</p>
     </div>
+  );
+}
+
+function LegendDot({ className, label }: { className: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className={`h-2.5 w-2.5 rounded-full ${className}`} />
+      {label}
+    </span>
   );
 }

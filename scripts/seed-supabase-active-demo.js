@@ -3,7 +3,7 @@ const fs = require("fs");
 const DEMO_BATCH = "apexos_initial_demo";
 const DEMO_PASSWORD = "ApexOS-Demo-2026!";
 const TARGET_COMPANY_NAME = process.env.SUPABASE_DEMO_COMPANY || "SCJ";
-const MODULES_TO_ENABLE = ["configuracion", "administracion_apex", "talento_humano", "transporte", "servicios"];
+const MODULES_TO_ENABLE = ["configuracion", "administracion_apex", "talento_humano", "transporte", "servicios", "proyectos"];
 const OPTIONAL_OPERATIONAL_TABLES = [
   "service_references",
   "service_reference_parts",

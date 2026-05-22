@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { api } from "@/lib/api";
-import { listPlatformCompanies } from "@/lib/supabaseQa";
 import {
   Activity,
   AlertTriangle,
@@ -212,7 +211,7 @@ const categories: ConfigCategory[] = [
     description: "Datos maestros, sedes, areas y parametros generales.",
     icon: Building2,
     items: [
-      { key: "empresas", title: "Datos de empresa", description: "Empresas, jerarquia, estado y modulos habilitados.", status: "activo", modal: "info", href: "/dashboard/administracion/suscripciones" },
+      { key: "empresas", title: "Empresas y modulos", description: "Crear empresas, editar datos y habilitar modulos por compania.", status: "activo", modal: "info", href: "/dashboard/administracion/suscripciones" },
       { key: "sedes", title: "Sedes", description: "Puntos de operacion asociados a usuarios, rutas y marcaciones.", status: "pendiente", modal: "info" },
       { key: "areas", title: "Areas y centros de costo", description: "Clasificacion para usuarios, nomina futura y costos.", status: "pendiente", modal: "info" },
       { key: "parametros", title: "Parametros generales", description: "Preferencias comunes del tenant y reglas base.", status: "pendiente", modal: "info" }
@@ -319,6 +318,28 @@ function isSupabaseSession() {
   try {
     const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
     return String(payload.iss || "").includes("supabase") || String(payload.ref || "") === "jbirkghkekuifgfsgquq";
+  } catch {
+    return false;
+  }
+}
+
+function canManageCompanies() {
+  if (typeof window === "undefined") return false;
+  const email = String(localStorage.getItem("user_email") || "").toLowerCase();
+  if (email.includes("admin") || email.includes("apex")) return true;
+
+  const token = localStorage.getItem("token");
+  if (!token?.includes(".")) return false;
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    const roleText = [
+      payload.role,
+      payload.app_metadata?.role,
+      payload.user_metadata?.role,
+      payload.user_metadata?.role_name,
+      payload.user_metadata?.profile
+    ].filter(Boolean).join(" ").toLowerCase();
+    return ["admin", "apex", "platform", "super"].some((word) => roleText.includes(word));
   } catch {
     return false;
   }
@@ -449,7 +470,6 @@ export default function AdministracionPage() {
   const [selectedConfig, setSelectedConfig] = useState<ConfigItem | null>(null);
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [platformAdminEnabled, setPlatformAdminEnabled] = useState(false);
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -491,27 +511,22 @@ export default function AdministracionPage() {
   }
 
   async function load() {
-    if (isSupabaseSession()) {
-      setMessage("Sesion Supabase QA activa. La administracion legacy local queda restringida; usa Empresas y suscripciones para configuracion global.");
-      setCatalog([]);
-      setRoles([]);
-      setUsers([]);
-    } else {
-      const [catalogData, rolesData, usersData] = await Promise.all([
-        api<CatalogItem[]>("/api/v1/admin/permissions/catalog"),
-        api<Role[]>("/api/v1/admin/roles"),
-        api<AdminUser[]>("/api/v1/admin/users")
-      ]);
-      setCatalog(catalogData);
-      setRoles(rolesData);
-      setUsers(usersData);
-      const initialRole = rolesData.find((role) => role.name !== "APEX_ADMIN") || rolesData[0];
-      if (!selectedRoleId && initialRole) {
-        setSelectedRoleId(initialRole.id);
-        setRoleForm({ name: initialRole.name, description: initialRole.description || "", active: initialRole.active, permissions: initialRole.permissions || emptyPermissions(catalogData) });
-      }
+    const [catalogData, rolesData, usersData] = await Promise.all([
+      api<CatalogItem[]>("/api/v1/admin/permissions/catalog"),
+      api<Role[]>("/api/v1/admin/roles"),
+      api<AdminUser[]>("/api/v1/admin/users")
+    ]);
+    setCatalog(catalogData);
+    setRoles(rolesData);
+    setUsers(usersData);
+    if (isSupabaseSession() && !canManageCompanies()) {
+      setMessage("Sesion empresa activa. La gestion de empresas y modulos requiere permisos de administrador de plataforma.");
     }
-    listPlatformCompanies(1).then((rows) => setPlatformAdminEnabled(rows.length > 0)).catch(() => setPlatformAdminEnabled(false));
+    const initialRole = rolesData.find((role) => role.name !== "APEX_ADMIN") || rolesData[0];
+    if (!selectedRoleId && initialRole) {
+      setSelectedRoleId(initialRole.id);
+      setRoleForm({ name: initialRole.name, description: initialRole.description || "", active: initialRole.active, permissions: initialRole.permissions || emptyPermissions(catalogData) });
+    }
   }
 
   useEffect(() => {
@@ -769,15 +784,27 @@ export default function AdministracionPage() {
                 </div>
               </div>
               <div className="grid gap-2 md:grid-cols-2">
-                {category.items.map((item) => (
-                  <button className="rounded-md border border-line p-3 text-left transition hover:border-apex hover:bg-paper" key={item.key} onClick={() => openConfig(item)} type="button">
-                    <span className="flex items-start justify-between gap-2">
-                      <span className="font-semibold">{item.title}</span>
-                      <span className={`shrink-0 rounded-md px-2 py-1 text-xs font-semibold ${statusClass(item.status)}`}>{item.status}</span>
-                    </span>
-                    <span className="mt-2 block text-sm text-neutral-600">{item.description}</span>
-                  </button>
-                ))}
+                {category.items.map((item) => {
+                  const content = (
+                    <>
+                      <span className="flex items-start justify-between gap-2">
+                        <span className="font-semibold">{item.title}</span>
+                        <span className={`shrink-0 rounded-md px-2 py-1 text-xs font-semibold ${statusClass(item.status)}`}>{item.status}</span>
+                      </span>
+                      <span className="mt-2 block text-sm text-neutral-600">{item.description}</span>
+                      {item.href ? <span className="mt-3 inline-flex text-xs font-semibold text-apex">Abrir panel</span> : null}
+                    </>
+                  );
+                  return item.href ? (
+                    <Link className="rounded-md border border-line p-3 text-left transition hover:border-apex hover:bg-paper" href={item.href} key={item.key}>
+                      {content}
+                    </Link>
+                  ) : (
+                    <button className="rounded-md border border-line p-3 text-left transition hover:border-apex hover:bg-paper" key={item.key} onClick={() => openConfig(item)} type="button">
+                      {content}
+                    </button>
+                  );
+                })}
               </div>
             </section>
           );

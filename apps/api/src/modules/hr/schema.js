@@ -30,6 +30,15 @@ const punchSchema = {
       route_id: { type: "integer" },
       extra_reason: { type: "string" },
       extra_detail: { type: "string" },
+      extra_evidence: {
+        type: "object",
+        properties: {
+          base64: { type: "string" },
+          name: { type: "string" },
+          type: { type: "string" },
+          size: { type: "integer" }
+        }
+      },
       metadata: { type: "object" }
     }
   }
@@ -68,6 +77,49 @@ const gpsPingSchema = {
       source: { type: "string" },
       captured_at: { type: "string" },
       metadata: { type: "object" }
+    }
+  }
+};
+
+const activityTypeSchema = {
+  body: {
+    type: "object",
+    required: ["name"],
+    properties: {
+      name: { type: "string" },
+      description: { type: "string" },
+      active: { type: "boolean" },
+      sort_order: { type: "integer" },
+      metadata: { type: "object" }
+    }
+  }
+};
+
+const workActivitySchema = {
+  body: {
+    type: "object",
+    required: ["activity_type_id", "latitude", "longitude", "observation", "photo"],
+    properties: {
+      activity_type_id: { type: "integer" },
+      occurred_at: { type: "string" },
+      latitude: { type: "number" },
+      longitude: { type: "number" },
+      accuracy_meters: { type: "number" },
+      approximate_address: { type: "string" },
+      observation: { type: "string" },
+      route_id: { type: "integer" },
+      vehicle_plate: { type: "string" },
+      metadata: { type: "object" },
+      photo: {
+        type: "object",
+        required: ["base64", "name", "type", "size"],
+        properties: {
+          base64: { type: "string" },
+          name: { type: "string" },
+          type: { type: "string" },
+          size: { type: "integer" }
+        }
+      }
     }
   }
 };
@@ -136,4 +188,4 @@ const preopSubmitSchema = {
   }
 };
 
-module.exports = { scheduleSchema, punchSchema, routeSchema, gpsPingSchema, employeeSchema, preopSubmitSchema };
+module.exports = { scheduleSchema, punchSchema, routeSchema, gpsPingSchema, activityTypeSchema, workActivitySchema, employeeSchema, preopSubmitSchema };
