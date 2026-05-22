@@ -48,6 +48,10 @@ const thirdPartySchema = {
       name: { type: "string", minLength: 1 },
       legal_name: { type: "string" },
       person_type: { type: "string", enum: ["natural", "juridica"] },
+      first_name: { type: "string" },
+      middle_name: { type: "string" },
+      first_last_name: { type: "string" },
+      second_last_name: { type: "string" },
       document_type: { type: "string" },
       tax_id: { type: "string" },
       tax_type: { type: "string" },
@@ -66,6 +70,46 @@ const thirdPartySchema = {
       active: { type: "boolean" },
       role_flags: { type: "object", additionalProperties: true },
       metadata: { type: "object", additionalProperties: true }
+    }
+  }
+};
+
+const documentTypeMasterSchema = {
+  body: {
+    type: "object",
+    required: ["code", "description"],
+    properties: {
+      code: { type: "string", minLength: 1 },
+      description: { type: "string", minLength: 1 },
+      active: { type: "boolean" }
+    }
+  }
+};
+
+const daneLocationMasterSchema = {
+  body: {
+    type: "object",
+    required: ["dane_code", "city", "department"],
+    properties: {
+      dane_code: { type: "string", minLength: 1 },
+      city: { type: "string", minLength: 1 },
+      department: { type: "string", minLength: 1 },
+      active: { type: "boolean" }
+    }
+  }
+};
+
+const organizationUnitSchema = {
+  body: {
+    type: "object",
+    required: ["type", "code", "name"],
+    properties: {
+      type: { type: "string", enum: ["society", "branch", "cost_center"] },
+      code: { type: "string", minLength: 1 },
+      name: { type: "string", minLength: 1 },
+      society_code: { type: "string" },
+      branch_code: { type: "string" },
+      active: { type: "boolean" }
     }
   }
 };
@@ -98,4 +142,13 @@ const paymentSchema = {
   }
 };
 
-module.exports = { journalEntrySchema, accountSchema, thirdPartySchema, periodSchema, paymentSchema };
+module.exports = {
+  journalEntrySchema,
+  accountSchema,
+  thirdPartySchema,
+  documentTypeMasterSchema,
+  daneLocationMasterSchema,
+  organizationUnitSchema,
+  periodSchema,
+  paymentSchema
+};

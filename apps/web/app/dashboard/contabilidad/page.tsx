@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Banknote, BookOpen, ClipboardList, FileText, Landmark, ReceiptText, Users } from "lucide-react";
+import { ArrowRight, Banknote, BookOpen, Building2, ClipboardList, FileText, ReceiptText, Users } from "lucide-react";
 import { ContabilidadNav } from "@/components/contabilidad-nav";
 
 const modules = [
@@ -16,6 +16,13 @@ const modules = [
     detail: "Clientes, proveedores, empleados, NIT, DV y responsabilidades.",
     icon: Users,
     status: "Maestro"
+  },
+  {
+    href: "/dashboard/contabilidad/estructura",
+    title: "Estructura organizacional",
+    detail: "Sociedad, sucursales y centros de costo enlazados para imputacion contable.",
+    icon: Building2,
+    status: "Estructura"
   },
   {
     href: "/dashboard/contabilidad/reportes",

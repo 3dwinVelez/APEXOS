@@ -41,6 +41,32 @@ const PUC_CO = [
 const TAX_ACCOUNT_PREFIXES = ["2365", "2367", "2368", "2408", "2410"];
 const RECEIVABLE_TYPES = ["invoice", "sale", "receivable"];
 const PAYABLE_TYPES = ["purchase", "bill", "payable", "expense"];
+const DEFAULT_DOCUMENT_TYPES = [
+  { code: "11", description: "Registro civil" },
+  { code: "12", description: "Tarjeta de identidad" },
+  { code: "13", description: "Cedula de ciudadania" },
+  { code: "21", description: "Tarjeta de extranjeria" },
+  { code: "22", description: "Cedula de extranjeria" },
+  { code: "31", description: "NIT" },
+  { code: "41", description: "Pasaporte" },
+  { code: "42", description: "Documento de identificacion extranjero" },
+  { code: "43", description: "Sin identificacion del exterior o para uso definido por la DIAN" },
+  { code: "47", description: "Permiso especial de permanencia PEP" },
+  { code: "50", description: "NIT de otro pais" },
+  { code: "91", description: "NUIP" }
+].map((row) => ({ ...row, active: true, source: "DIAN" }));
+const DEFAULT_DANE_LOCATIONS = [
+  { dane_code: "11001", city: "Bogota, D.C.", department: "Bogota, D.C." },
+  { dane_code: "05001", city: "Medellin", department: "Antioquia" },
+  { dane_code: "76001", city: "Cali", department: "Valle del Cauca" },
+  { dane_code: "08001", city: "Barranquilla", department: "Atlantico" },
+  { dane_code: "13001", city: "Cartagena de Indias", department: "Bolivar" },
+  { dane_code: "68001", city: "Bucaramanga", department: "Santander" },
+  { dane_code: "66001", city: "Pereira", department: "Risaralda" },
+  { dane_code: "17001", city: "Manizales", department: "Caldas" },
+  { dane_code: "73001", city: "Ibague", department: "Tolima" },
+  { dane_code: "54001", city: "Cucuta", department: "Norte de Santander" }
+].map((row) => ({ ...row, active: true, source: "DANE" }));
 
 function round(value) {
   return Math.round((Number(value) || 0) * 100) / 100;
@@ -96,6 +122,20 @@ function calculateVerificationDigit(taxId) {
   return mod > 1 ? 11 - mod : mod;
 }
 
+function isValidEmail(value) {
+  if (!value) return true;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim());
+}
+
+function fullNaturalName(data) {
+  return [
+    data.first_name || data.metadata?.first_name,
+    data.middle_name || data.metadata?.middle_name,
+    data.first_last_name || data.metadata?.first_last_name,
+    data.second_last_name || data.metadata?.second_last_name
+  ].map((value) => String(value || "").trim()).filter(Boolean).join(" ");
+}
+
 async function getAccountingConfig(tenantId) {
   const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
   const config = tenant?.config && typeof tenant.config === "object" ? tenant.config : {};
@@ -110,6 +150,229 @@ async function updateAccountingConfig(tenantId, accounting) {
     data: { config: { ...config, accounting: { ...(config.accounting || {}), ...accounting } } },
     select: { config: true }
   });
+}
+
+function normalizeCode(value) {
+  return String(value || "").trim();
+}
+
+function normalizeDocumentTypeInput(value) {
+  const text = normalizeCode(value).toUpperCase();
+  const legacy = {
+    NIT: "31",
+    CC: "13",
+    CEDULA: "13",
+    CE: "22",
+    PAS: "41",
+    PASAPORTE: "41",
+    TI: "12",
+    RC: "11"
+  };
+  return legacy[text] || text || "31";
+}
+
+function activeRows(rows) {
+  return rows.filter((row) => row.active !== false);
+}
+
+function mergeByCode(defaults, custom, key) {
+  const rows = new Map();
+  for (const row of defaults) rows.set(normalizeCode(row[key]), row);
+  for (const row of custom || []) {
+    const code = normalizeCode(row[key]);
+    if (code) rows.set(code, { ...rows.get(code), ...row, [key]: code });
+  }
+  return Array.from(rows.values()).sort((a, b) => normalizeCode(a[key]).localeCompare(normalizeCode(b[key])));
+}
+
+function defaultOrganizationTree(tenantId) {
+  return {
+    societies: [{
+      code: "SOC-01",
+      name: "Sociedad principal",
+      tenant_id: tenantId,
+      active: true
+    }],
+    branches: [],
+    cost_centers: []
+  };
+}
+
+function normalizeOrganizationTree(accounting, tenantId) {
+  const tree = accounting.organization_tree || defaultOrganizationTree(tenantId);
+  return {
+    societies: Array.isArray(tree.societies) ? tree.societies : [],
+    branches: Array.isArray(tree.branches) ? tree.branches : [],
+    cost_centers: Array.isArray(tree.cost_centers) ? tree.cost_centers : []
+  };
+}
+
+async function getThirdPartyMasters(tenantId) {
+  const accounting = await getAccountingConfig(tenantId);
+  const masters = accounting.third_party_masters || {};
+  return {
+    document_types: mergeByCode(DEFAULT_DOCUMENT_TYPES, masters.document_types, "code"),
+    locations: mergeByCode(DEFAULT_DANE_LOCATIONS, masters.locations, "dane_code")
+  };
+}
+
+async function updateThirdPartyMasterRow(tenantId, collection, key, row) {
+  const accounting = await getAccountingConfig(tenantId);
+  const masters = accounting.third_party_masters || {};
+  const existing = Array.isArray(masters[collection]) ? masters[collection] : [];
+  const code = normalizeCode(row[key]);
+  const nextRows = [...existing.filter((item) => normalizeCode(item[key]) !== code), { ...row, [key]: code, active: row.active !== false }];
+  await updateAccountingConfig(tenantId, {
+    third_party_masters: {
+      ...masters,
+      [collection]: nextRows
+    }
+  });
+  return getThirdPartyMasters(tenantId);
+}
+
+async function saveDocumentTypeMaster(tenantId, data) {
+  const code = normalizeCode(data.code);
+  const description = String(data.description || "").trim();
+  if (!code || !description) throw appError(400, "REQUIRED_DOCUMENT_TYPE", "Codigo y descripcion son obligatorios");
+  return updateThirdPartyMasterRow(tenantId, "document_types", "code", {
+    code,
+    description,
+    active: data.active !== false,
+    source: "Empresa"
+  });
+}
+
+async function saveDaneLocationMaster(tenantId, data) {
+  const daneCode = normalizeCode(data.dane_code);
+  const city = String(data.city || "").trim();
+  const department = String(data.department || "").trim();
+  if (!daneCode || !city || !department) throw appError(400, "REQUIRED_DANE_LOCATION", "Codigo DANE, ciudad y departamento son obligatorios");
+  return updateThirdPartyMasterRow(tenantId, "locations", "dane_code", {
+    dane_code: daneCode,
+    city,
+    department,
+    active: data.active !== false,
+    source: "Empresa"
+  });
+}
+
+async function getOrganizationTree(tenantId) {
+  const accounting = await getAccountingConfig(tenantId);
+  const tree = normalizeOrganizationTree(accounting, tenantId);
+  if (!tree.societies.length) return defaultOrganizationTree(tenantId);
+  return tree;
+}
+
+async function saveOrganizationUnit(tenantId, data) {
+  const type = data.type;
+  const code = normalizeCode(data.code);
+  const name = String(data.name || "").trim();
+  if (!code || !name) throw appError(400, "REQUIRED_ORG_UNIT", "Codigo y nombre son obligatorios");
+
+  const accounting = await getAccountingConfig(tenantId);
+  const tree = normalizeOrganizationTree(accounting, tenantId);
+  const active = data.active !== false;
+
+  if (type === "society") {
+    const row = { code, name, tenant_id: tenantId, active };
+    const societies = [...tree.societies.filter((item) => item.code !== code), row].sort((a, b) => a.code.localeCompare(b.code));
+    await updateAccountingConfig(tenantId, { organization_tree: { ...tree, societies } });
+    return getOrganizationTree(tenantId);
+  }
+
+  if (type === "branch") {
+    const societyCode = normalizeCode(data.society_code);
+    if (!tree.societies.some((item) => item.code === societyCode && item.active !== false)) {
+      throw appError(400, "SOCIETY_REQUIRED", "La sucursal debe estar enlazada a una sociedad activa");
+    }
+    const row = { code, name, society_code: societyCode, active };
+    const branches = [...tree.branches.filter((item) => item.code !== code), row].sort((a, b) => a.code.localeCompare(b.code));
+    await updateAccountingConfig(tenantId, { organization_tree: { ...tree, branches } });
+    return getOrganizationTree(tenantId);
+  }
+
+  const societyCode = normalizeCode(data.society_code);
+  const branchCode = normalizeCode(data.branch_code);
+  const branch = tree.branches.find((item) => item.code === branchCode && item.active !== false);
+  if (!branch || branch.society_code !== societyCode) {
+    throw appError(400, "BRANCH_REQUIRED", "El centro de costo debe estar enlazado a una sucursal de la sociedad seleccionada");
+  }
+  const row = { code, name, society_code: societyCode, branch_code: branchCode, active };
+  const costCenters = [...tree.cost_centers.filter((item) => item.code !== code), row].sort((a, b) => a.code.localeCompare(b.code));
+  await updateAccountingConfig(tenantId, { organization_tree: { ...tree, cost_centers: costCenters } });
+  return getOrganizationTree(tenantId);
+}
+
+async function countOrganizationAccountingReferences(tenantId, type, code) {
+  const metadataKeys = type === "society" ? ["society_code", "society"]
+    : type === "branch" ? ["branch_code", "branch"]
+      : ["cost_center_code", "cost_center"];
+  return prisma.runWithTenant(tenantId, async () => {
+    let count = 0;
+    for (const key of metadataKeys) {
+      count += await prisma.transaction.count({
+        where: {
+          metadata: {
+            path: [key],
+            equals: code
+          }
+        }
+      });
+    }
+    return count;
+  });
+}
+
+async function deleteOrganizationUnit(tenantId, type, codeInput) {
+  const code = normalizeCode(codeInput);
+  const accounting = await getAccountingConfig(tenantId);
+  const tree = normalizeOrganizationTree(accounting, tenantId);
+  const references = await countOrganizationAccountingReferences(tenantId, type, code);
+  if (references > 0) {
+    throw appError(409, "ORG_UNIT_HAS_ACCOUNTING_RECORDS", "No se puede borrar porque tiene registros contables asociados");
+  }
+
+  if (type === "society") {
+    if (tree.branches.some((item) => item.society_code === code)) {
+      throw appError(409, "SOCIETY_HAS_BRANCHES", "No se puede borrar una sociedad con sucursales enlazadas");
+    }
+    const societies = tree.societies.filter((item) => item.code !== code);
+    if (societies.length === tree.societies.length) throw appError(404, "ORG_UNIT_NOT_FOUND", "Sociedad no encontrada");
+    await updateAccountingConfig(tenantId, { organization_tree: { ...tree, societies } });
+    return getOrganizationTree(tenantId);
+  }
+
+  if (type === "branch") {
+    if (tree.cost_centers.some((item) => item.branch_code === code)) {
+      throw appError(409, "BRANCH_HAS_COST_CENTERS", "No se puede borrar una sucursal con centros de costo enlazados");
+    }
+    const branches = tree.branches.filter((item) => item.code !== code);
+    if (branches.length === tree.branches.length) throw appError(404, "ORG_UNIT_NOT_FOUND", "Sucursal no encontrada");
+    await updateAccountingConfig(tenantId, { organization_tree: { ...tree, branches } });
+    return getOrganizationTree(tenantId);
+  }
+
+  if (type !== "cost_center") throw appError(400, "INVALID_ORG_UNIT_TYPE", "Tipo de estructura invalido");
+  const costCenters = tree.cost_centers.filter((item) => item.code !== code);
+  if (costCenters.length === tree.cost_centers.length) throw appError(404, "ORG_UNIT_NOT_FOUND", "Centro de costo no encontrado");
+  await updateAccountingConfig(tenantId, { organization_tree: { ...tree, cost_centers: costCenters } });
+  return getOrganizationTree(tenantId);
+}
+
+async function validateThirdPartyMasters(tenantId, data) {
+  const masters = await getThirdPartyMasters(tenantId);
+  const documentType = normalizeDocumentTypeInput(data.document_type || data.tax_type || data.metadata?.document_type || "31");
+  const validDocumentTypes = new Set(activeRows(masters.document_types).map((item) => normalizeCode(item.code)));
+  if (!validDocumentTypes.has(documentType)) {
+    throw appError(400, "DOCUMENT_TYPE_NOT_IN_MASTER", "El tipo de documento debe existir en el maestro de tipos de documento");
+  }
+
+  const daneCode = normalizeCode(data.dane_code || data.metadata?.dane_code);
+  if (!daneCode) return { documentType };
+  const location = activeRows(masters.locations).find((item) => normalizeCode(item.dane_code) === daneCode);
+  if (!location) throw appError(400, "DANE_LOCATION_NOT_IN_MASTER", "La ciudad/departamento debe existir en el maestro DANE");
+  return { documentType, location };
 }
 
 async function assertPeriodOpen(tenantId, date) {
@@ -500,17 +763,29 @@ async function listThirdParties(tenantId, query = {}) {
 }
 
 async function saveThirdParty(tenantId, data, id = null) {
-  const name = String(data.name || data.legal_name || "").trim();
+  const personType = data.person_type || data.metadata?.person_type || "juridica";
+  const naturalName = personType === "natural" ? fullNaturalName(data) : "";
+  const name = String(naturalName || data.name || data.legal_name || "").trim();
   if (!name) throw appError(400, "REQUIRED_NAME", "Nombre o razon social es obligatorio");
+  if (!["customer", "supplier", "employee"].includes(data.type || "customer")) {
+    throw appError(400, "INVALID_THIRD_PARTY_TYPE", "Tipo de tercero invalido. Usa cliente, proveedor o empleado");
+  }
+  if (!isValidEmail(data.email)) throw appError(400, "INVALID_EMAIL", "El correo ingresado no tiene un formato valido");
   const taxId = data.tax_id ? String(data.tax_id).replace(/\s/g, "") : null;
+  const masterMatch = await validateThirdPartyMasters(tenantId, data);
+  const verificationDigit = taxId ? calculateVerificationDigit(taxId) : null;
   const metadata = {
     ...(data.metadata || {}),
-    person_type: data.person_type || data.metadata?.person_type || "juridica",
-    document_type: data.document_type || data.tax_type || data.metadata?.document_type || "NIT",
-    verification_digit: data.verification_digit ?? (taxId ? calculateVerificationDigit(taxId) : null),
+    person_type: personType,
+    first_name: data.first_name || data.metadata?.first_name || null,
+    middle_name: data.middle_name || data.metadata?.middle_name || null,
+    first_last_name: data.first_last_name || data.metadata?.first_last_name || null,
+    second_last_name: data.second_last_name || data.metadata?.second_last_name || null,
+    document_type: masterMatch.documentType,
+    verification_digit: verificationDigit,
     tax_responsibilities: data.tax_responsibilities || data.metadata?.tax_responsibilities || [],
-    dane_code: data.dane_code || data.metadata?.dane_code || null,
-    department: data.department || data.metadata?.department || null,
+    dane_code: masterMatch.location?.dane_code || data.dane_code || data.metadata?.dane_code || null,
+    department: masterMatch.location?.department || data.department || data.metadata?.department || null,
     role_flags: data.role_flags || data.metadata?.role_flags || {},
     dian: {
       cufe: null,
@@ -526,13 +801,13 @@ async function saveThirdParty(tenantId, data, id = null) {
   const payload = {
     type: data.type || "customer",
     name,
-    legal_name: data.legal_name || name,
+    legal_name: personType === "natural" ? naturalName : data.legal_name || name,
     tax_id: taxId,
-    tax_type: data.tax_type || metadata.document_type,
+    tax_type: masterMatch.documentType,
     email: data.email || null,
     phone: data.phone || null,
     address: data.address || null,
-    city: data.city || null,
+    city: masterMatch.location?.city || data.city || null,
     country: data.country || "CO",
     segment: data.segment || null,
     credit_limit: data.credit_limit || 0,
@@ -614,6 +889,12 @@ module.exports = {
   getAgingReport,
   listPeriods,
   updatePeriod,
+  getOrganizationTree,
+  saveOrganizationUnit,
+  deleteOrganizationUnit,
+  getThirdPartyMasters,
+  saveDocumentTypeMaster,
+  saveDaneLocationMaster,
   listThirdParties,
   saveThirdParty,
   registerPayment

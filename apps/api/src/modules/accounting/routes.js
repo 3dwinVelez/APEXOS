@@ -79,6 +79,33 @@ async function accountingRoutes(fastify) {
     preHandler: requirePermission("accounting", "write")
   }, async (request) => service.updatePeriod(request.user?.tenant_id, request.user?.id, request.params.period, request.body));
 
+  fastify.get("/accounting/organization-tree", {
+    preHandler: requirePermission("accounting", "read")
+  }, async (request) => service.getOrganizationTree(request.user?.tenant_id));
+
+  fastify.post("/accounting/organization-tree", {
+    schema: schema.organizationUnitSchema,
+    preHandler: requirePermission("accounting", "write")
+  }, async (request, reply) => reply.code(201).send(await service.saveOrganizationUnit(request.user?.tenant_id, request.body)));
+
+  fastify.delete("/accounting/organization-tree/:type/:code", {
+    preHandler: requirePermission("accounting", "write")
+  }, async (request) => service.deleteOrganizationUnit(request.user?.tenant_id, request.params.type, request.params.code));
+
+  fastify.get("/accounting/third-party-masters", {
+    preHandler: requirePermission("accounting", "read")
+  }, async (request) => service.getThirdPartyMasters(request.user?.tenant_id));
+
+  fastify.post("/accounting/third-party-masters/document-types", {
+    schema: schema.documentTypeMasterSchema,
+    preHandler: requirePermission("accounting", "write")
+  }, async (request, reply) => reply.code(201).send(await service.saveDocumentTypeMaster(request.user?.tenant_id, request.body)));
+
+  fastify.post("/accounting/third-party-masters/locations", {
+    schema: schema.daneLocationMasterSchema,
+    preHandler: requirePermission("accounting", "write")
+  }, async (request, reply) => reply.code(201).send(await service.saveDaneLocationMaster(request.user?.tenant_id, request.body)));
+
   fastify.get("/accounting/third-parties", {
     preHandler: requirePermission("accounting", "read")
   }, async (request) => service.listThirdParties(request.user?.tenant_id, request.query));

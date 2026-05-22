@@ -64,6 +64,7 @@ const adminPermissionCatalog = [
   { key: "vehiculos", label: "Vehiculos", actions: ["access", "view", "create", "edit"] },
   { key: "referencias", label: "Referencias de servicio", actions: ["access", "view", "create", "edit"] },
   { key: "proyectos", label: "Proyectos", actions: ["access", "view", "create", "edit"] },
+  { key: "contabilidad", label: "Contabilidad", actions: ["access", "view", "create", "edit", "export", "approve"] },
   { key: "reportes", label: "Reportes", actions: ["access", "view", "export"] },
   { key: "configuracion", label: "Configuracion tenant", actions: ["access", "view", "create", "edit"] },
   { key: "nomina", label: "Nomina futura", actions: ["access", "view", "create", "edit", "export"] }

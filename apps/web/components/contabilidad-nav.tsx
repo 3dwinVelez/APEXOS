@@ -7,6 +7,7 @@ const ITEMS = [
   { href: "/dashboard/contabilidad", label: "Resumen" },
   { href: "/dashboard/contabilidad/plan-cuentas", label: "Plan de cuentas" },
   { href: "/dashboard/contabilidad/terceros", label: "Terceros" },
+  { href: "/dashboard/contabilidad/estructura", label: "Estructura" },
   { href: "/dashboard/contabilidad/reportes", label: "Reportes" }
 ];
 
