@@ -109,15 +109,22 @@ export default function ServicesPage() {
   const [kpis, setKpis] = useState<OrdersResponse["kpis"]>({ pending: 0, in_progress: 0, closed: 0, not_executed: 0, total: 0 });
   const [status, setStatus] = useState("");
   const [query, setQuery] = useState("");
+  const [message, setMessage] = useState("");
 
   async function load() {
-    const response = await api<OrdersResponse>(`/api/v1/services/orders${status ? `?status=${status}` : ""}`);
-    setOrders(response.data);
-    setKpis(response.kpis);
+    try {
+      setMessage("");
+      const response = await api<OrdersResponse>(`/api/v1/services/orders${status ? `?status=${status}` : ""}`);
+      setOrders(response.data);
+      setKpis(response.kpis);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No fue posible cargar servicios.");
+      setOrders([]);
+    }
   }
 
   useEffect(() => {
-    load().catch(() => undefined);
+    load();
   }, [status]);
 
   const filtered = useMemo(() => {
@@ -219,8 +226,10 @@ export default function ServicesPage() {
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[360px_1fr]">
-        <aside className="space-y-3 rounded-md border border-line bg-white p-4">
+      {message ? <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{message}</div> : null}
+
+      <section className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
+        <aside className="min-w-0 space-y-3 rounded-md border border-line bg-white p-4">
           <div>
             <h2 className="font-semibold">Atencion prioritaria</h2>
             <p className="mt-1 text-sm text-neutral-500">Servicios abiertos, en proceso o con novedad.</p>
@@ -241,8 +250,8 @@ export default function ServicesPage() {
           </div>
         </aside>
 
-        <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
-          <div className="mb-4 grid gap-3 lg:grid-cols-[1fr_220px]">
+        <section className="min-w-0 rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
+          <div className="mb-4 grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_220px]">
             <div className="relative min-w-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
               <input className="h-12 w-full rounded-md border border-line bg-white pl-10 pr-3 text-base md:h-10 md:text-sm" placeholder="Buscar orden, cliente, direccion o referencia" value={query} onChange={(event) => setQuery(event.target.value)} />

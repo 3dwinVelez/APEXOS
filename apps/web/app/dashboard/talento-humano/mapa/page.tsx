@@ -250,22 +250,26 @@ export default function LiveGpsMapPage() {
   const [now, setNow] = useState(Date.now());
   const [followSelected, setFollowSelected] = useState(true);
   const [drag, setDrag] = useState<{ x: number; y: number; center: { latitude: number; longitude: number } } | null>(null);
+  const [message, setMessage] = useState("");
 
   async function load() {
     setLoading(true);
     try {
+      setMessage("");
       const response = await api<OperationsMap>(`/api/v1/hr/operations-map?date=${date}&minutes=${mode === "vivo" ? 30 : 1440}&footprint_days=30`);
       setData(response);
       setLastUpdated(response.generated_at || new Date().toISOString());
       setRefreshIn(LIVE_REFRESH_SECONDS);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No fue posible cargar el mapa operativo.");
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    load().catch(() => undefined);
-    const timer = mode === "vivo" ? window.setInterval(() => load().catch(() => undefined), LIVE_REFRESH_SECONDS * 1000) : null;
+    load();
+    const timer = mode === "vivo" ? window.setInterval(() => load(), LIVE_REFRESH_SECONDS * 1000) : null;
     return () => {
       if (timer) window.clearInterval(timer);
     };
@@ -371,6 +375,7 @@ export default function LiveGpsMapPage() {
           </button>
         </div>
       </header>
+      {message ? <div className="z-20 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-900">{message}</div> : null}
 
       <main className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[320px_1fr]">
         <aside className="z-10 flex max-h-[42vh] flex-col overflow-hidden border-b border-white/10 bg-[#0d1b2a] text-white lg:max-h-none lg:border-b-0 lg:border-r">

@@ -1,8 +1,5 @@
-const QA_SUPABASE_URL = "https://jbirkghkekuifgfsgquq.supabase.co";
-const QA_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Plz-iF_ayZUBR0XSq0klMw_svtfQzoX";
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || QA_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || QA_SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 type SupabaseFetchOptions = RequestInit & {
   contentType?: string;

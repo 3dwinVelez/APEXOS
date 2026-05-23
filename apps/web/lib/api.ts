@@ -2,6 +2,7 @@ import { assertActiveSession, clearSession, touchSession } from "./sessionSecuri
 import { supabaseFetch } from "./supabaseClient";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
+const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
 
 function isSupabaseSession() {
   if (typeof window === "undefined") return false;
@@ -10,7 +11,7 @@ function isSupabaseSession() {
   if (!token?.includes(".")) return false;
   try {
     const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-    return String(payload.iss || "").includes("supabase") || String(payload.ref || "") === "jbirkghkekuifgfsgquq";
+    return String(payload.iss || "").includes("supabase") || (!!SUPABASE_PROJECT_REF && String(payload.ref || "") === SUPABASE_PROJECT_REF);
   } catch {
     return false;
   }
@@ -116,7 +117,27 @@ function localDate(value = new Date()) {
   return value.toISOString().slice(0, 10);
 }
 
+function safeDevLog(message: string, error: unknown) {
+  if (process.env.NODE_ENV !== "production") {
+    console.warn(`[apexos] ${message}`, error instanceof Error ? error.message : String(error));
+  }
+}
+
+function currentSupabaseUserId() {
+  if (typeof window === "undefined") return "";
+  const token = localStorage.getItem("token");
+  if (!token?.includes(".")) return "";
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return String(payload.sub || "");
+  } catch {
+    return "";
+  }
+}
+
 async function currentSupabaseEmployee() {
+  const userId = currentSupabaseUserId();
+  const userFilter = userId ? `&user_id=eq.${userId}` : "";
   const rows = await supabaseFetch<Array<{
     id: string;
     company_id?: string;
@@ -127,7 +148,7 @@ async function currentSupabaseEmployee() {
     position?: string;
     user_type?: string;
     metadata?: AnyRow;
-  }>>("/rest/v1/employees?select=*&order=created_at.desc&limit=1");
+  }>>(`/rest/v1/employees?select=id,company_id,user_id,first_name,last_name,email,position,user_type,metadata&status=eq.active${userFilter}&order=created_at.desc&limit=1`);
   return rows[0] || null;
 }
 
@@ -148,13 +169,19 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const code = String(employee.metadata?.code || employee.id.slice(0, 8));
     const aliases = new Set([employee.id, employee.user_id, name, code, String(employee.metadata?.name || ""), String(employee.email || "")].filter(Boolean).map(String));
     const punches = (await supabaseFetch<Array<{ id: string; employee_id?: string; user_id?: string; user_name: string; punch_type: string; punched_at: string; punch_time?: string; vehicle_plate?: string; route_id?: string; latitude?: number; longitude?: number; accuracy_meters?: number }>>(
-      `/rest/v1/time_punches?select=*&punch_date=eq.${localDate()}&order=punched_at.asc`
-    ).catch(() => [])).filter((punch) => aliases.has(String(punch.employee_id || "")) || aliases.has(String(punch.user_id || "")) || aliases.has(String(punch.user_name || "")));
+      `/rest/v1/time_punches?select=id,employee_id,user_id,user_name,punch_type,punched_at,punch_time,vehicle_plate,route_id,latitude,longitude,accuracy_meters&punch_date=eq.${localDate()}&order=punched_at.asc&limit=80`
+    ).catch((error) => {
+      safeDevLog("No fue posible consultar marcaciones Supabase.", error);
+      return [];
+    })).filter((punch) => aliases.has(String(punch.employee_id || "")) || aliases.has(String(punch.user_id || "")) || aliases.has(String(punch.user_name || "")));
     const types = punches.map((punch) => punch.punch_type);
     const activeSession = types.includes("entrada") && !types.includes("salida");
     const activityRows = (await supabaseFetch<Array<{ id: string; employee_id?: string; user_id?: string; user_name: string; latitude: number; longitude: number; accuracy_meters?: number; captured_at: string; metadata?: AnyRow }>>(
-      "/rest/v1/gps_pings?select=*&source=eq.work_activity&order=captured_at.desc"
-    ).catch(() => [])).filter((row) => aliases.has(String(row.employee_id || "")) || aliases.has(String(row.user_id || "")) || aliases.has(String(row.user_name || "")));
+      "/rest/v1/gps_pings?select=id,employee_id,user_id,user_name,latitude,longitude,accuracy_meters,captured_at,metadata&source=eq.work_activity&order=captured_at.desc&limit=120"
+    ).catch((error) => {
+      safeDevLog("No fue posible consultar actividades Supabase.", error);
+      return [];
+    })).filter((row) => aliases.has(String(row.employee_id || "")) || aliases.has(String(row.user_id || "")) || aliases.has(String(row.user_name || "")));
     const activities = activityRows.map((row, index) => ({
       id: toNumberId(row.id),
       activity_type_name: String(row.metadata?.activity_type_name || "Actividad operativa"),
@@ -187,7 +214,10 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const name = fullName(employee);
     let extraMinutes = 0;
     if ((body.type || body.tipo_marca) === "salida" && body.route_id) {
-      const routeRows = await supabaseFetch<Array<{ route_date?: string; end_time?: string }>>(`/rest/v1/operational_routes?select=route_date,end_time&id=eq.${body.route_id}&limit=1`).catch(() => []);
+      const routeRows = await supabaseFetch<Array<{ route_date?: string; end_time?: string }>>(`/rest/v1/operational_routes?select=route_date,end_time&id=eq.${body.route_id}&limit=1`).catch((error) => {
+        safeDevLog("No fue posible consultar el horario de la ruta para hora extra.", error);
+        return [];
+      });
       const route = routeRows[0];
       if (route?.route_date && route?.end_time) {
         const plannedEnd = new Date(`${route.route_date}T${route.end_time}:00-05:00`);
@@ -235,7 +265,10 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         headers: { Prefer: "return=representation" }
       });
     }
-    const punches = await supabaseFetch<Array<{ punch_type: string }>>(`/rest/v1/time_punches?select=punch_type&employee_id=eq.${employee.id}&punch_date=eq.${localDate(now)}&order=punched_at.asc`).catch(() => []);
+    const punches = await supabaseFetch<Array<{ punch_type: string }>>(`/rest/v1/time_punches?select=punch_type&employee_id=eq.${employee.id}&punch_date=eq.${localDate(now)}&order=punched_at.asc&limit=12`).catch((error) => {
+      safeDevLog("No fue posible recalcular siguiente marcacion.", error);
+      return [];
+    });
     return {
       ok: true,
       hora: row.punch_time,
@@ -299,7 +332,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   }
 
   if (pathname === "/api/v1/hr/attendance") {
-    const punches = await supabaseFetch<Array<{ id: string; user_name: string; punch_type: string; punched_at: string }>>("/rest/v1/time_punches?select=*&order=punched_at.desc");
+    const punches = await supabaseFetch<Array<{ id: string; user_name: string; punch_type: string; punched_at: string }>>("/rest/v1/time_punches?select=id,user_name,punch_type,punched_at&order=punched_at.desc&limit=200");
     const grouped = new Map<string, Array<{ id: string; type: string; punched_at: string }>>();
     for (const punch of punches) {
       const list = grouped.get(punch.user_name) || [];
@@ -315,11 +348,11 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
 
   if (pathname === "/api/v1/hr/operations-map") {
     const [routes, employees, assignments, pings, punches] = await Promise.all([
-      supabaseFetch<Array<{ id: string; code?: string; route_date: string; vehicle_plate?: string; start_time?: string; end_time?: string; status?: string }>>("/rest/v1/operational_routes?select=*&order=route_date.desc"),
-      supabaseFetch<Array<{ id: string; first_name?: string; last_name?: string; document_number?: string; user_type?: string; position?: string; metadata?: AnyRow }>>("/rest/v1/employees?select=*&status=eq.active"),
-      supabaseFetch<Array<{ route_id: string; employee_id: string; role?: string }>>("/rest/v1/route_assignments?select=*"),
-      supabaseFetch<Array<{ id: string; employee_id?: string; user_name: string; route_id?: string; vehicle_id?: string; latitude: number; longitude: number; accuracy_meters?: number; source?: string; captured_at: string; metadata?: AnyRow }>>("/rest/v1/gps_pings?select=*&order=captured_at.desc"),
-      supabaseFetch<Array<{ id: string; employee_id?: string; user_name: string; punch_type: string; punch_time?: string; punched_at: string; route_id?: string; vehicle_id?: string; vehicle_plate?: string; latitude?: number; longitude?: number; accuracy_meters?: number; extra_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: AnyRow; metadata?: AnyRow }>>("/rest/v1/time_punches?select=*&order=punched_at.desc")
+      supabaseFetch<Array<{ id: string; code?: string; route_date: string; vehicle_plate?: string; start_time?: string; end_time?: string; status?: string }>>("/rest/v1/operational_routes?select=id,code,route_date,vehicle_plate,start_time,end_time,status&order=route_date.desc&limit=120"),
+      supabaseFetch<Array<{ id: string; first_name?: string; last_name?: string; document_number?: string; user_type?: string; position?: string; metadata?: AnyRow }>>("/rest/v1/employees?select=id,first_name,last_name,document_number,user_type,position,metadata&status=eq.active&limit=250"),
+      supabaseFetch<Array<{ route_id: string; employee_id: string; role?: string }>>("/rest/v1/route_assignments?select=route_id,employee_id,role&limit=500"),
+      supabaseFetch<Array<{ id: string; employee_id?: string; user_name: string; route_id?: string; vehicle_id?: string; latitude: number; longitude: number; accuracy_meters?: number; source?: string; captured_at: string; metadata?: AnyRow }>>("/rest/v1/gps_pings?select=id,employee_id,user_name,route_id,vehicle_id,latitude,longitude,accuracy_meters,source,captured_at,metadata&order=captured_at.desc&limit=500"),
+      supabaseFetch<Array<{ id: string; employee_id?: string; user_name: string; punch_type: string; punch_time?: string; punched_at: string; route_id?: string; vehicle_id?: string; vehicle_plate?: string; latitude?: number; longitude?: number; accuracy_meters?: number; extra_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: AnyRow; metadata?: AnyRow }>>("/rest/v1/time_punches?select=id,employee_id,user_name,punch_type,punch_time,punched_at,route_id,vehicle_id,vehicle_plate,latitude,longitude,accuracy_meters,extra_minutes,extra_reason,extra_detail,extra_evidence,metadata&order=punched_at.desc&limit=500")
     ]);
 
     const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
@@ -453,8 +486,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
 
   if (pathname === "/api/v1/hr/routes/preop/metrics") {
     const [checklists, blocks] = await Promise.all([
-      supabaseFetch<Array<{ id: string; checklist_status?: string }>>("/rest/v1/route_preoperational_checklists?select=*"),
-      supabaseFetch<Array<{ id: string }>>("/rest/v1/route_block_events?select=*")
+      supabaseFetch<Array<{ id: string; checklist_status?: string }>>("/rest/v1/route_preoperational_checklists?select=id,checklist_status&created_at=gte." + localDate() + "T00:00:00-05:00&limit=200"),
+      supabaseFetch<Array<{ id: string }>>("/rest/v1/route_block_events?select=id&created_at=gte." + localDate() + "T00:00:00-05:00&limit=200")
     ]);
     return {
       checklists_today: checklists.length,
@@ -509,7 +542,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       status?: string;
       user_type?: string;
       metadata?: Record<string, unknown>;
-    }>>(`/rest/v1/employees?select=*&order=created_at.desc${statusFilter}`);
+    }>>(`/rest/v1/employees?select=id,first_name,last_name,document_number,email,position,department,status,user_type,metadata&order=created_at.desc${statusFilter}&limit=250`);
 
     return rows.map((row) => {
       const name = fullName(row);
@@ -557,7 +590,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       document_status?: string;
       master_score?: number;
       metadata?: Record<string, unknown>;
-    }>>(`/rest/v1/vehicles?select=*&order=created_at.desc${idFilter}`);
+    }>>(`/rest/v1/vehicles?select=id,plate,type,category,brand,model,year,color,mileage,owner,ownership_type,base_site,authorized_driver_id,authorized_driver_name,authorized_driver_document,authorized_driver_code,status,master_status,document_status,master_score,metadata&order=created_at.desc${idFilter}&limit=${vehicleDetailMatch ? 1 : 100}`);
 
     const mapped = rows.map((row) => ({
       ...row,
@@ -591,12 +624,12 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       end_time?: string;
       status?: string;
       notes?: string;
-    }>>("/rest/v1/operational_routes?select=*&order=route_date.desc");
+    }>>("/rest/v1/operational_routes?select=id,code,route_date,vehicle_plate,start_time,end_time,status,notes&order=route_date.desc&limit=120");
     const assignments = await supabaseFetch<Array<{
       route_id: string;
       role?: string;
       employees?: { first_name?: string; last_name?: string; document_number?: string; metadata?: Record<string, unknown> };
-    }>>("/rest/v1/route_assignments?select=route_id,role,employees(first_name,last_name,document_number,metadata)");
+    }>>("/rest/v1/route_assignments?select=route_id,role,employees(first_name,last_name,document_number,metadata)&limit=500");
 
     return routes.map((route) => ({
       id: route.id,
@@ -639,8 +672,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       model?: string;
       active?: boolean;
       metadata?: AnyRow;
-    }>>(`/rest/v1/service_references?select=*&order=code.asc${activeFilter}`);
-    const parts = await supabaseFetch<Array<{ id: string; reference_id: string; name: string; quantity: number; unit: string; description?: string; display_order?: number }>>("/rest/v1/service_reference_parts?select=*&order=display_order.asc");
+    }>>(`/rest/v1/service_references?select=id,code,name,category,description,estimated_minutes,brand,model,active,metadata&order=code.asc${activeFilter}&limit=200`);
+    const parts = await supabaseFetch<Array<{ id: string; reference_id: string; name: string; quantity: number; unit: string; description?: string; display_order?: number }>>("/rest/v1/service_reference_parts?select=id,reference_id,name,quantity,unit,description,display_order&order=display_order.asc&limit=1000");
 
     return refs.map((ref) => ({
       ...ref,
@@ -719,11 +752,13 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       closed_at?: string;
       notes?: string;
       metadata?: AnyRow;
-    }>>(`/rest/v1/service_orders?select=*&order=created_at.desc${filters ? `&${filters}` : ""}`);
-    const refs = await supabaseFetch<Array<{ id: string; code: string; name: string; category?: string; estimated_minutes?: number; brand?: string; model?: string; metadata?: AnyRow }>>("/rest/v1/service_references?select=*");
-    const parts = await supabaseFetch<Array<{ id: string; reference_id: string; name: string; quantity: number; unit: string; display_order?: number }>>("/rest/v1/service_reference_parts?select=*&order=display_order.asc");
-    const incidents = await supabaseFetch<Array<{ id: string; order_id: string; type?: string; description?: string; action?: string }>>("/rest/v1/service_incidents?select=*");
-    const evidence = await supabaseFetch<Array<{ id: string; order_id: string; evidence_type?: string; file_url?: string; storage_path?: string }>>("/rest/v1/service_evidence?select=*");
+    }>>(`/rest/v1/service_orders?select=id,number,reference_id,technician_employee_id,service_type,status,customer_name,customer_address,customer_phone,invoice_number,scheduled_date,started_at,closed_at,notes,metadata&order=created_at.desc${filters ? `&${filters}` : ""}&limit=${serviceOrderDetailMatch ? 1 : 150}`);
+    const orderIds = orders.map((order) => order.id);
+    const orderFilter = orderIds.length ? `&order_id=in.(${orderIds.join(",")})` : "&order_id=is.null";
+    const refs = await supabaseFetch<Array<{ id: string; code: string; name: string; category?: string; estimated_minutes?: number; brand?: string; model?: string; metadata?: AnyRow }>>("/rest/v1/service_references?select=id,code,name,category,estimated_minutes,brand,model,metadata&limit=200");
+    const parts = await supabaseFetch<Array<{ id: string; reference_id: string; name: string; quantity: number; unit: string; display_order?: number }>>("/rest/v1/service_reference_parts?select=id,reference_id,name,quantity,unit,display_order&order=display_order.asc&limit=1000");
+    const incidents = await supabaseFetch<Array<{ id: string; order_id: string; type?: string; description?: string; action?: string }>>(`/rest/v1/service_incidents?select=id,order_id,type,description,action${orderFilter}&limit=500`);
+    const evidence = await supabaseFetch<Array<{ id: string; order_id: string; evidence_type?: string; file_url?: string; storage_path?: string }>>(`/rest/v1/service_evidence?select=id,order_id,evidence_type,file_url,storage_path${orderFilter}&limit=500`);
 
     const mapped = orders.map((order) => {
       const reference = refs.find((ref) => ref.id === order.reference_id);
@@ -822,13 +857,19 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
           operational: { classification: body.operational_classification || "operario", base_site: body.base_site || "", zone: body.operation_zone || "" }
         }
       };
-      const companies = await supabaseFetch<Array<{ id: string }>>("/rest/v1/companies?select=id&name=eq.SCJ&limit=1").catch(() => []);
+      const companies = await supabaseFetch<Array<{ id: string }>>("/rest/v1/companies?select=id&name=eq.SCJ&limit=1").catch((error) => {
+        safeDevLog("No fue posible consultar empresa SCJ.", error);
+        return [];
+      });
       const payload = { ...row, company_id: row.company_id || companies[0]?.id };
-      const inserted = payload.company_id ? await supabaseFetch<Array<AnyRow>>("/rest/v1/employees?select=*", {
+      const inserted = payload.company_id ? await supabaseFetch<Array<AnyRow>>("/rest/v1/employees?select=id,email,document_number,position,department,status,user_type,metadata", {
         method: "POST",
         body: JSON.stringify(payload),
         headers: { Prefer: "return=representation" }
-      }).catch(() => null) : null;
+      }).catch((error) => {
+        safeDevLog("No fue posible crear empleado Supabase.", error);
+        return null;
+      }) : null;
       const employee = inserted?.[0] || { ...payload, id: crypto.randomUUID?.() || String(Date.now()) };
       return {
         id: toNumberId(employee.id),
@@ -856,7 +897,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       status?: string;
       user_type?: string;
       metadata?: AnyRow;
-    }>>("/rest/v1/employees?select=*&order=created_at.desc");
+    }>>("/rest/v1/employees?select=id,first_name,last_name,email,document_number,position,department,status,user_type,metadata&order=created_at.desc&limit=250");
     return employees.map((employee) => {
       const name = fullName(employee);
       const roleId = Number(employee.metadata?.role_id || (employee.user_type === "conductor" ? 2 : 1));

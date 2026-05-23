@@ -94,7 +94,7 @@ async function build() {
   fastify.register(require("./src/modules/services/routes"), { prefix: "/api/v1" });
   fastify.register(require("./src/modules/transport/routes"), { prefix: "/api/v1" });
 
-  fastify.get("/brain/live", { websocket: true }, (connection, request) => {
+  fastify.get("/brain/live", { websocket: true, preHandler: fastify.authenticate }, (connection, request) => {
     const tenantId = request.user?.tenant_id;
     if (!tenantId) {
       connection.socket.close();

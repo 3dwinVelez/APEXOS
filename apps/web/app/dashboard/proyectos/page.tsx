@@ -367,8 +367,8 @@ export default function ProjectsPage() {
             <h1 className="text-2xl font-semibold md:text-3xl">Monitor operacional del proyecto</h1>
             <p className="mt-1 max-w-3xl text-sm leading-6 text-neutral-600">Una vista para saber que pasa, que esta pendiente, quien responde y que accion sigue.</p>
           </div>
-          <div className="grid gap-2 sm:flex">
-            <select className="h-11 rounded-md border border-line bg-white px-3 text-sm" value={activeId || ""} onChange={(event) => { const id = Number(event.target.value); setActiveId(id); load(id); }}>
+          <div className="grid min-w-0 gap-2 sm:flex sm:flex-wrap sm:justify-end">
+            <select className="h-11 min-w-0 rounded-md border border-line bg-white px-3 text-sm sm:max-w-[320px]" value={activeId || ""} onChange={(event) => { const id = Number(event.target.value); setActiveId(id); load(id); }}>
               {data.projects.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
             </select>
             <button className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white" onClick={() => setForm("proyecto")} type="button"><Plus size={16} /> Proyecto</button>
@@ -480,7 +480,7 @@ export default function ProjectsPage() {
               <span className="rounded-md bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">{filteredItems.length} elementos visibles</span>
             </div>
             <Filters filters={filters} setFilters={setFilters} responsibles={responsibles} />
-            <div className="mt-4 hidden overflow-x-auto md:block">
+            <div className="mt-4 hidden max-w-full overflow-x-auto md:block">
               <table className="w-full min-w-[820px] border-separate border-spacing-0 text-left text-sm">
                 <thead>
                   <tr className="text-xs text-neutral-500">
@@ -577,8 +577,8 @@ function Filters({ filters, setFilters, responsibles }: { filters: Record<string
   return (
     <div className="rounded-md border border-line bg-paper p-3">
       <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-neutral-700"><Filter size={16} /> Filtros simples</div>
-      <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-6">
-        <label className="relative md:col-span-3 xl:col-span-1">
+      <div className="grid min-w-0 gap-2 md:grid-cols-3 xl:grid-cols-6">
+        <label className="relative min-w-0 md:col-span-3 xl:col-span-1">
           <Search className="pointer-events-none absolute left-3 top-3 text-neutral-400" size={16} />
           <input className="h-11 w-full rounded-md border border-line bg-white pl-9 pr-3 text-sm" placeholder="Buscar" value={filters.search} onChange={(event) => setFilters((prev) => ({ ...prev, search: event.target.value }))} />
         </label>
@@ -593,7 +593,7 @@ function Filters({ filters, setFilters, responsibles }: { filters: Record<string
 }
 
 function FilterSelect({ value, onChange, options }: { value: string; onChange: (value: string) => void; options: Array<[string, string]> }) {
-  return <select className="h-11 rounded-md border border-line bg-white px-3 text-sm" value={value} onChange={(event) => onChange(event.target.value)}>{options.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select>;
+  return <select className="h-11 min-w-0 rounded-md border border-line bg-white px-3 text-sm" value={value} onChange={(event) => onChange(event.target.value)}>{options.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select>;
 }
 
 function TypeBadge({ type }: { type: WorkType }) {

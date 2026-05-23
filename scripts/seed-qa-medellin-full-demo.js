@@ -18,7 +18,7 @@ function loadEnv() {
 
 const env = loadEnv();
 const SUPABASE_URL = env.NEXT_PUBLIC_SUPABASE_URL;
-const SERVICE_ROLE_KEY = env.SUPABASE_SERVICE_ROLE_KEY || env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY;
+const SERVICE_ROLE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
 if (!SUPABASE_URL || !SERVICE_ROLE_KEY) throw new Error("Configura NEXT_PUBLIC_SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY en .env.");
 
 const headers = { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}`, "Content-Type": "application/json" };
@@ -128,6 +128,11 @@ const points = {
 };
 function gpsPoint([lat, lng], delta = 0) { return { latitude: lat + delta, longitude: lng - delta, accuracy_meters: 12 + Math.round(delta * 1000) }; }
 function iso(date, time) { return `${date}T${time}:00-05:00`; }
+function localDateOffset(days = 0) {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
+}
 
 async function main() {
   const company = await ensureCompany();
@@ -169,7 +174,7 @@ async function main() {
   ]));
 
   const [conNorte, conSur, conOriente, operaria, tecnico] = [employees[1], employees[2], employees[3], employees[4], employees[5]];
-  const date = "2026-05-22";
+  const date = localDateOffset(0);
   const routes = await upsert("operational_routes", [
     { company_id: company.id, code: "MED-RUTA-001", route_date: date, vehicle_id: vehicles[0].id, vehicle_plate: "MED101", start_time: "07:30", end_time: "16:30", status: "active", notes: "Bodega - Estadio - Laureles", metadata: demoMeta({ scenario: "normal_completa" }) },
     { company_id: company.id, code: "MED-RUTA-002", route_date: date, vehicle_id: vehicles[1].id, vehicle_plate: "MED202", start_time: "08:00", end_time: "17:00", status: "active", notes: "Poblado - Envigado - Itagui con extra", metadata: demoMeta({ scenario: "hora_extra_con_evidencia" }) },

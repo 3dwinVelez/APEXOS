@@ -111,6 +111,8 @@ const DEFAULT_ACTIVITY_TYPES = [
   "Apoyo operativo"
 ];
 
+const safeUserSelect = { id: true, name: true, email: true };
+
 function getPreoperationalTemplate() {
   return { sections: Array.from(new Set(PREOP_TEMPLATE.map((item) => item.section))), items: PREOP_TEMPLATE };
 }
@@ -185,7 +187,7 @@ async function listEmployees(tenantId, query = {}) {
       ...(query.position ? { position: query.position } : {}),
       ...(query.active == null ? {} : { active: query.active === "true" || query.active === true })
     },
-    include: { user: true },
+    include: { user: { select: safeUserSelect } },
     orderBy: { id: "desc" },
     take: 200
   }));
@@ -212,7 +214,7 @@ async function createEmployee(tenantId, input) {
         legacy: input.legacy || null
       }
     },
-    include: { user: true }
+    include: { user: { select: safeUserSelect } }
   }));
 }
 
@@ -1048,7 +1050,7 @@ async function getOperationsMap(tenantId, query = {}) {
         orderBy: { start_time: "asc" },
         take: 200
       }),
-      prisma.employee.findMany({ where: { active: true }, include: { user: true }, take: 500 }),
+      prisma.employee.findMany({ where: { active: true }, include: { user: { select: safeUserSelect } }, take: 500 }),
       prisma.gpsPing.findMany({
         where: { captured_at: { gte: day, lt: endOfDay(day) } },
         orderBy: { captured_at: "desc" },
@@ -1308,7 +1310,7 @@ async function processDay(tenantId, input = {}) {
   const day = startOfDay(input.date || new Date());
   return prisma.runWithTenant(tenantId, async () => {
     const [employees, schedules, punches] = await Promise.all([
-      prisma.employee.findMany({ where: { active: true }, include: { user: true } }),
+      prisma.employee.findMany({ where: { active: true }, include: { user: { select: safeUserSelect } } }),
       prisma.workSchedule.findMany({ where: { active: true } }),
       prisma.timePunch.findMany({ where: { date: { gte: day, lt: endOfDay(day) } }, orderBy: { punched_at: "asc" } })
     ]);
@@ -1335,7 +1337,7 @@ async function listWorkdays(tenantId, query = {}) {
   const day = query.date ? startOfDay(query.date) : null;
   return prisma.runWithTenant(tenantId, async () => prisma.processedWorkday.findMany({
     where: day ? { date: { gte: day, lt: endOfDay(day) } } : {},
-    include: { employee: { include: { user: true } }, schedule: true },
+    include: { employee: { include: { user: { select: safeUserSelect } } }, schedule: true },
     orderBy: { date: "desc" },
     take: 100
   }));
@@ -1356,7 +1358,7 @@ async function processPayrollRange(tenantId, input = {}) {
   const { start, end, key } = periodFromRange(input);
   const endExclusive = endOfDay(end);
   return prisma.runWithTenant(tenantId, async () => {
-    const employees = await prisma.employee.findMany({ where: { active: true }, include: { user: true } });
+    const employees = await prisma.employee.findMany({ where: { active: true }, include: { user: { select: safeUserSelect } } });
     const payrolls = [];
     for (const employee of employees) {
       const workdays = await prisma.processedWorkday.findMany({
@@ -1418,7 +1420,7 @@ async function listPayroll(tenantId, query = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const rows = await prisma.payroll.findMany({
       where: query.period ? { period: query.period } : {},
-      include: { employee: { include: { user: true } } },
+      include: { employee: { include: { user: { select: safeUserSelect } } } },
       orderBy: { created_at: "desc" },
       take: Math.min(Number(query.limit || 100), 300)
     });

@@ -104,29 +104,34 @@ export default function ServiceReportsPage() {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Row | null>(null);
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
   async function load() {
     setLoading(true);
     try {
+      setMessage("");
       const [orderRows, referenceRows, employeeRows, incidentRows, evidenceRows] = await Promise.all([
-        supabaseFetch<Order[]>(`/rest/v1/service_orders?select=*&scheduled_date=gte.${from}&scheduled_date=lte.${to}&order=scheduled_date.desc`),
-        supabaseFetch<Reference[]>("/rest/v1/service_references?select=*"),
-        supabaseFetch<Employee[]>("/rest/v1/employees?select=id,first_name,last_name,metadata"),
-        supabaseFetch<Incident[]>("/rest/v1/service_incidents?select=*"),
-        supabaseFetch<Evidence[]>("/rest/v1/service_evidence?select=*")
+        supabaseFetch<Order[]>(`/rest/v1/service_orders?select=id,number,reference_id,technician_employee_id,service_type,status,customer_name,customer_address,scheduled_date,started_at,closed_at,duration_minutes,no_execution_reason,metadata&scheduled_date=gte.${from}&scheduled_date=lte.${to}&order=scheduled_date.desc&limit=250`),
+        supabaseFetch<Reference[]>("/rest/v1/service_references?select=id,code,name,category,estimated_minutes&limit=200"),
+        supabaseFetch<Employee[]>("/rest/v1/employees?select=id,first_name,last_name,metadata&limit=250"),
+        supabaseFetch<Incident[]>("/rest/v1/service_incidents?select=id,order_id,type,description,action&limit=500"),
+        supabaseFetch<Evidence[]>("/rest/v1/service_evidence?select=id,order_id,evidence_type,storage_path,metadata&limit=500")
       ]);
       setOrders(orderRows);
       setReferences(referenceRows);
       setEmployees(employeeRows);
       setIncidents(incidentRows);
       setEvidence(evidenceRows);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No fue posible cargar el reporte de servicios.");
+      setOrders([]);
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    load().catch(() => undefined);
+    load();
   }, [from, to]);
 
   const rows = useMemo(() => {
@@ -218,6 +223,8 @@ export default function ServiceReportsPage() {
         <label className="text-sm font-semibold">Estado<select className="mt-1 h-10 w-full rounded-md border border-line px-3 font-normal" value={status} onChange={(event) => setStatus(event.target.value)}><option value="all">Todos</option>{Object.entries(statusLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
         <button className="inline-flex h-10 items-center self-end rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={load} type="button">Actualizar</button>
       </section>
+
+      {message ? <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{message}</div> : null}
 
       <section className="grid gap-3 md:grid-cols-5">
         <Metric label="Servicios" value={kpis.total} />

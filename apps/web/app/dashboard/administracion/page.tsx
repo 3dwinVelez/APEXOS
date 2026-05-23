@@ -31,6 +31,8 @@ import {
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
+const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
+
 type CatalogItem = { key: string; label: string; actions: string[] };
 type Role = { id: number; name: string; description: string; active: boolean; is_system: boolean; permissions: Record<string, Record<string, boolean>> };
 type AdminUser = {
@@ -317,7 +319,7 @@ function isSupabaseSession() {
   if (!token?.includes(".")) return false;
   try {
     const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-    return String(payload.iss || "").includes("supabase") || String(payload.ref || "") === "jbirkghkekuifgfsgquq";
+    return String(payload.iss || "").includes("supabase") || (!!SUPABASE_PROJECT_REF && String(payload.ref || "") === SUPABASE_PROJECT_REF);
   } catch {
     return false;
   }

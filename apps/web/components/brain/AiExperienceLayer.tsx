@@ -41,6 +41,8 @@ type Rect = {
   height: number;
 };
 
+const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
+
 const severityStyles: Record<InsightSeverity, string> = {
   critical: "border-red-200 bg-red-50 text-red-900",
   warning: "border-amber-200 bg-amber-50 text-amber-900",
@@ -263,7 +265,7 @@ function isSupabaseSession() {
   if (!token?.includes(".")) return false;
   try {
     const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-    return String(payload.iss || "").includes("supabase") || String(payload.ref || "") === "jbirkghkekuifgfsgquq";
+    return String(payload.iss || "").includes("supabase") || (!!SUPABASE_PROJECT_REF && String(payload.ref || "") === SUPABASE_PROJECT_REF);
   } catch {
     return false;
   }
