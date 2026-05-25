@@ -152,6 +152,13 @@ async function currentSupabaseEmployee() {
   return rows[0] || null;
 }
 
+async function currentSupabaseCompanyUser() {
+  const userId = currentSupabaseUserId();
+  if (!userId) return null;
+  const rows = await supabaseFetch<Array<{ company_id: string; role?: string }>>(`/rest/v1/company_users?select=company_id,role&user_id=eq.${userId}&status=eq.active&limit=1`);
+  return rows[0] || null;
+}
+
 async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): Promise<T | null> {
   const [pathname, queryString = ""] = path.split("?");
   const search = new URLSearchParams(queryString);
@@ -729,7 +736,211 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     } as T;
   }
 
+  const serviceOrderActionMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)\/(start|inspection|execution|close|close-not-executed)$/);
+  const serviceOrderIncidentsMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)\/incidents$/);
+  const serviceOrderPhotosMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)\/photos$/);
   const serviceOrderDetailMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)$/);
+  if (pathname === "/api/v1/services/orders" && method === "POST") {
+    const body = JSON.parse(String(options.body || "{}"));
+    const employee = await currentSupabaseEmployee();
+    const membership = employee?.company_id ? null : await currentSupabaseCompanyUser();
+    const companyId = employee?.company_id || membership?.company_id;
+    if (!companyId) throw new Error("No se encontro una empresa activa para crear el servicio.");
+    const referenceId = body.reference_id || body.reference_item_id || null;
+    const metadata = body.metadata && typeof body.metadata === "object" ? body.metadata : {};
+    const row = {
+      company_id: companyId,
+      number: `OS-${Date.now()}`,
+      reference_id: referenceId,
+      technician_employee_id: employee?.id || null,
+      technician_user_id: employee?.user_id || currentSupabaseUserId() || null,
+      service_type: body.service_type || "montaje",
+      status: "pendiente",
+      customer_name: body.customer_name,
+      customer_address: body.customer_address,
+      customer_phone: body.customer_phone || "",
+      invoice_number: body.invoice_number || "",
+      scheduled_date: body.scheduled_date || localDate(),
+      notes: body.notes || "",
+      metadata: { ...metadata, created_from: "apexos_web_supabase" }
+    };
+    await supabaseFetch<void>("/rest/v1/service_orders", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify(row)
+    });
+    const inserted = await supabaseFetch<Array<{
+      id: string;
+      number: string;
+      reference_id?: string;
+      technician_employee_id?: string;
+      service_type?: string;
+      status?: string;
+      customer_name: string;
+      customer_address: string;
+      customer_phone?: string;
+      invoice_number?: string;
+      scheduled_date?: string;
+      notes?: string;
+      metadata?: AnyRow;
+    }>>(`/rest/v1/service_orders?select=id,number,reference_id,technician_employee_id,service_type,status,customer_name,customer_address,customer_phone,invoice_number,scheduled_date,notes,metadata&number=eq.${encodeURIComponent(row.number)}&limit=1`);
+    if (!inserted[0]?.id) throw new Error("El servicio se envio, pero la politica RLS no permitio leer la orden creada.");
+    return inserted[0] as T;
+  }
+
+  if (serviceOrderActionMatch && method === "PATCH") {
+    const [, orderId, action] = serviceOrderActionMatch;
+    const body = JSON.parse(String(options.body || "{}"));
+    const rows = await supabaseFetch<Array<{ id: string; company_id: string; started_at?: string; metadata?: AnyRow }>>(
+      `/rest/v1/service_orders?select=id,company_id,started_at,metadata&id=eq.${encodeURIComponent(orderId)}&limit=1`
+    );
+    const current = rows[0];
+    if (!current) throw new Error("No se encontro el servicio o no tienes permisos para actualizarlo.");
+    const now = new Date().toISOString();
+    const metadata = current.metadata && typeof current.metadata === "object" ? current.metadata : {};
+    const patch: AnyRow = { metadata: { ...metadata, ...(body.metadata || {}) } };
+
+    if (action === "start") {
+      patch.status = "en_curso";
+      patch.started_at = now;
+      patch.start_latitude = body.latitude ?? null;
+      patch.start_longitude = body.longitude ?? null;
+      patch.metadata = { ...metadata, ...(body.metadata || {}), start_accuracy_meters: body.accuracy_meters ?? null };
+    }
+    if (action === "inspection") {
+      const items = Array.isArray(body.items) ? body.items.map((item: AnyRow) => ({
+        part_id: item.part_id,
+        name: item.name,
+        quantity: Number(item.quantity || 1),
+        unit: item.unit || "und",
+        status: item.status || "ok",
+        comment: item.comment || "",
+        action: item.action || "ninguna"
+      })) : [];
+      patch.status = "inspeccion";
+      patch.metadata = {
+        ...metadata,
+        inspection: {
+          items,
+          decision: body.decision || "pendiente",
+          problem_count: items.filter((item: AnyRow) => item.status !== "ok").length,
+          inspected_at: now,
+          ...(body.metadata || {})
+        }
+      };
+    }
+    if (action === "execution") {
+      patch.status = "ejecucion";
+      patch.metadata = {
+        ...metadata,
+        inspection: {
+          ...((metadata.inspection as AnyRow) || {}),
+          decision: "armable",
+          moved_to_execution_at: now
+        }
+      };
+    }
+    if (action === "close" || action === "close-not-executed") {
+      const evidence = await supabaseFetch<Array<{ evidence_type?: string; metadata?: AnyRow }>>(
+        `/rest/v1/service_evidence?select=evidence_type,metadata&order_id=eq.${encodeURIComponent(orderId)}&limit=100`
+      );
+      const available = new Set(evidence.map((item) => String(item.metadata?.original_type || item.evidence_type || "")));
+      const required = action === "close" ? ["producto_abierto", "producto_cerrado", "cliente", "firma_cliente"] : ["no_ejecutada", "firma_cliente"];
+      const missing = required.filter((item) => !available.has(item));
+      if (missing.length) throw new Error(`Faltan evidencias para cerrar: ${missing.join(", ")}.`);
+      if (action === "close-not-executed" && !String(body.no_execution_reason || "").trim()) throw new Error("El motivo de no ejecucion es obligatorio.");
+      patch.status = action === "close" ? "cerrada" : "no_ejecutada";
+      patch.closed_at = now;
+      patch.close_latitude = body.latitude ?? null;
+      patch.close_longitude = body.longitude ?? null;
+      patch.no_execution_reason = action === "close-not-executed" ? body.no_execution_reason : null;
+      patch.metadata = { ...metadata, ...(body.metadata || {}), close_accuracy_meters: body.accuracy_meters ?? null };
+      if (action === "close-not-executed") {
+        await supabaseFetch<void>("/rest/v1/service_incidents", {
+          method: "POST",
+          headers: { Prefer: "return=minimal" },
+          body: JSON.stringify({
+            company_id: current.company_id,
+            order_id: orderId,
+            type: "no_ejecutada",
+            description: body.no_execution_reason,
+            action: "cierre_no_ejecutado",
+            metadata: body.metadata || {}
+          })
+        });
+      }
+    }
+
+    await supabaseFetch<void>(`/rest/v1/service_orders?id=eq.${encodeURIComponent(orderId)}`, {
+      method: "PATCH",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify(patch)
+    });
+    return await supabaseApiFallback<T>(`/api/v1/services/orders/${orderId}`);
+  }
+
+  if (serviceOrderIncidentsMatch && method === "POST") {
+    const orderId = serviceOrderIncidentsMatch[1];
+    const body = JSON.parse(String(options.body || "{}"));
+    const rows = await supabaseFetch<Array<{ company_id: string }>>(`/rest/v1/service_orders?select=company_id&id=eq.${encodeURIComponent(orderId)}&limit=1`);
+    if (!rows[0]) throw new Error("No se encontro el servicio o no tienes permisos para registrar novedades.");
+    await supabaseFetch<void>("/rest/v1/service_incidents", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({
+        company_id: rows[0].company_id,
+        order_id: orderId,
+        type: body.type || "averia",
+        description: body.description,
+        action: body.action || "",
+        photo_url: body.photo_url || "",
+        metadata: body.metadata || {}
+      })
+    });
+    const inserted = await supabaseFetch<Array<{ id: string; order_id: string; type?: string; description?: string; action?: string; created_at?: string }>>(
+      `/rest/v1/service_incidents?select=id,order_id,type,description,action,created_at&order_id=eq.${encodeURIComponent(orderId)}&order=created_at.desc&limit=1`
+    );
+    if (!inserted[0]?.id) throw new Error("La novedad se envio, pero no fue posible leer el registro creado.");
+    return inserted[0] as T;
+  }
+
+  if (serviceOrderPhotosMatch) {
+    const orderId = serviceOrderPhotosMatch[1];
+    if (method === "GET") {
+      const photos = await supabaseFetch<Array<{ id: string; evidence_type?: string; file_url?: string; storage_path?: string; mime_type?: string; size_bytes?: number; metadata?: AnyRow; created_at?: string }>>(
+        `/rest/v1/service_evidence?select=id,evidence_type,file_url,storage_path,mime_type,size_bytes,metadata,created_at&order_id=eq.${encodeURIComponent(orderId)}&order=created_at.asc&limit=100`
+      );
+      return photos.map((photo) => ({ ...photo, type: String(photo.metadata?.original_type || photo.evidence_type || ""), base64_data: photo.file_url?.startsWith("data:") ? photo.file_url : "" })) as T;
+    }
+    if (method === "POST") {
+      const body = JSON.parse(String(options.body || "{}"));
+      const rows = await supabaseFetch<Array<{ company_id: string }>>(`/rest/v1/service_orders?select=company_id&id=eq.${encodeURIComponent(orderId)}&limit=1`);
+      if (!rows[0]) throw new Error("No se encontro el servicio o no tienes permisos para cargar evidencia.");
+      const originalType = String(body.type || body.evidence_type || "novedad");
+      const allowedType = ["fachada", "producto_abierto", "producto_cerrado", "cliente", "firma_cliente", "no_ejecutada"].includes(originalType) ? originalType : "novedad";
+      await supabaseFetch<void>("/rest/v1/service_evidence", {
+        method: "POST",
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify({
+          company_id: rows[0].company_id,
+          order_id: orderId,
+          evidence_type: allowedType,
+          file_url: body.file_url || body.base64_data || "",
+          storage_path: body.storage_path || "",
+          mime_type: body.mime_type || "",
+          size_bytes: Number(body.size_bytes || 0),
+          metadata: { ...(body.metadata || {}), original_type: originalType, file_name: body.file_name || "" }
+        })
+      });
+      const inserted = await supabaseFetch<Array<{ id: string; evidence_type?: string; file_url?: string; storage_path?: string; mime_type?: string; size_bytes?: number; metadata?: AnyRow; created_at?: string }>>(
+        `/rest/v1/service_evidence?select=id,evidence_type,file_url,storage_path,mime_type,size_bytes,metadata,created_at&order_id=eq.${encodeURIComponent(orderId)}&order=created_at.desc&limit=1`
+      );
+      const photo = inserted[0];
+      if (!photo?.id) throw new Error("La evidencia se envio, pero no fue posible leer el registro creado.");
+      return { ...photo, type: originalType, base64_data: photo?.file_url?.startsWith("data:") ? photo.file_url : "" } as T;
+    }
+  }
+
   if (pathname === "/api/v1/services/orders" || serviceOrderDetailMatch) {
     const status = search.get("status");
     const filters = [
@@ -753,12 +964,25 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       notes?: string;
       metadata?: AnyRow;
     }>>(`/rest/v1/service_orders?select=id,number,reference_id,technician_employee_id,service_type,status,customer_name,customer_address,customer_phone,invoice_number,scheduled_date,started_at,closed_at,notes,metadata&order=created_at.desc${filters ? `&${filters}` : ""}&limit=${serviceOrderDetailMatch ? 1 : 150}`);
+    if (serviceOrderDetailMatch && !orders[0]) return null as T;
     const orderIds = orders.map((order) => order.id);
     const orderFilter = orderIds.length ? `&order_id=in.(${orderIds.join(",")})` : "&order_id=is.null";
-    const refs = await supabaseFetch<Array<{ id: string; code: string; name: string; category?: string; estimated_minutes?: number; brand?: string; model?: string; metadata?: AnyRow }>>("/rest/v1/service_references?select=id,code,name,category,estimated_minutes,brand,model,metadata&limit=200");
-    const parts = await supabaseFetch<Array<{ id: string; reference_id: string; name: string; quantity: number; unit: string; display_order?: number }>>("/rest/v1/service_reference_parts?select=id,reference_id,name,quantity,unit,display_order&order=display_order.asc&limit=1000");
-    const incidents = await supabaseFetch<Array<{ id: string; order_id: string; type?: string; description?: string; action?: string }>>(`/rest/v1/service_incidents?select=id,order_id,type,description,action${orderFilter}&limit=500`);
-    const evidence = await supabaseFetch<Array<{ id: string; order_id: string; evidence_type?: string; file_url?: string; storage_path?: string }>>(`/rest/v1/service_evidence?select=id,order_id,evidence_type,file_url,storage_path${orderFilter}&limit=500`);
+    const refs = await supabaseFetch<Array<{ id: string; code: string; name: string; category?: string; estimated_minutes?: number; brand?: string; model?: string; metadata?: AnyRow }>>("/rest/v1/service_references?select=id,code,name,category,estimated_minutes,brand,model,metadata&limit=200").catch((error) => {
+      safeDevLog("No fue posible consultar referencias de servicios Supabase.", error);
+      return [];
+    });
+    const parts = await supabaseFetch<Array<{ id: string; reference_id: string; name: string; quantity: number; unit: string; display_order?: number }>>("/rest/v1/service_reference_parts?select=id,reference_id,name,quantity,unit,display_order&order=display_order.asc&limit=1000").catch((error) => {
+      safeDevLog("No fue posible consultar partes de referencias Supabase.", error);
+      return [];
+    });
+    const incidents = await supabaseFetch<Array<{ id: string; order_id: string; type?: string; description?: string; action?: string }>>(`/rest/v1/service_incidents?select=id,order_id,type,description,action${orderFilter}&limit=500`).catch((error) => {
+      safeDevLog("No fue posible consultar novedades de servicios Supabase.", error);
+      return [];
+    });
+    const evidence = await supabaseFetch<Array<{ id: string; order_id: string; evidence_type?: string; file_url?: string; storage_path?: string; mime_type?: string; size_bytes?: number; metadata?: AnyRow; created_at?: string }>>(`/rest/v1/service_evidence?select=id,order_id,evidence_type,file_url,storage_path,mime_type,size_bytes,metadata,created_at${orderFilter}&limit=500`).catch((error) => {
+      safeDevLog("No fue posible consultar evidencias de servicios Supabase.", error);
+      return [];
+    });
 
     const mapped = orders.map((order) => {
       const reference = refs.find((ref) => ref.id === order.reference_id);
@@ -776,8 +1000,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         customer_phone: order.customer_phone || "",
         scheduled_date: order.scheduled_date || "",
         incidents: incidents.filter((item) => item.order_id === order.id),
-        photos: evidence.filter((item) => item.order_id === order.id),
-        evidence: evidence.filter((item) => item.order_id === order.id),
+        photos: evidence.filter((item) => item.order_id === order.id).map((item) => ({ ...item, type: String(item.metadata?.original_type || item.evidence_type || ""), base64_data: item.file_url?.startsWith("data:") ? item.file_url : "" })),
+        evidence: evidence.filter((item) => item.order_id === order.id).map((item) => ({ ...item, type: String(item.metadata?.original_type || item.evidence_type || ""), base64_data: item.file_url?.startsWith("data:") ? item.file_url : "" })),
         inspection_items: referenceWithParts?.parts?.map((part) => ({ part_id: part.id, name: part.name, status: "pendiente" })) || []
       };
     });
@@ -932,8 +1156,8 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   let response: Response;
 
   if (isSupabaseSession()) {
-    const fallback = await supabaseApiFallback<T>(path).catch(() => null);
-    if (fallback) {
+    const fallback = await supabaseApiFallback<T>(path, options);
+    if (fallback !== null) {
       touchSession();
       return fallback;
     }
@@ -960,8 +1184,8 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
 
   if (!response.ok) {
     if (isSupabaseSession()) {
-      const fallback = await supabaseApiFallback<T>(path, options).catch(() => null);
-      if (fallback) {
+      const fallback = await supabaseApiFallback<T>(path, options);
+      if (fallback !== null) {
         touchSession();
         return fallback;
       }

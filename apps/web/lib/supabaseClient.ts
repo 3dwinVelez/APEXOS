@@ -55,7 +55,9 @@ export async function supabaseFetch<T>(path: string, options: SupabaseFetchOptio
     throw new Error(`Supabase ${response.status}: ${detail}`);
   }
   if (response.status === 204) return undefined as T;
-  return response.json() as Promise<T>;
+  const text = await response.text();
+  if (!text) return undefined as T;
+  return JSON.parse(text) as T;
 }
 
 export const supabaseAuth = {

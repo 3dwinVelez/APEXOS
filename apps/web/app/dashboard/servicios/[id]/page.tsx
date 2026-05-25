@@ -9,14 +9,14 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-type ServiceReferencePart = { id: number; name: string; quantity: number; unit: string };
+type ServiceReferencePart = { id: number | string; name: string; quantity: number; unit: string };
 type ReferenceManual = { title: string; file_name?: string; mime_type?: string; file_url?: string; base64_data?: string; notes?: string };
 type ServiceReference = { code: string; name: string; parts: ServiceReferencePart[]; manuals?: ReferenceManual[]; metadata?: { manuals?: ReferenceManual[] } };
 type InspectionStatus = "ok" | "averiada" | "faltante";
-type InspectionItem = { part_id: number; name: string; quantity: number; unit: string; status: InspectionStatus; comment: string; action: string };
-type ServicePhoto = { id: number; type: string; file_url?: string; base64_data?: string; metadata?: { mime_type?: string; file_name?: string; part_id?: number; part_name?: string; [key: string]: unknown }; created_at?: string };
+type InspectionItem = { part_id: number | string; name: string; quantity: number; unit: string; status: InspectionStatus; comment: string; action: string };
+type ServicePhoto = { id: number | string; type: string; file_url?: string; base64_data?: string; metadata?: { mime_type?: string; file_name?: string; part_id?: number | string; part_name?: string; [key: string]: unknown }; created_at?: string };
 type ServiceOrder = {
-  id: number;
+  id: number | string;
   number: string;
   reference: ServiceReference;
   service_type: string;
@@ -33,7 +33,7 @@ type ServiceOrder = {
   close_longitude?: number;
   duration_minutes?: number;
   no_execution_reason?: string;
-  incidents: Array<{ id: number; description: string; type: string; created_at?: string }>;
+  incidents: Array<{ id: number | string; description: string; type: string; created_at?: string }>;
   photos: ServicePhoto[];
   metadata?: { inspection?: { items?: InspectionItem[]; decision?: string; problem_count?: number } };
 };
@@ -92,6 +92,7 @@ export default function ServiceOperationPage() {
   const params = useParams<{ id: string }>();
   const [order, setOrder] = useState<ServiceOrder | null>(null);
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(true);
   const [incident, setIncident] = useState("");
   const [noExecutionReason, setNoExecutionReason] = useState("");
   const [noExecutionMode, setNoExecutionMode] = useState(false);
@@ -103,13 +104,23 @@ export default function ServiceOperationPage() {
   const [activePanel, setActivePanel] = useState<Panel>("inicio");
 
   async function load() {
-    const data = await api<ServiceOrder>(`/api/v1/services/orders/${params.id}`);
-    setOrder(data);
-    setActivePanel((current) => current === "inicio" && data.status !== "pendiente" ? panelForStatus(data.status) : current);
+    setLoading(true);
+    setMessage("");
+    try {
+      const data = await api<ServiceOrder>(`/api/v1/services/orders/${params.id}`);
+      if (!data?.id) throw new Error("No se encontro el servicio solicitado o no tienes permisos para verlo.");
+      setOrder(data);
+      setActivePanel((current) => current === "inicio" && data.status !== "pendiente" ? panelForStatus(data.status) : current);
+    } catch (error) {
+      setOrder(null);
+      setMessage(error instanceof Error ? error.message : "No fue posible cargar el servicio.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
-    load().catch(() => undefined);
+    load();
   }, [params.id]);
 
   useEffect(() => {
@@ -124,7 +135,7 @@ export default function ServiceOperationPage() {
     if (executionPhotoTypes.every((type) => order.photos.some((photo) => photo.type === type))) setClosureMode(true);
     const saved = order.metadata?.inspection?.items;
     if (saved?.length) {
-      setInspection(saved.map((item) => ({ ...item, part_id: Number(item.part_id), quantity: Number(item.quantity || 1), unit: item.unit || "und", status: (["ok", "averiada", "faltante"].includes(item.status) ? item.status : "ok") as InspectionStatus, action: item.action || "ninguna" })));
+      setInspection(saved.map((item) => ({ ...item, part_id: item.part_id, quantity: Number(item.quantity || 1), unit: item.unit || "und", status: (["ok", "averiada", "faltante"].includes(item.status) ? item.status : "ok") as InspectionStatus, action: item.action || "ninguna" })));
       return;
     }
     const parts = order.reference?.parts || [];
@@ -185,12 +196,12 @@ export default function ServiceOperationPage() {
     }
   }
 
-  function updateInspection(partId: number, patch: Partial<InspectionItem>) {
-    setInspection((current) => current.map((item) => item.part_id === partId ? { ...item, ...patch } : item));
+  function updateInspection(partId: number | string, patch: Partial<InspectionItem>) {
+    setInspection((current) => current.map((item) => String(item.part_id) === String(partId) ? { ...item, ...patch } : item));
   }
 
-  function hasProblemEvidence(partId: number) {
-    return Boolean(captures[`pieza_${partId}`]) || Boolean(order?.photos.some((photo) => photo.type === "pieza_averiada" && Number(photo.metadata?.part_id) === partId));
+  function hasProblemEvidence(partId: number | string) {
+    return Boolean(captures[`pieza_${partId}`]) || Boolean(order?.photos.some((photo) => photo.type === "pieza_averiada" && String(photo.metadata?.part_id) === String(partId)));
   }
 
   function hasPhoto(type: string) {
@@ -296,7 +307,16 @@ export default function ServiceOperationPage() {
     });
   }, [order]);
 
-  if (!order) return <div className="p-6 text-sm text-neutral-500">Cargando servicio...</div>;
+  if (!order) {
+    return (
+      <div className="mx-auto max-w-xl space-y-4 p-6">
+        <Link className="inline-flex h-11 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-medium text-neutral-600 hover:text-apex" href="/dashboard/servicios"><ArrowLeft size={18} /> Monitor</Link>
+        <div className="rounded-md border border-line bg-white p-4 text-sm font-medium text-neutral-700">
+          {loading ? "Cargando servicio..." : message || "No fue posible cargar el servicio."}
+        </div>
+      </div>
+    );
+  }
   const referenceManuals = order.reference?.manuals?.length ? order.reference.manuals : order.reference?.metadata?.manuals || [];
 
   return (

@@ -6,33 +6,58 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-type ServiceReference = { id: number; code: string; name: string; category: string; estimated_minutes: number; brand: string; model: string; parts: Array<{ id: number; name: string; quantity: number; unit: string }> };
-type ServiceOrder = { id: number; number: string };
+type ServiceReference = { id: number | string; code: string; name: string; category: string; estimated_minutes: number; brand: string; model: string; parts: Array<{ id: number | string; name: string; quantity: number; unit: string }> };
+type ServiceOrder = { id: number | string; number: string };
+type ServiceOrderCreateResponse = ServiceOrder | { order?: ServiceOrder; data?: ServiceOrder };
+
+function createdOrderId(response: ServiceOrderCreateResponse | null | undefined) {
+  if (!response) return null;
+  if ("id" in response && response.id) return response.id;
+  if ("order" in response && response.order?.id) return response.order.id;
+  if ("data" in response && response.data?.id) return response.data.id;
+  return null;
+}
 
 export default function NewServiceOrderPage() {
   const router = useRouter();
   const [references, setReferences] = useState<ServiceReference[]>([]);
   const [message, setMessage] = useState("");
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ reference_id: "", service_type: "montaje", customer_name: "", customer_address: "", customer_phone: "", invoice_number: "", scheduled_date: "", notes: "" });
 
   useEffect(() => {
-    api<ServiceReference[]>("/api/v1/services/references?active=true").then(setReferences).catch(() => setReferences([]));
+    api<ServiceReference[]>("/api/v1/services/references?active=true").then(setReferences).catch((error) => {
+      setReferences([]);
+      setMessage(error instanceof Error ? error.message : "No fue posible cargar referencias.");
+    });
   }, []);
 
   async function createOrder() {
+    if (saving) return;
     if (!form.reference_id || !form.customer_name || !form.customer_address) {
       setMessage("Referencia, cliente y direccion son obligatorios.");
       return;
     }
-    const order = await api<ServiceOrder>("/api/v1/services/orders", {
-      method: "POST",
-      body: JSON.stringify({
-        ...form,
-        reference_id: Number(form.reference_id),
-        metadata: { assignment: "current_user" }
-      })
-    });
-    router.push(`/dashboard/servicios/${order.id}`);
+    setSaving(true);
+    setMessage("");
+    try {
+      const numericReference = Number(form.reference_id);
+      const order = await api<ServiceOrderCreateResponse>("/api/v1/services/orders", {
+        method: "POST",
+        body: JSON.stringify({
+          ...form,
+          reference_id: Number.isFinite(numericReference) ? numericReference : form.reference_id,
+          metadata: { assignment: "current_user" }
+        })
+      });
+      const orderId = createdOrderId(order);
+      if (!orderId) throw new Error("El servicio fue enviado, pero no se recibio el identificador de la orden.");
+      router.push(`/dashboard/servicios/${orderId}`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No fue posible crear el servicio.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   const ref = references.find((item) => String(item.id) === form.reference_id);
@@ -65,7 +90,7 @@ export default function NewServiceOrderPage() {
         </div>
         {ref ? (
           <div className="mt-3 rounded-md border border-line bg-paper p-3 text-sm text-neutral-700">
-            {ref.parts.length} pieza(s) · {ref.estimated_minutes} min · {[ref.brand, ref.model].filter(Boolean).join(" / ") || ref.category}
+            {ref.parts.length} pieza(s) - {ref.estimated_minutes} min - {[ref.brand, ref.model].filter(Boolean).join(" / ") || ref.category}
           </div>
         ) : null}
       </section>
@@ -81,16 +106,16 @@ export default function NewServiceOrderPage() {
         </div>
       </section>
 
-      <button className="hidden h-12 w-full items-center justify-center gap-2 rounded-md bg-apex px-4 text-base font-semibold text-white md:inline-flex" onClick={createOrder} type="button">
-        <ClipboardCheck size={17} /> Crear orden de servicio
+      <button className="hidden h-12 w-full items-center justify-center gap-2 rounded-md bg-apex px-4 text-base font-semibold text-white disabled:opacity-60 md:inline-flex" disabled={saving} onClick={createOrder} type="button">
+        <ClipboardCheck size={17} /> {saving ? "Creando..." : "Crear orden de servicio"}
       </button>
       <div className="fixed inset-x-0 bottom-0 z-50 border-t border-line bg-white/95 p-3 pb-[calc(env(safe-area-inset-bottom)+12px)] backdrop-blur md:hidden">
         <div className="mb-2 grid grid-cols-2 gap-2">
           <Link className="inline-flex h-11 items-center justify-center rounded-md border border-line bg-white text-sm font-semibold" href="/dashboard/servicios">Cancelar</Link>
           <Link className="inline-flex h-11 items-center justify-center rounded-md border border-line bg-white text-sm font-semibold" href="/dashboard/servicios/referencias">Referencias</Link>
         </div>
-        <button className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-apex px-4 text-base font-semibold text-white shadow-sm" onClick={createOrder} type="button">
-          <ClipboardCheck size={18} /> Crear orden
+        <button className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-apex px-4 text-base font-semibold text-white shadow-sm disabled:opacity-60" disabled={saving} onClick={createOrder} type="button">
+          <ClipboardCheck size={18} /> {saving ? "Creando..." : "Crear orden"}
         </button>
       </div>
     </div>
