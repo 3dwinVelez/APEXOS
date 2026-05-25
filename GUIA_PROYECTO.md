@@ -253,8 +253,6 @@ Correo: admin@apexos.qa
 Clave: ApexOS-QA-Admin-2026!
 Acceso: admin global APEX OS, panel de empresas/suscripciones y owner de empresas QA.
 
-
-
 Usuario empresa SCJ
 Correo: scj@apexos.qa
 Clave: ApexOS-QA-SCJ-2026!
