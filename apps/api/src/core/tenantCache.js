@@ -1,11 +1,14 @@
 const prisma = require("./prisma");
 
-const redisDisabled = process.env.DISABLE_REDIS === "1";
+const redisDisabled = ["1", "true"].includes(String(process.env.REDIS_DISABLED || process.env.DISABLE_REDIS || "").toLowerCase());
 const redis = redisDisabled
   ? null
   : (() => {
+      if (!process.env.REDIS_URL) {
+        throw new Error("REDIS_URL is required when REDIS_DISABLED is not enabled");
+      }
       const Redis = require("ioredis");
-      return new Redis(process.env.REDIS_URL || "redis://localhost:6379", {
+      return new Redis(process.env.REDIS_URL, {
         maxRetriesPerRequest: 1,
         enableOfflineQueue: false,
         lazyConnect: true

@@ -3,6 +3,7 @@ const { connection } = require("../queues");
 const wsManager = require("../wsManager");
 
 if (!connection) {
+  console.info("Redis disabled - brain worker disabled in QA");
   return;
 }
 
@@ -17,4 +18,3 @@ new Worker("apex-brain", async (job) => {
   if (job.data.tenant_id) wsManager.broadcast(job.data.tenant_id, { type: "brain", data: result });
   return result;
 }, { connection });
-

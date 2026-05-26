@@ -4,6 +4,7 @@ const { connection } = require("../queues");
 const { redactSensitive } = require("../../security/policy");
 
 if (!connection) {
+  console.info("Redis disabled - audit worker disabled in QA");
   return;
 }
 
