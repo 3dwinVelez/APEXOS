@@ -1,5 +1,8 @@
+console.log("Before loading environment");
 require("./src/core/loadEnv")();
+console.log("After loading environment");
 
+console.log("Before require fastify");
 const fastify = require("fastify")({
   bodyLimit: Number(process.env.API_BODY_LIMIT_BYTES || 25 * 1024 * 1024),
   logger: {
@@ -8,6 +11,7 @@ const fastify = require("fastify")({
   },
   trustProxy: true
 });
+console.log("After require fastify");
 
 const MODULES = [
   "auth",
@@ -34,50 +38,56 @@ function requireEnv(names) {
 }
 
 function registerRoutes(name, routes, options) {
-  fastify.log.info(`Registering ${name} routes`);
+  bootLog(`Registering ${name} routes`);
   fastify.register(routes, options);
-  fastify.log.info(`Registered ${name} routes`);
+  bootLog(`Registered ${name} routes`);
+}
+
+function bootLog(message) {
+  console.log(message);
+  fastify.log.info(message);
 }
 
 async function build() {
-  fastify.log.info("Starting APEX OS API bootstrap");
+  bootLog("Entering build()");
+  bootLog("Starting APEX OS API bootstrap");
   requireEnv(["DATABASE_URL", "JWT_SECRET"]);
   const configuredOrigins = process.env.ALLOWED_ORIGINS?.split(",").map((origin) => origin.trim()).filter(Boolean) || [];
   const allowedOrigins = process.env.NODE_ENV === "production"
     ? configuredOrigins
     : Array.from(new Set([...configuredOrigins, ...DEFAULT_ALLOWED_ORIGINS]));
 
-  fastify.log.info("Registering cors");
+  bootLog("Registering cors");
   await fastify.register(require("@fastify/cors"), {
     origin: allowedOrigins.length ? allowedOrigins : DEFAULT_ALLOWED_ORIGINS,
     methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     credentials: true
   });
-  fastify.log.info("Registered cors");
+  bootLog("Registered cors");
 
-  fastify.log.info("Registering rate-limit");
+  bootLog("Registering rate-limit");
   await fastify.register(require("@fastify/rate-limit"), {
     max: 200,
     timeWindow: "1 minute",
     keyGenerator: (req) => req.user?.tenant_id || req.ip
   });
-  fastify.log.info("Registered rate-limit");
+  bootLog("Registered rate-limit");
 
-  fastify.log.info("Registering security headers");
+  bootLog("Registering security headers");
   require("./src/security/headers").registerSecurityHeaders(fastify);
-  fastify.log.info("Registered security headers");
+  bootLog("Registered security headers");
 
-  fastify.log.info("Registering websocket");
+  bootLog("Registering websocket");
   await fastify.register(require("@fastify/websocket"));
-  fastify.log.info("Registered websocket");
+  bootLog("Registered websocket");
 
-  fastify.log.info("Registering multipart");
+  bootLog("Registering multipart");
   await fastify.register(require("@fastify/multipart"), {
     limits: { fileSize: 50 * 1024 * 1024 }
   });
-  fastify.log.info("Registered multipart");
+  bootLog("Registered multipart");
 
-  fastify.log.info("Registering auth decorator");
+  bootLog("Registering auth decorator");
   fastify.decorate("authenticate", async (request, reply) => {
     try {
       const auth = request.headers.authorization || "";
@@ -96,13 +106,13 @@ async function build() {
       return reply.code(401).send({ error: "Token invalido", code: "TOKEN_INVALIDO" });
     }
   });
-  fastify.log.info("Registered auth decorator");
+  bootLog("Registered auth decorator");
 
-  fastify.log.info("Registering audit hook");
+  bootLog("Registering audit hook");
   require("./src/fabric/audit").registerAuditHook(fastify);
-  fastify.log.info("Registered audit hook");
+  bootLog("Registered audit hook");
 
-  fastify.log.info("Registering API modules");
+  bootLog("Registering API modules");
   registerRoutes("auth", require("./src/modules/auth/routes"), { prefix: "/api/v1" });
   registerRoutes("onboarding", require("./src/modules/onboarding/routes"), { prefix: "/api/v1" });
   registerRoutes("brain", require("./src/modules/brain/routes"), { prefix: "/api/v1" });
@@ -116,9 +126,9 @@ async function build() {
   registerRoutes("hr", require("./src/modules/hr/routes"), { prefix: "/api/v1" });
   registerRoutes("services", require("./src/modules/services/routes"), { prefix: "/api/v1" });
   registerRoutes("transport", require("./src/modules/transport/routes"), { prefix: "/api/v1" });
-  fastify.log.info("Registered API modules");
+  bootLog("Registered API modules");
 
-  fastify.log.info("Registering brain websocket route");
+  bootLog("Registering brain websocket route");
   fastify.get("/brain/live", { websocket: true, preHandler: fastify.authenticate }, (connection, request) => {
     const tenantId = request.user?.tenant_id;
     if (!tenantId) {
@@ -129,41 +139,41 @@ async function build() {
     wsManager.addClient(tenantId, connection.socket);
     connection.socket.on("close", () => wsManager.removeClient(tenantId, connection.socket));
   });
-  fastify.log.info("Registered brain websocket route");
+  bootLog("Registered brain websocket route");
 
   const { isRedisDisabled } = require("./src/fabric/redisConfig");
-  fastify.log.info("Starting background workers");
+  bootLog("Starting background workers");
   if (isRedisDisabled()) {
-    fastify.log.info("QA mode: background workers and crons disabled");
+    bootLog("QA mode: background workers and crons disabled");
   } else {
-    fastify.log.info("Registering audit worker");
+    bootLog("Registering audit worker");
     require("./src/fabric/workers/auditWorker");
-    fastify.log.info("Registered audit worker");
-    fastify.log.info("Registering brain worker");
+    bootLog("Registered audit worker");
+    bootLog("Registering brain worker");
     require("./src/fabric/workers/brainWorker");
-    fastify.log.info("Registered brain worker");
-    fastify.log.info("Registering stock sync worker");
+    bootLog("Registered brain worker");
+    bootLog("Registering stock sync worker");
     require("./src/fabric/workers/stockSyncWorker");
-    fastify.log.info("Registered stock sync worker");
-    fastify.log.info("Registering iot worker");
+    bootLog("Registered stock sync worker");
+    bootLog("Registering iot worker");
     require("./src/fabric/workers/iotWorker");
-    fastify.log.info("Registered iot worker");
-    fastify.log.info("Registering email worker");
+    bootLog("Registered iot worker");
+    bootLog("Registering email worker");
     require("./src/fabric/workers/emailWorker");
-    fastify.log.info("Registered email worker");
-    fastify.log.info("Starting cron jobs");
+    bootLog("Registered email worker");
+    bootLog("Starting cron jobs");
     require("./src/fabric/crons").start();
-    fastify.log.info("Started cron jobs");
+    bootLog("Started cron jobs");
   }
-  fastify.log.info("Finished background workers");
+  bootLog("Finished background workers");
 
-  fastify.log.info("Registering health route");
+  bootLog("Registering health route");
   fastify.get("/health", async () => {
     const prisma = require("./src/core/prisma");
     await prisma.$queryRaw`SELECT 1`;
     return { status: "OK", version: "2.0", modules: MODULES.length };
   });
-  fastify.log.info("Registered health route");
+  bootLog("Registered health route");
 
   fastify.setErrorHandler((error, request, reply) => {
     const code = error.code;
@@ -183,15 +193,16 @@ async function build() {
 
 if (require.main === module) {
   const port = Number(process.env.PORT || 3000);
-  fastify.log.info("Starting HTTP listen");
+  bootLog("Before build()");
+  bootLog("Starting HTTP listen");
   build()
     .then((app) => {
-      fastify.log.info(`About to listen on port ${port}`);
+      bootLog(`About to listen on port ${port}`);
       return app.listen({ port, host: "0.0.0.0" });
     })
     .then(() => {
-      fastify.log.info("HTTP server listening");
-      fastify.log.info("API de APEX OS iniciada");
+      bootLog("HTTP server listening");
+      bootLog("API de APEX OS iniciada");
     })
     .catch((err) => {
       fastify.log.error(err);
