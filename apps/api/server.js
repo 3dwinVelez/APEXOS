@@ -34,12 +34,14 @@ function requireEnv(names) {
 }
 
 async function build() {
+  fastify.log.info("Starting APEX OS API bootstrap");
   requireEnv(["DATABASE_URL", "JWT_SECRET"]);
   const configuredOrigins = process.env.ALLOWED_ORIGINS?.split(",").map((origin) => origin.trim()).filter(Boolean) || [];
   const allowedOrigins = process.env.NODE_ENV === "production"
     ? configuredOrigins
     : Array.from(new Set([...configuredOrigins, ...DEFAULT_ALLOWED_ORIGINS]));
 
+  fastify.log.info("Registering core plugins");
   await fastify.register(require("@fastify/cors"), {
     origin: allowedOrigins.length ? allowedOrigins : DEFAULT_ALLOWED_ORIGINS,
     methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -80,6 +82,7 @@ async function build() {
 
   require("./src/fabric/audit").registerAuditHook(fastify);
 
+  fastify.log.info("Registering API modules");
   fastify.register(require("./src/modules/auth/routes"), { prefix: "/api/v1" });
   fastify.register(require("./src/modules/onboarding/routes"), { prefix: "/api/v1" });
   fastify.register(require("./src/modules/brain/routes"), { prefix: "/api/v1" });
@@ -106,17 +109,20 @@ async function build() {
   });
 
   const { isRedisDisabled } = require("./src/fabric/redisConfig");
+  fastify.log.info("Starting background workers");
   if (isRedisDisabled()) {
-    fastify.log.info("Redis disabled - queue workers disabled");
+    fastify.log.info("QA mode: background workers and crons disabled");
   } else {
     require("./src/fabric/workers/auditWorker");
     require("./src/fabric/workers/brainWorker");
     require("./src/fabric/workers/stockSyncWorker");
+    require("./src/fabric/workers/iotWorker");
+    require("./src/fabric/workers/emailWorker");
+    fastify.log.info("Starting cron jobs");
+    require("./src/fabric/crons").start();
   }
-  require("./src/fabric/workers/iotWorker");
-  require("./src/fabric/workers/emailWorker");
-  require("./src/fabric/crons").start();
 
+  fastify.log.info("Registering healthcheck");
   fastify.get("/health", async () => {
     const prisma = require("./src/core/prisma");
     await prisma.$queryRaw`SELECT 1`;
@@ -140,9 +146,13 @@ async function build() {
 }
 
 if (require.main === module) {
+  fastify.log.info("Starting HTTP listen");
   build()
     .then((app) => app.listen({ port: Number(process.env.PORT || 3000), host: "0.0.0.0" }))
-    .then(() => fastify.log.info("API de APEX OS iniciada"))
+    .then(() => {
+      fastify.log.info("HTTP server listening");
+      fastify.log.info("API de APEX OS iniciada");
+    })
     .catch((err) => {
       fastify.log.error(err);
       process.exit(1);
