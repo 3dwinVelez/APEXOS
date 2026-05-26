@@ -1,5 +1,6 @@
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+const SUPABASE_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_SUPABASE_TIMEOUT_MS || 20000);
 
 type SupabaseFetchOptions = RequestInit & {
   contentType?: string;
@@ -42,13 +43,26 @@ export function supabaseHeaders({ contentType, requireSession = true }: Pick<Sup
 
 export async function supabaseFetch<T>(path: string, options: SupabaseFetchOptions = {}): Promise<T> {
   const { contentType = "application/json", requireSession = true, headers, ...init } = options;
-  const response = await fetch(supabaseUrl(path), {
-    ...init,
-    headers: {
-      ...supabaseHeaders({ contentType, requireSession }),
-      ...headers
+  const controller = new AbortController();
+  const timeout = globalThis.setTimeout(() => controller.abort(), SUPABASE_TIMEOUT_MS);
+  let response: Response;
+  try {
+    response = await fetch(supabaseUrl(path), {
+      ...init,
+      signal: controller.signal,
+      headers: {
+        ...supabaseHeaders({ contentType, requireSession }),
+        ...headers
+      }
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("Supabase no respondio a tiempo. Reintenta en unos segundos.");
     }
-  });
+    throw error;
+  } finally {
+    globalThis.clearTimeout(timeout);
+  }
   if (!response.ok) {
     const body = await response.json().catch(() => ({ message: response.statusText }));
     const detail = body.message || body.error_description || body.error || JSON.stringify(body);

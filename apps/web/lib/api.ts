@@ -3,6 +3,7 @@ import { supabaseFetch } from "./supabaseClient";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
+const API_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_API_TIMEOUT_MS || 20000);
 
 function isSupabaseSession() {
   if (typeof window === "undefined") return false;
@@ -120,6 +121,21 @@ function localDate(value = new Date()) {
 function safeDevLog(message: string, error: unknown) {
   if (process.env.NODE_ENV !== "production") {
     console.warn(`[apexos] ${message}`, error instanceof Error ? error.message : String(error));
+  }
+}
+
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, timeoutMs = API_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeout = globalThis.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("La plataforma no respondio a tiempo. Reintenta en unos segundos.");
+    }
+    throw error;
+  } finally {
+    globalThis.clearTimeout(timeout);
   }
 }
 
@@ -1164,7 +1180,7 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   }
 
   try {
-    response = await fetch(`${API_URL}${path}`, {
+    response = await fetchWithTimeout(`${API_URL}${path}`, {
       ...options,
       headers: {
         "Content-Type": "application/json",
@@ -1172,8 +1188,9 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
         ...options.headers
       }
     });
-  } catch {
-    throw new Error("API no disponible. Inicia el backend en http://localhost:3000.");
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    throw new Error("API no disponible. Revisa el servicio backend.");
   }
 
   if (response.status === 401 && typeof window !== "undefined" && !isSupabaseSession()) {
@@ -1192,7 +1209,7 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
     }
 
     if (response.status >= 500) {
-      throw new Error("API no disponible. Inicia el backend en http://localhost:3000.");
+      throw new Error("API no disponible. Revisa el servicio backend.");
     }
 
     const body = await response.json().catch(() => ({ error: response.statusText }));
