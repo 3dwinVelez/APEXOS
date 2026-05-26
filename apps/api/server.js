@@ -105,9 +105,14 @@ async function build() {
     connection.socket.on("close", () => wsManager.removeClient(tenantId, connection.socket));
   });
 
-  require("./src/fabric/workers/auditWorker");
-  require("./src/fabric/workers/brainWorker");
-  require("./src/fabric/workers/stockSyncWorker");
+  const { isRedisDisabled } = require("./src/fabric/redisConfig");
+  if (isRedisDisabled()) {
+    fastify.log.info("Redis disabled - queue workers disabled");
+  } else {
+    require("./src/fabric/workers/auditWorker");
+    require("./src/fabric/workers/brainWorker");
+    require("./src/fabric/workers/stockSyncWorker");
+  }
   require("./src/fabric/workers/iotWorker");
   require("./src/fabric/workers/emailWorker");
   require("./src/fabric/crons").start();

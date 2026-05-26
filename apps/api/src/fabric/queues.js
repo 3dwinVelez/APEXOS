@@ -1,12 +1,7 @@
-const { Queue } = require("bullmq");
-const IORedis = require("ioredis");
-
-function isRedisDisabled() {
-  return ["1", "true"].includes(String(process.env.REDIS_DISABLED || process.env.DISABLE_REDIS || "").toLowerCase());
-}
+const { getRedisUrl, isRedisDisabled } = require("./redisConfig");
 
 if (isRedisDisabled()) {
-  console.info("Redis disabled — using noop queues");
+  console.info("Redis disabled - using noop queues");
   const noopQueue = { add: async () => undefined };
 
   module.exports = {
@@ -18,11 +13,10 @@ if (isRedisDisabled()) {
   return;
 }
 
-if (!process.env.REDIS_URL) {
-  throw new Error("REDIS_URL is required when REDIS_DISABLED is not enabled");
-}
+const { Queue } = require("bullmq");
+const IORedis = require("ioredis");
 
-const connection = new IORedis(process.env.REDIS_URL, {
+const connection = new IORedis(getRedisUrl(), {
   maxRetriesPerRequest: null
 });
 
