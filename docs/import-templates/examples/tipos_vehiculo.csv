@@ -1,0 +1,4 @@
+company_code,vehicle_type_code,name,description,active,sort_order
+GLOBAL,camioneta,Camioneta,Vehiculo liviano operativo,true,10
+GLOBAL,furgon,Furgon,Vehiculo de carga cerrado,true,20
+GLOBAL,camion,Camion,Vehiculo de carga pesada,true,30

@@ -1,0 +1,4 @@
+company_code,product_brand_code,name,description,active,sort_order
+GLOBAL,DEMOOFFICE,DemoOffice,Marca ficticia de oficina,true,10
+GLOBAL,DEMOHOME,DemoHome,Marca ficticia de hogar,true,20
+SCJ,SCJPRO,SCJ Pro,Marca interna ficticia,true,30

@@ -1,0 +1,4 @@
+company_code,warehouse_code,name,location_code,address,city,active,sort_order
+SCJ,BOG-NORTE-B01,Bodega principal norte,BOG-NORTE,Calle 10 20 30,Bogota,true,10
+SCJ,BOG-SUR-B01,Bodega sur,BOG-SUR,Carrera 50 40 30,Bogota,true,20
+SCJ,MED-B01,Bodega Medellin,MED-PRINCIPAL,Avenida 80 45 10,Medellin,true,30

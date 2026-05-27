@@ -1,0 +1,4 @@
+company_code,position_code,name,description,area_code,active,sort_order
+SCJ,CONDUCTOR,Conductor,Conduce vehiculos de reparto,TRANSP,true,10
+SCJ,SUP_RUTA,Supervisor de ruta,Coordina equipo operativo,OPER,true,20
+SCJ,AUX_OPER,Auxiliar operativo,Apoya servicios y actividades,OPER,true,30

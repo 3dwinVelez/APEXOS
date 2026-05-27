@@ -1,0 +1,4 @@
+company_code,item_code,name,item_type_code,category_code,unit_code,brand_code,model,description,unit_cost,unit_price,tax_rate,stock_min,stock_max,estimated_minutes,active
+SCJ,REF-MON-001,Montaje escritorio modular,service,OFICINA,UND,DEMOOFFICE,MOD-90,Servicio de montaje de escritorio,120000,190000,19,0,0,90,true
+SCJ,SKU-ESC-001,Escritorio modular,product,OFICINA,UND,DEMOOFFICE,ESC-120,Producto demo de oficina,300000,450000,19,2,20,,true
+SCJ,SRV-SOP-002,Soporte tecnico silla,service,SERVICIOS,HORA,DEMOOFFICE,SILLA-45,Servicio de soporte y ajuste,50000,90000,19,0,0,45,true

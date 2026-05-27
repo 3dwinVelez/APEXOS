@@ -1,0 +1,4 @@
+unit_code,name,symbol,unit_type,active,sort_order
+UND,Unidad,und,cantidad,true,10
+KG,Kilogramo,kg,peso,true,20
+HORA,Hora,h,tiempo,true,30

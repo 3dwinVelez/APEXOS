@@ -1,0 +1,4 @@
+bank_code,name,country,swift_code,active,sort_order
+BANCOLOMBIA,Bancolombia,CO,COLOCOBM,true,10
+BOGOTA,Banco de Bogota,CO,BBOGCOBB,true,20
+DAVIVIENDA,Davivienda,CO,CAFECOBB,true,30

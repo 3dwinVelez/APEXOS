@@ -1,0 +1,4 @@
+company_code,area_code,name,description,parent_area_code,active,sort_order
+SCJ,OPER,Operacion,Area operativa,,true,10
+SCJ,TRANSP,Transporte,Flota y rutas,OPER,true,20
+SCJ,ADMIN,Administracion,Gestion administrativa,,true,30

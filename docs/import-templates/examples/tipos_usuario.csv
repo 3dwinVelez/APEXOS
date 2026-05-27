@@ -1,0 +1,4 @@
+company_code,user_type_code,name,description,active,sort_order
+GLOBAL,admin,Administrador,Usuario administrativo,true,10
+GLOBAL,supervisor,Supervisor,Usuario con equipo asignado,true,20
+GLOBAL,conductor,Conductor,Usuario operativo de transporte,true,30

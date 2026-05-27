@@ -1,0 +1,4 @@
+company_code;plate;vehicle_type_code;vehicle_brand_code;line;model_year;color;vin_chassis;engine_number;fuel_type_code;capacity_value;unit_code;ownership_type_code;legal_owner;owner_document;cost_center_code;location_code;driver_user_code;status;soat_expires;technical_review_expires
+SCJ;ABC123;camioneta;TOYOTA;Hilux;2023;Blanco;VINQA0001;MOTQA0001;diesel;1000;KG;propio;SCJ;900123456;CC-TRAN;BOG-NORTE;carlos.rincon.qa@example.com;activo;10/1/2027;15/2/2027
+SCJ;DEF456;furgon;CHEVROLET;NPR;2022;Azul;VINQA0002;MOTQA0002;diesel;2500;KG;leasing;Leasing Demo;900654321;CC-TRAN;BOG-SUR;;activo;1/3/2027;5/3/2027
+SCJ;GHI789;camion;HINO;FC9J;2021;Gris;VINQA0003;MOTQA0003;diesel;5000;KG;tercero;Proveedor Logistico QA;901333444;CC-TRAN;MED-PRINCIPAL;;activo;1/4/2027;15/4/2027

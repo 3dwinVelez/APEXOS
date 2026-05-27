@@ -1,0 +1,4 @@
+document_type_code,dian_code,name,applies_to,active,sort_order
+CC,13,Cedula de ciudadania,usuarios;terceros,true,10
+CE,22,Cedula de extranjeria,usuarios;terceros,true,20
+NIT,31,NIT,empresas;terceros,true,30

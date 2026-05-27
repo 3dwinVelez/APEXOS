@@ -1,0 +1,4 @@
+payment_method_code,name,description,requires_bank,active,sort_order
+cash,Efectivo,Pago en efectivo,false,true,10
+transfer,Transferencia,Pago por transferencia bancaria,true,true,20
+card,Tarjeta,Pago con tarjeta,false,true,30

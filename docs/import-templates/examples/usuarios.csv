@@ -1,0 +1,4 @@
+company_code,email,first_name,last_name,display_name,role_code,user_type_code,document_type_code,document_number,phone,status,position_code,area_code,location_code,warehouse_code,cost_center_code,hire_date,temporary_password,require_password_change
+SCJ,laura.martinez.qa@example.com,Laura,Martinez,Laura Martinez,ADMIN_EMPRESA,admin,CC,1020304050,3001112233,activo,SUP_RUTA,OPER,BOG-NORTE,,CC-OPER,2026-05-01,Cambio123!,true
+SCJ,carlos.rincon.qa@example.com,Carlos,Rincon,Carlos Rincon,OPERARIO,conductor,CC,1020304051,3001112244,activo,CONDUCTOR,TRANSP,BOG-NORTE,BOG-NORTE-B01,CC-TRAN,2026-05-01,Cambio123!,true
+SCJ,ana.torres.qa@example.com,Ana,Torres,Ana Torres,SUPERVISOR,supervisor,CC,1020304052,3001112255,activo,SUP_RUTA,OPER,BOG-SUR,,CC-OPER,2026-05-01,Cambio123!,true
