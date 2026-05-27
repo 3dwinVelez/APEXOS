@@ -86,6 +86,7 @@ export default function MobilePunchPage() {
   const [activityPhoto, setActivityPhoto] = useState<CapturedFile | null>(null);
   const [activitySaving, setActivitySaving] = useState(false);
   const [activityMessage, setActivityMessage] = useState("");
+  const [markingType, setMarkingType] = useState<string | null>(null);
 
   async function load() {
     const [me, routeData, attendanceData, typesData, sessionData] = await Promise.all([
@@ -177,45 +178,53 @@ export default function MobilePunchPage() {
   }
 
   async function mark(type: string) {
-    if (!employee) return;
-    const fix = gps || await refreshGps();
-    if (!fix) return;
-    if (type === "salida" && isClosingLate && (!extraReason || !extraDetail.trim() || !extraEvidence)) {
-      setMessage("Cierre fuera de horario: selecciona motivo, escribe el sustento y adjunta evidencia fotografica.");
-      return;
+    if (!employee || markingType) return;
+    setMarkingType(type);
+    setMessage("");
+    try {
+      const fix = gps || await refreshGps();
+      if (!fix) return;
+      if (type === "salida" && isClosingLate && (!extraReason || !extraDetail.trim() || !extraEvidence)) {
+        setMessage("Cierre fuera de horario: selecciona motivo, escribe el sustento y adjunta evidencia fotografica.");
+        return;
+      }
+      const response = await api<PunchResponse>("/api/v1/hr/time-punches", {
+        method: "POST",
+        body: JSON.stringify({
+          employee_id: employee.id,
+          user_name: userName,
+          type,
+          punched_at: new Date().toISOString(),
+          latitude: fix.latitude,
+          longitude: fix.longitude,
+          accuracy_meters: fix.accuracy_meters,
+          vehicle_plate: vehiclePlate,
+          route_id: route?.id,
+          extra_reason: type === "salida" ? extraReason : undefined,
+          extra_detail: type === "salida" ? extraDetail : undefined,
+          extra_evidence: type === "salida" ? extraEvidence : undefined,
+          metadata: { source: "apexos-mobile", current_user_only: true }
+        })
+      });
+      if (response.preoperational_required && response.preoperational_checklist) {
+        const template = await api<PreopTemplate>("/api/v1/hr/routes/preop/template");
+        setPreop(response.preoperational_checklist);
+        setPreopTemplate(template);
+        setPreopAnswers(Object.fromEntries(template.items.map((item) => [item.item_key, { answer: "cumple", observations: "", evidence: null }])));
+        setPreopMessage("Checklist preoperacional obligatorio antes de iniciar ruta.");
+        setMessage("Completa el checklist preoperacional para habilitar la Entrada.");
+        return;
+      }
+      setExtraReason("");
+      setExtraDetail("");
+      setExtraEvidence(null);
+      setMessage(`${punchLabels[type].title} registrado.`);
+      await load();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No fue posible registrar la marcacion.");
+    } finally {
+      setMarkingType(null);
     }
-    const response = await api<PunchResponse>("/api/v1/hr/time-punches", {
-      method: "POST",
-      body: JSON.stringify({
-        employee_id: employee.id,
-        user_name: userName,
-        type,
-        punched_at: new Date().toISOString(),
-        latitude: fix.latitude,
-        longitude: fix.longitude,
-        accuracy_meters: fix.accuracy_meters,
-        vehicle_plate: vehiclePlate,
-        route_id: route?.id,
-        extra_reason: type === "salida" ? extraReason : undefined,
-        extra_detail: type === "salida" ? extraDetail : undefined,
-        extra_evidence: type === "salida" ? extraEvidence : undefined,
-        metadata: { source: "apexos-mobile", current_user_only: true }
-      })
-    });
-    if (response.preoperational_required && response.preoperational_checklist) {
-      const template = await api<PreopTemplate>("/api/v1/hr/routes/preop/template");
-      setPreop(response.preoperational_checklist);
-      setPreopTemplate(template);
-      setPreopAnswers(Object.fromEntries(template.items.map((item) => [item.item_key, { answer: "cumple", observations: "", evidence: null }])));
-      setPreopMessage("Checklist preoperacional obligatorio antes de iniciar ruta.");
-      setMessage("Completa el checklist preoperacional para habilitar la Entrada.");
-      return;
-    }
-    setExtraReason("");
-    setExtraDetail("");
-    setExtraEvidence(null);
-    setMessage(`${punchLabels[type].title} registrado.`);
-    await load();
   }
 
   async function openActivityModal() {
@@ -425,14 +434,14 @@ export default function MobilePunchPage() {
               const enabled = type === nextType && !!employee;
               const cfg = punchLabels[type];
               return (
-                <button className={`min-h-24 w-full rounded-md border p-4 text-left transition active:scale-[0.99] ${enabled ? "border-apex bg-white shadow-sm" : "border-line bg-white opacity-70"}`} disabled={!enabled} key={type} onClick={() => mark(type)} type="button">
+                  <button className={`min-h-24 w-full rounded-md border p-4 text-left transition active:scale-[0.99] ${enabled ? "border-apex bg-white shadow-sm" : "border-line bg-white opacity-70"}`} disabled={!enabled || Boolean(markingType)} key={type} onClick={() => mark(type)} type="button">
                   <div className="flex items-center gap-3">
                     <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-md text-white ${done ? "bg-emerald-600" : enabled ? cfg.color : "bg-neutral-300"}`}>
                       {done ? <CheckCircle2 size={24} /> : <MapPin size={23} />}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-base font-semibold">{cfg.title}</p>
-                      <p className="mt-1 text-sm text-neutral-500">{done ? "Registrado correctamente" : enabled ? cfg.desc : "No disponible aun"}</p>
+                      <p className="mt-1 text-sm text-neutral-500">{markingType === type ? "Registrando..." : done ? "Registrado correctamente" : enabled ? cfg.desc : "No disponible aun"}</p>
                     </div>
                   </div>
                 </button>
@@ -472,11 +481,11 @@ export default function MobilePunchPage() {
       {view === "marcar" ? <div className="fixed inset-x-0 bottom-0 z-50 border-t border-line bg-white/95 px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur md:hidden">
         <button
           className={`h-14 w-full rounded-md text-base font-semibold text-white shadow-sm ${punchLabels[nextType]?.color || "bg-apex"} disabled:bg-neutral-300`}
-          disabled={!employee || !nextType}
+          disabled={!employee || !nextType || Boolean(markingType)}
           onClick={() => mark(nextType)}
           type="button"
         >
-          {nextType ? punchLabels[nextType]?.title || "Registrar" : "Jornada completa"}
+          {markingType ? "Registrando..." : nextType ? punchLabels[nextType]?.title || "Registrar" : "Jornada completa"}
         </button>
       </div> : null}
 

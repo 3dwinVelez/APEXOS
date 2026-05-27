@@ -151,6 +151,18 @@ function currentSupabaseUserId() {
   }
 }
 
+function currentSupabaseUserEmail() {
+  if (typeof window === "undefined") return "";
+  const token = localStorage.getItem("token");
+  if (!token?.includes(".")) return "";
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return String(payload.email || payload.user_metadata?.email || "");
+  } catch {
+    return "";
+  }
+}
+
 async function currentSupabaseEmployee() {
   const userId = currentSupabaseUserId();
   const userFilter = userId ? `&user_id=eq.${userId}` : "";
@@ -165,7 +177,30 @@ async function currentSupabaseEmployee() {
     user_type?: string;
     metadata?: AnyRow;
   }>>(`/rest/v1/employees?select=id,company_id,user_id,first_name,last_name,email,position,user_type,metadata&status=eq.active${userFilter}&order=created_at.desc&limit=1`);
-  return rows[0] || null;
+  if (rows[0]) return rows[0];
+
+  const membership = await currentSupabaseCompanyUser();
+  if (!membership?.company_id || !userId) return null;
+  const email = currentSupabaseUserEmail();
+  return {
+    id: userId,
+    company_id: membership.company_id,
+    user_id: userId,
+    first_name: "Usuario",
+    last_name: "QA",
+    email,
+    position: membership.role || "operario",
+    user_type: membership.role === "admin" || membership.role === "owner" ? "administrador" : "operario",
+    metadata: {
+      name: email || `Usuario ${userId.slice(0, 8)}`,
+      virtual_employee: true,
+      source: "company_users_fallback"
+    }
+  };
+}
+
+function isVirtualEmployee(employee: { metadata?: AnyRow } | null | undefined) {
+  return employee?.metadata?.virtual_employee === true;
 }
 
 async function currentSupabaseCompanyUser() {
@@ -255,7 +290,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     } : {};
     const row = {
       company_id: employee.company_id,
-      employee_id: employee.id,
+      employee_id: isVirtualEmployee(employee) ? null : employee.id,
       user_id: employee.user_id || null,
       route_id: body.route_id || null,
       user_name: body.user_name || name,
@@ -288,7 +323,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         headers: { Prefer: "return=representation" }
       });
     }
-    const punches = await supabaseFetch<Array<{ punch_type: string }>>(`/rest/v1/time_punches?select=punch_type&employee_id=eq.${employee.id}&punch_date=eq.${localDate(now)}&order=punched_at.asc&limit=12`).catch((error) => {
+    const punchIdentityFilter = isVirtualEmployee(employee) ? `user_id=eq.${employee.user_id}` : `employee_id=eq.${employee.id}`;
+    const punches = await supabaseFetch<Array<{ punch_type: string }>>(`/rest/v1/time_punches?select=punch_type&${punchIdentityFilter}&punch_date=eq.${localDate(now)}&order=punched_at.asc&limit=12`).catch((error) => {
       safeDevLog("No fue posible recalcular siguiente marcacion.", error);
       return [];
     });
@@ -311,7 +347,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const now = body.occurred_at ? new Date(body.occurred_at) : new Date();
     const row = {
       company_id: employee.company_id,
-      employee_id: employee.id,
+      employee_id: isVirtualEmployee(employee) ? null : employee.id,
       user_id: employee.user_id || null,
       route_id: body.route_id || null,
       user_name: fullName(employee),
