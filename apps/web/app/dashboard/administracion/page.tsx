@@ -513,14 +513,26 @@ export default function AdministracionPage() {
   }
 
   async function load() {
-    const [catalogData, rolesData, usersData] = await Promise.all([
+    setMessage("");
+    const [catalogResult, rolesResult, usersResult] = await Promise.allSettled([
       api<CatalogItem[]>("/api/v1/admin/permissions/catalog"),
       api<Role[]>("/api/v1/admin/roles"),
       api<AdminUser[]>("/api/v1/admin/users")
     ]);
+    const catalogData = catalogResult.status === "fulfilled" ? catalogResult.value : [];
+    const rolesData = rolesResult.status === "fulfilled" ? rolesResult.value : [];
+    const usersData = usersResult.status === "fulfilled" ? usersResult.value : [];
     setCatalog(catalogData);
     setRoles(rolesData);
     setUsers(usersData);
+    const errors = [
+      catalogResult.status === "rejected" ? "catalogo de permisos" : "",
+      rolesResult.status === "rejected" ? "roles" : "",
+      usersResult.status === "rejected" ? "usuarios" : ""
+    ].filter(Boolean);
+    if (errors.length) {
+      setMessage(`No fue posible consultar ${errors.join(", ")}. Revisa permisos RLS, empresa activa o conectividad Supabase.`);
+    }
     if (isSupabaseSession() && !canManageCompanies()) {
       setMessage("Sesion empresa activa. La gestion de empresas y modulos requiere permisos de administrador de plataforma.");
     }

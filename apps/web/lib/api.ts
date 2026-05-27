@@ -206,8 +206,82 @@ function isVirtualEmployee(employee: { metadata?: AnyRow } | null | undefined) {
 async function currentSupabaseCompanyUser() {
   const userId = currentSupabaseUserId();
   if (!userId) return null;
-  const rows = await supabaseFetch<Array<{ company_id: string; role?: string }>>(`/rest/v1/company_users?select=company_id,role&user_id=eq.${userId}&status=eq.active&limit=1`);
-  return rows[0] || null;
+  const rows = await supabaseFetch<Array<{ company_id: string; company_name?: string; role?: string }>>(
+    `/rest/v1/v_user_companies?select=company_id,company_name,role&user_id=eq.${userId}&limit=20`
+  ).catch(() => supabaseFetch<Array<{ company_id: string; role?: string }>>(`/rest/v1/company_users?select=company_id,role&user_id=eq.${userId}&status=eq.active&limit=20`));
+  const preferredCompanyId = typeof window !== "undefined" ? localStorage.getItem("apexos_company_id") : "";
+  return rows.find((row) => row.company_id === preferredCompanyId)
+    || rows.find((row) => ["owner", "admin", "superadmin"].includes(String(row.role || "").toLowerCase()))
+    || rows[0]
+    || null;
+}
+
+function supabaseVehicleStatus(status: unknown) {
+  const value = String(status || "").toLowerCase();
+  if (value === "inactivo") return "inactive";
+  if (value === "retirado") return "retired";
+  if (value === "bloqueado" || value === "mantenimiento") return "maintenance";
+  return ["active", "inactive", "maintenance", "retired"].includes(value) ? value : "active";
+}
+
+function dateOrNull(value: unknown) {
+  return typeof value === "string" && value.trim() ? value : null;
+}
+
+function uuidOrNull(value: unknown) {
+  const text = String(value || "");
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(text) ? text : null;
+}
+
+function supabaseVehiclePayload(input: AnyRow, companyId?: string) {
+  return {
+    ...(companyId ? { company_id: companyId } : {}),
+    plate: String(input.plate || "").toUpperCase().replace(/\s+/g, ""),
+    type: input.type || input.category || "vehiculo",
+    category: input.category || input.type || "vehiculo",
+    brand: input.brand || null,
+    line: input.line || null,
+    model: input.model || null,
+    year: input.year ? Number(input.year) : null,
+    color: input.color || null,
+    vin_chassis: input.vin_chassis || null,
+    engine_number: input.engine_number || null,
+    cylinder_capacity: input.cylinder_capacity || null,
+    fuel: input.fuel || null,
+    body_type: input.body_type || null,
+    axle_count: input.axle_count ? Number(input.axle_count) : null,
+    capacity_value: input.capacity_value ? Number(input.capacity_value) : null,
+    capacity_unit: input.capacity_unit || null,
+    volume_available: input.volume_available ? Number(input.volume_available) : null,
+    mileage: input.mileage ? Number(input.mileage) : 0,
+    ownership_type: input.ownership_type || null,
+    legal_owner: input.legal_owner || null,
+    owner: input.owner || input.legal_owner || null,
+    owner_document: input.owner_document || null,
+    linked_company: input.linked_company || null,
+    cost_center: input.cost_center || null,
+    base_site: input.base_site || null,
+    authorized_driver_id: uuidOrNull(input.authorized_driver_id),
+    authorized_driver_name: input.authorized_driver_name || null,
+    authorized_driver_document: input.authorized_driver_document || null,
+    authorized_driver_code: input.authorized_driver_code || null,
+    linked_at: dateOrNull(input.linked_at),
+    unlinked_at: dateOrNull(input.unlinked_at),
+    status: supabaseVehicleStatus(input.status),
+    active: !["inactive", "retired"].includes(supabaseVehicleStatus(input.status)),
+    soat_issued_at: dateOrNull(input.soat_issued_at),
+    soat_expires: dateOrNull(input.soat_expires),
+    technical_review_issued_at: dateOrNull(input.technical_review_issued_at),
+    technical_review_expires: dateOrNull(input.technical_review_expires),
+    property_card: input.property_card || null,
+    contractual_policy_expires: dateOrNull(input.contractual_policy_expires),
+    extra_contractual_policy_expires: dateOrNull(input.extra_contractual_policy_expires),
+    cargo_registry: input.cargo_registry || null,
+    special_permits: input.special_permits || null,
+    normative_restrictions: input.normative_restrictions || null,
+    legal_notes: input.legal_notes || null,
+    metadata: { ...(typeof input.metadata === "object" && input.metadata ? input.metadata : {}), notes: input.notes || "" }
+  };
 }
 
 async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): Promise<T | null> {
@@ -626,6 +700,27 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
 
   const vehicleDetailMatch = pathname.match(/^\/api\/v1\/transport\/vehicles\/([^/]+)$/);
   if (pathname === "/api/v1/transport/vehicles" || vehicleDetailMatch) {
+    const vehicleSelect = "id,plate,type,category,brand,line,model,year,color,mileage,owner,ownership_type,legal_owner,owner_document,linked_company,cost_center,base_site,authorized_driver_id,authorized_driver_name,authorized_driver_document,authorized_driver_code,linked_at,unlinked_at,status,master_status,document_status,master_score,vin_chassis,engine_number,cylinder_capacity,fuel,body_type,axle_count,capacity_value,capacity_unit,volume_available,soat_issued_at,soat_expires,technical_review_issued_at,technical_review_expires,property_card,contractual_policy_expires,extra_contractual_policy_expires,cargo_registry,special_permits,normative_restrictions,legal_notes,metadata";
+
+    if (method === "POST" || method === "PUT" || method === "PATCH") {
+      const body = JSON.parse(String(options.body || "{}")) as AnyRow;
+      const employee = await currentSupabaseEmployee();
+      const membership = employee?.company_id ? null : await currentSupabaseCompanyUser();
+      const companyId = String(body.company_id || employee?.company_id || membership?.company_id || "");
+      if (!companyId) throw new Error("No se encontro una empresa activa para guardar el vehiculo.");
+      if (!body.plate) throw new Error("La placa del vehiculo es obligatoria.");
+      const payload = supabaseVehiclePayload(body, method === "POST" ? companyId : undefined);
+      const endpoint = method === "POST"
+        ? `/rest/v1/vehicles?select=${vehicleSelect}`
+        : `/rest/v1/vehicles?id=eq.${encodeURIComponent(vehicleDetailMatch?.[1] || String(body.id || ""))}&select=${vehicleSelect}`;
+      const savedRows = await supabaseFetch<Array<AnyRow>>(endpoint, {
+        method: method === "POST" ? "POST" : "PATCH",
+        body: JSON.stringify(payload),
+        headers: { Prefer: "return=representation" }
+      });
+      return (savedRows[0] || null) as T;
+    }
+
     const idFilter = vehicleDetailMatch ? `&id=eq.${encodeURIComponent(vehicleDetailMatch[1])}` : "";
     const rows = await supabaseFetch<Array<{
       id: string;
@@ -649,7 +744,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       document_status?: string;
       master_score?: number;
       metadata?: Record<string, unknown>;
-    }>>(`/rest/v1/vehicles?select=id,plate,type,category,brand,model,year,color,mileage,owner,ownership_type,base_site,authorized_driver_id,authorized_driver_name,authorized_driver_document,authorized_driver_code,status,master_status,document_status,master_score,metadata&order=created_at.desc${idFilter}&limit=${vehicleDetailMatch ? 1 : 100}`);
+    }>>(`/rest/v1/vehicles?select=${vehicleSelect}&order=created_at.desc${idFilter}&limit=${vehicleDetailMatch ? 1 : 100}`);
 
     const mapped = rows.map((row) => ({
       ...row,
@@ -1133,11 +1228,15 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
           operational: { classification: body.operational_classification || "operario", base_site: body.base_site || "", zone: body.operation_zone || "" }
         }
       };
-      const companies = await supabaseFetch<Array<{ id: string }>>("/rest/v1/companies?select=id&name=eq.SCJ&limit=1").catch((error) => {
+      const membership = row.company_id ? null : await currentSupabaseCompanyUser().catch((error) => {
+        safeDevLog("No fue posible resolver empresa activa para usuario.", error);
+        return null;
+      });
+      const companies = row.company_id || membership?.company_id ? [] : await supabaseFetch<Array<{ id: string }>>("/rest/v1/companies?select=id&name=eq.SCJ&limit=1").catch((error) => {
         safeDevLog("No fue posible consultar empresa SCJ.", error);
         return [];
       });
-      const payload = { ...row, company_id: row.company_id || companies[0]?.id };
+      const payload = { ...row, company_id: row.company_id || membership?.company_id || companies[0]?.id };
       const inserted = payload.company_id ? await supabaseFetch<Array<AnyRow>>("/rest/v1/employees?select=id,email,document_number,position,department,status,user_type,metadata", {
         method: "POST",
         body: JSON.stringify(payload),
