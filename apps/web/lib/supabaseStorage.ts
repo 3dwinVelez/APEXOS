@@ -4,12 +4,16 @@ export const IMAGE_MAX_BYTES = 2 * 1024 * 1024;
 export const IMAGE_MIME_TYPES = ["image/png", "image/jpeg", "image/webp"] as const;
 
 type ImageBucket = "company-assets" | "user-avatars" | "service-images";
+type DocumentBucket = "user-documents";
 
 type UploadResult = {
-  bucket: ImageBucket;
+  bucket: ImageBucket | DocumentBucket;
   path: string;
   storagePath: string;
 };
+
+const USER_DOCUMENT_MAX_BYTES = 10 * 1024 * 1024;
+const USER_DOCUMENT_MIME_TYPES = ["application/pdf", "image/png", "image/jpeg", "image/webp"] as const;
 
 function validateImage(file: File) {
   if (!IMAGE_MIME_TYPES.includes(file.type as (typeof IMAGE_MIME_TYPES)[number])) {
@@ -21,9 +25,19 @@ function validateImage(file: File) {
 }
 
 function extensionFor(file: File) {
+  if (file.type === "application/pdf") return "pdf";
   if (file.type === "image/png") return "png";
   if (file.type === "image/webp") return "webp";
   return "jpg";
+}
+
+function validateUserDocument(file: File) {
+  if (!USER_DOCUMENT_MIME_TYPES.includes(file.type as (typeof USER_DOCUMENT_MIME_TYPES)[number])) {
+    throw new Error("Formato no permitido. Usa PDF, PNG, JPEG o WEBP.");
+  }
+  if (file.size > USER_DOCUMENT_MAX_BYTES) {
+    throw new Error("El documento supera el limite de 10MB.");
+  }
 }
 
 function safeName(prefix: string, file: File) {
@@ -34,20 +48,20 @@ function encodePath(path: string) {
   return path.split("/").map(encodeURIComponent).join("/");
 }
 
-function objectUrl(bucket: ImageBucket, path: string) {
+function objectUrl(bucket: ImageBucket | DocumentBucket, path: string) {
   return supabaseUrl(`/storage/v1/object/${bucket}/${encodePath(path)}`);
 }
 
-export function storagePath(bucket: ImageBucket, path: string) {
+export function storagePath(bucket: ImageBucket | DocumentBucket, path: string) {
   return `${bucket}/${path}`;
 }
 
-export function splitStoragePath(value: string): { bucket: ImageBucket; path: string } {
+export function splitStoragePath(value: string): { bucket: ImageBucket | DocumentBucket; path: string } {
   const [bucket, ...pathParts] = value.split("/");
-  if (!["company-assets", "user-avatars", "service-images"].includes(bucket) || !pathParts.length) {
+  if (!["company-assets", "user-avatars", "service-images", "user-documents"].includes(bucket) || !pathParts.length) {
     throw new Error("Ruta de Storage invalida.");
   }
-  return { bucket: bucket as ImageBucket, path: pathParts.join("/") };
+  return { bucket: bucket as ImageBucket | DocumentBucket, path: pathParts.join("/") };
 }
 
 async function uploadImage(bucket: ImageBucket, path: string, file: File): Promise<UploadResult> {
@@ -118,5 +132,29 @@ export function uploadServiceImage(companyId: string, serviceId: string, file: F
 }
 
 export function getServiceImageUrl(storageValue: string, expiresIn = 3600) {
+  return createSignedImageUrl(storageValue, expiresIn);
+}
+
+export async function uploadUserDocument(companyId: string, userId: string, documentType: string, file: File): Promise<UploadResult> {
+  validateUserDocument(file);
+  const safeDocumentType = documentType.replace(/[^a-z0-9_-]/gi, "-").toLowerCase() || "internal";
+  const responsePath = `${companyId}/${userId}/${safeDocumentType}/${safeName("document", file)}`;
+  const response = await fetch(objectUrl("user-documents", responsePath), {
+    method: "PUT",
+    headers: {
+      ...supabaseHeaders({ contentType: file.type }),
+      "x-upsert": "true",
+      "cache-control": "3600"
+    },
+    body: file
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(body.message || "No fue posible cargar el documento.");
+  }
+  return { bucket: "user-documents", path: responsePath, storagePath: storagePath("user-documents", responsePath) };
+}
+
+export function getUserDocumentUrl(storageValue: string, expiresIn = 900) {
   return createSignedImageUrl(storageValue, expiresIn);
 }

@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { api } from "@/lib/api";
+import { getUserDocumentUrl, uploadUserDocument } from "@/lib/supabaseStorage";
 import {
   Activity,
   AlertTriangle,
@@ -35,8 +36,28 @@ const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
 
 type CatalogItem = { key: string; label: string; actions: string[] };
 type Role = { id: number; name: string; description: string; active: boolean; is_system: boolean; permissions: Record<string, Record<string, boolean>> };
+type MasterOption = { code: string; name: string };
+type UserMasterData = {
+  document_types: MasterOption[];
+  user_statuses: MasterOption[];
+  user_types: MasterOption[];
+  contract_types: MasterOption[];
+  engagement_types: MasterOption[];
+  session_statuses: MasterOption[];
+  user_document_types: MasterOption[];
+  areas: MasterOption[];
+  positions: MasterOption[];
+  locations: MasterOption[];
+  cost_centers: MasterOption[];
+  work_shifts: MasterOption[];
+  banks: MasterOption[];
+  roles?: Role[];
+};
 type AdminUser = {
   id: number;
+  employee_uuid?: string;
+  user_uuid?: string;
+  company_id?: string;
   name: string;
   email: string;
   role_id: number | null;
@@ -50,6 +71,18 @@ type AdminUser = {
   salary_base: number;
   labor_status: string;
   [key: string]: unknown;
+};
+type UserDocument = {
+  id: string;
+  document_type: string;
+  file_name: string;
+  storage_path?: string;
+  file_url?: string;
+  mime_type?: string;
+  file_size?: number;
+  status?: string;
+  observations?: string;
+  uploaded_at?: string;
 };
 type ConfigItem = {
   key: string;
@@ -66,7 +99,7 @@ type ConfigCategory = {
   icon: typeof Building2;
   items: ConfigItem[];
 };
-type UserTab = "basicos" | "acceso" | "laboral" | "operacion" | "documentos" | "auditoria";
+type UserTab = "basicos" | "acceso" | "laboral" | "operacion" | "documentos" | "maestros" | "auditoria";
 type UserForm = {
   name: string;
   first_names: string;
@@ -204,6 +237,22 @@ const emptyUser: UserForm = {
   operational_restrictions: "",
   base_site: "",
   operation_zone: ""
+};
+
+const fallbackUserMasterData: UserMasterData = {
+  document_types: [{ code: "CC", name: "Cedula" }, { code: "CE", name: "Extranjeria" }, { code: "NIT", name: "NIT" }, { code: "PAS", name: "Pasaporte" }],
+  user_statuses: [{ code: "activo", name: "Activo" }, { code: "inactivo", name: "Inactivo" }, { code: "suspendido", name: "Suspendido" }, { code: "bloqueado", name: "Bloqueado" }, { code: "pendiente_activacion", name: "Pendiente activacion" }],
+  user_types: [{ code: "administrativo", name: "Administrativo" }, { code: "conductor", name: "Conductor" }, { code: "supervisor", name: "Supervisor" }, { code: "operario", name: "Operario" }, { code: "tecnico", name: "Tecnico" }, { code: "bodega", name: "Bodega" }],
+  contract_types: [{ code: "indefinite", name: "Indefinido" }, { code: "fixed", name: "Termino fijo" }, { code: "service", name: "Prestacion de servicios" }, { code: "temporary", name: "Temporal" }],
+  engagement_types: [{ code: "empleado", name: "Empleado" }, { code: "contratista", name: "Contratista" }, { code: "tercero", name: "Tercero" }, { code: "temporal", name: "Temporal" }, { code: "aprendiz", name: "Aprendiz" }],
+  session_statuses: [{ code: "sin_sesion", name: "Sin sesion" }, { code: "activa", name: "Activa" }, { code: "bloqueada", name: "Bloqueada" }],
+  user_document_types: [{ code: "identity", name: "Documento de identidad" }, { code: "contract", name: "Contrato" }, { code: "license", name: "Licencia de conduccion" }, { code: "social_security", name: "Seguridad social" }, { code: "bank_certificate", name: "Certificado bancario" }, { code: "occupational_exam", name: "Examen medico ocupacional" }, { code: "internal", name: "Documento interno" }],
+  areas: [{ code: "OPER", name: "Operacion" }, { code: "TRANSP", name: "Transporte" }, { code: "ADMIN", name: "Administracion" }, { code: "BODEGA", name: "Bodega" }],
+  positions: [{ code: "ADMIN", name: "Administrador" }, { code: "SUP_RUTA", name: "Supervisor de ruta" }, { code: "CONDUCTOR", name: "Conductor" }, { code: "AUX_OPER", name: "Auxiliar operativo" }],
+  locations: [{ code: "SEDE-PRINCIPAL", name: "Sede principal" }, { code: "BOG-NORTE", name: "Bogota Norte" }, { code: "BOG-SUR", name: "Bogota Sur" }],
+  cost_centers: [{ code: "CC-OPER", name: "Operacion" }, { code: "CC-TRAN", name: "Transporte" }, { code: "CC-ADMIN", name: "Administracion" }],
+  work_shifts: [{ code: "DIURNO", name: "Diurno" }, { code: "NOCTURNO", name: "Nocturno" }, { code: "MIXTO", name: "Mixto" }],
+  banks: [{ code: "BANCOLOMBIA", name: "Bancolombia" }, { code: "BOGOTA", name: "Banco de Bogota" }, { code: "DAVIVIENDA", name: "Davivienda" }]
 };
 
 const categories: ConfigCategory[] = [
@@ -458,6 +507,11 @@ function SelectField({ label, value, onChange, options }: { label: string; value
   );
 }
 
+function optionPairs(items: MasterOption[] = [], placeholder?: string): Array<[string, string]> {
+  const pairs = items.map((item) => [item.code, item.name] as [string, string]);
+  return placeholder ? [["", placeholder], ...pairs] : pairs;
+}
+
 function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) {
   return (
     <label className="flex min-h-10 items-center justify-between gap-3 rounded-md border border-line px-3 py-2 text-sm">
@@ -474,12 +528,16 @@ export default function AdministracionPage() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
+  const [masterData, setMasterData] = useState<UserMasterData>(fallbackUserMasterData);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
   const [roleForm, setRoleForm] = useState({ name: "", description: "", active: true, permissions: {} as Record<string, Record<string, boolean>> });
   const [userForm, setUserForm] = useState<UserForm>(emptyUser);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [userTab, setUserTab] = useState<UserTab>("basicos");
+  const [documentDraft, setDocumentDraft] = useState({ document_type: "identity", file_name: "", file_url: "", storage_path: "", mime_type: "", file_size: "", observations: "" });
+  const [selectedDocumentFile, setSelectedDocumentFile] = useState<File | null>(null);
+  const [catalogDraft, setCatalogDraft] = useState({ catalog: "positions", code: "", name: "", description: "" });
   const [message, setMessage] = useState("");
 
   const selectedRole = useMemo(() => roles.find((role) => role.id === selectedRoleId) || null, [roles, selectedRoleId]);
@@ -514,21 +572,25 @@ export default function AdministracionPage() {
 
   async function load() {
     setMessage("");
-    const [catalogResult, rolesResult, usersResult] = await Promise.allSettled([
+    const [catalogResult, rolesResult, usersResult, masterResult] = await Promise.allSettled([
       api<CatalogItem[]>("/api/v1/admin/permissions/catalog"),
       api<Role[]>("/api/v1/admin/roles"),
-      api<AdminUser[]>("/api/v1/admin/users")
+      api<AdminUser[]>("/api/v1/admin/users"),
+      api<UserMasterData>("/api/v1/admin/user-master-data")
     ]);
     const catalogData = catalogResult.status === "fulfilled" ? catalogResult.value : [];
     const rolesData = rolesResult.status === "fulfilled" ? rolesResult.value : [];
     const usersData = usersResult.status === "fulfilled" ? usersResult.value : [];
+    const masterDataResult = masterResult.status === "fulfilled" ? masterResult.value : fallbackUserMasterData;
     setCatalog(catalogData);
     setRoles(rolesData);
     setUsers(usersData);
+    setMasterData({ ...fallbackUserMasterData, ...masterDataResult });
     const errors = [
       catalogResult.status === "rejected" ? "catalogo de permisos" : "",
       rolesResult.status === "rejected" ? "roles" : "",
-      usersResult.status === "rejected" ? "usuarios" : ""
+      usersResult.status === "rejected" ? "usuarios" : "",
+      masterResult.status === "rejected" ? "maestros de usuario" : ""
     ].filter(Boolean);
     if (errors.length) {
       setMessage(`No fue posible consultar ${errors.join(", ")}. Revisa permisos RLS, empresa activa o conectividad Supabase.`);
@@ -593,6 +655,7 @@ export default function AdministracionPage() {
     setSelectedUserId(null);
     setUserForm(emptyUser);
     setUserTab("basicos");
+    setSelectedDocumentFile(null);
   }
 
   function validateUser() {
@@ -620,7 +683,7 @@ export default function AdministracionPage() {
       salary_base: Number(userForm.salary_base || 0),
       documents: selectedUser?.documents || []
     };
-    if (selectedUserId) await api(`/api/v1/admin/users/${selectedUserId}`, { method: "PUT", body: JSON.stringify(payload) });
+    if (selectedUserId) await api(`/api/v1/admin/users/${selectedUserApiId()}`, { method: "PUT", body: JSON.stringify(payload) });
     else await api("/api/v1/admin/users", { method: "POST", body: JSON.stringify(payload) });
     setMessage("Usuario guardado.");
     await load();
@@ -628,11 +691,102 @@ export default function AdministracionPage() {
   }
 
   async function setUserStatus(active: boolean) {
-    if (!selectedUserId) return;
+    const targetId = selectedUserApiId();
+    if (!targetId) return;
     if (!active && !window.confirm("Confirmas desactivar este usuario sin eliminar su historial?")) return;
-    await api(`/api/v1/admin/users/${selectedUserId}/status`, { method: "PATCH", body: JSON.stringify({ active }) });
+    await api(`/api/v1/admin/users/${targetId}/status`, { method: "PATCH", body: JSON.stringify({ active }) });
     setMessage(active ? "Usuario activado." : "Usuario desactivado.");
     await load();
+  }
+
+  function selectedUserApiId() {
+    return isSupabaseSession() && selectedUser?.employee_uuid ? selectedUser.employee_uuid : selectedUserId;
+  }
+
+  async function blockUserAccess() {
+    const targetId = selectedUserApiId();
+    if (!targetId) return;
+    await api(`/api/v1/admin/users/${targetId}/access`, { method: "PATCH", body: JSON.stringify({ session_status: "bloqueada", active: false }) });
+    setMessage("Acceso de usuario bloqueado.");
+    await load();
+  }
+
+  async function requestPasswordReset() {
+    const targetId = selectedUserApiId();
+    if (!targetId) return;
+    await api(`/api/v1/admin/users/${targetId}/access`, { method: "PATCH", body: JSON.stringify({ require_password_change: true, session_status: "sin_sesion" }) });
+    setMessage("Cambio de clave solicitado para el proximo ingreso.");
+    await load();
+  }
+
+  async function addDocument() {
+    const targetId = selectedUserApiId();
+    if (!targetId) {
+      setMessage("Guarda primero el usuario para adjuntar documentos.");
+      return;
+    }
+    if (!documentDraft.document_type || (!documentDraft.file_name.trim() && !selectedDocumentFile)) {
+      setMessage("Tipo documental y nombre de archivo son obligatorios.");
+      return;
+    }
+    let nextDraft = { ...documentDraft };
+    if (selectedDocumentFile) {
+      if (!selectedUser?.company_id || !selectedUser?.user_uuid) {
+        setMessage("El usuario debe estar sincronizado con empresa y Auth para subir documentos privados.");
+        return;
+      }
+      const uploaded = await uploadUserDocument(selectedUser.company_id, selectedUser.user_uuid, documentDraft.document_type, selectedDocumentFile);
+      nextDraft = {
+        ...nextDraft,
+        file_name: nextDraft.file_name || selectedDocumentFile.name,
+        file_url: "",
+        storage_path: uploaded.storagePath,
+        mime_type: selectedDocumentFile.type,
+        file_size: String(selectedDocumentFile.size)
+      };
+    }
+    await api<AdminUser>(`/api/v1/admin/users/${targetId}/documents`, {
+      method: "POST",
+      body: JSON.stringify({ ...nextDraft, file_size: Number(nextDraft.file_size || 0), status: "pending" })
+    });
+    setDocumentDraft({ document_type: "identity", file_name: "", file_url: "", storage_path: "", mime_type: "", file_size: "", observations: "" });
+    setSelectedDocumentFile(null);
+    setMessage("Documento asociado al usuario.");
+    await load();
+  }
+
+  async function removeDocument(documentId: string) {
+    const targetId = selectedUserApiId();
+    if (!targetId) return;
+    await api<AdminUser>(`/api/v1/admin/users/${targetId}/documents/${documentId}`, { method: "DELETE" });
+    setMessage("Documento retirado del expediente.");
+    await load();
+  }
+
+  async function openDocument(doc: UserDocument) {
+    const value = doc.storage_path || doc.file_url;
+    if (!value) return;
+    const url = value.startsWith("user-documents/") ? await getUserDocumentUrl(value) : value;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  async function saveCatalogItem() {
+    if (!catalogDraft.catalog || !catalogDraft.code.trim() || !catalogDraft.name.trim()) {
+      setMessage("Catalogo, codigo y nombre son obligatorios.");
+      return;
+    }
+    const next = await api<UserMasterData>(`/api/v1/admin/user-master-data/${catalogDraft.catalog}/items`, {
+      method: "POST",
+      body: JSON.stringify({
+        code: catalogDraft.code.trim(),
+        name: catalogDraft.name.trim(),
+        description: catalogDraft.description.trim(),
+        active: true
+      })
+    });
+    setMasterData({ ...fallbackUserMasterData, ...next });
+    setCatalogDraft({ catalog: catalogDraft.catalog, code: "", name: "", description: "" });
+    setMessage("Maestro actualizado.");
   }
 
   function renderUserTab() {
@@ -642,7 +796,7 @@ export default function AdministracionPage() {
           <Field label="Nombres" value={userForm.first_names} onChange={(value) => setUserField("first_names", value)} />
           <Field label="Apellidos" value={userForm.last_names} onChange={(value) => setUserField("last_names", value)} />
           <Field label="Nombre visible" value={userForm.name} onChange={(value) => setUserField("name", value)} />
-          <SelectField label="Tipo de documento" value={userForm.document_type} onChange={(value) => setUserField("document_type", value)} options={[["CC", "Cedula"], ["CE", "Extranjeria"], ["NIT", "NIT"], ["PAS", "Pasaporte"]]} />
+          <SelectField label="Tipo de documento" value={userForm.document_type} onChange={(value) => setUserField("document_type", value)} options={optionPairs(masterData.document_types)} />
           <Field label="Numero de documento" value={userForm.document} onChange={(value) => setUserField("document", value)} />
           <Field label="Fecha de expedicion" type="date" value={userForm.document_issue_date} onChange={(value) => setUserField("document_issue_date", value)} />
           <Field label="Lugar de expedicion" value={userForm.document_issue_place} onChange={(value) => setUserField("document_issue_place", value)} />
@@ -650,7 +804,7 @@ export default function AdministracionPage() {
           <SelectField label="Genero" value={userForm.gender} onChange={(value) => setUserField("gender", value)} options={[["", "No especificado"], ["femenino", "Femenino"], ["masculino", "Masculino"], ["otro", "Otro"]]} />
           <Field label="Correo principal" value={userForm.email} onChange={(value) => setUserField("email", value)} />
           <Field label="Telefono" value={userForm.phone} onChange={(value) => setUserField("phone", value)} />
-          <SelectField label="Estado" value={userForm.user_status} onChange={(value) => setUserField("user_status", value)} options={[["activo", "Activo"], ["inactivo", "Inactivo"], ["suspendido", "Suspendido"], ["retirado", "Retirado"], ["pendiente_activacion", "Pendiente activacion"]]} />
+          <SelectField label="Estado" value={userForm.user_status} onChange={(value) => setUserField("user_status", value)} options={optionPairs(masterData.user_statuses)} />
           <Field label="Direccion" value={userForm.address} onChange={(value) => setUserField("address", value)} />
           <Field label="Ciudad" value={userForm.city} onChange={(value) => setUserField("city", value)} />
           <Field label="Departamento" value={userForm.state_region} onChange={(value) => setUserField("state_region", value)} />
@@ -665,14 +819,14 @@ export default function AdministracionPage() {
           <Field label={selectedUserId ? "Nueva clave opcional" : "Clave inicial"} type="password" value={userForm.password} onChange={(value) => setUserField("password", value)} />
           <SelectField label="Rol principal" value={userForm.role_id} onChange={(value) => setUserField("role_id", value)} options={[["", "Seleccionar rol"], ...roles.filter((role) => role.active).map((role) => [String(role.id), role.name] as [string, string])]} />
           <Field label="Roles adicionales" value={userForm.additional_roles} onChange={(value) => setUserField("additional_roles", value)} />
-          <Field label="Perfil operativo" value={userForm.operational_profile} onChange={(value) => setUserField("operational_profile", value)} />
+          <SelectField label="Perfil operativo" value={userForm.operational_profile || userForm.operational_classification} onChange={(value) => { setUserField("operational_profile", value); setUserField("operational_classification", value); }} options={optionPairs(masterData.user_types, "Seleccionar perfil")} />
           <Field label="Empresa" value={userForm.company} onChange={(value) => setUserField("company", value)} />
-          <Field label="Sede asignada" value={userForm.site} onChange={(value) => setUserField("site", value)} />
-          <Field label="Area" value={userForm.area} onChange={(value) => setUserField("area", value)} />
-          <Field label="Cargo" value={userForm.position} onChange={(value) => setUserField("position", value)} />
+          <SelectField label="Sede asignada" value={userForm.site} onChange={(value) => setUserField("site", value)} options={optionPairs(masterData.locations, "Seleccionar sede")} />
+          <SelectField label="Area" value={userForm.area} onChange={(value) => { setUserField("area", value); setUserField("department", value); }} options={optionPairs(masterData.areas, "Seleccionar area")} />
+          <SelectField label="Cargo" value={userForm.position} onChange={(value) => setUserField("position", value)} options={optionPairs(masterData.positions, "Seleccionar cargo")} />
           <Field label="Jefe directo" value={userForm.manager} onChange={(value) => setUserField("manager", value)} />
           <Field label="Permisos especiales" value={userForm.special_permissions} onChange={(value) => setUserField("special_permissions", value)} />
-          <SelectField label="Estado de sesion" value={userForm.session_status} onChange={(value) => setUserField("session_status", value)} options={[["sin_sesion", "Sin sesion"], ["activa", "Activa"], ["bloqueada", "Bloqueada"]]} />
+          <SelectField label="Estado de sesion" value={userForm.session_status} onChange={(value) => setUserField("session_status", value)} options={optionPairs(masterData.session_statuses)} />
           <Toggle label="Requiere cambio de clave" checked={userForm.require_password_change} onChange={(value) => setUserField("require_password_change", value)} />
           <Field label="MFA / 2FA futuro" value={userForm.mfa_status} onChange={(value) => setUserField("mfa_status", value)} />
         </div>
@@ -681,22 +835,22 @@ export default function AdministracionPage() {
     if (userTab === "laboral") {
       return (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          <SelectField label="Tipo de vinculacion" value={userForm.engagement_type} onChange={(value) => setUserField("engagement_type", value)} options={[["empleado", "Empleado"], ["contratista", "Contratista"], ["tercero", "Tercero"], ["temporal", "Temporal"], ["aprendiz", "Aprendiz"], ["proveedor", "Proveedor"]]} />
+          <SelectField label="Tipo de vinculacion" value={userForm.engagement_type} onChange={(value) => setUserField("engagement_type", value)} options={optionPairs(masterData.engagement_types)} />
           <Field label="Fecha de ingreso" type="date" value={userForm.hire_date} onChange={(value) => setUserField("hire_date", value)} />
           <Field label="Fecha de retiro" type="date" value={userForm.end_date} onChange={(value) => setUserField("end_date", value)} />
-          <SelectField label="Tipo de contrato" value={userForm.contract_type} onChange={(value) => setUserField("contract_type", value)} options={[["indefinite", "Indefinido"], ["fixed", "Termino fijo"], ["service", "Prestacion de servicios"], ["temporary", "Temporal"]]} />
-          <Field label="Cargo" value={userForm.position} onChange={(value) => setUserField("position", value)} />
-          <Field label="Area" value={userForm.department} onChange={(value) => setUserField("department", value)} />
-          <Field label="Centro de costo" value={userForm.cost_center} onChange={(value) => setUserField("cost_center", value)} />
-          <Field label="Jornada laboral" value={userForm.workday} onChange={(value) => setUserField("workday", value)} />
-          <Field label="Turno base" value={userForm.base_shift} onChange={(value) => setUserField("base_shift", value)} />
+          <SelectField label="Tipo de contrato" value={userForm.contract_type} onChange={(value) => setUserField("contract_type", value)} options={optionPairs(masterData.contract_types)} />
+          <SelectField label="Cargo" value={userForm.position} onChange={(value) => setUserField("position", value)} options={optionPairs(masterData.positions, "Seleccionar cargo")} />
+          <SelectField label="Area" value={userForm.department} onChange={(value) => { setUserField("department", value); setUserField("area", value); }} options={optionPairs(masterData.areas, "Seleccionar area")} />
+          <SelectField label="Centro de costo" value={userForm.cost_center} onChange={(value) => setUserField("cost_center", value)} options={optionPairs(masterData.cost_centers, "Seleccionar centro")} />
+          <SelectField label="Jornada laboral" value={userForm.workday} onChange={(value) => setUserField("workday", value)} options={optionPairs(masterData.work_shifts, "Seleccionar jornada")} />
+          <SelectField label="Turno base" value={userForm.base_shift} onChange={(value) => setUserField("base_shift", value)} options={optionPairs(masterData.work_shifts, "Seleccionar turno")} />
           {sensitiveAllowed ? <Field label="Salario base" type="number" value={userForm.salary_base} onChange={(value) => setUserField("salary_base", value)} /> : null}
           {sensitiveAllowed ? <Field label="Auxilio transporte" value={userForm.transport_allowance} onChange={(value) => setUserField("transport_allowance", value)} /> : null}
           <Field label="Riesgo ARL" value={userForm.arl_risk} onChange={(value) => setUserField("arl_risk", value)} />
           <Field label="EPS" value={userForm.eps} onChange={(value) => setUserField("eps", value)} />
           <Field label="Fondo de pension" value={userForm.pension_fund} onChange={(value) => setUserField("pension_fund", value)} />
           <Field label="Caja de compensacion" value={userForm.compensation_fund} onChange={(value) => setUserField("compensation_fund", value)} />
-          {sensitiveAllowed ? <Field label="Banco" value={userForm.bank} onChange={(value) => setUserField("bank", value)} /> : null}
+          {sensitiveAllowed ? <SelectField label="Banco" value={userForm.bank} onChange={(value) => setUserField("bank", value)} options={optionPairs(masterData.banks, "Seleccionar banco")} /> : null}
           {sensitiveAllowed ? <Field label="Tipo de cuenta" value={userForm.bank_account_type} onChange={(value) => setUserField("bank_account_type", value)} /> : null}
           {sensitiveAllowed ? <Field label="Numero de cuenta" value={userForm.bank_account_number} onChange={(value) => setUserField("bank_account_number", value)} /> : null}
           <Field label="Observaciones laborales" value={userForm.labor_notes} onChange={(value) => setUserField("labor_notes", value)} />
@@ -706,8 +860,8 @@ export default function AdministracionPage() {
     if (userTab === "operacion") {
       return (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          <SelectField label="Clasificacion operativa" value={userForm.operational_classification} onChange={(value) => setUserField("operational_classification", value)} options={[["administrativo", "Administrativo"], ["conductor", "Conductor"], ["auxiliar", "Auxiliar"], ["coordinador", "Coordinador"], ["auditor", "Auditor"], ["sst", "SST"], ["soporte", "Soporte"], ["comercial", "Comercial"], ["bodega", "Bodega"], ["tecnico", "Tecnico"]]} />
-          <Field label="Sede base" value={userForm.base_site} onChange={(value) => setUserField("base_site", value)} />
+          <SelectField label="Clasificacion operativa" value={userForm.operational_classification} onChange={(value) => setUserField("operational_classification", value)} options={optionPairs(masterData.user_types)} />
+          <SelectField label="Sede base" value={userForm.base_site} onChange={(value) => setUserField("base_site", value)} options={optionPairs(masterData.locations, "Seleccionar sede")} />
           <Field label="Zona de operacion" value={userForm.operation_zone} onChange={(value) => setUserField("operation_zone", value)} />
           <Toggle label="Puede realizar marcaciones" checked={userForm.can_punch_time} onChange={(value) => setUserField("can_punch_time", value)} />
           <Toggle label="Puede recibir servicios" checked={userForm.can_receive_services} onChange={(value) => setUserField("can_receive_services", value)} />
@@ -723,17 +877,89 @@ export default function AdministracionPage() {
       );
     }
     if (userTab === "documentos") {
+      const documents = (Array.isArray(selectedUser?.documents) ? selectedUser.documents : []) as UserDocument[];
       return (
-        <div className="space-y-3">
-          {["Documento de identidad", "Contrato", "Hoja de vida", "Licencia de conduccion", "Seguridad social", "Certificado bancario", "Examen medico ocupacional", "Certificados SST"].map((doc) => (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line p-3" key={doc}>
+        <div className="space-y-4">
+          <div className="grid gap-3 rounded-md border border-line bg-paper p-3 md:grid-cols-2 xl:grid-cols-3">
+            <SelectField label="Tipo documental" value={documentDraft.document_type} onChange={(value) => setDocumentDraft((current) => ({ ...current, document_type: value }))} options={optionPairs(masterData.user_document_types)} />
+            <Field label="Nombre de archivo" value={documentDraft.file_name} onChange={(value) => setDocumentDraft((current) => ({ ...current, file_name: value }))} />
+            <Field label="Ruta storage / URL" value={documentDraft.storage_path || documentDraft.file_url} onChange={(value) => setDocumentDraft((current) => ({ ...current, storage_path: value, file_url: value }))} />
+            <Field label="MIME" value={documentDraft.mime_type} onChange={(value) => setDocumentDraft((current) => ({ ...current, mime_type: value }))} />
+            <Field label="Tamano bytes" type="number" value={documentDraft.file_size} onChange={(value) => setDocumentDraft((current) => ({ ...current, file_size: value }))} />
+            <Field label="Observaciones" value={documentDraft.observations} onChange={(value) => setDocumentDraft((current) => ({ ...current, observations: value }))} />
+            <label className="text-sm font-semibold md:col-span-2 xl:col-span-3">
+              Archivo privado
+              <input className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" onChange={(event) => setSelectedDocumentFile(event.target.files?.[0] || null)} />
+              {selectedDocumentFile ? <span className="mt-1 block text-xs font-normal text-neutral-500">{selectedDocumentFile.name} - {selectedDocumentFile.type || "sin MIME"}</span> : null}
+            </label>
+            <div className="md:col-span-2 xl:col-span-3">
+              <Button onClick={addDocument} type="button"><Plus size={16} /> Subir / asociar documento</Button>
+            </div>
+          </div>
+          {documents.map((doc) => (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line p-3" key={doc.id}>
               <div>
-                <p className="text-sm font-semibold">{doc}</p>
-                <p className="text-xs text-neutral-500">Pendiente de carga y validacion documental.</p>
+                <p className="text-sm font-semibold">{doc.file_name}</p>
+                <p className="text-xs text-neutral-500">{doc.document_type} · {doc.mime_type || "sin MIME"} · {doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleString() : "sin fecha"}</p>
+                {doc.storage_path || doc.file_url ? <p className="mt-1 break-all text-xs text-neutral-500">{doc.storage_path || doc.file_url}</p> : null}
               </div>
-              <span className="rounded-md bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">Pendiente</span>
+              <div className="flex items-center gap-2">
+                <span className="rounded-md bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">{doc.status || "pending"}</span>
+                {(doc.storage_path || doc.file_url) ? <button className="h-9 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => openDocument(doc)} type="button">Ver</button> : null}
+                <button className="h-9 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => removeDocument(doc.id)} type="button">Eliminar</button>
+              </div>
             </div>
           ))}
+          {!documents.length ? <p className="rounded-md border border-dashed border-line p-6 text-center text-sm text-neutral-500">Sin documentos asociados al usuario.</p> : null}
+        </div>
+      );
+    }
+    if (userTab === "maestros") {
+      const catalogOptions: Array<[string, string]> = [
+        ["user_types", "Tipos de usuario"],
+        ["user_statuses", "Estados de usuario"],
+        ["document_types", "Tipos de documento"],
+        ["positions", "Cargos"],
+        ["areas", "Areas"],
+        ["locations", "Sedes"],
+        ["cost_centers", "Centros de costo"],
+        ["contract_types", "Tipos de contrato"],
+        ["work_shifts", "Turnos"],
+        ["user_document_types", "Tipos documentales"],
+        ["banks", "Bancos"]
+      ];
+      const selectedItems = Array.isArray((masterData as Record<string, unknown>)[catalogDraft.catalog])
+        ? (((masterData as unknown) as Record<string, MasterOption[]>)[catalogDraft.catalog] || [])
+        : [];
+      return (
+        <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+          <div className="rounded-md border border-line bg-paper p-3">
+            <div className="grid gap-3">
+              <SelectField label="Catalogo" value={catalogDraft.catalog} onChange={(value) => setCatalogDraft((current) => ({ ...current, catalog: value }))} options={catalogOptions} />
+              <Field label="Codigo" value={catalogDraft.code} onChange={(value) => setCatalogDraft((current) => ({ ...current, code: value.toUpperCase().replace(/\s+/g, "-") }))} />
+              <Field label="Nombre" value={catalogDraft.name} onChange={(value) => setCatalogDraft((current) => ({ ...current, name: value }))} />
+              <Field label="Descripcion" value={catalogDraft.description} onChange={(value) => setCatalogDraft((current) => ({ ...current, description: value }))} />
+              <Button onClick={saveCatalogItem} type="button"><Save size={16} /> Guardar maestro</Button>
+            </div>
+          </div>
+          <div className="max-h-[58vh] overflow-auto rounded-md border border-line">
+            <table className="w-full min-w-[520px] text-sm">
+              <thead className="sticky top-0 bg-white">
+                <tr className="border-b border-line text-left text-xs text-neutral-500">
+                  <th className="px-3 py-2">Codigo</th>
+                  <th className="px-3 py-2">Nombre</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedItems.map((item) => (
+                  <tr className="border-b border-line/70" key={item.code}>
+                    <td className="px-3 py-2 font-mono text-xs">{item.code}</td>
+                    <td className="px-3 py-2">{item.name}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       );
     }
@@ -924,6 +1150,8 @@ export default function AdministracionPage() {
                   <p className="text-sm text-neutral-500">Score maestro: {userScore}/100</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  {selectedUserId ? <Button className="border border-line bg-white text-neutral-800 hover:bg-paper" onClick={requestPasswordReset} type="button"><LockKeyhole size={16} /> Reset acceso</Button> : null}
+                  {selectedUserId ? <Button className="border border-line bg-white text-neutral-800 hover:bg-paper" onClick={blockUserAccess} type="button"><X size={16} /> Bloquear acceso</Button> : null}
                   {selectedUserId && selectedUser?.active ? <Button className="bg-rose-700 hover:bg-rose-800" onClick={() => setUserStatus(false)} type="button"><X size={16} /> Desactivar</Button> : null}
                   {selectedUserId && selectedUser && !selectedUser.active ? <Button onClick={() => setUserStatus(true)} type="button"><Check size={16} /> Activar</Button> : null}
                   <Button onClick={saveUser} type="button"><Save size={16} /> Guardar</Button>
@@ -936,6 +1164,7 @@ export default function AdministracionPage() {
                   ["laboral", "Datos laborales", FolderKanban],
                   ["operacion", "Operacion", Route],
                   ["documentos", "Documentos", FileText],
+                  ["maestros", "Maestros", SlidersHorizontal],
                   ["auditoria", "Auditoria", Activity]
                 ].map(([key, label, Icon]) => {
                   const TabIcon = Icon as typeof UserCog;

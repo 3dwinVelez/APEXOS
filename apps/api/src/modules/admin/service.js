@@ -23,6 +23,95 @@ const SYSTEM_ROLE_TEMPLATES = [
   { name: "Coordinador", description: "Gestiona operacion, catalogos, reportes, configuracion y nomina sin ser superadmin.", is_system: true, legacy_permissions: { dashboard: { access: true, view: true }, personal: { access: true, view: true, create: true, edit: true }, servicios: { access: true, view: true, create: true, edit: true, export: true }, horarios: { access: true, view: true, create: true, edit: true, approve: true }, vehiculos: { access: true, view: true, create: true, edit: true }, referencias: { access: true, view: true, create: true, edit: true }, reportes: { access: true, view: true, export: true }, configuracion: { access: true, view: true, create: true, edit: true }, nomina: { access: true, view: true, create: true, edit: true, export: true } } }
 ];
 
+const USER_MASTER_DATA = {
+  document_types: [
+    { code: "CC", name: "Cedula de ciudadania" },
+    { code: "CE", name: "Cedula de extranjeria" },
+    { code: "NIT", name: "NIT" },
+    { code: "PAS", name: "Pasaporte" }
+  ],
+  user_statuses: [
+    { code: "activo", name: "Activo" },
+    { code: "inactivo", name: "Inactivo" },
+    { code: "suspendido", name: "Suspendido" },
+    { code: "bloqueado", name: "Bloqueado" },
+    { code: "pendiente_activacion", name: "Pendiente activacion" }
+  ],
+  user_types: [
+    { code: "administrativo", name: "Administrativo" },
+    { code: "conductor", name: "Conductor" },
+    { code: "supervisor", name: "Supervisor" },
+    { code: "operario", name: "Operario" },
+    { code: "tecnico", name: "Tecnico" },
+    { code: "bodega", name: "Bodega" }
+  ],
+  contract_types: [
+    { code: "indefinite", name: "Indefinido" },
+    { code: "fixed", name: "Termino fijo" },
+    { code: "service", name: "Prestacion de servicios" },
+    { code: "temporary", name: "Temporal" }
+  ],
+  engagement_types: [
+    { code: "empleado", name: "Empleado" },
+    { code: "contratista", name: "Contratista" },
+    { code: "tercero", name: "Tercero" },
+    { code: "temporal", name: "Temporal" },
+    { code: "aprendiz", name: "Aprendiz" }
+  ],
+  session_statuses: [
+    { code: "sin_sesion", name: "Sin sesion" },
+    { code: "activa", name: "Activa" },
+    { code: "bloqueada", name: "Bloqueada" }
+  ],
+  document_statuses: [
+    { code: "pending", name: "Pendiente" },
+    { code: "approved", name: "Aprobado" },
+    { code: "rejected", name: "Rechazado" },
+    { code: "expired", name: "Vencido" }
+  ],
+  user_document_types: [
+    { code: "identity", name: "Documento de identidad" },
+    { code: "contract", name: "Contrato" },
+    { code: "license", name: "Licencia de conduccion" },
+    { code: "social_security", name: "Seguridad social" },
+    { code: "bank_certificate", name: "Certificado bancario" },
+    { code: "occupational_exam", name: "Examen medico ocupacional" },
+    { code: "internal", name: "Documento interno" }
+  ],
+  areas: [
+    { code: "OPER", name: "Operacion" },
+    { code: "TRANSP", name: "Transporte" },
+    { code: "ADMIN", name: "Administracion" },
+    { code: "BODEGA", name: "Bodega" }
+  ],
+  positions: [
+    { code: "ADMIN", name: "Administrador" },
+    { code: "SUP_RUTA", name: "Supervisor de ruta" },
+    { code: "CONDUCTOR", name: "Conductor" },
+    { code: "AUX_OPER", name: "Auxiliar operativo" }
+  ],
+  locations: [
+    { code: "SEDE-PRINCIPAL", name: "Sede principal" },
+    { code: "BOG-NORTE", name: "Bogota Norte" },
+    { code: "BOG-SUR", name: "Bogota Sur" }
+  ],
+  cost_centers: [
+    { code: "CC-OPER", name: "Operacion" },
+    { code: "CC-TRAN", name: "Transporte" },
+    { code: "CC-ADMIN", name: "Administracion" }
+  ],
+  work_shifts: [
+    { code: "DIURNO", name: "Diurno" },
+    { code: "NOCTURNO", name: "Nocturno" },
+    { code: "MIXTO", name: "Mixto" }
+  ],
+  banks: [
+    { code: "BANCOLOMBIA", name: "Bancolombia" },
+    { code: "BOGOTA", name: "Banco de Bogota" },
+    { code: "DAVIVIENDA", name: "Davivienda" }
+  ]
+};
+
 function emptyLegacyPermissions() {
   return Object.fromEntries(PERMISSION_CATALOG.map((item) => [
     item.key,
@@ -244,6 +333,61 @@ async function processBilling() {
 
 async function getPermissionCatalog() {
   return PERMISSION_CATALOG.map(({ key, label, actions }) => ({ key, label, actions }));
+}
+
+async function getUserMasterData(tenantId) {
+  await ensureSystemRoles(tenantId);
+  return prisma.runWithTenant(tenantId, async () => {
+    const roles = await prisma.role.findMany({ include: { permissions: true }, orderBy: [{ is_system: "desc" }, { name: "asc" }] });
+    return {
+      ...USER_MASTER_DATA,
+      roles: roles.map(roleDto)
+    };
+  });
+}
+
+async function addUserMasterDataItem(tenantId, catalog, input, actorId = null) {
+  await ensureSystemRoles(tenantId);
+  const allowed = new Set(Object.keys(USER_MASTER_DATA));
+  if (!allowed.has(catalog)) {
+    const err = new Error("Catalogo de usuario no soportado.");
+    err.statusCode = 400;
+    throw err;
+  }
+  const code = String(input.code || "").trim();
+  const name = String(input.name || "").trim();
+  if (!code || !name) {
+    const err = new Error("Codigo y nombre son obligatorios.");
+    err.statusCode = 400;
+    throw err;
+  }
+  const item = {
+    code,
+    name,
+    description: String(input.description || "").trim(),
+    active: input.active !== false,
+    sort_order: Number(input.sort_order || 100)
+  };
+  const current = Array.isArray(USER_MASTER_DATA[catalog]) ? USER_MASTER_DATA[catalog] : [];
+  USER_MASTER_DATA[catalog] = current.some((entry) => entry.code === code)
+    ? current.map((entry) => entry.code === code ? { ...entry, ...item } : entry)
+    : [...current, item];
+  return prisma.runWithTenant(tenantId, async () => {
+    const roles = await prisma.role.findMany({ include: { permissions: true }, orderBy: [{ is_system: "desc" }, { name: "asc" }] });
+    await prisma.auditLog.create({
+      data: {
+        tenant_id: tenantId,
+        user_id: actorId,
+        action: "catalog_item_upserted",
+        module: "admin",
+        entity: `/api/v1/admin/user-master-data/${catalog}/items`,
+        entity_id: code,
+        old_value: null,
+        new_value: item
+      }
+    }).catch(() => null);
+    return { ...USER_MASTER_DATA, roles: roles.map(roleDto) };
+  });
 }
 
 async function listRoles(tenantId) {
@@ -608,10 +752,157 @@ async function setUserActive(tenantId, id, active, actorId = null) {
   });
 }
 
+async function updateUserAccess(tenantId, id, input, actorId = null) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id) }, include: { employee: true } });
+    const previousSnapshot = userAuditSnapshot(current, current.employee);
+    const metadata = current.employee?.metadata || {};
+    const access = metadata.access || {};
+    const nextSessionStatus = input.session_status || (input.blocked ? "bloqueada" : access.session_status || "sin_sesion");
+    if (input.password) assertPasswordPolicy(input.password);
+    await prisma.user.update({
+      where: { id: current.id },
+      data: {
+        ...(input.password ? { password: await bcrypt.hash(input.password, 12) } : {}),
+        active: input.active === undefined ? current.active : toBoolean(input.active)
+      }
+    });
+    if (current.employee) {
+      await prisma.employee.update({
+        where: { id: current.employee.id },
+        data: {
+          metadata: {
+            ...metadata,
+            access: {
+              ...access,
+              session_status: nextSessionStatus,
+              require_password_change: input.require_password_change === undefined ? Boolean(access.require_password_change) : toBoolean(input.require_password_change)
+            },
+            user_audit_trail: [
+              ...(Array.isArray(metadata.user_audit_trail) ? metadata.user_audit_trail : []).slice(-9),
+              { at: new Date().toISOString(), action: "access_updated", module: "administracion", actor_id: actorId }
+            ]
+          }
+        }
+      });
+    }
+    const user = await prisma.user.findFirstOrThrow({ where: { id: current.id }, include: { role: true, employee: true } });
+    await prisma.auditLog.create({
+      data: {
+        tenant_id: tenantId,
+        user_id: actorId,
+        action: "access_updated",
+        module: "admin",
+        entity: "/api/v1/admin/users/access",
+        entity_id: String(user.id),
+        old_value: previousSnapshot,
+        new_value: userAuditSnapshot(user, user.employee)
+      }
+    });
+    return userDto(user);
+  });
+}
+
+async function addUserDocument(tenantId, id, input, actorId = null) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id) }, include: { employee: true } });
+    if (!input.document_type || !input.file_name) {
+      const err = new Error("Tipo documental y nombre de archivo son obligatorios");
+      err.statusCode = 400;
+      throw err;
+    }
+    const metadata = current.employee?.metadata || {};
+    const documents = Array.isArray(metadata.documents) ? metadata.documents : [];
+    const document = {
+      id: input.id || `doc-${Date.now()}`,
+      document_type: input.document_type,
+      file_name: input.file_name,
+      file_url: input.file_url || "",
+      storage_path: input.storage_path || "",
+      mime_type: input.mime_type || "",
+      file_size: Number(input.file_size || 0),
+      status: input.status || "pending",
+      observations: input.observations || "",
+      uploaded_by: actorId,
+      uploaded_at: new Date().toISOString()
+    };
+    if (current.employee) {
+      await prisma.employee.update({
+        where: { id: current.employee.id },
+        data: {
+          metadata: {
+            ...metadata,
+            documents: [...documents, document],
+            user_audit_trail: [
+              ...(Array.isArray(metadata.user_audit_trail) ? metadata.user_audit_trail : []).slice(-9),
+              { at: new Date().toISOString(), action: "document_added", module: "administracion", actor_id: actorId, document_id: document.id }
+            ]
+          }
+        }
+      });
+    }
+    const user = await prisma.user.findFirstOrThrow({ where: { id: current.id }, include: { role: true, employee: true } });
+    await prisma.auditLog.create({
+      data: {
+        tenant_id: tenantId,
+        user_id: actorId,
+        action: "document_added",
+        module: "admin",
+        entity: "/api/v1/admin/users/documents",
+        entity_id: String(user.id),
+        old_value: null,
+        new_value: document
+      }
+    });
+    return userDto(user);
+  });
+}
+
+async function removeUserDocument(tenantId, id, documentId, actorId = null) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id) }, include: { employee: true } });
+    const metadata = current.employee?.metadata || {};
+    const documents = Array.isArray(metadata.documents) ? metadata.documents : [];
+    const removed = documents.find((document) => String(document.id) === String(documentId)) || null;
+    const nextDocuments = documents.filter((document) => String(document.id) !== String(documentId));
+    if (current.employee) {
+      await prisma.employee.update({
+        where: { id: current.employee.id },
+        data: {
+          metadata: {
+            ...metadata,
+            documents: nextDocuments,
+            user_audit_trail: [
+              ...(Array.isArray(metadata.user_audit_trail) ? metadata.user_audit_trail : []).slice(-9),
+              { at: new Date().toISOString(), action: "document_removed", module: "administracion", actor_id: actorId, document_id: documentId }
+            ]
+          }
+        }
+      });
+    }
+    const user = await prisma.user.findFirstOrThrow({ where: { id: current.id }, include: { role: true, employee: true } });
+    await prisma.auditLog.create({
+      data: {
+        tenant_id: tenantId,
+        user_id: actorId,
+        action: "document_removed",
+        module: "admin",
+        entity: "/api/v1/admin/users/documents",
+        entity_id: String(user.id),
+        old_value: removed,
+        new_value: null
+      }
+    });
+    return userDto(user);
+  });
+}
+
 module.exports = {
   exportTenantData,
   processBilling,
   getPermissionCatalog,
+  getUserMasterData,
+  addUserMasterDataItem,
   listRoles,
   createRole,
   updateRole,
@@ -619,6 +910,9 @@ module.exports = {
   listUsers,
   createUser,
   updateUser,
-  setUserActive
+  setUserActive,
+  updateUserAccess,
+  addUserDocument,
+  removeUserDocument
 };
 

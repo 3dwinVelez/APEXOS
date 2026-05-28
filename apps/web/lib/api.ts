@@ -1,5 +1,5 @@
 import { assertActiveSession, clearSession, touchSession } from "./sessionSecurity";
-import { supabaseFetch } from "./supabaseClient";
+import { getSupabaseAccessToken, supabaseFetch } from "./supabaseClient";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
@@ -104,6 +104,40 @@ function storedAdminRoles() {
 
 function saveStoredAdminRoles(roles: ReturnType<typeof defaultAdminRoles>) {
   if (typeof window !== "undefined") localStorage.setItem("apexos_admin_roles_qa", JSON.stringify(roles));
+}
+
+function getStoredUserMasterData() {
+  if (typeof window === "undefined") return defaultUserMasterData();
+  const raw = localStorage.getItem("apexos_user_master_data_qa");
+  if (!raw) return defaultUserMasterData();
+  try {
+    const parsed = JSON.parse(raw);
+    return { ...defaultUserMasterData(), ...(parsed && typeof parsed === "object" ? parsed : {}) };
+  } catch {
+    return defaultUserMasterData();
+  }
+}
+
+function saveStoredUserMasterData(data: ReturnType<typeof defaultUserMasterData>) {
+  if (typeof window !== "undefined") localStorage.setItem("apexos_user_master_data_qa", JSON.stringify(data));
+}
+
+function defaultUserMasterData() {
+  return {
+    document_types: [["CC", "Cedula"], ["CE", "Extranjeria"], ["NIT", "NIT"], ["PAS", "Pasaporte"]].map(([code, name]) => ({ code, name })),
+    user_statuses: [["activo", "Activo"], ["inactivo", "Inactivo"], ["suspendido", "Suspendido"], ["bloqueado", "Bloqueado"], ["pendiente_activacion", "Pendiente activacion"]].map(([code, name]) => ({ code, name })),
+    user_types: [["administrativo", "Administrativo"], ["conductor", "Conductor"], ["supervisor", "Supervisor"], ["operario", "Operario"], ["tecnico", "Tecnico"], ["bodega", "Bodega"]].map(([code, name]) => ({ code, name })),
+    contract_types: [["indefinite", "Indefinido"], ["fixed", "Termino fijo"], ["service", "Prestacion de servicios"], ["temporary", "Temporal"]].map(([code, name]) => ({ code, name })),
+    engagement_types: [["empleado", "Empleado"], ["contratista", "Contratista"], ["tercero", "Tercero"], ["temporal", "Temporal"], ["aprendiz", "Aprendiz"]].map(([code, name]) => ({ code, name })),
+    session_statuses: [["sin_sesion", "Sin sesion"], ["activa", "Activa"], ["bloqueada", "Bloqueada"]].map(([code, name]) => ({ code, name })),
+    user_document_types: [["identity", "Documento de identidad"], ["contract", "Contrato"], ["license", "Licencia de conduccion"], ["social_security", "Seguridad social"], ["bank_certificate", "Certificado bancario"], ["occupational_exam", "Examen medico ocupacional"], ["internal", "Documento interno"]].map(([code, name]) => ({ code, name })),
+    areas: [["OPER", "Operacion"], ["TRANSP", "Transporte"], ["ADMIN", "Administracion"], ["BODEGA", "Bodega"]].map(([code, name]) => ({ code, name })),
+    positions: [["ADMIN", "Administrador"], ["SUP_RUTA", "Supervisor de ruta"], ["CONDUCTOR", "Conductor"], ["AUX_OPER", "Auxiliar operativo"]].map(([code, name]) => ({ code, name })),
+    locations: [["SEDE-PRINCIPAL", "Sede principal"], ["BOG-NORTE", "Bogota Norte"], ["BOG-SUR", "Bogota Sur"]].map(([code, name]) => ({ code, name })),
+    cost_centers: [["CC-OPER", "Operacion"], ["CC-TRAN", "Transporte"], ["CC-ADMIN", "Administracion"]].map(([code, name]) => ({ code, name })),
+    work_shifts: [["DIURNO", "Diurno"], ["NOCTURNO", "Nocturno"], ["MIXTO", "Mixto"]].map(([code, name]) => ({ code, name })),
+    banks: [["BANCOLOMBIA", "Bancolombia"], ["BOGOTA", "Banco de Bogota"], ["DAVIVIENDA", "Davivienda"]].map(([code, name]) => ({ code, name }))
+  };
 }
 
 function nextPunchFrom(types: string[]) {
@@ -214,6 +248,24 @@ async function currentSupabaseCompanyUser() {
     || rows.find((row) => ["owner", "admin", "superadmin"].includes(String(row.role || "").toLowerCase()))
     || rows[0]
     || null;
+}
+
+async function nextAdminUsersRequest<T>(init: RequestInit = {}, query = "") {
+  const token = getSupabaseAccessToken();
+  if (!token) throw new Error("Sesion requerida para gestionar usuarios.");
+  const response = await fetch(`/api/admin/users${query}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      ...(init.headers || {})
+    }
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(body.message || "No fue posible gestionar usuarios.");
+  }
+  return response.json() as Promise<T>;
 }
 
 function supabaseVehicleStatus(status: unknown) {
@@ -1195,12 +1247,148 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     return (next.find((role) => role.id === roleId) || null) as T;
   }
 
+  if (pathname === "/api/v1/admin/user-master-data") {
+    return { ...getStoredUserMasterData(), roles: storedAdminRoles() } as T;
+  }
+
+  const adminCatalogItemMatch = pathname.match(/^\/api\/v1\/admin\/user-master-data\/([^/]+)\/items$/);
+  if (adminCatalogItemMatch && method === "POST") {
+    const catalogCode = adminCatalogItemMatch[1];
+    const body = JSON.parse(String(options.body || "{}"));
+    const item = {
+      code: String(body.code || "").trim(),
+      name: String(body.name || "").trim(),
+      description: String(body.description || "").trim(),
+      active: body.active !== false,
+      sort_order: Number(body.sort_order || 100)
+    };
+    if (!item.code || !item.name) throw new Error("Codigo y nombre del catalogo son obligatorios.");
+    const data = getStoredUserMasterData();
+    const current = Array.isArray((data as AnyRow)[catalogCode]) ? ((data as AnyRow)[catalogCode] as Array<{ code: string; name: string }>) : [];
+    const next = current.some((entry) => entry.code === item.code)
+      ? current.map((entry) => entry.code === item.code ? { ...entry, ...item } : entry)
+      : [...current, item];
+    const nextData = { ...data, [catalogCode]: next };
+    saveStoredUserMasterData(nextData);
+
+    const membership = await currentSupabaseCompanyUser().catch(() => null);
+    if (membership?.company_id) {
+      const catalogs = await supabaseFetch<Array<{ id: string }>>(
+        `/rest/v1/master_catalogs?select=id&or=(and(code.eq.${encodeURIComponent(catalogCode)},company_id.eq.${encodeURIComponent(membership.company_id)}),and(code.eq.${encodeURIComponent(catalogCode)},company_id.is.null))&limit=1`
+      ).catch(() => []);
+      const catalogId = catalogs[0]?.id;
+      if (catalogId) {
+        await supabaseFetch("/rest/v1/master_catalog_items?on_conflict=catalog_id,code", {
+          method: "POST",
+          headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+          body: JSON.stringify({
+            catalog_id: catalogId,
+            company_id: membership.company_id,
+            code: item.code,
+            name: item.name,
+            description: item.description || null,
+            active: item.active,
+            sort_order: item.sort_order
+          })
+        }).catch((error) => safeDevLog("No fue posible persistir item de catalogo en Supabase.", error));
+      }
+    }
+    return { ...nextData, roles: storedAdminRoles() } as T;
+  }
+
+  const adminUserDocumentMatch = pathname.match(/^\/api\/v1\/admin\/users\/([^/]+)\/documents(?:\/([^/]+))?$/);
+  if (adminUserDocumentMatch) {
+    const [, userId, documentId] = adminUserDocumentMatch;
+    const body = options.body ? JSON.parse(String(options.body)) : {};
+    await nextAdminUsersRequest({
+      method: "PATCH",
+      body: JSON.stringify(method === "DELETE"
+        ? { employee_id: userId, action: "document_remove", document_id: documentId }
+        : { employee_id: userId, action: "document_add", ...body, document_id: body.id || `doc-${Date.now()}` })
+    }).catch((error) => safeDevLog("No fue posible actualizar documentos via Next API.", error));
+    const employees = await supabaseFetch<Array<{ id: string; metadata?: AnyRow }>>(`/rest/v1/employees?select=id,metadata&id=eq.${encodeURIComponent(userId)}&limit=1`).catch(() => []);
+    const current = employees[0];
+    const metadata = current?.metadata || {};
+    const documents = Array.isArray(metadata.documents) ? metadata.documents : [];
+    const nextDocuments = method === "DELETE"
+      ? documents.filter((document) => String((document as AnyRow).id) !== String(documentId))
+      : [...documents, {
+        id: body.id || `doc-${Date.now()}`,
+        document_type: body.document_type || "internal",
+        file_name: body.file_name || "documento",
+        file_url: body.file_url || "",
+        storage_path: body.storage_path || "",
+        mime_type: body.mime_type || "",
+        file_size: Number(body.file_size || 0),
+        status: body.status || "pending",
+        observations: body.observations || "",
+        uploaded_at: new Date().toISOString()
+      }];
+    if (current?.id) {
+      await supabaseFetch(`/rest/v1/employees?id=eq.${encodeURIComponent(current.id)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ metadata: { ...metadata, documents: nextDocuments } })
+      });
+    }
+    return supabaseApiFallback(`/api/v1/admin/users`) as T;
+  }
+
+  const adminUserAccessMatch = pathname.match(/^\/api\/v1\/admin\/users\/([^/]+)\/access$/);
+  if (adminUserAccessMatch) {
+    const body = JSON.parse(String(options.body || "{}"));
+    await nextAdminUsersRequest({
+      method: "PATCH",
+      body: JSON.stringify({ employee_id: adminUserAccessMatch[1], action: "access", ...body })
+    }).catch((error) => safeDevLog("No fue posible actualizar acceso via Next API.", error));
+    const employees = await supabaseFetch<Array<{ id: string; metadata?: AnyRow }>>(`/rest/v1/employees?select=id,metadata&id=eq.${encodeURIComponent(adminUserAccessMatch[1])}&limit=1`).catch(() => []);
+    const current = employees[0];
+    const metadata = current?.metadata || {};
+    if (current?.id) {
+      await supabaseFetch(`/rest/v1/employees?id=eq.${encodeURIComponent(current.id)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ metadata: { ...metadata, access: { ...(metadata.access as AnyRow || {}), session_status: body.session_status || "bloqueada", require_password_change: body.require_password_change ?? (metadata.access as AnyRow)?.require_password_change } } })
+      });
+    }
+    return supabaseApiFallback(`/api/v1/admin/users`) as T;
+  }
+
   if (pathname === "/api/v1/admin/users") {
     const roles = storedAdminRoles();
     if (method === "POST") {
       const body = JSON.parse(String(options.body || "{}"));
       const fullName = body.name || `${body.first_names || ""} ${body.last_names || ""}`.trim() || body.email || "Usuario demo";
       const role = roles.find((item) => item.id === Number(body.role_id)) || roles[0];
+      const token = getSupabaseAccessToken();
+      if (token) {
+        const response = await fetch("/api/admin/users", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ ...body, role_name: role.name })
+        });
+        if (response.ok) {
+          const created = await response.json() as { user_id: string; employee?: AnyRow };
+          const employee = created.employee || {};
+          return {
+            id: toNumberId(employee.id),
+            employee_uuid: employee.id,
+            user_uuid: created.user_id,
+            company_id: employee.company_id,
+            name: fullName,
+            email: String(employee.email || body.email || ""),
+            role_id: role.id,
+            role_name: role.name,
+            active: employee.status === "active",
+            code: String((employee.metadata as AnyRow)?.code || ""),
+            document: String(employee.document_number || ""),
+            company: String(body.company || "SCJ"),
+            position: String(employee.position || ""),
+            department: String(employee.department || ""),
+            operational_classification: String(employee.user_type || "")
+          } as T;
+        }
+        const errorBody = await response.json().catch(() => ({ message: response.statusText }));
+        safeDevLog("No fue posible crear usuario Auth; se intentara fallback employees.", errorBody);
+      }
       const row = {
         company_id: body.company_id || undefined,
         first_name: body.first_names || fullName.split(" ")[0] || fullName,
@@ -1248,6 +1436,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       const employee = inserted?.[0] || { ...payload, id: crypto.randomUUID?.() || String(Date.now()) };
       return {
         id: toNumberId(employee.id),
+        employee_uuid: employee.id,
         name: fullName,
         email: String(employee.email || ""),
         role_id: role.id,
@@ -1261,8 +1450,10 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         operational_classification: String(employee.user_type || "")
       } as T;
     }
-    const employees = await supabaseFetch<Array<{
+    const serverRows = await nextAdminUsersRequest<{ employees: Array<{
       id: string;
+      company_id?: string;
+      user_id?: string;
       first_name?: string;
       last_name?: string;
       email?: string;
@@ -1272,13 +1463,33 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       status?: string;
       user_type?: string;
       metadata?: AnyRow;
-    }>>("/rest/v1/employees?select=id,first_name,last_name,email,document_number,position,department,status,user_type,metadata&order=created_at.desc&limit=250");
+    }> }>({ method: "GET" }).then((result) => result.employees).catch((error) => {
+      safeDevLog("No fue posible listar usuarios via Next API.", error);
+      return null;
+    });
+    const employees = serverRows || await supabaseFetch<Array<{
+      id: string;
+      company_id?: string;
+      user_id?: string;
+      first_name?: string;
+      last_name?: string;
+      email?: string;
+      document_number?: string;
+      position?: string;
+      department?: string;
+      status?: string;
+      user_type?: string;
+      metadata?: AnyRow;
+    }>>("/rest/v1/employees?select=id,company_id,user_id,first_name,last_name,email,document_number,position,department,status,user_type,metadata&order=created_at.desc&limit=250");
     return employees.map((employee) => {
       const name = fullName(employee);
       const roleId = Number(employee.metadata?.role_id || (employee.user_type === "conductor" ? 2 : 1));
       const role = roles.find((item) => item.id === roleId) || roles[0];
       return {
         id: toNumberId(employee.id),
+        employee_uuid: employee.id,
+        user_uuid: employee.user_id || "",
+        company_id: employee.company_id || "",
         name,
         email: employee.email || "",
         role_id: role?.id || roleId,
@@ -1293,9 +1504,57 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         labor_status: employee.status || "active",
         operational_classification: employee.user_type || employee.position || "operario",
         base_site: "Sede Demo SCJ",
-        site: "Sede Demo SCJ"
+        site: String(employee.metadata?.access && typeof employee.metadata.access === "object" ? (employee.metadata.access as AnyRow).site || "Sede Demo SCJ" : "Sede Demo SCJ"),
+        documents: Array.isArray(employee.metadata?.documents) ? employee.metadata.documents : []
       };
     }) as T;
+  }
+
+  const adminUserMatch = pathname.match(/^\/api\/v1\/admin\/users\/([^/]+)(?:\/status)?$/);
+  if (adminUserMatch && ["PUT", "PATCH"].includes(method)) {
+    const body = options.body ? JSON.parse(String(options.body)) : {};
+    const employeeId = adminUserMatch[1];
+    await nextAdminUsersRequest({
+      method: "PATCH",
+      body: JSON.stringify({ employee_id: employeeId, action: pathname.endsWith("/status") ? "status" : "update", ...body })
+    }).catch((error) => safeDevLog("No fue posible actualizar usuario via Next API.", error));
+    const rows = await supabaseFetch<Array<{ id: string; metadata?: AnyRow; status?: string }>>(`/rest/v1/employees?select=id,metadata,status&id=eq.${encodeURIComponent(employeeId)}&limit=1`).catch(() => []);
+    const current = rows[0];
+    if (current?.id) {
+      const fullName = body.name || `${body.first_names || ""} ${body.last_names || ""}`.trim();
+      const status = pathname.endsWith("/status")
+        ? (body.active ? "active" : "inactive")
+        : (body.user_status === "inactivo" ? "inactive" : body.user_status === "suspendido" ? "suspended" : current.status || "active");
+      await supabaseFetch(`/rest/v1/employees?id=eq.${encodeURIComponent(current.id)}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          first_name: body.first_names || undefined,
+          last_name: body.last_names || undefined,
+          email: body.email || undefined,
+          phone: body.phone || undefined,
+          position: body.position || body.operational_classification || undefined,
+          department: body.department || body.area || undefined,
+          status,
+          user_type: body.operational_classification || undefined,
+          metadata: {
+            ...(current.metadata || {}),
+            name: fullName || (current.metadata || {}).name,
+            role_id: body.role_id || (current.metadata || {}).role_id,
+            document: body.document || (current.metadata || {}).document,
+            document_type: body.document_type || (current.metadata || {}).document_type,
+            user_status: body.user_status || status,
+            access: { ...((current.metadata?.access as AnyRow) || {}), role_id: body.role_id, email: body.access_email || body.email, site: body.site || body.base_site, area: body.area || body.department, session_status: body.session_status },
+            employment: { ...((current.metadata?.employment as AnyRow) || {}), cost_center: body.cost_center, contract_type: body.contract_type, engagement_type: body.engagement_type },
+            operational: { ...((current.metadata?.operational as AnyRow) || {}), classification: body.operational_classification, base_site: body.base_site, zone: body.operation_zone },
+            user_audit_trail: [
+              ...(Array.isArray(current.metadata?.user_audit_trail) ? current.metadata.user_audit_trail : []).slice(-9),
+              { at: new Date().toISOString(), action: pathname.endsWith("/status") ? "status_updated" : "updated", source: "supabase-fallback" }
+            ]
+          }
+        })
+      });
+    }
+    return supabaseApiFallback(`/api/v1/admin/users`) as T;
   }
 
   return null;
