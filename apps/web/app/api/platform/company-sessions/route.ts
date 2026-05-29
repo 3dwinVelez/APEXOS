@@ -8,12 +8,14 @@ type AnyRow = Record<string, unknown>;
 
 async function supabaseRequest(path: string, init: RequestInit & { token?: string; service?: boolean } = {}) {
   const { token, service, headers, ...rest } = init;
-  const key = service ? SUPABASE_SERVICE_ROLE_KEY : SUPABASE_ANON_KEY;
+  const useServiceRole = service && Boolean(SUPABASE_SERVICE_ROLE_KEY);
+  const key = useServiceRole ? SUPABASE_SERVICE_ROLE_KEY : SUPABASE_ANON_KEY;
+  const bearer = useServiceRole ? SUPABASE_SERVICE_ROLE_KEY : token;
   const response = await fetch(`${SUPABASE_URL}${path}`, {
     ...rest,
     headers: {
       apikey: key,
-      Authorization: `Bearer ${service ? SUPABASE_SERVICE_ROLE_KEY : token}`,
+      Authorization: `Bearer ${bearer}`,
       "Content-Type": "application/json",
       ...headers
     }
@@ -57,10 +59,6 @@ function latestTimestamp(...values: unknown[]) {
 
 export async function GET(request: NextRequest) {
   try {
-    if (!SUPABASE_SERVICE_ROLE_KEY) {
-      return NextResponse.json({ message: "Falta SUPABASE_SERVICE_ROLE_KEY en el servidor." }, { status: 500 });
-    }
-
     const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     if (!token) return NextResponse.json({ message: "Sesion requerida." }, { status: 401 });
     await requirePlatformAdmin(token);
@@ -69,26 +67,26 @@ export async function GET(request: NextRequest) {
     if (!companyId) return NextResponse.json({ message: "Empresa requerida." }, { status: 400 });
 
     const windowMinutes = Math.max(5, Math.min(240, Number(request.nextUrl.searchParams.get("minutes") || 30)));
+    const secureRead = SUPABASE_SERVICE_ROLE_KEY ? { method: "GET", service: true } : { method: "GET", token };
     const employees = await supabaseRequest(
       `/rest/v1/employees?select=id,company_id,user_id,first_name,last_name,email,position,department,status,user_type,metadata&company_id=eq.${encodeURIComponent(companyId)}&order=first_name.asc&limit=500`,
-      { method: "GET", service: true }
+      secureRead
     ) as AnyRow[];
     const memberships = await supabaseRequest(
       `/rest/v1/company_users?select=user_id,role,status,updated_at&company_id=eq.${encodeURIComponent(companyId)}&limit=1000`,
-      { method: "GET", service: true }
+      secureRead
     ) as AnyRow[];
     const profileIds = memberships.map((membership) => String(membership.user_id || "")).filter(Boolean);
     const profiles = profileIds.length
       ? await supabaseRequest(
         `/rest/v1/profiles?select=id,full_name,email,status,updated_at&id=in.(${profileIds.map(encodeURIComponent).join(",")})`,
-        { method: "GET", service: true }
+        secureRead
       ) as AnyRow[]
       : [];
 
-    const authUsers = await supabaseRequest("/auth/v1/admin/users?per_page=1000&page=1", {
-      method: "GET",
-      service: true
-    }) as { users?: AnyRow[] };
+    const authUsers = SUPABASE_SERVICE_ROLE_KEY
+      ? await supabaseRequest("/auth/v1/admin/users?per_page=1000&page=1", { method: "GET", service: true }) as { users?: AnyRow[] }
+      : { users: [] };
     const authById = new Map((authUsers.users || []).map((user) => [String(user.id), user]));
     const employeeByUserId = new Map(employees.filter((employee) => employee.user_id).map((employee) => [String(employee.user_id), employee]));
     const profileById = new Map(profiles.map((profile) => [String(profile.id), profile]));
@@ -112,7 +110,7 @@ export async function GET(request: NextRequest) {
         department: employee?.department || "",
         status: employee?.status || membership.status || profile?.status || "active",
         user_type: employee?.user_type || "",
-        auth_status: authUser ? "linked" : "without_auth",
+        auth_status: authUser || userId ? "linked" : "without_auth",
         connected,
         last_sign_in_at: authUser?.last_sign_in_at || null,
         last_seen_at: lastActivityAt,
@@ -164,10 +162,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    if (!SUPABASE_SERVICE_ROLE_KEY) {
-      return NextResponse.json({ message: "Falta SUPABASE_SERVICE_ROLE_KEY en el servidor." }, { status: 500 });
-    }
-
     const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     if (!token) return NextResponse.json({ message: "Sesion requerida." }, { status: 401 });
     const body = await request.json().catch(() => ({})) as { company_id?: string };
@@ -176,36 +170,43 @@ export async function POST(request: NextRequest) {
 
     const memberships = await supabaseRequest(
       `/rest/v1/company_users?select=company_id,user_id,role,status&user_id=eq.${encodeURIComponent(current.id)}&status=eq.active&limit=20`,
-      { method: "GET", service: true }
+      SUPABASE_SERVICE_ROLE_KEY ? { method: "GET", service: true } : { method: "GET", token }
     ) as AnyRow[];
     const membership = memberships.find((item) => body.company_id && item.company_id === body.company_id)
       || memberships.find((item) => ["owner", "admin", "superadmin"].includes(String(item.role || "").toLowerCase()))
       || memberships[0];
     if (!membership?.company_id) return NextResponse.json({ ok: false, reason: "without_company" });
 
+    await supabaseRequest(`/rest/v1/profiles?id=eq.${encodeURIComponent(current.id)}`, {
+      method: "PATCH",
+      token,
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ updated_at: new Date().toISOString() })
+    }).catch(() => undefined);
+
     await supabaseRequest(
       `/rest/v1/company_users?company_id=eq.${encodeURIComponent(String(membership.company_id))}&user_id=eq.${encodeURIComponent(current.id)}`,
       {
         method: "PATCH",
-        service: true,
+        ...(SUPABASE_SERVICE_ROLE_KEY ? { service: true } : { token }),
         headers: { Prefer: "return=minimal" },
         body: JSON.stringify({ status: membership.status || "active" })
       }
-    );
+    ).catch(() => undefined);
 
     const employees = await supabaseRequest(
       `/rest/v1/employees?select=id,metadata&company_id=eq.${encodeURIComponent(String(membership.company_id))}&user_id=eq.${encodeURIComponent(current.id)}&limit=1`,
-      { method: "GET", service: true }
-    ) as AnyRow[];
+      SUPABASE_SERVICE_ROLE_KEY ? { method: "GET", service: true } : { method: "GET", token }
+    ).catch(() => []) as AnyRow[];
     const employee = employees[0];
     if (employee?.id) {
       const metadata = (employee.metadata && typeof employee.metadata === "object" ? employee.metadata : {}) as AnyRow;
       await supabaseRequest(`/rest/v1/employees?id=eq.${encodeURIComponent(String(employee.id))}`, {
         method: "PATCH",
-        service: true,
+        ...(SUPABASE_SERVICE_ROLE_KEY ? { service: true } : { token }),
         headers: { Prefer: "return=minimal" },
         body: JSON.stringify({ metadata: { ...metadata, session_last_seen_at: new Date().toISOString() } })
-      });
+      }).catch(() => undefined);
     }
 
     return NextResponse.json({ ok: true, company_id: membership.company_id });
