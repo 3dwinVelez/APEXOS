@@ -23,6 +23,9 @@ export default function LoginPage() {
       localStorage.removeItem("auth_provider");
       localStorage.removeItem("user_email");
       localStorage.removeItem("tenant_active_modules");
+      localStorage.removeItem("role_permissions");
+      localStorage.removeItem("role_metadata");
+      localStorage.removeItem("role_name");
       try {
         const data = await supabaseAuth.signInWithPassword(loginEmail, loginPassword);
         localStorage.setItem("token", data.access_token);
@@ -31,7 +34,12 @@ export default function LoginPage() {
         localStorage.setItem("user_email", data.user.email || loginEmail);
       } catch (supabaseError) {
         if (!getSupabaseConfigStatus().ready) throw supabaseError;
-        const data = await api<{ token: string; refresh: string; tenant?: { active_modules?: string[] } }>("/api/v1/auth/login", {
+        const data = await api<{
+          token: string;
+          refresh: string;
+          tenant?: { active_modules?: string[] };
+          user?: { role?: string; role_permissions?: unknown[]; role_metadata?: Record<string, unknown> };
+        }>("/api/v1/auth/login", {
           method: "POST",
           body: JSON.stringify({ email: loginEmail, password: loginPassword })
         });
@@ -40,6 +48,9 @@ export default function LoginPage() {
         localStorage.setItem("auth_provider", "local");
         localStorage.setItem("user_email", loginEmail);
         if (data.tenant?.active_modules) localStorage.setItem("tenant_active_modules", JSON.stringify(data.tenant.active_modules));
+        if (data.user?.role) localStorage.setItem("role_name", data.user.role);
+        if (Array.isArray(data.user?.role_permissions)) localStorage.setItem("role_permissions", JSON.stringify(data.user.role_permissions));
+        if (data.user?.role_metadata) localStorage.setItem("role_metadata", JSON.stringify(data.user.role_metadata));
       }
       touchSession();
       router.push("/dashboard");

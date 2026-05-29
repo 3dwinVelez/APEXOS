@@ -6,6 +6,9 @@ export function clearSession(reason = "expired") {
   localStorage.removeItem("refresh");
   localStorage.removeItem("auth_provider");
   localStorage.removeItem("tenant_active_modules");
+  localStorage.removeItem("role_permissions");
+  localStorage.removeItem("role_metadata");
+  localStorage.removeItem("role_name");
   localStorage.setItem("apex_session_end_reason", reason);
 }
 

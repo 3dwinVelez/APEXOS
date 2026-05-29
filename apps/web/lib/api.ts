@@ -58,18 +58,34 @@ function kpisForOrders(orders: Array<{ status?: string }>) {
 }
 
 const adminPermissionCatalog = [
-  { key: "dashboard", label: "Inicio y tablero", actions: ["access", "view"] },
-  { key: "personal", label: "Usuarios y colaboradores", actions: ["access", "view", "create", "edit"] },
-  { key: "roles", label: "Roles y permisos", actions: ["access", "view", "create", "edit"] },
-  { key: "servicios", label: "Servicios", actions: ["access", "view", "create", "edit", "export"] },
-  { key: "horarios", label: "Marcaciones y rutas", actions: ["access", "view", "create", "edit", "approve"] },
-  { key: "vehiculos", label: "Vehiculos", actions: ["access", "view", "create", "edit"] },
-  { key: "referencias", label: "Referencias de servicio", actions: ["access", "view", "create", "edit"] },
-  { key: "proyectos", label: "Proyectos", actions: ["access", "view", "create", "edit"] },
-  { key: "contabilidad", label: "Contabilidad", actions: ["access", "view", "create", "edit", "export", "approve"] },
-  { key: "reportes", label: "Reportes", actions: ["access", "view", "export"] },
-  { key: "configuracion", label: "Configuracion tenant", actions: ["access", "view", "create", "edit"] },
-  { key: "nomina", label: "Nomina futura", actions: ["access", "view", "create", "edit", "export"] }
+  { key: "dashboard", label: "Inicio / Dashboard", group: "core", module: "brain", submodule: "home", actions: ["access", "view", "reports"] },
+  { key: "usuarios", label: "Usuarios", group: "administracion", module: "admin", submodule: "users", actions: ["access", "view", "create", "edit", "delete", "export", "import", "attach", "download", "sensitive", "manage_users"] },
+  { key: "roles", label: "Roles y permisos", group: "administracion", module: "admin", submodule: "roles", actions: ["access", "view", "create", "edit", "delete", "export", "configure", "administer", "manage_roles"] },
+  { key: "empresas", label: "Empresas / Tenants", group: "administracion", module: "admin", submodule: "tenants", actions: ["access", "view", "create", "edit", "delete", "configure", "administer", "sensitive"] },
+  { key: "clientes", label: "Clientes", group: "comercial", module: "sales", submodule: "customers", actions: ["access", "view", "create", "edit", "delete", "export", "import", "sensitive"] },
+  { key: "proveedores", label: "Proveedores", group: "compras", module: "purchases", submodule: "suppliers", actions: ["access", "view", "create", "edit", "delete", "export", "import", "sensitive"] },
+  { key: "inventarios", label: "Inventarios", group: "operacion", module: "inventory", submodule: "stock", actions: ["access", "view", "create", "edit", "delete", "approve", "export", "import", "configure"] },
+  { key: "wms", label: "WMS", group: "operacion", module: "inventory", submodule: "wms", actions: ["access", "view", "create", "edit", "approve", "execute", "reports"] },
+  { key: "compras", label: "Compras", group: "compras", module: "purchases", submodule: "orders", actions: ["access", "view", "create", "edit", "delete", "approve", "reject", "void", "export", "import", "attach", "download"] },
+  { key: "ventas", label: "Ventas", group: "comercial", module: "sales", submodule: "orders", actions: ["access", "view", "create", "edit", "delete", "approve", "reject", "void", "export", "import"] },
+  { key: "logistica", label: "Logistica", group: "operacion", module: "transport", submodule: "logistics", actions: ["access", "view", "create", "edit", "approve", "execute", "reports"] },
+  { key: "transporte", label: "Transporte", group: "operacion", module: "transport", submodule: "vehicles", actions: ["access", "view", "create", "edit", "delete", "approve", "export", "import", "attach", "download", "configure"] },
+  { key: "ultima_milla", label: "Ultima milla", group: "operacion", module: "transport", submodule: "last_mile", actions: ["access", "view", "create", "edit", "approve", "execute", "reports"] },
+  { key: "importaciones", label: "Importaciones", group: "operacion", module: "purchases", submodule: "imports", actions: ["access", "view", "create", "edit", "approve", "reject", "void", "export", "import", "attach", "download"] },
+  { key: "servicios", label: "Servicios", group: "operacion", module: "services", submodule: "orders", actions: ["access", "view", "create", "edit", "delete", "approve", "reject", "void", "export", "import", "attach", "download", "execute", "reports"] },
+  { key: "talento_humano", label: "Talento humano", group: "administracion", module: "hr", submodule: "hr", actions: ["access", "view", "create", "edit", "delete", "approve", "export", "import", "sensitive", "reports"] },
+  { key: "marcaciones", label: "Marcaciones y jornadas", group: "operacion", module: "hr", submodule: "time", actions: ["access", "view", "create", "edit", "approve", "reject", "export", "reports"] },
+  { key: "proyectos", label: "Proyectos", group: "gestion", module: "projects", submodule: "projects", actions: ["access", "view", "create", "edit", "delete", "approve", "reject", "export", "attach", "download", "reports"] },
+  { key: "contabilidad", label: "Contabilidad", group: "finanzas", module: "accounting", submodule: "accounting", actions: ["access", "view", "create", "edit", "delete", "approve", "reject", "void", "export", "import", "sensitive", "reports", "configure"] },
+  { key: "facturacion", label: "Facturacion", group: "finanzas", module: "invoicing", submodule: "billing", actions: ["access", "view", "create", "edit", "approve", "reject", "void", "export", "download", "sensitive"] },
+  { key: "reportes", label: "Reportes", group: "analitica", module: "admin", submodule: "reports", actions: ["access", "view", "export", "download", "reports", "sensitive"] },
+  { key: "automatizaciones", label: "Automatizaciones", group: "sistema", module: "brain", submodule: "automation", actions: ["access", "view", "create", "edit", "delete", "execute", "configure", "administer"] },
+  { key: "documentos", label: "Documentos adjuntos", group: "sistema", module: "admin", submodule: "documents", actions: ["access", "view", "create", "edit", "delete", "approve", "reject", "attach", "download", "sensitive"] },
+  { key: "configuracion", label: "Configuracion general", group: "sistema", module: "admin", submodule: "settings", actions: ["access", "view", "edit", "configure", "administer", "sensitive"] },
+  { key: "auditoria", label: "Auditoria", group: "sistema", module: "admin", submodule: "audit", actions: ["access", "view", "export", "download", "reports", "sensitive"] },
+  { key: "notificaciones", label: "Notificaciones", group: "sistema", module: "admin", submodule: "notifications", actions: ["access", "view", "create", "edit", "delete", "execute", "configure"] },
+  { key: "ia", label: "IA / Asistente interno", group: "sistema", module: "brain", submodule: "assistant", actions: ["access", "view", "execute", "configure", "administer", "sensitive"] },
+  { key: "nomina", label: "Nomina", group: "finanzas", module: "payroll", submodule: "payroll", actions: ["access", "view", "create", "edit", "approve", "export", "import", "sensitive", "reports"] }
 ];
 
 function emptyAdminPermissions() {
@@ -85,8 +101,10 @@ function defaultAdminRoles() {
     Object.fromEntries(item.actions.map((action) => [action, true]))
   ]));
   return [
-    { id: 1, name: "Administrador SCJ", description: "Administra usuarios, roles y operacion de la empresa.", active: true, is_system: true, permissions: all },
-    { id: 2, name: "Conductor / Operario", description: "Registra jornada, actividades y consulta servicios asignados.", active: true, is_system: true, permissions: { ...emptyAdminPermissions(), dashboard: { access: true, view: true }, horarios: { access: true, view: true, create: true, edit: false, approve: false }, servicios: { access: true, view: true, create: false, edit: true, export: false } } }
+    { id: 1, name: "Administrador de empresa", description: "Administra usuarios, roles y operacion de la empresa.", active: true, is_system: true, hierarchy_level: 90, role_type: "admin_empresa", scope: "company", permissions: all },
+    { id: 2, name: "Supervisor operativo", description: "Supervisa ejecucion diaria y evidencias operativas.", active: true, is_system: false, hierarchy_level: 60, role_type: "supervisor", scope: "area", permissions: { ...emptyAdminPermissions(), dashboard: { access: true, view: true, reports: true }, marcaciones: { access: true, view: true, create: true, edit: true, approve: true, reject: true, export: true, reports: true }, servicios: { access: true, view: true, create: true, edit: true, approve: true, attach: true, download: true, reports: true }, transporte: { access: true, view: true, edit: true, reports: true } } },
+    { id: 3, name: "Auxiliar operativo", description: "Registra jornada, actividades y consulta servicios asignados.", active: true, is_system: false, hierarchy_level: 30, role_type: "operativo", scope: "location", permissions: { ...emptyAdminPermissions(), dashboard: { access: true, view: true }, marcaciones: { access: true, view: true, create: true }, servicios: { access: true, view: true, create: true, edit: true, attach: true, download: true }, documentos: { access: true, view: true, attach: true, download: true } } },
+    { id: 4, name: "Auditor", description: "Consulta auditoria, reportes y documentos sensibles.", active: true, is_system: false, hierarchy_level: 65, role_type: "auditor", scope: "company", permissions: { ...emptyAdminPermissions(), dashboard: { access: true, view: true, reports: true }, auditoria: { access: true, view: true, export: true, download: true, reports: true, sensitive: true }, reportes: { access: true, view: true, export: true, download: true, reports: true, sensitive: true }, documentos: { access: true, view: true, download: true, sensitive: true } } }
   ];
 }
 
@@ -1222,6 +1240,13 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         description: body.description || body.descripcion || "",
         active: body.active !== false && body.activo !== false,
         is_system: false,
+        hierarchy_level: Number(body.hierarchy_level || 10),
+        role_type: body.role_type || "custom",
+        scope: body.scope || "company",
+        scopes: body.scopes || { locations: [], areas: [], cost_centers: [], processes: [] },
+        restrictions: body.restrictions || { locations: [], areas: [], cost_centers: [], processes: [] },
+        can_delegate: Boolean(body.can_delegate),
+        sensitive: Boolean(body.sensitive),
         permissions: body.permissions || emptyAdminPermissions()
       };
       const next = [...roles, role];
@@ -1241,6 +1266,13 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       name: role.is_system ? role.name : (body.name || body.nombre || role.name),
       description: body.description || body.descripcion || role.description,
       active: pathname.endsWith("/status") ? Boolean(body.active ?? body.activo) : (body.active !== false && body.activo !== false),
+      hierarchy_level: Number(body.hierarchy_level || role.hierarchy_level || 10),
+      role_type: body.role_type || role.role_type || "custom",
+      scope: body.scope || role.scope || "company",
+      scopes: body.scopes || role.scopes || { locations: [], areas: [], cost_centers: [], processes: [] },
+      restrictions: body.restrictions || role.restrictions || { locations: [], areas: [], cost_centers: [], processes: [] },
+      can_delegate: body.can_delegate ?? role.can_delegate ?? false,
+      sensitive: body.sensitive ?? role.sensitive ?? false,
       permissions: body.permissions || role.permissions
     } : role);
     saveStoredAdminRoles(next);

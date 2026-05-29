@@ -1,6 +1,7 @@
 import { AiExperienceLayer } from "@/components/brain/AiExperienceLayer";
 import { AiAssistanceToggle } from "@/components/brain/AiAssistanceToggle";
 import { MobileNav } from "@/components/shell/MobileNav";
+import { RouteAccessGuard } from "@/components/shell/RouteAccessGuard";
 import { Sidebar } from "@/components/shell/Sidebar";
 import { Brain, Sparkles } from "lucide-react";
 import Link from "next/link";
@@ -28,7 +29,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </Link>
           </div>
         </div>
-        {children}
+        <RouteAccessGuard>{children}</RouteAccessGuard>
       </main>
       <MobileNav />
       <AiExperienceLayer />
