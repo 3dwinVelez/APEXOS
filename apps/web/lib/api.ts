@@ -1419,7 +1419,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
           } as T;
         }
         const errorBody = await response.json().catch(() => ({ message: response.statusText }));
-        safeDevLog("No fue posible crear usuario Auth; se intentara fallback employees.", errorBody);
+        throw new Error(errorBody.message || "No fue posible crear el acceso Auth del usuario.");
       }
       const row = {
         company_id: body.company_id || undefined,
