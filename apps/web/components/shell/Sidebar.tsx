@@ -2,6 +2,7 @@
 
 import { isSupabaseSession, loadModuleAccess, ModuleAccessState } from "@/lib/moduleAccess";
 import { MODULES } from "@/lib/modules";
+import { UserSessionBadge } from "@/components/shell/UserSessionBadge";
 import { ChevronLeft, ChevronRight, Home, LockKeyhole } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -109,10 +110,14 @@ export function Sidebar() {
         ) : null}
       </nav>
       {!collapsed ? (
-        <div className="mt-3 shrink-0 rounded-md border border-line bg-paper p-3 text-xs text-neutral-600">
-          El menu queda fijo y el area de trabajo se expande al ocultarlo.
+        <div className="mt-3 shrink-0">
+          <UserSessionBadge />
         </div>
-      ) : null}
+      ) : (
+        <div className="mt-3 shrink-0">
+          <UserSessionBadge compact />
+        </div>
+      )}
     </aside>
   );
 }

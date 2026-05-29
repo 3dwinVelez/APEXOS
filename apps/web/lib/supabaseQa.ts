@@ -90,6 +90,35 @@ export type PlatformCompanyModuleAccess = {
   plan_name: string | null;
 };
 
+export type PlatformCompanySessionUser = {
+  employee_id: string;
+  user_id: string | null;
+  name: string;
+  email: string;
+  role: string;
+  position: string;
+  department: string;
+  status: string;
+  user_type: string;
+  auth_status: "linked" | "without_auth";
+  connected: boolean;
+  last_sign_in_at: string | null;
+  last_seen_minutes: number | null;
+};
+
+export type PlatformCompanySessions = {
+  company_id: string;
+  generated_at: string;
+  window_minutes: number;
+  totals: {
+    users: number;
+    connected: number;
+    active: number;
+    without_auth: number;
+  };
+  users: PlatformCompanySessionUser[];
+};
+
 export function listSupabaseModules(limit = 50) {
   return supabaseFetch<SupabaseModule[]>(`/rest/v1/modules?select=*&order=sort_order.asc&limit=${limit}`);
 }
@@ -112,6 +141,22 @@ export function listPlatformCompanies(limit = 100) {
 
 export function listPlatformCompanyModuleAccess(companyId: string, limit = 100) {
   return supabaseFetch<PlatformCompanyModuleAccess[]>(`/rest/v1/v_platform_company_module_access?company_id=eq.${companyId}&select=*&order=sort_order.asc&limit=${limit}`);
+}
+
+export function listPlatformCompanySessions(companyId: string, minutes = 30) {
+  const token = getSupabaseAccessToken();
+  if (!token) throw new Error("Sesion requerida para consultar usuarios conectados.");
+
+  return fetch(`/api/platform/company-sessions?company_id=${encodeURIComponent(companyId)}&minutes=${minutes}`, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` }
+  }).then(async (response) => {
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(body.message || "No fue posible consultar usuarios conectados.");
+    }
+    return response.json() as Promise<PlatformCompanySessions>;
+  });
 }
 
 export function createPlatformCompany(input: { name: string; legal_name?: string | null; tax_id?: string | null; email?: string | null; phone?: string | null; company_type?: string | null; parent_company_id?: string | null; business_line?: string | null; country?: string | null; city?: string | null; address?: string | null; status?: string; plan_id?: string | null }) {

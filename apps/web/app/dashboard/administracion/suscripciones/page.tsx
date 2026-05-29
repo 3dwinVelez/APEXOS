@@ -1,7 +1,7 @@
 "use client";
 
-import { createPlatformCompanyWithAdmin, deletePlatformCompany, listPlatformCompanies, listPlatformCompanyModuleAccess, PlatformCompany, PlatformCompanyModuleAccess, setPlatformCompanyModuleAccess, updatePlatformCompany } from "@/lib/supabaseQa";
-import { ArrowLeft, Building2, Check, LockKeyhole, Pencil, Plus, RefreshCw, ShieldCheck, SlidersHorizontal, Trash2, X } from "lucide-react";
+import { createPlatformCompanyWithAdmin, deletePlatformCompany, listPlatformCompanies, listPlatformCompanyModuleAccess, listPlatformCompanySessions, PlatformCompany, PlatformCompanyModuleAccess, PlatformCompanySessions, setPlatformCompanyModuleAccess, updatePlatformCompany } from "@/lib/supabaseQa";
+import { ArrowLeft, Building2, Check, CircleUserRound, LockKeyhole, Pencil, Plus, RefreshCw, ShieldCheck, SlidersHorizontal, Trash2, UsersRound, X } from "lucide-react";
 import Link from "next/link";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -45,6 +45,7 @@ const emptyCompanyForm: CompanyForm = {
 export default function SuscripcionesPage() {
   const [companies, setCompanies] = useState<PlatformCompany[]>([]);
   const [modules, setModules] = useState<PlatformCompanyModuleAccess[]>([]);
+  const [sessions, setSessions] = useState<PlatformCompanySessions | null>(null);
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
   const [companyForm, setCompanyForm] = useState<CompanyForm>(emptyCompanyForm);
   const [showCompanyModal, setShowCompanyModal] = useState(false);
@@ -66,14 +67,21 @@ export default function SuscripcionesPage() {
       const nextCompanyId = selectedCompanyId || rows[0]?.company_id || "";
       setSelectedCompanyId(nextCompanyId);
       if (nextCompanyId) {
-        setModules(await listPlatformCompanyModuleAccess(nextCompanyId));
+        const [moduleRows, sessionRows] = await Promise.all([
+          listPlatformCompanyModuleAccess(nextCompanyId),
+          listPlatformCompanySessions(nextCompanyId).catch(() => null)
+        ]);
+        setModules(moduleRows);
+        setSessions(sessionRows);
       } else {
         setModules([]);
+        setSessions(null);
       }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No fue posible consultar empresas.");
       setCompanies([]);
       setModules([]);
+      setSessions(null);
     } finally {
       setLoading(false);
     }
@@ -82,7 +90,15 @@ export default function SuscripcionesPage() {
   async function selectCompany(companyId: string) {
     setSelectedCompanyId(companyId);
     setMessage("");
-    setModules(await listPlatformCompanyModuleAccess(companyId));
+    const [moduleRows, sessionRows] = await Promise.all([
+      listPlatformCompanyModuleAccess(companyId),
+      listPlatformCompanySessions(companyId).catch((error) => {
+        setMessage(error instanceof Error ? error.message : "No fue posible consultar usuarios conectados.");
+        return null;
+      })
+    ]);
+    setModules(moduleRows);
+    setSessions(sessionRows);
   }
 
   async function toggleModule(item: PlatformCompanyModuleAccess) {
@@ -198,6 +214,7 @@ export default function SuscripcionesPage() {
       if (selectedCompanyId === deletingCompany.company_id) {
         setSelectedCompanyId("");
         setModules([]);
+        setSessions(null);
       }
       await loadCompanies();
       setMessage("Empresa eliminada.");
@@ -211,6 +228,19 @@ export default function SuscripcionesPage() {
   useEffect(() => {
     loadCompanies();
   }, []);
+
+  async function refreshCompanySessions() {
+    if (!selectedCompanyId) return;
+    setSaving("sessions");
+    setMessage("");
+    try {
+      setSessions(await listPlatformCompanySessions(selectedCompanyId));
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No fue posible consultar usuarios conectados.");
+    } finally {
+      setSaving("");
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -273,11 +303,90 @@ export default function SuscripcionesPage() {
               <h2 className="text-xl font-semibold">{selectedCompany?.company_name || "Selecciona una empresa"}</h2>
               <p className="mt-1 text-sm text-neutral-500">{selectedCompany?.legal_name || "Empresa sin razon social"} · {selectedCompany?.tax_id || "Sin NIT"} · {selectedCompany?.parent_company_name || selectedCompany?.company_type || "Sin grupo"} · {selectedCompany?.status || "Sin estado"}</p>
             </div>
-            <div className="rounded-md border border-line bg-paper px-3 py-2 text-sm font-semibold">
-              <ShieldCheck className="mr-1 inline text-apex" size={15} />
-              {enabledCount} modulos habilitados
+            <div className="flex flex-wrap gap-2">
+              <div className="rounded-md border border-line bg-paper px-3 py-2 text-sm font-semibold">
+                <UsersRound className="mr-1 inline text-apex" size={15} />
+                {sessions?.totals.connected || 0}/{sessions?.totals.users || 0} conectados
+              </div>
+              <div className="rounded-md border border-line bg-paper px-3 py-2 text-sm font-semibold">
+                <ShieldCheck className="mr-1 inline text-apex" size={15} />
+                {enabledCount} modulos habilitados
+              </div>
             </div>
           </div>
+
+          <section className="mb-4 rounded-md border border-line bg-paper p-3">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="font-semibold">Usuarios conectados</h3>
+                <p className="text-xs text-neutral-500">Ventana de actividad: ultimos {sessions?.window_minutes || 30} minutos.</p>
+              </div>
+              <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-white px-3 text-xs font-semibold hover:bg-paper disabled:opacity-60" disabled={!selectedCompanyId || saving === "sessions"} onClick={refreshCompanySessions} type="button">
+                <RefreshCw className={saving === "sessions" ? "animate-spin" : ""} size={14} />
+                Actualizar usuarios
+              </button>
+            </div>
+            <div className="grid gap-2 md:grid-cols-3">
+              <div className="rounded-md border border-line bg-white p-3">
+                <p className="text-xs text-neutral-500">Conectados</p>
+                <p className="text-2xl font-semibold text-emerald-700">{sessions?.totals.connected || 0}</p>
+              </div>
+              <div className="rounded-md border border-line bg-white p-3">
+                <p className="text-xs text-neutral-500">Usuarios activos</p>
+                <p className="text-2xl font-semibold">{sessions?.totals.active || 0}</p>
+              </div>
+              <div className="rounded-md border border-line bg-white p-3">
+                <p className="text-xs text-neutral-500">Sin cuenta Auth</p>
+                <p className={`text-2xl font-semibold ${(sessions?.totals.without_auth || 0) ? "text-rose-700" : "text-neutral-900"}`}>{sessions?.totals.without_auth || 0}</p>
+              </div>
+            </div>
+            <div className="mt-3 max-h-64 overflow-auto rounded-md border border-line bg-white">
+              <table className="w-full min-w-[760px] text-sm">
+                <thead className="sticky top-0 bg-white">
+                  <tr className="border-b border-line text-left text-xs text-neutral-500">
+                    <th className="px-3 py-2">Usuario</th>
+                    <th className="px-3 py-2">Rol / cargo</th>
+                    <th className="px-3 py-2">Estado</th>
+                    <th className="px-3 py-2">Ultimo ingreso</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(sessions?.users || []).map((user) => (
+                    <tr className="border-b border-line/70" key={user.employee_id}>
+                      <td className="px-3 py-2">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${user.connected ? "bg-emerald-100 text-emerald-700" : "bg-paper text-neutral-500"}`}>
+                            <CircleUserRound size={16} />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold">{user.name}</p>
+                            <p className="truncate text-xs text-neutral-500">{user.email || "Sin correo"}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2">
+                        <p className="font-medium">{user.role || user.user_type || "Sin rol"}</p>
+                        <p className="text-xs text-neutral-500">{[user.position, user.department].filter(Boolean).join(" · ") || "Sin cargo"}</p>
+                      </td>
+                      <td className="px-3 py-2">
+                        <span className={`inline-flex rounded-md px-2 py-1 text-xs font-semibold ${user.connected ? "bg-emerald-50 text-emerald-700" : user.auth_status === "without_auth" ? "bg-rose-50 text-rose-700" : "bg-neutral-100 text-neutral-600"}`}>
+                          {user.connected ? "Conectado" : user.auth_status === "without_auth" ? "Sin Auth" : user.status}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-xs text-neutral-600">
+                        {user.last_seen_minutes === null ? "Sin ingreso" : `Hace ${user.last_seen_minutes} min`}
+                      </td>
+                    </tr>
+                  ))}
+                  {!sessions?.users?.length ? (
+                    <tr>
+                      <td className="px-3 py-6 text-center text-sm text-neutral-500" colSpan={4}>Sin usuarios asociados a esta empresa.</td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+          </section>
 
           <div className="grid gap-3 md:grid-cols-2">
             {modules.map((item) => (
