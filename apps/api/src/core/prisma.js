@@ -29,6 +29,11 @@ function currentTenantId() {
   return tenantStorage.getStore()?.tenantId;
 }
 
+function normalizeTenantId(tenantId) {
+  if (tenantId === null || tenantId === undefined) return tenantId;
+  return String(tenantId);
+}
+
 function createPrismaClient() {
   const client = new PrismaClient({
     log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"]
@@ -87,7 +92,7 @@ function getPrismaClient() {
 
 const lazyPrisma = new Proxy({}, {
   get(_target, property) {
-    if (property === "runWithTenant") return (tenantId, fn) => tenantStorage.run({ tenantId }, fn);
+    if (property === "runWithTenant") return (tenantId, fn) => tenantStorage.run({ tenantId: normalizeTenantId(tenantId) }, fn);
     if (property === "currentTenantId") return currentTenantId;
 
     const value = getPrismaClient()[property];

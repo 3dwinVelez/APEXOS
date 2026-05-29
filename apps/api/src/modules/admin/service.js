@@ -2,6 +2,18 @@ const bcrypt = require("bcrypt");
 const prisma = require("../../core/prisma");
 const { assertPasswordPolicy } = require("../../security/policy");
 
+function badRequest(message) {
+  const error = new Error(message);
+  error.statusCode = 400;
+  return error;
+}
+
+function normalizeTenantId(tenantId) {
+  const value = String(tenantId ?? "").trim();
+  if (!value) throw badRequest("Tenant requerido para operar administracion.");
+  return value;
+}
+
 const ROLE_ACTIONS = ["access", "view", "create", "edit", "delete", "approve", "reject", "void", "export", "import", "attach", "download", "configure", "administer", "execute", "reports", "sensitive", "manage_users", "manage_roles"];
 const READ_ACTIONS = new Set(["access", "view", "download", "reports"]);
 const WRITE_ACTIONS = new Set(["create", "edit", "delete", "reject", "void", "import", "attach", "configure", "administer", "execute", "sensitive", "manage_users", "manage_roles"]);
@@ -353,6 +365,7 @@ function userAuditSnapshot(user, employee) {
 }
 
 async function upsertRoleFromLegacy(tenantId, data) {
+  tenantId = normalizeTenantId(tenantId);
   const legacyPermissions = normalizeLegacyPermissions(data.permissions || data.legacy_permissions || {});
   const rbacPermissions = legacyToRbacPermissions(legacyPermissions);
   const roleData = {
@@ -378,32 +391,22 @@ async function upsertRoleFromLegacy(tenantId, data) {
 }
 
 async function ensureSystemRoles(tenantId) {
+  tenantId = normalizeTenantId(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
+    const templatesByName = new Map(SYSTEM_ROLE_TEMPLATES.map((template) => [template.name, template]));
+    const currentRoles = await prisma.role.findMany({
+      where: { name: { in: [...templatesByName.keys()] } },
+      select: { name: true }
+    });
+    const existing = new Set(currentRoles.map((role) => role.name));
     for (const template of SYSTEM_ROLE_TEMPLATES) {
-      const current = await prisma.role.findUnique({ where: { tenant_id_name: { tenant_id: tenantId, name: template.name } } });
-      if (current) {
-        await prisma.role.update({
-          where: { id: current.id },
-          data: {
-            description: current.description || template.description,
-            is_system: current.name === "APEX_ADMIN" ? true : current.is_system,
-            metadata: {
-              ...(current.metadata || {}),
-              role_type: current.metadata?.role_type || template.role_type,
-              hierarchy_level: current.metadata?.hierarchy_level || template.hierarchy_level,
-              active: current.metadata?.active !== false,
-              base_template: true
-            }
-          }
-        });
-        continue;
-      }
-      await upsertRoleFromLegacy(tenantId, { ...template, active: true });
+      if (!existing.has(template.name)) await upsertRoleFromLegacy(tenantId, { ...template, active: true });
     }
   });
 }
 
 async function exportTenantData(tenantId) {
+  tenantId = normalizeTenantId(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const [parties, items, transactions, employees, movements] = await Promise.all([
       prisma.party.findMany(),
@@ -434,6 +437,7 @@ async function getPermissionCatalog() {
 }
 
 async function getUserMasterData(tenantId) {
+  tenantId = normalizeTenantId(tenantId);
   await ensureSystemRoles(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const roles = await prisma.role.findMany({ include: { permissions: true }, orderBy: [{ is_system: "desc" }, { name: "asc" }] });
@@ -445,6 +449,7 @@ async function getUserMasterData(tenantId) {
 }
 
 async function addUserMasterDataItem(tenantId, catalog, input, actorId = null) {
+  tenantId = normalizeTenantId(tenantId);
   await ensureSystemRoles(tenantId);
   const allowed = new Set(Object.keys(USER_MASTER_DATA));
   if (!allowed.has(catalog)) {
@@ -489,6 +494,7 @@ async function addUserMasterDataItem(tenantId, catalog, input, actorId = null) {
 }
 
 async function listRoles(tenantId) {
+  tenantId = normalizeTenantId(tenantId);
   await ensureSystemRoles(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const roles = await prisma.role.findMany({ include: { permissions: true }, orderBy: [{ is_system: "desc" }, { name: "asc" }] });
@@ -497,6 +503,7 @@ async function listRoles(tenantId) {
 }
 
 async function createRole(tenantId, input, actorId = null) {
+  tenantId = normalizeTenantId(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const name = String(input.name || input.nombre || "").trim();
     if (!name) {
@@ -528,6 +535,7 @@ async function createRole(tenantId, input, actorId = null) {
 }
 
 async function updateRole(tenantId, id, input, actorId = null) {
+  tenantId = normalizeTenantId(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const current = await prisma.role.findFirstOrThrow({ where: { id: Number(id) }, include: { permissions: true } });
     const previous = roleDto(current);
@@ -586,6 +594,7 @@ async function updateRole(tenantId, id, input, actorId = null) {
 }
 
 async function setRoleActive(tenantId, id, active, actorId = null) {
+  tenantId = normalizeTenantId(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const current = await prisma.role.findFirstOrThrow({ where: { id: Number(id) }, include: { permissions: true } });
     if (current.name === "APEX_ADMIN") return roleDto(current);
@@ -603,6 +612,7 @@ async function setRoleActive(tenantId, id, active, actorId = null) {
 }
 
 async function listUsers(tenantId) {
+  tenantId = normalizeTenantId(tenantId);
   await ensureSystemRoles(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const users = await prisma.user.findMany({
@@ -614,20 +624,29 @@ async function listUsers(tenantId) {
 }
 
 async function createUser(tenantId, input, actorId = null) {
+  tenantId = normalizeTenantId(tenantId);
   await ensureSystemRoles(tenantId);
+  const email = String(input.email || input.username || input.user || input.access_email || "").trim().toLowerCase();
+  if (!email) throw badRequest("El correo del usuario es obligatorio.");
   const rawPassword = input.password || input.pas || "";
   assertPasswordPolicy(rawPassword);
   const password = await bcrypt.hash(rawPassword, 12);
   return prisma.runWithTenant(tenantId, async () => {
+    const existing = await prisma.user.findFirst({ where: { email } });
+    if (existing) {
+      const err = new Error("Ya existe un usuario con este correo en la empresa.");
+      err.statusCode = 409;
+      throw err;
+    }
     const role = input.role_id
       ? await prisma.role.findFirstOrThrow({ where: { id: Number(input.role_id) } })
       : await prisma.role.findFirst({ where: { name: "Empleado" } });
+    if (!role) throw badRequest("Debe seleccionar un rol valido para el usuario.");
     if (role?.metadata?.active === false) {
-      const err = new Error("El rol seleccionado esta inactivo");
-      err.statusCode = 400;
-      throw err;
+      throw badRequest("El rol seleccionado esta inactivo");
     }
     const fullName = input.name || input.nombre || `${input.first_names || ""} ${input.last_names || ""}`.trim();
+    if (!fullName) throw badRequest("El nombre del usuario es obligatorio.");
     const userStatus = input.user_status || input.labor_status || input.estado_laboral || "activo";
     const active = !["inactivo", "suspendido", "retirado"].includes(userStatus) && input.active !== false && input.activo !== false;
     const metadata = {
@@ -699,7 +718,7 @@ async function createUser(tenantId, input, actorId = null) {
       data: {
         tenant_id: tenantId,
         name: fullName,
-        email: (input.email || input.username || input.user).toLowerCase(),
+        email,
         password,
         role_id: role?.id || null,
         active,
@@ -738,6 +757,7 @@ async function createUser(tenantId, input, actorId = null) {
 }
 
 async function updateUser(tenantId, id, input, actorId = null) {
+  tenantId = normalizeTenantId(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id) }, include: { employee: true } });
     const previousSnapshot = userAuditSnapshot(current, current.employee);
@@ -863,6 +883,7 @@ async function updateUser(tenantId, id, input, actorId = null) {
 }
 
 async function setUserActive(tenantId, id, active, actorId = null) {
+  tenantId = normalizeTenantId(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const enabled = toBoolean(active);
     const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id) }, include: { employee: true } });
@@ -906,6 +927,7 @@ async function setUserActive(tenantId, id, active, actorId = null) {
 }
 
 async function updateUserAccess(tenantId, id, input, actorId = null) {
+  tenantId = normalizeTenantId(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id) }, include: { employee: true } });
     const previousSnapshot = userAuditSnapshot(current, current.employee);
@@ -957,6 +979,7 @@ async function updateUserAccess(tenantId, id, input, actorId = null) {
 }
 
 async function addUserDocument(tenantId, id, input, actorId = null) {
+  tenantId = normalizeTenantId(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id) }, include: { employee: true } });
     if (!input.document_type || !input.file_name) {
@@ -1012,6 +1035,7 @@ async function addUserDocument(tenantId, id, input, actorId = null) {
 }
 
 async function removeUserDocument(tenantId, id, documentId, actorId = null) {
+  tenantId = normalizeTenantId(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id) }, include: { employee: true } });
     const metadata = current.employee?.metadata || {};

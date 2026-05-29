@@ -105,7 +105,7 @@ type ConfigItem = {
   title: string;
   description: string;
   status: "configurado" | "pendiente" | "activo" | "restringido";
-  modal: "roles" | "users" | "info";
+  modal: "roles" | "users" | "masters" | "info";
   href?: string;
 };
 type ConfigCategory = {
@@ -115,7 +115,7 @@ type ConfigCategory = {
   icon: typeof Building2;
   items: ConfigItem[];
 };
-type UserTab = "basicos" | "acceso" | "laboral" | "operacion" | "documentos" | "maestros" | "auditoria";
+type UserTab = "basicos" | "acceso" | "laboral" | "operacion" | "documentos" | "auditoria";
 type UserForm = {
   name: string;
   first_names: string;
@@ -296,9 +296,9 @@ const categories: ConfigCategory[] = [
     icon: Building2,
     items: [
       { key: "empresas", title: "Empresas y modulos", description: "Crear empresas, editar datos y habilitar modulos por compania.", status: "activo", modal: "info", href: "/dashboard/administracion/suscripciones" },
-      { key: "sedes", title: "Sedes", description: "Puntos de operacion asociados a usuarios, rutas y marcaciones.", status: "pendiente", modal: "info" },
-      { key: "areas", title: "Areas y centros de costo", description: "Clasificacion para usuarios, nomina futura y costos.", status: "pendiente", modal: "info" },
-      { key: "parametros", title: "Parametros generales", description: "Preferencias comunes del tenant y reglas base.", status: "pendiente", modal: "info" }
+      { key: "sedes", title: "Sedes", description: "Puntos de operacion asociados a usuarios, rutas y marcaciones.", status: "pendiente", modal: "masters" },
+      { key: "areas", title: "Areas y centros de costo", description: "Clasificacion para usuarios, nomina futura y costos.", status: "pendiente", modal: "masters" },
+      { key: "parametros", title: "Maestros de plataforma", description: "Catalogos transversales para usuarios, documentos, sedes, turnos y bancos.", status: "configurado", modal: "masters" }
     ]
   },
   {
@@ -331,7 +331,7 @@ const categories: ConfigCategory[] = [
     description: "Tipos documentales, vencimientos y validaciones.",
     icon: FileText,
     items: [
-      { key: "tipos-documentales", title: "Tipos documentales", description: "Catalogo de documentos por usuario, vehiculo y servicio.", status: "pendiente", modal: "info" },
+      { key: "tipos-documentales", title: "Tipos documentales", description: "Catalogo de documentos por usuario, vehiculo y servicio.", status: "pendiente", modal: "masters" },
       { key: "vencimientos", title: "Vencimientos", description: "Control de fechas criticas y estado documental.", status: "pendiente", modal: "info" },
       { key: "archivos", title: "Configuracion de archivos", description: "Buckets privados, tamanos y formatos permitidos.", status: "activo", modal: "info" },
       { key: "validaciones-documentales", title: "Validaciones documentales", description: "Estados de revision, rechazo y versionado.", status: "pendiente", modal: "info" }
@@ -357,7 +357,7 @@ const categories: ConfigCategory[] = [
     items: [
       { key: "cuentas", title: "Cuentas contables", description: "Plan de cuentas y reglas contables.", status: "activo", modal: "info", href: "/dashboard/contabilidad/plan-cuentas" },
       { key: "impuestos", title: "Impuestos", description: "Parametros tributarios y tasas base.", status: "pendiente", modal: "info" },
-      { key: "centros-costo", title: "Centros de costo", description: "Clasificacion para personal, operacion y productos.", status: "pendiente", modal: "info" },
+      { key: "centros-costo", title: "Centros de costo", description: "Clasificacion para personal, operacion y productos.", status: "pendiente", modal: "masters" },
       { key: "producto-material", title: "Producto/material", description: "Costos futuros por producto, material o referencia.", status: "pendiente", modal: "info" }
     ]
   },
@@ -588,7 +588,7 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
 }
 
 export default function AdministracionPage() {
-  const [activeModal, setActiveModal] = useState<"roles" | "users" | "info" | null>(null);
+  const [activeModal, setActiveModal] = useState<"roles" | "users" | "masters" | "info" | null>(null);
   const [selectedConfig, setSelectedConfig] = useState<ConfigItem | null>(null);
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -924,6 +924,56 @@ export default function AdministracionPage() {
     setMessage("Maestro actualizado.");
   }
 
+  function renderMasterCatalogManager() {
+    const catalogOptions: Array<[string, string]> = [
+      ["user_types", "Tipos de usuario"],
+      ["user_statuses", "Estados de usuario"],
+      ["document_types", "Tipos de documento"],
+      ["positions", "Cargos"],
+      ["areas", "Areas"],
+      ["locations", "Sedes"],
+      ["cost_centers", "Centros de costo"],
+      ["contract_types", "Tipos de contrato"],
+      ["work_shifts", "Turnos"],
+      ["user_document_types", "Tipos documentales"],
+      ["banks", "Bancos"]
+    ];
+    const selectedItems = Array.isArray((masterData as Record<string, unknown>)[catalogDraft.catalog])
+      ? (((masterData as unknown) as Record<string, MasterOption[]>)[catalogDraft.catalog] || [])
+      : [];
+    return (
+      <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+        <div className="rounded-md border border-line bg-paper p-3">
+          <div className="grid gap-3">
+            <SelectField label="Catalogo" value={catalogDraft.catalog} onChange={(value) => setCatalogDraft((current) => ({ ...current, catalog: value }))} options={catalogOptions} />
+            <Field label="Codigo" value={catalogDraft.code} onChange={(value) => setCatalogDraft((current) => ({ ...current, code: value.toUpperCase().replace(/\s+/g, "-") }))} />
+            <Field label="Nombre" value={catalogDraft.name} onChange={(value) => setCatalogDraft((current) => ({ ...current, name: value }))} />
+            <Field label="Descripcion" value={catalogDraft.description} onChange={(value) => setCatalogDraft((current) => ({ ...current, description: value }))} />
+            <Button onClick={saveCatalogItem} type="button"><Save size={16} /> Guardar maestro</Button>
+          </div>
+        </div>
+        <div className="max-h-[58vh] overflow-auto rounded-md border border-line">
+          <table className="w-full min-w-[520px] text-sm">
+            <thead className="sticky top-0 bg-white">
+              <tr className="border-b border-line text-left text-xs text-neutral-500">
+                <th className="px-3 py-2">Codigo</th>
+                <th className="px-3 py-2">Nombre</th>
+              </tr>
+            </thead>
+            <tbody>
+              {selectedItems.map((item) => (
+                <tr className="border-b border-line/70" key={item.code}>
+                  <td className="px-3 py-2 font-mono text-xs">{item.code}</td>
+                  <td className="px-3 py-2">{item.name}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
   function renderUserTab() {
     if (userTab === "basicos") {
       return (
@@ -1046,55 +1096,6 @@ export default function AdministracionPage() {
             </div>
           ))}
           {!documents.length ? <p className="rounded-md border border-dashed border-line p-6 text-center text-sm text-neutral-500">Sin documentos asociados al usuario.</p> : null}
-        </div>
-      );
-    }
-    if (userTab === "maestros") {
-      const catalogOptions: Array<[string, string]> = [
-        ["user_types", "Tipos de usuario"],
-        ["user_statuses", "Estados de usuario"],
-        ["document_types", "Tipos de documento"],
-        ["positions", "Cargos"],
-        ["areas", "Areas"],
-        ["locations", "Sedes"],
-        ["cost_centers", "Centros de costo"],
-        ["contract_types", "Tipos de contrato"],
-        ["work_shifts", "Turnos"],
-        ["user_document_types", "Tipos documentales"],
-        ["banks", "Bancos"]
-      ];
-      const selectedItems = Array.isArray((masterData as Record<string, unknown>)[catalogDraft.catalog])
-        ? (((masterData as unknown) as Record<string, MasterOption[]>)[catalogDraft.catalog] || [])
-        : [];
-      return (
-        <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
-          <div className="rounded-md border border-line bg-paper p-3">
-            <div className="grid gap-3">
-              <SelectField label="Catalogo" value={catalogDraft.catalog} onChange={(value) => setCatalogDraft((current) => ({ ...current, catalog: value }))} options={catalogOptions} />
-              <Field label="Codigo" value={catalogDraft.code} onChange={(value) => setCatalogDraft((current) => ({ ...current, code: value.toUpperCase().replace(/\s+/g, "-") }))} />
-              <Field label="Nombre" value={catalogDraft.name} onChange={(value) => setCatalogDraft((current) => ({ ...current, name: value }))} />
-              <Field label="Descripcion" value={catalogDraft.description} onChange={(value) => setCatalogDraft((current) => ({ ...current, description: value }))} />
-              <Button onClick={saveCatalogItem} type="button"><Save size={16} /> Guardar maestro</Button>
-            </div>
-          </div>
-          <div className="max-h-[58vh] overflow-auto rounded-md border border-line">
-            <table className="w-full min-w-[520px] text-sm">
-              <thead className="sticky top-0 bg-white">
-                <tr className="border-b border-line text-left text-xs text-neutral-500">
-                  <th className="px-3 py-2">Codigo</th>
-                  <th className="px-3 py-2">Nombre</th>
-                </tr>
-              </thead>
-              <tbody>
-                {selectedItems.map((item) => (
-                  <tr className="border-b border-line/70" key={item.code}>
-                    <td className="px-3 py-2 font-mono text-xs">{item.code}</td>
-                    <td className="px-3 py-2">{item.name}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </div>
       );
     }
@@ -1279,8 +1280,14 @@ export default function AdministracionPage() {
         </ModalFrame>
       ) : null}
 
+      {activeModal === "masters" ? (
+        <ModalFrame title="Maestros de plataforma" onClose={() => setActiveModal(null)} maxWidth="md:max-w-6xl">
+          {renderMasterCatalogManager()}
+        </ModalFrame>
+      ) : null}
+
       {activeModal === "users" ? (
-        <ModalFrame title="Ficha maestra de usuario" onClose={() => setActiveModal(null)} maxWidth="md:max-w-7xl">
+        <ModalFrame title="Creacion y gestion de usuarios" onClose={() => setActiveModal(null)} maxWidth="md:max-w-7xl">
           <div className="grid gap-4 xl:grid-cols-[300px_1fr]">
             <aside className="space-y-3">
               <Button className="w-full" onClick={newUser} type="button"><Plus size={16} /> Nuevo usuario</Button>
@@ -1317,7 +1324,6 @@ export default function AdministracionPage() {
                   ["laboral", "Datos laborales", FolderKanban],
                   ["operacion", "Operacion", Route],
                   ["documentos", "Documentos", FileText],
-                  ["maestros", "Maestros", SlidersHorizontal],
                   ["auditoria", "Auditoria", Activity]
                 ].map(([key, label, Icon]) => {
                   const TabIcon = Icon as typeof UserCog;
