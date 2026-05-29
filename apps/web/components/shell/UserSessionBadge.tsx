@@ -1,6 +1,6 @@
 "use client";
 
-import { supabaseFetch } from "@/lib/supabaseClient";
+import { getSupabaseAccessToken, supabaseFetch } from "@/lib/supabaseClient";
 import { CircleUserRound } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -55,6 +55,14 @@ export function UserSessionBadge({ compact = false }: { compact?: boolean }) {
             role: value.role || company?.role || "",
             company: company?.company_name || value.company
           }));
+          const token = getSupabaseAccessToken();
+          if (token) {
+            fetch("/api/platform/company-sessions", {
+              method: "POST",
+              headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ company_id: company?.company_id || null })
+            }).catch(() => undefined);
+          }
         })
         .catch(() => undefined);
     }

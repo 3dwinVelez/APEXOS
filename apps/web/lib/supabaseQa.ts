@@ -103,6 +103,7 @@ export type PlatformCompanySessionUser = {
   auth_status: "linked" | "without_auth";
   connected: boolean;
   last_sign_in_at: string | null;
+  last_seen_at: string | null;
   last_seen_minutes: number | null;
 };
 
