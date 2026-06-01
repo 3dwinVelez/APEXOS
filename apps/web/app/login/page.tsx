@@ -66,10 +66,10 @@ export default function LoginPage() {
     await loginWithCredentials(loginEmail, loginPassword);
   }
 
-  async function loginDemo() {
+  function fillDemoEmail() {
     setEmail("admin.demo@demo.apexos.local");
-    setPassword("ApexOS-Demo-2026!");
-    await loginWithCredentials("admin.demo@demo.apexos.local", "ApexOS-Demo-2026!");
+    setPassword("");
+    setError("Usuario demo seleccionado. Ingresa la contrasena entregada por el equipo QA.");
   }
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -94,8 +94,8 @@ export default function LoginPage() {
           <LogIn size={16} />
           Entrar
         </Button>
-        <button className="mt-3 h-10 w-full rounded-md border border-line bg-paper text-sm font-semibold text-neutral-700 hover:bg-white" type="button" onClick={loginDemo}>
-          Entrar a muestra SCJ
+        <button className="mt-3 h-10 w-full rounded-md border border-line bg-paper text-sm font-semibold text-neutral-700 hover:bg-white" type="button" onClick={fillDemoEmail}>
+          Usar usuario demo SCJ
         </button>
       </form>
     </main>
