@@ -383,3 +383,38 @@ QA puede seguir: **SI, QA ESTABLE CON RIESGOS CONTROLADOS**.
 Produccion piloto: **PREPARABLE, NO ACTIVAR TODAVIA SIN CHECKLIST PROD**.
 
 La plataforma ya tiene base funcional suficiente para pruebas reales en QA. Se puede avanzar a preparar Supabase produccion pago y Railway produccion en paralelo, siempre sin cutover hasta confirmar backups/PITR, variables productivas, dominio/SSL, RLS con datos operativos y fuente unica por modulo.
+
+## Preparacion produccion sin cutover
+
+Fecha: 2026-05-31  
+Estado: **PRODUCCION PREPARADA A NIVEL TECNICO/DOCUMENTAL SIN CUTOVER**
+
+Artefactos agregados:
+
+- `PRODUCTION_SETUP.md`: guia para crear Supabase PROD, aplicar migraciones, configurar Storage, Railway frontend/backend, CORS y backups.
+- `INITIAL_PROD_SEED_GUIDE.md`: guia del seed inicial productivo.
+- `RELEASE_PRODUCTION_GO_LIVE_CHECKLIST.md`: checklist final antes de activar cliente real.
+- `scripts/seed-production-initial.js`: seed protegido e idempotente para empresa, usuarios, roles/catalogos, modulos, vehiculos y buckets.
+
+Prueba del seed:
+
+- Ejecutado contra Supabase QA con `TARGET_ENV=qa` y `CONFIRM_QA_SEED=true`.
+- Resultado: OK.
+- No borro datos.
+- Buckets existentes fueron omitidos.
+- Empresa/catologos/usuarios/membresias/empleados/modulos fueron actualizados por upsert.
+- Vehiculo inicial fue insertado.
+
+Protecciones productivas del seed:
+
+- Para produccion exige `TARGET_ENV=production`.
+- Para produccion exige `CONFIRM_PROD_SEED=true`.
+- Requiere `SUPABASE_SERVICE_ROLE_KEY`.
+- No imprime claves sensibles.
+- No ejecuta deletes.
+- Permite archivo JSON externo via `PROD_SEED_FILE` para no versionar datos reales.
+
+Decision:
+
+- Se puede preparar Supabase produccion pago y Railway produccion.
+- No hacer cutover hasta completar `RELEASE_PRODUCTION_GO_LIVE_CHECKLIST.md`.

@@ -45,6 +45,8 @@ Requeridas:
 - `DISABLE_REDIS=true`
 - `NEXT_PUBLIC_SUPABASE_URL=https://<supabase-qa-ref>.supabase.co`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key-qa>`
+- `SUPABASE_URL=https://<supabase-qa-ref>.supabase.co`
+- `SUPABASE_ANON_KEY=<anon-key-qa>`
 - `SUPABASE_SERVICE_ROLE_KEY=<service-role-qa>`
 
 Opcionales segun modulo:
@@ -103,12 +105,29 @@ Requeridas:
 - `JWT_SECRET=<secret-prod-rotado>`
 - `FRONTEND_URL=https://<frontend-prod>`
 - `ALLOWED_ORIGINS=https://<frontend-prod>`
+- `CORS_ORIGIN=https://<frontend-prod>` si el proveedor exige ese nombre; mapearlo a `ALLOWED_ORIGINS`.
 - `REDIS_DISABLED=false`
 - `DISABLE_REDIS=false`
 - `REDIS_URL=<redis-prod-url>`
 - `NEXT_PUBLIC_SUPABASE_URL=https://<supabase-prod-ref>.supabase.co`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key-prod>`
+- `SUPABASE_URL=https://<supabase-prod-ref>.supabase.co`
+- `SUPABASE_ANON_KEY=<anon-key-prod>`
 - `SUPABASE_SERVICE_ROLE_KEY=<service-role-prod>`
+
+## Seed Produccion
+
+Requeridas:
+
+- `TARGET_ENV=production`
+- `CONFIRM_PROD_SEED=true`
+- `SUPABASE_URL=https://<supabase-prod-ref>.supabase.co`
+- `SUPABASE_SERVICE_ROLE_KEY=<service-role-prod>`
+- `INITIAL_USER_PASSWORD=<temporary-strong-password>` o `PROD_SEED_FILE=<secure-json-path>` con `temporary_password` por usuario.
+
+Opcional:
+
+- `PROD_SEED_FILE=<secure-json-path>`
 
 ## Supabase Produccion
 
