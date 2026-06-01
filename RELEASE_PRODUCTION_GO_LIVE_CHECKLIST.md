@@ -5,7 +5,7 @@ No ejecutar cutover hasta que todos los puntos criticos esten en OK.
 
 ## Decision actual
 
-**PRODUCCION PREPARABLE SIN CUTOVER**
+**SUPABASE PROD ESTRUCTURAL VACIO ANTES DE CARGUE INICIAL**
 
 ## Supabase produccion
 
@@ -16,6 +16,8 @@ No ejecutar cutover hasta que todos los puntos criticos esten en OK.
 - [ ] PITR habilitado o decision formal documentada.
 - [ ] Backup manual tomado antes de migraciones.
 - [ ] Migraciones aplicadas en orden.
+- [ ] Schema Prisma aplicado con `prisma db push --skip-generate`.
+- [ ] Limpieza productiva ejecutada con `supabase/production/cleanup_prod_seed_data.sql`.
 - [ ] Validacion de tablas completada.
 - [ ] Validacion de foreign keys completada.
 - [ ] Validacion de indices completada.
@@ -25,22 +27,19 @@ No ejecutar cutover hasta que todos los puntos criticos esten en OK.
 - [ ] Policies de Storage validadas.
 - [ ] Auth configurado.
 - [ ] Datos demo excluidos.
+- [ ] `auth.users` vacio antes de seed.
+- [ ] Tablas transaccionales vacias antes de seed.
+- [ ] `storage.objects` vacio antes de seed.
+- [ ] `npm run validate:production:structure` OK.
 
-## Seed productivo
+## Seed productivo posterior
 
-- [ ] JSON productivo preparado fuera del repo.
-- [ ] `TARGET_ENV=production`.
-- [ ] `CONFIRM_PROD_SEED=true`.
-- [ ] `SUPABASE_SERVICE_ROLE_KEY` productiva configurada solo en runtime seguro.
-- [ ] Seed ejecutado sin errores.
-- [ ] Logs de insertados/actualizados/omitidos guardados.
-- [ ] Empresa inicial creada/actualizada.
-- [ ] Usuarios iniciales creados.
-- [ ] Roles/catalogos base creados.
-- [ ] Modulos activos habilitados.
-- [ ] Vehiculos/conductores base creados.
-- [ ] Login admin inicial OK.
-- [ ] Cambio de contrasena temporal realizado.
+- [ ] No ejecutar seed en la fase de replica estructural vacia.
+- [ ] JSON productivo preparado fuera del repo para fase posterior.
+- [ ] Aprobacion explicita de negocio para cargue inicial.
+- [ ] En fase posterior: `TARGET_ENV=production`.
+- [ ] En fase posterior: `CONFIRM_PROD_SEED=true`.
+- [ ] En fase posterior: `SUPABASE_SERVICE_ROLE_KEY` productiva configurada solo en runtime seguro.
 
 ## Railway backend/API
 
@@ -56,6 +55,7 @@ No ejecutar cutover hasta que todos los puntos criticos esten en OK.
 - [ ] Deploy OK.
 - [ ] `/health` OK.
 - [ ] Logs sin errores de bootstrap.
+- [ ] Backend conectado a Supabase PROD vacio.
 
 ## Railway frontend
 
@@ -67,33 +67,27 @@ No ejecutar cutover hasta que todos los puntos criticos esten en OK.
 - [ ] Deploy OK.
 - [ ] Login OK.
 - [ ] Layout OK.
+- [ ] Frontend apunta a API PROD y Supabase PROD.
 
 ## Seguridad
 
 - [ ] No hay service role en frontend cliente.
 - [ ] No hay secretos versionados.
-- [ ] RLS probado con admin empresa.
-- [ ] RLS probado con supervisor.
-- [ ] RLS probado con conductor/operativo.
-- [ ] Empresa A no ve empresa B.
-- [ ] Storage bloquea acceso cruzado.
+- [ ] RLS/policies presentes antes de usuarios reales.
+- [ ] Pruebas por rol quedan pendientes para fase posterior al seed inicial.
+- [ ] Storage policies presentes y buckets privados.
 - [ ] Errores no exponen tokens ni claves.
 - [ ] CORS sin comodines.
 
 ## Smoke test funcional
 
-- [ ] Login/logout.
+- [ ] Login page carga.
+- [ ] Login real pendiente hasta seed inicial.
 - [ ] Dashboard.
 - [ ] Administracion APEX.
-- [ ] Usuarios.
-- [ ] Roles/catalogos base.
-- [ ] Talento humano.
-- [ ] Marcaciones.
-- [ ] Transporte.
-- [ ] Vehiculos.
-- [ ] Servicios.
-- [ ] Proyectos.
-- [ ] Storage/evidencias.
+- [ ] Modulos no muestran datos demo.
+- [ ] Endpoints protegidos responden 401/403 sin token.
+- [ ] `/health` responde OK.
 - [ ] Mobile 360px.
 - [ ] Mobile 390px.
 - [ ] Mobile 414px.
@@ -126,4 +120,4 @@ Go-live solo si:
 
 Cuando este checklist este completo:
 
-**PRODUCCION LISTA PARA CUTOVER CONTROLADO**
+**SUPABASE PROD CREADO COMO REPLICA ESTRUCTURAL VACIA Y LISTO PARA CARGUE INICIAL CONTROLADO**

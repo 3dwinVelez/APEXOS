@@ -21,6 +21,7 @@
     "seed:supabase:ops": "node scripts/seed-supabase-ops.js",
     "seed:supabase:active-demo": "node scripts/seed-supabase-active-demo.js",
     "seed:production:initial": "node scripts/seed-production-initial.js",
+    "validate:production:structure": "node scripts/validate-production-structure.js",
     "setup:local": "npm install && npm run check:local && npm run infra:up && npm run prisma:generate && npm run db:push && npm run seed:demo",
     "start:local": "npm run check:local && npm run infra:up && npm run dev",
     "start:local:windows": "node scripts/start-local-windows.js",

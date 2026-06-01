@@ -387,7 +387,7 @@ La plataforma ya tiene base funcional suficiente para pruebas reales en QA. Se p
 ## Preparacion produccion sin cutover
 
 Fecha: 2026-05-31  
-Estado: **PRODUCCION PREPARADA A NIVEL TECNICO/DOCUMENTAL SIN CUTOVER**
+Estado actualizado: **SUPABASE PROD DEBE SER REPLICA ESTRUCTURAL VACIA DE QA, SIN SEED**
 
 Artefactos agregados:
 
@@ -395,6 +395,8 @@ Artefactos agregados:
 - `INITIAL_PROD_SEED_GUIDE.md`: guia del seed inicial productivo.
 - `RELEASE_PRODUCTION_GO_LIVE_CHECKLIST.md`: checklist final antes de activar cliente real.
 - `scripts/seed-production-initial.js`: seed protegido e idempotente para empresa, usuarios, roles/catalogos, modulos, vehiculos y buckets.
+- `supabase/production/cleanup_prod_seed_data.sql`: limpieza obligatoria para eliminar seeds QA/demo despues de aplicar migraciones en PROD.
+- `scripts/validate-production-structure.js`: validador de replica estructural vacia.
 
 Prueba del seed:
 
@@ -416,5 +418,8 @@ Protecciones productivas del seed:
 
 Decision:
 
-- Se puede preparar Supabase produccion pago y Railway produccion.
+- Primero crear Supabase PROD como replica estructural vacia.
+- Aplicar migraciones SQL, aplicar schema Prisma y ejecutar `cleanup_prod_seed_data.sql`.
+- Ejecutar `npm run validate:production:structure`.
+- No ejecutar seed productivo todavia.
 - No hacer cutover hasta completar `RELEASE_PRODUCTION_GO_LIVE_CHECKLIST.md`.

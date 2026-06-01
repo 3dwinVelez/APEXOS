@@ -8,6 +8,8 @@ Commit QA base: `495c001 fix: stabilize QA readiness blockers`
 
 Levantar Supabase produccion pago y Railway produccion con DB/Auth/Storage/API/frontend separados de QA, sin reemplazar QA ni apuntar dominios reales hasta completar el checklist final.
 
+**Ajuste clave:** Supabase PROD debe ser una replica estructural de QA, pero vacia. No se ejecuta seed productivo, no se copian datos demo y no se cargan datos reales en esta fase.
+
 ## 1. Crear Supabase produccion
 
 1. Crear proyecto Supabase nuevo en la organizacion productiva.
@@ -20,10 +22,11 @@ Levantar Supabase produccion pago y Railway produccion con DB/Auth/Storage/API/f
    - Service role key.
    - Postgres connection string/pooler.
 5. No copiar datos demo de QA.
+6. No ejecutar seed productivo todavia.
 
-## 2. Aplicar migraciones
+## 2. Aplicar estructura
 
-Ejecutar migraciones en orden ascendente desde `supabase/migrations/`:
+Ejecutar migraciones SQL en orden ascendente desde `supabase/migrations/`. Estas migraciones contienen estructura, RLS, policies, funciones, triggers, indices, buckets y algunos catalogos tecnicos. Algunas migraciones historicas tambien insertan datos QA; por eso el paso 3 de limpieza es obligatorio para produccion vacia.
 
 1. `20260517143000_init_qa_saas_foundation.sql`
 2. `20260517150000_harden_qa_catalog_rls.sql`
@@ -69,7 +72,72 @@ Alternativa controlada:
 psql "<PROD_DATABASE_URL>" -f supabase/migrations/<archivo>.sql
 ```
 
-## 3. Validaciones de DB
+### 2.1 Aplicar estructura Prisma/API
+
+QA tambien contiene tablas Prisma CamelCase creadas desde `apps/api/prisma/schema.prisma`. Para que PROD sea replica funcional de QA, aplicar schema Prisma despues de las migraciones SQL:
+
+```powershell
+$env:DATABASE_URL="<PROD_DATABASE_URL>"
+npx prisma db push --schema apps/api/prisma/schema.prisma --skip-generate
+```
+
+No ejecutar seeds Prisma.
+
+## 3. Limpieza productiva obligatoria
+
+Despues de aplicar migraciones SQL y estructura Prisma, ejecutar:
+
+```powershell
+psql "<PROD_DATABASE_URL>" -f supabase/production/cleanup_prod_seed_data.sql
+```
+
+Este SQL elimina:
+
+- Empresas QA/demo.
+- Usuarios QA/demo.
+- Membresias QA.
+- Datos operativos/transaccionales.
+- Objetos de Storage.
+
+Mantiene:
+
+- Esquema.
+- Tablas.
+- Relaciones.
+- Indices.
+- Constraints.
+- Funciones.
+- Triggers.
+- RLS.
+- Policies.
+- Buckets.
+- Catalogos tecnicos minimos como `modules`, `plans` genericos y `plan_modules`.
+
+## 4. Validar replica estructural vacia
+
+Ejecutar:
+
+```powershell
+$env:TARGET_ENV="production"
+$env:CONFIRM_PROD_VALIDATE="true"
+$env:DATABASE_URL="<PROD_DATABASE_URL>"
+$env:SUPABASE_URL="https://<prod-ref>.supabase.co"
+$env:SUPABASE_SERVICE_ROLE_KEY="<prod-service-role>"
+npm run validate:production:structure
+```
+
+El validador confirma:
+
+- Tablas esperadas.
+- RLS activo.
+- Policies publicas y de Storage.
+- Funciones `app_private`.
+- Buckets privados.
+- `auth.users` vacio.
+- Tablas operativas vacias.
+- `storage.objects` vacio.
+
+## 5. Validaciones de DB
 
 Ejecutar despues de migrar:
 
@@ -97,7 +165,7 @@ Criterio esperado:
 - Foreign keys e indices aplicados.
 - `app_private` creado y funciones disponibles.
 
-## 4. Storage
+## 6. Storage
 
 Buckets privados requeridos:
 
@@ -118,9 +186,24 @@ Validar:
 - Upload/download con usuario admin empresa.
 - Bloqueo de acceso cruzado entre empresas.
 
-## 5. Auth y usuarios iniciales
+## 7. Auth
 
-Usar `scripts/seed-production-initial.js` con credenciales productivas. El script:
+En esta fase Auth debe quedar configurado pero sin usuarios reales ni demo.
+
+Validar:
+
+- Proveedores Auth requeridos.
+- Email/password habilitado si aplica.
+- Redirect URLs productivas definidas.
+- `auth.users` en 0 despues de `cleanup_prod_seed_data.sql`.
+
+No crear usuarios iniciales todavia. El alta de usuarios ocurre en fase de cargue inicial controlado con `scripts/seed-production-initial.js`.
+
+## 8. Seed productivo posterior, no en esta fase
+
+El script `scripts/seed-production-initial.js` queda disponible para la siguiente fase. No ejecutarlo hasta que el checklist estructural este OK.
+
+Cuando llegue la fase de cargue inicial, el script:
 
 - Crea/actualiza empresa.
 - Crea usuarios Auth si no existen.
@@ -132,7 +215,7 @@ Usar `scripts/seed-production-initial.js` con credenciales productivas. El scrip
 - Crea buckets si faltan.
 - No borra datos.
 
-## 6. Backups/PITR
+## 9. Backups/PITR
 
 Antes de cargar cliente real:
 
@@ -151,7 +234,7 @@ Notas criticas:
 - PITR es add-on para Pro/Team/Enterprise y requiere al menos Small compute add-on.
 - Backups de DB no restauran objetos borrados de Storage, solo metadata.
 
-## 7. Railway produccion
+## 10. Railway produccion
 
 Crear dos servicios separados:
 
@@ -214,7 +297,7 @@ Variables:
 - `DISABLE_REDIS=false`
 - `REDIS_URL`
 
-## 8. CORS
+## 11. CORS
 
 `ALLOWED_ORIGINS` debe contener solo dominios productivos:
 
@@ -224,16 +307,30 @@ https://app.<dominio-produccion>
 
 No usar `*`. No incluir dominios QA en produccion salvo ventana temporal de validacion controlada.
 
-## 9. Resultado esperado
+## 12. Smoke test sin datos reales
+
+Con PROD estructural vacio:
+
+- API `/health`: OK.
+- Frontend carga login/layout: OK.
+- Login: no debe existir usuario inicial aun.
+- Modulos no deben mostrar datos demo.
+- Endpoints protegidos deben responder 401/403 sin token.
+- Endpoints con service role/server-side no deben filtrar secretos.
+
+## 13. Resultado esperado
 
 Al finalizar esta preparacion, produccion debe quedar:
 
 - Supabase PROD creado.
 - Migraciones aplicadas.
+- Estructura Prisma aplicada.
+- Limpieza productiva ejecutada.
 - Buckets privados.
 - RLS activo.
-- Seed inicial ejecutado.
+- Auth configurado sin usuarios demo.
+- Sin datos operativos ni transaccionales.
 - Railway frontend y backend desplegados.
 - `/health` en API OK.
-- Login de usuario inicial OK.
+- Sin login real todavia.
 - Sin cutover de dominio real todavia.

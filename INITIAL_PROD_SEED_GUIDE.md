@@ -3,9 +3,15 @@
 Script: `scripts/seed-production-initial.js`  
 NPM: `npm run seed:production:initial`
 
+## Estado
+
+**No ejecutar en la fase de replica estructural vacia.**
+
+Este script queda preparado para la fase posterior de cargue inicial controlado, una vez `PRODUCTION_SETUP.md` y `RELEASE_PRODUCTION_GO_LIVE_CHECKLIST.md` confirmen que Supabase PROD esta estructuralmente igual a QA, vacio y sin datos demo.
+
 ## Objetivo
 
-Cargar datos maestros iniciales de una empresa en Supabase produccion de forma controlada, idempotente y sin borrar registros.
+Cargar datos maestros iniciales de una empresa en Supabase produccion de forma controlada, idempotente y sin borrar registros, solo cuando ya se autorice el cargue inicial.
 
 ## Protecciones
 
