@@ -255,6 +255,12 @@ function isVirtualEmployee(employee: { metadata?: AnyRow } | null | undefined) {
   return employee?.metadata?.virtual_employee === true;
 }
 
+async function existingProfileId(userId: string | null) {
+  if (!userId) return null;
+  const rows = await supabaseFetch<Array<{ id: string }>>(`/rest/v1/profiles?select=id&id=eq.${encodeURIComponent(userId)}&limit=1`).catch(() => []);
+  return rows[0]?.id || null;
+}
+
 async function currentSupabaseCompanyUser() {
   const userId = currentSupabaseUserId();
   if (!userId) return null;
@@ -963,14 +969,18 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const membership = employee?.company_id ? null : await currentSupabaseCompanyUser();
     const companyId = employee?.company_id || membership?.company_id;
     if (!companyId) throw new Error("No se encontro una empresa activa para crear el servicio.");
-    const referenceId = body.reference_id || body.reference_item_id || null;
+    const userId = currentSupabaseUserId();
+    const profileId = await existingProfileId(userId);
+    const referenceId = uuidOrNull(body.reference_id || body.reference_item_id);
+    if (!referenceId) throw new Error("Selecciona una referencia valida para crear el servicio.");
     const metadata = body.metadata && typeof body.metadata === "object" ? body.metadata : {};
+    const orderNumber = `OS-${new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14)}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
     const row = {
       company_id: companyId,
-      number: `OS-${Date.now()}`,
+      number: orderNumber,
       reference_id: referenceId,
-      technician_employee_id: employee?.id || null,
-      technician_user_id: employee?.user_id || currentSupabaseUserId() || null,
+      technician_employee_id: employee && !isVirtualEmployee(employee) ? employee.id : null,
+      technician_user_id: profileId,
       service_type: body.service_type || "montaje",
       status: "pendiente",
       customer_name: body.customer_name,
@@ -979,13 +989,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       invoice_number: body.invoice_number || "",
       scheduled_date: body.scheduled_date || localDate(),
       notes: body.notes || "",
-      metadata: { ...metadata, created_from: "apexos_web_supabase" }
+      metadata: { ...metadata, created_from: "apexos_web_supabase", created_by_user_id: userId || null }
     };
-    await supabaseFetch<void>("/rest/v1/service_orders", {
-      method: "POST",
-      headers: { Prefer: "return=minimal" },
-      body: JSON.stringify(row)
-    });
     const inserted = await supabaseFetch<Array<{
       id: string;
       number: string;
@@ -1000,8 +1005,12 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       scheduled_date?: string;
       notes?: string;
       metadata?: AnyRow;
-    }>>(`/rest/v1/service_orders?select=id,number,reference_id,technician_employee_id,service_type,status,customer_name,customer_address,customer_phone,invoice_number,scheduled_date,notes,metadata&number=eq.${encodeURIComponent(row.number)}&limit=1`);
-    if (!inserted[0]?.id) throw new Error("El servicio se envio, pero la politica RLS no permitio leer la orden creada.");
+    }>>("/rest/v1/service_orders?select=id,number,reference_id,technician_employee_id,service_type,status,customer_name,customer_address,customer_phone,invoice_number,scheduled_date,notes,metadata", {
+      method: "POST",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify(row)
+    });
+    if (!inserted[0]?.id) throw new Error("El servicio se envio, pero Supabase no retorno la orden creada.");
     return inserted[0] as T;
   }
 

@@ -41,12 +41,11 @@ export default function NewServiceOrderPage() {
     setSaving(true);
     setMessage("");
     try {
-      const numericReference = Number(form.reference_id);
       const order = await api<ServiceOrderCreateResponse>("/api/v1/services/orders", {
         method: "POST",
         body: JSON.stringify({
           ...form,
-          reference_id: Number.isFinite(numericReference) ? numericReference : form.reference_id,
+          reference_id: form.reference_id,
           metadata: { assignment: "current_user" }
         })
       });
