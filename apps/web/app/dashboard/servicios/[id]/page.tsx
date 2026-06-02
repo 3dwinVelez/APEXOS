@@ -301,24 +301,20 @@ export default function ServiceOperationPage() {
     setDownloadingPdf(true);
     setMessage("");
     try {
+      savePdfBlob(await buildServiceReportPdfBlob(order));
+      setMessage("PDF generado con evidencias fotograficas desde los datos cargados del servicio.");
+      return;
+    } catch (localError) {
       if (HAS_CONFIGURED_API_URL) {
         const token = localStorage.getItem("token");
         const response = await fetch(`${API_URL}/api/v1/services/orders/${params.id}/report-pdf`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
         if (response.ok) {
           savePdfBlob(await response.blob());
-          setMessage("PDF descargado.");
+          setMessage("PDF descargado desde API. Algunas evidencias podrian aparecer como referencia si no estan disponibles en el navegador.");
           return;
         }
       }
-      savePdfBlob(buildServiceReportPdfBlob(order));
-      setMessage(HAS_CONFIGURED_API_URL ? "La API no entrego el PDF; se genero un reporte local con los datos cargados." : "PDF generado desde los datos cargados del servicio.");
-    } catch (error) {
-      try {
-        savePdfBlob(buildServiceReportPdfBlob(order));
-        setMessage("PDF generado localmente porque la descarga de API no respondio.");
-      } catch {
-        setMessage(error instanceof Error ? error.message : "No fue posible descargar el PDF.");
-      }
+      setMessage(localError instanceof Error ? localError.message : "No fue posible descargar el PDF con evidencias.");
     } finally {
       setDownloadingPdf(false);
     }

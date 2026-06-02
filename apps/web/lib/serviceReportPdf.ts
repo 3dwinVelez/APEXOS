@@ -29,6 +29,14 @@ type ReportOrder = {
   metadata?: { inspection?: { items?: Array<{ name?: string; quantity?: number; unit?: string; status?: string; comment?: string; action?: string }> } };
 };
 
+type EvidenceImage = {
+  index: number;
+  name: string;
+  width: number;
+  height: number;
+  hex: string;
+};
+
 const statusLabels: Record<string, string> = {
   pendiente: "Pendiente",
   en_curso: "En curso",
@@ -84,10 +92,77 @@ function wrap(value: unknown, maxChars = 74) {
   return lines.length ? lines : [""];
 }
 
-export function buildServiceReportPdfBlob(order: ReportOrder) {
+function bytesToHex(bytes: Uint8Array) {
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("") + ">";
+}
+
+function base64ToBytes(value: string) {
+  const binary = atob(value);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+  return bytes;
+}
+
+function evidenceSource(photo: ReportPhoto) {
+  const raw = photo.base64_data || photo.file_url || "";
+  if (!raw) return "";
+  if (raw.startsWith("data:")) return raw;
+  if (/^[A-Za-z0-9+/=]+$/.test(raw.slice(0, 80)) && raw.length > 120) {
+    return `data:${photo.metadata?.mime_type || "image/jpeg"};base64,${raw}`;
+  }
+  return raw;
+}
+
+function loadImage(src: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("No fue posible cargar imagen de evidencia."));
+    image.src = src;
+  });
+}
+
+async function prepareEvidenceImages(photos: ReportPhoto[]) {
+  const prepared: EvidenceImage[] = [];
+  for (const [index, photo] of photos.slice(0, 24).entries()) {
+    const source = evidenceSource(photo);
+    if (!source) continue;
+    try {
+      const image = await loadImage(source);
+      const maxWidth = 900;
+      const ratio = image.width > maxWidth ? maxWidth / image.width : 1;
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(image.width * ratio));
+      canvas.height = Math.max(1, Math.round(image.height * ratio));
+      const context = canvas.getContext("2d");
+      if (!context) continue;
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.78);
+      const base64 = dataUrl.split(",")[1] || "";
+      if (!base64) continue;
+      prepared.push({
+        index,
+        name: `Im${prepared.length + 1}`,
+        width: canvas.width,
+        height: canvas.height,
+        hex: bytesToHex(base64ToBytes(base64))
+      });
+    } catch {
+      // The report still includes the evidence metadata when the image URL is private or blocked by CORS.
+    }
+  }
+  return prepared;
+}
+
+export async function buildServiceReportPdfBlob(order: ReportOrder) {
   const pageWidth = 612;
   const pageHeight = 792;
   const margin = 42;
+  const photos = order.photos || [];
+  const imageByPhotoIndex = new Map((await prepareEvidenceImages(photos)).map((image) => [image.index, image]));
   const streams: string[] = [];
   let commands: string[] = [];
   let y = pageHeight - margin;
@@ -156,6 +231,48 @@ export function buildServiceReportPdfBlob(order: ReportOrder) {
     y -= height + 6;
   }
 
+  function drawImage(image: EvidenceImage, x: number, bottom: number, boxWidth: number, boxHeight: number) {
+    const scale = Math.min(boxWidth / image.width, boxHeight / image.height);
+    const width = image.width * scale;
+    const height = image.height * scale;
+    const left = x + (boxWidth - width) / 2;
+    const top = bottom + (boxHeight - height) / 2;
+    commands.push("q");
+    commands.push(`${width.toFixed(2)} 0 0 ${height.toFixed(2)} ${left.toFixed(2)} ${top.toFixed(2)} cm`);
+    commands.push(`/${image.name} Do`);
+    commands.push("Q");
+  }
+
+  function evidenceCard(photo: ReportPhoto, index: number) {
+    const image = imageByPhotoIndex.get(index);
+    const height = image ? 138 : 54;
+    ensure(height + 8);
+    const bottom = y - height + 6;
+    rect(margin, bottom, pageWidth - margin * 2, height, [0.99, 0.99, 0.98], [0.88, 0.89, 0.88]);
+    if (image) {
+      rect(margin + 10, bottom + 12, 122, 104, [1, 1, 1], [0.84, 0.86, 0.84]);
+      drawImage(image, margin + 14, bottom + 16, 114, 96);
+      text(photoLabels[String(photo.type || "")] || photo.type || "Evidencia", margin + 148, y - 10, { size: 9.5, bold: true });
+      wrap(photo.metadata?.file_name || photo.metadata?.part_name || "Imagen adjunta", 54).slice(0, 2).forEach((line, lineIndex) => {
+        text(line, margin + 148, y - 26 - lineIndex * 11, { size: 8.5, fill: [0.32, 0.35, 0.38] });
+      });
+      text(`Fecha: ${formatDate(photo.created_at)}`, margin + 148, y - 58, { size: 8.5, fill: [0.32, 0.35, 0.38] });
+      if (!photo.base64_data && photo.file_url && !photo.file_url.startsWith("data:")) {
+        wrap(photo.file_url, 58).slice(0, 2).forEach((line, lineIndex) => {
+          text(line, margin + 148, y - 76 - lineIndex * 10, { size: 7.5, fill: [0.42, 0.45, 0.46] });
+        });
+      }
+    } else {
+      row([
+        { text: photoLabels[String(photo.type || "")] || photo.type || "Evidencia", x: 10, chars: 24, bold: true },
+        { text: photo.metadata?.file_name || photo.metadata?.part_name || photo.file_url || "Imagen no disponible para embeber", x: 160, chars: 46, lines: 2 },
+        { text: formatDate(photo.created_at), x: 410, chars: 22 }
+      ], 36);
+      return;
+    }
+    y -= height + 8;
+  }
+
   rect(0, pageHeight - 108, pageWidth, 108, [0.03, 0.18, 0.16]);
   rect(0, pageHeight - 112, pageWidth, 4, [0.05, 0.55, 0.47]);
   text("APEXOS", margin, pageHeight - 48, { bold: true, size: 22, fill: [1, 1, 1] });
@@ -209,13 +326,8 @@ export function buildServiceReportPdfBlob(order: ReportOrder) {
   }
 
   title("Evidencias");
-  const photos = order.photos || [];
   if (photos.length) {
-    photos.slice(0, 50).forEach((photo) => row([
-      { text: photoLabels[String(photo.type || "")] || photo.type || "Evidencia", x: 10, chars: 24, bold: true },
-      { text: photo.metadata?.file_name || photo.metadata?.part_name || (photo.base64_data || photo.file_url ? "Captura almacenada" : "Soporte adjunto"), x: 160, chars: 46, lines: 2 },
-      { text: formatDate(photo.created_at), x: 410, chars: 22 }
-    ], 36));
+    photos.slice(0, 50).forEach((photo, index) => evidenceCard(photo, index));
   } else {
     paragraph("Sin evidencias cargadas.");
   }
@@ -225,6 +337,12 @@ export function buildServiceReportPdfBlob(order: ReportOrder) {
   text("Documento generado por APEXOS. Validar evidencias originales en la plataforma.", margin + 10, y - 7, { size: 8.5, fill: [0.22, 0.34, 0.3] });
 
   if (commands.length) streams.push(commands.join("\n"));
+  const images = Array.from(imageByPhotoIndex.values());
+  const imageObjectStart = 5 + streams.length * 2;
+  const imageObjectByName = new Map(images.map((image, index) => [image.name, imageObjectStart + index]));
+  const xObjects = images.length
+    ? `/XObject << ${images.map((image) => `/${image.name} ${imageObjectByName.get(image.name)} 0 R`).join(" ")} >>`
+    : "";
   const pages = streams.map((stream, index) => ({ stream, pageObj: 5 + index * 2, contentObj: 6 + index * 2 }));
   const objects = [
     "<< /Type /Catalog /Pages 2 0 R >>",
@@ -233,8 +351,11 @@ export function buildServiceReportPdfBlob(order: ReportOrder) {
     "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>"
   ];
   pages.forEach((page) => {
-    objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${page.contentObj} 0 R >>`);
+    objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> ${xObjects} >> /Contents ${page.contentObj} 0 R >>`);
     objects.push(`<< /Length ${new TextEncoder().encode(page.stream).length} >>\nstream\n${page.stream}\nendstream`);
+  });
+  images.forEach((image) => {
+    objects.push(`<< /Type /XObject /Subtype /Image /Width ${image.width} /Height ${image.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter [/ASCIIHexDecode /DCTDecode] /Length ${image.hex.length} >>\nstream\n${image.hex}\nendstream`);
   });
 
   let pdf = "%PDF-1.4\n";
