@@ -1,7 +1,7 @@
 "use client";
 
 import { api } from "@/lib/api";
-import { Activity, AlertTriangle, CalendarDays, Camera, CheckCircle2, Clock, MapPinned, Navigation, RefreshCw, Route, Smartphone, Truck, Users, X } from "lucide-react";
+import { Activity, AlertTriangle, CalendarDays, Camera, CheckCircle2, Clock, FileText, MapPinned, Navigation, RefreshCw, Route, Smartphone, Truck, Users, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
@@ -214,7 +214,7 @@ export default function TalentPage() {
         <ActionTile icon={<Route size={20} />} title="Planeacion de rutas" detail="Equipo, vehiculo y horario operativo." href="/dashboard/talento-humano/rutas" />
         <ActionTile icon={<MapPinned size={20} />} title="Mapa GPS en vivo" detail="Trazabilidad limpia por ruta y persona." href="/dashboard/talento-humano/mapa" />
         <ActionTile icon={<CalendarDays size={20} />} title="Reportes" detail="Horas, extras y trazabilidad por empleado." href="/dashboard/talento-humano/reportes" />
-        <ActionTile icon={<Truck size={20} />} title="Maestro de vehiculos" detail="Estado documental de flota." href="/dashboard/transporte" />
+        <ActionTile icon={<FileText size={20} />} title="Configuracion nomina" detail="Recargos, nocturna y conceptos contables." href="/dashboard/talento-humano/nomina" />
       </section>
 
       <section className="overflow-hidden rounded-md border border-line bg-white">

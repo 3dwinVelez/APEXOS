@@ -40,6 +40,9 @@ async function hrRoutes(fastify) {
   fastify.post("/hr/workdays/process", { preHandler: requirePermission("hr", "write") }, (request) => service.processDay(request.user?.tenant_id, request.body || {}));
   fastify.get("/hr/workdays", { preHandler: requirePermission("hr", "read") }, (request) => service.listWorkdays(request.user?.tenant_id, request.query));
 
+  fastify.get("/hr/payroll/config", { preHandler: requirePermission("payroll", "read") }, (request) => service.getPayrollConfig(request.user?.tenant_id));
+  fastify.put("/hr/payroll/config", { preHandler: requirePermission("payroll", "write") }, (request) => service.savePayrollConfig(request.user?.tenant_id, request.body || {}));
+
   fastify.post("/hr/payroll/process", { preHandler: requirePermission("payroll", "write") }, (request) => service.processPayrollRange(request.user?.tenant_id, request.body || {}));
   fastify.get("/hr/payroll", { preHandler: requirePermission("payroll", "read") }, (request) => service.listPayroll(request.user?.tenant_id, request.query));
 }

@@ -38,11 +38,13 @@ type Item = {
   name: string;
   unit: string;
   unit_cost: number;
+  tax_rate: number;
   stock_current: number;
   stock_min: number;
   stock_max: number;
   abc_class: string;
 };
+type WarehouseOption = { id: number; code: string; name: string; society_code: string; branch_code: string; active: boolean };
 
 type PurchaseOrder = {
   id: number;
@@ -92,12 +94,6 @@ const statusLabels: Record<string, string> = {
   closed: "Cerrada"
 };
 
-const warehouses = [
-  { id: 1, name: "CEDI Principal" },
-  { id: 2, name: "Bodega Norte" },
-  { id: 3, name: "Tienda / cross dock" }
-];
-
 const templates = [
   { name: "Reposicion critica", priority: "alta", tag: "stock critico", detail: "Cubre minimos y productos ABC." },
   { name: "Compra mensual", priority: "normal", tag: "recurrente", detail: "Orden base para abastecimiento." },
@@ -107,6 +103,7 @@ const templates = [
 export default function NuevaOCPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [items, setItems] = useState<Item[]>([]);
+  const [warehouses, setWarehouses] = useState<WarehouseOption[]>([]);
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
   const [error, setError] = useState("");
@@ -118,7 +115,7 @@ export default function NuevaOCPage() {
   const [assistantPanel, setAssistantPanel] = useState<AssistantPanel>("inventario");
   const [form, setForm] = useState({
     supplier_id: 0,
-    warehouse_id: 1,
+    warehouse_id: 0,
     expected_at: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString().slice(0, 10),
     priority: "normal",
     currency: "USD",
@@ -133,13 +130,17 @@ export default function NuevaOCPage() {
   }, []);
 
   async function load() {
-    const [supplierData, itemData, orderData] = await Promise.all([
+    const [supplierData, itemData, warehouseData, orderData] = await Promise.all([
       api<Supplier[]>("/api/v1/purchases/suppliers"),
       api<{ data: Item[] }>("/api/v1/inventory/items"),
+      api<WarehouseOption[]>("/api/v1/inventory/warehouses"),
       api<PurchaseOrder[]>("/api/v1/purchases/orders")
     ]);
     setSuppliers(supplierData || []);
     setItems(itemData.data || []);
+    const activeWarehouses = (warehouseData || []).filter((warehouse) => warehouse.active !== false);
+    setWarehouses(activeWarehouses);
+    setForm((current) => ({ ...current, warehouse_id: current.warehouse_id || activeWarehouses[0]?.id || 0 }));
     setOrders(orderData || []);
     setSelectedOrder((orderData || [])[0] || null);
   }
@@ -176,7 +177,7 @@ export default function NuevaOCPage() {
   }, [lines]);
 
   const criticalLineCount = lines.filter((line) => line.stock_current <= line.stock_min).length;
-  const canCreate = Boolean(form.supplier_id && lines.length);
+  const canCreate = Boolean(form.supplier_id && form.warehouse_id && lines.length);
 
   function addItem(item: Item) {
     setLines((current) => {
@@ -193,7 +194,7 @@ export default function NuevaOCPage() {
           qty: suggestedQty(item),
           unit_cost: Number(item.unit_cost || 0),
           discount: 0,
-          tax_rate: 0,
+          tax_rate: Number(item.tax_rate || 0),
           expected_at: form.expected_at,
           notes: "",
           stock_current: Number(item.stock_current || 0),
@@ -230,6 +231,7 @@ export default function NuevaOCPage() {
     setOk("");
     try {
       if (!form.supplier_id) throw new Error("Selecciona un proveedor");
+      if (!form.warehouse_id) throw new Error("Selecciona una bodega destino");
       if (!lines.length) throw new Error("Agrega al menos un producto");
       const po = await api<PurchaseOrder>("/api/v1/purchases/orders", {
         method: "POST",
@@ -322,14 +324,15 @@ export default function NuevaOCPage() {
       {error ? <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
       {ok ? <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{ok}</p> : null}
 
-      {suppliers.length === 0 || items.length === 0 ? (
+      {suppliers.length === 0 || items.length === 0 || warehouses.length === 0 ? (
         <section className="grid gap-3 rounded-md border border-amber-200 bg-amber-50 p-4 lg:grid-cols-[1fr_auto] lg:items-center">
           <div>
             <p className="text-sm font-semibold text-amber-900">Faltan datos maestros para crear una OC</p>
-            <p className="mt-1 text-sm text-amber-800">Necesitas al menos un proveedor activo y un producto de inventario para mantener el flujo confiable.</p>
+            <p className="mt-1 text-sm text-amber-800">Necesitas al menos un proveedor activo, una bodega destino y un producto de inventario para mantener el flujo confiable.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Link className="inline-flex h-10 items-center rounded-md border border-amber-300 bg-white px-3 text-sm text-amber-900 hover:bg-amber-100" href="/dashboard/compras/proveedores">Crear proveedor</Link>
+            <Link className="inline-flex h-10 items-center rounded-md border border-amber-300 bg-white px-3 text-sm text-amber-900 hover:bg-amber-100" href="/dashboard/inventario/bodegas">Crear bodega</Link>
             <Link className="inline-flex h-10 items-center rounded-md border border-amber-300 bg-white px-3 text-sm text-amber-900 hover:bg-amber-100" href="/dashboard/inventario/productos/nuevo">Crear producto</Link>
           </div>
         </section>
@@ -354,8 +357,9 @@ export default function NuevaOCPage() {
                       </select>
                     </Field>
                     <Field label="Bodega destino">
-                      <select className="h-10 w-full rounded-md border border-line px-3 text-sm" value={form.warehouse_id} onChange={(e) => setForm((p) => ({ ...p, warehouse_id: Number(e.target.value) }))}>
-                        {warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>)}
+                      <select className="h-10 w-full rounded-md border border-line px-3 text-sm" disabled={!warehouses.length} value={form.warehouse_id} onChange={(e) => setForm((p) => ({ ...p, warehouse_id: Number(e.target.value) }))}>
+                        {warehouses.length ? <option value={0}>Seleccionar bodega</option> : <option value={0}>Crea una bodega primero</option>}
+                        {warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.code} - {warehouse.name} / {warehouse.society_code}-{warehouse.branch_code}</option>)}
                       </select>
                     </Field>
                     <Field label="Entrega esperada">
@@ -418,7 +422,7 @@ export default function NuevaOCPage() {
                           <Plus size={15} className="text-apex" />
                         </span>
                         <span className="mt-1 block truncate text-neutral-600">{item.name}</span>
-                        <span className="mt-2 block text-xs text-neutral-500">Stock {item.stock_current} / min {item.stock_min} / sugerido {suggestedQty(item)}</span>
+                        <span className="mt-2 block text-xs text-neutral-500">Stock {item.stock_current} / min {item.stock_min} / sugerido {suggestedQty(item)} / imp. {Number(item.tax_rate || 0)}%</span>
                       </button>
                     ))}
                   </div>
@@ -712,10 +716,14 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+function numberInputValue(value: number) {
+  return value === 0 ? "" : String(value);
+}
+
 function NumberInput({ value, suffix, onChange }: { value: number; suffix?: string; onChange: (value: number) => void }) {
   return (
     <div className="flex h-9 items-center rounded-md border border-line bg-white">
-      <input className="h-full w-20 rounded-md px-2 text-sm outline-none" min={0} step="0.01" type="number" value={value} onChange={(e) => onChange(Number(e.target.value))} />
+      <input className="h-full w-20 rounded-md px-2 text-sm outline-none" min={0} step="0.01" type="number" value={numberInputValue(value)} onChange={(e) => onChange(e.target.value === "" ? 0 : Number(e.target.value))} />
       {suffix ? <span className="pr-2 text-xs text-neutral-500">{suffix}</span> : null}
     </div>
   );

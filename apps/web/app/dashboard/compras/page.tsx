@@ -5,7 +5,8 @@ import { ComprasNav } from "@/components/compras-nav";
 const workspaces = [
   { href: "/dashboard/compras/ordenes/nueva", title: "Orden de compra", detail: "Crea, aprueba y dispara WMS desde un solo workspace.", icon: ClipboardCheck, action: "Abrir workspace" },
   { href: "/dashboard/compras/ordenes/recibir", title: "Recepcion", detail: "Controla parciales, diferencias y entrada a inventario.", icon: PackageCheck, action: "Recibir" },
-  { href: "/dashboard/compras/proveedores", title: "Proveedores", detail: "Gestiona datos comerciales minimos y condiciones.", icon: Users, action: "Gestionar" }
+  { href: "/dashboard/compras/proveedores", title: "Proveedores", detail: "Gestiona datos comerciales minimos y condiciones.", icon: Users, action: "Gestionar" },
+  { href: "/dashboard/compras/facturas", title: "Factura proveedor", detail: "Registra factura con o sin OC y afecta CXP, contabilidad e inventario.", icon: Receipt, action: "Registrar" }
 ];
 
 const flow = [
@@ -58,7 +59,7 @@ export default function ComprasPage() {
               </div>
             </div>
 
-            <div className="grid gap-3 p-4 lg:grid-cols-3">
+            <div className="grid gap-3 p-4 lg:grid-cols-4">
               {workspaces.map((card) => {
                 const Icon = card.icon;
                 return (

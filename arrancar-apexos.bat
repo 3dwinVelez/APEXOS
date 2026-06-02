@@ -39,7 +39,7 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo [1/5] Verificando Docker Desktop...
+echo [1/7] Verificando Docker Desktop...
 docker info >nul 2>nul
 if errorlevel 1 (
   echo Docker no responde. Intentando iniciar Docker Desktop...
@@ -58,7 +58,7 @@ if errorlevel 1 (
 
 if not exist ".env" (
   if exist ".env.example" (
-    echo [2/5] Creando .env desde .env.example...
+    echo [2/7] Creando .env desde .env.example...
     copy ".env.example" ".env" >nul
   ) else (
     echo [ERROR] No existe .env ni .env.example.
@@ -66,11 +66,11 @@ if not exist ".env" (
     exit /b 1
   )
 ) else (
-  echo [2/5] .env encontrado.
+  echo [2/7] .env encontrado.
 )
 
 if not exist "node_modules" (
-  echo [3/5] Instalando dependencias...
+  echo [3/7] Instalando dependencias...
   call npm.cmd install
   if errorlevel 1 (
     echo [ERROR] Fallo npm install.
@@ -78,10 +78,14 @@ if not exist "node_modules" (
     exit /b 1
   )
 ) else (
-  echo [3/5] Dependencias ya instaladas.
+  echo [3/7] Dependencias ya instaladas.
 )
 
-echo [4/6] Validando ambiente local...
+echo [4/7] Liberando puertos locales...
+call :kill_port 3000
+call :kill_port 3001
+
+echo [5/7] Validando ambiente local...
 call npm.cmd run check:local
 if errorlevel 1 (
   echo [ERROR] La validacion local fallo.
@@ -89,7 +93,7 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo [5/6] Preparando Prisma y base de datos...
+echo [6/7] Preparando Prisma y base de datos...
 call npm.cmd run prisma:generate
 if errorlevel 1 (
   echo [ERROR] Fallo prisma:generate.
@@ -105,7 +109,9 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo [6/6] Arrancando APEXOS...
+echo [7/7] Arrancando APEXOS...
+call :kill_port 3000
+call :kill_port 3001
 echo.
 echo Web: http://localhost:3001
 echo API: http://localhost:3000/health
@@ -117,3 +123,10 @@ echo.
 call npm.cmd run start:local
 
 pause
+exit /b 0
+
+:kill_port
+set "PORT_TO_KILL=%~1"
+echo Revisando puerto %PORT_TO_KILL%...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-NetTCPConnection -LocalPort %PORT_TO_KILL% -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { Write-Host ('Liberando puerto %PORT_TO_KILL% con PID ' + $_); Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }"
+exit /b 0

@@ -51,6 +51,7 @@ type AdminUser = {
   labor_status: string;
   [key: string]: unknown;
 };
+type ThirdParty = { id: number; name: string; legal_name?: string | null; tax_id?: string | null; active: boolean };
 type ConfigItem = {
   key: string;
   title: string;
@@ -106,9 +107,14 @@ type UserForm = {
   contract_type: string;
   cost_center: string;
   workday: string;
+  daily_hours: string;
   base_shift: string;
   salary_base: string;
   transport_allowance: string;
+  eps_party_id: string;
+  pension_party_id: string;
+  arl_party_id: string;
+  arl_risk_percent: string;
   arl_risk: string;
   eps: string;
   pension_fund: string;
@@ -180,9 +186,14 @@ const emptyUser: UserForm = {
   contract_type: "indefinite",
   cost_center: "",
   workday: "",
+  daily_hours: "8",
   base_shift: "",
   salary_base: "0",
   transport_allowance: "",
+  eps_party_id: "",
+  pension_party_id: "",
+  arl_party_id: "",
+  arl_risk_percent: "0.522",
   arl_risk: "",
   eps: "",
   pension_fund: "",
@@ -401,9 +412,14 @@ function userToForm(user: AdminUser): UserForm {
     contract_type: String(readUserValue(user, "contract_type", "indefinite")),
     cost_center: String(readUserValue(user, "cost_center", "")),
     workday: String(readUserValue(user, "workday", "")),
+    daily_hours: String(readUserValue(user, "daily_hours", "8")),
     base_shift: String(readUserValue(user, "base_shift", "")),
     salary_base: String(user.salary_base || 0),
     transport_allowance: String(readUserValue(user, "transport_allowance", "")),
+    eps_party_id: String(readUserValue(user, "eps_party_id", "")),
+    pension_party_id: String(readUserValue(user, "pension_party_id", "")),
+    arl_party_id: String(readUserValue(user, "arl_party_id", "")),
+    arl_risk_percent: String(readUserValue(user, "arl_risk_percent", "0.522")),
     arl_risk: String(readUserValue(user, "arl_risk", "")),
     eps: String(readUserValue(user, "eps", "")),
     pension_fund: String(readUserValue(user, "pension_fund", "")),
@@ -458,6 +474,18 @@ function SelectField({ label, value, onChange, options }: { label: string; value
   );
 }
 
+function PartySelect({ label, value, onChange, parties }: { label: string; value: string; onChange: (value: string) => void; parties: ThirdParty[] }) {
+  return (
+    <label className="block text-sm">
+      <span className="mb-1 block font-medium text-neutral-700">{label}</span>
+      <select className="h-10 w-full rounded-md border border-line px-3 text-sm" value={value} onChange={(event) => onChange(event.target.value)}>
+        <option value="">Seleccionar tercero contable</option>
+        {parties.map((party) => <option key={party.id} value={party.id}>{party.tax_id ? `${party.tax_id} - ` : ""}{party.legal_name || party.name}</option>)}
+      </select>
+    </label>
+  );
+}
+
 function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) {
   return (
     <label className="flex min-h-10 items-center justify-between gap-3 rounded-md border border-line px-3 py-2 text-sm">
@@ -475,6 +503,7 @@ export default function AdministracionPage() {
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [thirdParties, setThirdParties] = useState<ThirdParty[]>([]);
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
   const [roleForm, setRoleForm] = useState({ name: "", description: "", active: true, permissions: {} as Record<string, Record<string, boolean>> });
   const [userForm, setUserForm] = useState<UserForm>(emptyUser);
@@ -513,14 +542,16 @@ export default function AdministracionPage() {
   }
 
   async function load() {
-    const [catalogData, rolesData, usersData] = await Promise.all([
+    const [catalogData, rolesData, usersData, partyData] = await Promise.all([
       api<CatalogItem[]>("/api/v1/admin/permissions/catalog"),
       api<Role[]>("/api/v1/admin/roles"),
-      api<AdminUser[]>("/api/v1/admin/users")
+      api<AdminUser[]>("/api/v1/admin/users"),
+      api<ThirdParty[]>("/api/v1/accounting/third-parties?active=true&limit=500").catch(() => [])
     ]);
     setCatalog(catalogData);
     setRoles(rolesData);
     setUsers(usersData);
+    setThirdParties(partyData);
     if (isSupabaseSession() && !canManageCompanies()) {
       setMessage("Sesion empresa activa. La gestion de empresas y modulos requiere permisos de administrador de plataforma.");
     }
@@ -677,12 +708,17 @@ export default function AdministracionPage() {
           <Field label="Area" value={userForm.department} onChange={(value) => setUserField("department", value)} />
           <Field label="Centro de costo" value={userForm.cost_center} onChange={(value) => setUserField("cost_center", value)} />
           <Field label="Jornada laboral" value={userForm.workday} onChange={(value) => setUserField("workday", value)} />
+          <Field label="Horas diarias" type="number" value={userForm.daily_hours} onChange={(value) => setUserField("daily_hours", value)} />
           <Field label="Turno base" value={userForm.base_shift} onChange={(value) => setUserField("base_shift", value)} />
           {sensitiveAllowed ? <Field label="Salario base" type="number" value={userForm.salary_base} onChange={(value) => setUserField("salary_base", value)} /> : null}
-          {sensitiveAllowed ? <Field label="Auxilio transporte" value={userForm.transport_allowance} onChange={(value) => setUserField("transport_allowance", value)} /> : null}
-          <Field label="Riesgo ARL" value={userForm.arl_risk} onChange={(value) => setUserField("arl_risk", value)} />
-          <Field label="EPS" value={userForm.eps} onChange={(value) => setUserField("eps", value)} />
-          <Field label="Fondo de pension" value={userForm.pension_fund} onChange={(value) => setUserField("pension_fund", value)} />
+          {sensitiveAllowed ? <Field label="Auxilio transporte" type="number" value={userForm.transport_allowance} onChange={(value) => setUserField("transport_allowance", value)} /> : null}
+          <PartySelect label="Tercero EPS" value={userForm.eps_party_id} onChange={(value) => setUserField("eps_party_id", value)} parties={thirdParties} />
+          <PartySelect label="Tercero fondo pension" value={userForm.pension_party_id} onChange={(value) => setUserField("pension_party_id", value)} parties={thirdParties} />
+          <PartySelect label="Tercero ARL" value={userForm.arl_party_id} onChange={(value) => setUserField("arl_party_id", value)} parties={thirdParties} />
+          <Field label="Porcentaje riesgo laboral ARL" type="number" value={userForm.arl_risk_percent} onChange={(value) => setUserField("arl_risk_percent", value)} />
+          <Field label="Riesgo ARL / clase" value={userForm.arl_risk} onChange={(value) => setUserField("arl_risk", value)} />
+          <Field label="EPS texto libre" value={userForm.eps} onChange={(value) => setUserField("eps", value)} />
+          <Field label="Fondo de pension texto libre" value={userForm.pension_fund} onChange={(value) => setUserField("pension_fund", value)} />
           <Field label="Caja de compensacion" value={userForm.compensation_fund} onChange={(value) => setUserField("compensation_fund", value)} />
           {sensitiveAllowed ? <Field label="Banco" value={userForm.bank} onChange={(value) => setUserField("bank", value)} /> : null}
           {sensitiveAllowed ? <Field label="Tipo de cuenta" value={userForm.bank_account_type} onChange={(value) => setUserField("bank_account_type", value)} /> : null}

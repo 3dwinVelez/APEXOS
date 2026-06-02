@@ -67,9 +67,9 @@ export default function LoginPage() {
   }
 
   async function loginDemo() {
-    setEmail("admin.demo@demo.apexos.local");
-    setPassword("ApexOS-Demo-2026!");
-    await loginWithCredentials("admin.demo@demo.apexos.local", "ApexOS-Demo-2026!");
+    setEmail("demo@apex.local");
+    setPassword("test1234");
+    await loginWithCredentials("demo@apex.local", "test1234");
   }
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
