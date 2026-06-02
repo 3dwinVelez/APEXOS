@@ -92,6 +92,73 @@ async function accountingRoutes(fastify) {
     preHandler: requirePermission("accounting", "write")
   }, async (request) => service.deleteOrganizationUnit(request.user?.tenant_id, request.params.type, request.params.code));
 
+  fastify.get("/accounting/document-masters", {
+    preHandler: requirePermission("accounting", "read")
+  }, async (request) => service.getAccountingDocumentMasters(request.user?.tenant_id));
+
+  fastify.post("/accounting/document-masters/types", {
+    schema: schema.accountingDocumentTypeSchema,
+    preHandler: requirePermission("accounting", "write")
+  }, async (request, reply) => reply.code(201).send(await service.saveAccountingDocumentType(request.user?.tenant_id, request.body)));
+
+  fastify.post("/accounting/document-masters/numbering", {
+    schema: schema.accountingNumberingSchema,
+    preHandler: requirePermission("accounting", "write")
+  }, async (request, reply) => reply.code(201).send(await service.saveAccountingNumbering(request.user?.tenant_id, request.body)));
+
+  fastify.get("/accounting/vat-masters", {
+    preHandler: requirePermission("accounting", "read")
+  }, async (request) => service.getVatMasters(request.user?.tenant_id));
+
+  fastify.post("/accounting/vat-masters", {
+    schema: schema.vatMasterSchema,
+    preHandler: requirePermission("accounting", "write")
+  }, async (request, reply) => reply.code(201).send(await service.saveVatMaster(request.user?.tenant_id, request.body)));
+
+  fastify.delete("/accounting/vat-masters/:code", {
+    preHandler: requirePermission("accounting", "write")
+  }, async (request) => service.deleteVatMaster(request.user?.tenant_id, request.params.code));
+
+  fastify.get("/accounting/payable-accounts", {
+    preHandler: requirePermission("accounting", "read")
+  }, async (request) => service.listPayableAccounts(request.user?.tenant_id, request.query));
+
+  fastify.get("/accounting/documents", {
+    preHandler: requirePermission("accounting", "read")
+  }, async (request) => service.listAccountingDocuments(request.user?.tenant_id, request.query));
+
+  fastify.post("/accounting/documents", {
+    schema: schema.accountingDocumentSchema,
+    preHandler: requirePermission("accounting", "write")
+  }, async (request, reply) => reply.code(201).send(await service.createAccountingDocument(request.user?.tenant_id, request.user?.id, request.body)));
+
+  fastify.get("/accounting/payables/documents", {
+    preHandler: requirePermission("accounting", "read")
+  }, async (request) => service.listPayableDocuments(request.user?.tenant_id, request.query));
+
+  fastify.get("/accounting/payables/open-invoices", {
+    preHandler: requirePermission("accounting", "read")
+  }, async (request) => service.listOpenPayableInvoices(request.user?.tenant_id, request.query));
+
+  fastify.get("/accounting/payables/suppliers/:supplier_id/documents", {
+    preHandler: requirePermission("accounting", "read")
+  }, async (request) => service.listSupplierPayableDocuments(request.user?.tenant_id, request.params.supplier_id, request.query));
+
+  fastify.post("/accounting/payables/documents/simulate", {
+    schema: schema.payableDocumentSchema,
+    preHandler: requirePermission("accounting", "read")
+  }, async (request) => service.simulatePayableDocument(request.user?.tenant_id, request.body));
+
+  fastify.post("/accounting/payables/documents", {
+    schema: schema.payableDocumentSchema,
+    preHandler: requirePermission("accounting", "write")
+  }, async (request, reply) => reply.code(201).send(await service.createPayableDocument(request.user?.tenant_id, request.user?.id, request.body)));
+
+  fastify.post("/accounting/payables/applications", {
+    schema: schema.payableApplicationSchema,
+    preHandler: requirePermission("accounting", "write")
+  }, async (request, reply) => reply.code(201).send(await service.applyPayableCreditNote(request.user?.tenant_id, request.user?.id, request.body)));
+
   fastify.get("/accounting/third-party-masters", {
     preHandler: requirePermission("accounting", "read")
   }, async (request) => service.getThirdPartyMasters(request.user?.tenant_id));
