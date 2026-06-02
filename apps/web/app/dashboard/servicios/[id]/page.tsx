@@ -98,6 +98,7 @@ export default function ServiceOperationPage() {
   const [noExecutionMode, setNoExecutionMode] = useState(false);
   const [gpsMessage, setGpsMessage] = useState("");
   const [working, setWorking] = useState(false);
+  const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const [captures, setCaptures] = useState<Record<string, CapturedFile | null>>({});
   const [inspection, setInspection] = useState<InspectionItem[]>([]);
   const [closureMode, setClosureMode] = useState(false);
@@ -142,9 +143,10 @@ export default function ServiceOperationPage() {
     setInspection(parts.map((part) => ({ part_id: part.id, name: part.name, quantity: Number(part.quantity || 1), unit: part.unit || "und", status: "ok", comment: "", action: "ninguna" })));
   }, [order, noExecutionReason]);
 
-  async function uploadPhoto(type: string, file: CapturedFile | null, metadata: Record<string, unknown> = {}) {
-    setCaptures((current) => ({ ...current, [type]: file }));
+  async function uploadPhoto(type: string, file: CapturedFile | null, metadata: Record<string, unknown> = {}, captureKey = type) {
+    setCaptures((current) => ({ ...current, [captureKey]: file }));
     if (!file) return;
+    setUploading((current) => ({ ...current, [captureKey]: true }));
     try {
       const savedPhoto = await api<ServicePhoto>(`/api/v1/services/orders/${params.id}/photos`, {
         method: "POST",
@@ -153,8 +155,10 @@ export default function ServiceOperationPage() {
       setOrder((current) => current ? { ...current, photos: [...current.photos.filter((photo) => photo.id !== savedPhoto.id), savedPhoto] } : current);
       setMessage(`Evidencia ${photoLabels[type] || type} cargada.`);
     } catch (error) {
-      setCaptures((current) => ({ ...current, [type]: null }));
+      setCaptures((current) => ({ ...current, [captureKey]: null }));
       setMessage(error instanceof Error ? error.message : "No fue posible guardar la evidencia.");
+    } finally {
+      setUploading((current) => ({ ...current, [captureKey]: false }));
     }
   }
 
@@ -349,8 +353,8 @@ export default function ServiceOperationPage() {
         {visiblePanels.map((panel) => {
           const Icon = panel.icon;
           return (
-            <button className={`min-h-12 min-w-32 rounded-md border px-3 text-sm font-semibold sm:min-w-0 ${activePanel === panel.id ? "border-apex bg-apex text-white" : "border-line bg-white text-neutral-700"}`} key={panel.id} onClick={() => setActivePanel(panel.id)} type="button">
-              <Icon className="mr-1 inline" size={16} /> {panel.label}
+            <button className={`inline-flex min-h-12 min-w-32 items-center justify-center gap-1 rounded-md border px-3 text-sm font-semibold sm:min-w-0 ${activePanel === panel.id ? "border-apex bg-apex text-white" : "border-line bg-white text-neutral-700"}`} key={panel.id} onClick={() => setActivePanel(panel.id)} type="button">
+              <Icon className="shrink-0" size={16} /> <span className="truncate">{panel.label}</span>
             </button>
           );
         })}
@@ -359,7 +363,7 @@ export default function ServiceOperationPage() {
       {activePanel === "inicio" && order.status === "pendiente" ? (
         <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
           <h2 className="mb-3 text-base font-semibold">Inicio del servicio</h2>
-          <PhotoCapture label="Foto de fachada" required value={captures.fachada || null} onChange={(file) => uploadPhoto("fachada", file)} />
+          <PhotoCapture label="Foto de fachada" required loading={uploading.fachada} value={captures.fachada || null} onChange={(file) => uploadPhoto("fachada", file)} />
           <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white disabled:opacity-50" disabled={working || (!captures.fachada && !hasPhoto("fachada"))} onClick={() => update("start")} type="button"><Play size={18} /> Iniciar y registrar GPS</button>
         </section>
       ) : null}
@@ -379,7 +383,7 @@ export default function ServiceOperationPage() {
                     <div className="rounded-md border border-sky-100 bg-white p-3" key={`${manual.file_name || manual.title}-${index}`}>
                       <p className="text-sm font-semibold">{manual.title || manual.file_name || `Documento ${index + 1}`}</p>
                       {manual.notes ? <p className="mt-1 text-xs text-neutral-600">{manual.notes}</p> : null}
-                      {href ? <a className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper sm:w-auto" href={href} target="_blank" rel="noreferrer"><Download size={15} /> Ver documento</a> : null}
+                      {href ? <a className="mt-2 inline-flex h-11 w-full min-w-0 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper sm:w-auto" href={href} target="_blank" rel="noreferrer"><Download className="shrink-0" size={15} /> <span className="truncate">Ver documento</span></a> : null}
                     </div>
                   );
                 })}
@@ -411,7 +415,7 @@ export default function ServiceOperationPage() {
                       <option value="revision">Requiere revision</option>
                       <option value="ninguna">Sin accion adicional</option>
                     </select>
-                    <PhotoCapture label={`Evidencia - ${part.name}`} required value={captures[`pieza_${part.part_id}`] || null} onChange={(file) => uploadPhoto("pieza_averiada", file, { part_id: part.part_id, part_name: part.name, status: part.status, comment: part.comment, action: part.action })} />
+                    <PhotoCapture label={`Evidencia - ${part.name}`} required loading={uploading[`pieza_${part.part_id}`]} value={captures[`pieza_${part.part_id}`] || null} onChange={(file) => uploadPhoto("pieza_averiada", file, { part_id: part.part_id, part_name: part.name, status: part.status, comment: part.comment, action: part.action }, `pieza_${part.part_id}`)} />
                   </div>
                 ) : null}
               </div>
@@ -430,8 +434,8 @@ export default function ServiceOperationPage() {
             <>
               <h2 className="mb-3 text-base font-semibold">Ejecucion</h2>
               <div className="grid gap-2">
-                <PhotoCapture label="Foto 1: Producto abierto" required value={captures.producto_abierto || null} onChange={(file) => uploadPhoto("producto_abierto", file)} />
-                <PhotoCapture label="Foto 2: Producto cerrado" required value={captures.producto_cerrado || null} onChange={(file) => uploadPhoto("producto_cerrado", file)} />
+                <PhotoCapture label="Foto 1: Producto abierto" required loading={uploading.producto_abierto} value={captures.producto_abierto || null} onChange={(file) => uploadPhoto("producto_abierto", file)} />
+                <PhotoCapture label="Foto 2: Producto cerrado" required loading={uploading.producto_cerrado} value={captures.producto_cerrado || null} onChange={(file) => uploadPhoto("producto_cerrado", file)} />
               </div>
               <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white disabled:opacity-50" disabled={!executionPhotosReady()} onClick={() => setClosureMode(true)} type="button"><Camera size={18} /> Continuar al cierre</button>
             </>
@@ -439,7 +443,7 @@ export default function ServiceOperationPage() {
             <>
               <h2 className="mb-3 text-base font-semibold">Cierre del servicio</h2>
               <div className="grid gap-2">
-                <PhotoCapture label="Foto del cliente que recibe" required value={captures.cliente || null} onChange={(file) => uploadPhoto("cliente", file)} />
+                <PhotoCapture label="Foto del cliente que recibe" required loading={uploading.cliente} value={captures.cliente || null} onChange={(file) => uploadPhoto("cliente", file)} />
                 <SignatureCapture label="Firma del cliente" required value={captures.firma_cliente || null} onChange={(file) => uploadSignature(file)} />
               </div>
               <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-emerald-600 text-base font-semibold text-white disabled:opacity-50" disabled={working || !closePhotosReady()} onClick={() => update("close")} type="button"><CheckCircle2 size={18} /> Cerrar servicio</button>
@@ -454,7 +458,7 @@ export default function ServiceOperationPage() {
           <textarea className="min-h-24 w-full rounded-md border border-line px-3 py-3 text-base md:text-sm" placeholder="Describe averia, faltante o accion requerida" value={incident} onChange={(event) => setIncident(event.target.value)} />
           <button className="mt-2 h-12 w-full rounded-md border border-line text-base font-semibold hover:bg-paper" onClick={addIncident} type="button"><Search className="mr-1 inline" size={17} /> Registrar novedad</button>
           <textarea className="mt-3 min-h-20 w-full rounded-md border border-line px-3 py-3 text-base md:text-sm" placeholder="Motivo si no se puede ejecutar" value={noExecutionReason} onChange={(event) => setNoExecutionReason(event.target.value)} />
-          <PhotoCapture label="Evidencia no ejecutada" value={captures.no_ejecutada || null} onChange={(file) => uploadPhoto("no_ejecutada", file, { reason: noExecutionReason })} />
+          <PhotoCapture label="Evidencia no ejecutada" loading={uploading.no_ejecutada} value={captures.no_ejecutada || null} onChange={(file) => uploadPhoto("no_ejecutada", file, { reason: noExecutionReason })} />
           {noExecutionMode ? <SignatureCapture label="Firma del cliente" required value={captures.firma_cliente || null} onChange={(file) => uploadSignature(file, { reason: noExecutionReason, closure: "no_ejecutada" })} /> : null}
           <button className="mt-2 inline-flex h-12 w-full items-center justify-center gap-2 rounded-md border border-red-200 text-base font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50" disabled={working || (noExecutionMode ? !noExecutionReady() : !noExecutionReason.trim() || !hasPhoto("no_ejecutada"))} onClick={() => update("close-not-executed")} type="button"><FileSignature size={17} /> Cerrar no ejecutada</button>
         </section>
@@ -464,14 +468,14 @@ export default function ServiceOperationPage() {
         <section className="space-y-3 rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-base font-semibold">Historial y evidencias</h2>
-            <button className="inline-flex h-11 items-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white" onClick={downloadPdf} type="button"><Download size={16} /> PDF</button>
+            <button className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white" onClick={downloadPdf} type="button"><Download className="shrink-0" size={16} /> <span className="truncate">PDF</span></button>
           </div>
           <div className="grid gap-2 text-sm text-neutral-700">
             {order.started_at ? <p className="rounded-md bg-paper p-3">Inicio: {new Date(order.started_at).toLocaleString()}</p> : null}
             {order.closed_at ? <p className="rounded-md bg-paper p-3">Cierre: {new Date(order.closed_at).toLocaleString()} · {order.duration_minutes ?? "--"} min</p> : null}
             {order.no_execution_reason ? <p className="rounded-md bg-amber-50 p-3 text-amber-900">No ejecutada: {order.no_execution_reason}</p> : null}
-            {mapLink(order.start_latitude, order.start_longitude) ? <a className="inline-flex h-11 items-center gap-2 rounded-md border border-line px-3 font-semibold" href={mapLink(order.start_latitude, order.start_longitude)} target="_blank" rel="noreferrer"><MapPin size={16} /> GPS inicio</a> : null}
-            {mapLink(order.close_latitude, order.close_longitude) ? <a className="inline-flex h-11 items-center gap-2 rounded-md border border-line px-3 font-semibold" href={mapLink(order.close_latitude, order.close_longitude)} target="_blank" rel="noreferrer"><MapPin size={16} /> GPS cierre</a> : null}
+            {mapLink(order.start_latitude, order.start_longitude) ? <a className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-md border border-line px-3 font-semibold" href={mapLink(order.start_latitude, order.start_longitude)} target="_blank" rel="noreferrer"><MapPin className="shrink-0" size={16} /> <span className="truncate">GPS inicio</span></a> : null}
+            {mapLink(order.close_latitude, order.close_longitude) ? <a className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-md border border-line px-3 font-semibold" href={mapLink(order.close_latitude, order.close_longitude)} target="_blank" rel="noreferrer"><MapPin className="shrink-0" size={16} /> <span className="truncate">GPS cierre</span></a> : null}
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {order.photos.map((photo) => {
@@ -495,7 +499,7 @@ export default function ServiceOperationPage() {
 
       <div className="fixed inset-x-0 bottom-0 z-50 border-t border-line bg-white/95 px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur md:hidden">
         {activePanel === "historial" ? (
-          <button className="h-14 w-full rounded-md bg-apex text-base font-semibold text-white shadow-sm" onClick={downloadPdf} type="button">Descargar PDF</button>
+          <button className="h-14 w-full rounded-md bg-apex px-3 text-base font-semibold text-white shadow-sm" onClick={downloadPdf} type="button">Descargar PDF</button>
         ) : (
           <button className="h-14 w-full rounded-md border border-line bg-white text-base font-semibold shadow-sm" onClick={() => setActivePanel("historial")} type="button">Ver historial</button>
         )}
