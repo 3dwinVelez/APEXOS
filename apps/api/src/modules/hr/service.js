@@ -9,6 +9,47 @@ const DEFAULT_PARAMS = {
   night_end: "06:00"
 };
 
+const DEFAULT_PAYROLL_CONFIG = {
+  parameters: {
+    country: "CO",
+    ordinary_hours_day: 8,
+    ordinary_hours_week: 42,
+    night_start: "19:00",
+    night_end: "06:00",
+    health_employee_percent: 4,
+    pension_employee_percent: 4,
+    health_employer_percent: 8.5,
+    pension_employer_percent: 12,
+    transport_allowance_enabled: true,
+    arl_default_percent: 0.522
+  },
+  overtime_rates: [
+    { code: "HORA_DIURNA", name: "Hora ordinaria diurna", percent: 0, multiplier: 1, starts_at: "06:00", ends_at: "19:00", active: true },
+    { code: "RECARGO_NOCTURNO", name: "Recargo nocturno ordinario", percent: 35, multiplier: 1.35, starts_at: "19:00", ends_at: "06:00", active: true },
+    { code: "HED", name: "Hora extra diurna", percent: 25, multiplier: 1.25, active: true },
+    { code: "HEN", name: "Hora extra nocturna", percent: 75, multiplier: 1.75, active: true },
+    { code: "DOM_FEST_2026_H1", name: "Dominical/festivo hasta junio 2026", percent: 80, multiplier: 1.8, active: true },
+    { code: "DOM_FEST_2026_H2", name: "Dominical/festivo desde julio 2026", percent: 90, multiplier: 1.9, active: true },
+    { code: "HEDD", name: "Hora extra diurna dominical/festiva", percent: 105, multiplier: 2.05, active: true },
+    { code: "HEND", name: "Hora extra nocturna dominical/festiva", percent: 155, multiplier: 2.55, active: true }
+  ],
+  concepts: [
+    { code: "SALARIO_BASICO", name: "Salario basico", type: "earning", basis: "salary", account_code: "", active: true },
+    { code: "AUX_TRANSPORTE", name: "Auxilio de transporte", type: "earning", basis: "transport_allowance", account_code: "", active: true },
+    { code: "HORA_DIURNA", name: "Hora diurna", type: "earning", basis: "hours", account_code: "", active: true },
+    { code: "RECARGO_NOCTURNO", name: "Recargo nocturno", type: "earning", basis: "hours", account_code: "", active: true },
+    { code: "HED", name: "Hora extra diurna", type: "earning", basis: "hours", account_code: "", active: true },
+    { code: "HEN", name: "Hora extra nocturna", type: "earning", basis: "hours", account_code: "", active: true },
+    { code: "DOM_FEST", name: "Dominical / festivo", type: "earning", basis: "hours", account_code: "", active: true },
+    { code: "DED_SALUD", name: "Deduccion salud empleado", type: "deduction", basis: "ibc", account_code: "", active: true },
+    { code: "DED_PENSION", name: "Deduccion pension empleado", type: "deduction", basis: "ibc", account_code: "", active: true },
+    { code: "APORTE_SALUD", name: "Aporte salud empleador", type: "employer_cost", basis: "ibc", account_code: "", active: true },
+    { code: "APORTE_PENSION", name: "Aporte pension empleador", type: "employer_cost", basis: "ibc", account_code: "", active: true },
+    { code: "APORTE_ARL", name: "Aporte ARL", type: "employer_cost", basis: "ibc", account_code: "", active: true },
+    { code: "CAJA_COMPENSACION", name: "Caja de compensacion", type: "employer_cost", basis: "ibc", account_code: "", active: true }
+  ]
+};
+
 const OPERATING_TIMEZONE = "America/Bogota";
 const OPERATING_OFFSET = "-05:00";
 
@@ -60,6 +101,41 @@ function employeeType(employee) {
 
 function isDriver(employee) {
   return ["conductor", "driver", "chofer", "operador de ruta", "operador_ruta", "transportador"].includes(employeeType(employee));
+}
+
+function mergePayrollConfig(config = {}) {
+  return {
+    ...DEFAULT_PAYROLL_CONFIG,
+    ...config,
+    parameters: { ...DEFAULT_PAYROLL_CONFIG.parameters, ...(config.parameters || {}) },
+    overtime_rates: Array.isArray(config.overtime_rates) && config.overtime_rates.length ? config.overtime_rates : DEFAULT_PAYROLL_CONFIG.overtime_rates,
+    concepts: Array.isArray(config.concepts) && config.concepts.length ? config.concepts : DEFAULT_PAYROLL_CONFIG.concepts
+  };
+}
+
+async function getPayrollConfig(tenantId) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
+    const config = tenant?.config && typeof tenant.config === "object" ? tenant.config : {};
+    return mergePayrollConfig(config.payroll || {});
+  });
+}
+
+async function savePayrollConfig(tenantId, input) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
+    const config = tenant?.config && typeof tenant.config === "object" ? tenant.config : {};
+    const current = mergePayrollConfig(config.payroll || {});
+    const next = mergePayrollConfig({
+      ...current,
+      ...(input || {}),
+      parameters: { ...current.parameters, ...((input || {}).parameters || {}) },
+      overtime_rates: Array.isArray(input?.overtime_rates) ? input.overtime_rates : current.overtime_rates,
+      concepts: Array.isArray(input?.concepts) ? input.concepts : current.concepts
+    });
+    await prisma.tenant.update({ where: { id: tenantId }, data: { config: { ...config, payroll: next } } });
+    return next;
+  });
 }
 
 function punchStatus(type) {
@@ -1444,6 +1520,8 @@ module.exports = {
   listSchedules,
   createSchedule,
   updateSchedule,
+  getPayrollConfig,
+  savePayrollConfig,
   listEmployees,
   getCurrentEmployee,
   createEmployee,

@@ -64,6 +64,8 @@ async function createPurchaseOrder(tenantId, userId, data) {
   return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
     const supplier = await tx.party.findFirst({ where: { id: supplier_id, type: "supplier", active: true } });
     if (!supplier) throw appError(404, "SUPPLIER_NOT_FOUND", "Proveedor no encontrado");
+    const warehouse = await tx.place.findFirst({ where: { id: Number(warehouse_id), type: "warehouse", active: true } });
+    if (!warehouse) throw appError(404, "WAREHOUSE_NOT_FOUND", "Selecciona una bodega destino activa");
 
     const processedLines = [];
     for (const line of lines) {
@@ -121,7 +123,12 @@ async function createPurchaseOrder(tenantId, userId, data) {
         notes,
         metadata: {
           expected_at,
-          warehouse_id,
+          warehouse_id: warehouse.id,
+          warehouse_code: warehouse.code,
+          warehouse_name: warehouse.name,
+          society_code: warehouse.society_code,
+          branch_code: warehouse.branch_code,
+          cost_center_code: warehouse.cost_center_code,
           priority,
           payment_terms,
           tags,
@@ -161,7 +168,7 @@ async function getSupplier(tenantId, supplierId) {
       orderBy: { created_at: "desc" },
       include: { lines: true, movements: true }
     });
-    return enrichSupplier(supplier, orders.map(enrichPurchaseOrder));
+    return enrichSupplier(supplier, await Promise.all(orders.map(enrichPurchaseOrder)));
   });
 }
 
@@ -197,26 +204,40 @@ async function updateSupplier(tenantId, supplierId, data) {
   });
 }
 
-function enrichPurchaseOrder(po) {
+async function enrichPurchaseOrder(po) {
   const receivedByItem = new Map();
   for (const move of po.movements || []) {
     if (move.type !== "in") continue;
     receivedByItem.set(move.item_id, (receivedByItem.get(move.item_id) || 0) + Number(move.qty));
   }
+  const invoiceRows = po.lines?.length ? await prisma.purchaseOrderInvoiceLine.findMany({
+    where: { purchase_order_line_id: { in: po.lines.map((line) => line.id) } }
+  }) : [];
+  const invoicedByLine = new Map();
+  for (const row of invoiceRows) {
+    const sign = row.document_kind === "credit_note" ? -1 : 1;
+    invoicedByLine.set(row.purchase_order_line_id, (invoicedByLine.get(row.purchase_order_line_id) || 0) + sign * Number(row.qty));
+  }
 
   const lines = (po.lines || []).map((line) => {
     const received_quantity = receivedByItem.get(line.item_id) || 0;
     const pending_quantity = Math.max(0, Number(line.qty) - received_quantity);
-    return { ...line, received_quantity, pending_quantity };
+    const invoiced_quantity = Math.max(0, invoicedByLine.get(line.id) || 0);
+    const pending_invoice_quantity = Math.max(0, Number(line.qty) - invoiced_quantity);
+    return { ...line, received_quantity, pending_quantity, invoiced_quantity, pending_invoice_quantity };
   });
   const ordered = lines.reduce((sum, line) => sum + Number(line.qty), 0);
   const received = lines.reduce((sum, line) => sum + Number(line.received_quantity), 0);
+  const invoiced = lines.reduce((sum, line) => sum + Number(line.invoiced_quantity), 0);
   return {
     ...po,
     lines,
     received_quantity: received,
     pending_quantity: Math.max(0, ordered - received),
-    received_percent: ordered ? Math.round((received / ordered) * 100) : 0
+    pending_invoice_quantity: Math.max(0, ordered - invoiced),
+    invoiced_quantity: invoiced,
+    received_percent: ordered ? Math.round((received / ordered) * 100) : 0,
+    invoiced_percent: ordered ? Math.round((invoiced / ordered) * 100) : 0
   };
 }
 
@@ -383,7 +404,7 @@ async function createReceiptFromPurchaseOrder(tenantId, userId, poId) {
     if (!["confirmed", "partial"].includes(po.status)) {
       throw appError(422, "INVALID_STATUS", "La OC debe estar aprobada para crear recepción WMS");
     }
-    const enriched = enrichPurchaseOrder(po);
+    const enriched = await enrichPurchaseOrder(po);
     return {
       id: `INB-${po.number}`,
       po_id: po.id,
@@ -471,7 +492,7 @@ async function listSuppliers(tenantId) {
       include: { lines: true, movements: true }
     });
     const ordersBySupplier = new Map();
-    for (const order of orders.map(enrichPurchaseOrder)) {
+    for (const order of await Promise.all(orders.map(enrichPurchaseOrder))) {
       const list = ordersBySupplier.get(order.party_id) || [];
       list.push(order);
       ordersBySupplier.set(order.party_id, list);
@@ -494,8 +515,8 @@ function enrichSupplier(supplier, orders = []) {
       pending_receipts: pendingReceipts,
       total_purchased: totalPurchased,
       service_level: serviceLevel,
-      last_order_at: orders[0].created_at || null,
-      last_order_number: orders[0].number || null
+      last_order_at: orders[0]?.created_at || null,
+      last_order_number: orders[0]?.number || null
     },
     recent_orders: orders.slice(0, 6)
   };
@@ -508,8 +529,218 @@ async function listPurchaseOrders(tenantId) {
     orderBy: { created_at: "desc" },
       include: { party: true, lines: true, movements: true }
     });
-    return orders.map(enrichPurchaseOrder);
+    return Promise.all(orders.map(enrichPurchaseOrder));
   });
+}
+
+async function listOpenPurchaseOrders(tenantId, query = {}) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const supplierId = Number(query.supplier_id);
+    if (!supplierId) throw appError(400, "REQUIRED_SUPPLIER", "Seleccione un proveedor para buscar ordenes abiertas");
+    const search = String(query.search || "").trim().toUpperCase();
+    const orders = await prisma.transaction.findMany({
+      where: {
+        type: "purchase",
+        party_id: supplierId,
+        status: { notIn: ["closed", "cancelled"] },
+        ...(search ? { number: { contains: search } } : {})
+      },
+      orderBy: { created_at: "desc" },
+      include: { party: true, lines: true, movements: true }
+    });
+    const enriched = await Promise.all(orders.map(enrichPurchaseOrder));
+    return enriched
+      .map((order) => ({ ...order, lines: order.lines.filter((line) => Number(line.pending_invoice_quantity || 0) > 0) }))
+      .filter((order) => order.lines.length > 0);
+  });
+}
+
+async function preparePurchaseInvoiceAccounting(tx, data) {
+  const documentKind = data.document_kind === "credit_note" ? "credit_note" : "invoice";
+  const isCreditNote = documentKind === "credit_note";
+  const supplier = await tx.party.findFirst({ where: { id: Number(data.supplier_id), type: "supplier", active: true } });
+  if (!supplier) throw appError(404, "SUPPLIER_NOT_FOUND", "Proveedor no encontrado");
+  const location = data.with_purchase_order ? null : await tx.location.findFirst({ where: { id: Number(data.location_id), active: true }, include: { place: true } });
+  if (!data.with_purchase_order && !location) throw appError(404, "LOCATION_NOT_FOUND", "Seleccione una bodega/ubicacion activa para afectar inventario");
+  let po = null;
+  if (data.with_purchase_order) {
+    po = await tx.transaction.findFirst({
+      where: {
+        id: Number(data.purchase_order_id) || undefined,
+        number: data.purchase_order_id ? undefined : String(data.purchase_order_reference || "").trim().toUpperCase(),
+        type: "purchase",
+        party_id: supplier.id,
+        status: { notIn: ["closed", "cancelled"] }
+      },
+      include: { lines: true }
+    });
+    if (!po) throw appError(404, "PURCHASE_ORDER_NOT_FOUND", "Orden de compra abierta no encontrada para este proveedor");
+  }
+
+  const payableLines = [];
+  const stockUpdates = [];
+  const poInvoiceControls = [];
+  for (const [index, line] of data.lines.entries()) {
+    const item = await tx.item.findFirst({ where: { id: Number(line.item_id), active: true }, include: { family: { include: { accounting: true } } } });
+    if (!item) throw appError(404, "ITEM_NOT_FOUND", `Producto ${line.item_id} no encontrado`);
+    if (!item.family?.accounting) throw appError(400, "FAMILY_ACCOUNTING_NOT_FOUND", `El producto ${item.code} no tiene familia con configuracion contable`);
+    const qty = Number(line.qty || 0);
+    const unitCost = Number(line.unit_cost || 0);
+    if (qty <= 0 || unitCost < 0) throw appError(400, "INVALID_LINE", "Cantidad y costo unitario deben ser validos");
+    if (isCreditNote && !data.with_purchase_order) {
+      if (Number(item.stock_current || 0) - qty < -0.0001) throw appError(422, "INSUFFICIENT_STOCK", `Stock insuficiente para ${item.code}`);
+      const stockAtLocation = await tx.itemLocation.findFirst({ where: { item_id: item.id, location_id: location.id } });
+      if (!stockAtLocation || Number(stockAtLocation.qty || 0) < qty) throw appError(422, "INSUFFICIENT_LOCATION_STOCK", `Stock insuficiente en ${location.code} para ${item.code}`);
+    }
+    if (po) {
+      if (!line.purchase_order_line_id) throw appError(400, "REQUIRED_PO_LINE", `La linea ${index + 1} debe venir de la orden de compra`);
+      const poLine = po.lines.find((row) => row.id === Number(line.purchase_order_line_id));
+      if (!poLine || poLine.item_id !== item.id) throw appError(400, "INVALID_PO_LINE", `La linea ${index + 1} no pertenece a la orden seleccionada`);
+      const controls = await tx.purchaseOrderInvoiceLine.findMany({ where: { purchase_order_line_id: poLine.id } });
+      const alreadyInvoiced = controls.reduce((sum, row) => sum + (row.document_kind === "credit_note" ? -Number(row.qty) : Number(row.qty)), 0);
+      const available = isCreditNote ? alreadyInvoiced : Number(poLine.qty) - alreadyInvoiced;
+      if (qty > available + 0.0001) {
+        throw appError(422, "EXCEEDS_PO_INVOICE_PENDING", `${isCreditNote ? "La nota supera lo facturado" : "La factura supera el pendiente por facturar"} en ${poLine.description} (${available})`);
+      }
+      poInvoiceControls.push({ poLine, item, qty, unitCost, amount: Math.round(qty * unitCost * 100) / 100 });
+    }
+    const accountCode = data.with_purchase_order ? item.family.accounting.gr_ir_account_code : item.family.accounting.goods_receipt_account_code;
+    const description = String(line.description || `${item.code} ${item.name}`).trim();
+    payableLines.push({
+      account_code: accountCode,
+      branch_code: data.branch_code,
+      cost_center_code: data.cost_center_code,
+      movement: isCreditNote ? "credit" : "debit",
+      vat_code: String(line.vat_code || "").trim().toUpperCase(),
+      description,
+      amount: Math.round(qty * unitCost * 100) / 100
+    });
+    if (!data.with_purchase_order) stockUpdates.push({ item, qty, unitCost, description });
+  }
+
+  return { documentKind, isCreditNote, supplier, location, po, payableLines, stockUpdates, poInvoiceControls };
+}
+
+function purchaseInvoicePayablePayload(data, prepared) {
+  return {
+    document_kind: prepared.documentKind,
+    source_module: "purchases",
+    posting_date: data.posting_date,
+    due_term: data.due_term,
+    due_date: data.due_date,
+    supplier_reference: data.supplier_reference,
+    header_text: data.header_text,
+    supplier_id: prepared.supplier.id,
+    referenced_invoice_id: data.referenced_invoice_id,
+    invoice_reference: data.invoice_reference,
+    society_code: data.society_code,
+    associated_account_code: data.associated_account_code,
+    lines: prepared.payableLines
+  };
+}
+
+async function simulatePurchaseInvoice(tenantId, data) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const prepared = await preparePurchaseInvoiceAccounting(prisma, data);
+    return accountingService.simulatePayableDocument(tenantId, purchaseInvoicePayablePayload(data, prepared));
+  });
+}
+
+async function createPurchaseInvoice(tenantId, userId, data) {
+  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
+    const prepared = await preparePurchaseInvoiceAccounting(tx, data);
+    const { documentKind, isCreditNote, location, po, stockUpdates, poInvoiceControls } = prepared;
+    const payableLines = [];
+    payableLines.push(...prepared.payableLines);
+
+    const cxp = await accountingService.createPayableDocument(tenantId, userId, purchaseInvoicePayablePayload(data, { ...prepared, payableLines }));
+
+    for (const row of poInvoiceControls) {
+      await tx.purchaseOrderInvoiceLine.create({
+        data: {
+          purchase_order_id: po.id,
+          purchase_order_line_id: row.poLine.id,
+          cxp_cabdoc_id: cxp.id,
+          item_id: row.item.id,
+          document_kind: documentKind,
+          qty: row.qty,
+          unit_cost: row.unitCost,
+          amount: row.amount,
+          created_by: userId || null
+        }
+      });
+    }
+
+    for (const row of stockUpdates) {
+      const previousQty = Number(row.item.stock_current || 0);
+      const previousCost = Number(row.item.unit_cost || 0);
+      if (isCreditNote && previousQty - row.qty < -0.0001) throw appError(422, "INSUFFICIENT_STOCK", `Stock insuficiente para ${row.item.code}`);
+      const nextQty = isCreditNote ? previousQty - row.qty : previousQty + row.qty;
+      const nextValue = isCreditNote ? nextQty * previousCost : previousQty * previousCost + row.qty * row.unitCost;
+      const nextCost = isCreditNote ? previousCost : (nextQty > 0 ? Math.round((nextValue / nextQty) * 10000) / 10000 : row.unitCost);
+      await tx.productCost.create({
+        data: {
+          item_id: row.item.id,
+          costing_method: "weighted_average",
+          quantity_balance: nextQty,
+          value_balance: Math.round(nextValue * 100) / 100,
+          average_cost: nextCost,
+          last_unit_cost: row.unitCost,
+          source_type: isCreditNote ? "purchase_credit_note" : "purchase_invoice",
+          source_id: cxp.id,
+          created_by: userId || null
+        }
+      });
+      if (isCreditNote) {
+        const stockAtLocation = await tx.itemLocation.findFirst({ where: { item_id: row.item.id, location_id: location.id } });
+        if (!stockAtLocation || Number(stockAtLocation.qty || 0) < row.qty) throw appError(422, "INSUFFICIENT_LOCATION_STOCK", `Stock insuficiente en ${location.code} para ${row.item.code}`);
+        await tx.itemLocation.update({ where: { id: stockAtLocation.id }, data: { qty: { decrement: row.qty }, cost: nextCost } });
+      } else {
+        const stockAtLocation = await tx.itemLocation.findFirst({ where: { item_id: row.item.id, location_id: location.id, lot: null } });
+        if (stockAtLocation) {
+          await tx.itemLocation.update({ where: { id: stockAtLocation.id }, data: { qty: { increment: row.qty }, cost: nextCost } });
+        } else {
+          await tx.itemLocation.create({ data: { item_id: row.item.id, location_id: location.id, qty: row.qty, cost: nextCost } });
+        }
+      }
+      await tx.movement.create({
+        data: {
+          type: isCreditNote ? "out" : "in",
+          item_id: row.item.id,
+          transaction_id: po?.id || null,
+          from_location: isCreditNote ? location.id : null,
+          to_location: isCreditNote ? null : location.id,
+          qty: row.qty,
+          cost: row.unitCost,
+          reason: `${isCreditNote ? "Nota credito compra" : "Factura compra"} ${cxp.number}`,
+          created_by: userId || null
+        }
+      });
+      await tx.item.update({ where: { id: row.item.id }, data: { stock_current: { increment: isCreditNote ? -row.qty : row.qty }, unit_cost: nextCost } });
+    }
+
+    if (po) {
+      const controls = await tx.purchaseOrderInvoiceLine.findMany({ where: { purchase_order_id: po.id } });
+      const invoicedByLine = new Map();
+      for (const control of controls) {
+        const sign = control.document_kind === "credit_note" ? -1 : 1;
+        invoicedByLine.set(control.purchase_order_line_id, (invoicedByLine.get(control.purchase_order_line_id) || 0) + sign * Number(control.qty));
+      }
+      const fullyInvoiced = po.lines.every((line) => (invoicedByLine.get(line.id) || 0) >= Number(line.qty) - 0.0001);
+      await tx.transaction.update({
+        where: { id: po.id },
+        data: {
+          metadata: {
+            ...(po.metadata || {}),
+            invoice_status: fullyInvoiced ? "fully_invoiced" : "partially_invoiced",
+            last_purchase_invoice: { cxp_id: cxp.id, number: cxp.number, supplier_reference: data.supplier_reference, document_kind: documentKind, created_at: new Date().toISOString() }
+          }
+        }
+      });
+    }
+
+    return { ...cxp, purchase_order: po ? { id: po.id, number: po.number } : null };
+  }));
 }
 
 module.exports = {
@@ -517,9 +748,12 @@ module.exports = {
   getSupplier,
   updateSupplier,
   listPurchaseOrders,
+  listOpenPurchaseOrders,
   getPurchaseOrder,
   createSupplier,
   createPurchaseOrder,
+  simulatePurchaseInvoice,
+  createPurchaseInvoice,
   receivePurchaseOrder,
   updatePOStatus,
   approvePurchaseOrder,
