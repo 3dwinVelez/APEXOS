@@ -4,6 +4,7 @@ import { PhotoCapture, type CapturedFile } from "@/components/operations/PhotoCa
 import { SignatureCapture } from "@/components/operations/SignatureCapture";
 import { api } from "@/lib/api";
 import { getGpsFix } from "@/lib/gps";
+import { buildServiceReportPdfBlob } from "@/lib/serviceReportPdf";
 import { ArrowLeft, BookOpen, Camera, CheckCircle2, Download, FileSignature, History, MapPin, Play, Search, Wrench, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -40,6 +41,7 @@ type ServiceOrder = {
 type Panel = "inicio" | "inspeccion" | "ejecucion" | "novedad" | "historial";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
+const HAS_CONFIGURED_API_URL = Boolean(process.env.NEXT_PUBLIC_API_URL);
 const statusLabel: Record<string, string> = {
   pendiente: "Pendiente",
   en_curso: "En curso",
@@ -98,6 +100,7 @@ export default function ServiceOperationPage() {
   const [noExecutionMode, setNoExecutionMode] = useState(false);
   const [gpsMessage, setGpsMessage] = useState("");
   const [working, setWorking] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const [captures, setCaptures] = useState<Record<string, CapturedFile | null>>({});
   const [inspection, setInspection] = useState<InspectionItem[]>([]);
@@ -284,20 +287,41 @@ export default function ServiceOperationPage() {
     await load();
   }
 
-  async function downloadPdf() {
-    const token = localStorage.getItem("token");
-    const response = await fetch(`${API_URL}/api/v1/services/orders/${params.id}/report-pdf`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
-    if (!response.ok) {
-      setMessage("No fue posible descargar el PDF.");
-      return;
-    }
-    const blob = await response.blob();
+  function savePdfBlob(blob: Blob) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
     link.download = `${order?.number || "servicio"}.pdf`;
     link.click();
     URL.revokeObjectURL(url);
+  }
+
+  async function downloadPdf() {
+    if (!order || downloadingPdf) return;
+    setDownloadingPdf(true);
+    setMessage("");
+    try {
+      if (HAS_CONFIGURED_API_URL) {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${API_URL}/api/v1/services/orders/${params.id}/report-pdf`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+        if (response.ok) {
+          savePdfBlob(await response.blob());
+          setMessage("PDF descargado.");
+          return;
+        }
+      }
+      savePdfBlob(buildServiceReportPdfBlob(order));
+      setMessage(HAS_CONFIGURED_API_URL ? "La API no entrego el PDF; se genero un reporte local con los datos cargados." : "PDF generado desde los datos cargados del servicio.");
+    } catch (error) {
+      try {
+        savePdfBlob(buildServiceReportPdfBlob(order));
+        setMessage("PDF generado localmente porque la descarga de API no respondio.");
+      } catch {
+        setMessage(error instanceof Error ? error.message : "No fue posible descargar el PDF.");
+      }
+    } finally {
+      setDownloadingPdf(false);
+    }
   }
 
   const visiblePanels = useMemo(() => {
@@ -468,7 +492,7 @@ export default function ServiceOperationPage() {
         <section className="space-y-3 rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-base font-semibold">Historial y evidencias</h2>
-            <button className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white" onClick={downloadPdf} type="button"><Download className="shrink-0" size={16} /> <span className="truncate">PDF</span></button>
+            <button className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white disabled:opacity-60" disabled={downloadingPdf} onClick={downloadPdf} type="button"><Download className="shrink-0" size={16} /> <span className="truncate">{downloadingPdf ? "Generando..." : "PDF"}</span></button>
           </div>
           <div className="grid gap-2 text-sm text-neutral-700">
             {order.started_at ? <p className="rounded-md bg-paper p-3">Inicio: {new Date(order.started_at).toLocaleString()}</p> : null}
@@ -499,7 +523,7 @@ export default function ServiceOperationPage() {
 
       <div className="fixed inset-x-0 bottom-0 z-50 border-t border-line bg-white/95 px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur md:hidden">
         {activePanel === "historial" ? (
-          <button className="h-14 w-full rounded-md bg-apex px-3 text-base font-semibold text-white shadow-sm" onClick={downloadPdf} type="button">Descargar PDF</button>
+          <button className="h-14 w-full rounded-md bg-apex px-3 text-base font-semibold text-white shadow-sm disabled:opacity-60" disabled={downloadingPdf} onClick={downloadPdf} type="button">{downloadingPdf ? "Generando PDF..." : "Descargar PDF"}</button>
         ) : (
           <button className="h-14 w-full rounded-md border border-line bg-white text-base font-semibold shadow-sm" onClick={() => setActivePanel("historial")} type="button">Ver historial</button>
         )}
