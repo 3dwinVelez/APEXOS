@@ -744,7 +744,9 @@ async function createWorkActivity(tenantId, user, input) {
       throw err;
     }
     assertSafeFile({ base64_data: input.photo.base64, file_name: input.photo.name, mime_type: input.photo.type, file_size: input.photo.size }, { maxBytes: MAX_EVIDENCE_BYTES });
-    const employee = await getCurrentEmployee(tenantId, user).catch(() => null);
+    const employee = input.employee_id
+      ? await prisma.employee.findFirst({ where: { id: Number(input.employee_id), tenant_id: tenantId }, include: { user: { select: { name: true, email: true } } } })
+      : await getCurrentEmployee(tenantId, user).catch(() => null);
     const userName = employee?.code || employeeDisplayName(employee) || user?.name || user?.email || "";
     const session = await findCurrentWorkSession({ employee, userName });
     if (!session) {

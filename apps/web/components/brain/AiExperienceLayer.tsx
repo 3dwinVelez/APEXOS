@@ -184,15 +184,15 @@ function stepsForPath(pathname: string): CoachStep[] {
         id: "time-schedule",
         selector: 'a[href="/dashboard/talento-humano/marcacion"]',
         title: "Marcacion movil separada",
-        body: "El operario entra a una pantalla simple para ingreso, almuerzo, retorno y cierre con vehiculo y ruta.",
+        body: "El operario entra a una pantalla simple para ingreso, almuerzo, retorno y cierre con horario asignado.",
         action: "Abrir marcacion"
       },
       {
         id: "time-route-vehicle",
         selector: 'a[href="/dashboard/talento-humano/rutas"]',
-        title: "Planeacion de rutas",
-        body: "Las rutas asignan vehiculo, equipo, tolerancia y viaticos antes de que el operario marque.",
-        action: "Planear ruta"
+        title: "Asignar horarios",
+        body: "Los horarios asignan personas, recurso opcional, tolerancia y viaticos antes de que el usuario marque.",
+        action: "Asignar horario"
       }
     ];
   }

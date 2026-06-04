@@ -7,6 +7,7 @@ const MODULE_CODES = {
   hr: ["M-17", "talento-humano", "talento_humano"],
   inventory: ["M-01", "inventario"],
   invoicing: ["M-04", "facturacion"],
+  payroll: ["M-17", "nomina", "payroll"],
   purchases: ["M-02", "compras"],
   projects: ["M-19", "proyectos"],
   sales: ["M-03", "ventas"],

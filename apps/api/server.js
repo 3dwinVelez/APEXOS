@@ -89,10 +89,19 @@ async function build() {
 
   bootLog("Registering auth decorator");
   fastify.decorate("authenticate", async (request, reply) => {
+    const auth = request.headers.authorization || "";
+    const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
     try {
-      const auth = request.headers.authorization || "";
-      const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
       request.user = require("./src/security/jwt").verify(token);
+    } catch {
+      try {
+        request.user = await require("./src/security/supabaseAuth").authenticateSupabaseToken(token);
+      } catch {
+        return reply.code(401).send({ error: "Token invalido", code: "TOKEN_INVALIDO" });
+      }
+    }
+
+    try {
       const tenantId = request.user?.tenant_id;
       if (tenantId) {
         const { getTenantFromCache } = require("./src/core/tenantCache");

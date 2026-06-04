@@ -246,6 +246,7 @@ async function receivePurchaseOrder(tenantId, userId, poId, data) {
   if (!Array.isArray(received_lines) || received_lines.length === 0) {
     throw appError(400, "NO_RECEIVED_LINES", "Debes enviar al menos una linea recibida");
   }
+  await accountingService.assertPeriodOpen(tenantId, new Date());
   return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
     const po = await tx.transaction.findFirst({
       where: { id: poId, type: "purchase" },
@@ -270,7 +271,7 @@ async function receivePurchaseOrder(tenantId, userId, poId, data) {
       if (row.qty_received > pending + 0.0001) {
         throw appError(422, "EXCEEDS_PENDING", `La cantidad recibida supera el pendiente (${pending})`);
       }
-      await inventoryService.stockMove(tenantId, userId, {
+      await inventoryService.stockMoveTx(tx, tenantId, userId, {
         item_id: line.item_id,
         type: "in",
         qty: Number(row.qty_received),
@@ -285,7 +286,7 @@ async function receivePurchaseOrder(tenantId, userId, poId, data) {
     }
 
     if (receivedTotal > 0) {
-      await accountingService.journalEntry(tenantId, {
+      await accountingService.journalEntryTx(tx, {
         description: `Recepcion de mercancia ${po.number}`,
         transaction_id: po.id,
         entries: [{ account: "1435", debit: receivedTotal, credit: 0 }, { account: "2205", debit: 0, credit: receivedTotal }]

@@ -2,7 +2,7 @@
 
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { Activity, AlertTriangle, ArrowLeft, Camera, CheckCircle2, Clock, MapPinned, Navigation, Plus, RefreshCw, Route, Save, Users, X } from "lucide-react";
+import { Activity, ArrowLeft, CalendarDays, Camera, Clock, HelpCircle, MapPinned, Navigation, Plus, RefreshCw, Save, Users, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -29,7 +29,7 @@ function formatHour(value?: string | null) {
 }
 
 function routeLabel(route: RouteMonitor) {
-  return route.vehicle_plate || route.placa || `Ruta ${route.id}`;
+  return route.vehicle_plate || route.placa || `Horario ${route.id}`;
 }
 
 function Metric({ icon, label, value, hint }: { icon: React.ReactNode; label: string; value: number; hint: string }) {
@@ -40,6 +40,19 @@ function Metric({ icon, label, value, hint }: { icon: React.ReactNode; label: st
       <p className="mt-1 text-sm text-white">{label}</p>
       <p className="mt-1 text-xs text-neutral-400">{hint}</p>
     </div>
+  );
+}
+
+function FieldHelp({ label, help, children }: { label: string; help: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-1 flex items-center gap-1 text-sm font-semibold text-neutral-800">
+        {label}
+        <HelpCircle size={14} className="text-neutral-400" />
+      </span>
+      {children}
+      <span className="mt-1 block text-xs leading-5 text-neutral-500">{help}</span>
+    </label>
   );
 }
 
@@ -68,7 +81,6 @@ export default function RoutesPlanningPage() {
     setRoutes(routeData);
     setOperations(operationsData);
     setLoadingMonitor(false);
-    if (!form.vehicle_plate && vehicleData[0]) setForm((prev) => ({ ...prev, vehicle_plate: vehicleData[0].plate }));
   }
 
   useEffect(() => {
@@ -78,19 +90,24 @@ export default function RoutesPlanningPage() {
   }, []);
 
   async function createRoute() {
-    if (!form.vehicle_plate || !form.employees.length) {
-      setMessage("Selecciona vehiculo y al menos una persona.");
+    if (!form.employees.length) {
+      setMessage("Selecciona al menos una persona para asignar el horario.");
+      return;
+    }
+    if (!form.start_time || !form.end_time) {
+      setMessage("Define hora de inicio y hora de fin del horario.");
       return;
     }
     await api<TimeRoute>("/api/v1/hr/routes", { method: "POST", body: JSON.stringify({ ...form, status: "active" }) });
-    setMessage("Ruta operativa creada.");
-    setForm((prev) => ({ ...prev, employees: [], notes: "" }));
+    setMessage("Horario asignado correctamente.");
+    setForm((prev) => ({ ...prev, vehicle_plate: "", employees: [], notes: "" }));
     setModal(null);
     await load();
   }
 
   const activeRoutes = useMemo(() => routes.filter((route) => route.status !== "closed"), [routes]);
   const totalAssigned = useMemo(() => routes.reduce((sum, route) => sum + (route.employees?.length || 0), 0), [routes]);
+  const selectedEmployeeCount = form.employees.length;
   const monitorRoutes: RouteMonitor[] = operations?.routes?.length ? operations.routes : routes.map((route) => ({ ...route, punch_points: [], activity_points: [] }));
   const selectedRoute = monitorRoutes.find((route) => String(route.id) === selectedRouteId) || null;
   const selectedPeople = useMemo(() => selectedRoute && operations ? operations.people.filter((person) => String(person.route_id) === String(selectedRoute.id)) : [], [operations, selectedRoute]);
@@ -110,10 +127,10 @@ export default function RoutesPlanningPage() {
         <div>
           <Link className="mb-3 inline-flex h-11 items-center gap-2 rounded-md pr-3 text-sm font-medium text-neutral-600 hover:text-apex" href="/dashboard/talento-humano"><ArrowLeft size={18} /> Control de horarios</Link>
           <p className="text-sm font-medium text-apex">Talento Humano</p>
-          <h1 className="text-2xl font-semibold md:text-3xl">Planeacion de rutas</h1>
+          <h1 className="text-2xl font-semibold md:text-3xl">Asignar horarios</h1>
         </div>
         <button className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white md:h-10 md:w-auto" onClick={() => setModal("route")} type="button">
-          <Plus size={16} /> Nueva ruta
+          <Plus size={16} /> Nuevo horario
         </button>
       </header>
 
@@ -123,16 +140,16 @@ export default function RoutesPlanningPage() {
         <div className="grid lg:grid-cols-[1.15fr_2fr]">
           <div className="border-b border-white/10 p-5 lg:border-b-0 lg:border-r">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">Monitor APEX</p>
-            <h2 className="mt-3 text-2xl font-semibold">Control operativo de rutas</h2>
-            <p className="mt-2 text-sm text-neutral-300">Rutas, equipo, marcaciones, actividades, GPS y evidencias en un solo panel administrativo.</p>
+            <h2 className="mt-3 text-2xl font-semibold">Control operativo de horarios</h2>
+            <p className="mt-2 text-sm text-neutral-300">Horarios, personas, marcaciones, actividades, GPS y evidencias en un solo panel administrativo.</p>
             <div className="mt-5 flex items-end gap-2">
               <span className="text-5xl font-semibold">{routeCoverage}</span>
               <span className="pb-2 text-sm text-neutral-400">/100 seguimiento</span>
             </div>
           </div>
           <div className="grid gap-px bg-white/10 sm:grid-cols-2 xl:grid-cols-4">
-            <Metric icon={<Route size={18} />} label="Rutas activas" value={activeRoutes.length} hint={`${routes.length} planeadas`} />
-            <Metric icon={<Users size={18} />} label="Equipo asignado" value={totalAssigned} hint={`${employees.length} disponibles`} />
+            <Metric icon={<CalendarDays size={18} />} label="Horarios activos" value={activeRoutes.length} hint={`${routes.length} planeados`} />
+            <Metric icon={<Users size={18} />} label="Personas asignadas" value={totalAssigned} hint={`${employees.length} disponibles`} />
             <Metric icon={<MapPinned size={18} />} label="Con GPS" value={operations?.totals.online || 0} hint={`${operations?.totals.without_gps || 0} sin senal`} />
             <Metric icon={<Activity size={18} />} label="Eventos" value={totalEvents} hint="marcas + actividades" />
           </div>
@@ -142,8 +159,8 @@ export default function RoutesPlanningPage() {
       <section className="rounded-md border border-line bg-white p-4">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2"><Route size={18} className="text-apex" /><h2 className="text-base font-semibold">Monitor dinamico por ruta</h2></div>
-            <p className="mt-1 text-sm text-neutral-600">Abre una ruta para ver su trazabilidad cronologica y evidencias.</p>
+            <div className="flex items-center gap-2"><CalendarDays size={18} className="text-apex" /><h2 className="text-base font-semibold">Monitor dinamico por horario</h2></div>
+            <p className="mt-1 text-sm text-neutral-600">Abre un horario para ver su trazabilidad cronologica, personas asignadas y evidencias.</p>
           </div>
           <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={load} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={16} /> Actualizar</button>
         </div>
@@ -155,11 +172,11 @@ export default function RoutesPlanningPage() {
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="font-semibold">{routeLabel(route)}</p>
-                    <p className="mt-1 text-xs text-neutral-500">Ruta {String(route.id)} - {route.date ? new Date(route.date).toLocaleDateString() : "hoy"}</p>
+                    <p className="mt-1 text-xs text-neutral-500">Horario {String(route.id)} - {route.date ? new Date(route.date).toLocaleDateString() : "hoy"}</p>
                   </div>
                   <span className={`rounded-md px-2 py-1 text-xs font-semibold ${events ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>{events ? "En seguimiento" : "Sin eventos"}</span>
                 </div>
-                <p className="mt-3 text-sm text-neutral-600">{route.employees?.join(", ") || "Sin equipo"}</p>
+                <p className="mt-3 text-sm text-neutral-600">{route.employees?.join(", ") || "Sin personas asignadas"}</p>
                 <div className="mt-3 flex flex-wrap gap-2 text-xs text-neutral-600">
                   <span className="rounded-md bg-white px-2 py-1">{route.start_time || "--"} - {route.end_time || "--"}</span>
                   <span className="rounded-md bg-white px-2 py-1">{route.assigned_count ?? route.employees?.length ?? 0} persona(s)</span>
@@ -169,26 +186,57 @@ export default function RoutesPlanningPage() {
               </button>
             );
           })}
-          {!monitorRoutes.length ? <div className="col-span-full rounded-md border border-dashed border-line p-10 text-center text-sm text-neutral-500">No hay rutas creadas.</div> : null}
+          {!monitorRoutes.length ? <div className="col-span-full rounded-md border border-dashed border-line p-10 text-center text-sm text-neutral-500">No hay horarios asignados.</div> : null}
         </div>
       </section>
 
       {modal === "route" ? (
-        <ModalFrame title="Nueva ruta operativa" onClose={() => setModal(null)}>
-          <div className="grid gap-3 md:grid-cols-2">
-            <input className="h-12 rounded-md border border-line px-3 text-base md:text-sm" type="date" value={form.date} onChange={(event) => setForm((prev) => ({ ...prev, date: event.target.value }))} />
-            <select className="h-12 rounded-md border border-line px-3 text-base md:text-sm" value={form.vehicle_plate} onChange={(event) => setForm((prev) => ({ ...prev, vehicle_plate: event.target.value }))}>
-              <option value="">Vehiculo *</option>
-              {vehicles.map((vehicle) => <option key={vehicle.id} value={vehicle.plate}>{vehicle.plate} - {vehicle.type || vehicle.model || "Movil"}</option>)}
-            </select>
-            <input className="h-12 rounded-md border border-line px-3 text-base md:text-sm" value={form.start_time} onChange={(event) => setForm((prev) => ({ ...prev, start_time: event.target.value }))} />
-            <input className="h-12 rounded-md border border-line px-3 text-base md:text-sm" value={form.end_time} onChange={(event) => setForm((prev) => ({ ...prev, end_time: event.target.value }))} />
-            <input className="h-12 rounded-md border border-line px-3 text-base md:text-sm" type="number" value={form.tolerance_minutes} onChange={(event) => setForm((prev) => ({ ...prev, tolerance_minutes: Number(event.target.value) }))} />
-            <input className="h-12 rounded-md border border-line px-3 text-base md:text-sm" type="number" value={form.per_diem} onChange={(event) => setForm((prev) => ({ ...prev, per_diem: Number(event.target.value) }))} />
-            <input className="h-12 rounded-md border border-line px-3 text-base md:col-span-2 md:text-sm" placeholder="Notas" value={form.notes} onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))} />
+        <ModalFrame title="Nuevo horario operativo" onClose={() => setModal(null)}>
+          <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-950">
+            Usa este formulario para asignar jornadas a personal operativo, administrativo o logistico. El vehiculo es opcional y solo aplica cuando el horario esta asociado a una operacion de transporte.
+          </div>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <FieldHelp label="Fecha del horario" help="Dia en el que aplica la asignacion. Para horarios recurrentes usa una asignacion por dia operativo.">
+              <input className="h-12 w-full rounded-md border border-line px-3 text-base md:text-sm" type="date" value={form.date} onChange={(event) => setForm((prev) => ({ ...prev, date: event.target.value }))} />
+            </FieldHelp>
+            <FieldHelp label="Recurso o vehiculo" help="Opcional. Dejalo vacio para horarios generales de oficina, bodega, planta o equipos sin vehiculo.">
+              <select className="h-12 w-full rounded-md border border-line px-3 text-base md:text-sm" value={form.vehicle_plate} onChange={(event) => setForm((prev) => ({ ...prev, vehicle_plate: event.target.value }))}>
+                <option value="">Sin vehiculo asignado</option>
+                {vehicles.map((vehicle) => <option key={vehicle.id} value={vehicle.plate}>{vehicle.plate} - {vehicle.type || vehicle.model || "Movil"}</option>)}
+              </select>
+            </FieldHelp>
+            <FieldHelp label="Hora de inicio" help="La primera marcacion se compara contra esta hora para control de llegada.">
+              <input className="h-12 w-full rounded-md border border-line px-3 text-base md:text-sm" type="time" value={form.start_time} onChange={(event) => setForm((prev) => ({ ...prev, start_time: event.target.value }))} />
+            </FieldHelp>
+            <FieldHelp label="Hora de fin" help="El cierre despues de esta hora puede generar extension o novedad segun tolerancia.">
+              <input className="h-12 w-full rounded-md border border-line px-3 text-base md:text-sm" type="time" value={form.end_time} onChange={(event) => setForm((prev) => ({ ...prev, end_time: event.target.value }))} />
+            </FieldHelp>
+            <FieldHelp label="Tolerancia en minutos" help="Margen permitido antes de marcar atrasos o extensiones operativas.">
+              <input className="h-12 w-full rounded-md border border-line px-3 text-base md:text-sm" min={0} type="number" value={form.tolerance_minutes} onChange={(event) => setForm((prev) => ({ ...prev, tolerance_minutes: Number(event.target.value) }))} />
+            </FieldHelp>
+            <FieldHelp label="Viatico o auxilio" help="Valor opcional asociado a la jornada. Usa 0 cuando no aplique.">
+              <input className="h-12 w-full rounded-md border border-line px-3 text-base md:text-sm" min={0} type="number" value={form.per_diem} onChange={(event) => setForm((prev) => ({ ...prev, per_diem: Number(event.target.value) }))} />
+            </FieldHelp>
+            <FieldHelp label="Notas internas" help="Indica sede, turno, frente de trabajo, instruccion especial o responsable del horario.">
+              <textarea className="min-h-24 w-full rounded-md border border-line px-3 py-2 text-base md:text-sm" placeholder="Ej: Turno bodega norte, prioridad recepcion, supervisor asignado..." value={form.notes} onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))} />
+            </FieldHelp>
+            <div className="rounded-md border border-line bg-paper p-3">
+              <p className="flex items-center gap-2 text-sm font-semibold text-neutral-800"><Clock size={16} className="text-apex" /> Resumen</p>
+              <div className="mt-3 space-y-2 text-sm text-neutral-600">
+                <p><span className="font-semibold text-neutral-900">{form.start_time || "--"} - {form.end_time || "--"}</span> con {form.tolerance_minutes || 0} min de tolerancia.</p>
+                <p>{selectedEmployeeCount} persona(s) seleccionada(s).</p>
+                <p>{form.vehicle_plate ? `Recurso asignado: ${form.vehicle_plate}.` : "Horario general sin vehiculo fijo."}</p>
+              </div>
+            </div>
           </div>
           <div className="mt-4 rounded-md border border-line bg-paper p-3">
-            <p className="mb-2 text-sm font-semibold">Equipo asignado</p>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-semibold">Personas asignadas</p>
+                <p className="mt-1 text-xs text-neutral-500">Selecciona una o varias personas. Esta asignacion alimenta marcaciones, mapa y reportes.</p>
+              </div>
+              <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-neutral-600">{selectedEmployeeCount} seleccionada(s)</span>
+            </div>
             <div className="flex max-h-44 flex-wrap gap-2 overflow-y-auto">
               {employees.map((employee) => {
                 const value = employee.code || employeeName(employee);
@@ -201,7 +249,7 @@ export default function RoutesPlanningPage() {
               })}
             </div>
           </div>
-          <button className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white" onClick={createRoute} type="button"><Save size={17} /> Crear ruta</button>
+          <button className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white" onClick={createRoute} type="button"><Save size={17} /> Asignar horario</button>
         </ModalFrame>
       ) : null}
 
@@ -262,7 +310,7 @@ export default function RoutesPlanningPage() {
                       </div>
                     </article>
                   ))}
-                  {!selectedTimeline.length ? <p className="rounded-md bg-paper p-4 text-sm text-neutral-500">Esta ruta aun no tiene marcaciones ni actividades.</p> : null}
+                  {!selectedTimeline.length ? <p className="rounded-md bg-paper p-4 text-sm text-neutral-500">Este horario aun no tiene marcaciones ni actividades.</p> : null}
                 </div>
               </section>
             </div>
@@ -271,7 +319,7 @@ export default function RoutesPlanningPage() {
       ) : null}
 
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-white/95 p-3 backdrop-blur md:hidden">
-        <button className="h-14 w-full rounded-md bg-apex text-base font-semibold text-white" onClick={() => setModal("route")} type="button">Nueva ruta</button>
+        <button className="h-14 w-full rounded-md bg-apex text-base font-semibold text-white" onClick={() => setModal("route")} type="button">Nuevo horario</button>
       </div>
     </div>
   );

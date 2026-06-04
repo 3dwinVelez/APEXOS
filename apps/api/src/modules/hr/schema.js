@@ -101,6 +101,7 @@ const workActivitySchema = {
     required: ["activity_type_id", "latitude", "longitude", "observation", "photo"],
     properties: {
       activity_type_id: { type: "integer" },
+      employee_id: { type: "integer" },
       occurred_at: { type: "string" },
       latitude: { type: "number" },
       longitude: { type: "number" },

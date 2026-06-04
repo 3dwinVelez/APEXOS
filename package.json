@@ -3,6 +3,9 @@
   "version": "2.0.0",
   "private": true,
   "description": "APEX OS 2.0 - El Sistema Operativo para Empresas",
+  "engines": {
+    "node": "22.x"
+  },
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -28,6 +31,8 @@
     "restart:local:windows": "node scripts/start-local-windows.js --restart",
     "verify:web-assets": "node scripts/ensure-web-css.js --url http://localhost:3001/dashboard",
     "verify:web-assets:dev": "set NEXT_DIST_DIR=.next-dev&& node scripts/ensure-web-css.js --url http://localhost:3001/dashboard",
+    "qa:full-validation": "node scripts/qa-full-system-validation.js",
+    "qa:hr-services-stress": "node scripts/qa-hr-services-linear-stress.js",
     "lint": "npm --workspace apps/web run lint",
     "prisma:validate": "npm --workspace apps/api run prisma:validate",
     "brain:dev": "cd services/brain && uvicorn main:app --reload --port 8000"

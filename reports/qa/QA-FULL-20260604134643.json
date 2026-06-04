@@ -1,0 +1,846 @@
+{
+  "batch": "QA-FULL-20260604134643",
+  "started_at": "2026-06-04T13:46:43.162Z",
+  "config": {
+    "apiUrl": "http://127.0.0.1:3021",
+    "webUrl": "http://127.0.0.1:3018",
+    "supabaseUrl": "https://jbirkghkekuifgfsgquq.supabase.co",
+    "databaseUrlHost": "postgresql://aws-1-us-east-2.pooler.supabase.com:6543/postgres",
+    "hasAnonKey": true,
+    "hasServiceRoleKey": true
+  },
+  "summary": {
+    "passed": 81,
+    "failed": 0,
+    "blocked": 0,
+    "warning": 2
+  },
+  "results": [
+    {
+      "area": "preflight",
+      "name": "Variables minimas QA",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {}
+    },
+    {
+      "area": "api-runtime",
+      "name": "Health API local",
+      "status": "passed",
+      "severity": "critical",
+      "detail": {
+        "body": {
+          "status": "OK",
+          "version": "2.0",
+          "modules": 13
+        }
+      }
+    },
+    {
+      "area": "web-runtime",
+      "name": "Login frontend local",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "db-prisma",
+      "name": "Tablas Prisma esperadas via REST",
+      "status": "passed",
+      "severity": "critical",
+      "detail": {
+        "expected": 20,
+        "missing": []
+      }
+    },
+    {
+      "area": "supabase-auth",
+      "name": "Login admin global QA",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "email": "admin@apexos.qa"
+      }
+    },
+    {
+      "area": "supabase-auth",
+      "name": "Login admin empresa SCJ QA",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "email": "scj@apexos.qa"
+      }
+    },
+    {
+      "area": "supabase-rls",
+      "name": "Admin global ve empresas plataforma",
+      "status": "passed",
+      "severity": "high",
+      "detail": {
+        "count": 7
+      }
+    },
+    {
+      "area": "supabase-rls",
+      "name": "SCJ ve su empresa",
+      "status": "passed",
+      "severity": "high",
+      "detail": {
+        "count": 1,
+        "companies": [
+          {
+            "company_name": "SCJ"
+          }
+        ]
+      }
+    },
+    {
+      "area": "supabase-permissions",
+      "name": "Modulos SCJ activos",
+      "status": "passed",
+      "severity": "high",
+      "detail": {
+        "enabled": [
+          "administracion_apex",
+          "compras",
+          "configuracion",
+          "contabilidad",
+          "inventario",
+          "servicios",
+          "talento_humano",
+          "transporte"
+        ],
+        "missing": []
+      }
+    },
+    {
+      "area": "supabase-schema",
+      "name": "Tabla/vista accesible: companies",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {}
+    },
+    {
+      "area": "supabase-schema",
+      "name": "Tabla/vista accesible: company_users",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {}
+    },
+    {
+      "area": "supabase-schema",
+      "name": "Tabla/vista accesible: modules",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {}
+    },
+    {
+      "area": "supabase-schema",
+      "name": "Tabla/vista accesible: company_modules",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {}
+    },
+    {
+      "area": "supabase-schema",
+      "name": "Tabla/vista accesible: employees",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {}
+    },
+    {
+      "area": "supabase-schema",
+      "name": "Tabla/vista accesible: vehicles",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {}
+    },
+    {
+      "area": "supabase-schema",
+      "name": "Tabla/vista accesible: service_orders",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {}
+    },
+    {
+      "area": "supabase-schema",
+      "name": "Tabla/vista accesible: service_evidence",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {}
+    },
+    {
+      "area": "supabase-schema",
+      "name": "Tabla/vista accesible: Project",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {}
+    },
+    {
+      "area": "supabase-schema",
+      "name": "Tabla/vista accesible: time_punches",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {}
+    },
+    {
+      "area": "supabase-schema",
+      "name": "Tabla/vista accesible: gps_pings",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {}
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/login",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/administracion",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/administracion/suscripciones",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/servicios",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/servicios/nuevo",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/talento-humano",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/talento-humano/marcacion",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/transporte",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/proyectos",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/inventario",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/inventario/familias",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/compras",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/compras/facturas",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/contabilidad",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/contabilidad/asientos",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "auth-architecture",
+      "name": "Admin Supabase no autentica en API Prisma",
+      "status": "warning",
+      "severity": "high",
+      "detail": {
+        "message": "Frontend usa Supabase Auth, API usa usuarios Prisma. Riesgo de permisos partidos.",
+        "status": 401
+      }
+    },
+    {
+      "area": "auth-architecture",
+      "name": "Token Supabase sirve contra API Prisma",
+      "status": "warning",
+      "severity": "medium",
+      "detail": {
+        "message": "Si esto no fue disenado, revisar boundary de JWT"
+      }
+    },
+    {
+      "area": "scenario-seed",
+      "name": "Tenant/usuario API QA",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "tenant_id": "065b030d-9843-4d90-a124-cd4ef7a7a8de",
+        "email": "qa-full-20260604134643@apexos.local"
+      }
+    },
+    {
+      "area": "api-auth",
+      "name": "Login usuario tecnico Prisma",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "email": "qa-full-20260604134643@apexos.local",
+        "tenant_id": "065b030d-9843-4d90-a124-cd4ef7a7a8de"
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Auth me",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/auth/me",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Inicializar plan de cuentas",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/accounting/chart/init",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear sucursal contable QA",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/accounting/organization-tree",
+        "status": 201
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear centro de costo QA",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/accounting/organization-tree",
+        "status": 201
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar estructura contable",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/accounting/organization-tree",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar cuentas contables",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/accounting/accounts",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear familia inventario",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/inventory/families",
+        "status": 201
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar familias inventario",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/inventory/families",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear bodega",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/inventory/warehouses",
+        "status": 201
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar bodegas",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/inventory/warehouses",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar ubicaciones bodega",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/inventory/locations",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear producto inventario",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/inventory/items",
+        "status": 201
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar productos",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/inventory/items",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear proveedor",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/purchases/suppliers",
+        "status": 201
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar proveedores",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/purchases/suppliers",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear orden de compra",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/purchases/orders",
+        "status": 201
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar ordenes compra",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/purchases/orders",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Aprobar orden de compra",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/purchases/orders/4/approve",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Recibir orden de compra",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/purchases/orders/4/receive",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar kardex producto",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/inventory/kardex/5",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar costos inventario",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/inventory/costs",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Config nomina GET",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/hr/payroll/config",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Config nomina PUT",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/hr/payroll/config",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear empleado operativo",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/hr/employees",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar empleados",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/hr/employees",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear vehiculo",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/transport/vehicles",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar vehiculos",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/transport/vehicles",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear referencia servicio",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/services/references",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar referencias servicio",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/services/references",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear orden de servicio",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/services/orders",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Iniciar servicio",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/services/orders/18/start",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Agregar foto servicio",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/services/orders/18/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar fotos servicio",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/services/orders/18/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Descargar PDF servicio",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/services/orders/18/report-pdf",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar ordenes servicio",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/services/orders",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear proyecto",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/projects",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear compromiso proyecto",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/projects/8/commitments",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar proyectos",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/projects",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear tipo actividad",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/hr/activity-types",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Registrar GPS",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/hr/gps/ping",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Registrar marcacion",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/hr/time-punches",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Registrar actividad operativa con foto",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/hr/work-activities",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar mapa operaciones",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/hr/operations-map",
+        "status": 200
+      }
+    }
+  ],
+  "created": [
+    {
+      "type": "Tenant",
+      "id": "065b030d-9843-4d90-a124-cd4ef7a7a8de",
+      "name": "QA Full Validation QA-FULL-20260604134643",
+      "domain": "qa-full-20260604134643.qa.local"
+    },
+    {
+      "type": "User",
+      "id": 51,
+      "email": "qa-full-20260604134643@apexos.local",
+      "tenant_id": "065b030d-9843-4d90-a124-cd4ef7a7a8de",
+      "password_note": "Generated only for this QA scenario"
+    }
+  ],
+  "findings": [
+    {
+      "area": "auth-architecture",
+      "name": "Admin Supabase no autentica en API Prisma",
+      "status": "warning",
+      "severity": "high",
+      "detail": {
+        "message": "Frontend usa Supabase Auth, API usa usuarios Prisma. Riesgo de permisos partidos.",
+        "status": 401
+      }
+    },
+    {
+      "area": "auth-architecture",
+      "name": "Token Supabase sirve contra API Prisma",
+      "status": "warning",
+      "severity": "medium",
+      "detail": {
+        "message": "Si esto no fue disenado, revisar boundary de JWT"
+      }
+    }
+  ],
+  "finished_at": "2026-06-04T13:48:07.559Z"
+}

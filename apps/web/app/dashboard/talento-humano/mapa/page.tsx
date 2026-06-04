@@ -389,7 +389,7 @@ export default function LiveGpsMapPage() {
           <div className="space-y-2 border-y border-white/10 p-3">
             <select className="h-11 w-full rounded-md border border-white/10 bg-white/10 px-3 text-sm text-white" value={routeId} onChange={(event) => setRouteId(event.target.value === "all" ? "all" : event.target.value)}>
               <option className="text-neutral-900" value="all">Todas las rutas</option>
-              {routes.map((route) => <option className="text-neutral-900" key={route.id} value={route.id}>{route.vehicle_plate || "Sin placa"} · Ruta {route.id}</option>)}
+              {routes.map((route) => <option className="text-neutral-900" key={route.id} value={route.id}>{route.vehicle_plate || "Sin vehiculo"} - Horario {route.id}</option>)}
             </select>
             <select className="h-11 w-full rounded-md border border-white/10 bg-white/10 px-3 text-sm text-white" value={userName} onChange={(event) => setUserName(event.target.value)}>
               <option className="text-neutral-900" value="all">Todos los usuarios</option>
@@ -571,7 +571,7 @@ export default function LiveGpsMapPage() {
                   <LocateFixed className="mr-1 inline text-apex" size={14} />
                   {selected.latitude.toFixed(6)}, {selected.longitude.toFixed(6)} · precision {Math.round(selected.accuracy_meters || 0)}m
                 </div>
-              ) : <p className="mt-3 rounded-md bg-amber-50 p-3 text-sm font-medium text-amber-900">Persona con ruta planeada, pendiente de primer GPS.</p>}
+              ) : <p className="mt-3 rounded-md bg-amber-50 p-3 text-sm font-medium text-amber-900">Persona con horario asignado, pendiente de primer GPS.</p>}
               {mapsUrl(selected) ? <a className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-apex text-sm font-semibold text-white" href={mapsUrl(selected)} target="_blank" rel="noreferrer">Abrir en Google Maps <ExternalLink size={14} /></a> : null}
             </div>
           ) : null}
@@ -587,7 +587,7 @@ export default function LiveGpsMapPage() {
               </div>
               <div className="mt-3 grid gap-2 text-sm text-neutral-700">
                 <p className="rounded-md bg-paper p-3">Hora: <span className="font-semibold">{selectedMark.time}</span> · {new Date(selectedMark.punched_at).toLocaleString()}</p>
-                <p className="rounded-md bg-paper p-3">Vehiculo: <span className="font-semibold">{selectedMark.vehicle_plate || "--"}</span> · Ruta {selectedMark.route_id || "--"}</p>
+                <p className="rounded-md bg-paper p-3">Vehiculo: <span className="font-semibold">{selectedMark.vehicle_plate || "--"}</span> - Horario {selectedMark.route_id || "--"}</p>
                 <p className="rounded-md bg-paper p-3">GPS: {selectedMark.latitude.toFixed(6)}, {selectedMark.longitude.toFixed(6)} · {Math.round(selectedMark.accuracy_meters || 0)}m</p>
                 {selectedMark.metadata?.observation ? <p className="rounded-md bg-emerald-50 p-3 text-emerald-900">Observacion: {String(selectedMark.metadata.observation)}</p> : null}
                 {Array.isArray(selectedMark.metadata?.evidence) && selectedMark.metadata.evidence[0]?.base64_data ? <img alt="Evidencia operativa" className="max-h-48 rounded-md object-cover" src={String(selectedMark.metadata.evidence[0].base64_data)} /> : null}
@@ -603,7 +603,7 @@ export default function LiveGpsMapPage() {
               <div className="rounded-md border border-line bg-white p-5 shadow-sm">
                 <MapPin className="mx-auto text-apex" size={30} />
                 <p className="mt-3 font-semibold">Sin ubicaciones GPS para mostrar</p>
-                <p className="mt-1 text-sm text-neutral-500">Las personas con ruta planeada apareceran aqui cuando marquen o envien senal GPS.</p>
+                <p className="mt-1 text-sm text-neutral-500">Las personas con horario asignado apareceran aqui cuando marquen o envien senal GPS.</p>
               </div>
             </div>
           ) : null}

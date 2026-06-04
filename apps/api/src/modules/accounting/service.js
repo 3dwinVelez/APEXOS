@@ -673,29 +673,39 @@ async function journalEntry(tenantId, data) {
   }
 
   await assertPeriodOpen(tenantId, date);
+  return prisma.runWithTenant(tenantId, () => prisma.$transaction((tx) => journalEntryTx(tx, data)));
+}
+
+async function journalEntryTx(tx, data) {
+  const { description, date = new Date(), transaction_id = null, entries = [] } = data;
+  if (!description.trim()) throw appError(400, "REQUIRED_DESCRIPTION", "La descripcion del asiento es obligatoria");
+  if (entries.length < 2) throw appError(400, "MIN_ENTRIES", "El asiento requiere al menos dos lineas");
+  const totalDebit = entries.reduce((sum, entry) => sum + (entry.debit || 0), 0);
+  const totalCredit = entries.reduce((sum, entry) => sum + (entry.credit || 0), 0);
+  if (Math.abs(totalDebit - totalCredit) > 0.01) {
+    throw appError(422, "UNBALANCED_ENTRY", `Partida no cuadra: Debito ${totalDebit.toFixed(2)}, Credito ${totalCredit.toFixed(2)}`);
+  }
   const period = periodFromDate(date);
-  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
-    const created = [];
-    for (const entry of entries) {
-      const account = await tx.account.findFirst({
-        where: { code: { startsWith: String(entry.account) }, active: true }
-      });
-      if (!account) throw appError(404, "ACCOUNT_NOT_FOUND", `Cuenta ${entry.account} no encontrada`);
-      created.push(await tx.ledgerEntry.create({
-        data: {
-          account_id: account.id,
-          transaction_id,
-          date: new Date(date),
-          debit: entry.debit || 0,
-          credit: entry.credit || 0,
-          balance: 0,
-          description,
-          period
-        }
-      }));
-    }
-    return created;
-  }));
+  const created = [];
+  for (const entry of entries) {
+    const account = await tx.account.findFirst({
+      where: { code: { startsWith: String(entry.account) }, active: true }
+    });
+    if (!account) throw appError(404, "ACCOUNT_NOT_FOUND", `Cuenta ${entry.account} no encontrada`);
+    created.push(await tx.ledgerEntry.create({
+      data: {
+        account_id: account.id,
+        transaction_id,
+        date: new Date(date),
+        debit: entry.debit || 0,
+        credit: entry.credit || 0,
+        balance: 0,
+        description,
+        period
+      }
+    }));
+  }
+  return created;
 }
 
 async function listAccountingDocuments(tenantId, query = {}) {
@@ -1695,7 +1705,7 @@ async function registerPayment(tenantId, userId, data) {
       data: { transaction_id, party_id, type, method, amount, date: new Date(date), reference, notes, created_by: userId }
     });
 
-    await journalEntry(tenantId, {
+    await journalEntryTx(tx, {
       description: `Pago ${payment.id}`,
       date,
       transaction_id: transaction_id || null,
@@ -1714,7 +1724,9 @@ module.exports = {
   createAccount,
   updateAccount,
   deleteAccount,
+  assertPeriodOpen,
   journalEntry,
+  journalEntryTx,
   getBalanceSheet,
   getIncomeStatement,
   getLedgerByAccount,

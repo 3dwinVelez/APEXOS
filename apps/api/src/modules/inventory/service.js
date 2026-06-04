@@ -281,99 +281,101 @@ async function applyWeightedAverageCost(tx, tenantId, userId, item, qty, unitCos
   return nextAverage;
 }
 
-async function stockMove(tenantId, userId, data) {
-  return prisma.runWithTenant(tenantId, async () => prisma.$transaction(async (tx) => {
-    const {
-      item_id, type, qty, from_location_id = null, to_location_id = null,
-      transaction_id = null, cost = null, lot = null, reason = null, expiry = null
-    } = data;
+async function stockMoveTx(tx, tenantId, userId, data) {
+  const {
+    item_id, type, qty, from_location_id = null, to_location_id = null,
+    transaction_id = null, cost = null, lot = null, reason = null, expiry = null
+  } = data;
 
-    if (!["in", "out", "transfer", "adjustment"].includes(type)) {
-      throw appError(400, "INVALID_MOVE_TYPE", "Tipo de movimiento invalido");
-    }
-    if (!qty || qty <= 0) throw appError(400, "INVALID_QTY", "La cantidad debe ser mayor a 0");
+  if (!["in", "out", "transfer", "adjustment"].includes(type)) {
+    throw appError(400, "INVALID_MOVE_TYPE", "Tipo de movimiento invalido");
+  }
+  if (!qty || qty <= 0) throw appError(400, "INVALID_QTY", "La cantidad debe ser mayor a 0");
 
-    const item = await tx.item.findFirst({ where: { id: item_id, active: true } });
-    if (!item) throw appError(404, "ITEM_NOT_FOUND", "Item no encontrado");
+  const item = await tx.item.findFirst({ where: { id: item_id, active: true } });
+  if (!item) throw appError(404, "ITEM_NOT_FOUND", "Item no encontrado");
 
-    if ((type === "out" || type === "transfer") && !from_location_id) {
-      throw appError(400, "FROM_LOCATION_REQUIRED", "from_location_id es obligatorio para salidas y transferencias");
-    }
-    if ((type === "in" || type === "transfer") && !to_location_id) {
-      throw appError(400, "TO_LOCATION_REQUIRED", "to_location_id es obligatorio para entradas y transferencias");
-    }
-    if (type === "transfer" && from_location_id === to_location_id) {
-      throw appError(400, "SAME_LOCATION", "No puedes transferir a la misma ubicacion");
-    }
+  if ((type === "out" || type === "transfer") && !from_location_id) {
+    throw appError(400, "FROM_LOCATION_REQUIRED", "from_location_id es obligatorio para salidas y transferencias");
+  }
+  if ((type === "in" || type === "transfer") && !to_location_id) {
+    throw appError(400, "TO_LOCATION_REQUIRED", "to_location_id es obligatorio para entradas y transferencias");
+  }
+  if (type === "transfer" && from_location_id === to_location_id) {
+    throw appError(400, "SAME_LOCATION", "No puedes transferir a la misma ubicacion");
+  }
 
-    const delta = (type === "in" || type === "adjustment") ? qty : -qty;
-    if (item.stock_current + delta < 0) {
-      throw appError(422, "INSUFFICIENT_STOCK", "Stock insuficiente");
-    }
+  const delta = (type === "in" || type === "adjustment") ? qty : -qty;
+  if (item.stock_current + delta < 0) {
+    throw appError(422, "INSUFFICIENT_STOCK", "Stock insuficiente");
+  }
 
-    if (from_location_id) {
-      await tx.location.findFirstOrThrow({ where: { id: from_location_id, active: true } }).catch(() => {
-        throw appError(404, "FROM_LOCATION_NOT_FOUND", "Ubicacion origen no encontrada");
-      });
-    }
-    if (to_location_id) {
-      await tx.location.findFirstOrThrow({ where: { id: to_location_id, active: true } }).catch(() => {
-        throw appError(404, "TO_LOCATION_NOT_FOUND", "Ubicacion destino no encontrada");
-      });
-    }
-
-    let nextAverageCost = item.unit_cost;
-    if ((type === "in" || type === "adjustment") && item.costing_method === "weighted_average") {
-      nextAverageCost = await applyWeightedAverageCost(tx, tenantId, userId, item, qty, cost ?? item.unit_cost, "movement", transaction_id);
-    }
-
-    const movement = await tx.movement.create({
-      data: {
-        item_id,
-        type,
-        from_location: from_location_id,
-        to_location: to_location_id,
-        transaction_id,
-        qty,
-        cost: cost ?? item.unit_cost,
-        lot,
-        reason,
-        created_by: userId
-      }
+  if (from_location_id) {
+    await tx.location.findFirstOrThrow({ where: { id: from_location_id, active: true } }).catch(() => {
+      throw appError(404, "FROM_LOCATION_NOT_FOUND", "Ubicacion origen no encontrada");
     });
+  }
+  if (to_location_id) {
+    await tx.location.findFirstOrThrow({ where: { id: to_location_id, active: true } }).catch(() => {
+      throw appError(404, "TO_LOCATION_NOT_FOUND", "Ubicacion destino no encontrada");
+    });
+  }
 
-    const updated = await tx.item.update({ where: { id: item_id }, data: { stock_current: { increment: delta }, unit_cost: nextAverageCost } });
+  let nextAverageCost = item.unit_cost;
+  if ((type === "in" || type === "adjustment") && item.costing_method === "weighted_average") {
+    nextAverageCost = await applyWeightedAverageCost(tx, tenantId, userId, item, qty, cost ?? item.unit_cost, "movement", transaction_id);
+  }
 
-    if (to_location_id) {
-      const currentTo = await tx.itemLocation.findFirst({ where: { item_id, location_id: to_location_id, lot: lot ?? null } });
-      if (currentTo) {
-        await tx.itemLocation.update({ where: { id: currentTo.id }, data: { qty: { increment: qty } } });
-      } else {
-        await tx.itemLocation.create({
-          data: { item_id, location_id: to_location_id, qty, lot, expiry: expiry ? new Date(expiry) : null, cost: cost ?? item.unit_cost }
-        });
-      }
+  const movement = await tx.movement.create({
+    data: {
+      item_id,
+      type,
+      from_location: from_location_id,
+      to_location: to_location_id,
+      transaction_id,
+      qty,
+      cost: cost ?? item.unit_cost,
+      lot,
+      reason,
+      created_by: userId
     }
+  });
 
-    if (from_location_id) {
-      const currentFrom = await tx.itemLocation.findFirst({ where: { item_id, location_id: from_location_id } });
-      if (!currentFrom || currentFrom.qty < qty) throw appError(422, "INSUFFICIENT_LOCATION_STOCK", "Stock insuficiente en ubicacion origen");
-      await tx.itemLocation.update({ where: { id: currentFrom.id }, data: { qty: { decrement: qty } } });
-    }
+  const updated = await tx.item.update({ where: { id: item_id }, data: { stock_current: { increment: delta }, unit_cost: nextAverageCost } });
 
-    if (updated.stock_current <= updated.stock_min) {
-      setImmediate(() => {
-        brainQueue.add("inventory-stock-alert", {
-          tenant_id: tenantId,
-          type: "STOCK_ALERT",
-          module: "inventory",
-          item_id: updated.id
-        }).catch(() => undefined);
+  if (to_location_id) {
+    const currentTo = await tx.itemLocation.findFirst({ where: { item_id, location_id: to_location_id, lot: lot ?? null } });
+    if (currentTo) {
+      await tx.itemLocation.update({ where: { id: currentTo.id }, data: { qty: { increment: qty } } });
+    } else {
+      await tx.itemLocation.create({
+        data: { item_id, location_id: to_location_id, qty, lot, expiry: expiry ? new Date(expiry) : null, cost: cost ?? item.unit_cost }
       });
     }
+  }
 
-    return { movement, item: updated };
-  }));
+  if (from_location_id) {
+    const currentFrom = await tx.itemLocation.findFirst({ where: { item_id, location_id: from_location_id } });
+    if (!currentFrom || currentFrom.qty < qty) throw appError(422, "INSUFFICIENT_LOCATION_STOCK", "Stock insuficiente en ubicacion origen");
+    await tx.itemLocation.update({ where: { id: currentFrom.id }, data: { qty: { decrement: qty } } });
+  }
+
+  if (updated.stock_current <= updated.stock_min) {
+    setImmediate(() => {
+      brainQueue.add("inventory-stock-alert", {
+        tenant_id: tenantId,
+        type: "STOCK_ALERT",
+        module: "inventory",
+        item_id: updated.id
+      }).catch(() => undefined);
+    });
+  }
+
+  return { movement, item: updated };
+}
+
+async function stockMove(tenantId, userId, data) {
+  return prisma.runWithTenant(tenantId, async () => prisma.$transaction((tx) => stockMoveTx(tx, tenantId, userId, data)));
 }
 
 async function listFamilies(tenantId, query = {}) {
@@ -792,6 +794,7 @@ module.exports = {
   getFamilyAccountingByItem,
   applyWeightedAverageCost,
   stockMove,
+  stockMoveTx,
   adjustStock,
   getKardex,
   getInventoryCosts,

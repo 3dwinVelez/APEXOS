@@ -1,7 +1,7 @@
 "use client";
 
 import { api } from "@/lib/api";
-import { Activity, AlertTriangle, CalendarDays, Camera, CheckCircle2, Clock, FileText, MapPinned, Navigation, RefreshCw, Route, Smartphone, Truck, Users, X } from "lucide-react";
+import { Activity, AlertTriangle, CalendarDays, Camera, CheckCircle2, FileText, MapPinned, Navigation, RefreshCw, Route, Smartphone, Truck, Users, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
@@ -80,7 +80,7 @@ function formatHour(value?: string | null) {
 }
 
 function routeLabel(route: RouteMonitor) {
-  return route.vehicle_plate || route.placa || `Ruta ${route.id}`;
+  return route.vehicle_plate || route.placa || `Horario ${route.id}`;
 }
 
 export default function TalentPage() {
@@ -168,7 +168,7 @@ export default function TalentPage() {
   const completedMarks = attendance.filter((item) => item.next_type == null).length;
   const openAlerts = (operations?.totals.without_gps || 0) + monitorRoutes.filter((route) => !(route.punch_points?.length || route.activity_points?.length)).length;
   const statusMessage = openAlerts
-    ? `Hay ${openAlerts} punto(s) por revisar: rutas sin eventos o personas sin GPS.`
+    ? `Hay ${openAlerts} punto(s) por revisar: horarios sin eventos o personas sin GPS.`
     : "La operacion de campo se ve estable y con trazabilidad reciente.";
 
   return (
@@ -179,18 +179,18 @@ export default function TalentPage() {
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">M-17 - Talento Humano</p>
               <h1 className="mt-3 max-w-2xl text-3xl font-semibold md:text-4xl">Centro operativo de personal en campo</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/72">{statusMessage} Jornada, rutas, GPS y evidencias quedan conectados en una sola lectura.</p>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/72">{statusMessage} Jornada, horarios, GPS y evidencias quedan conectados en una sola lectura.</p>
             </div>
             <div className="mt-5 flex flex-wrap gap-2">
               <Link className="inline-flex h-11 items-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-[#071417]" href="/dashboard/talento-humano/marcacion"><Smartphone size={16} /> Marcacion movil</Link>
-              <Link className="inline-flex h-11 items-center gap-2 rounded-md border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/dashboard/talento-humano/rutas"><Route size={16} /> Rutas</Link>
+              <Link className="inline-flex h-11 items-center gap-2 rounded-md border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/dashboard/talento-humano/rutas"><Route size={16} /> Asignar horarios</Link>
               <Link className="inline-flex h-11 items-center gap-2 rounded-md border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/dashboard/talento-humano/mapa"><MapPinned size={16} /> Mapa GPS</Link>
             </div>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <ApexIndicator icon={<Users size={18} />} label="Personas en campo" value={peopleInField} detail={`${onlinePeople} con senal reciente`} tone="emerald" />
-            <ApexIndicator icon={<Route size={18} />} label="Rutas activas" value={activeRoutes} detail={`${monitorRoutes.length} planeadas hoy`} tone="sky" />
+            <ApexIndicator icon={<Route size={18} />} label="Horarios activos" value={activeRoutes} detail={`${monitorRoutes.length} planeados hoy`} tone="sky" />
             <ApexIndicator icon={<Activity size={18} />} label="Eventos trazables" value={fieldEvents} detail={`${attendance.length} personas con marcas`} tone="violet" />
             <ApexIndicator icon={<AlertTriangle size={18} />} label="Alertas operativas" value={openAlerts} detail={`${gpsCoverage}% cobertura GPS`} tone={openAlerts ? "amber" : "emerald"} />
           </div>
@@ -211,7 +211,7 @@ export default function TalentPage() {
 
       <section className="grid gap-3 lg:grid-cols-6">
         <ActionTile icon={<Smartphone size={20} />} title="Marcacion movil" detail="Jornada, GPS y evidencia de campo." href="/dashboard/talento-humano/marcacion" primary />
-        <ActionTile icon={<Route size={20} />} title="Planeacion de rutas" detail="Equipo, vehiculo y horario operativo." href="/dashboard/talento-humano/rutas" />
+        <ActionTile icon={<Route size={20} />} title="Asignar horarios" detail="Personas, recurso opcional y jornada operativa." href="/dashboard/talento-humano/rutas" />
         <ActionTile icon={<MapPinned size={20} />} title="Mapa GPS en vivo" detail="Trazabilidad limpia por ruta y persona." href="/dashboard/talento-humano/mapa" />
         <ActionTile icon={<CalendarDays size={20} />} title="Reportes" detail="Horas, extras y trazabilidad por empleado." href="/dashboard/talento-humano/reportes" />
         <ActionTile icon={<FileText size={20} />} title="Configuracion nomina" detail="Recargos y conceptos contables." href="/dashboard/talento-humano/nomina" />
@@ -221,8 +221,8 @@ export default function TalentPage() {
       <section className="overflow-hidden rounded-md border border-line bg-white">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line p-4">
           <div>
-            <div className="flex items-center gap-2"><MapPinned size={18} className="text-apex" /><h2 className="text-lg font-semibold">Monitor operativo de rutas</h2></div>
-            <p className="mt-1 text-sm text-neutral-600">Control cronologico por ruta planeada: equipo, marcaciones, actividades, GPS y evidencias.</p>
+            <div className="flex items-center gap-2"><MapPinned size={18} className="text-apex" /><h2 className="text-lg font-semibold">Monitor operativo de horarios</h2></div>
+            <p className="mt-1 text-sm text-neutral-600">Control cronologico por horario asignado: personas, marcaciones, actividades, GPS y evidencias.</p>
           </div>
           <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold hover:bg-paper" onClick={load} type="button">
             <RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={16} /> Actualizar
@@ -230,14 +230,14 @@ export default function TalentPage() {
         </div>
 
         <div className="grid border-b border-line md:grid-cols-4">
-          <MonitorStrip label="Rutas planeadas" value={operations?.totals.routes ?? monitorRoutes.length} hint={`${activeRoutes} activas`} />
+          <MonitorStrip label="Horarios planeados" value={operations?.totals.routes ?? monitorRoutes.length} hint={`${activeRoutes} activos`} />
           <MonitorStrip label="Personas asignadas" value={peopleInField} hint={`${onlinePeople} en linea`} />
           <MonitorStrip label="Cobertura GPS" value={`${gpsCoverage}%`} hint={`${operations?.totals.without_gps || 0} sin GPS`} />
           <MonitorStrip label="Eventos del dia" value={fieldEvents} hint="Marcas + actividades" />
         </div>
 
         <div className="hidden grid-cols-[1.3fr_1fr_1fr_1fr_120px] gap-3 border-b border-line bg-paper px-4 py-3 text-xs font-semibold uppercase text-neutral-500 md:grid">
-          <span>Ruta</span>
+          <span>Horario</span>
           <span>Equipo</span>
           <span>Actividad</span>
           <span>Estado</span>
@@ -282,7 +282,7 @@ export default function TalentPage() {
             <header className="border-b border-line p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm font-semibold text-apex">Panel administrativo de ruta</p>
+                  <p className="text-sm font-semibold text-apex">Panel administrativo de horario</p>
                   <h2 className="text-2xl font-semibold">{routeLabel(selectedRoute)}</h2>
                   <p className="mt-1 text-sm text-neutral-600">{formatHour(selectedRoute.start_time)} - {formatHour(selectedRoute.end_time)} - {selectedPeople.length || selectedRoute.employees?.length || 0} persona(s) asignadas</p>
                 </div>
@@ -291,7 +291,7 @@ export default function TalentPage() {
             </header>
             <div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[320px_1fr]">
               <section className="border-b border-line p-4 lg:border-b-0 lg:border-r">
-                <h3 className="text-sm font-semibold uppercase text-neutral-500">Equipo en ruta</h3>
+                <h3 className="text-sm font-semibold uppercase text-neutral-500">Personas asignadas</h3>
                 <div className="mt-3 space-y-2">
                   {(selectedPeople.length ? selectedPeople : (selectedRoute.employees || []).map((name) => ({ key: String(name), name, user_name: String(name), route_id: selectedRoute.id } as OperatorPoint))).map((person) => (
                     <div className="rounded-md border border-line p-3" key={person.key}>
@@ -310,7 +310,7 @@ export default function TalentPage() {
               <section className="p-4">
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <h3 className="text-base font-semibold">Linea cronologica de la ruta</h3>
+                    <h3 className="text-base font-semibold">Linea cronologica del horario</h3>
                     <p className="mt-1 text-sm text-neutral-600">Marcaciones y actividades ordenadas por hora, con ubicacion y evidencia cuando existe.</p>
                   </div>
                   <Link className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href="/dashboard/talento-humano/mapa">
@@ -341,7 +341,7 @@ export default function TalentPage() {
                       </div>
                     </article>
                   ))}
-                  {!selectedTimeline.length ? <p className="rounded-md bg-paper p-4 text-sm text-neutral-500">Esta ruta aun no tiene marcaciones ni actividades registradas.</p> : null}
+                  {!selectedTimeline.length ? <p className="rounded-md bg-paper p-4 text-sm text-neutral-500">Este horario aun no tiene marcaciones ni actividades registradas.</p> : null}
                 </div>
               </section>
             </div>
