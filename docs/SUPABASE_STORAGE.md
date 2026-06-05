@@ -20,7 +20,8 @@ Todos los buckets son privados.
 Configuracion inicial:
 
 - `public = false`
-- Tamano maximo: `2MB`
+- Tamano maximo del bucket `service-images`: `10MB` para conservar evidencias legacy migradas.
+- El frontend limita nuevas imagenes a `2MB`.
 - MIME permitidos:
   - `image/png`
   - `image/jpeg`
@@ -131,17 +132,22 @@ const url = await getCompanyLogoUrl(company.logo_url);
 
 - Buckets `company-assets`, `user-avatars` y `service-images` existen.
 - Los tres buckets son privados.
-- Los tres buckets tienen limite de `2097152` bytes.
+- `company-assets` y `user-avatars` tienen limite de `2097152` bytes.
+- `service-images` tiene limite de `10485760` bytes para conservar evidencias legacy; el frontend limita nuevas cargas a `2097152` bytes.
 - Los tres buckets aceptan `image/png`, `image/jpeg` e `image/webp`.
 - `storage.objects` tiene RLS activo.
 - Existen politicas por bucket para lectura, insercion, actualizacion y borrado.
 - El acceso cruzado entre empresas fue bloqueado con RLS.
 
-Pendiente:
+Validacion adicional 2026-06-05:
 
-- Subida binaria real desde Storage API con usuario QA autenticado.
-- Lectura real con URL firmada usando token real.
-- Reemplazo y eliminacion real via Storage API.
+- 19 evidencias de Servicios migradas desde data URI a `service-images`.
+- 0 evidencias data URI restantes.
+- Subida binaria autenticada: OK.
+- Insercion de metadata: OK.
+- Firma y lectura privada: OK.
+- Limpieza autenticada: OK.
+- Intento de persistir una nueva data URI: bloqueado por trigger.
 
 ## Errores comunes
 

@@ -1,0 +1,1117 @@
+{
+  "generated_at": "2026-06-05T21:06:06.791Z",
+  "api_url_configured": false,
+  "service_role_available": true,
+  "scenarios": [
+    1,
+    10,
+    50,
+    100
+  ],
+  "results": [
+    {
+      "category": "frontend_document",
+      "target": "login",
+      "concurrency": 1,
+      "requests": 1,
+      "avg_ms": 453.58,
+      "p95_ms": 453.58,
+      "p99_ms": 453.58,
+      "avg_kb": 6.64,
+      "requests_per_second": 2.2,
+      "errors": 0,
+      "statuses": {
+        "200": 1
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "dashboard",
+      "concurrency": 1,
+      "requests": 1,
+      "avg_ms": 91.81,
+      "p95_ms": 91.81,
+      "p99_ms": 91.81,
+      "avg_kb": 38.63,
+      "requests_per_second": 10.89,
+      "errors": 0,
+      "statuses": {
+        "200": 1
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "users_roles",
+      "concurrency": 1,
+      "requests": 1,
+      "avg_ms": 89.12,
+      "p95_ms": 89.12,
+      "p99_ms": 89.12,
+      "avg_kb": 39.05,
+      "requests_per_second": 11.21,
+      "errors": 0,
+      "statuses": {
+        "200": 1
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "services",
+      "concurrency": 1,
+      "requests": 1,
+      "avg_ms": 83.93,
+      "p95_ms": 83.93,
+      "p99_ms": 83.93,
+      "avg_kb": 36.07,
+      "requests_per_second": 11.91,
+      "errors": 0,
+      "statuses": {
+        "200": 1
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "punches",
+      "concurrency": 1,
+      "requests": 1,
+      "avg_ms": 87.07,
+      "p95_ms": 87.07,
+      "p99_ms": 87.07,
+      "avg_kb": 36.71,
+      "requests_per_second": 11.48,
+      "errors": 0,
+      "statuses": {
+        "200": 1
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "vehicles",
+      "concurrency": 1,
+      "requests": 1,
+      "avg_ms": 94.07,
+      "p95_ms": 94.07,
+      "p99_ms": 94.07,
+      "avg_kb": 38.73,
+      "requests_per_second": 10.63,
+      "errors": 0,
+      "statuses": {
+        "200": 1
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "projects",
+      "concurrency": 1,
+      "requests": 1,
+      "avg_ms": 83.58,
+      "p95_ms": 83.58,
+      "p99_ms": 83.58,
+      "avg_kb": 38.9,
+      "requests_per_second": 11.96,
+      "errors": 0,
+      "statuses": {
+        "200": 1
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "inventory",
+      "concurrency": 1,
+      "requests": 1,
+      "avg_ms": 89.11,
+      "p95_ms": 89.11,
+      "p99_ms": 89.11,
+      "avg_kb": 39.21,
+      "requests_per_second": 11.22,
+      "errors": 0,
+      "statuses": {
+        "200": 1
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "purchases",
+      "concurrency": 1,
+      "requests": 1,
+      "avg_ms": 92.14,
+      "p95_ms": 92.14,
+      "p99_ms": 92.14,
+      "avg_kb": 39.22,
+      "requests_per_second": 10.85,
+      "errors": 0,
+      "statuses": {
+        "200": 1
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "accounting",
+      "concurrency": 1,
+      "requests": 1,
+      "avg_ms": 84.99,
+      "p95_ms": 84.99,
+      "p99_ms": 84.99,
+      "avg_kb": 39.24,
+      "requests_per_second": 11.76,
+      "errors": 0,
+      "statuses": {
+        "200": 1
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "payroll",
+      "concurrency": 1,
+      "requests": 1,
+      "avg_ms": 87.6,
+      "p95_ms": 87.6,
+      "p99_ms": 87.6,
+      "avg_kb": 39.23,
+      "requests_per_second": 11.41,
+      "errors": 0,
+      "statuses": {
+        "200": 1
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "supabase_rest",
+      "target": "service_orders",
+      "concurrency": 1,
+      "requests": 1,
+      "avg_ms": 456.28,
+      "p95_ms": 456.28,
+      "p99_ms": 456.28,
+      "avg_kb": 2.38,
+      "requests_per_second": 2.19,
+      "errors": 0,
+      "statuses": {
+        "200": 1
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "supabase_rest",
+      "target": "service_evidence_metadata",
+      "concurrency": 1,
+      "requests": 1,
+      "avg_ms": 267.85,
+      "p95_ms": 267.85,
+      "p99_ms": 267.85,
+      "avg_kb": 10.07,
+      "requests_per_second": 3.73,
+      "errors": 0,
+      "statuses": {
+        "200": 1
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "supabase_rest",
+      "target": "employees",
+      "concurrency": 1,
+      "requests": 1,
+      "avg_ms": 242,
+      "p95_ms": 242,
+      "p99_ms": 242,
+      "avg_kb": 3.24,
+      "requests_per_second": 4.13,
+      "errors": 0,
+      "statuses": {
+        "200": 1
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "supabase_rest",
+      "target": "vehicles",
+      "concurrency": 1,
+      "requests": 1,
+      "avg_ms": 234.27,
+      "p95_ms": 234.27,
+      "p99_ms": 234.27,
+      "avg_kb": 0.91,
+      "requests_per_second": 4.27,
+      "errors": 0,
+      "statuses": {
+        "200": 1
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "supabase_rest",
+      "target": "punches",
+      "concurrency": 1,
+      "requests": 1,
+      "avg_ms": 227.97,
+      "p95_ms": 227.97,
+      "p99_ms": 227.97,
+      "avg_kb": 4.67,
+      "requests_per_second": 4.39,
+      "errors": 0,
+      "statuses": {
+        "200": 1
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "supabase_rest",
+      "target": "gps",
+      "concurrency": 1,
+      "requests": 1,
+      "avg_ms": 251.5,
+      "p95_ms": 251.5,
+      "p99_ms": 251.5,
+      "avg_kb": 1.78,
+      "requests_per_second": 3.98,
+      "errors": 0,
+      "statuses": {
+        "200": 1
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "login",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 236.06,
+      "p95_ms": 268.58,
+      "p99_ms": 268.58,
+      "avg_kb": 6.64,
+      "requests_per_second": 35.23,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "dashboard",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 114.99,
+      "p95_ms": 170.72,
+      "p99_ms": 170.72,
+      "avg_kb": 38.63,
+      "requests_per_second": 57.96,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "users_roles",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 96.82,
+      "p95_ms": 105.1,
+      "p99_ms": 105.1,
+      "avg_kb": 39.05,
+      "requests_per_second": 88.52,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "services",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 97.76,
+      "p95_ms": 107.74,
+      "p99_ms": 107.74,
+      "avg_kb": 36.07,
+      "requests_per_second": 91.03,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "punches",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 95.13,
+      "p95_ms": 99.25,
+      "p99_ms": 99.25,
+      "avg_kb": 36.71,
+      "requests_per_second": 98.93,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "vehicles",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 98.55,
+      "p95_ms": 103.38,
+      "p99_ms": 103.38,
+      "avg_kb": 38.73,
+      "requests_per_second": 95.36,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "projects",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 101.52,
+      "p95_ms": 112.01,
+      "p99_ms": 112.01,
+      "avg_kb": 38.9,
+      "requests_per_second": 88.07,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "inventory",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 94.87,
+      "p95_ms": 100.22,
+      "p99_ms": 100.22,
+      "avg_kb": 39.21,
+      "requests_per_second": 98,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "purchases",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 96.28,
+      "p95_ms": 99.92,
+      "p99_ms": 99.92,
+      "avg_kb": 39.22,
+      "requests_per_second": 97.71,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "accounting",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 97.93,
+      "p95_ms": 102.61,
+      "p99_ms": 102.61,
+      "avg_kb": 39.24,
+      "requests_per_second": 95.33,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "payroll",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 115.84,
+      "p95_ms": 121.4,
+      "p99_ms": 121.4,
+      "avg_kb": 39.23,
+      "requests_per_second": 81.88,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "supabase_rest",
+      "target": "service_orders",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 501.12,
+      "p95_ms": 635.34,
+      "p99_ms": 635.34,
+      "avg_kb": 2.38,
+      "requests_per_second": 15.69,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "supabase_rest",
+      "target": "service_evidence_metadata",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 260.01,
+      "p95_ms": 469.4,
+      "p99_ms": 469.4,
+      "avg_kb": 10.07,
+      "requests_per_second": 21.14,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "supabase_rest",
+      "target": "employees",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 250.61,
+      "p95_ms": 398.95,
+      "p99_ms": 398.95,
+      "avg_kb": 3.24,
+      "requests_per_second": 24.58,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "supabase_rest",
+      "target": "vehicles",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 242.87,
+      "p95_ms": 406.11,
+      "p99_ms": 406.11,
+      "avg_kb": 0.91,
+      "requests_per_second": 24.4,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "supabase_rest",
+      "target": "punches",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 204.19,
+      "p95_ms": 302.45,
+      "p99_ms": 302.45,
+      "avg_kb": 4.67,
+      "requests_per_second": 32.72,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "supabase_rest",
+      "target": "gps",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 211.7,
+      "p95_ms": 302.22,
+      "p99_ms": 302.22,
+      "avg_kb": 1.78,
+      "requests_per_second": 32.89,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "login",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 249.89,
+      "p95_ms": 351.32,
+      "p99_ms": 354.04,
+      "avg_kb": 6.64,
+      "requests_per_second": 136.04,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "dashboard",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 182.05,
+      "p95_ms": 223.68,
+      "p99_ms": 224.45,
+      "avg_kb": 38.63,
+      "requests_per_second": 207.6,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "users_roles",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 190.56,
+      "p95_ms": 216.39,
+      "p99_ms": 217.7,
+      "avg_kb": 39.05,
+      "requests_per_second": 224.75,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "services",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 213.32,
+      "p95_ms": 233.7,
+      "p99_ms": 286.19,
+      "avg_kb": 36.07,
+      "requests_per_second": 169.23,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "punches",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 254.15,
+      "p95_ms": 276.83,
+      "p99_ms": 278.13,
+      "avg_kb": 36.71,
+      "requests_per_second": 174.69,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "vehicles",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 240.97,
+      "p95_ms": 263.05,
+      "p99_ms": 264.38,
+      "avg_kb": 38.73,
+      "requests_per_second": 187.58,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "projects",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 198.16,
+      "p95_ms": 223.65,
+      "p99_ms": 229.48,
+      "avg_kb": 38.9,
+      "requests_per_second": 204.5,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "inventory",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 210.42,
+      "p95_ms": 221.74,
+      "p99_ms": 221.94,
+      "avg_kb": 39.21,
+      "requests_per_second": 222.53,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "purchases",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 252.66,
+      "p95_ms": 259.89,
+      "p99_ms": 260.32,
+      "avg_kb": 39.22,
+      "requests_per_second": 190.83,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "accounting",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 229.94,
+      "p95_ms": 250.04,
+      "p99_ms": 250.74,
+      "avg_kb": 39.24,
+      "requests_per_second": 196.91,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "payroll",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 211.09,
+      "p95_ms": 245.47,
+      "p99_ms": 246.33,
+      "avg_kb": 39.23,
+      "requests_per_second": 200.82,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "supabase_rest",
+      "target": "service_orders",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 470.91,
+      "p95_ms": 648.52,
+      "p99_ms": 756.8,
+      "avg_kb": 2.38,
+      "requests_per_second": 64.3,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "supabase_rest",
+      "target": "service_evidence_metadata",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 316.3,
+      "p95_ms": 458.75,
+      "p99_ms": 479.66,
+      "avg_kb": 10.07,
+      "requests_per_second": 102.79,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "supabase_rest",
+      "target": "employees",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 281.61,
+      "p95_ms": 419.55,
+      "p99_ms": 432.75,
+      "avg_kb": 3.24,
+      "requests_per_second": 112.97,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "supabase_rest",
+      "target": "vehicles",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 355.49,
+      "p95_ms": 407.68,
+      "p99_ms": 473.99,
+      "avg_kb": 0.91,
+      "requests_per_second": 105.09,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "supabase_rest",
+      "target": "punches",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 242.16,
+      "p95_ms": 295.58,
+      "p99_ms": 330.33,
+      "avg_kb": 4.67,
+      "requests_per_second": 149.75,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "supabase_rest",
+      "target": "gps",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 204.77,
+      "p95_ms": 272.88,
+      "p99_ms": 278.88,
+      "avg_kb": 1.78,
+      "requests_per_second": 177.06,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "login",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 331.12,
+      "p95_ms": 378.07,
+      "p99_ms": 393.11,
+      "avg_kb": 6.64,
+      "requests_per_second": 234.2,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "dashboard",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 320.53,
+      "p95_ms": 577.97,
+      "p99_ms": 690.45,
+      "avg_kb": 38.63,
+      "requests_per_second": 142.52,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "users_roles",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 332.81,
+      "p95_ms": 355.64,
+      "p99_ms": 357.81,
+      "avg_kb": 39.05,
+      "requests_per_second": 236.96,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "services",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 232.14,
+      "p95_ms": 265.81,
+      "p99_ms": 269.5,
+      "avg_kb": 36.07,
+      "requests_per_second": 342.39,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "punches",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 414.68,
+      "p95_ms": 443.32,
+      "p99_ms": 452.56,
+      "avg_kb": 36.71,
+      "requests_per_second": 213.42,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "vehicles",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 495.29,
+      "p95_ms": 524.78,
+      "p99_ms": 526.65,
+      "avg_kb": 38.73,
+      "requests_per_second": 187.31,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "projects",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 336.42,
+      "p95_ms": 621.73,
+      "p99_ms": 710.07,
+      "avg_kb": 38.9,
+      "requests_per_second": 100.2,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "inventory",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 261.94,
+      "p95_ms": 296.34,
+      "p99_ms": 299.74,
+      "avg_kb": 39.21,
+      "requests_per_second": 283.54,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "purchases",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 331.64,
+      "p95_ms": 652.26,
+      "p99_ms": 896.86,
+      "avg_kb": 39.22,
+      "requests_per_second": 109.56,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "accounting",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 272.49,
+      "p95_ms": 296.26,
+      "p99_ms": 298.56,
+      "avg_kb": 39.24,
+      "requests_per_second": 276.08,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "frontend_document",
+      "target": "payroll",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 486.41,
+      "p95_ms": 808.66,
+      "p99_ms": 975.52,
+      "avg_kb": 39.23,
+      "requests_per_second": 99.32,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "supabase_rest",
+      "target": "service_orders",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 557.75,
+      "p95_ms": 666.24,
+      "p99_ms": 707.92,
+      "avg_kb": 2.38,
+      "requests_per_second": 118,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "supabase_rest",
+      "target": "service_evidence_metadata",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 305.5,
+      "p95_ms": 459.49,
+      "p99_ms": 468.35,
+      "avg_kb": 10.07,
+      "requests_per_second": 194.22,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "supabase_rest",
+      "target": "employees",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 286.51,
+      "p95_ms": 467.88,
+      "p99_ms": 738.03,
+      "avg_kb": 3.24,
+      "requests_per_second": 127.32,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "supabase_rest",
+      "target": "vehicles",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 233.81,
+      "p95_ms": 330.61,
+      "p99_ms": 378.02,
+      "avg_kb": 0.91,
+      "requests_per_second": 223.11,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "supabase_rest",
+      "target": "punches",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 266.07,
+      "p95_ms": 418.04,
+      "p99_ms": 515.69,
+      "avg_kb": 4.67,
+      "requests_per_second": 188.18,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "supabase_rest",
+      "target": "gps",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 266.92,
+      "p95_ms": 449.29,
+      "p99_ms": 502.4,
+      "avg_kb": 1.78,
+      "requests_per_second": 187.73,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      },
+      "server_timing": ""
+    },
+    {
+      "category": "supabase_rest_heavy",
+      "target": "service_evidence_with_file_url",
+      "concurrency": 1,
+      "requests": 1,
+      "avg_ms": 184.66,
+      "p95_ms": 184.66,
+      "p99_ms": 184.66,
+      "avg_kb": 17.36,
+      "requests_per_second": 5.41,
+      "errors": 0,
+      "statuses": {
+        "200": 1
+      },
+      "server_timing": ""
+    }
+  ]
+}

@@ -390,9 +390,15 @@ async function upsertRoleFromLegacy(tenantId, data) {
   return prisma.role.create({ data: roleData, include: { permissions: true } });
 }
 
+const systemRolesReady = new Set();
+const systemRolesInFlight = new Map();
+
 async function ensureSystemRoles(tenantId) {
   tenantId = normalizeTenantId(tenantId);
-  return prisma.runWithTenant(tenantId, async () => {
+  if (systemRolesReady.has(tenantId)) return;
+  if (systemRolesInFlight.has(tenantId)) return systemRolesInFlight.get(tenantId);
+
+  const bootstrap = prisma.runWithTenant(tenantId, async () => {
     const templatesByName = new Map(SYSTEM_ROLE_TEMPLATES.map((template) => [template.name, template]));
     const currentRoles = await prisma.role.findMany({
       where: { name: { in: [...templatesByName.keys()] } },
@@ -403,6 +409,13 @@ async function ensureSystemRoles(tenantId) {
       if (!existing.has(template.name)) await upsertRoleFromLegacy(tenantId, { ...template, active: true });
     }
   });
+  systemRolesInFlight.set(tenantId, bootstrap);
+  try {
+    await bootstrap;
+    systemRolesReady.add(tenantId);
+  } finally {
+    systemRolesInFlight.delete(tenantId);
+  }
 }
 
 async function exportTenantData(tenantId) {
@@ -438,19 +451,11 @@ async function getPermissionCatalog() {
 
 async function getUserMasterData(tenantId) {
   tenantId = normalizeTenantId(tenantId);
-  await ensureSystemRoles(tenantId);
-  return prisma.runWithTenant(tenantId, async () => {
-    const roles = await prisma.role.findMany({ include: { permissions: true }, orderBy: [{ is_system: "desc" }, { name: "asc" }] });
-    return {
-      ...USER_MASTER_DATA,
-      roles: roles.map(roleDto)
-    };
-  });
+  return prisma.runWithTenant(tenantId, async () => ({ ...USER_MASTER_DATA }));
 }
 
 async function addUserMasterDataItem(tenantId, catalog, input, actorId = null) {
   tenantId = normalizeTenantId(tenantId);
-  await ensureSystemRoles(tenantId);
   const allowed = new Set(Object.keys(USER_MASTER_DATA));
   if (!allowed.has(catalog)) {
     const err = new Error("Catalogo de usuario no soportado.");
@@ -476,7 +481,6 @@ async function addUserMasterDataItem(tenantId, catalog, input, actorId = null) {
     ? current.map((entry) => entry.code === code ? { ...entry, ...item } : entry)
     : [...current, item];
   return prisma.runWithTenant(tenantId, async () => {
-    const roles = await prisma.role.findMany({ include: { permissions: true }, orderBy: [{ is_system: "desc" }, { name: "asc" }] });
     await prisma.auditLog.create({
       data: {
         tenant_id: tenantId,
@@ -489,7 +493,7 @@ async function addUserMasterDataItem(tenantId, catalog, input, actorId = null) {
         new_value: item
       }
     }).catch(() => null);
-    return { ...USER_MASTER_DATA, roles: roles.map(roleDto) };
+    return { ...USER_MASTER_DATA };
   });
 }
 
