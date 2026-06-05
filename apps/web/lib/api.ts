@@ -360,6 +360,133 @@ function supabaseVehiclePayload(input: AnyRow, companyId?: string) {
   };
 }
 
+type SupabaseServiceReference = {
+  id: string;
+  company_id?: string;
+  code: string;
+  name: string;
+  category?: string;
+  description?: string;
+  estimated_minutes?: number;
+  brand?: string;
+  model?: string;
+  active?: boolean;
+  metadata?: AnyRow;
+};
+
+type SupabaseServiceReferencePart = {
+  id?: string;
+  reference_id: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  description?: string;
+  display_order?: number;
+};
+
+function serviceReferencePayload(input: AnyRow, companyId: string) {
+  const metadata = input.metadata && typeof input.metadata === "object" ? input.metadata as AnyRow : {};
+  return {
+    company_id: companyId,
+    code: String(input.code || "").trim().toUpperCase(),
+    name: String(input.name || "").trim(),
+    category: String(input.category || "muebles"),
+    description: String(input.description || ""),
+    estimated_minutes: Math.max(1, Number(input.estimated_minutes || 60)),
+    brand: String(input.brand || ""),
+    model: String(input.model || ""),
+    active: !(input.active === false || String(input.active).toLowerCase() === "false"),
+    metadata: {
+      ...metadata,
+      manuals: Array.isArray(input.manuals) ? input.manuals : Array.isArray(metadata.manuals) ? metadata.manuals : []
+    }
+  };
+}
+
+function serviceReferenceParts(input: AnyRow, companyId: string, referenceId: string) {
+  const parts = Array.isArray(input.parts) ? input.parts as AnyRow[] : [];
+  const names = new Set<string>();
+  return parts.map((part, index) => {
+    const name = String(part.name || "").trim();
+    const normalizedName = name.toLocaleLowerCase();
+    if (!name) throw new Error("Cada pieza de la referencia debe tener un nombre.");
+    if (names.has(normalizedName)) throw new Error(`La pieza "${name}" esta repetida en la referencia.`);
+    names.add(normalizedName);
+    return {
+      company_id: companyId,
+      reference_id: referenceId,
+      name,
+      quantity: Math.max(0.01, Number(part.quantity || 1)),
+      unit: String(part.unit || "und"),
+      description: String(part.description || ""),
+      display_order: Number(part.display_order ?? index)
+    };
+  });
+}
+
+async function hydrateSupabaseServiceReferences(refs: SupabaseServiceReference[]) {
+  if (!refs.length) return [];
+  const referenceIds = refs.map((ref) => ref.id).join(",");
+  const parts = await supabaseFetch<SupabaseServiceReferencePart[]>(
+    `/rest/v1/service_reference_parts?select=id,reference_id,name,quantity,unit,description,display_order&reference_id=in.(${referenceIds})&order=display_order.asc&limit=2000`
+  );
+  return refs.map((ref) => {
+    const referenceParts = parts.filter((part) => part.reference_id === ref.id);
+    return {
+      ...ref,
+      estimated_minutes: ref.estimated_minutes || 60,
+      brand: ref.brand || "",
+      model: ref.model || "",
+      parts: referenceParts,
+      manuals: Array.isArray(ref.metadata?.manuals) ? ref.metadata.manuals : [],
+      total_parts: referenceParts.length,
+      total_pieces: referenceParts.reduce((sum, part) => sum + Number(part.quantity || 0), 0)
+    };
+  });
+}
+
+async function saveSupabaseServiceReference(input: AnyRow, referenceId?: string) {
+  const membership = await currentSupabaseCompanyUser();
+  if (!membership?.company_id) throw new Error("No se encontro una empresa activa para guardar la referencia.");
+  const payload = serviceReferencePayload(input, membership.company_id);
+  if (!payload.code || !payload.name) throw new Error("Codigo y nombre son obligatorios.");
+  const validatedParts = serviceReferenceParts(input, membership.company_id, referenceId || "pending");
+
+  let saved: SupabaseServiceReference[];
+  if (referenceId) {
+    saved = await supabaseFetch<SupabaseServiceReference[]>(
+      `/rest/v1/service_references?id=eq.${encodeURIComponent(referenceId)}&select=id,company_id,code,name,category,description,estimated_minutes,brand,model,active,metadata`,
+      { method: "PATCH", body: JSON.stringify(payload), headers: { Prefer: "return=representation" } }
+    );
+    if (!saved[0]) throw new Error("La referencia no existe o no tienes permisos para editarla.");
+    await supabaseFetch(`/rest/v1/service_reference_parts?reference_id=eq.${encodeURIComponent(referenceId)}`, { method: "DELETE" });
+  } else {
+    saved = await supabaseFetch<SupabaseServiceReference[]>(
+      "/rest/v1/service_references?select=id,company_id,code,name,category,description,estimated_minutes,brand,model,active,metadata",
+      { method: "POST", body: JSON.stringify(payload), headers: { Prefer: "return=representation" } }
+    );
+  }
+
+  const savedReference = saved[0];
+  if (!savedReference) throw new Error("Supabase no retorno la referencia guardada.");
+  const parts = validatedParts.map((part) => ({ ...part, reference_id: savedReference.id }));
+  try {
+    if (parts.length) {
+      await supabaseFetch("/rest/v1/service_reference_parts", {
+        method: "POST",
+        body: JSON.stringify(parts),
+        headers: { Prefer: "return=minimal" }
+      });
+    }
+  } catch (error) {
+    if (!referenceId) {
+      await supabaseFetch(`/rest/v1/service_references?id=eq.${encodeURIComponent(savedReference.id)}`, { method: "DELETE" }).catch(() => undefined);
+    }
+    throw error;
+  }
+  return (await hydrateSupabaseServiceReferences([savedReference]))[0];
+}
+
 async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): Promise<T | null> {
   const [pathname, queryString = ""] = path.split("?");
   const search = new URLSearchParams(queryString);
@@ -889,30 +1016,70 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     } as T;
   }
 
-  if (pathname === "/api/v1/services/references") {
-    const activeFilter = active === "true" ? "&active=eq.true" : "";
-    const refs = await supabaseFetch<Array<{
-      id: string;
-      code: string;
-      name: string;
-      category?: string;
-      description?: string;
-      estimated_minutes?: number;
-      brand?: string;
-      model?: string;
-      active?: boolean;
-      metadata?: AnyRow;
-    }>>(`/rest/v1/service_references?select=id,code,name,category,description,estimated_minutes,brand,model,active,metadata&order=code.asc${activeFilter}&limit=200`);
-    const parts = await supabaseFetch<Array<{ id: string; reference_id: string; name: string; quantity: number; unit: string; description?: string; display_order?: number }>>("/rest/v1/service_reference_parts?select=id,reference_id,name,quantity,unit,description,display_order&order=display_order.asc&limit=1000");
+  const serviceReferenceMatch = pathname.match(/^\/api\/v1\/services\/references\/([^/]+)$/);
+  if (serviceReferenceMatch && method === "PUT") {
+    const body = JSON.parse(String(options.body || "{}")) as AnyRow;
+    return await saveSupabaseServiceReference(body, serviceReferenceMatch[1]) as T;
+  }
 
-    return refs.map((ref) => ({
-      ...ref,
-      estimated_minutes: ref.estimated_minutes || 60,
-      brand: ref.brand || "",
-      model: ref.model || "",
-      parts: parts.filter((part) => part.reference_id === ref.id),
-      manuals: Array.isArray(ref.metadata?.manuals) ? ref.metadata.manuals : []
-    })) as T;
+  if (pathname === "/api/v1/services/references/import" && method === "POST") {
+    const body = JSON.parse(String(options.body || "{}")) as { rows?: AnyRow[] };
+    const grouped = new Map<string, AnyRow>();
+    for (const row of body.rows || []) {
+      const code = String(row.code || "").trim().toUpperCase();
+      if (!code || !String(row.name || "").trim()) continue;
+      const current = grouped.get(code) || { ...row, code, parts: [], manuals: [] };
+      if (row.part_name) {
+        (current.parts as AnyRow[]).push({
+          name: row.part_name,
+          quantity: Number(row.part_quantity || 1),
+          unit: row.part_unit || "und",
+          description: row.part_description || ""
+        });
+      }
+      if (row.manual_url || row.manual_title) {
+        (current.manuals as AnyRow[]).push({
+          title: row.manual_title || "Manual",
+          file_name: row.manual_title || "manual",
+          file_url: row.manual_url || "",
+          notes: row.manual_notes || ""
+        });
+      }
+      grouped.set(code, current);
+    }
+    const result = { created: 0, updated: 0, skipped: 0, references: [] as AnyRow[] };
+    for (const row of grouped.values()) {
+      try {
+        const existing = await supabaseFetch<Array<{ id: string }>>(
+          `/rest/v1/service_references?select=id&code=eq.${encodeURIComponent(String(row.code))}&limit=1`
+        );
+        const saved = await saveSupabaseServiceReference(row, existing[0]?.id);
+        result[existing[0] ? "updated" : "created"] += 1;
+        result.references.push(saved);
+      } catch (error) {
+        safeDevLog(`No fue posible importar la referencia ${String(row.code)}.`, error);
+        result.skipped += 1;
+      }
+    }
+    return result as T;
+  }
+
+  if (pathname === "/api/v1/services/references" && method === "POST") {
+    const body = JSON.parse(String(options.body || "{}")) as AnyRow;
+    return await saveSupabaseServiceReference(body) as T;
+  }
+
+  if (pathname === "/api/v1/services/references" && method === "GET") {
+    const activeFilter = active === "true" ? "&active=eq.true" : "";
+    const categoryFilter = search.get("category") ? `&category=eq.${encodeURIComponent(String(search.get("category")))}` : "";
+    const textSearch = search.get("search")?.trim();
+    const searchFilter = textSearch
+      ? `&or=(code.ilike.*${encodeURIComponent(textSearch)}*,name.ilike.*${encodeURIComponent(textSearch)}*,brand.ilike.*${encodeURIComponent(textSearch)}*,model.ilike.*${encodeURIComponent(textSearch)}*)`
+      : "";
+    const refs = await supabaseFetch<SupabaseServiceReference[]>(
+      `/rest/v1/service_references?select=id,company_id,code,name,category,description,estimated_minutes,brand,model,active,metadata&order=code.asc${activeFilter}${categoryFilter}${searchFilter}&limit=500`
+    );
+    return await hydrateSupabaseServiceReferences(refs) as T;
   }
 
   if (pathname === "/api/v1/projects/operational-center") {

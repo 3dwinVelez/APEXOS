@@ -16,7 +16,7 @@ const TENANT_MODELS = new Set([
   "VehicleDocument", "VehicleMasterAuditLog", "ServiceReferencePart", "ServiceIncident", "ServicePhoto",
   "Project", "ProjectCommitment", "ProjectDeliverable", "ProjectRisk", "ProjectResourceAssignment",
   "ProjectComment", "ProjectEvidence", "ProjectAlert", "ProjectLog",
-  "Payroll", "Account", "LedgerEntry", "Payment",
+  "Payroll", "Account", "LedgerEntry", "CntCabdoc", "CntCuedoc", "CxpCabdoc", "CxpCuedoc", "CxpApplication", "PurchaseOrderInvoiceLine", "InventoryFamily", "InventoryFamilyAccounting", "ProductCost", "Payment",
   "BrainEvent", "BrainMetric", "CustomField", "AuditLog", "Workflow",
   "Category", "SensorReading", "OKR", "SoDRule", "EInvoice", "EInvoiceConfig"
 ]);
@@ -74,7 +74,9 @@ function createPrismaClient() {
     if (SOFT_DELETE.has(params.model) && ["findMany", "findFirst"].includes(params.action)) {
       params.args = params.args || {};
       params.args.where = params.args.where || {};
-      if (!("active" in params.args.where)) params.args.where.active = true;
+      const includeInactive = params.args.where.__includeInactive === true;
+      delete params.args.where.__includeInactive;
+      if (!includeInactive && !("active" in params.args.where)) params.args.where.active = true;
     }
     return next(params);
   });

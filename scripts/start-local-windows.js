@@ -9,6 +9,7 @@ const localDir = path.join(root, ".local");
 const pgData = path.join(localDir, "postgres");
 const envPath = path.join(root, ".env");
 const envExamplePath = path.join(root, ".env.example");
+const localPostgresPort = Number(process.env.APEX_LOCAL_POSTGRES_PORT || 54320);
 
 const npmCmd = process.platform === "win32" ? "npm.cmd" : "npm";
 
@@ -62,7 +63,7 @@ function ensureEnv() {
 
   const env = fs.readFileSync(envPath, "utf8");
   const required = {
-    DATABASE_URL: "postgresql://apex:apex_dev_password@localhost:55432/apexos",
+    DATABASE_URL: `postgresql://apex:apex_dev_password@localhost:${localPostgresPort}/apexos`,
     REDIS_URL: "redis://localhost:6379",
     DISABLE_REDIS: "1",
     NEXT_PUBLIC_API_URL: "http://127.0.0.1:3000"
@@ -123,7 +124,7 @@ async function ensurePostgres() {
     run("initdb", ["-D", pgData, "-U", "apex", "-A", "trust", "--encoding=UTF8"]);
   }
 
-  if (!(await isPortOpen(55432))) {
+  if (!(await isPortOpen(localPostgresPort))) {
     const pidFile = path.join(pgData, "postmaster.pid");
     if (fs.existsSync(pidFile)) {
       fs.rmSync(pidFile, { force: true });
@@ -134,7 +135,7 @@ async function ensurePostgres() {
       "-D",
       pgData,
       "-o",
-      "-p 55432",
+      `-p ${localPostgresPort}`,
       "-l",
       path.join(logsDir, "postgres-local.log"),
       "start"
@@ -144,7 +145,7 @@ async function ensurePostgres() {
       log("pg_ctl failed; starting postgres.exe directly");
       const out = fs.openSync(path.join(logsDir, "postgres-local.log"), "a");
       const err = fs.openSync(path.join(logsDir, "postgres-local.err.log"), "a");
-      const child = spawn("postgres", ["-D", pgData, "-p", "55432"], {
+      const child = spawn("postgres", ["-D", pgData, "-p", String(localPostgresPort)], {
         detached: true,
         stdio: ["ignore", out, err],
         windowsHide: true,
@@ -155,10 +156,10 @@ async function ensurePostgres() {
       log(`postgres pid ${child.pid}`);
     }
 
-    await waitForPort(55432);
+    await waitForPort(localPostgresPort);
   }
 
-  run("createdb", ["-h", "localhost", "-p", "55432", "-U", "apex", "apexos"], { allowFailure: true, quiet: true, timeoutMs: 10000 });
+  run("createdb", ["-h", "localhost", "-p", String(localPostgresPort), "-U", "apex", "apexos"], { allowFailure: true, quiet: true, timeoutMs: 10000 });
 }
 
 function ensureDependencies() {

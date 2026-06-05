@@ -335,7 +335,7 @@ export default function MobilePunchPage() {
         })
       })
     });
-    setMessage(result.route_authorized ? "Checklist aprobado. Ruta habilitada." : "Ruta bloqueada por novedad critica.");
+    setMessage(result.route_authorized ? "Checklist aprobado. Operacion vehicular habilitada." : "Operacion vehicular bloqueada por novedad critica.");
     setPreop(null);
     await load();
     if (result.route_authorized && nextType === "entrada") {
@@ -392,7 +392,7 @@ export default function MobilePunchPage() {
               </div>
             </div>
             <div className="mt-4 rounded-md bg-paper p-3 text-sm text-neutral-700">
-              <Truck className="mr-2 inline text-apex" size={15} /> {route ? `Ruta ${route.id} · ${route.start_time || "--"} - ${route.end_time || "--"}` : "Sin ruta asignada para este vehiculo/equipo"}
+              <Truck className="mr-2 inline text-apex" size={15} /> {route ? `Horario ${route.id} - ${route.start_time || "--"} - ${route.end_time || "--"}` : "Sin horario asignado para este usuario/equipo"}
             </div>
             {nextType === "salida" && isClosingLate ? (
               <div className="mt-3 space-y-3 rounded-md border border-amber-200 bg-amber-50 p-3">
@@ -495,7 +495,7 @@ export default function MobilePunchPage() {
             <div className="sticky top-0 z-10 -mx-3 mb-4 border-b border-line bg-white/95 px-3 pb-3 pt-3 backdrop-blur sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:pt-0">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-apex">Planeacion de rutas</p>
+                  <p className="text-sm font-semibold text-apex">Validacion preoperacional</p>
                   <h2 className="text-xl font-semibold">Checklist preoperacional obligatorio</h2>
                   <p className="mt-1 text-sm text-neutral-600">Placa {preop.plate}. Sin aprobacion no se habilita el inicio de ruta.</p>
                 </div>

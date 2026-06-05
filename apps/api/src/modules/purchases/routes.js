@@ -24,6 +24,10 @@ async function purchasesRoutes(fastify) {
     preHandler: requirePermission("purchases", "read")
   }, async (request) => service.listPurchaseOrders(request.user?.tenant_id));
 
+  fastify.get("/purchases/orders/open", {
+    preHandler: requirePermission("purchases", "read")
+  }, async (request) => service.listOpenPurchaseOrders(request.user?.tenant_id, request.query));
+
   fastify.get("/purchases/orders/:id", {
     preHandler: requirePermission("purchases", "read")
   }, async (request) => service.getPurchaseOrder(request.user?.tenant_id, Number(request.params.id)));
@@ -37,6 +41,16 @@ async function purchasesRoutes(fastify) {
     schema: schema.purchaseOrderSchema,
     preHandler: requirePermission("purchases", "write")
   }, async (request, reply) => reply.code(201).send(await service.createPurchaseOrder(request.user?.tenant_id, request.user.id, request.body)));
+
+  fastify.post("/purchases/invoices", {
+    schema: schema.purchaseInvoiceSchema,
+    preHandler: requirePermission("purchases", "write")
+  }, async (request, reply) => reply.code(201).send(await service.createPurchaseInvoice(request.user?.tenant_id, request.user.id, request.body)));
+
+  fastify.post("/purchases/invoices/simulate", {
+    schema: schema.purchaseInvoiceSchema,
+    preHandler: requirePermission("purchases", "read")
+  }, async (request) => service.simulatePurchaseInvoice(request.user?.tenant_id, request.body));
 
   fastify.post("/purchases/orders/:id/receive", {
     preHandler: requirePermission("purchases", "approve")

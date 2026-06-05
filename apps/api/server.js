@@ -56,10 +56,18 @@ async function build() {
   const allowedOrigins = process.env.NODE_ENV === "production"
     ? configuredOrigins
     : Array.from(new Set([...configuredOrigins, ...DEFAULT_ALLOWED_ORIGINS]));
+  const isAllowedOrigin = (origin) => {
+    if (!origin) return true;
+    if (allowedOrigins.includes(origin)) return true;
+    if (process.env.NODE_ENV !== "production") {
+      return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+    }
+    return false;
+  };
 
   bootLog("Registering cors");
   await fastify.register(require("@fastify/cors"), {
-    origin: allowedOrigins.length ? allowedOrigins : DEFAULT_ALLOWED_ORIGINS,
+    origin: (origin, callback) => callback(null, isAllowedOrigin(origin)),
     methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     credentials: true
   });
@@ -89,10 +97,19 @@ async function build() {
 
   bootLog("Registering auth decorator");
   fastify.decorate("authenticate", async (request, reply) => {
+    const auth = request.headers.authorization || "";
+    const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
     try {
-      const auth = request.headers.authorization || "";
-      const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
       request.user = require("./src/security/jwt").verify(token);
+    } catch {
+      try {
+        request.user = await require("./src/security/supabaseAuth").authenticateSupabaseToken(token);
+      } catch {
+        return reply.code(401).send({ error: "Token invalido", code: "TOKEN_INVALIDO" });
+      }
+    }
+
+    try {
       const tenantId = request.user?.tenant_id;
       if (tenantId) {
         const { getTenantFromCache } = require("./src/core/tenantCache");

@@ -9,6 +9,47 @@ const DEFAULT_PARAMS = {
   night_end: "06:00"
 };
 
+const DEFAULT_PAYROLL_CONFIG = {
+  parameters: {
+    country: "CO",
+    ordinary_hours_day: 8,
+    ordinary_hours_week: 42,
+    night_start: "19:00",
+    night_end: "06:00",
+    health_employee_percent: 4,
+    pension_employee_percent: 4,
+    health_employer_percent: 8.5,
+    pension_employer_percent: 12,
+    transport_allowance_enabled: true,
+    arl_default_percent: 0.522
+  },
+  overtime_rates: [
+    { code: "HORA_DIURNA", name: "Hora ordinaria diurna", percent: 0, multiplier: 1, starts_at: "06:00", ends_at: "19:00", active: true },
+    { code: "RECARGO_NOCTURNO", name: "Recargo nocturno ordinario", percent: 35, multiplier: 1.35, starts_at: "19:00", ends_at: "06:00", active: true },
+    { code: "HED", name: "Hora extra diurna", percent: 25, multiplier: 1.25, active: true },
+    { code: "HEN", name: "Hora extra nocturna", percent: 75, multiplier: 1.75, active: true },
+    { code: "DOM_FEST_2026_H1", name: "Dominical/festivo hasta junio 2026", percent: 80, multiplier: 1.8, active: true },
+    { code: "DOM_FEST_2026_H2", name: "Dominical/festivo desde julio 2026", percent: 90, multiplier: 1.9, active: true },
+    { code: "HEDD", name: "Hora extra diurna dominical/festiva", percent: 105, multiplier: 2.05, active: true },
+    { code: "HEND", name: "Hora extra nocturna dominical/festiva", percent: 155, multiplier: 2.55, active: true }
+  ],
+  concepts: [
+    { code: "SALARIO_BASICO", name: "Salario basico", type: "earning", basis: "salary", account_code: "", active: true },
+    { code: "AUX_TRANSPORTE", name: "Auxilio de transporte", type: "earning", basis: "transport_allowance", account_code: "", active: true },
+    { code: "HORA_DIURNA", name: "Hora diurna", type: "earning", basis: "hours", account_code: "", active: true },
+    { code: "RECARGO_NOCTURNO", name: "Recargo nocturno", type: "earning", basis: "hours", account_code: "", active: true },
+    { code: "HED", name: "Hora extra diurna", type: "earning", basis: "hours", account_code: "", active: true },
+    { code: "HEN", name: "Hora extra nocturna", type: "earning", basis: "hours", account_code: "", active: true },
+    { code: "DOM_FEST", name: "Dominical / festivo", type: "earning", basis: "hours", account_code: "", active: true },
+    { code: "DED_SALUD", name: "Deduccion salud empleado", type: "deduction", basis: "ibc", account_code: "", active: true },
+    { code: "DED_PENSION", name: "Deduccion pension empleado", type: "deduction", basis: "ibc", account_code: "", active: true },
+    { code: "APORTE_SALUD", name: "Aporte salud empleador", type: "employer_cost", basis: "ibc", account_code: "", active: true },
+    { code: "APORTE_PENSION", name: "Aporte pension empleador", type: "employer_cost", basis: "ibc", account_code: "", active: true },
+    { code: "APORTE_ARL", name: "Aporte ARL", type: "employer_cost", basis: "ibc", account_code: "", active: true },
+    { code: "CAJA_COMPENSACION", name: "Caja de compensacion", type: "employer_cost", basis: "ibc", account_code: "", active: true }
+  ]
+};
+
 const OPERATING_TIMEZONE = "America/Bogota";
 const OPERATING_OFFSET = "-05:00";
 
@@ -60,6 +101,41 @@ function employeeType(employee) {
 
 function isDriver(employee) {
   return ["conductor", "driver", "chofer", "operador de ruta", "operador_ruta", "transportador"].includes(employeeType(employee));
+}
+
+function mergePayrollConfig(config = {}) {
+  return {
+    ...DEFAULT_PAYROLL_CONFIG,
+    ...config,
+    parameters: { ...DEFAULT_PAYROLL_CONFIG.parameters, ...(config.parameters || {}) },
+    overtime_rates: Array.isArray(config.overtime_rates) && config.overtime_rates.length ? config.overtime_rates : DEFAULT_PAYROLL_CONFIG.overtime_rates,
+    concepts: Array.isArray(config.concepts) && config.concepts.length ? config.concepts : DEFAULT_PAYROLL_CONFIG.concepts
+  };
+}
+
+async function getPayrollConfig(tenantId) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
+    const config = tenant?.config && typeof tenant.config === "object" ? tenant.config : {};
+    return mergePayrollConfig(config.payroll || {});
+  });
+}
+
+async function savePayrollConfig(tenantId, input) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
+    const config = tenant?.config && typeof tenant.config === "object" ? tenant.config : {};
+    const current = mergePayrollConfig(config.payroll || {});
+    const next = mergePayrollConfig({
+      ...current,
+      ...(input || {}),
+      parameters: { ...current.parameters, ...((input || {}).parameters || {}) },
+      overtime_rates: Array.isArray(input?.overtime_rates) ? input.overtime_rates : current.overtime_rates,
+      concepts: Array.isArray(input?.concepts) ? input.concepts : current.concepts
+    });
+    await prisma.tenant.update({ where: { id: tenantId }, data: { config: { ...config, payroll: next } } });
+    return next;
+  });
 }
 
 function punchStatus(type) {
@@ -232,6 +308,62 @@ async function createRoute(tenantId, input) {
       status: input.status || "active"
     }
   }));
+}
+
+async function updateRoute(tenantId, id, input) {
+  return prisma.runWithTenant(tenantId, async () => prisma.timeRoute.update({
+    where: { id: Number(id) },
+    data: {
+      date: startOfDay(input.date),
+      vehicle_plate: input.vehicle_plate || "",
+      employees: input.employees || [],
+      start_time: input.start_time || "08:00",
+      end_time: input.end_time || "17:00",
+      tolerance_minutes: input.tolerance_minutes ?? 15,
+      per_diem: Number(input.per_diem || 0),
+      notes: input.notes || "",
+      status: input.status || "active"
+    }
+  }));
+}
+
+function datesForRouteRange(input) {
+  const start = startOfDay(input.start_date);
+  const end = startOfDay(input.end_date);
+  if (end < start) {
+    const error = new Error("La fecha final no puede ser menor que la fecha inicial.");
+    error.statusCode = 400;
+    throw error;
+  }
+  const weekdays = Array.isArray(input.weekdays) && input.weekdays.length
+    ? new Set(input.weekdays.map((day) => Number(day)))
+    : new Set([1, 2, 3, 4, 5]);
+  const dates = [];
+  for (let cursor = new Date(start); cursor <= end; cursor = new Date(cursor.getTime() + 86400000)) {
+    if (weekdays.has(cursor.getDay())) dates.push(new Date(cursor));
+  }
+  return dates;
+}
+
+async function createRoutesBulk(tenantId, input) {
+  const dates = datesForRouteRange(input);
+  if (!dates.length) return { created: 0, routes: [] };
+  return prisma.runWithTenant(tenantId, async () => {
+    const routes = await prisma.$transaction(dates.map((date) => prisma.timeRoute.create({
+      data: {
+        date,
+        vehicle_plate: input.vehicle_plate || "",
+        employees: input.employees || [],
+        start_time: input.start_time || "08:00",
+        end_time: input.end_time || "17:00",
+        tolerance_minutes: input.tolerance_minutes ?? 15,
+        per_diem: Number(input.per_diem || 0),
+        notes: input.notes || "",
+        status: input.status || "active"
+      }
+    })));
+    return { created: routes.length, routes };
+  });
 }
 
 async function findEmployee(input) {
@@ -668,7 +800,9 @@ async function createWorkActivity(tenantId, user, input) {
       throw err;
     }
     assertSafeFile({ base64_data: input.photo.base64, file_name: input.photo.name, mime_type: input.photo.type, file_size: input.photo.size }, { maxBytes: MAX_EVIDENCE_BYTES });
-    const employee = await getCurrentEmployee(tenantId, user).catch(() => null);
+    const employee = input.employee_id
+      ? await prisma.employee.findFirst({ where: { id: Number(input.employee_id), tenant_id: tenantId }, include: { user: { select: { name: true, email: true } } } })
+      : await getCurrentEmployee(tenantId, user).catch(() => null);
     const userName = employee?.code || employeeDisplayName(employee) || user?.name || user?.email || "";
     const session = await findCurrentWorkSession({ employee, userName });
     if (!session) {
@@ -1444,11 +1578,15 @@ module.exports = {
   listSchedules,
   createSchedule,
   updateSchedule,
+  getPayrollConfig,
+  savePayrollConfig,
   listEmployees,
   getCurrentEmployee,
   createEmployee,
   listRoutes,
   createRoute,
+  updateRoute,
+  createRoutesBulk,
   getPreoperationalTemplate,
   getActivePreoperationalChecklist,
   submitPreoperationalChecklist,

@@ -1,4 +1,5 @@
 const http = require("node:http");
+const fs = require("node:fs");
 const path = require("node:path");
 const { spawn, spawnSync } = require("node:child_process");
 
@@ -7,7 +8,24 @@ const webDir = path.join(root, "apps", "web");
 const node = process.execPath;
 const nextBin = path.join(root, "node_modules", "next", "dist", "bin", "next");
 const ensureCss = path.join(root, "scripts", "ensure-web-css.js");
+const envPath = path.join(root, ".env");
+const webPort = Number(process.env.WEB_PORT || process.argv[2] || 3001);
+const webUrl = `http://localhost:${webPort}`;
+
+function rootEnv() {
+  if (!fs.existsSync(envPath)) return {};
+  return Object.fromEntries(fs.readFileSync(envPath, "utf8")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith("#") && line.includes("="))
+    .map((line) => {
+      const separator = line.indexOf("=");
+      return [line.slice(0, separator).trim(), line.slice(separator + 1).trim().replace(/^["']|["']$/g, "")];
+    }));
+}
+
 const devEnv = {
+  ...rootEnv(),
   ...process.env,
   NEXT_DIST_DIR: process.env.NEXT_DIST_DIR || ".next-dev",
   NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000"
@@ -19,7 +37,7 @@ function log(message) {
 
 function isReady() {
   return new Promise((resolve) => {
-    const req = http.get("http://localhost:3001/dashboard", (res) => {
+    const req = http.get(`${webUrl}/dashboard`, (res) => {
       res.resume();
       resolve((res.statusCode || 0) < 500);
     });
@@ -45,7 +63,7 @@ async function ensureCssAfterBoot() {
     log("Web did not respond in time for CSS validation.");
     return;
   }
-  const result = spawnSync(node, [ensureCss, "--url", "http://localhost:3001/dashboard"], {
+  const result = spawnSync(node, [ensureCss, "--url", `${webUrl}/dashboard`], {
     cwd: root,
     env: devEnv,
     encoding: "utf8",
@@ -54,7 +72,7 @@ async function ensureCssAfterBoot() {
   if (result.status !== 0) log("CSS validation failed; check logs above.");
 }
 
-const child = spawn(node, [nextBin, "dev", "-p", "3001"], {
+const child = spawn(node, [nextBin, "dev", "-p", String(webPort)], {
   cwd: webDir,
   stdio: "inherit",
   env: devEnv
