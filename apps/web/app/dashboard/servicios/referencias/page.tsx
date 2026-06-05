@@ -3,7 +3,7 @@
 import { api } from "@/lib/api";
 import { ActionCard } from "@/components/ui/ActionCard";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { ArrowLeft, Download, Edit3, FileText, Plus, Save, Search, Upload } from "lucide-react";
+import { ArrowLeft, Download, FileText, Plus, Save, Search, Upload } from "lucide-react";
 import Link from "next/link";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 
@@ -113,7 +113,13 @@ export default function ServiceReferencesPage() {
     const params = new URLSearchParams();
     if (category) params.set("category", category);
     if (search) params.set("search", search);
-    setReferences(await api<ServiceReference[]>(`/api/v1/services/references${params.size ? `?${params.toString()}` : ""}`));
+    try {
+      setReferences(await api<ServiceReference[]>(`/api/v1/services/references${params.size ? `?${params.toString()}` : ""}`));
+      setError("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No fue posible cargar las referencias.");
+      throw err;
+    }
   }
 
   useEffect(() => {
@@ -154,6 +160,11 @@ export default function ServiceReferencesPage() {
   async function save() {
     if (!form.code || !form.name || form.parts.some((part) => !part.name)) {
       setError("Codigo, nombre y piezas son obligatorios.");
+      return;
+    }
+    const partNames = form.parts.map((part) => part.name.trim().toLocaleLowerCase());
+    if (new Set(partNames).size !== partNames.length) {
+      setError("No puedes registrar dos piezas con el mismo nombre.");
       return;
     }
     setSaving(true);

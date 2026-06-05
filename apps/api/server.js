@@ -56,10 +56,18 @@ async function build() {
   const allowedOrigins = process.env.NODE_ENV === "production"
     ? configuredOrigins
     : Array.from(new Set([...configuredOrigins, ...DEFAULT_ALLOWED_ORIGINS]));
+  const isAllowedOrigin = (origin) => {
+    if (!origin) return true;
+    if (allowedOrigins.includes(origin)) return true;
+    if (process.env.NODE_ENV !== "production") {
+      return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+    }
+    return false;
+  };
 
   bootLog("Registering cors");
   await fastify.register(require("@fastify/cors"), {
-    origin: allowedOrigins.length ? allowedOrigins : DEFAULT_ALLOWED_ORIGINS,
+    origin: (origin, callback) => callback(null, isAllowedOrigin(origin)),
     methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     credentials: true
   });

@@ -62,6 +62,26 @@ const routeSchema = {
   }
 };
 
+const routeBulkSchema = {
+  body: {
+    type: "object",
+    required: ["start_date", "end_date"],
+    properties: {
+      start_date: { type: "string" },
+      end_date: { type: "string" },
+      weekdays: { type: "array", items: { type: "integer" } },
+      vehicle_plate: { type: "string" },
+      employees: { type: "array", items: { type: "string" } },
+      start_time: { type: "string" },
+      end_time: { type: "string" },
+      tolerance_minutes: { type: "integer" },
+      per_diem: { type: "number" },
+      notes: { type: "string" },
+      status: { type: "string" }
+    }
+  }
+};
+
 const gpsPingSchema = {
   body: {
     type: "object",
@@ -189,4 +209,4 @@ const preopSubmitSchema = {
   }
 };
 
-module.exports = { scheduleSchema, punchSchema, routeSchema, gpsPingSchema, activityTypeSchema, workActivitySchema, employeeSchema, preopSubmitSchema };
+module.exports = { scheduleSchema, punchSchema, routeSchema, routeBulkSchema, gpsPingSchema, activityTypeSchema, workActivitySchema, employeeSchema, preopSubmitSchema };

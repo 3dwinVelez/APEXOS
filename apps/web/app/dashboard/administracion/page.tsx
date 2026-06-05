@@ -9,9 +9,12 @@ import {
   AlertTriangle,
   Bell,
   Building2,
+  ChevronLeft,
+  ChevronRight,
   Check,
   CreditCard,
   Database,
+  Edit3,
   FileText,
   FolderKanban,
   Gauge,
@@ -26,6 +29,7 @@ import {
   SlidersHorizontal,
   Truck,
   UserCog,
+  UserPlus,
   Users,
   X
 } from "lucide-react";
@@ -116,6 +120,14 @@ type ConfigCategory = {
   items: ConfigItem[];
 };
 type UserTab = "basicos" | "acceso" | "laboral" | "operacion" | "documentos" | "auditoria";
+const userSteps: Array<{ key: UserTab; label: string; detail: string; icon: typeof UserCog }> = [
+  { key: "basicos", label: "Identidad", detail: "Datos personales y contacto", icon: UserCog },
+  { key: "acceso", label: "Acceso", detail: "Correo, rol y seguridad", icon: Shield },
+  { key: "laboral", label: "Laboral", detail: "Vinculacion y organizacion", icon: FolderKanban },
+  { key: "operacion", label: "Operacion", detail: "Capacidades y asignaciones", icon: Route },
+  { key: "documentos", label: "Documentos", detail: "Expediente privado", icon: FileText },
+  { key: "auditoria", label: "Revision", detail: "Resumen y trazabilidad", icon: Activity }
+];
 type UserForm = {
   name: string;
   first_names: string;
@@ -604,6 +616,9 @@ export default function AdministracionPage() {
   const [userForm, setUserForm] = useState<UserForm>(emptyUser);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [userTab, setUserTab] = useState<UserTab>("basicos");
+  const [userEditorOpen, setUserEditorOpen] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
+  const [userStatusFilter, setUserStatusFilter] = useState("all");
   const [documentDraft, setDocumentDraft] = useState({ document_type: "identity", file_name: "", file_url: "", storage_path: "", mime_type: "", file_size: "", observations: "" });
   const [selectedDocumentFile, setSelectedDocumentFile] = useState<File | null>(null);
   const [catalogDraft, setCatalogDraft] = useState({ catalog: "positions", code: "", name: "", description: "" });
@@ -613,6 +628,15 @@ export default function AdministracionPage() {
   const selectedUser = useMemo(() => users.find((user) => user.id === selectedUserId) || null, [users, selectedUserId]);
   const userScore = useMemo(() => scoreUser(userForm), [userForm]);
   const sensitiveAllowed = useMemo(() => roles.find((role) => role.id === Number(userForm.role_id))?.name !== "Empleado", [roles, userForm.role_id]);
+  const filteredUsers = useMemo(() => {
+    const term = userSearch.trim().toLowerCase();
+    return users.filter((user) => {
+      const matchesStatus = userStatusFilter === "all" || (userStatusFilter === "active" ? user.active : !user.active);
+      const text = `${user.name} ${user.email} ${user.role_name || ""} ${user.position || ""} ${user.department || ""} ${user.company || ""}`.toLowerCase();
+      return matchesStatus && (!term || text.includes(term));
+    });
+  }, [userSearch, userStatusFilter, users]);
+  const currentUserStep = Math.max(0, userSteps.findIndex((step) => step.key === userTab));
   const filteredCategories = useMemo(() => {
     return categories
       .filter((category) => categoryFilter === "all" || category.key === categoryFilter)
@@ -784,6 +808,7 @@ export default function AdministracionPage() {
     setSelectedUserId(user.id);
     setUserForm(userToForm(user));
     setUserTab("basicos");
+    setUserEditorOpen(true);
   }
 
   function newUser() {
@@ -791,6 +816,7 @@ export default function AdministracionPage() {
     setUserForm(emptyUser);
     setUserTab("basicos");
     setSelectedDocumentFile(null);
+    setUserEditorOpen(true);
   }
 
   function validateUser() {
@@ -822,7 +848,33 @@ export default function AdministracionPage() {
     else await api("/api/v1/admin/users", { method: "POST", body: JSON.stringify(payload) });
     setMessage("Usuario guardado.");
     await load();
-    newUser();
+    setSelectedUserId(null);
+    setUserForm(emptyUser);
+    setUserTab("basicos");
+    setUserEditorOpen(false);
+  }
+
+  function userApiId(user: AdminUser) {
+    return isSupabaseSession() && user.employee_uuid ? user.employee_uuid : user.id;
+  }
+
+  async function setUserStatusDirect(user: AdminUser, active: boolean) {
+    if (!active && !window.confirm(`Confirmas inactivar a ${user.name} sin eliminar su historial?`)) return;
+    await api(`/api/v1/admin/users/${userApiId(user)}/status`, { method: "PATCH", body: JSON.stringify({ active }) });
+    setMessage(active ? `${user.name} fue activado.` : `${user.name} fue inactivado.`);
+    await load();
+  }
+
+  async function suspendUserDirect(user: AdminUser) {
+    if (!window.confirm(`Confirmas suspender el acceso de ${user.name}?`)) return;
+    await api(`/api/v1/admin/users/${userApiId(user)}/access`, { method: "PATCH", body: JSON.stringify({ session_status: "bloqueada", active: false }) });
+    setMessage(`Acceso suspendido para ${user.name}.`);
+    await load();
+  }
+
+  function moveUserStep(direction: -1 | 1) {
+    const next = Math.min(userSteps.length - 1, Math.max(0, currentUserStep + direction));
+    setUserTab(userSteps[next].key);
   }
 
   async function setUserStatus(active: boolean) {
@@ -1114,6 +1166,73 @@ export default function AdministracionPage() {
     );
   }
 
+  function renderUserDirectory() {
+    return (
+      <div className="space-y-4">
+        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {[["Total usuarios", users.length, "text-neutral-950"], ["Activos", metrics.active, "text-emerald-700"], ["Inactivos", metrics.inactive, "text-neutral-600"], ["Sin rol", metrics.withoutRole, "text-amber-700"]].map(([label, value, tone]) => (
+            <div className="rounded-md border border-line bg-white p-3" key={String(label)}><p className="text-xs font-semibold uppercase text-neutral-500">{label}</p><p className={`mt-2 text-2xl font-semibold ${tone}`}>{value}</p></div>
+          ))}
+        </section>
+        <section className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-paper p-3">
+          <div className="flex min-w-0 flex-1 flex-wrap gap-2">
+            <label className="relative min-w-[220px] flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
+              <input className="h-11 w-full rounded-md border border-line bg-white pl-9 pr-3 text-sm" placeholder="Buscar nombre, correo, rol, cargo o area..." value={userSearch} onChange={(event) => setUserSearch(event.target.value)} />
+            </label>
+            <select className="h-11 rounded-md border border-line bg-white px-3 text-sm font-semibold" value={userStatusFilter} onChange={(event) => setUserStatusFilter(event.target.value)}>
+              <option value="all">Todos los estados</option><option value="active">Activos</option><option value="inactive">Inactivos / suspendidos</option>
+            </select>
+          </div>
+          <Button onClick={newUser} type="button"><UserPlus size={16} /> Crear usuario</Button>
+        </section>
+        <div className="max-h-[58vh] overflow-auto rounded-md border border-line bg-white">
+          <table className="w-full min-w-[900px] text-sm">
+            <thead className="sticky top-0 z-10 bg-paper"><tr className="border-b border-line text-left text-xs font-semibold uppercase text-neutral-500"><th className="px-3 py-3">Usuario</th><th className="px-3 py-3">Rol y cargo</th><th className="px-3 py-3">Organizacion</th><th className="px-3 py-3">Estado</th><th className="px-3 py-3 text-right">Acciones</th></tr></thead>
+            <tbody>
+              {filteredUsers.map((user) => (
+                <tr className="border-b border-line/70 hover:bg-paper/60" key={user.id}>
+                  <td className="px-3 py-3"><p className="font-semibold">{user.name}</p><p className="mt-1 text-xs text-neutral-500">{user.email || "Sin correo"} - {user.code || "Sin codigo"}</p></td>
+                  <td className="px-3 py-3"><p className="font-medium">{user.role_name || "Sin rol"}</p><p className="mt-1 text-xs text-neutral-500">{user.position || "Sin cargo"}</p></td>
+                  <td className="px-3 py-3"><p>{user.company || "Sin empresa"}</p><p className="mt-1 text-xs text-neutral-500">{user.department || "Sin area"}</p></td>
+                  <td className="px-3 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${user.active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>{user.active ? "Activo" : "Inactivo"}</span></td>
+                  <td className="px-3 py-3"><div className="flex justify-end gap-2">
+                    <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-xs font-semibold hover:bg-white" onClick={() => selectUser(user)} type="button"><Edit3 size={14} /> Editar</button>
+                    {user.active ? <><button className="h-9 rounded-md border border-amber-200 px-3 text-xs font-semibold text-amber-800 hover:bg-amber-50" onClick={() => suspendUserDirect(user)} type="button">Suspender</button><button className="h-9 rounded-md border border-rose-200 px-3 text-xs font-semibold text-rose-700 hover:bg-rose-50" onClick={() => setUserStatusDirect(user, false)} type="button">Inactivar</button></> : <button className="h-9 rounded-md bg-apex px-3 text-xs font-semibold text-white" onClick={() => setUserStatusDirect(user, true)} type="button">Activar</button>}
+                  </div></td>
+                </tr>
+              ))}
+              {!filteredUsers.length ? <tr><td className="px-4 py-10 text-center text-sm text-neutral-500" colSpan={5}>No hay usuarios que coincidan con los filtros.</td></tr> : null}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  function renderUserEditor() {
+    return (
+      <div className="grid gap-4 xl:grid-cols-[250px_1fr]">
+        <aside className="space-y-3">
+          <button className="inline-flex h-10 w-full items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold hover:bg-paper" onClick={() => setUserEditorOpen(false)} type="button"><ChevronLeft size={16} /> Volver a usuarios</button>
+          <div className="rounded-md border border-line bg-paper p-3"><p className="text-xs font-semibold uppercase text-neutral-500">{selectedUserId ? "Editando usuario" : "Nuevo usuario"}</p><p className="mt-2 truncate font-semibold">{userForm.name || `${userForm.first_names} ${userForm.last_names}`.trim() || "Sin nombre todavia"}</p><p className="mt-1 truncate text-xs text-neutral-500">{userForm.email || userForm.access_email || "Correo pendiente"}</p><div className="mt-3 h-2 overflow-hidden rounded-full bg-white"><div className="h-full bg-apex" style={{ width: `${userScore}%` }} /></div><p className="mt-2 text-xs font-semibold text-neutral-600">Ficha completa: {userScore}%</p></div>
+          <nav className="space-y-1" aria-label="Pasos de creacion de usuario">{userSteps.map((step, index) => { const StepIcon = step.icon; const active = userTab === step.key; return <button className={`flex w-full items-start gap-3 rounded-md px-3 py-2 text-left ${active ? "bg-apex text-white" : "hover:bg-paper"}`} key={step.key} onClick={() => setUserTab(step.key)} type="button"><span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs font-bold ${active ? "bg-white/15" : "bg-paper text-apex"}`}>{index + 1}</span><span className="min-w-0"><span className="flex items-center gap-1 text-sm font-semibold"><StepIcon size={14} /> {step.label}</span><span className={`mt-0.5 block text-xs ${active ? "text-white/70" : "text-neutral-500"}`}>{step.detail}</span></span></button>; })}</nav>
+        </aside>
+        <section className="min-w-0">
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-3 border-b border-line pb-4">
+            <div><p className="text-xs font-semibold uppercase text-apex">Paso {currentUserStep + 1} de {userSteps.length}</p><h3 className="mt-1 text-lg font-semibold">{userSteps[currentUserStep].label}</h3><p className="mt-1 text-sm text-neutral-500">{userSteps[currentUserStep].detail}. Completa lo necesario y continua.</p></div>
+            <div className="flex flex-wrap gap-2">{selectedUserId ? <Button className="border border-line bg-white text-neutral-800 hover:bg-paper" onClick={requestPasswordReset} type="button"><LockKeyhole size={16} /> Restablecer acceso</Button> : null}{selectedUserId ? <Button className="border border-amber-200 bg-white text-amber-800 hover:bg-amber-50" onClick={blockUserAccess} type="button">Suspender</Button> : null}{selectedUserId && selectedUser?.active ? <Button className="bg-rose-700 hover:bg-rose-800" onClick={() => setUserStatus(false)} type="button">Inactivar</Button> : null}{selectedUserId && selectedUser && !selectedUser.active ? <Button onClick={() => setUserStatus(true)} type="button"><Check size={16} /> Activar</Button> : null}</div>
+          </div>
+          <div className="min-h-[380px]">{renderUserTab()}</div>
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
+            <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold disabled:opacity-40" disabled={currentUserStep === 0} onClick={() => moveUserStep(-1)} type="button"><ChevronLeft size={16} /> Anterior</button>
+            <div className="flex gap-2"><button className="h-10 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => setUserEditorOpen(false)} type="button">Cancelar</button>{currentUserStep < userSteps.length - 1 ? <Button onClick={() => moveUserStep(1)} type="button">Siguiente <ChevronRight size={16} /></Button> : <Button onClick={saveUser} type="button"><Save size={16} /> {selectedUserId ? "Guardar cambios" : "Crear usuario"}</Button>}</div>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -1287,7 +1406,9 @@ export default function AdministracionPage() {
       ) : null}
 
       {activeModal === "users" ? (
-        <ModalFrame title="Creacion y gestion de usuarios" onClose={() => setActiveModal(null)} maxWidth="md:max-w-7xl">
+        <ModalFrame title={userEditorOpen ? (selectedUserId ? "Editar usuario" : "Crear usuario") : "Usuarios de plataforma"} onClose={() => { setActiveModal(null); setUserEditorOpen(false); }} maxWidth="md:max-w-7xl">
+          {userEditorOpen ? renderUserEditor() : renderUserDirectory()}
+          {false ? (
           <div className="grid gap-4 xl:grid-cols-[300px_1fr]">
             <aside className="space-y-3">
               <Button className="w-full" onClick={newUser} type="button"><Plus size={16} /> Nuevo usuario</Button>
@@ -1338,6 +1459,7 @@ export default function AdministracionPage() {
               {renderUserTab()}
             </section>
           </div>
+          ) : null}
         </ModalFrame>
       ) : null}
     </div>

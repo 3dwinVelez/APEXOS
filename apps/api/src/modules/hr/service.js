@@ -310,6 +310,62 @@ async function createRoute(tenantId, input) {
   }));
 }
 
+async function updateRoute(tenantId, id, input) {
+  return prisma.runWithTenant(tenantId, async () => prisma.timeRoute.update({
+    where: { id: Number(id) },
+    data: {
+      date: startOfDay(input.date),
+      vehicle_plate: input.vehicle_plate || "",
+      employees: input.employees || [],
+      start_time: input.start_time || "08:00",
+      end_time: input.end_time || "17:00",
+      tolerance_minutes: input.tolerance_minutes ?? 15,
+      per_diem: Number(input.per_diem || 0),
+      notes: input.notes || "",
+      status: input.status || "active"
+    }
+  }));
+}
+
+function datesForRouteRange(input) {
+  const start = startOfDay(input.start_date);
+  const end = startOfDay(input.end_date);
+  if (end < start) {
+    const error = new Error("La fecha final no puede ser menor que la fecha inicial.");
+    error.statusCode = 400;
+    throw error;
+  }
+  const weekdays = Array.isArray(input.weekdays) && input.weekdays.length
+    ? new Set(input.weekdays.map((day) => Number(day)))
+    : new Set([1, 2, 3, 4, 5]);
+  const dates = [];
+  for (let cursor = new Date(start); cursor <= end; cursor = new Date(cursor.getTime() + 86400000)) {
+    if (weekdays.has(cursor.getDay())) dates.push(new Date(cursor));
+  }
+  return dates;
+}
+
+async function createRoutesBulk(tenantId, input) {
+  const dates = datesForRouteRange(input);
+  if (!dates.length) return { created: 0, routes: [] };
+  return prisma.runWithTenant(tenantId, async () => {
+    const routes = await prisma.$transaction(dates.map((date) => prisma.timeRoute.create({
+      data: {
+        date,
+        vehicle_plate: input.vehicle_plate || "",
+        employees: input.employees || [],
+        start_time: input.start_time || "08:00",
+        end_time: input.end_time || "17:00",
+        tolerance_minutes: input.tolerance_minutes ?? 15,
+        per_diem: Number(input.per_diem || 0),
+        notes: input.notes || "",
+        status: input.status || "active"
+      }
+    })));
+    return { created: routes.length, routes };
+  });
+}
+
 async function findEmployee(input) {
   if (input.employee_id) return prisma.employee.findFirst({ where: { id: Number(input.employee_id) } });
   const name = input.user_name.trim();
@@ -1529,6 +1585,8 @@ module.exports = {
   createEmployee,
   listRoutes,
   createRoute,
+  updateRoute,
+  createRoutesBulk,
   getPreoperationalTemplate,
   getActivePreoperationalChecklist,
   submitPreoperationalChecklist,
