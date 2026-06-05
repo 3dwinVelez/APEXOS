@@ -130,7 +130,7 @@ async function build() {
   bootLog("Registered audit hook");
 
   bootLog("Registering QA performance logging");
-  const { currentPerformanceContext, runPerformanceContext } = require("./src/core/performanceContext");
+  const { currentPerformanceContext, runPerformanceContext, setResponseSizeBytes } = require("./src/core/performanceContext");
   fastify.addHook("onRequest", (request, _reply, done) => {
     runPerformanceContext({ startedAt: process.hrtime.bigint() }, done);
   });
@@ -139,7 +139,14 @@ async function build() {
     const durationMs = context?.startedAt
       ? Number(process.hrtime.bigint() - context.startedAt) / 1e6
       : Number(reply.elapsedTime || 0);
-    reply.header("Server-Timing", `app;dur=${durationMs.toFixed(1)}`);
+    const responseSizeBytes = Buffer.isBuffer(payload)
+      ? payload.length
+      : typeof payload === "string"
+        ? Buffer.byteLength(payload)
+        : 0;
+    setResponseSizeBytes(responseSizeBytes);
+    const queryTotalMs = context?.queryTotalMs || 0;
+    reply.header("Server-Timing", `app;dur=${durationMs.toFixed(1)}, db;dur=${queryTotalMs.toFixed(1)}`);
     done(null, payload);
   });
   fastify.addHook("onResponse", (request, reply, done) => {
@@ -154,7 +161,12 @@ async function build() {
         method: request.method,
         status: reply.statusCode,
         duration_ms: Number(durationMs.toFixed(2)),
+        response_size_bytes: context?.responseSizeBytes || 0,
         query_count: context?.queryCount || 0,
+        query_total_ms: Number((context?.queryTotalMs || 0).toFixed(2)),
+        query_max_ms: Number((context?.queryMaxMs || 0).toFixed(2)),
+        slow_query_count: context?.slowQueries?.length || 0,
+        slow_queries: (context?.slowQueries || []).slice(0, 10),
         user_id: request.user?.id || null,
         company_id: request.user?.tenant_id || null
       });

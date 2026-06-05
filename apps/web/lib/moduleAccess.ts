@@ -5,6 +5,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
 const MODULE_ACCESS_CACHE_KEY = "apexos_module_access_cache";
 const MODULE_ACCESS_CACHE_MS = 60_000;
+let moduleAccessInFlight: { token: string; promise: Promise<ModuleAccessState> } | null = null;
 
 export type ModuleAccessState = {
   loading: boolean;
@@ -211,35 +212,44 @@ export async function loadModuleAccess(modules: ApexModule[]): Promise<ModuleAcc
     }
   }
 
-  const [platformCompanies, companies] = await Promise.all([
-    listPlatformCompanies(1).catch(() => []),
-    listUserCompanies(5).catch(() => []) as Promise<UserCompany[]>
-  ]);
-  if (platformCompanies.length > 0) {
-    const state = {
-      loading: false,
-      isPlatformAdmin: true,
-      bySlug: Object.fromEntries(modules.map((module) => [module.slug, true]))
-    };
-    sessionStorage.setItem(MODULE_ACCESS_CACHE_KEY, JSON.stringify({ at: Date.now(), state }));
-    return state;
+  const sessionToken = localStorage.getItem("token") || "";
+  if (!moduleAccessInFlight || moduleAccessInFlight.token !== sessionToken) {
+    const promise = (async () => {
+      const [platformCompanies, companies] = await Promise.all([
+        listPlatformCompanies(1).catch(() => []),
+        listUserCompanies(5).catch(() => []) as Promise<UserCompany[]>
+      ]);
+      if (platformCompanies.length > 0) {
+        const state = {
+          loading: false,
+          isPlatformAdmin: true,
+          bySlug: Object.fromEntries(modules.map((module) => [module.slug, true]))
+        };
+        sessionStorage.setItem(MODULE_ACCESS_CACHE_KEY, JSON.stringify({ at: Date.now(), state }));
+        return state;
+      }
+
+      const companyId = companies[0]?.company_id;
+      if (!companyId) return { loading: false, isPlatformAdmin: false, bySlug: {} };
+
+      const statuses = await listCompanyModuleStatus(companyId, 100).catch(() => []) as CompanyModuleStatus[];
+      const enabledByCode = new Map(statuses.map((item) => [item.module_code, item.enabled]));
+      const orderByCode = new Map(statuses.map((item, index) => [item.module_code, item.sort_order ?? index]));
+      const state = {
+        loading: false,
+        isPlatformAdmin: false,
+        bySlug: Object.fromEntries(modules.map((module) => [module.slug, enabledByCode.get(getModuleCode(module)) === true])),
+        orderBySlug: Object.fromEntries(modules.map((module, index) => [module.slug, orderByCode.get(getModuleCode(module)) ?? index]))
+      };
+      sessionStorage.setItem(MODULE_ACCESS_CACHE_KEY, JSON.stringify({ at: Date.now(), state }));
+      return state;
+    })();
+    moduleAccessInFlight = { token: sessionToken, promise };
   }
 
-  const companyId = companies[0]?.company_id;
-  if (!companyId) {
-    return { loading: false, isPlatformAdmin: false, bySlug: {} };
+  try {
+    return applyRolePermissions(modules, await moduleAccessInFlight.promise);
+  } finally {
+    if (moduleAccessInFlight?.token === sessionToken) moduleAccessInFlight = null;
   }
-
-  const statuses = await listCompanyModuleStatus(companyId, 100).catch(() => []) as CompanyModuleStatus[];
-  const enabledByCode = new Map(statuses.map((item) => [item.module_code, item.enabled]));
-  const orderByCode = new Map(statuses.map((item, index) => [item.module_code, item.sort_order ?? index]));
-
-  const state = {
-    loading: false,
-    isPlatformAdmin: false,
-    bySlug: Object.fromEntries(modules.map((module) => [module.slug, enabledByCode.get(getModuleCode(module)) === true])),
-    orderBySlug: Object.fromEntries(modules.map((module, index) => [module.slug, orderByCode.get(getModuleCode(module)) ?? index]))
-  };
-  sessionStorage.setItem(MODULE_ACCESS_CACHE_KEY, JSON.stringify({ at: Date.now(), state }));
-  return state;
 }

@@ -12,6 +12,12 @@ type UploadResult = {
   storagePath: string;
 };
 
+type EncodedImage = {
+  base64: string;
+  name: string;
+  type: string;
+};
+
 const USER_DOCUMENT_MAX_BYTES = 10 * 1024 * 1024;
 const USER_DOCUMENT_MIME_TYPES = ["application/pdf", "image/png", "image/jpeg", "image/webp"] as const;
 
@@ -88,7 +94,11 @@ export async function createSignedImageUrl(value: string, expiresIn = 3600) {
     method: "POST",
     body: JSON.stringify({ expiresIn })
   });
-  return data.signedURL?.startsWith("http") ? data.signedURL : supabaseUrl(data.signedURL);
+  if (data.signedURL?.startsWith("http")) return data.signedURL;
+  const signedPath = data.signedURL?.startsWith("/object/")
+    ? `/storage/v1${data.signedURL}`
+    : data.signedURL;
+  return supabaseUrl(signedPath);
 }
 
 export async function deleteImage(value: string) {
@@ -129,6 +139,14 @@ export function getUserAvatarUrl(storageValue: string, expiresIn = 3600) {
 
 export function uploadServiceImage(companyId: string, serviceId: string, file: File) {
   return uploadImage("service-images", `${companyId}/${serviceId}/${safeName("service", file)}`, file);
+}
+
+export function uploadServiceImageData(companyId: string, serviceId: string, image: EncodedImage) {
+  const match = image.base64.match(/^data:([^;,]+);base64,(.+)$/);
+  if (!match) throw new Error("La evidencia no contiene una imagen base64 valida.");
+  const bytes = Uint8Array.from(atob(match[2]), (character) => character.charCodeAt(0));
+  const file = new File([bytes], image.name || "evidencia.jpg", { type: image.type || match[1] });
+  return uploadServiceImage(companyId, serviceId, file);
 }
 
 export function getServiceImageUrl(storageValue: string, expiresIn = 3600) {

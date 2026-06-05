@@ -1,5 +1,6 @@
 import { assertActiveSession, clearSession, touchSession } from "./sessionSecurity";
 import { getSupabaseAccessToken, supabaseFetch } from "./supabaseClient";
+import { getServiceImageUrl, uploadServiceImageData } from "./supabaseStorage";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
@@ -174,6 +175,40 @@ function safeDevLog(message: string, error: unknown) {
   if (process.env.NODE_ENV !== "production") {
     console.warn(`[apexos] ${message}`, error instanceof Error ? error.message : String(error));
   }
+}
+
+type ServiceEvidenceRow = {
+  id: string;
+  order_id?: string;
+  evidence_type?: string;
+  file_url?: string;
+  storage_bucket?: string;
+  storage_path?: string;
+  mime_type?: string;
+  size_bytes?: number;
+  metadata?: AnyRow;
+  created_at?: string;
+};
+
+async function resolveServiceEvidencePhoto(photo: ServiceEvidenceRow) {
+  const legacyBase64 = photo.file_url?.startsWith("data:") ? photo.file_url : "";
+  let fileUrl = legacyBase64 ? "" : photo.file_url || "";
+  if (photo.storage_path) {
+    const storageValue = photo.storage_path.startsWith("service-images/")
+      ? photo.storage_path
+      : `${photo.storage_bucket || "service-images"}/${photo.storage_path}`;
+    try {
+      fileUrl = await getServiceImageUrl(storageValue);
+    } catch (error) {
+      safeDevLog("No fue posible firmar una evidencia de servicio.", error);
+    }
+  }
+  return {
+    ...photo,
+    type: String(photo.metadata?.original_type || photo.evidence_type || ""),
+    file_url: fileUrl,
+    base64_data: legacyBase64
+  };
 }
 
 async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, timeoutMs = API_TIMEOUT_MS) {
@@ -1300,10 +1335,10 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   if (serviceOrderPhotosMatch) {
     const orderId = serviceOrderPhotosMatch[1];
     if (method === "GET") {
-      const photos = await supabaseFetch<Array<{ id: string; evidence_type?: string; file_url?: string; storage_path?: string; mime_type?: string; size_bytes?: number; metadata?: AnyRow; created_at?: string }>>(
-        `/rest/v1/service_evidence?select=id,evidence_type,file_url,storage_path,mime_type,size_bytes,metadata,created_at&order_id=eq.${encodeURIComponent(orderId)}&order=created_at.asc&limit=100`
+      const photos = await supabaseFetch<ServiceEvidenceRow[]>(
+        `/rest/v1/service_evidence?select=id,evidence_type,file_url,storage_bucket,storage_path,mime_type,size_bytes,metadata,created_at&order_id=eq.${encodeURIComponent(orderId)}&order=created_at.asc&limit=100`
       );
-      return photos.map((photo) => ({ ...photo, type: String(photo.metadata?.original_type || photo.evidence_type || ""), base64_data: photo.file_url?.startsWith("data:") ? photo.file_url : "" })) as T;
+      return await Promise.all(photos.map(resolveServiceEvidencePhoto)) as T;
     }
     if (method === "POST") {
       const body = JSON.parse(String(options.body || "{}"));
@@ -1311,6 +1346,13 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       if (!rows[0]) throw new Error("No se encontro el servicio o no tienes permisos para cargar evidencia.");
       const originalType = String(body.type || body.evidence_type || "novedad");
       const allowedType = ["fachada", "producto_abierto", "producto_cerrado", "cliente", "firma_cliente", "no_ejecutada"].includes(originalType) ? originalType : "novedad";
+      const uploaded = body.base64_data && !body.storage_path
+        ? await uploadServiceImageData(rows[0].company_id, orderId, {
+          base64: String(body.base64_data),
+          name: String(body.file_name || `${allowedType}.jpg`),
+          type: String(body.mime_type || "image/jpeg")
+        })
+        : null;
       await supabaseFetch<void>("/rest/v1/service_evidence", {
         method: "POST",
         headers: { Prefer: "return=minimal" },
@@ -1318,19 +1360,20 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
           company_id: rows[0].company_id,
           order_id: orderId,
           evidence_type: allowedType,
-          file_url: body.file_url || body.base64_data || "",
-          storage_path: body.storage_path || "",
+          file_url: body.file_url || "",
+          storage_bucket: uploaded?.bucket || body.storage_bucket || "service-images",
+          storage_path: uploaded?.storagePath || body.storage_path || "",
           mime_type: body.mime_type || "",
           size_bytes: Number(body.size_bytes || 0),
           metadata: { ...(body.metadata || {}), original_type: originalType, file_name: body.file_name || "" }
         })
       });
-      const inserted = await supabaseFetch<Array<{ id: string; evidence_type?: string; file_url?: string; storage_path?: string; mime_type?: string; size_bytes?: number; metadata?: AnyRow; created_at?: string }>>(
-        `/rest/v1/service_evidence?select=id,evidence_type,file_url,storage_path,mime_type,size_bytes,metadata,created_at&order_id=eq.${encodeURIComponent(orderId)}&order=created_at.desc&limit=1`
+      const inserted = await supabaseFetch<ServiceEvidenceRow[]>(
+        `/rest/v1/service_evidence?select=id,evidence_type,file_url,storage_bucket,storage_path,mime_type,size_bytes,metadata,created_at&order_id=eq.${encodeURIComponent(orderId)}&order=created_at.desc&limit=1`
       );
       const photo = inserted[0];
       if (!photo?.id) throw new Error("La evidencia se envio, pero no fue posible leer el registro creado.");
-      return { ...photo, type: originalType, base64_data: photo?.file_url?.startsWith("data:") ? photo.file_url : "" } as T;
+      return await resolveServiceEvidencePhoto({ ...photo, metadata: { ...(photo.metadata || {}), original_type: originalType } }) as T;
     }
   }
 
@@ -1363,6 +1406,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     if (serviceOrderDetailMatch && !orders[0]) return null as T;
     const orderIds = orders.map((order) => order.id);
     const orderFilter = orderIds.length ? `&order_id=in.(${orderIds.join(",")})` : "&order_id=is.null";
+    const evidenceSelect = serviceOrderDetailMatch
+      ? "id,order_id,evidence_type,file_url,storage_bucket,storage_path,mime_type,size_bytes,metadata,created_at"
+      : "id,order_id,evidence_type,storage_bucket,storage_path,mime_type,size_bytes,metadata,created_at";
     const [refs, parts, incidents, evidence] = await Promise.all([
       supabaseFetch<Array<{ id: string; code: string; name: string; category?: string; estimated_minutes?: number; brand?: string; model?: string; metadata?: AnyRow }>>("/rest/v1/service_references?select=id,code,name,category,estimated_minutes,brand,model,metadata&limit=200").catch((error) => {
         safeDevLog("No fue posible consultar referencias de servicios Supabase.", error);
@@ -1376,12 +1422,15 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         safeDevLog("No fue posible consultar novedades de servicios Supabase.", error);
         return [];
       }),
-      supabaseFetch<Array<{ id: string; order_id: string; evidence_type?: string; file_url?: string; storage_path?: string; mime_type?: string; size_bytes?: number; metadata?: AnyRow; created_at?: string }>>(`/rest/v1/service_evidence?select=id,order_id,evidence_type,file_url,storage_path,mime_type,size_bytes,metadata,created_at${orderFilter}&limit=500`).catch((error) => {
+      supabaseFetch<ServiceEvidenceRow[]>(`/rest/v1/service_evidence?select=${evidenceSelect}${orderFilter}&limit=500`).catch((error) => {
         safeDevLog("No fue posible consultar evidencias de servicios Supabase.", error);
         return [];
       })
     ]);
 
+    const resolvedEvidence = serviceOrderDetailMatch
+      ? await Promise.all(evidence.map(resolveServiceEvidencePhoto))
+      : evidence;
     const mapped = orders.map((order) => {
       const reference = refs.find((ref) => ref.id === order.reference_id);
       const referenceWithParts = reference ? {
@@ -1398,8 +1447,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         customer_phone: order.customer_phone || "",
         scheduled_date: order.scheduled_date || "",
         incidents: incidents.filter((item) => item.order_id === order.id),
-        photos: evidence.filter((item) => item.order_id === order.id).map((item) => ({ ...item, type: String(item.metadata?.original_type || item.evidence_type || ""), base64_data: item.file_url?.startsWith("data:") ? item.file_url : "" })),
-        evidence: evidence.filter((item) => item.order_id === order.id).map((item) => ({ ...item, type: String(item.metadata?.original_type || item.evidence_type || ""), base64_data: item.file_url?.startsWith("data:") ? item.file_url : "" })),
+        photos: resolvedEvidence.filter((item) => item.order_id === order.id).map((item) => ({ ...item, type: String(item.metadata?.original_type || item.evidence_type || "") })),
+        evidence: resolvedEvidence.filter((item) => item.order_id === order.id).map((item) => ({ ...item, type: String(item.metadata?.original_type || item.evidence_type || "") })),
         inspection_items: referenceWithParts?.parts?.map((part) => ({ part_id: part.id, name: part.name, status: "pendiente" })) || []
       };
     });
