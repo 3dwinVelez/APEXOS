@@ -1,5 +1,6 @@
 const { AsyncLocalStorage } = require("node:async_hooks");
 const { PrismaClient } = require("@prisma/client");
+const { incrementQueryCount } = require("./performanceContext");
 
 const tenantStorage = new AsyncLocalStorage();
 let prisma;
@@ -40,6 +41,7 @@ function createPrismaClient() {
   });
 
   client.$use(async (params, next) => {
+    incrementQueryCount();
     const tenantId = currentTenantId();
     if (!tenantId || !TENANT_MODELS.has(params.model)) return next(params);
 

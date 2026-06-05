@@ -423,6 +423,7 @@ async function listOrders(tenantId, query = {}) {
       where,
       include: orderInclude(),
       orderBy: { created_at: "desc" },
+      skip: Math.max(Number(query.offset || 0), 0),
       take: Math.min(Number(query.limit || 100), 200)
     });
     const kpis = {
@@ -502,7 +503,9 @@ async function listReferences(tenantId, query = {}) {
         } : {})
       },
       include: referenceInclude(),
-      orderBy: { code: "asc" }
+      orderBy: { code: "asc" },
+      skip: Math.max(Number(query.offset || 0), 0),
+      take: Math.min(Number(query.limit || 100), 200)
     });
     return rows.map(referenceDto);
   });

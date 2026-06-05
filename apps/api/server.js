@@ -129,6 +129,40 @@ async function build() {
   require("./src/fabric/audit").registerAuditHook(fastify);
   bootLog("Registered audit hook");
 
+  bootLog("Registering QA performance logging");
+  const { currentPerformanceContext, runPerformanceContext } = require("./src/core/performanceContext");
+  fastify.addHook("onRequest", (request, _reply, done) => {
+    runPerformanceContext({ startedAt: process.hrtime.bigint() }, done);
+  });
+  fastify.addHook("onSend", (_request, reply, payload, done) => {
+    const context = currentPerformanceContext();
+    const durationMs = context?.startedAt
+      ? Number(process.hrtime.bigint() - context.startedAt) / 1e6
+      : Number(reply.elapsedTime || 0);
+    reply.header("Server-Timing", `app;dur=${durationMs.toFixed(1)}`);
+    done(null, payload);
+  });
+  fastify.addHook("onResponse", (request, reply, done) => {
+    const context = currentPerformanceContext();
+    const durationMs = context?.startedAt
+      ? Number(process.hrtime.bigint() - context.startedAt) / 1e6
+      : Number(reply.elapsedTime || 0);
+    if (process.env.PERFORMANCE_LOG_ENABLED === "true" || process.env.APP_ENV === "qa") {
+      fastify.log.info({
+        event: "api_performance",
+        endpoint: request.routeOptions?.url || request.url.split("?")[0],
+        method: request.method,
+        status: reply.statusCode,
+        duration_ms: Number(durationMs.toFixed(2)),
+        query_count: context?.queryCount || 0,
+        user_id: request.user?.id || null,
+        company_id: request.user?.tenant_id || null
+      });
+    }
+    done();
+  });
+  bootLog("Registered QA performance logging");
+
   bootLog("Registering API modules");
   registerRoutes("auth", require("./src/modules/auth/routes"), { prefix: "/api/v1" });
   registerRoutes("onboarding", require("./src/modules/onboarding/routes"), { prefix: "/api/v1" });

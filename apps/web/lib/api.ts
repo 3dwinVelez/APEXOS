@@ -1336,6 +1336,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
 
   if (pathname === "/api/v1/services/orders" || serviceOrderDetailMatch) {
     const status = search.get("status");
+    const orderLimit = serviceOrderDetailMatch
+      ? 1
+      : Math.min(Math.max(Number(search.get("limit") || 50), 1), 150);
     const filters = [
       status ? `status=eq.${encodeURIComponent(status)}` : "",
       serviceOrderDetailMatch ? `id=eq.${encodeURIComponent(serviceOrderDetailMatch[1])}` : ""
@@ -1356,26 +1359,28 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       closed_at?: string;
       notes?: string;
       metadata?: AnyRow;
-    }>>(`/rest/v1/service_orders?select=id,number,reference_id,technician_employee_id,service_type,status,customer_name,customer_address,customer_phone,invoice_number,scheduled_date,started_at,closed_at,notes,metadata&order=created_at.desc${filters ? `&${filters}` : ""}&limit=${serviceOrderDetailMatch ? 1 : 150}`);
+    }>>(`/rest/v1/service_orders?select=id,number,reference_id,technician_employee_id,service_type,status,customer_name,customer_address,customer_phone,invoice_number,scheduled_date,started_at,closed_at,notes,metadata&order=created_at.desc${filters ? `&${filters}` : ""}&limit=${orderLimit}`);
     if (serviceOrderDetailMatch && !orders[0]) return null as T;
     const orderIds = orders.map((order) => order.id);
     const orderFilter = orderIds.length ? `&order_id=in.(${orderIds.join(",")})` : "&order_id=is.null";
-    const refs = await supabaseFetch<Array<{ id: string; code: string; name: string; category?: string; estimated_minutes?: number; brand?: string; model?: string; metadata?: AnyRow }>>("/rest/v1/service_references?select=id,code,name,category,estimated_minutes,brand,model,metadata&limit=200").catch((error) => {
-      safeDevLog("No fue posible consultar referencias de servicios Supabase.", error);
-      return [];
-    });
-    const parts = await supabaseFetch<Array<{ id: string; reference_id: string; name: string; quantity: number; unit: string; display_order?: number }>>("/rest/v1/service_reference_parts?select=id,reference_id,name,quantity,unit,display_order&order=display_order.asc&limit=1000").catch((error) => {
-      safeDevLog("No fue posible consultar partes de referencias Supabase.", error);
-      return [];
-    });
-    const incidents = await supabaseFetch<Array<{ id: string; order_id: string; type?: string; description?: string; action?: string }>>(`/rest/v1/service_incidents?select=id,order_id,type,description,action${orderFilter}&limit=500`).catch((error) => {
-      safeDevLog("No fue posible consultar novedades de servicios Supabase.", error);
-      return [];
-    });
-    const evidence = await supabaseFetch<Array<{ id: string; order_id: string; evidence_type?: string; file_url?: string; storage_path?: string; mime_type?: string; size_bytes?: number; metadata?: AnyRow; created_at?: string }>>(`/rest/v1/service_evidence?select=id,order_id,evidence_type,file_url,storage_path,mime_type,size_bytes,metadata,created_at${orderFilter}&limit=500`).catch((error) => {
-      safeDevLog("No fue posible consultar evidencias de servicios Supabase.", error);
-      return [];
-    });
+    const [refs, parts, incidents, evidence] = await Promise.all([
+      supabaseFetch<Array<{ id: string; code: string; name: string; category?: string; estimated_minutes?: number; brand?: string; model?: string; metadata?: AnyRow }>>("/rest/v1/service_references?select=id,code,name,category,estimated_minutes,brand,model,metadata&limit=200").catch((error) => {
+        safeDevLog("No fue posible consultar referencias de servicios Supabase.", error);
+        return [];
+      }),
+      supabaseFetch<Array<{ id: string; reference_id: string; name: string; quantity: number; unit: string; display_order?: number }>>("/rest/v1/service_reference_parts?select=id,reference_id,name,quantity,unit,display_order&order=display_order.asc&limit=1000").catch((error) => {
+        safeDevLog("No fue posible consultar partes de referencias Supabase.", error);
+        return [];
+      }),
+      supabaseFetch<Array<{ id: string; order_id: string; type?: string; description?: string; action?: string }>>(`/rest/v1/service_incidents?select=id,order_id,type,description,action${orderFilter}&limit=500`).catch((error) => {
+        safeDevLog("No fue posible consultar novedades de servicios Supabase.", error);
+        return [];
+      }),
+      supabaseFetch<Array<{ id: string; order_id: string; evidence_type?: string; file_url?: string; storage_path?: string; mime_type?: string; size_bytes?: number; metadata?: AnyRow; created_at?: string }>>(`/rest/v1/service_evidence?select=id,order_id,evidence_type,file_url,storage_path,mime_type,size_bytes,metadata,created_at${orderFilter}&limit=500`).catch((error) => {
+        safeDevLog("No fue posible consultar evidencias de servicios Supabase.", error);
+        return [];
+      })
+    ]);
 
     const mapped = orders.map((order) => {
       const reference = refs.find((ref) => ref.id === order.reference_id);

@@ -126,6 +126,7 @@ model Party {
   contacts     Contact[]
 
   @@index([tenant_id, type])
+  @@index([tenant_id, type, active, name])
   @@index([tenant_id, tax_id])
 }
 
@@ -349,6 +350,7 @@ model Transaction {
   @@index([tenant_id, type, status])
   @@index([tenant_id, party_id])
   @@index([tenant_id, created_at])
+  @@index([tenant_id, type, created_at])
 }
 
 model TransactionLine {
@@ -626,6 +628,8 @@ model CxpCabdoc {
   @@index([tenant_id, posting_date])
   @@index([tenant_id, due_date])
   @@index([tenant_id, society_code])
+  @@index([tenant_id, document_class, posting_date])
+  @@index([tenant_id, supplier_id, due_date])
 }
 
 model CxpApplication {
@@ -1118,6 +1122,7 @@ model GpsPing {
 
   @@index([tenant_id, user_name, captured_at])
   @@index([tenant_id, route_id, captured_at])
+  @@index([tenant_id, captured_at])
 }
 
 model WorkSession {
@@ -1429,6 +1434,7 @@ model ServiceOrder {
   @@unique([tenant_id, number])
   @@index([tenant_id, status])
   @@index([tenant_id, scheduled_date])
+  @@index([tenant_id, created_at])
 }
 
 model ServiceReference {
@@ -1518,6 +1524,7 @@ model Payroll {
 
   @@unique([employee_id, period])
   @@index([tenant_id, status])
+  @@index([tenant_id, created_at])
 }
 
 model OKR {

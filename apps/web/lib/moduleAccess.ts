@@ -3,6 +3,8 @@ import { CompanyModuleStatus, listCompanyModuleStatus, listPlatformCompanies, li
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
+const MODULE_ACCESS_CACHE_KEY = "apexos_module_access_cache";
+const MODULE_ACCESS_CACHE_MS = 60_000;
 
 export type ModuleAccessState = {
   loading: boolean;
@@ -199,16 +201,30 @@ async function loadLocalModuleAccess(modules: ApexModule[]): Promise<ModuleAcces
 export async function loadModuleAccess(modules: ApexModule[]): Promise<ModuleAccessState> {
   if (!isSupabaseSession()) return loadLocalModuleAccess(modules);
 
-  const platformCompanies = await listPlatformCompanies(1).catch(() => []);
+  const cached = sessionStorage.getItem(MODULE_ACCESS_CACHE_KEY);
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached) as { at: number; state: ModuleAccessState };
+      if (Date.now() - parsed.at < MODULE_ACCESS_CACHE_MS) return applyRolePermissions(modules, parsed.state);
+    } catch {
+      sessionStorage.removeItem(MODULE_ACCESS_CACHE_KEY);
+    }
+  }
+
+  const [platformCompanies, companies] = await Promise.all([
+    listPlatformCompanies(1).catch(() => []),
+    listUserCompanies(5).catch(() => []) as Promise<UserCompany[]>
+  ]);
   if (platformCompanies.length > 0) {
-    return {
+    const state = {
       loading: false,
       isPlatformAdmin: true,
       bySlug: Object.fromEntries(modules.map((module) => [module.slug, true]))
     };
+    sessionStorage.setItem(MODULE_ACCESS_CACHE_KEY, JSON.stringify({ at: Date.now(), state }));
+    return state;
   }
 
-  const companies = await listUserCompanies(5).catch(() => []) as UserCompany[];
   const companyId = companies[0]?.company_id;
   if (!companyId) {
     return { loading: false, isPlatformAdmin: false, bySlug: {} };
@@ -218,10 +234,12 @@ export async function loadModuleAccess(modules: ApexModule[]): Promise<ModuleAcc
   const enabledByCode = new Map(statuses.map((item) => [item.module_code, item.enabled]));
   const orderByCode = new Map(statuses.map((item, index) => [item.module_code, item.sort_order ?? index]));
 
-  return {
+  const state = {
     loading: false,
     isPlatformAdmin: false,
     bySlug: Object.fromEntries(modules.map((module) => [module.slug, enabledByCode.get(getModuleCode(module)) === true])),
     orderBySlug: Object.fromEntries(modules.map((module, index) => [module.slug, orderByCode.get(getModuleCode(module)) ?? index]))
   };
+  sessionStorage.setItem(MODULE_ACCESS_CACHE_KEY, JSON.stringify({ at: Date.now(), state }));
+  return state;
 }

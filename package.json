@@ -33,6 +33,7 @@
     "verify:web-assets:dev": "set NEXT_DIST_DIR=.next-dev&& node scripts/ensure-web-css.js --url http://localhost:3001/dashboard",
     "qa:full-validation": "node scripts/qa-full-system-validation.js",
     "qa:hr-services-stress": "node scripts/qa-hr-services-linear-stress.js",
+    "qa:performance": "node scripts/performance/qa-latency-benchmark.js",
     "lint": "npm --workspace apps/web run lint",
     "prisma:validate": "npm --workspace apps/api run prisma:validate",
     "brain:dev": "cd services/brain && uvicorn main:app --reload --port 8000"

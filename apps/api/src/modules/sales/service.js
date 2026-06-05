@@ -109,18 +109,22 @@ async function createSaleOrder(tenantId, userId, data) {
   }));
 }
 
-async function listCustomers(tenantId) {
+async function listCustomers(tenantId, query = {}) {
   return prisma.runWithTenant(tenantId, () => prisma.party.findMany({
     where: { type: "customer", active: true },
-    orderBy: { name: "asc" }
+    orderBy: { name: "asc" },
+    skip: Math.max(Number(query.offset || 0), 0),
+    take: Math.min(Number(query.limit || 100), 200)
   }));
 }
 
-async function listSaleOrders(tenantId) {
+async function listSaleOrders(tenantId, query = {}) {
   return prisma.runWithTenant(tenantId, () => prisma.transaction.findMany({
     where: { type: "sale" },
     orderBy: { created_at: "desc" },
-    include: { party: true, lines: true }
+    include: { party: true, lines: true },
+    skip: Math.max(Number(query.offset || 0), 0),
+    take: Math.min(Number(query.limit || 100), 200)
   }));
 }
 

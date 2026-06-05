@@ -493,11 +493,16 @@ async function addUserMasterDataItem(tenantId, catalog, input, actorId = null) {
   });
 }
 
-async function listRoles(tenantId) {
+async function listRoles(tenantId, query = {}) {
   tenantId = normalizeTenantId(tenantId);
   await ensureSystemRoles(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
-    const roles = await prisma.role.findMany({ include: { permissions: true }, orderBy: [{ is_system: "desc" }, { name: "asc" }] });
+    const roles = await prisma.role.findMany({
+      include: { permissions: true },
+      orderBy: [{ is_system: "desc" }, { name: "asc" }],
+      skip: Math.max(Number(query.offset || 0), 0),
+      take: Math.min(Number(query.limit || 100), 200)
+    });
     return roles.map(roleDto);
   });
 }
@@ -611,13 +616,15 @@ async function setRoleActive(tenantId, id, active, actorId = null) {
   });
 }
 
-async function listUsers(tenantId) {
+async function listUsers(tenantId, query = {}) {
   tenantId = normalizeTenantId(tenantId);
   await ensureSystemRoles(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const users = await prisma.user.findMany({
       include: { role: true, employee: true },
-      orderBy: { name: "asc" }
+      orderBy: { name: "asc" },
+      skip: Math.max(Number(query.offset || 0), 0),
+      take: Math.min(Number(query.limit || 100), 200)
     });
     return users.map(userDto);
   });
