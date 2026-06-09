@@ -19,6 +19,20 @@ const READ_ACTIONS = new Set(["access", "view", "download", "reports"]);
 const WRITE_ACTIONS = new Set(["create", "edit", "delete", "reject", "void", "import", "attach", "configure", "administer", "execute", "sensitive", "manage_users", "manage_roles"]);
 const APPROVE_ACTIONS = new Set(["approve"]);
 const EXPORT_ACTIONS = new Set(["export"]);
+const TENANT_MODULE_CODES = {
+  accounting: ["M-07", "contabilidad", "finance", "accounting"],
+  admin: ["M-22", "administracion", "administracion_apex", "admin"],
+  brain: ["AI-CORE", "apex-ai", "apex_ai", "brain"],
+  hr: ["M-17", "talento-humano", "talento_humano", "hr"],
+  inventory: ["M-01", "inventario", "inventory"],
+  invoicing: ["M-04", "facturacion", "invoicing"],
+  payroll: ["M-17", "nomina", "payroll"],
+  purchases: ["M-02", "compras", "purchases"],
+  projects: ["M-19", "proyectos", "projects"],
+  sales: ["M-03", "ventas", "sales"],
+  services: ["M-26", "servicios", "services"],
+  transport: ["M-14", "transporte", "transport"]
+};
 
 function grants(module, actions = ROLE_ACTIONS) {
   return Object.fromEntries(actions.map((action) => {
@@ -29,6 +43,18 @@ function grants(module, actions = ROLE_ACTIONS) {
     if (EXPORT_ACTIONS.has(action)) mapped.push([module, "export"]);
     return [action, mapped.length ? mapped : [[module, action]]];
   }));
+}
+
+function normalizeActiveModules(value) {
+  return Array.isArray(value) ? value.map((item) => String(item).trim().toLowerCase()).filter(Boolean) : [];
+}
+
+function tenantHasModule(activeModules, module) {
+  if (!module) return true;
+  const active = normalizeActiveModules(activeModules);
+  if (!active.length) return true;
+  const allowedCodes = (TENANT_MODULE_CODES[module] || [module]).map((item) => String(item).trim().toLowerCase());
+  return allowedCodes.some((code) => active.includes(code));
 }
 
 const PERMISSION_CATALOG = [
@@ -190,10 +216,18 @@ function emptyLegacyPermissions() {
   ]));
 }
 
-function normalizeLegacyPermissions(raw) {
-  const base = emptyLegacyPermissions();
+function filterPermissionCatalog(activeModules) {
+  return PERMISSION_CATALOG.filter((item) => tenantHasModule(activeModules, item.module));
+}
+
+function normalizeLegacyPermissions(raw, activeModules = null) {
+  const catalog = activeModules ? filterPermissionCatalog(activeModules) : PERMISSION_CATALOG;
+  const base = Object.fromEntries(catalog.map((item) => [
+    item.key,
+    Object.fromEntries(item.actions.map((action) => [action, false]))
+  ]));
   if (!raw || typeof raw !== "object") return base;
-  for (const item of PERMISSION_CATALOG) {
+  for (const item of catalog) {
     for (const action of item.actions) {
       base[item.key][action] = Boolean(raw[item.key]?.[action]);
     }
@@ -201,10 +235,11 @@ function normalizeLegacyPermissions(raw) {
   return base;
 }
 
-function legacyToRbacPermissions(raw) {
-  const legacy = normalizeLegacyPermissions(raw);
+function legacyToRbacPermissions(raw, activeModules = null) {
+  const catalog = activeModules ? filterPermissionCatalog(activeModules) : PERMISSION_CATALOG;
+  const legacy = normalizeLegacyPermissions(raw, activeModules);
   const grants = new Map();
-  for (const item of PERMISSION_CATALOG) {
+  for (const item of catalog) {
     for (const action of item.actions) {
       if (!legacy[item.key][action]) continue;
       for (const [module, mappedAction] of item.grants[action] || []) {
@@ -215,21 +250,22 @@ function legacyToRbacPermissions(raw) {
   return Array.from(grants.values());
 }
 
-function permissionsToLegacy(role) {
+function permissionsToLegacy(role, activeModules = null) {
+  const catalog = activeModules ? filterPermissionCatalog(activeModules) : PERMISSION_CATALOG;
   if (role.name === "APEX_ADMIN" || role.permissions?.some((p) => p.module === "*" && p.action === "*")) {
-    return Object.fromEntries(PERMISSION_CATALOG.map((item) => [
+    return Object.fromEntries(catalog.map((item) => [
       item.key,
       Object.fromEntries(item.actions.map((action) => [action, true]))
     ]));
   }
-  return normalizeLegacyPermissions(role.metadata?.legacy_permissions || {});
+  return normalizeLegacyPermissions(role.metadata?.legacy_permissions || {}, activeModules);
 }
 
-function roleDto(role) {
+function roleDto(role, activeModules = null) {
   const metadata = role.metadata || {};
   const permissions = role.permissions || [];
-  const legacy = permissionsToLegacy(role);
-  const activeModules = Object.entries(legacy).filter(([, actions]) => Object.values(actions || {}).some(Boolean)).length;
+  const legacy = permissionsToLegacy(role, activeModules);
+  const activeModuleCount = Object.entries(legacy).filter(([, actions]) => Object.values(actions || {}).some(Boolean)).length;
   const activeActions = Object.values(legacy).reduce((sum, actions) => sum + Object.values(actions || {}).filter(Boolean).length, 0);
   return {
     id: role.id,
@@ -248,10 +284,16 @@ function roleDto(role) {
     restrictions: metadata.restrictions || { locations: [], areas: [], cost_centers: [], processes: [] },
     can_delegate: Boolean(metadata.can_delegate),
     sensitive: Boolean(metadata.sensitive),
-    impact_summary: { modules: activeModules, actions: activeActions, raw_permissions: permissions.length },
+    impact_summary: { modules: activeModuleCount, actions: activeActions, raw_permissions: permissions.length },
     permissions: legacy,
     raw_permissions: permissions
   };
+}
+
+async function getTenantActiveModules(tenantId) {
+  tenantId = normalizeTenantId(tenantId);
+  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { active_modules: true } });
+  return normalizeActiveModules(tenant?.active_modules);
 }
 
 function userDto(user) {
@@ -300,6 +342,8 @@ function userDto(user) {
     country: metadata.country || "Colombia",
     user_status: metadata.user_status || (user.active ? "activo" : "inactivo"),
     access_email: access.email || user.email,
+    profile_kind: metadata.profile_kind || metadata.user_kind || operational.classification || "administrativo",
+    user_kind: metadata.user_kind || metadata.profile_kind || operational.classification || "administrativo",
     additional_roles: access.additional_roles || "",
     operational_profile: access.operational_profile || "",
     site: access.site || "",
@@ -349,6 +393,12 @@ function toBoolean(value) {
   return Boolean(value);
 }
 
+function normalizeUsernameEmail(value, fallbackDomain = "apex.local") {
+  const text = String(value || "").trim().toLowerCase();
+  if (!text) return "";
+  return text.includes("@") ? text : `${text}@${fallbackDomain}`;
+}
+
 function userAuditSnapshot(user, employee) {
   return {
     user_id: user?.id,
@@ -364,10 +414,13 @@ function userAuditSnapshot(user, employee) {
   };
 }
 
-async function upsertRoleFromLegacy(tenantId, data) {
+async function upsertRoleFromLegacy(tenantId, data, activeModules = null) {
   tenantId = normalizeTenantId(tenantId);
-  const legacyPermissions = normalizeLegacyPermissions(data.permissions || data.legacy_permissions || {});
-  const rbacPermissions = legacyToRbacPermissions(legacyPermissions);
+  const tenantModules = activeModules || await getTenantActiveModules(tenantId);
+  const legacyPermissions = normalizeLegacyPermissions(data.permissions || data.legacy_permissions || {}, tenantModules);
+  const rbacPermissions = data.name === "APEX_ADMIN"
+    ? [{ module: "*", action: "*" }]
+    : legacyToRbacPermissions(legacyPermissions, tenantModules);
   const roleData = {
     tenant_id: tenantId,
     name: data.name || data.nombre,
@@ -399,6 +452,7 @@ async function ensureSystemRoles(tenantId) {
   if (systemRolesInFlight.has(tenantId)) return systemRolesInFlight.get(tenantId);
 
   const bootstrap = prisma.runWithTenant(tenantId, async () => {
+    const activeModules = await getTenantActiveModules(tenantId);
     const templatesByName = new Map(SYSTEM_ROLE_TEMPLATES.map((template) => [template.name, template]));
     const currentRoles = await prisma.role.findMany({
       where: { name: { in: [...templatesByName.keys()] } },
@@ -406,7 +460,7 @@ async function ensureSystemRoles(tenantId) {
     });
     const existing = new Set(currentRoles.map((role) => role.name));
     for (const template of SYSTEM_ROLE_TEMPLATES) {
-      if (!existing.has(template.name)) await upsertRoleFromLegacy(tenantId, { ...template, active: true });
+      if (!existing.has(template.name)) await upsertRoleFromLegacy(tenantId, { ...template, active: true }, activeModules);
     }
   });
   systemRolesInFlight.set(tenantId, bootstrap);
@@ -445,8 +499,9 @@ async function processBilling() {
   return { processed: true };
 }
 
-async function getPermissionCatalog() {
-  return PERMISSION_CATALOG.map(({ key, label, group, module, submodule, actions }) => ({ key, label, group, module, submodule, actions }));
+async function getPermissionCatalog(tenantId) {
+  const activeModules = await getTenantActiveModules(tenantId);
+  return filterPermissionCatalog(activeModules).map(({ key, label, group, module, submodule, actions }) => ({ key, label, group, module, submodule, actions }));
 }
 
 async function getUserMasterData(tenantId) {
@@ -500,6 +555,7 @@ async function addUserMasterDataItem(tenantId, catalog, input, actorId = null) {
 async function listRoles(tenantId, query = {}) {
   tenantId = normalizeTenantId(tenantId);
   await ensureSystemRoles(tenantId);
+  const activeModules = await getTenantActiveModules(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const roles = await prisma.role.findMany({
       include: { permissions: true },
@@ -507,12 +563,13 @@ async function listRoles(tenantId, query = {}) {
       skip: Math.max(Number(query.offset || 0), 0),
       take: Math.min(Number(query.limit || 100), 200)
     });
-    return roles.map(roleDto);
+    return roles.map((role) => roleDto(role, activeModules));
   });
 }
 
 async function createRole(tenantId, input, actorId = null) {
   tenantId = normalizeTenantId(tenantId);
+  const activeModules = await getTenantActiveModules(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const name = String(input.name || input.nombre || "").trim();
     if (!name) {
@@ -526,7 +583,7 @@ async function createRole(tenantId, input, actorId = null) {
       err.statusCode = 409;
       throw err;
     }
-    const role = await upsertRoleFromLegacy(tenantId, { ...input, is_system: false });
+    const role = await upsertRoleFromLegacy(tenantId, { ...input, is_system: false }, activeModules);
     await prisma.auditLog.create({
       data: {
         tenant_id: tenantId,
@@ -536,18 +593,19 @@ async function createRole(tenantId, input, actorId = null) {
         entity: "/api/v1/admin/roles",
         entity_id: String(role.id),
         old_value: null,
-        new_value: roleDto(role)
+        new_value: roleDto(role, activeModules)
       }
     });
-    return roleDto(role);
+    return roleDto(role, activeModules);
   });
 }
 
 async function updateRole(tenantId, id, input, actorId = null) {
   tenantId = normalizeTenantId(tenantId);
+  const activeModules = await getTenantActiveModules(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const current = await prisma.role.findFirstOrThrow({ where: { id: Number(id) }, include: { permissions: true } });
-    const previous = roleDto(current);
+    const previous = roleDto(current, activeModules);
     if (current.name === "APEX_ADMIN") {
       const role = await prisma.role.update({
         where: { id: current.id },
@@ -558,12 +616,12 @@ async function updateRole(tenantId, id, input, actorId = null) {
         include: { permissions: true }
       });
       await prisma.auditLog.create({
-        data: { tenant_id: tenantId, user_id: actorId, action: "role_updated", module: "admin", entity: "/api/v1/admin/roles", entity_id: String(role.id), old_value: previous, new_value: roleDto(role) }
+        data: { tenant_id: tenantId, user_id: actorId, action: "role_updated", module: "admin", entity: "/api/v1/admin/roles", entity_id: String(role.id), old_value: previous, new_value: roleDto(role, activeModules) }
       });
-      return roleDto(role);
+      return roleDto(role, activeModules);
     }
-    const legacyPermissions = normalizeLegacyPermissions(input.permissions || {});
-    const rbacPermissions = legacyToRbacPermissions(legacyPermissions);
+    const legacyPermissions = normalizeLegacyPermissions(input.permissions || {}, activeModules);
+    const rbacPermissions = legacyToRbacPermissions(legacyPermissions, activeModules);
     const nextName = current.is_system ? current.name : String(input.name || input.nombre || current.name).trim();
     if (nextName !== current.name) {
       const duplicate = await prisma.role.findUnique({ where: { tenant_id_name: { tenant_id: tenantId, name: nextName } } });
@@ -596,27 +654,28 @@ async function updateRole(tenantId, id, input, actorId = null) {
       include: { permissions: true }
     });
     await prisma.auditLog.create({
-      data: { tenant_id: tenantId, user_id: actorId, action: "role_updated", module: "admin", entity: "/api/v1/admin/roles", entity_id: String(role.id), old_value: previous, new_value: roleDto(role) }
+      data: { tenant_id: tenantId, user_id: actorId, action: "role_updated", module: "admin", entity: "/api/v1/admin/roles", entity_id: String(role.id), old_value: previous, new_value: roleDto(role, activeModules) }
     });
-    return roleDto(role);
+    return roleDto(role, activeModules);
   });
 }
 
 async function setRoleActive(tenantId, id, active, actorId = null) {
   tenantId = normalizeTenantId(tenantId);
+  const activeModules = await getTenantActiveModules(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const current = await prisma.role.findFirstOrThrow({ where: { id: Number(id) }, include: { permissions: true } });
-    if (current.name === "APEX_ADMIN") return roleDto(current);
-    const previous = roleDto(current);
+    if (current.name === "APEX_ADMIN") return roleDto(current, activeModules);
+    const previous = roleDto(current, activeModules);
     const role = await prisma.role.update({
       where: { id: current.id },
       data: { metadata: { ...(current.metadata || {}), active: toBoolean(active) } },
       include: { permissions: true }
     });
     await prisma.auditLog.create({
-      data: { tenant_id: tenantId, user_id: actorId, action: toBoolean(active) ? "role_activated" : "role_deactivated", module: "admin", entity: "/api/v1/admin/roles/status", entity_id: String(role.id), old_value: previous, new_value: roleDto(role) }
+      data: { tenant_id: tenantId, user_id: actorId, action: toBoolean(active) ? "role_activated" : "role_deactivated", module: "admin", entity: "/api/v1/admin/roles/status", entity_id: String(role.id), old_value: previous, new_value: roleDto(role, activeModules) }
     });
-    return roleDto(role);
+    return roleDto(role, activeModules);
   });
 }
 
@@ -637,7 +696,7 @@ async function listUsers(tenantId, query = {}) {
 async function createUser(tenantId, input, actorId = null) {
   tenantId = normalizeTenantId(tenantId);
   await ensureSystemRoles(tenantId);
-  const email = String(input.email || input.username || input.user || input.access_email || "").trim().toLowerCase();
+  const email = normalizeUsernameEmail(input.email || input.username || input.user || input.access_email || "");
   if (!email) throw badRequest("El correo del usuario es obligatorio.");
   const rawPassword = input.password || input.pas || "";
   assertPasswordPolicy(rawPassword);
@@ -678,8 +737,10 @@ async function createUser(tenantId, input, actorId = null) {
       company: input.company || input.empresa || "APEX",
       labor_status: userStatus,
       user_status: userStatus,
+      profile_kind: input.profile_kind || input.user_kind || input.tipo_usuario || input.operational_classification || "administrativo",
+      user_kind: input.user_kind || input.profile_kind || input.tipo_usuario || input.operational_classification || "administrativo",
       access: {
-        email: input.access_email || input.email || input.username || input.user,
+        email: normalizeUsernameEmail(input.access_email || input.email || input.username || input.user || email),
         additional_roles: input.additional_roles || "",
         operational_profile: input.operational_profile || "",
         site: input.site || "",
@@ -781,7 +842,7 @@ async function updateUser(tenantId, id, input, actorId = null) {
     const fullName = input.name || input.nombre || `${input.first_names || previousMetadata.first_names || ""} ${input.last_names || previousMetadata.last_names || ""}`.trim() || current.name;
     const data = {
       name: fullName,
-      email: (input.email || input.username || current.email).toLowerCase(),
+      email: normalizeUsernameEmail(input.email || input.username || current.email),
       role_id: input.role_id ? Number(input.role_id) : current.role_id,
       active
     };
@@ -818,9 +879,11 @@ async function updateUser(tenantId, id, input, actorId = null) {
         company: input.company || input.empresa || current.employee?.metadata?.company || "APEX",
         labor_status: userStatus,
         user_status: userStatus,
+        profile_kind: input.profile_kind || input.user_kind || input.tipo_usuario || previousMetadata.profile_kind || previousMetadata.user_kind || previousOperational.classification || "administrativo",
+        user_kind: input.user_kind || input.profile_kind || input.tipo_usuario || previousMetadata.user_kind || previousMetadata.profile_kind || previousOperational.classification || "administrativo",
         access: {
           ...previousAccess,
-          email: input.access_email || input.email || previousAccess.email || data.email,
+          email: normalizeUsernameEmail(input.access_email || input.email || previousAccess.email || data.email),
           additional_roles: input.additional_roles || previousAccess.additional_roles || "",
           operational_profile: input.operational_profile || previousAccess.operational_profile || "",
           site: input.site || previousAccess.site || "",

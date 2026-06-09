@@ -5,7 +5,6 @@ import type { LucideIcon } from "lucide-react";
 import {
   AlertTriangle,
   ArrowRight,
-  BarChart3,
   Boxes,
   CheckCircle2,
   ClipboardCheck,

@@ -10,13 +10,11 @@ import {
   Boxes,
   CheckCircle2,
   ClipboardList,
-  Container,
   Edit3,
   Filter,
   GitBranch,
   Map,
   Package,
-  PackageCheck,
   Plus,
   Radio,
   Route,
@@ -26,7 +24,6 @@ import {
   Timer,
   Trash2,
   Truck,
-  Users,
   Warehouse,
   Zap
 } from "lucide-react";
@@ -629,10 +626,6 @@ export default function WmsPage() {
     if (!selectedAssetId) return;
     setAssets((current) => current.filter((asset) => asset.id !== selectedAssetId));
     setSelectedAssetId(null);
-  }
-
-  function updateTask(id: string, patch: Partial<WmsTask>) {
-    setTasks((current) => current.map((task) => task.id === id ? { ...task, ...patch } : task));
   }
 
   function toggleTaskSelection(id: string) {

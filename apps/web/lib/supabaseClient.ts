@@ -82,6 +82,13 @@ export const supabaseAuth = {
       body: JSON.stringify({ email, password })
     });
   },
+  refreshSession(refresh_token: string) {
+    return supabaseFetch<{ access_token: string; refresh_token: string; user: { id: string; email?: string } }>("/auth/v1/token?grant_type=refresh_token", {
+      method: "POST",
+      requireSession: false,
+      body: JSON.stringify({ refresh_token })
+    });
+  },
   getUser() {
     return supabaseFetch<{ user: { id: string; email?: string } }>("/auth/v1/user", { method: "GET" });
   },

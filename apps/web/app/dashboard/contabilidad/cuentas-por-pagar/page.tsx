@@ -845,7 +845,7 @@ export default function CuentasPorPagarPage() {
                       <tr className="border-b border-line/70 last:border-0" key={item.id}>
                         <td className="px-3 py-2 font-mono text-xs">{item.code}</td>
                         <td className="px-3 py-2">{item.name}</td>
-                        <td className="px-3 py-2 text-right"><button className="h-9 rounded-md bg-apex px-3 text-sm font-medium text-white" onClick={() => { chooser.type === "associated" ? setHeader((current) => ({ ...current, associated_account_code: item.code })) : chooser.lineIndex !== undefined ? updateLine(chooser.lineIndex, { account_code: item.code }) : undefined; setChooser(null); }} type="button">Seleccionar</button></td>
+                        <td className="px-3 py-2 text-right"><button className="h-9 rounded-md bg-apex px-3 text-sm font-medium text-white" onClick={() => { if (chooser.type === "associated") setHeader((current) => ({ ...current, associated_account_code: item.code })); else if (chooser.lineIndex !== undefined) updateLine(chooser.lineIndex, { account_code: item.code }); setChooser(null); }} type="button">Seleccionar</button></td>
                       </tr>
                     ))}
                   </tbody>

@@ -12,7 +12,7 @@ async function adminRoutes(fastify) {
 
   fastify.get("/admin/permissions/catalog", {
     preHandler: requirePermission("admin", "read")
-  }, async () => service.getPermissionCatalog());
+  }, async (request) => service.getPermissionCatalog(request.user?.tenant_id));
 
   fastify.get("/admin/roles", {
     preHandler: requirePermission("admin", "read")

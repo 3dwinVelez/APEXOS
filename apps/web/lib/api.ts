@@ -694,7 +694,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       safeDevLog("No fue posible consultar actividades Supabase.", error);
       return [];
     })).filter((row) => aliases.has(String(row.employee_id || "")) || aliases.has(String(row.user_id || "")) || aliases.has(String(row.user_name || "")));
-    const activities = activityRows.map((row, index) => ({
+    const activities = activityRows.map((row) => ({
       id: toNumberId(row.id),
       activity_type_name: String(row.metadata?.activity_type_name || "Actividad operativa"),
       observation: String(row.metadata?.observation || ""),
@@ -770,7 +770,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       });
     } catch (error) {
       if (!String(error).includes("extra_evidence")) throw error;
-      const { extra_evidence: _extraEvidence, ...fallbackRow } = row;
+      const fallbackRow = { ...row };
+      delete fallbackRow.extra_evidence;
       inserted = await supabaseFetch<Array<Record<string, unknown>>>("/rest/v1/time_punches?select=*", {
         method: "POST",
         body: JSON.stringify(fallbackRow),
