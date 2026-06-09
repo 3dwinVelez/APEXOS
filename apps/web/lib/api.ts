@@ -37,6 +37,21 @@ const fallbackActivityTypes = [
   "Apoyo operativo"
 ].map((name, index) => ({ id: index + 1, name, active: true, sort_order: (index + 1) * 10 }));
 
+const tenantModuleCodesByPermissionModule: Record<string, string[]> = {
+  accounting: ["M-07", "contabilidad", "finance", "accounting"],
+  admin: ["M-22", "administracion", "administracion_apex", "admin"],
+  brain: ["AI-CORE", "apex-ai", "apex_ai", "brain"],
+  hr: ["M-17", "talento-humano", "talento_humano", "hr"],
+  inventory: ["M-01", "inventario", "inventory"],
+  invoicing: ["M-04", "facturacion", "invoicing"],
+  payroll: ["M-17", "nomina", "payroll"],
+  purchases: ["M-02", "compras", "purchases"],
+  projects: ["M-19", "proyectos", "projects"],
+  sales: ["M-03", "ventas", "sales"],
+  services: ["M-26", "servicios", "services"],
+  transport: ["M-14", "transporte", "transport"]
+};
+
 function fullName(row: { first_name?: string; last_name?: string; email?: string; id?: string; metadata?: AnyRow }) {
   const metadataName = typeof row.metadata?.name === "string" ? row.metadata.name : "";
   return [row.first_name, row.last_name].filter(Boolean).join(" ").trim() || metadataName || row.email || `Empleado ${String(row.id || "").slice(0, 8)}`;
@@ -209,57 +224,93 @@ const adminPermissionCatalog = [
   { key: "nomina", label: "Nomina", group: "finanzas", module: "payroll", submodule: "payroll", actions: ["access", "view", "create", "edit", "approve", "export", "import", "sensitive", "reports"] }
 ];
 
-function emptyAdminPermissions() {
-  return Object.fromEntries(adminPermissionCatalog.map((item) => [
+function normalizeTenantActiveModules(value: unknown) {
+  return Array.isArray(value) ? value.map((item) => String(item).trim().toLowerCase()).filter(Boolean) : [];
+}
+
+function getStoredTenantActiveModules() {
+  if (typeof window === "undefined") return [] as string[];
+  const raw = localStorage.getItem("tenant_active_modules");
+  if (!raw) return [] as string[];
+  try {
+    return normalizeTenantActiveModules(JSON.parse(raw));
+  } catch {
+    return [] as string[];
+  }
+}
+
+function tenantAllowsPermissionModule(activeModules: string[], module?: string) {
+  if (!module) return true;
+  if (!activeModules.length) return true;
+  const allowedCodes = (tenantModuleCodesByPermissionModule[module] || [module]).map((item) => String(item).trim().toLowerCase());
+  return allowedCodes.some((code) => activeModules.includes(code));
+}
+
+function filteredAdminPermissionCatalog(activeModules = getStoredTenantActiveModules()) {
+  return adminPermissionCatalog.filter((item) => tenantAllowsPermissionModule(activeModules, item.module));
+}
+
+function filterAdminPermissions(permissions: Record<string, Record<string, boolean>> | undefined, activeModules = getStoredTenantActiveModules()) {
+  const catalog = filteredAdminPermissionCatalog(activeModules);
+  return Object.fromEntries(catalog.map((item) => [
+    item.key,
+    Object.fromEntries(item.actions.map((action) => [action, Boolean(permissions?.[item.key]?.[action])]))
+  ]));
+}
+
+function emptyAdminPermissions(activeModules = getStoredTenantActiveModules()) {
+  return Object.fromEntries(filteredAdminPermissionCatalog(activeModules).map((item) => [
     item.key,
     Object.fromEntries(item.actions.map((action) => [action, false]))
   ]));
 }
 
-function mergeAdminPermissions(overrides: Record<string, Record<string, boolean>>) {
-  const base = emptyAdminPermissions();
+function mergeAdminPermissions(overrides: Record<string, Record<string, boolean>>, activeModules = getStoredTenantActiveModules()) {
+  const base = emptyAdminPermissions(activeModules);
   for (const [moduleKey, actions] of Object.entries(overrides || {})) {
     base[moduleKey] = { ...(base[moduleKey] || {}), ...actions };
   }
-  return base;
+  return filterAdminPermissions(base, activeModules);
 }
 
-function defaultAdminRoles() {
-  const all = Object.fromEntries(adminPermissionCatalog.map((item) => [item.key, Object.fromEntries(item.actions.map((action) => [action, true]))]));
+function defaultAdminRoles(activeModules = getStoredTenantActiveModules()) {
+  const catalog = filteredAdminPermissionCatalog(activeModules);
+  const all = Object.fromEntries(catalog.map((item) => [item.key, Object.fromEntries(item.actions.map((action) => [action, true]))]));
   const shared = { scopes: { locations: [], areas: [], cost_centers: [], processes: [] }, restrictions: { locations: [], areas: [], cost_centers: [], processes: [] }, can_delegate: false, sensitive: false };
   return [
     { id: 1, name: "Administrador de empresa", description: "Administra usuarios, roles y operacion de la empresa.", active: true, is_system: true, hierarchy_level: 90, role_type: "admin_empresa", scope: "company", permissions: all, ...shared },
-    { id: 2, name: "Supervisor operativo", description: "Supervisa ejecucion diaria y evidencias operativas.", active: true, is_system: false, hierarchy_level: 60, role_type: "supervisor", scope: "area", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true, reports: true }, marcaciones: { access: true, view: true, create: true, edit: true, approve: true, reject: true, export: true, reports: true }, servicios: { access: true, view: true, create: true, edit: true, approve: true, attach: true, download: true, reports: true }, transporte: { access: true, view: true, edit: true, reports: true } }), ...shared },
-    { id: 3, name: "Auxiliar operativo", description: "Registra jornada, actividades y consulta servicios asignados.", active: true, is_system: false, hierarchy_level: 30, role_type: "operativo", scope: "location", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true }, marcaciones: { access: true, view: true, create: true }, servicios: { access: true, view: true, create: true, edit: true, attach: true, download: true }, documentos: { access: true, view: true, attach: true, download: true } }), ...shared },
-    { id: 4, name: "Auditor", description: "Consulta auditoria, reportes y documentos sensibles.", active: true, is_system: false, hierarchy_level: 65, role_type: "auditor", scope: "company", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true, reports: true }, auditoria: { access: true, view: true, export: true, download: true, reports: true, sensitive: true }, reportes: { access: true, view: true, export: true, download: true, reports: true, sensitive: true }, documentos: { access: true, view: true, download: true, sensitive: true } }), ...shared, sensitive: true },
-    { id: 5, name: "Soporte tecnico", description: "Soporte de configuracion y diagnostico.", active: true, is_system: false, hierarchy_level: 75, role_type: "soporte", scope: "company", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true, reports: true }, usuarios: { access: true, view: true, edit: true }, roles: { access: true, view: true }, configuracion: { access: true, view: true, edit: true, configure: true }, auditoria: { access: true, view: true, reports: true }, notificaciones: { access: true, view: true, create: true, edit: true }, ia: { access: true, view: true, execute: true } }), ...shared },
-    { id: 6, name: "Tecnico", description: "Ejecuta servicios y registra trabajo operativo.", active: true, is_system: false, hierarchy_level: 35, role_type: "operativo", scope: "location", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true }, servicios: { access: true, view: true, create: true, edit: true, attach: true, download: true }, marcaciones: { access: true, view: true, create: true }, transporte: { access: true, view: true }, documentos: { access: true, view: true, attach: true, download: true } }), ...shared },
-    { id: 7, name: "Empleado", description: "Consulta operativa y registra jornada.", active: true, is_system: false, hierarchy_level: 20, role_type: "operativo", scope: "location", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true }, marcaciones: { access: true, view: true, create: true }, documentos: { access: true, view: true, download: true } }), ...shared }
+    { id: 2, name: "Supervisor operativo", description: "Supervisa ejecucion diaria y evidencias operativas.", active: true, is_system: false, hierarchy_level: 60, role_type: "supervisor", scope: "area", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true, reports: true }, marcaciones: { access: true, view: true, create: true, edit: true, approve: true, reject: true, export: true, reports: true }, servicios: { access: true, view: true, create: true, edit: true, approve: true, attach: true, download: true, reports: true }, transporte: { access: true, view: true, edit: true, reports: true } }, activeModules), ...shared },
+    { id: 3, name: "Auxiliar operativo", description: "Registra jornada, actividades y consulta servicios asignados.", active: true, is_system: false, hierarchy_level: 30, role_type: "operativo", scope: "location", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true }, marcaciones: { access: true, view: true, create: true }, servicios: { access: true, view: true, create: true, edit: true, attach: true, download: true }, documentos: { access: true, view: true, attach: true, download: true } }, activeModules), ...shared },
+    { id: 4, name: "Auditor", description: "Consulta auditoria, reportes y documentos sensibles.", active: true, is_system: false, hierarchy_level: 65, role_type: "auditor", scope: "company", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true, reports: true }, auditoria: { access: true, view: true, export: true, download: true, reports: true, sensitive: true }, reportes: { access: true, view: true, export: true, download: true, reports: true, sensitive: true }, documentos: { access: true, view: true, download: true, sensitive: true } }, activeModules), ...shared, sensitive: true },
+    { id: 5, name: "Soporte tecnico", description: "Soporte de configuracion y diagnostico.", active: true, is_system: false, hierarchy_level: 75, role_type: "soporte", scope: "company", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true, reports: true }, usuarios: { access: true, view: true, edit: true }, roles: { access: true, view: true }, configuracion: { access: true, view: true, edit: true, configure: true }, auditoria: { access: true, view: true, reports: true }, notificaciones: { access: true, view: true, create: true, edit: true }, ia: { access: true, view: true, execute: true } }, activeModules), ...shared },
+    { id: 6, name: "Tecnico", description: "Ejecuta servicios y registra trabajo operativo.", active: true, is_system: false, hierarchy_level: 35, role_type: "operativo", scope: "location", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true }, servicios: { access: true, view: true, create: true, edit: true, attach: true, download: true }, marcaciones: { access: true, view: true, create: true }, transporte: { access: true, view: true }, documentos: { access: true, view: true, attach: true, download: true } }, activeModules), ...shared },
+    { id: 7, name: "Empleado", description: "Consulta operativa y registra jornada.", active: true, is_system: false, hierarchy_level: 20, role_type: "operativo", scope: "location", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true }, marcaciones: { access: true, view: true, create: true }, documentos: { access: true, view: true, download: true } }, activeModules), ...shared }
   ];
 }
 
-function normalizeStoredAdminRoles(roles: ReturnType<typeof defaultAdminRoles>) {
-  const defaults = defaultAdminRoles();
+function normalizeStoredAdminRoles(roles: ReturnType<typeof defaultAdminRoles>, activeModules = getStoredTenantActiveModules()) {
+  const defaults = defaultAdminRoles(activeModules);
   const input = Array.isArray(roles) ? roles : [];
   const byName = new Map(input.map((role) => [String(role.name || ""), role]));
   const normalizedDefaults = defaults.map((role) => {
     const current = byName.get(role.name);
-    return current ? { ...role, ...current, permissions: current.permissions || role.permissions } : role;
+    return current ? { ...role, ...current, permissions: filterAdminPermissions(current.permissions || role.permissions, activeModules) } : role;
   });
   const existingDefaultNames = new Set(normalizedDefaults.map((role) => role.name));
-  const customRoles = input.filter((role) => !existingDefaultNames.has(String(role.name || "")));
+  const customRoles = input.filter((role) => !existingDefaultNames.has(String(role.name || ""))).map((role) => ({ ...role, permissions: filterAdminPermissions(role.permissions, activeModules) }));
   return [...normalizedDefaults, ...customRoles];
 }
 
 function storedAdminRoles() {
-  if (typeof window === "undefined") return defaultAdminRoles();
+  const activeModules = getStoredTenantActiveModules();
+  if (typeof window === "undefined") return defaultAdminRoles(activeModules);
   const raw = localStorage.getItem("apexos_admin_roles_qa");
-  if (!raw) return defaultAdminRoles();
+  if (!raw) return defaultAdminRoles(activeModules);
   try {
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length ? normalizeStoredAdminRoles(parsed) : defaultAdminRoles();
+    return Array.isArray(parsed) && parsed.length ? normalizeStoredAdminRoles(parsed, activeModules) : defaultAdminRoles(activeModules);
   } catch {
-    return defaultAdminRoles();
+    return defaultAdminRoles(activeModules);
   }
 }
 
@@ -1600,7 +1651,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   }
 
   if (pathname === "/api/v1/admin/permissions/catalog") {
-    return adminPermissionCatalog as T;
+    return filteredAdminPermissionCatalog() as T;
   }
 
   if (pathname === "/api/v1/admin/roles") {
@@ -1620,7 +1671,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         restrictions: body.restrictions || { locations: [], areas: [], cost_centers: [], processes: [] },
         can_delegate: Boolean(body.can_delegate),
         sensitive: Boolean(body.sensitive),
-        permissions: body.permissions || emptyAdminPermissions()
+        permissions: filterAdminPermissions(body.permissions || emptyAdminPermissions())
       };
       const next = [...roles, role];
       saveStoredAdminRoles(next);
@@ -1646,7 +1697,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       restrictions: body.restrictions || role.restrictions || { locations: [], areas: [], cost_centers: [], processes: [] },
       can_delegate: body.can_delegate ?? role.can_delegate ?? false,
       sensitive: body.sensitive ?? role.sensitive ?? false,
-      permissions: body.permissions || role.permissions
+        permissions: filterAdminPermissions(body.permissions || role.permissions)
     } : role);
     saveStoredAdminRoles(next);
     return (next.find((role) => role.id === roleId) || null) as T;
