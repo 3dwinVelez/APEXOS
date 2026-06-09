@@ -212,11 +212,16 @@ function stopApexNodeProcesses() {
   run("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script], { allowFailure: true, quiet: true });
 }
 
+function stopConflictingDockerServices() {
+  run("docker", ["compose", "-f", "infra/docker-compose.yml", "stop", "api", "web", "nginx"], { allowFailure: true, quiet: true, timeoutMs: 30000 });
+}
+
 async function main() {
   const restart = process.argv.includes("--restart");
   ensureEnv();
   ensureDependencies();
   await ensurePostgres();
+  stopConflictingDockerServices();
   if (restart) stopApexNodeProcesses();
 
   const apiWasRunning = await isPortOpen(3000);

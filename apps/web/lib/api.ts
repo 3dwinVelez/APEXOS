@@ -1,10 +1,11 @@
-import { assertActiveSession, clearSession, touchSession } from "./sessionSecurity";
-import { getSupabaseAccessToken, supabaseFetch } from "./supabaseClient";
+import { assertActiveSession, clearSession, emitAppAlert, setPasswordChangeRequired, touchSession } from "./sessionSecurity";
+import { getSupabaseAccessToken, supabaseAuth, supabaseFetch } from "./supabaseClient";
 import { getServiceImageUrl, uploadServiceImageData } from "./supabaseStorage";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
 const API_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_API_TIMEOUT_MS || 20000);
+let refreshSessionInFlight: Promise<boolean> | null = null;
 
 function isSupabaseSession() {
   if (typeof window === "undefined") return false;
@@ -39,6 +40,125 @@ const fallbackActivityTypes = [
 function fullName(row: { first_name?: string; last_name?: string; email?: string; id?: string; metadata?: AnyRow }) {
   const metadataName = typeof row.metadata?.name === "string" ? row.metadata.name : "";
   return [row.first_name, row.last_name].filter(Boolean).join(" ").trim() || metadataName || row.email || `Empleado ${String(row.id || "").slice(0, 8)}`;
+}
+
+function requestErrorMessage(path: string, status: number, detail: string) {
+  if (status >= 500) return `Error ${status} en ${path}. Backend no disponible${detail ? `: ${detail}` : ""}`;
+  if (status === 401) return `Sesion no autorizada en ${path}. Inicia sesion de nuevo.`;
+  return `Error ${status} en ${path}: ${detail || "La solicitud no pudo completarse."}`;
+}
+
+function alertRequestFailure(path: string, status: number | null, detail: string) {
+  emitAppAlert({
+    title: status === 401 ? "Sesion invalida" : "Fallo tecnico detectado",
+    message: status === 401 ? "La sesion actual ya no es valida. Debes autenticarte otra vez." : `No fue posible completar la solicitud solicitada por el modulo actual.`,
+    technical: `Ruta: ${path}${status ? ` | Estado: ${status}` : ""}${detail ? ` | Detalle: ${detail}` : ""}`,
+    level: status === 401 || (status !== null && status >= 500) ? "error" : "warning"
+  });
+}
+
+async function refreshSessionToken() {
+  if (typeof window === "undefined") return false;
+  if (refreshSessionInFlight) return refreshSessionInFlight;
+
+  refreshSessionInFlight = (async () => {
+    const provider = localStorage.getItem("auth_provider") || "local";
+    const refresh = localStorage.getItem("refresh") || "";
+    if (!refresh) return false;
+
+    try {
+      if (provider === "supabase") {
+        const data = await supabaseAuth.refreshSession(refresh);
+        if (!data.access_token) return false;
+        localStorage.setItem("token", data.access_token);
+        if (data.refresh_token) localStorage.setItem("refresh", data.refresh_token);
+        if (data.user?.email) localStorage.setItem("user_email", data.user.email);
+        touchSession();
+        return true;
+      }
+
+      const response = await fetchWithTimeout(`${API_URL}/api/v1/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh })
+      });
+      if (!response.ok) return false;
+      const data = await response.json() as { token?: string; refresh?: string; user?: { role?: string; role_permissions?: unknown[]; role_metadata?: Record<string, unknown>; require_password_change?: boolean; session_status?: string } };
+      if (!data.token) return false;
+      localStorage.setItem("token", data.token);
+      if (data.refresh) localStorage.setItem("refresh", data.refresh);
+      if (data.user?.role) localStorage.setItem("role_name", data.user.role);
+      if (Array.isArray(data.user?.role_permissions)) localStorage.setItem("role_permissions", JSON.stringify(data.user.role_permissions));
+      if (data.user?.role_metadata) localStorage.setItem("role_metadata", JSON.stringify(data.user.role_metadata));
+      setPasswordChangeRequired(Boolean(data.user?.require_password_change));
+      touchSession();
+      return true;
+    } catch {
+      return false;
+    } finally {
+      refreshSessionInFlight = null;
+    }
+  })();
+
+  return refreshSessionInFlight;
+}
+
+export async function authorizedFetch(input: string, options: RequestInit = {}, retried = false): Promise<Response> {
+  assertActiveSession();
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  let response: Response;
+
+  try {
+    response = await fetchWithTimeout(input, {
+      ...options,
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options.headers
+      }
+    });
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "Servicio no disponible.";
+    alertRequestFailure(input, null, detail);
+    if (error instanceof Error) throw error;
+    throw new Error("No fue posible completar la solicitud autenticada.");
+  }
+
+  if (response.status === 401 && typeof window !== "undefined") {
+    if (!retried && await refreshSessionToken()) {
+      return authorizedFetch(input, options, true);
+    }
+    alertRequestFailure(input, 401, "Sesion expirada, revocada o no autorizada.");
+    clearSession(isSupabaseSession() ? "supabase_unauthorized" : "unauthorized");
+    window.location.href = "/login";
+    throw new Error("Tu sesion expiro. Inicia sesion de nuevo.");
+  }
+
+  touchSession();
+  return response;
+}
+
+export async function authorizedJson<T>(input: string, options: RequestInit = {}): Promise<T> {
+  const response = await authorizedFetch(input, options);
+  if (!response.ok) {
+    if (response.status >= 500) {
+      const detail = await response.text().catch(() => "");
+      const message = requestErrorMessage(input, response.status, detail);
+      alertRequestFailure(input, response.status, detail);
+      throw new Error(message);
+    }
+    const body = await response.json().catch(() => ({ error: response.statusText }));
+    const detail = body.error || body.message || response.statusText;
+    const message = requestErrorMessage(input, response.status, detail);
+    alertRequestFailure(input, response.status, detail);
+    throw new Error(message);
+  }
+  return response.json() as Promise<T>;
+}
+
+function normalizeUsernameEmail(value: unknown, fallbackDomain = "apex.local") {
+  const text = String(value || "").trim().toLowerCase();
+  if (!text) return "";
+  return text.includes("@") ? text : `${text}@${fallbackDomain}`;
 }
 
 function toNumberId(id: unknown) {
@@ -96,17 +216,39 @@ function emptyAdminPermissions() {
   ]));
 }
 
+function mergeAdminPermissions(overrides: Record<string, Record<string, boolean>>) {
+  const base = emptyAdminPermissions();
+  for (const [moduleKey, actions] of Object.entries(overrides || {})) {
+    base[moduleKey] = { ...(base[moduleKey] || {}), ...actions };
+  }
+  return base;
+}
+
 function defaultAdminRoles() {
-  const all = Object.fromEntries(adminPermissionCatalog.map((item) => [
-    item.key,
-    Object.fromEntries(item.actions.map((action) => [action, true]))
-  ]));
+  const all = Object.fromEntries(adminPermissionCatalog.map((item) => [item.key, Object.fromEntries(item.actions.map((action) => [action, true]))]));
+  const shared = { scopes: { locations: [], areas: [], cost_centers: [], processes: [] }, restrictions: { locations: [], areas: [], cost_centers: [], processes: [] }, can_delegate: false, sensitive: false };
   return [
-    { id: 1, name: "Administrador de empresa", description: "Administra usuarios, roles y operacion de la empresa.", active: true, is_system: true, hierarchy_level: 90, role_type: "admin_empresa", scope: "company", permissions: all },
-    { id: 2, name: "Supervisor operativo", description: "Supervisa ejecucion diaria y evidencias operativas.", active: true, is_system: false, hierarchy_level: 60, role_type: "supervisor", scope: "area", permissions: { ...emptyAdminPermissions(), dashboard: { access: true, view: true, reports: true }, marcaciones: { access: true, view: true, create: true, edit: true, approve: true, reject: true, export: true, reports: true }, servicios: { access: true, view: true, create: true, edit: true, approve: true, attach: true, download: true, reports: true }, transporte: { access: true, view: true, edit: true, reports: true } } },
-    { id: 3, name: "Auxiliar operativo", description: "Registra jornada, actividades y consulta servicios asignados.", active: true, is_system: false, hierarchy_level: 30, role_type: "operativo", scope: "location", permissions: { ...emptyAdminPermissions(), dashboard: { access: true, view: true }, marcaciones: { access: true, view: true, create: true }, servicios: { access: true, view: true, create: true, edit: true, attach: true, download: true }, documentos: { access: true, view: true, attach: true, download: true } } },
-    { id: 4, name: "Auditor", description: "Consulta auditoria, reportes y documentos sensibles.", active: true, is_system: false, hierarchy_level: 65, role_type: "auditor", scope: "company", permissions: { ...emptyAdminPermissions(), dashboard: { access: true, view: true, reports: true }, auditoria: { access: true, view: true, export: true, download: true, reports: true, sensitive: true }, reportes: { access: true, view: true, export: true, download: true, reports: true, sensitive: true }, documentos: { access: true, view: true, download: true, sensitive: true } } }
+    { id: 1, name: "Administrador de empresa", description: "Administra usuarios, roles y operacion de la empresa.", active: true, is_system: true, hierarchy_level: 90, role_type: "admin_empresa", scope: "company", permissions: all, ...shared },
+    { id: 2, name: "Supervisor operativo", description: "Supervisa ejecucion diaria y evidencias operativas.", active: true, is_system: false, hierarchy_level: 60, role_type: "supervisor", scope: "area", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true, reports: true }, marcaciones: { access: true, view: true, create: true, edit: true, approve: true, reject: true, export: true, reports: true }, servicios: { access: true, view: true, create: true, edit: true, approve: true, attach: true, download: true, reports: true }, transporte: { access: true, view: true, edit: true, reports: true } }), ...shared },
+    { id: 3, name: "Auxiliar operativo", description: "Registra jornada, actividades y consulta servicios asignados.", active: true, is_system: false, hierarchy_level: 30, role_type: "operativo", scope: "location", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true }, marcaciones: { access: true, view: true, create: true }, servicios: { access: true, view: true, create: true, edit: true, attach: true, download: true }, documentos: { access: true, view: true, attach: true, download: true } }), ...shared },
+    { id: 4, name: "Auditor", description: "Consulta auditoria, reportes y documentos sensibles.", active: true, is_system: false, hierarchy_level: 65, role_type: "auditor", scope: "company", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true, reports: true }, auditoria: { access: true, view: true, export: true, download: true, reports: true, sensitive: true }, reportes: { access: true, view: true, export: true, download: true, reports: true, sensitive: true }, documentos: { access: true, view: true, download: true, sensitive: true } }), ...shared, sensitive: true },
+    { id: 5, name: "Soporte tecnico", description: "Soporte de configuracion y diagnostico.", active: true, is_system: false, hierarchy_level: 75, role_type: "soporte", scope: "company", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true, reports: true }, usuarios: { access: true, view: true, edit: true }, roles: { access: true, view: true }, configuracion: { access: true, view: true, edit: true, configure: true }, auditoria: { access: true, view: true, reports: true }, notificaciones: { access: true, view: true, create: true, edit: true }, ia: { access: true, view: true, execute: true } }), ...shared },
+    { id: 6, name: "Tecnico", description: "Ejecuta servicios y registra trabajo operativo.", active: true, is_system: false, hierarchy_level: 35, role_type: "operativo", scope: "location", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true }, servicios: { access: true, view: true, create: true, edit: true, attach: true, download: true }, marcaciones: { access: true, view: true, create: true }, transporte: { access: true, view: true }, documentos: { access: true, view: true, attach: true, download: true } }), ...shared },
+    { id: 7, name: "Empleado", description: "Consulta operativa y registra jornada.", active: true, is_system: false, hierarchy_level: 20, role_type: "operativo", scope: "location", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true }, marcaciones: { access: true, view: true, create: true }, documentos: { access: true, view: true, download: true } }), ...shared }
   ];
+}
+
+function normalizeStoredAdminRoles(roles: ReturnType<typeof defaultAdminRoles>) {
+  const defaults = defaultAdminRoles();
+  const input = Array.isArray(roles) ? roles : [];
+  const byName = new Map(input.map((role) => [String(role.name || ""), role]));
+  const normalizedDefaults = defaults.map((role) => {
+    const current = byName.get(role.name);
+    return current ? { ...role, ...current, permissions: current.permissions || role.permissions } : role;
+  });
+  const existingDefaultNames = new Set(normalizedDefaults.map((role) => role.name));
+  const customRoles = input.filter((role) => !existingDefaultNames.has(String(role.name || "")));
+  return [...normalizedDefaults, ...customRoles];
 }
 
 function storedAdminRoles() {
@@ -115,7 +257,7 @@ function storedAdminRoles() {
   if (!raw) return defaultAdminRoles();
   try {
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length ? parsed : defaultAdminRoles();
+    return Array.isArray(parsed) && parsed.length ? normalizeStoredAdminRoles(parsed) : defaultAdminRoles();
   } catch {
     return defaultAdminRoles();
   }
@@ -150,8 +292,8 @@ function defaultUserMasterData() {
     engagement_types: [["empleado", "Empleado"], ["contratista", "Contratista"], ["tercero", "Tercero"], ["temporal", "Temporal"], ["aprendiz", "Aprendiz"]].map(([code, name]) => ({ code, name })),
     session_statuses: [["sin_sesion", "Sin sesion"], ["activa", "Activa"], ["bloqueada", "Bloqueada"]].map(([code, name]) => ({ code, name })),
     user_document_types: [["identity", "Documento de identidad"], ["contract", "Contrato"], ["license", "Licencia de conduccion"], ["social_security", "Seguridad social"], ["bank_certificate", "Certificado bancario"], ["occupational_exam", "Examen medico ocupacional"], ["internal", "Documento interno"]].map(([code, name]) => ({ code, name })),
-    areas: [["OPER", "Operacion"], ["TRANSP", "Transporte"], ["ADMIN", "Administracion"], ["BODEGA", "Bodega"]].map(([code, name]) => ({ code, name })),
-    positions: [["ADMIN", "Administrador"], ["SUP_RUTA", "Supervisor de ruta"], ["CONDUCTOR", "Conductor"], ["AUX_OPER", "Auxiliar operativo"]].map(([code, name]) => ({ code, name })),
+    areas: [["OPER", "Operacion"], ["SERV", "Servicios"], ["TRANSP", "Transporte"], ["ADMIN", "Administracion"], ["BODEGA", "Bodega"]].map(([code, name]) => ({ code, name })),
+    positions: [["ADMIN", "Administrador"], ["SUP_RUTA", "Supervisor de ruta"], ["CONDUCTOR", "Conductor"], ["TECNICO", "Tecnico de servicios"], ["AUX_OPER", "Auxiliar operativo"]].map(([code, name]) => ({ code, name })),
     locations: [["SEDE-PRINCIPAL", "Sede principal"], ["BOG-NORTE", "Bogota Norte"], ["BOG-SUR", "Bogota Sur"]].map(([code, name]) => ({ code, name })),
     cost_centers: [["CC-OPER", "Operacion"], ["CC-TRAN", "Transporte"], ["CC-ADMIN", "Administracion"]].map(([code, name]) => ({ code, name })),
     work_shifts: [["DIURNO", "Diurno"], ["NOCTURNO", "Nocturno"], ["MIXTO", "Mixto"]].map(([code, name]) => ({ code, name })),
@@ -1562,35 +1704,40 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   if (adminUserDocumentMatch) {
     const [, userId, documentId] = adminUserDocumentMatch;
     const body = options.body ? JSON.parse(String(options.body)) : {};
-    await nextAdminUsersRequest({
+    const nextApiOk = await nextAdminUsersRequest({
       method: "PATCH",
       body: JSON.stringify(method === "DELETE"
         ? { employee_id: userId, action: "document_remove", document_id: documentId }
         : { employee_id: userId, action: "document_add", ...body, document_id: body.id || `doc-${Date.now()}` })
-    }).catch((error) => safeDevLog("No fue posible actualizar documentos via Next API.", error));
-    const employees = await supabaseFetch<Array<{ id: string; metadata?: AnyRow }>>(`/rest/v1/employees?select=id,metadata&id=eq.${encodeURIComponent(userId)}&limit=1`).catch(() => []);
-    const current = employees[0];
-    const metadata = current?.metadata || {};
-    const documents = Array.isArray(metadata.documents) ? metadata.documents : [];
-    const nextDocuments = method === "DELETE"
-      ? documents.filter((document) => String((document as AnyRow).id) !== String(documentId))
-      : [...documents, {
-        id: body.id || `doc-${Date.now()}`,
-        document_type: body.document_type || "internal",
-        file_name: body.file_name || "documento",
-        file_url: body.file_url || "",
-        storage_path: body.storage_path || "",
-        mime_type: body.mime_type || "",
-        file_size: Number(body.file_size || 0),
-        status: body.status || "pending",
-        observations: body.observations || "",
-        uploaded_at: new Date().toISOString()
-      }];
-    if (current?.id) {
-      await supabaseFetch(`/rest/v1/employees?id=eq.${encodeURIComponent(current.id)}`, {
-        method: "PATCH",
-        body: JSON.stringify({ metadata: { ...metadata, documents: nextDocuments } })
-      });
+    }).then(() => true).catch((error) => {
+      safeDevLog("No fue posible actualizar documentos via Next API.", error);
+      return false;
+    });
+    if (!nextApiOk) {
+      const employees = await supabaseFetch<Array<{ id: string; metadata?: AnyRow }>>(`/rest/v1/employees?select=id,metadata&id=eq.${encodeURIComponent(userId)}&limit=1`).catch(() => []);
+      const current = employees[0];
+      const metadata = current?.metadata || {};
+      const documents = Array.isArray(metadata.documents) ? metadata.documents : [];
+      const nextDocuments = method === "DELETE"
+        ? documents.filter((document) => String((document as AnyRow).id) !== String(documentId))
+        : [...documents, {
+          id: body.id || `doc-${Date.now()}`,
+          document_type: body.document_type || "internal",
+          file_name: body.file_name || "documento",
+          file_url: body.file_url || "",
+          storage_path: body.storage_path || "",
+          mime_type: body.mime_type || "",
+          file_size: Number(body.file_size || 0),
+          status: body.status || "pending",
+          observations: body.observations || "",
+          uploaded_at: new Date().toISOString()
+        }];
+      if (current?.id) {
+        await supabaseFetch(`/rest/v1/employees?id=eq.${encodeURIComponent(current.id)}`, {
+          method: "PATCH",
+          body: JSON.stringify({ metadata: { ...metadata, documents: nextDocuments } })
+        });
+      }
     }
     return supabaseApiFallback(`/api/v1/admin/users`) as T;
   }
@@ -1598,18 +1745,23 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   const adminUserAccessMatch = pathname.match(/^\/api\/v1\/admin\/users\/([^/]+)\/access$/);
   if (adminUserAccessMatch) {
     const body = JSON.parse(String(options.body || "{}"));
-    await nextAdminUsersRequest({
+    const nextApiOk = await nextAdminUsersRequest({
       method: "PATCH",
       body: JSON.stringify({ employee_id: adminUserAccessMatch[1], action: "access", ...body })
-    }).catch((error) => safeDevLog("No fue posible actualizar acceso via Next API.", error));
-    const employees = await supabaseFetch<Array<{ id: string; metadata?: AnyRow }>>(`/rest/v1/employees?select=id,metadata&id=eq.${encodeURIComponent(adminUserAccessMatch[1])}&limit=1`).catch(() => []);
-    const current = employees[0];
-    const metadata = current?.metadata || {};
-    if (current?.id) {
-      await supabaseFetch(`/rest/v1/employees?id=eq.${encodeURIComponent(current.id)}`, {
-        method: "PATCH",
-        body: JSON.stringify({ metadata: { ...metadata, access: { ...(metadata.access as AnyRow || {}), session_status: body.session_status || "bloqueada", require_password_change: body.require_password_change ?? (metadata.access as AnyRow)?.require_password_change } } })
-      });
+    }).then(() => true).catch((error) => {
+      safeDevLog("No fue posible actualizar acceso via Next API.", error);
+      return false;
+    });
+    if (!nextApiOk) {
+      const employees = await supabaseFetch<Array<{ id: string; metadata?: AnyRow }>>(`/rest/v1/employees?select=id,metadata&id=eq.${encodeURIComponent(adminUserAccessMatch[1])}&limit=1`).catch(() => []);
+      const current = employees[0];
+      const metadata = current?.metadata || {};
+      if (current?.id) {
+        await supabaseFetch(`/rest/v1/employees?id=eq.${encodeURIComponent(current.id)}`, {
+          method: "PATCH",
+          body: JSON.stringify({ metadata: { ...metadata, access: { ...(metadata.access as AnyRow || {}), session_status: body.session_status || "bloqueada", require_password_change: body.require_password_change ?? (metadata.access as AnyRow)?.require_password_change } } })
+        });
+      }
     }
     return supabaseApiFallback(`/api/v1/admin/users`) as T;
   }
@@ -1673,7 +1825,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
           role_name: role.name,
           document: body.document || "",
           company: body.company || "SCJ",
-          access: { email: body.access_email || body.email, role_id: role.id, role_name: role.name, site: body.site || body.base_site || "", area: body.area || body.department || "" },
+          access: { email: normalizeUsernameEmail(body.access_email || body.email), role_id: role.id, role_name: role.name, site: body.site || body.base_site || "", area: body.area || body.department || "" },
           employment: { cost_center: body.cost_center || "", contract_type: body.contract_type || "" },
           operational: { classification: body.operational_classification || "operario", base_site: body.base_site || "", zone: body.operation_zone || "" }
         }
@@ -1776,45 +1928,50 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   if (adminUserMatch && ["PUT", "PATCH"].includes(method)) {
     const body = options.body ? JSON.parse(String(options.body)) : {};
     const employeeId = adminUserMatch[1];
-    await nextAdminUsersRequest({
+    const nextApiOk = await nextAdminUsersRequest({
       method: "PATCH",
       body: JSON.stringify({ employee_id: employeeId, action: pathname.endsWith("/status") ? "status" : "update", ...body })
-    }).catch((error) => safeDevLog("No fue posible actualizar usuario via Next API.", error));
-    const rows = await supabaseFetch<Array<{ id: string; metadata?: AnyRow; status?: string }>>(`/rest/v1/employees?select=id,metadata,status&id=eq.${encodeURIComponent(employeeId)}&limit=1`).catch(() => []);
-    const current = rows[0];
-    if (current?.id) {
-      const fullName = body.name || `${body.first_names || ""} ${body.last_names || ""}`.trim();
-      const status = pathname.endsWith("/status")
-        ? (body.active ? "active" : "inactive")
-        : (body.user_status === "inactivo" ? "inactive" : body.user_status === "suspendido" ? "suspended" : current.status || "active");
-      await supabaseFetch(`/rest/v1/employees?id=eq.${encodeURIComponent(current.id)}`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          first_name: body.first_names || undefined,
-          last_name: body.last_names || undefined,
-          email: body.email || undefined,
-          phone: body.phone || undefined,
-          position: body.position || body.operational_classification || undefined,
-          department: body.department || body.area || undefined,
-          status,
-          user_type: body.operational_classification || undefined,
-          metadata: {
-            ...(current.metadata || {}),
-            name: fullName || (current.metadata || {}).name,
-            role_id: body.role_id || (current.metadata || {}).role_id,
-            document: body.document || (current.metadata || {}).document,
-            document_type: body.document_type || (current.metadata || {}).document_type,
-            user_status: body.user_status || status,
-            access: { ...((current.metadata?.access as AnyRow) || {}), role_id: body.role_id, email: body.access_email || body.email, site: body.site || body.base_site, area: body.area || body.department, session_status: body.session_status },
-            employment: { ...((current.metadata?.employment as AnyRow) || {}), cost_center: body.cost_center, contract_type: body.contract_type, engagement_type: body.engagement_type },
-            operational: { ...((current.metadata?.operational as AnyRow) || {}), classification: body.operational_classification, base_site: body.base_site, zone: body.operation_zone },
-            user_audit_trail: [
-              ...(Array.isArray(current.metadata?.user_audit_trail) ? current.metadata.user_audit_trail : []).slice(-9),
-              { at: new Date().toISOString(), action: pathname.endsWith("/status") ? "status_updated" : "updated", source: "supabase-fallback" }
-            ]
-          }
-        })
-      });
+    }).then(() => true).catch((error) => {
+      safeDevLog("No fue posible actualizar usuario via Next API.", error);
+      return false;
+    });
+    if (!nextApiOk) {
+      const rows = await supabaseFetch<Array<{ id: string; metadata?: AnyRow; status?: string }>>(`/rest/v1/employees?select=id,metadata,status&id=eq.${encodeURIComponent(employeeId)}&limit=1`).catch(() => []);
+      const current = rows[0];
+      if (current?.id) {
+        const fullName = body.name || `${body.first_names || ""} ${body.last_names || ""}`.trim();
+        const status = pathname.endsWith("/status")
+          ? (body.active ? "active" : "inactive")
+          : (body.user_status === "inactivo" ? "inactive" : body.user_status === "suspendido" ? "inactive" : current.status || "active");
+        await supabaseFetch(`/rest/v1/employees?id=eq.${encodeURIComponent(current.id)}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            first_name: body.first_names || undefined,
+            last_name: body.last_names || undefined,
+            email: body.email || undefined,
+            phone: body.phone || undefined,
+            position: body.position || body.operational_classification || undefined,
+            department: body.department || body.area || undefined,
+            status,
+            user_type: body.operational_classification || undefined,
+            metadata: {
+              ...(current.metadata || {}),
+              name: fullName || (current.metadata || {}).name,
+              role_id: body.role_id || (current.metadata || {}).role_id,
+              document: body.document || (current.metadata || {}).document,
+              document_type: body.document_type || (current.metadata || {}).document_type,
+              user_status: body.user_status || status,
+              access: { ...((current.metadata?.access as AnyRow) || {}), role_id: body.role_id, email: body.access_email || body.email, site: body.site || body.base_site, area: body.area || body.department, session_status: body.session_status },
+              employment: { ...((current.metadata?.employment as AnyRow) || {}), cost_center: body.cost_center, contract_type: body.contract_type, engagement_type: body.engagement_type },
+              operational: { ...((current.metadata?.operational as AnyRow) || {}), classification: body.operational_classification, base_site: body.base_site, zone: body.operation_zone },
+              user_audit_trail: [
+                ...(Array.isArray(current.metadata?.user_audit_trail) ? current.metadata.user_audit_trail : []).slice(-9),
+                { at: new Date().toISOString(), action: pathname.endsWith("/status") ? "status_updated" : "updated", source: "supabase-fallback" }
+              ]
+            }
+          })
+        });
+      }
     }
     return supabaseApiFallback(`/api/v1/admin/users`) as T;
   }
@@ -1822,7 +1979,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   return null;
 }
 
-export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
+export async function api<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
   assertActiveSession();
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
   let response: Response;
@@ -1845,12 +2002,18 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
       }
     });
   } catch (error) {
+    const detail = error instanceof Error ? error.message : "Backend no disponible.";
+    alertRequestFailure(path, null, detail);
     if (error instanceof Error) throw error;
     throw new Error("API no disponible. Revisa el servicio backend.");
   }
 
-  if (response.status === 401 && typeof window !== "undefined" && !isSupabaseSession()) {
-    clearSession("unauthorized");
+  if (response.status === 401 && typeof window !== "undefined") {
+    if (!retried && await refreshSessionToken()) {
+      return api<T>(path, options, true);
+    }
+    alertRequestFailure(path, 401, "Sesion expirada, revocada o no autorizada.");
+    clearSession(isSupabaseSession() ? "supabase_unauthorized" : "unauthorized");
     window.location.href = "/login";
     throw new Error("Tu sesión expiró. Inicia sesión de nuevo.");
   }
@@ -1865,11 +2028,17 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
     }
 
     if (response.status >= 500) {
-      throw new Error("API no disponible. Revisa el servicio backend.");
+      const detail = await response.text().catch(() => "");
+      const message = requestErrorMessage(path, response.status, detail);
+      alertRequestFailure(path, response.status, detail);
+      throw new Error(message);
     }
 
     const body = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(body.error || "La solicitud no pudo completarse");
+    const detail = body.error || body.message || response.statusText;
+    const message = requestErrorMessage(path, response.status, detail);
+    alertRequestFailure(path, response.status, detail);
+    throw new Error(message);
   }
   touchSession();
   return response.json() as Promise<T>;

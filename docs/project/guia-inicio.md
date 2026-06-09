@@ -33,6 +33,15 @@ Si `.env` no existe:
 copy .env.example .env
 ```
 
+Valores locales habituales:
+
+- API: `3000`
+- Web: `3001`
+- PostgreSQL: `55432`
+- Redis: `6379`
+- MinIO: `9000` y `9001`
+- BRAIN: `8000`
+
 ## Instalacion inicial
 
 ```powershell
@@ -40,6 +49,59 @@ npm run setup:local
 ```
 
 Este comando instala dependencias, valida ambiente, inicia infraestructura local, genera Prisma Client, sincroniza base de datos y carga datos demo.
+
+## Comandos utiles
+
+```powershell
+npm run prisma:validate
+npm run prisma:generate
+npm run db:push
+npm run seed:demo
+npm --workspace apps/web run typecheck
+npm --workspace apps/web run build
+npm run verify:web-assets
+```
+
+## Infraestructura Docker
+
+Levantar solo infraestructura:
+
+```powershell
+npm run infra:up
+```
+
+Este comando levanta solo dependencias de apoyo para desarrollo local:
+
+- `postgres`
+- `redis`
+- `minio`
+- `brain`
+
+No levanta `api` ni `web` para evitar conflictos con el modo desarrollo local.
+
+Si necesitas levantar todo el stack Dockerizado, usa:
+
+```powershell
+npm run infra:up:full
+```
+
+Detener infraestructura:
+
+```powershell
+npm run infra:down
+```
+
+Servicios definidos en `infra/docker-compose.yml`:
+
+- `postgres`
+- `redis`
+- `minio`
+- `brain`
+- `api`
+- `web`
+- `nginx`
+- `prometheus`
+- `grafana`
 
 ## Inicio diario
 
@@ -84,6 +146,12 @@ npm run db:push
 npm run seed:demo
 ```
 
+Orden recomendado para frontend:
+
+1. `npm --workspace apps/web run typecheck`
+2. `npm --workspace apps/web run build`
+3. `npm run verify:web-assets`
+
 ## Si el frontend carga sin estilos
 
 ```powershell
@@ -92,3 +160,21 @@ npm run restart:local:windows
 ```
 
 El servidor de desarrollo usa `.next-dev` y el build usa `.next`; esto evita que una compilacion borre assets CSS usados por el dev server.
+
+## Problemas comunes
+
+Si Docker no responde, abrir Docker Desktop y volver a ejecutar `npm run start:local`.
+
+Si faltan tablas o la base esta vacia:
+
+```powershell
+npm run db:push
+npm run seed:demo
+```
+
+Si falla el frontend:
+
+```powershell
+npm --workspace apps/web run typecheck
+npm --workspace apps/web run build
+```
