@@ -19,6 +19,8 @@ Comandos recomendados:
 2. `npm run workflow:sync-desarrollo`
 3. `npm run qa:deterministic-validation`
 4. `npm run workflow:promote-develop`
+5. `git switch develop`
+6. `npm run workflow:promote-main`
 
 Reglas operativas:
 
@@ -27,3 +29,42 @@ Reglas operativas:
 - Mantener sincronizada `desarrollo` con `develop` antes de iniciar un nuevo bloque de trabajo.
 - Evitar ramas temporales persistentes. Si se usan para integracion puntual, deben eliminarse al terminar.
 - Ejecutar `npm run qa:deterministic-validation` antes de promover cambios a `develop`.
+- Promover a `main` solo desde `develop` limpia y validada.
+
+## Guia Practica
+
+### 1. Actualizar ambiente local de desarrollo
+
+```powershell
+git switch desarrollo
+npm run workflow:status
+npm run workflow:sync-desarrollo
+npm install
+npm run qa:deterministic-validation
+```
+
+### 2. Subir trabajo desde desarrollo hacia develop
+
+```powershell
+git switch desarrollo
+git add .
+git commit -m "mensaje claro del ajuste"
+npm run qa:deterministic-validation
+npm run workflow:promote-develop
+```
+
+### 3. Promover un ambiente validado de develop hacia main
+
+```powershell
+git switch develop
+git pull
+npm run qa:deterministic-validation
+npm run workflow:promote-main
+```
+
+### 4. Verificacion rapida del flujo
+
+```powershell
+npm run workflow:status
+git branch -vv
+```
