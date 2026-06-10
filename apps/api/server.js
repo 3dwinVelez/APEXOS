@@ -239,16 +239,18 @@ async function build() {
   bootLog("Registered health route");
 
   fastify.setErrorHandler((error, request, reply) => {
+    const requestId = request.id;
+    reply.header("x-request-id", requestId);
     const code = error.code;
-    if (code === "P2002") return reply.code(409).send({ error: "Registro duplicado", code: "DUPLICADO" });
-    if (code === "P2025") return reply.code(404).send({ error: "No encontrado", code: "NO_ENCONTRADO" });
+    if (code === "P2002") return reply.code(409).send({ error: "Registro duplicado", code: "DUPLICADO", request_id: requestId });
+    if (code === "P2025") return reply.code(404).send({ error: "No encontrado", code: "NO_ENCONTRADO", request_id: requestId });
     if (error.statusCode && error.statusCode >= 400 && error.statusCode < 500) {
-      return reply.code(error.statusCode).send({ error: error.message, code: error.code || "VALIDACION" });
+      return reply.code(error.statusCode).send({ error: error.message, code: error.code || "VALIDACION", request_id: requestId });
     }
-    if (error.statusCode === 400) return reply.code(400).send({ error: error.message, code: "VALIDACION" });
-    if (error.statusCode === 429) return reply.code(429).send({ error: "Demasiadas solicitudes", code: "LIMITE_SOLICITUDES" });
-    fastify.log.error(error);
-    return reply.code(500).send({ error: "Error interno", code: "ERROR_INTERNO" });
+    if (error.statusCode === 400) return reply.code(400).send({ error: error.message, code: "VALIDACION", request_id: requestId });
+    if (error.statusCode === 429) return reply.code(429).send({ error: "Demasiadas solicitudes", code: "LIMITE_SOLICITUDES", request_id: requestId });
+    fastify.log.error({ err: error, requestId, url: request.url, method: request.method, userId: request.user?.id, tenantId: request.user?.tenant_id }, "Unhandled API error");
+    return reply.code(500).send({ error: "Error interno", code: "ERROR_INTERNO", request_id: requestId });
   });
 
   return fastify;

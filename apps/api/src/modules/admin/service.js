@@ -399,6 +399,25 @@ function normalizeUsernameEmail(value, fallbackDomain = "apex.local") {
   return text.includes("@") ? text : `${text}@${fallbackDomain}`;
 }
 
+function cleanText(value) {
+  return String(value || "").trim();
+}
+
+function validateRequiredUserInput(input, { requirePassword = false } = {}) {
+  const fullName = cleanText(input.name || `${cleanText(input.first_names)} ${cleanText(input.last_names)}`);
+  const email = normalizeUsernameEmail(input.email || input.username || input.user || input.access_email);
+  if (!fullName) throw badRequest("El nombre del usuario es obligatorio.");
+  if (!email) throw badRequest("El correo del usuario es obligatorio.");
+  if (!cleanText(input.role_id)) throw badRequest("El rol principal es obligatorio.");
+  if (!cleanText(input.document)) throw badRequest("El numero de documento es obligatorio.");
+  if (!cleanText(input.first_names)) throw badRequest("Los nombres del usuario son obligatorios.");
+  if (!cleanText(input.last_names)) throw badRequest("Los apellidos del usuario son obligatorios.");
+  if (!cleanText(input.position)) throw badRequest("El cargo del usuario es obligatorio.");
+  if (!cleanText(input.department || input.area)) throw badRequest("El area o departamento del usuario es obligatorio.");
+  if (requirePassword && !cleanText(input.password || input.pas)) throw badRequest("La clave inicial es obligatoria.");
+  return { fullName, email };
+}
+
 function userAuditSnapshot(user, employee) {
   return {
     user_id: user?.id,
@@ -696,8 +715,7 @@ async function listUsers(tenantId, query = {}) {
 async function createUser(tenantId, input, actorId = null) {
   tenantId = normalizeTenantId(tenantId);
   await ensureSystemRoles(tenantId);
-  const email = normalizeUsernameEmail(input.email || input.username || input.user || input.access_email || "");
-  if (!email) throw badRequest("El correo del usuario es obligatorio.");
+  const { fullName, email } = validateRequiredUserInput(input, { requirePassword: true });
   const rawPassword = input.password || input.pas || "";
   assertPasswordPolicy(rawPassword);
   const password = await bcrypt.hash(rawPassword, 12);
@@ -715,8 +733,6 @@ async function createUser(tenantId, input, actorId = null) {
     if (role?.metadata?.active === false) {
       throw badRequest("El rol seleccionado esta inactivo");
     }
-    const fullName = input.name || input.nombre || `${input.first_names || ""} ${input.last_names || ""}`.trim();
-    if (!fullName) throw badRequest("El nombre del usuario es obligatorio.");
     const userStatus = input.user_status || input.labor_status || input.estado_laboral || "activo";
     const active = !["inactivo", "suspendido", "retirado"].includes(userStatus) && input.active !== false && input.activo !== false;
     const metadata = {

@@ -1,4 +1,4 @@
-import { assertActiveSession, clearSession, emitAppAlert, setPasswordChangeRequired, touchSession } from "./sessionSecurity";
+import { assertActiveSession, clearSession, emitAppAlert, keepSessionAlive, setPasswordChangeRequired, touchSession } from "./sessionSecurity";
 import { getSupabaseAccessToken, supabaseAuth, supabaseFetch } from "./supabaseClient";
 import { getServiceImageUrl, uploadServiceImageData } from "./supabaseStorage";
 
@@ -2033,6 +2033,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
 
 export async function api<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
   assertActiveSession();
+  await keepSessionAlive();
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
   let response: Response;
 

@@ -79,7 +79,7 @@ async function ensureProfileAndMembership(companyId, user, fullName, role) {
 }
 
 async function ensureEnabledModules(companyId) {
-  const modules = await list("/rest/v1/modules?select=id,code&code=in.(talento_humano,servicios,transporte,administracion_apex,configuracion)");
+  const modules = await list("/rest/v1/modules?select=id,code&code=in.(talento_humano,servicios,transporte,administracion_apex,configuracion,inventario,compras,contabilidad)");
   await upsert("company_modules", modules.map((module) => ({
     company_id: companyId,
     module_id: module.id,

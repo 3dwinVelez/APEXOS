@@ -819,10 +819,16 @@ export default function AdministracionPage() {
   }
 
   function validateUser() {
-    if (!userForm.name.trim()) return "El nombre es obligatorio.";
+    if (!userForm.first_names.trim()) return "Los nombres son obligatorios.";
+    if (!userForm.last_names.trim()) return "Los apellidos son obligatorios.";
+    if (!userForm.name.trim() && !`${userForm.first_names} ${userForm.last_names}`.trim()) return "El nombre es obligatorio.";
     if (!userForm.email.trim()) return "El correo es obligatorio.";
     if (!userForm.role_id) return "El rol principal es obligatorio.";
+    if (!userForm.document.trim()) return "El documento es obligatorio.";
+    if (!userForm.position.trim()) return "El cargo es obligatorio.";
+    if (!userForm.department.trim() && !userForm.area.trim()) return "El area o departamento es obligatorio.";
     if (!selectedUserId && !userForm.password) return "La clave inicial es obligatoria.";
+    if (!selectedUserId && userForm.password.length < 8) return "La clave inicial debe tener minimo 8 caracteres.";
     if (userForm.operational_classification === "conductor" && (!userForm.driver_license || !userForm.license_expires_at)) return "Un conductor requiere licencia y fecha de vencimiento.";
     if (userForm.can_punch_time && (!userForm.base_site || !userForm.base_shift)) return "Para marcar jornada se requiere sede base y turno.";
     if (userForm.salary_base !== "0" && (!userForm.cost_center || !userForm.contract_type)) return "Los datos de nomina requieren centro de costo y tipo de contrato.";

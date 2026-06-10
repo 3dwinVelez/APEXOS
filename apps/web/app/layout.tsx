@@ -1,5 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import { PlatformAlerts } from "@/components/system/PlatformAlerts";
+import { SessionLifecycle } from "@/components/system/SessionLifecycle";
 
 export const metadata: Metadata = {
   title: "APEX OS",
@@ -9,8 +11,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es">
-      <body>{children}</body>
+      <body>
+        <SessionLifecycle />
+        <PlatformAlerts />
+        {children}
+      </body>
     </html>
   );
 }
-

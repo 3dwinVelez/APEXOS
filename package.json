@@ -35,6 +35,7 @@
     "qa:full-validation": "node scripts/qa-full-system-validation.js",
     "qa:users:audit": "node scripts/audit-user-profiles.js",
     "qa:users:functional": "node scripts/qa-user-creation-functional.js",
+    "qa:deterministic-validation": "node scripts/qa-deterministic-validation.js",
     "qa:hr-services-stress": "node scripts/qa-hr-services-linear-stress.js",
     "qa:performance": "node scripts/performance/qa-latency-benchmark.js",
     "qa:root-cause": "node scripts/performance/qa-root-cause-benchmark.js",
