@@ -6,13 +6,11 @@ const { spawnSync } = require("node:child_process");
 
 const ROOT = path.resolve(__dirname, "..");
 const TEMP_ROOT = path.join(os.tmpdir(), "apexos-workflow");
-const IS_WINDOWS = process.platform === "win32";
-
 function runGit(args, options = {}) {
   const result = spawnSync("git", args, {
     cwd: options.cwd || ROOT,
     encoding: "utf8",
-    shell: IS_WINDOWS,
+    shell: false,
     ...options
   });
   if (result.status !== 0) {
@@ -49,7 +47,7 @@ function printStatus() {
   const branch = currentBranch();
   const clean = worktreeClean();
   const local = runGit(["branch", "--format=%(refname:short)"]).split(/\r?\n/).filter(Boolean);
-  const remote = runGit(["branch", "-r", "--format=%(refname:short)"]).split(/\r?\n/).filter(Boolean);
+  const remote = runGit(["branch", "-r", "--format=%(refname:short)"]).split(/\r?\n/).filter((name) => Boolean(name) && name !== "origin");
   console.log(JSON.stringify({
     branch,
     clean,
