@@ -38,7 +38,7 @@ Ramas activas del proyecto:
 
 - `desarrollo`: trabajo local.
 - `develop`: integracion validada.
-- `main`: estable/produccion.
+- `main`: estable/produccion. Es la referencia directa para despliegues.
 
 Comandos base:
 
