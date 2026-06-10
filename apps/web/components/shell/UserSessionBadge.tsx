@@ -39,8 +39,11 @@ export function UserSessionBadge({ compact = false }: { compact?: boolean }) {
 
   useEffect(() => {
     let cancelled = false;
+    let heartbeatId = 0;
     const current = readLocalSession();
     setSession(current);
+    const syncFromStorage = () => setSession(readLocalSession());
+    window.addEventListener("storage", syncFromStorage);
     if (current.provider === "supabase") {
       supabaseFetch<SessionCompany[]>("/rest/v1/v_user_companies?select=company_id,company_name,role&limit=5")
         .then((rows) => {
@@ -56,18 +59,23 @@ export function UserSessionBadge({ compact = false }: { compact?: boolean }) {
             company: company?.company_name || value.company
           }));
           const token = getSupabaseAccessToken();
-          if (token) {
+          const registerPresence = () => {
+            if (!token) return;
             fetch("/api/platform/company-sessions", {
               method: "POST",
               headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
               body: JSON.stringify({ company_id: company?.company_id || null })
             }).catch(() => undefined);
-          }
+          };
+          registerPresence();
+          heartbeatId = window.setInterval(registerPresence, 120000);
         })
         .catch(() => undefined);
     }
     return () => {
       cancelled = true;
+      window.removeEventListener("storage", syncFromStorage);
+      if (heartbeatId) window.clearInterval(heartbeatId);
     };
   }, []);
 

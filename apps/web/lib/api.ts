@@ -1,4 +1,5 @@
-import { assertActiveSession, clearSession, touchSession } from "./sessionSecurity";
+import { notifyPlatform } from "./platformAlerts";
+import { assertActiveSession, clearSession, keepSessionAlive, touchSession } from "./sessionSecurity";
 import { getSupabaseAccessToken, supabaseFetch } from "./supabaseClient";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
@@ -174,6 +175,17 @@ function safeDevLog(message: string, error: unknown) {
   if (process.env.NODE_ENV !== "production") {
     console.warn(`[apexos] ${message}`, error instanceof Error ? error.message : String(error));
   }
+}
+
+function notifyApiIssue(title: string, message: string, technical?: string, requestId?: string) {
+  notifyPlatform({
+    level: "error",
+    title,
+    message,
+    technical,
+    requestId,
+    source: "api"
+  });
 }
 
 async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, timeoutMs = API_TIMEOUT_MS) {
@@ -1770,6 +1782,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
 
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   assertActiveSession();
+  await keepSessionAlive();
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
   let response: Response;
 
@@ -1791,6 +1804,7 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
       }
     });
   } catch (error) {
+    notifyApiIssue("Servicio no disponible", "La plataforma no pudo completar la solicitud sin bloquear la pantalla.", error instanceof Error ? error.message : "Backend no disponible.");
     if (error instanceof Error) throw error;
     throw new Error("API no disponible. Revisa el servicio backend.");
   }
@@ -1811,10 +1825,12 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
     }
 
     if (response.status >= 500) {
+      notifyApiIssue("Fallo interno detectado", "Se detecto un error interno. La operacion se detuvo de forma segura.", `HTTP ${response.status}`, response.headers.get("x-request-id") || undefined);
       throw new Error("API no disponible. Revisa el servicio backend.");
     }
 
     const body = await response.json().catch(() => ({ error: response.statusText }));
+    notifyApiIssue("Operacion rechazada", body.error || "La solicitud no pudo completarse.", [body.code, body.request_id].filter(Boolean).join(" · ") || undefined, body.request_id);
     throw new Error(body.error || "La solicitud no pudo completarse");
   }
   touchSession();

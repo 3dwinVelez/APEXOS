@@ -34,7 +34,7 @@ async function createSupplier(tenantId, userId, data) {
         phone,
         address,
         city,
-        country,
+        country: country || "CO",
         credit_limit,
         credit_days,
         balance: 0,
@@ -257,6 +257,16 @@ async function receivePurchaseOrder(tenantId, userId, poId, data) {
       throw appError(422, "INVALID_STATUS", "No se puede recibir una PO en este estado");
     }
 
+    const warehouseId = Number(po.metadata?.warehouse_id || 0);
+    let defaultLocationId = null;
+    if (warehouseId) {
+      const defaultLocation = await tx.location.findFirst({
+        where: { place_id: warehouseId, active: true },
+        orderBy: { id: "asc" }
+      });
+      defaultLocationId = defaultLocation?.id || null;
+    }
+
     let receivedTotal = 0;
     for (const row of received_lines) {
       const line = po.lines.find((entry) => entry.id === row.line_id);
@@ -275,7 +285,7 @@ async function receivePurchaseOrder(tenantId, userId, poId, data) {
         item_id: line.item_id,
         type: "in",
         qty: Number(row.qty_received),
-        to_location_id: row.location_id,
+        to_location_id: row.location_id || defaultLocationId,
         transaction_id: poId,
         cost: line.unit_cost,
         lot: row.lot || null,

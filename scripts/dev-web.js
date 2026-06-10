@@ -10,7 +10,8 @@ const nextBin = path.join(root, "node_modules", "next", "dist", "bin", "next");
 const ensureCss = path.join(root, "scripts", "ensure-web-css.js");
 const envPath = path.join(root, ".env");
 const webPort = Number(process.env.WEB_PORT || process.argv[2] || 3001);
-const webUrl = `http://localhost:${webPort}`;
+const webHost = process.env.WEB_HOST || "127.0.0.1";
+const webUrl = `http://${webHost}:${webPort}`;
 
 function rootEnv() {
   if (!fs.existsSync(envPath)) return {};
@@ -72,7 +73,7 @@ async function ensureCssAfterBoot() {
   if (result.status !== 0) log("CSS validation failed; check logs above.");
 }
 
-const child = spawn(node, [nextBin, "dev", "-p", String(webPort)], {
+const child = spawn(node, [nextBin, "dev", "-H", webHost, "-p", String(webPort)], {
   cwd: webDir,
   stdio: "inherit",
   env: devEnv

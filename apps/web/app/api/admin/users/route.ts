@@ -6,6 +6,8 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || proce
 
 type AnyRow = Record<string, unknown>;
 
+type HttpError = Error & { status?: number };
+
 async function supabaseRequest(path: string, init: RequestInit & { token?: string; service?: boolean } = {}) {
   const { token, service, headers, ...rest } = init;
   const key = service ? SUPABASE_SERVICE_ROLE_KEY : SUPABASE_ANON_KEY;
@@ -29,6 +31,29 @@ async function supabaseRequest(path: string, init: RequestInit & { token?: strin
 function clean(value: unknown) {
   const text = typeof value === "string" ? value.trim() : "";
   return text || null;
+}
+
+function httpError(message: string, status: number) {
+  const error = new Error(message) as HttpError;
+  error.status = status;
+  return error;
+}
+
+function validateUserPayload(body: AnyRow, { requirePassword = false } = {}) {
+  const email = clean(body.email || body.access_email)?.toLowerCase();
+  const firstNames = clean(body.first_names);
+  const lastNames = clean(body.last_names);
+  const fullName = clean(body.name) || `${firstNames || ""} ${lastNames || ""}`.trim();
+  if (!email) throw httpError("Correo requerido.", 400);
+  if (!fullName) throw httpError("Nombre requerido.", 400);
+  if (!firstNames) throw httpError("Nombres requeridos.", 400);
+  if (!lastNames) throw httpError("Apellidos requeridos.", 400);
+  if (!clean(body.role_id) && !clean(body.role_name)) throw httpError("Rol principal requerido.", 400);
+  if (!clean(body.document)) throw httpError("Documento requerido.", 400);
+  if (!clean(body.position) && !clean(body.operational_classification)) throw httpError("Cargo requerido.", 400);
+  if (!clean(body.department) && !clean(body.area)) throw httpError("Area o departamento requerido.", 400);
+  if (requirePassword && String(body.password || "").length < 8) throw httpError("La clave temporal debe tener minimo 8 caracteres.", 400);
+  return { email, fullName };
 }
 
 function userStatusToEmployeeStatus(value: unknown) {
@@ -84,7 +109,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ employees });
   } catch (error) {
-    return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible consultar usuarios." }, { status: 500 });
+    const status = (error as HttpError)?.status || 500;
+    return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible consultar usuarios." }, { status });
   }
 }
 
@@ -179,7 +205,8 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible actualizar usuario." }, { status: 500 });
+    const status = (error as HttpError)?.status || 500;
+    return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible actualizar usuario." }, { status });
   }
 }
 
@@ -196,12 +223,8 @@ export async function POST(request: NextRequest) {
     if (!token) return NextResponse.json({ message: "Sesion requerida." }, { status: 401 });
 
     const body = (await request.json()) as AnyRow;
-    const email = clean(body.email || body.access_email)?.toLowerCase();
+    const { email, fullName } = validateUserPayload(body, { requirePassword: true });
     const password = String(body.password || "");
-    const fullName = clean(body.name) || `${clean(body.first_names) || ""} ${clean(body.last_names) || ""}`.trim();
-    if (!email) return NextResponse.json({ message: "Correo requerido." }, { status: 400 });
-    if (!fullName) return NextResponse.json({ message: "Nombre requerido." }, { status: 400 });
-    if (password.length < 8) return NextResponse.json({ message: "La clave temporal debe tener minimo 8 caracteres." }, { status: 400 });
 
     const requestedCompanyId = clean(body.company_id);
     const membership = await requireCompanyAdmin(token, requestedCompanyId);
@@ -304,6 +327,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ user_id: authUser.id, employee: employees[0] });
   } catch (error) {
-    return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible crear el usuario." }, { status: 500 });
+    const status = (error as HttpError)?.status || 500;
+    return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible crear el usuario." }, { status });
   }
 }
