@@ -82,6 +82,24 @@ function withTempDevelopSync(callback) {
   }
 }
 
+function withTempMainSync(callback) {
+  fs.mkdirSync(TEMP_ROOT, { recursive: true });
+  const suffix = Date.now().toString();
+  const branch = `sync/main-${suffix}`;
+  const worktree = path.join(TEMP_ROOT, branch.replace(/[/:]/g, "-"));
+  try {
+    runGit(["worktree", "add", "-b", branch, worktree, "origin/main"]);
+    callback({ branch, worktree });
+  } finally {
+    try {
+      runGit(["worktree", "remove", "--force", worktree]);
+    } catch {}
+    try {
+      runGit(["branch", "-D", branch]);
+    } catch {}
+  }
+}
+
 function promoteDevelop() {
   ensureBranch("desarrollo");
   ensureCleanWorktree();
@@ -95,12 +113,26 @@ function promoteDevelop() {
   console.log("desarrollo promovida a develop");
 }
 
+function promoteMain() {
+  ensureBranch("develop");
+  ensureCleanWorktree();
+  ensureOnlyWorkflowBranches();
+  runGit(["fetch", "--all", "--prune"]);
+  runGit(["push", "origin", "develop"]);
+  withTempMainSync(({ worktree }) => {
+    runGit(["merge", "--no-ff", "origin/develop", "-m", "merge: promote develop into main"], { cwd: worktree });
+    runGit(["push", "origin", "HEAD:main"], { cwd: worktree });
+  });
+  console.log("develop promovida a main");
+}
+
 const command = process.argv[2] || "status";
 
 try {
   if (command === "status") printStatus();
   else if (command === "sync-desarrollo") syncDesarrollo();
   else if (command === "promote-develop") promoteDevelop();
+  else if (command === "promote-main") promoteMain();
   else throw new Error(`Comando no soportado: ${command}`);
 } catch (error) {
   console.error(error.message);

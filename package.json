@@ -45,6 +45,7 @@
     "workflow:status": "node scripts/branch-workflow.js status",
     "workflow:sync-desarrollo": "node scripts/branch-workflow.js sync-desarrollo",
     "workflow:promote-develop": "node scripts/branch-workflow.js promote-develop",
+    "workflow:promote-main": "node scripts/branch-workflow.js promote-main",
     "lint": "npm --workspace apps/web run lint",
     "prisma:validate": "npx prisma validate --schema apps/api/prisma/schema.prisma",
     "brain:dev": "cd services/brain && uvicorn main:app --reload --port 8000"

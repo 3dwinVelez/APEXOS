@@ -7,6 +7,7 @@ Esta carpeta centraliza la documentacion viva del proyecto APEXOS.
 - [Contexto del proyecto](./contexto-proyecto.md)
 - [Guia de inicio local](./guia-inicio.md)
 - [Proyecto local](./proyecto-local.md)
+- [Flujo de ramas y ambientes](./flujo-ramas-y-ambientes.md)
 - [Filosofia de producto e interfaz](./filosofia-producto-ui.md)
 - [Validacion de frontend y CSS](./validacion-frontend-css.md)
 
