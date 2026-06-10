@@ -13,6 +13,13 @@ Flujo obligatorio:
 3. Subir `desarrollo` y luego promover los cambios hacia `develop`.
 4. Cuando `develop` quede aprobado, promover hacia `main`.
 
+Comandos recomendados:
+
+1. `npm run workflow:status`
+2. `npm run workflow:sync-desarrollo`
+3. `npm run qa:deterministic-validation`
+4. `npm run workflow:promote-develop`
+
 Reglas operativas:
 
 - No trabajar directamente sobre `main`.
