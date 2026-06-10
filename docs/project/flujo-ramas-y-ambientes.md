@@ -6,7 +6,7 @@ Mantener tres ambientes claros:
 
 - `desarrollo`: ambiente local de construccion y ajuste.
 - `develop`: ambiente de integracion validada.
-- `main`: ambiente estable para liberacion.
+- `main`: ambiente estable para liberacion y produccion.
 
 ## Flujo operativo
 
@@ -50,6 +50,14 @@ git pull
 npm run qa:deterministic-validation
 npm run workflow:promote-main
 ```
+
+### Checklist antes de mover a produccion
+
+- `develop` sin cambios locales.
+- Validacion deterministica completada sin fallos.
+- Cambios de autenticacion, sesiones y usuarios revisados.
+- Riesgos conocidos documentados o cerrados.
+- Aprobacion funcional para despliegue en `main`.
 
 ## Reglas
 

@@ -2,7 +2,7 @@
 
 APEXOS trabaja con 3 ramas activas:
 
-- `main`: produccion estable.
+- `main`: produccion estable. Todo lo que llegue aqui se considera candidato directo a despliegue.
 - `develop`: integracion validada antes de promover a produccion.
 - `desarrollo`: rama de trabajo para cambios locales, ajustes y validaciones.
 
@@ -61,6 +61,14 @@ git pull
 npm run qa:deterministic-validation
 npm run workflow:promote-main
 ```
+
+Checklist minimo antes de promover a `main`:
+
+- `develop` limpia y sincronizada con remoto.
+- Validacion deterministica en verde.
+- Sin errores abiertos de sesiones, seguridad o multiusuario.
+- Flujo critico de usuarios validado.
+- Confirmacion de que el cambio esta aprobado para produccion.
 
 ### 4. Verificacion rapida del flujo
 
