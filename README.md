@@ -32,6 +32,29 @@ demo@apex.local
 test1234
 ```
 
+## Branch Workflow
+
+Ramas activas del proyecto:
+
+- `desarrollo`: trabajo local.
+- `develop`: integracion validada.
+- `main`: estable/produccion. Es la referencia directa para despliegues.
+
+Comandos base:
+
+```powershell
+npm run workflow:status
+npm run workflow:sync-desarrollo
+npm run qa:deterministic-validation
+npm run workflow:promote-develop
+git switch develop
+npm run workflow:promote-main
+```
+
+Guia detallada:
+
+- `BRANCHING_WORKFLOW.md`
+
 If you want to run the BRAIN service outside Docker instead:
 
 ```powershell

@@ -1,0 +1,1725 @@
+{
+  "batch": "QA-HR-SVC-20260604141135",
+  "started_at": "2026-06-04T14:11:35.376Z",
+  "apiUrl": "http://127.0.0.1:3021",
+  "supabaseUrl": "https://jbirkghkekuifgfsgquq.supabase.co",
+  "summary": {
+    "passed": 189,
+    "failed": 0,
+    "warning": 0
+  },
+  "results": [
+    {
+      "area": "preflight",
+      "name": "API health",
+      "status": "passed",
+      "detail": {
+        "apiUrl": "http://127.0.0.1:3021"
+      }
+    },
+    {
+      "area": "supabase-map",
+      "name": "Contrato REST time_punches.vehicle_plate",
+      "status": "passed",
+      "detail": {
+        "rows": 5
+      }
+    },
+    {
+      "area": "setup",
+      "name": "Tenant tecnico API",
+      "status": "passed",
+      "detail": {
+        "email": "qa-hr-svc-20260604141135@apexos.local",
+        "tenant_id": "25e6651f-04c3-4e12-87a5-136fd8be3ab0"
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Crear tipo actividad base",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/activity-types",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 1: crear empleado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/employees",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 1: crear vehiculo",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/transport/vehicles",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 1: GPS",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/gps/ping",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 1: entrada",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/time-punches",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 1: actividad con foto",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/work-activities",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 2: crear empleado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/employees",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 2: crear vehiculo",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/transport/vehicles",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 2: GPS",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/gps/ping",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 2: entrada",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/time-punches",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 2: inicio almuerzo",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/time-punches",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 2: fin almuerzo",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/time-punches",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 2: actividad con foto",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/work-activities",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 3: crear empleado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/employees",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 3: crear vehiculo",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/transport/vehicles",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 3: GPS",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/gps/ping",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 3: entrada",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/time-punches",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 3: actividad con foto",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/work-activities",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 4: crear empleado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/employees",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 4: crear vehiculo",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/transport/vehicles",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 4: GPS",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/gps/ping",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 4: entrada",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/time-punches",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 4: inicio almuerzo",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/time-punches",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 4: fin almuerzo",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/time-punches",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 4: actividad con foto",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/work-activities",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 4: salida con extra",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/time-punches",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 5: crear empleado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/employees",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 5: crear vehiculo",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/transport/vehicles",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 5: GPS",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/gps/ping",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 5: entrada",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/time-punches",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 5: actividad con foto",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/work-activities",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 6: crear empleado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/employees",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 6: crear vehiculo",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/transport/vehicles",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 6: GPS",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/gps/ping",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 6: entrada",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/time-punches",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 6: inicio almuerzo",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/time-punches",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 6: fin almuerzo",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/time-punches",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 6: actividad con foto",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/work-activities",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 7: crear empleado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/employees",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 7: crear vehiculo",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/transport/vehicles",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 7: GPS",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/gps/ping",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 7: entrada",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/time-punches",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 7: actividad con foto",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/work-activities",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 8: crear empleado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/employees",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 8: crear vehiculo",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/transport/vehicles",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 8: GPS",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/gps/ping",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 8: entrada",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/time-punches",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 8: inicio almuerzo",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/time-punches",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 8: fin almuerzo",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/time-punches",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 8: actividad con foto",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/work-activities",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 8: salida con extra",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/time-punches",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 9: crear empleado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/employees",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 9: crear vehiculo",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/transport/vehicles",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 9: GPS",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/gps/ping",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 9: entrada",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/time-punches",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 9: actividad con foto",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/work-activities",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 10: crear empleado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/employees",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 10: crear vehiculo",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/transport/vehicles",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 10: GPS",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/gps/ping",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 10: entrada",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/time-punches",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 10: inicio almuerzo",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/time-punches",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 10: fin almuerzo",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/time-punches",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Escenario 10: actividad con foto",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/work-activities",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Consultar empleados",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/employees",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Consultar asistencia",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/attendance",
+        "status": 200
+      }
+    },
+    {
+      "area": "talento-humano",
+      "name": "Consultar mapa operaciones",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/hr/operations-map",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 1: crear referencia",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/references",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 1: crear orden",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 1: iniciar orden",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/29/start",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 1: foto producto_abierto",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/29/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 1: foto producto_cerrado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/29/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 1: foto cliente",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/29/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 1: foto firma_cliente",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/29/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 1: inspeccion",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/29/inspection",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 1: ejecucion",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/29/execution",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 1: cierre ejecutado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/29/close",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 1: consultar fotos",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/29/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 1: descargar PDF",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/29/report-pdf",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 2: crear referencia",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/references",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 2: crear orden",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 2: iniciar orden",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/30/start",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 2: foto producto_abierto",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/30/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 2: foto producto_cerrado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/30/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 2: foto cliente",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/30/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 2: foto firma_cliente",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/30/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 2: inspeccion",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/30/inspection",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 2: ejecucion",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/30/execution",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 2: cierre ejecutado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/30/close",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 2: consultar fotos",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/30/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 2: descargar PDF",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/30/report-pdf",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 3: crear referencia",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/references",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 3: crear orden",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 3: iniciar orden",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/31/start",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 3: foto producto_abierto",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/31/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 3: foto producto_cerrado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/31/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 3: foto cliente",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/31/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 3: foto firma_cliente",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/31/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 3: inspeccion",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/31/inspection",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 3: ejecucion",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/31/execution",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 3: cierre ejecutado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/31/close",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 3: consultar fotos",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/31/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 3: descargar PDF",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/31/report-pdf",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 4: crear referencia",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/references",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 4: crear orden",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 4: iniciar orden",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/32/start",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 4: foto producto_abierto",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/32/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 4: foto producto_cerrado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/32/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 4: foto cliente",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/32/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 4: foto firma_cliente",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/32/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 4: inspeccion",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/32/inspection",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 4: ejecucion",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/32/execution",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 4: cierre ejecutado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/32/close",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 4: consultar fotos",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/32/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 4: descargar PDF",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/32/report-pdf",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 5: crear referencia",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/references",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 5: crear orden",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 5: iniciar orden",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/33/start",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 5: foto producto_abierto",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/33/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 5: foto producto_cerrado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/33/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 5: foto cliente",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/33/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 5: foto firma_cliente",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/33/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 5: foto no_ejecutada",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/33/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 5: cierre no ejecutado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/33/close-not-executed",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 5: consultar fotos",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/33/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 5: descargar PDF",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/33/report-pdf",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 6: crear referencia",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/references",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 6: crear orden",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 6: iniciar orden",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/34/start",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 6: foto producto_abierto",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/34/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 6: foto producto_cerrado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/34/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 6: foto cliente",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/34/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 6: foto firma_cliente",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/34/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 6: inspeccion",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/34/inspection",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 6: ejecucion",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/34/execution",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 6: cierre ejecutado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/34/close",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 6: consultar fotos",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/34/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 6: descargar PDF",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/34/report-pdf",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 7: crear referencia",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/references",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 7: crear orden",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 7: iniciar orden",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/35/start",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 7: foto producto_abierto",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/35/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 7: foto producto_cerrado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/35/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 7: foto cliente",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/35/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 7: foto firma_cliente",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/35/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 7: inspeccion",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/35/inspection",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 7: ejecucion",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/35/execution",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 7: cierre ejecutado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/35/close",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 7: consultar fotos",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/35/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 7: descargar PDF",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/35/report-pdf",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 8: crear referencia",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/references",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 8: crear orden",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 8: iniciar orden",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/36/start",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 8: foto producto_abierto",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/36/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 8: foto producto_cerrado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/36/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 8: foto cliente",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/36/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 8: foto firma_cliente",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/36/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 8: inspeccion",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/36/inspection",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 8: ejecucion",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/36/execution",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 8: cierre ejecutado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/36/close",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 8: consultar fotos",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/36/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 8: descargar PDF",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/36/report-pdf",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 9: crear referencia",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/references",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 9: crear orden",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 9: iniciar orden",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/37/start",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 9: foto producto_abierto",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/37/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 9: foto producto_cerrado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/37/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 9: foto cliente",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/37/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 9: foto firma_cliente",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/37/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 9: inspeccion",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/37/inspection",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 9: ejecucion",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/37/execution",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 9: cierre ejecutado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/37/close",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 9: consultar fotos",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/37/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 9: descargar PDF",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/37/report-pdf",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 10: crear referencia",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/references",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 10: crear orden",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 10: iniciar orden",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/38/start",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 10: foto producto_abierto",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/38/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 10: foto producto_cerrado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/38/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 10: foto cliente",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/38/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 10: foto firma_cliente",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/38/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 10: foto no_ejecutada",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/38/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 10: cierre no ejecutado",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/38/close-not-executed",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 10: consultar fotos",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/38/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Escenario 10: descargar PDF",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders/38/report-pdf",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Consultar ordenes",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/orders",
+        "status": 200
+      }
+    },
+    {
+      "area": "servicios",
+      "name": "Consultar referencias",
+      "status": "passed",
+      "detail": {
+        "endpoint": "/services/references",
+        "status": 200
+      }
+    }
+  ],
+  "created": [
+    {
+      "type": "tenant",
+      "id": "25e6651f-04c3-4e12-87a5-136fd8be3ab0",
+      "name": "QA HR Servicios QA-HR-SVC-20260604141135"
+    },
+    {
+      "type": "user",
+      "id": 53,
+      "email": "qa-hr-svc-20260604141135@apexos.local"
+    }
+  ],
+  "finished_at": "2026-06-04T14:16:41.532Z"
+}

@@ -4,6 +4,7 @@ node_modules/
 !.env.example
 .next/
 .next-dev/
+apps/web/.next-dev-*/
 dist/
 coverage/
 *.log
@@ -18,4 +19,3 @@ venv/
 logs/
 .npm-cache/
 supabase/.temp/
-apps/api/prisma/migrations/

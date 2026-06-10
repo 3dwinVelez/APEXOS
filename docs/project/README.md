@@ -1,4 +1,4 @@
-# Documentacion central APEXOS
+# Documentacion canonica de APEXOS
 
 Esta carpeta centraliza la documentacion viva del proyecto APEXOS.
 
@@ -6,14 +6,17 @@ Esta carpeta centraliza la documentacion viva del proyecto APEXOS.
 
 - [Contexto del proyecto](./contexto-proyecto.md)
 - [Guia de inicio local](./guia-inicio.md)
+- [Proyecto local](./proyecto-local.md)
+- [Flujo de ramas y ambientes](./flujo-ramas-y-ambientes.md)
 - [Filosofia de producto e interfaz](./filosofia-producto-ui.md)
 - [Validacion de frontend y CSS](./validacion-frontend-css.md)
 
-## Cambios por modulo
+## Modulos
 
 - [Administracion](./modulos/administracion.md)
 - [Servicios](./modulos/servicios.md)
 - [Talento Humano](./modulos/talento-humano.md)
+- [Monitor Central](./modulos/monitor-central.md)
 - [Transporte](./modulos/transporte.md)
 - [Ventas](./modulos/ventas.md)
 - [Facturacion](./modulos/facturacion.md)
@@ -25,3 +28,5 @@ Esta carpeta centraliza la documentacion viva del proyecto APEXOS.
 ## Regla de mantenimiento
 
 Todo cambio funcional, visual o de flujo debe documentarse aqui. Los archivos historicos fuera de esta carpeta pueden existir como soporte, pero la referencia principal del proyecto queda en `docs/project`.
+
+La documentacion operativa, de QA, despliegue y legacy se organiza desde [el indice general de documentacion](../README.md).

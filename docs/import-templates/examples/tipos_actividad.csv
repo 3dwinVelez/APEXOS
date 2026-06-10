@@ -1,0 +1,4 @@
+company_code,activity_type_code,name,description,active,sort_order
+GLOBAL,INICIO_RUTA,Inicio de ruta,Registro de inicio operativo,true,10
+GLOBAL,ENTREGA_CLIENTE,Entrega en cliente,Registro de entrega final,true,20
+GLOBAL,NOVEDAD_RUTA,Novedad en ruta,Registro de novedad operativa,true,30

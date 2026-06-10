@@ -1,0 +1,4 @@
+company_code,vehicle_brand_code,name,description,active,sort_order
+GLOBAL,TOYOTA,Toyota,Marca vehicular,true,10
+GLOBAL,CHEVROLET,Chevrolet,Marca vehicular,true,20
+GLOBAL,HINO,Hino,Marca vehicular,true,30

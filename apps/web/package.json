@@ -6,8 +6,8 @@
     "dev": "node ../../scripts/dev-web.js",
     "build": "next build",
     "start": "next start -p 3001",
-    "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.typecheck.json --noEmit"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.62.8",

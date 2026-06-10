@@ -2,26 +2,212 @@ const bcrypt = require("bcrypt");
 const prisma = require("../../core/prisma");
 const { assertPasswordPolicy } = require("../../security/policy");
 
+function badRequest(message) {
+  const error = new Error(message);
+  error.statusCode = 400;
+  return error;
+}
+
+function normalizeTenantId(tenantId) {
+  const value = String(tenantId ?? "").trim();
+  if (!value) throw badRequest("Tenant requerido para operar administracion.");
+  return value;
+}
+
+const ROLE_ACTIONS = ["access", "view", "create", "edit", "delete", "approve", "reject", "void", "export", "import", "attach", "download", "configure", "administer", "execute", "reports", "sensitive", "manage_users", "manage_roles"];
+const READ_ACTIONS = new Set(["access", "view", "download", "reports"]);
+const WRITE_ACTIONS = new Set(["create", "edit", "delete", "reject", "void", "import", "attach", "configure", "administer", "execute", "sensitive", "manage_users", "manage_roles"]);
+const APPROVE_ACTIONS = new Set(["approve"]);
+const EXPORT_ACTIONS = new Set(["export"]);
+const TENANT_MODULE_CODES = {
+  accounting: ["M-07", "contabilidad", "finance", "accounting"],
+  admin: ["M-22", "administracion", "administracion_apex", "admin"],
+  brain: ["AI-CORE", "apex-ai", "apex_ai", "brain"],
+  hr: ["M-17", "talento-humano", "talento_humano", "hr"],
+  inventory: ["M-01", "inventario", "inventory"],
+  invoicing: ["M-04", "facturacion", "invoicing"],
+  payroll: ["M-17", "nomina", "payroll"],
+  purchases: ["M-02", "compras", "purchases"],
+  projects: ["M-19", "proyectos", "projects"],
+  sales: ["M-03", "ventas", "sales"],
+  services: ["M-26", "servicios", "services"],
+  transport: ["M-14", "transporte", "transport"]
+};
+
+function grants(module, actions = ROLE_ACTIONS) {
+  return Object.fromEntries(actions.map((action) => {
+    const mapped = [];
+    if (READ_ACTIONS.has(action)) mapped.push([module, "read"]);
+    if (WRITE_ACTIONS.has(action)) mapped.push([module, "write"]);
+    if (APPROVE_ACTIONS.has(action)) mapped.push([module, "approve"]);
+    if (EXPORT_ACTIONS.has(action)) mapped.push([module, "export"]);
+    return [action, mapped.length ? mapped : [[module, action]]];
+  }));
+}
+
+function normalizeActiveModules(value) {
+  return Array.isArray(value) ? value.map((item) => String(item).trim().toLowerCase()).filter(Boolean) : [];
+}
+
+function tenantHasModule(activeModules, module) {
+  if (!module) return true;
+  const active = normalizeActiveModules(activeModules);
+  if (!active.length) return true;
+  const allowedCodes = (TENANT_MODULE_CODES[module] || [module]).map((item) => String(item).trim().toLowerCase());
+  return allowedCodes.some((code) => active.includes(code));
+}
+
 const PERMISSION_CATALOG = [
-  { key: "dashboard", label: "Dashboard", actions: ["access", "view"], grants: { access: [["brain", "read"]], view: [["brain", "read"]] } },
-  { key: "personal", label: "Personal / Usuarios", actions: ["access", "view", "create", "edit"], grants: { access: [["hr", "read"], ["admin", "read"]], view: [["hr", "read"], ["admin", "read"]], create: [["hr", "write"], ["admin", "write"]], edit: [["hr", "write"], ["admin", "write"]] } },
-  { key: "roles", label: "Roles y perfiles", actions: ["access", "view", "create", "edit"], grants: { access: [["admin", "read"]], view: [["admin", "read"]], create: [["admin", "write"]], edit: [["admin", "write"]] } },
-  { key: "servicios", label: "Servicios", actions: ["access", "view", "create", "edit", "export"], grants: { access: [["services", "read"]], view: [["services", "read"]], create: [["services", "write"]], edit: [["services", "write"]], export: [["services", "export"]] } },
-  { key: "horarios", label: "Horarios y marcaciones", actions: ["access", "view", "create", "edit", "approve"], grants: { access: [["hr", "read"]], view: [["hr", "read"]], create: [["hr", "write"]], edit: [["hr", "write"]], approve: [["hr", "approve"]] } },
-  { key: "vehiculos", label: "Vehiculos", actions: ["access", "view", "create", "edit"], grants: { access: [["transport", "read"]], view: [["transport", "read"]], create: [["transport", "write"]], edit: [["transport", "write"]] } },
-  { key: "referencias", label: "Referencias", actions: ["access", "view", "create", "edit"], grants: { access: [["services", "read"]], view: [["services", "read"]], create: [["services", "write"]], edit: [["services", "write"]] } },
-  { key: "proyectos", label: "Proyectos", actions: ["access", "view", "create", "edit"], grants: { access: [["projects", "read"]], view: [["projects", "read"]], create: [["projects", "write"]], edit: [["projects", "write"]] } },
-  { key: "contabilidad", label: "Contabilidad", actions: ["access", "view", "create", "edit", "export", "approve"], grants: { access: [["accounting", "read"]], view: [["accounting", "read"]], create: [["accounting", "write"]], edit: [["accounting", "write"]], export: [["accounting", "read"]], approve: [["accounting", "write"]] } },
-  { key: "reportes", label: "Reportes", actions: ["access", "view", "export"], grants: { access: [["admin", "read"]], view: [["admin", "read"]], export: [["admin", "export"]] } },
-  { key: "configuracion", label: "Configuracion", actions: ["access", "view", "create", "edit"], grants: { access: [["admin", "read"]], view: [["admin", "read"]], create: [["admin", "write"]], edit: [["admin", "write"]] } },
-  { key: "nomina", label: "Nomina", actions: ["access", "view", "create", "edit", "export"], grants: { access: [["payroll", "read"], ["hr", "read"]], view: [["payroll", "read"], ["hr", "read"]], create: [["payroll", "write"], ["hr", "write"]], edit: [["payroll", "write"], ["hr", "write"]], export: [["payroll", "export"]] } }
+  { key: "dashboard", label: "Inicio / Dashboard", group: "core", module: "brain", submodule: "home", actions: ["access", "view", "reports"], grants: grants("brain", ["access", "view", "reports"]) },
+  { key: "usuarios", label: "Usuarios", group: "administracion", module: "admin", submodule: "users", actions: ["access", "view", "create", "edit", "delete", "export", "import", "attach", "download", "sensitive", "manage_users"], grants: grants("admin", ["access", "view", "create", "edit", "delete", "export", "import", "attach", "download", "sensitive", "manage_users"]) },
+  { key: "roles", label: "Roles y permisos", group: "administracion", module: "admin", submodule: "roles", actions: ["access", "view", "create", "edit", "delete", "export", "configure", "administer", "manage_roles"], grants: grants("admin", ["access", "view", "create", "edit", "delete", "export", "configure", "administer", "manage_roles"]) },
+  { key: "empresas", label: "Empresas / Tenants", group: "administracion", module: "admin", submodule: "tenants", actions: ["access", "view", "create", "edit", "delete", "configure", "administer", "sensitive"], grants: grants("admin", ["access", "view", "create", "edit", "delete", "configure", "administer", "sensitive"]) },
+  { key: "clientes", label: "Clientes", group: "comercial", module: "sales", submodule: "customers", actions: ["access", "view", "create", "edit", "delete", "export", "import", "sensitive"], grants: grants("sales", ["access", "view", "create", "edit", "delete", "export", "import", "sensitive"]) },
+  { key: "proveedores", label: "Proveedores", group: "compras", module: "purchases", submodule: "suppliers", actions: ["access", "view", "create", "edit", "delete", "export", "import", "sensitive"], grants: grants("purchases", ["access", "view", "create", "edit", "delete", "export", "import", "sensitive"]) },
+  { key: "inventarios", label: "Inventarios", group: "operacion", module: "inventory", submodule: "stock", actions: ["access", "view", "create", "edit", "delete", "approve", "export", "import", "configure"], grants: grants("inventory", ["access", "view", "create", "edit", "delete", "approve", "export", "import", "configure"]) },
+  { key: "wms", label: "WMS", group: "operacion", module: "inventory", submodule: "wms", actions: ["access", "view", "create", "edit", "approve", "execute", "reports"], grants: grants("inventory", ["access", "view", "create", "edit", "approve", "execute", "reports"]) },
+  { key: "compras", label: "Compras", group: "compras", module: "purchases", submodule: "orders", actions: ["access", "view", "create", "edit", "delete", "approve", "reject", "void", "export", "import", "attach", "download"], grants: grants("purchases", ["access", "view", "create", "edit", "delete", "approve", "reject", "void", "export", "import", "attach", "download"]) },
+  { key: "ventas", label: "Ventas", group: "comercial", module: "sales", submodule: "orders", actions: ["access", "view", "create", "edit", "delete", "approve", "reject", "void", "export", "import"], grants: grants("sales", ["access", "view", "create", "edit", "delete", "approve", "reject", "void", "export", "import"]) },
+  { key: "logistica", label: "Logistica", group: "operacion", module: "transport", submodule: "logistics", actions: ["access", "view", "create", "edit", "approve", "execute", "reports"], grants: grants("transport", ["access", "view", "create", "edit", "approve", "execute", "reports"]) },
+  { key: "transporte", label: "Transporte", group: "operacion", module: "transport", submodule: "vehicles", actions: ["access", "view", "create", "edit", "delete", "approve", "export", "import", "attach", "download", "configure"], grants: grants("transport", ["access", "view", "create", "edit", "delete", "approve", "export", "import", "attach", "download", "configure"]) },
+  { key: "ultima_milla", label: "Ultima milla", group: "operacion", module: "transport", submodule: "last_mile", actions: ["access", "view", "create", "edit", "approve", "execute", "reports"], grants: grants("transport", ["access", "view", "create", "edit", "approve", "execute", "reports"]) },
+  { key: "importaciones", label: "Importaciones", group: "operacion", module: "purchases", submodule: "imports", actions: ["access", "view", "create", "edit", "approve", "reject", "void", "export", "import", "attach", "download"], grants: grants("purchases", ["access", "view", "create", "edit", "approve", "reject", "void", "export", "import", "attach", "download"]) },
+  { key: "servicios", label: "Servicios", group: "operacion", module: "services", submodule: "orders", actions: ["access", "view", "create", "edit", "delete", "approve", "reject", "void", "export", "import", "attach", "download", "execute", "reports"], grants: grants("services", ["access", "view", "create", "edit", "delete", "approve", "reject", "void", "export", "import", "attach", "download", "execute", "reports"]) },
+  { key: "talento_humano", label: "Talento humano", group: "administracion", module: "hr", submodule: "hr", actions: ["access", "view", "create", "edit", "delete", "approve", "export", "import", "sensitive", "reports"], grants: grants("hr", ["access", "view", "create", "edit", "delete", "approve", "export", "import", "sensitive", "reports"]) },
+  { key: "marcaciones", label: "Marcaciones y jornadas", group: "operacion", module: "hr", submodule: "time", actions: ["access", "view", "create", "edit", "approve", "reject", "export", "reports"], grants: grants("hr", ["access", "view", "create", "edit", "approve", "reject", "export", "reports"]) },
+  { key: "proyectos", label: "Proyectos", group: "gestion", module: "projects", submodule: "projects", actions: ["access", "view", "create", "edit", "delete", "approve", "reject", "export", "attach", "download", "reports"], grants: grants("projects", ["access", "view", "create", "edit", "delete", "approve", "reject", "export", "attach", "download", "reports"]) },
+  { key: "contabilidad", label: "Contabilidad", group: "finanzas", module: "accounting", submodule: "accounting", actions: ["access", "view", "create", "edit", "delete", "approve", "reject", "void", "export", "import", "sensitive", "reports", "configure"], grants: grants("accounting", ["access", "view", "create", "edit", "delete", "approve", "reject", "void", "export", "import", "sensitive", "reports", "configure"]) },
+  { key: "facturacion", label: "Facturacion", group: "finanzas", module: "invoicing", submodule: "billing", actions: ["access", "view", "create", "edit", "approve", "reject", "void", "export", "download", "sensitive"], grants: grants("invoicing", ["access", "view", "create", "edit", "approve", "reject", "void", "export", "download", "sensitive"]) },
+  { key: "reportes", label: "Reportes", group: "analitica", module: "admin", submodule: "reports", actions: ["access", "view", "export", "download", "reports", "sensitive"], grants: grants("admin", ["access", "view", "export", "download", "reports", "sensitive"]) },
+  { key: "automatizaciones", label: "Automatizaciones", group: "sistema", module: "brain", submodule: "automation", actions: ["access", "view", "create", "edit", "delete", "execute", "configure", "administer"], grants: grants("brain", ["access", "view", "create", "edit", "delete", "execute", "configure", "administer"]) },
+  { key: "documentos", label: "Documentos adjuntos", group: "sistema", module: "admin", submodule: "documents", actions: ["access", "view", "create", "edit", "delete", "approve", "reject", "attach", "download", "sensitive"], grants: grants("admin", ["access", "view", "create", "edit", "delete", "approve", "reject", "attach", "download", "sensitive"]) },
+  { key: "configuracion", label: "Configuracion general", group: "sistema", module: "admin", submodule: "settings", actions: ["access", "view", "edit", "configure", "administer", "sensitive"], grants: grants("admin", ["access", "view", "edit", "configure", "administer", "sensitive"]) },
+  { key: "auditoria", label: "Auditoria", group: "sistema", module: "admin", submodule: "audit", actions: ["access", "view", "export", "download", "reports", "sensitive"], grants: grants("admin", ["access", "view", "export", "download", "reports", "sensitive"]) },
+  { key: "notificaciones", label: "Notificaciones", group: "sistema", module: "admin", submodule: "notifications", actions: ["access", "view", "create", "edit", "delete", "execute", "configure"], grants: grants("admin", ["access", "view", "create", "edit", "delete", "execute", "configure"]) },
+  { key: "ia", label: "IA / Asistente interno", group: "sistema", module: "brain", submodule: "assistant", actions: ["access", "view", "execute", "configure", "administer", "sensitive"], grants: grants("brain", ["access", "view", "execute", "configure", "administer", "sensitive"]) },
+  { key: "nomina", label: "Nomina", group: "finanzas", module: "payroll", submodule: "payroll", actions: ["access", "view", "create", "edit", "approve", "export", "import", "sensitive", "reports"], grants: grants("payroll", ["access", "view", "create", "edit", "approve", "export", "import", "sensitive", "reports"]) }
 ];
 
+function permissionPreset(keys, allowedActions) {
+  const legacy = emptyLegacyPermissions();
+  for (const key of keys) {
+    if (!legacy[key]) continue;
+    for (const action of allowedActions) {
+      if (action === "*") for (const available of Object.keys(legacy[key])) legacy[key][available] = true;
+      else if (legacy[key][action] !== undefined) legacy[key][action] = true;
+    }
+  }
+  return legacy;
+}
+
+const ALL_PERMISSION_KEYS = PERMISSION_CATALOG.map((item) => item.key);
 const SYSTEM_ROLE_TEMPLATES = [
-  { name: "Tecnico", description: "Ejecuta servicios, consulta referencias y registra trabajo de campo.", is_system: true, legacy_permissions: { dashboard: { access: true, view: true }, servicios: { access: true, view: true, edit: true, export: true }, horarios: { access: true, view: true, create: true, edit: true }, vehiculos: { access: true, view: true }, referencias: { access: true, view: true } } },
-  { name: "Empleado", description: "Consulta operativa y registro de jornada.", is_system: true, legacy_permissions: { dashboard: { access: true, view: true }, horarios: { access: true, view: true, create: true }, vehiculos: { access: true, view: true } } },
-  { name: "Coordinador", description: "Gestiona operacion, catalogos, reportes, configuracion y nomina sin ser superadmin.", is_system: true, legacy_permissions: { dashboard: { access: true, view: true }, personal: { access: true, view: true, create: true, edit: true }, servicios: { access: true, view: true, create: true, edit: true, export: true }, horarios: { access: true, view: true, create: true, edit: true, approve: true }, vehiculos: { access: true, view: true, create: true, edit: true }, referencias: { access: true, view: true, create: true, edit: true }, reportes: { access: true, view: true, export: true }, configuracion: { access: true, view: true, create: true, edit: true }, nomina: { access: true, view: true, create: true, edit: true, export: true } } }
+  { name: "APEX_ADMIN", description: "Superadministrador con control total del tenant.", is_system: true, hierarchy_level: 100, role_type: "superadmin", legacy_permissions: permissionPreset(ALL_PERMISSION_KEYS, ["*"]) },
+  { name: "Administrador de empresa", description: "Administra usuarios, roles, configuracion y operacion de la empresa.", is_system: false, hierarchy_level: 90, role_type: "admin_empresa", legacy_permissions: permissionPreset(ALL_PERMISSION_KEYS.filter((key) => key !== "empresas"), ["access", "view", "create", "edit", "approve", "export", "configure", "manage_users", "manage_roles"]) },
+  { name: "Gerente general", description: "Consulta transversal, aprueba procesos y revisa reportes sensibles.", is_system: false, hierarchy_level: 80, role_type: "gerencia", legacy_permissions: permissionPreset(ALL_PERMISSION_KEYS, ["access", "view", "approve", "export", "reports", "sensitive"]) },
+  { name: "Coordinador logistico", description: "Coordina transporte, servicios, rutas, WMS e inventario operativo.", is_system: false, hierarchy_level: 70, role_type: "coordinador", legacy_permissions: permissionPreset(["dashboard", "logistica", "transporte", "ultima_milla", "servicios", "inventarios", "wms", "documentos", "reportes"], ["access", "view", "create", "edit", "approve", "export", "attach", "download", "reports"]) },
+  { name: "Supervisor operativo", description: "Supervisa ejecucion diaria, equipo operativo, evidencias y marcaciones.", is_system: false, hierarchy_level: 60, role_type: "supervisor", legacy_permissions: permissionPreset(["dashboard", "servicios", "talento_humano", "marcaciones", "logistica", "transporte", "ultima_milla", "documentos"], ["access", "view", "create", "edit", "approve", "attach", "download", "reports"]) },
+  { name: "Auxiliar operativo", description: "Ejecuta actividades asignadas y registra evidencias operativas.", is_system: false, hierarchy_level: 30, role_type: "operativo", legacy_permissions: permissionPreset(["dashboard", "servicios", "marcaciones", "logistica", "documentos"], ["access", "view", "create", "edit", "attach", "download"]) },
+  { name: "Analista contable", description: "Gestiona contabilidad, facturacion y reportes financieros.", is_system: false, hierarchy_level: 50, role_type: "analista", legacy_permissions: permissionPreset(["dashboard", "contabilidad", "facturacion", "reportes", "documentos"], ["access", "view", "create", "edit", "approve", "export", "import", "download", "reports", "sensitive"]) },
+  { name: "Analista de compras", description: "Gestiona proveedores, compras, importaciones y documentos asociados.", is_system: false, hierarchy_level: 50, role_type: "analista", legacy_permissions: permissionPreset(["dashboard", "proveedores", "compras", "importaciones", "inventarios", "documentos"], ["access", "view", "create", "edit", "approve", "reject", "export", "import", "attach", "download"]) },
+  { name: "Analista de inventario", description: "Administra productos, stock, WMS y reportes de inventario.", is_system: false, hierarchy_level: 50, role_type: "analista", legacy_permissions: permissionPreset(["dashboard", "inventarios", "wms", "compras", "reportes"], ["access", "view", "create", "edit", "approve", "export", "import", "reports"]) },
+  { name: "Comercial", description: "Gestiona clientes, ventas y seguimiento comercial.", is_system: false, hierarchy_level: 45, role_type: "comercial", legacy_permissions: permissionPreset(["dashboard", "clientes", "ventas", "servicios", "reportes"], ["access", "view", "create", "edit", "export", "reports"]) },
+  { name: "Usuario solo lectura", description: "Consulta informacion autorizada sin modificar datos.", is_system: false, hierarchy_level: 10, role_type: "lectura", legacy_permissions: permissionPreset(ALL_PERMISSION_KEYS, ["access", "view", "reports"]) },
+  { name: "Auditor", description: "Consulta auditoria, documentos y reportes con foco de control.", is_system: false, hierarchy_level: 65, role_type: "auditor", legacy_permissions: permissionPreset(["dashboard", "auditoria", "documentos", "reportes", "usuarios", "roles", "contabilidad"], ["access", "view", "export", "download", "reports", "sensitive"]) },
+  { name: "Soporte tecnico", description: "Soporta configuracion, diagnostico y administracion tecnica controlada.", is_system: false, hierarchy_level: 75, role_type: "soporte", legacy_permissions: permissionPreset(["dashboard", "usuarios", "roles", "configuracion", "auditoria", "notificaciones", "ia"], ["access", "view", "edit", "configure", "administer", "reports"]) },
+  { name: "Tecnico", description: "Ejecuta servicios, consulta referencias y registra trabajo de campo.", is_system: false, hierarchy_level: 35, role_type: "operativo", legacy_permissions: permissionPreset(["dashboard", "servicios", "marcaciones", "transporte", "documentos"], ["access", "view", "create", "edit", "attach", "download"]) },
+  { name: "Empleado", description: "Consulta operativa y registra jornada.", is_system: false, hierarchy_level: 20, role_type: "operativo", legacy_permissions: permissionPreset(["dashboard", "marcaciones", "documentos"], ["access", "view", "create", "download"]) },
+  { name: "Coordinador", description: "Rol legacy de coordinacion operativa y administrativa.", is_system: false, hierarchy_level: 70, role_type: "coordinador", legacy_permissions: permissionPreset(["dashboard", "usuarios", "roles", "servicios", "marcaciones", "transporte", "reportes", "configuracion", "nomina"], ["access", "view", "create", "edit", "approve", "export", "configure"]) }
 ];
+
+const USER_MASTER_DATA = {
+  document_types: [
+    { code: "CC", name: "Cedula de ciudadania" },
+    { code: "CE", name: "Cedula de extranjeria" },
+    { code: "NIT", name: "NIT" },
+    { code: "PAS", name: "Pasaporte" }
+  ],
+  user_statuses: [
+    { code: "activo", name: "Activo" },
+    { code: "inactivo", name: "Inactivo" },
+    { code: "suspendido", name: "Suspendido" },
+    { code: "bloqueado", name: "Bloqueado" },
+    { code: "pendiente_activacion", name: "Pendiente activacion" }
+  ],
+  user_types: [
+    { code: "administrativo", name: "Administrativo" },
+    { code: "conductor", name: "Conductor" },
+    { code: "supervisor", name: "Supervisor" },
+    { code: "operario", name: "Operario" },
+    { code: "tecnico", name: "Tecnico" },
+    { code: "bodega", name: "Bodega" }
+  ],
+  contract_types: [
+    { code: "indefinite", name: "Indefinido" },
+    { code: "fixed", name: "Termino fijo" },
+    { code: "service", name: "Prestacion de servicios" },
+    { code: "temporary", name: "Temporal" }
+  ],
+  engagement_types: [
+    { code: "empleado", name: "Empleado" },
+    { code: "contratista", name: "Contratista" },
+    { code: "tercero", name: "Tercero" },
+    { code: "temporal", name: "Temporal" },
+    { code: "aprendiz", name: "Aprendiz" }
+  ],
+  session_statuses: [
+    { code: "sin_sesion", name: "Sin sesion" },
+    { code: "activa", name: "Activa" },
+    { code: "bloqueada", name: "Bloqueada" }
+  ],
+  document_statuses: [
+    { code: "pending", name: "Pendiente" },
+    { code: "approved", name: "Aprobado" },
+    { code: "rejected", name: "Rechazado" },
+    { code: "expired", name: "Vencido" }
+  ],
+  user_document_types: [
+    { code: "identity", name: "Documento de identidad" },
+    { code: "contract", name: "Contrato" },
+    { code: "license", name: "Licencia de conduccion" },
+    { code: "social_security", name: "Seguridad social" },
+    { code: "bank_certificate", name: "Certificado bancario" },
+    { code: "occupational_exam", name: "Examen medico ocupacional" },
+    { code: "internal", name: "Documento interno" }
+  ],
+  areas: [
+    { code: "OPER", name: "Operacion" },
+    { code: "TRANSP", name: "Transporte" },
+    { code: "ADMIN", name: "Administracion" },
+    { code: "BODEGA", name: "Bodega" }
+  ],
+  positions: [
+    { code: "ADMIN", name: "Administrador" },
+    { code: "SUP_RUTA", name: "Supervisor de ruta" },
+    { code: "CONDUCTOR", name: "Conductor" },
+    { code: "AUX_OPER", name: "Auxiliar operativo" }
+  ],
+  locations: [
+    { code: "SEDE-PRINCIPAL", name: "Sede principal" },
+    { code: "BOG-NORTE", name: "Bogota Norte" },
+    { code: "BOG-SUR", name: "Bogota Sur" }
+  ],
+  cost_centers: [
+    { code: "CC-OPER", name: "Operacion" },
+    { code: "CC-TRAN", name: "Transporte" },
+    { code: "CC-ADMIN", name: "Administracion" }
+  ],
+  work_shifts: [
+    { code: "DIURNO", name: "Diurno" },
+    { code: "NOCTURNO", name: "Nocturno" },
+    { code: "MIXTO", name: "Mixto" }
+  ],
+  banks: [
+    { code: "BANCOLOMBIA", name: "Bancolombia" },
+    { code: "BOGOTA", name: "Banco de Bogota" },
+    { code: "DAVIVIENDA", name: "Davivienda" }
+  ]
+};
 
 function emptyLegacyPermissions() {
   return Object.fromEntries(PERMISSION_CATALOG.map((item) => [
@@ -30,10 +216,18 @@ function emptyLegacyPermissions() {
   ]));
 }
 
-function normalizeLegacyPermissions(raw) {
-  const base = emptyLegacyPermissions();
+function filterPermissionCatalog(activeModules) {
+  return PERMISSION_CATALOG.filter((item) => tenantHasModule(activeModules, item.module));
+}
+
+function normalizeLegacyPermissions(raw, activeModules = null) {
+  const catalog = activeModules ? filterPermissionCatalog(activeModules) : PERMISSION_CATALOG;
+  const base = Object.fromEntries(catalog.map((item) => [
+    item.key,
+    Object.fromEntries(item.actions.map((action) => [action, false]))
+  ]));
   if (!raw || typeof raw !== "object") return base;
-  for (const item of PERMISSION_CATALOG) {
+  for (const item of catalog) {
     for (const action of item.actions) {
       base[item.key][action] = Boolean(raw[item.key]?.[action]);
     }
@@ -41,10 +235,11 @@ function normalizeLegacyPermissions(raw) {
   return base;
 }
 
-function legacyToRbacPermissions(raw) {
-  const legacy = normalizeLegacyPermissions(raw);
+function legacyToRbacPermissions(raw, activeModules = null) {
+  const catalog = activeModules ? filterPermissionCatalog(activeModules) : PERMISSION_CATALOG;
+  const legacy = normalizeLegacyPermissions(raw, activeModules);
   const grants = new Map();
-  for (const item of PERMISSION_CATALOG) {
+  for (const item of catalog) {
     for (const action of item.actions) {
       if (!legacy[item.key][action]) continue;
       for (const [module, mappedAction] of item.grants[action] || []) {
@@ -55,30 +250,50 @@ function legacyToRbacPermissions(raw) {
   return Array.from(grants.values());
 }
 
-function permissionsToLegacy(role) {
+function permissionsToLegacy(role, activeModules = null) {
+  const catalog = activeModules ? filterPermissionCatalog(activeModules) : PERMISSION_CATALOG;
   if (role.name === "APEX_ADMIN" || role.permissions?.some((p) => p.module === "*" && p.action === "*")) {
-    return Object.fromEntries(PERMISSION_CATALOG.map((item) => [
+    return Object.fromEntries(catalog.map((item) => [
       item.key,
       Object.fromEntries(item.actions.map((action) => [action, true]))
     ]));
   }
-  return normalizeLegacyPermissions(role.metadata?.legacy_permissions || {});
+  return normalizeLegacyPermissions(role.metadata?.legacy_permissions || {}, activeModules);
 }
 
-function roleDto(role) {
+function roleDto(role, activeModules = null) {
+  const metadata = role.metadata || {};
+  const permissions = role.permissions || [];
+  const legacy = permissionsToLegacy(role, activeModules);
+  const activeModuleCount = Object.entries(legacy).filter(([, actions]) => Object.values(actions || {}).some(Boolean)).length;
+  const activeActions = Object.values(legacy).reduce((sum, actions) => sum + Object.values(actions || {}).filter(Boolean).length, 0);
   return {
     id: role.id,
     name: role.name,
     nombre: role.name,
     description: role.description || "",
     descripcion: role.description || "",
-    active: role.metadata?.active !== false,
-    activo: role.metadata?.active !== false,
+    active: metadata.active !== false,
+    activo: metadata.active !== false,
     is_system: role.is_system,
     es_sistema: role.is_system,
-    permissions: permissionsToLegacy(role),
-    raw_permissions: role.permissions || []
+    hierarchy_level: Number(metadata.hierarchy_level || 10),
+    role_type: metadata.role_type || "custom",
+    scope: metadata.scope || "company",
+    scopes: metadata.scopes || { locations: [], areas: [], cost_centers: [], processes: [] },
+    restrictions: metadata.restrictions || { locations: [], areas: [], cost_centers: [], processes: [] },
+    can_delegate: Boolean(metadata.can_delegate),
+    sensitive: Boolean(metadata.sensitive),
+    impact_summary: { modules: activeModuleCount, actions: activeActions, raw_permissions: permissions.length },
+    permissions: legacy,
+    raw_permissions: permissions
   };
+}
+
+async function getTenantActiveModules(tenantId) {
+  tenantId = normalizeTenantId(tenantId);
+  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { active_modules: true } });
+  return normalizeActiveModules(tenant?.active_modules);
 }
 
 function userDto(user) {
@@ -127,6 +342,8 @@ function userDto(user) {
     country: metadata.country || "Colombia",
     user_status: metadata.user_status || (user.active ? "activo" : "inactivo"),
     access_email: access.email || user.email,
+    profile_kind: metadata.profile_kind || metadata.user_kind || operational.classification || "administrativo",
+    user_kind: metadata.user_kind || metadata.profile_kind || operational.classification || "administrativo",
     additional_roles: access.additional_roles || "",
     operational_profile: access.operational_profile || "",
     site: access.site || "",
@@ -176,6 +393,31 @@ function toBoolean(value) {
   return Boolean(value);
 }
 
+function normalizeUsernameEmail(value, fallbackDomain = "apex.local") {
+  const text = String(value || "").trim().toLowerCase();
+  if (!text) return "";
+  return text.includes("@") ? text : `${text}@${fallbackDomain}`;
+}
+
+function cleanText(value) {
+  return String(value || "").trim();
+}
+
+function validateRequiredUserInput(input, { requirePassword = false } = {}) {
+  const fullName = cleanText(input.name || `${cleanText(input.first_names)} ${cleanText(input.last_names)}`);
+  const email = normalizeUsernameEmail(input.email || input.username || input.user || input.access_email);
+  if (!fullName) throw badRequest("El nombre del usuario es obligatorio.");
+  if (!email) throw badRequest("El correo del usuario es obligatorio.");
+  if (!cleanText(input.role_id)) throw badRequest("El rol principal es obligatorio.");
+  if (!cleanText(input.document)) throw badRequest("El numero de documento es obligatorio.");
+  if (!cleanText(input.first_names)) throw badRequest("Los nombres del usuario son obligatorios.");
+  if (!cleanText(input.last_names)) throw badRequest("Los apellidos del usuario son obligatorios.");
+  if (!cleanText(input.position)) throw badRequest("El cargo del usuario es obligatorio.");
+  if (!cleanText(input.department || input.area)) throw badRequest("El area o departamento del usuario es obligatorio.");
+  if (requirePassword && !cleanText(input.password || input.pas)) throw badRequest("La clave inicial es obligatoria.");
+  return { fullName, email };
+}
+
 function userAuditSnapshot(user, employee) {
   return {
     user_id: user?.id,
@@ -191,32 +433,66 @@ function userAuditSnapshot(user, employee) {
   };
 }
 
-async function upsertRoleFromLegacy(tenantId, data) {
-  const legacyPermissions = normalizeLegacyPermissions(data.permissions || data.legacy_permissions || {});
-  const rbacPermissions = legacyToRbacPermissions(legacyPermissions);
+async function upsertRoleFromLegacy(tenantId, data, activeModules = null) {
+  tenantId = normalizeTenantId(tenantId);
+  const tenantModules = activeModules || await getTenantActiveModules(tenantId);
+  const legacyPermissions = normalizeLegacyPermissions(data.permissions || data.legacy_permissions || {}, tenantModules);
+  const rbacPermissions = data.name === "APEX_ADMIN"
+    ? [{ module: "*", action: "*" }]
+    : legacyToRbacPermissions(legacyPermissions, tenantModules);
   const roleData = {
     tenant_id: tenantId,
     name: data.name || data.nombre,
     description: data.description || data.descripcion || "",
     is_system: Boolean(data.is_system),
-    metadata: { active: data.active !== false && data.activo !== false, legacy_permissions: legacyPermissions },
+    metadata: {
+      active: data.active !== false && data.activo !== false,
+      legacy_permissions: legacyPermissions,
+      hierarchy_level: Number(data.hierarchy_level || data.level || 10),
+      role_type: data.role_type || data.type || "custom",
+      scope: data.scope || "company",
+      scopes: data.scopes || { locations: [], areas: [], cost_centers: [], processes: [] },
+      restrictions: data.restrictions || { locations: [], areas: [], cost_centers: [], processes: [] },
+      can_delegate: toBoolean(data.can_delegate),
+      sensitive: toBoolean(data.sensitive)
+    },
     permissions: { create: rbacPermissions }
   };
 
   return prisma.role.create({ data: roleData, include: { permissions: true } });
 }
 
+const systemRolesReady = new Set();
+const systemRolesInFlight = new Map();
+
 async function ensureSystemRoles(tenantId) {
-  return prisma.runWithTenant(tenantId, async () => {
+  tenantId = normalizeTenantId(tenantId);
+  if (systemRolesReady.has(tenantId)) return;
+  if (systemRolesInFlight.has(tenantId)) return systemRolesInFlight.get(tenantId);
+
+  const bootstrap = prisma.runWithTenant(tenantId, async () => {
+    const activeModules = await getTenantActiveModules(tenantId);
+    const templatesByName = new Map(SYSTEM_ROLE_TEMPLATES.map((template) => [template.name, template]));
+    const currentRoles = await prisma.role.findMany({
+      where: { name: { in: [...templatesByName.keys()] } },
+      select: { name: true }
+    });
+    const existing = new Set(currentRoles.map((role) => role.name));
     for (const template of SYSTEM_ROLE_TEMPLATES) {
-      const current = await prisma.role.findUnique({ where: { tenant_id_name: { tenant_id: tenantId, name: template.name } } });
-      if (current) continue;
-      await upsertRoleFromLegacy(tenantId, template);
+      if (!existing.has(template.name)) await upsertRoleFromLegacy(tenantId, { ...template, active: true }, activeModules);
     }
   });
+  systemRolesInFlight.set(tenantId, bootstrap);
+  try {
+    await bootstrap;
+    systemRolesReady.add(tenantId);
+  } finally {
+    systemRolesInFlight.delete(tenantId);
+  }
 }
 
 async function exportTenantData(tenantId) {
+  tenantId = normalizeTenantId(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const [parties, items, transactions, employees, movements] = await Promise.all([
       prisma.party.findMany(),
@@ -242,95 +518,221 @@ async function processBilling() {
   return { processed: true };
 }
 
-async function getPermissionCatalog() {
-  return PERMISSION_CATALOG.map(({ key, label, actions }) => ({ key, label, actions }));
+async function getPermissionCatalog(tenantId) {
+  const activeModules = await getTenantActiveModules(tenantId);
+  return filterPermissionCatalog(activeModules).map(({ key, label, group, module, submodule, actions }) => ({ key, label, group, module, submodule, actions }));
 }
 
-async function listRoles(tenantId) {
+async function getUserMasterData(tenantId) {
+  tenantId = normalizeTenantId(tenantId);
+  return prisma.runWithTenant(tenantId, async () => ({ ...USER_MASTER_DATA }));
+}
+
+async function addUserMasterDataItem(tenantId, catalog, input, actorId = null) {
+  tenantId = normalizeTenantId(tenantId);
+  const allowed = new Set(Object.keys(USER_MASTER_DATA));
+  if (!allowed.has(catalog)) {
+    const err = new Error("Catalogo de usuario no soportado.");
+    err.statusCode = 400;
+    throw err;
+  }
+  const code = String(input.code || "").trim();
+  const name = String(input.name || "").trim();
+  if (!code || !name) {
+    const err = new Error("Codigo y nombre son obligatorios.");
+    err.statusCode = 400;
+    throw err;
+  }
+  const item = {
+    code,
+    name,
+    description: String(input.description || "").trim(),
+    active: input.active !== false,
+    sort_order: Number(input.sort_order || 100)
+  };
+  const current = Array.isArray(USER_MASTER_DATA[catalog]) ? USER_MASTER_DATA[catalog] : [];
+  USER_MASTER_DATA[catalog] = current.some((entry) => entry.code === code)
+    ? current.map((entry) => entry.code === code ? { ...entry, ...item } : entry)
+    : [...current, item];
+  return prisma.runWithTenant(tenantId, async () => {
+    await prisma.auditLog.create({
+      data: {
+        tenant_id: tenantId,
+        user_id: actorId,
+        action: "catalog_item_upserted",
+        module: "admin",
+        entity: `/api/v1/admin/user-master-data/${catalog}/items`,
+        entity_id: code,
+        old_value: null,
+        new_value: item
+      }
+    }).catch(() => null);
+    return { ...USER_MASTER_DATA };
+  });
+}
+
+async function listRoles(tenantId, query = {}) {
+  tenantId = normalizeTenantId(tenantId);
   await ensureSystemRoles(tenantId);
+  const activeModules = await getTenantActiveModules(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
-    const roles = await prisma.role.findMany({ include: { permissions: true }, orderBy: [{ is_system: "desc" }, { name: "asc" }] });
-    return roles.map(roleDto);
+    const roles = await prisma.role.findMany({
+      include: { permissions: true },
+      orderBy: [{ is_system: "desc" }, { name: "asc" }],
+      skip: Math.max(Number(query.offset || 0), 0),
+      take: Math.min(Number(query.limit || 100), 200)
+    });
+    return roles.map((role) => roleDto(role, activeModules));
   });
 }
 
-async function createRole(tenantId, input) {
+async function createRole(tenantId, input, actorId = null) {
+  tenantId = normalizeTenantId(tenantId);
+  const activeModules = await getTenantActiveModules(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
-    const role = await upsertRoleFromLegacy(tenantId, { ...input, is_system: false });
-    return roleDto(role);
+    const name = String(input.name || input.nombre || "").trim();
+    if (!name) {
+      const err = new Error("El nombre del rol es obligatorio.");
+      err.statusCode = 400;
+      throw err;
+    }
+    const duplicate = await prisma.role.findUnique({ where: { tenant_id_name: { tenant_id: tenantId, name } } });
+    if (duplicate) {
+      const err = new Error("Ya existe un rol con ese nombre en esta empresa.");
+      err.statusCode = 409;
+      throw err;
+    }
+    const role = await upsertRoleFromLegacy(tenantId, { ...input, is_system: false }, activeModules);
+    await prisma.auditLog.create({
+      data: {
+        tenant_id: tenantId,
+        user_id: actorId,
+        action: "role_created",
+        module: "admin",
+        entity: "/api/v1/admin/roles",
+        entity_id: String(role.id),
+        old_value: null,
+        new_value: roleDto(role, activeModules)
+      }
+    });
+    return roleDto(role, activeModules);
   });
 }
 
-async function updateRole(tenantId, id, input) {
+async function updateRole(tenantId, id, input, actorId = null) {
+  tenantId = normalizeTenantId(tenantId);
+  const activeModules = await getTenantActiveModules(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
-    const current = await prisma.role.findFirstOrThrow({ where: { id: Number(id) } });
+    const current = await prisma.role.findFirstOrThrow({ where: { id: Number(id) }, include: { permissions: true } });
+    const previous = roleDto(current, activeModules);
     if (current.name === "APEX_ADMIN") {
       const role = await prisma.role.update({
         where: { id: current.id },
         data: {
           description: input.description || input.descripcion || current.description,
-          metadata: { ...(current.metadata || {}), active: true }
+          metadata: { ...(current.metadata || {}), active: true, hierarchy_level: 100, role_type: "superadmin" }
         },
         include: { permissions: true }
       });
-      return roleDto(role);
+      await prisma.auditLog.create({
+        data: { tenant_id: tenantId, user_id: actorId, action: "role_updated", module: "admin", entity: "/api/v1/admin/roles", entity_id: String(role.id), old_value: previous, new_value: roleDto(role, activeModules) }
+      });
+      return roleDto(role, activeModules);
     }
-    const legacyPermissions = normalizeLegacyPermissions(input.permissions || {});
-    const rbacPermissions = legacyToRbacPermissions(legacyPermissions);
+    const legacyPermissions = normalizeLegacyPermissions(input.permissions || {}, activeModules);
+    const rbacPermissions = legacyToRbacPermissions(legacyPermissions, activeModules);
+    const nextName = current.is_system ? current.name : String(input.name || input.nombre || current.name).trim();
+    if (nextName !== current.name) {
+      const duplicate = await prisma.role.findUnique({ where: { tenant_id_name: { tenant_id: tenantId, name: nextName } } });
+      if (duplicate) {
+        const err = new Error("Ya existe un rol con ese nombre en esta empresa.");
+        err.statusCode = 409;
+        throw err;
+      }
+    }
     await prisma.permission.deleteMany({ where: { role_id: current.id } });
     const role = await prisma.role.update({
       where: { id: current.id },
       data: {
-        name: current.is_system ? current.name : (input.name || input.nombre || current.name),
+        name: nextName,
         description: input.description || input.descripcion || "",
-        metadata: { active: input.active !== false && input.activo !== false, legacy_permissions: legacyPermissions },
+        metadata: {
+          ...(current.metadata || {}),
+          active: input.active !== false && input.activo !== false,
+          legacy_permissions: legacyPermissions,
+          hierarchy_level: Number(input.hierarchy_level || current.metadata?.hierarchy_level || 10),
+          role_type: input.role_type || current.metadata?.role_type || "custom",
+          scope: input.scope || current.metadata?.scope || "company",
+          scopes: input.scopes || current.metadata?.scopes || { locations: [], areas: [], cost_centers: [], processes: [] },
+          restrictions: input.restrictions || current.metadata?.restrictions || { locations: [], areas: [], cost_centers: [], processes: [] },
+          can_delegate: input.can_delegate === undefined ? Boolean(current.metadata?.can_delegate) : toBoolean(input.can_delegate),
+          sensitive: input.sensitive === undefined ? Boolean(current.metadata?.sensitive) : toBoolean(input.sensitive)
+        },
         permissions: { create: rbacPermissions }
       },
       include: { permissions: true }
     });
-    return roleDto(role);
+    await prisma.auditLog.create({
+      data: { tenant_id: tenantId, user_id: actorId, action: "role_updated", module: "admin", entity: "/api/v1/admin/roles", entity_id: String(role.id), old_value: previous, new_value: roleDto(role, activeModules) }
+    });
+    return roleDto(role, activeModules);
   });
 }
 
-async function setRoleActive(tenantId, id, active) {
+async function setRoleActive(tenantId, id, active, actorId = null) {
+  tenantId = normalizeTenantId(tenantId);
+  const activeModules = await getTenantActiveModules(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const current = await prisma.role.findFirstOrThrow({ where: { id: Number(id) }, include: { permissions: true } });
-    if (current.name === "APEX_ADMIN") return roleDto(current);
+    if (current.name === "APEX_ADMIN") return roleDto(current, activeModules);
+    const previous = roleDto(current, activeModules);
     const role = await prisma.role.update({
       where: { id: current.id },
       data: { metadata: { ...(current.metadata || {}), active: toBoolean(active) } },
       include: { permissions: true }
     });
-    return roleDto(role);
+    await prisma.auditLog.create({
+      data: { tenant_id: tenantId, user_id: actorId, action: toBoolean(active) ? "role_activated" : "role_deactivated", module: "admin", entity: "/api/v1/admin/roles/status", entity_id: String(role.id), old_value: previous, new_value: roleDto(role, activeModules) }
+    });
+    return roleDto(role, activeModules);
   });
 }
 
-async function listUsers(tenantId) {
+async function listUsers(tenantId, query = {}) {
+  tenantId = normalizeTenantId(tenantId);
   await ensureSystemRoles(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const users = await prisma.user.findMany({
       include: { role: true, employee: true },
-      orderBy: { name: "asc" }
+      orderBy: { name: "asc" },
+      skip: Math.max(Number(query.offset || 0), 0),
+      take: Math.min(Number(query.limit || 100), 200)
     });
     return users.map(userDto);
   });
 }
 
 async function createUser(tenantId, input, actorId = null) {
+  tenantId = normalizeTenantId(tenantId);
   await ensureSystemRoles(tenantId);
+  const { fullName, email } = validateRequiredUserInput(input, { requirePassword: true });
   const rawPassword = input.password || input.pas || "";
   assertPasswordPolicy(rawPassword);
   const password = await bcrypt.hash(rawPassword, 12);
   return prisma.runWithTenant(tenantId, async () => {
+    const existing = await prisma.user.findFirst({ where: { email } });
+    if (existing) {
+      const err = new Error("Ya existe un usuario con este correo en la empresa.");
+      err.statusCode = 409;
+      throw err;
+    }
     const role = input.role_id
       ? await prisma.role.findFirstOrThrow({ where: { id: Number(input.role_id) } })
       : await prisma.role.findFirst({ where: { name: "Empleado" } });
+    if (!role) throw badRequest("Debe seleccionar un rol valido para el usuario.");
     if (role?.metadata?.active === false) {
-      const err = new Error("El rol seleccionado esta inactivo");
-      err.statusCode = 400;
-      throw err;
+      throw badRequest("El rol seleccionado esta inactivo");
     }
-    const fullName = input.name || input.nombre || `${input.first_names || ""} ${input.last_names || ""}`.trim();
     const userStatus = input.user_status || input.labor_status || input.estado_laboral || "activo";
     const active = !["inactivo", "suspendido", "retirado"].includes(userStatus) && input.active !== false && input.activo !== false;
     const metadata = {
@@ -351,8 +753,10 @@ async function createUser(tenantId, input, actorId = null) {
       company: input.company || input.empresa || "APEX",
       labor_status: userStatus,
       user_status: userStatus,
+      profile_kind: input.profile_kind || input.user_kind || input.tipo_usuario || input.operational_classification || "administrativo",
+      user_kind: input.user_kind || input.profile_kind || input.tipo_usuario || input.operational_classification || "administrativo",
       access: {
-        email: input.access_email || input.email || input.username || input.user,
+        email: normalizeUsernameEmail(input.access_email || input.email || input.username || input.user || email),
         additional_roles: input.additional_roles || "",
         operational_profile: input.operational_profile || "",
         site: input.site || "",
@@ -402,7 +806,7 @@ async function createUser(tenantId, input, actorId = null) {
       data: {
         tenant_id: tenantId,
         name: fullName,
-        email: (input.email || input.username || input.user).toLowerCase(),
+        email,
         password,
         role_id: role?.id || null,
         active,
@@ -441,6 +845,7 @@ async function createUser(tenantId, input, actorId = null) {
 }
 
 async function updateUser(tenantId, id, input, actorId = null) {
+  tenantId = normalizeTenantId(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id) }, include: { employee: true } });
     const previousSnapshot = userAuditSnapshot(current, current.employee);
@@ -453,7 +858,7 @@ async function updateUser(tenantId, id, input, actorId = null) {
     const fullName = input.name || input.nombre || `${input.first_names || previousMetadata.first_names || ""} ${input.last_names || previousMetadata.last_names || ""}`.trim() || current.name;
     const data = {
       name: fullName,
-      email: (input.email || input.username || current.email).toLowerCase(),
+      email: normalizeUsernameEmail(input.email || input.username || current.email),
       role_id: input.role_id ? Number(input.role_id) : current.role_id,
       active
     };
@@ -490,9 +895,11 @@ async function updateUser(tenantId, id, input, actorId = null) {
         company: input.company || input.empresa || current.employee?.metadata?.company || "APEX",
         labor_status: userStatus,
         user_status: userStatus,
+        profile_kind: input.profile_kind || input.user_kind || input.tipo_usuario || previousMetadata.profile_kind || previousMetadata.user_kind || previousOperational.classification || "administrativo",
+        user_kind: input.user_kind || input.profile_kind || input.tipo_usuario || previousMetadata.user_kind || previousMetadata.profile_kind || previousOperational.classification || "administrativo",
         access: {
           ...previousAccess,
-          email: input.access_email || input.email || previousAccess.email || data.email,
+          email: normalizeUsernameEmail(input.access_email || input.email || previousAccess.email || data.email),
           additional_roles: input.additional_roles || previousAccess.additional_roles || "",
           operational_profile: input.operational_profile || previousAccess.operational_profile || "",
           site: input.site || previousAccess.site || "",
@@ -566,6 +973,7 @@ async function updateUser(tenantId, id, input, actorId = null) {
 }
 
 async function setUserActive(tenantId, id, active, actorId = null) {
+  tenantId = normalizeTenantId(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const enabled = toBoolean(active);
     const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id) }, include: { employee: true } });
@@ -608,10 +1016,160 @@ async function setUserActive(tenantId, id, active, actorId = null) {
   });
 }
 
+async function updateUserAccess(tenantId, id, input, actorId = null) {
+  tenantId = normalizeTenantId(tenantId);
+  return prisma.runWithTenant(tenantId, async () => {
+    const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id) }, include: { employee: true } });
+    const previousSnapshot = userAuditSnapshot(current, current.employee);
+    const metadata = current.employee?.metadata || {};
+    const access = metadata.access || {};
+    const nextSessionStatus = input.session_status || (input.blocked ? "bloqueada" : access.session_status || "sin_sesion");
+    if (input.password) assertPasswordPolicy(input.password);
+    await prisma.user.update({
+      where: { id: current.id },
+      data: {
+        ...(input.password ? { password: await bcrypt.hash(input.password, 12) } : {}),
+        active: input.active === undefined ? current.active : toBoolean(input.active)
+      }
+    });
+    if (current.employee) {
+      await prisma.employee.update({
+        where: { id: current.employee.id },
+        data: {
+          metadata: {
+            ...metadata,
+            access: {
+              ...access,
+              session_status: nextSessionStatus,
+              require_password_change: input.require_password_change === undefined ? Boolean(access.require_password_change) : toBoolean(input.require_password_change)
+            },
+            user_audit_trail: [
+              ...(Array.isArray(metadata.user_audit_trail) ? metadata.user_audit_trail : []).slice(-9),
+              { at: new Date().toISOString(), action: "access_updated", module: "administracion", actor_id: actorId }
+            ]
+          }
+        }
+      });
+    }
+    const user = await prisma.user.findFirstOrThrow({ where: { id: current.id }, include: { role: true, employee: true } });
+    await prisma.auditLog.create({
+      data: {
+        tenant_id: tenantId,
+        user_id: actorId,
+        action: "access_updated",
+        module: "admin",
+        entity: "/api/v1/admin/users/access",
+        entity_id: String(user.id),
+        old_value: previousSnapshot,
+        new_value: userAuditSnapshot(user, user.employee)
+      }
+    });
+    return userDto(user);
+  });
+}
+
+async function addUserDocument(tenantId, id, input, actorId = null) {
+  tenantId = normalizeTenantId(tenantId);
+  return prisma.runWithTenant(tenantId, async () => {
+    const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id) }, include: { employee: true } });
+    if (!input.document_type || !input.file_name) {
+      const err = new Error("Tipo documental y nombre de archivo son obligatorios");
+      err.statusCode = 400;
+      throw err;
+    }
+    const metadata = current.employee?.metadata || {};
+    const documents = Array.isArray(metadata.documents) ? metadata.documents : [];
+    const document = {
+      id: input.id || `doc-${Date.now()}`,
+      document_type: input.document_type,
+      file_name: input.file_name,
+      file_url: input.file_url || "",
+      storage_path: input.storage_path || "",
+      mime_type: input.mime_type || "",
+      file_size: Number(input.file_size || 0),
+      status: input.status || "pending",
+      observations: input.observations || "",
+      uploaded_by: actorId,
+      uploaded_at: new Date().toISOString()
+    };
+    if (current.employee) {
+      await prisma.employee.update({
+        where: { id: current.employee.id },
+        data: {
+          metadata: {
+            ...metadata,
+            documents: [...documents, document],
+            user_audit_trail: [
+              ...(Array.isArray(metadata.user_audit_trail) ? metadata.user_audit_trail : []).slice(-9),
+              { at: new Date().toISOString(), action: "document_added", module: "administracion", actor_id: actorId, document_id: document.id }
+            ]
+          }
+        }
+      });
+    }
+    const user = await prisma.user.findFirstOrThrow({ where: { id: current.id }, include: { role: true, employee: true } });
+    await prisma.auditLog.create({
+      data: {
+        tenant_id: tenantId,
+        user_id: actorId,
+        action: "document_added",
+        module: "admin",
+        entity: "/api/v1/admin/users/documents",
+        entity_id: String(user.id),
+        old_value: null,
+        new_value: document
+      }
+    });
+    return userDto(user);
+  });
+}
+
+async function removeUserDocument(tenantId, id, documentId, actorId = null) {
+  tenantId = normalizeTenantId(tenantId);
+  return prisma.runWithTenant(tenantId, async () => {
+    const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id) }, include: { employee: true } });
+    const metadata = current.employee?.metadata || {};
+    const documents = Array.isArray(metadata.documents) ? metadata.documents : [];
+    const removed = documents.find((document) => String(document.id) === String(documentId)) || null;
+    const nextDocuments = documents.filter((document) => String(document.id) !== String(documentId));
+    if (current.employee) {
+      await prisma.employee.update({
+        where: { id: current.employee.id },
+        data: {
+          metadata: {
+            ...metadata,
+            documents: nextDocuments,
+            user_audit_trail: [
+              ...(Array.isArray(metadata.user_audit_trail) ? metadata.user_audit_trail : []).slice(-9),
+              { at: new Date().toISOString(), action: "document_removed", module: "administracion", actor_id: actorId, document_id: documentId }
+            ]
+          }
+        }
+      });
+    }
+    const user = await prisma.user.findFirstOrThrow({ where: { id: current.id }, include: { role: true, employee: true } });
+    await prisma.auditLog.create({
+      data: {
+        tenant_id: tenantId,
+        user_id: actorId,
+        action: "document_removed",
+        module: "admin",
+        entity: "/api/v1/admin/users/documents",
+        entity_id: String(user.id),
+        old_value: removed,
+        new_value: null
+      }
+    });
+    return userDto(user);
+  });
+}
+
 module.exports = {
   exportTenantData,
   processBilling,
   getPermissionCatalog,
+  getUserMasterData,
+  addUserMasterDataItem,
   listRoles,
   createRole,
   updateRole,
@@ -619,6 +1177,9 @@ module.exports = {
   listUsers,
   createUser,
   updateUser,
-  setUserActive
+  setUserActive,
+  updateUserAccess,
+  addUserDocument,
+  removeUserDocument
 };
 

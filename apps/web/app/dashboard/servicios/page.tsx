@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   ChevronRight,
   ClipboardCheck,
-  FileText,
   Gauge,
   Image as ImageIcon,
   Layers3,
@@ -93,12 +92,12 @@ function Indicator({ icon: Icon, label, value, detail, tone }: { icon: typeof Ga
 
 function QuickLink({ href, icon: Icon, title, detail, primary = false }: { href: string; icon: typeof Plus; title: string; detail: string; primary?: boolean }) {
   return (
-    <Link className={`group rounded-md border p-4 transition active:scale-[0.99] ${primary ? "border-apex bg-apex text-white shadow-sm hover:bg-[#116b61]" : "border-line bg-white hover:border-apex hover:bg-paper"}`} href={href}>
+    <Link className={`group min-w-0 rounded-md border p-4 transition active:scale-[0.99] ${primary ? "border-apex bg-apex text-white shadow-sm hover:bg-[#116b61]" : "border-line bg-white hover:border-apex hover:bg-paper"}`} href={href}>
       <div className="flex items-start justify-between gap-3">
         <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md ${primary ? "bg-white/15" : "bg-apex/10 text-apex"}`}><Icon size={19} /></span>
         <ChevronRight className={primary ? "text-white/70" : "text-neutral-400 group-hover:text-apex"} size={18} />
       </div>
-      <h3 className="mt-4 font-semibold">{title}</h3>
+      <h3 className="mt-4 break-words font-semibold">{title}</h3>
       <p className={`mt-1 text-sm leading-5 ${primary ? "text-white/75" : "text-neutral-600"}`}>{detail}</p>
     </Link>
   );
@@ -177,13 +176,13 @@ export default function ServicesPage() {
             <h2 className="max-w-2xl text-2xl font-semibold leading-tight sm:text-4xl">Control claro de servicios, evidencias y novedades</h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-white/70">{mainMessage} Prioriza lo pendiente, revisa no ejecutados y valida que cada cierre tenga evidencia suficiente.</p>
             <div className="mt-5 grid gap-2 sm:flex sm:flex-wrap">
-              <Link className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-[#081411]" href="/dashboard/servicios/nuevo">
-                <Plus size={17} />
-                Nueva orden
+              <Link className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-[#081411]" href="/dashboard/servicios/nuevo">
+                <Plus className="shrink-0" size={17} />
+                <span className="truncate">Nueva orden</span>
               </Link>
-              <Link className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/dashboard/servicios/reportes">
-                <BarChart3 size={17} />
-                Ver reportes
+              <Link className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-md border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/dashboard/servicios/reportes">
+                <BarChart3 className="shrink-0" size={17} />
+                <span className="truncate">Ver reportes</span>
               </Link>
             </div>
           </div>
@@ -291,11 +290,11 @@ export default function ServicesPage() {
                       <span className="rounded-md bg-paper px-2 py-1">{order.photos.length} foto(s)</span>
                       <span className="rounded-md bg-paper px-2 py-1">{order.incidents.length} novedad(es)</span>
                     </div>
-                    <div className="mt-4 flex items-center justify-between gap-3">
+                    <div className="mt-4 grid min-w-0 gap-2 sm:flex sm:items-center sm:justify-between sm:gap-3">
                       <span className="text-xs font-medium text-neutral-500">{formatDate(order.scheduled_date)}</span>
-                      <span className="inline-flex h-9 items-center gap-2 rounded-md bg-white px-3 text-xs font-semibold text-apex shadow-sm ring-1 ring-line">
-                        {serviceAction(order)}
-                        <ChevronRight size={14} />
+                      <span className="inline-flex h-9 min-w-0 items-center justify-center gap-2 rounded-md bg-white px-3 text-xs font-semibold text-apex shadow-sm ring-1 ring-line sm:w-auto">
+                        <span className="truncate">{serviceAction(order)}</span>
+                        <ChevronRight className="shrink-0" size={14} />
                       </span>
                     </div>
                   </div>
@@ -314,8 +313,8 @@ export default function ServicesPage() {
       </section>
 
       <div className="fixed inset-x-0 bottom-0 z-50 grid grid-cols-[1fr_56px_56px] gap-2 border-t border-line bg-white/95 p-3 pb-[calc(env(safe-area-inset-bottom)+12px)] backdrop-blur md:hidden">
-        <Link className="inline-flex h-14 items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white shadow-sm" href="/dashboard/servicios/nuevo">
-          <Plus size={18} /> Nueva orden
+        <Link className="inline-flex h-14 min-w-0 items-center justify-center gap-2 rounded-md bg-apex px-3 text-base font-semibold text-white shadow-sm" href="/dashboard/servicios/nuevo">
+          <Plus className="shrink-0" size={18} /> <span className="truncate">Nueva orden</span>
         </Link>
         <Link className="inline-flex h-14 w-14 items-center justify-center rounded-md border border-line bg-white" href="/dashboard/servicios/referencias" aria-label="Referencias">
           <Settings2 size={20} />

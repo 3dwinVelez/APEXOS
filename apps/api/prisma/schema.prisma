@@ -126,6 +126,7 @@ model Party {
   contacts     Contact[]
 
   @@index([tenant_id, type])
+  @@index([tenant_id, type, active, name])
   @@index([tenant_id, tax_id])
 }
 
@@ -149,8 +150,14 @@ model Item {
   description   String?
   category_id   Int?
   category      Category?         @relation(fields: [category_id], references: [id])
+  family_id     Int?
+  family        InventoryFamily?   @relation(fields: [family_id], references: [id])
+  family_code   String?
+  society_code  String?
+  branch_code   String?
   unit          String            @default("UND")
   unit_cost     Float             @default(0)
+  costing_method String           @default("weighted_average")
   unit_price    Float             @default(0)
   tax_rate      Float             @default(0)
   stock_current Float             @default(0)
@@ -166,10 +173,75 @@ model Item {
   locations     ItemLocation[]
   bom_lines     BOMLine[]
   movements     Movement[]
+  costs         ProductCost[]
 
   @@unique([tenant_id, code])
   @@index([tenant_id, type])
+  @@index([tenant_id, family_code])
+  @@index([tenant_id, society_code, branch_code])
   @@index([tenant_id, active])
+}
+
+model InventoryFamily {
+  id          Int                        @id @default(autoincrement())
+  tenant_id   String
+  code        String
+  name        String
+  description String?
+  society_code String?
+  branch_code String?
+  code_start  String?
+  code_end    String?
+  active      Boolean                    @default(true)
+  created_at  DateTime                   @default(now())
+  updated_at  DateTime                   @updatedAt
+  items       Item[]
+  accounting  InventoryFamilyAccounting?
+
+  @@map("inv_families")
+  @@unique([tenant_id, code])
+  @@index([tenant_id, society_code, branch_code])
+  @@index([tenant_id, active])
+}
+
+model InventoryFamilyAccounting {
+  id                            Int             @id @default(autoincrement())
+  tenant_id                     String
+  family_id                     Int             @unique
+  family                        InventoryFamily @relation(fields: [family_id], references: [id], onDelete: Cascade)
+  goods_receipt_account_code    String
+  gr_ir_account_code            String
+  sales_cost_account_code       String
+  sales_revenue_account_code    String
+  return_revenue_account_code   String
+  manual_in_account_code        String
+  manual_out_account_code       String
+  active                        Boolean         @default(true)
+  created_at                    DateTime        @default(now())
+  updated_at                    DateTime        @updatedAt
+
+  @@map("inv_family_accounting")
+  @@index([tenant_id])
+}
+
+model ProductCost {
+  id               Int      @id @default(autoincrement())
+  tenant_id        String
+  item_id          Int
+  item             Item     @relation(fields: [item_id], references: [id])
+  costing_method   String   @default("weighted_average")
+  quantity_balance Float    @default(0)
+  value_balance    Float    @default(0)
+  average_cost     Float    @default(0)
+  last_unit_cost    Float    @default(0)
+  source_type      String?
+  source_id        Int?
+  created_by       Int?
+  created_at       DateTime @default(now())
+
+  @@map("inv_product_costs")
+  @@index([tenant_id, item_id, created_at])
+  @@index([tenant_id, source_type, source_id])
 }
 
 model Category {
@@ -185,21 +257,26 @@ model Category {
 }
 
 model Place {
-  id        Int        @id @default(autoincrement())
-  tenant_id String
-  type      String
-  name      String
-  code      String
-  address   String?
-  city      String?
-  country   String     @default("CO")
-  parent_id Int?
-  active    Boolean    @default(true)
-  metadata  Json       @default("{}")
-  locations Location[]
+  id               Int        @id @default(autoincrement())
+  tenant_id        String
+  type             String
+  name             String
+  code             String
+  address          String?
+  city             String?
+  country          String     @default("CO")
+  society_code     String?
+  branch_code      String?
+  cost_center_code String?
+  warehouse_type   String     @default("owned")
+  parent_id        Int?
+  active           Boolean    @default(true)
+  metadata         Json       @default("{}")
+  locations        Location[]
 
   @@unique([tenant_id, code])
   @@index([tenant_id, type])
+  @@index([tenant_id, society_code, branch_code, cost_center_code])
 }
 
 model Location {
@@ -273,6 +350,7 @@ model Transaction {
   @@index([tenant_id, type, status])
   @@index([tenant_id, party_id])
   @@index([tenant_id, created_at])
+  @@index([tenant_id, type, created_at])
 }
 
 model TransactionLine {
@@ -458,6 +536,161 @@ model LedgerEntry {
 
   @@index([tenant_id, account_id, date])
   @@index([tenant_id, period])
+}
+
+model CntCabdoc {
+  id              Int         @id @default(autoincrement())
+  tenant_id       String
+  document_type   String
+  document_number Int
+  full_number     String
+  posting_date    DateTime
+  reference       String?
+  header_text     String
+  society_code    String
+  status          String      @default("posted")
+  total_debit     Float       @default(0)
+  total_credit    Float       @default(0)
+  created_by      Int?
+  created_at      DateTime    @default(now())
+  updated_at      DateTime    @updatedAt
+  lines           CntCuedoc[]
+
+  @@map("cnt_cabdoc")
+  @@unique([tenant_id, document_type, document_number])
+  @@unique([tenant_id, full_number])
+  @@index([tenant_id, posting_date])
+  @@index([tenant_id, society_code])
+}
+
+model CntCuedoc {
+  id                Int       @id @default(autoincrement())
+  tenant_id         String
+  cabdoc_id         Int
+  cabdoc            CntCabdoc @relation(fields: [cabdoc_id], references: [id], onDelete: Cascade)
+  line_no           Int
+  account_id        Int
+  account_code      String
+  branch_code       String
+  cost_center_code  String
+  party_id          Int
+  party_tax_id      String?
+  movement          String
+  debit             Float     @default(0)
+  credit            Float     @default(0)
+  description       String
+  ledger_entry_id   Int?
+  created_at        DateTime  @default(now())
+
+  @@map("cnt_cuedoc")
+  @@index([tenant_id, cabdoc_id])
+  @@index([tenant_id, account_code])
+  @@index([tenant_id, party_id])
+  @@index([tenant_id, branch_code, cost_center_code])
+}
+
+model CxpCabdoc {
+  id                      Int         @id @default(autoincrement())
+  tenant_id               String
+  document_kind           String
+  document_class          String
+  number                  String
+  supplier_reference      String      @default("")
+  referenced_invoice_id   Int?
+  posting_date            DateTime
+  due_term                String
+  due_date                DateTime
+  header_text             String
+  supplier_id             Int
+  supplier_tax_id         String?
+  society_code            String
+  associated_account_id   Int
+  associated_account_code String
+  subtotal                Float       @default(0)
+  tax_total               Float       @default(0)
+  total                   Float       @default(0)
+  applied_total           Float       @default(0)
+  balance                 Float       @default(0)
+  status                  String      @default("posted")
+  accounting_document_id  Int?
+  created_by              Int?
+  created_at              DateTime    @default(now())
+  updated_at              DateTime    @updatedAt
+  lines                   CxpCuedoc[]
+
+  @@map("cxp_cabdoc")
+  @@unique([tenant_id, number])
+  @@index([tenant_id, document_class, supplier_id, supplier_reference])
+  @@index([tenant_id, supplier_id])
+  @@index([tenant_id, supplier_id, balance])
+  @@index([tenant_id, referenced_invoice_id])
+  @@index([tenant_id, document_class])
+  @@index([tenant_id, posting_date])
+  @@index([tenant_id, due_date])
+  @@index([tenant_id, society_code])
+  @@index([tenant_id, document_class, posting_date])
+  @@index([tenant_id, supplier_id, due_date])
+}
+
+model CxpApplication {
+  id             Int      @id @default(autoincrement())
+  tenant_id      String
+  credit_note_id Int
+  invoice_id     Int
+  amount         Float
+  created_by     Int?
+  created_at     DateTime @default(now())
+
+  @@map("cxp_applications")
+  @@index([tenant_id, credit_note_id])
+  @@index([tenant_id, invoice_id])
+}
+
+model CxpCuedoc {
+  id                Int       @id @default(autoincrement())
+  tenant_id         String
+  cabdoc_id         Int
+  cabdoc            CxpCabdoc @relation(fields: [cabdoc_id], references: [id], onDelete: Cascade)
+  line_no           Int
+  account_id        Int
+  account_code      String
+  branch_code       String
+  cost_center_code  String
+  movement          String
+  vat_code          String?
+  vat_concept       String?
+  vat_account_code  String?
+  vat_percent       Float     @default(0)
+  vat_amount        Float     @default(0)
+  description       String
+  amount            Float     @default(0)
+  total             Float     @default(0)
+  created_at        DateTime  @default(now())
+
+  @@map("cxp_cuedoc")
+  @@index([tenant_id, cabdoc_id])
+  @@index([tenant_id, account_code])
+  @@index([tenant_id, branch_code, cost_center_code])
+}
+
+model PurchaseOrderInvoiceLine {
+  id                     Int      @id @default(autoincrement())
+  tenant_id              String
+  purchase_order_id      Int
+  purchase_order_line_id Int
+  cxp_cabdoc_id          Int
+  item_id                Int
+  document_kind          String
+  qty                    Float
+  unit_cost              Float
+  amount                 Float
+  created_by             Int?
+  created_at             DateTime @default(now())
+
+  @@map("pur_order_invoice_lines")
+  @@index([tenant_id, purchase_order_id])
+  @@index([tenant_id, purchase_order_line_id])
+  @@index([tenant_id, cxp_cabdoc_id])
 }
 
 model Employee {
@@ -889,6 +1122,7 @@ model GpsPing {
 
   @@index([tenant_id, user_name, captured_at])
   @@index([tenant_id, route_id, captured_at])
+  @@index([tenant_id, captured_at])
 }
 
 model WorkSession {
@@ -1200,6 +1434,7 @@ model ServiceOrder {
   @@unique([tenant_id, number])
   @@index([tenant_id, status])
   @@index([tenant_id, scheduled_date])
+  @@index([tenant_id, created_at])
 }
 
 model ServiceReference {
@@ -1289,6 +1524,7 @@ model Payroll {
 
   @@unique([employee_id, period])
   @@index([tenant_id, status])
+  @@index([tenant_id, created_at])
 }
 
 model OKR {

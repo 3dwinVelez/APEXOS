@@ -7,7 +7,8 @@ const ITEMS = [
   { href: "/dashboard/compras", label: "Resumen" },
   { href: "/dashboard/compras/proveedores", label: "Proveedores" },
   { href: "/dashboard/compras/ordenes/nueva", label: "Nueva OC" },
-  { href: "/dashboard/compras/ordenes/recibir", label: "Recibir OC" }
+  { href: "/dashboard/compras/ordenes/recibir", label: "Recibir OC" },
+  { href: "/dashboard/compras/facturas", label: "Facturas" }
 ];
 
 export function ComprasNav() {

@@ -9,7 +9,7 @@ async function invoicingRoutes(fastify) {
 
   fastify.get("/invoicing/invoices", {
     preHandler: requirePermission("invoicing", "read")
-  }, async (request) => service.listInvoices(request.user?.tenant_id));
+  }, async (request) => service.listInvoices(request.user?.tenant_id, request.query));
 
   fastify.post("/invoicing/sales-orders/:id/invoice", {
     schema: schema.invoiceSchema,

@@ -5,10 +5,10 @@ import { notFound } from "next/navigation";
 
 export default async function ModulePage({ params }: { params: Promise<{ module: string }> }) {
   const { module: slug } = await params;
-  const module = MODULES_BY_SLUG[slug];
-  if (!module) notFound();
+  const moduleConfig = MODULES_BY_SLUG[slug];
+  if (!moduleConfig) notFound();
 
-  const Icon = module.icon;
+  const Icon = moduleConfig.icon;
   const inventoryActionLinks: Record<string, string> = {
     "Crear artículo": "/dashboard/inventario/productos/nuevo",
     "Registrar movimiento": "/dashboard/inventario/stock",
@@ -41,16 +41,16 @@ export default async function ModulePage({ params }: { params: Promise<{ module:
   return (
     <div className="space-y-5">
       <header>
-        <p className="text-sm font-medium text-apex">{module.id} · {module.area}</p>
+        <p className="text-sm font-medium text-apex">{moduleConfig.id} · {moduleConfig.area}</p>
         <div className="mt-2 flex flex-wrap items-center gap-3">
           <Icon size={30} className="text-apex" />
-          <h1 className="text-3xl font-semibold">{module.name}</h1>
-          <span className="rounded-md border border-line bg-white px-3 py-1 text-sm text-neutral-700">{module.status}</span>
+          <h1 className="text-3xl font-semibold">{moduleConfig.name}</h1>
+          <span className="rounded-md border border-line bg-white px-3 py-1 text-sm text-neutral-700">{moduleConfig.status}</span>
         </div>
       </header>
       <section className="rounded-md border border-line bg-white p-5">
         <h2 className="mb-2 text-lg font-semibold">Resumen operativo</h2>
-        <p className="max-w-3xl text-sm leading-6 text-neutral-700">{module.summary}</p>
+        <p className="max-w-3xl text-sm leading-6 text-neutral-700">{moduleConfig.summary}</p>
       </section>
       <section className="rounded-md border border-apex/20 bg-white p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -75,7 +75,7 @@ export default async function ModulePage({ params }: { params: Promise<{ module:
         <div className="rounded-md border border-line bg-white p-5">
           <h2 className="mb-4 text-base font-semibold">Capacidades del módulo</h2>
           <div className="grid gap-3 sm:grid-cols-2">
-            {module.capabilities.map((capability) => (
+            {moduleConfig.capabilities.map((capability) => (
               <div className="flex items-start gap-2 rounded-md bg-paper p-3 text-sm" key={capability}>
                 <CheckCircle2 size={17} className="mt-0.5 shrink-0 text-apex" />
                 <span>{capability}</span>
@@ -86,7 +86,7 @@ export default async function ModulePage({ params }: { params: Promise<{ module:
         <div className="rounded-md border border-line bg-white p-5">
           <h2 className="mb-4 text-base font-semibold">Acciones disponibles</h2>
           <div className="space-y-2">
-            {module.nextActions.map((action) => (
+            {moduleConfig.nextActions.map((action) => (
               moduleActionLinks[slug]?.[action] ? (
                 <Link className="flex w-full items-center justify-between rounded-md border border-line px-3 py-2 text-left text-sm hover:bg-paper" href={moduleActionLinks[slug][action]} key={action}>
                   {action}

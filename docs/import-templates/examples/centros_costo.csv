@@ -1,0 +1,4 @@
+company_code,cost_center_code,name,society_code,branch_code,area_code,active
+SCJ,CC-OPER,Operacion,SOC-SCJ,BOG,OPER,true
+SCJ,CC-TRAN,Transporte,SOC-SCJ,BOG,TRANSP,true
+SCJ,CC-ADMIN,Administracion,SOC-SCJ,BOG,ADMIN,true

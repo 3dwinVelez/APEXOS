@@ -1,0 +1,4 @@
+company_code,category_code,name,parent_category_code,type,active,sort_order
+SCJ,MUEBLES,Muebles,,item,true,10
+SCJ,OFICINA,Oficina,MUEBLES,item,true,20
+SCJ,SERVICIOS,Servicios,,item,true,30

@@ -220,12 +220,23 @@ export default function TransportPage() {
   });
 
   async function load() {
-    const [vehicleData, employeeData] = await Promise.all([
-      api<Vehicle[]>("/api/v1/transport/vehicles").catch(() => []),
-      api<Employee[]>("/api/v1/hr/employees?active=true").catch(() => [])
+    setMessage("");
+    const [vehicleResult, employeeResult] = await Promise.allSettled([
+      api<Vehicle[]>("/api/v1/transport/vehicles"),
+      api<Employee[]>("/api/v1/hr/employees?active=true")
     ]);
-    setVehicles(vehicleData);
-    setEmployees(employeeData);
+    if (vehicleResult.status === "fulfilled") setVehicles(vehicleResult.value);
+    else setVehicles([]);
+    if (employeeResult.status === "fulfilled") setEmployees(employeeResult.value);
+    else setEmployees([]);
+
+    const errors = [
+      vehicleResult.status === "rejected" ? "vehiculos" : "",
+      employeeResult.status === "rejected" ? "conductores/usuarios" : ""
+    ].filter(Boolean);
+    if (errors.length) {
+      setMessage(`No fue posible consultar ${errors.join(" y ")}. Revisa permisos RLS, empresa activa o conectividad Supabase.`);
+    }
   }
 
   useEffect(() => {

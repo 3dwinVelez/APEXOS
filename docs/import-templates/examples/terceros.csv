@@ -1,0 +1,4 @@
+company_code,third_party_type_code,name,legal_name,person_type,document_type_code,document_number,verification_digit,tax_responsibilities,email,phone,address,city_code,segment,credit_limit,credit_days,active
+SCJ,customer,Cliente Demo Norte,Cliente Demo Norte SAS,juridica,NIT,901111222,5,R-99-PN,compras.norte@example.com,6015550101,Calle 10 20 30,11001,retail,5000000,30,true
+SCJ,supplier,Proveedor Logistico QA,Proveedor Logistico QA SAS,juridica,NIT,901333444,1,R-99-PN,contacto.proveedor@example.com,6045550102,Carrera 45 12 34,05001,logistica,3000000,15,true
+SCJ,customer,Cliente Persona QA,,natural,CC,1020304000,,R-99-PN,cliente.persona@example.com,3002223344,Avenida 20 15 10,11001,hogar,1000000,8,true

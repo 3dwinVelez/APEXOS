@@ -239,7 +239,29 @@ export default function ServiceReportsPage() {
           <div><h2 className="font-semibold">Detalle profesional de servicios</h2><p className="text-sm text-neutral-500">{filtered.length} registro(s) encontrados</p></div>
           <label className="relative w-full sm:w-96"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} /><input className="h-10 w-full rounded-md border border-line pl-9 pr-3 text-sm" placeholder="Buscar orden, tecnico, cliente o referencia" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
         </div>
-        <div className="overflow-x-auto">
+        <div className="grid gap-3 p-3 md:hidden">
+          {filtered.map((row) => (
+            <button className="rounded-md border border-line bg-white p-3 text-left shadow-sm active:scale-[0.99]" key={row.id} onClick={() => setSelected(row)} type="button">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold">{row.number} - {row.customer}</p>
+                  <p className="mt-1 text-xs text-neutral-500">{row.date || "Sin fecha"} - {row.technician}</p>
+                </div>
+                <span className="shrink-0 rounded-md bg-paper px-2 py-1 text-[11px] font-semibold text-neutral-700">{statusLabels[row.status] || row.status}</span>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-neutral-600">
+                <span className="rounded-md bg-paper px-2 py-1">Duracion: {minutesLabel(row.duration)}</span>
+                <span className="rounded-md bg-paper px-2 py-1">Evidencias: {row.evidence.length}</span>
+                <span className="rounded-md bg-paper px-2 py-1">Novedades: {row.incidents.length}</span>
+                <span className="rounded-md bg-paper px-2 py-1">{row.productType}</span>
+              </div>
+              <p className="mt-3 line-clamp-2 text-xs text-neutral-600">{row.reference}</p>
+              {row.findings !== "Sin hallazgos" ? <p className="mt-2 line-clamp-2 rounded-md bg-amber-50 p-2 text-xs font-semibold text-amber-900">{row.findings}</p> : null}
+            </button>
+          ))}
+          {!filtered.length ? <p className="rounded-md border border-dashed border-line p-6 text-center text-sm text-neutral-500">{loading ? "Cargando..." : "Sin servicios para el filtro seleccionado."}</p> : null}
+        </div>
+        <div className="hidden overflow-x-auto md:block">
           <table className="min-w-[1200px] w-full text-left text-sm">
             <thead className="bg-paper text-xs uppercase text-neutral-500"><tr>{["Fecha", "Orden", "Tecnico", "Cliente", "Estado", "Producto", "Referencia", "Inicio", "Cierre", "Duracion", "Hallazgos", ""].map((head) => <th className="px-4 py-3" key={head}>{head}</th>)}</tr></thead>
             <tbody className="divide-y divide-line">

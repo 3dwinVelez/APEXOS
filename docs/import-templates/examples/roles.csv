@@ -1,0 +1,4 @@
+company_code,role_code,role_name,description,is_system,active,permissions
+SCJ,ADMIN_EMPRESA,Administrador empresa,Administra configuracion usuarios y operacion,false,true,admin:read;admin:write;hr:read;hr:write
+SCJ,SUPERVISOR,Supervisor,Consulta equipo rutas servicios y reportes,false,true,hr:read;transport:read;services:read
+SCJ,OPERARIO,Operario,Registra jornada y actividades operativas,false,true,hr:read;hr:write;services:read

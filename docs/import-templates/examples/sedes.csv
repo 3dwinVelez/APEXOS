@@ -1,0 +1,4 @@
+company_code,location_code,name,address,city,country,active,sort_order
+SCJ,BOG-NORTE,Sede Bogota Norte,Calle 10 20 30,Bogota,CO,true,10
+SCJ,BOG-SUR,Sede Bogota Sur,Carrera 50 40 30,Bogota,CO,true,20
+SCJ,MED-PRINCIPAL,Sede Medellin Principal,Avenida 80 45 10,Medellin,CO,true,30

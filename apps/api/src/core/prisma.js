@@ -1,10 +1,9 @@
 const { AsyncLocalStorage } = require("node:async_hooks");
 const { PrismaClient } = require("@prisma/client");
+const { recordQuery } = require("./performanceContext");
 
 const tenantStorage = new AsyncLocalStorage();
-const prisma = new PrismaClient({
-  log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"]
-});
+let prisma;
 
 const TENANT_MODELS = new Set([
   "User", "Role", "Party", "Item", "Place", "Location", "ItemLocation",
@@ -18,7 +17,7 @@ const TENANT_MODELS = new Set([
   "VehicleDocument", "VehicleMasterAuditLog", "ServiceReferencePart", "ServiceIncident", "ServicePhoto",
   "Project", "ProjectCommitment", "ProjectDeliverable", "ProjectRisk", "ProjectResourceAssignment",
   "ProjectComment", "ProjectEvidence", "ProjectAlert", "ProjectLog",
-  "Payroll", "Account", "LedgerEntry", "Payment",
+  "Payroll", "Account", "LedgerEntry", "CntCabdoc", "CntCuedoc", "CxpCabdoc", "CxpCuedoc", "CxpApplication", "PurchaseOrderInvoiceLine", "InventoryFamily", "InventoryFamilyAccounting", "ProductCost", "Payment",
   "BrainEvent", "BrainMetric", "CustomField", "AuditLog", "Workflow",
   "Category", "SensorReading", "OKR", "SoDRule", "EInvoice", "EInvoiceConfig"
 ]);
@@ -31,47 +30,96 @@ function currentTenantId() {
   return tenantStorage.getStore()?.tenantId;
 }
 
-prisma.$use(async (params, next) => {
-  const tenantId = currentTenantId();
-  if (!tenantId || !TENANT_MODELS.has(params.model)) return next(params);
+function normalizeTenantId(tenantId) {
+  if (tenantId === null || tenantId === undefined) return tenantId;
+  return String(tenantId);
+}
 
-  if (WRITE_OPS.has(params.action) && params.args.data) {
-    if (Array.isArray(params.args.data)) {
-      params.args.data = params.args.data.map((row) => ({ ...row, tenant_id: tenantId }));
-    } else {
-      params.args.data.tenant_id = tenantId;
+function createPrismaClient() {
+  const client = new PrismaClient({
+    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"]
+  });
+
+  client.$use(async (params, next) => {
+    const startedAt = process.hrtime.bigint();
+    const tenantId = currentTenantId();
+    try {
+      if (!tenantId || !TENANT_MODELS.has(params.model)) return await next(params);
+
+      if (WRITE_OPS.has(params.action) && params.args.data) {
+        if (Array.isArray(params.args.data)) {
+          params.args.data = params.args.data.map((row) => ({ ...row, tenant_id: tenantId }));
+        } else {
+          params.args.data.tenant_id = tenantId;
+        }
+      }
+
+      if (READ_OPS.has(params.action)) {
+        params.args = params.args || {};
+        params.args.where = { ...params.args.where, tenant_id: tenantId };
+      }
+
+      return await next(params);
+    } finally {
+      const durationMs = Number(process.hrtime.bigint() - startedAt) / 1e6;
+      const slowThresholdMs = Math.max(Number(process.env.PERFORMANCE_SLOW_QUERY_MS || 300), 1);
+      recordQuery({
+        model: params.model || "raw",
+        action: params.action,
+        durationMs: Number(durationMs.toFixed(2)),
+        slow: durationMs >= slowThresholdMs,
+        hasTenantFilter: Boolean(params.args?.where?.tenant_id),
+        hasLimit: Number.isFinite(params.args?.take),
+        includeCount: params.args?.include ? Object.keys(params.args.include).length : 0
+      });
     }
-  }
+  });
 
-  if (READ_OPS.has(params.action)) {
-    params.args = params.args || {};
-    params.args.where = { ...params.args.where, tenant_id: tenantId };
-  }
-
-  return next(params);
-});
-
-prisma.$use(async (params, next) => {
-  const result = await next(params);
-  if (params.model === "Item" && ["update", "updateMany"].includes(params.action)) {
-    const data = params.args.data || {};
-    if ("stock_current" in data) {
-      setImmediate(() => require("./stockSyncHook").trigger(params).catch(() => undefined));
+  client.$use(async (params, next) => {
+    const result = await next(params);
+    if (params.model === "Item" && ["update", "updateMany"].includes(params.action)) {
+      const data = params.args.data || {};
+      if ("stock_current" in data) {
+        setImmediate(() => require("./stockSyncHook").trigger(params).catch(() => undefined));
+      }
     }
+    return result;
+  });
+
+  client.$use(async (params, next) => {
+    if (SOFT_DELETE.has(params.model) && ["findMany", "findFirst"].includes(params.action)) {
+      params.args = params.args || {};
+      params.args.where = params.args.where || {};
+      const includeInactive = params.args.where.__includeInactive === true;
+      delete params.args.where.__includeInactive;
+      if (!includeInactive && !("active" in params.args.where)) params.args.where.active = true;
+    }
+    return next(params);
+  });
+
+  return client;
+}
+
+function getPrismaClient() {
+  if (!prisma) {
+    prisma = createPrismaClient();
   }
-  return result;
+
+  return prisma;
+}
+
+const lazyPrisma = new Proxy({}, {
+  get(_target, property) {
+    if (property === "runWithTenant") return (tenantId, fn) => tenantStorage.run({ tenantId: normalizeTenantId(tenantId) }, fn);
+    if (property === "currentTenantId") return currentTenantId;
+
+    const value = getPrismaClient()[property];
+    return typeof value === "function" ? value.bind(getPrismaClient()) : value;
+  },
+  set(_target, property, value) {
+    getPrismaClient()[property] = value;
+    return true;
+  }
 });
 
-prisma.$use(async (params, next) => {
-  if (SOFT_DELETE.has(params.model) && ["findMany", "findFirst"].includes(params.action)) {
-    params.args = params.args || {};
-    params.args.where = params.args.where || {};
-    if (!("active" in params.args.where)) params.args.where.active = true;
-  }
-  return next(params);
-});
-
-prisma.runWithTenant = (tenantId, fn) => tenantStorage.run({ tenantId }, fn);
-prisma.currentTenantId = currentTenantId;
-
-module.exports = prisma;
+module.exports = lazyPrisma;

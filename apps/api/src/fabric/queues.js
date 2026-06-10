@@ -1,7 +1,7 @@
-const { Queue } = require("bullmq");
-const IORedis = require("ioredis");
+const { getRedisUrl, isRedisDisabled } = require("./redisConfig");
 
-if (process.env.DISABLE_REDIS === "1") {
+if (isRedisDisabled()) {
+  console.info("Redis disabled - using noop queues");
   const noopQueue = { add: async () => undefined };
 
   module.exports = {
@@ -13,7 +13,10 @@ if (process.env.DISABLE_REDIS === "1") {
   return;
 }
 
-const connection = new IORedis(process.env.REDIS_URL || "redis://localhost:6379", {
+const { Queue } = require("bullmq");
+const IORedis = require("ioredis");
+
+const connection = new IORedis(getRedisUrl(), {
   maxRetriesPerRequest: null
 });
 
@@ -22,4 +25,3 @@ const brainQueue = new Queue("apex-brain", { connection });
 const stockQueue = new Queue("apex-stock-sync", { connection });
 
 module.exports = { connection, auditQueue, brainQueue, stockQueue };
-

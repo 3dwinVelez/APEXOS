@@ -14,7 +14,10 @@ function findEnv(startDir) {
 }
 
 function loadEnv(filePath = findEnv(process.cwd())) {
-  if (!filePath || !fs.existsSync(filePath)) return;
+  if (!filePath || !fs.existsSync(filePath)) {
+    console.log("Environment loaded");
+    return;
+  }
 
   for (const line of fs.readFileSync(filePath, "utf8").split(/\r?\n/)) {
     const trimmed = line.trim();
@@ -33,6 +36,8 @@ function loadEnv(filePath = findEnv(process.cwd())) {
       process.env[key] = value;
     }
   }
+
+  console.log("Environment loaded");
 }
 
 module.exports = loadEnv;

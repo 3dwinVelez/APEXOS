@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Banknote, BookOpen, Building2, ClipboardList, FileText, ReceiptText, Users } from "lucide-react";
+import { ArrowRight, Banknote, BookOpen, Building2, ClipboardList, FileText, FilePlus2, ReceiptText, Users, WalletCards } from "lucide-react";
 import { ContabilidadNav } from "@/components/contabilidad-nav";
 
 const modules = [
@@ -16,6 +16,20 @@ const modules = [
     detail: "Clientes, proveedores, empleados, NIT, DV y responsabilidades.",
     icon: Users,
     status: "Maestro"
+  },
+  {
+    href: "/dashboard/contabilidad/asientos",
+    title: "Asientos contables",
+    detail: "Comprobantes con cabecera, detalle, numeracion y validacion de debitos contra creditos.",
+    icon: FilePlus2,
+    status: "Registro"
+  },
+  {
+    href: "/dashboard/contabilidad/cuentas-por-pagar",
+    title: "Cuentas por pagar",
+    detail: "Facturas y notas credito de proveedor con vencimiento, IVA y cuenta asociada.",
+    icon: WalletCards,
+    status: "CXP"
   },
   {
     href: "/dashboard/contabilidad/estructura",

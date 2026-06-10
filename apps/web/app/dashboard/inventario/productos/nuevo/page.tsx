@@ -5,7 +5,6 @@ import type { LucideIcon } from "lucide-react";
 import {
   AlertTriangle,
   ArrowRight,
-  BarChart3,
   Boxes,
   CheckCircle2,
   ClipboardCheck,
@@ -37,6 +36,9 @@ type InventoryItem = {
   name: string;
   type: string;
   unit: string;
+  family_code?: string | null;
+  society_code?: string | null;
+  branch_code?: string | null;
   unit_cost: number;
   unit_price: number;
   tax_rate: number;
@@ -59,6 +61,8 @@ type InventoryItem = {
     serial_control: boolean;
     notes: string;
     currency: string;
+    society_code?: string;
+    branch_code?: string;
   };
 };
 
@@ -69,12 +73,34 @@ type InventoryListResponse = {
   pages: number;
 };
 
+type InventoryFamily = {
+  id: number;
+  code: string;
+  name: string;
+  society_code?: string | null;
+  branch_code?: string | null;
+  code_start?: string | null;
+  code_end?: string | null;
+  active: boolean;
+};
+
+type Society = { code: string; name: string; active: boolean };
+type Branch = { code: string; name: string; society_code: string; active: boolean };
+type OrganizationTree = { societies: Society[]; branches: Branch[]; cost_centers: Array<{ code: string; name: string; society_code: string; branch_code: string; active: boolean }> };
+
+type InventoryItemPatch = Partial<Omit<InventoryItem, "metadata">> & {
+  family_code?: string;
+  metadata?: Partial<InventoryItem["metadata"]>;
+};
+
 type WorkspaceTab = "crear" | "directorio" | "trazabilidad";
 type AssistantPanel = "operacion" | "costos" | "wms";
 
 const INITIAL_FORM = {
   code: "",
   name: "",
+  society_code: "",
+  branch_code: "",
   type: "product",
   unit: "UND",
   unit_cost: 0,
@@ -85,18 +111,20 @@ const INITIAL_FORM = {
   stock_max: 0,
   weight_kg: 0,
   volume_m3: 0,
-  family: "general",
+  family: "",
   brand: "",
   channel: "omnicanal",
   wms_profile: "almacenable",
   purchase_profile: "comprable",
   sales_profile: "vendible",
-  costing_method: "promedio",
+  costing_method: "weighted_average",
   lot_control: false,
   expiry_control: false,
   serial_control: false,
   notes: ""
 };
+
+const EMPTY_TREE: OrganizationTree = { societies: [], branches: [], cost_centers: [] };
 
 const templates = [
   { label: "Retail / producto", type: "product", unit: "UND", margin: 35, stock_min: 5, stock_max: 50, family: "mercancia", wms_profile: "picking" },
@@ -113,8 +141,18 @@ const typeLabels: Record<string, string> = {
   raw_material: "Materia prima"
 };
 
+function numberInputValue(value: number) {
+  return value === 0 ? "" : String(value);
+}
+
+function numberFromInput(value: string) {
+  return value === "" ? 0 : Number(value);
+}
+
 export default function NuevoProductoPage() {
   const [items, setItems] = useState<InventoryItem[]>([]);
+  const [families, setFamilies] = useState<InventoryFamily[]>([]);
+  const [tree, setTree] = useState<OrganizationTree>(EMPTY_TREE);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("crear");
   const [assistantPanel, setAssistantPanel] = useState<AssistantPanel>("operacion");
@@ -126,8 +164,17 @@ export default function NuevoProductoPage() {
   const [form, setForm] = useState(INITIAL_FORM);
 
   useEffect(() => {
-    loadItems().catch((err) => setError(err instanceof Error ? err.message : "No fue posible cargar productos"));
+    Promise.all([loadItems(), loadFamilies(), loadOrganization()]).catch((err) => setError(err instanceof Error ? err.message : "No fue posible cargar productos"));
   }, []);
+
+  useEffect(() => {
+    const society = form.society_code || activeSocieties[0]?.code || "";
+    const branch = form.branch_code || activeBranchesFor(society)[0]?.code || "";
+    const family = filteredFamilies(society, branch).find((entry) => entry.code === form.family)?.code || filteredFamilies(society, branch)[0]?.code || "";
+    if (society !== form.society_code || branch !== form.branch_code || family !== form.family) {
+      setForm((current) => ({ ...current, society_code: society, branch_code: branch, family }));
+    }
+  }, [tree, families]);
 
   async function loadItems() {
     setLoading(true);
@@ -138,6 +185,15 @@ export default function NuevoProductoPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function loadFamilies() {
+    const rows = await api<InventoryFamily[]>("/api/v1/inventory/families?active=all");
+    setFamilies((rows || []).filter((family) => family.active !== false));
+  }
+
+  async function loadOrganization() {
+    setTree(await api<OrganizationTree>("/api/v1/accounting/organization-tree"));
   }
 
   const filteredItems = useMemo(() => {
@@ -166,8 +222,25 @@ export default function NuevoProductoPage() {
   }, [items]);
 
   const margin = form.unit_price ? Math.round(((Number(form.unit_price) - Number(form.unit_cost)) / Number(form.unit_price)) * 100) : 0;
-  const canSave = Boolean(form.code.trim() && form.name.trim() && form.type && form.unit);
+  const activeSocieties = tree.societies.filter((item) => item.active !== false);
+  const activeBranches = activeBranchesFor(form.society_code);
+  const availableFamilies = filteredFamilies(form.society_code, form.branch_code);
+  const selectedFamily = availableFamilies.find((family) => family.code === form.family);
+  const canSave = Boolean(form.name.trim() && form.society_code && form.branch_code && form.type && form.unit && selectedFamily);
   const taxRates = taxRatesForCountry("CO");
+
+  function activeBranchesFor(societyCode: string) {
+    return tree.branches.filter((item) => item.active !== false && item.society_code === societyCode);
+  }
+
+  function filteredFamilies(societyCode: string, branchCode: string) {
+    return families.filter((family) => family.active !== false && (!societyCode || family.society_code === societyCode) && (!branchCode || family.branch_code === branchCode));
+  }
+
+  function nextFamilyCode(preferred?: string) {
+    if (preferred && availableFamilies.some((family) => family.code === preferred)) return preferred;
+    return availableFamilies[0]?.code || "";
+  }
 
   function applyTemplate(template: (typeof templates)[number]) {
     setForm((current) => ({
@@ -176,17 +249,10 @@ export default function NuevoProductoPage() {
       unit: template.unit,
       stock_min: template.stock_min,
       stock_max: template.stock_max,
-      family: template.family,
+      family: nextFamilyCode(template.family.toUpperCase()),
       wms_profile: template.wms_profile,
       unit_price: current.unit_cost > 0 ? Math.round(current.unit_cost / (1 - template.margin / 100)) : current.unit_price
     }));
-  }
-
-  function autoSku() {
-    const prefix = form.type === "raw_material" ? "RAW" : form.type === "service" ? "SRV" : form.type === "component" ? "CMP" : "SKU";
-    const base = (form.name || form.family || "ITEM").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 12).toUpperCase();
-    const next = String(items.length + 1).padStart(3, "0");
-    setForm((current) => ({ ...current, code: `${prefix}-${base || "ITEM"}-${next}` }));
   }
 
   async function createItem(keepCreating = false) {
@@ -197,10 +263,13 @@ export default function NuevoProductoPage() {
       const created = await api<InventoryItem>("/api/v1/inventory/items", {
         method: "POST",
         body: JSON.stringify({
-          code: form.code,
           name: form.name,
           type: form.type,
           unit: form.unit,
+          family_code: form.family.toUpperCase(),
+          society_code: form.society_code,
+          branch_code: form.branch_code,
+          costing_method: "weighted_average",
           unit_cost: Number(form.unit_cost),
           unit_price: Number(form.unit_price),
           tax_rate: Number(form.tax_rate),
@@ -210,12 +279,14 @@ export default function NuevoProductoPage() {
           volume_m3: Number(form.volume_m3 || 0),
           metadata: {
             family: form.family,
+            society_code: form.society_code,
+            branch_code: form.branch_code,
             brand: form.brand,
             channel: form.channel,
             wms_profile: form.wms_profile,
             purchase_profile: form.purchase_profile,
             sales_profile: form.sales_profile,
-            costing_method: form.costing_method,
+            costing_method: "weighted_average",
             currency: form.currency,
             lot_control: form.lot_control,
             expiry_control: form.expiry_control,
@@ -228,7 +299,7 @@ export default function NuevoProductoPage() {
       await loadItems();
       setSelectedItem(created);
       if (!keepCreating) setActiveTab("directorio");
-      setForm(keepCreating ? { ...INITIAL_FORM, type: form.type, unit: form.unit, family: form.family, wms_profile: form.wms_profile } : INITIAL_FORM);
+      setForm(keepCreating ? { ...INITIAL_FORM, society_code: form.society_code, branch_code: form.branch_code, type: form.type, unit: form.unit, family: form.family, wms_profile: form.wms_profile } : { ...INITIAL_FORM, society_code: form.society_code, branch_code: form.branch_code, family: nextFamilyCode() });
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible crear el producto");
     } finally {
@@ -236,7 +307,7 @@ export default function NuevoProductoPage() {
     }
   }
 
-  async function updateSelectedItem(patch: Partial<Omit<InventoryItem, "metadata">> & { metadata?: Partial<InventoryItem["metadata"]> }) {
+  async function updateSelectedItem(patch: InventoryItemPatch) {
     if (!selectedItem) return;
     setSaving(true);
     setError("");
@@ -277,10 +348,10 @@ export default function NuevoProductoPage() {
         <div className="flex flex-col gap-3 p-3 lg:flex-row lg:items-center lg:justify-between">
           <SegmentedNav active={activeTab} onChange={setActiveTab} />
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-medium hover:bg-paper" onClick={autoSku} type="button">
+            <span className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line bg-white px-3 text-sm text-neutral-600">
               <Sparkles size={16} />
-              Generar SKU
-            </button>
+              Codigo automatico por familia
+            </span>
             <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-3 text-sm font-medium text-white disabled:opacity-50" disabled={saving || !canSave} onClick={() => createItem(false)} type="button">
               <Save size={16} />
               Crear producto
@@ -301,9 +372,27 @@ export default function NuevoProductoPage() {
               <section className="rounded-md border border-line bg-white">
                 <PanelHeader icon={PackagePlus} title="Crear producto" detail="Captura lo minimo para operar; los detalles viven agrupados por impacto." />
                 <div className="space-y-4 p-4">
-                  <div className="grid gap-3 lg:grid-cols-[180px_1fr_180px_150px]">
-                    <Field label="SKU / Codigo">
-                      <input className="h-10 w-full rounded-md border border-line px-3 text-sm uppercase" placeholder="SKU-001" value={form.code} onChange={(e) => setForm((p) => ({ ...p, code: e.target.value.toUpperCase().replace(/\s+/g, "-") }))} />
+                  <div className="grid gap-3 lg:grid-cols-[180px_180px_1fr_180px_150px]">
+                    <Field label="Sociedad">
+                      <select className="h-10 w-full rounded-md border border-line px-3 text-sm" value={form.society_code} onChange={(e) => {
+                        const society = e.target.value;
+                        const branch = activeBranchesFor(society)[0]?.code || "";
+                        const family = filteredFamilies(society, branch)[0]?.code || "";
+                        setForm((p) => ({ ...p, society_code: society, branch_code: branch, family }));
+                      }}>
+                        <option value="">Sociedad</option>
+                        {activeSocieties.map((item) => <option key={item.code} value={item.code}>{item.code}</option>)}
+                      </select>
+                    </Field>
+                    <Field label="Sucursal">
+                      <select className="h-10 w-full rounded-md border border-line px-3 text-sm" value={form.branch_code} onChange={(e) => {
+                        const branch = e.target.value;
+                        const family = filteredFamilies(form.society_code, branch)[0]?.code || "";
+                        setForm((p) => ({ ...p, branch_code: branch, family }));
+                      }}>
+                        <option value="">Sucursal</option>
+                        {activeBranches.map((item) => <option key={item.code} value={item.code}>{item.code}</option>)}
+                      </select>
                     </Field>
                     <Field label="Nombre">
                       <input className="h-10 w-full rounded-md border border-line px-3 text-sm" placeholder="Ej: Cafe molido 500g, servicio instalacion, saco azucar 25kg" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
@@ -332,7 +421,13 @@ export default function NuevoProductoPage() {
 
                   <div className="grid gap-3 lg:grid-cols-4">
                     <Field label="Familia">
-                      <input className="h-10 w-full rounded-md border border-line px-3 text-sm" value={form.family} onChange={(e) => setForm((p) => ({ ...p, family: e.target.value }))} />
+                      <select className="h-10 w-full rounded-md border border-line px-3 text-sm" disabled={!availableFamilies.length} value={availableFamilies.length ? form.family : ""} onChange={(e) => setForm((p) => ({ ...p, family: e.target.value }))}>
+                        {availableFamilies.length ? null : <option value="">Crea una familia para esta sucursal</option>}
+                        {availableFamilies.map((family) => <option key={family.id} value={family.code}>{family.code} - {family.name}</option>)}
+                      </select>
+                    </Field>
+                    <Field label="Codigo asignado">
+                      <input className="h-10 w-full rounded-md border border-line bg-paper px-3 text-sm text-neutral-600" readOnly value={selectedFamily?.code_start && selectedFamily?.code_end ? `${selectedFamily.code_start}-${selectedFamily.code_end}` : "Automatico"} />
                     </Field>
                     <Field label="Marca / linea">
                       <input className="h-10 w-full rounded-md border border-line px-3 text-sm" placeholder="Opcional" value={form.brand} onChange={(e) => setForm((p) => ({ ...p, brand: e.target.value }))} />
@@ -365,30 +460,30 @@ export default function NuevoProductoPage() {
                       </select>
                     </Field>
                     <Field label="Costo unitario">
-                      <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} type="number" value={form.unit_cost} onChange={(e) => setForm((p) => ({ ...p, unit_cost: Number(e.target.value) }))} />
+                      <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} type="number" value={numberInputValue(form.unit_cost)} onChange={(e) => setForm((p) => ({ ...p, unit_cost: numberFromInput(e.target.value) }))} />
                     </Field>
                     <Field label="Precio venta">
-                      <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} type="number" value={form.unit_price} onChange={(e) => setForm((p) => ({ ...p, unit_price: Number(e.target.value) }))} />
+                      <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} type="number" value={numberInputValue(form.unit_price)} onChange={(e) => setForm((p) => ({ ...p, unit_price: numberFromInput(e.target.value) }))} />
                     </Field>
                     <MiniMetric label="Margen estimado" value={`${Number.isFinite(margin) ? margin : 0}%`} />
                   </div>
 
                   <div className="grid gap-3 rounded-md border border-line bg-paper p-3">
                     <Field label="Stock minimo">
-                      <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} type="number" value={form.stock_min} onChange={(e) => setForm((p) => ({ ...p, stock_min: Number(e.target.value) }))} />
+                      <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} type="number" value={numberInputValue(form.stock_min)} onChange={(e) => setForm((p) => ({ ...p, stock_min: numberFromInput(e.target.value) }))} />
                     </Field>
                     <Field label="Stock maximo">
-                      <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} type="number" value={form.stock_max} onChange={(e) => setForm((p) => ({ ...p, stock_max: Number(e.target.value) }))} />
+                      <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} type="number" value={numberInputValue(form.stock_max)} onChange={(e) => setForm((p) => ({ ...p, stock_max: numberFromInput(e.target.value) }))} />
                     </Field>
                     <MiniMetric label="Reposicion sugerida" value={String(Math.max(0, Number(form.stock_max) - Number(form.stock_min)))} />
                   </div>
 
                   <div className="grid gap-3 rounded-md border border-line bg-paper p-3">
                     <Field label="Peso kg">
-                      <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} step="0.01" type="number" value={form.weight_kg} onChange={(e) => setForm((p) => ({ ...p, weight_kg: Number(e.target.value) }))} />
+                      <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} step="0.01" type="number" value={numberInputValue(form.weight_kg)} onChange={(e) => setForm((p) => ({ ...p, weight_kg: numberFromInput(e.target.value) }))} />
                     </Field>
                     <Field label="Volumen m3">
-                      <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} step="0.001" type="number" value={form.volume_m3} onChange={(e) => setForm((p) => ({ ...p, volume_m3: Number(e.target.value) }))} />
+                      <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} step="0.001" type="number" value={numberInputValue(form.volume_m3)} onChange={(e) => setForm((p) => ({ ...p, volume_m3: numberFromInput(e.target.value) }))} />
                     </Field>
                     <MiniMetric label="Perfil WMS" value={form.wms_profile} />
                   </div>
@@ -408,11 +503,8 @@ export default function NuevoProductoPage() {
                     <input className="h-10 w-full rounded-md border border-line px-3 text-sm" placeholder="Ej: requiere lote, vencimiento, temperatura, serial, inspeccion de calidad" value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} />
                   </Field>
                   <Field label="Costeo">
-                    <select className="h-10 w-full rounded-md border border-line px-3 text-sm" value={form.costing_method} onChange={(e) => setForm((p) => ({ ...p, costing_method: e.target.value }))}>
-                      <option value="promedio">Promedio</option>
-                      <option value="fifo">FIFO</option>
-                      <option value="estandar">Estandar</option>
-                      <option value="identificado">Identificado</option>
+                    <select className="h-10 w-full rounded-md border border-line px-3 text-sm" value="weighted_average" onChange={() => undefined}>
+                      <option value="weighted_average">Promedio ponderado</option>
                     </select>
                   </Field>
                 </div>
@@ -467,7 +559,7 @@ export default function NuevoProductoPage() {
                   {!loading && filteredItems.length === 0 ? <p className="rounded-md border border-dashed border-line p-4 text-center text-sm text-neutral-500">No hay productos con ese criterio.</p> : null}
                 </div>
 
-                <ProductProfile item={selectedItem} saving={saving} onPatch={updateSelectedItem} />
+                <ProductProfile families={families} item={selectedItem} saving={saving} onPatch={updateSelectedItem} />
               </div>
             </section>
           ) : null}
@@ -508,7 +600,7 @@ export default function NuevoProductoPage() {
 
               {assistantPanel === "operacion" ? (
                 <div className="space-y-2 text-sm">
-                  <MetricRow label="SKU" value={form.code || selectedItem?.code || "-"} />
+                  <MetricRow label="Codigo" value={selectedItem?.code || "Automatico al guardar"} />
                   <MetricRow label="Tipo" value={typeLabels[form.type] || form.type} />
                   <MetricRow label="Unidad" value={form.unit} />
                   <MetricRow label="Stock critico" value={`${totals.critical} productos`} />
@@ -520,7 +612,7 @@ export default function NuevoProductoPage() {
                   <MetricRow label="Costo" value={money(form.unit_cost, form.currency)} />
                   <MetricRow label="Precio" value={money(form.unit_price, form.currency)} />
                   <MetricRow label="Margen" value={`${Number.isFinite(margin) ? margin : 0}%`} />
-                  <MetricRow label="Metodo" value={form.costing_method} />
+                  <MetricRow label="Metodo" value="Promedio ponderado" />
                 </div>
               ) : null}
 
@@ -589,7 +681,7 @@ function SegmentedNav({ active, onChange }: { active: WorkspaceTab; onChange: (t
   );
 }
 
-function ProductProfile({ item, saving, onPatch }: { item: InventoryItem | null; saving: boolean; onPatch: (patch: Partial<Omit<InventoryItem, "metadata">> & { metadata?: Partial<InventoryItem["metadata"]> }) => void }) {
+function ProductProfile({ families, item, saving, onPatch }: { families: InventoryFamily[]; item: InventoryItem | null; saving: boolean; onPatch: (patch: InventoryItemPatch) => void }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({ unit_cost: 0, unit_price: 0, stock_min: 0, stock_max: 0, family: "", notes: "" });
 
@@ -600,15 +692,16 @@ function ProductProfile({ item, saving, onPatch }: { item: InventoryItem | null;
       unit_price: item.unit_price || 0,
       stock_min: item.stock_min || 0,
       stock_max: item.stock_max || 0,
-      family: item.metadata.family || "",
+      family: item.family_code || item.metadata.family?.toUpperCase() || "",
       notes: item.metadata.notes || ""
     });
     setEditing(false);
-  }, [item?.id, item?.unit_cost, item?.unit_price, item?.stock_min, item?.stock_max, item?.metadata.family, item?.metadata.notes]);
+  }, [item?.id, item?.unit_cost, item?.unit_price, item?.stock_min, item?.stock_max, item?.family_code, item?.metadata.family, item?.metadata.notes]);
 
   if (!item) {
     return <div className="flex min-h-[360px] items-center justify-center rounded-md border border-dashed border-line bg-paper text-sm text-neutral-500">Selecciona o crea un producto.</div>;
   }
+  const productFamilies = families.filter((family) => family.active !== false && (!item.society_code || family.society_code === item.society_code) && (!item.branch_code || family.branch_code === item.branch_code));
 
   return (
     <div className="rounded-md border border-line">
@@ -633,25 +726,28 @@ function ProductProfile({ item, saving, onPatch }: { item: InventoryItem | null;
       {editing ? (
         <div className="grid gap-3 border-t border-line p-4 lg:grid-cols-2">
           <Field label="Costo">
-            <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} type="number" value={draft.unit_cost} onChange={(e) => setDraft((p) => ({ ...p, unit_cost: Number(e.target.value) }))} />
+            <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} type="number" value={numberInputValue(draft.unit_cost)} onChange={(e) => setDraft((p) => ({ ...p, unit_cost: numberFromInput(e.target.value) }))} />
           </Field>
           <Field label="Precio">
-            <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} type="number" value={draft.unit_price} onChange={(e) => setDraft((p) => ({ ...p, unit_price: Number(e.target.value) }))} />
+            <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} type="number" value={numberInputValue(draft.unit_price)} onChange={(e) => setDraft((p) => ({ ...p, unit_price: numberFromInput(e.target.value) }))} />
           </Field>
           <Field label="Stock minimo">
-            <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} type="number" value={draft.stock_min} onChange={(e) => setDraft((p) => ({ ...p, stock_min: Number(e.target.value) }))} />
+            <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} type="number" value={numberInputValue(draft.stock_min)} onChange={(e) => setDraft((p) => ({ ...p, stock_min: numberFromInput(e.target.value) }))} />
           </Field>
           <Field label="Stock maximo">
-            <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} type="number" value={draft.stock_max} onChange={(e) => setDraft((p) => ({ ...p, stock_max: Number(e.target.value) }))} />
+            <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} type="number" value={numberInputValue(draft.stock_max)} onChange={(e) => setDraft((p) => ({ ...p, stock_max: numberFromInput(e.target.value) }))} />
           </Field>
           <Field label="Familia">
-            <input className="h-10 w-full rounded-md border border-line px-3 text-sm" value={draft.family} onChange={(e) => setDraft((p) => ({ ...p, family: e.target.value }))} />
+            <select className="h-10 w-full rounded-md border border-line px-3 text-sm" disabled={!productFamilies.length} value={productFamilies.length ? draft.family : ""} onChange={(e) => setDraft((p) => ({ ...p, family: e.target.value }))}>
+              {productFamilies.length ? null : <option value="">Crea una familia para esta sucursal</option>}
+              {productFamilies.map((family) => <option key={family.id} value={family.code}>{family.code} - {family.name}</option>)}
+            </select>
           </Field>
           <Field label="Notas">
             <input className="h-10 w-full rounded-md border border-line px-3 text-sm" value={draft.notes} onChange={(e) => setDraft((p) => ({ ...p, notes: e.target.value }))} />
           </Field>
           <div className="lg:col-span-2">
-            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white disabled:opacity-50" disabled={saving} onClick={() => onPatch({ unit_cost: draft.unit_cost, unit_price: draft.unit_price, stock_min: draft.stock_min, stock_max: draft.stock_max || null, metadata: { ...(item.metadata || {}), family: draft.family, notes: draft.notes } })} type="button">
+            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white disabled:opacity-50" disabled={saving || !draft.family} onClick={() => onPatch({ unit_cost: draft.unit_cost, unit_price: draft.unit_price, stock_min: draft.stock_min, stock_max: draft.stock_max || null, family_code: draft.family, metadata: { ...(item.metadata || {}), family: draft.family, notes: draft.notes } })} type="button">
               <Save size={16} />
               Guardar cambios
             </button>
@@ -662,7 +758,7 @@ function ProductProfile({ item, saving, onPatch }: { item: InventoryItem | null;
       <div className="grid gap-4 border-t border-line p-4 lg:grid-cols-2">
         <div>
           <h3 className="mb-3 text-sm font-semibold">Configuracion operativa</h3>
-          <InfoLine icon={Tag} label="Familia" value={item.metadata.family || "Sin familia"} />
+          <InfoLine icon={Tag} label="Familia" value={item.family_code || item.metadata.family || "Sin familia"} />
           <InfoLine icon={Warehouse} label="WMS" value={item.metadata.wms_profile || "almacenable"} />
           <InfoLine icon={ClipboardCheck} label="Compras" value={item.metadata.purchase_profile || "comprable"} />
           <InfoLine icon={ShoppingCart} label="Ventas" value={item.metadata.sales_profile || "vendible"} />

@@ -1,0 +1,4 @@
+company_code,company_name,legal_name,tax_id,status,plan_code,country,city
+SCJ,SCJ Logistica,SCJ Logistica SAS,901123456,active,piloto_especial,CO,Bogota
+DEMO,Empresa Demo APEX,Empresa Demo APEX SAS,901555777,trial,piloto_especial,CO,Medellin
+NORTE,Operacion Norte,Operacion Norte SAS,900888111,active,piloto_especial,CO,Barranquilla

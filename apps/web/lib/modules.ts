@@ -15,7 +15,6 @@ import {
   FileText,
   Gauge,
   Landmark,
-  MapPinned,
   PackageCheck,
   ReceiptText,
   RefreshCcw,

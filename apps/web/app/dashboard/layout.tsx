@@ -1,7 +1,9 @@
 import { AiExperienceLayer } from "@/components/brain/AiExperienceLayer";
 import { AiAssistanceToggle } from "@/components/brain/AiAssistanceToggle";
 import { MobileNav } from "@/components/shell/MobileNav";
+import { RouteAccessGuard } from "@/components/shell/RouteAccessGuard";
 import { Sidebar } from "@/components/shell/Sidebar";
+import { UserSessionBadge } from "@/components/shell/UserSessionBadge";
 import { Brain, Sparkles } from "lucide-react";
 import Link from "next/link";
 
@@ -21,6 +23,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
+            <UserSessionBadge compact />
             <AiAssistanceToggle />
             <Link className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-medium hover:bg-paper" href="/dashboard/apex-ai">
               <Sparkles size={15} />
@@ -28,7 +31,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </Link>
           </div>
         </div>
-        {children}
+        <RouteAccessGuard>{children}</RouteAccessGuard>
       </main>
       <MobileNav />
       <AiExperienceLayer />

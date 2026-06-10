@@ -10,12 +10,16 @@ const SEED_MODULES = ["M-01", "M-03", "M-04", "M-05", "M-07", "M-22"];
 const ALL_MODULES = Array.from({ length: 26 }, (_, index) => `M-${String(index + 1).padStart(2, "0")}`);
 
 function publicUser(user) {
+  const role = user.role || {};
   return {
     id: user.id,
     name: user.name,
     email: user.email,
     tenant_id: user.tenant_id,
-    role: user.role.name
+    role: role.name || null,
+    role_id: role.id || user.role_id || null,
+    role_permissions: Array.isArray(role.permissions) ? role.permissions : [],
+    role_metadata: role.metadata || {}
   };
 }
 

@@ -1,13 +1,23 @@
+const { isRedisDisabled } = require("../redisConfig");
+
+if (isRedisDisabled()) {
+  console.info("Redis disabled - worker disabled");
+  module.exports = null;
+  return;
+}
+
 const { Worker } = require("bullmq");
 const prisma = require("../../core/prisma");
 const { connection } = require("../queues");
 const { redactSensitive } = require("../../security/policy");
 
 if (!connection) {
+  console.info("Redis disabled - worker disabled");
+  module.exports = null;
   return;
 }
 
-new Worker("apex-audit", async (job) => {
+module.exports = new Worker("apex-audit", async (job) => {
   const payload = job.data;
   await prisma.auditLog.create({
     data: {

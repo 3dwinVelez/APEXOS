@@ -142,6 +142,125 @@ const paymentSchema = {
   }
 };
 
+const accountingDocumentTypeSchema = {
+  body: {
+    type: "object",
+    required: ["code", "description"],
+    properties: {
+      code: { type: "string", minLength: 1 },
+      description: { type: "string", minLength: 1 },
+      active: { type: "boolean" }
+    }
+  }
+};
+
+const accountingNumberingSchema = {
+  body: {
+    type: "object",
+    required: ["document_type", "next_number"],
+    properties: {
+      document_type: { type: "string", minLength: 1 },
+      prefix: { type: "string" },
+      next_number: { type: "integer", minimum: 1 },
+      active: { type: "boolean" }
+    }
+  }
+};
+
+const accountingDocumentSchema = {
+  body: {
+    type: "object",
+    required: ["posting_date", "document_type", "society_code", "header_text", "lines"],
+    properties: {
+      posting_date: { type: "string", minLength: 1 },
+      document_type: { type: "string", minLength: 1 },
+      society_code: { type: "string", minLength: 1 },
+      reference: { type: "string" },
+      header_text: { type: "string", minLength: 1 },
+      lines: {
+        type: "array",
+        minItems: 2,
+        items: {
+          type: "object",
+          required: ["account_code", "branch_code", "cost_center_code", "party_id", "movement", "amount", "description"],
+          properties: {
+            account_code: { type: "string", minLength: 1 },
+            branch_code: { type: "string", minLength: 1 },
+            cost_center_code: { type: "string", minLength: 1 },
+            party_id: { type: "integer" },
+            movement: { type: "string", enum: ["debit", "credit"] },
+            amount: { type: "number", exclusiveMinimum: 0 },
+            description: { type: "string", minLength: 1 }
+          }
+        }
+      }
+    }
+  }
+};
+
+const vatMasterSchema = {
+  body: {
+    type: "object",
+    required: ["code", "concept", "percent", "account_code"],
+    properties: {
+      code: { type: "string", minLength: 1 },
+      concept: { type: "string", minLength: 1 },
+      percent: { type: "number", minimum: 0 },
+      account_code: { type: "string", minLength: 1 },
+      active: { type: "boolean" }
+    }
+  }
+};
+
+const payableDocumentSchema = {
+  body: {
+    type: "object",
+    required: ["document_kind", "posting_date", "supplier_reference", "header_text", "supplier_id", "society_code", "associated_account_code", "lines"],
+    properties: {
+      document_kind: { type: "string", enum: ["invoice", "credit_note"] },
+      posting_date: { type: "string", minLength: 1 },
+      due_term: { type: "string" },
+      due_date: { type: "string" },
+      supplier_reference: { type: "string", minLength: 1, pattern: "^[A-Za-z0-9_-]+$" },
+      invoice_reference: { type: "string" },
+      referenced_invoice_id: { type: "integer" },
+      header_text: { type: "string", minLength: 1 },
+      supplier_id: { type: "integer" },
+      society_code: { type: "string", minLength: 1 },
+      associated_account_code: { type: "string", minLength: 1 },
+      lines: {
+        type: "array",
+        minItems: 1,
+        items: {
+          type: "object",
+          required: ["account_code", "branch_code", "cost_center_code", "movement", "vat_code", "description", "amount"],
+          properties: {
+            account_code: { type: "string", minLength: 1 },
+            branch_code: { type: "string", minLength: 1 },
+            cost_center_code: { type: "string", minLength: 1 },
+            movement: { type: "string", enum: ["debit", "credit"] },
+            vat_code: { type: "string" },
+            description: { type: "string", minLength: 1 },
+            amount: { type: "number", exclusiveMinimum: 0 }
+          }
+        }
+      }
+    }
+  }
+};
+
+const payableApplicationSchema = {
+  body: {
+    type: "object",
+    required: ["credit_note_id", "invoice_id", "amount"],
+    properties: {
+      credit_note_id: { type: "integer" },
+      invoice_id: { type: "integer" },
+      amount: { type: "number", exclusiveMinimum: 0 }
+    }
+  }
+};
+
 module.exports = {
   journalEntrySchema,
   accountSchema,
@@ -150,5 +269,11 @@ module.exports = {
   daneLocationMasterSchema,
   organizationUnitSchema,
   periodSchema,
-  paymentSchema
+  paymentSchema,
+  accountingDocumentTypeSchema,
+  accountingNumberingSchema,
+  accountingDocumentSchema,
+  vatMasterSchema,
+  payableDocumentSchema,
+  payableApplicationSchema
 };

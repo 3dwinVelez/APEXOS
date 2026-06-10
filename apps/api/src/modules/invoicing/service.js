@@ -89,7 +89,7 @@ async function invoiceSaleOrder(tenantId, userId, soId, data) {
     });
 
     for (const stockLine of stockCostLines) {
-      await inventoryService.stockMove(tenantId, userId, {
+      await inventoryService.stockMoveTx(tx, tenantId, userId, {
         item_id: stockLine.item.id,
         type: "out",
         qty: stockLine.qty,
@@ -104,7 +104,7 @@ async function invoiceSaleOrder(tenantId, userId, soId, data) {
 
     await tx.transaction.update({ where: { id: saleOrder.id }, data: { status: "invoiced" } });
 
-    await accountingService.journalEntry(tenantId, {
+    await accountingService.journalEntryTx(tx, {
       description: `Factura ${invoice.number}`,
       transaction_id: invoice.id,
       entries: [
@@ -116,7 +116,7 @@ async function invoiceSaleOrder(tenantId, userId, soId, data) {
 
     const cogsAmount = stockCostLines.reduce((sum, row) => sum + (row.qty * row.unit_cost), 0);
     if (cogsAmount > 0) {
-      await accountingService.journalEntry(tenantId, {
+      await accountingService.journalEntryTx(tx, {
         description: `Costo de venta ${invoice.number}`,
         transaction_id: invoice.id,
         entries: [
@@ -130,11 +130,13 @@ async function invoiceSaleOrder(tenantId, userId, soId, data) {
   }));
 }
 
-async function listInvoices(tenantId) {
+async function listInvoices(tenantId, query = {}) {
   return prisma.runWithTenant(tenantId, () => prisma.transaction.findMany({
     where: { type: "invoice" },
     orderBy: { created_at: "desc" },
-    include: { party: true, lines: true }
+    include: { party: true, lines: true },
+    skip: Math.max(Number(query.offset || 0), 0),
+    take: Math.min(Number(query.limit || 100), 200)
   }));
 }
 

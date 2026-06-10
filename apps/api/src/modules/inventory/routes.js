@@ -11,6 +11,37 @@ async function inventoryRoutes(fastify) {
     preHandler: requirePermission("inventory", "read")
   }, async (request) => service.listItems(request.user?.tenant_id, request.query));
 
+  fastify.get("/inventory/families", {
+    preHandler: requirePermission("inventory", "read")
+  }, async (request) => service.listFamilies(request.user?.tenant_id, request.query));
+
+  fastify.get("/inventory/warehouses", {
+    preHandler: requirePermission("inventory", "read")
+  }, async (request) => service.listWarehouses(request.user?.tenant_id, request.query));
+
+  fastify.get("/inventory/locations", {
+    preHandler: requirePermission("inventory", "read")
+  }, async (request) => service.listWarehouseLocations(request.user?.tenant_id));
+
+  fastify.post("/inventory/families", {
+    schema: schemas.familySchema,
+    preHandler: requirePermission("inventory", "write")
+  }, async (request, reply) => reply.code(201).send(await service.saveFamily(request.user?.tenant_id, request.body)));
+
+  fastify.post("/inventory/warehouses", {
+    schema: schemas.warehouseSchema,
+    preHandler: requirePermission("inventory", "write")
+  }, async (request, reply) => reply.code(201).send(await service.saveWarehouse(request.user?.tenant_id, request.body)));
+
+  fastify.put("/inventory/warehouses/:id", {
+    schema: schemas.warehouseSchema,
+    preHandler: requirePermission("inventory", "write")
+  }, async (request) => service.saveWarehouse(request.user?.tenant_id, request.body, Number(request.params.id)));
+
+  fastify.delete("/inventory/warehouses/:id", {
+    preHandler: requirePermission("inventory", "write")
+  }, async (request) => service.deleteWarehouse(request.user?.tenant_id, Number(request.params.id)));
+
   fastify.post("/inventory/items", {
     schema: schemas.createItemSchema,
     preHandler: requirePermission("inventory", "write")
@@ -41,6 +72,10 @@ async function inventoryRoutes(fastify) {
     schema: schemas.adjustStockSchema,
     preHandler: requirePermission("inventory", "approve")
   }, async (request) => service.adjustStock(request.user?.tenant_id, request.user.id, request.body));
+
+  fastify.get("/inventory/costs", {
+    preHandler: requirePermission("inventory", "read")
+  }, async (request) => service.getInventoryCosts(request.user?.tenant_id, request.query));
 
   fastify.get("/inventory/kardex/:id", {
     preHandler: requirePermission("inventory", "read")

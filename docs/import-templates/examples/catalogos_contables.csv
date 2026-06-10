@@ -1,0 +1,4 @@
+company_code,catalog_type,code,name,parent_code,account_type,active
+SCJ,account,1105,Caja,11,asset,true
+SCJ,account,1110,Bancos,11,asset,true
+SCJ,society,SOC-SCJ,SCJ Logistica,,,true

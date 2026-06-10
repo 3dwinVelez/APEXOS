@@ -1,0 +1,4 @@
+company_code,service_type_code,name,description,active,sort_order
+GLOBAL,montaje,Montaje,Servicio de instalacion o armado,true,10
+GLOBAL,desmontaje,Desmontaje,Servicio de retiro o desmontaje,true,20
+GLOBAL,ambos,Montaje y desmontaje,Servicio combinado,true,30

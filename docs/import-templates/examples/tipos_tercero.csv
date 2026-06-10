@@ -1,0 +1,4 @@
+third_party_type_code,name,description,active,sort_order
+customer,Cliente,Tercero cliente,true,10
+supplier,Proveedor,Tercero proveedor,true,20
+employee,Empleado,Tercero empleado,true,30
