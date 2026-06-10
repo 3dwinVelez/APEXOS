@@ -4,9 +4,9 @@ import { api } from "@/lib/api";
 import { getGpsFix, type GpsFix } from "@/lib/gps";
 import { SignatureCapture } from "@/components/operations/SignatureCapture";
 import { PhotoCapture, type CapturedFile } from "@/components/operations/PhotoCapture";
-import { Activity, AlertTriangle, ArrowLeft, Camera, CheckCircle2, ExternalLink, MapPin, Navigation, Plus, RefreshCw, Truck, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, ExternalLink, MapPin, Navigation, Plus, RefreshCw, Truck, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 type Employee = { id: number; code: string; user_type?: string; position?: string; metadata: { name: string; user_type?: string }; user: { name: string } };
 type Attendance = { user_name: string; next_type: string | null; punches: Array<{ id: number; type: string; time: string; vehicle_plate: string }> };

@@ -1,0 +1,324 @@
+{
+  "generated_at": "2026-06-05T17:42:59.764Z",
+  "frontend_url": "https://apexos-web-qa-production.up.railway.app",
+  "api_url_configured": false,
+  "scenarios": [
+    10,
+    50,
+    100
+  ],
+  "results": [
+    {
+      "target": "frontend_login",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 295.02,
+      "p95_ms": 329.4,
+      "p99_ms": 329.4,
+      "requests_per_second": 28.88,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      }
+    },
+    {
+      "target": "frontend_dashboard",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 89.76,
+      "p95_ms": 105.64,
+      "p99_ms": 105.64,
+      "requests_per_second": 92.96,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      }
+    },
+    {
+      "target": "supabase_user_companies",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 551.59,
+      "p95_ms": 660.86,
+      "p99_ms": 660.86,
+      "requests_per_second": 14.96,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      }
+    },
+    {
+      "target": "supabase_services",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 248.87,
+      "p95_ms": 395.01,
+      "p99_ms": 395.01,
+      "requests_per_second": 25.07,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      }
+    },
+    {
+      "target": "supabase_employees",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 236.53,
+      "p95_ms": 258.95,
+      "p99_ms": 258.95,
+      "requests_per_second": 38.32,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      }
+    },
+    {
+      "target": "supabase_vehicles",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 230.91,
+      "p95_ms": 254.65,
+      "p99_ms": 254.65,
+      "requests_per_second": 38.85,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      }
+    },
+    {
+      "target": "supabase_punches",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 283.63,
+      "p95_ms": 409.7,
+      "p99_ms": 409.7,
+      "requests_per_second": 24.21,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      }
+    },
+    {
+      "target": "supabase_gps",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 231.41,
+      "p95_ms": 240.83,
+      "p99_ms": 240.83,
+      "requests_per_second": 40.94,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      }
+    },
+    {
+      "target": "frontend_login",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 252.63,
+      "p95_ms": 330.55,
+      "p99_ms": 345.19,
+      "requests_per_second": 135.95,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      }
+    },
+    {
+      "target": "frontend_dashboard",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 153.4,
+      "p95_ms": 211.07,
+      "p99_ms": 214.14,
+      "requests_per_second": 228.58,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      }
+    },
+    {
+      "target": "supabase_user_companies",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 447.16,
+      "p95_ms": 640.92,
+      "p99_ms": 679.46,
+      "requests_per_second": 73.25,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      }
+    },
+    {
+      "target": "supabase_services",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 650.57,
+      "p95_ms": 770.61,
+      "p99_ms": 773.64,
+      "requests_per_second": 62.58,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      }
+    },
+    {
+      "target": "supabase_employees",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 440.67,
+      "p95_ms": 572.79,
+      "p99_ms": 580.51,
+      "requests_per_second": 84.82,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      }
+    },
+    {
+      "target": "supabase_vehicles",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 326.67,
+      "p95_ms": 409.02,
+      "p99_ms": 411.56,
+      "requests_per_second": 118.9,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      }
+    },
+    {
+      "target": "supabase_punches",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 434.23,
+      "p95_ms": 586.09,
+      "p99_ms": 589.73,
+      "requests_per_second": 83.23,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      }
+    },
+    {
+      "target": "supabase_gps",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 462.17,
+      "p95_ms": 570.69,
+      "p99_ms": 572.03,
+      "requests_per_second": 86.7,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      }
+    },
+    {
+      "target": "frontend_login",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 309.85,
+      "p95_ms": 450.62,
+      "p99_ms": 471.74,
+      "requests_per_second": 192.43,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      }
+    },
+    {
+      "target": "frontend_dashboard",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 199.06,
+      "p95_ms": 262.66,
+      "p99_ms": 314.27,
+      "requests_per_second": 300.23,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      }
+    },
+    {
+      "target": "supabase_user_companies",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 406.67,
+      "p95_ms": 478.4,
+      "p99_ms": 501.13,
+      "requests_per_second": 179.97,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      }
+    },
+    {
+      "target": "supabase_services",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 688,
+      "p95_ms": 820.62,
+      "p99_ms": 832.96,
+      "requests_per_second": 118.92,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      }
+    },
+    {
+      "target": "supabase_employees",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 714.54,
+      "p95_ms": 863.66,
+      "p99_ms": 875.84,
+      "requests_per_second": 110.52,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      }
+    },
+    {
+      "target": "supabase_vehicles",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 410.49,
+      "p95_ms": 500.83,
+      "p99_ms": 512.05,
+      "requests_per_second": 188.18,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      }
+    },
+    {
+      "target": "supabase_punches",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 671.97,
+      "p95_ms": 1016.72,
+      "p99_ms": 1020.19,
+      "requests_per_second": 96.68,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      }
+    },
+    {
+      "target": "supabase_gps",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 438.09,
+      "p95_ms": 622.93,
+      "p99_ms": 631.94,
+      "requests_per_second": 156.37,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      }
+    }
+  ]
+}

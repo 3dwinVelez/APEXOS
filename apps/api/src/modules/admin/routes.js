@@ -12,11 +12,11 @@ async function adminRoutes(fastify) {
 
   fastify.get("/admin/permissions/catalog", {
     preHandler: requirePermission("admin", "read")
-  }, async () => service.getPermissionCatalog());
+  }, async (request) => service.getPermissionCatalog(request.user?.tenant_id));
 
   fastify.get("/admin/roles", {
     preHandler: requirePermission("admin", "read")
-  }, async (request) => service.listRoles(request.user?.tenant_id));
+  }, async (request) => service.listRoles(request.user?.tenant_id, request.query));
 
   fastify.post("/admin/roles", {
     preHandler: requirePermission("admin", "write")
@@ -32,7 +32,7 @@ async function adminRoutes(fastify) {
 
   fastify.get("/admin/users", {
     preHandler: requirePermission("admin", "read")
-  }, async (request) => service.listUsers(request.user?.tenant_id));
+  }, async (request) => service.listUsers(request.user?.tenant_id, request.query));
 
   fastify.get("/admin/user-master-data", {
     preHandler: requirePermission("admin", "read")

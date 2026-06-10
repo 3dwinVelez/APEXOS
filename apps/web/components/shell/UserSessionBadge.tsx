@@ -17,6 +17,22 @@ type CurrentSession = {
   company: string;
 };
 
+let sessionCompaniesInFlight: { token: string; promise: Promise<SessionCompany[]> } | null = null;
+let lastPresenceAt = 0;
+let lastPresenceToken = "";
+
+function loadSessionCompanies() {
+  const token = getSupabaseAccessToken() || "";
+  if (!sessionCompaniesInFlight || sessionCompaniesInFlight.token !== token) {
+    const promise = supabaseFetch<SessionCompany[]>("/rest/v1/v_user_companies?select=company_id,company_name,role&limit=5")
+      .finally(() => {
+        if (sessionCompaniesInFlight?.token === token) sessionCompaniesInFlight = null;
+      });
+    sessionCompaniesInFlight = { token, promise };
+  }
+  return sessionCompaniesInFlight.promise;
+}
+
 function readLocalSession(): CurrentSession {
   if (typeof window === "undefined") return { email: "", role: "", provider: "", company: "" };
   return {
@@ -45,7 +61,7 @@ export function UserSessionBadge({ compact = false }: { compact?: boolean }) {
     const syncFromStorage = () => setSession(readLocalSession());
     window.addEventListener("storage", syncFromStorage);
     if (current.provider === "supabase") {
-      supabaseFetch<SessionCompany[]>("/rest/v1/v_user_companies?select=company_id,company_name,role&limit=5")
+      loadSessionCompanies()
         .then((rows) => {
           if (cancelled) return;
           const preferredCompanyId = localStorage.getItem("apexos_company_id");
@@ -61,6 +77,9 @@ export function UserSessionBadge({ compact = false }: { compact?: boolean }) {
           const token = getSupabaseAccessToken();
           const registerPresence = () => {
             if (!token) return;
+            if (lastPresenceToken === token && Date.now() - lastPresenceAt <= 60_000) return;
+            lastPresenceAt = Date.now();
+            lastPresenceToken = token;
             fetch("/api/platform/company-sessions", {
               method: "POST",
               headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },

@@ -599,7 +599,12 @@ async function listAccounts(tenantId, query = {}) {
         { name: { contains: String(query.search), mode: "insensitive" } }
       ];
     }
-    const accounts = await prisma.account.findMany({ where, orderBy: { code: "asc" } });
+    const accounts = await prisma.account.findMany({
+      where,
+      orderBy: { code: "asc" },
+      skip: Math.max(Number(query.offset || 0), 0),
+      take: Math.min(Number(query.limit || 500), 1000)
+    });
     return accounts.map(accountDto);
   });
 }

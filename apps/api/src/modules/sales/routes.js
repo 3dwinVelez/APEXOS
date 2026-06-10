@@ -9,11 +9,11 @@ async function salesRoutes(fastify) {
 
   fastify.get("/sales/customers", {
     preHandler: requirePermission("sales", "read")
-  }, async (request) => service.listCustomers(request.user?.tenant_id));
+  }, async (request) => service.listCustomers(request.user?.tenant_id, request.query));
 
   fastify.get("/sales/orders", {
     preHandler: requirePermission("sales", "read")
-  }, async (request) => service.listSaleOrders(request.user?.tenant_id));
+  }, async (request) => service.listSaleOrders(request.user?.tenant_id, request.query));
 
   fastify.post("/sales/customers", {
     schema: schema.customerSchema,

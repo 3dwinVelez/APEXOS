@@ -4,20 +4,16 @@ import { api } from "@/lib/api";
 import {
   AlertTriangle,
   ArrowLeft,
-  CalendarClock,
-  CheckCircle2,
   ClipboardList,
   Clock3,
   FileCheck2,
   Filter,
-  Gauge,
   ListChecks,
   MessageSquarePlus,
   Plus,
   Search,
   ShieldAlert,
   Sparkles,
-  Target,
   UserPlus,
   Users,
   X
@@ -95,14 +91,6 @@ type WorkItem = {
   action: string;
 };
 type QuickForm = "proyecto" | "compromiso" | "tarea" | "entregable" | "riesgo" | "recurso" | "seguimiento" | null;
-
-const statusLabel: Record<string, string> = {
-  pendiente: "Pendiente",
-  activo: "En curso",
-  bloqueado: "Bloqueado: requiere accion",
-  validacion: "En validacion",
-  finalizado: "Finalizado"
-};
 
 const shortStatusLabel: Record<string, string> = {
   pendiente: "Pendiente",
@@ -355,8 +343,6 @@ export default function ProjectsPage() {
     return days !== null && days < 0 && item.status !== "finalizado";
   }).length;
   const noResponsible = workItems.filter((item) => !item.responsible && item.status !== "finalizado").length;
-  const pressure = project.indicators.active_blocks * 30 + overdue * 20 + noResponsible * 10 + project.indicators.saturated_resources * 15 + project.indicators.next_commitments * 8;
-
   return (
     <div className="mx-auto max-w-7xl space-y-4 pb-24 md:pb-8">
       <header className="sticky top-0 z-20 -mx-3 border-b border-line bg-paper/95 px-3 py-3 backdrop-blur sm:-mx-4 sm:px-4 md:static md:mx-0 md:border-0 md:bg-transparent md:px-0">

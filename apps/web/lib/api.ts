@@ -1,10 +1,11 @@
-import { notifyPlatform } from "./platformAlerts";
-import { assertActiveSession, clearSession, keepSessionAlive, touchSession } from "./sessionSecurity";
-import { getSupabaseAccessToken, supabaseFetch } from "./supabaseClient";
+import { assertActiveSession, clearSession, emitAppAlert, keepSessionAlive, setPasswordChangeRequired, touchSession } from "./sessionSecurity";
+import { getSupabaseAccessToken, supabaseAuth, supabaseFetch } from "./supabaseClient";
+import { getServiceImageUrl, uploadServiceImageData } from "./supabaseStorage";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
 const API_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_API_TIMEOUT_MS || 20000);
+let refreshSessionInFlight: Promise<boolean> | null = null;
 
 function isSupabaseSession() {
   if (typeof window === "undefined") return false;
@@ -36,9 +37,143 @@ const fallbackActivityTypes = [
   "Apoyo operativo"
 ].map((name, index) => ({ id: index + 1, name, active: true, sort_order: (index + 1) * 10 }));
 
+const tenantModuleCodesByPermissionModule: Record<string, string[]> = {
+  accounting: ["M-07", "contabilidad", "finance", "accounting"],
+  admin: ["M-22", "administracion", "administracion_apex", "admin"],
+  brain: ["AI-CORE", "apex-ai", "apex_ai", "brain"],
+  hr: ["M-17", "talento-humano", "talento_humano", "hr"],
+  inventory: ["M-01", "inventario", "inventory"],
+  invoicing: ["M-04", "facturacion", "invoicing"],
+  payroll: ["M-17", "nomina", "payroll"],
+  purchases: ["M-02", "compras", "purchases"],
+  projects: ["M-19", "proyectos", "projects"],
+  sales: ["M-03", "ventas", "sales"],
+  services: ["M-26", "servicios", "services"],
+  transport: ["M-14", "transporte", "transport"]
+};
+
 function fullName(row: { first_name?: string; last_name?: string; email?: string; id?: string; metadata?: AnyRow }) {
   const metadataName = typeof row.metadata?.name === "string" ? row.metadata.name : "";
   return [row.first_name, row.last_name].filter(Boolean).join(" ").trim() || metadataName || row.email || `Empleado ${String(row.id || "").slice(0, 8)}`;
+}
+
+function requestErrorMessage(path: string, status: number, detail: string) {
+  if (status >= 500) return `Error ${status} en ${path}. Backend no disponible${detail ? `: ${detail}` : ""}`;
+  if (status === 401) return `Sesion no autorizada en ${path}. Inicia sesion de nuevo.`;
+  return `Error ${status} en ${path}: ${detail || "La solicitud no pudo completarse."}`;
+}
+
+function alertRequestFailure(path: string, status: number | null, detail: string) {
+  emitAppAlert({
+    title: status === 401 ? "Sesion invalida" : "Fallo tecnico detectado",
+    message: status === 401 ? "La sesion actual ya no es valida. Debes autenticarte otra vez." : `No fue posible completar la solicitud solicitada por el modulo actual.`,
+    technical: `Ruta: ${path}${status ? ` | Estado: ${status}` : ""}${detail ? ` | Detalle: ${detail}` : ""}`,
+    level: status === 401 || (status !== null && status >= 500) ? "error" : "warning"
+  });
+}
+
+async function refreshSessionToken() {
+  if (typeof window === "undefined") return false;
+  if (refreshSessionInFlight) return refreshSessionInFlight;
+
+  refreshSessionInFlight = (async () => {
+    const provider = localStorage.getItem("auth_provider") || "local";
+    const refresh = localStorage.getItem("refresh") || "";
+    if (!refresh) return false;
+
+    try {
+      if (provider === "supabase") {
+        const data = await supabaseAuth.refreshSession(refresh);
+        if (!data.access_token) return false;
+        localStorage.setItem("token", data.access_token);
+        if (data.refresh_token) localStorage.setItem("refresh", data.refresh_token);
+        if (data.user?.email) localStorage.setItem("user_email", data.user.email);
+        touchSession();
+        return true;
+      }
+
+      const response = await fetchWithTimeout(`${API_URL}/api/v1/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh })
+      });
+      if (!response.ok) return false;
+      const data = await response.json() as { token?: string; refresh?: string; user?: { role?: string; role_permissions?: unknown[]; role_metadata?: Record<string, unknown>; require_password_change?: boolean; session_status?: string } };
+      if (!data.token) return false;
+      localStorage.setItem("token", data.token);
+      if (data.refresh) localStorage.setItem("refresh", data.refresh);
+      if (data.user?.role) localStorage.setItem("role_name", data.user.role);
+      if (Array.isArray(data.user?.role_permissions)) localStorage.setItem("role_permissions", JSON.stringify(data.user.role_permissions));
+      if (data.user?.role_metadata) localStorage.setItem("role_metadata", JSON.stringify(data.user.role_metadata));
+      setPasswordChangeRequired(Boolean(data.user?.require_password_change));
+      touchSession();
+      return true;
+    } catch {
+      return false;
+    } finally {
+      refreshSessionInFlight = null;
+    }
+  })();
+
+  return refreshSessionInFlight;
+}
+
+export async function authorizedFetch(input: string, options: RequestInit = {}, retried = false): Promise<Response> {
+  assertActiveSession();
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  let response: Response;
+
+  try {
+    response = await fetchWithTimeout(input, {
+      ...options,
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options.headers
+      }
+    });
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "Servicio no disponible.";
+    alertRequestFailure(input, null, detail);
+    if (error instanceof Error) throw error;
+    throw new Error("No fue posible completar la solicitud autenticada.");
+  }
+
+  if (response.status === 401 && typeof window !== "undefined") {
+    if (!retried && await refreshSessionToken()) {
+      return authorizedFetch(input, options, true);
+    }
+    alertRequestFailure(input, 401, "Sesion expirada, revocada o no autorizada.");
+    clearSession(isSupabaseSession() ? "supabase_unauthorized" : "unauthorized");
+    window.location.href = "/login";
+    throw new Error("Tu sesion expiro. Inicia sesion de nuevo.");
+  }
+
+  touchSession();
+  return response;
+}
+
+export async function authorizedJson<T>(input: string, options: RequestInit = {}): Promise<T> {
+  const response = await authorizedFetch(input, options);
+  if (!response.ok) {
+    if (response.status >= 500) {
+      const detail = await response.text().catch(() => "");
+      const message = requestErrorMessage(input, response.status, detail);
+      alertRequestFailure(input, response.status, detail);
+      throw new Error(message);
+    }
+    const body = await response.json().catch(() => ({ error: response.statusText }));
+    const detail = body.error || body.message || response.statusText;
+    const message = requestErrorMessage(input, response.status, detail);
+    alertRequestFailure(input, response.status, detail);
+    throw new Error(message);
+  }
+  return response.json() as Promise<T>;
+}
+
+function normalizeUsernameEmail(value: unknown, fallbackDomain = "apex.local") {
+  const text = String(value || "").trim().toLowerCase();
+  if (!text) return "";
+  return text.includes("@") ? text : `${text}@${fallbackDomain}`;
 }
 
 function toNumberId(id: unknown) {
@@ -89,35 +224,93 @@ const adminPermissionCatalog = [
   { key: "nomina", label: "Nomina", group: "finanzas", module: "payroll", submodule: "payroll", actions: ["access", "view", "create", "edit", "approve", "export", "import", "sensitive", "reports"] }
 ];
 
-function emptyAdminPermissions() {
-  return Object.fromEntries(adminPermissionCatalog.map((item) => [
+function normalizeTenantActiveModules(value: unknown) {
+  return Array.isArray(value) ? value.map((item) => String(item).trim().toLowerCase()).filter(Boolean) : [];
+}
+
+function getStoredTenantActiveModules() {
+  if (typeof window === "undefined") return [] as string[];
+  const raw = localStorage.getItem("tenant_active_modules");
+  if (!raw) return [] as string[];
+  try {
+    return normalizeTenantActiveModules(JSON.parse(raw));
+  } catch {
+    return [] as string[];
+  }
+}
+
+function tenantAllowsPermissionModule(activeModules: string[], module?: string) {
+  if (!module) return true;
+  if (!activeModules.length) return true;
+  const allowedCodes = (tenantModuleCodesByPermissionModule[module] || [module]).map((item) => String(item).trim().toLowerCase());
+  return allowedCodes.some((code) => activeModules.includes(code));
+}
+
+function filteredAdminPermissionCatalog(activeModules = getStoredTenantActiveModules()) {
+  return adminPermissionCatalog.filter((item) => tenantAllowsPermissionModule(activeModules, item.module));
+}
+
+function filterAdminPermissions(permissions: Record<string, Record<string, boolean>> | undefined, activeModules = getStoredTenantActiveModules()) {
+  const catalog = filteredAdminPermissionCatalog(activeModules);
+  return Object.fromEntries(catalog.map((item) => [
+    item.key,
+    Object.fromEntries(item.actions.map((action) => [action, Boolean(permissions?.[item.key]?.[action])]))
+  ]));
+}
+
+function emptyAdminPermissions(activeModules = getStoredTenantActiveModules()) {
+  return Object.fromEntries(filteredAdminPermissionCatalog(activeModules).map((item) => [
     item.key,
     Object.fromEntries(item.actions.map((action) => [action, false]))
   ]));
 }
 
-function defaultAdminRoles() {
-  const all = Object.fromEntries(adminPermissionCatalog.map((item) => [
-    item.key,
-    Object.fromEntries(item.actions.map((action) => [action, true]))
-  ]));
+function mergeAdminPermissions(overrides: Record<string, Record<string, boolean>>, activeModules = getStoredTenantActiveModules()) {
+  const base = emptyAdminPermissions(activeModules);
+  for (const [moduleKey, actions] of Object.entries(overrides || {})) {
+    base[moduleKey] = { ...(base[moduleKey] || {}), ...actions };
+  }
+  return filterAdminPermissions(base, activeModules);
+}
+
+function defaultAdminRoles(activeModules = getStoredTenantActiveModules()) {
+  const catalog = filteredAdminPermissionCatalog(activeModules);
+  const all = Object.fromEntries(catalog.map((item) => [item.key, Object.fromEntries(item.actions.map((action) => [action, true]))]));
+  const shared = { scopes: { locations: [], areas: [], cost_centers: [], processes: [] }, restrictions: { locations: [], areas: [], cost_centers: [], processes: [] }, can_delegate: false, sensitive: false };
   return [
-    { id: 1, name: "Administrador de empresa", description: "Administra usuarios, roles y operacion de la empresa.", active: true, is_system: true, hierarchy_level: 90, role_type: "admin_empresa", scope: "company", permissions: all },
-    { id: 2, name: "Supervisor operativo", description: "Supervisa ejecucion diaria y evidencias operativas.", active: true, is_system: false, hierarchy_level: 60, role_type: "supervisor", scope: "area", permissions: { ...emptyAdminPermissions(), dashboard: { access: true, view: true, reports: true }, marcaciones: { access: true, view: true, create: true, edit: true, approve: true, reject: true, export: true, reports: true }, servicios: { access: true, view: true, create: true, edit: true, approve: true, attach: true, download: true, reports: true }, transporte: { access: true, view: true, edit: true, reports: true } } },
-    { id: 3, name: "Auxiliar operativo", description: "Registra jornada, actividades y consulta servicios asignados.", active: true, is_system: false, hierarchy_level: 30, role_type: "operativo", scope: "location", permissions: { ...emptyAdminPermissions(), dashboard: { access: true, view: true }, marcaciones: { access: true, view: true, create: true }, servicios: { access: true, view: true, create: true, edit: true, attach: true, download: true }, documentos: { access: true, view: true, attach: true, download: true } } },
-    { id: 4, name: "Auditor", description: "Consulta auditoria, reportes y documentos sensibles.", active: true, is_system: false, hierarchy_level: 65, role_type: "auditor", scope: "company", permissions: { ...emptyAdminPermissions(), dashboard: { access: true, view: true, reports: true }, auditoria: { access: true, view: true, export: true, download: true, reports: true, sensitive: true }, reportes: { access: true, view: true, export: true, download: true, reports: true, sensitive: true }, documentos: { access: true, view: true, download: true, sensitive: true } } }
+    { id: 1, name: "Administrador de empresa", description: "Administra usuarios, roles y operacion de la empresa.", active: true, is_system: true, hierarchy_level: 90, role_type: "admin_empresa", scope: "company", permissions: all, ...shared },
+    { id: 2, name: "Supervisor operativo", description: "Supervisa ejecucion diaria y evidencias operativas.", active: true, is_system: false, hierarchy_level: 60, role_type: "supervisor", scope: "area", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true, reports: true }, marcaciones: { access: true, view: true, create: true, edit: true, approve: true, reject: true, export: true, reports: true }, servicios: { access: true, view: true, create: true, edit: true, approve: true, attach: true, download: true, reports: true }, transporte: { access: true, view: true, edit: true, reports: true } }, activeModules), ...shared },
+    { id: 3, name: "Auxiliar operativo", description: "Registra jornada, actividades y consulta servicios asignados.", active: true, is_system: false, hierarchy_level: 30, role_type: "operativo", scope: "location", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true }, marcaciones: { access: true, view: true, create: true }, servicios: { access: true, view: true, create: true, edit: true, attach: true, download: true }, documentos: { access: true, view: true, attach: true, download: true } }, activeModules), ...shared },
+    { id: 4, name: "Auditor", description: "Consulta auditoria, reportes y documentos sensibles.", active: true, is_system: false, hierarchy_level: 65, role_type: "auditor", scope: "company", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true, reports: true }, auditoria: { access: true, view: true, export: true, download: true, reports: true, sensitive: true }, reportes: { access: true, view: true, export: true, download: true, reports: true, sensitive: true }, documentos: { access: true, view: true, download: true, sensitive: true } }, activeModules), ...shared, sensitive: true },
+    { id: 5, name: "Soporte tecnico", description: "Soporte de configuracion y diagnostico.", active: true, is_system: false, hierarchy_level: 75, role_type: "soporte", scope: "company", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true, reports: true }, usuarios: { access: true, view: true, edit: true }, roles: { access: true, view: true }, configuracion: { access: true, view: true, edit: true, configure: true }, auditoria: { access: true, view: true, reports: true }, notificaciones: { access: true, view: true, create: true, edit: true }, ia: { access: true, view: true, execute: true } }, activeModules), ...shared },
+    { id: 6, name: "Tecnico", description: "Ejecuta servicios y registra trabajo operativo.", active: true, is_system: false, hierarchy_level: 35, role_type: "operativo", scope: "location", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true }, servicios: { access: true, view: true, create: true, edit: true, attach: true, download: true }, marcaciones: { access: true, view: true, create: true }, transporte: { access: true, view: true }, documentos: { access: true, view: true, attach: true, download: true } }, activeModules), ...shared },
+    { id: 7, name: "Empleado", description: "Consulta operativa y registra jornada.", active: true, is_system: false, hierarchy_level: 20, role_type: "operativo", scope: "location", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true }, marcaciones: { access: true, view: true, create: true }, documentos: { access: true, view: true, download: true } }, activeModules), ...shared }
   ];
 }
 
+function normalizeStoredAdminRoles(roles: ReturnType<typeof defaultAdminRoles>, activeModules = getStoredTenantActiveModules()) {
+  const defaults = defaultAdminRoles(activeModules);
+  const input = Array.isArray(roles) ? roles : [];
+  const byName = new Map(input.map((role) => [String(role.name || ""), role]));
+  const normalizedDefaults = defaults.map((role) => {
+    const current = byName.get(role.name);
+    return current ? { ...role, ...current, permissions: filterAdminPermissions(current.permissions || role.permissions, activeModules) } : role;
+  });
+  const existingDefaultNames = new Set(normalizedDefaults.map((role) => role.name));
+  const customRoles = input.filter((role) => !existingDefaultNames.has(String(role.name || ""))).map((role) => ({ ...role, permissions: filterAdminPermissions(role.permissions, activeModules) }));
+  return [...normalizedDefaults, ...customRoles];
+}
+
 function storedAdminRoles() {
-  if (typeof window === "undefined") return defaultAdminRoles();
+  const activeModules = getStoredTenantActiveModules();
+  if (typeof window === "undefined") return defaultAdminRoles(activeModules);
   const raw = localStorage.getItem("apexos_admin_roles_qa");
-  if (!raw) return defaultAdminRoles();
+  if (!raw) return defaultAdminRoles(activeModules);
   try {
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length ? parsed : defaultAdminRoles();
+    return Array.isArray(parsed) && parsed.length ? normalizeStoredAdminRoles(parsed, activeModules) : defaultAdminRoles(activeModules);
   } catch {
-    return defaultAdminRoles();
+    return defaultAdminRoles(activeModules);
   }
 }
 
@@ -150,8 +343,8 @@ function defaultUserMasterData() {
     engagement_types: [["empleado", "Empleado"], ["contratista", "Contratista"], ["tercero", "Tercero"], ["temporal", "Temporal"], ["aprendiz", "Aprendiz"]].map(([code, name]) => ({ code, name })),
     session_statuses: [["sin_sesion", "Sin sesion"], ["activa", "Activa"], ["bloqueada", "Bloqueada"]].map(([code, name]) => ({ code, name })),
     user_document_types: [["identity", "Documento de identidad"], ["contract", "Contrato"], ["license", "Licencia de conduccion"], ["social_security", "Seguridad social"], ["bank_certificate", "Certificado bancario"], ["occupational_exam", "Examen medico ocupacional"], ["internal", "Documento interno"]].map(([code, name]) => ({ code, name })),
-    areas: [["OPER", "Operacion"], ["TRANSP", "Transporte"], ["ADMIN", "Administracion"], ["BODEGA", "Bodega"]].map(([code, name]) => ({ code, name })),
-    positions: [["ADMIN", "Administrador"], ["SUP_RUTA", "Supervisor de ruta"], ["CONDUCTOR", "Conductor"], ["AUX_OPER", "Auxiliar operativo"]].map(([code, name]) => ({ code, name })),
+    areas: [["OPER", "Operacion"], ["SERV", "Servicios"], ["TRANSP", "Transporte"], ["ADMIN", "Administracion"], ["BODEGA", "Bodega"]].map(([code, name]) => ({ code, name })),
+    positions: [["ADMIN", "Administrador"], ["SUP_RUTA", "Supervisor de ruta"], ["CONDUCTOR", "Conductor"], ["TECNICO", "Tecnico de servicios"], ["AUX_OPER", "Auxiliar operativo"]].map(([code, name]) => ({ code, name })),
     locations: [["SEDE-PRINCIPAL", "Sede principal"], ["BOG-NORTE", "Bogota Norte"], ["BOG-SUR", "Bogota Sur"]].map(([code, name]) => ({ code, name })),
     cost_centers: [["CC-OPER", "Operacion"], ["CC-TRAN", "Transporte"], ["CC-ADMIN", "Administracion"]].map(([code, name]) => ({ code, name })),
     work_shifts: [["DIURNO", "Diurno"], ["NOCTURNO", "Nocturno"], ["MIXTO", "Mixto"]].map(([code, name]) => ({ code, name })),
@@ -177,15 +370,38 @@ function safeDevLog(message: string, error: unknown) {
   }
 }
 
-function notifyApiIssue(title: string, message: string, technical?: string, requestId?: string) {
-  notifyPlatform({
-    level: "error",
-    title,
-    message,
-    technical,
-    requestId,
-    source: "api"
-  });
+type ServiceEvidenceRow = {
+  id: string;
+  order_id?: string;
+  evidence_type?: string;
+  file_url?: string;
+  storage_bucket?: string;
+  storage_path?: string;
+  mime_type?: string;
+  size_bytes?: number;
+  metadata?: AnyRow;
+  created_at?: string;
+};
+
+async function resolveServiceEvidencePhoto(photo: ServiceEvidenceRow) {
+  const legacyBase64 = photo.file_url?.startsWith("data:") ? photo.file_url : "";
+  let fileUrl = legacyBase64 ? "" : photo.file_url || "";
+  if (photo.storage_path) {
+    const storageValue = photo.storage_path.startsWith("service-images/")
+      ? photo.storage_path
+      : `${photo.storage_bucket || "service-images"}/${photo.storage_path}`;
+    try {
+      fileUrl = await getServiceImageUrl(storageValue);
+    } catch (error) {
+      safeDevLog("No fue posible firmar una evidencia de servicio.", error);
+    }
+  }
+  return {
+    ...photo,
+    type: String(photo.metadata?.original_type || photo.evidence_type || ""),
+    file_url: fileUrl,
+    base64_data: legacyBase64
+  };
 }
 
 async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, timeoutMs = API_TIMEOUT_MS) {
@@ -529,7 +745,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       safeDevLog("No fue posible consultar actividades Supabase.", error);
       return [];
     })).filter((row) => aliases.has(String(row.employee_id || "")) || aliases.has(String(row.user_id || "")) || aliases.has(String(row.user_name || "")));
-    const activities = activityRows.map((row, index) => ({
+    const activities = activityRows.map((row) => ({
       id: toNumberId(row.id),
       activity_type_name: String(row.metadata?.activity_type_name || "Actividad operativa"),
       observation: String(row.metadata?.observation || ""),
@@ -605,7 +821,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       });
     } catch (error) {
       if (!String(error).includes("extra_evidence")) throw error;
-      const { extra_evidence: _extraEvidence, ...fallbackRow } = row;
+      const fallbackRow = { ...row };
+      delete fallbackRow.extra_evidence;
       inserted = await supabaseFetch<Array<Record<string, unknown>>>("/rest/v1/time_punches?select=*", {
         method: "POST",
         body: JSON.stringify(fallbackRow),
@@ -1312,10 +1529,10 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   if (serviceOrderPhotosMatch) {
     const orderId = serviceOrderPhotosMatch[1];
     if (method === "GET") {
-      const photos = await supabaseFetch<Array<{ id: string; evidence_type?: string; file_url?: string; storage_path?: string; mime_type?: string; size_bytes?: number; metadata?: AnyRow; created_at?: string }>>(
-        `/rest/v1/service_evidence?select=id,evidence_type,file_url,storage_path,mime_type,size_bytes,metadata,created_at&order_id=eq.${encodeURIComponent(orderId)}&order=created_at.asc&limit=100`
+      const photos = await supabaseFetch<ServiceEvidenceRow[]>(
+        `/rest/v1/service_evidence?select=id,evidence_type,file_url,storage_bucket,storage_path,mime_type,size_bytes,metadata,created_at&order_id=eq.${encodeURIComponent(orderId)}&order=created_at.asc&limit=100`
       );
-      return photos.map((photo) => ({ ...photo, type: String(photo.metadata?.original_type || photo.evidence_type || ""), base64_data: photo.file_url?.startsWith("data:") ? photo.file_url : "" })) as T;
+      return await Promise.all(photos.map(resolveServiceEvidencePhoto)) as T;
     }
     if (method === "POST") {
       const body = JSON.parse(String(options.body || "{}"));
@@ -1323,6 +1540,13 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       if (!rows[0]) throw new Error("No se encontro el servicio o no tienes permisos para cargar evidencia.");
       const originalType = String(body.type || body.evidence_type || "novedad");
       const allowedType = ["fachada", "producto_abierto", "producto_cerrado", "cliente", "firma_cliente", "no_ejecutada"].includes(originalType) ? originalType : "novedad";
+      const uploaded = body.base64_data && !body.storage_path
+        ? await uploadServiceImageData(rows[0].company_id, orderId, {
+          base64: String(body.base64_data),
+          name: String(body.file_name || `${allowedType}.jpg`),
+          type: String(body.mime_type || "image/jpeg")
+        })
+        : null;
       await supabaseFetch<void>("/rest/v1/service_evidence", {
         method: "POST",
         headers: { Prefer: "return=minimal" },
@@ -1330,24 +1554,28 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
           company_id: rows[0].company_id,
           order_id: orderId,
           evidence_type: allowedType,
-          file_url: body.file_url || body.base64_data || "",
-          storage_path: body.storage_path || "",
+          file_url: body.file_url || "",
+          storage_bucket: uploaded?.bucket || body.storage_bucket || "service-images",
+          storage_path: uploaded?.storagePath || body.storage_path || "",
           mime_type: body.mime_type || "",
           size_bytes: Number(body.size_bytes || 0),
           metadata: { ...(body.metadata || {}), original_type: originalType, file_name: body.file_name || "" }
         })
       });
-      const inserted = await supabaseFetch<Array<{ id: string; evidence_type?: string; file_url?: string; storage_path?: string; mime_type?: string; size_bytes?: number; metadata?: AnyRow; created_at?: string }>>(
-        `/rest/v1/service_evidence?select=id,evidence_type,file_url,storage_path,mime_type,size_bytes,metadata,created_at&order_id=eq.${encodeURIComponent(orderId)}&order=created_at.desc&limit=1`
+      const inserted = await supabaseFetch<ServiceEvidenceRow[]>(
+        `/rest/v1/service_evidence?select=id,evidence_type,file_url,storage_bucket,storage_path,mime_type,size_bytes,metadata,created_at&order_id=eq.${encodeURIComponent(orderId)}&order=created_at.desc&limit=1`
       );
       const photo = inserted[0];
       if (!photo?.id) throw new Error("La evidencia se envio, pero no fue posible leer el registro creado.");
-      return { ...photo, type: originalType, base64_data: photo?.file_url?.startsWith("data:") ? photo.file_url : "" } as T;
+      return await resolveServiceEvidencePhoto({ ...photo, metadata: { ...(photo.metadata || {}), original_type: originalType } }) as T;
     }
   }
 
   if (pathname === "/api/v1/services/orders" || serviceOrderDetailMatch) {
     const status = search.get("status");
+    const orderLimit = serviceOrderDetailMatch
+      ? 1
+      : Math.min(Math.max(Number(search.get("limit") || 50), 1), 150);
     const filters = [
       status ? `status=eq.${encodeURIComponent(status)}` : "",
       serviceOrderDetailMatch ? `id=eq.${encodeURIComponent(serviceOrderDetailMatch[1])}` : ""
@@ -1368,27 +1596,35 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       closed_at?: string;
       notes?: string;
       metadata?: AnyRow;
-    }>>(`/rest/v1/service_orders?select=id,number,reference_id,technician_employee_id,service_type,status,customer_name,customer_address,customer_phone,invoice_number,scheduled_date,started_at,closed_at,notes,metadata&order=created_at.desc${filters ? `&${filters}` : ""}&limit=${serviceOrderDetailMatch ? 1 : 150}`);
+    }>>(`/rest/v1/service_orders?select=id,number,reference_id,technician_employee_id,service_type,status,customer_name,customer_address,customer_phone,invoice_number,scheduled_date,started_at,closed_at,notes,metadata&order=created_at.desc${filters ? `&${filters}` : ""}&limit=${orderLimit}`);
     if (serviceOrderDetailMatch && !orders[0]) return null as T;
     const orderIds = orders.map((order) => order.id);
     const orderFilter = orderIds.length ? `&order_id=in.(${orderIds.join(",")})` : "&order_id=is.null";
-    const refs = await supabaseFetch<Array<{ id: string; code: string; name: string; category?: string; estimated_minutes?: number; brand?: string; model?: string; metadata?: AnyRow }>>("/rest/v1/service_references?select=id,code,name,category,estimated_minutes,brand,model,metadata&limit=200").catch((error) => {
-      safeDevLog("No fue posible consultar referencias de servicios Supabase.", error);
-      return [];
-    });
-    const parts = await supabaseFetch<Array<{ id: string; reference_id: string; name: string; quantity: number; unit: string; display_order?: number }>>("/rest/v1/service_reference_parts?select=id,reference_id,name,quantity,unit,display_order&order=display_order.asc&limit=1000").catch((error) => {
-      safeDevLog("No fue posible consultar partes de referencias Supabase.", error);
-      return [];
-    });
-    const incidents = await supabaseFetch<Array<{ id: string; order_id: string; type?: string; description?: string; action?: string }>>(`/rest/v1/service_incidents?select=id,order_id,type,description,action${orderFilter}&limit=500`).catch((error) => {
-      safeDevLog("No fue posible consultar novedades de servicios Supabase.", error);
-      return [];
-    });
-    const evidence = await supabaseFetch<Array<{ id: string; order_id: string; evidence_type?: string; file_url?: string; storage_path?: string; mime_type?: string; size_bytes?: number; metadata?: AnyRow; created_at?: string }>>(`/rest/v1/service_evidence?select=id,order_id,evidence_type,file_url,storage_path,mime_type,size_bytes,metadata,created_at${orderFilter}&limit=500`).catch((error) => {
-      safeDevLog("No fue posible consultar evidencias de servicios Supabase.", error);
-      return [];
-    });
+    const evidenceSelect = serviceOrderDetailMatch
+      ? "id,order_id,evidence_type,file_url,storage_bucket,storage_path,mime_type,size_bytes,metadata,created_at"
+      : "id,order_id,evidence_type,storage_bucket,storage_path,mime_type,size_bytes,metadata,created_at";
+    const [refs, parts, incidents, evidence] = await Promise.all([
+      supabaseFetch<Array<{ id: string; code: string; name: string; category?: string; estimated_minutes?: number; brand?: string; model?: string; metadata?: AnyRow }>>("/rest/v1/service_references?select=id,code,name,category,estimated_minutes,brand,model,metadata&limit=200").catch((error) => {
+        safeDevLog("No fue posible consultar referencias de servicios Supabase.", error);
+        return [];
+      }),
+      supabaseFetch<Array<{ id: string; reference_id: string; name: string; quantity: number; unit: string; display_order?: number }>>("/rest/v1/service_reference_parts?select=id,reference_id,name,quantity,unit,display_order&order=display_order.asc&limit=1000").catch((error) => {
+        safeDevLog("No fue posible consultar partes de referencias Supabase.", error);
+        return [];
+      }),
+      supabaseFetch<Array<{ id: string; order_id: string; type?: string; description?: string; action?: string }>>(`/rest/v1/service_incidents?select=id,order_id,type,description,action${orderFilter}&limit=500`).catch((error) => {
+        safeDevLog("No fue posible consultar novedades de servicios Supabase.", error);
+        return [];
+      }),
+      supabaseFetch<ServiceEvidenceRow[]>(`/rest/v1/service_evidence?select=${evidenceSelect}${orderFilter}&limit=500`).catch((error) => {
+        safeDevLog("No fue posible consultar evidencias de servicios Supabase.", error);
+        return [];
+      })
+    ]);
 
+    const resolvedEvidence = serviceOrderDetailMatch
+      ? await Promise.all(evidence.map(resolveServiceEvidencePhoto))
+      : evidence;
     const mapped = orders.map((order) => {
       const reference = refs.find((ref) => ref.id === order.reference_id);
       const referenceWithParts = reference ? {
@@ -1405,8 +1641,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         customer_phone: order.customer_phone || "",
         scheduled_date: order.scheduled_date || "",
         incidents: incidents.filter((item) => item.order_id === order.id),
-        photos: evidence.filter((item) => item.order_id === order.id).map((item) => ({ ...item, type: String(item.metadata?.original_type || item.evidence_type || ""), base64_data: item.file_url?.startsWith("data:") ? item.file_url : "" })),
-        evidence: evidence.filter((item) => item.order_id === order.id).map((item) => ({ ...item, type: String(item.metadata?.original_type || item.evidence_type || ""), base64_data: item.file_url?.startsWith("data:") ? item.file_url : "" })),
+        photos: resolvedEvidence.filter((item) => item.order_id === order.id).map((item) => ({ ...item, type: String(item.metadata?.original_type || item.evidence_type || "") })),
+        evidence: resolvedEvidence.filter((item) => item.order_id === order.id).map((item) => ({ ...item, type: String(item.metadata?.original_type || item.evidence_type || "") })),
         inspection_items: referenceWithParts?.parts?.map((part) => ({ part_id: part.id, name: part.name, status: "pendiente" })) || []
       };
     });
@@ -1415,7 +1651,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   }
 
   if (pathname === "/api/v1/admin/permissions/catalog") {
-    return adminPermissionCatalog as T;
+    return filteredAdminPermissionCatalog() as T;
   }
 
   if (pathname === "/api/v1/admin/roles") {
@@ -1435,7 +1671,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         restrictions: body.restrictions || { locations: [], areas: [], cost_centers: [], processes: [] },
         can_delegate: Boolean(body.can_delegate),
         sensitive: Boolean(body.sensitive),
-        permissions: body.permissions || emptyAdminPermissions()
+        permissions: filterAdminPermissions(body.permissions || emptyAdminPermissions())
       };
       const next = [...roles, role];
       saveStoredAdminRoles(next);
@@ -1461,7 +1697,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       restrictions: body.restrictions || role.restrictions || { locations: [], areas: [], cost_centers: [], processes: [] },
       can_delegate: body.can_delegate ?? role.can_delegate ?? false,
       sensitive: body.sensitive ?? role.sensitive ?? false,
-      permissions: body.permissions || role.permissions
+        permissions: filterAdminPermissions(body.permissions || role.permissions)
     } : role);
     saveStoredAdminRoles(next);
     return (next.find((role) => role.id === roleId) || null) as T;
@@ -1520,35 +1756,40 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   if (adminUserDocumentMatch) {
     const [, userId, documentId] = adminUserDocumentMatch;
     const body = options.body ? JSON.parse(String(options.body)) : {};
-    await nextAdminUsersRequest({
+    const nextApiOk = await nextAdminUsersRequest({
       method: "PATCH",
       body: JSON.stringify(method === "DELETE"
         ? { employee_id: userId, action: "document_remove", document_id: documentId }
         : { employee_id: userId, action: "document_add", ...body, document_id: body.id || `doc-${Date.now()}` })
-    }).catch((error) => safeDevLog("No fue posible actualizar documentos via Next API.", error));
-    const employees = await supabaseFetch<Array<{ id: string; metadata?: AnyRow }>>(`/rest/v1/employees?select=id,metadata&id=eq.${encodeURIComponent(userId)}&limit=1`).catch(() => []);
-    const current = employees[0];
-    const metadata = current?.metadata || {};
-    const documents = Array.isArray(metadata.documents) ? metadata.documents : [];
-    const nextDocuments = method === "DELETE"
-      ? documents.filter((document) => String((document as AnyRow).id) !== String(documentId))
-      : [...documents, {
-        id: body.id || `doc-${Date.now()}`,
-        document_type: body.document_type || "internal",
-        file_name: body.file_name || "documento",
-        file_url: body.file_url || "",
-        storage_path: body.storage_path || "",
-        mime_type: body.mime_type || "",
-        file_size: Number(body.file_size || 0),
-        status: body.status || "pending",
-        observations: body.observations || "",
-        uploaded_at: new Date().toISOString()
-      }];
-    if (current?.id) {
-      await supabaseFetch(`/rest/v1/employees?id=eq.${encodeURIComponent(current.id)}`, {
-        method: "PATCH",
-        body: JSON.stringify({ metadata: { ...metadata, documents: nextDocuments } })
-      });
+    }).then(() => true).catch((error) => {
+      safeDevLog("No fue posible actualizar documentos via Next API.", error);
+      return false;
+    });
+    if (!nextApiOk) {
+      const employees = await supabaseFetch<Array<{ id: string; metadata?: AnyRow }>>(`/rest/v1/employees?select=id,metadata&id=eq.${encodeURIComponent(userId)}&limit=1`).catch(() => []);
+      const current = employees[0];
+      const metadata = current?.metadata || {};
+      const documents = Array.isArray(metadata.documents) ? metadata.documents : [];
+      const nextDocuments = method === "DELETE"
+        ? documents.filter((document) => String((document as AnyRow).id) !== String(documentId))
+        : [...documents, {
+          id: body.id || `doc-${Date.now()}`,
+          document_type: body.document_type || "internal",
+          file_name: body.file_name || "documento",
+          file_url: body.file_url || "",
+          storage_path: body.storage_path || "",
+          mime_type: body.mime_type || "",
+          file_size: Number(body.file_size || 0),
+          status: body.status || "pending",
+          observations: body.observations || "",
+          uploaded_at: new Date().toISOString()
+        }];
+      if (current?.id) {
+        await supabaseFetch(`/rest/v1/employees?id=eq.${encodeURIComponent(current.id)}`, {
+          method: "PATCH",
+          body: JSON.stringify({ metadata: { ...metadata, documents: nextDocuments } })
+        });
+      }
     }
     return supabaseApiFallback(`/api/v1/admin/users`) as T;
   }
@@ -1556,18 +1797,23 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   const adminUserAccessMatch = pathname.match(/^\/api\/v1\/admin\/users\/([^/]+)\/access$/);
   if (adminUserAccessMatch) {
     const body = JSON.parse(String(options.body || "{}"));
-    await nextAdminUsersRequest({
+    const nextApiOk = await nextAdminUsersRequest({
       method: "PATCH",
       body: JSON.stringify({ employee_id: adminUserAccessMatch[1], action: "access", ...body })
-    }).catch((error) => safeDevLog("No fue posible actualizar acceso via Next API.", error));
-    const employees = await supabaseFetch<Array<{ id: string; metadata?: AnyRow }>>(`/rest/v1/employees?select=id,metadata&id=eq.${encodeURIComponent(adminUserAccessMatch[1])}&limit=1`).catch(() => []);
-    const current = employees[0];
-    const metadata = current?.metadata || {};
-    if (current?.id) {
-      await supabaseFetch(`/rest/v1/employees?id=eq.${encodeURIComponent(current.id)}`, {
-        method: "PATCH",
-        body: JSON.stringify({ metadata: { ...metadata, access: { ...(metadata.access as AnyRow || {}), session_status: body.session_status || "bloqueada", require_password_change: body.require_password_change ?? (metadata.access as AnyRow)?.require_password_change } } })
-      });
+    }).then(() => true).catch((error) => {
+      safeDevLog("No fue posible actualizar acceso via Next API.", error);
+      return false;
+    });
+    if (!nextApiOk) {
+      const employees = await supabaseFetch<Array<{ id: string; metadata?: AnyRow }>>(`/rest/v1/employees?select=id,metadata&id=eq.${encodeURIComponent(adminUserAccessMatch[1])}&limit=1`).catch(() => []);
+      const current = employees[0];
+      const metadata = current?.metadata || {};
+      if (current?.id) {
+        await supabaseFetch(`/rest/v1/employees?id=eq.${encodeURIComponent(current.id)}`, {
+          method: "PATCH",
+          body: JSON.stringify({ metadata: { ...metadata, access: { ...(metadata.access as AnyRow || {}), session_status: body.session_status || "bloqueada", require_password_change: body.require_password_change ?? (metadata.access as AnyRow)?.require_password_change } } })
+        });
+      }
     }
     return supabaseApiFallback(`/api/v1/admin/users`) as T;
   }
@@ -1631,7 +1877,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
           role_name: role.name,
           document: body.document || "",
           company: body.company || "SCJ",
-          access: { email: body.access_email || body.email, role_id: role.id, role_name: role.name, site: body.site || body.base_site || "", area: body.area || body.department || "" },
+          access: { email: normalizeUsernameEmail(body.access_email || body.email), role_id: role.id, role_name: role.name, site: body.site || body.base_site || "", area: body.area || body.department || "" },
           employment: { cost_center: body.cost_center || "", contract_type: body.contract_type || "" },
           operational: { classification: body.operational_classification || "operario", base_site: body.base_site || "", zone: body.operation_zone || "" }
         }
@@ -1734,45 +1980,50 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   if (adminUserMatch && ["PUT", "PATCH"].includes(method)) {
     const body = options.body ? JSON.parse(String(options.body)) : {};
     const employeeId = adminUserMatch[1];
-    await nextAdminUsersRequest({
+    const nextApiOk = await nextAdminUsersRequest({
       method: "PATCH",
       body: JSON.stringify({ employee_id: employeeId, action: pathname.endsWith("/status") ? "status" : "update", ...body })
-    }).catch((error) => safeDevLog("No fue posible actualizar usuario via Next API.", error));
-    const rows = await supabaseFetch<Array<{ id: string; metadata?: AnyRow; status?: string }>>(`/rest/v1/employees?select=id,metadata,status&id=eq.${encodeURIComponent(employeeId)}&limit=1`).catch(() => []);
-    const current = rows[0];
-    if (current?.id) {
-      const fullName = body.name || `${body.first_names || ""} ${body.last_names || ""}`.trim();
-      const status = pathname.endsWith("/status")
-        ? (body.active ? "active" : "inactive")
-        : (body.user_status === "inactivo" ? "inactive" : body.user_status === "suspendido" ? "suspended" : current.status || "active");
-      await supabaseFetch(`/rest/v1/employees?id=eq.${encodeURIComponent(current.id)}`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          first_name: body.first_names || undefined,
-          last_name: body.last_names || undefined,
-          email: body.email || undefined,
-          phone: body.phone || undefined,
-          position: body.position || body.operational_classification || undefined,
-          department: body.department || body.area || undefined,
-          status,
-          user_type: body.operational_classification || undefined,
-          metadata: {
-            ...(current.metadata || {}),
-            name: fullName || (current.metadata || {}).name,
-            role_id: body.role_id || (current.metadata || {}).role_id,
-            document: body.document || (current.metadata || {}).document,
-            document_type: body.document_type || (current.metadata || {}).document_type,
-            user_status: body.user_status || status,
-            access: { ...((current.metadata?.access as AnyRow) || {}), role_id: body.role_id, email: body.access_email || body.email, site: body.site || body.base_site, area: body.area || body.department, session_status: body.session_status },
-            employment: { ...((current.metadata?.employment as AnyRow) || {}), cost_center: body.cost_center, contract_type: body.contract_type, engagement_type: body.engagement_type },
-            operational: { ...((current.metadata?.operational as AnyRow) || {}), classification: body.operational_classification, base_site: body.base_site, zone: body.operation_zone },
-            user_audit_trail: [
-              ...(Array.isArray(current.metadata?.user_audit_trail) ? current.metadata.user_audit_trail : []).slice(-9),
-              { at: new Date().toISOString(), action: pathname.endsWith("/status") ? "status_updated" : "updated", source: "supabase-fallback" }
-            ]
-          }
-        })
-      });
+    }).then(() => true).catch((error) => {
+      safeDevLog("No fue posible actualizar usuario via Next API.", error);
+      return false;
+    });
+    if (!nextApiOk) {
+      const rows = await supabaseFetch<Array<{ id: string; metadata?: AnyRow; status?: string }>>(`/rest/v1/employees?select=id,metadata,status&id=eq.${encodeURIComponent(employeeId)}&limit=1`).catch(() => []);
+      const current = rows[0];
+      if (current?.id) {
+        const fullName = body.name || `${body.first_names || ""} ${body.last_names || ""}`.trim();
+        const status = pathname.endsWith("/status")
+          ? (body.active ? "active" : "inactive")
+          : (body.user_status === "inactivo" ? "inactive" : body.user_status === "suspendido" ? "inactive" : current.status || "active");
+        await supabaseFetch(`/rest/v1/employees?id=eq.${encodeURIComponent(current.id)}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            first_name: body.first_names || undefined,
+            last_name: body.last_names || undefined,
+            email: body.email || undefined,
+            phone: body.phone || undefined,
+            position: body.position || body.operational_classification || undefined,
+            department: body.department || body.area || undefined,
+            status,
+            user_type: body.operational_classification || undefined,
+            metadata: {
+              ...(current.metadata || {}),
+              name: fullName || (current.metadata || {}).name,
+              role_id: body.role_id || (current.metadata || {}).role_id,
+              document: body.document || (current.metadata || {}).document,
+              document_type: body.document_type || (current.metadata || {}).document_type,
+              user_status: body.user_status || status,
+              access: { ...((current.metadata?.access as AnyRow) || {}), role_id: body.role_id, email: body.access_email || body.email, site: body.site || body.base_site, area: body.area || body.department, session_status: body.session_status },
+              employment: { ...((current.metadata?.employment as AnyRow) || {}), cost_center: body.cost_center, contract_type: body.contract_type, engagement_type: body.engagement_type },
+              operational: { ...((current.metadata?.operational as AnyRow) || {}), classification: body.operational_classification, base_site: body.base_site, zone: body.operation_zone },
+              user_audit_trail: [
+                ...(Array.isArray(current.metadata?.user_audit_trail) ? current.metadata.user_audit_trail : []).slice(-9),
+                { at: new Date().toISOString(), action: pathname.endsWith("/status") ? "status_updated" : "updated", source: "supabase-fallback" }
+              ]
+            }
+          })
+        });
+      }
     }
     return supabaseApiFallback(`/api/v1/admin/users`) as T;
   }
@@ -1780,7 +2031,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   return null;
 }
 
-export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
+export async function api<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
   assertActiveSession();
   await keepSessionAlive();
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -1804,13 +2055,18 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
       }
     });
   } catch (error) {
-    notifyApiIssue("Servicio no disponible", "La plataforma no pudo completar la solicitud sin bloquear la pantalla.", error instanceof Error ? error.message : "Backend no disponible.");
+    const detail = error instanceof Error ? error.message : "Backend no disponible.";
+    alertRequestFailure(path, null, detail);
     if (error instanceof Error) throw error;
     throw new Error("API no disponible. Revisa el servicio backend.");
   }
 
-  if (response.status === 401 && typeof window !== "undefined" && !isSupabaseSession()) {
-    clearSession("unauthorized");
+  if (response.status === 401 && typeof window !== "undefined") {
+    if (!retried && await refreshSessionToken()) {
+      return api<T>(path, options, true);
+    }
+    alertRequestFailure(path, 401, "Sesion expirada, revocada o no autorizada.");
+    clearSession(isSupabaseSession() ? "supabase_unauthorized" : "unauthorized");
     window.location.href = "/login";
     throw new Error("Tu sesión expiró. Inicia sesión de nuevo.");
   }
@@ -1825,13 +2081,17 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
     }
 
     if (response.status >= 500) {
-      notifyApiIssue("Fallo interno detectado", "Se detecto un error interno. La operacion se detuvo de forma segura.", `HTTP ${response.status}`, response.headers.get("x-request-id") || undefined);
-      throw new Error("API no disponible. Revisa el servicio backend.");
+      const detail = await response.text().catch(() => "");
+      const message = requestErrorMessage(path, response.status, detail);
+      alertRequestFailure(path, response.status, detail);
+      throw new Error(message);
     }
 
     const body = await response.json().catch(() => ({ error: response.statusText }));
-    notifyApiIssue("Operacion rechazada", body.error || "La solicitud no pudo completarse.", [body.code, body.request_id].filter(Boolean).join(" · ") || undefined, body.request_id);
-    throw new Error(body.error || "La solicitud no pudo completarse");
+    const detail = body.error || body.message || response.statusText;
+    const message = requestErrorMessage(path, response.status, detail);
+    alertRequestFailure(path, response.status, detail);
+    throw new Error(message);
   }
   touchSession();
   return response.json() as Promise<T>;

@@ -130,11 +130,13 @@ async function invoiceSaleOrder(tenantId, userId, soId, data) {
   }));
 }
 
-async function listInvoices(tenantId) {
+async function listInvoices(tenantId, query = {}) {
   return prisma.runWithTenant(tenantId, () => prisma.transaction.findMany({
     where: { type: "invoice" },
     orderBy: { created_at: "desc" },
-    include: { party: true, lines: true }
+    include: { party: true, lines: true },
+    skip: Math.max(Number(query.offset || 0), 0),
+    take: Math.min(Number(query.limit || 100), 200)
   }));
 }
 

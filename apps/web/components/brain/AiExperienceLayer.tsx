@@ -2,7 +2,7 @@
 
 import { api } from "@/lib/api";
 import { AI_ASSISTANCE_EVENT, AI_ASSISTANCE_KEY } from "@/components/brain/AiAssistanceToggle";
-import { AlertTriangle, Bell, Brain, CheckCircle2, ChevronRight, Lightbulb, Loader2, Sparkles, X, Zap } from "lucide-react";
+import { AlertTriangle, Bell, CheckCircle2, ChevronRight, Lightbulb, Loader2, Sparkles, X, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";

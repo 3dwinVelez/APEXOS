@@ -491,15 +491,18 @@ async function checkVMIAlerts(tenantId) {
   });
 }
 
-async function listSuppliers(tenantId) {
+async function listSuppliers(tenantId, query = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const suppliers = await prisma.party.findMany({
       where: { type: "supplier", active: true },
-      orderBy: { name: "asc" }
+      orderBy: { name: "asc" },
+      skip: Math.max(Number(query.offset || 0), 0),
+      take: Math.min(Number(query.limit || 100), 200)
     });
     const orders = await prisma.transaction.findMany({
       where: { type: "purchase", party_id: { in: suppliers.map((supplier) => supplier.id) } },
       orderBy: { created_at: "desc" },
+      take: 500,
       include: { lines: true, movements: true }
     });
     const ordersBySupplier = new Map();
@@ -533,11 +536,13 @@ function enrichSupplier(supplier, orders = []) {
   };
 }
 
-async function listPurchaseOrders(tenantId) {
+async function listPurchaseOrders(tenantId, query = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const orders = await prisma.transaction.findMany({
-    where: { type: "purchase" },
-    orderBy: { created_at: "desc" },
+      where: { type: "purchase" },
+      orderBy: { created_at: "desc" },
+      skip: Math.max(Number(query.offset || 0), 0),
+      take: Math.min(Number(query.limit || 100), 200),
       include: { party: true, lines: true, movements: true }
     });
     return Promise.all(orders.map(enrichPurchaseOrder));
@@ -557,6 +562,7 @@ async function listOpenPurchaseOrders(tenantId, query = {}) {
         ...(search ? { number: { contains: search } } : {})
       },
       orderBy: { created_at: "desc" },
+      take: Math.min(Number(query.limit || 100), 200),
       include: { party: true, lines: true, movements: true }
     });
     const enriched = await Promise.all(orders.map(enrichPurchaseOrder));

@@ -22,6 +22,14 @@ function orderInclude() {
   return { reference: { include: { parts: true } }, incidents: true, photos: true };
 }
 
+function orderListInclude() {
+  return {
+    reference: { include: { parts: true } },
+    incidents: true,
+    photos: { select: { id: true, type: true, created_at: true } }
+  };
+}
+
 function photoLabel(type) {
   const labels = {
     fachada: "Fachada",
@@ -421,8 +429,9 @@ async function listOrders(tenantId, query = {}) {
     }
     const data = await prisma.serviceOrder.findMany({
       where,
-      include: orderInclude(),
+      include: orderListInclude(),
       orderBy: { created_at: "desc" },
+      skip: Math.max(Number(query.offset || 0), 0),
       take: Math.min(Number(query.limit || 100), 200)
     });
     const kpis = {
@@ -502,7 +511,9 @@ async function listReferences(tenantId, query = {}) {
         } : {})
       },
       include: referenceInclude(),
-      orderBy: { code: "asc" }
+      orderBy: { code: "asc" },
+      skip: Math.max(Number(query.offset || 0), 0),
+      take: Math.min(Number(query.limit || 100), 200)
     });
     return rows.map(referenceDto);
   });

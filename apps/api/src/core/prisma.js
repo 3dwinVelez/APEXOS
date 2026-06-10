@@ -1,5 +1,6 @@
 const { AsyncLocalStorage } = require("node:async_hooks");
 const { PrismaClient } = require("@prisma/client");
+const { recordQuery } = require("./performanceContext");
 
 const tenantStorage = new AsyncLocalStorage();
 let prisma;
@@ -40,23 +41,38 @@ function createPrismaClient() {
   });
 
   client.$use(async (params, next) => {
+    const startedAt = process.hrtime.bigint();
     const tenantId = currentTenantId();
-    if (!tenantId || !TENANT_MODELS.has(params.model)) return next(params);
+    try {
+      if (!tenantId || !TENANT_MODELS.has(params.model)) return await next(params);
 
-    if (WRITE_OPS.has(params.action) && params.args.data) {
-      if (Array.isArray(params.args.data)) {
-        params.args.data = params.args.data.map((row) => ({ ...row, tenant_id: tenantId }));
-      } else {
-        params.args.data.tenant_id = tenantId;
+      if (WRITE_OPS.has(params.action) && params.args.data) {
+        if (Array.isArray(params.args.data)) {
+          params.args.data = params.args.data.map((row) => ({ ...row, tenant_id: tenantId }));
+        } else {
+          params.args.data.tenant_id = tenantId;
+        }
       }
-    }
 
-    if (READ_OPS.has(params.action)) {
-      params.args = params.args || {};
-      params.args.where = { ...params.args.where, tenant_id: tenantId };
-    }
+      if (READ_OPS.has(params.action)) {
+        params.args = params.args || {};
+        params.args.where = { ...params.args.where, tenant_id: tenantId };
+      }
 
-    return next(params);
+      return await next(params);
+    } finally {
+      const durationMs = Number(process.hrtime.bigint() - startedAt) / 1e6;
+      const slowThresholdMs = Math.max(Number(process.env.PERFORMANCE_SLOW_QUERY_MS || 300), 1);
+      recordQuery({
+        model: params.model || "raw",
+        action: params.action,
+        durationMs: Number(durationMs.toFixed(2)),
+        slow: durationMs >= slowThresholdMs,
+        hasTenantFilter: Boolean(params.args?.where?.tenant_id),
+        hasLimit: Number.isFinite(params.args?.take),
+        includeCount: params.args?.include ? Object.keys(params.args.include).length : 0
+      });
+    }
   });
 
   client.$use(async (params, next) => {

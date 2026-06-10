@@ -17,7 +17,6 @@ import {
   Edit3,
   FileText,
   FolderKanban,
-  Gauge,
   Link as LinkIcon,
   LockKeyhole,
   Plus,

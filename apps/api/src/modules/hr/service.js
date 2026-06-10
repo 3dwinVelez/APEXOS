@@ -1172,6 +1172,10 @@ async function getOperationsMap(tenantId, query = {}) {
   const day = query.date ? startOfDay(query.date) : startOfDay();
   const activeMinutes = Math.min(Number(query.minutes || 30), 240);
   const footprintDays = Math.min(Number(query.footprint_days || 14), 60);
+  const pingLimit = Math.min(Math.max(Number(query.ping_limit || 1000), 100), 2000);
+  const footprintLimit = Math.min(Math.max(Number(query.footprint_limit || 2000), 200), 5000);
+  const punchLimit = Math.min(Math.max(Number(query.punch_limit || 1000), 100), 2000);
+  const activityLimit = Math.min(Math.max(Number(query.activity_limit || 1000), 100), 2000);
   const since = new Date(Date.now() - activeMinutes * 60000);
   const footprintSince = new Date(day.getTime() - footprintDays * 86400000);
   return prisma.runWithTenant(tenantId, async () => {
@@ -1188,23 +1192,23 @@ async function getOperationsMap(tenantId, query = {}) {
       prisma.gpsPing.findMany({
         where: { captured_at: { gte: day, lt: endOfDay(day) } },
         orderBy: { captured_at: "desc" },
-        take: 2000
+        take: pingLimit
       }),
       prisma.gpsPing.findMany({
         where: { captured_at: { gte: footprintSince, lt: endOfDay(day) } },
         orderBy: { captured_at: "desc" },
-        take: 5000
+        take: footprintLimit
       }),
       prisma.timePunch.findMany({
         where: { date: { gte: day, lt: endOfDay(day) } },
         orderBy: { punched_at: "desc" },
-        take: 2000
+        take: punchLimit
       }),
       prisma.workActivity.findMany({
         where: { occurred_at: { gte: day, lt: endOfDay(day) } },
         include: { activity_type: true, evidence: true },
         orderBy: { occurred_at: "desc" },
-        take: 2000
+        take: activityLimit
       })
     ]);
 

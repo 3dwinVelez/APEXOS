@@ -9,7 +9,7 @@ async function purchasesRoutes(fastify) {
 
   fastify.get("/purchases/suppliers", {
     preHandler: requirePermission("purchases", "read")
-  }, async (request) => service.listSuppliers(request.user?.tenant_id));
+  }, async (request) => service.listSuppliers(request.user?.tenant_id, request.query));
 
   fastify.get("/purchases/suppliers/:id", {
     preHandler: requirePermission("purchases", "read")
@@ -22,7 +22,7 @@ async function purchasesRoutes(fastify) {
 
   fastify.get("/purchases/orders", {
     preHandler: requirePermission("purchases", "read")
-  }, async (request) => service.listPurchaseOrders(request.user?.tenant_id));
+  }, async (request) => service.listPurchaseOrders(request.user?.tenant_id, request.query));
 
   fastify.get("/purchases/orders/open", {
     preHandler: requirePermission("purchases", "read")

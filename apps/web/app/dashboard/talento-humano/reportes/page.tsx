@@ -1,7 +1,7 @@
 "use client";
 
 import { supabaseFetch } from "@/lib/supabaseClient";
-import { ArrowLeft, Download, Eye, Filter, Search, TimerReset } from "lucide-react";
+import { ArrowLeft, Download, Eye, Filter, Search } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
