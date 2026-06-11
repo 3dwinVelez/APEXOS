@@ -27,7 +27,7 @@ type ReportOrder = {
   photos?: ReportPhoto[];
   incidents?: Array<{ type?: string; description?: string; created_at?: string }>;
   metadata?: {
-    inspection?: { items?: Array<{ name?: string; quantity?: number; unit?: string; status?: string; comment?: string; action?: string }> };
+    inspection?: { items?: Array<{ name?: string; quantity?: number; unit?: string; status?: string; comment?: string; action?: string; supplier_name?: string }> };
     satisfaction_survey?: { answers?: Array<{ question_id?: string; question?: string; rating?: number }>; average?: number };
   };
 };
@@ -310,7 +310,7 @@ export async function buildServiceReportPdfBlob(order: ReportOrder) {
     inspection.slice(0, 40).forEach((item) => row([
       { text: `${item.name || "Pieza"} (${item.quantity || 1} ${item.unit || "und"})`, x: 10, chars: 36, bold: true },
       { text: item.status || "N/A", x: 230, chars: 16 },
-      { text: [item.comment, item.action].filter(Boolean).join(" / ") || "Sin observacion", x: 320, chars: 42, lines: 3 }
+      { text: [item.comment, item.action, item.supplier_name ? `Proveedor: ${item.supplier_name}` : ""].filter(Boolean).join(" / ") || "Sin observacion", x: 320, chars: 42, lines: 3 }
     ], 40));
   } else {
     paragraph("Sin inspeccion registrada.");

@@ -38,6 +38,11 @@
 - El tecnico inicia sesion directamente en `Mis servicios activos`, sin pasar por el dashboard empresarial.
 - El perfil tecnico usa un shell operativo exclusivo: sin menu modular, inteligencia administrativa ni accesos secundarios; conserva identidad de sesion, salida visible y enfoque en la siguiente orden.
 - Cualquier intento del perfil tecnico de navegar hacia otra ruta del dashboard lo devuelve automaticamente a Servicios.
+- Reportes de Servicios se organiza en tres vistas administrativas: consolidado operativo, evaluacion/satisfaccion del cliente y piezas requeridas por novedades.
+- El consolidado Excel genera un libro con hojas separadas para Servicios, Satisfaccion del cliente y Piezas requeridas.
+- Cada vista administrativa puede descargarse como PDF y cada registro permite generar un reporte individual.
+- Las piezas averiadas o faltantes registradas durante la inspeccion alimentan automaticamente el reporte de requerimientos con orden, tecnico, cliente, referencia, cantidad, accion, observacion y proveedor sugerido.
+- El tecnico puede registrar un proveedor sugerido para una pieza problematica; si no se conoce, el reporte la identifica como `Por definir` para gestion posterior.
 
 ## Regla de experiencia
 
@@ -56,3 +61,6 @@ Servicios debe operar como una experiencia de campo: pocas decisiones visibles a
 - Descargar plantilla CSV e importar referencias con piezas.
 - Cerrar solo con evidencias tecnicas, encuesta y firma completas; marcar no ejecutada solo con motivo, evidencia y firma.
 - Consultar historial y descargar PDF.
+- Descargar consolidados administrativos en PDF y Excel.
+- Consultar evaluacion por servicio y satisfaccion promedio del cliente.
+- Generar reporte de piezas requeridas por tecnico, orden, referencia y proveedor sugerido.

@@ -1464,7 +1464,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         unit: item.unit || "und",
         status: item.status || "ok",
         comment: item.comment || "",
-        action: item.action || "ninguna"
+        action: item.action || "ninguna",
+        supplier_name: item.supplier_name || ""
       })) : [];
       patch.status = "inspeccion";
       patch.metadata = {
@@ -1643,7 +1644,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const evidenceSelect = serviceOrderDetailMatch
       ? "id,order_id,evidence_type,file_url,storage_bucket,storage_path,mime_type,size_bytes,metadata,created_at"
       : "id,order_id,evidence_type,storage_bucket,storage_path,mime_type,size_bytes,metadata,created_at";
-    const [refs, parts, incidents, evidence] = await Promise.all([
+    const [refs, parts, incidents, evidence, technicians] = await Promise.all([
       supabaseFetch<Array<{ id: string; code: string; name: string; category?: string; estimated_minutes?: number; brand?: string; model?: string; metadata?: AnyRow }>>("/rest/v1/service_references?select=id,code,name,category,estimated_minutes,brand,model,metadata&limit=200").catch((error) => {
         safeDevLog("No fue posible consultar referencias de servicios Supabase.", error);
         return [];
@@ -1659,6 +1660,10 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       supabaseFetch<ServiceEvidenceRow[]>(`/rest/v1/service_evidence?select=${evidenceSelect}${orderFilter}&limit=500`).catch((error) => {
         safeDevLog("No fue posible consultar evidencias de servicios Supabase.", error);
         return [];
+      }),
+      supabaseFetch<Array<{ id: string; first_name?: string; last_name?: string; email?: string; metadata?: AnyRow }>>("/rest/v1/employees?select=id,first_name,last_name,email,metadata&user_type=eq.tecnico&limit=500").catch((error) => {
+        safeDevLog("No fue posible consultar tecnicos de servicios Supabase.", error);
+        return [];
       })
     ]);
 
@@ -1672,8 +1677,16 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         parts: parts.filter((part) => part.reference_id === reference.id),
         manuals: Array.isArray(reference.metadata?.manuals) ? reference.metadata.manuals : []
       } : null;
+      const technician = technicians.find((item) => item.id === order.technician_employee_id);
       return {
         ...order,
+        technician: technician ? {
+          id: technician.id,
+          user: {
+            name: [technician.first_name, technician.last_name].filter(Boolean).join(" ").trim() || String(technician.metadata?.name || technician.email || "Tecnico"),
+            email: technician.email || ""
+          }
+        } : null,
         reference: referenceWithParts,
         reference_id: order.reference_id || "",
         service_type: order.service_type || "servicio",

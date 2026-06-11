@@ -131,7 +131,8 @@ const inspectionSchema = {
             unit: { type: "string" },
             status: { type: "string" },
             comment: { type: "string" },
-            action: { type: "string" }
+            action: { type: "string" },
+            supplier_name: { type: "string" }
           }
         }
       },

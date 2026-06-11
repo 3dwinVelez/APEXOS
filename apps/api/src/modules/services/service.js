@@ -290,7 +290,7 @@ function buildReportPdf(report) {
     ], {
       part: `${item.name || "Pieza"} (${item.quantity || 1} ${item.unit || "und"})`,
       status: item.status || "N/A",
-      comment: [item.comment, item.action].filter(Boolean).join(" / ") || "Sin observacion"
+      comment: [item.comment, item.action, item.supplier_name ? `Proveedor: ${item.supplier_name}` : ""].filter(Boolean).join(" / ") || "Sin observacion"
     }, 40));
   } else {
     paragraph("Sin inspeccion registrada.");
@@ -483,6 +483,17 @@ async function listTechnicians(tenantId, user) {
   }));
 }
 
+async function attachTechnicians(tenantId, orders) {
+  const ids = [...new Set(orders.map((order) => order.technician_id).filter(Boolean))];
+  if (!ids.length) return orders;
+  const technicians = await prisma.employee.findMany({
+    where: { tenant_id: tenantId, id: { in: ids } },
+    select: { id: true, code: true, position: true, user: { select: { id: true, name: true, email: true } } }
+  });
+  const byId = new Map(technicians.map((technician) => [technician.id, technician]));
+  return orders.map((order) => ({ ...order, technician: byId.get(order.technician_id) || null }));
+}
+
 async function listOrders(tenantId, user, query = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const where = await technicianOrderScope(tenantId, user);
@@ -501,6 +512,7 @@ async function listOrders(tenantId, user, query = {}) {
       skip: Math.max(Number(query.offset || 0), 0),
       take: Math.min(Number(query.limit || 100), 200)
     });
+    const enriched = await attachTechnicians(tenantId, data);
     const kpis = {
       pending: data.filter((order) => order.status === "pendiente").length,
       in_progress: data.filter((order) => ["en_curso", "inspeccion", "ejecucion"].includes(order.status)).length,
@@ -508,7 +520,7 @@ async function listOrders(tenantId, user, query = {}) {
       not_executed: data.filter((order) => order.status === "no_ejecutada").length,
       total: data.length
     };
-    return { data, kpis };
+    return { data: enriched, kpis };
   });
 }
 
@@ -738,7 +750,8 @@ async function moveToInspection(tenantId, user, id, input = {}) {
       unit: item.unit || "und",
       status: item.status || "ok",
       comment: item.comment || "",
-      action: item.action || "ninguna"
+      action: item.action || "ninguna",
+      supplier_name: item.supplier_name || ""
     }));
     const problems = items.filter((item) => item.status !== "ok");
     return prisma.serviceOrder.update({
