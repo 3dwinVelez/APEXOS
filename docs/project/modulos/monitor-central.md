@@ -6,6 +6,7 @@
 - El home ahora funciona como monitor BI transversal con tarjetas dinamicas, graficos radiales, dona de estados, grafico compuesto volumen/salud y panel de insights.
 - Los indicadores se muestran segun los modulos habilitados y los datos disponibles.
 - Se integraron metricas de servicios, talento humano/campo y maestro de vehiculos.
+- El KPI de Servicios concentra carga abierta, ordenes programadas hoy, no ejecutadas y volumen total; la lectura administrativa vive en el monitor central y no en el lobby operativo.
 
 ## Regla de experiencia
 

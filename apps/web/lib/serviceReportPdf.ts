@@ -26,7 +26,10 @@ type ReportOrder = {
   reference?: { code?: string; name?: string };
   photos?: ReportPhoto[];
   incidents?: Array<{ type?: string; description?: string; created_at?: string }>;
-  metadata?: { inspection?: { items?: Array<{ name?: string; quantity?: number; unit?: string; status?: string; comment?: string; action?: string }> } };
+  metadata?: {
+    inspection?: { items?: Array<{ name?: string; quantity?: number; unit?: string; status?: string; comment?: string; action?: string }> };
+    satisfaction_survey?: { answers?: Array<{ question_id?: string; question?: string; rating?: number }>; average?: number };
+  };
 };
 
 type EvidenceImage = {
@@ -323,6 +326,18 @@ export async function buildServiceReportPdfBlob(order: ReportOrder) {
     ], 42));
   } else {
     paragraph("Sin novedades registradas.");
+  }
+
+  title("Encuesta de satisfaccion");
+  const survey = order.metadata?.satisfaction_survey;
+  if (survey?.answers?.length) {
+    survey.answers.slice(0, 10).forEach((answer) => row([
+      { text: answer.question || answer.question_id || "Pregunta", x: 10, chars: 70, bold: true },
+      { text: `${answer.rating || 0}/5`, x: 455, chars: 12 }
+    ], 32));
+    paragraph(`Promedio: ${Number(survey.average || 0).toFixed(1)}/5`);
+  } else {
+    paragraph("Sin encuesta de satisfaccion registrada.");
   }
 
   title("Evidencias");

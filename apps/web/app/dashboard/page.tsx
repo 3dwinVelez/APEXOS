@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 type ServicesSummary = {
-  data: Array<{ status: string; photos: unknown[]; incidents: unknown[] }>;
+  data: Array<{ status: string; scheduled_date?: string; photos: unknown[]; incidents: unknown[] }>;
   kpis: { pending: number; in_progress: number; closed: number; not_executed: number; total: number };
 };
 type OperationsMap = { kpis?: { online?: number; offline?: number; routes?: number; people?: number; without_gps?: number }; routes?: unknown[] };
@@ -25,6 +25,7 @@ export default function DashboardPage() {
   const [access, setAccess] = useState<ModuleAccessState>({ loading: true, isPlatformAdmin: false, bySlug: {} });
   const [summary, setSummary] = useState({
     services: { pending: 0, in_progress: 0, closed: 0, not_executed: 0, total: 0 },
+    servicesToday: 0,
     evidence: 0,
     incidents: 0,
     routes: 0,
@@ -60,8 +61,10 @@ export default function DashboardPage() {
     ]).then(([services, operations, attendance, vehicleMetrics, preopMetrics]) => {
       const orders = services?.data || [];
       const attendanceRows = Array.isArray(attendance) ? attendance : [];
+      const today = new Date().toISOString().slice(0, 10);
       setSummary({
         services: services?.kpis || { pending: 0, in_progress: 0, closed: 0, not_executed: 0, total: 0 },
+        servicesToday: orders.filter((order) => order.scheduled_date?.slice(0, 10) === today).length,
         evidence: orders.reduce((sum, order) => sum + (order.photos?.length || 0), 0),
         incidents: orders.reduce((sum, order) => sum + (order.incidents?.length || 0), 0),
         routes: operations?.kpis?.routes || operations?.routes?.length || 0,
@@ -102,7 +105,7 @@ export default function DashboardPage() {
       module: "servicios",
       label: "Servicios por resolver",
       value: activeServices,
-      context: `${summary.services.closed}/${summary.services.total} cerrados`,
+      context: `${summary.servicesToday} para hoy · ${summary.services.not_executed} no ejecutados · ${summary.services.total} total`,
       health: serviceCompletion,
       icon: Wrench,
       color: "#0f766e"

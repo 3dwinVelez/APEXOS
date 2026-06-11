@@ -52,6 +52,19 @@ async function requireEvidence(orderId, requiredTypes) {
   }
 }
 
+function requireSatisfactionSurvey(input = {}) {
+  const answers = input.metadata?.satisfaction_survey?.answers;
+  const requiredQuestionIds = new Set(["service_quality", "technician_attention", "final_result"]);
+  const validQuestionIds = new Set(Array.isArray(answers)
+    ? answers
+      .filter((answer) => requiredQuestionIds.has(String(answer?.question_id || "")) && Number.isInteger(answer?.rating) && answer.rating >= 1 && answer.rating <= 5)
+      .map((answer) => answer.question_id)
+    : []);
+  if (validQuestionIds.size !== requiredQuestionIds.size) {
+    throw appError(422, "SATISFACTION_SURVEY_REQUIRED", "Completa las 3 preguntas de satisfaccion antes de cerrar el servicio");
+  }
+}
+
 function orderTimeline(order) {
   const events = [
     { label: "Orden creada", at: order.created_at },
@@ -63,11 +76,13 @@ function orderTimeline(order) {
 
 function reportForOrder(order) {
   const inspection = order.metadata?.inspection || {};
+  const satisfaction = order.metadata?.satisfaction_survey || {};
   return {
     order,
     timeline: orderTimeline(order),
     inspection_items: inspection.items || [],
     inspection_decision: inspection.decision || "",
+    satisfaction_survey: satisfaction,
     evidence: order.photos.map((photo) => ({
       id: photo.id,
       type: photo.type,
@@ -293,6 +308,18 @@ function buildReportPdf(report) {
     paragraph("Sin novedades registradas.");
   }
 
+  title("Encuesta de satisfaccion");
+  if (Array.isArray(report.satisfaction_survey?.answers) && report.satisfaction_survey.answers.length) {
+    tableHeader([{ label: "Pregunta", x: 10 }, { label: "Calificacion", x: 440 }]);
+    report.satisfaction_survey.answers.slice(0, 10).forEach((answer) => tableRow([
+      { key: "question", x: 10, chars: 72, bold: true },
+      { key: "rating", x: 440, chars: 16 }
+    ], { question: answer.question || answer.question_id, rating: `${answer.rating}/5` }, 30));
+    paragraph(`Promedio: ${Number(report.satisfaction_survey.average || 0).toFixed(1)}/5`);
+  } else {
+    paragraph("Sin encuesta de satisfaccion registrada.");
+  }
+
   title("Evidencias fotograficas y soportes");
   if (report.evidence.length) {
     tableHeader([{ label: "Tipo", x: 10 }, { label: "Archivo / detalle", x: 160 }, { label: "Fecha", x: 410 }]);
@@ -475,6 +502,27 @@ async function currentEmployeeId(tenantId, user) {
 }
 
 async function createOrder(tenantId, user, input) {
+  const requiredFields = [
+    ["reference_id", "referencia"],
+    ["service_type", "tipo de servicio"],
+    ["customer_name", "nombre del cliente"],
+    ["customer_document", "cedula del cliente"],
+    ["customer_address", "direccion"],
+    ["customer_phone", "telefono"],
+    ["invoice_number", "factura o pedido"],
+    ["scheduled_date", "fecha programada del servicio"],
+    ["cedi_delivery_date", "fecha de entrega del CEDI"],
+    ["notes", "observaciones operativas"]
+  ];
+  const missing = requiredFields
+    .filter(([field]) => input[field] == null || String(input[field]).trim() === "")
+    .map(([, label]) => label);
+  if (missing.length) throw appError(400, "SERVICE_ORDER_REQUIRED_FIELDS", `Completa los campos obligatorios: ${missing.join(", ")}`);
+  if (!/^\d+$/.test(String(input.customer_document))) throw appError(400, "INVALID_CUSTOMER_DOCUMENT", "La cedula del cliente debe contener solo numeros");
+  if (Number.isNaN(new Date(input.scheduled_date).getTime()) || Number.isNaN(new Date(input.cedi_delivery_date).getTime())) {
+    throw appError(400, "INVALID_SERVICE_DATES", "Las fechas del servicio y entrega CEDI deben ser validas");
+  }
+
   return prisma.runWithTenant(tenantId, async () => prisma.serviceOrder.create({
     data: {
       number: await nextNumber(),
@@ -489,7 +537,11 @@ async function createOrder(tenantId, user, input) {
       scheduled_date: input.scheduled_date ? new Date(input.scheduled_date) : null,
       notes: input.notes || "",
       created_by: user.id,
-      metadata: input.metadata || {}
+      metadata: {
+        ...(input.metadata || {}),
+        customer_document: input.customer_document,
+        cedi_delivery_date: input.cedi_delivery_date
+      }
     },
     include: orderInclude()
   }));
@@ -691,7 +743,8 @@ async function moveToExecution(tenantId, id) {
 async function closeOrder(tenantId, id, input = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const order = await prisma.serviceOrder.findFirstOrThrow({ where: { id: Number(id) } });
-    await requireEvidence(id, ["producto_abierto", "producto_cerrado", "cliente", "firma_cliente"]);
+    requireSatisfactionSurvey(input);
+    await requireEvidence(id, ["producto_abierto", "producto_cerrado", "firma_cliente"]);
     const now = new Date();
     const duration = order.started_at ? Math.max(Math.round((now - order.started_at) / 60000), 0) : null;
     return prisma.serviceOrder.update({

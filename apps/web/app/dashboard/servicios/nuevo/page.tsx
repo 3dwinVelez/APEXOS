@@ -9,6 +9,18 @@ import { useEffect, useState } from "react";
 type ServiceReference = { id: number | string; code: string; name: string; category: string; estimated_minutes: number; brand: string; model: string; parts: Array<{ id: number | string; name: string; quantity: number; unit: string }> };
 type ServiceOrder = { id: number | string; number: string };
 type ServiceOrderCreateResponse = ServiceOrder | { order?: ServiceOrder; data?: ServiceOrder };
+type OrderForm = {
+  reference_id: string;
+  service_type: string;
+  scheduled_date: string;
+  cedi_delivery_date: string;
+  customer_name: string;
+  customer_document: string;
+  customer_phone: string;
+  customer_address: string;
+  invoice_number: string;
+  notes: string;
+};
 
 function createdOrderId(response: ServiceOrderCreateResponse | null | undefined) {
   if (!response) return null;
@@ -23,7 +35,7 @@ export default function NewServiceOrderPage() {
   const [references, setReferences] = useState<ServiceReference[]>([]);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ reference_id: "", service_type: "montaje", customer_name: "", customer_address: "", customer_phone: "", invoice_number: "", scheduled_date: "", notes: "" });
+  const [form, setForm] = useState<OrderForm>({ reference_id: "", service_type: "montaje", scheduled_date: "", cedi_delivery_date: "", customer_name: "", customer_document: "", customer_phone: "", customer_address: "", invoice_number: "", notes: "" });
 
   useEffect(() => {
     api<ServiceReference[]>("/api/v1/services/references?active=true").then(setReferences).catch((error) => {
@@ -34,8 +46,21 @@ export default function NewServiceOrderPage() {
 
   async function createOrder() {
     if (saving) return;
-    if (!form.reference_id || !form.customer_name || !form.customer_address) {
-      setMessage("Referencia, cliente y direccion son obligatorios.");
+    const requiredFields: Array<[keyof OrderForm, string]> = [
+      ["reference_id", "referencia"],
+      ["service_type", "tipo de servicio"],
+      ["scheduled_date", "fecha programada del servicio"],
+      ["cedi_delivery_date", "fecha de entrega del CEDI"],
+      ["customer_name", "nombre del cliente"],
+      ["customer_document", "cedula del cliente"],
+      ["customer_phone", "telefono"],
+      ["customer_address", "direccion"],
+      ["invoice_number", "factura o pedido"],
+      ["notes", "observaciones operativas"]
+    ];
+    const missing = requiredFields.filter(([key]) => !form[key].trim()).map(([, label]) => label);
+    if (missing.length) {
+      setMessage(`Completa los campos obligatorios: ${missing.join(", ")}.`);
       return;
     }
     setSaving(true);
@@ -46,7 +71,11 @@ export default function NewServiceOrderPage() {
         body: JSON.stringify({
           ...form,
           reference_id: form.reference_id,
-          metadata: { assignment: "current_user" }
+          metadata: {
+            assignment: "current_user",
+            customer_document: form.customer_document.trim(),
+            cedi_delivery_date: form.cedi_delivery_date
+          }
         })
       });
       const orderId = createdOrderId(order);
@@ -74,18 +103,34 @@ export default function NewServiceOrderPage() {
       {message ? <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm font-medium text-amber-900">{message}</div> : null}
 
       <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
-        <h2 className="mb-4 text-base font-semibold">Referencia y tipo</h2>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-base font-semibold">Referencia y programacion</h2>
+          <span className="text-xs font-medium text-neutral-500">Todos los campos son obligatorios</span>
+        </div>
         <div className="grid gap-3 md:grid-cols-2">
-          <select className="h-12 w-full min-w-0 rounded-md border border-line bg-white px-3 text-base md:h-10 md:text-sm" value={form.reference_id} onChange={(event) => setForm((prev) => ({ ...prev, reference_id: event.target.value }))}>
-            <option value="">Referencia *</option>
-            {references.map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}
-          </select>
-          <select className="h-12 w-full min-w-0 rounded-md border border-line bg-white px-3 text-base md:h-10 md:text-sm" value={form.service_type} onChange={(event) => setForm((prev) => ({ ...prev, service_type: event.target.value }))}>
-            <option value="montaje">Montaje</option>
-            <option value="desmontaje">Desmontaje</option>
-            <option value="ambos">Montaje y desmontaje</option>
-          </select>
-          <input className="h-12 w-full min-w-0 rounded-md border border-line px-3 text-base md:h-10 md:text-sm" type="date" value={form.scheduled_date} onChange={(event) => setForm((prev) => ({ ...prev, scheduled_date: event.target.value }))} />
+          <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+            Referencia del producto *
+            <select className="h-12 w-full min-w-0 rounded-md border border-line bg-white px-3 text-base md:h-10 md:text-sm" required value={form.reference_id} onChange={(event) => setForm((prev) => ({ ...prev, reference_id: event.target.value }))}>
+              <option value="">Selecciona una referencia</option>
+              {references.map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}
+            </select>
+          </label>
+          <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+            Tipo de servicio *
+            <select className="h-12 w-full min-w-0 rounded-md border border-line bg-white px-3 text-base md:h-10 md:text-sm" required value={form.service_type} onChange={(event) => setForm((prev) => ({ ...prev, service_type: event.target.value }))}>
+              <option value="montaje">Montaje</option>
+              <option value="desmontaje">Desmontaje</option>
+              <option value="ambos">Montaje y desmontaje</option>
+            </select>
+          </label>
+          <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+            Fecha programada del servicio *
+            <input className="h-12 w-full min-w-0 rounded-md border border-line px-3 text-base md:h-10 md:text-sm" required type="date" value={form.scheduled_date} onChange={(event) => setForm((prev) => ({ ...prev, scheduled_date: event.target.value }))} />
+          </label>
+          <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+            Fecha de entrega del producto por el CEDI *
+            <input className="h-12 w-full min-w-0 rounded-md border border-line px-3 text-base md:h-10 md:text-sm" required type="date" value={form.cedi_delivery_date} onChange={(event) => setForm((prev) => ({ ...prev, cedi_delivery_date: event.target.value }))} />
+          </label>
         </div>
         {ref ? (
           <div className="mt-3 rounded-md border border-line bg-paper p-3 text-sm text-neutral-700">
@@ -97,11 +142,30 @@ export default function NewServiceOrderPage() {
       <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
         <h2 className="mb-4 text-base font-semibold">Datos del cliente</h2>
         <div className="grid gap-3 md:grid-cols-2">
-          <input className="h-12 w-full min-w-0 rounded-md border border-line px-3 text-base md:h-10 md:text-sm" placeholder="Nombre cliente *" value={form.customer_name} onChange={(event) => setForm((prev) => ({ ...prev, customer_name: event.target.value }))} />
-          <input className="h-12 w-full min-w-0 rounded-md border border-line px-3 text-base md:h-10 md:text-sm" placeholder="Telefono" value={form.customer_phone} onChange={(event) => setForm((prev) => ({ ...prev, customer_phone: event.target.value }))} />
-          <input className="h-12 w-full min-w-0 rounded-md border border-line px-3 text-base md:col-span-2 md:h-10 md:text-sm" placeholder="Direccion *" value={form.customer_address} onChange={(event) => setForm((prev) => ({ ...prev, customer_address: event.target.value }))} />
-          <input className="h-12 w-full min-w-0 rounded-md border border-line px-3 text-base md:h-10 md:text-sm" placeholder="Factura / pedido" value={form.invoice_number} onChange={(event) => setForm((prev) => ({ ...prev, invoice_number: event.target.value }))} />
-          <textarea className="min-h-28 rounded-md border border-line px-3 py-3 text-base md:col-span-2 md:text-sm" placeholder="Observaciones operativas" value={form.notes} onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))} />
+          <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+            Nombre completo *
+            <input className="h-12 w-full min-w-0 rounded-md border border-line px-3 text-base md:h-10 md:text-sm" required value={form.customer_name} onChange={(event) => setForm((prev) => ({ ...prev, customer_name: event.target.value }))} />
+          </label>
+          <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+            Cedula del cliente *
+            <input className="h-12 w-full min-w-0 rounded-md border border-line px-3 text-base md:h-10 md:text-sm" inputMode="numeric" pattern="[0-9]*" required value={form.customer_document} onChange={(event) => setForm((prev) => ({ ...prev, customer_document: event.target.value.replace(/\D/g, "") }))} />
+          </label>
+          <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+            Telefono *
+            <input className="h-12 w-full min-w-0 rounded-md border border-line px-3 text-base md:h-10 md:text-sm" inputMode="tel" required value={form.customer_phone} onChange={(event) => setForm((prev) => ({ ...prev, customer_phone: event.target.value }))} />
+          </label>
+          <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+            Factura o pedido *
+            <input className="h-12 w-full min-w-0 rounded-md border border-line px-3 text-base md:h-10 md:text-sm" required value={form.invoice_number} onChange={(event) => setForm((prev) => ({ ...prev, invoice_number: event.target.value }))} />
+          </label>
+          <label className="grid gap-1.5 text-sm font-medium text-neutral-700 md:col-span-2">
+            Direccion completa del servicio *
+            <input className="h-12 w-full min-w-0 rounded-md border border-line px-3 text-base md:h-10 md:text-sm" required value={form.customer_address} onChange={(event) => setForm((prev) => ({ ...prev, customer_address: event.target.value }))} />
+          </label>
+          <label className="grid gap-1.5 text-sm font-medium text-neutral-700 md:col-span-2">
+            Observaciones operativas *
+            <textarea className="min-h-28 rounded-md border border-line px-3 py-3 text-base md:text-sm" required value={form.notes} onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))} />
+          </label>
         </div>
       </section>
 

@@ -1361,6 +1361,10 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   const serviceOrderDetailMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)$/);
   if (pathname === "/api/v1/services/orders" && method === "POST") {
     const body = JSON.parse(String(options.body || "{}"));
+    const requiredServiceFields = ["reference_id", "service_type", "scheduled_date", "cedi_delivery_date", "customer_name", "customer_document", "customer_phone", "customer_address", "invoice_number", "notes"];
+    const missingServiceFields = requiredServiceFields.filter((field) => body[field] == null || String(body[field]).trim() === "");
+    if (missingServiceFields.length) throw new Error("Completa todos los campos obligatorios de la orden de servicio.");
+    if (!/^\d+$/.test(String(body.customer_document))) throw new Error("La cedula del cliente debe contener solo numeros.");
     const employee = await currentSupabaseEmployee();
     const membership = employee?.company_id ? null : await currentSupabaseCompanyUser();
     const companyId = employee?.company_id || membership?.company_id;
@@ -1467,9 +1471,20 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         `/rest/v1/service_evidence?select=evidence_type,metadata&order_id=eq.${encodeURIComponent(orderId)}&limit=100`
       );
       const available = new Set(evidence.map((item) => String(item.metadata?.original_type || item.evidence_type || "")));
-      const required = action === "close" ? ["producto_abierto", "producto_cerrado", "cliente", "firma_cliente"] : ["no_ejecutada", "firma_cliente"];
+      const required = action === "close" ? ["producto_abierto", "producto_cerrado", "firma_cliente"] : ["no_ejecutada", "firma_cliente"];
       const missing = required.filter((item) => !available.has(item));
       if (missing.length) throw new Error(`Faltan evidencias para cerrar: ${missing.join(", ")}.`);
+      if (action === "close") {
+        const answers = Array.isArray(body.metadata?.satisfaction_survey?.answers) ? body.metadata.satisfaction_survey.answers : [];
+        const requiredQuestionIds = new Set(["service_quality", "technician_attention", "final_result"]);
+        const validQuestionIds = new Set(answers
+          .filter((answer: AnyRow) => {
+            const rating = Number(answer?.rating);
+            return requiredQuestionIds.has(String(answer?.question_id || "")) && Number.isInteger(rating) && rating >= 1 && rating <= 5;
+          })
+          .map((answer: AnyRow) => String(answer.question_id)));
+        if (validQuestionIds.size !== requiredQuestionIds.size) throw new Error("Completa las 3 preguntas de satisfaccion antes de cerrar el servicio.");
+      }
       if (action === "close-not-executed" && !String(body.no_execution_reason || "").trim()) throw new Error("El motivo de no ejecucion es obligatorio.");
       patch.status = action === "close" ? "cerrada" : "no_ejecutada";
       patch.closed_at = now;
@@ -2049,7 +2064,7 @@ export async function api<T>(path: string, options: RequestInit = {}, retried = 
     response = await fetchWithTimeout(`${API_URL}${path}`, {
       ...options,
       headers: {
-        "Content-Type": "application/json",
+        ...(options.body ? { "Content-Type": "application/json" } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...options.headers
       }

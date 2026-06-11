@@ -1413,7 +1413,7 @@ export default function AdministracionPage() {
       {activeModal === "users" ? (
         <ModalFrame title={userEditorOpen ? (selectedUserId ? "Editar usuario" : "Crear usuario") : "Usuarios de plataforma"} onClose={() => { setActiveModal(null); setUserEditorOpen(false); }} maxWidth="md:max-w-7xl">
           {userEditorOpen ? renderUserEditor() : renderUserDirectory()}
-          {false ? (
+          {false && (
           <div className="grid gap-4 xl:grid-cols-[300px_1fr]">
             <aside className="space-y-3">
               <Button className="w-full" onClick={newUser} type="button"><Plus size={16} /> Nuevo usuario</Button>
@@ -1464,7 +1464,7 @@ export default function AdministracionPage() {
               {renderUserTab()}
             </section>
           </div>
-          ) : null}
+          )}
         </ModalFrame>
       ) : null}
     </div>

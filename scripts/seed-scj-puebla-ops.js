@@ -25,6 +25,19 @@ function at(date, hhmm) {
   return d;
 }
 
+function demoSatisfactionSurvey(completedAt) {
+  return {
+    version: 1,
+    answers: [
+      { question_id: "service_quality", question: "Calidad del servicio", rating: 5 },
+      { question_id: "technician_attention", question: "Atencion del tecnico", rating: 5 },
+      { question_id: "final_result", question: "Resultado final", rating: 5 }
+    ],
+    average: 5,
+    completed_at: completedAt.toISOString()
+  };
+}
+
 function startOfDay(date) {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 5, 0, 0, 0));
 }
@@ -265,7 +278,11 @@ async function seedTenant(org) {
         scheduled_date: day(i - 4),
         started_at: ["en_curso", "inspeccion", "ejecucion", "cerrada", "no_ejecutada"].includes(status) ? at(day(i - 4), "09:10") : null,
         closed_at: ["cerrada", "no_ejecutada"].includes(status) ? at(day(i - 4), "16:40") : null,
-        metadata: { demo_seed: true, scenario: status }
+        metadata: {
+          demo_seed: true,
+          scenario: status,
+          ...(status === "cerrada" ? { satisfaction_survey: demoSatisfactionSurvey(at(day(i - 4), "16:35")) } : {})
+        }
       },
       create: {
         tenant_id: tenant.id,
@@ -288,7 +305,11 @@ async function seedTenant(org) {
         duration_minutes: ["cerrada", "no_ejecutada"].includes(status) ? 450 : null,
         created_by: admin.id,
         no_execution_reason: status === "no_ejecutada" ? "Cliente ausente en sitio" : null,
-        metadata: { demo_seed: true, scenario: status }
+        metadata: {
+          demo_seed: true,
+          scenario: status,
+          ...(status === "cerrada" ? { satisfaction_survey: demoSatisfactionSurvey(at(day(i - 4), "16:35")) } : {})
+        }
       }
     });
     await prisma.serviceIncident.deleteMany({ where: { tenant_id: tenant.id, order_id: order.id } });
@@ -305,8 +326,8 @@ async function seedTenant(org) {
         }
       });
     }
-    const photoTypes = status === "no_ejecutada" ? ["no_ejecutada"] : ["fachada", "producto_abierto", "producto_cerrado", "cliente", "firma_cliente"];
-    for (const type of photoTypes.slice(0, status === "cerrada" ? 5 : 2)) {
+    const photoTypes = status === "no_ejecutada" ? ["no_ejecutada", "firma_cliente"] : ["producto_abierto", "producto_cerrado", "firma_cliente"];
+    for (const type of photoTypes.slice(0, status === "cerrada" || status === "no_ejecutada" ? photoTypes.length : 2)) {
       await prisma.servicePhoto.create({
         data: {
           tenant_id: tenant.id,

@@ -29,4 +29,7 @@ Los documentos historicos en `modules/*` y `docs/APEX_LEGACY_MIGRATION.md` se co
 - Mantener alineados Servicios, Talento Humano, Administracion, Transporte, Ventas y Facturacion con la migracion legacy.
 - Evitar pantallas saturadas.
 - Usar acciones claras, modales o pantallas dedicadas para creacion, edicion y configuracion.
+- Diseñar cada pantalla para que cualquier persona pueda entender su proposito, informacion y siguiente accion sin capacitacion extensa.
+- Priorizar funcionalidad, lectura y comparacion de datos por encima de decoracion visual.
+- Mantener compatibilidad legible entre tema claro y oscuro en toda nueva pantalla o componente.
 - Preservar rendimiento y estabilidad del frontend.

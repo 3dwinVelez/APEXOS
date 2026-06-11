@@ -174,6 +174,7 @@ function startProcess(name, args, stdoutFile, stderrFile) {
   let command = npmCmd;
   let commandArgs = args;
   let cwd = root;
+  const nextBin = path.join(root, "node_modules", "next", "dist", "bin", "next");
 
   if (process.platform === "win32" && args.join(" ").includes("apps/api")) {
     command = "C:\\Program Files\\nodejs\\node.exe";
@@ -181,8 +182,8 @@ function startProcess(name, args, stdoutFile, stderrFile) {
     cwd = path.join(root, "apps", "api");
   } else if (process.platform === "win32" && args.join(" ").includes("apps/web")) {
     command = "C:\\Program Files\\nodejs\\node.exe";
-    commandArgs = [path.join(root, "scripts", "dev-web.js")];
-    cwd = root;
+    commandArgs = [nextBin, "dev", "-H", "127.0.0.1", "-p", "3001"];
+    cwd = path.join(root, "apps", "web");
   }
 
   const child = spawn(command, commandArgs, {
@@ -194,7 +195,9 @@ function startProcess(name, args, stdoutFile, stderrFile) {
     env: {
       ...baseEnv({
         DISABLE_REDIS: "1",
-        NEXT_PUBLIC_API_URL: "http://127.0.0.1:3000"
+        NEXT_PUBLIC_API_URL: "http://127.0.0.1:3000",
+        NEXT_DIST_DIR: ".next-dev",
+        WEB_HOST: "127.0.0.1"
       })
     }
   });
