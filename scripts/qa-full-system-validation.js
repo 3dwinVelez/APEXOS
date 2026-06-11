@@ -64,7 +64,7 @@ loadDotEnv(path.join(ROOT, "apps", "web", ".env.local"));
 
 const config = {
   apiUrl: (process.env.QA_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3010").replace(/\/$/, ""),
-  webUrl: (process.env.QA_WEB_URL || "http://127.0.0.1:3011").replace(/\/$/, ""),
+  webUrl: (process.env.QA_WEB_URL || "http://127.0.0.1:3001").replace(/\/$/, ""),
   supabaseUrl: (process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "").replace(/\/$/, ""),
   supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "",
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || "",
@@ -571,6 +571,26 @@ async function validateApiScenario(scjSession) {
     legacy: { qa_batch: batch }
   });
   await apiStep("Consultar empleados", "GET", "/hr/employees", token);
+  const roles = await apiStep("Consultar roles administrativos", "GET", "/admin/roles", token);
+  const technicianRole = pickCreatedRow(roles, (role) => role.name === "Tecnico");
+  await apiStep("Crear tecnico asignable", "POST", "/admin/users", token, {
+    profile_kind: "tecnico",
+    user_kind: "tecnico",
+    name: "Tecnico QA Servicios",
+    first_names: "Tecnico QA",
+    last_names: "Servicios",
+    email: `tecnico.${batch.toLowerCase()}@apex.local`,
+    password: "ApexQa2026!",
+    role_id: technicianRole?.id,
+    document: `TEC-${batch.slice(-8)}`,
+    position: "Tecnico de servicios",
+    department: "Servicios",
+    user_status: "activo",
+    operational_classification: "tecnico",
+    engagement_type: "contratista",
+    contract_type: "service",
+    can_receive_services: true
+  });
 
   const vehicle = await apiStep("Crear vehiculo", "POST", "/transport/vehicles", token, {
     plate: `QA${batch.slice(-3)}`,
@@ -598,15 +618,20 @@ async function validateApiScenario(scjSession) {
     metadata: { qa_batch: batch }
   });
   await apiStep("Consultar referencias servicio", "GET", "/services/references", token);
+  const technicians = await apiStep("Consultar tecnicos servicio", "GET", "/services/technicians", token);
+  const serviceTechnician = pickCreatedRow(technicians, () => true);
 
   const serviceOrder = await apiStep("Crear orden de servicio", "POST", "/services/orders", token, {
     reference_id: reference?.id,
-    technician_id: employee?.id,
+    technician_id: serviceTechnician?.id,
     service_type: "mantenimiento",
     customer_name: "Cliente QA Validacion",
+    customer_document: numericBatch,
     customer_address: "Carrera QA 45",
     customer_phone: "3000000000",
+    invoice_number: `FAC-${batch.slice(-8)}`,
     scheduled_date: new Date(Date.now() + 86400000).toISOString(),
+    cedi_delivery_date: new Date().toISOString(),
     notes: "Orden generada por validacion completa",
     metadata: { qa_batch: batch, vehicle_id: vehicle?.id }
   });

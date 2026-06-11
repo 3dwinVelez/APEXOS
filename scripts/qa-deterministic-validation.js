@@ -235,12 +235,17 @@ async function validateSupabase(app) {
 
 function validateFrontendBuild() {
   const npmCmd = process.platform === "win32" ? "npm.cmd" : "npm";
-  const build = spawnSync(npmCmd, ["--workspace", "apps/web", "run", "build"], {
+  const npmArgs = ["--workspace", "apps/web", "run", "build"];
+  const executable = process.platform === "win32" ? (process.env.ComSpec || "cmd.exe") : npmCmd;
+  const executableArgs = process.platform === "win32"
+    ? ["/d", "/s", "/c", [npmCmd, ...npmArgs].join(" ")]
+    : npmArgs;
+  const build = spawnSync(executable, executableArgs, {
     cwd: ROOT,
     encoding: "utf8",
     stdio: "pipe",
     maxBuffer: 20 * 1024 * 1024,
-    shell: process.platform === "win32",
+    shell: false,
     env: {
       ...process.env,
       NODE_ENV: "production",

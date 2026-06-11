@@ -403,6 +403,11 @@ function cleanText(value) {
   return String(value || "").trim();
 }
 
+function normalizeProfileKind(value) {
+  const profileKind = cleanText(value).toLowerCase();
+  return profileKind === "technician" ? "tecnico" : profileKind;
+}
+
 function validateRequiredUserInput(input, { requirePassword = false } = {}) {
   const fullName = cleanText(input.name || `${cleanText(input.first_names)} ${cleanText(input.last_names)}`);
   const email = normalizeUsernameEmail(input.email || input.username || input.user || input.access_email);
@@ -733,6 +738,7 @@ async function createUser(tenantId, input, actorId = null) {
     if (role?.metadata?.active === false) {
       throw badRequest("El rol seleccionado esta inactivo");
     }
+    const profileKind = normalizeProfileKind(input.profile_kind || input.user_kind || input.tipo_usuario || input.operational_classification || role.name);
     const userStatus = input.user_status || input.labor_status || input.estado_laboral || "activo";
     const active = !["inactivo", "suspendido", "retirado"].includes(userStatus) && input.active !== false && input.activo !== false;
     const metadata = {
@@ -753,8 +759,8 @@ async function createUser(tenantId, input, actorId = null) {
       company: input.company || input.empresa || "APEX",
       labor_status: userStatus,
       user_status: userStatus,
-      profile_kind: input.profile_kind || input.user_kind || input.tipo_usuario || input.operational_classification || "administrativo",
-      user_kind: input.user_kind || input.profile_kind || input.tipo_usuario || input.operational_classification || "administrativo",
+      profile_kind: profileKind || "administrativo",
+      user_kind: profileKind || "administrativo",
       access: {
         email: normalizeUsernameEmail(input.access_email || input.email || input.username || input.user || email),
         additional_roles: input.additional_roles || "",
@@ -814,6 +820,7 @@ async function createUser(tenantId, input, actorId = null) {
           create: {
             tenant_id: tenantId,
             code: input.code || input.id_interno || `EMP-${Date.now()}`,
+            user_type: profileKind === "tecnico" ? "tecnico" : "empleado",
             position: input.position || input.rol || "empleado",
             department: input.department || "Operacion",
             salary_base: Number(input.salary_base || input.salario_base || input.salario || 0),
@@ -853,6 +860,7 @@ async function updateUser(tenantId, id, input, actorId = null) {
     const previousAccess = previousMetadata.access || {};
     const previousEmployment = previousMetadata.employment || {};
     const previousOperational = previousMetadata.operational || {};
+    const requestedProfileKind = normalizeProfileKind(input.profile_kind || input.user_kind || input.tipo_usuario || input.operational_classification || previousMetadata.profile_kind || previousMetadata.user_kind || previousOperational.classification);
     const userStatus = input.user_status || input.labor_status || input.estado_laboral || previousMetadata.user_status || previousMetadata.labor_status || "activo";
     const active = !["inactivo", "suspendido", "retirado"].includes(userStatus) && input.active !== false && input.activo !== false;
     const fullName = input.name || input.nombre || `${input.first_names || previousMetadata.first_names || ""} ${input.last_names || previousMetadata.last_names || ""}`.trim() || current.name;
@@ -869,6 +877,9 @@ async function updateUser(tenantId, id, input, actorId = null) {
     await prisma.user.update({ where: { id: current.id }, data });
     const employeeData = {
       code: input.code || input.id_interno || current.employee?.code || `EMP-${current.id}`,
+      user_type: requestedProfileKind === "tecnico"
+        ? "tecnico"
+        : (current.employee?.user_type === "tecnico" ? "empleado" : current.employee?.user_type || "empleado"),
       position: input.position || current.employee?.position || "empleado",
       department: input.department || current.employee?.department || "Operacion",
       salary_base: Number(input.salary_base || input.salario_base || current.employee?.salary_base || 0),
@@ -895,8 +906,8 @@ async function updateUser(tenantId, id, input, actorId = null) {
         company: input.company || input.empresa || current.employee?.metadata?.company || "APEX",
         labor_status: userStatus,
         user_status: userStatus,
-        profile_kind: input.profile_kind || input.user_kind || input.tipo_usuario || previousMetadata.profile_kind || previousMetadata.user_kind || previousOperational.classification || "administrativo",
-        user_kind: input.user_kind || input.profile_kind || input.tipo_usuario || previousMetadata.user_kind || previousMetadata.profile_kind || previousOperational.classification || "administrativo",
+        profile_kind: requestedProfileKind || "administrativo",
+        user_kind: requestedProfileKind || "administrativo",
         access: {
           ...previousAccess,
           email: normalizeUsernameEmail(input.access_email || input.email || previousAccess.email || data.email),
