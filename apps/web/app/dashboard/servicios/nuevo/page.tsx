@@ -9,8 +9,10 @@ import { useEffect, useState } from "react";
 type ServiceReference = { id: number | string; code: string; name: string; category: string; estimated_minutes: number; brand: string; model: string; parts: Array<{ id: number | string; name: string; quantity: number; unit: string }> };
 type ServiceOrder = { id: number | string; number: string };
 type ServiceOrderCreateResponse = ServiceOrder | { order?: ServiceOrder; data?: ServiceOrder };
+type Technician = { id: number | string; code?: string; user?: { name?: string; email?: string } };
 type OrderForm = {
   reference_id: string;
+  technician_id: string;
   service_type: string;
   scheduled_date: string;
   cedi_delivery_date: string;
@@ -33,21 +35,34 @@ function createdOrderId(response: ServiceOrderCreateResponse | null | undefined)
 export default function NewServiceOrderPage() {
   const router = useRouter();
   const [references, setReferences] = useState<ServiceReference[]>([]);
+  const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<OrderForm>({ reference_id: "", service_type: "montaje", scheduled_date: "", cedi_delivery_date: "", customer_name: "", customer_document: "", customer_phone: "", customer_address: "", invoice_number: "", notes: "" });
+  const [form, setForm] = useState<OrderForm>({ reference_id: "", technician_id: "", service_type: "montaje", scheduled_date: "", cedi_delivery_date: "", customer_name: "", customer_document: "", customer_phone: "", customer_address: "", invoice_number: "", notes: "" });
 
   useEffect(() => {
-    api<ServiceReference[]>("/api/v1/services/references?active=true").then(setReferences).catch((error) => {
+    if (localStorage.getItem("role_name")?.toLowerCase() === "tecnico") {
+      router.replace("/dashboard/servicios");
+      return;
+    }
+    Promise.all([
+      api<ServiceReference[]>("/api/v1/services/references?active=true"),
+      api<Technician[]>("/api/v1/services/technicians")
+    ]).then(([referenceRows, technicianRows]) => {
+      setReferences(referenceRows);
+      setTechnicians(technicianRows);
+    }).catch((error) => {
       setReferences([]);
+      setTechnicians([]);
       setMessage(error instanceof Error ? error.message : "No fue posible cargar referencias.");
     });
-  }, []);
+  }, [router]);
 
   async function createOrder() {
     if (saving) return;
     const requiredFields: Array<[keyof OrderForm, string]> = [
       ["reference_id", "referencia"],
+      ["technician_id", "tecnico asignado"],
       ["service_type", "tipo de servicio"],
       ["scheduled_date", "fecha programada del servicio"],
       ["cedi_delivery_date", "fecha de entrega del CEDI"],
@@ -71,8 +86,9 @@ export default function NewServiceOrderPage() {
         body: JSON.stringify({
           ...form,
           reference_id: form.reference_id,
+          technician_id: form.technician_id,
           metadata: {
-            assignment: "current_user",
+            assignment: "selected_technician",
             customer_document: form.customer_document.trim(),
             cedi_delivery_date: form.cedi_delivery_date
           }
@@ -121,6 +137,13 @@ export default function NewServiceOrderPage() {
               <option value="montaje">Montaje</option>
               <option value="desmontaje">Desmontaje</option>
               <option value="ambos">Montaje y desmontaje</option>
+            </select>
+          </label>
+          <label className="grid gap-1.5 text-sm font-medium text-neutral-700 md:col-span-2">
+            Tecnico responsable *
+            <select className="h-12 w-full min-w-0 rounded-md border border-line bg-white px-3 text-base md:h-10 md:text-sm" required value={form.technician_id} onChange={(event) => setForm((prev) => ({ ...prev, technician_id: event.target.value }))}>
+              <option value="">Selecciona un tecnico operativo</option>
+              {technicians.map((technician) => <option key={technician.id} value={technician.id}>{technician.code || "TEC"} - {technician.user?.name || technician.user?.email || "Tecnico"}</option>)}
             </select>
           </label>
           <label className="grid gap-1.5 text-sm font-medium text-neutral-700">

@@ -3,6 +3,7 @@
 import { supabaseFetch } from "@/lib/supabaseClient";
 import { ArrowLeft, Download, Eye, Search, Wrench } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 type Reference = { id: string; code?: string; name?: string; category?: string; brand?: string; model?: string; estimated_minutes?: number };
@@ -93,6 +94,7 @@ function downloadCsv(filename: string, rows: Array<Record<string, unknown>>) {
 }
 
 export default function ServiceReportsPage() {
+  const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [references, setReferences] = useState<Reference[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -131,8 +133,12 @@ export default function ServiceReportsPage() {
   }
 
   useEffect(() => {
+    if (localStorage.getItem("role_name")?.toLowerCase() === "tecnico") {
+      router.replace("/dashboard/servicios");
+      return;
+    }
     load();
-  }, [from, to]);
+  }, [from, router, to]);
 
   const rows = useMemo(() => {
     const refs = new Map(references.map((reference) => [String(reference.id), reference]));

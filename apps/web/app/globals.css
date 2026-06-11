@@ -63,6 +63,10 @@ body {
   overflow-x: hidden;
 }
 
+html[data-role="tecnico"] .technician-hide {
+  display: none !important;
+}
+
 button,
 a,
 input,

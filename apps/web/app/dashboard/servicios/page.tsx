@@ -99,6 +99,7 @@ export default function ServicesPage() {
   const [serviceType, setServiceType] = useState("");
   const [sortBy, setSortBy] = useState("priority");
   const [message, setMessage] = useState("");
+  const [technicianMode, setTechnicianMode] = useState(false);
 
   async function load() {
     try {
@@ -112,6 +113,7 @@ export default function ServicesPage() {
   }
 
   useEffect(() => {
+    setTechnicianMode(localStorage.getItem("role_name")?.toLowerCase() === "tecnico");
     load();
   }, []);
 
@@ -192,7 +194,7 @@ export default function ServicesPage() {
             <h2 className="max-w-3xl text-2xl font-semibold leading-tight sm:text-3xl">Ordenes listas para gestionar</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-white/65">{mainMessage} Usa los filtros para encontrar rapidamente el siguiente servicio.</p>
           </div>
-          <div className="grid shrink-0 gap-2 sm:flex sm:flex-wrap">
+          {!technicianMode ? <div className="grid shrink-0 gap-2 sm:flex sm:flex-wrap">
             <Link className="dark-primary-action inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-[#081411]" href="/dashboard/servicios/nuevo">
               <Plus className="shrink-0" size={17} />
               <span className="truncate">Nueva orden</span>
@@ -205,7 +207,7 @@ export default function ServicesPage() {
               <BarChart3 className="shrink-0" size={17} />
               <span className="truncate">Reportes</span>
             </Link>
-          </div>
+          </div> : null}
         </div>
       </section>
 
@@ -418,7 +420,7 @@ export default function ServicesPage() {
         </section>
       </section>
 
-      <div className="fixed inset-x-0 bottom-0 z-50 grid grid-cols-[1fr_56px_56px] gap-2 border-t border-line bg-white/95 p-3 pb-[calc(env(safe-area-inset-bottom)+12px)] backdrop-blur md:hidden">
+      {!technicianMode ? <div className="fixed inset-x-0 bottom-0 z-50 grid grid-cols-[1fr_56px_56px] gap-2 border-t border-line bg-white/95 p-3 pb-[calc(env(safe-area-inset-bottom)+12px)] backdrop-blur md:hidden">
         <Link className="inline-flex h-14 min-w-0 items-center justify-center gap-2 rounded-md bg-apex px-3 text-base font-semibold text-white shadow-sm" href="/dashboard/servicios/nuevo">
           <Plus className="shrink-0" size={18} /> <span className="truncate">Nueva orden</span>
         </Link>
@@ -428,7 +430,7 @@ export default function ServicesPage() {
         <Link className="inline-flex h-14 w-14 items-center justify-center rounded-md border border-line bg-white" href="/dashboard/servicios/reportes" aria-label="Reportes">
           <BarChart3 size={20} />
         </Link>
-      </div>
+      </div> : null}
     </div>
   );
 }

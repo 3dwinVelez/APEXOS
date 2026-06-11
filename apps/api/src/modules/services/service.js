@@ -446,10 +446,50 @@ function referenceData(tenantId, input, currentMetadata = {}) {
   };
 }
 
-async function listOrders(tenantId, query = {}) {
+function isTechnician(user) {
+  return String(user?.role?.name || "").toLowerCase() === "tecnico";
+}
+
+function assertAdministrativeServiceUser(user) {
+  if (isTechnician(user)) throw appError(403, "TECHNICIAN_OPERATION_FORBIDDEN", "El tecnico solo puede ejecutar servicios asignados");
+}
+
+async function technicianEmployeeId(tenantId, user) {
+  if (!user?.id) return null;
+  const employee = await prisma.employee.findFirst({ where: { tenant_id: tenantId, user_id: user.id, active: true, user_type: "tecnico" }, select: { id: true } });
+  return employee?.id || null;
+}
+
+async function technicianOrderScope(tenantId, user) {
+  if (!isTechnician(user)) return {};
+  const employeeId = await technicianEmployeeId(tenantId, user);
+  if (!employeeId) throw appError(403, "TECHNICIAN_PROFILE_REQUIRED", "El usuario tecnico no tiene un perfil operativo activo");
+  return { technician_id: employeeId, status: { in: ["pendiente", "en_curso", "inspeccion", "ejecucion"] } };
+}
+
+async function accessibleOrder(tenantId, user, id, include = orderInclude()) {
+  const scope = await technicianOrderScope(tenantId, user);
+  const order = await prisma.serviceOrder.findFirst({ where: { id: Number(id), ...scope }, include });
+  if (!order) throw appError(404, "SERVICE_ORDER_NOT_AVAILABLE", "La orden no existe, no esta activa o no esta asignada a este tecnico");
+  return order;
+}
+
+async function listTechnicians(tenantId, user) {
+  assertAdministrativeServiceUser(user);
+  return prisma.runWithTenant(tenantId, async () => prisma.employee.findMany({
+    where: { active: true, user_type: "tecnico", user: { active: true, role: { name: "Tecnico" } } },
+    select: { id: true, code: true, position: true, user: { select: { id: true, name: true, email: true } } },
+    orderBy: { code: "asc" }
+  }));
+}
+
+async function listOrders(tenantId, user, query = {}) {
   return prisma.runWithTenant(tenantId, async () => {
-    const where = {};
-    if (query.status) where.status = query.status;
+    const where = await technicianOrderScope(tenantId, user);
+    if (query.status && !isTechnician(user)) where.status = query.status;
+    if (query.status && isTechnician(user) && ["pendiente", "en_curso", "inspeccion", "ejecucion"].includes(query.status)) {
+      where.status = query.status;
+    }
     if (query.date) {
       const day = startOfDay(query.date);
       where.scheduled_date = { gte: day, lt: new Date(day.getTime() + 86400000) };
@@ -472,38 +512,27 @@ async function listOrders(tenantId, query = {}) {
   });
 }
 
-async function getOrder(tenantId, id) {
-  return prisma.runWithTenant(tenantId, async () => prisma.serviceOrder.findFirstOrThrow({
-    where: { id: Number(id) },
-    include: orderInclude()
-  }));
+async function getOrder(tenantId, user, id) {
+  return prisma.runWithTenant(tenantId, async () => accessibleOrder(tenantId, user, id));
 }
 
-async function getOrderReport(tenantId, id) {
-  const order = await getOrder(tenantId, id);
+async function getOrderReport(tenantId, user, id) {
+  assertAdministrativeServiceUser(user);
+  const order = await getOrder(tenantId, user, id);
   return reportForOrder(order);
 }
 
-async function getOrderReportPdf(tenantId, id) {
-  const report = await getOrderReport(tenantId, id);
+async function getOrderReportPdf(tenantId, user, id) {
+  const report = await getOrderReport(tenantId, user, id);
   const order = report.order;
   return { fileName: `${order.number || `servicio-${id}`}.pdf`, buffer: buildReportPdf(report) };
 }
 
-function canAssignAnyTechnician(user) {
-  const roleName = user?.role?.name || "";
-  return ["APEX_ADMIN", "Coordinador", "Admin", "Administrador"].includes(roleName);
-}
-
-async function currentEmployeeId(tenantId, user) {
-  if (!user?.id) return null;
-  const employee = await prisma.employee.findFirst({ where: { tenant_id: tenantId, user_id: user.id }, select: { id: true } });
-  return employee?.id || null;
-}
-
 async function createOrder(tenantId, user, input) {
+  assertAdministrativeServiceUser(user);
   const requiredFields = [
     ["reference_id", "referencia"],
+    ["technician_id", "tecnico asignado"],
     ["service_type", "tipo de servicio"],
     ["customer_name", "nombre del cliente"],
     ["customer_document", "cedula del cliente"],
@@ -523,12 +552,18 @@ async function createOrder(tenantId, user, input) {
     throw appError(400, "INVALID_SERVICE_DATES", "Las fechas del servicio y entrega CEDI deben ser validas");
   }
 
-  return prisma.runWithTenant(tenantId, async () => prisma.serviceOrder.create({
+  return prisma.runWithTenant(tenantId, async () => {
+    const technician = await prisma.employee.findFirst({
+      where: { id: Number(input.technician_id), active: true, user_type: "tecnico", user: { active: true, role: { name: "Tecnico" } } },
+      select: { id: true }
+    });
+    if (!technician) throw appError(400, "INVALID_SERVICE_TECHNICIAN", "Selecciona un tecnico operativo activo");
+    return prisma.serviceOrder.create({
     data: {
       number: await nextNumber(),
       reference_item_id: input.reference_item_id,
       reference_id: input.reference_id,
-      technician_id: canAssignAnyTechnician(user) ? input.technician_id : await currentEmployeeId(tenantId, user),
+      technician_id: technician.id,
       service_type: input.service_type || "montaje",
       customer_name: input.customer_name,
       customer_address: input.customer_address,
@@ -544,7 +579,8 @@ async function createOrder(tenantId, user, input) {
       }
     },
     include: orderInclude()
-  }));
+    });
+  });
 }
 
 async function listReferences(tenantId, query = {}) {
@@ -578,14 +614,16 @@ async function getReference(tenantId, id) {
   })));
 }
 
-async function createReference(tenantId, input) {
+async function createReference(tenantId, user, input) {
+  assertAdministrativeServiceUser(user);
   return prisma.runWithTenant(tenantId, async () => prisma.serviceReference.create({
     data: referenceData(tenantId, input),
     include: referenceInclude()
   }).then(referenceDto));
 }
 
-async function updateReference(tenantId, id, input) {
+async function updateReference(tenantId, user, id, input) {
+  assertAdministrativeServiceUser(user);
   return prisma.runWithTenant(tenantId, async () => {
     const current = await prisma.serviceReference.findFirstOrThrow({ where: { id: Number(id) }, select: { metadata: true } });
     await prisma.serviceReferencePart.deleteMany({ where: { reference_id: Number(id) } });
@@ -639,7 +677,8 @@ function normalizeBulkRows(rows = []) {
   }));
 }
 
-async function bulkImportReferences(tenantId, input) {
+async function bulkImportReferences(tenantId, user, input) {
+  assertAdministrativeServiceUser(user);
   const rows = normalizeBulkRows(input.rows || []);
   if (!rows.length) throw appError(400, "EMPTY_REFERENCE_IMPORT", "La plantilla no contiene referencias validas");
   return prisma.runWithTenant(tenantId, async () => {
@@ -672,9 +711,11 @@ async function bulkImportReferences(tenantId, input) {
   });
 }
 
-async function startOrder(tenantId, id, input = {}) {
-  return prisma.runWithTenant(tenantId, async () => prisma.serviceOrder.update({
-    where: { id: Number(id) },
+async function startOrder(tenantId, user, id, input = {}) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const order = await accessibleOrder(tenantId, user, id);
+    return prisma.serviceOrder.update({
+    where: { id: order.id },
     data: {
       status: "en_curso",
       started_at: new Date(),
@@ -683,12 +724,13 @@ async function startOrder(tenantId, id, input = {}) {
       metadata: { ...(input.metadata || {}), start_accuracy_meters: input.accuracy_meters }
     },
     include: orderInclude()
-  }));
+    });
+  });
 }
 
-async function moveToInspection(tenantId, id, input = {}) {
+async function moveToInspection(tenantId, user, id, input = {}) {
   return prisma.runWithTenant(tenantId, async () => {
-    const order = await prisma.serviceOrder.findFirstOrThrow({ where: { id: Number(id) } });
+    const order = await accessibleOrder(tenantId, user, id);
     const items = (input.items || []).map((item) => ({
       part_id: Number(item.part_id),
       name: item.name,
@@ -719,9 +761,9 @@ async function moveToInspection(tenantId, id, input = {}) {
   });
 }
 
-async function moveToExecution(tenantId, id) {
+async function moveToExecution(tenantId, user, id) {
   return prisma.runWithTenant(tenantId, async () => {
-    const order = await prisma.serviceOrder.findFirstOrThrow({ where: { id: Number(id) } });
+    const order = await accessibleOrder(tenantId, user, id);
     return prisma.serviceOrder.update({
       where: { id: Number(id) },
       data: {
@@ -740,9 +782,9 @@ async function moveToExecution(tenantId, id) {
   });
 }
 
-async function closeOrder(tenantId, id, input = {}) {
+async function closeOrder(tenantId, user, id, input = {}) {
   return prisma.runWithTenant(tenantId, async () => {
-    const order = await prisma.serviceOrder.findFirstOrThrow({ where: { id: Number(id) } });
+    const order = await accessibleOrder(tenantId, user, id);
     requireSatisfactionSurvey(input);
     await requireEvidence(id, ["producto_abierto", "producto_cerrado", "firma_cliente"]);
     const now = new Date();
@@ -762,9 +804,9 @@ async function closeOrder(tenantId, id, input = {}) {
   });
 }
 
-async function closeNotExecuted(tenantId, id, input = {}) {
+async function closeNotExecuted(tenantId, user, id, input = {}) {
   return prisma.runWithTenant(tenantId, async () => {
-    const order = await prisma.serviceOrder.findFirstOrThrow({ where: { id: Number(id) } });
+    const order = await accessibleOrder(tenantId, user, id);
     if (!String(input.no_execution_reason || "").trim()) {
       throw appError(400, "NO_EXECUTION_REASON_REQUIRED", "El motivo de no ejecucion es obligatorio");
     }
@@ -795,26 +837,31 @@ async function closeNotExecuted(tenantId, id, input = {}) {
   });
 }
 
-async function addIncident(tenantId, orderId, input) {
-  return prisma.runWithTenant(tenantId, async () => prisma.serviceIncident.create({
+async function addIncident(tenantId, user, orderId, input) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const order = await accessibleOrder(tenantId, user, orderId);
+    return prisma.serviceIncident.create({
     data: {
-      order_id: Number(orderId),
+      order_id: order.id,
       description: input.description,
       type: input.type || "averia",
       action: input.action || "",
       photo_url: input.photo_url || "",
       metadata: input.metadata || {}
     }
-  }));
+    });
+  });
 }
 
-async function addPhoto(tenantId, orderId, input) {
+async function addPhoto(tenantId, user, orderId, input) {
   assertSafeFile(input, { maxBytes: MAX_EVIDENCE_BYTES });
   const fileName = normalizeFileName(input.file_name || `${input.type}-${orderId}`);
   const storagePath = input.storage_path || secureStoragePath({ tenantId, module: "services", entity: "orders", entityId: orderId, fileName });
-  return prisma.runWithTenant(tenantId, async () => prisma.servicePhoto.create({
+  return prisma.runWithTenant(tenantId, async () => {
+    const order = await accessibleOrder(tenantId, user, orderId);
+    return prisma.servicePhoto.create({
     data: {
-      order_id: Number(orderId),
+      order_id: order.id,
       type: input.type,
       file_url: input.file_url || "",
       base64_data: input.base64_data || "",
@@ -826,18 +873,23 @@ async function addPhoto(tenantId, orderId, input) {
         ...(input.metadata || {})
       }
     }
-  }));
+    });
+  });
 }
 
-async function listPhotos(tenantId, orderId) {
-  return prisma.runWithTenant(tenantId, async () => prisma.servicePhoto.findMany({
-    where: { order_id: Number(orderId) },
+async function listPhotos(tenantId, user, orderId) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const order = await accessibleOrder(tenantId, user, orderId);
+    return prisma.servicePhoto.findMany({
+    where: { order_id: order.id },
     orderBy: { created_at: "asc" }
-  }));
+    });
+  });
 }
 
 module.exports = {
   listOrders,
+  listTechnicians,
   getOrder,
   getOrderReport,
   getOrderReportPdf,

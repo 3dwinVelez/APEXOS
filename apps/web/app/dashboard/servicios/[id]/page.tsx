@@ -7,7 +7,7 @@ import { getGpsFix } from "@/lib/gps";
 import { buildServiceReportPdfBlob } from "@/lib/serviceReportPdf";
 import { ArrowLeft, BookOpen, Camera, CheckCircle2, Download, FileSignature, History, MapPin, Play, Search, Star, Wrench, XCircle } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 type ServiceReferencePart = { id: number | string; name: string; quantity: number; unit: string };
@@ -100,6 +100,7 @@ function mapLink(lat?: number, lon?: number) {
 
 export default function ServiceOperationPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const [order, setOrder] = useState<ServiceOrder | null>(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -219,6 +220,10 @@ export default function ServiceOperationPage() {
           metadata: { ...gpsResult.metadata, ...(satisfactionSurvey ? { satisfaction_survey: satisfactionSurvey } : {}) }
         })
       });
+      if (["close", "close-not-executed"].includes(action) && localStorage.getItem("role_name")?.toLowerCase() === "tecnico") {
+        router.replace("/dashboard/servicios");
+        return;
+      }
       setOrder(updated);
       setActivePanel(panelForStatus(updated.status));
       setMessage(`Orden ${statusLabel[updated.status] || updated.status}.`);

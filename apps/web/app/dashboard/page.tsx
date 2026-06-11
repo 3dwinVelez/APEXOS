@@ -6,6 +6,7 @@ import { loadModuleAccess, ModuleAccessState } from "@/lib/moduleAccess";
 import { MODULES } from "@/lib/modules";
 import { Activity, AlertTriangle, Boxes, Gauge, MapPinned, ShieldCheck, TrendingUp, Users, Wrench } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 type ServicesSummary = {
@@ -22,6 +23,7 @@ const statusColors = ["#f59e0b", "#0284c7", "#059669", "#dc2626"];
 const clamp = (value: number) => Math.min(100, Math.max(0, Math.round(Number.isFinite(value) ? value : 0)));
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [access, setAccess] = useState<ModuleAccessState>({ loading: true, isPlatformAdmin: false, bySlug: {} });
   const [summary, setSummary] = useState({
     services: { pending: 0, in_progress: 0, closed: 0, not_executed: 0, total: 0 },
@@ -44,12 +46,16 @@ export default function DashboardPage() {
   });
 
   useEffect(() => {
+    if (localStorage.getItem("role_name")?.toLowerCase() === "tecnico") {
+      router.replace("/dashboard/servicios");
+      return;
+    }
     if (localStorage.getItem("auth_provider") === "supabase") {
       loadModuleAccess(MODULES).then(setAccess).catch(() => setAccess({ loading: false, isPlatformAdmin: false, bySlug: {} }));
     } else {
       setAccess({ loading: false, isPlatformAdmin: false, bySlug: Object.fromEntries(MODULES.map((module) => [module.slug, true])) });
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     Promise.all([

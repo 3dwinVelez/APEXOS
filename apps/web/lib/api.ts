@@ -283,7 +283,7 @@ function defaultAdminRoles(activeModules = getStoredTenantActiveModules()) {
     { id: 3, name: "Auxiliar operativo", description: "Registra jornada, actividades y consulta servicios asignados.", active: true, is_system: false, hierarchy_level: 30, role_type: "operativo", scope: "location", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true }, marcaciones: { access: true, view: true, create: true }, servicios: { access: true, view: true, create: true, edit: true, attach: true, download: true }, documentos: { access: true, view: true, attach: true, download: true } }, activeModules), ...shared },
     { id: 4, name: "Auditor", description: "Consulta auditoria, reportes y documentos sensibles.", active: true, is_system: false, hierarchy_level: 65, role_type: "auditor", scope: "company", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true, reports: true }, auditoria: { access: true, view: true, export: true, download: true, reports: true, sensitive: true }, reportes: { access: true, view: true, export: true, download: true, reports: true, sensitive: true }, documentos: { access: true, view: true, download: true, sensitive: true } }, activeModules), ...shared, sensitive: true },
     { id: 5, name: "Soporte tecnico", description: "Soporte de configuracion y diagnostico.", active: true, is_system: false, hierarchy_level: 75, role_type: "soporte", scope: "company", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true, reports: true }, usuarios: { access: true, view: true, edit: true }, roles: { access: true, view: true }, configuracion: { access: true, view: true, edit: true, configure: true }, auditoria: { access: true, view: true, reports: true }, notificaciones: { access: true, view: true, create: true, edit: true }, ia: { access: true, view: true, execute: true } }, activeModules), ...shared },
-    { id: 6, name: "Tecnico", description: "Ejecuta servicios y registra trabajo operativo.", active: true, is_system: false, hierarchy_level: 35, role_type: "operativo", scope: "location", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true }, servicios: { access: true, view: true, create: true, edit: true, attach: true, download: true }, marcaciones: { access: true, view: true, create: true }, transporte: { access: true, view: true }, documentos: { access: true, view: true, attach: true, download: true } }, activeModules), ...shared },
+    { id: 6, name: "Tecnico", description: "Ejecuta exclusivamente servicios activos asignados.", active: true, is_system: true, hierarchy_level: 35, role_type: "operativo", scope: "assigned", permissions: mergeAdminPermissions({ servicios: { access: true, view: true, edit: true, attach: true, download: true } }, activeModules), ...shared },
     { id: 7, name: "Empleado", description: "Consulta operativa y registra jornada.", active: true, is_system: false, hierarchy_level: 20, role_type: "operativo", scope: "location", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true }, marcaciones: { access: true, view: true, create: true }, documentos: { access: true, view: true, download: true } }, activeModules), ...shared }
   ];
 }
@@ -479,14 +479,26 @@ async function currentSupabaseEmployee() {
   };
 }
 
+function technicianSession() {
+  return typeof window !== "undefined" && localStorage.getItem("role_name")?.toLowerCase() === "tecnico";
+}
+
 function isVirtualEmployee(employee: { metadata?: AnyRow } | null | undefined) {
   return employee?.metadata?.virtual_employee === true;
 }
 
-async function existingProfileId(userId: string | null) {
-  if (!userId) return null;
-  const rows = await supabaseFetch<Array<{ id: string }>>(`/rest/v1/profiles?select=id&id=eq.${encodeURIComponent(userId)}&limit=1`).catch(() => []);
-  return rows[0]?.id || null;
+async function accessibleSupabaseServiceOrder(orderId: string) {
+  const employee = technicianSession() ? await currentSupabaseEmployee() : null;
+  if (technicianSession() && (!employee || isVirtualEmployee(employee))) {
+    throw new Error("No se encontro una ficha tecnica activa para operar servicios.");
+  }
+  const technicianFilter = employee ? `&technician_employee_id=eq.${encodeURIComponent(employee.id)}` : "";
+  const activeFilter = technicianSession() ? "&status=in.(pendiente,en_curso,inspeccion,ejecucion)" : "";
+  const rows = await supabaseFetch<Array<{ id: string; company_id: string; started_at?: string; metadata?: AnyRow }>>(
+    `/rest/v1/service_orders?select=id,company_id,started_at,metadata&id=eq.${encodeURIComponent(orderId)}${technicianFilter}${activeFilter}&limit=1`
+  );
+  if (!rows[0]) throw new Error("No se encontro el servicio o no tienes permisos para operarlo.");
+  return rows[0];
 }
 
 async function currentSupabaseCompanyUser() {
@@ -1247,11 +1259,13 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
 
   const serviceReferenceMatch = pathname.match(/^\/api\/v1\/services\/references\/([^/]+)$/);
   if (serviceReferenceMatch && method === "PUT") {
+    if (technicianSession()) throw new Error("El tecnico no puede modificar referencias.");
     const body = JSON.parse(String(options.body || "{}")) as AnyRow;
     return await saveSupabaseServiceReference(body, serviceReferenceMatch[1]) as T;
   }
 
   if (pathname === "/api/v1/services/references/import" && method === "POST") {
+    if (technicianSession()) throw new Error("El tecnico no puede importar referencias.");
     const body = JSON.parse(String(options.body || "{}")) as { rows?: AnyRow[] };
     const grouped = new Map<string, AnyRow>();
     for (const row of body.rows || []) {
@@ -1294,6 +1308,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   }
 
   if (pathname === "/api/v1/services/references" && method === "POST") {
+    if (technicianSession()) throw new Error("El tecnico no puede crear referencias.");
     const body = JSON.parse(String(options.body || "{}")) as AnyRow;
     return await saveSupabaseServiceReference(body) as T;
   }
@@ -1359,9 +1374,22 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   const serviceOrderIncidentsMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)\/incidents$/);
   const serviceOrderPhotosMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)\/photos$/);
   const serviceOrderDetailMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)$/);
+  if (pathname === "/api/v1/services/technicians" && method === "GET") {
+    if (technicianSession()) throw new Error("El tecnico no puede consultar el directorio operativo.");
+    const rows = await supabaseFetch<Array<{ id: string; first_name?: string; last_name?: string; email?: string; position?: string; metadata?: AnyRow }>>(
+      "/rest/v1/employees?select=id,first_name,last_name,email,position,metadata&status=eq.active&user_type=eq.tecnico&order=first_name.asc&limit=100"
+    );
+    return rows.map((row) => ({
+      id: row.id,
+      code: String(row.metadata?.employee_code || row.metadata?.code || "TEC"),
+      position: row.position || "Tecnico de servicios",
+      user: { name: [row.first_name, row.last_name].filter(Boolean).join(" ").trim() || String(row.metadata?.name || row.email || "Tecnico"), email: row.email || "" }
+    })) as T;
+  }
   if (pathname === "/api/v1/services/orders" && method === "POST") {
     const body = JSON.parse(String(options.body || "{}"));
-    const requiredServiceFields = ["reference_id", "service_type", "scheduled_date", "cedi_delivery_date", "customer_name", "customer_document", "customer_phone", "customer_address", "invoice_number", "notes"];
+    if (technicianSession()) throw new Error("El tecnico no puede crear ordenes de servicio.");
+    const requiredServiceFields = ["reference_id", "technician_id", "service_type", "scheduled_date", "cedi_delivery_date", "customer_name", "customer_document", "customer_phone", "customer_address", "invoice_number", "notes"];
     const missingServiceFields = requiredServiceFields.filter((field) => body[field] == null || String(body[field]).trim() === "");
     if (missingServiceFields.length) throw new Error("Completa todos los campos obligatorios de la orden de servicio.");
     if (!/^\d+$/.test(String(body.customer_document))) throw new Error("La cedula del cliente debe contener solo numeros.");
@@ -1370,7 +1398,6 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const companyId = employee?.company_id || membership?.company_id;
     if (!companyId) throw new Error("No se encontro una empresa activa para crear el servicio.");
     const userId = currentSupabaseUserId();
-    const profileId = await existingProfileId(userId);
     const referenceId = uuidOrNull(body.reference_id || body.reference_item_id);
     if (!referenceId) throw new Error("Selecciona una referencia valida para crear el servicio.");
     const metadata = body.metadata && typeof body.metadata === "object" ? body.metadata : {};
@@ -1379,8 +1406,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       company_id: companyId,
       number: orderNumber,
       reference_id: referenceId,
-      technician_employee_id: employee && !isVirtualEmployee(employee) ? employee.id : null,
-      technician_user_id: profileId,
+      technician_employee_id: body.technician_id,
+      technician_user_id: null,
       service_type: body.service_type || "montaje",
       status: "pendiente",
       customer_name: body.customer_name,
@@ -1417,11 +1444,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   if (serviceOrderActionMatch && method === "PATCH") {
     const [, orderId, action] = serviceOrderActionMatch;
     const body = JSON.parse(String(options.body || "{}"));
-    const rows = await supabaseFetch<Array<{ id: string; company_id: string; started_at?: string; metadata?: AnyRow }>>(
-      `/rest/v1/service_orders?select=id,company_id,started_at,metadata&id=eq.${encodeURIComponent(orderId)}&limit=1`
-    );
-    const current = rows[0];
-    if (!current) throw new Error("No se encontro el servicio o no tienes permisos para actualizarlo.");
+    const current = await accessibleSupabaseServiceOrder(orderId);
     const now = new Date().toISOString();
     const metadata = current.metadata && typeof current.metadata === "object" ? current.metadata : {};
     const patch: AnyRow = { metadata: { ...metadata, ...(body.metadata || {}) } };
@@ -1519,13 +1542,12 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   if (serviceOrderIncidentsMatch && method === "POST") {
     const orderId = serviceOrderIncidentsMatch[1];
     const body = JSON.parse(String(options.body || "{}"));
-    const rows = await supabaseFetch<Array<{ company_id: string }>>(`/rest/v1/service_orders?select=company_id&id=eq.${encodeURIComponent(orderId)}&limit=1`);
-    if (!rows[0]) throw new Error("No se encontro el servicio o no tienes permisos para registrar novedades.");
+    const current = await accessibleSupabaseServiceOrder(orderId);
     await supabaseFetch<void>("/rest/v1/service_incidents", {
       method: "POST",
       headers: { Prefer: "return=minimal" },
       body: JSON.stringify({
-        company_id: rows[0].company_id,
+        company_id: current.company_id,
         order_id: orderId,
         type: body.type || "averia",
         description: body.description,
@@ -1544,6 +1566,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   if (serviceOrderPhotosMatch) {
     const orderId = serviceOrderPhotosMatch[1];
     if (method === "GET") {
+      await accessibleSupabaseServiceOrder(orderId);
       const photos = await supabaseFetch<ServiceEvidenceRow[]>(
         `/rest/v1/service_evidence?select=id,evidence_type,file_url,storage_bucket,storage_path,mime_type,size_bytes,metadata,created_at&order_id=eq.${encodeURIComponent(orderId)}&order=created_at.asc&limit=100`
       );
@@ -1551,12 +1574,11 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     }
     if (method === "POST") {
       const body = JSON.parse(String(options.body || "{}"));
-      const rows = await supabaseFetch<Array<{ company_id: string }>>(`/rest/v1/service_orders?select=company_id&id=eq.${encodeURIComponent(orderId)}&limit=1`);
-      if (!rows[0]) throw new Error("No se encontro el servicio o no tienes permisos para cargar evidencia.");
+      const current = await accessibleSupabaseServiceOrder(orderId);
       const originalType = String(body.type || body.evidence_type || "novedad");
       const allowedType = ["fachada", "producto_abierto", "producto_cerrado", "cliente", "firma_cliente", "no_ejecutada"].includes(originalType) ? originalType : "novedad";
       const uploaded = body.base64_data && !body.storage_path
-        ? await uploadServiceImageData(rows[0].company_id, orderId, {
+        ? await uploadServiceImageData(current.company_id, orderId, {
           base64: String(body.base64_data),
           name: String(body.file_name || `${allowedType}.jpg`),
           type: String(body.mime_type || "image/jpeg")
@@ -1566,7 +1588,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         method: "POST",
         headers: { Prefer: "return=minimal" },
         body: JSON.stringify({
-          company_id: rows[0].company_id,
+          company_id: current.company_id,
           order_id: orderId,
           evidence_type: allowedType,
           file_url: body.file_url || "",
@@ -1591,9 +1613,12 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const orderLimit = serviceOrderDetailMatch
       ? 1
       : Math.min(Math.max(Number(search.get("limit") || 50), 1), 150);
+    const employee = technicianSession() ? await currentSupabaseEmployee() : null;
     const filters = [
       status ? `status=eq.${encodeURIComponent(status)}` : "",
-      serviceOrderDetailMatch ? `id=eq.${encodeURIComponent(serviceOrderDetailMatch[1])}` : ""
+      serviceOrderDetailMatch ? `id=eq.${encodeURIComponent(serviceOrderDetailMatch[1])}` : "",
+      employee && !isVirtualEmployee(employee) ? `technician_employee_id=eq.${encodeURIComponent(employee.id)}` : "",
+      technicianSession() ? "status=in.(pendiente,en_curso,inspeccion,ejecucion)" : ""
     ].filter(Boolean).join("&");
     const orders = await supabaseFetch<Array<{
       id: string;

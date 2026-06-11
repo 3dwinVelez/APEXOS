@@ -27,7 +27,14 @@
 - El hook global de auditoria acepta operaciones sin cuerpo, evitando respuestas `400` posteriores a cambios de estado validos como pasar una orden a ejecucion.
 - El cliente API deja de declarar contenido JSON en solicitudes sin cuerpo, evitando el rechazo `FST_ERR_CTP_EMPTY_JSON_BODY` en transiciones operativas.
 - El listado principal usa una tabla profesional en escritorio para comparar orden, cliente, servicio, agenda, soportes y accion; en movil conserva tarjetas tactiles.
+- El lobby de referencias replica el patron operativo de Servicios: busqueda inmediata, filtros combinables, ordenamiento, tabla comparativa en escritorio y tarjetas tactiles en movil.
+- La consulta de referencias permite comparar estado, categoria, marca/modelo, piezas, documentos y tiempo estimado antes de abrir la ficha tecnica.
 - La creacion de orden exige referencia, tipo, fecha del servicio, fecha de entrega CEDI, nombre, cedula, telefono, direccion, factura/pedido y observaciones; cedula y entrega CEDI se conservan en metadata para compatibilidad.
+- La creacion de orden exige asignar un tecnico activo. No se permite crear una orden sin responsable operativo.
+- El rol exacto `Tecnico` solo puede consultar y operar Servicios; no puede crear ordenes, administrar referencias ni abrir reportes globales.
+- Cada tecnico solo visualiza ordenes activas asignadas a su ficha (`pendiente`, `en_curso`, `inspeccion` o `ejecucion`). Las ordenes de otros tecnicos y las cerradas quedan fuera de su sesion.
+- Los usuarios administrativos conservan la consulta total, asignacion de tecnicos, creacion de ordenes, referencias y reportes.
+- El seed local mantiene diez cuentas operativas demo, desde `tecnico01@apex.local` hasta `tecnico10@apex.local`, con clave inicial `Tecnico2026!`.
 
 ## Regla de experiencia
 
@@ -36,6 +43,8 @@ Servicios debe operar como una experiencia de campo: pocas decisiones visibles a
 ## Validaciones esperadas
 
 - Crear orden.
+- Crear una orden solo despues de seleccionar un tecnico activo.
+- Verificar que un tecnico solo vea sus servicios activos y que no pueda crear ordenes ni consultar servicios ajenos.
 - Iniciar servicio con GPS.
 - Registrar inspeccion, ejecucion, novedades y fotos.
 - Capturar firma digital del cliente sobre el dispositivo movil.

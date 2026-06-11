@@ -33,3 +33,4 @@ Los documentos historicos en `modules/*` y `docs/APEX_LEGACY_MIGRATION.md` se co
 - Priorizar funcionalidad, lectura y comparacion de datos por encima de decoracion visual.
 - Mantener compatibilidad legible entre tema claro y oscuro en toda nueva pantalla o componente.
 - Preservar rendimiento y estabilidad del frontend.
+- Aplicar privilegio minimo por rol: los perfiles operativos solo deben ver los modulos y registros necesarios para ejecutar su trabajo asignado.

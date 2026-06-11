@@ -80,7 +80,8 @@ export default function LoginPage() {
         if (data.user?.role_metadata) localStorage.setItem("role_metadata", JSON.stringify(data.user.role_metadata));
       }
       touchSession();
-      window.location.assign("/dashboard");
+      const roleName = localStorage.getItem("role_name")?.toLowerCase();
+      window.location.assign(roleName === "tecnico" ? "/dashboard/servicios" : "/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo iniciar sesion");
     } finally {
