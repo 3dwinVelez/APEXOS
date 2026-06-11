@@ -175,10 +175,11 @@ function startProcess(name, args, stdoutFile, stderrFile) {
   let commandArgs = args;
   let cwd = root;
   const nextBin = path.join(root, "node_modules", "next", "dist", "bin", "next");
+  const nodemonBin = path.join(root, "node_modules", "nodemon", "bin", "nodemon.js");
 
   if (process.platform === "win32" && args.join(" ").includes("apps/api")) {
     command = "C:\\Program Files\\nodejs\\node.exe";
-    commandArgs = ["server.js"];
+    commandArgs = [nodemonBin, "--watch", "src", "--watch", "server.js", "--ext", "js,json", "server.js"];
     cwd = path.join(root, "apps", "api");
   } else if (process.platform === "win32" && args.join(" ").includes("apps/web")) {
     command = "C:\\Program Files\\nodejs\\node.exe";
