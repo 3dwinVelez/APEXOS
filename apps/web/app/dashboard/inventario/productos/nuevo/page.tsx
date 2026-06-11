@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   AlertTriangle,
@@ -162,6 +162,9 @@ export default function NuevoProductoPage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(INITIAL_FORM);
+  const activeSocieties = useMemo(() => tree.societies.filter((item) => item.active !== false), [tree.societies]);
+  const activeBranchesFor = useCallback((societyCode: string) => tree.branches.filter((item) => item.active !== false && item.society_code === societyCode), [tree.branches]);
+  const filteredFamilies = useCallback((societyCode: string, branchCode: string) => families.filter((family) => family.active !== false && (!societyCode || family.society_code === societyCode) && (!branchCode || family.branch_code === branchCode)), [families]);
 
   useEffect(() => {
     Promise.all([loadItems(), loadFamilies(), loadOrganization()]).catch((err) => setError(err instanceof Error ? err.message : "No fue posible cargar productos"));
@@ -174,7 +177,7 @@ export default function NuevoProductoPage() {
     if (society !== form.society_code || branch !== form.branch_code || family !== form.family) {
       setForm((current) => ({ ...current, society_code: society, branch_code: branch, family }));
     }
-  }, [tree, families]);
+  }, [activeBranchesFor, activeSocieties, filteredFamilies, form.branch_code, form.family, form.society_code]);
 
   async function loadItems() {
     setLoading(true);
@@ -222,20 +225,11 @@ export default function NuevoProductoPage() {
   }, [items]);
 
   const margin = form.unit_price ? Math.round(((Number(form.unit_price) - Number(form.unit_cost)) / Number(form.unit_price)) * 100) : 0;
-  const activeSocieties = tree.societies.filter((item) => item.active !== false);
   const activeBranches = activeBranchesFor(form.society_code);
   const availableFamilies = filteredFamilies(form.society_code, form.branch_code);
   const selectedFamily = availableFamilies.find((family) => family.code === form.family);
   const canSave = Boolean(form.name.trim() && form.society_code && form.branch_code && form.type && form.unit && selectedFamily);
   const taxRates = taxRatesForCountry("CO");
-
-  function activeBranchesFor(societyCode: string) {
-    return tree.branches.filter((item) => item.active !== false && item.society_code === societyCode);
-  }
-
-  function filteredFamilies(societyCode: string, branchCode: string) {
-    return families.filter((family) => family.active !== false && (!societyCode || family.society_code === societyCode) && (!branchCode || family.branch_code === branchCode));
-  }
 
   function nextFamilyCode(preferred?: string) {
     if (preferred && availableFamilies.some((family) => family.code === preferred)) return preferred;
@@ -696,7 +690,7 @@ function ProductProfile({ families, item, saving, onPatch }: { families: Invento
       notes: item.metadata.notes || ""
     });
     setEditing(false);
-  }, [item?.id, item?.unit_cost, item?.unit_price, item?.stock_min, item?.stock_max, item?.family_code, item?.metadata.family, item?.metadata.notes]);
+  }, [item]);
 
   if (!item) {
     return <div className="flex min-h-[360px] items-center justify-center rounded-md border border-dashed border-line bg-paper text-sm text-neutral-500">Selecciona o crea un producto.</div>;

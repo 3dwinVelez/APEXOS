@@ -3,6 +3,7 @@
 import { api } from "@/lib/api";
 import { Activity, AlertTriangle, CalendarDays, Camera, CheckCircle2, FileText, MapPinned, Navigation, RefreshCw, Route, Smartphone, Truck, Users, X } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
@@ -332,7 +333,7 @@ export default function TalentPage() {
                       </div>
                       <div className="min-w-0">
                         {event.evidence?.[0]?.base64_data ? (
-                          <img alt="Evidencia de actividad" className="h-32 w-full rounded-md object-cover" src={event.evidence[0].base64_data} />
+                          <Image alt="Evidencia de actividad" className="h-32 w-full rounded-md object-cover" height={320} src={event.evidence[0].base64_data} unoptimized width={640} />
                         ) : event.evidence?.[0]?.file_url ? (
                           <a className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href={event.evidence[0].file_url} target="_blank" rel="noreferrer"><Camera size={16} /> Ver evidencia</a>
                         ) : (

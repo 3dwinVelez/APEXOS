@@ -3,7 +3,8 @@
 import { api } from "@/lib/api";
 import { ArrowLeft, CalendarDays, Clock, ExternalLink, LocateFixed, MapPin, RefreshCw, Route, Satellite, Users } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { PointerEvent } from "react";
 
 type GpsPoint = {
@@ -207,13 +208,16 @@ function MapTiles({ center, zoom }: { center: { latitude: number; longitude: num
   return (
     <>
       {tiles.map((tile) => (
-        <img
+        <Image
           alt=""
           className="absolute h-64 w-64 select-none"
           draggable={false}
+          height={256}
           key={`${tile.x}-${tile.y}-${zoom}`}
           src={tileUrl(tile.x, tile.y, zoom)}
           style={{ left: `calc(50% + ${tile.left}px)`, top: `calc(50% + ${tile.top}px)` }}
+          unoptimized
+          width={256}
         />
       ))}
     </>
@@ -252,7 +256,7 @@ export default function LiveGpsMapPage() {
   const [drag, setDrag] = useState<{ x: number; y: number; center: { latitude: number; longitude: number } } | null>(null);
   const [message, setMessage] = useState("");
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       setMessage("");
@@ -265,7 +269,7 @@ export default function LiveGpsMapPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [date, mode]);
 
   useEffect(() => {
     load();
@@ -273,7 +277,7 @@ export default function LiveGpsMapPage() {
     return () => {
       if (timer) window.clearInterval(timer);
     };
-  }, [date, mode]);
+  }, [load, mode]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -292,8 +296,8 @@ export default function LiveGpsMapPage() {
     setSelectedKey("");
   }, [routeId, userName, status, date, mode]);
 
-  const people = data?.people || [];
-  const routes = data?.routes || [];
+  const people = useMemo(() => data?.people || [], [data?.people]);
+  const routes = useMemo(() => data?.routes || [], [data?.routes]);
   const activeWindowSeconds = (data?.active_window_minutes || 30) * 60;
   const users = useMemo(() => Array.from(new Set(people.map((person) => person.user_name).filter(Boolean))).sort(), [people]);
   const filteredPeople = useMemo(() => people.filter((person) => {
@@ -309,10 +313,12 @@ export default function LiveGpsMapPage() {
   const centerTarget = followSelected && selected?.latitude != null && selected.longitude != null
     ? { latitude: selected.latitude, longitude: selected.longitude }
     : centerFrom(filteredPeople);
+  const targetLatitude = centerTarget.latitude;
+  const targetLongitude = centerTarget.longitude;
   const [center, setCenter] = useState(centerTarget);
   useEffect(() => {
-    setCenter(centerTarget);
-  }, [centerTarget.latitude, centerTarget.longitude]);
+    setCenter({ latitude: targetLatitude, longitude: targetLongitude });
+  }, [targetLatitude, targetLongitude]);
 
   function startPan(event: PointerEvent<HTMLElement>) {
     if (event.target instanceof HTMLElement && event.target.closest("button,a,input,select")) return;
@@ -590,9 +596,9 @@ export default function LiveGpsMapPage() {
                 <p className="rounded-md bg-paper p-3">Vehiculo: <span className="font-semibold">{selectedMark.vehicle_plate || "--"}</span> - Horario {selectedMark.route_id || "--"}</p>
                 <p className="rounded-md bg-paper p-3">GPS: {selectedMark.latitude.toFixed(6)}, {selectedMark.longitude.toFixed(6)} · {Math.round(selectedMark.accuracy_meters || 0)}m</p>
                 {selectedMark.metadata?.observation ? <p className="rounded-md bg-emerald-50 p-3 text-emerald-900">Observacion: {String(selectedMark.metadata.observation)}</p> : null}
-                {Array.isArray(selectedMark.metadata?.evidence) && selectedMark.metadata.evidence[0]?.base64_data ? <img alt="Evidencia operativa" className="max-h-48 rounded-md object-cover" src={String(selectedMark.metadata.evidence[0].base64_data)} /> : null}
+                {Array.isArray(selectedMark.metadata?.evidence) && selectedMark.metadata.evidence[0]?.base64_data ? <Image alt="Evidencia operativa" className="max-h-48 rounded-md object-cover" height={480} src={String(selectedMark.metadata.evidence[0].base64_data)} unoptimized width={640} /> : null}
                 {selectedMark.extra_minutes ? <p className="rounded-md bg-amber-50 p-3 text-amber-900">Extra: {selectedMark.extra_minutes} min · {selectedMark.extra_reason || "extension"}{selectedMark.extra_detail ? ` · ${selectedMark.extra_detail}` : ""}</p> : null}
-                {selectedMark.extra_evidence?.base64_data ? <img alt="Soporte hora extra" className="max-h-48 rounded-md object-cover" src={selectedMark.extra_evidence.base64_data} /> : null}
+                {selectedMark.extra_evidence?.base64_data ? <Image alt="Soporte hora extra" className="max-h-48 rounded-md object-cover" height={480} src={selectedMark.extra_evidence.base64_data} unoptimized width={640} /> : null}
               </div>
               <a className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-apex text-sm font-semibold text-white" href={mapsUrl(selectedMark)} target="_blank" rel="noreferrer">Abrir marca en Google Maps <ExternalLink size={14} /></a>
             </div>

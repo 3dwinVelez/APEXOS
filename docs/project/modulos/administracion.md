@@ -25,6 +25,8 @@
 - Roles mantiene matriz de permisos alineada con legacy.
 - Usuarios conserva creacion de empleado asociado para alimentar Talento Humano, Servicios, Marcaciones y Nomina.
 - La creacion de usuarios ahora permite escoger de forma explicita si la ficha corresponde a tecnico o empleado, reduciendo campos irrelevantes y mejorando la validacion del alta.
+- 2026-06-11: El rol exacto `Tecnico` queda limitado a permisos de lectura y operacion de Servicios. Su navegacion no expone dashboard, administracion ni otros modulos.
+- 2026-06-11: El seed local crea y mantiene diez tecnicos demo activos con ficha laboral asociada para asignacion obligatoria en ordenes.
 
 ## Regla de experiencia
 

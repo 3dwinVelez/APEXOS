@@ -33,7 +33,7 @@ import {
   X
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
 
@@ -599,6 +599,7 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
 }
 
 export default function AdministracionPage() {
+  const initializedRole = useRef(false);
   const [activeModal, setActiveModal] = useState<"roles" | "users" | "masters" | "info" | null>(null);
   const [selectedConfig, setSelectedConfig] = useState<ConfigItem | null>(null);
   const [query, setQuery] = useState("");
@@ -678,7 +679,7 @@ export default function AdministracionPage() {
     setUserForm((current) => ({ ...current, [key]: value }));
   }
 
-  async function load() {
+  const load = useCallback(async () => {
     setMessage("");
     const [catalogResult, rolesResult, usersResult, masterResult] = await Promise.allSettled([
       api<CatalogItem[]>("/api/v1/admin/permissions/catalog"),
@@ -707,7 +708,8 @@ export default function AdministracionPage() {
       setMessage("Sesion empresa activa. La gestion de empresas y modulos requiere permisos de administrador de plataforma.");
     }
     const initialRole = rolesData.find((role) => role.name !== "APEX_ADMIN") || rolesData[0];
-    if (!selectedRoleId && initialRole) {
+    if (initialRole && !initializedRole.current) {
+      initializedRole.current = true;
       setSelectedRoleId(initialRole.id);
       setRoleForm({
         ...emptyRoleForm(catalogData),
@@ -724,11 +726,11 @@ export default function AdministracionPage() {
         permissions: initialRole.permissions || emptyPermissions(catalogData)
       });
     }
-  }
+  }, []);
 
   useEffect(() => {
     load().catch((error) => setMessage(error.message));
-  }, []);
+  }, [load]);
 
   function openConfig(item: ConfigItem) {
     setSelectedConfig(item);
@@ -1413,7 +1415,7 @@ export default function AdministracionPage() {
       {activeModal === "users" ? (
         <ModalFrame title={userEditorOpen ? (selectedUserId ? "Editar usuario" : "Crear usuario") : "Usuarios de plataforma"} onClose={() => { setActiveModal(null); setUserEditorOpen(false); }} maxWidth="md:max-w-7xl">
           {userEditorOpen ? renderUserEditor() : renderUserDirectory()}
-          {false ? (
+          {false && (
           <div className="grid gap-4 xl:grid-cols-[300px_1fr]">
             <aside className="space-y-3">
               <Button className="w-full" onClick={newUser} type="button"><Plus size={16} /> Nuevo usuario</Button>
@@ -1464,7 +1466,7 @@ export default function AdministracionPage() {
               {renderUserTab()}
             </section>
           </div>
-          ) : null}
+          )}
         </ModalFrame>
       ) : null}
     </div>

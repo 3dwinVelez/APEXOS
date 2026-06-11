@@ -3,7 +3,7 @@
 import { api } from "@/lib/api";
 import { AlertTriangle, ArrowRight, Brain, CheckCircle2, DatabaseZap, Loader2, Lock, Sparkles, Zap } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type InsightSeverity = "critical" | "warning" | "info" | "success";
 
@@ -78,7 +78,7 @@ export default function ApexAiPage() {
     if (modules.some((module) => module.id === normalized)) setSelectedModule(normalized);
   }, []);
 
-  async function load(moduleId = selectedModule) {
+  const load = useCallback(async (moduleId: string) => {
     setLoading(true);
     setError(null);
     try {
@@ -93,14 +93,14 @@ export default function ApexAiPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   async function runRecommendations() {
     setRunning(true);
     setError(null);
     try {
       await api<{ count: number }>("/api/v1/brain/recommendations/run", { method: "POST", body: JSON.stringify({}) });
-      await load();
+      await load(selectedModule);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible guardar recomendaciones.");
     } finally {
@@ -110,7 +110,7 @@ export default function ApexAiPage() {
 
   useEffect(() => {
     load(selectedModule);
-  }, [selectedModule]);
+  }, [load, selectedModule]);
 
   const filteredInsights = useMemo(() => {
     if (!insights) return [];

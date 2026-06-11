@@ -42,9 +42,7 @@ function newestGeneratedCss() {
 }
 
 function runTailwindFallback() {
-  const bin = process.platform === "win32"
-    ? path.join(root, "node_modules", ".bin", "tailwindcss.cmd")
-    : path.join(root, "node_modules", ".bin", "tailwindcss");
+  const bin = path.join(root, "node_modules", "tailwindcss", "lib", "cli.js");
 
   let generatedAny = false;
   if (fs.existsSync(bin)) {
@@ -52,15 +50,14 @@ function runTailwindFallback() {
       const fallbackDir = path.join(webDir, distDirName, "static", "css", "app");
       const fallbackCss = path.join(fallbackDir, "layout.css");
       fs.mkdirSync(fallbackDir, { recursive: true });
-      const result = spawnSync(bin, [
+      const result = spawnSync(process.execPath, [bin,
         "-i", path.join(webDir, "app", "globals.css"),
         "-o", fallbackCss,
         "--config", path.join(webDir, "tailwind.config.ts"),
         "--minify"
       ], {
         cwd: webDir,
-        encoding: "utf8",
-        shell: process.platform === "win32"
+        encoding: "utf8"
       });
 
       if (result.status === 0 && fs.existsSync(fallbackCss)) {

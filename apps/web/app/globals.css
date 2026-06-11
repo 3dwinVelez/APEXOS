@@ -2,6 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: light;
+  --color-ink: 20 22 26;
+  --color-paper: 247 245 239;
+  --color-line: 217 212 200;
+  --color-apex: 20 108 99;
+  --color-signal: 192 86 33;
+  --surface: 255 255 255;
+  --surface-soft: 247 245 239;
+  --surface-muted: 241 238 231;
+  --text-strong: 23 23 23;
+  --text-body: 64 64 64;
+  --text-muted: 115 115 115;
+}
+
+html.dark {
+  color-scheme: dark;
+  --color-ink: 238 242 241;
+  --color-paper: 12 18 18;
+  --color-line: 51 65 63;
+  --color-apex: 52 211 181;
+  --color-signal: 251 146 60;
+  --surface: 20 29 28;
+  --surface-soft: 12 18 18;
+  --surface-muted: 29 40 38;
+  --text-strong: 241 245 244;
+  --text-body: 203 213 211;
+  --text-muted: 148 163 160;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -9,8 +39,9 @@
 html,
 body {
   min-height: 100%;
-  background: #f7f5ef;
-  color: #14161a;
+  background: rgb(var(--color-paper));
+  color: rgb(var(--color-ink));
+  transition: background-color 160ms ease, color 160ms ease;
 }
 
 body {
@@ -32,6 +63,18 @@ body {
   overflow-x: hidden;
 }
 
+html[data-role="tecnico"] .technician-hide {
+  display: none !important;
+}
+
+.technician-only {
+  display: none;
+}
+
+html[data-role="tecnico"] .technician-only {
+  display: flex;
+}
+
 button,
 a,
 input,
@@ -47,17 +90,290 @@ textarea {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1eee7;
+  background: rgb(var(--surface-muted));
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d4cec2;
-  border: 2px solid #f1eee7;
+  background: rgb(var(--color-line));
+  border: 2px solid rgb(var(--surface-muted));
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #b9b0a0;
+  background: rgb(var(--text-muted));
+}
+
+html.dark .bg-white,
+html.dark .bg-white\/95 {
+  background-color: rgb(var(--surface) / 1) !important;
+}
+
+html.dark .bg-white\/90,
+html.dark .bg-white\/80 {
+  background-color: rgb(var(--surface) / 0.92) !important;
+}
+
+html.dark .bg-paper,
+html.dark .bg-paper\/95 {
+  background-color: rgb(var(--color-paper) / 1) !important;
+}
+
+html.dark .bg-apex {
+  background-color: rgb(var(--color-apex) / 1) !important;
+}
+
+html.dark .text-apex {
+  color: rgb(var(--color-apex) / 1) !important;
+}
+
+html.dark .border-line {
+  border-color: rgb(var(--color-line) / 1) !important;
+}
+
+html.dark .border-apex {
+  border-color: rgb(var(--color-apex) / 1) !important;
+}
+
+html.dark .ring-line {
+  --tw-ring-color: rgb(var(--color-line) / 1) !important;
+}
+
+html.dark .divide-line > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(var(--color-line) / 1) !important;
+}
+
+html.dark .hover\:bg-paper:hover,
+html.dark .active\:bg-paper:active {
+  background-color: rgb(var(--surface-muted) / 1) !important;
+}
+
+html.dark .hover\:border-apex:hover,
+html.dark .group:hover .group-hover\:border-apex {
+  border-color: rgb(var(--color-apex) / 1) !important;
+}
+
+html.dark .bg-neutral-50,
+html.dark .bg-neutral-100,
+html.dark .bg-slate-50 {
+  background-color: rgb(var(--surface-muted) / 1) !important;
+}
+
+html.dark .text-neutral-900,
+html.dark .text-neutral-800,
+html.dark .text-slate-900,
+html.dark .text-slate-800,
+html.dark .text-black {
+  color: rgb(var(--text-strong)) !important;
+}
+
+html.dark .text-neutral-700,
+html.dark .text-neutral-600,
+html.dark .text-slate-700,
+html.dark .text-slate-600 {
+  color: rgb(var(--text-body)) !important;
+}
+
+html.dark .text-neutral-500,
+html.dark .text-neutral-400,
+html.dark .text-slate-500,
+html.dark .text-slate-400 {
+  color: rgb(var(--text-muted)) !important;
+}
+
+html.dark .border-neutral-100,
+html.dark .border-neutral-200,
+html.dark .border-neutral-300,
+html.dark .border-slate-200,
+html.dark .divide-neutral-100 > :not([hidden]) ~ :not([hidden]),
+html.dark .divide-neutral-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(var(--color-line)) !important;
+}
+
+html.dark input,
+html.dark select,
+html.dark textarea {
+  background-color: rgb(var(--surface)) !important;
+  border-color: rgb(var(--color-line)) !important;
+  color: rgb(var(--text-strong)) !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: rgb(var(--text-muted)) !important;
+  opacity: 1;
+}
+
+html.dark option {
+  background: rgb(var(--surface));
+  color: rgb(var(--text-strong));
+}
+
+html.dark .bg-amber-50,
+html.dark .bg-amber-100 {
+  background-color: rgb(120 53 15 / 0.28) !important;
+}
+
+html.dark .bg-red-50,
+html.dark .bg-red-100,
+html.dark .bg-rose-50,
+html.dark .bg-rose-100 {
+  background-color: rgb(127 29 29 / 0.3) !important;
+}
+
+html.dark .bg-emerald-50,
+html.dark .bg-emerald-100,
+html.dark .bg-teal-50,
+html.dark .bg-teal-100 {
+  background-color: rgb(6 78 59 / 0.34) !important;
+}
+
+html.dark .bg-blue-50,
+html.dark .bg-blue-100,
+html.dark .bg-sky-50,
+html.dark .bg-sky-100,
+html.dark .bg-indigo-50,
+html.dark .bg-indigo-100 {
+  background-color: rgb(30 64 175 / 0.28) !important;
+}
+
+html.dark .text-amber-700,
+html.dark .text-amber-800,
+html.dark .text-amber-900 {
+  color: rgb(253 186 116) !important;
+}
+
+html.dark .text-red-700,
+html.dark .text-red-800,
+html.dark .text-red-900,
+html.dark .text-rose-700,
+html.dark .text-rose-800,
+html.dark .text-rose-900 {
+  color: rgb(253 164 175) !important;
+}
+
+html.dark .text-emerald-700,
+html.dark .text-emerald-800,
+html.dark .text-emerald-900,
+html.dark .text-teal-700,
+html.dark .text-teal-800,
+html.dark .text-teal-900 {
+  color: rgb(110 231 183) !important;
+}
+
+html.dark .text-blue-700,
+html.dark .text-blue-800,
+html.dark .text-blue-900,
+html.dark .text-sky-700,
+html.dark .text-sky-800,
+html.dark .text-sky-900,
+html.dark .text-indigo-700,
+html.dark .text-indigo-800,
+html.dark .text-indigo-900 {
+  color: rgb(147 197 253) !important;
+}
+
+html.dark .border-amber-200,
+html.dark .border-red-200,
+html.dark .border-rose-200,
+html.dark .border-emerald-200,
+html.dark .border-teal-200,
+html.dark .border-blue-200,
+html.dark .border-sky-200,
+html.dark .border-indigo-200 {
+  border-color: rgb(var(--color-line)) !important;
+}
+
+html.dark table thead {
+  color: rgb(var(--text-body));
+}
+
+html.dark .shadow-sm,
+html.dark .shadow-lg {
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.22);
+}
+
+html.dark .dark-primary-action {
+  background-color: rgb(var(--color-apex)) !important;
+  color: rgb(5 25 23) !important;
+  border-color: rgb(var(--color-apex)) !important;
+}
+
+.platform-alert {
+  background: rgb(255 255 255 / 0.98);
+  color: rgb(31 41 55);
+  border-color: rgb(203 213 225);
+  box-shadow: 0 16px 38px rgb(15 23 42 / 0.18);
+}
+
+.platform-alert-info {
+  border-left: 5px solid rgb(2 132 199);
+}
+
+.platform-alert-success {
+  border-left: 5px solid rgb(5 150 105);
+}
+
+.platform-alert-warning {
+  border-left: 5px solid rgb(217 119 6);
+}
+
+.platform-alert-error {
+  border-left: 5px solid rgb(220 38 38);
+}
+
+.platform-alert-detail {
+  background: rgb(241 245 249);
+  border-color: rgb(203 213 225);
+  color: rgb(51 65 85);
+}
+
+.platform-alert-close {
+  border-color: rgb(203 213 225);
+  color: rgb(51 65 85);
+}
+
+.platform-alert-close:hover {
+  background: rgb(241 245 249);
+  color: rgb(15 23 42);
+}
+
+html.dark .platform-alert {
+  background: rgb(20 29 28 / 0.98) !important;
+  color: rgb(241 245 244) !important;
+  border-color: rgb(71 85 83) !important;
+  box-shadow: 0 18px 44px rgb(0 0 0 / 0.48);
+}
+
+html.dark .platform-alert-info {
+  border-left-color: rgb(56 189 248) !important;
+}
+
+html.dark .platform-alert-success {
+  border-left-color: rgb(52 211 153) !important;
+}
+
+html.dark .platform-alert-warning {
+  border-left-color: rgb(251 191 36) !important;
+}
+
+html.dark .platform-alert-error {
+  border-left-color: rgb(251 113 133) !important;
+}
+
+html.dark .platform-alert-detail {
+  background: rgb(12 18 18) !important;
+  border-color: rgb(71 85 83) !important;
+  color: rgb(203 213 211) !important;
+}
+
+html.dark .platform-alert-close {
+  border-color: rgb(71 85 83) !important;
+  color: rgb(203 213 211) !important;
+}
+
+html.dark .platform-alert-close:hover {
+  background: rgb(41 55 53) !important;
+  color: rgb(255 255 255) !important;
 }
 
 @keyframes apexCoachIn {

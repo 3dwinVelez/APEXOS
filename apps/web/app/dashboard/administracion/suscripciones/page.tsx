@@ -4,7 +4,7 @@ import { createPlatformCompanyWithAdmin, deletePlatformCompany, listPlatformComp
 import { ArrowLeft, Building2, Check, CircleUserRound, LockKeyhole, Pencil, Plus, RefreshCw, ShieldCheck, SlidersHorizontal, Trash2, UsersRound, X } from "lucide-react";
 import Link from "next/link";
 import type { Dispatch, SetStateAction } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CompanyForm = {
   name: string;
@@ -54,17 +54,19 @@ export default function SuscripcionesPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState("");
   const [message, setMessage] = useState("");
+  const selectedCompanyIdRef = useRef("");
 
   const selectedCompany = useMemo(() => companies.find((company) => company.company_id === selectedCompanyId) || null, [companies, selectedCompanyId]);
   const enabledCount = modules.filter((item) => item.enabled).length;
 
-  async function loadCompanies() {
+  const loadCompanies = useCallback(async () => {
     setLoading(true);
     setMessage("");
     try {
       const rows = await listPlatformCompanies();
       setCompanies(rows);
-      const nextCompanyId = selectedCompanyId || rows[0]?.company_id || "";
+      const nextCompanyId = selectedCompanyIdRef.current || rows[0]?.company_id || "";
+      selectedCompanyIdRef.current = nextCompanyId;
       setSelectedCompanyId(nextCompanyId);
       if (nextCompanyId) {
         const [moduleRows, sessionRows] = await Promise.all([
@@ -85,9 +87,10 @@ export default function SuscripcionesPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   async function selectCompany(companyId: string) {
+    selectedCompanyIdRef.current = companyId;
     setSelectedCompanyId(companyId);
     setMessage("");
     const [moduleRows, sessionRows] = await Promise.all([
@@ -212,6 +215,7 @@ export default function SuscripcionesPage() {
       await deletePlatformCompany(deletingCompany.company_id);
       setDeletingCompany(null);
       if (selectedCompanyId === deletingCompany.company_id) {
+        selectedCompanyIdRef.current = "";
         setSelectedCompanyId("");
         setModules([]);
         setSessions(null);
@@ -227,7 +231,7 @@ export default function SuscripcionesPage() {
 
   useEffect(() => {
     loadCompanies();
-  }, []);
+  }, [loadCompanies]);
 
   async function refreshCompanySessions() {
     if (!selectedCompanyId) return;

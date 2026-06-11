@@ -4,7 +4,7 @@ import { loadModuleAccess } from "@/lib/moduleAccess";
 import { MODULES, MODULES_BY_SLUG } from "@/lib/modules";
 import { ShieldAlert } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 type AccessState = "checking" | "allowed" | "denied";
@@ -17,6 +17,7 @@ function dashboardSlug(pathname: string) {
 
 export function RouteAccessGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const slug = useMemo(() => dashboardSlug(pathname), [pathname]);
   const [state, setState] = useState<AccessState>("checking");
 
@@ -24,6 +25,10 @@ export function RouteAccessGuard({ children }: { children: React.ReactNode }) {
     let alive = true;
 
     async function checkAccess() {
+      if (localStorage.getItem("role_name")?.toLowerCase() === "tecnico" && !pathname.startsWith("/dashboard/servicios")) {
+        router.replace("/dashboard/servicios");
+        return;
+      }
       if (!slug || !MODULES_BY_SLUG[slug]) {
         if (alive) setState("allowed");
         return;
@@ -43,7 +48,7 @@ export function RouteAccessGuard({ children }: { children: React.ReactNode }) {
     return () => {
       alive = false;
     };
-  }, [slug]);
+  }, [pathname, router, slug]);
 
   if (state === "checking") {
     return (

@@ -21,7 +21,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 type ApexStatus = "pendiente" | "activo" | "bloqueado" | "validacion" | "finalizado";
@@ -244,16 +244,16 @@ export default function ProjectsPage() {
   const [selectedItem, setSelectedItem] = useState<WorkItem | null>(null);
   const [filters, setFilters] = useState({ search: "", status: "todos", responsible: "todos", priority: "todos", type: "todos", date: "todos" });
 
-  async function load(projectId = activeId) {
+  const load = useCallback(async (projectId: number | null = null) => {
     const qs = projectId ? `?project_id=${projectId}` : "";
     const response = await api<CenterResponse>(`/api/v1/projects/operational-center${qs}`);
     setData(response);
     setActiveId(response.active_project?.id || null);
-  }
+  }, []);
 
   useEffect(() => {
     load().catch((error) => setMessage(error instanceof Error ? error.message : "No fue posible cargar proyectos."));
-  }, []);
+  }, [load]);
 
   const project = data?.active_project;
   const workItems = useMemo(() => project ? buildWorkItems(project) : [], [project]);

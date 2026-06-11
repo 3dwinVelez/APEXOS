@@ -5,16 +5,17 @@ import { SignatureCapture } from "@/components/operations/SignatureCapture";
 import { api } from "@/lib/api";
 import { getGpsFix } from "@/lib/gps";
 import { buildServiceReportPdfBlob } from "@/lib/serviceReportPdf";
-import { ArrowLeft, BookOpen, Camera, CheckCircle2, Download, FileSignature, History, MapPin, Play, Search, Wrench, XCircle } from "lucide-react";
+import { ArrowLeft, BookOpen, Camera, CheckCircle2, Download, FileSignature, History, MapPin, Play, Search, Star, Wrench, XCircle } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
+import { useParams, useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type ServiceReferencePart = { id: number | string; name: string; quantity: number; unit: string };
 type ReferenceManual = { title: string; file_name?: string; mime_type?: string; file_url?: string; base64_data?: string; notes?: string };
 type ServiceReference = { code: string; name: string; parts: ServiceReferencePart[]; manuals?: ReferenceManual[]; metadata?: { manuals?: ReferenceManual[] } };
 type InspectionStatus = "ok" | "averiada" | "faltante";
-type InspectionItem = { part_id: number | string; name: string; quantity: number; unit: string; status: InspectionStatus; comment: string; action: string };
+type InspectionItem = { part_id: number | string; name: string; quantity: number; unit: string; status: InspectionStatus; comment: string; action: string; supplier_name?: string };
 type ServicePhoto = { id: number | string; type: string; file_url?: string; base64_data?: string; metadata?: { mime_type?: string; file_name?: string; part_id?: number | string; part_name?: string; [key: string]: unknown }; created_at?: string };
 type ServiceOrder = {
   id: number | string;
@@ -36,7 +37,10 @@ type ServiceOrder = {
   no_execution_reason?: string;
   incidents: Array<{ id: number | string; description: string; type: string; created_at?: string }>;
   photos: ServicePhoto[];
-  metadata?: { inspection?: { items?: InspectionItem[]; decision?: string; problem_count?: number } };
+  metadata?: {
+    inspection?: { items?: InspectionItem[]; decision?: string; problem_count?: number };
+    satisfaction_survey?: { answers?: Array<{ question_id: string; question: string; rating: number }>; average?: number; completed_at?: string };
+  };
 };
 type Panel = "inicio" | "inspeccion" | "ejecucion" | "novedad" | "historial";
 
@@ -51,7 +55,12 @@ const statusLabel: Record<string, string> = {
   no_ejecutada: "No ejecutada"
 };
 const executionPhotoTypes = ["producto_abierto", "producto_cerrado"];
-const closePhotoTypes = ["producto_abierto", "producto_cerrado", "cliente", "firma_cliente"];
+const closePhotoTypes = ["producto_abierto", "producto_cerrado", "firma_cliente"];
+const satisfactionQuestions = [
+  { id: "service_quality", label: "¿Cómo calificas la calidad del servicio realizado?" },
+  { id: "technician_attention", label: "¿Cómo calificas la atención y claridad del técnico?" },
+  { id: "final_result", label: "¿Qué tan satisfecho quedaste con el resultado final?" }
+] as const;
 const photoLabels: Record<string, string> = {
   fachada: "Fachada",
   pieza_averiada: "Pieza",
@@ -92,6 +101,7 @@ function mapLink(lat?: number, lon?: number) {
 
 export default function ServiceOperationPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const [order, setOrder] = useState<ServiceOrder | null>(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -105,9 +115,10 @@ export default function ServiceOperationPage() {
   const [captures, setCaptures] = useState<Record<string, CapturedFile | null>>({});
   const [inspection, setInspection] = useState<InspectionItem[]>([]);
   const [closureMode, setClosureMode] = useState(false);
+  const [satisfactionRatings, setSatisfactionRatings] = useState<Record<string, number>>({});
   const [activePanel, setActivePanel] = useState<Panel>("inicio");
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setMessage("");
     try {
@@ -121,11 +132,11 @@ export default function ServiceOperationPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [params.id]);
 
   useEffect(() => {
     load();
-  }, [params.id]);
+  }, [load]);
 
   useEffect(() => {
     if (!order) return;
@@ -191,8 +202,29 @@ export default function ServiceOperationPage() {
     setWorking(true);
     try {
       const gpsResult = ["start", "close", "close-not-executed"].includes(action) ? await optionalGps(action) : { gps: null, metadata: {} };
+      const satisfactionSurvey = action === "close" ? {
+        version: 1,
+        answers: satisfactionQuestions.map((question) => ({
+          question_id: question.id,
+          question: question.label,
+          rating: satisfactionRatings[question.id]
+        })),
+        average: satisfactionQuestions.reduce((total, question) => total + (satisfactionRatings[question.id] || 0), 0) / satisfactionQuestions.length,
+        completed_at: new Date().toISOString()
+      } : undefined;
       const body = action === "close-not-executed" ? { no_execution_reason: noExecutionReason || "Cliente no disponible / evidencia pendiente" } : {};
-      const updated = await api<ServiceOrder>(`/api/v1/services/orders/${params.id}/${action}`, { method: "PATCH", body: JSON.stringify({ ...body, ...(gpsResult.gps || {}), metadata: gpsResult.metadata }) });
+      const updated = await api<ServiceOrder>(`/api/v1/services/orders/${params.id}/${action}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          ...body,
+          ...(gpsResult.gps || {}),
+          metadata: { ...gpsResult.metadata, ...(satisfactionSurvey ? { satisfaction_survey: satisfactionSurvey } : {}) }
+        })
+      });
+      if (["close", "close-not-executed"].includes(action) && localStorage.getItem("role_name")?.toLowerCase() === "tecnico") {
+        router.replace("/dashboard/servicios");
+        return;
+      }
       setOrder(updated);
       setActivePanel(panelForStatus(updated.status));
       setMessage(`Orden ${statusLabel[updated.status] || updated.status}.`);
@@ -219,8 +251,12 @@ export default function ServiceOperationPage() {
     return executionPhotoTypes.every((type) => hasPhoto(type));
   }
 
-  function closePhotosReady() {
-    return closePhotoTypes.every((type) => hasPhoto(type));
+  function satisfactionReady() {
+    return satisfactionQuestions.every((question) => satisfactionRatings[question.id] >= 1);
+  }
+
+  function closeReady() {
+    return closePhotoTypes.every((type) => hasPhoto(type)) && satisfactionReady();
   }
 
   function noExecutionReady() {
@@ -383,8 +419,11 @@ export default function ServiceOperationPage() {
       {activePanel === "inicio" && order.status === "pendiente" ? (
         <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
           <h2 className="mb-3 text-base font-semibold">Inicio del servicio</h2>
-          <PhotoCapture label="Foto de fachada" required loading={uploading.fachada} value={captures.fachada || null} onChange={(file) => uploadPhoto("fachada", file)} />
-          <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white disabled:opacity-50" disabled={working || (!captures.fachada && !hasPhoto("fachada"))} onClick={() => update("start")} type="button"><Play size={18} /> Iniciar y registrar GPS</button>
+          <div className="rounded-md border border-line bg-paper p-4">
+            <p className="font-semibold">Confirma que estás en el punto de servicio</p>
+            <p className="mt-1 text-sm text-neutral-600">Al iniciar registraremos tu ubicación automáticamente. No necesitas tomar una foto de la fachada.</p>
+          </div>
+          <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white disabled:opacity-50" disabled={working} onClick={() => update("start")} type="button"><Play size={18} /> Iniciar y registrar GPS</button>
         </section>
       ) : null}
 
@@ -435,7 +474,8 @@ export default function ServiceOperationPage() {
                       <option value="revision">Requiere revision</option>
                       <option value="ninguna">Sin accion adicional</option>
                     </select>
-                    <PhotoCapture label={`Evidencia - ${part.name}`} required loading={uploading[`pieza_${part.part_id}`]} value={captures[`pieza_${part.part_id}`] || null} onChange={(file) => uploadPhoto("pieza_averiada", file, { part_id: part.part_id, part_name: part.name, status: part.status, comment: part.comment, action: part.action }, `pieza_${part.part_id}`)} />
+                    <input className="h-12 w-full rounded-md border border-line px-3 text-base" placeholder="Proveedor sugerido (opcional)" value={part.supplier_name || ""} onChange={(event) => updateInspection(part.part_id, { supplier_name: event.target.value })} />
+                    <PhotoCapture label={`Evidencia - ${part.name}`} required loading={uploading[`pieza_${part.part_id}`]} value={captures[`pieza_${part.part_id}`] || null} onChange={(file) => uploadPhoto("pieza_averiada", file, { part_id: part.part_id, part_name: part.name, status: part.status, comment: part.comment, action: part.action, supplier_name: part.supplier_name || "" }, `pieza_${part.part_id}`)} />
                   </div>
                 ) : null}
               </div>
@@ -462,11 +502,46 @@ export default function ServiceOperationPage() {
           ) : (
             <>
               <h2 className="mb-3 text-base font-semibold">Cierre del servicio</h2>
-              <div className="grid gap-2">
-                <PhotoCapture label="Foto del cliente que recibe" required loading={uploading.cliente} value={captures.cliente || null} onChange={(file) => uploadPhoto("cliente", file)} />
+              <div className="grid gap-3">
+                <div className="rounded-md border border-line bg-paper p-3 sm:p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="font-semibold">Encuesta rápida del cliente</p>
+                      <p className="mt-1 text-sm text-neutral-600">Pide al cliente tocar las estrellas. Son 3 preguntas y toma menos de un minuto.</p>
+                    </div>
+                    <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-semibold">
+                      {Object.keys(satisfactionRatings).length} de 3 respondidas
+                    </span>
+                  </div>
+                  <div className="mt-3 grid gap-3">
+                    {satisfactionQuestions.map((question, index) => {
+                      const selectedRating = satisfactionRatings[question.id] || 0;
+                      return (
+                        <fieldset className="rounded-md border border-line bg-white p-3" key={question.id}>
+                          <legend className="px-1 text-sm font-semibold">{index + 1}. {question.label}</legend>
+                          <div className="mt-2 flex min-h-12 items-center gap-1 sm:gap-2">
+                            {[1, 2, 3, 4, 5].map((rating) => (
+                              <button
+                                aria-label={`${rating} de 5 estrellas para ${question.label}`}
+                                aria-pressed={selectedRating === rating}
+                                className="flex h-11 w-11 items-center justify-center rounded-md border border-line bg-white transition hover:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                                key={rating}
+                                onClick={() => setSatisfactionRatings((current) => ({ ...current, [question.id]: rating }))}
+                                type="button"
+                              >
+                                <Star className={rating <= selectedRating ? "fill-amber-400 text-amber-400" : "text-neutral-400"} size={25} />
+                              </button>
+                            ))}
+                            {selectedRating ? <span className="ml-1 text-sm font-semibold">{selectedRating}/5</span> : null}
+                          </div>
+                        </fieldset>
+                      );
+                    })}
+                  </div>
+                </div>
                 <SignatureCapture label="Firma del cliente" required value={captures.firma_cliente || null} onChange={(file) => uploadSignature(file)} />
               </div>
-              <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-emerald-600 text-base font-semibold text-white disabled:opacity-50" disabled={working || !closePhotosReady()} onClick={() => update("close")} type="button"><CheckCircle2 size={18} /> Cerrar servicio</button>
+              <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-emerald-600 text-base font-semibold text-white disabled:opacity-50" disabled={working || !closeReady()} onClick={() => update("close")} type="button"><CheckCircle2 size={18} /> Cerrar servicio</button>
             </>
           )}
         </section>
@@ -497,12 +572,30 @@ export default function ServiceOperationPage() {
             {mapLink(order.start_latitude, order.start_longitude) ? <a className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-md border border-line px-3 font-semibold" href={mapLink(order.start_latitude, order.start_longitude)} target="_blank" rel="noreferrer"><MapPin className="shrink-0" size={16} /> <span className="truncate">GPS inicio</span></a> : null}
             {mapLink(order.close_latitude, order.close_longitude) ? <a className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-md border border-line px-3 font-semibold" href={mapLink(order.close_latitude, order.close_longitude)} target="_blank" rel="noreferrer"><MapPin className="shrink-0" size={16} /> <span className="truncate">GPS cierre</span></a> : null}
           </div>
+          {order.metadata?.satisfaction_survey?.answers?.length ? (
+            <div className="rounded-md border border-line bg-paper p-3">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold">Encuesta de satisfaccion</h3>
+                <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900">
+                  Promedio {Number(order.metadata.satisfaction_survey.average || 0).toFixed(1)}/5
+                </span>
+              </div>
+              <div className="mt-3 grid gap-2">
+                {order.metadata.satisfaction_survey.answers.map((answer) => (
+                  <div className="flex items-center justify-between gap-3 rounded-md bg-white p-3 text-sm" key={answer.question_id}>
+                    <span>{answer.question}</span>
+                    <span className="shrink-0 font-semibold text-amber-700">{answer.rating}/5</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {order.photos.map((photo) => {
               const src = photoSrc(photo);
               return (
                 <div className="rounded-md border border-line bg-paper p-2" key={photo.id}>
-                  {src ? <img className="aspect-square w-full rounded-md object-cover" src={src} alt={photoLabels[photo.type] || photo.type} /> : <div className="flex aspect-square items-center justify-center rounded-md bg-white text-xs text-neutral-500">Sin preview</div>}
+                  {src ? <Image className="aspect-square w-full rounded-md object-cover" height={480} src={src} alt={photoLabels[photo.type] || photo.type} unoptimized width={480} /> : <div className="flex aspect-square items-center justify-center rounded-md bg-white text-xs text-neutral-500">Sin preview</div>}
                   <p className="mt-2 text-xs font-semibold">{photoLabels[photo.type] || photo.type}</p>
                   {photo.metadata?.part_name ? <p className="text-[11px] text-neutral-500">{String(photo.metadata.part_name)}</p> : null}
                 </div>

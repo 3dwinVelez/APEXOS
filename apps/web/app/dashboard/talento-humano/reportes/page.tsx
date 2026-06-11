@@ -3,7 +3,7 @@
 import { supabaseFetch } from "@/lib/supabaseClient";
 import { ArrowLeft, Download, Eye, Filter, Search } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type Employee = { id: string; first_name?: string; last_name?: string; document_number?: string; user_type?: string; position?: string; metadata?: Record<string, unknown> };
 type Punch = { id: string; employee_id?: string; user_name?: string; route_id?: string; vehicle_plate?: string; punch_type: string; punched_at: string; punch_date?: string; punch_time?: string; latitude?: number; longitude?: number; accuracy_meters?: number; extra_minutes?: number; extra_reason?: string; extra_detail?: string; metadata?: Record<string, unknown> };
@@ -83,7 +83,7 @@ export default function HrReportsPage() {
   const [selected, setSelected] = useState<ReportRow | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const [employeeRows, punchRows, activityRows, routeRows] = await Promise.all([
@@ -99,11 +99,11 @@ export default function HrReportsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [from, to]);
 
   useEffect(() => {
     load().catch(() => undefined);
-  }, [from, to]);
+  }, [load]);
 
   const rows = useMemo(() => {
     const employeesById = new Map(employees.map((employee) => [String(employee.id), employee]));
