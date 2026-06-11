@@ -7,8 +7,9 @@ import { getGpsFix } from "@/lib/gps";
 import { buildServiceReportPdfBlob } from "@/lib/serviceReportPdf";
 import { ArrowLeft, BookOpen, Camera, CheckCircle2, Download, FileSignature, History, MapPin, Play, Search, Star, Wrench, XCircle } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type ServiceReferencePart = { id: number | string; name: string; quantity: number; unit: string };
 type ReferenceManual = { title: string; file_name?: string; mime_type?: string; file_url?: string; base64_data?: string; notes?: string };
@@ -117,7 +118,7 @@ export default function ServiceOperationPage() {
   const [satisfactionRatings, setSatisfactionRatings] = useState<Record<string, number>>({});
   const [activePanel, setActivePanel] = useState<Panel>("inicio");
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setMessage("");
     try {
@@ -131,11 +132,11 @@ export default function ServiceOperationPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [params.id]);
 
   useEffect(() => {
     load();
-  }, [params.id]);
+  }, [load]);
 
   useEffect(() => {
     if (!order) return;
@@ -593,7 +594,7 @@ export default function ServiceOperationPage() {
               const src = photoSrc(photo);
               return (
                 <div className="rounded-md border border-line bg-paper p-2" key={photo.id}>
-                  {src ? <img className="aspect-square w-full rounded-md object-cover" src={src} alt={photoLabels[photo.type] || photo.type} /> : <div className="flex aspect-square items-center justify-center rounded-md bg-white text-xs text-neutral-500">Sin preview</div>}
+                  {src ? <Image className="aspect-square w-full rounded-md object-cover" height={480} src={src} alt={photoLabels[photo.type] || photo.type} unoptimized width={480} /> : <div className="flex aspect-square items-center justify-center rounded-md bg-white text-xs text-neutral-500">Sin preview</div>}
                   <p className="mt-2 text-xs font-semibold">{photoLabels[photo.type] || photo.type}</p>
                   {photo.metadata?.part_name ? <p className="text-[11px] text-neutral-500">{String(photo.metadata.part_name)}</p> : null}
                 </div>

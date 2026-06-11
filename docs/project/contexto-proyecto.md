@@ -22,6 +22,7 @@ Los documentos historicos en `modules/*` y `docs/APEX_LEGACY_MIGRATION.md` se co
 - Evitar cambios fuera del alcance de la tarea.
 - No duplicar funciones existentes si ya hay componentes o utilidades compartidas.
 - Validar typecheck, build o flujos segun el riesgo del cambio.
+- Mantener lint, typecheck y build sin advertencias; una alerta silenciosa debe corregirse por causa raiz y no ocultarse.
 - Documentar cambios funcionales y de experiencia cuando impacten al usuario.
 
 ## Prioridades actuales

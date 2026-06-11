@@ -464,7 +464,7 @@ function SupplierProfile({ supplier, onPatch, saving }: { supplier: Supplier | n
       notes: supplier.metadata.notes || ""
     });
     setEditing(false);
-  }, [supplier?.id, supplier?.email, supplier?.phone, supplier?.city, supplier?.credit_days, supplier?.metadata.notes]);
+  }, [supplier]);
 
   if (!supplier) {
     return <div className="flex min-h-[360px] items-center justify-center rounded-md border border-dashed border-line bg-paper text-sm text-neutral-500">Selecciona o crea un proveedor.</div>;

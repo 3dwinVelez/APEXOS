@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { InventoryNav } from "@/components/inventory-nav";
 import { api } from "@/lib/api";
@@ -78,7 +78,7 @@ export default function ReportesInventarioPage() {
     if (firstItem) setSelectedItemId((current) => current || String(firstItem.id));
   }
 
-  async function loadKardex(itemId = selectedItemId) {
+  const loadKardex = useCallback(async (itemId: string) => {
     if (!itemId) return;
     setLoading(true);
     setError("");
@@ -92,7 +92,7 @@ export default function ReportesInventarioPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [fromDate, toDate]);
 
   useEffect(() => {
     loadBase().catch((err) => setError(err instanceof Error ? err.message : "No se pudieron cargar reportes"));
@@ -100,7 +100,7 @@ export default function ReportesInventarioPage() {
 
   useEffect(() => {
     if (selectedItemId) void loadKardex(selectedItemId);
-  }, [selectedItemId]);
+  }, [loadKardex, selectedItemId]);
 
   const filteredCosts = useMemo(() => {
     const text = query.trim().toLowerCase();
@@ -134,7 +134,7 @@ export default function ReportesInventarioPage() {
           <label className="text-sm">Hasta
             <input className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} />
           </label>
-          <button className="mt-6 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white disabled:opacity-60" disabled={loading || !selectedItemId} onClick={() => loadKardex()} type="button">
+          <button className="mt-6 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white disabled:opacity-60" disabled={loading || !selectedItemId} onClick={() => loadKardex(selectedItemId)} type="button">
             <Search size={16} /> Consultar
           </button>
         </div>

@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { Activity, ArrowLeft, CalendarDays, Camera, CheckSquare2, Clock, Copy, Edit3, HelpCircle, MapPinned, Navigation, Plus, RefreshCw, Save, Search, Square, UserPlus, Users, X } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 
 type Employee = { id: number; code: string; user_type?: string; position: string; department: string; metadata: { name: string; document: string; user_type?: string }; user: { name: string } };
@@ -572,7 +573,7 @@ export default function RoutesPlanningPage() {
                         {event.latitude != null && event.longitude != null ? <p className="mt-2 text-xs text-neutral-500">GPS {Number(event.latitude).toFixed(5)}, {Number(event.longitude).toFixed(5)} - {Math.round(Number(event.accuracy_meters || 0))}m</p> : null}
                       </div>
                       <div>
-                        {event.evidence?.[0]?.base64_data ? <img alt="Evidencia" className="h-32 w-full rounded-md object-cover" src={event.evidence[0].base64_data} /> : event.evidence?.[0]?.file_url ? <a className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href={event.evidence[0].file_url} target="_blank" rel="noreferrer"><Camera size={16} /> Ver evidencia</a> : <p className="rounded-md bg-paper p-3 text-xs font-semibold text-neutral-500">Sin evidencia fotografica</p>}
+                        {event.evidence?.[0]?.base64_data ? <Image alt="Evidencia" className="h-32 w-full rounded-md object-cover" height={320} src={event.evidence[0].base64_data} unoptimized width={640} /> : event.evidence?.[0]?.file_url ? <a className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href={event.evidence[0].file_url} target="_blank" rel="noreferrer"><Camera size={16} /> Ver evidencia</a> : <p className="rounded-md bg-paper p-3 text-xs font-semibold text-neutral-500">Sin evidencia fotografica</p>}
                       </div>
                     </article>
                   ))}

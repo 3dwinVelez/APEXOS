@@ -4,7 +4,7 @@ import { supabaseFetch } from "@/lib/supabaseClient";
 import { ArrowLeft, Download, Eye, Search, Wrench } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type Reference = { id: string; code?: string; name?: string; category?: string; brand?: string; model?: string; estimated_minutes?: number };
 type Order = {
@@ -108,7 +108,7 @@ export default function ServiceReportsPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       setMessage("");
@@ -130,7 +130,7 @@ export default function ServiceReportsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [from, to]);
 
   useEffect(() => {
     if (localStorage.getItem("role_name")?.toLowerCase() === "tecnico") {
@@ -138,7 +138,7 @@ export default function ServiceReportsPage() {
       return;
     }
     load();
-  }, [from, router, to]);
+  }, [load, router]);
 
   const rows = useMemo(() => {
     const refs = new Map(references.map((reference) => [String(reference.id), reference]));

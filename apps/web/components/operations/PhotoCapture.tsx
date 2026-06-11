@@ -1,6 +1,7 @@
 "use client";
 
 import { Camera, ImagePlus, Loader2, X } from "lucide-react";
+import Image from "next/image";
 import { useRef, useState } from "react";
 
 export type CapturedFile = {
@@ -72,7 +73,7 @@ export function PhotoCapture({ label, required, capture = true, loading = false,
       {value ? (
         <div className="space-y-2">
           <div className="relative overflow-hidden rounded-md border border-line bg-paper">
-            <img alt={label} className="aspect-[4/3] w-full object-cover" src={value.base64} />
+            <Image alt={label} className="aspect-[4/3] w-full object-cover" height={480} src={value.base64} unoptimized width={640} />
             {loading ? (
               <div className="absolute inset-0 flex items-center justify-center bg-white/75 text-sm font-semibold text-apex backdrop-blur-sm">
                 <Loader2 className="mr-2 animate-spin" size={18} /> Guardando evidencia

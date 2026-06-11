@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Edit3, FilePlus2, ListPlus, Percent, Plus, Save, Search, Settings2, Trash2, WalletCards } from "lucide-react";
 import { api } from "@/lib/api";
 import { ContabilidadNav } from "@/components/contabilidad-nav";
@@ -141,7 +141,7 @@ export default function CuentasPorPagarPage() {
   const [vatDraft, setVatDraft] = useState({ code: "", concept: "Compras", percent: 19, account_code: "2408" });
   const [editingVat, setEditingVat] = useState<string | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -172,11 +172,11 @@ export default function CuentasPorPagarPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   const activeSocieties = tree.societies.filter((item) => item.active !== false);
   const branches = tree.branches.filter((item) => item.active !== false && item.society_code === header.society_code);
