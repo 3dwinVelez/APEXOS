@@ -67,14 +67,14 @@ async function main() {
     update: {
       description: "Ejecuta exclusivamente servicios activos asignados.",
       is_system: true,
-      metadata: { active: true, role_type: "operativo", profile_kind: "technician", services_assigned_only: true }
+      metadata: { active: true, role_type: "operativo", profile_kind: "technician", workspace: "technician_services", landing_page: "/dashboard/servicios", services_assigned_only: true }
     },
     create: {
       tenant_id: tenant.id,
       name: "Tecnico",
       description: "Ejecuta exclusivamente servicios activos asignados.",
       is_system: true,
-      metadata: { active: true, role_type: "operativo", profile_kind: "technician", services_assigned_only: true }
+      metadata: { active: true, role_type: "operativo", profile_kind: "technician", workspace: "technician_services", landing_page: "/dashboard/servicios", services_assigned_only: true }
     }
   });
   await prisma.permission.deleteMany({ where: { role_id: technicianRole.id } });

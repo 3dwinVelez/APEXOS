@@ -67,6 +67,14 @@ html[data-role="tecnico"] .technician-hide {
   display: none !important;
 }
 
+.technician-only {
+  display: none;
+}
+
+html[data-role="tecnico"] .technician-only {
+  display: flex;
+}
+
 button,
 a,
 input,

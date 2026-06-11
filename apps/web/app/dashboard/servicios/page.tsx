@@ -177,9 +177,9 @@ export default function ServicesPage() {
             <ArrowLeft size={18} />
           </Link>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-apex">M-26 · Operacion de campo</p>
-            <h1 className="truncate text-2xl font-semibold md:text-3xl">Servicios</h1>
-            <p className="mt-1 hidden text-sm text-neutral-600 sm:block">Monitor operativo para crear, ejecutar y controlar servicios tecnicos con evidencia.</p>
+            <p className="text-sm font-semibold text-apex">{technicianMode ? "Perfil tecnico operativo" : "M-26 · Operacion de campo"}</p>
+            <h1 className="truncate text-2xl font-semibold md:text-3xl">{technicianMode ? "Mis servicios activos" : "Servicios"}</h1>
+            <p className="mt-1 hidden text-sm text-neutral-600 sm:block">{technicianMode ? "Aqui encuentras unicamente las ordenes asignadas que puedes atender." : "Monitor operativo para crear, ejecutar y controlar servicios tecnicos con evidencia."}</p>
           </div>
         </div>
       </header>
@@ -191,8 +191,8 @@ export default function ServicesPage() {
               <Sparkles size={14} />
               Centro operativo de servicios
             </div>
-            <h2 className="max-w-3xl text-2xl font-semibold leading-tight sm:text-3xl">Ordenes listas para gestionar</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/65">{mainMessage} Usa los filtros para encontrar rapidamente el siguiente servicio.</p>
+            <h2 className="max-w-3xl text-2xl font-semibold leading-tight sm:text-3xl">{technicianMode ? "Tu siguiente servicio esta aqui" : "Ordenes listas para gestionar"}</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/65">{mainMessage} {technicianMode ? "Selecciona una orden para iniciar o continuar el trabajo." : "Usa los filtros para encontrar rapidamente el siguiente servicio."}</p>
           </div>
           {!technicianMode ? <div className="grid shrink-0 gap-2 sm:flex sm:flex-wrap">
             <Link className="dark-primary-action inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-[#081411]" href="/dashboard/servicios/nuevo">
@@ -217,8 +217,8 @@ export default function ServicesPage() {
         <aside className="min-w-0 rounded-md border border-line bg-white p-3 sm:p-4">
           <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
             <div>
-            <h2 className="font-semibold">Atencion prioritaria</h2>
-            <p className="mt-1 text-sm text-neutral-500">Servicios abiertos, en proceso o con novedad.</p>
+            <h2 className="font-semibold">{technicianMode ? "Que debes atender primero" : "Atencion prioritaria"}</h2>
+            <p className="mt-1 text-sm text-neutral-500">{technicianMode ? "Tus servicios ordenados por urgencia y avance." : "Servicios abiertos, en proceso o con novedad."}</p>
             </div>
             <span className="rounded-md bg-paper px-3 py-1.5 text-xs font-semibold text-neutral-600">{operational.attention.length} por atender</span>
           </div>

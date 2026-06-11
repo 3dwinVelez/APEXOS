@@ -35,6 +35,9 @@
 - Cada tecnico solo visualiza ordenes activas asignadas a su ficha (`pendiente`, `en_curso`, `inspeccion` o `ejecucion`). Las ordenes de otros tecnicos y las cerradas quedan fuera de su sesion.
 - Los usuarios administrativos conservan la consulta total, asignacion de tecnicos, creacion de ordenes, referencias y reportes.
 - El seed local mantiene diez cuentas operativas demo, desde `tecnico01@apex.local` hasta `tecnico10@apex.local`, con clave inicial `Tecnico2026!`.
+- El tecnico inicia sesion directamente en `Mis servicios activos`, sin pasar por el dashboard empresarial.
+- El perfil tecnico usa un shell operativo exclusivo: sin menu modular, inteligencia administrativa ni accesos secundarios; conserva identidad de sesion, salida visible y enfoque en la siguiente orden.
+- Cualquier intento del perfil tecnico de navegar hacia otra ruta del dashboard lo devuelve automaticamente a Servicios.
 
 ## Regla de experiencia
 
