@@ -6,6 +6,8 @@ const { spawnSync } = require("node:child_process");
 const root = path.resolve(__dirname, "..");
 const webDir = path.join(root, "apps", "web");
 const distDirNames = process.env.NEXT_DIST_DIR ? [process.env.NEXT_DIST_DIR] : [".next-dev", ".next"];
+const requestTimeoutMs = Number(process.env.WEB_CSS_REQUEST_TIMEOUT_MS || 15000);
+const verifyAttempts = Number(process.env.WEB_CSS_VERIFY_ATTEMPTS || 3);
 
 function log(message) {
   console.log(`[web-css] ${message}`);
@@ -20,10 +22,14 @@ function request(url) {
       res.on("end", () => resolve({ statusCode: res.statusCode || 0, headers: res.headers, body }));
     });
     req.on("error", reject);
-    req.setTimeout(5000, () => {
+    req.setTimeout(requestTimeoutMs, () => {
       req.destroy(new Error(`Timeout fetching ${url}`));
     });
   });
+}
+
+function sleep(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 function newestGeneratedCss() {
@@ -106,6 +112,22 @@ async function verify(url) {
   return { ok: failures.length === 0, cssPaths, failures };
 }
 
+async function verifyWithRetry(url) {
+  let lastError;
+  for (let attempt = 1; attempt <= verifyAttempts; attempt += 1) {
+    try {
+      return await verify(url);
+    } catch (error) {
+      lastError = error;
+      if (attempt < verifyAttempts) {
+        log(`${error.message}. Retrying verification (${attempt + 1}/${verifyAttempts}).`);
+        await sleep(1000);
+      }
+    }
+  }
+  throw lastError;
+}
+
 async function main() {
   const buildOnly = process.argv.includes("--build-only");
   const urlIndex = process.argv.indexOf("--url");
@@ -116,14 +138,7 @@ async function main() {
     return;
   }
 
-  let result;
-  try {
-    result = await verify(url);
-  } catch (error) {
-    log(`${error.message}. Generating fallback CSS.`);
-    if (!runTailwindFallback()) process.exit(1);
-    return;
-  }
+  const result = await verifyWithRetry(url);
 
   if (result.ok) {
     log(`CSS ok: ${result.cssPaths.join(", ")}`);
@@ -133,7 +148,7 @@ async function main() {
   log(`CSS asset check failed: ${JSON.stringify(result.failures)}`);
   if (!runTailwindFallback()) process.exit(1);
 
-  const after = await verify(url);
+  const after = await verifyWithRetry(url);
   if (!after.ok) {
     console.error(`[web-css] CSS still failing after fallback: ${JSON.stringify(after.failures)}`);
     process.exit(1);
