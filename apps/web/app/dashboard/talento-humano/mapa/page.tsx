@@ -361,7 +361,7 @@ export default function LiveGpsMapPage() {
         <div className="flex flex-wrap items-center gap-2">
           <div className="grid grid-cols-2 gap-1 rounded-md bg-white/10 p-1">
             {(["vivo", "historico"] as const).map((item) => (
-              <button className={`h-8 rounded-md px-3 text-xs font-semibold ${mode === item ? "bg-white text-[#0d1b2a]" : "text-white/70"}`} key={item} onClick={() => setMode(item)} type="button">
+              <button className={`h-8 rounded-md px-3 text-xs font-semibold ${mode === item ? "dark-primary-action bg-white text-[#0d1b2a]" : "text-white/70"}`} key={item} onClick={() => setMode(item)} type="button">
                 {item === "vivo" ? "En vivo" : "Historico"}
               </button>
             ))}
@@ -408,7 +408,7 @@ export default function LiveGpsMapPage() {
                 ["offline", "Off"],
                 ["nogps", "Sin GPS"]
               ].map(([key, label]) => (
-                <button className={`h-9 rounded-md text-xs font-semibold ${status === key ? "bg-white text-[#0d1b2a]" : "text-white/70"}`} key={key} onClick={() => setStatus(key as typeof status)} type="button">
+                <button className={`h-9 rounded-md text-xs font-semibold ${status === key ? "dark-primary-action bg-white text-[#0d1b2a]" : "text-white/70"}`} key={key} onClick={() => setStatus(key as typeof status)} type="button">
                   {label}
                 </button>
               ))}

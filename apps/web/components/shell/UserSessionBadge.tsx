@@ -51,7 +51,7 @@ function initials(email: string) {
 }
 
 export function UserSessionBadge({ compact = false }: { compact?: boolean }) {
-  const [session, setSession] = useState<CurrentSession>(() => readLocalSession());
+  const [session, setSession] = useState<CurrentSession>({ email: "", role: "", provider: "", company: "" });
 
   useEffect(() => {
     let cancelled = false;

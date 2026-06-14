@@ -1,7 +1,7 @@
 "use client";
 
 import { api } from "@/lib/api";
-import { Activity, AlertTriangle, CalendarDays, Camera, CheckCircle2, FileText, MapPinned, Navigation, RefreshCw, Route, Smartphone, Truck, Users, X } from "lucide-react";
+import { Activity, AlertTriangle, BarChart3, Camera, CheckCircle2, ChevronRight, Clock3, FileText, Filter, MapPinned, Navigation, RefreshCw, RotateCcw, Route, Search, Smartphone, Users, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
@@ -94,6 +94,8 @@ export default function TalentPage() {
   const [operations, setOperations] = useState<OperationsMap | null>(null);
   const [selectedRouteId, setSelectedRouteId] = useState<string>("");
   const [loadingMonitor, setLoadingMonitor] = useState(false);
+  const [routeQuery, setRouteQuery] = useState("");
+  const [routeFilter, setRouteFilter] = useState("attention");
 
   async function load() {
     setLoadingMonitor(true);
@@ -171,38 +173,43 @@ export default function TalentPage() {
   const statusMessage = openAlerts
     ? `Hay ${openAlerts} punto(s) por revisar: horarios sin eventos o personas sin GPS.`
     : "La operacion de campo se ve estable y con trazabilidad reciente.";
+  const filteredRoutes = useMemo(() => {
+    const term = routeQuery.trim().toLowerCase();
+    return monitorRoutes
+      .filter((route) => {
+        const routePeople = operations?.people.filter((person) => String(person.route_id) === String(route.id)) || [];
+        const events = (route.punch_points?.length || 0) + (route.activity_points?.length || 0);
+        const offline = routePeople.filter((person) => !person.online).length;
+        if (routeFilter === "active" && !["active", "planned", "en_ruta"].includes(String(route.status || "").toLowerCase())) return false;
+        if (routeFilter === "no_events" && events > 0) return false;
+        if (routeFilter === "offline" && offline === 0) return false;
+        return !term || [routeLabel(route), route.status, ...(route.employees || []), ...routePeople.map((person) => person.name)].join(" ").toLowerCase().includes(term);
+      })
+      .sort((a, b) => {
+        if (routeFilter !== "attention") return String(a.start_time || "").localeCompare(String(b.start_time || ""));
+        const attention = (route: RouteMonitor) => {
+          const routePeople = operations?.people.filter((person) => String(person.route_id) === String(route.id)) || [];
+          const events = (route.punch_points?.length || 0) + (route.activity_points?.length || 0);
+          return (events ? 0 : 100) + routePeople.filter((person) => !person.online).length;
+        };
+        return attention(b) - attention(a) || String(a.start_time || "").localeCompare(String(b.start_time || ""));
+      });
+  }, [monitorRoutes, operations, routeFilter, routeQuery]);
+  const activeRouteFilters = (routeQuery.trim() ? 1 : 0) + (routeFilter !== "attention" ? 1 : 0);
 
   return (
     <div className="space-y-5">
-      <section className="overflow-hidden rounded-md bg-[#071417] text-white shadow-sm">
-        <div className="grid gap-5 p-5 lg:grid-cols-[1.05fr_0.95fr] lg:p-6">
-          <div className="flex min-h-[260px] flex-col justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">M-17 - Talento Humano</p>
-              <h1 className="mt-3 max-w-2xl text-3xl font-semibold md:text-4xl">Centro operativo de personal en campo</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/72">{statusMessage} Jornada, horarios, GPS y evidencias quedan conectados en una sola lectura.</p>
-            </div>
-            <div className="mt-5 flex flex-wrap gap-2">
-              <Link className="inline-flex h-11 items-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-[#071417]" href="/dashboard/talento-humano/marcacion"><Smartphone size={16} /> Marcacion movil</Link>
-              <Link className="inline-flex h-11 items-center gap-2 rounded-md border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/dashboard/talento-humano/rutas"><Route size={16} /> Asignar horarios</Link>
-              <Link className="inline-flex h-11 items-center gap-2 rounded-md border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/dashboard/talento-humano/mapa"><MapPinned size={16} /> Mapa GPS</Link>
-            </div>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <ApexIndicator icon={<Users size={18} />} label="Personas en campo" value={peopleInField} detail={`${onlinePeople} con senal reciente`} tone="emerald" />
-            <ApexIndicator icon={<Route size={18} />} label="Horarios activos" value={activeRoutes} detail={`${monitorRoutes.length} planeados hoy`} tone="sky" />
-            <ApexIndicator icon={<Activity size={18} />} label="Eventos trazables" value={fieldEvents} detail={`${attendance.length} personas con marcas`} tone="violet" />
-            <ApexIndicator icon={<AlertTriangle size={18} />} label="Alertas operativas" value={openAlerts} detail={`${gpsCoverage}% cobertura GPS`} tone={openAlerts ? "amber" : "emerald"} />
-          </div>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium text-apex">M-17 · Operacion de personal</p>
+          <h1 className="mt-1 text-3xl font-semibold">Talento Humano</h1>
+          <p className="mt-2 max-w-3xl text-sm text-neutral-600">{statusMessage}</p>
         </div>
-        <div className="grid border-t border-white/10 sm:grid-cols-4">
-          <HeroStat label="Horarios" value={schedules.length} />
-          <HeroStat label="Vehiculos" value={vehicles.length} />
-          <HeroStat label="Jornadas completas" value={completedMarks} />
-          <HeroStat label="Procesadas" value={workdays.length} />
+        <div className="flex flex-wrap gap-2">
+          <Link className="inline-flex h-11 items-center gap-2 rounded-md border border-line bg-white px-4 text-sm font-semibold hover:bg-paper" href="/dashboard/talento-humano/mapa"><MapPinned size={17} /> Ver mapa</Link>
+          <Link className="inline-flex h-11 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white hover:bg-apex/90" href="/dashboard/talento-humano/rutas"><Route size={17} /> Asignar horario</Link>
         </div>
-      </section>
+      </header>
 
       {!employees.length || !vehicles.length ? (
         <section className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
@@ -210,71 +217,91 @@ export default function TalentPage() {
         </section>
       ) : null}
 
-      <section className="grid gap-3 lg:grid-cols-6">
-        <ActionTile icon={<Smartphone size={20} />} title="Marcacion movil" detail="Jornada, GPS y evidencia de campo." href="/dashboard/talento-humano/marcacion" primary />
-        <ActionTile icon={<Route size={20} />} title="Asignar horarios" detail="Personas, recurso opcional y jornada operativa." href="/dashboard/talento-humano/rutas" />
-        <ActionTile icon={<MapPinned size={20} />} title="Mapa GPS en vivo" detail="Trazabilidad limpia por ruta y persona." href="/dashboard/talento-humano/mapa" />
-        <ActionTile icon={<CalendarDays size={20} />} title="Reportes" detail="Horas, extras y trazabilidad por empleado." href="/dashboard/talento-humano/reportes" />
-        <ActionTile icon={<FileText size={20} />} title="Configuracion nomina" detail="Recargos y conceptos contables." href="/dashboard/talento-humano/nomina" />
-        <ActionTile icon={<Truck size={20} />} title="Maestro de vehiculos" detail="Estado documental de flota." href="/dashboard/transporte" />
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <CompactMetric icon={<Users size={17} />} label="Personas planeadas" value={peopleInField} detail={`${onlinePeople} con senal reciente`} />
+        <CompactMetric icon={<Route size={17} />} label="Horarios activos" value={activeRoutes} detail={`${monitorRoutes.length} planeados · ${schedules.length} plantillas`} />
+        <CompactMetric icon={<Activity size={17} />} label="Eventos del dia" value={fieldEvents} detail={`${completedMarks} completas · ${workdays.length} procesadas`} />
+        <CompactMetric icon={<AlertTriangle size={17} />} label="Requieren atencion" value={openAlerts} detail={`${gpsCoverage}% cobertura GPS`} tone={openAlerts ? "amber" : "default"} />
+      </section>
+
+      <section className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+        <OperationalLink icon={<Smartphone size={18} />} title="Marcacion movil" detail="Registrar jornada" href="/dashboard/talento-humano/marcacion" />
+        <OperationalLink icon={<Route size={18} />} title="Planeacion" detail="Asignar horarios" href="/dashboard/talento-humano/rutas" />
+        <OperationalLink icon={<MapPinned size={18} />} title="Mapa GPS" detail="Seguimiento en vivo" href="/dashboard/talento-humano/mapa" />
+        <OperationalLink icon={<BarChart3 size={18} />} title="Reportes" detail="Horas y novedades" href="/dashboard/talento-humano/reportes" />
+        <OperationalLink icon={<FileText size={18} />} title="Nomina" detail="Conceptos y recargos" href="/dashboard/talento-humano/nomina" />
       </section>
 
       <section className="overflow-hidden rounded-md border border-line bg-white">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line p-4">
-          <div>
-            <div className="flex items-center gap-2"><MapPinned size={18} className="text-apex" /><h2 className="text-lg font-semibold">Monitor operativo de horarios</h2></div>
-            <p className="mt-1 text-sm text-neutral-600">Control cronologico por horario asignado: personas, marcaciones, actividades, GPS y evidencias.</p>
+        <div className="border-b border-line p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2"><Clock3 size={18} className="text-apex" /><h2 className="text-lg font-semibold">Horarios de hoy</h2></div>
+              <p className="mt-1 text-sm text-neutral-600">Prioriza horarios sin eventos o con personas sin senal y abre el detalle solo cuando necesites actuar.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <p className="text-sm text-neutral-500">{filteredRoutes.length} de {monitorRoutes.length}</p>
+              <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold hover:bg-paper" onClick={load} type="button">
+                <RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={16} /> Actualizar
+              </button>
+            </div>
           </div>
-          <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold hover:bg-paper" onClick={load} type="button">
-            <RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={16} /> Actualizar
-          </button>
+          <div className="mt-4 grid gap-2 md:grid-cols-[minmax(240px,1fr)_220px]">
+            <label className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
+              <input className="h-10 w-full rounded-md border border-line pl-9 pr-3 text-sm" placeholder="Buscar placa, persona o estado" value={routeQuery} onChange={(event) => setRouteQuery(event.target.value)} />
+            </label>
+            <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={routeFilter} onChange={(event) => setRouteFilter(event.target.value)}>
+              <option value="attention">Prioridad operativa</option>
+              <option value="active">Horarios activos</option>
+              <option value="no_events">Sin eventos</option>
+              <option value="offline">Con personas sin senal</option>
+              <option value="all">Todos los horarios</option>
+            </select>
+          </div>
+          {activeRouteFilters ? <button className="mt-3 inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold text-neutral-700 hover:bg-paper" onClick={() => { setRouteQuery(""); setRouteFilter("attention"); }} type="button"><RotateCcw size={15} /> Limpiar filtros</button> : null}
         </div>
 
-        <div className="grid border-b border-line md:grid-cols-4">
-          <MonitorStrip label="Horarios planeados" value={operations?.totals.routes ?? monitorRoutes.length} hint={`${activeRoutes} activos`} />
-          <MonitorStrip label="Personas asignadas" value={peopleInField} hint={`${onlinePeople} en linea`} />
-          <MonitorStrip label="Cobertura GPS" value={`${gpsCoverage}%`} hint={`${operations?.totals.without_gps || 0} sin GPS`} />
-          <MonitorStrip label="Eventos del dia" value={fieldEvents} hint="Marcas + actividades" />
-        </div>
-
-        <div className="hidden grid-cols-[1.3fr_1fr_1fr_1fr_120px] gap-3 border-b border-line bg-paper px-4 py-3 text-xs font-semibold uppercase text-neutral-500 md:grid">
-          <span>Horario</span>
-          <span>Equipo</span>
-          <span>Actividad</span>
-          <span>Estado</span>
-          <span>Detalle</span>
-        </div>
-        <div className="divide-y divide-line">
-          {monitorRoutes.map((route) => {
+        <div className="grid gap-3 p-3 md:hidden">
+          {filteredRoutes.map((route) => {
             const routePeople = operations?.people.filter((person) => String(person.route_id) === String(route.id)) || [];
             const events = (route.punch_points?.length || 0) + (route.activity_points?.length || 0);
             const alerts = routePeople.filter((person) => !person.online).length;
             return (
-              <button className="grid w-full gap-3 px-4 py-4 text-left transition hover:bg-paper md:grid-cols-[1.3fr_1fr_1fr_1fr_120px] md:items-center" key={String(route.id)} onClick={() => setSelectedRouteId(String(route.id))} type="button">
-                <div>
-                  <p className="text-base font-semibold">{routeLabel(route)}</p>
-                  <p className="mt-1 text-xs text-neutral-500">{formatHour(route.start_time)} - {formatHour(route.end_time)} - {route.status || "planeada"}</p>
-                </div>
-                <div className="text-sm">
-                  <p className="font-semibold">{route.assigned_count ?? route.employees?.length ?? 0} persona(s)</p>
-                  <p className="mt-1 text-xs text-neutral-500">{route.online_count || 0} con senal reciente</p>
-                </div>
-                <div className="text-sm">
-                  <p className="font-semibold">{events} evento(s)</p>
-                  <p className="mt-1 text-xs text-neutral-500">{route.activity_points?.length || 0} actividades con evidencia</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
+              <button className="rounded-md border border-line p-4 text-left hover:border-apex hover:bg-paper" key={String(route.id)} onClick={() => setSelectedRouteId(String(route.id))} type="button">
+                <div className="flex items-start justify-between gap-3"><div><p className="text-lg font-semibold">{routeLabel(route)}</p><p className="mt-1 text-xs text-neutral-500">{formatHour(route.start_time)} - {formatHour(route.end_time)}</p></div><ChevronRight className="text-neutral-400" size={18} /></div>
+                <div className="mt-3 flex flex-wrap gap-2">
                   <span className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold ${events ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>
                     {events ? <CheckCircle2 size={13} /> : <AlertTriangle size={13} />}{events ? "En seguimiento" : "Sin eventos"}
                   </span>
                   {alerts ? <span className="rounded-md bg-paper px-2 py-1 text-xs font-semibold text-neutral-600">{alerts} sin senal</span> : null}
                 </div>
-                <span className="inline-flex h-10 items-center justify-center rounded-md bg-apex px-3 text-sm font-semibold text-white">Abrir</span>
+                <div className="mt-3 grid grid-cols-3 gap-2 text-sm"><Info label="Personas" value={route.assigned_count ?? route.employees?.length ?? 0} /><Info label="En linea" value={route.online_count || 0} /><Info label="Eventos" value={events} /></div>
               </button>
             );
           })}
-          {!monitorRoutes.length ? <p className="p-4 text-sm text-neutral-500">Sin rutas planeadas para el dia.</p> : null}
         </div>
+
+        <div className="hidden overflow-x-auto md:block">
+          <table className="w-full min-w-[940px] border-collapse text-left text-sm">
+            <thead className="bg-paper text-xs uppercase tracking-wide text-neutral-500"><tr><th className="px-4 py-3">Horario</th><th className="px-4 py-3">Equipo</th><th className="px-4 py-3">Actividad</th><th className="px-4 py-3">Estado operativo</th><th className="px-4 py-3 text-right">Accion</th></tr></thead>
+            <tbody className="divide-y divide-line">
+              {filteredRoutes.map((route) => {
+                const routePeople = operations?.people.filter((person) => String(person.route_id) === String(route.id)) || [];
+                const events = (route.punch_points?.length || 0) + (route.activity_points?.length || 0);
+                const alerts = routePeople.filter((person) => !person.online).length;
+                return <tr className="hover:bg-paper/70" key={String(route.id)}>
+                  <td className="px-4 py-3"><p className="font-semibold">{routeLabel(route)}</p><p className="mt-1 text-xs text-neutral-500">{formatHour(route.start_time)} - {formatHour(route.end_time)} · {route.status || "planeada"}</p></td>
+                  <td className="px-4 py-3"><p className="font-semibold">{route.assigned_count ?? route.employees?.length ?? 0} persona(s)</p><p className="mt-1 text-xs text-neutral-500">{route.online_count || 0} con senal reciente</p></td>
+                  <td className="px-4 py-3"><p className="font-semibold">{events} evento(s)</p><p className="mt-1 text-xs text-neutral-500">{route.activity_points?.length || 0} actividades con evidencia</p></td>
+                  <td className="px-4 py-3"><span className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold ${events ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>{events ? <CheckCircle2 size={13} /> : <AlertTriangle size={13} />}{events ? "En seguimiento" : "Sin eventos"}</span>{alerts ? <p className="mt-1 text-xs font-semibold text-amber-800">{alerts} persona(s) sin senal</p> : null}</td>
+                  <td className="px-4 py-3 text-right"><button className="h-9 rounded-md border border-line px-3 text-sm font-semibold hover:border-apex hover:bg-paper" onClick={() => setSelectedRouteId(String(route.id))} type="button">Abrir monitor</button></td>
+                </tr>;
+              })}
+            </tbody>
+          </table>
+        </div>
+        {!filteredRoutes.length ? <div className="p-10 text-center"><Filter className="mx-auto text-neutral-300" size={28} /><p className="mt-3 text-sm font-semibold">No hay horarios con estos filtros</p><p className="mt-1 text-sm text-neutral-500">Limpia los filtros o asigna un nuevo horario.</p></div> : null}
       </section>
 
       {selectedRoute ? (
@@ -353,50 +380,29 @@ export default function TalentPage() {
   );
 }
 
-function ApexIndicator({ icon, label, value, detail, tone }: { icon: ReactNode; label: string; value: number; detail: string; tone: "emerald" | "sky" | "violet" | "amber" }) {
-  const colors = {
-    emerald: "bg-emerald-400/12 text-emerald-200 border-emerald-300/20",
-    sky: "bg-sky-400/12 text-sky-200 border-sky-300/20",
-    violet: "bg-violet-400/12 text-violet-200 border-violet-300/20",
-    amber: "bg-amber-400/12 text-amber-200 border-amber-300/20"
-  };
+function CompactMetric({ icon, label, value, detail, tone = "default" }: { icon: ReactNode; label: string; value: number | string; detail: string; tone?: "default" | "amber" }) {
+  const toneClass = tone === "amber" ? "border-amber-200 bg-amber-50 text-amber-900" : "border-line bg-white text-neutral-800";
   return (
-    <div className={`rounded-md border p-4 ${colors[tone]}`}>
-      <div className="flex items-center justify-between gap-3">
-        <span className="flex h-10 w-10 items-center justify-center rounded-md bg-white/10">{icon}</span>
-        <p className="text-3xl font-semibold text-white">{value}</p>
+    <div className={`flex items-center gap-3 rounded-md border p-3 ${toneClass}`}>
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white/70 text-apex">{icon}</span>
+      <div className="min-w-0">
+        <div className="flex items-baseline gap-2"><p className="text-xl font-semibold">{value}</p><p className="truncate text-sm font-semibold">{label}</p></div>
+        <p className="truncate text-xs opacity-70">{detail}</p>
       </div>
-      <p className="mt-4 text-sm font-semibold text-white">{label}</p>
-      <p className="mt-1 text-xs text-white/62">{detail}</p>
     </div>
   );
 }
 
-function HeroStat({ label, value }: { label: string; value: number }) {
+function OperationalLink({ icon, title, detail, href }: { icon: ReactNode; title: string; detail: string; href: string }) {
   return (
-    <div className="border-b border-white/10 p-4 sm:border-b-0 sm:border-r last:border-r-0">
-      <p className="text-2xl font-semibold">{value}</p>
-      <p className="mt-1 text-xs uppercase tracking-wide text-white/55">{label}</p>
-    </div>
-  );
-}
-
-function ActionTile({ icon, title, detail, href, primary = false }: { icon: ReactNode; title: string; detail: string; href: string; primary?: boolean }) {
-  return (
-    <Link className={`rounded-md border p-4 transition hover:-translate-y-0.5 hover:shadow-sm ${primary ? "border-apex bg-[#146C6312]" : "border-line bg-white hover:border-apex"}`} href={href}>
-      <span className={`flex h-10 w-10 items-center justify-center rounded-md ${primary ? "bg-apex text-white" : "bg-paper text-apex"}`}>{icon}</span>
-      <p className="mt-4 font-semibold">{title}</p>
-      <p className="mt-1 text-sm text-neutral-600">{detail}</p>
+    <Link className="group flex items-center gap-3 rounded-md border border-line bg-white p-3 hover:border-apex hover:bg-paper" href={href}>
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-paper text-apex group-hover:bg-white">{icon}</span>
+      <span className="min-w-0 flex-1"><span className="block text-sm font-semibold">{title}</span><span className="block truncate text-xs text-neutral-500">{detail}</span></span>
+      <ChevronRight className="shrink-0 text-neutral-400" size={16} />
     </Link>
   );
 }
 
-function MonitorStrip({ label, value, hint }: { label: string; value: number | string; hint: string }) {
-  return (
-    <div className="border-b border-line p-4 md:border-b-0 md:border-r last:border-r-0">
-      <p className="text-xs font-semibold uppercase text-neutral-500">{label}</p>
-      <p className="mt-2 text-2xl font-semibold">{value}</p>
-      <p className="mt-1 text-xs text-neutral-500">{hint}</p>
-    </div>
-  );
+function Info({ label, value }: { label: string; value: number | string }) {
+  return <div><p className="text-xs text-neutral-500">{label}</p><p className="font-semibold">{value}</p></div>;
 }

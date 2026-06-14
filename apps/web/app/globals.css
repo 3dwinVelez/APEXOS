@@ -48,6 +48,24 @@ body {
   margin: 0;
 }
 
+html.theme-transition,
+html.theme-transition body,
+html.theme-transition aside,
+html.theme-transition nav,
+html.theme-transition main,
+html.theme-transition section,
+html.theme-transition article,
+html.theme-transition header,
+html.theme-transition footer,
+html.theme-transition div,
+html.theme-transition button,
+html.theme-transition a,
+html.theme-transition input,
+html.theme-transition select,
+html.theme-transition textarea {
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease, box-shadow 180ms ease !important;
+}
+
 button,
 input,
 select,
@@ -113,13 +131,46 @@ html.dark .bg-white\/80 {
   background-color: rgb(var(--surface) / 0.92) !important;
 }
 
+html.dark .bg-white\/70,
+html.dark .bg-white\/60,
+html.dark .bg-white\/50 {
+  background-color: rgb(var(--surface) / 0.78) !important;
+}
+
 html.dark .bg-paper,
-html.dark .bg-paper\/95 {
+html.dark .bg-paper\/95,
+html.dark .bg-paper\/70 {
   background-color: rgb(var(--color-paper) / 1) !important;
 }
 
-html.dark .bg-apex {
+html.dark .bg-apex,
+html.dark .bg-apex\/90 {
   background-color: rgb(var(--color-apex) / 1) !important;
+}
+
+html.dark .bg-apex\/70 {
+  background-color: rgb(var(--color-apex) / 0.72) !important;
+}
+
+html.dark .bg-apex\/50 {
+  background-color: rgb(var(--color-apex) / 0.5) !important;
+}
+
+html.dark .bg-apex\/10,
+html.dark .bg-\[\#146C6312\],
+html.dark .bg-\[\#146C630D\] {
+  background-color: rgb(var(--color-apex) / 0.13) !important;
+}
+
+html.dark .bg-apex.text-white,
+html.dark .bg-apex\/90.text-white,
+html.dark .bg-apex\/70.text-white,
+html.dark .hover\:bg-apex\/90:hover {
+  color: rgb(5 25 23) !important;
+}
+
+html.dark .hover\:bg-apex\/90:hover {
+  background-color: rgb(var(--color-apex) / 0.88) !important;
 }
 
 html.dark .text-apex {
@@ -136,6 +187,11 @@ html.dark .border-apex {
 
 html.dark .ring-line {
   --tw-ring-color: rgb(var(--color-line) / 1) !important;
+}
+
+html.dark .ring-offset-1,
+html.dark .ring-offset-2 {
+  --tw-ring-offset-color: rgb(var(--surface)) !important;
 }
 
 html.dark .divide-line > :not([hidden]) ~ :not([hidden]) {
@@ -156,6 +212,19 @@ html.dark .bg-neutral-50,
 html.dark .bg-neutral-100,
 html.dark .bg-slate-50 {
   background-color: rgb(var(--surface-muted) / 1) !important;
+}
+
+html.dark .bg-neutral-200,
+html.dark .bg-neutral-300,
+html.dark .bg-slate-100,
+html.dark .bg-slate-200 {
+  background-color: rgb(var(--color-line) / 0.9) !important;
+}
+
+html.dark .bg-neutral-400,
+html.dark .bg-neutral-500,
+html.dark .bg-neutral-600 {
+  background-color: rgb(var(--text-muted) / 0.72) !important;
 }
 
 html.dark .text-neutral-900,
@@ -183,6 +252,12 @@ html.dark .text-slate-400 {
 html.dark .border-neutral-100,
 html.dark .border-neutral-200,
 html.dark .border-neutral-300,
+html.dark .border-neutral-400,
+html.dark .border-neutral-500,
+html.dark .border-neutral-600,
+html.dark .border-neutral-700,
+html.dark .border-neutral-800,
+html.dark .border-neutral-900,
 html.dark .border-slate-200,
 html.dark .divide-neutral-100 > :not([hidden]) ~ :not([hidden]),
 html.dark .divide-neutral-200 > :not([hidden]) ~ :not([hidden]) {
@@ -195,6 +270,7 @@ html.dark textarea {
   background-color: rgb(var(--surface)) !important;
   border-color: rgb(var(--color-line)) !important;
   color: rgb(var(--text-strong)) !important;
+  caret-color: rgb(var(--color-apex));
 }
 
 html.dark input::placeholder,
@@ -232,13 +308,40 @@ html.dark .bg-blue-100,
 html.dark .bg-sky-50,
 html.dark .bg-sky-100,
 html.dark .bg-indigo-50,
-html.dark .bg-indigo-100 {
+html.dark .bg-indigo-100,
+html.dark .bg-cyan-50,
+html.dark .bg-cyan-100,
+html.dark .bg-violet-50,
+html.dark .bg-violet-100,
+html.dark .bg-purple-50,
+html.dark .bg-purple-100 {
   background-color: rgb(30 64 175 / 0.28) !important;
+}
+
+html.dark .hover\:bg-amber-50:hover,
+html.dark .hover\:bg-amber-100:hover {
+  background-color: rgb(120 53 15 / 0.42) !important;
+}
+
+html.dark .hover\:bg-red-50:hover,
+html.dark .hover\:bg-red-100:hover,
+html.dark .hover\:bg-rose-50:hover,
+html.dark .hover\:bg-rose-100:hover {
+  background-color: rgb(127 29 29 / 0.44) !important;
+}
+
+html.dark .hover\:bg-emerald-50:hover,
+html.dark .hover\:bg-emerald-100:hover,
+html.dark .hover\:bg-teal-50:hover,
+html.dark .hover\:bg-teal-100:hover {
+  background-color: rgb(6 78 59 / 0.48) !important;
 }
 
 html.dark .text-amber-700,
 html.dark .text-amber-800,
-html.dark .text-amber-900 {
+html.dark .text-amber-900,
+html.dark .text-amber-950,
+html.dark .text-amber-600 {
   color: rgb(253 186 116) !important;
 }
 
@@ -247,7 +350,9 @@ html.dark .text-red-800,
 html.dark .text-red-900,
 html.dark .text-rose-700,
 html.dark .text-rose-800,
-html.dark .text-rose-900 {
+html.dark .text-rose-900,
+html.dark .text-red-600,
+html.dark .text-rose-600 {
   color: rgb(253 164 175) !important;
 }
 
@@ -256,7 +361,9 @@ html.dark .text-emerald-800,
 html.dark .text-emerald-900,
 html.dark .text-teal-700,
 html.dark .text-teal-800,
-html.dark .text-teal-900 {
+html.dark .text-teal-900,
+html.dark .text-emerald-600,
+html.dark .text-teal-600 {
   color: rgb(110 231 183) !important;
 }
 
@@ -268,7 +375,22 @@ html.dark .text-sky-800,
 html.dark .text-sky-900,
 html.dark .text-indigo-700,
 html.dark .text-indigo-800,
-html.dark .text-indigo-900 {
+html.dark .text-indigo-900,
+html.dark .text-blue-600,
+html.dark .text-sky-600,
+html.dark .text-indigo-600,
+html.dark .text-cyan-600,
+html.dark .text-cyan-700,
+html.dark .text-cyan-800,
+html.dark .text-cyan-900,
+html.dark .text-violet-600,
+html.dark .text-violet-700,
+html.dark .text-violet-800,
+html.dark .text-violet-900,
+html.dark .text-purple-600,
+html.dark .text-purple-700,
+html.dark .text-purple-800,
+html.dark .text-purple-900 {
   color: rgb(147 197 253) !important;
 }
 
@@ -279,7 +401,10 @@ html.dark .border-emerald-200,
 html.dark .border-teal-200,
 html.dark .border-blue-200,
 html.dark .border-sky-200,
-html.dark .border-indigo-200 {
+html.dark .border-indigo-200,
+html.dark .border-cyan-200,
+html.dark .border-violet-200,
+html.dark .border-purple-200 {
   border-color: rgb(var(--color-line)) !important;
 }
 
@@ -287,8 +412,14 @@ html.dark table thead {
   color: rgb(var(--text-body));
 }
 
+html.dark table tbody tr:hover {
+  background-color: rgb(var(--surface-muted) / 0.72);
+}
+
 html.dark .shadow-sm,
-html.dark .shadow-lg {
+html.dark .shadow-md,
+html.dark .shadow-lg,
+html.dark .shadow-xl {
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.22);
 }
 

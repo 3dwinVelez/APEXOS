@@ -22,10 +22,12 @@ export function ThemeToggle() {
 
   function toggleTheme() {
     const next = activeTheme() === "dark" ? "light" : "dark";
+    document.documentElement.classList.add("theme-transition");
     document.documentElement.classList.toggle("dark", next === "dark");
     document.documentElement.dataset.theme = next;
     localStorage.setItem("apex_theme", next);
     setTheme(next);
+    window.setTimeout(() => document.documentElement.classList.remove("theme-transition"), 220);
   }
 
   const dark = theme === "dark";

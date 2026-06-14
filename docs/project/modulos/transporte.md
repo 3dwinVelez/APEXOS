@@ -3,8 +3,14 @@
 ## Cambios aplicados
 
 - Vehiculos se ajusto como ficha maestra transversal, no como modulo operativo.
-- El panel principal muestra placas, estado documental, score maestro, sede base, propiedad y vencimientos criticos.
-- La ficha usa pestanas: datos generales, propiedad, documentos legales, adjuntos, datos tecnicos y auditoria.
+- La entrada al modulo usa un encabezado compacto y cuatro indicadores esenciales: flota registrada, vehiculos que requieren atencion, score promedio y fichas incompletas.
+- La consulta principal presenta una tabla profesional para comparar placas, estado documental, sede, propiedad, conductor autorizado y vencimientos criticos sin abrir cada ficha.
+- La tabla permite buscar por placa, marca, sede o conductor; filtrar por estado, sede y propiedad; ordenar por prioridad documental, placa o score; y limpiar filtros activos.
+- En pantallas moviles, la tabla se adapta a tarjetas compactas conservando los datos necesarios para decidir que ficha abrir.
+- La creacion de vehiculos se guia en tres etapas esenciales: identificacion, operacion y propiedad, y documentos. Las secciones avanzadas aparecen despues de guardar la ficha inicial.
+- Las etapas de la ficha usan iconos semanticos para facilitar el reconocimiento visual de identificacion, ubicacion/propiedad, documentos, adjuntos, datos tecnicos y auditoria.
+- Cada vehiculo muestra una barra de completitud independiente del score documental. Dentro del editor, la barra se actualiza con los datos diligenciados e indica los siguientes campos recomendados.
+- La ficha completa usa pestanas: identificacion, operacion y propiedad, documentos, adjuntos, datos tecnicos y auditoria.
 - Se agrego carga de documentos por placa con tipo documental, fechas, version, estado y ruta de almacenamiento logica.
 - Se calcula estado maestro documental y Vehicle Master Score de 0 a 100.
 - Se expone endpoint de metricas para tablero inicial y endpoint de consulta para Planeacion.
@@ -12,7 +18,9 @@
 
 ## Regla de experiencia
 
-Transporte debe comportarse como maestro confiable de flota: consulta rapida primero, captura y mantenimiento en ficha separada. No debe incluir checklist preoperacional, inicio de ruta, despacho ni asignacion activa; Planeacion consume estos datos y decide si puede iniciar una ruta.
+Transporte debe comportarse como maestro confiable de flota: comparacion y consulta rapida primero, captura y mantenimiento en ficha separada. La vista principal debe reducir ruido visual, priorizar excepciones documentales y permitir que cualquier persona entienda que vehiculo necesita atencion. La ficha debe explicar que completar y mostrar primero solo los datos esenciales para crear un vehiculo.
+
+No debe incluir checklist preoperacional, inicio de ruta, despacho ni asignacion activa; Planeacion consume estos datos y decide si puede iniciar una ruta.
 
 ## Validaciones esperadas
 
