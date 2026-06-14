@@ -2,6 +2,7 @@
 
 import { api } from "@/lib/api";
 import { AI_ASSISTANCE_EVENT, AI_ASSISTANCE_KEY } from "@/components/brain/AiAssistanceToggle";
+import { useApexAiAccess } from "@/components/brain/useApexAiAccess";
 import { AlertTriangle, Bell, CheckCircle2, ChevronRight, Lightbulb, Loader2, Sparkles, X, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -273,6 +274,7 @@ function isSupabaseSession() {
 
 export function AiExperienceLayer() {
   const pathname = usePathname();
+  const aiAccess = useApexAiAccess();
   const [enabled, setEnabled] = useState(true);
   const [insights, setInsights] = useState<BrainInsight[]>([]);
   const [loadingInsights, setLoadingInsights] = useState(false);
@@ -282,6 +284,7 @@ export function AiExperienceLayer() {
   const [targetRect, setTargetRect] = useState<Rect | null>(null);
   const [dismissedInsights, setDismissedInsights] = useState<Set<string>>(new Set());
   const [isMobile, setIsMobile] = useState(false);
+  const [viewport, setViewport] = useState({ width: 1280, height: 720 });
 
   const currentModule = moduleFromPath(pathname);
   const steps = useMemo(() => stepsForPath(pathname), [pathname]);
@@ -313,14 +316,17 @@ export function AiExperienceLayer() {
   }, []);
 
   useEffect(() => {
-    const sync = () => setIsMobile(window.innerWidth < 768);
+    const sync = () => {
+      setIsMobile(window.innerWidth < 768);
+      setViewport({ width: window.innerWidth, height: window.innerHeight });
+    };
     sync();
     window.addEventListener("resize", sync);
     return () => window.removeEventListener("resize", sync);
   }, []);
 
   useEffect(() => {
-    if (!enabled) {
+    if (!enabled || aiAccess !== "enabled") {
       setCoachOpen(false);
       setTrayOpen(false);
       setInsights([]);
@@ -345,7 +351,7 @@ export function AiExperienceLayer() {
       .then((response) => setInsights(response.data))
       .catch(() => setInsights([]))
       .finally(() => setLoadingInsights(false));
-  }, [currentModule, enabled, guideKey, insightKey, isMobile, pathname, steps.length]);
+  }, [aiAccess, currentModule, enabled, guideKey, insightKey, isMobile, pathname, steps.length]);
 
   useEffect(() => {
     if (!coachOpen) return;
@@ -383,12 +389,12 @@ export function AiExperienceLayer() {
 
   const visibleInsights = insights.filter((insight) => !dismissedInsights.has(insight.id));
   const criticalCount = visibleInsights.filter((insight) => insight.severity === "critical" || insight.severity === "warning").length;
-  const viewportWidth = typeof window === "undefined" ? 1280 : window.innerWidth;
-  const viewportHeight = typeof window === "undefined" ? 720 : window.innerHeight;
+  const viewportWidth = viewport.width;
+  const viewportHeight = viewport.height;
   const coachTop = targetRect ? Math.min(viewportHeight - 210, Math.max(72, targetRect.top + targetRect.height + 12)) : 112;
   const coachLeft = targetRect ? Math.min(viewportWidth - 360, Math.max(16, targetRect.left)) : Math.max(16, viewportWidth - 390);
 
-  if (!enabled) return null;
+  if (!enabled || aiAccess !== "enabled") return null;
 
   return (
     <>

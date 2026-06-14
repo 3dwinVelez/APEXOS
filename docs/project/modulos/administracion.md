@@ -2,6 +2,11 @@
 
 ## Cambios aplicados
 
+- 2026-06-14: La entrada de Administracion APEX se alineo con el lenguaje visual de Transporte y Talento Humano mediante encabezado compacto, accion primaria para crear usuario y cuatro indicadores esenciales.
+- 2026-06-14: Usuarios, Roles y permisos, Empresas y modulos, y Maestros quedaron como accesos administrativos prioritarios, reconocibles por icono y descripcion breve.
+- 2026-06-14: Las categorias extensas de configuracion se reemplazaron en la portada por un catalogo profesional en tabla para escritorio y tarjetas tactiles en movil.
+- 2026-06-14: El catalogo administrativo permite buscar por configuracion, modulo o tarea, filtrar por categoria y estado, y limpiar filtros activos sin ocultar ninguna funcionalidad existente.
+- 2026-06-14: Los flujos internos de usuarios, roles, permisos y maestros conservan sus ventanas separadas; la portada solo organiza consulta y acceso para evitar mezclar tareas administrativas.
 - 2026-05-20: Administracion se reorganizo como panel centralizado por categorias: Empresa y organizacion, Usuarios y seguridad, Operacion logistica, Documentos, Alertas, Contabilidad y costos, Integraciones y Sistema.
 - 2026-05-20: Las configuraciones ahora se abren desde tarjetas hacia modales, ventanas amplias o accesos protegidos, evitando mostrar roles, usuarios, empresas y parametros en una sola pantalla.
 - 2026-05-20: Usuarios se convirtio en ficha maestra con pestanas para datos basicos, acceso, datos laborales, operacion, documentos y auditoria, conservando la API actual y guardando extensiones en `Employee.metadata`.
@@ -27,6 +32,7 @@
 - La creacion de usuarios ahora permite escoger de forma explicita si la ficha corresponde a tecnico o empleado, reduciendo campos irrelevantes y mejorando la validacion del alta.
 - 2026-06-11: El rol exacto `Tecnico` queda limitado a permisos de lectura y operacion de Servicios. Su navegacion no expone dashboard, administracion ni otros modulos.
 - 2026-06-11: El seed local crea y mantiene diez tecnicos demo activos con ficha laboral asociada para asignacion obligatoria en ordenes.
+- 2026-06-14: La insignia de sesion inicia con un estado estable entre servidor y navegador y sincroniza la identidad despues del montaje, eliminando advertencias de hidratacion sin ocultar errores de sesion.
 
 ## Regla de experiencia
 

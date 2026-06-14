@@ -1,6 +1,7 @@
 "use client";
 
 import { api } from "@/lib/api";
+import { useApexAiAccess } from "@/components/brain/useApexAiAccess";
 import { AlertTriangle, ArrowRight, Brain, CheckCircle2, Loader2, Sparkles, Zap } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -46,6 +47,7 @@ const severityIcons: Record<InsightSeverity, typeof AlertTriangle> = {
 };
 
 export function BrainPanel() {
+  const access = useApexAiAccess();
   const [data, setData] = useState<BrainInsightsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
@@ -78,8 +80,9 @@ export function BrainPanel() {
   }
 
   useEffect(() => {
-    load();
-  }, []);
+    if (access === "enabled") load();
+    else if (access === "disabled") setLoading(false);
+  }, [access]);
 
   const healthLabel = useMemo(() => {
     if (!data) return "Leyendo";
@@ -87,6 +90,23 @@ export function BrainPanel() {
     if (data.health_score >= 70) return "Requiere atencion";
     return "Riesgo operativo";
   }, [data]);
+
+  if (access === "disabled") {
+    return (
+      <section className="rounded-md border border-line bg-white p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-paper text-neutral-500">
+            <Brain size={19} />
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">APEX AI Core</p>
+            <h2 className="text-base font-semibold">Modulo no habilitado</h2>
+            <p className="mt-1 text-sm text-neutral-600">La empresa actual no tiene APEX AI Core activo.</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="rounded-md border border-line bg-white p-4">

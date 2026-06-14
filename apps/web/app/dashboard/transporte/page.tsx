@@ -2,7 +2,7 @@
 
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { AlertTriangle, Archive, Gauge, Paperclip, Plus, Save, Search, ShieldCheck, Truck } from "lucide-react";
+import { AlertTriangle, Archive, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, FileCheck2, Filter, Gauge, History, MapPin, Paperclip, Plus, RotateCcw, Save, Search, ShieldCheck, Truck, Wrench } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
@@ -144,7 +144,28 @@ const emptyVehicle = {
   notes: ""
 };
 
-const tabs = ["Datos generales", "Propiedad", "Documentos legales", "Adjuntos", "Datos tecnicos", "Auditoria"];
+const tabs = ["Identificacion", "Operacion y propiedad", "Documentos", "Adjuntos", "Datos tecnicos", "Auditoria"];
+const creationTabs = tabs.slice(0, 3);
+const completionFields = [
+  ["plate", "placa"],
+  ["type", "tipo de vehiculo"],
+  ["brand", "marca"],
+  ["line", "linea o referencia"],
+  ["color", "color"],
+  ["fuel", "combustible"],
+  ["body_type", "carroceria"],
+  ["capacity_value", "capacidad"],
+  ["ownership_type", "tipo de propiedad"],
+  ["legal_owner", "propietario legal"],
+  ["base_site", "sede base"],
+  ["authorized_driver_name", "conductor autorizado"],
+  ["soat_issued_at", "emision del SOAT"],
+  ["soat_expires", "vencimiento del SOAT"],
+  ["technical_review_issued_at", "emision tecnico-mecanica"],
+  ["technical_review_expires", "vencimiento tecnico-mecanica"],
+  ["property_card", "tarjeta de propiedad"],
+  ["vin_chassis", "VIN o chasis"]
+] as const;
 const documentTypes = [
   ["soat", "SOAT"],
   ["revision_tecnico_mecanica", "Tecnico-mecanica"],
@@ -189,6 +210,18 @@ function statusClass(status: string) {
   return "border-line bg-paper text-neutral-700";
 }
 
+function vehicleCompletion(source: object) {
+  const record = source as Record<string, unknown>;
+  const missing = completionFields.filter(([field]) => {
+    const value = record[field];
+    return value === undefined || value === null || value === "" || value === 0;
+  });
+  return {
+    percent: Math.round(((completionFields.length - missing.length) / completionFields.length) * 100),
+    missing: missing.map(([, label]) => label)
+  };
+}
+
 function readFile(file: File) {
   return new Promise<{ base64_data: string; file_name: string; mime_type: string; file_size: number }>((resolve, reject) => {
     const reader = new FileReader();
@@ -207,6 +240,10 @@ export default function TransportPage() {
   const [showEditor, setShowEditor] = useState(false);
   const [message, setMessage] = useState("");
   const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [siteFilter, setSiteFilter] = useState("");
+  const [ownershipFilter, setOwnershipFilter] = useState("");
+  const [sortBy, setSortBy] = useState("attention");
   const [saving, setSaving] = useState(false);
   const [documentDraft, setDocumentDraft] = useState({
     document_type: "soat",
@@ -355,9 +392,26 @@ export default function TransportPage() {
 
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
-    if (!term) return vehicles;
-    return vehicles.filter((vehicle) => [vehicle.plate, vehicle.brand, vehicle.line, vehicle.type, vehicle.base_site, vehicle.ownership_type].join(" ").toLowerCase().includes(term));
-  }, [vehicles, query]);
+    const statusPriority: Record<string, number> = {
+      bloqueado_documental: 0,
+      documento_proximo_a_vencer: 1,
+      pendiente_documentacion: 2,
+      apto_documentalmente: 3,
+      inactivo: 4,
+      retirado: 5
+    };
+    return vehicles
+      .filter((vehicle) => !term || [vehicle.plate, vehicle.brand, vehicle.line, vehicle.model, vehicle.type, vehicle.base_site, vehicle.ownership_type, vehicle.authorized_driver_name].join(" ").toLowerCase().includes(term))
+      .filter((vehicle) => !statusFilter || vehicle.master_status === statusFilter)
+      .filter((vehicle) => !siteFilter || vehicle.base_site === siteFilter)
+      .filter((vehicle) => !ownershipFilter || vehicle.ownership_type === ownershipFilter)
+      .sort((a, b) => {
+        if (sortBy === "plate") return a.plate.localeCompare(b.plate);
+        if (sortBy === "score_desc") return (b.master_score || 0) - (a.master_score || 0);
+        if (sortBy === "score_asc") return (a.master_score || 0) - (b.master_score || 0);
+        return (statusPriority[a.master_status] ?? 9) - (statusPriority[b.master_status] ?? 9) || (a.master_score || 0) - (b.master_score || 0);
+      });
+  }, [ownershipFilter, query, siteFilter, sortBy, statusFilter, vehicles]);
 
   const metrics = useMemo(() => ({
     total: vehicles.length,
@@ -367,120 +421,147 @@ export default function TransportPage() {
   }), [vehicles]);
   const ready = vehicles.filter((vehicle) => vehicle.master_status === "apto_documentalmente").length;
   const incomplete = vehicles.filter((vehicle) => (vehicle.master_score || 0) < 70).length;
-  const operationalScore = metrics.total ? Math.round(((ready * 100) + ((metrics.total - metrics.blocked - metrics.warning - ready) * 55)) / metrics.total) : 0;
-  const statusMessage = metrics.blocked
-    ? `${metrics.blocked} vehiculo(s) bloqueados requieren correccion documental antes de asignarse.`
-    : metrics.warning
-      ? `${metrics.warning} vehiculo(s) tienen documentos proximos a vencer.`
-      : "La flota no presenta bloqueos documentales criticos.";
+  const sites = useMemo(() => [...new Set(vehicles.map((vehicle) => vehicle.base_site).filter(Boolean))].sort(), [vehicles]);
+  const ownershipTypes = useMemo(() => [...new Set(vehicles.map((vehicle) => vehicle.ownership_type).filter(Boolean))].sort(), [vehicles]);
+  const activeFilters = [statusFilter, siteFilter, ownershipFilter].filter(Boolean).length + (query.trim() ? 1 : 0);
+  const editorTabs = selected ? tabs : creationTabs;
+  const activeTabIndex = editorTabs.indexOf(activeTab);
+  const formCompletion = vehicleCompletion(form);
+
+  function clearFilters() {
+    setQuery("");
+    setStatusFilter("");
+    setSiteFilter("");
+    setOwnershipFilter("");
+    setSortBy("attention");
+  }
+
+  function moveEditor(direction: number) {
+    const next = editorTabs[activeTabIndex + direction];
+    if (next) setActiveTab(next);
+  }
 
   return (
     <div className="space-y-5">
-      <section className="overflow-hidden rounded-md bg-[#071417] text-white shadow-sm">
-        <div className="grid gap-5 p-5 lg:grid-cols-[1.05fr_0.95fr] lg:p-6">
-          <div className="flex min-h-[250px] flex-col justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">M-14 - Logistica</p>
-              <h1 className="mt-3 max-w-2xl text-3xl font-semibold md:text-4xl">Centro maestro de flota</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/72">{statusMessage} Esta vista controla placas, documentos, conductor autorizado y disponibilidad para rutas, servicios y costos.</p>
-            </div>
-            <div className="mt-5 flex flex-wrap gap-2">
-              <button className="inline-flex h-11 items-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-[#071417]" onClick={newVehicle} type="button"><Plus size={17} /> Nueva ficha</button>
-              <a className="inline-flex h-11 items-center gap-2 rounded-md border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="#flota-maestra"><Truck size={16} /> Ver flota</a>
-            </div>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <FleetIndicator icon={<Truck size={18} />} label="Vehiculos maestros" value={metrics.total} detail={`${ready} aptos documentalmente`} tone="emerald" />
-            <FleetIndicator icon={<ShieldCheck size={18} />} label="Score promedio" value={`${metrics.avgScore}/100`} detail={`${operationalScore}% estabilidad documental`} tone="sky" />
-            <FleetIndicator icon={<AlertTriangle size={18} />} label="Bloqueados" value={metrics.blocked} detail="No asignables a ruta" tone={metrics.blocked ? "red" : "emerald"} />
-            <FleetIndicator icon={<Gauge size={18} />} label="Proximos a vencer" value={metrics.warning} detail={`${incomplete} fichas incompletas`} tone={metrics.warning ? "amber" : "emerald"} />
-          </div>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium text-apex">M-14 · Maestro de flota</p>
+          <h1 className="mt-1 text-3xl font-semibold">Vehiculos</h1>
+          <p className="mt-2 max-w-3xl text-sm text-neutral-600">Consulta el estado de cada placa, corrige documentos y mantén la flota lista para Planeacion.</p>
         </div>
-        <div className="grid border-t border-white/10 sm:grid-cols-4">
-          <HeroStat label="Aptos" value={ready} />
-          <HeroStat label="Bloqueados" value={metrics.blocked} />
-          <HeroStat label="Por vencer" value={metrics.warning} />
-          <HeroStat label="Incompletos" value={incomplete} />
-        </div>
-      </section>
+        <button className="inline-flex h-11 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white hover:bg-apex/90" onClick={newVehicle} type="button"><Plus size={17} /> Crear vehiculo</button>
+      </header>
 
       {message ? <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{message}</div> : null}
 
-      <section className="grid gap-3 lg:grid-cols-4">
-        <ActionTile icon={<Plus size={20} />} title="Nueva ficha" detail="Crear placa con datos tecnicos, propiedad y documentos." onClick={newVehicle} primary />
-        <ActionTile icon={<ShieldCheck size={20} />} title="Control documental" detail="SOAT, tecnico-mecanica, polizas y adjuntos." href="#flota-maestra" />
-        <ActionTile icon={<Gauge size={20} />} title="Riesgo de vencimiento" detail="Prioriza fichas con semaforo amarillo o rojo." href="#flota-maestra" />
-        <ActionTile icon={<Truck size={20} />} title="Disponibilidad operativa" detail="Base para rutas, servicios y planeacion." href="/dashboard/talento-humano/rutas" />
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <CompactMetric icon={<Truck size={17} />} label="Flota registrada" value={metrics.total} detail={`${ready} aptos para operar`} />
+        <CompactMetric icon={<AlertTriangle size={17} />} label="Requieren atencion" value={metrics.blocked + metrics.warning} detail={`${metrics.blocked} bloqueados · ${metrics.warning} por vencer`} tone={metrics.blocked ? "red" : metrics.warning ? "amber" : "default"} />
+        <CompactMetric icon={<ShieldCheck size={17} />} label="Score promedio" value={`${metrics.avgScore}/100`} detail={scoreLabel(metrics.avgScore)} />
+        <CompactMetric icon={<Gauge size={17} />} label="Fichas incompletas" value={incomplete} detail="Score inferior a 70" tone={incomplete ? "amber" : "default"} />
       </section>
 
       <section className="overflow-hidden rounded-md border border-line bg-white" id="flota-maestra">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line p-4">
-          <div>
-            <h2 className="text-lg font-semibold">Flota maestra</h2>
-            <p className="text-sm text-neutral-600">Datos listos para ser consumidos por Planeacion antes de iniciar una ruta.</p>
+        <div className="border-b border-line p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold">Consulta de flota</h2>
+              <p className="text-sm text-neutral-600">Compara placas y abre una ficha solo cuando necesites actuar.</p>
+            </div>
+            <p className="text-sm text-neutral-500">{filtered.length} de {vehicles.length} vehiculo(s)</p>
           </div>
-          <label className="relative w-full sm:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
-            <input className="h-10 w-full rounded-md border border-line pl-9 pr-3 text-sm" placeholder="Buscar placa, sede, tipo..." value={query} onChange={(event) => setQuery(event.target.value)} />
-          </label>
+          <div className="mt-4 grid gap-2 lg:grid-cols-[minmax(240px,1fr)_repeat(4,minmax(150px,auto))]">
+            <label className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
+              <input className="h-10 w-full rounded-md border border-line pl-9 pr-3 text-sm" placeholder="Buscar placa, marca, sede o conductor" value={query} onChange={(event) => setQuery(event.target.value)} />
+            </label>
+            <FilterSelect value={statusFilter} onChange={setStatusFilter} options={[
+              ["", "Todos los estados"],
+              ["bloqueado_documental", "Bloqueados"],
+              ["documento_proximo_a_vencer", "Proximos a vencer"],
+              ["pendiente_documentacion", "Pendientes de documentos"],
+              ["apto_documentalmente", "Aptos documentalmente"],
+              ["inactivo", "Inactivos"],
+              ["retirado", "Retirados"]
+            ]} />
+            <FilterSelect value={siteFilter} onChange={setSiteFilter} options={[["", "Todas las sedes"], ...sites.map((site) => [site, site] as [string, string])]} />
+            <FilterSelect value={ownershipFilter} onChange={setOwnershipFilter} options={[["", "Toda propiedad"], ...ownershipTypes.map((type) => [type, type] as [string, string])]} />
+            <FilterSelect value={sortBy} onChange={setSortBy} options={[["attention", "Prioridad documental"], ["plate", "Placa A-Z"], ["score_asc", "Menor score"], ["score_desc", "Mayor score"]]} />
+          </div>
+          {activeFilters ? (
+            <button className="mt-3 inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold text-neutral-700 hover:bg-paper" onClick={clearFilters} type="button"><RotateCcw size={15} /> Limpiar {activeFilters} filtro(s)</button>
+          ) : null}
         </div>
-        <div className="grid border-b border-line md:grid-cols-4">
-          <MonitorStrip label="Total flota" value={metrics.total} hint="Placas maestras" />
-          <MonitorStrip label="Aptos" value={ready} hint="Asignables" />
-          <MonitorStrip label="Bloqueos" value={metrics.blocked} hint="Riesgo alto" />
-          <MonitorStrip label="Score" value={`${metrics.avgScore}/100`} hint={scoreLabel(metrics.avgScore)} />
-        </div>
-        <div className="grid gap-3 p-4 lg:grid-cols-2">
+
+        <div className="grid gap-3 p-3 md:hidden">
           {filtered.map((vehicle) => (
-            <button className="group rounded-md border border-line bg-white p-4 text-left transition hover:-translate-y-0.5 hover:border-apex hover:bg-paper hover:shadow-sm" key={vehicle.id} onClick={() => openVehicle(vehicle)} type="button">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="text-2xl font-semibold tracking-tight">{vehicle.plate}</p>
-                  <p className="text-sm text-neutral-600">{vehicle.brand || "-"} {vehicle.line || vehicle.model || ""} {vehicle.year ? `(${vehicle.year})` : ""}</p>
-                </div>
+            <button className="rounded-md border border-line p-4 text-left hover:border-apex hover:bg-paper" key={vehicle.id} onClick={() => openVehicle(vehicle)} type="button">
+              <div className="flex items-start justify-between gap-3">
+                <div><p className="text-xl font-semibold">{vehicle.plate}</p><p className="text-sm text-neutral-600">{vehicle.brand} {vehicle.line || vehicle.model || ""}</p></div>
                 <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${statusClass(vehicle.master_status)}`}>{statusLabel(vehicle.master_status)}</span>
               </div>
-              <div className="mt-4 h-2 overflow-hidden rounded-full bg-paper">
-                <div className={`h-full ${vehicle.master_score >= 80 ? "bg-emerald-500" : vehicle.master_score >= 60 ? "bg-amber-500" : "bg-red-500"}`} style={{ width: `${Math.max(0, Math.min(100, vehicle.master_score || 0))}%` }} />
-              </div>
-              <div className="mt-4 grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
-                <Info label="Sede base" value={vehicle.base_site || "-"} />
-                <Info label="Propiedad" value={vehicle.ownership_type || "-"} />
-                <Info label="Capacidad" value={vehicle.capacity_value ? `${vehicle.capacity_value} ${vehicle.capacity_unit || ""}` : vehicle.load_capacity || "-"} />
-                <Info label="Conductor" value={vehicle.authorized_driver_name || "-"} />
-              </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                <span className="rounded-md bg-paper px-2 py-1">SOAT: {vehicle.dashboard_metrics?.soat_days_remaining ?? "--"} dias</span>
-                <span className="rounded-md bg-paper px-2 py-1">Tec-mec: {vehicle.dashboard_metrics?.technical_review_days_remaining ?? "--"} dias</span>
-                <span className="rounded-md bg-paper px-2 py-1">{scoreLabel(vehicle.master_score || 0)}</span>
-                <span className="ml-auto text-xs font-semibold text-apex opacity-0 transition group-hover:opacity-100">Abrir ficha</span>
-              </div>
+              <div className="mt-3 grid grid-cols-2 gap-3"><Info label="Sede" value={vehicle.base_site || "-"} /><Info label="Conductor" value={vehicle.authorized_driver_name || "Sin asignar"} /><Info label="Propiedad" value={vehicle.ownership_type || "-"} /><Info label="Score" value={`${vehicle.master_score || 0}/100`} /></div>
+              <CompletionBar className="mt-4" percent={vehicleCompletion(vehicle).percent} />
             </button>
           ))}
-          {!filtered.length ? <p className="text-sm text-neutral-500">No hay vehiculos registrados para este filtro.</p> : null}
         </div>
+
+        <div className="hidden overflow-x-auto md:block">
+          <table className="w-full min-w-[1050px] border-collapse text-left text-sm">
+            <thead className="bg-paper text-xs uppercase tracking-wide text-neutral-500">
+              <tr><th className="px-4 py-3">Vehiculo</th><th className="px-4 py-3">Estado y completitud</th><th className="px-4 py-3">Sede y propiedad</th><th className="px-4 py-3">Conductor autorizado</th><th className="px-4 py-3">Vencimientos</th><th className="px-4 py-3 text-right">Accion</th></tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {filtered.map((vehicle) => (
+                <tr className="hover:bg-paper/70" key={vehicle.id}>
+                  <td className="px-4 py-3"><p className="font-semibold">{vehicle.plate}</p><p className="text-xs text-neutral-500">{vehicle.brand || "-"} {vehicle.line || vehicle.model || ""} {vehicle.year ? `· ${vehicle.year}` : ""}</p></td>
+                  <td className="min-w-52 px-4 py-3"><span className={`inline-flex rounded-md border px-2 py-1 text-xs font-semibold ${statusClass(vehicle.master_status)}`}>{statusLabel(vehicle.master_status)}</span><CompletionBar className="mt-2" compact percent={vehicleCompletion(vehicle).percent} /></td>
+                  <td className="px-4 py-3"><p className="font-medium">{vehicle.base_site || "Sin sede"}</p><p className="text-xs capitalize text-neutral-500">{vehicle.ownership_type || "Sin propiedad"}</p></td>
+                  <td className="px-4 py-3"><p className="font-medium">{vehicle.authorized_driver_name || "Sin asignar"}</p><p className="text-xs text-neutral-500">{vehicle.authorized_driver_code || vehicle.authorized_driver_document || "Disponible para asignacion"}</p></td>
+                  <td className="px-4 py-3"><p>SOAT: <strong>{vehicle.dashboard_metrics?.soat_days_remaining ?? "--"} dias</strong></p><p className="text-xs text-neutral-500">Tec-mec: {vehicle.dashboard_metrics?.technical_review_days_remaining ?? "--"} dias</p></td>
+                  <td className="px-4 py-3 text-right"><button className="h-9 rounded-md border border-line px-3 text-sm font-semibold hover:border-apex hover:bg-white" onClick={() => openVehicle(vehicle)} type="button">Abrir ficha</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {!filtered.length ? <div className="p-10 text-center"><Filter className="mx-auto text-neutral-300" size={28} /><p className="mt-3 text-sm font-semibold">No hay vehiculos con estos filtros</p><p className="mt-1 text-sm text-neutral-500">Limpia los filtros o crea una nueva ficha.</p></div> : null}
       </section>
 
       {showEditor ? (
-        <ModalFrame title={selected ? `Ficha ${selected.plate}` : "Nueva ficha maestra"} onClose={() => setShowEditor(false)} maxWidth="md:max-w-6xl">
+        <ModalFrame title={selected ? `Ficha vehicular · ${selected.plate}` : "Crear vehiculo"} onClose={() => setShowEditor(false)} maxWidth="md:max-w-6xl">
           <div className="space-y-4">
-            <div className="grid gap-3 rounded-md border border-line bg-paper p-3 md:grid-cols-6">
-              <Summary label="Placa" value={form.plate || "Nueva"} />
-              <Summary label="Estado maestro" value={statusLabel(selected?.master_status || "pendiente_documentacion")} />
-              <Summary label="Score" value={`${selected?.master_score || 0}/100`} />
-              <Summary label="Semaforo" value={scoreLabel(selected?.master_score || 0)} />
-              <Summary label="Sede base" value={form.base_site || "--"} />
-              <Summary label="Propiedad" value={form.ownership_type || "--"} />
+            <div className="rounded-md border border-apex/20 bg-[#146C630D] p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="flex min-w-0 items-start gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-white text-apex shadow-sm">{tabIcon(activeTab, 20)}</span>
+                  <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-apex">{selected ? "Mantenimiento de ficha" : `Paso ${activeTabIndex + 1} de ${editorTabs.length}`}</p>
+                  <h2 className="mt-1 text-lg font-semibold">{editorGuide(activeTab).title}</h2>
+                  <p className="mt-1 max-w-3xl text-sm text-neutral-600">{editorGuide(activeTab).detail}</p>
+                  </div>
+                </div>
+                {selected ? <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${statusClass(selected.master_status)}`}>{statusLabel(selected.master_status)}</span> : null}
+              </div>
+              <div className="mt-4 rounded-md border border-white bg-white/80 p-3">
+                <CompletionBar percent={formCompletion.percent} />
+                <p className="mt-2 text-xs text-neutral-600">
+                  {formCompletion.missing.length
+                    ? `Siguiente recomendado: ${formCompletion.missing.slice(0, 3).join(", ")}.`
+                    : "La informacion principal del vehiculo esta completa."}
+                </p>
+              </div>
+              <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                {editorTabs.map((tab, index) => (
+                  <button className={`flex items-center gap-2 rounded-md border px-3 py-2 text-left text-sm font-semibold ${activeTab === tab ? "border-apex bg-white text-apex" : "border-line bg-white/60 text-neutral-600 hover:bg-white"}`} key={tab} onClick={() => setActiveTab(tab)} type="button">
+                    <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${index < activeTabIndex ? "bg-emerald-100 text-emerald-700" : activeTab === tab ? "bg-apex text-white" : "bg-paper text-neutral-500"}`}>{index < activeTabIndex ? <CheckCircle2 size={15} /> : tabIcon(tab, 15)}</span>
+                    <span><span className="block text-[10px] font-medium uppercase tracking-wide opacity-60">Etapa {index + 1}</span>{tab}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="flex gap-2 overflow-x-auto border-b border-line pb-2">
-              {tabs.map((tab) => (
-                <button className={`h-10 shrink-0 rounded-md px-3 text-sm font-semibold ${activeTab === tab ? "bg-apex text-white" : "bg-paper text-neutral-700 hover:bg-neutral-200"}`} key={tab} onClick={() => setActiveTab(tab)} type="button">{tab}</button>
-              ))}
-            </div>
-
-            {activeTab === "Datos generales" ? (
+            {activeTab === "Identificacion" ? (
               <FormGrid>
                 <Input label="Placa *" value={form.plate} onChange={(value) => setField("plate", value.toUpperCase().replace(/\s+/g, ""))} />
                 <Input label="Tipo de vehiculo *" value={form.type} onChange={(value) => setField("type", value)} />
@@ -498,7 +579,7 @@ export default function TransportPage() {
               </FormGrid>
             ) : null}
 
-            {activeTab === "Propiedad" ? (
+            {activeTab === "Operacion y propiedad" ? (
               <FormGrid>
                 <Select label="Tipo de propiedad *" value={form.ownership_type} onChange={(value) => setField("ownership_type", value)} options={["propio", "tercero", "renting", "leasing", "proveedor", "temporal"]} />
                 <Input label="Propietario legal" value={form.legal_owner} onChange={(value) => setField("legal_owner", value)} />
@@ -521,7 +602,7 @@ export default function TransportPage() {
               </FormGrid>
             ) : null}
 
-            {activeTab === "Documentos legales" ? (
+            {activeTab === "Documentos" ? (
               <FormGrid>
                 <Input label="Fecha emision SOAT" type="date" value={form.soat_issued_at} onChange={(value) => setField("soat_issued_at", value)} />
                 <Input label="Vencimiento SOAT" type="date" value={form.soat_expires} onChange={(value) => setField("soat_expires", value)} />
@@ -597,9 +678,13 @@ export default function TransportPage() {
               </div>
             ) : null}
 
-            <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3">
               <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => setShowEditor(false)} type="button"><Archive size={16} /> Cerrar</button>
-              <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-60" onClick={saveVehicle} disabled={saving} type="button"><Save size={16} /> {saving ? "Guardando..." : "Guardar ficha"}</button>
+              <div className="flex flex-wrap gap-2">
+                {activeTabIndex > 0 ? <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => moveEditor(-1)} type="button"><ChevronLeft size={16} /> Anterior</button> : null}
+                {activeTabIndex < editorTabs.length - 1 ? <button className="inline-flex h-10 items-center gap-2 rounded-md border border-apex px-3 text-sm font-semibold text-apex hover:bg-paper" onClick={() => moveEditor(1)} type="button">Siguiente <ChevronRight size={16} /></button> : null}
+                <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-60" onClick={saveVehicle} disabled={saving} type="button"><Save size={16} /> {saving ? "Guardando..." : selected ? "Guardar cambios" : "Crear vehiculo"}</button>
+              </div>
             </div>
           </div>
         </ModalFrame>
@@ -608,63 +693,65 @@ export default function TransportPage() {
   );
 }
 
-function FleetIndicator({ icon, label, value, detail, tone }: { icon: ReactNode; label: string; value: string | number; detail: string; tone: "emerald" | "sky" | "amber" | "red" }) {
-  const colors = {
-    emerald: "bg-emerald-400/12 text-emerald-200 border-emerald-300/20",
-    sky: "bg-sky-400/12 text-sky-200 border-sky-300/20",
-    amber: "bg-amber-400/12 text-amber-200 border-amber-300/20",
-    red: "bg-red-400/12 text-red-200 border-red-300/20"
-  };
+function CompactMetric({ icon, label, value, detail, tone = "default" }: { icon: ReactNode; label: string; value: string | number; detail: string; tone?: "default" | "amber" | "red" }) {
+  const toneClass = tone === "red" ? "border-red-200 bg-red-50 text-red-800" : tone === "amber" ? "border-amber-200 bg-amber-50 text-amber-800" : "border-line bg-white text-neutral-800";
   return (
-    <div className={`rounded-md border p-4 ${colors[tone]}`}>
-      <div className="flex items-center justify-between gap-3">
-        <span className="flex h-10 w-10 items-center justify-center rounded-md bg-white/10">{icon}</span>
-        <p className="text-3xl font-semibold text-white">{value}</p>
+    <div className={`flex items-center gap-3 rounded-md border p-3 ${toneClass}`}>
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white/70 text-apex">{icon}</span>
+      <div className="min-w-0">
+        <div className="flex items-baseline gap-2"><p className="text-xl font-semibold">{value}</p><p className="truncate text-sm font-semibold">{label}</p></div>
+        <p className="truncate text-xs opacity-70">{detail}</p>
       </div>
-      <p className="mt-4 text-sm font-semibold text-white">{label}</p>
-      <p className="mt-1 text-xs text-white/62">{detail}</p>
     </div>
   );
 }
 
-function HeroStat({ label, value }: { label: string; value: number }) {
+function CompletionBar({ percent, compact = false, className = "" }: { percent: number; compact?: boolean; className?: string }) {
+  const tone = percent >= 85 ? "bg-emerald-500" : percent >= 60 ? "bg-amber-500" : "bg-red-500";
+  const label = percent >= 85 ? "Completa" : percent >= 60 ? "En progreso" : "Requiere datos";
   return (
-    <div className="border-b border-white/10 p-4 sm:border-b-0 sm:border-r last:border-r-0">
-      <p className="text-2xl font-semibold">{value}</p>
-      <p className="mt-1 text-xs uppercase tracking-wide text-white/55">{label}</p>
+    <div className={className}>
+      <div className="flex items-center justify-between gap-3 text-xs">
+        <span className="inline-flex items-center gap-1.5 font-semibold text-neutral-700"><ClipboardList size={compact ? 13 : 15} /> Completitud de ficha</span>
+        <span className="font-semibold text-neutral-600">{percent}%{compact ? "" : ` · ${label}`}</span>
+      </div>
+      <div className={`${compact ? "mt-1 h-1.5" : "mt-2 h-2"} overflow-hidden rounded-full bg-neutral-200`} role="progressbar" aria-label="Completitud de la ficha vehicular" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}>
+        <div className={`h-full rounded-full transition-all ${tone}`} style={{ width: `${percent}%` }} />
+      </div>
     </div>
   );
 }
 
-function ActionTile({ icon, title, detail, href, onClick, primary = false }: { icon: ReactNode; title: string; detail: string; href?: string; onClick?: () => void; primary?: boolean }) {
-  const className = `rounded-md border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-sm ${primary ? "border-apex bg-[#146C6312]" : "border-line bg-white hover:border-apex"}`;
-  const content = (
-    <>
-      <span className={`flex h-10 w-10 items-center justify-center rounded-md ${primary ? "bg-apex text-white" : "bg-paper text-apex"}`}>{icon}</span>
-      <p className="mt-4 font-semibold">{title}</p>
-      <p className="mt-1 text-sm text-neutral-600">{detail}</p>
-    </>
-  );
-  if (href) return <a className={className} href={href}>{content}</a>;
-  return <button className={className} onClick={onClick} type="button">{content}</button>;
+function tabIcon(tab: string, size = 16) {
+  const icons: Record<string, ReactNode> = {
+    Identificacion: <Truck size={size} />,
+    "Operacion y propiedad": <MapPin size={size} />,
+    Documentos: <FileCheck2 size={size} />,
+    Adjuntos: <Paperclip size={size} />,
+    "Datos tecnicos": <Wrench size={size} />,
+    Auditoria: <History size={size} />
+  };
+  return icons[tab] || <ClipboardList size={size} />;
 }
 
-function MonitorStrip({ label, value, hint }: { label: string; value: string | number; hint: string }) {
-  return (
-    <div className="border-b border-line p-4 md:border-b-0 md:border-r last:border-r-0">
-      <p className="text-xs font-semibold uppercase text-neutral-500">{label}</p>
-      <p className="mt-2 text-2xl font-semibold">{value}</p>
-      <p className="mt-1 text-xs text-neutral-500">{hint}</p>
-    </div>
-  );
+function FilterSelect({ value, onChange, options }: { value: string; onChange: (value: string) => void; options: [string, string][] }) {
+  return <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={value} onChange={(event) => onChange(event.target.value)}>{options.map(([option, label]) => <option key={option || label} value={option}>{label}</option>)}</select>;
+}
+
+function editorGuide(tab: string) {
+  const guides: Record<string, { title: string; detail: string }> = {
+    Identificacion: { title: "Identifica el vehiculo", detail: "Empieza con placa, tipo y marca. Agrega solo los datos que ayudan a reconocer y planear el uso del vehiculo." },
+    "Operacion y propiedad": { title: "Define quien y donde lo opera", detail: "Indica propiedad, sede base y conductor autorizado. Estos datos alimentan Planeacion y control operativo." },
+    Documentos: { title: "Registra vigencias esenciales", detail: "Completa SOAT y tecnico-mecanica para que APEXOS calcule disponibilidad y alertas documentales." },
+    Adjuntos: { title: "Conserva soportes por placa", detail: "Carga documentos legibles con fecha de emision y vencimiento para mantener trazabilidad." },
+    "Datos tecnicos": { title: "Completa la ficha tecnica", detail: "Agrega VIN, motor, ejes y kilometraje cuando sean necesarios para mantenimiento o auditoria." },
+    Auditoria: { title: "Revisa la trazabilidad", detail: "Consulta los cambios criticos realizados sobre la ficha y sus documentos." }
+  };
+  return guides[tab] || { title: tab, detail: "Completa la informacion necesaria para mantener una ficha confiable." };
 }
 
 function Info({ label, value }: { label: string; value: string | number }) {
   return <div><p className="text-xs text-neutral-500">{label}</p><p className="font-semibold">{value}</p></div>;
-}
-
-function Summary({ label, value }: { label: string; value: string | number }) {
-  return <div className="rounded-md bg-white p-3"><p className="text-xs text-neutral-500">{label}</p><p className="truncate text-sm font-semibold">{value}</p></div>;
 }
 
 function FormGrid({ children }: { children: ReactNode }) {

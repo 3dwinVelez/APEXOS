@@ -15,6 +15,9 @@ Toda pantalla debe poder entenderse sin capacitacion extensa. Antes de considera
 - Los datos administrativos y analiticos deben vivir en dashboards; los modulos operativos deben reservar espacio para ejecutar trabajo.
 - Todas las pantallas deben ser legibles y operables tanto en tema claro como oscuro; colores, estados, bordes, formularios y acciones deben conservar contraste suficiente.
 - El tema seleccionado debe persistir entre sesiones y poder alternarse sin interrumpir el flujo del usuario.
+- Las acciones primarias con fondo `apex` deben adaptar tambien el color del texto en tema oscuro; no se debe asumir que texto blanco conserva contraste sobre el color de marca iluminado.
+- Los nuevos componentes deben preferir los tokens `paper`, `line`, `ink` y `apex` sobre colores hexadecimales fijos. Los colores semanticos se reservan para estados y deben incluir fondo, borde y texto legibles en ambos temas.
+- La transicion entre temas debe ser breve y afectar superficies, texto, bordes, campos y sombras sin producir destellos claros.
 
 ## Principios obligatorios
 
