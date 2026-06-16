@@ -4,7 +4,7 @@ import { BrainPanel } from "@/components/brain/BrainPanel";
 import { api } from "@/lib/api";
 import { loadModuleAccess, ModuleAccessState } from "@/lib/moduleAccess";
 import { MODULES } from "@/lib/modules";
-import { Activity, AlertTriangle, ArrowRight, Boxes, CheckCircle2, ClipboardCheck, MapPinned, ShieldCheck, Truck, Users, Wrench } from "lucide-react";
+import { Activity, AlertTriangle, ArrowRight, Boxes, CheckCircle2, ClipboardCheck, LockKeyhole, MapPinned, ShieldCheck, Truck, Users, Wrench } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -167,7 +167,9 @@ export default function DashboardPage() {
   }, [access]);
 
   const enabled = (slug: string) => !access.loading && access.bySlug[slug] === true;
-  const activeModules = MODULES
+  const orderedModules = [...MODULES]
+    .sort((a, b) => (access.orderBySlug?.[a.slug] ?? 999) - (access.orderBySlug?.[b.slug] ?? 999));
+  const activeModules = [...MODULES]
     .filter((module) => enabled(module.slug))
     .sort((a, b) => (access.orderBySlug?.[a.slug] ?? 999) - (access.orderBySlug?.[b.slug] ?? 999));
   const activeServices = summary.services.pending + summary.services.in_progress;
@@ -233,7 +235,7 @@ export default function DashboardPage() {
       description: `${summary.vehicleActive} vehículos activos, ${summary.vehicleBlocked} bloqueados y ${summary.vehicleExpiring} por vencer.`,
       value: `${summary.vehicleTotal} vehículos`
     }
-  ].filter((item) => enabled(item.module));
+  ];
 
   if (access.loading) {
     return <div className="rounded-md border border-line bg-white p-8 text-sm text-neutral-500">Preparando el tablero según los módulos habilitados...</div>;
@@ -374,12 +376,21 @@ export default function DashboardPage() {
           <h2 className="text-base font-semibold">Resumen por módulo</h2>
           <div className="mt-4 divide-y divide-line">
             {moduleRows.length ? moduleRows.map((item) => (
-              <Link className="grid gap-3 py-4 transition hover:bg-paper md:grid-cols-[160px_1fr_130px_20px]" href={`/dashboard/${item.module}`} key={item.module}>
-                <p className="text-sm font-semibold">{item.name}</p>
-                <p className="text-sm text-neutral-600">{item.description}</p>
-                <p className="text-right text-sm font-semibold">{item.value}</p>
-                <ArrowRight className="text-neutral-400" size={16} />
-              </Link>
+              enabled(item.module) ? (
+                <Link className="grid gap-3 py-4 transition hover:bg-paper md:grid-cols-[160px_1fr_130px_20px]" href={`/dashboard/${item.module}`} key={item.module}>
+                  <p className="text-sm font-semibold">{item.name}</p>
+                  <p className="text-sm text-neutral-600">{item.description}</p>
+                  <p className="text-right text-sm font-semibold">{item.value}</p>
+                  <ArrowRight className="text-neutral-400" size={16} />
+                </Link>
+              ) : (
+                <div className="grid gap-3 py-4 text-neutral-500 md:grid-cols-[160px_1fr_130px_20px]" key={item.module}>
+                  <p className="text-sm font-semibold">{item.name}</p>
+                  <p className="text-sm">Modulo visible, bloqueado por suscripcion o permisos actuales.</p>
+                  <p className="text-right text-sm font-semibold">Bloqueado</p>
+                  <LockKeyhole className="text-neutral-400" size={16} />
+                </div>
+              )
             )) : (
               <p className="py-8 text-center text-sm text-neutral-500">No hay módulos activos con un resumen analítico disponible.</p>
             )}
@@ -388,12 +399,22 @@ export default function DashboardPage() {
         <BrainPanel />
       </section>
 
-      {activeModules.length > 0 && (
+      {orderedModules.length > 0 && (
         <section className="rounded-md border border-line bg-white p-4">
           <h2 className="text-base font-semibold">Módulos disponibles</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {activeModules.map((module) => {
+            {orderedModules.map((module) => {
               const Icon = module.icon;
+              const moduleEnabled = enabled(module.slug);
+              if (!moduleEnabled) {
+                return (
+                  <div className="flex items-center gap-3 rounded-md border border-line bg-paper/60 p-3 text-neutral-500" key={module.slug} title="Modulo bloqueado por suscripcion o permisos">
+                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-white text-neutral-400"><Icon size={17} /></span>
+                    <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{module.name}</p><p className="truncate text-xs">Bloqueado</p></div>
+                    <LockKeyhole className="text-neutral-400" size={16} />
+                  </div>
+                );
+              }
               return (
                 <Link className="group flex items-center gap-3 rounded-md border border-line p-3 transition hover:border-neutral-300 hover:bg-paper" href={`/dashboard/${module.slug}`} key={module.slug}>
                   <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-paper text-apex"><Icon size={17} /></span>
