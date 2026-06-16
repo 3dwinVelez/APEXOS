@@ -1,7 +1,8 @@
 "use client";
 
 import { getSupabaseAccessToken, supabaseFetch } from "@/lib/supabaseClient";
-import { CircleUserRound } from "lucide-react";
+import { clearSession } from "@/lib/sessionSecurity";
+import { CircleUserRound, LogOut } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 type SessionCompany = {
@@ -53,6 +54,11 @@ function initials(email: string) {
 export function UserSessionBadge({ compact = false }: { compact?: boolean }) {
   const [session, setSession] = useState<CurrentSession>({ email: "", role: "", provider: "", company: "" });
 
+  function logout() {
+    clearSession("manual_logout");
+    window.location.assign("/login");
+  }
+
   useEffect(() => {
     let cancelled = false;
     let heartbeatId = 0;
@@ -103,9 +109,9 @@ export function UserSessionBadge({ compact = false }: { compact?: boolean }) {
 
   if (compact) {
     return (
-      <div className="flex h-10 w-10 items-center justify-center rounded-md border border-line bg-paper text-xs font-semibold text-apex" title={`${label}${detail ? ` - ${detail}` : ""}`}>
+      <button className="flex h-10 w-10 items-center justify-center rounded-md border border-line bg-paper text-xs font-semibold text-apex transition hover:border-red-300 hover:text-red-700" onClick={logout} title={`Cerrar sesion - ${label}${detail ? ` - ${detail}` : ""}`} type="button">
         {session.email ? initials(session.email) : <CircleUserRound size={17} />}
-      </div>
+      </button>
     );
   }
 
@@ -124,6 +130,10 @@ export function UserSessionBadge({ compact = false }: { compact?: boolean }) {
         <span className="h-2 w-2 rounded-full bg-emerald-500" />
         Sesion activa
       </div>
+      <button className="mt-3 inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-line bg-white text-xs font-semibold text-neutral-600 transition hover:border-red-300 hover:text-red-700" onClick={logout} type="button">
+        <LogOut size={14} />
+        Cerrar sesion
+      </button>
     </div>
   );
 }

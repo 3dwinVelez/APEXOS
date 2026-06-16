@@ -3,7 +3,7 @@
 import { isSupabaseSession, loadModuleAccess, ModuleAccessState } from "@/lib/moduleAccess";
 import { MODULES } from "@/lib/modules";
 import { UserSessionBadge } from "@/components/shell/UserSessionBadge";
-import { ChevronLeft, ChevronRight, Home } from "lucide-react";
+import { ChevronLeft, ChevronRight, Home, LockKeyhole } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -40,11 +40,11 @@ export function Sidebar() {
     icon: module.icon,
     enabled: access.loading ? true : access.bySlug[module.slug] === true
   }));
-  const activeItems = items
-    .filter((item) => item.enabled)
+  const orderedItems = items
     .sort((a, b) => (access.orderBySlug?.[a.slug] ?? 999) - (access.orderBySlug?.[b.slug] ?? 999));
 
-  function linkClass(active: boolean) {
+  function linkClass(active: boolean, enabled = true) {
+    if (!enabled) return "flex h-10 w-full items-center gap-3 rounded-md px-3 text-left text-sm text-neutral-400 opacity-75";
     return `flex h-10 items-center gap-3 rounded-md px-3 text-sm transition ${active ? "bg-apex text-white shadow-sm" : "text-neutral-700 hover:bg-paper"}`;
   }
 
@@ -56,9 +56,25 @@ export function Sidebar() {
   function renderItem(item: (typeof items)[number]) {
     const Icon = item.icon;
     const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+    if (!item.enabled) {
+      return (
+        <button
+          aria-disabled="true"
+          className={linkClass(false, false)}
+          disabled
+          key={item.href}
+          title={`${item.label} bloqueado por suscripcion o permisos`}
+          type="button"
+        >
+          <Icon size={18} />
+          {!collapsed ? <span className="min-w-0 flex-1 truncate">{item.label}</span> : null}
+          {!collapsed ? <LockKeyhole className="shrink-0" size={14} /> : null}
+        </button>
+      );
+    }
     return (
       <Link
-        className={linkClass(active)}
+        className={linkClass(active, item.enabled)}
         href={item.href}
         key={item.href}
         title={item.label}
@@ -91,7 +107,7 @@ export function Sidebar() {
           {!collapsed ? "Inicio" : null}
         </Link> : null}
         {sectionLabel("Activos")}
-        {activeItems.map(renderItem)}
+        {orderedItems.map(renderItem)}
       </nav>
       {!collapsed ? (
         <div className="mt-3 shrink-0">
