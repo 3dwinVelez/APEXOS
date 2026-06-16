@@ -41,7 +41,10 @@ export function Sidebar() {
     enabled: access.loading ? true : access.bySlug[module.slug] === true
   }));
   const orderedItems = items
-    .sort((a, b) => (access.orderBySlug?.[a.slug] ?? 999) - (access.orderBySlug?.[b.slug] ?? 999));
+    .sort((a, b) => {
+      if (a.enabled !== b.enabled) return a.enabled ? -1 : 1;
+      return (access.orderBySlug?.[a.slug] ?? 999) - (access.orderBySlug?.[b.slug] ?? 999);
+    });
 
   function linkClass(active: boolean, enabled = true) {
     if (!enabled) return "flex h-10 w-full items-center gap-3 rounded-md px-3 text-left text-sm text-neutral-400 opacity-75";
