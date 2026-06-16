@@ -1044,7 +1044,7 @@ export default function AdministracionPage() {
     }
     const saved = await api<ServiceType[]>("/api/v1/services/service-types", {
       method: "PUT",
-      body: JSON.stringify(normalized)
+      body: JSON.stringify({ types: normalized })
     });
     const cleanSaved = normalizeServiceTypes(saved);
     setServiceTypes(cleanSaved.length ? cleanSaved : normalized);
