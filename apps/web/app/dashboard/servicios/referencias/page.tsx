@@ -23,10 +23,16 @@ type ServiceReference = {
   manuals?: Manual[];
   total_pieces: number;
 };
+type ServiceType = { code: string; label: string; active: boolean };
 
 const categories = ["muebles", "colchones", "electrodomesticos", "cocina", "oficina", "decoracion", "iluminacion", "textiles", "otros"];
 const emptyPart = { name: "", quantity: 1, unit: "und", description: "" };
 const emptyForm = { code: "", name: "", category: "muebles", description: "", estimated_minutes: 60, brand: "", model: "", active: true, parts: [emptyPart] as Part[], manuals: [] as Manual[] };
+const defaultServiceTypes: ServiceType[] = [
+  { code: "montaje", label: "Montaje", active: true },
+  { code: "desmontaje", label: "Desmontaje", active: true },
+  { code: "ambos", label: "Montaje y desmontaje", active: true }
+];
 const csvHeaders = "code,name,category,description,estimated_minutes,brand,model,part_name,part_quantity,part_unit,part_description,manual_title,manual_url,manual_notes";
 
 function readFile(file: File): Promise<Manual> {
@@ -112,10 +118,17 @@ export default function ServiceReferencesPage() {
   const [importRows, setImportRows] = useState<Record<string, string>[]>([]);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [serviceTypes, setServiceTypes] = useState<ServiceType[]>(defaultServiceTypes);
+  const [savingTypes, setSavingTypes] = useState(false);
 
   async function load() {
     try {
-      setReferences(await api<ServiceReference[]>("/api/v1/services/references"));
+      const [referenceRows, typeRows] = await Promise.all([
+        api<ServiceReference[]>("/api/v1/services/references"),
+        api<ServiceType[]>("/api/v1/services/service-types").catch(() => defaultServiceTypes)
+      ]);
+      setReferences(referenceRows);
+      setServiceTypes(typeRows.length ? typeRows : defaultServiceTypes);
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible cargar las referencias.");
@@ -269,6 +282,48 @@ export default function ServiceReferencesPage() {
     }
   }
 
+  function updateServiceType(index: number, patch: Partial<ServiceType>) {
+    setServiceTypes((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item));
+  }
+
+  function addServiceType() {
+    setServiceTypes((current) => [...current, { code: "", label: "", active: true }]);
+  }
+
+  function removeServiceType(index: number) {
+    setServiceTypes((current) => current.filter((_, itemIndex) => itemIndex !== index));
+  }
+
+  async function saveServiceTypes() {
+    const normalized = serviceTypes.map((item) => ({
+      code: item.code.trim().toLowerCase().replace(/[^a-z0-9_-]+/g, "_"),
+      label: item.label.trim(),
+      active: item.active !== false
+    })).filter((item) => item.code && item.label);
+    if (!normalized.length || !normalized.some((item) => item.active)) {
+      setError("Registra al menos un tipo de servicio activo.");
+      return;
+    }
+    if (new Set(normalized.map((item) => item.code)).size !== normalized.length) {
+      setError("No puedes repetir codigos de tipos de servicio.");
+      return;
+    }
+    setSavingTypes(true);
+    setError("");
+    try {
+      const saved = await api<ServiceType[]>("/api/v1/services/service-types", {
+        method: "PUT",
+        body: JSON.stringify({ types: normalized })
+      });
+      setServiceTypes(saved);
+      setMessage("Tipos de servicio actualizados.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No fue posible guardar los tipos de servicio.");
+    } finally {
+      setSavingTypes(false);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-7xl space-y-5 pb-24 md:pb-8">
       <header className="sticky top-0 z-20 -mx-3 border-b border-line bg-paper/95 px-3 py-3 backdrop-blur sm:-mx-4 sm:px-4 md:static md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0">
@@ -306,6 +361,32 @@ export default function ServiceReferencesPage() {
           <Summary label="Activas" value={stats.active} />
           <Summary label="Piezas configuradas" value={stats.parts} />
           <Summary label="Manuales y guias" value={stats.manuals} />
+        </div>
+      </section>
+
+      <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
+        <div className="mb-3 grid gap-2 sm:flex sm:items-start sm:justify-between">
+          <div>
+            <h2 className="font-semibold">Tipos de servicio</h2>
+            <p className="mt-1 text-sm text-neutral-500">Controla las opciones disponibles al crear o editar una orden. Inactiva un tipo para ocultarlo sin perder historial.</p>
+          </div>
+          <div className="grid gap-2 sm:flex">
+            <button className="h-10 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={addServiceType} type="button">Agregar tipo</button>
+            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white disabled:opacity-60" disabled={savingTypes} onClick={saveServiceTypes} type="button"><Save size={15} /> {savingTypes ? "Guardando..." : "Guardar tipos"}</button>
+          </div>
+        </div>
+        <div className="space-y-2">
+          {serviceTypes.map((item, index) => (
+            <div className="grid gap-2 rounded-md border border-line p-2 md:grid-cols-[160px_1fr_110px_44px]" key={`${item.code}-${index}`}>
+              <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="codigo" value={item.code} onChange={(event) => updateServiceType(index, { code: event.target.value })} />
+              <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Nombre visible" value={item.label} onChange={(event) => updateServiceType(index, { label: event.target.value })} />
+              <label className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-semibold">
+                <input checked={item.active !== false} onChange={(event) => updateServiceType(index, { active: event.target.checked })} type="checkbox" />
+                Activo
+              </label>
+              <button className="h-10 rounded-md border border-line text-sm font-semibold hover:bg-paper" onClick={() => removeServiceType(index)} type="button">-</button>
+            </div>
+          ))}
         </div>
       </section>
 

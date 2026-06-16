@@ -22,6 +22,7 @@ import { useEffect, useMemo, useState } from "react";
 
 type ServiceReference = { id: number | string; code: string; name: string };
 type Technician = { id: number | string; code?: string; user?: { name?: string; email?: string } };
+type ServiceType = { code: string; label: string; active?: boolean };
 type ServiceOrder = {
   id: number | string;
   number: string;
@@ -132,6 +133,7 @@ export default function ServicesPage() {
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [references, setReferences] = useState<ServiceReference[]>([]);
   const [technicians, setTechnicians] = useState<Technician[]>([]);
+  const [serviceTypesCatalog, setServiceTypesCatalog] = useState<ServiceType[]>([]);
   const [status, setStatus] = useState("");
   const [query, setQuery] = useState("");
   const [dateScope, setDateScope] = useState("");
@@ -161,8 +163,10 @@ export default function ServicesPage() {
         api<ServiceReference[]>("/api/v1/services/references?active=true"),
         api<Technician[]>("/api/v1/services/technicians")
       ]);
+      const typeRows = await api<ServiceType[]>("/api/v1/services/service-types").catch(() => []);
       setReferences(referenceRows);
       setTechnicians(technicianRows);
+      setServiceTypesCatalog(typeRows.filter((item) => item.active !== false));
     } catch {
       setReferences([]);
       setTechnicians([]);
@@ -204,6 +208,7 @@ export default function ServicesPage() {
   }, [dateScope, evidenceScope, orders, query, serviceType, sortBy, status]);
 
   const serviceTypes = useMemo(() => [...new Set(orders.map((order) => order.service_type).filter(Boolean))].sort(), [orders]);
+  const editableServiceTypes = serviceTypesCatalog.length ? serviceTypesCatalog : serviceTypes.map((type) => ({ code: type, label: statusLabel[type] || type }));
   const statusCounts = useMemo(() => orders.reduce<Record<string, number>>((acc, order) => {
     acc[order.status] = (acc[order.status] || 0) + 1;
     return acc;
@@ -583,9 +588,7 @@ export default function ServicesPage() {
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
                 Tipo de servicio *
                 <select className="h-11 rounded-md border border-line bg-white px-3" value={editForm.service_type} onChange={(event) => setEditForm((prev) => ({ ...prev, service_type: event.target.value }))}>
-                  <option value="montaje">Montaje</option>
-                  <option value="desmontaje">Desmontaje</option>
-                  <option value="ambos">Montaje y desmontaje</option>
+                  {editableServiceTypes.map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}
                 </select>
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">

@@ -10,6 +10,7 @@ type ServiceReference = { id: number | string; code: string; name: string; categ
 type ServiceOrder = { id: number | string; number: string };
 type ServiceOrderCreateResponse = ServiceOrder | { order?: ServiceOrder; data?: ServiceOrder };
 type Technician = { id: number | string; code?: string; user?: { name?: string; email?: string } };
+type ServiceType = { code: string; label: string; active?: boolean };
 type OrderForm = {
   reference_id: string;
   technician_id: string;
@@ -36,6 +37,7 @@ export default function NewServiceOrderPage() {
   const router = useRouter();
   const [references, setReferences] = useState<ServiceReference[]>([]);
   const [technicians, setTechnicians] = useState<Technician[]>([]);
+  const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<OrderForm>({ reference_id: "", technician_id: "", service_type: "montaje", scheduled_date: "", cedi_delivery_date: "", customer_name: "", customer_document: "", customer_phone: "", customer_address: "", invoice_number: "", notes: "" });
@@ -47,10 +49,16 @@ export default function NewServiceOrderPage() {
     }
     Promise.all([
       api<ServiceReference[]>("/api/v1/services/references?active=true"),
-      api<Technician[]>("/api/v1/services/technicians")
-    ]).then(([referenceRows, technicianRows]) => {
+      api<Technician[]>("/api/v1/services/technicians"),
+      api<ServiceType[]>("/api/v1/services/service-types")
+    ]).then(([referenceRows, technicianRows, typeRows]) => {
       setReferences(referenceRows);
       setTechnicians(technicianRows);
+      const activeTypes = typeRows.filter((item) => item.active !== false);
+      setServiceTypes(activeTypes);
+      if (activeTypes.length) {
+        setForm((prev) => activeTypes.some((item) => item.code === prev.service_type) ? prev : { ...prev, service_type: activeTypes[0].code });
+      }
     }).catch((error) => {
       setReferences([]);
       setTechnicians([]);
@@ -105,6 +113,7 @@ export default function NewServiceOrderPage() {
   }
 
   const ref = references.find((item) => String(item.id) === form.reference_id);
+  const selectableServiceTypes = serviceTypes.length ? serviceTypes : [{ code: "montaje", label: "Montaje" }, { code: "desmontaje", label: "Desmontaje" }, { code: "ambos", label: "Montaje y desmontaje" }];
 
   return (
     <div className="mx-auto max-w-3xl space-y-4 pb-32 md:pb-6">
@@ -134,9 +143,7 @@ export default function NewServiceOrderPage() {
           <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
             Tipo de servicio *
             <select className="h-12 w-full min-w-0 rounded-md border border-line bg-white px-3 text-base md:h-10 md:text-sm" required value={form.service_type} onChange={(event) => setForm((prev) => ({ ...prev, service_type: event.target.value }))}>
-              <option value="montaje">Montaje</option>
-              <option value="desmontaje">Desmontaje</option>
-              <option value="ambos">Montaje y desmontaje</option>
+              {selectableServiceTypes.map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}
             </select>
           </label>
           <label className="grid gap-1.5 text-sm font-medium text-neutral-700 md:col-span-2">

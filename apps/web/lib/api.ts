@@ -624,6 +624,95 @@ type SupabaseServiceReferencePart = {
   display_order?: number;
 };
 
+const DEFAULT_SERVICE_TYPES = [
+  { code: "montaje", label: "Montaje", active: true },
+  { code: "desmontaje", label: "Desmontaje", active: true },
+  { code: "ambos", label: "Montaje y desmontaje", active: true }
+];
+const SERVICE_TYPES_REFERENCE_CODE = "__SERVICE_TYPES__";
+
+function serviceTypeCode(value: unknown) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9_-]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function normalizeServiceTypes(rows: unknown) {
+  const source = Array.isArray(rows) && rows.length ? rows : DEFAULT_SERVICE_TYPES;
+  const seen = new Set<string>();
+  return source
+    .map((item) => {
+      const row = item && typeof item === "object" ? item as AnyRow : {};
+      const code = serviceTypeCode(row.code || row.label);
+      const label = String(row.label || row.code || "").trim();
+      return { code, label, active: row.active !== false };
+    })
+    .filter((item) => item.code && item.label && !seen.has(item.code) && seen.add(item.code));
+}
+
+async function currentSupabaseCompanyId() {
+  const employee = await currentSupabaseEmployee().catch(() => null);
+  const membership = employee?.company_id ? null : await currentSupabaseCompanyUser();
+  const companyId = employee?.company_id || membership?.company_id;
+  if (!companyId) throw new Error("No se encontro una empresa activa para servicios.");
+  return companyId;
+}
+
+async function supabaseServiceTypes() {
+  const companyId = await currentSupabaseCompanyId();
+  const rows = await supabaseFetch<Array<{ metadata?: AnyRow }>>(
+    `/rest/v1/service_references?select=metadata&company_id=eq.${encodeURIComponent(companyId)}&code=eq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&limit=1`
+  ).catch(() => []);
+  return normalizeServiceTypes(rows[0]?.metadata?.service_types);
+}
+
+async function saveSupabaseServiceTypes(typesInput: unknown) {
+  if (technicianSession()) throw new Error("El tecnico no puede modificar tipos de servicio.");
+  const companyId = await currentSupabaseCompanyId();
+  const types = normalizeServiceTypes(typesInput);
+  if (!types.some((item) => item.active)) throw new Error("Debe existir al menos un tipo de servicio activo.");
+  const existing = await supabaseFetch<Array<{ id: string; metadata?: AnyRow }>>(
+    `/rest/v1/service_references?select=id,metadata&company_id=eq.${encodeURIComponent(companyId)}&code=eq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&limit=1`
+  );
+  const payload = {
+    company_id: companyId,
+    code: SERVICE_TYPES_REFERENCE_CODE,
+    name: "Tipos de servicio",
+    category: "sistema",
+    description: "Catalogo interno de tipos de servicio configurables.",
+    estimated_minutes: 1,
+    brand: "",
+    model: "",
+    active: false,
+    metadata: { ...(existing[0]?.metadata || {}), service_types: types, system_catalog: true, updated_at: new Date().toISOString() }
+  };
+  if (existing[0]?.id) {
+    await supabaseFetch(`/rest/v1/service_references?id=eq.${encodeURIComponent(existing[0].id)}`, {
+      method: "PATCH",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify(payload)
+    });
+  } else {
+    await supabaseFetch("/rest/v1/service_references", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify(payload)
+    });
+  }
+  return types;
+}
+
+async function ensureSupabaseServiceType(value: unknown) {
+  const code = serviceTypeCode(value);
+  const active = (await supabaseServiceTypes()).filter((item) => item.active);
+  if (!active.some((item) => item.code === code)) throw new Error("Selecciona un tipo de servicio activo.");
+  return code;
+}
+
 function serviceReferencePayload(input: AnyRow, companyId: string) {
   const metadata = input.metadata && typeof input.metadata === "object" ? input.metadata as AnyRow : {};
   return {
@@ -1321,7 +1410,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       ? `&or=(code.ilike.*${encodeURIComponent(textSearch)}*,name.ilike.*${encodeURIComponent(textSearch)}*,brand.ilike.*${encodeURIComponent(textSearch)}*,model.ilike.*${encodeURIComponent(textSearch)}*)`
       : "";
     const refs = await supabaseFetch<SupabaseServiceReference[]>(
-      `/rest/v1/service_references?select=id,company_id,code,name,category,description,estimated_minutes,brand,model,active,metadata&order=code.asc${activeFilter}${categoryFilter}${searchFilter}&limit=500`
+      `/rest/v1/service_references?select=id,company_id,code,name,category,description,estimated_minutes,brand,model,active,metadata&code=neq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&order=code.asc${activeFilter}${categoryFilter}${searchFilter}&limit=500`
     );
     return await hydrateSupabaseServiceReferences(refs) as T;
   }
@@ -1386,6 +1475,13 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       user: { name: [row.first_name, row.last_name].filter(Boolean).join(" ").trim() || String(row.metadata?.name || row.email || "Tecnico"), email: row.email || "" }
     })) as T;
   }
+  if (pathname === "/api/v1/services/service-types") {
+    if (method === "GET") return await supabaseServiceTypes() as T;
+    if (method === "PUT") {
+      const body = JSON.parse(String(options.body || "{}")) as { types?: unknown };
+      return await saveSupabaseServiceTypes(body.types) as T;
+    }
+  }
   if (pathname === "/api/v1/services/orders" && method === "POST") {
     const body = JSON.parse(String(options.body || "{}"));
     if (technicianSession()) throw new Error("El tecnico no puede crear ordenes de servicio.");
@@ -1401,6 +1497,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const referenceId = uuidOrNull(body.reference_id || body.reference_item_id);
     if (!referenceId) throw new Error("Selecciona una referencia valida para crear el servicio.");
     const metadata = body.metadata && typeof body.metadata === "object" ? body.metadata : {};
+    const serviceType = await ensureSupabaseServiceType(body.service_type || "montaje");
     const orderNumber = `OS-${new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14)}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
     const row = {
       company_id: companyId,
@@ -1408,7 +1505,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       reference_id: referenceId,
       technician_employee_id: body.technician_id,
       technician_user_id: null,
-      service_type: body.service_type || "montaje",
+      service_type: serviceType,
       status: "pendiente",
       customer_name: body.customer_name,
       customer_address: body.customer_address,
@@ -1474,7 +1571,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       nextMetadata.reassigned_at = new Date().toISOString();
       nextMetadata.reassigned_by_user_id = currentSupabaseUserId() || null;
     }
-    if (body.service_type != null) patch.service_type = String(body.service_type || "montaje");
+    if (body.service_type != null) patch.service_type = await ensureSupabaseServiceType(body.service_type || "montaje");
     if (body.customer_name != null) patch.customer_name = String(body.customer_name || "").trim();
     if (body.customer_address != null) patch.customer_address = String(body.customer_address || "").trim();
     if (body.customer_phone != null) patch.customer_phone = String(body.customer_phone || "").trim();
@@ -1705,7 +1802,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       ? "id,order_id,evidence_type,file_url,storage_bucket,storage_path,mime_type,size_bytes,metadata,created_at"
       : "id,order_id,evidence_type,storage_bucket,storage_path,mime_type,size_bytes,metadata,created_at";
     const [refs, parts, incidents, evidence, technicians] = await Promise.all([
-      supabaseFetch<Array<{ id: string; code: string; name: string; category?: string; estimated_minutes?: number; brand?: string; model?: string; metadata?: AnyRow }>>("/rest/v1/service_references?select=id,code,name,category,estimated_minutes,brand,model,metadata&limit=200").catch((error) => {
+      supabaseFetch<Array<{ id: string; code: string; name: string; category?: string; estimated_minutes?: number; brand?: string; model?: string; metadata?: AnyRow }>>(`/rest/v1/service_references?select=id,code,name,category,estimated_minutes,brand,model,metadata&code=neq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&limit=200`).catch((error) => {
         safeDevLog("No fue posible consultar referencias de servicios Supabase.", error);
         return [];
       }),

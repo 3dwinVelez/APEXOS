@@ -372,6 +372,76 @@ function referenceInclude() {
   return { parts: { orderBy: { display_order: "asc" } } };
 }
 
+const DEFAULT_SERVICE_TYPES = [
+  { code: "montaje", label: "Montaje", active: true },
+  { code: "desmontaje", label: "Desmontaje", active: true },
+  { code: "ambos", label: "Montaje y desmontaje", active: true }
+];
+
+function serviceTypeCode(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9_-]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function normalizeServiceTypes(rows = []) {
+  const source = Array.isArray(rows) && rows.length ? rows : DEFAULT_SERVICE_TYPES;
+  const seen = new Set();
+  return source
+    .map((item) => {
+      const code = serviceTypeCode(item.code || item.label);
+      const label = String(item.label || item.code || "").trim();
+      return { code, label, active: item.active !== false };
+    })
+    .filter((item) => item.code && item.label && !seen.has(item.code) && seen.add(item.code));
+}
+
+async function configuredServiceTypes(tenantId) {
+  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
+  return normalizeServiceTypes(tenant?.config?.services?.service_types);
+}
+
+async function assertValidServiceType(tenantId, value) {
+  const code = serviceTypeCode(value);
+  const active = (await configuredServiceTypes(tenantId)).filter((item) => item.active);
+  if (!active.some((item) => item.code === code)) {
+    throw appError(400, "INVALID_SERVICE_TYPE", "Selecciona un tipo de servicio activo");
+  }
+  return code;
+}
+
+async function listServiceTypes(tenantId) {
+  return configuredServiceTypes(tenantId);
+}
+
+async function saveServiceTypes(tenantId, user, input = {}) {
+  assertAdministrativeServiceUser(user);
+  const types = normalizeServiceTypes(input.types);
+  if (!types.some((item) => item.active)) throw appError(400, "SERVICE_TYPES_REQUIRED", "Debe existir al menos un tipo de servicio activo");
+  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
+  const config = tenant?.config || {};
+  const updated = await prisma.tenant.update({
+    where: { id: tenantId },
+    data: {
+      config: {
+        ...config,
+        services: {
+          ...(config.services || {}),
+          service_types: types,
+          service_types_updated_at: new Date().toISOString(),
+          service_types_updated_by: user?.id || null
+        }
+      }
+    },
+    select: { config: true }
+  });
+  return normalizeServiceTypes(updated.config?.services?.service_types);
+}
+
 function referenceManuals(input = {}) {
   const metadata = input.metadata && typeof input.metadata === "object" ? input.metadata : {};
   const rawManuals = Array.isArray(input.manuals) ? input.manuals : Array.isArray(metadata.manuals) ? metadata.manuals : [];
@@ -565,6 +635,7 @@ async function createOrder(tenantId, user, input) {
   }
 
   return prisma.runWithTenant(tenantId, async () => {
+    const serviceType = await assertValidServiceType(tenantId, input.service_type || "montaje");
     const technician = await prisma.employee.findFirst({
       where: { id: Number(input.technician_id), active: true, user_type: "tecnico", user: { active: true, role: { name: "Tecnico" } } },
       select: { id: true }
@@ -576,7 +647,7 @@ async function createOrder(tenantId, user, input) {
       reference_item_id: input.reference_item_id,
       reference_id: input.reference_id,
       technician_id: technician.id,
-      service_type: input.service_type || "montaje",
+      service_type: serviceType,
       customer_name: input.customer_name,
       customer_address: input.customer_address,
       customer_phone: input.customer_phone || "",
@@ -622,7 +693,7 @@ async function updateOrder(tenantId, user, id, input = {}) {
       nextMetadata.reassigned_at = new Date().toISOString();
       nextMetadata.reassigned_by = user.id;
     }
-    if (input.service_type != null) data.service_type = String(input.service_type || "montaje");
+    if (input.service_type != null) data.service_type = await assertValidServiceType(tenantId, input.service_type || "montaje");
     if (input.customer_name != null) data.customer_name = String(input.customer_name || "").trim();
     if (input.customer_address != null) data.customer_address = String(input.customer_address || "").trim();
     if (input.customer_phone != null) data.customer_phone = String(input.customer_phone || "").trim();
@@ -963,6 +1034,8 @@ async function listPhotos(tenantId, user, orderId) {
 module.exports = {
   listOrders,
   listTechnicians,
+  listServiceTypes,
+  saveServiceTypes,
   getOrder,
   getOrderReport,
   getOrderReportPdf,
