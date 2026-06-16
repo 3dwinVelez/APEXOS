@@ -97,6 +97,28 @@ const serviceTypesSchema = {
   }
 };
 
+const satisfactionQuestionsSchema = {
+  body: {
+    type: "object",
+    required: ["questions"],
+    properties: {
+      questions: {
+        type: "array",
+        minItems: 1,
+        items: {
+          type: "object",
+          required: ["id", "label"],
+          properties: {
+            id: { type: "string" },
+            label: { type: "string" },
+            active: { type: "boolean" }
+          }
+        }
+      }
+    }
+  }
+};
+
 const referenceBulkImportSchema = {
   body: {
     type: "object",
@@ -213,4 +235,4 @@ const photoSchema = {
   }
 };
 
-module.exports = { orderSchema, orderUpdateSchema, referenceSchema, referenceBulkImportSchema, serviceTypesSchema, startSchema, inspectionSchema, closeSchema, incidentSchema, photoSchema };
+module.exports = { orderSchema, orderUpdateSchema, referenceSchema, referenceBulkImportSchema, serviceTypesSchema, satisfactionQuestionsSchema, startSchema, inspectionSchema, closeSchema, incidentSchema, photoSchema };

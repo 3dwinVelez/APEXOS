@@ -52,16 +52,17 @@ async function requireEvidence(orderId, requiredTypes) {
   }
 }
 
-function requireSatisfactionSurvey(input = {}) {
+async function requireSatisfactionSurvey(tenantId, input = {}) {
   const answers = input.metadata?.satisfaction_survey?.answers;
-  const requiredQuestionIds = new Set(["service_quality", "technician_attention", "final_result"]);
+  const activeQuestions = (await configuredSatisfactionQuestions(tenantId)).filter((question) => question.active);
+  const requiredQuestionIds = new Set(activeQuestions.map((question) => question.id));
   const validQuestionIds = new Set(Array.isArray(answers)
     ? answers
       .filter((answer) => requiredQuestionIds.has(String(answer?.question_id || "")) && Number.isInteger(answer?.rating) && answer.rating >= 1 && answer.rating <= 5)
       .map((answer) => answer.question_id)
     : []);
   if (validQuestionIds.size !== requiredQuestionIds.size) {
-    throw appError(422, "SATISFACTION_SURVEY_REQUIRED", "Completa las 3 preguntas de satisfaccion antes de cerrar el servicio");
+    throw appError(422, "SATISFACTION_SURVEY_REQUIRED", `Completa las ${requiredQuestionIds.size} preguntas de satisfaccion antes de cerrar el servicio`);
   }
 }
 
@@ -378,6 +379,12 @@ const DEFAULT_SERVICE_TYPES = [
   { code: "ambos", label: "Montaje y desmontaje", active: true }
 ];
 
+const DEFAULT_SATISFACTION_QUESTIONS = [
+  { id: "service_quality", label: "Como calificas la calidad del servicio realizado?", active: true },
+  { id: "technician_attention", label: "Como calificas la atencion y claridad del tecnico?", active: true },
+  { id: "final_result", label: "Que tan satisfecho quedaste con el resultado final?", active: true }
+];
+
 function serviceTypeCode(value) {
   return String(value || "")
     .trim()
@@ -386,6 +393,10 @@ function serviceTypeCode(value) {
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9_-]+/g, "_")
     .replace(/^_+|_+$/g, "");
+}
+
+function satisfactionQuestionId(value) {
+  return serviceTypeCode(value);
 }
 
 function normalizeServiceTypes(rows = []) {
@@ -400,9 +411,26 @@ function normalizeServiceTypes(rows = []) {
     .filter((item) => item.code && item.label && !seen.has(item.code) && seen.add(item.code));
 }
 
+function normalizeSatisfactionQuestions(rows = []) {
+  const source = Array.isArray(rows) && rows.length ? rows : DEFAULT_SATISFACTION_QUESTIONS;
+  const seen = new Set();
+  return source
+    .map((item) => {
+      const id = satisfactionQuestionId(item.id || item.label);
+      const label = String(item.label || item.id || "").trim();
+      return { id, label, active: item.active !== false };
+    })
+    .filter((item) => item.id && item.label && !seen.has(item.id) && seen.add(item.id));
+}
+
 async function configuredServiceTypes(tenantId) {
   const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
   return normalizeServiceTypes(tenant?.config?.services?.service_types);
+}
+
+async function configuredSatisfactionQuestions(tenantId) {
+  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
+  return normalizeSatisfactionQuestions(tenant?.config?.services?.satisfaction_questions);
 }
 
 async function assertValidServiceType(tenantId, value) {
@@ -440,6 +468,34 @@ async function saveServiceTypes(tenantId, user, input = {}) {
     select: { config: true }
   });
   return normalizeServiceTypes(updated.config?.services?.service_types);
+}
+
+async function listSatisfactionQuestions(tenantId) {
+  return configuredSatisfactionQuestions(tenantId);
+}
+
+async function saveSatisfactionQuestions(tenantId, user, input = {}) {
+  assertAdministrativeServiceUser(user);
+  const questions = normalizeSatisfactionQuestions(input.questions);
+  if (!questions.some((item) => item.active)) throw appError(400, "SATISFACTION_QUESTIONS_REQUIRED", "Debe existir al menos una pregunta de satisfaccion activa");
+  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
+  const config = tenant?.config || {};
+  const updated = await prisma.tenant.update({
+    where: { id: tenantId },
+    data: {
+      config: {
+        ...config,
+        services: {
+          ...(config.services || {}),
+          satisfaction_questions: questions,
+          satisfaction_questions_updated_at: new Date().toISOString(),
+          satisfaction_questions_updated_by: user?.id || null
+        }
+      }
+    },
+    select: { config: true }
+  });
+  return normalizeSatisfactionQuestions(updated.config?.services?.satisfaction_questions);
 }
 
 function referenceManuals(input = {}) {
@@ -929,7 +985,7 @@ async function moveToExecution(tenantId, user, id) {
 async function closeOrder(tenantId, user, id, input = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const order = await accessibleOrder(tenantId, user, id);
-    requireSatisfactionSurvey(input);
+    await requireSatisfactionSurvey(tenantId, input);
     await requireEvidence(id, ["producto_abierto", "producto_cerrado", "firma_cliente"]);
     const now = new Date();
     const duration = order.started_at ? Math.max(Math.round((now - order.started_at) / 60000), 0) : null;
@@ -1036,6 +1092,8 @@ module.exports = {
   listTechnicians,
   listServiceTypes,
   saveServiceTypes,
+  listSatisfactionQuestions,
+  saveSatisfactionQuestions,
   getOrder,
   getOrderReport,
   getOrderReportPdf,

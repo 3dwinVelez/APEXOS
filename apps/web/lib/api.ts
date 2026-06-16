@@ -629,6 +629,11 @@ const DEFAULT_SERVICE_TYPES = [
   { code: "desmontaje", label: "Desmontaje", active: true },
   { code: "ambos", label: "Montaje y desmontaje", active: true }
 ];
+const DEFAULT_SATISFACTION_QUESTIONS = [
+  { id: "service_quality", label: "Como calificas la calidad del servicio realizado?", active: true },
+  { id: "technician_attention", label: "Como calificas la atencion y claridad del tecnico?", active: true },
+  { id: "final_result", label: "Que tan satisfecho quedaste con el resultado final?", active: true }
+];
 const SERVICE_TYPES_REFERENCE_CODE = "__SERVICE_TYPES__";
 
 function serviceTypeCode(value: unknown) {
@@ -652,6 +657,23 @@ function normalizeServiceTypes(rows: unknown) {
       return { code, label, active: row.active !== false };
     })
     .filter((item) => item.code && item.label && !seen.has(item.code) && seen.add(item.code));
+}
+
+function satisfactionQuestionId(value: unknown) {
+  return serviceTypeCode(value);
+}
+
+function normalizeSatisfactionQuestions(rows: unknown) {
+  const source = Array.isArray(rows) && rows.length ? rows : DEFAULT_SATISFACTION_QUESTIONS;
+  const seen = new Set<string>();
+  return source
+    .map((item) => {
+      const row = item && typeof item === "object" ? item as AnyRow : {};
+      const id = satisfactionQuestionId(row.id || row.label);
+      const label = String(row.label || row.id || "").trim();
+      return { id, label, active: row.active !== false };
+    })
+    .filter((item) => item.id && item.label && !seen.has(item.id) && seen.add(item.id));
 }
 
 async function currentSupabaseCompanyId() {
@@ -704,6 +726,51 @@ async function saveSupabaseServiceTypes(typesInput: unknown) {
     });
   }
   return types;
+}
+
+async function supabaseSatisfactionQuestions() {
+  const companyId = await currentSupabaseCompanyId();
+  const rows = await supabaseFetch<Array<{ metadata?: AnyRow }>>(
+    `/rest/v1/service_references?select=metadata&company_id=eq.${encodeURIComponent(companyId)}&code=eq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&limit=1`
+  ).catch(() => []);
+  return normalizeSatisfactionQuestions(rows[0]?.metadata?.satisfaction_questions);
+}
+
+async function saveSupabaseSatisfactionQuestions(questionsInput: unknown) {
+  if (technicianSession()) throw new Error("El tecnico no puede modificar preguntas de satisfaccion.");
+  const companyId = await currentSupabaseCompanyId();
+  const questions = normalizeSatisfactionQuestions(questionsInput);
+  if (!questions.some((item) => item.active)) throw new Error("Debe existir al menos una pregunta de satisfaccion activa.");
+  const existing = await supabaseFetch<Array<{ id: string; metadata?: AnyRow }>>(
+    `/rest/v1/service_references?select=id,metadata&company_id=eq.${encodeURIComponent(companyId)}&code=eq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&limit=1`
+  );
+  const metadata = existing[0]?.metadata || {};
+  const payload = {
+    company_id: companyId,
+    code: SERVICE_TYPES_REFERENCE_CODE,
+    name: "Parametros de servicio",
+    category: "sistema",
+    description: "Catalogos internos de servicios configurables.",
+    estimated_minutes: 1,
+    brand: "",
+    model: "",
+    active: false,
+    metadata: { ...metadata, satisfaction_questions: questions, system_catalog: true, updated_at: new Date().toISOString() }
+  };
+  if (existing[0]?.id) {
+    await supabaseFetch(`/rest/v1/service_references?id=eq.${encodeURIComponent(existing[0].id)}`, {
+      method: "PATCH",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify(payload)
+    });
+  } else {
+    await supabaseFetch("/rest/v1/service_references", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify(payload)
+    });
+  }
+  return questions;
 }
 
 async function ensureSupabaseServiceType(value: unknown) {
@@ -1482,6 +1549,13 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       return await saveSupabaseServiceTypes(body.types) as T;
     }
   }
+  if (pathname === "/api/v1/services/satisfaction-questions") {
+    if (method === "GET") return await supabaseSatisfactionQuestions() as T;
+    if (method === "PUT") {
+      const body = JSON.parse(String(options.body || "{}")) as { questions?: unknown };
+      return await saveSupabaseSatisfactionQuestions(body.questions) as T;
+    }
+  }
   if (pathname === "/api/v1/services/orders" && method === "POST") {
     const body = JSON.parse(String(options.body || "{}"));
     if (technicianSession()) throw new Error("El tecnico no puede crear ordenes de servicio.");
@@ -1657,14 +1731,15 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       if (missing.length) throw new Error(`Faltan evidencias para cerrar: ${missing.join(", ")}.`);
       if (action === "close") {
         const answers = Array.isArray(body.metadata?.satisfaction_survey?.answers) ? body.metadata.satisfaction_survey.answers : [];
-        const requiredQuestionIds = new Set(["service_quality", "technician_attention", "final_result"]);
+        const requiredQuestions = (await supabaseSatisfactionQuestions()).filter((question) => question.active);
+        const requiredQuestionIds = new Set(requiredQuestions.map((question) => question.id));
         const validQuestionIds = new Set(answers
           .filter((answer: AnyRow) => {
             const rating = Number(answer?.rating);
             return requiredQuestionIds.has(String(answer?.question_id || "")) && Number.isInteger(rating) && rating >= 1 && rating <= 5;
           })
           .map((answer: AnyRow) => String(answer.question_id)));
-        if (validQuestionIds.size !== requiredQuestionIds.size) throw new Error("Completa las 3 preguntas de satisfaccion antes de cerrar el servicio.");
+        if (validQuestionIds.size !== requiredQuestionIds.size) throw new Error(`Completa las ${requiredQuestionIds.size} preguntas de satisfaccion antes de cerrar el servicio.`);
       }
       if (action === "close-not-executed" && !String(body.no_execution_reason || "").trim()) throw new Error("El motivo de no ejecucion es obligatorio.");
       patch.status = action === "close" ? "cerrada" : "no_ejecutada";

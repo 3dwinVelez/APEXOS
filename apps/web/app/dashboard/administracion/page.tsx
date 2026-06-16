@@ -61,6 +61,7 @@ type Role = {
 type RoleScopes = { locations: string[]; areas: string[]; cost_centers: string[]; processes: string[] };
 type MasterOption = { code: string; name: string };
 type ServiceType = { code: string; label: string; active?: boolean };
+type SatisfactionQuestion = { id: string; label: string; active?: boolean };
 type UserMasterData = {
   document_types: MasterOption[];
   user_statuses: MasterOption[];
@@ -312,6 +313,12 @@ const defaultServiceTypes: ServiceType[] = [
   { code: "diagnostico", label: "Diagnostico", active: true }
 ];
 
+const defaultSatisfactionQuestions: SatisfactionQuestion[] = [
+  { id: "service_quality", label: "Como calificas la calidad del servicio realizado?", active: true },
+  { id: "technician_attention", label: "Como calificas la atencion y claridad del tecnico?", active: true },
+  { id: "final_result", label: "Que tan satisfecho quedaste con el resultado final?", active: true }
+];
+
 function normalizeServiceTypeCode(value: string) {
   return value
     .trim()
@@ -322,6 +329,10 @@ function normalizeServiceTypeCode(value: string) {
     .replace(/^_+|_+$/g, "");
 }
 
+function normalizeQuestionId(value: string) {
+  return normalizeServiceTypeCode(value);
+}
+
 function normalizeServiceTypes(items: ServiceType[] = []) {
   const map = new Map<string, ServiceType>();
   items.forEach((item) => {
@@ -329,6 +340,17 @@ function normalizeServiceTypes(items: ServiceType[] = []) {
     const label = String(item.label || item.code || "").trim();
     if (!code || !label) return;
     map.set(code, { code, label, active: item.active !== false });
+  });
+  return Array.from(map.values());
+}
+
+function normalizeSatisfactionQuestions(items: SatisfactionQuestion[] = []) {
+  const map = new Map<string, SatisfactionQuestion>();
+  items.forEach((item) => {
+    const id = normalizeQuestionId(item.id || item.label || "");
+    const label = String(item.label || item.id || "").trim();
+    if (!id || !label) return;
+    map.set(id, { id, label, active: item.active !== false });
   });
   return Array.from(map.values());
 }
@@ -626,6 +648,7 @@ export default function AdministracionPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [masterData, setMasterData] = useState<UserMasterData>(fallbackUserMasterData);
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>(defaultServiceTypes);
+  const [satisfactionQuestions, setSatisfactionQuestions] = useState<SatisfactionQuestion[]>(defaultSatisfactionQuestions);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
   const [roleForm, setRoleForm] = useState(emptyRoleForm([]));
@@ -709,29 +732,33 @@ export default function AdministracionPage() {
 
   const load = useCallback(async () => {
     setMessage("");
-    const [catalogResult, rolesResult, usersResult, masterResult, serviceTypesResult] = await Promise.allSettled([
+    const [catalogResult, rolesResult, usersResult, masterResult, serviceTypesResult, satisfactionQuestionsResult] = await Promise.allSettled([
       api<CatalogItem[]>("/api/v1/admin/permissions/catalog"),
       api<Role[]>("/api/v1/admin/roles"),
       api<AdminUser[]>("/api/v1/admin/users"),
       api<UserMasterData>("/api/v1/admin/user-master-data"),
-      api<ServiceType[]>("/api/v1/services/service-types")
+      api<ServiceType[]>("/api/v1/services/service-types"),
+      api<SatisfactionQuestion[]>("/api/v1/services/satisfaction-questions")
     ]);
     const catalogData = catalogResult.status === "fulfilled" ? catalogResult.value : [];
     const rolesData = rolesResult.status === "fulfilled" ? rolesResult.value : [];
     const usersData = usersResult.status === "fulfilled" ? usersResult.value : [];
     const masterDataResult = masterResult.status === "fulfilled" ? masterResult.value : fallbackUserMasterData;
     const serviceTypesData = serviceTypesResult.status === "fulfilled" ? normalizeServiceTypes(serviceTypesResult.value) : defaultServiceTypes;
+    const satisfactionQuestionsData = satisfactionQuestionsResult.status === "fulfilled" ? normalizeSatisfactionQuestions(satisfactionQuestionsResult.value) : defaultSatisfactionQuestions;
     setCatalog(catalogData);
     setRoles(rolesData);
     setUsers(usersData);
     setMasterData({ ...fallbackUserMasterData, ...masterDataResult });
     setServiceTypes(serviceTypesData.length ? serviceTypesData : defaultServiceTypes);
+    setSatisfactionQuestions(satisfactionQuestionsData.length ? satisfactionQuestionsData : defaultSatisfactionQuestions);
     const errors = [
       catalogResult.status === "rejected" ? "catalogo de permisos" : "",
       rolesResult.status === "rejected" ? "roles" : "",
       usersResult.status === "rejected" ? "usuarios" : "",
       masterResult.status === "rejected" ? "maestros de usuario" : "",
-      serviceTypesResult.status === "rejected" ? "tipos de servicio" : ""
+      serviceTypesResult.status === "rejected" ? "tipos de servicio" : "",
+      satisfactionQuestionsResult.status === "rejected" ? "preguntas de satisfaccion" : ""
     ].filter(Boolean);
     if (errors.length) {
       setMessage(`No fue posible consultar ${errors.join(", ")}. Revisa permisos RLS, empresa activa o conectividad Supabase.`);
@@ -1018,6 +1045,20 @@ export default function AdministracionPage() {
       setCatalogDraft({ catalog: catalogDraft.catalog, code: "", name: "", description: "" });
       return;
     }
+    if (catalogDraft.catalog === "satisfaction_questions") {
+      const id = normalizeQuestionId(catalogDraft.code);
+      if (!id) {
+        setMessage("El codigo de la pregunta debe tener letras o numeros.");
+        return;
+      }
+      const next = normalizeSatisfactionQuestions([
+        ...satisfactionQuestions.filter((item) => item.id !== id),
+        { id, label: catalogDraft.name.trim(), active: true }
+      ]);
+      await saveSatisfactionQuestionCatalog(next, "Pregunta de satisfaccion actualizada.");
+      setCatalogDraft({ catalog: catalogDraft.catalog, code: "", name: "", description: "" });
+      return;
+    }
     const next = await api<UserMasterData>(`/api/v1/admin/user-master-data/${catalogDraft.catalog}/items`, {
       method: "POST",
       body: JSON.stringify({
@@ -1063,6 +1104,37 @@ export default function AdministracionPage() {
     await saveServiceTypeCatalog(serviceTypes.filter((item) => item.code !== code), "Tipo de servicio retirado del maestro.");
   }
 
+  async function saveSatisfactionQuestionCatalog(nextQuestions: SatisfactionQuestion[], successMessage = "Preguntas de satisfaccion actualizadas.") {
+    const normalized = normalizeSatisfactionQuestions(nextQuestions);
+    if (!normalized.length) {
+      setMessage("Debe existir al menos una pregunta de satisfaccion.");
+      return;
+    }
+    if (!normalized.some((item) => item.active !== false)) {
+      setMessage("Debe quedar al menos una pregunta de satisfaccion activa.");
+      return;
+    }
+    const saved = await api<SatisfactionQuestion[]>("/api/v1/services/satisfaction-questions", {
+      method: "PUT",
+      body: JSON.stringify({ questions: normalized })
+    });
+    const cleanSaved = normalizeSatisfactionQuestions(saved);
+    setSatisfactionQuestions(cleanSaved.length ? cleanSaved : normalized);
+    setMessage(successMessage);
+  }
+
+  async function toggleSatisfactionQuestion(id: string) {
+    const next = satisfactionQuestions.map((item) => item.id === id ? { ...item, active: item.active === false } : item);
+    await saveSatisfactionQuestionCatalog(next, "Estado de la pregunta actualizado.");
+  }
+
+  async function removeSatisfactionQuestion(id: string) {
+    const target = satisfactionQuestions.find((item) => item.id === id);
+    if (!target) return;
+    if (!window.confirm(`Confirmas retirar la pregunta "${target.label}" del maestro?`)) return;
+    await saveSatisfactionQuestionCatalog(satisfactionQuestions.filter((item) => item.id !== id), "Pregunta retirada del maestro.");
+  }
+
   function renderMasterCatalogManager() {
     const catalogOptions: Array<[string, string]> = [
       ["user_types", "Tipos de usuario"],
@@ -1076,29 +1148,39 @@ export default function AdministracionPage() {
       ["work_shifts", "Turnos"],
       ["user_document_types", "Tipos documentales"],
       ["banks", "Bancos"],
-      ["service_types", "Tipos de servicio"]
+      ["service_types", "Tipos de servicio"],
+      ["satisfaction_questions", "Preguntas de satisfaccion"]
     ];
     const isServiceTypeCatalog = catalogDraft.catalog === "service_types";
-    const selectedItems = !isServiceTypeCatalog && Array.isArray((masterData as Record<string, unknown>)[catalogDraft.catalog])
+    const isSatisfactionQuestionCatalog = catalogDraft.catalog === "satisfaction_questions";
+    const isOperationalCatalog = isServiceTypeCatalog || isSatisfactionQuestionCatalog;
+    const selectedItems = !isOperationalCatalog && Array.isArray((masterData as Record<string, unknown>)[catalogDraft.catalog])
       ? (((masterData as unknown) as Record<string, MasterOption[]>)[catalogDraft.catalog] || [])
       : [];
     const catalogRows: Array<MasterOption & { active?: boolean }> = isServiceTypeCatalog
       ? serviceTypes.map((item) => ({ code: item.code, name: item.label, active: item.active !== false }))
+      : isSatisfactionQuestionCatalog
+        ? satisfactionQuestions.map((item) => ({ code: item.id, name: item.label, active: item.active !== false }))
       : selectedItems;
     return (
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
         <div className="rounded-md border border-line bg-paper p-3">
           <div className="grid gap-3">
             <SelectField label="Catalogo" value={catalogDraft.catalog} onChange={(value) => setCatalogDraft((current) => ({ ...current, catalog: value }))} options={catalogOptions} />
-            <Field label="Codigo" value={catalogDraft.code} onChange={(value) => setCatalogDraft((current) => ({ ...current, code: current.catalog === "service_types" ? normalizeServiceTypeCode(value) : value.toUpperCase().replace(/\s+/g, "-") }))} />
-            <Field label="Nombre" value={catalogDraft.name} onChange={(value) => setCatalogDraft((current) => ({ ...current, name: value }))} />
+            <Field label="Codigo" value={catalogDraft.code} onChange={(value) => setCatalogDraft((current) => ({ ...current, code: isOperationalCatalog ? normalizeServiceTypeCode(value) : value.toUpperCase().replace(/\s+/g, "-") }))} />
+            <Field label={isSatisfactionQuestionCatalog ? "Pregunta" : "Nombre"} value={catalogDraft.name} onChange={(value) => setCatalogDraft((current) => ({ ...current, name: value }))} />
             <Field label="Descripcion" value={catalogDraft.description} onChange={(value) => setCatalogDraft((current) => ({ ...current, description: value }))} />
             {isServiceTypeCatalog ? (
               <p className="rounded-md border border-apex/20 bg-apex/10 px-3 py-2 text-xs text-neutral-600">
                 Estos tipos se usan en la creacion y edicion de ordenes de servicio. Deja activo solo lo que el operador debe seleccionar.
               </p>
             ) : null}
-            <Button onClick={saveCatalogItem} type="button"><Save size={16} /> {isServiceTypeCatalog ? "Guardar tipo de servicio" : "Guardar maestro"}</Button>
+            {isSatisfactionQuestionCatalog ? (
+              <p className="rounded-md border border-apex/20 bg-apex/10 px-3 py-2 text-xs text-neutral-600">
+                Estas preguntas aparecen en el cierre del servicio y son obligatorias cuando estan activas.
+              </p>
+            ) : null}
+            <Button onClick={saveCatalogItem} type="button"><Save size={16} /> {isServiceTypeCatalog ? "Guardar tipo de servicio" : isSatisfactionQuestionCatalog ? "Guardar pregunta" : "Guardar maestro"}</Button>
           </div>
         </div>
         <div className="max-h-[58vh] overflow-auto rounded-md border border-line">
@@ -1106,9 +1188,9 @@ export default function AdministracionPage() {
             <thead className="sticky top-0 bg-white">
               <tr className="border-b border-line text-left text-xs text-neutral-500">
                 <th className="px-3 py-2">Codigo</th>
-                <th className="px-3 py-2">Nombre</th>
-                {isServiceTypeCatalog ? <th className="px-3 py-2">Estado</th> : null}
-                {isServiceTypeCatalog ? <th className="px-3 py-2 text-right">Accion</th> : null}
+                <th className="px-3 py-2">{isSatisfactionQuestionCatalog ? "Pregunta" : "Nombre"}</th>
+                {isOperationalCatalog ? <th className="px-3 py-2">Estado</th> : null}
+                {isOperationalCatalog ? <th className="px-3 py-2 text-right">Accion</th> : null}
               </tr>
             </thead>
             <tbody>
@@ -1116,20 +1198,20 @@ export default function AdministracionPage() {
                 <tr className="border-b border-line/70" key={item.code}>
                   <td className="px-3 py-2 font-mono text-xs">{item.code}</td>
                   <td className="px-3 py-2">{item.name}</td>
-                  {isServiceTypeCatalog ? (
+                  {isOperationalCatalog ? (
                     <td className="px-3 py-2">
                       <span className={`rounded-md px-2 py-1 text-xs font-semibold ${item.active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>
                         {item.active ? "Activo" : "Inactivo"}
                       </span>
                     </td>
                   ) : null}
-                  {isServiceTypeCatalog ? (
+                  {isOperationalCatalog ? (
                     <td className="px-3 py-2">
                       <div className="flex justify-end gap-2">
-                        <button className="rounded-md border border-line px-2 py-1 text-xs font-semibold hover:bg-paper" onClick={() => toggleServiceType(item.code)} type="button">
+                        <button className="rounded-md border border-line px-2 py-1 text-xs font-semibold hover:bg-paper" onClick={() => isServiceTypeCatalog ? toggleServiceType(item.code) : toggleSatisfactionQuestion(item.code)} type="button">
                           {item.active ? "Inactivar" : "Activar"}
                         </button>
-                        <button className="rounded-md border border-rose-200 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50" onClick={() => removeServiceType(item.code)} type="button">
+                        <button className="rounded-md border border-rose-200 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50" onClick={() => isServiceTypeCatalog ? removeServiceType(item.code) : removeSatisfactionQuestion(item.code)} type="button">
                           Retirar
                         </button>
                       </div>
@@ -1137,9 +1219,9 @@ export default function AdministracionPage() {
                   ) : null}
                 </tr>
               ))}
-              {isServiceTypeCatalog && !serviceTypes.length ? (
+              {isOperationalCatalog && !catalogRows.length ? (
                 <tr>
-                  <td className="px-3 py-6 text-center text-sm text-neutral-500" colSpan={4}>No hay tipos de servicio configurados.</td>
+                  <td className="px-3 py-6 text-center text-sm text-neutral-500" colSpan={4}>No hay registros configurados.</td>
                 </tr>
               ) : null}
             </tbody>
