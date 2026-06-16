@@ -24,6 +24,7 @@ async function servicesRoutes(fastify) {
       .send(pdf.buffer);
   });
   fastify.post("/services/orders", { schema: schemas.orderSchema, preHandler: requirePermission("services", "write") }, (request) => service.createOrder(request.user?.tenant_id, request.user, request.body));
+  fastify.put("/services/orders/:id", { schema: schemas.orderUpdateSchema, preHandler: requirePermission("services", "write") }, (request) => service.updateOrder(request.user?.tenant_id, request.user, request.params.id, request.body));
   fastify.patch("/services/orders/:id/start", { schema: schemas.startSchema, preHandler: requirePermission("services", "write") }, (request) => service.startOrder(request.user?.tenant_id, request.user, request.params.id, request.body));
   fastify.patch("/services/orders/:id/inspection", { schema: schemas.inspectionSchema, preHandler: requirePermission("services", "write") }, (request) => service.moveToInspection(request.user?.tenant_id, request.user, request.params.id, request.body));
   fastify.patch("/services/orders/:id/execution", { preHandler: requirePermission("services", "write") }, (request) => service.moveToExecution(request.user?.tenant_id, request.user, request.params.id));

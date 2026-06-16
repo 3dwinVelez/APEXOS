@@ -494,8 +494,8 @@ async function accessibleSupabaseServiceOrder(orderId: string) {
   }
   const technicianFilter = employee ? `&technician_employee_id=eq.${encodeURIComponent(employee.id)}` : "";
   const activeFilter = technicianSession() ? "&status=in.(pendiente,en_curso,inspeccion,ejecucion)" : "";
-  const rows = await supabaseFetch<Array<{ id: string; company_id: string; started_at?: string; metadata?: AnyRow }>>(
-    `/rest/v1/service_orders?select=id,company_id,started_at,metadata&id=eq.${encodeURIComponent(orderId)}${technicianFilter}${activeFilter}&limit=1`
+  const rows = await supabaseFetch<Array<{ id: string; company_id: string; status?: string; started_at?: string; metadata?: AnyRow }>>(
+    `/rest/v1/service_orders?select=id,company_id,status,started_at,metadata&id=eq.${encodeURIComponent(orderId)}${technicianFilter}${activeFilter}&limit=1`
   );
   if (!rows[0]) throw new Error("No se encontro el servicio o no tienes permisos para operarlo.");
   return rows[0];
@@ -1439,6 +1439,66 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     });
     if (!inserted[0]?.id) throw new Error("El servicio se envio, pero Supabase no retorno la orden creada.");
     return inserted[0] as T;
+  }
+
+  if (serviceOrderDetailMatch && method === "PUT") {
+    const orderId = serviceOrderDetailMatch[1];
+    const body = JSON.parse(String(options.body || "{}")) as AnyRow;
+    if (technicianSession()) throw new Error("El tecnico no puede editar ordenes de servicio.");
+    const current = await accessibleSupabaseServiceOrder(orderId);
+    if (["cerrada", "no_ejecutada"].includes(String(current.status || ""))) {
+      throw new Error("Las ordenes finalizadas no se pueden editar para proteger la trazabilidad.");
+    }
+    const metadata = current.metadata && typeof current.metadata === "object" ? current.metadata as AnyRow : {};
+    const bodyMetadata = body.metadata && typeof body.metadata === "object" ? body.metadata as AnyRow : {};
+    const patch: AnyRow = {};
+    const nextMetadata: AnyRow = { ...metadata, ...bodyMetadata };
+    const referenceId = body.reference_id ? uuidOrNull(body.reference_id) : null;
+    if (body.reference_id && !referenceId) throw new Error("Selecciona una referencia valida.");
+    if (referenceId) {
+      const references = await supabaseFetch<Array<{ id: string }>>(
+        `/rest/v1/service_references?select=id&id=eq.${encodeURIComponent(referenceId)}&active=eq.true&limit=1`
+      );
+      if (!references[0]?.id) throw new Error("Selecciona una referencia activa.");
+      patch.reference_id = referenceId;
+    }
+    if (body.technician_id) {
+      const technicianId = uuidOrNull(body.technician_id);
+      if (!technicianId) throw new Error("Selecciona un tecnico operativo activo.");
+      const technicians = await supabaseFetch<Array<{ id: string; user_id?: string }>>(
+        `/rest/v1/employees?select=id,user_id&id=eq.${encodeURIComponent(technicianId)}&status=eq.active&user_type=eq.tecnico&limit=1`
+      );
+      if (!technicians[0]?.id) throw new Error("Selecciona un tecnico operativo activo.");
+      patch.technician_employee_id = technicianId;
+      patch.technician_user_id = technicians[0].user_id || null;
+      nextMetadata.reassigned_at = new Date().toISOString();
+      nextMetadata.reassigned_by_user_id = currentSupabaseUserId() || null;
+    }
+    if (body.service_type != null) patch.service_type = String(body.service_type || "montaje");
+    if (body.customer_name != null) patch.customer_name = String(body.customer_name || "").trim();
+    if (body.customer_address != null) patch.customer_address = String(body.customer_address || "").trim();
+    if (body.customer_phone != null) patch.customer_phone = String(body.customer_phone || "").trim();
+    if (body.invoice_number != null) patch.invoice_number = String(body.invoice_number || "").trim();
+    if (body.notes != null) patch.notes = String(body.notes || "").trim();
+    if (body.scheduled_date != null && String(body.scheduled_date).trim()) patch.scheduled_date = String(body.scheduled_date).slice(0, 10);
+    if (body.customer_document != null) {
+      if (!/^\d+$/.test(String(body.customer_document))) throw new Error("La cedula del cliente debe contener solo numeros.");
+      nextMetadata.customer_document = String(body.customer_document);
+    }
+    if (body.cedi_delivery_date != null && String(body.cedi_delivery_date).trim()) {
+      nextMetadata.cedi_delivery_date = String(body.cedi_delivery_date).slice(0, 10);
+    }
+    patch.metadata = {
+      ...nextMetadata,
+      last_admin_edit_at: new Date().toISOString(),
+      last_admin_edit_by_user_id: currentSupabaseUserId() || null
+    };
+    await supabaseFetch<void>(`/rest/v1/service_orders?id=eq.${encodeURIComponent(orderId)}`, {
+      method: "PATCH",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify(patch)
+    });
+    return await supabaseApiFallback<T>(`/api/v1/services/orders/${orderId}`);
   }
 
   if (serviceOrderActionMatch && method === "PATCH") {

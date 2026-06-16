@@ -276,7 +276,7 @@ export default function ServiceReferencesPage() {
           <Link className="mb-3 inline-flex h-11 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-medium text-neutral-600 hover:text-apex md:border-0 md:bg-transparent md:px-0" href="/dashboard/servicios"><ArrowLeft size={16} /> Volver a servicios</Link>
           <p className="text-sm font-medium text-apex">Servicios</p>
           <h1 className="text-2xl font-semibold md:text-3xl">Referencias de servicio</h1>
-          <p className="mt-2 max-w-3xl text-sm text-neutral-600">Maestro tecnico para modelos, piezas, tiempos, manuales, guias y carga masiva por CSV.</p>
+          <p className="mt-2 max-w-3xl text-sm text-neutral-600">Maestro tecnico para modelos, listas de piezas, tiempos, manuales, guias y carga masiva por CSV.</p>
         </div>
       </header>
 
@@ -289,8 +289,8 @@ export default function ServiceReferencesPage() {
             <div className="mb-3 inline-flex items-center gap-2 rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-teal-100">
               <Sparkles size={14} /> Maestro tecnico de servicios
             </div>
-            <h2 className="max-w-3xl text-2xl font-semibold leading-tight sm:text-3xl">Referencias listas para consultar y mantener</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/65">Compara fichas tecnicas, piezas, tiempos y documentos sin abrir cada referencia. Edita solo cuando sea necesario.</p>
+            <h2 className="max-w-3xl text-2xl font-semibold leading-tight sm:text-3xl">Referencias y listas listas para mantener</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/65">Compara fichas tecnicas, listas de piezas, tiempos y documentos sin abrir cada referencia. Edita solo cuando el maestro cambie.</p>
           </div>
           <div className="grid shrink-0 grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             <button className="dark-primary-action col-span-2 inline-flex h-11 items-center justify-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-[#081411] sm:col-span-1" onClick={reset} type="button"><Plus size={17} /> Nueva referencia</button>
@@ -362,7 +362,7 @@ export default function ServiceReferencesPage() {
               <h2 className="font-semibold">Maestro de referencias</h2>
               <p className="text-sm text-neutral-500">{filtered.length} de {references.length} referencia(s) visibles</p>
             </div>
-            <p className="hidden text-xs font-medium text-neutral-500 md:block">Selecciona una referencia para editar su ficha tecnica.</p>
+            <p className="hidden text-xs font-medium text-neutral-500 md:block">Selecciona una referencia para editar su ficha y listas de servicio.</p>
           </div>
 
           <div className="grid gap-3 md:hidden">
@@ -423,7 +423,7 @@ export default function ServiceReferencesPage() {
                       </td>
                       <td className="px-4 py-3 align-top"><p className="inline-flex items-center gap-2 font-medium text-neutral-800"><Clock3 size={15} className="text-neutral-400" /> {reference.estimated_minutes} min</p></td>
                       <td className="px-4 py-3 text-right align-middle">
-                        <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-white px-3 text-xs font-semibold text-apex shadow-sm transition group-hover:border-apex" onClick={() => edit(reference)} type="button">Editar ficha <ChevronRight size={14} /></button>
+                        <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-white px-3 text-xs font-semibold text-apex shadow-sm transition group-hover:border-apex" onClick={() => edit(reference)} type="button">Editar listas <ChevronRight size={14} /></button>
                       </td>
                     </tr>
                   ))}
@@ -467,7 +467,7 @@ export default function ServiceReferencesPage() {
 
             <section className="rounded-md border border-line p-3">
               <div className="mb-3 grid gap-2 sm:flex sm:items-center sm:justify-between">
-                <div><h2 className="text-sm font-semibold">Piezas para inspeccion</h2><p className="text-xs text-neutral-500">Estas piezas aparecen al tecnico durante la validacion.</p></div>
+              <div><h2 className="text-sm font-semibold">Lista de piezas para inspeccion</h2><p className="text-xs text-neutral-500">Estas piezas aparecen al tecnico durante la validacion y se actualizan en nuevas ordenes.</p></div>
                 <button className="h-11 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => setForm((prev) => ({ ...prev, parts: [...prev.parts, { ...emptyPart }] }))} type="button">Agregar pieza</button>
               </div>
               <div className="space-y-2">

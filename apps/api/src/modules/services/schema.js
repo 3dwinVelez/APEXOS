@@ -20,6 +20,13 @@ const orderSchema = {
   }
 };
 
+const orderUpdateSchema = {
+  body: {
+    type: "object",
+    properties: orderSchema.body.properties
+  }
+};
+
 const referenceSchema = {
   body: {
     type: "object",
@@ -184,4 +191,4 @@ const photoSchema = {
   }
 };
 
-module.exports = { orderSchema, referenceSchema, referenceBulkImportSchema, startSchema, inspectionSchema, closeSchema, incidentSchema, photoSchema };
+module.exports = { orderSchema, orderUpdateSchema, referenceSchema, referenceBulkImportSchema, startSchema, inspectionSchema, closeSchema, incidentSchema, photoSchema };

@@ -595,6 +595,66 @@ async function createOrder(tenantId, user, input) {
   });
 }
 
+async function updateOrder(tenantId, user, id, input = {}) {
+  assertAdministrativeServiceUser(user);
+  return prisma.runWithTenant(tenantId, async () => {
+    const order = await accessibleOrder(tenantId, user, id);
+    if (["cerrada", "no_ejecutada"].includes(order.status)) {
+      throw appError(409, "SERVICE_ORDER_FINALIZED", "Las ordenes finalizadas no se pueden editar para proteger la trazabilidad");
+    }
+
+    const metadata = order.metadata || {};
+    const data = {};
+    const nextMetadata = { ...metadata, ...(input.metadata || {}) };
+
+    if (input.reference_id != null && String(input.reference_id).trim() !== "") {
+      const reference = await prisma.serviceReference.findFirst({ where: { id: Number(input.reference_id), active: true }, select: { id: true } });
+      if (!reference) throw appError(400, "INVALID_SERVICE_REFERENCE", "Selecciona una referencia activa");
+      data.reference_id = reference.id;
+    }
+    if (input.technician_id != null && String(input.technician_id).trim() !== "") {
+      const technician = await prisma.employee.findFirst({
+        where: { id: Number(input.technician_id), active: true, user_type: "tecnico", user: { active: true, role: { name: "Tecnico" } } },
+        select: { id: true }
+      });
+      if (!technician) throw appError(400, "INVALID_SERVICE_TECHNICIAN", "Selecciona un tecnico operativo activo");
+      data.technician_id = technician.id;
+      nextMetadata.reassigned_at = new Date().toISOString();
+      nextMetadata.reassigned_by = user.id;
+    }
+    if (input.service_type != null) data.service_type = String(input.service_type || "montaje");
+    if (input.customer_name != null) data.customer_name = String(input.customer_name || "").trim();
+    if (input.customer_address != null) data.customer_address = String(input.customer_address || "").trim();
+    if (input.customer_phone != null) data.customer_phone = String(input.customer_phone || "").trim();
+    if (input.invoice_number != null) data.invoice_number = String(input.invoice_number || "").trim();
+    if (input.notes != null) data.notes = String(input.notes || "").trim();
+    if (input.scheduled_date != null && String(input.scheduled_date).trim() !== "") {
+      if (Number.isNaN(new Date(input.scheduled_date).getTime())) throw appError(400, "INVALID_SERVICE_DATES", "La fecha programada debe ser valida");
+      data.scheduled_date = new Date(input.scheduled_date);
+    }
+    if (input.customer_document != null) {
+      if (!/^\d+$/.test(String(input.customer_document))) throw appError(400, "INVALID_CUSTOMER_DOCUMENT", "La cedula del cliente debe contener solo numeros");
+      nextMetadata.customer_document = String(input.customer_document);
+    }
+    if (input.cedi_delivery_date != null && String(input.cedi_delivery_date).trim() !== "") {
+      if (Number.isNaN(new Date(input.cedi_delivery_date).getTime())) throw appError(400, "INVALID_SERVICE_DATES", "La fecha de entrega CEDI debe ser valida");
+      nextMetadata.cedi_delivery_date = String(input.cedi_delivery_date).slice(0, 10);
+    }
+
+    data.metadata = {
+      ...nextMetadata,
+      last_admin_edit_at: new Date().toISOString(),
+      last_admin_edit_by: user.id
+    };
+
+    return prisma.serviceOrder.update({
+      where: { id: order.id },
+      data,
+      include: orderInclude()
+    });
+  });
+}
+
 async function listReferences(tenantId, query = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const rows = await prisma.serviceReference.findMany({
@@ -907,6 +967,7 @@ module.exports = {
   getOrderReport,
   getOrderReportPdf,
   createOrder,
+  updateOrder,
   listReferences,
   getReference,
   createReference,
