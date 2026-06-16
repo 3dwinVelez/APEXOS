@@ -2,6 +2,14 @@
 
 ## Cambios aplicados
 
+- La entrada principal se simplifico como centro operativo de lectura rapida, con encabezado compacto, dos acciones prioritarias y cuatro indicadores esenciales.
+- Los accesos a Marcacion, Planeacion, Mapa GPS, Reportes y Nomina usan bloques compactos con iconos y una descripcion breve de su funcion.
+- El monitor de horarios presenta tabla profesional en escritorio y tarjetas tactiles en movil para comparar equipo, eventos, senal y estado operativo.
+- La consulta permite buscar por placa, persona o estado y filtrar por prioridad operativa, horarios activos, ausencia de eventos o personas sin senal.
+- Los horarios que requieren atencion se priorizan automaticamente; el detalle cronologico permanece en un panel separado para no saturar la vista principal.
+- La pantalla administrativa Asignar horarios usa indicadores compactos y una tabla comparativa con filtros por persona/sede/placa, tipo de jornada, estado y fecha.
+- La consulta administrativa conserva el historial completo de horarios y agrega sobre cada registro la trazabilidad disponible del dia, sin ocultar jornadas pasadas.
+- Crear, editar y clonar horarios permanece en una ventana separada y guiada visualmente, diferenciando jornadas administrativas de sede fija y jornadas operativas con recurso movil.
 - Marcaciones mantiene enfoque movil con acciones tactiles y separacion entre marcar e historial.
 - El mapa GPS usa coordenadas reales, enlace correcto a Google Maps y trazado de rutas.
 - Planeacion de rutas se reorganizo como panel con KPIs, listado y acciones en ventanas flotantes.
@@ -19,6 +27,7 @@
 - Se agregaron escenarios demo para validar mapa historico, recorrido por marcaciones y ultima huella offline:
   - `node scripts/seed-hr-map-demo.js`
   - `node scripts/validate-hr-map-demo.js`
+- Los controles blancos ubicados sobre encabezados y paneles oscuros conservan su tratamiento inverso al alternar el tema, evitando perdida de contraste en el acceso a Marcacion y en los filtros del mapa.
 
 ## Regla de experiencia
 

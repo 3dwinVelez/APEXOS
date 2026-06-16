@@ -3,12 +3,11 @@
 import { api } from "@/lib/api";
 import { Activity, AlertTriangle, CalendarDays, Camera, CheckCircle2, FileText, MapPinned, Navigation, RefreshCw, Route, Smartphone, Truck, Users, X } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
-type Schedule = { id: number };
 type Attendance = { user_name: string; next_type: string | null; punches: Array<{ id: number }> };
-type Workday = { id: number; inconsistent: boolean };
 type Employee = { id: number };
 type Vehicle = { id: number };
 type TimeRoute = { id: number | string; vehicle_plate: string; employees: string[]; start_time: string; end_time: string; status: string };
@@ -84,9 +83,7 @@ function routeLabel(route: RouteMonitor) {
 }
 
 export default function TalentPage() {
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
-  const [workdays, setWorkdays] = useState<Workday[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [routes, setRoutes] = useState<TimeRoute[]>([]);
@@ -97,18 +94,14 @@ export default function TalentPage() {
   async function load() {
     setLoadingMonitor(true);
     const today = new Date().toISOString().slice(0, 10);
-    const [scheduleData, attendanceData, workdayData, employeeData, vehicleData, routeData, operationsData] = await Promise.all([
-      api<Schedule[]>("/api/v1/hr/schedules").catch(() => []),
+    const [attendanceData, employeeData, vehicleData, routeData, operationsData] = await Promise.all([
       api<Attendance[]>("/api/v1/hr/attendance").catch(() => []),
-      api<Workday[]>("/api/v1/hr/workdays").catch(() => []),
       api<Employee[]>("/api/v1/hr/employees").catch(() => []),
       api<Vehicle[]>("/api/v1/transport/vehicles").catch(() => []),
       api<TimeRoute[]>("/api/v1/hr/routes").catch(() => []),
       api<OperationsMap>(`/api/v1/hr/operations-map?date=${today}&minutes=30&footprint_days=30`).catch(() => null)
     ]);
-    setSchedules(scheduleData);
     setAttendance(attendanceData);
-    setWorkdays(workdayData);
     setEmployees(employeeData);
     setVehicles(vehicleData);
     setRoutes(routeData);
@@ -174,32 +167,16 @@ export default function TalentPage() {
   return (
     <div className="space-y-5">
       <section className="overflow-hidden rounded-md bg-[#071417] text-white shadow-sm">
-        <div className="grid gap-5 p-5 lg:grid-cols-[1.05fr_0.95fr] lg:p-6">
-          <div className="flex min-h-[260px] flex-col justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">M-17 - Talento Humano</p>
-              <h1 className="mt-3 max-w-2xl text-3xl font-semibold md:text-4xl">Centro operativo de personal en campo</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/72">{statusMessage} Jornada, horarios, GPS y evidencias quedan conectados en una sola lectura.</p>
-            </div>
-            <div className="mt-5 flex flex-wrap gap-2">
-              <Link className="inline-flex h-11 items-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-[#071417]" href="/dashboard/talento-humano/marcacion"><Smartphone size={16} /> Marcacion movil</Link>
-              <Link className="inline-flex h-11 items-center gap-2 rounded-md border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/dashboard/talento-humano/rutas"><Route size={16} /> Asignar horarios</Link>
-              <Link className="inline-flex h-11 items-center gap-2 rounded-md border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/dashboard/talento-humano/mapa"><MapPinned size={16} /> Mapa GPS</Link>
-            </div>
+        <div className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">M-17 - Talento Humano</p>
+            <h1 className="mt-2 max-w-3xl text-2xl font-semibold sm:text-3xl">Operación de personal y jornadas</h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/65">{statusMessage} Accede directamente a la función que necesitas gestionar.</p>
           </div>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <ApexIndicator icon={<Users size={18} />} label="Personas en campo" value={peopleInField} detail={`${onlinePeople} con senal reciente`} tone="emerald" />
-            <ApexIndicator icon={<Route size={18} />} label="Horarios activos" value={activeRoutes} detail={`${monitorRoutes.length} planeados hoy`} tone="sky" />
-            <ApexIndicator icon={<Activity size={18} />} label="Eventos trazables" value={fieldEvents} detail={`${attendance.length} personas con marcas`} tone="violet" />
-            <ApexIndicator icon={<AlertTriangle size={18} />} label="Alertas operativas" value={openAlerts} detail={`${gpsCoverage}% cobertura GPS`} tone={openAlerts ? "amber" : "emerald"} />
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <Link className="inline-flex h-11 items-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-[#071417]" href="/dashboard/talento-humano/marcacion"><Smartphone size={16} /> Marcación móvil</Link>
+            <Link className="inline-flex h-11 items-center gap-2 rounded-md border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/dashboard/talento-humano/rutas"><Route size={16} /> Nuevo horario</Link>
           </div>
-        </div>
-        <div className="grid border-t border-white/10 sm:grid-cols-4">
-          <HeroStat label="Horarios" value={schedules.length} />
-          <HeroStat label="Vehiculos" value={vehicles.length} />
-          <HeroStat label="Jornadas completas" value={completedMarks} />
-          <HeroStat label="Procesadas" value={workdays.length} />
         </div>
       </section>
 
@@ -209,13 +186,30 @@ export default function TalentPage() {
         </section>
       ) : null}
 
-      <section className="grid gap-3 lg:grid-cols-6">
-        <ActionTile icon={<Smartphone size={20} />} title="Marcacion movil" detail="Jornada, GPS y evidencia de campo." href="/dashboard/talento-humano/marcacion" primary />
-        <ActionTile icon={<Route size={20} />} title="Asignar horarios" detail="Personas, recurso opcional y jornada operativa." href="/dashboard/talento-humano/rutas" />
-        <ActionTile icon={<MapPinned size={20} />} title="Mapa GPS en vivo" detail="Trazabilidad limpia por ruta y persona." href="/dashboard/talento-humano/mapa" />
-        <ActionTile icon={<CalendarDays size={20} />} title="Reportes" detail="Horas, extras y trazabilidad por empleado." href="/dashboard/talento-humano/reportes" />
-        <ActionTile icon={<FileText size={20} />} title="Configuracion nomina" detail="Recargos y conceptos contables." href="/dashboard/talento-humano/nomina" />
-        <ActionTile icon={<Truck size={20} />} title="Maestro de vehiculos" detail="Estado documental de flota." href="/dashboard/transporte" />
+      <section className="rounded-md border border-line bg-white p-4">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-apex">Funciones del módulo</p>
+            <h2 className="mt-1 text-xl font-semibold">¿Qué necesitas gestionar?</h2>
+            <p className="mt-1 text-sm text-neutral-600">Accesos organizados según el trabajo diario del equipo.</p>
+          </div>
+          <span className={`rounded-md px-3 py-1.5 text-xs font-semibold ${openAlerts ? "bg-amber-50 text-amber-900" : "bg-emerald-50 text-emerald-800"}`}>{openAlerts ? `${openAlerts} punto(s) requieren revisión` : "Operación estable"}</span>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <ActionTile icon={<Smartphone size={20} />} title="Registrar jornada" detail="Marcación móvil, GPS y evidencia para personal operativo." href="/dashboard/talento-humano/marcacion" primary />
+          <ActionTile icon={<Route size={20} />} title="Planear y asignar horarios" detail="Organiza personas, jornadas y recursos de campo." href="/dashboard/talento-humano/rutas" primary />
+          <ActionTile icon={<MapPinned size={20} />} title="Supervisar operación en vivo" detail="Consulta ubicación, actividad y trazabilidad por persona." href="/dashboard/talento-humano/mapa" primary />
+          <ActionTile icon={<CalendarDays size={20} />} title="Consultar reportes" detail="Horas laboradas, extras y trazabilidad por empleado." href="/dashboard/talento-humano/reportes" />
+          <ActionTile icon={<FileText size={20} />} title="Configurar nómina" detail="Administra recargos y conceptos contables." href="/dashboard/talento-humano/nomina" />
+          <ActionTile icon={<Truck size={20} />} title="Gestionar vehículos" detail="Consulta disponibilidad y estado documental de la flota." href="/dashboard/transporte" />
+        </div>
+      </section>
+
+      <section className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <CompactMetric icon={<Users size={16} />} label="Personal en campo" value={peopleInField} detail={`${onlinePeople} con señal reciente`} />
+        <CompactMetric icon={<Route size={16} />} label="Horarios activos" value={activeRoutes} detail={`${monitorRoutes.length} planeados hoy`} />
+        <CompactMetric icon={<Activity size={16} />} label="Eventos del día" value={fieldEvents} detail={`${completedMarks} jornadas completas`} />
+        <CompactMetric icon={<MapPinned size={16} />} label="Cobertura GPS" value={`${gpsCoverage}%`} detail={`${operations?.totals.without_gps || 0} personas sin GPS`} alert={openAlerts > 0} />
       </section>
 
       <section className="overflow-hidden rounded-md border border-line bg-white">
@@ -332,7 +326,7 @@ export default function TalentPage() {
                       </div>
                       <div className="min-w-0">
                         {event.evidence?.[0]?.base64_data ? (
-                          <img alt="Evidencia de actividad" className="h-32 w-full rounded-md object-cover" src={event.evidence[0].base64_data} />
+                          <Image alt="Evidencia de actividad" className="h-32 w-full rounded-md object-cover" height={320} src={event.evidence[0].base64_data} unoptimized width={640} />
                         ) : event.evidence?.[0]?.file_url ? (
                           <a className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href={event.evidence[0].file_url} target="_blank" rel="noreferrer"><Camera size={16} /> Ver evidencia</a>
                         ) : (
@@ -352,42 +346,17 @@ export default function TalentPage() {
   );
 }
 
-function ApexIndicator({ icon, label, value, detail, tone }: { icon: ReactNode; label: string; value: number; detail: string; tone: "emerald" | "sky" | "violet" | "amber" }) {
-  const colors = {
-    emerald: "bg-emerald-400/12 text-emerald-200 border-emerald-300/20",
-    sky: "bg-sky-400/12 text-sky-200 border-sky-300/20",
-    violet: "bg-violet-400/12 text-violet-200 border-violet-300/20",
-    amber: "bg-amber-400/12 text-amber-200 border-amber-300/20"
-  };
-  return (
-    <div className={`rounded-md border p-4 ${colors[tone]}`}>
-      <div className="flex items-center justify-between gap-3">
-        <span className="flex h-10 w-10 items-center justify-center rounded-md bg-white/10">{icon}</span>
-        <p className="text-3xl font-semibold text-white">{value}</p>
-      </div>
-      <p className="mt-4 text-sm font-semibold text-white">{label}</p>
-      <p className="mt-1 text-xs text-white/62">{detail}</p>
-    </div>
-  );
-}
-
-function HeroStat({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="border-b border-white/10 p-4 sm:border-b-0 sm:border-r last:border-r-0">
-      <p className="text-2xl font-semibold">{value}</p>
-      <p className="mt-1 text-xs uppercase tracking-wide text-white/55">{label}</p>
-    </div>
-  );
-}
-
 function ActionTile({ icon, title, detail, href, primary = false }: { icon: ReactNode; title: string; detail: string; href: string; primary?: boolean }) {
   return (
-    <Link className={`rounded-md border p-4 transition hover:-translate-y-0.5 hover:shadow-sm ${primary ? "border-apex bg-[#146C6312]" : "border-line bg-white hover:border-apex"}`} href={href}>
-      <span className={`flex h-10 w-10 items-center justify-center rounded-md ${primary ? "bg-apex text-white" : "bg-paper text-apex"}`}>{icon}</span>
-      <p className="mt-4 font-semibold">{title}</p>
-      <p className="mt-1 text-sm text-neutral-600">{detail}</p>
+    <Link className={`flex min-h-28 items-start gap-3 rounded-md border p-4 transition hover:border-apex hover:shadow-sm ${primary ? "border-apex/40 bg-[#146C6312]" : "border-line bg-white"}`} href={href}>
+      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md ${primary ? "bg-apex text-white" : "bg-paper text-apex"}`}>{icon}</span>
+      <span className="min-w-0"><span className="font-semibold">{title}</span><span className="mt-1 block text-sm leading-5 text-neutral-600">{detail}</span></span>
     </Link>
   );
+}
+
+function CompactMetric({ icon, label, value, detail, alert = false }: { icon: ReactNode; label: string; value: number | string; detail: string; alert?: boolean }) {
+  return <div className="flex items-center gap-3 rounded-md border border-line bg-white px-3 py-2.5"><span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${alert ? "bg-amber-50 text-amber-800" : "bg-paper text-apex"}`}>{icon}</span><div className="min-w-0 flex-1"><div className="flex items-baseline justify-between gap-2"><p className="truncate text-xs font-semibold uppercase text-neutral-500">{label}</p><p className="text-lg font-semibold">{value}</p></div><p className="truncate text-xs text-neutral-500">{detail}</p></div></div>;
 }
 
 function MonitorStrip({ label, value, hint }: { label: string; value: number | string; hint: string }) {

@@ -3,6 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { api } from "@/lib/api";
+import { loadModuleAccess } from "@/lib/moduleAccess";
+import { MODULES } from "@/lib/modules";
 import { getUserDocumentUrl, uploadUserDocument } from "@/lib/supabaseStorage";
 import {
   Activity,
@@ -15,12 +17,14 @@ import {
   CreditCard,
   Database,
   Edit3,
+  Filter,
   FileText,
   FolderKanban,
   Link as LinkIcon,
   LockKeyhole,
   Plus,
   RefreshCw,
+  RotateCcw,
   Route,
   Save,
   Search,
@@ -33,7 +37,7 @@ import {
   X
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
 
@@ -56,6 +60,8 @@ type Role = {
 };
 type RoleScopes = { locations: string[]; areas: string[]; cost_centers: string[]; processes: string[] };
 type MasterOption = { code: string; name: string };
+type ServiceType = { code: string; label: string; active?: boolean };
+type SatisfactionQuestion = { id: string; label: string; active?: boolean };
 type UserMasterData = {
   document_types: MasterOption[];
   user_statuses: MasterOption[];
@@ -299,6 +305,56 @@ const fallbackUserMasterData: UserMasterData = {
   banks: [{ code: "BANCOLOMBIA", name: "Bancolombia" }, { code: "BOGOTA", name: "Banco de Bogota" }, { code: "DAVIVIENDA", name: "Davivienda" }]
 };
 
+const defaultServiceTypes: ServiceType[] = [
+  { code: "instalacion", label: "Instalacion", active: true },
+  { code: "mantenimiento", label: "Mantenimiento", active: true },
+  { code: "garantia", label: "Garantia", active: true },
+  { code: "retiro", label: "Retiro", active: true },
+  { code: "diagnostico", label: "Diagnostico", active: true }
+];
+
+const defaultSatisfactionQuestions: SatisfactionQuestion[] = [
+  { id: "service_quality", label: "Como calificas la calidad del servicio realizado?", active: true },
+  { id: "technician_attention", label: "Como calificas la atencion y claridad del tecnico?", active: true },
+  { id: "final_result", label: "Que tan satisfecho quedaste con el resultado final?", active: true }
+];
+
+function normalizeServiceTypeCode(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function normalizeQuestionId(value: string) {
+  return normalizeServiceTypeCode(value);
+}
+
+function normalizeServiceTypes(items: ServiceType[] = []) {
+  const map = new Map<string, ServiceType>();
+  items.forEach((item) => {
+    const code = normalizeServiceTypeCode(item.code || item.label || "");
+    const label = String(item.label || item.code || "").trim();
+    if (!code || !label) return;
+    map.set(code, { code, label, active: item.active !== false });
+  });
+  return Array.from(map.values());
+}
+
+function normalizeSatisfactionQuestions(items: SatisfactionQuestion[] = []) {
+  const map = new Map<string, SatisfactionQuestion>();
+  items.forEach((item) => {
+    const id = normalizeQuestionId(item.id || item.label || "");
+    const label = String(item.label || item.id || "").trim();
+    if (!id || !label) return;
+    map.set(id, { id, label, active: item.active !== false });
+  });
+  return Array.from(map.values());
+}
+
 const categories: ConfigCategory[] = [
   {
     key: "empresa",
@@ -451,28 +507,6 @@ function isSupabaseSession() {
   }
 }
 
-function canManageCompanies() {
-  if (typeof window === "undefined") return false;
-  const email = String(localStorage.getItem("user_email") || "").toLowerCase();
-  if (email.includes("admin") || email.includes("apex")) return true;
-
-  const token = localStorage.getItem("token");
-  if (!token?.includes(".")) return false;
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-    const roleText = [
-      payload.role,
-      payload.app_metadata?.role,
-      payload.user_metadata?.role,
-      payload.user_metadata?.role_name,
-      payload.user_metadata?.profile
-    ].filter(Boolean).join(" ").toLowerCase();
-    return ["admin", "apex", "platform", "super"].some((word) => roleText.includes(word));
-  } catch {
-    return false;
-  }
-}
-
 function statusClass(status: ConfigItem["status"]) {
   if (status === "configurado" || status === "activo") return "bg-emerald-50 text-emerald-700";
   if (status === "restringido") return "bg-rose-50 text-rose-700";
@@ -598,14 +632,23 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
   );
 }
 
+function CompactMetric({ icon, label, value, detail, tone = "default" }: { icon: React.ReactNode; label: string; value: number | string; detail: string; tone?: "default" | "amber" | "red" }) {
+  const toneClass = tone === "red" ? "border-rose-200 bg-rose-50 text-rose-900" : tone === "amber" ? "border-amber-200 bg-amber-50 text-amber-900" : "border-line bg-white text-neutral-800";
+  return <div className={`flex items-center gap-3 rounded-md border p-3 ${toneClass}`}><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white/70 text-apex">{icon}</span><div className="min-w-0"><div className="flex items-baseline gap-2"><p className="text-xl font-semibold">{value}</p><p className="truncate text-sm font-semibold">{label}</p></div><p className="truncate text-xs opacity-70">{detail}</p></div></div>;
+}
+
 export default function AdministracionPage() {
+  const initializedRole = useRef(false);
   const [activeModal, setActiveModal] = useState<"roles" | "users" | "masters" | "info" | null>(null);
   const [selectedConfig, setSelectedConfig] = useState<ConfigItem | null>(null);
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [configStatusFilter, setConfigStatusFilter] = useState("all");
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [masterData, setMasterData] = useState<UserMasterData>(fallbackUserMasterData);
+  const [serviceTypes, setServiceTypes] = useState<ServiceType[]>(defaultServiceTypes);
+  const [satisfactionQuestions, setSatisfactionQuestions] = useState<SatisfactionQuestion[]>(defaultSatisfactionQuestions);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
   const [roleForm, setRoleForm] = useState(emptyRoleForm([]));
@@ -622,6 +665,7 @@ export default function AdministracionPage() {
   const [selectedDocumentFile, setSelectedDocumentFile] = useState<File | null>(null);
   const [catalogDraft, setCatalogDraft] = useState({ catalog: "positions", code: "", name: "", description: "" });
   const [message, setMessage] = useState("");
+  const [platformAdmin, setPlatformAdmin] = useState(false);
 
   const selectedRole = useMemo(() => roles.find((role) => role.id === selectedRoleId) || null, [roles, selectedRoleId]);
   const selectedUser = useMemo(() => users.find((user) => user.id === selectedUserId) || null, [users, selectedUserId]);
@@ -636,18 +680,17 @@ export default function AdministracionPage() {
     });
   }, [userSearch, userStatusFilter, users]);
   const currentUserStep = Math.max(0, userSteps.findIndex((step) => step.key === userTab));
-  const filteredCategories = useMemo(() => {
-    return categories
-      .filter((category) => categoryFilter === "all" || category.key === categoryFilter)
-      .map((category) => ({
-        ...category,
-        items: category.items.filter((item) => {
-          const text = `${category.title} ${item.title} ${item.description}`.toLowerCase();
-          return text.includes(query.trim().toLowerCase());
-        })
-      }))
-      .filter((category) => category.items.length > 0);
-  }, [categoryFilter, query]);
+  const configItems = useMemo(() => categories.flatMap((category) => category.items.map((item) => ({ ...item, categoryKey: category.key, categoryTitle: category.title, categoryIcon: category.icon }))), []);
+  const filteredConfigItems = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    return configItems.filter((item) => {
+      if (item.key === "empresas" && !platformAdmin) return false;
+      const matchesCategory = categoryFilter === "all" || item.categoryKey === categoryFilter;
+      const matchesStatus = configStatusFilter === "all" || item.status === configStatusFilter;
+      const text = `${item.categoryTitle} ${item.title} ${item.description}`.toLowerCase();
+      return matchesCategory && matchesStatus && (!term || text.includes(term));
+    });
+  }, [categoryFilter, configItems, configStatusFilter, platformAdmin, query]);
   const metrics = useMemo(() => {
     const active = users.filter((user) => user.active).length;
     const inactive = users.length - active;
@@ -673,41 +716,56 @@ export default function AdministracionPage() {
     const critical = Object.values(roleForm.permissions).reduce((sum, actionsMap) => sum + ["delete", "administer", "configure", "sensitive", "manage_users", "manage_roles"].filter((action) => actionsMap?.[action]).length, 0);
     return { modules, actions, critical };
   }, [roleForm.permissions]);
+  const configuredItems = configItems.filter((item) => item.status === "configurado" || item.status === "activo").length;
+  const pendingItems = configItems.filter((item) => item.status === "pendiente").length;
+  const activeConfigFilters = [query.trim(), categoryFilter !== "all" ? categoryFilter : "", configStatusFilter !== "all" ? configStatusFilter : ""].filter(Boolean).length;
+
+  function clearConfigFilters() {
+    setQuery("");
+    setCategoryFilter("all");
+    setConfigStatusFilter("all");
+  }
 
   function setUserField<K extends keyof UserForm>(key: K, value: UserForm[K]) {
     setUserForm((current) => ({ ...current, [key]: value }));
   }
 
-  async function load() {
+  const load = useCallback(async () => {
     setMessage("");
-    const [catalogResult, rolesResult, usersResult, masterResult] = await Promise.allSettled([
+    const [catalogResult, rolesResult, usersResult, masterResult, serviceTypesResult, satisfactionQuestionsResult] = await Promise.allSettled([
       api<CatalogItem[]>("/api/v1/admin/permissions/catalog"),
       api<Role[]>("/api/v1/admin/roles"),
       api<AdminUser[]>("/api/v1/admin/users"),
-      api<UserMasterData>("/api/v1/admin/user-master-data")
+      api<UserMasterData>("/api/v1/admin/user-master-data"),
+      api<ServiceType[]>("/api/v1/services/service-types"),
+      api<SatisfactionQuestion[]>("/api/v1/services/satisfaction-questions")
     ]);
     const catalogData = catalogResult.status === "fulfilled" ? catalogResult.value : [];
     const rolesData = rolesResult.status === "fulfilled" ? rolesResult.value : [];
     const usersData = usersResult.status === "fulfilled" ? usersResult.value : [];
     const masterDataResult = masterResult.status === "fulfilled" ? masterResult.value : fallbackUserMasterData;
+    const serviceTypesData = serviceTypesResult.status === "fulfilled" ? normalizeServiceTypes(serviceTypesResult.value) : defaultServiceTypes;
+    const satisfactionQuestionsData = satisfactionQuestionsResult.status === "fulfilled" ? normalizeSatisfactionQuestions(satisfactionQuestionsResult.value) : defaultSatisfactionQuestions;
     setCatalog(catalogData);
     setRoles(rolesData);
     setUsers(usersData);
     setMasterData({ ...fallbackUserMasterData, ...masterDataResult });
+    setServiceTypes(serviceTypesData.length ? serviceTypesData : defaultServiceTypes);
+    setSatisfactionQuestions(satisfactionQuestionsData.length ? satisfactionQuestionsData : defaultSatisfactionQuestions);
     const errors = [
       catalogResult.status === "rejected" ? "catalogo de permisos" : "",
       rolesResult.status === "rejected" ? "roles" : "",
       usersResult.status === "rejected" ? "usuarios" : "",
-      masterResult.status === "rejected" ? "maestros de usuario" : ""
+      masterResult.status === "rejected" ? "maestros de usuario" : "",
+      serviceTypesResult.status === "rejected" ? "tipos de servicio" : "",
+      satisfactionQuestionsResult.status === "rejected" ? "preguntas de satisfaccion" : ""
     ].filter(Boolean);
     if (errors.length) {
       setMessage(`No fue posible consultar ${errors.join(", ")}. Revisa permisos RLS, empresa activa o conectividad Supabase.`);
     }
-    if (isSupabaseSession() && !canManageCompanies()) {
-      setMessage("Sesion empresa activa. La gestion de empresas y modulos requiere permisos de administrador de plataforma.");
-    }
     const initialRole = rolesData.find((role) => role.name !== "APEX_ADMIN") || rolesData[0];
-    if (!selectedRoleId && initialRole) {
+    if (initialRole && !initializedRole.current) {
+      initializedRole.current = true;
       setSelectedRoleId(initialRole.id);
       setRoleForm({
         ...emptyRoleForm(catalogData),
@@ -724,10 +782,16 @@ export default function AdministracionPage() {
         permissions: initialRole.permissions || emptyPermissions(catalogData)
       });
     }
-  }
+  }, []);
 
   useEffect(() => {
     load().catch((error) => setMessage(error.message));
+  }, [load]);
+
+  useEffect(() => {
+    loadModuleAccess(MODULES)
+      .then((access) => setPlatformAdmin(access.isPlatformAdmin))
+      .catch(() => setPlatformAdmin(false));
   }, []);
 
   function openConfig(item: ConfigItem) {
@@ -967,6 +1031,34 @@ export default function AdministracionPage() {
       setMessage("Catalogo, codigo y nombre son obligatorios.");
       return;
     }
+    if (catalogDraft.catalog === "service_types") {
+      const code = normalizeServiceTypeCode(catalogDraft.code);
+      if (!code) {
+        setMessage("El codigo del tipo de servicio debe tener letras o numeros.");
+        return;
+      }
+      const next = normalizeServiceTypes([
+        ...serviceTypes.filter((item) => item.code !== code),
+        { code, label: catalogDraft.name.trim(), active: true }
+      ]).sort((a, b) => a.label.localeCompare(b.label));
+      await saveServiceTypeCatalog(next, "Tipo de servicio actualizado.");
+      setCatalogDraft({ catalog: catalogDraft.catalog, code: "", name: "", description: "" });
+      return;
+    }
+    if (catalogDraft.catalog === "satisfaction_questions") {
+      const id = normalizeQuestionId(catalogDraft.code);
+      if (!id) {
+        setMessage("El codigo de la pregunta debe tener letras o numeros.");
+        return;
+      }
+      const next = normalizeSatisfactionQuestions([
+        ...satisfactionQuestions.filter((item) => item.id !== id),
+        { id, label: catalogDraft.name.trim(), active: true }
+      ]);
+      await saveSatisfactionQuestionCatalog(next, "Pregunta de satisfaccion actualizada.");
+      setCatalogDraft({ catalog: catalogDraft.catalog, code: "", name: "", description: "" });
+      return;
+    }
     const next = await api<UserMasterData>(`/api/v1/admin/user-master-data/${catalogDraft.catalog}/items`, {
       method: "POST",
       body: JSON.stringify({
@@ -981,6 +1073,68 @@ export default function AdministracionPage() {
     setMessage("Maestro actualizado.");
   }
 
+  async function saveServiceTypeCatalog(nextTypes: ServiceType[], successMessage = "Tipos de servicio actualizados.") {
+    const normalized = normalizeServiceTypes(nextTypes);
+    if (!normalized.length) {
+      setMessage("Debe existir al menos un tipo de servicio.");
+      return;
+    }
+    if (!normalized.some((item) => item.active !== false)) {
+      setMessage("Debe quedar al menos un tipo de servicio activo.");
+      return;
+    }
+    const saved = await api<ServiceType[]>("/api/v1/services/service-types", {
+      method: "PUT",
+      body: JSON.stringify({ types: normalized })
+    });
+    const cleanSaved = normalizeServiceTypes(saved);
+    setServiceTypes(cleanSaved.length ? cleanSaved : normalized);
+    setMessage(successMessage);
+  }
+
+  async function toggleServiceType(code: string) {
+    const next = serviceTypes.map((item) => item.code === code ? { ...item, active: item.active === false } : item);
+    await saveServiceTypeCatalog(next, "Estado del tipo de servicio actualizado.");
+  }
+
+  async function removeServiceType(code: string) {
+    const target = serviceTypes.find((item) => item.code === code);
+    if (!target) return;
+    if (!window.confirm(`Confirmas retirar el tipo de servicio "${target.label}" del maestro?`)) return;
+    await saveServiceTypeCatalog(serviceTypes.filter((item) => item.code !== code), "Tipo de servicio retirado del maestro.");
+  }
+
+  async function saveSatisfactionQuestionCatalog(nextQuestions: SatisfactionQuestion[], successMessage = "Preguntas de satisfaccion actualizadas.") {
+    const normalized = normalizeSatisfactionQuestions(nextQuestions);
+    if (!normalized.length) {
+      setMessage("Debe existir al menos una pregunta de satisfaccion.");
+      return;
+    }
+    if (!normalized.some((item) => item.active !== false)) {
+      setMessage("Debe quedar al menos una pregunta de satisfaccion activa.");
+      return;
+    }
+    const saved = await api<SatisfactionQuestion[]>("/api/v1/services/satisfaction-questions", {
+      method: "PUT",
+      body: JSON.stringify({ questions: normalized })
+    });
+    const cleanSaved = normalizeSatisfactionQuestions(saved);
+    setSatisfactionQuestions(cleanSaved.length ? cleanSaved : normalized);
+    setMessage(successMessage);
+  }
+
+  async function toggleSatisfactionQuestion(id: string) {
+    const next = satisfactionQuestions.map((item) => item.id === id ? { ...item, active: item.active === false } : item);
+    await saveSatisfactionQuestionCatalog(next, "Estado de la pregunta actualizado.");
+  }
+
+  async function removeSatisfactionQuestion(id: string) {
+    const target = satisfactionQuestions.find((item) => item.id === id);
+    if (!target) return;
+    if (!window.confirm(`Confirmas retirar la pregunta "${target.label}" del maestro?`)) return;
+    await saveSatisfactionQuestionCatalog(satisfactionQuestions.filter((item) => item.id !== id), "Pregunta retirada del maestro.");
+  }
+
   function renderMasterCatalogManager() {
     const catalogOptions: Array<[string, string]> = [
       ["user_types", "Tipos de usuario"],
@@ -993,37 +1147,83 @@ export default function AdministracionPage() {
       ["contract_types", "Tipos de contrato"],
       ["work_shifts", "Turnos"],
       ["user_document_types", "Tipos documentales"],
-      ["banks", "Bancos"]
+      ["banks", "Bancos"],
+      ["service_types", "Tipos de servicio"],
+      ["satisfaction_questions", "Preguntas de satisfaccion"]
     ];
-    const selectedItems = Array.isArray((masterData as Record<string, unknown>)[catalogDraft.catalog])
+    const isServiceTypeCatalog = catalogDraft.catalog === "service_types";
+    const isSatisfactionQuestionCatalog = catalogDraft.catalog === "satisfaction_questions";
+    const isOperationalCatalog = isServiceTypeCatalog || isSatisfactionQuestionCatalog;
+    const selectedItems = !isOperationalCatalog && Array.isArray((masterData as Record<string, unknown>)[catalogDraft.catalog])
       ? (((masterData as unknown) as Record<string, MasterOption[]>)[catalogDraft.catalog] || [])
       : [];
+    const catalogRows: Array<MasterOption & { active?: boolean }> = isServiceTypeCatalog
+      ? serviceTypes.map((item) => ({ code: item.code, name: item.label, active: item.active !== false }))
+      : isSatisfactionQuestionCatalog
+        ? satisfactionQuestions.map((item) => ({ code: item.id, name: item.label, active: item.active !== false }))
+      : selectedItems;
     return (
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
         <div className="rounded-md border border-line bg-paper p-3">
           <div className="grid gap-3">
             <SelectField label="Catalogo" value={catalogDraft.catalog} onChange={(value) => setCatalogDraft((current) => ({ ...current, catalog: value }))} options={catalogOptions} />
-            <Field label="Codigo" value={catalogDraft.code} onChange={(value) => setCatalogDraft((current) => ({ ...current, code: value.toUpperCase().replace(/\s+/g, "-") }))} />
-            <Field label="Nombre" value={catalogDraft.name} onChange={(value) => setCatalogDraft((current) => ({ ...current, name: value }))} />
+            <Field label="Codigo" value={catalogDraft.code} onChange={(value) => setCatalogDraft((current) => ({ ...current, code: isOperationalCatalog ? normalizeServiceTypeCode(value) : value.toUpperCase().replace(/\s+/g, "-") }))} />
+            <Field label={isSatisfactionQuestionCatalog ? "Pregunta" : "Nombre"} value={catalogDraft.name} onChange={(value) => setCatalogDraft((current) => ({ ...current, name: value }))} />
             <Field label="Descripcion" value={catalogDraft.description} onChange={(value) => setCatalogDraft((current) => ({ ...current, description: value }))} />
-            <Button onClick={saveCatalogItem} type="button"><Save size={16} /> Guardar maestro</Button>
+            {isServiceTypeCatalog ? (
+              <p className="rounded-md border border-apex/20 bg-apex/10 px-3 py-2 text-xs text-neutral-600">
+                Estos tipos se usan en la creacion y edicion de ordenes de servicio. Deja activo solo lo que el operador debe seleccionar.
+              </p>
+            ) : null}
+            {isSatisfactionQuestionCatalog ? (
+              <p className="rounded-md border border-apex/20 bg-apex/10 px-3 py-2 text-xs text-neutral-600">
+                Estas preguntas aparecen en el cierre del servicio y son obligatorias cuando estan activas.
+              </p>
+            ) : null}
+            <Button onClick={saveCatalogItem} type="button"><Save size={16} /> {isServiceTypeCatalog ? "Guardar tipo de servicio" : isSatisfactionQuestionCatalog ? "Guardar pregunta" : "Guardar maestro"}</Button>
           </div>
         </div>
         <div className="max-h-[58vh] overflow-auto rounded-md border border-line">
-          <table className="w-full min-w-[520px] text-sm">
+          <table className="w-full min-w-[640px] text-sm">
             <thead className="sticky top-0 bg-white">
               <tr className="border-b border-line text-left text-xs text-neutral-500">
                 <th className="px-3 py-2">Codigo</th>
-                <th className="px-3 py-2">Nombre</th>
+                <th className="px-3 py-2">{isSatisfactionQuestionCatalog ? "Pregunta" : "Nombre"}</th>
+                {isOperationalCatalog ? <th className="px-3 py-2">Estado</th> : null}
+                {isOperationalCatalog ? <th className="px-3 py-2 text-right">Accion</th> : null}
               </tr>
             </thead>
             <tbody>
-              {selectedItems.map((item) => (
+              {catalogRows.map((item) => (
                 <tr className="border-b border-line/70" key={item.code}>
                   <td className="px-3 py-2 font-mono text-xs">{item.code}</td>
                   <td className="px-3 py-2">{item.name}</td>
+                  {isOperationalCatalog ? (
+                    <td className="px-3 py-2">
+                      <span className={`rounded-md px-2 py-1 text-xs font-semibold ${item.active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>
+                        {item.active ? "Activo" : "Inactivo"}
+                      </span>
+                    </td>
+                  ) : null}
+                  {isOperationalCatalog ? (
+                    <td className="px-3 py-2">
+                      <div className="flex justify-end gap-2">
+                        <button className="rounded-md border border-line px-2 py-1 text-xs font-semibold hover:bg-paper" onClick={() => isServiceTypeCatalog ? toggleServiceType(item.code) : toggleSatisfactionQuestion(item.code)} type="button">
+                          {item.active ? "Inactivar" : "Activar"}
+                        </button>
+                        <button className="rounded-md border border-rose-200 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50" onClick={() => isServiceTypeCatalog ? removeServiceType(item.code) : removeSatisfactionQuestion(item.code)} type="button">
+                          Retirar
+                        </button>
+                      </div>
+                    </td>
+                  ) : null}
                 </tr>
               ))}
+              {isOperationalCatalog && !catalogRows.length ? (
+                <tr>
+                  <td className="px-3 py-6 text-center text-sm text-neutral-500" colSpan={4}>No hay registros configurados.</td>
+                </tr>
+              ) : null}
             </tbody>
           </table>
         </div>
@@ -1240,76 +1440,66 @@ export default function AdministracionPage() {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+      <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-apex">Configuracion</p>
-          <h1 className="text-3xl font-semibold">Administracion</h1>
+          <p className="text-sm font-medium text-apex">Configuracion y gobierno</p>
+          <h1 className="mt-1 text-3xl font-semibold">Administracion APEX</h1>
+          <p className="mt-2 max-w-3xl text-sm text-neutral-600">Gestiona accesos, permisos, empresas y maestros desde un centro administrativo ordenado.</p>
         </div>
-        <Button className="border border-line bg-white text-neutral-800 hover:bg-paper" onClick={() => load().catch((error) => setMessage(error.message))} type="button">
-          <RefreshCw size={16} />
-          Actualizar
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button className="border border-line bg-white text-neutral-800 hover:bg-paper" onClick={() => load().catch((error) => setMessage(error.message))} type="button"><RefreshCw size={16} /> Actualizar</Button>
+          <Button onClick={() => { setActiveModal("users"); newUser(); }} type="button"><UserPlus size={16} /> Crear usuario</Button>
+        </div>
       </header>
 
       {message ? <p className="rounded-md border border-line bg-white px-4 py-3 text-sm text-neutral-700">{message}</p> : null}
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-md border border-line bg-white p-4"><Users className="mb-2 text-apex" size={18} /><p className="text-2xl font-semibold">{metrics.active}</p><p className="text-sm text-neutral-500">Usuarios activos</p></div>
-        <div className="rounded-md border border-line bg-white p-4"><AlertTriangle className="mb-2 text-amber-600" size={18} /><p className="text-2xl font-semibold">{metrics.pending}</p><p className="text-sm text-neutral-500">Pendientes activacion</p></div>
-        <div className="rounded-md border border-line bg-white p-4"><Truck className="mb-2 text-apex" size={18} /><p className="text-2xl font-semibold">{metrics.drivers}</p><p className="text-sm text-neutral-500">Conductores activos</p></div>
-        <div className="rounded-md border border-line bg-white p-4"><LockKeyhole className="mb-2 text-rose-600" size={18} /><p className="text-2xl font-semibold">{metrics.withoutRole + metrics.withoutSite}</p><p className="text-sm text-neutral-500">Fichas incompletas</p></div>
+        <CompactMetric icon={<Users size={17} />} label="Usuarios activos" value={metrics.active} detail={`${metrics.inactive} inactivos`} />
+        <CompactMetric icon={<AlertTriangle size={17} />} label="Requieren atencion" value={metrics.pending + metrics.withoutRole + metrics.withoutSite} detail={`${metrics.pending} pendientes · ${metrics.withoutRole} sin rol`} tone={metrics.pending + metrics.withoutRole + metrics.withoutSite ? "amber" : "default"} />
+        <CompactMetric icon={<Shield size={17} />} label="Roles activos" value={roles.filter((role) => role.active).length} detail={`${roles.length} roles configurados`} />
+        <CompactMetric icon={<SlidersHorizontal size={17} />} label="Configuraciones listas" value={`${configuredItems}/${configItems.length}`} detail={`${pendingItems} pendientes`} tone={pendingItems ? "amber" : "default"} />
       </section>
 
-      <section className="grid gap-3 rounded-md border border-line bg-white p-3 md:grid-cols-[1fr_220px]">
-        <label className="relative block">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
-          <input className="h-10 w-full rounded-md border border-line pl-9 pr-3 text-sm" placeholder="Buscar configuracion" value={query} onChange={(event) => setQuery(event.target.value)} />
-        </label>
-        <select className="h-10 rounded-md border border-line px-3 text-sm" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
-          <option value="all">Todas las categorias</option>
-          {categories.map((category) => <option key={category.key} value={category.key}>{category.title}</option>)}
-        </select>
+      <section className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        <button className="group flex items-center gap-3 rounded-md border border-line bg-white p-3 text-left hover:border-apex hover:bg-paper" onClick={() => setActiveModal("users")} type="button"><span className="flex h-10 w-10 items-center justify-center rounded-md bg-paper text-apex group-hover:bg-white"><Users size={18} /></span><span><span className="block text-sm font-semibold">Usuarios</span><span className="text-xs text-neutral-500">Accesos y fichas maestras</span></span></button>
+        <button className="group flex items-center gap-3 rounded-md border border-line bg-white p-3 text-left hover:border-apex hover:bg-paper" onClick={() => setActiveModal("roles")} type="button"><span className="flex h-10 w-10 items-center justify-center rounded-md bg-paper text-apex group-hover:bg-white"><Shield size={18} /></span><span><span className="block text-sm font-semibold">Roles y permisos</span><span className="text-xs text-neutral-500">Gobierno de acceso</span></span></button>
+        <Link className="group flex items-center gap-3 rounded-md border border-line bg-white p-3 hover:border-apex hover:bg-paper" href="/dashboard/administracion/suscripciones"><span className="flex h-10 w-10 items-center justify-center rounded-md bg-paper text-apex group-hover:bg-white"><Building2 size={18} /></span><span><span className="block text-sm font-semibold">Empresas y modulos</span><span className="text-xs text-neutral-500">Suscripciones y habilitaciones</span></span></Link>
+        <button className="group flex items-center gap-3 rounded-md border border-line bg-white p-3 text-left hover:border-apex hover:bg-paper" onClick={() => setActiveModal("masters")} type="button"><span className="flex h-10 w-10 items-center justify-center rounded-md bg-paper text-apex group-hover:bg-white"><Database size={18} /></span><span><span className="block text-sm font-semibold">Maestros</span><span className="text-xs text-neutral-500">Catalogos transversales</span></span></button>
       </section>
 
-      <div className="grid gap-5 xl:grid-cols-2">
-        {filteredCategories.map((category) => {
-          const Icon = category.icon;
-          return (
-            <section className="rounded-md border border-line bg-white p-4" key={category.key}>
-              <div className="mb-4 flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-paper text-apex"><Icon size={18} /></div>
-                <div>
-                  <h2 className="font-semibold">{category.title}</h2>
-                  <p className="mt-1 text-sm text-neutral-600">{category.description}</p>
-                </div>
-              </div>
-              <div className="grid gap-2 md:grid-cols-2">
-                {category.items.map((item) => {
-                  const content = (
-                    <>
-                      <span className="flex items-start justify-between gap-2">
-                        <span className="font-semibold">{item.title}</span>
-                        <span className={`shrink-0 rounded-md px-2 py-1 text-xs font-semibold ${statusClass(item.status)}`}>{item.status}</span>
-                      </span>
-                      <span className="mt-2 block text-sm text-neutral-600">{item.description}</span>
-                      {item.href ? <span className="mt-3 inline-flex text-xs font-semibold text-apex">Abrir panel</span> : null}
-                    </>
-                  );
-                  return item.href ? (
-                    <Link className="rounded-md border border-line p-3 text-left transition hover:border-apex hover:bg-paper" href={item.href} key={item.key}>
-                      {content}
-                    </Link>
-                  ) : (
-                    <button className="rounded-md border border-line p-3 text-left transition hover:border-apex hover:bg-paper" key={item.key} onClick={() => openConfig(item)} type="button">
-                      {content}
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          );
-        })}
-      </div>
+      <section className="overflow-hidden rounded-md border border-line bg-white">
+        <div className="border-b border-line p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-semibold">Catalogo administrativo</h2><p className="mt-1 text-sm text-neutral-600">Encuentra configuraciones por nombre, categoria o estado.</p></div><p className="text-sm text-neutral-500">{filteredConfigItems.length} de {configItems.length}</p></div>
+          <div className="mt-4 grid gap-2 lg:grid-cols-[minmax(240px,1fr)_230px_180px]">
+            <label className="relative block"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} /><input className="h-10 w-full rounded-md border border-line pl-9 pr-3 text-sm" placeholder="Buscar configuracion, modulo o tarea" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
+            <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}><option value="all">Todas las categorias</option>{categories.map((category) => <option key={category.key} value={category.key}>{category.title}</option>)}</select>
+            <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={configStatusFilter} onChange={(event) => setConfigStatusFilter(event.target.value)}><option value="all">Todos los estados</option><option value="configurado">Configurados</option><option value="activo">Activos</option><option value="pendiente">Pendientes</option><option value="restringido">Restringidos</option></select>
+          </div>
+          {activeConfigFilters ? <button className="mt-3 inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold text-neutral-700 hover:bg-paper" onClick={clearConfigFilters} type="button"><RotateCcw size={15} /> Limpiar {activeConfigFilters} filtro(s)</button> : null}
+        </div>
+
+        <div className="grid gap-3 p-3 md:hidden">
+          {filteredConfigItems.map((item) => {
+            const Icon = item.categoryIcon;
+            const content = <><div className="flex items-start justify-between gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-md bg-paper text-apex"><Icon size={17} /></span><span className={`rounded-md px-2 py-1 text-xs font-semibold ${statusClass(item.status)}`}>{item.status}</span></div><p className="mt-3 font-semibold">{item.title}</p><p className="mt-1 text-xs text-neutral-500">{item.categoryTitle}</p><p className="mt-2 text-sm text-neutral-600">{item.description}</p></>;
+            return item.href ? <Link className="rounded-md border border-line p-4 hover:border-apex hover:bg-paper" href={item.href} key={item.key}>{content}</Link> : <button className="rounded-md border border-line p-4 text-left hover:border-apex hover:bg-paper" key={item.key} onClick={() => openConfig(item)} type="button">{content}</button>;
+          })}
+        </div>
+
+        <div className="hidden overflow-x-auto md:block">
+          <table className="w-full min-w-[980px] border-collapse text-left text-sm">
+            <thead className="bg-paper text-xs uppercase tracking-wide text-neutral-500"><tr><th className="px-4 py-3">Configuracion</th><th className="px-4 py-3">Categoria</th><th className="px-4 py-3">Estado</th><th className="px-4 py-3">Proposito</th><th className="px-4 py-3 text-right">Accion</th></tr></thead>
+            <tbody className="divide-y divide-line">
+              {filteredConfigItems.map((item) => {
+                const Icon = item.categoryIcon;
+                return <tr className="hover:bg-paper/70" key={item.key}><td className="px-4 py-3"><div className="flex items-center gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-paper text-apex"><Icon size={16} /></span><p className="font-semibold">{item.title}</p></div></td><td className="px-4 py-3 text-neutral-600">{item.categoryTitle}</td><td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${statusClass(item.status)}`}>{item.status}</span></td><td className="max-w-md px-4 py-3 text-neutral-600">{item.description}</td><td className="px-4 py-3 text-right">{item.href ? <Link className="inline-flex h-9 items-center rounded-md border border-line px-3 text-xs font-semibold hover:border-apex hover:bg-paper" href={item.href}>Abrir panel</Link> : <button className="h-9 rounded-md border border-line px-3 text-xs font-semibold hover:border-apex hover:bg-paper" onClick={() => openConfig(item)} type="button">Configurar</button>}</td></tr>;
+              })}
+            </tbody>
+          </table>
+        </div>
+        {!filteredConfigItems.length ? <div className="p-10 text-center"><Filter className="mx-auto text-neutral-300" size={28} /><p className="mt-3 text-sm font-semibold">No hay configuraciones con estos filtros</p><p className="mt-1 text-sm text-neutral-500">Limpia los filtros para volver al catalogo completo.</p></div> : null}
+      </section>
 
       {activeModal === "info" && selectedConfig ? (
         <ModalFrame title={selectedConfig.title} onClose={() => setActiveModal(null)} maxWidth="md:max-w-3xl">
@@ -1355,7 +1545,7 @@ export default function AdministracionPage() {
                 <Field label="Nombre del rol" value={roleForm.name} onChange={(value) => setRoleForm((prev) => ({ ...prev, name: value }))} />
                 <Field label="Descripcion" value={roleForm.description} onChange={(value) => setRoleForm((prev) => ({ ...prev, description: value }))} />
                 <Field label="Nivel jerarquico" type="number" value={roleForm.hierarchy_level} onChange={(value) => setRoleForm((prev) => ({ ...prev, hierarchy_level: value }))} />
-                <SelectField label="Tipo de rol" value={roleForm.role_type} onChange={(value) => setRoleForm((prev) => ({ ...prev, role_type: value }))} options={[["custom", "Personalizado"], ["superadmin", "Superadmin"], ["admin_empresa", "Admin empresa"], ["gerencia", "Gerencia"], ["coordinador", "Coordinador"], ["supervisor", "Supervisor"], ["operativo", "Operativo"], ["analista", "Analista"], ["comercial", "Comercial"], ["auditor", "Auditor"], ["soporte", "Soporte"]]} />
+                <SelectField label="Tipo de rol" value={roleForm.role_type} onChange={(value) => setRoleForm((prev) => ({ ...prev, role_type: value }))} options={[["custom", "Personalizado"], ...(platformAdmin ? [["superadmin", "Superadmin"] as [string, string]] : []), ["admin_empresa", "Admin empresa"], ["gerencia", "Gerencia"], ["coordinador", "Coordinador"], ["supervisor", "Supervisor"], ["operativo", "Operativo"], ["analista", "Analista"], ["comercial", "Comercial"], ["auditor", "Auditor"], ["soporte", "Soporte"]]} />
                 <SelectField label="Alcance" value={roleForm.scope} onChange={(value) => setRoleForm((prev) => ({ ...prev, scope: value }))} options={[["company", "Empresa"], ["location", "Sede"], ["area", "Area"], ["cost_center", "Centro de costo"], ["process", "Proceso"]]} />
                 <SelectField label="Copiar desde rol" value="" onChange={copyRole} options={[["", "Seleccionar rol base"], ...roles.map((role) => [String(role.id), role.name] as [string, string])]} />
                 <Toggle label="Puede delegar permisos" checked={roleForm.can_delegate} onChange={(value) => setRoleForm((prev) => ({ ...prev, can_delegate: value }))} />
@@ -1413,7 +1603,7 @@ export default function AdministracionPage() {
       {activeModal === "users" ? (
         <ModalFrame title={userEditorOpen ? (selectedUserId ? "Editar usuario" : "Crear usuario") : "Usuarios de plataforma"} onClose={() => { setActiveModal(null); setUserEditorOpen(false); }} maxWidth="md:max-w-7xl">
           {userEditorOpen ? renderUserEditor() : renderUserDirectory()}
-          {false ? (
+          {false && (
           <div className="grid gap-4 xl:grid-cols-[300px_1fr]">
             <aside className="space-y-3">
               <Button className="w-full" onClick={newUser} type="button"><Plus size={16} /> Nuevo usuario</Button>
@@ -1464,7 +1654,7 @@ export default function AdministracionPage() {
               {renderUserTab()}
             </section>
           </div>
-          ) : null}
+          )}
         </ModalFrame>
       ) : null}
     </div>

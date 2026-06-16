@@ -273,7 +273,22 @@ async function seedOrg(org) {
     close_longitude: org.lon - index * 0.012,
     duration_minutes: ["cerrada", "no_ejecutada"].includes(status) ? 450 : null,
     no_execution_reason: status === "no_ejecutada" ? "Cliente ausente en sitio" : null,
-    metadata: { demo_seed: true, scenario: status }
+    metadata: {
+      demo_seed: true,
+      scenario: status,
+      ...(status === "cerrada" ? {
+        satisfaction_survey: {
+          version: 1,
+          answers: [
+            { question_id: "service_quality", question: "Calidad del servicio", rating: 5 },
+            { question_id: "technician_attention", question: "Atencion del tecnico", rating: 5 },
+            { question_id: "final_result", question: "Resultado final", rating: 5 }
+          ],
+          average: 5,
+          completed_at: iso(dateOffset(index - 4), "16:35")
+        }
+      } : {})
+    }
   })), "company_id,number");
 
   await request(`/rest/v1/service_incidents?company_id=eq.${company_id}&metadata->>demo_seed=eq.true`, { method: "DELETE" }).catch(() => null);
@@ -292,8 +307,8 @@ async function seedOrg(org) {
         metadata: { demo_seed: true }
       });
     }
-    const types = order.status === "no_ejecutada" ? ["no_ejecutada"] : ["fachada", "producto_abierto", "producto_cerrado", "cliente", "firma_cliente"];
-    for (const type of types.slice(0, order.status === "cerrada" ? 5 : 2)) {
+    const types = order.status === "no_ejecutada" ? ["no_ejecutada", "firma_cliente"] : ["producto_abierto", "producto_cerrado", "firma_cliente"];
+    for (const type of types.slice(0, order.status === "cerrada" || order.status === "no_ejecutada" ? types.length : 2)) {
       evidence.push({
         company_id,
         order_id: order.id,

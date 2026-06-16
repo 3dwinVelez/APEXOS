@@ -5,11 +5,11 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#14161A",
-        paper: "#F7F5EF",
-        line: "#D9D4C8",
-        apex: "#146C63",
-        signal: "#C05621"
+        ink: "rgb(var(--color-ink) / <alpha-value>)",
+        paper: "rgb(var(--color-paper) / <alpha-value>)",
+        line: "rgb(var(--color-line) / <alpha-value>)",
+        apex: "rgb(var(--color-apex) / <alpha-value>)",
+        signal: "rgb(var(--color-signal) / <alpha-value>)"
       }
     }
   },

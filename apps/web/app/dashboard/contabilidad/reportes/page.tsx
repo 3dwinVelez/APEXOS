@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { CalendarCheck, FileSpreadsheet, RefreshCcw } from "lucide-react";
 import { api } from "@/lib/api";
@@ -31,7 +31,7 @@ export default function ReportesContablesPage() {
   const [error, setError] = useState("");
   const [savingPeriod, setSavingPeriod] = useState(false);
 
-  async function load() {
+  const load = useCallback(async () => {
     setError("");
     try {
       const [b, i, tb, tr, ar, ap, le, pe] = await Promise.all([
@@ -56,11 +56,11 @@ export default function ReportesContablesPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudieron cargar reportes");
     }
-  }
+  }, [accountCode, period]);
 
   useEffect(() => {
     load();
-  }, [period]);
+  }, [load]);
 
   async function loadLedger() {
     setError("");

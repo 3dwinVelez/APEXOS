@@ -1,40 +1,21 @@
+import { ApexAiHeader } from "@/components/brain/ApexAiHeader";
 import { AiExperienceLayer } from "@/components/brain/AiExperienceLayer";
-import { AiAssistanceToggle } from "@/components/brain/AiAssistanceToggle";
 import { MobileNav } from "@/components/shell/MobileNav";
 import { RouteAccessGuard } from "@/components/shell/RouteAccessGuard";
 import { Sidebar } from "@/components/shell/Sidebar";
-import { UserSessionBadge } from "@/components/shell/UserSessionBadge";
-import { Brain, Sparkles } from "lucide-react";
-import Link from "next/link";
+import { TechnicianWorkspaceHeader } from "@/components/shell/TechnicianWorkspaceHeader";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-paper md:flex">
-      <Sidebar />
+      <div className="technician-hide"><Sidebar /></div>
       <main className="min-w-0 flex-1 overflow-x-hidden p-3 pb-24 sm:p-4 md:p-6 md:pb-6">
-        <div className="mb-4 hidden flex-wrap items-center justify-between gap-3 rounded-md border border-apex/15 bg-white px-4 py-3 md:flex">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-apex text-white">
-              <Brain size={17} />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold">APEX AI Core activo</p>
-              <p className="truncate text-xs text-neutral-600">Mentor, alertas y recomendaciones conectadas a todo el ecosistema.</p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <UserSessionBadge compact />
-            <AiAssistanceToggle />
-            <Link className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-medium hover:bg-paper" href="/dashboard/apex-ai">
-              <Sparkles size={15} />
-              Ver inteligencia
-            </Link>
-          </div>
-        </div>
+        <TechnicianWorkspaceHeader />
+        <ApexAiHeader />
         <RouteAccessGuard>{children}</RouteAccessGuard>
       </main>
       <MobileNav />
-      <AiExperienceLayer />
+      <div className="technician-hide"><AiExperienceLayer /></div>
     </div>
   );
 }

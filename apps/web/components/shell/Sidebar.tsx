@@ -3,18 +3,20 @@
 import { isSupabaseSession, loadModuleAccess, ModuleAccessState } from "@/lib/moduleAccess";
 import { MODULES } from "@/lib/modules";
 import { UserSessionBadge } from "@/components/shell/UserSessionBadge";
-import { ChevronLeft, ChevronRight, Home, LockKeyhole } from "lucide-react";
+import { ChevronLeft, ChevronRight, Home } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const [technicianMode, setTechnicianMode] = useState(false);
   const [access, setAccess] = useState<ModuleAccessState>({ loading: true, isPlatformAdmin: false, bySlug: {} });
   const pathname = usePathname();
 
   useEffect(() => {
     const saved = localStorage.getItem("apex_sidebar_collapsed");
+    setTechnicianMode(localStorage.getItem("role_name")?.toLowerCase() === "tecnico");
     if (saved === "1") setCollapsed(true);
     if (localStorage.getItem("token") || isSupabaseSession()) {
       loadModuleAccess(MODULES).then(setAccess).catch(() => setAccess({ loading: false, isPlatformAdmin: false, bySlug: {} }));
@@ -41,7 +43,6 @@ export function Sidebar() {
   const activeItems = items
     .filter((item) => item.enabled)
     .sort((a, b) => (access.orderBySlug?.[a.slug] ?? 999) - (access.orderBySlug?.[b.slug] ?? 999));
-  const lockedItems = items.filter((item) => !item.enabled);
 
   function linkClass(active: boolean) {
     return `flex h-10 items-center gap-3 rounded-md px-3 text-sm transition ${active ? "bg-apex text-white shadow-sm" : "text-neutral-700 hover:bg-paper"}`;
@@ -55,7 +56,7 @@ export function Sidebar() {
   function renderItem(item: (typeof items)[number]) {
     const Icon = item.icon;
     const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-    return item.enabled ? (
+    return (
       <Link
         className={linkClass(active)}
         href={item.href}
@@ -65,16 +66,6 @@ export function Sidebar() {
         <Icon size={18} />
         {!collapsed ? item.label : null}
       </Link>
-    ) : (
-      <div
-        className="flex h-10 cursor-not-allowed items-center gap-3 rounded-md px-3 text-sm text-amber-700/80"
-        key={item.href}
-        title={`${item.label} bloqueado`}
-      >
-        <Icon size={18} />
-        {!collapsed ? <span className="min-w-0 flex-1 truncate">{item.label}</span> : null}
-        <LockKeyhole size={15} />
-      </div>
     );
   }
 
@@ -95,19 +86,12 @@ export function Sidebar() {
         </button>
       </div>
       <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
-        <Link className={linkClass(pathname === "/dashboard")} href="/dashboard" title="Inicio">
+        {!technicianMode ? <Link className={linkClass(pathname === "/dashboard")} href="/dashboard" title="Inicio">
           <Home size={18} />
           {!collapsed ? "Inicio" : null}
-        </Link>
+        </Link> : null}
         {sectionLabel("Activos")}
         {activeItems.map(renderItem)}
-        {lockedItems.length ? (
-          <>
-            {!collapsed ? <div className="my-3 border-t border-line" /> : null}
-            {sectionLabel("Bloqueados")}
-            {lockedItems.map(renderItem)}
-          </>
-        ) : null}
       </nav>
       {!collapsed ? (
         <div className="mt-3 shrink-0">

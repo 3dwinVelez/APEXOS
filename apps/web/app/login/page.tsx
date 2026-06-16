@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { touchSession } from "@/lib/sessionSecurity";
-import { getSupabaseConfigStatus, supabaseAuth } from "@/lib/supabaseClient";
+import { getSupabaseConfigStatus, supabaseAuth, supabaseFetch } from "@/lib/supabaseClient";
 import { LogIn } from "lucide-react";
 import { useState } from "react";
 
@@ -13,6 +13,18 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  async function resolveSupabaseProfile(email: string) {
+    const rows = await supabaseFetch<Array<{ user_type?: string; metadata?: { role_name?: string; profile_kind?: string } }>>(
+      `/rest/v1/employees?select=user_type,metadata&email=eq.${encodeURIComponent(email)}&status=eq.active&limit=1`
+    ).catch(() => []);
+    const employee = rows[0];
+    const technician = employee?.user_type?.toLowerCase() === "tecnico"
+      || employee?.metadata?.profile_kind?.toLowerCase() === "tecnico"
+      || employee?.metadata?.role_name?.toLowerCase() === "tecnico";
+    if (technician) localStorage.setItem("role_name", "Tecnico");
+    else if (employee?.metadata?.role_name) localStorage.setItem("role_name", employee.metadata.role_name);
+  }
 
   async function loginWithLocalApi(loginEmail: string, loginPassword: string) {
     const response = await fetch(`${API_URL}/api/v1/auth/login`, {
@@ -57,6 +69,7 @@ export default function LoginPage() {
           localStorage.setItem("refresh", data.refresh_token);
           localStorage.setItem("auth_provider", "supabase");
           localStorage.setItem("user_email", data.user.email || loginEmail);
+          await resolveSupabaseProfile(data.user.email || loginEmail);
           authenticatedWithSupabase = true;
         } catch (error) {
           supabaseLoginError = error;
@@ -80,7 +93,9 @@ export default function LoginPage() {
         if (data.user?.role_metadata) localStorage.setItem("role_metadata", JSON.stringify(data.user.role_metadata));
       }
       touchSession();
-      window.location.assign("/dashboard");
+      const roleName = localStorage.getItem("role_name")?.toLowerCase();
+      document.documentElement.dataset.role = roleName || "";
+      window.location.assign(roleName === "tecnico" ? "/dashboard/servicios" : "/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo iniciar sesion");
     } finally {

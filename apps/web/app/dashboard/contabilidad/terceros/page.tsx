@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Edit3, ListPlus, Plus, Search, Settings2, Users } from "lucide-react";
 import { api } from "@/lib/api";
 import { ContabilidadNav } from "@/components/contabilidad-nav";
@@ -117,7 +117,7 @@ export default function TercerosContablesPage() {
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -131,25 +131,25 @@ export default function TercerosContablesPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [search, type]);
 
-  async function loadMasters() {
+  const loadMasters = useCallback(async () => {
     try {
       const data = await api<ThirdPartyMasters>("/api/v1/accounting/third-party-masters");
       setMasters(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudieron cargar maestros contables");
     }
-  }
+  }, []);
 
   useEffect(() => {
     loadMasters();
-  }, []);
+  }, [loadMasters]);
 
   useEffect(() => {
     const timeout = setTimeout(load, 250);
     return () => clearTimeout(timeout);
-  }, [search, type]);
+  }, [load]);
 
   const stats = useMemo(() => ({
     total: items.length,

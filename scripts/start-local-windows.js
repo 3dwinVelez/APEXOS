@@ -29,12 +29,22 @@ function baseEnv(extra = {}) {
   return env;
 }
 
+function quoteCmdArgument(value) {
+  if (!/[\s"&|<>^]/.test(value)) return value;
+  return `"${value.replace(/"/g, '""')}"`;
+}
+
 function run(command, args, options = {}) {
   log(`${command} ${args.join(" ")}`);
-  const result = spawnSync(command, args, {
+  const isCmdScript = process.platform === "win32" && command.toLowerCase().endsWith(".cmd");
+  const executable = isCmdScript ? (process.env.ComSpec || "cmd.exe") : command;
+  const executableArgs = isCmdScript
+    ? ["/d", "/s", "/c", [command, ...args].map(quoteCmdArgument).join(" ")]
+    : args;
+  const result = spawnSync(executable, executableArgs, {
     cwd: options.cwd || root,
     env: baseEnv(options.env),
-    shell: process.platform === "win32" && command.toLowerCase().endsWith(".cmd"),
+    shell: false,
     encoding: "utf8",
     stdio: "pipe",
     timeout: options.timeoutMs
@@ -52,6 +62,29 @@ function run(command, args, options = {}) {
     throw new Error(`Command failed: ${command} ${args.join(" ")}`);
   }
   return result;
+}
+
+function sleep(milliseconds) {
+  const buffer = new SharedArrayBuffer(4);
+  Atomics.wait(new Int32Array(buffer), 0, 0, milliseconds);
+}
+
+function runPrismaGenerate() {
+  const attempts = process.platform === "win32" ? 3 : 1;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const result = run(npmCmd, ["run", "prisma:generate"], { allowFailure: true });
+    if (result.status === 0) return;
+
+    const output = `${result.stdout || ""}\n${result.stderr || ""}`;
+    const lockedEngine = output.includes("EPERM") && output.includes("query_engine-windows.dll.node");
+    if (!lockedEngine || attempt === attempts) {
+      throw new Error("Command failed: npm run prisma:generate");
+    }
+
+    log(`Prisma engine still locked; retrying generation (${attempt + 1}/${attempts})`);
+    sleep(1500);
+  }
 }
 
 function ensureEnv() {
@@ -168,21 +201,34 @@ function ensureDependencies() {
   }
 }
 
+function restoreCanonicalNextEnv() {
+  const nextEnvPath = path.join(root, "apps", "web", "next-env.d.ts");
+  if (!fs.existsSync(nextEnvPath)) return;
+  const current = fs.readFileSync(nextEnvPath, "utf8");
+  const canonical = current.replace("./.next-dev/types/routes.d.ts", "./.next/types/routes.d.ts");
+  if (canonical !== current) {
+    fs.writeFileSync(nextEnvPath, canonical);
+    log("Restored canonical Next.js type reference");
+  }
+}
+
 function startProcess(name, args, stdoutFile, stderrFile) {
   const out = fs.openSync(path.join(logsDir, stdoutFile), "w");
   const err = fs.openSync(path.join(logsDir, stderrFile), "w");
   let command = npmCmd;
   let commandArgs = args;
   let cwd = root;
+  const nextBin = path.join(root, "node_modules", "next", "dist", "bin", "next");
+  const nodemonBin = path.join(root, "node_modules", "nodemon", "bin", "nodemon.js");
 
   if (process.platform === "win32" && args.join(" ").includes("apps/api")) {
     command = "C:\\Program Files\\nodejs\\node.exe";
-    commandArgs = ["server.js"];
+    commandArgs = [nodemonBin, "--watch", "src", "--watch", "server.js", "--ext", "js,json", "server.js"];
     cwd = path.join(root, "apps", "api");
   } else if (process.platform === "win32" && args.join(" ").includes("apps/web")) {
     command = "C:\\Program Files\\nodejs\\node.exe";
-    commandArgs = [path.join(root, "scripts", "dev-web.js")];
-    cwd = root;
+    commandArgs = [nextBin, "dev", "-H", "127.0.0.1", "-p", "3001"];
+    cwd = path.join(root, "apps", "web");
   }
 
   const child = spawn(command, commandArgs, {
@@ -194,7 +240,9 @@ function startProcess(name, args, stdoutFile, stderrFile) {
     env: {
       ...baseEnv({
         DISABLE_REDIS: "1",
-        NEXT_PUBLIC_API_URL: "http://127.0.0.1:3000"
+        NEXT_PUBLIC_API_URL: "http://127.0.0.1:3000",
+        NEXT_DIST_DIR: ".next-dev",
+        WEB_HOST: "127.0.0.1"
       })
     }
   });
@@ -204,12 +252,26 @@ function startProcess(name, args, stdoutFile, stderrFile) {
 
 function stopApexNodeProcesses() {
   if (process.platform !== "win32") return;
+  const netstat = run("netstat.exe", ["-ano"], { allowFailure: true, quiet: true });
+  const apexPids = new Set();
+  for (const line of (netstat.stdout || "").split(/\r?\n/)) {
+    const match = line.match(/^\s*TCP\s+\S+:(3000|3001)\s+\S+\s+LISTENING\s+(\d+)\s*$/i);
+    if (match && Number(match[2]) !== process.pid) apexPids.add(match[2]);
+  }
+  for (const pid of apexPids) {
+    const result = run("taskkill.exe", ["/PID", pid, "/T", "/F"], { allowFailure: true, quiet: true });
+    if (result.status !== 0) {
+      throw new Error(`Could not stop APEX process ${pid}. Run the restart with permission to stop local processes.`);
+    }
+  }
+
   const escapedRoot = root.replace(/'/g, "''");
   const script = `$repo = '${escapedRoot}'; $current = ${process.pid}; ` +
     `Get-CimInstance Win32_Process -Filter "name = 'node.exe'" | ` +
     `Where-Object { $_.ProcessId -ne $current -and ($_.CommandLine -like "*$repo*" -or $_.CommandLine -like '*--workspace apps/web*' -or $_.CommandLine -like '*--workspace apps/api*') } | ` +
     `ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`;
   run("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script], { allowFailure: true, quiet: true });
+  sleep(1000);
 }
 
 function stopConflictingDockerServices() {
@@ -226,7 +288,7 @@ async function main() {
 
   const apiWasRunning = await isPortOpen(3000);
   if (restart || !apiWasRunning) {
-    run(npmCmd, ["run", "prisma:generate"]);
+    runPrismaGenerate();
     run(npmCmd, ["run", "db:push"]);
     run(npmCmd, ["run", "seed:demo"]);
   } else {
@@ -244,6 +306,7 @@ async function main() {
   }
 
   run("node", ["scripts/ensure-web-css.js", "--url", "http://localhost:3001/dashboard"], { allowFailure: true });
+  restoreCanonicalNextEnv();
 
   log("Ready");
   log("Web: http://localhost:3001");

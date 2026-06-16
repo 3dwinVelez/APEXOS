@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Edit3, Plus, Power, Search } from "lucide-react";
 import { api } from "@/lib/api";
 import { ContabilidadNav } from "@/components/contabilidad-nav";
@@ -44,7 +44,7 @@ export default function PlanCuentasPage() {
   const [ok, setOk] = useState("");
   const [error, setError] = useState("");
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -58,12 +58,12 @@ export default function PlanCuentasPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [search, type]);
 
   useEffect(() => {
     const timeout = setTimeout(load, 250);
     return () => clearTimeout(timeout);
-  }, [search, type]);
+  }, [load]);
 
   const stats = useMemo(() => ({
     total: accounts.length,

@@ -6,7 +6,7 @@ import { SignatureCapture } from "@/components/operations/SignatureCapture";
 import { PhotoCapture, type CapturedFile } from "@/components/operations/PhotoCapture";
 import { AlertTriangle, ArrowLeft, CheckCircle2, ExternalLink, MapPin, Navigation, Plus, RefreshCw, Truck, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type Employee = { id: number; code: string; user_type?: string; position?: string; metadata: { name: string; user_type?: string }; user: { name: string } };
 type Attendance = { user_name: string; next_type: string | null; punches: Array<{ id: number; type: string; time: string; vehicle_plate: string }> };
@@ -88,7 +88,7 @@ export default function MobilePunchPage() {
   const [activityMessage, setActivityMessage] = useState("");
   const [markingType, setMarkingType] = useState<string | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     const [me, routeData, attendanceData, typesData, sessionData] = await Promise.all([
       api<Employee>("/api/v1/hr/me").catch(() => null),
       api<TimeRoute[]>("/api/v1/hr/routes").catch(() => []),
@@ -101,18 +101,18 @@ export default function MobilePunchPage() {
     setAttendance(attendanceData);
     setActivityTypes(typesData);
     setSession(sessionData);
-    if (!activityTypeId && typesData[0]) setActivityTypeId(String(typesData[0].id));
+    if (typesData[0]) setActivityTypeId((current) => current || String(typesData[0].id));
     const active = await api<{ checklist: PreopChecklist | null; template: PreopTemplate }>("/api/v1/hr/routes/preop/active").catch(() => null);
     if (active?.checklist) {
       setPreop(active.checklist);
       setPreopTemplate(active.template);
       setPreopAnswers(Object.fromEntries(active.template.items.map((item) => [item.item_key, { answer: "cumple", observations: "", evidence: null }])));
     }
-  }
+  }, []);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   const userName = employee ? employee.code || employeeName(employee) : "";
   const currentAttendance = attendance.find((item) => item.user_name === userName) || { user_name: userName, next_type: "entrada", punches: [] };
@@ -148,7 +148,7 @@ export default function MobilePunchPage() {
       }).catch(() => undefined);
     }, 30000);
     return () => window.clearInterval(timer);
-  }, [employee?.id, gps, userName, vehiclePlate, route?.id]);
+  }, [employee, gps, route?.id, userName, vehiclePlate]);
 
   async function refreshGps() {
     setGpsStatus("loading");

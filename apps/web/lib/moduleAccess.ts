@@ -162,6 +162,12 @@ function stateFromActiveModuleList(modules: ApexModule[], activeModules: string[
   });
 }
 
+function isLocalPlatformAdmin(user?: { role_metadata?: Record<string, unknown>; role?: string }) {
+  const role = String(user?.role || "").trim().toLowerCase();
+  const roleType = String(user?.role_metadata?.role_type || "").trim().toLowerCase();
+  return role === "apex_admin" || role === "superadmin" || roleType === "superadmin";
+}
+
 async function loadLocalModuleAccess(modules: ApexModule[]): Promise<ModuleAccessState> {
   const token = getToken();
   if (token) {
@@ -179,7 +185,8 @@ async function loadLocalModuleAccess(modules: ApexModule[]): Promise<ModuleAcces
         if (Array.isArray(data.user?.role_permissions)) localStorage.setItem("role_permissions", JSON.stringify(data.user.role_permissions));
         if (data.user?.role_metadata) localStorage.setItem("role_metadata", JSON.stringify(data.user.role_metadata));
         if (data.user?.role) localStorage.setItem("role_name", data.user.role);
-        return stateFromActiveModuleList(modules, activeModules);
+        const state = stateFromActiveModuleList(modules, activeModules);
+        return { ...state, isPlatformAdmin: isLocalPlatformAdmin(data.user) };
       }
     } catch {
       // If the API is temporarily unavailable, keep the last known tenant menu.

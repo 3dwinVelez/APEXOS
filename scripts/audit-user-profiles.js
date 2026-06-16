@@ -22,7 +22,14 @@ function inferProfileKind(user) {
   const metadata = user.employee?.metadata || {};
   const access = metadata.access || {};
   const operational = metadata.operational || {};
-  return String(metadata.profile_kind || access.profile_kind || operational.classification || "").toLowerCase() === "tecnico"
+  const indicators = [
+    metadata.profile_kind,
+    access.profile_kind,
+    operational.classification,
+    user.employee?.user_type,
+    user.role?.name
+  ].map((value) => String(value || "").toLowerCase());
+  return indicators.some((value) => value === "tecnico" || value === "technician")
     ? "tecnico"
     : "empleado";
 }

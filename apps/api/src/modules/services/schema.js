@@ -1,20 +1,29 @@
 const orderSchema = {
   body: {
     type: "object",
-    required: ["customer_name", "customer_address"],
+    required: ["reference_id", "technician_id", "service_type", "customer_name", "customer_document", "customer_address", "customer_phone", "invoice_number", "scheduled_date", "cedi_delivery_date", "notes"],
     properties: {
       reference_item_id: { type: "integer" },
       reference_id: { type: "integer" },
       technician_id: { type: "integer" },
       service_type: { type: "string" },
       customer_name: { type: "string" },
+      customer_document: { type: "string" },
       customer_address: { type: "string" },
       customer_phone: { type: "string" },
       invoice_number: { type: "string" },
       scheduled_date: { type: "string" },
+      cedi_delivery_date: { type: "string" },
       notes: { type: "string" },
       metadata: { type: "object" }
     }
+  }
+};
+
+const orderUpdateSchema = {
+  body: {
+    type: "object",
+    properties: orderSchema.body.properties
   }
 };
 
@@ -62,6 +71,50 @@ const referenceSchema = {
         }
       },
       metadata: { type: "object" }
+    }
+  }
+};
+
+const serviceTypesSchema = {
+  body: {
+    type: "object",
+    required: ["types"],
+    properties: {
+      types: {
+        type: "array",
+        minItems: 1,
+        items: {
+          type: "object",
+          required: ["code", "label"],
+          properties: {
+            code: { type: "string" },
+            label: { type: "string" },
+            active: { type: "boolean" }
+          }
+        }
+      }
+    }
+  }
+};
+
+const satisfactionQuestionsSchema = {
+  body: {
+    type: "object",
+    required: ["questions"],
+    properties: {
+      questions: {
+        type: "array",
+        minItems: 1,
+        items: {
+          type: "object",
+          required: ["id", "label"],
+          properties: {
+            id: { type: "string" },
+            label: { type: "string" },
+            active: { type: "boolean" }
+          }
+        }
+      }
     }
   }
 };
@@ -129,7 +182,8 @@ const inspectionSchema = {
             unit: { type: "string" },
             status: { type: "string" },
             comment: { type: "string" },
-            action: { type: "string" }
+            action: { type: "string" },
+            supplier_name: { type: "string" }
           }
         }
       },
@@ -181,4 +235,4 @@ const photoSchema = {
   }
 };
 
-module.exports = { orderSchema, referenceSchema, referenceBulkImportSchema, startSchema, inspectionSchema, closeSchema, incidentSchema, photoSchema };
+module.exports = { orderSchema, orderUpdateSchema, referenceSchema, referenceBulkImportSchema, serviceTypesSchema, satisfactionQuestionsSchema, startSchema, inspectionSchema, closeSchema, incidentSchema, photoSchema };

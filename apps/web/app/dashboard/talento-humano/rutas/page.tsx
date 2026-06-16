@@ -2,8 +2,9 @@
 
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { Activity, ArrowLeft, CalendarDays, Camera, CheckSquare2, Clock, Copy, Edit3, HelpCircle, MapPinned, Navigation, Plus, RefreshCw, Save, Search, Square, UserPlus, Users, X } from "lucide-react";
+import { Activity, ArrowLeft, Building2, CalendarDays, Camera, CheckSquare2, Clock, Copy, Edit3, Filter, HelpCircle, Navigation, Plus, RefreshCw, RotateCcw, Save, Search, Square, Truck, UserPlus, Users, X } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 
 type Employee = { id: number; code: string; user_type?: string; position: string; department: string; metadata: { name: string; document: string; user_type?: string }; user: { name: string } };
@@ -92,13 +93,15 @@ function administrativeSiteFromNotes(value = "") {
   return line ? line.replace(administrativeSitePrefix, "").trim() : "";
 }
 
-function Metric({ icon, label, value, hint }: { icon: React.ReactNode; label: string; value: number; hint: string }) {
+function CompactMetric({ icon, label, value, hint, tone = "default" }: { icon: React.ReactNode; label: string; value: number | string; hint: string; tone?: "default" | "amber" }) {
+  const toneClass = tone === "amber" ? "border-amber-200 bg-amber-50 text-amber-900" : "border-line bg-white text-neutral-800";
   return (
-    <div className="bg-neutral-950 p-4">
-      <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-md bg-emerald-400/10 text-emerald-300">{icon}</div>
-      <p className="text-3xl font-semibold">{value}</p>
-      <p className="mt-1 text-sm text-white">{label}</p>
-      <p className="mt-1 text-xs text-neutral-400">{hint}</p>
+    <div className={`flex items-center gap-3 rounded-md border p-3 ${toneClass}`}>
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white/70 text-apex">{icon}</span>
+      <div className="min-w-0">
+        <div className="flex items-baseline gap-2"><p className="text-xl font-semibold">{value}</p><p className="truncate text-sm font-semibold">{label}</p></div>
+        <p className="truncate text-xs opacity-70">{hint}</p>
+      </div>
     </div>
   );
 }
@@ -209,6 +212,10 @@ export default function RoutesPlanningPage() {
   const [administrativeSite, setAdministrativeSite] = useState("SEDE-PRINCIPAL");
   const [bulkMode, setBulkMode] = useState(false);
   const [bulk, setBulk] = useState({ start_date: new Date().toISOString().slice(0, 10), end_date: addDays(new Date().toISOString().slice(0, 10), 4), weekdays: [1, 2, 3, 4, 5] });
+  const [query, setQuery] = useState("");
+  const [kindFilter, setKindFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
 
   async function load() {
     setLoadingMonitor(true);
@@ -329,7 +336,14 @@ export default function RoutesPlanningPage() {
   const totalAssigned = useMemo(() => routes.reduce((sum, route) => sum + (route.employees?.length || 0), 0), [routes]);
   const selectedEmployeeCount = form.employees.length;
   const bulkCount = bulkMode ? rangePreview(bulk.start_date, bulk.end_date, bulk.weekdays) : 1;
-  const monitorRoutes: RouteMonitor[] = operations?.routes?.length ? operations.routes : routes.map((route) => ({ ...route, punch_points: [], activity_points: [] }));
+  const monitorRoutes: RouteMonitor[] = useMemo(() => {
+    if (!routes.length) return operations?.routes || [];
+    const operationById = new Map((operations?.routes || []).map((route) => [String(route.id), route]));
+    return routes.map((route) => {
+      const operation = operationById.get(String(route.id));
+      return { ...route, ...operation, punch_points: operation?.punch_points || [], activity_points: operation?.activity_points || [] };
+    });
+  }, [operations, routes]);
   const selectedRoute = monitorRoutes.find((route) => String(route.id) === selectedRouteId) || null;
   const selectedPeople = useMemo(() => selectedRoute && operations ? operations.people.filter((person) => String(person.route_id) === String(selectedRoute.id)) : [], [operations, selectedRoute]);
   const selectedTimeline = useMemo(() => {
@@ -339,16 +353,36 @@ export default function RoutesPlanningPage() {
       ...(selectedRoute.activity_points || []).map((event) => ({ kind: "actividad" as const, id: `activity-${event.id}`, user_name: event.user_name, title: event.type, at: event.occurred_at, time: event.time || event.occurred_at, latitude: event.latitude, longitude: event.longitude, accuracy_meters: event.accuracy_meters, observation: event.observation || "", evidence: event.evidence || [] }))
     ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
   }, [selectedRoute]);
-  const totalEvents = monitorRoutes.reduce((sum, route) => sum + (route.punch_points?.length || 0) + (route.activity_points?.length || 0), 0);
   const routeCoverage = monitorRoutes.length ? Math.round((monitorRoutes.filter((route) => (route.punch_points?.length || 0) > 0).length / monitorRoutes.length) * 100) : 0;
+  const administrativeRoutes = monitorRoutes.filter((route) => !route.vehicle_plate && !route.placa).length;
+  const operationalRoutes = monitorRoutes.length - administrativeRoutes;
+  const routesWithoutPeople = monitorRoutes.filter((route) => !(route.assigned_count ?? route.employees?.length ?? 0)).length;
+  const filteredRoutes = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    return monitorRoutes
+      .filter((route) => !term || [routeLabel(route), route.status, administrativeSiteFromNotes(route.notes || ""), ...(route.employees || [])].join(" ").toLowerCase().includes(term))
+      .filter((route) => !kindFilter || (kindFilter === "operational" ? Boolean(route.vehicle_plate || route.placa) : !route.vehicle_plate && !route.placa))
+      .filter((route) => !statusFilter || route.status === statusFilter)
+      .filter((route) => !dateFilter || inputDate(route.date) === dateFilter)
+      .sort((a, b) => inputDate(b.date).localeCompare(inputDate(a.date)) || String(a.start_time || "").localeCompare(String(b.start_time || "")));
+  }, [dateFilter, kindFilter, monitorRoutes, query, statusFilter]);
+  const activeFilters = [query.trim(), kindFilter, statusFilter, dateFilter].filter(Boolean).length;
+
+  function clearFilters() {
+    setQuery("");
+    setKindFilter("");
+    setStatusFilter("");
+    setDateFilter("");
+  }
 
   return (
     <div className="space-y-5 pb-20 md:pb-6">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Link className="mb-3 inline-flex h-11 items-center gap-2 rounded-md pr-3 text-sm font-medium text-neutral-600 hover:text-apex" href="/dashboard/talento-humano"><ArrowLeft size={18} /> Control de horarios</Link>
-          <p className="text-sm font-medium text-apex">Talento Humano</p>
-          <h1 className="text-2xl font-semibold md:text-3xl">Asignar horarios</h1>
+          <Link className="mb-2 inline-flex items-center gap-2 text-sm font-medium text-neutral-600 hover:text-apex" href="/dashboard/talento-humano"><ArrowLeft size={16} /> Talento Humano</Link>
+          <p className="text-sm font-medium text-apex">Administracion de jornadas</p>
+          <h1 className="mt-1 text-3xl font-semibold">Asignar horarios</h1>
+          <p className="mt-2 max-w-3xl text-sm text-neutral-600">Consulta, compara y asigna jornadas administrativas u operativas sin mezclar la planeacion con el seguimiento en campo.</p>
         </div>
         <button className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white md:h-10 md:w-auto" onClick={() => openCreateModal()} type="button">
           <Plus size={16} /> Nuevo horario
@@ -357,43 +391,40 @@ export default function RoutesPlanningPage() {
 
       {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-900">{message}</div> : null}
 
-      <section className="overflow-hidden rounded-md border border-line bg-neutral-950 text-white">
-        <div className="grid lg:grid-cols-[1.15fr_2fr]">
-          <div className="border-b border-white/10 p-5 lg:border-b-0 lg:border-r">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">Monitor APEX</p>
-            <h2 className="mt-3 text-2xl font-semibold">Control operativo de horarios</h2>
-            <p className="mt-2 text-sm text-neutral-300">Horarios, personas, marcaciones, actividades, GPS y evidencias en un solo panel administrativo.</p>
-            <div className="mt-5 flex items-end gap-2">
-              <span className="text-5xl font-semibold">{routeCoverage}</span>
-              <span className="pb-2 text-sm text-neutral-400">/100 seguimiento</span>
-            </div>
-          </div>
-          <div className="grid gap-px bg-white/10 sm:grid-cols-2 xl:grid-cols-4">
-            <Metric icon={<CalendarDays size={18} />} label="Horarios activos" value={activeRoutes.length} hint={`${routes.length} planeados`} />
-            <Metric icon={<Users size={18} />} label="Personas asignadas" value={totalAssigned} hint={`${employees.length} disponibles`} />
-            <Metric icon={<MapPinned size={18} />} label="Con GPS" value={operations?.totals.online || 0} hint={`${operations?.totals.without_gps || 0} sin senal`} />
-            <Metric icon={<Activity size={18} />} label="Eventos" value={totalEvents} hint="marcas + actividades" />
-          </div>
-        </div>
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <CompactMetric icon={<CalendarDays size={17} />} label="Horarios activos" value={activeRoutes.length} hint={`${routes.length} registros totales`} />
+        <CompactMetric icon={<Users size={17} />} label="Personas asignadas" value={totalAssigned} hint={`${employees.length} disponibles`} />
+        <CompactMetric icon={<Building2 size={17} />} label="Tipo de jornada" value={`${administrativeRoutes}/${operationalRoutes}`} hint="Administrativas / operativas" />
+        <CompactMetric icon={<Activity size={17} />} label="Seguimiento" value={`${routeCoverage}%`} hint={`${routesWithoutPeople} horarios sin personas`} tone={routesWithoutPeople ? "amber" : "default"} />
       </section>
 
-      <section className="rounded-md border border-line bg-white p-4">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2"><CalendarDays size={18} className="text-apex" /><h2 className="text-base font-semibold">Monitor dinamico por horario</h2></div>
-            <p className="mt-1 text-sm text-neutral-600">Abre un horario para ver su trazabilidad cronologica, personas asignadas y evidencias.</p>
+      <section className="overflow-hidden rounded-md border border-line bg-white">
+        <div className="border-b border-line p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2"><CalendarDays size={18} className="text-apex" /><h2 className="text-lg font-semibold">Consulta de horarios</h2></div>
+              <p className="mt-1 text-sm text-neutral-600">Compara fecha, jornada, personas y estado antes de abrir o editar un horario.</p>
+            </div>
+            <div className="flex items-center gap-3"><p className="text-sm text-neutral-500">{filteredRoutes.length} de {monitorRoutes.length}</p><button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={load} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={16} /> Actualizar</button></div>
           </div>
-          <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={load} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={16} /> Actualizar</button>
+          <div className="mt-4 grid gap-2 lg:grid-cols-[minmax(240px,1fr)_180px_180px_170px]">
+            <label className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} /><input className="h-10 w-full rounded-md border border-line pl-9 pr-3 text-sm" placeholder="Buscar persona, sede, placa o estado" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
+            <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={kindFilter} onChange={(event) => setKindFilter(event.target.value)}><option value="">Todos los tipos</option><option value="administrative">Administrativos</option><option value="operational">Operativos</option></select>
+            <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="">Todos los estados</option><option value="active">Activos</option><option value="closed">Cerrados</option><option value="cancelled">Cancelados</option></select>
+            <input aria-label="Filtrar por fecha" className="h-10 rounded-md border border-line bg-white px-3 text-sm" type="date" value={dateFilter} onChange={(event) => setDateFilter(event.target.value)} />
+          </div>
+          {activeFilters ? <button className="mt-3 inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold text-neutral-700 hover:bg-paper" onClick={clearFilters} type="button"><RotateCcw size={15} /> Limpiar {activeFilters} filtro(s)</button> : null}
         </div>
-        <div className="grid gap-3 lg:grid-cols-2">
-          {monitorRoutes.map((route) => {
+
+        <div className="grid gap-3 p-3 md:hidden">
+          {filteredRoutes.map((route) => {
             const events = (route.punch_points?.length || 0) + (route.activity_points?.length || 0);
             return (
               <article className="rounded-md border border-line p-4 text-left transition hover:border-apex hover:bg-paper" key={String(route.id)}>
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="font-semibold">{routeLabel(route)}</p>
-                    <p className="mt-1 text-xs text-neutral-500">Horario {String(route.id)} - {route.date ? new Date(route.date).toLocaleDateString() : "hoy"}</p>
+                    <p className="font-semibold">{route.vehicle_plate || route.placa || administrativeSiteFromNotes(route.notes || "") || "Jornada administrativa"}</p>
+                    <p className="mt-1 text-xs text-neutral-500">{inputDate(route.date)} · {formatHour(route.start_time)} - {formatHour(route.end_time)}</p>
                   </div>
                   <span className={`rounded-md px-2 py-1 text-xs font-semibold ${events ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>{events ? "En seguimiento" : "Sin eventos"}</span>
                 </div>
@@ -412,14 +443,33 @@ export default function RoutesPlanningPage() {
               </article>
             );
           })}
-          {!monitorRoutes.length ? <div className="col-span-full rounded-md border border-dashed border-line p-10 text-center text-sm text-neutral-500">No hay horarios asignados.</div> : null}
         </div>
+
+        <div className="hidden overflow-x-auto md:block">
+          <table className="w-full min-w-[1080px] border-collapse text-left text-sm">
+            <thead className="bg-paper text-xs uppercase tracking-wide text-neutral-500"><tr><th className="px-4 py-3">Fecha y jornada</th><th className="px-4 py-3">Tipo y ubicacion</th><th className="px-4 py-3">Personas</th><th className="px-4 py-3">Estado</th><th className="px-4 py-3 text-right">Acciones</th></tr></thead>
+            <tbody className="divide-y divide-line">
+              {filteredRoutes.map((route) => {
+                const events = (route.punch_points?.length || 0) + (route.activity_points?.length || 0);
+                const operational = Boolean(route.vehicle_plate || route.placa);
+                return <tr className="hover:bg-paper/70" key={String(route.id)}>
+                  <td className="px-4 py-3"><p className="font-semibold">{inputDate(route.date)}</p><p className="mt-1 text-xs text-neutral-500">{formatHour(route.start_time)} - {formatHour(route.end_time)} · {route.tolerance_minutes ?? 15} min tolerancia</p></td>
+                  <td className="px-4 py-3"><p className="flex items-center gap-2 font-semibold">{operational ? <Truck className="text-apex" size={15} /> : <Building2 className="text-apex" size={15} />}{operational ? "Operativa" : "Administrativa"}</p><p className="mt-1 text-xs text-neutral-500">{operational ? routeLabel(route) : administrativeSiteFromNotes(route.notes || "") || "Sin sede definida"}</p></td>
+                  <td className="px-4 py-3"><p className="font-semibold">{route.assigned_count ?? route.employees?.length ?? 0} persona(s)</p><p className="mt-1 max-w-72 truncate text-xs text-neutral-500">{route.employees?.join(", ") || "Sin personas asignadas"}</p></td>
+                  <td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${events ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>{events ? "En seguimiento" : "Sin eventos"}</span><p className="mt-1 text-xs capitalize text-neutral-500">{route.status || "active"} · {events} evento(s)</p></td>
+                  <td className="px-4 py-3"><div className="flex justify-end gap-2"><button className="h-9 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => setSelectedRouteId(String(route.id))} type="button">Abrir</button><button className="h-9 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => openEditModal(route)} type="button">Editar</button><button className="h-9 rounded-md border border-apex px-3 text-xs font-semibold text-apex hover:bg-paper" onClick={() => openCreateModal(route)} type="button">Clonar</button></div></td>
+                </tr>;
+              })}
+            </tbody>
+          </table>
+        </div>
+        {!filteredRoutes.length ? <div className="p-10 text-center"><Filter className="mx-auto text-neutral-300" size={28} /><p className="mt-3 text-sm font-semibold">No hay horarios con estos filtros</p><p className="mt-1 text-sm text-neutral-500">Limpia los filtros o crea una nueva asignacion.</p></div> : null}
       </section>
 
       {modal ? (
-        <ModalFrame title={modal === "edit" ? "Editar horario operativo" : "Nuevo horario operativo"} onClose={() => { setModal(null); resetForm(); }}>
-          <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-950">
-            Usa este formulario para asignar jornadas a personal operativo, administrativo o logistico. Puedes crear un dia puntual o clonar la misma jornada por rango de fechas y dias de la semana.
+        <ModalFrame title={modal === "edit" ? "Editar asignacion de horario" : "Nueva asignacion de horario"} onClose={() => { setModal(null); resetForm(); }} maxWidth="md:max-w-5xl">
+          <div className="rounded-md border border-apex/20 bg-[#146C630D] p-4">
+            <div className="flex items-start gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-white text-apex">{scheduleKind === "administrative" ? <Building2 size={19} /> : <Truck size={19} />}</span><div><p className="text-xs font-semibold uppercase tracking-wide text-apex">{modal === "edit" ? "Actualizar jornada" : bulkMode ? `Crear ${bulkCount} horarios` : "Crear un horario"}</p><h2 className="mt-1 text-lg font-semibold">{scheduleKind === "administrative" ? "Jornada administrativa o de sede fija" : "Jornada operativa con recurso movil"}</h2><p className="mt-1 text-sm text-neutral-600">Primero define cuando y donde aplica; despues selecciona las personas que trabajaran en esta jornada.</p></div></div>
           </div>
           {modal !== "edit" ? (
             <div className="mt-4 grid gap-2 rounded-md border border-line bg-white p-2 sm:grid-cols-2">
@@ -572,7 +622,7 @@ export default function RoutesPlanningPage() {
                         {event.latitude != null && event.longitude != null ? <p className="mt-2 text-xs text-neutral-500">GPS {Number(event.latitude).toFixed(5)}, {Number(event.longitude).toFixed(5)} - {Math.round(Number(event.accuracy_meters || 0))}m</p> : null}
                       </div>
                       <div>
-                        {event.evidence?.[0]?.base64_data ? <img alt="Evidencia" className="h-32 w-full rounded-md object-cover" src={event.evidence[0].base64_data} /> : event.evidence?.[0]?.file_url ? <a className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href={event.evidence[0].file_url} target="_blank" rel="noreferrer"><Camera size={16} /> Ver evidencia</a> : <p className="rounded-md bg-paper p-3 text-xs font-semibold text-neutral-500">Sin evidencia fotografica</p>}
+                        {event.evidence?.[0]?.base64_data ? <Image alt="Evidencia" className="h-32 w-full rounded-md object-cover" height={320} src={event.evidence[0].base64_data} unoptimized width={640} /> : event.evidence?.[0]?.file_url ? <a className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href={event.evidence[0].file_url} target="_blank" rel="noreferrer"><Camera size={16} /> Ver evidencia</a> : <p className="rounded-md bg-paper p-3 text-xs font-semibold text-neutral-500">Sin evidencia fotografica</p>}
                       </div>
                     </article>
                   ))}

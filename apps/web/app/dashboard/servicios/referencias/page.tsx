@@ -1,10 +1,10 @@
 "use client";
 
 import { api } from "@/lib/api";
-import { ActionCard } from "@/components/ui/ActionCard";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { ArrowLeft, Download, FileText, Plus, Save, Search, Upload } from "lucide-react";
+import { ArrowLeft, BookOpen, ChevronRight, Clock3, Download, Filter, Layers3, Plus, RotateCcw, Save, Search, SlidersHorizontal, Sparkles, Upload } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 
 type Part = { id?: number; name: string; quantity: number; unit: string; description: string };
@@ -23,10 +23,16 @@ type ServiceReference = {
   manuals?: Manual[];
   total_pieces: number;
 };
+type ServiceType = { code: string; label: string; active: boolean };
 
 const categories = ["muebles", "colchones", "electrodomesticos", "cocina", "oficina", "decoracion", "iluminacion", "textiles", "otros"];
 const emptyPart = { name: "", quantity: 1, unit: "und", description: "" };
 const emptyForm = { code: "", name: "", category: "muebles", description: "", estimated_minutes: 60, brand: "", model: "", active: true, parts: [emptyPart] as Part[], manuals: [] as Manual[] };
+const defaultServiceTypes: ServiceType[] = [
+  { code: "montaje", label: "Montaje", active: true },
+  { code: "desmontaje", label: "Desmontaje", active: true },
+  { code: "ambos", label: "Montaje y desmontaje", active: true }
+];
 const csvHeaders = "code,name,category,description,estimated_minutes,brand,model,part_name,part_quantity,part_unit,part_description,manual_title,manual_url,manual_notes";
 
 function readFile(file: File): Promise<Manual> {
@@ -97,10 +103,14 @@ function manualHref(manual: Manual) {
 }
 
 export default function ServiceReferencesPage() {
+  const router = useRouter();
   const [references, setReferences] = useState<ServiceReference[]>([]);
   const [selected, setSelected] = useState<ServiceReference | null>(null);
   const [category, setCategory] = useState("");
   const [search, setSearch] = useState("");
+  const [activeScope, setActiveScope] = useState("");
+  const [documentationScope, setDocumentationScope] = useState("");
+  const [sortBy, setSortBy] = useState("code");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -108,13 +118,17 @@ export default function ServiceReferencesPage() {
   const [importRows, setImportRows] = useState<Record<string, string>[]>([]);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [serviceTypes, setServiceTypes] = useState<ServiceType[]>(defaultServiceTypes);
+  const [savingTypes, setSavingTypes] = useState(false);
 
   async function load() {
-    const params = new URLSearchParams();
-    if (category) params.set("category", category);
-    if (search) params.set("search", search);
     try {
-      setReferences(await api<ServiceReference[]>(`/api/v1/services/references${params.size ? `?${params.toString()}` : ""}`));
+      const [referenceRows, typeRows] = await Promise.all([
+        api<ServiceReference[]>("/api/v1/services/references"),
+        api<ServiceType[]>("/api/v1/services/service-types").catch(() => defaultServiceTypes)
+      ]);
+      setReferences(referenceRows);
+      setServiceTypes(typeRows.length ? typeRows : defaultServiceTypes);
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible cargar las referencias.");
@@ -123,9 +137,12 @@ export default function ServiceReferencesPage() {
   }
 
   useEffect(() => {
-    const timeout = setTimeout(() => load().catch(() => undefined), 250);
-    return () => clearTimeout(timeout);
-  }, [category, search]);
+    if (localStorage.getItem("role_name")?.toLowerCase() === "tecnico") {
+      router.replace("/dashboard/servicios");
+      return;
+    }
+    load().catch(() => undefined);
+  }, [router]);
 
   const stats = useMemo(() => ({
     total: references.length,
@@ -133,6 +150,44 @@ export default function ServiceReferencesPage() {
     manuals: references.reduce((sum, item) => sum + (item.manuals?.length || 0), 0),
     active: references.filter((item) => item.active).length
   }), [references]);
+  const categoryCounts = useMemo(() => references.reduce<Record<string, number>>((counts, reference) => {
+    counts[reference.category || "otros"] = (counts[reference.category || "otros"] || 0) + 1;
+    return counts;
+  }, {}), [references]);
+  const filtered = useMemo(() => {
+    const term = search.trim().toLocaleLowerCase();
+    return references.filter((reference) => {
+      const matchesTerm = !term || [reference.code, reference.name, reference.category, reference.brand, reference.model, reference.description]
+        .filter(Boolean)
+        .some((value) => String(value).toLocaleLowerCase().includes(term));
+      const matchesActive =
+        !activeScope ||
+        (activeScope === "active" && reference.active) ||
+        (activeScope === "inactive" && !reference.active);
+      const manuals = reference.manuals?.length || 0;
+      const matchesDocuments =
+        !documentationScope ||
+        (documentationScope === "with_manuals" && manuals > 0) ||
+        (documentationScope === "without_manuals" && manuals === 0) ||
+        (documentationScope === "multi_part" && reference.parts.length > 1);
+      return matchesTerm && (!category || reference.category === category) && matchesActive && matchesDocuments;
+    }).sort((a, b) => {
+      if (sortBy === "name") return a.name.localeCompare(b.name);
+      if (sortBy === "parts_desc") return b.parts.length - a.parts.length || a.code.localeCompare(b.code);
+      if (sortBy === "manuals_desc") return (b.manuals?.length || 0) - (a.manuals?.length || 0) || a.code.localeCompare(b.code);
+      if (sortBy === "time_asc") return a.estimated_minutes - b.estimated_minutes || a.code.localeCompare(b.code);
+      return a.code.localeCompare(b.code);
+    });
+  }, [activeScope, category, documentationScope, references, search, sortBy]);
+  const activeFilters = [category, activeScope, documentationScope].filter(Boolean).length + (search.trim() ? 1 : 0);
+
+  function clearFilters() {
+    setSearch("");
+    setCategory("");
+    setActiveScope("");
+    setDocumentationScope("");
+    setSortBy("code");
+  }
 
   function reset() {
     setSelected(null);
@@ -227,71 +282,254 @@ export default function ServiceReferencesPage() {
     }
   }
 
+  function updateServiceType(index: number, patch: Partial<ServiceType>) {
+    setServiceTypes((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item));
+  }
+
+  function addServiceType() {
+    setServiceTypes((current) => [...current, { code: "", label: "", active: true }]);
+  }
+
+  function removeServiceType(index: number) {
+    setServiceTypes((current) => current.filter((_, itemIndex) => itemIndex !== index));
+  }
+
+  async function saveServiceTypes() {
+    const normalized = serviceTypes.map((item) => ({
+      code: item.code.trim().toLowerCase().replace(/[^a-z0-9_-]+/g, "_"),
+      label: item.label.trim(),
+      active: item.active !== false
+    })).filter((item) => item.code && item.label);
+    if (!normalized.length || !normalized.some((item) => item.active)) {
+      setError("Registra al menos un tipo de servicio activo.");
+      return;
+    }
+    if (new Set(normalized.map((item) => item.code)).size !== normalized.length) {
+      setError("No puedes repetir codigos de tipos de servicio.");
+      return;
+    }
+    setSavingTypes(true);
+    setError("");
+    try {
+      const saved = await api<ServiceType[]>("/api/v1/services/service-types", {
+        method: "PUT",
+        body: JSON.stringify({ types: normalized })
+      });
+      setServiceTypes(saved);
+      setMessage("Tipos de servicio actualizados.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No fue posible guardar los tipos de servicio.");
+    } finally {
+      setSavingTypes(false);
+    }
+  }
+
   return (
-    <div className="space-y-5 pb-24 md:pb-0">
-      <header className="sticky top-0 z-20 -mx-3 grid gap-3 border-b border-line bg-paper/95 px-3 py-3 backdrop-blur sm:-mx-4 sm:px-4 md:static md:mx-0 md:flex md:items-start md:justify-between md:border-0 md:bg-transparent md:px-0 md:py-0">
+    <div className="mx-auto max-w-7xl space-y-5 pb-24 md:pb-8">
+      <header className="sticky top-0 z-20 -mx-3 border-b border-line bg-paper/95 px-3 py-3 backdrop-blur sm:-mx-4 sm:px-4 md:static md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0">
         <div className="min-w-0">
           <Link className="mb-3 inline-flex h-11 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-medium text-neutral-600 hover:text-apex md:border-0 md:bg-transparent md:px-0" href="/dashboard/servicios"><ArrowLeft size={16} /> Volver a servicios</Link>
           <p className="text-sm font-medium text-apex">Servicios</p>
           <h1 className="text-2xl font-semibold md:text-3xl">Referencias de servicio</h1>
-          <p className="mt-2 max-w-3xl text-sm text-neutral-600">Maestro tecnico para modelos, piezas, tiempos, manuales, guias y carga masiva por CSV.</p>
-        </div>
-        <div className="grid gap-2 sm:flex sm:flex-wrap">
-          <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md border border-line bg-white px-4 text-sm font-semibold hover:bg-paper sm:w-auto" onClick={downloadTemplate} type="button"><Download size={16} /> Plantilla CSV</button>
-          <label className="inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-line bg-white px-4 text-sm font-semibold hover:bg-paper sm:w-auto">
-            <Upload size={16} /> Cargar CSV
-            <input className="hidden" type="file" accept=".csv,text/csv" onChange={onCsv} />
-          </label>
-          <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white sm:w-auto" onClick={reset} type="button"><Plus size={16} /> Nueva referencia</button>
+          <p className="mt-2 max-w-3xl text-sm text-neutral-600">Maestro tecnico para modelos, listas de piezas, tiempos, manuales, guias y carga masiva por CSV.</p>
         </div>
       </header>
 
       {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">{message}</div> : null}
       {error ? <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</div> : null}
 
-      <section className="grid gap-3 md:grid-cols-4">
-        <Metric label="Referencias" value={stats.total} />
-        <Metric label="Activas" value={stats.active} />
-        <Metric label="Piezas" value={stats.parts} />
-        <Metric label="Manuales/guias" value={stats.manuals} />
-      </section>
-
-      <section className="grid gap-3 md:grid-cols-3">
-        <ActionCard title="Nueva referencia" detail="Crear ficha tecnica, piezas y documentos." icon={Plus} onClick={reset} primary />
-        <ActionCard title="Carga masiva" detail="Sube referencias y piezas desde una plantilla CSV." icon={Upload} onClick={() => setShowImport(true)} />
-        <ActionCard title="Documentos tecnicos" detail="Manuales visibles para el tecnico durante la inspeccion." icon={FileText} onClick={() => undefined} />
-      </section>
-
-      <section className="rounded-md border border-line bg-white p-3 sm:p-4">
-        <div className="mb-4 grid gap-3 md:grid-cols-[1fr_220px]">
-          <label className="relative">
-            <Search className="pointer-events-none absolute left-3 top-3 text-neutral-400" size={16} />
-            <input className="h-10 w-full rounded-md border border-line pl-9 pr-3 text-sm" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por codigo, nombre, marca o modelo" />
-          </label>
-          <select className="h-11 w-full rounded-md border border-line px-3 text-sm" value={category} onChange={(event) => setCategory(event.target.value)}>
-            <option value="">Todas las categorias</option>
-            {categories.map((item) => <option key={item} value={item}>{item}</option>)}
-          </select>
+      <section className="overflow-hidden rounded-md bg-[#081411] text-white shadow-sm">
+        <div className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-teal-100">
+              <Sparkles size={14} /> Maestro tecnico de servicios
+            </div>
+            <h2 className="max-w-3xl text-2xl font-semibold leading-tight sm:text-3xl">Referencias y listas listas para mantener</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/65">Compara fichas tecnicas, listas de piezas, tiempos y documentos sin abrir cada referencia. Edita solo cuando el maestro cambie.</p>
+          </div>
+          <div className="grid shrink-0 grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+            <button className="dark-primary-action col-span-2 inline-flex h-11 items-center justify-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-[#081411] sm:col-span-1" onClick={reset} type="button"><Plus size={17} /> Nueva referencia</button>
+            <button className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" onClick={downloadTemplate} type="button"><Download size={16} /> Plantilla</button>
+            <label className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-md border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10">
+              <Upload size={16} /> Importar
+              <input className="hidden" type="file" accept=".csv,text/csv" onChange={onCsv} />
+            </label>
+          </div>
         </div>
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {references.map((reference) => (
-            <button className={`rounded-md border p-3 text-left transition hover:bg-paper sm:p-4 ${selected?.id === reference.id ? "border-apex" : "border-line"}`} key={reference.id} onClick={() => edit(reference)} type="button">
-              <div className="mb-3 flex items-center justify-between gap-2">
-                <span className="text-xs font-semibold uppercase text-apex">{reference.category}</span>
-                <span className="rounded-md bg-paper px-2 py-1 font-mono text-xs">{reference.code}</span>
-              </div>
-              <h3 className="break-words font-semibold">{reference.name}</h3>
-              <p className="mt-1 text-sm text-neutral-500">{[reference.brand, reference.model].filter(Boolean).join(" / ") || "Sin marca/modelo"}</p>
-              <div className="mt-3 flex flex-wrap gap-2 text-xs text-neutral-600">
-                <span className="rounded-md bg-paper px-2 py-1">{reference.parts.length} pieza(s)</span>
-                <span className="rounded-md bg-paper px-2 py-1">{reference.estimated_minutes} min</span>
-                <span className="rounded-md bg-paper px-2 py-1">{reference.manuals?.length || 0} doc.</span>
-              </div>
-            </button>
+        <div className="grid grid-cols-2 border-t border-white/10 text-sm sm:grid-cols-4">
+          <Summary label="Referencias" value={stats.total} />
+          <Summary label="Activas" value={stats.active} />
+          <Summary label="Piezas configuradas" value={stats.parts} />
+          <Summary label="Manuales y guias" value={stats.manuals} />
+        </div>
+      </section>
+
+      <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
+        <div className="mb-3 grid gap-2 sm:flex sm:items-start sm:justify-between">
+          <div>
+            <h2 className="font-semibold">Tipos de servicio</h2>
+            <p className="mt-1 text-sm text-neutral-500">Controla las opciones disponibles al crear o editar una orden. Inactiva un tipo para ocultarlo sin perder historial.</p>
+          </div>
+          <div className="grid gap-2 sm:flex">
+            <button className="h-10 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={addServiceType} type="button">Agregar tipo</button>
+            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white disabled:opacity-60" disabled={savingTypes} onClick={saveServiceTypes} type="button"><Save size={15} /> {savingTypes ? "Guardando..." : "Guardar tipos"}</button>
+          </div>
+        </div>
+        <div className="space-y-2">
+          {serviceTypes.map((item, index) => (
+            <div className="grid gap-2 rounded-md border border-line p-2 md:grid-cols-[160px_1fr_110px_44px]" key={`${item.code}-${index}`}>
+              <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="codigo" value={item.code} onChange={(event) => updateServiceType(index, { code: event.target.value })} />
+              <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Nombre visible" value={item.label} onChange={(event) => updateServiceType(index, { label: event.target.value })} />
+              <label className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-semibold">
+                <input checked={item.active !== false} onChange={(event) => updateServiceType(index, { active: event.target.checked })} type="checkbox" />
+                Activo
+              </label>
+              <button className="h-10 rounded-md border border-line text-sm font-semibold hover:bg-paper" onClick={() => removeServiceType(index)} type="button">-</button>
+            </div>
           ))}
-          {!references.length ? <p className="rounded-md bg-paper p-4 text-sm text-neutral-600 md:col-span-2 xl:col-span-3">No hay referencias para mostrar.</p> : null}
         </div>
       </section>
+
+      <section className="min-w-0 rounded-md border border-line bg-white shadow-sm">
+        <div className="border-b border-line p-3 sm:p-4">
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="flex h-9 w-9 items-center justify-center rounded-md bg-apex/10 text-apex"><SlidersHorizontal size={17} /></span>
+              <div>
+                <h2 className="font-semibold">Consulta de referencias</h2>
+                <p className="text-sm text-neutral-500">Filtra y ordena el maestro tecnico sin recargar la pantalla.</p>
+              </div>
+            </div>
+            {activeFilters ? <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold text-neutral-600 hover:border-apex hover:text-apex" onClick={clearFilters} type="button"><RotateCcw size={15} /> Limpiar {activeFilters} filtro(s)</button> : null}
+          </div>
+
+          <label className="relative block">
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={17} />
+            <input className="h-12 w-full rounded-md border border-line bg-paper pl-10 pr-3 text-base outline-none transition focus:border-apex focus:bg-white md:text-sm" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por codigo, nombre, categoria, marca, modelo o descripcion" />
+          </label>
+
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+            <button className={`shrink-0 rounded-md border px-3 py-2 text-xs font-semibold transition ${!category ? "border-apex bg-apex text-white" : "border-line bg-white text-neutral-600 hover:border-apex"}`} onClick={() => setCategory("")} type="button">Todas <span className="ml-1 opacity-70">{references.length}</span></button>
+            {categories.filter((item) => categoryCounts[item]).map((item) => (
+              <button className={`shrink-0 rounded-md border px-3 py-2 text-xs font-semibold capitalize transition ${category === item ? "border-apex bg-apex text-white" : "border-line bg-white text-neutral-600 hover:border-apex"}`} key={item} onClick={() => setCategory(item)} type="button">{item} <span className="ml-1 opacity-70">{categoryCounts[item]}</span></button>
+            ))}
+          </div>
+
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            <select className="h-11 rounded-md border border-line bg-white px-3 text-sm" value={activeScope} onChange={(event) => setActiveScope(event.target.value)}>
+              <option value="">Cualquier estado</option>
+              <option value="active">Solo activas</option>
+              <option value="inactive">Solo inactivas</option>
+            </select>
+            <select className="h-11 rounded-md border border-line bg-white px-3 text-sm" value={documentationScope} onChange={(event) => setDocumentationScope(event.target.value)}>
+              <option value="">Piezas y documentos</option>
+              <option value="with_manuals">Con manuales</option>
+              <option value="without_manuals">Sin manuales</option>
+              <option value="multi_part">Con varias piezas</option>
+            </select>
+            <select className="h-11 rounded-md border border-line bg-white px-3 text-sm" value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
+              <option value="code">Codigo</option>
+              <option value="name">Nombre</option>
+              <option value="parts_desc">Mas piezas</option>
+              <option value="manuals_desc">Mas documentos</option>
+              <option value="time_asc">Menor tiempo estimado</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="p-3 sm:p-4">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="font-semibold">Maestro de referencias</h2>
+              <p className="text-sm text-neutral-500">{filtered.length} de {references.length} referencia(s) visibles</p>
+            </div>
+            <p className="hidden text-xs font-medium text-neutral-500 md:block">Selecciona una referencia para editar su ficha y listas de servicio.</p>
+          </div>
+
+          <div className="grid gap-3 md:hidden">
+            {filtered.map((reference) => (
+              <button className="rounded-md border border-line p-3 text-left transition active:scale-[0.99] hover:border-apex hover:bg-paper" key={reference.id} onClick={() => edit(reference)} type="button">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-md bg-paper px-2 py-1 font-mono text-xs font-semibold text-apex">{reference.code}</span>
+                      <span className={`rounded-md border px-2 py-1 text-[11px] font-semibold ${reference.active ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-neutral-200 bg-neutral-100 text-neutral-600"}`}>{reference.active ? "Activa" : "Inactiva"}</span>
+                    </div>
+                    <h3 className="mt-3 text-base font-semibold">{reference.name}</h3>
+                    <p className="mt-1 text-sm text-neutral-500">{[reference.brand, reference.model].filter(Boolean).join(" / ") || "Sin marca o modelo"}</p>
+                  </div>
+                  <ChevronRight className="shrink-0 text-apex" size={18} />
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-neutral-600">
+                  <span className="rounded-md bg-paper px-2 py-2 text-center">{reference.parts.length} pieza(s)</span>
+                  <span className="rounded-md bg-paper px-2 py-2 text-center">{reference.manuals?.length || 0} doc.</span>
+                  <span className="rounded-md bg-paper px-2 py-2 text-center">{reference.estimated_minutes} min</span>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {filtered.length ? (
+            <div className="hidden overflow-x-auto rounded-md border border-line md:block">
+              <table className="w-full min-w-[1040px] border-collapse text-left text-sm">
+                <thead className="bg-paper text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
+                  <tr>
+                    <th className="px-4 py-3">Codigo y estado</th>
+                    <th className="px-4 py-3">Referencia</th>
+                    <th className="px-4 py-3">Categoria</th>
+                    <th className="px-4 py-3 text-center">Configuracion tecnica</th>
+                    <th className="px-4 py-3">Tiempo</th>
+                    <th className="px-4 py-3 text-right">Accion</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {filtered.map((reference) => (
+                    <tr className="group transition hover:bg-paper" key={reference.id}>
+                      <td className="px-4 py-3 align-top">
+                        <button className="font-mono text-sm font-semibold text-apex" onClick={() => edit(reference)} type="button">{reference.code}</button>
+                        <div className="mt-2"><span className={`rounded-md border px-2 py-1 text-[11px] font-semibold ${reference.active ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-neutral-200 bg-neutral-100 text-neutral-600"}`}>{reference.active ? "Activa" : "Inactiva"}</span></div>
+                      </td>
+                      <td className="max-w-[320px] px-4 py-3 align-top">
+                        <p className="truncate font-semibold text-neutral-900">{reference.name}</p>
+                        <p className="mt-1 truncate text-xs text-neutral-500">{[reference.brand, reference.model].filter(Boolean).join(" / ") || "Sin marca o modelo registrado"}</p>
+                        <p className="mt-1 line-clamp-1 text-xs text-neutral-500">{reference.description || "Sin descripcion tecnica"}</p>
+                      </td>
+                      <td className="px-4 py-3 align-top"><span className="rounded-md bg-paper px-3 py-2 text-xs font-semibold capitalize text-neutral-700">{reference.category || "otros"}</span></td>
+                      <td className="px-4 py-3 text-center align-top">
+                        <div className="inline-flex items-center gap-3 rounded-md bg-paper px-3 py-2 text-xs font-medium text-neutral-600">
+                          <span className="inline-flex items-center gap-1.5"><Layers3 size={14} /> {reference.parts.length} pieza(s)</span>
+                          <span className="h-3 w-px bg-line" />
+                          <span className={`inline-flex items-center gap-1.5 ${(reference.manuals?.length || 0) ? "" : "text-amber-700"}`}><BookOpen size={14} /> {reference.manuals?.length || 0} doc.</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 align-top"><p className="inline-flex items-center gap-2 font-medium text-neutral-800"><Clock3 size={15} className="text-neutral-400" /> {reference.estimated_minutes} min</p></td>
+                      <td className="px-4 py-3 text-right align-middle">
+                        <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-white px-3 text-xs font-semibold text-apex shadow-sm transition group-hover:border-apex" onClick={() => edit(reference)} type="button">Editar listas <ChevronRight size={14} /></button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="rounded-md border border-dashed border-line p-8 text-center sm:p-10">
+              <Filter className="mx-auto mb-3 text-neutral-300" size={34} />
+              <p className="font-semibold">No encontramos referencias con estos filtros</p>
+              <p className="mt-1 text-sm text-neutral-500">Ajusta la busqueda o limpia los filtros activos.</p>
+              {activeFilters ? <button className="mt-4 inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white" onClick={clearFilters} type="button"><RotateCcw size={15} /> Limpiar filtros</button> : null}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <div className="fixed inset-x-0 bottom-0 z-50 grid grid-cols-[1fr_56px_56px] gap-2 border-t border-line bg-white/95 p-3 pb-[calc(env(safe-area-inset-bottom)+12px)] backdrop-blur md:hidden">
+        <button className="inline-flex h-14 min-w-0 items-center justify-center gap-2 rounded-md bg-apex px-3 text-base font-semibold text-white shadow-sm" onClick={reset} type="button"><Plus className="shrink-0" size={18} /> <span className="truncate">Nueva referencia</span></button>
+        <button aria-label="Descargar plantilla CSV" className="inline-flex h-14 w-14 items-center justify-center rounded-md border border-line bg-white" onClick={downloadTemplate} type="button"><Download size={20} /></button>
+        <label aria-label="Importar referencias CSV" className="inline-flex h-14 w-14 cursor-pointer items-center justify-center rounded-md border border-line bg-white">
+          <Upload size={20} />
+          <input className="hidden" type="file" accept=".csv,text/csv" onChange={onCsv} />
+        </label>
+      </div>
 
       {showForm ? (
         <ModalFrame title={selected ? "Editar referencia" : "Nueva referencia"} onClose={() => setShowForm(false)} maxWidth="max-w-5xl">
@@ -310,7 +548,7 @@ export default function ServiceReferencesPage() {
 
             <section className="rounded-md border border-line p-3">
               <div className="mb-3 grid gap-2 sm:flex sm:items-center sm:justify-between">
-                <div><h2 className="text-sm font-semibold">Piezas para inspeccion</h2><p className="text-xs text-neutral-500">Estas piezas aparecen al tecnico durante la validacion.</p></div>
+              <div><h2 className="text-sm font-semibold">Lista de piezas para inspeccion</h2><p className="text-xs text-neutral-500">Estas piezas aparecen al tecnico durante la validacion y se actualizan en nuevas ordenes.</p></div>
                 <button className="h-11 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => setForm((prev) => ({ ...prev, parts: [...prev.parts, { ...emptyPart }] }))} type="button">Agregar pieza</button>
               </div>
               <div className="space-y-2">
@@ -392,11 +630,11 @@ export default function ServiceReferencesPage() {
   );
 }
 
-function Metric({ label, value }: { label: string; value: number }) {
+function Summary({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-md border border-line bg-white p-3">
-      <p className="text-xs text-neutral-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold">{value}</p>
+    <div className="border-white/10 px-4 py-3 first:border-0 sm:border-l">
+      <p className="text-xs text-white/55">{label}</p>
+      <p className="mt-1 text-lg font-semibold text-white">{value}</p>
     </div>
   );
 }

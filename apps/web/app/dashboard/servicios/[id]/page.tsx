@@ -5,17 +5,19 @@ import { SignatureCapture } from "@/components/operations/SignatureCapture";
 import { api } from "@/lib/api";
 import { getGpsFix } from "@/lib/gps";
 import { buildServiceReportPdfBlob } from "@/lib/serviceReportPdf";
-import { ArrowLeft, BookOpen, Camera, CheckCircle2, Download, FileSignature, History, MapPin, Play, Search, Wrench, XCircle } from "lucide-react";
+import { ArrowLeft, BookOpen, Camera, CheckCircle2, Circle, Download, FileSignature, MapPin, Play, Star, Wrench, XCircle } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
+import { useParams, useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 
 type ServiceReferencePart = { id: number | string; name: string; quantity: number; unit: string };
 type ReferenceManual = { title: string; file_name?: string; mime_type?: string; file_url?: string; base64_data?: string; notes?: string };
 type ServiceReference = { code: string; name: string; parts: ServiceReferencePart[]; manuals?: ReferenceManual[]; metadata?: { manuals?: ReferenceManual[] } };
 type InspectionStatus = "ok" | "averiada" | "faltante";
-type InspectionItem = { part_id: number | string; name: string; quantity: number; unit: string; status: InspectionStatus; comment: string; action: string };
+type InspectionItem = { part_id: number | string; name: string; quantity: number; unit: string; status: InspectionStatus; comment: string; action: string; supplier_name?: string };
 type ServicePhoto = { id: number | string; type: string; file_url?: string; base64_data?: string; metadata?: { mime_type?: string; file_name?: string; part_id?: number | string; part_name?: string; [key: string]: unknown }; created_at?: string };
+type SatisfactionQuestion = { id: string; label: string; active?: boolean };
 type ServiceOrder = {
   id: number | string;
   number: string;
@@ -36,7 +38,10 @@ type ServiceOrder = {
   no_execution_reason?: string;
   incidents: Array<{ id: number | string; description: string; type: string; created_at?: string }>;
   photos: ServicePhoto[];
-  metadata?: { inspection?: { items?: InspectionItem[]; decision?: string; problem_count?: number } };
+  metadata?: {
+    inspection?: { items?: InspectionItem[]; decision?: string; problem_count?: number };
+    satisfaction_survey?: { answers?: Array<{ question_id: string; question: string; rating: number }>; average?: number; completed_at?: string };
+  };
 };
 type Panel = "inicio" | "inspeccion" | "ejecucion" | "novedad" | "historial";
 
@@ -51,7 +56,13 @@ const statusLabel: Record<string, string> = {
   no_ejecutada: "No ejecutada"
 };
 const executionPhotoTypes = ["producto_abierto", "producto_cerrado"];
-const closePhotoTypes = ["producto_abierto", "producto_cerrado", "cliente", "firma_cliente"];
+const closePhotoTypes = ["producto_abierto", "producto_cerrado", "firma_cliente"];
+const satisfactionQuestions = [
+  { id: "service_quality", label: "¿Cómo calificas la calidad del servicio realizado?" },
+  { id: "technician_attention", label: "¿Cómo calificas la atención y claridad del técnico?" },
+  { id: "final_result", label: "¿Qué tan satisfecho quedaste con el resultado final?" }
+] as const;
+const fallbackSatisfactionQuestions = (): SatisfactionQuestion[] => satisfactionQuestions.map((question) => ({ ...question, active: true }));
 const photoLabels: Record<string, string> = {
   fachada: "Fachada",
   pieza_averiada: "Pieza",
@@ -62,19 +73,25 @@ const photoLabels: Record<string, string> = {
   no_ejecutada: "No ejecutada"
 };
 const inspectionStatusLabel: Record<InspectionStatus, string> = { ok: "OK", averiada: "Averiada", faltante: "Faltante" };
-const panelConfig: Array<{ id: Panel; label: string; icon: typeof Play }> = [
-  { id: "inicio", label: "Inicio", icon: Play },
-  { id: "inspeccion", label: "Inspeccion", icon: Search },
-  { id: "ejecucion", label: "Ejecucion", icon: Wrench },
-  { id: "novedad", label: "Novedad", icon: FileSignature },
-  { id: "historial", label: "Historial", icon: History }
-];
+const workflowSteps = [
+  { id: "pendiente", label: "Inicio" },
+  { id: "inspeccion", label: "Inspección" },
+  { id: "ejecucion", label: "Ejecución" },
+  { id: "cerrada", label: "Cierre" }
+] as const;
 
 function panelForStatus(status: string): Panel {
   if (status === "pendiente") return "inicio";
   if (["en_curso", "inspeccion"].includes(status)) return "inspeccion";
   if (status === "ejecucion") return "ejecucion";
   return "historial";
+}
+
+function workflowStep(status: string) {
+  if (status === "pendiente") return 0;
+  if (["en_curso", "inspeccion"].includes(status)) return 1;
+  if (status === "ejecucion") return 2;
+  return 3;
 }
 
 function photoSrc(photo: ServicePhoto) {
@@ -92,12 +109,11 @@ function mapLink(lat?: number, lon?: number) {
 
 export default function ServiceOperationPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const [order, setOrder] = useState<ServiceOrder | null>(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
-  const [incident, setIncident] = useState("");
   const [noExecutionReason, setNoExecutionReason] = useState("");
-  const [noExecutionMode, setNoExecutionMode] = useState(false);
   const [gpsMessage, setGpsMessage] = useState("");
   const [working, setWorking] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
@@ -105,15 +121,22 @@ export default function ServiceOperationPage() {
   const [captures, setCaptures] = useState<Record<string, CapturedFile | null>>({});
   const [inspection, setInspection] = useState<InspectionItem[]>([]);
   const [closureMode, setClosureMode] = useState(false);
+  const [surveyQuestions, setSurveyQuestions] = useState<SatisfactionQuestion[]>(fallbackSatisfactionQuestions());
+  const [satisfactionRatings, setSatisfactionRatings] = useState<Record<string, number>>({});
   const [activePanel, setActivePanel] = useState<Panel>("inicio");
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setMessage("");
     try {
-      const data = await api<ServiceOrder>(`/api/v1/services/orders/${params.id}`);
+      const [data, questions] = await Promise.all([
+        api<ServiceOrder>(`/api/v1/services/orders/${params.id}`),
+        api<SatisfactionQuestion[]>("/api/v1/services/satisfaction-questions").catch(() => fallbackSatisfactionQuestions())
+      ]);
       if (!data?.id) throw new Error("No se encontro el servicio solicitado o no tienes permisos para verlo.");
+      const activeQuestions = questions.filter((question) => question.active !== false && question.id && question.label);
       setOrder(data);
+      setSurveyQuestions(activeQuestions.length ? activeQuestions : fallbackSatisfactionQuestions());
       setActivePanel((current) => current === "inicio" && data.status !== "pendiente" ? panelForStatus(data.status) : current);
     } catch (error) {
       setOrder(null);
@@ -121,16 +144,15 @@ export default function ServiceOperationPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [params.id]);
 
   useEffect(() => {
     load();
-  }, [params.id]);
+  }, [load]);
 
   useEffect(() => {
     if (!order) return;
     if (order.metadata?.inspection?.decision === "no_armable" && !["cerrada", "no_ejecutada"].includes(order.status)) {
-      setNoExecutionMode(true);
       const problems = order.metadata.inspection.items?.filter((item) => item.status !== "ok") || [];
       if (problems.length && !noExecutionReason.trim()) {
         setNoExecutionReason(problems.map((item) => `${inspectionStatusLabel[item.status]}: ${item.name}${item.comment ? ` - ${item.comment}` : ""}`).join("\n"));
@@ -191,8 +213,25 @@ export default function ServiceOperationPage() {
     setWorking(true);
     try {
       const gpsResult = ["start", "close", "close-not-executed"].includes(action) ? await optionalGps(action) : { gps: null, metadata: {} };
+      const satisfactionSurvey = action === "close" ? {
+        version: 1,
+        answers: surveyQuestions.map((question) => ({
+          question_id: question.id,
+          question: question.label,
+          rating: satisfactionRatings[question.id]
+        })),
+        average: surveyQuestions.reduce((total, question) => total + (satisfactionRatings[question.id] || 0), 0) / surveyQuestions.length,
+        completed_at: new Date().toISOString()
+      } : undefined;
       const body = action === "close-not-executed" ? { no_execution_reason: noExecutionReason || "Cliente no disponible / evidencia pendiente" } : {};
-      const updated = await api<ServiceOrder>(`/api/v1/services/orders/${params.id}/${action}`, { method: "PATCH", body: JSON.stringify({ ...body, ...(gpsResult.gps || {}), metadata: gpsResult.metadata }) });
+      const updated = await api<ServiceOrder>(`/api/v1/services/orders/${params.id}/${action}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          ...body,
+          ...(gpsResult.gps || {}),
+          metadata: { ...gpsResult.metadata, ...(satisfactionSurvey ? { satisfaction_survey: satisfactionSurvey } : {}) }
+        })
+      });
       setOrder(updated);
       setActivePanel(panelForStatus(updated.status));
       setMessage(`Orden ${statusLabel[updated.status] || updated.status}.`);
@@ -211,20 +250,28 @@ export default function ServiceOperationPage() {
     return Boolean(captures[`pieza_${partId}`]) || Boolean(order?.photos.some((photo) => photo.type === "pieza_averiada" && String(photo.metadata?.part_id) === String(partId)));
   }
 
-  function hasPhoto(type: string) {
-    return Boolean(captures[type]) || Boolean(order?.photos.some((photo) => photo.type === type));
+  function hasPersistedPhoto(type: string) {
+    return Boolean(order?.photos.some((photo) => photo.type === type));
+  }
+
+  function uploadsPending(types: string[]) {
+    return types.some((type) => uploading[type]);
   }
 
   function executionPhotosReady() {
-    return executionPhotoTypes.every((type) => hasPhoto(type));
+    return executionPhotoTypes.every((type) => hasPersistedPhoto(type)) && !uploadsPending(executionPhotoTypes);
   }
 
-  function closePhotosReady() {
-    return closePhotoTypes.every((type) => hasPhoto(type));
+  function satisfactionReady() {
+    return surveyQuestions.every((question) => satisfactionRatings[question.id] >= 1);
+  }
+
+  function closeReady() {
+    return closePhotoTypes.every((type) => hasPersistedPhoto(type)) && satisfactionReady() && !uploadsPending(closePhotoTypes);
   }
 
   function noExecutionReady() {
-    return Boolean(noExecutionReason.trim() && hasPhoto("no_ejecutada") && hasPhoto("firma_cliente"));
+    return Boolean(noExecutionReason.trim() && hasPersistedPhoto("no_ejecutada") && hasPersistedPhoto("firma_cliente") && !uploadsPending(["no_ejecutada", "firma_cliente"]));
   }
 
   function validateInspection() {
@@ -249,7 +296,6 @@ export default function ServiceOperationPage() {
       if (!inspected) return;
       const updated = await api<ServiceOrder>(`/api/v1/services/orders/${params.id}/execution`, { method: "PATCH", body: JSON.stringify({}) });
       setOrder(updated);
-      setNoExecutionMode(false);
       setClosureMode(false);
       setActivePanel("ejecucion");
       setMessage("Inspeccion guardada. Producto armable.");
@@ -266,7 +312,6 @@ export default function ServiceOperationPage() {
       const updated = await saveInspection("no_armable");
       if (!updated) return;
       setOrder(updated);
-      setNoExecutionMode(true);
       setClosureMode(false);
       const problems = inspection.filter((item) => item.status !== "ok");
       setNoExecutionReason(problems.map((item) => `${inspectionStatusLabel[item.status]}: ${item.name}${item.comment ? ` - ${item.comment}` : ""}`).join("\n"));
@@ -277,14 +322,6 @@ export default function ServiceOperationPage() {
     } finally {
       setWorking(false);
     }
-  }
-
-  async function addIncident() {
-    if (!incident.trim()) return;
-    await api(`/api/v1/services/orders/${params.id}/incidents`, { method: "POST", body: JSON.stringify({ type: "averia", action: "revision", description: incident }) });
-    setIncident("");
-    setMessage("Novedad registrada.");
-    await load();
   }
 
   function savePdfBlob(blob: Blob) {
@@ -320,17 +357,6 @@ export default function ServiceOperationPage() {
     }
   }
 
-  const visiblePanels = useMemo(() => {
-    if (!order) return [];
-    return panelConfig.filter((panel) => {
-      if (panel.id === "inicio") return order.status === "pendiente";
-      if (panel.id === "inspeccion") return ["en_curso", "inspeccion"].includes(order.status);
-      if (panel.id === "ejecucion") return order.status === "ejecucion";
-      if (panel.id === "novedad") return !["cerrada", "no_ejecutada"].includes(order.status);
-      return true;
-    });
-  }, [order]);
-
   if (!order) {
     return (
       <div className="mx-auto max-w-xl space-y-4 p-6">
@@ -342,6 +368,7 @@ export default function ServiceOperationPage() {
     );
   }
   const referenceManuals = order.reference?.manuals?.length ? order.reference.manuals : order.reference?.metadata?.manuals || [];
+  const orderCompleted = ["cerrada", "no_ejecutada"].includes(order.status);
 
   return (
     <div className="mx-auto max-w-xl space-y-4 pb-32 md:pb-8">
@@ -369,22 +396,44 @@ export default function ServiceOperationPage() {
         </div>
       </section>
 
-      <nav className="-mx-3 flex gap-2 overflow-x-auto px-3 pb-1 sm:mx-0 sm:grid sm:grid-cols-5 sm:px-0">
-        {visiblePanels.map((panel) => {
-          const Icon = panel.icon;
-          return (
-            <button className={`inline-flex min-h-12 min-w-32 items-center justify-center gap-1 rounded-md border px-3 text-sm font-semibold sm:min-w-0 ${activePanel === panel.id ? "border-apex bg-apex text-white" : "border-line bg-white text-neutral-700"}`} key={panel.id} onClick={() => setActivePanel(panel.id)} type="button">
-              <Icon className="shrink-0" size={16} /> <span className="truncate">{panel.label}</span>
+      <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-apex">Avance de la orden</p>
+            <p className="mt-1 text-sm text-neutral-600">Paso {workflowStep(order.status) + 1} de {workflowSteps.length}: <span className="font-semibold text-neutral-900">{workflowSteps[workflowStep(order.status)].label}</span></p>
+          </div>
+          {!["cerrada", "no_ejecutada"].includes(order.status) ? (
+            <button className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-md border border-red-200 px-3 text-sm font-semibold text-red-700 hover:bg-red-50" onClick={() => setActivePanel("novedad")} type="button">
+              <FileSignature size={16} /> Novedad
             </button>
-          );
-        })}
-      </nav>
+          ) : null}
+        </div>
+        <div className="mt-4 grid grid-cols-4 gap-1">
+          {workflowSteps.map((step, index) => {
+            const current = index === workflowStep(order.status);
+            const completed = index < workflowStep(order.status) || ["cerrada", "no_ejecutada"].includes(order.status);
+            return (
+              <div className="min-w-0" key={step.id}>
+                <div className={`h-1.5 rounded-full ${completed || current ? "bg-apex" : "bg-line"}`} />
+                <div className={`mt-2 flex items-center gap-1 text-[11px] font-semibold sm:text-xs ${current ? "text-apex" : completed ? "text-neutral-700" : "text-neutral-400"}`}>
+                  {completed ? <CheckCircle2 className="shrink-0" size={14} /> : <Circle className="shrink-0" size={14} />}
+                  <span className="truncate">{step.label}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        {order.status === "no_ejecutada" ? <p className="mt-3 rounded-md bg-amber-50 p-2 text-xs font-semibold text-amber-900">La orden finalizó mediante una novedad soportada.</p> : null}
+      </section>
 
       {activePanel === "inicio" && order.status === "pendiente" ? (
         <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
           <h2 className="mb-3 text-base font-semibold">Inicio del servicio</h2>
-          <PhotoCapture label="Foto de fachada" required loading={uploading.fachada} value={captures.fachada || null} onChange={(file) => uploadPhoto("fachada", file)} />
-          <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white disabled:opacity-50" disabled={working || (!captures.fachada && !hasPhoto("fachada"))} onClick={() => update("start")} type="button"><Play size={18} /> Iniciar y registrar GPS</button>
+          <div className="rounded-md border border-line bg-paper p-4">
+            <p className="font-semibold">Confirma que estás en el punto de servicio</p>
+            <p className="mt-1 text-sm text-neutral-600">Al iniciar registraremos tu ubicación automáticamente. No necesitas tomar una foto de la fachada.</p>
+          </div>
+          <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white disabled:opacity-50" disabled={working} onClick={() => update("start")} type="button"><Play size={18} /> Iniciar y registrar GPS</button>
         </section>
       ) : null}
 
@@ -435,7 +484,8 @@ export default function ServiceOperationPage() {
                       <option value="revision">Requiere revision</option>
                       <option value="ninguna">Sin accion adicional</option>
                     </select>
-                    <PhotoCapture label={`Evidencia - ${part.name}`} required loading={uploading[`pieza_${part.part_id}`]} value={captures[`pieza_${part.part_id}`] || null} onChange={(file) => uploadPhoto("pieza_averiada", file, { part_id: part.part_id, part_name: part.name, status: part.status, comment: part.comment, action: part.action }, `pieza_${part.part_id}`)} />
+                    <input className="h-12 w-full rounded-md border border-line px-3 text-base" placeholder="Proveedor sugerido (opcional)" value={part.supplier_name || ""} onChange={(event) => updateInspection(part.part_id, { supplier_name: event.target.value })} />
+                    <PhotoCapture label={`Evidencia - ${part.name}`} required loading={uploading[`pieza_${part.part_id}`]} value={captures[`pieza_${part.part_id}`] || null} onChange={(file) => uploadPhoto("pieza_averiada", file, { part_id: part.part_id, part_name: part.name, status: part.status, comment: part.comment, action: part.action, supplier_name: part.supplier_name || "" }, `pieza_${part.part_id}`)} />
                   </div>
                 ) : null}
               </div>
@@ -457,16 +507,51 @@ export default function ServiceOperationPage() {
                 <PhotoCapture label="Foto 1: Producto abierto" required loading={uploading.producto_abierto} value={captures.producto_abierto || null} onChange={(file) => uploadPhoto("producto_abierto", file)} />
                 <PhotoCapture label="Foto 2: Producto cerrado" required loading={uploading.producto_cerrado} value={captures.producto_cerrado || null} onChange={(file) => uploadPhoto("producto_cerrado", file)} />
               </div>
-              <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white disabled:opacity-50" disabled={!executionPhotosReady()} onClick={() => setClosureMode(true)} type="button"><Camera size={18} /> Continuar al cierre</button>
+              <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white disabled:opacity-50" disabled={!executionPhotosReady()} onClick={() => setClosureMode(true)} type="button"><Camera size={18} /> {uploadsPending(executionPhotoTypes) ? "Guardando evidencias..." : "Continuar al cierre"}</button>
             </>
           ) : (
             <>
               <h2 className="mb-3 text-base font-semibold">Cierre del servicio</h2>
-              <div className="grid gap-2">
-                <PhotoCapture label="Foto del cliente que recibe" required loading={uploading.cliente} value={captures.cliente || null} onChange={(file) => uploadPhoto("cliente", file)} />
+              <div className="grid gap-3">
+                <div className="rounded-md border border-line bg-paper p-3 sm:p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="font-semibold">Encuesta rápida del cliente</p>
+                      <p className="mt-1 text-sm text-neutral-600">Pide al cliente tocar las estrellas. Son {surveyQuestions.length} pregunta(s) y toma menos de un minuto.</p>
+                    </div>
+                    <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-semibold">
+                      {surveyQuestions.filter((question) => satisfactionRatings[question.id] >= 1).length} de {surveyQuestions.length} respondidas
+                    </span>
+                  </div>
+                  <div className="mt-3 grid gap-3">
+                    {surveyQuestions.map((question, index) => {
+                      const selectedRating = satisfactionRatings[question.id] || 0;
+                      return (
+                        <fieldset className="rounded-md border border-line bg-white p-3" key={question.id}>
+                          <legend className="px-1 text-sm font-semibold">{index + 1}. {question.label}</legend>
+                          <div className="mt-2 flex min-h-12 items-center gap-1 sm:gap-2">
+                            {[1, 2, 3, 4, 5].map((rating) => (
+                              <button
+                                aria-label={`${rating} de 5 estrellas para ${question.label}`}
+                                aria-pressed={selectedRating === rating}
+                                className="flex h-11 w-11 items-center justify-center rounded-md border border-line bg-white transition hover:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                                key={rating}
+                                onClick={() => setSatisfactionRatings((current) => ({ ...current, [question.id]: rating }))}
+                                type="button"
+                              >
+                                <Star className={rating <= selectedRating ? "fill-amber-400 text-amber-400" : "text-neutral-400"} size={25} />
+                              </button>
+                            ))}
+                            {selectedRating ? <span className="ml-1 text-sm font-semibold">{selectedRating}/5</span> : null}
+                          </div>
+                        </fieldset>
+                      );
+                    })}
+                  </div>
+                </div>
                 <SignatureCapture label="Firma del cliente" required value={captures.firma_cliente || null} onChange={(file) => uploadSignature(file)} />
               </div>
-              <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-emerald-600 text-base font-semibold text-white disabled:opacity-50" disabled={working || !closePhotosReady()} onClick={() => update("close")} type="button"><CheckCircle2 size={18} /> Cerrar servicio</button>
+              <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-emerald-600 text-base font-semibold text-white disabled:opacity-50" disabled={working || !closeReady()} onClick={() => update("close")} type="button"><CheckCircle2 size={18} /> {uploadsPending(closePhotoTypes) ? "Guardando soportes..." : "Cerrar servicio"}</button>
             </>
           )}
         </section>
@@ -474,13 +559,32 @@ export default function ServiceOperationPage() {
 
       {activePanel === "novedad" && !["cerrada", "no_ejecutada"].includes(order.status) ? (
         <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
-          <h2 className="mb-3 text-base font-semibold">{noExecutionMode ? "Cierre no ejecutado" : "Novedad"}</h2>
-          <textarea className="min-h-24 w-full rounded-md border border-line px-3 py-3 text-base md:text-sm" placeholder="Describe averia, faltante o accion requerida" value={incident} onChange={(event) => setIncident(event.target.value)} />
-          <button className="mt-2 h-12 w-full rounded-md border border-line text-base font-semibold hover:bg-paper" onClick={addIncident} type="button"><Search className="mr-1 inline" size={17} /> Registrar novedad</button>
-          <textarea className="mt-3 min-h-20 w-full rounded-md border border-line px-3 py-3 text-base md:text-sm" placeholder="Motivo si no se puede ejecutar" value={noExecutionReason} onChange={(event) => setNoExecutionReason(event.target.value)} />
-          <PhotoCapture label="Evidencia no ejecutada" loading={uploading.no_ejecutada} value={captures.no_ejecutada || null} onChange={(file) => uploadPhoto("no_ejecutada", file, { reason: noExecutionReason })} />
-          {noExecutionMode ? <SignatureCapture label="Firma del cliente" required value={captures.firma_cliente || null} onChange={(file) => uploadSignature(file, { reason: noExecutionReason, closure: "no_ejecutada" })} /> : null}
-          <button className="mt-2 inline-flex h-12 w-full items-center justify-center gap-2 rounded-md border border-red-200 text-base font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50" disabled={working || (noExecutionMode ? !noExecutionReady() : !noExecutionReason.trim() || !hasPhoto("no_ejecutada"))} onClick={() => update("close-not-executed")} type="button"><FileSignature size={17} /> Cerrar no ejecutada</button>
+          <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-amber-950">
+            <h2 className="text-base font-semibold">Reportar novedad y cerrar orden</h2>
+            <p className="mt-1 text-sm">Esta acción finaliza completamente la orden. Para proteger la trazabilidad debes registrar los tres soportes obligatorios.</p>
+          </div>
+          <div className="mb-4 grid grid-cols-3 gap-2 text-center text-xs font-semibold">
+            <SupportState ready={Boolean(noExecutionReason.trim())} label="Motivo" />
+            <SupportState ready={hasPersistedPhoto("no_ejecutada")} label="Evidencia" />
+            <SupportState ready={hasPersistedPhoto("firma_cliente")} label="Firma" />
+          </div>
+          <label className="text-sm font-semibold">1. Describe la novedad y por qué no puede continuar</label>
+          <textarea className="mt-1 min-h-24 w-full rounded-md border border-line px-3 py-3 text-base md:text-sm" placeholder="Ejemplo: producto incompleto, cliente ausente o pieza faltante..." value={noExecutionReason} onChange={(event) => setNoExecutionReason(event.target.value)} />
+          <div className="mt-3 grid gap-3">
+            <PhotoCapture label="2. Evidencia de la novedad" required loading={uploading.no_ejecutada} value={captures.no_ejecutada || null} onChange={(file) => uploadPhoto("no_ejecutada", file, { reason: noExecutionReason })} />
+            <SignatureCapture label="3. Firma del cliente" required value={captures.firma_cliente || null} onChange={(file) => uploadSignature(file, { reason: noExecutionReason, closure: "no_ejecutada" })} />
+          </div>
+          <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-red-700 text-base font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40" disabled={working || !noExecutionReady()} onClick={() => update("close-not-executed")} type="button"><FileSignature size={17} /> {uploadsPending(["no_ejecutada", "firma_cliente"]) ? "Guardando soportes..." : "Confirmar novedad y cerrar orden"}</button>
+          <button className="mt-2 h-11 w-full rounded-md border border-line text-sm font-semibold hover:bg-paper" onClick={() => setActivePanel(panelForStatus(order.status))} type="button">Volver al paso actual</button>
+        </section>
+      ) : null}
+
+      {orderCompleted ? (
+        <section className="rounded-md border border-emerald-300 bg-emerald-50 p-4 text-center shadow-sm">
+          <CheckCircle2 className="mx-auto text-emerald-700" size={40} />
+          <h2 className="mt-2 text-xl font-semibold text-emerald-950">Orden finalizada correctamente</h2>
+          <p className="mt-1 text-sm text-emerald-900">Los soportes quedaron registrados. Continúa con el siguiente servicio desde el monitor.</p>
+          <button className="mt-4 inline-flex h-16 w-full items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 text-lg font-semibold text-white shadow-sm hover:bg-emerald-800" onClick={() => router.replace("/dashboard/servicios")} type="button"><CheckCircle2 size={22} /> Servicio completado</button>
         </section>
       ) : null}
 
@@ -497,12 +601,30 @@ export default function ServiceOperationPage() {
             {mapLink(order.start_latitude, order.start_longitude) ? <a className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-md border border-line px-3 font-semibold" href={mapLink(order.start_latitude, order.start_longitude)} target="_blank" rel="noreferrer"><MapPin className="shrink-0" size={16} /> <span className="truncate">GPS inicio</span></a> : null}
             {mapLink(order.close_latitude, order.close_longitude) ? <a className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-md border border-line px-3 font-semibold" href={mapLink(order.close_latitude, order.close_longitude)} target="_blank" rel="noreferrer"><MapPin className="shrink-0" size={16} /> <span className="truncate">GPS cierre</span></a> : null}
           </div>
+          {order.metadata?.satisfaction_survey?.answers?.length ? (
+            <div className="rounded-md border border-line bg-paper p-3">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold">Encuesta de satisfaccion</h3>
+                <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900">
+                  Promedio {Number(order.metadata.satisfaction_survey.average || 0).toFixed(1)}/5
+                </span>
+              </div>
+              <div className="mt-3 grid gap-2">
+                {order.metadata.satisfaction_survey.answers.map((answer) => (
+                  <div className="flex items-center justify-between gap-3 rounded-md bg-white p-3 text-sm" key={answer.question_id}>
+                    <span>{answer.question}</span>
+                    <span className="shrink-0 font-semibold text-amber-700">{answer.rating}/5</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {order.photos.map((photo) => {
               const src = photoSrc(photo);
               return (
                 <div className="rounded-md border border-line bg-paper p-2" key={photo.id}>
-                  {src ? <img className="aspect-square w-full rounded-md object-cover" src={src} alt={photoLabels[photo.type] || photo.type} /> : <div className="flex aspect-square items-center justify-center rounded-md bg-white text-xs text-neutral-500">Sin preview</div>}
+                  {src ? <Image className="aspect-square w-full rounded-md object-cover" height={480} src={src} alt={photoLabels[photo.type] || photo.type} unoptimized width={480} /> : <div className="flex aspect-square items-center justify-center rounded-md bg-white text-xs text-neutral-500">Sin preview</div>}
                   <p className="mt-2 text-xs font-semibold">{photoLabels[photo.type] || photo.type}</p>
                   {photo.metadata?.part_name ? <p className="text-[11px] text-neutral-500">{String(photo.metadata.part_name)}</p> : null}
                 </div>
@@ -518,12 +640,16 @@ export default function ServiceOperationPage() {
       ) : null}
 
       <div className="fixed inset-x-0 bottom-0 z-50 border-t border-line bg-white/95 px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur md:hidden">
-        {activePanel === "historial" ? (
+        {orderCompleted ? (
+          <button className="inline-flex h-16 w-full items-center justify-center gap-2 rounded-md bg-emerald-700 px-3 text-lg font-semibold text-white shadow-sm" onClick={() => router.replace("/dashboard/servicios")} type="button"><CheckCircle2 size={22} /> Servicio completado</button>
+        ) : activePanel === "historial" ? (
           <button className="h-14 w-full rounded-md bg-apex px-3 text-base font-semibold text-white shadow-sm disabled:opacity-60" disabled={downloadingPdf} onClick={downloadPdf} type="button">{downloadingPdf ? "Generando PDF..." : "Descargar PDF"}</button>
-        ) : (
-          <button className="h-14 w-full rounded-md border border-line bg-white text-base font-semibold shadow-sm" onClick={() => setActivePanel("historial")} type="button">Ver historial</button>
-        )}
+        ) : activePanel !== "novedad" ? <button className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-md border border-red-200 bg-white text-base font-semibold text-red-700 shadow-sm" onClick={() => setActivePanel("novedad")} type="button"><FileSignature size={18} /> Reportar novedad</button> : null}
       </div>
     </div>
   );
+}
+
+function SupportState({ ready, label }: { ready: boolean; label: string }) {
+  return <div className={`rounded-md border p-2 ${ready ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-line bg-paper text-neutral-500"}`}><span className="flex items-center justify-center gap-1">{ready ? <CheckCircle2 size={14} /> : <Circle size={14} />}{label}</span></div>;
 }

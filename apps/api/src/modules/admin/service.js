@@ -52,7 +52,7 @@ function normalizeActiveModules(value) {
 function tenantHasModule(activeModules, module) {
   if (!module) return true;
   const active = normalizeActiveModules(activeModules);
-  if (!active.length) return true;
+  if (!active.length) return false;
   const allowedCodes = (TENANT_MODULE_CODES[module] || [module]).map((item) => String(item).trim().toLowerCase());
   return allowedCodes.some((code) => active.includes(code));
 }
@@ -217,7 +217,7 @@ function emptyLegacyPermissions() {
 }
 
 function filterPermissionCatalog(activeModules) {
-  return PERMISSION_CATALOG.filter((item) => tenantHasModule(activeModules, item.module));
+  return PERMISSION_CATALOG.filter((item) => item.key !== "empresas" && tenantHasModule(activeModules, item.module));
 }
 
 function normalizeLegacyPermissions(raw, activeModules = null) {
@@ -403,6 +403,11 @@ function cleanText(value) {
   return String(value || "").trim();
 }
 
+function normalizeProfileKind(value) {
+  const profileKind = cleanText(value).toLowerCase();
+  return profileKind === "technician" ? "tecnico" : profileKind;
+}
+
 function validateRequiredUserInput(input, { requirePassword = false } = {}) {
   const fullName = cleanText(input.name || `${cleanText(input.first_names)} ${cleanText(input.last_names)}`);
   const email = normalizeUsernameEmail(input.email || input.username || input.user || input.access_email);
@@ -571,7 +576,7 @@ async function addUserMasterDataItem(tenantId, catalog, input, actorId = null) {
   });
 }
 
-async function listRoles(tenantId, query = {}) {
+async function listRoles(tenantId, query = {}, actorRoleName = "") {
   tenantId = normalizeTenantId(tenantId);
   await ensureSystemRoles(tenantId);
   const activeModules = await getTenantActiveModules(tenantId);
@@ -582,7 +587,9 @@ async function listRoles(tenantId, query = {}) {
       skip: Math.max(Number(query.offset || 0), 0),
       take: Math.min(Number(query.limit || 100), 200)
     });
-    return roles.map((role) => roleDto(role, activeModules));
+    return roles
+      .filter((role) => role.name !== "APEX_ADMIN" || actorRoleName === "APEX_ADMIN")
+      .map((role) => roleDto(role, activeModules));
   });
 }
 
@@ -594,6 +601,11 @@ async function createRole(tenantId, input, actorId = null) {
     if (!name) {
       const err = new Error("El nombre del rol es obligatorio.");
       err.statusCode = 400;
+      throw err;
+    }
+    if (name.toUpperCase() === "APEX_ADMIN" || String(input.role_type || "").toLowerCase() === "superadmin") {
+      const err = new Error("El rol superadministrador es reservado y no puede crearse desde la administracion empresarial.");
+      err.statusCode = 403;
       throw err;
     }
     const duplicate = await prisma.role.findUnique({ where: { tenant_id_name: { tenant_id: tenantId, name } } });
@@ -619,13 +631,18 @@ async function createRole(tenantId, input, actorId = null) {
   });
 }
 
-async function updateRole(tenantId, id, input, actorId = null) {
+async function updateRole(tenantId, id, input, actorId = null, actorRoleName = "") {
   tenantId = normalizeTenantId(tenantId);
   const activeModules = await getTenantActiveModules(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const current = await prisma.role.findFirstOrThrow({ where: { id: Number(id) }, include: { permissions: true } });
     const previous = roleDto(current, activeModules);
     if (current.name === "APEX_ADMIN") {
+      if (actorRoleName !== "APEX_ADMIN") {
+        const err = new Error("Solo un superadministrador puede modificar el rol APEX_ADMIN.");
+        err.statusCode = 403;
+        throw err;
+      }
       const role = await prisma.role.update({
         where: { id: current.id },
         data: {
@@ -638,6 +655,11 @@ async function updateRole(tenantId, id, input, actorId = null) {
         data: { tenant_id: tenantId, user_id: actorId, action: "role_updated", module: "admin", entity: "/api/v1/admin/roles", entity_id: String(role.id), old_value: previous, new_value: roleDto(role, activeModules) }
       });
       return roleDto(role, activeModules);
+    }
+    if (String(input.role_type || "").toLowerCase() === "superadmin") {
+      const err = new Error("El tipo superadministrador es reservado para APEX_ADMIN.");
+      err.statusCode = 403;
+      throw err;
     }
     const legacyPermissions = normalizeLegacyPermissions(input.permissions || {}, activeModules);
     const rbacPermissions = legacyToRbacPermissions(legacyPermissions, activeModules);
@@ -733,6 +755,7 @@ async function createUser(tenantId, input, actorId = null) {
     if (role?.metadata?.active === false) {
       throw badRequest("El rol seleccionado esta inactivo");
     }
+    const profileKind = normalizeProfileKind(input.profile_kind || input.user_kind || input.tipo_usuario || input.operational_classification || role.name);
     const userStatus = input.user_status || input.labor_status || input.estado_laboral || "activo";
     const active = !["inactivo", "suspendido", "retirado"].includes(userStatus) && input.active !== false && input.activo !== false;
     const metadata = {
@@ -753,8 +776,8 @@ async function createUser(tenantId, input, actorId = null) {
       company: input.company || input.empresa || "APEX",
       labor_status: userStatus,
       user_status: userStatus,
-      profile_kind: input.profile_kind || input.user_kind || input.tipo_usuario || input.operational_classification || "administrativo",
-      user_kind: input.user_kind || input.profile_kind || input.tipo_usuario || input.operational_classification || "administrativo",
+      profile_kind: profileKind || "administrativo",
+      user_kind: profileKind || "administrativo",
       access: {
         email: normalizeUsernameEmail(input.access_email || input.email || input.username || input.user || email),
         additional_roles: input.additional_roles || "",
@@ -814,6 +837,7 @@ async function createUser(tenantId, input, actorId = null) {
           create: {
             tenant_id: tenantId,
             code: input.code || input.id_interno || `EMP-${Date.now()}`,
+            user_type: profileKind === "tecnico" ? "tecnico" : "empleado",
             position: input.position || input.rol || "empleado",
             department: input.department || "Operacion",
             salary_base: Number(input.salary_base || input.salario_base || input.salario || 0),
@@ -853,6 +877,7 @@ async function updateUser(tenantId, id, input, actorId = null) {
     const previousAccess = previousMetadata.access || {};
     const previousEmployment = previousMetadata.employment || {};
     const previousOperational = previousMetadata.operational || {};
+    const requestedProfileKind = normalizeProfileKind(input.profile_kind || input.user_kind || input.tipo_usuario || input.operational_classification || previousMetadata.profile_kind || previousMetadata.user_kind || previousOperational.classification);
     const userStatus = input.user_status || input.labor_status || input.estado_laboral || previousMetadata.user_status || previousMetadata.labor_status || "activo";
     const active = !["inactivo", "suspendido", "retirado"].includes(userStatus) && input.active !== false && input.activo !== false;
     const fullName = input.name || input.nombre || `${input.first_names || previousMetadata.first_names || ""} ${input.last_names || previousMetadata.last_names || ""}`.trim() || current.name;
@@ -869,6 +894,9 @@ async function updateUser(tenantId, id, input, actorId = null) {
     await prisma.user.update({ where: { id: current.id }, data });
     const employeeData = {
       code: input.code || input.id_interno || current.employee?.code || `EMP-${current.id}`,
+      user_type: requestedProfileKind === "tecnico"
+        ? "tecnico"
+        : (current.employee?.user_type === "tecnico" ? "empleado" : current.employee?.user_type || "empleado"),
       position: input.position || current.employee?.position || "empleado",
       department: input.department || current.employee?.department || "Operacion",
       salary_base: Number(input.salary_base || input.salario_base || current.employee?.salary_base || 0),
@@ -895,8 +923,8 @@ async function updateUser(tenantId, id, input, actorId = null) {
         company: input.company || input.empresa || current.employee?.metadata?.company || "APEX",
         labor_status: userStatus,
         user_status: userStatus,
-        profile_kind: input.profile_kind || input.user_kind || input.tipo_usuario || previousMetadata.profile_kind || previousMetadata.user_kind || previousOperational.classification || "administrativo",
-        user_kind: input.user_kind || input.profile_kind || input.tipo_usuario || previousMetadata.user_kind || previousMetadata.profile_kind || previousOperational.classification || "administrativo",
+        profile_kind: requestedProfileKind || "administrativo",
+        user_kind: requestedProfileKind || "administrativo",
         access: {
           ...previousAccess,
           email: normalizeUsernameEmail(input.access_email || input.email || previousAccess.email || data.email),

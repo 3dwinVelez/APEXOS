@@ -277,10 +277,12 @@ async function runServiceScenarios(token) {
       reference_id: reference?.id,
       service_type: i % 3 === 0 ? "garantia" : "montaje",
       customer_name: `Cliente QA ${i}`,
+      customer_document: `10000000${String(i).padStart(2, "0")}`,
       customer_address: `Calle ${i} # ${10 + i}-QA`,
       customer_phone: `30000000${String(i).padStart(2, "0")}`,
       invoice_number: `FAC-${batch.slice(-6)}-${i}`,
       scheduled_date: new Date(startedAt.getTime() + i * 86400000).toISOString(),
+      cedi_delivery_date: new Date(startedAt.getTime() + Math.max(i - 1, 0) * 86400000).toISOString(),
       notes: `Orden de servicio QA ${i}`,
       metadata: { batch, scenario: i }
     });
@@ -294,7 +296,6 @@ async function runServiceScenarios(token) {
 
     await addServicePhoto(token, order?.id, "producto_abierto", i);
     await addServicePhoto(token, order?.id, "producto_cerrado", i);
-    await addServicePhoto(token, order?.id, "cliente", i);
     await addServicePhoto(token, order?.id, "firma_cliente", i);
 
     if (i % 5 === 0) {
@@ -310,7 +311,20 @@ async function runServiceScenarios(token) {
       await apiStep("servicios", `Escenario ${i}: inspeccion`, "PATCH", `/services/orders/${order?.id}/inspection`, token, {
         decision: i % 4 === 0 ? "requiere_ajuste" : "armable",
         items: [{ part_id: reference?.parts?.[0]?.id || 1, name: `Pieza QA ${i}`, quantity: 1, unit: "und", status: i % 4 === 0 ? "ajuste" : "ok", comment: "Validado QA" }],
-        metadata: { batch, scenario: i }
+        metadata: {
+          batch,
+          scenario: i,
+          satisfaction_survey: {
+            version: 1,
+            answers: [
+              { question_id: "service_quality", question: "Calidad del servicio", rating: 5 },
+              { question_id: "technician_attention", question: "Atencion del tecnico", rating: 5 },
+              { question_id: "final_result", question: "Resultado final", rating: 5 }
+            ],
+            average: 5,
+            completed_at: new Date().toISOString()
+          }
+        }
       });
       await apiStep("servicios", `Escenario ${i}: ejecucion`, "PATCH", `/services/orders/${order?.id}/execution`, token, {});
       await apiStep("servicios", `Escenario ${i}: cierre ejecutado`, "PATCH", `/services/orders/${order?.id}/close`, token, {
