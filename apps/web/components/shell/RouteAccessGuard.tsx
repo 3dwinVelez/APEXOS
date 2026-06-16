@@ -37,6 +37,10 @@ export function RouteAccessGuard({ children }: { children: React.ReactNode }) {
       try {
         const access = await loadModuleAccess(MODULES);
         if (!alive) return;
+        if (pathname.startsWith("/dashboard/administracion/suscripciones")) {
+          setState(access.isPlatformAdmin ? "allowed" : "denied");
+          return;
+        }
         setState(access.bySlug[slug] === true ? "allowed" : "denied");
       } catch {
         if (alive) setState("denied");

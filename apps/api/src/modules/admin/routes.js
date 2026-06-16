@@ -16,7 +16,7 @@ async function adminRoutes(fastify) {
 
   fastify.get("/admin/roles", {
     preHandler: requirePermission("admin", "read")
-  }, async (request) => service.listRoles(request.user?.tenant_id, request.query));
+  }, async (request) => service.listRoles(request.user?.tenant_id, request.query, request.user?.role?.name));
 
   fastify.post("/admin/roles", {
     preHandler: requirePermission("admin", "write")
@@ -24,7 +24,7 @@ async function adminRoutes(fastify) {
 
   fastify.put("/admin/roles/:id", {
     preHandler: requirePermission("admin", "write")
-  }, async (request) => service.updateRole(request.user?.tenant_id, request.params.id, request.body, request.user?.id));
+  }, async (request) => service.updateRole(request.user?.tenant_id, request.params.id, request.body, request.user?.id, request.user?.role?.name));
 
   fastify.patch("/admin/roles/:id/status", {
     preHandler: requirePermission("admin", "write")

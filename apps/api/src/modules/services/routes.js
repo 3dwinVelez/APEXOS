@@ -9,6 +9,10 @@ async function servicesRoutes(fastify) {
 
   fastify.get("/services/orders", { preHandler: requirePermission("services", "read") }, (request) => service.listOrders(request.user?.tenant_id, request.user, request.query));
   fastify.get("/services/technicians", { preHandler: requirePermission("services", "read") }, (request) => service.listTechnicians(request.user?.tenant_id, request.user));
+  fastify.get("/services/service-types", { preHandler: requirePermission("services", "read") }, (request) => service.listServiceTypes(request.user?.tenant_id));
+  fastify.put("/services/service-types", { schema: schemas.serviceTypesSchema, preHandler: requirePermission("services", "write") }, (request) => service.saveServiceTypes(request.user?.tenant_id, request.user, request.body));
+  fastify.get("/services/satisfaction-questions", { preHandler: requirePermission("services", "read") }, (request) => service.listSatisfactionQuestions(request.user?.tenant_id));
+  fastify.put("/services/satisfaction-questions", { schema: schemas.satisfactionQuestionsSchema, preHandler: requirePermission("services", "write") }, (request) => service.saveSatisfactionQuestions(request.user?.tenant_id, request.user, request.body));
   fastify.get("/services/references", { preHandler: requirePermission("services", "read") }, (request) => service.listReferences(request.user?.tenant_id, request.query));
   fastify.get("/services/references/:id", { preHandler: requirePermission("services", "read") }, (request) => service.getReference(request.user?.tenant_id, request.params.id));
   fastify.post("/services/references", { schema: schemas.referenceSchema, preHandler: requirePermission("services", "write") }, (request) => service.createReference(request.user?.tenant_id, request.user, request.body));
@@ -24,6 +28,7 @@ async function servicesRoutes(fastify) {
       .send(pdf.buffer);
   });
   fastify.post("/services/orders", { schema: schemas.orderSchema, preHandler: requirePermission("services", "write") }, (request) => service.createOrder(request.user?.tenant_id, request.user, request.body));
+  fastify.put("/services/orders/:id", { schema: schemas.orderUpdateSchema, preHandler: requirePermission("services", "write") }, (request) => service.updateOrder(request.user?.tenant_id, request.user, request.params.id, request.body));
   fastify.patch("/services/orders/:id/start", { schema: schemas.startSchema, preHandler: requirePermission("services", "write") }, (request) => service.startOrder(request.user?.tenant_id, request.user, request.params.id, request.body));
   fastify.patch("/services/orders/:id/inspection", { schema: schemas.inspectionSchema, preHandler: requirePermission("services", "write") }, (request) => service.moveToInspection(request.user?.tenant_id, request.user, request.params.id, request.body));
   fastify.patch("/services/orders/:id/execution", { preHandler: requirePermission("services", "write") }, (request) => service.moveToExecution(request.user?.tenant_id, request.user, request.params.id));

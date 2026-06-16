@@ -17,6 +17,7 @@ type ServiceReference = { code: string; name: string; parts: ServiceReferencePar
 type InspectionStatus = "ok" | "averiada" | "faltante";
 type InspectionItem = { part_id: number | string; name: string; quantity: number; unit: string; status: InspectionStatus; comment: string; action: string; supplier_name?: string };
 type ServicePhoto = { id: number | string; type: string; file_url?: string; base64_data?: string; metadata?: { mime_type?: string; file_name?: string; part_id?: number | string; part_name?: string; [key: string]: unknown }; created_at?: string };
+type SatisfactionQuestion = { id: string; label: string; active?: boolean };
 type ServiceOrder = {
   id: number | string;
   number: string;
@@ -61,6 +62,7 @@ const satisfactionQuestions = [
   { id: "technician_attention", label: "¿Cómo calificas la atención y claridad del técnico?" },
   { id: "final_result", label: "¿Qué tan satisfecho quedaste con el resultado final?" }
 ] as const;
+const fallbackSatisfactionQuestions = (): SatisfactionQuestion[] => satisfactionQuestions.map((question) => ({ ...question, active: true }));
 const photoLabels: Record<string, string> = {
   fachada: "Fachada",
   pieza_averiada: "Pieza",
@@ -119,6 +121,7 @@ export default function ServiceOperationPage() {
   const [captures, setCaptures] = useState<Record<string, CapturedFile | null>>({});
   const [inspection, setInspection] = useState<InspectionItem[]>([]);
   const [closureMode, setClosureMode] = useState(false);
+  const [surveyQuestions, setSurveyQuestions] = useState<SatisfactionQuestion[]>(fallbackSatisfactionQuestions());
   const [satisfactionRatings, setSatisfactionRatings] = useState<Record<string, number>>({});
   const [activePanel, setActivePanel] = useState<Panel>("inicio");
 
@@ -126,9 +129,14 @@ export default function ServiceOperationPage() {
     setLoading(true);
     setMessage("");
     try {
-      const data = await api<ServiceOrder>(`/api/v1/services/orders/${params.id}`);
+      const [data, questions] = await Promise.all([
+        api<ServiceOrder>(`/api/v1/services/orders/${params.id}`),
+        api<SatisfactionQuestion[]>("/api/v1/services/satisfaction-questions").catch(() => fallbackSatisfactionQuestions())
+      ]);
       if (!data?.id) throw new Error("No se encontro el servicio solicitado o no tienes permisos para verlo.");
+      const activeQuestions = questions.filter((question) => question.active !== false && question.id && question.label);
       setOrder(data);
+      setSurveyQuestions(activeQuestions.length ? activeQuestions : fallbackSatisfactionQuestions());
       setActivePanel((current) => current === "inicio" && data.status !== "pendiente" ? panelForStatus(data.status) : current);
     } catch (error) {
       setOrder(null);
@@ -207,12 +215,12 @@ export default function ServiceOperationPage() {
       const gpsResult = ["start", "close", "close-not-executed"].includes(action) ? await optionalGps(action) : { gps: null, metadata: {} };
       const satisfactionSurvey = action === "close" ? {
         version: 1,
-        answers: satisfactionQuestions.map((question) => ({
+        answers: surveyQuestions.map((question) => ({
           question_id: question.id,
           question: question.label,
           rating: satisfactionRatings[question.id]
         })),
-        average: satisfactionQuestions.reduce((total, question) => total + (satisfactionRatings[question.id] || 0), 0) / satisfactionQuestions.length,
+        average: surveyQuestions.reduce((total, question) => total + (satisfactionRatings[question.id] || 0), 0) / surveyQuestions.length,
         completed_at: new Date().toISOString()
       } : undefined;
       const body = action === "close-not-executed" ? { no_execution_reason: noExecutionReason || "Cliente no disponible / evidencia pendiente" } : {};
@@ -255,7 +263,7 @@ export default function ServiceOperationPage() {
   }
 
   function satisfactionReady() {
-    return satisfactionQuestions.every((question) => satisfactionRatings[question.id] >= 1);
+    return surveyQuestions.every((question) => satisfactionRatings[question.id] >= 1);
   }
 
   function closeReady() {
@@ -509,14 +517,14 @@ export default function ServiceOperationPage() {
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
                       <p className="font-semibold">Encuesta rápida del cliente</p>
-                      <p className="mt-1 text-sm text-neutral-600">Pide al cliente tocar las estrellas. Son 3 preguntas y toma menos de un minuto.</p>
+                      <p className="mt-1 text-sm text-neutral-600">Pide al cliente tocar las estrellas. Son {surveyQuestions.length} pregunta(s) y toma menos de un minuto.</p>
                     </div>
                     <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-semibold">
-                      {Object.keys(satisfactionRatings).length} de 3 respondidas
+                      {surveyQuestions.filter((question) => satisfactionRatings[question.id] >= 1).length} de {surveyQuestions.length} respondidas
                     </span>
                   </div>
                   <div className="mt-3 grid gap-3">
-                    {satisfactionQuestions.map((question, index) => {
+                    {surveyQuestions.map((question, index) => {
                       const selectedRating = satisfactionRatings[question.id] || 0;
                       return (
                         <fieldset className="rounded-md border border-line bg-white p-3" key={question.id}>

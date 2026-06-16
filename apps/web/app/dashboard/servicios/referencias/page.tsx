@@ -23,10 +23,16 @@ type ServiceReference = {
   manuals?: Manual[];
   total_pieces: number;
 };
+type ServiceType = { code: string; label: string; active: boolean };
 
 const categories = ["muebles", "colchones", "electrodomesticos", "cocina", "oficina", "decoracion", "iluminacion", "textiles", "otros"];
 const emptyPart = { name: "", quantity: 1, unit: "und", description: "" };
 const emptyForm = { code: "", name: "", category: "muebles", description: "", estimated_minutes: 60, brand: "", model: "", active: true, parts: [emptyPart] as Part[], manuals: [] as Manual[] };
+const defaultServiceTypes: ServiceType[] = [
+  { code: "montaje", label: "Montaje", active: true },
+  { code: "desmontaje", label: "Desmontaje", active: true },
+  { code: "ambos", label: "Montaje y desmontaje", active: true }
+];
 const csvHeaders = "code,name,category,description,estimated_minutes,brand,model,part_name,part_quantity,part_unit,part_description,manual_title,manual_url,manual_notes";
 
 function readFile(file: File): Promise<Manual> {
@@ -112,10 +118,17 @@ export default function ServiceReferencesPage() {
   const [importRows, setImportRows] = useState<Record<string, string>[]>([]);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [serviceTypes, setServiceTypes] = useState<ServiceType[]>(defaultServiceTypes);
+  const [savingTypes, setSavingTypes] = useState(false);
 
   async function load() {
     try {
-      setReferences(await api<ServiceReference[]>("/api/v1/services/references"));
+      const [referenceRows, typeRows] = await Promise.all([
+        api<ServiceReference[]>("/api/v1/services/references"),
+        api<ServiceType[]>("/api/v1/services/service-types").catch(() => defaultServiceTypes)
+      ]);
+      setReferences(referenceRows);
+      setServiceTypes(typeRows.length ? typeRows : defaultServiceTypes);
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible cargar las referencias.");
@@ -269,6 +282,48 @@ export default function ServiceReferencesPage() {
     }
   }
 
+  function updateServiceType(index: number, patch: Partial<ServiceType>) {
+    setServiceTypes((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item));
+  }
+
+  function addServiceType() {
+    setServiceTypes((current) => [...current, { code: "", label: "", active: true }]);
+  }
+
+  function removeServiceType(index: number) {
+    setServiceTypes((current) => current.filter((_, itemIndex) => itemIndex !== index));
+  }
+
+  async function saveServiceTypes() {
+    const normalized = serviceTypes.map((item) => ({
+      code: item.code.trim().toLowerCase().replace(/[^a-z0-9_-]+/g, "_"),
+      label: item.label.trim(),
+      active: item.active !== false
+    })).filter((item) => item.code && item.label);
+    if (!normalized.length || !normalized.some((item) => item.active)) {
+      setError("Registra al menos un tipo de servicio activo.");
+      return;
+    }
+    if (new Set(normalized.map((item) => item.code)).size !== normalized.length) {
+      setError("No puedes repetir codigos de tipos de servicio.");
+      return;
+    }
+    setSavingTypes(true);
+    setError("");
+    try {
+      const saved = await api<ServiceType[]>("/api/v1/services/service-types", {
+        method: "PUT",
+        body: JSON.stringify({ types: normalized })
+      });
+      setServiceTypes(saved);
+      setMessage("Tipos de servicio actualizados.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No fue posible guardar los tipos de servicio.");
+    } finally {
+      setSavingTypes(false);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-7xl space-y-5 pb-24 md:pb-8">
       <header className="sticky top-0 z-20 -mx-3 border-b border-line bg-paper/95 px-3 py-3 backdrop-blur sm:-mx-4 sm:px-4 md:static md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0">
@@ -276,7 +331,7 @@ export default function ServiceReferencesPage() {
           <Link className="mb-3 inline-flex h-11 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-medium text-neutral-600 hover:text-apex md:border-0 md:bg-transparent md:px-0" href="/dashboard/servicios"><ArrowLeft size={16} /> Volver a servicios</Link>
           <p className="text-sm font-medium text-apex">Servicios</p>
           <h1 className="text-2xl font-semibold md:text-3xl">Referencias de servicio</h1>
-          <p className="mt-2 max-w-3xl text-sm text-neutral-600">Maestro tecnico para modelos, piezas, tiempos, manuales, guias y carga masiva por CSV.</p>
+          <p className="mt-2 max-w-3xl text-sm text-neutral-600">Maestro tecnico para modelos, listas de piezas, tiempos, manuales, guias y carga masiva por CSV.</p>
         </div>
       </header>
 
@@ -289,8 +344,8 @@ export default function ServiceReferencesPage() {
             <div className="mb-3 inline-flex items-center gap-2 rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-teal-100">
               <Sparkles size={14} /> Maestro tecnico de servicios
             </div>
-            <h2 className="max-w-3xl text-2xl font-semibold leading-tight sm:text-3xl">Referencias listas para consultar y mantener</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/65">Compara fichas tecnicas, piezas, tiempos y documentos sin abrir cada referencia. Edita solo cuando sea necesario.</p>
+            <h2 className="max-w-3xl text-2xl font-semibold leading-tight sm:text-3xl">Referencias y listas listas para mantener</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/65">Compara fichas tecnicas, listas de piezas, tiempos y documentos sin abrir cada referencia. Edita solo cuando el maestro cambie.</p>
           </div>
           <div className="grid shrink-0 grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             <button className="dark-primary-action col-span-2 inline-flex h-11 items-center justify-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-[#081411] sm:col-span-1" onClick={reset} type="button"><Plus size={17} /> Nueva referencia</button>
@@ -306,6 +361,32 @@ export default function ServiceReferencesPage() {
           <Summary label="Activas" value={stats.active} />
           <Summary label="Piezas configuradas" value={stats.parts} />
           <Summary label="Manuales y guias" value={stats.manuals} />
+        </div>
+      </section>
+
+      <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
+        <div className="mb-3 grid gap-2 sm:flex sm:items-start sm:justify-between">
+          <div>
+            <h2 className="font-semibold">Tipos de servicio</h2>
+            <p className="mt-1 text-sm text-neutral-500">Controla las opciones disponibles al crear o editar una orden. Inactiva un tipo para ocultarlo sin perder historial.</p>
+          </div>
+          <div className="grid gap-2 sm:flex">
+            <button className="h-10 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={addServiceType} type="button">Agregar tipo</button>
+            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white disabled:opacity-60" disabled={savingTypes} onClick={saveServiceTypes} type="button"><Save size={15} /> {savingTypes ? "Guardando..." : "Guardar tipos"}</button>
+          </div>
+        </div>
+        <div className="space-y-2">
+          {serviceTypes.map((item, index) => (
+            <div className="grid gap-2 rounded-md border border-line p-2 md:grid-cols-[160px_1fr_110px_44px]" key={`${item.code}-${index}`}>
+              <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="codigo" value={item.code} onChange={(event) => updateServiceType(index, { code: event.target.value })} />
+              <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Nombre visible" value={item.label} onChange={(event) => updateServiceType(index, { label: event.target.value })} />
+              <label className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-semibold">
+                <input checked={item.active !== false} onChange={(event) => updateServiceType(index, { active: event.target.checked })} type="checkbox" />
+                Activo
+              </label>
+              <button className="h-10 rounded-md border border-line text-sm font-semibold hover:bg-paper" onClick={() => removeServiceType(index)} type="button">-</button>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -362,7 +443,7 @@ export default function ServiceReferencesPage() {
               <h2 className="font-semibold">Maestro de referencias</h2>
               <p className="text-sm text-neutral-500">{filtered.length} de {references.length} referencia(s) visibles</p>
             </div>
-            <p className="hidden text-xs font-medium text-neutral-500 md:block">Selecciona una referencia para editar su ficha tecnica.</p>
+            <p className="hidden text-xs font-medium text-neutral-500 md:block">Selecciona una referencia para editar su ficha y listas de servicio.</p>
           </div>
 
           <div className="grid gap-3 md:hidden">
@@ -423,7 +504,7 @@ export default function ServiceReferencesPage() {
                       </td>
                       <td className="px-4 py-3 align-top"><p className="inline-flex items-center gap-2 font-medium text-neutral-800"><Clock3 size={15} className="text-neutral-400" /> {reference.estimated_minutes} min</p></td>
                       <td className="px-4 py-3 text-right align-middle">
-                        <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-white px-3 text-xs font-semibold text-apex shadow-sm transition group-hover:border-apex" onClick={() => edit(reference)} type="button">Editar ficha <ChevronRight size={14} /></button>
+                        <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-white px-3 text-xs font-semibold text-apex shadow-sm transition group-hover:border-apex" onClick={() => edit(reference)} type="button">Editar listas <ChevronRight size={14} /></button>
                       </td>
                     </tr>
                   ))}
@@ -467,7 +548,7 @@ export default function ServiceReferencesPage() {
 
             <section className="rounded-md border border-line p-3">
               <div className="mb-3 grid gap-2 sm:flex sm:items-center sm:justify-between">
-                <div><h2 className="text-sm font-semibold">Piezas para inspeccion</h2><p className="text-xs text-neutral-500">Estas piezas aparecen al tecnico durante la validacion.</p></div>
+              <div><h2 className="text-sm font-semibold">Lista de piezas para inspeccion</h2><p className="text-xs text-neutral-500">Estas piezas aparecen al tecnico durante la validacion y se actualizan en nuevas ordenes.</p></div>
                 <button className="h-11 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => setForm((prev) => ({ ...prev, parts: [...prev.parts, { ...emptyPart }] }))} type="button">Agregar pieza</button>
               </div>
               <div className="space-y-2">

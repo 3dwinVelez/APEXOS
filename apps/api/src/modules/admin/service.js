@@ -52,7 +52,7 @@ function normalizeActiveModules(value) {
 function tenantHasModule(activeModules, module) {
   if (!module) return true;
   const active = normalizeActiveModules(activeModules);
-  if (!active.length) return true;
+  if (!active.length) return false;
   const allowedCodes = (TENANT_MODULE_CODES[module] || [module]).map((item) => String(item).trim().toLowerCase());
   return allowedCodes.some((code) => active.includes(code));
 }
@@ -217,7 +217,7 @@ function emptyLegacyPermissions() {
 }
 
 function filterPermissionCatalog(activeModules) {
-  return PERMISSION_CATALOG.filter((item) => tenantHasModule(activeModules, item.module));
+  return PERMISSION_CATALOG.filter((item) => item.key !== "empresas" && tenantHasModule(activeModules, item.module));
 }
 
 function normalizeLegacyPermissions(raw, activeModules = null) {
@@ -576,7 +576,7 @@ async function addUserMasterDataItem(tenantId, catalog, input, actorId = null) {
   });
 }
 
-async function listRoles(tenantId, query = {}) {
+async function listRoles(tenantId, query = {}, actorRoleName = "") {
   tenantId = normalizeTenantId(tenantId);
   await ensureSystemRoles(tenantId);
   const activeModules = await getTenantActiveModules(tenantId);
@@ -587,7 +587,9 @@ async function listRoles(tenantId, query = {}) {
       skip: Math.max(Number(query.offset || 0), 0),
       take: Math.min(Number(query.limit || 100), 200)
     });
-    return roles.map((role) => roleDto(role, activeModules));
+    return roles
+      .filter((role) => role.name !== "APEX_ADMIN" || actorRoleName === "APEX_ADMIN")
+      .map((role) => roleDto(role, activeModules));
   });
 }
 
@@ -599,6 +601,11 @@ async function createRole(tenantId, input, actorId = null) {
     if (!name) {
       const err = new Error("El nombre del rol es obligatorio.");
       err.statusCode = 400;
+      throw err;
+    }
+    if (name.toUpperCase() === "APEX_ADMIN" || String(input.role_type || "").toLowerCase() === "superadmin") {
+      const err = new Error("El rol superadministrador es reservado y no puede crearse desde la administracion empresarial.");
+      err.statusCode = 403;
       throw err;
     }
     const duplicate = await prisma.role.findUnique({ where: { tenant_id_name: { tenant_id: tenantId, name } } });
@@ -624,13 +631,18 @@ async function createRole(tenantId, input, actorId = null) {
   });
 }
 
-async function updateRole(tenantId, id, input, actorId = null) {
+async function updateRole(tenantId, id, input, actorId = null, actorRoleName = "") {
   tenantId = normalizeTenantId(tenantId);
   const activeModules = await getTenantActiveModules(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const current = await prisma.role.findFirstOrThrow({ where: { id: Number(id) }, include: { permissions: true } });
     const previous = roleDto(current, activeModules);
     if (current.name === "APEX_ADMIN") {
+      if (actorRoleName !== "APEX_ADMIN") {
+        const err = new Error("Solo un superadministrador puede modificar el rol APEX_ADMIN.");
+        err.statusCode = 403;
+        throw err;
+      }
       const role = await prisma.role.update({
         where: { id: current.id },
         data: {
@@ -643,6 +655,11 @@ async function updateRole(tenantId, id, input, actorId = null) {
         data: { tenant_id: tenantId, user_id: actorId, action: "role_updated", module: "admin", entity: "/api/v1/admin/roles", entity_id: String(role.id), old_value: previous, new_value: roleDto(role, activeModules) }
       });
       return roleDto(role, activeModules);
+    }
+    if (String(input.role_type || "").toLowerCase() === "superadmin") {
+      const err = new Error("El tipo superadministrador es reservado para APEX_ADMIN.");
+      err.statusCode = 403;
+      throw err;
     }
     const legacyPermissions = normalizeLegacyPermissions(input.permissions || {}, activeModules);
     const rbacPermissions = legacyToRbacPermissions(legacyPermissions, activeModules);

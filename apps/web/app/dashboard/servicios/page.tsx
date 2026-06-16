@@ -1,13 +1,16 @@
 "use client";
 
+import { ModalFrame } from "@/components/ui/ModalFrame";
 import { api } from "@/lib/api";
 import {
   ArrowLeft,
   BarChart3,
   ChevronRight,
   Filter,
+  Pencil,
   Plus,
   RotateCcw,
+  Save,
   Search,
   Settings2,
   SlidersHorizontal,
@@ -17,21 +20,57 @@ import {
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-type ServiceReference = { id: number; code: string; name: string };
+type ServiceReference = { id: number | string; code: string; name: string };
+type Technician = { id: number | string; code?: string; user?: { name?: string; email?: string } };
+type ServiceType = { code: string; label: string; active?: boolean };
 type ServiceOrder = {
-  id: number;
+  id: number | string;
   number: string;
+  reference_id?: number | string;
   reference: ServiceReference;
+  technician?: Technician | null;
+  technician_id?: number | string;
+  technician_employee_id?: number | string;
   service_type: string;
   status: string;
   customer_name: string;
   customer_address: string;
   customer_phone: string;
+  invoice_number?: string;
   scheduled_date: string;
+  notes?: string;
+  metadata?: { customer_document?: string; cedi_delivery_date?: string; [key: string]: unknown };
   incidents: Array<{ id: number }>;
   photos: Array<{ id: number }>;
 };
 type OrdersResponse = { data: ServiceOrder[] };
+type OrderEditForm = {
+  reference_id: string;
+  technician_id: string;
+  service_type: string;
+  scheduled_date: string;
+  cedi_delivery_date: string;
+  customer_name: string;
+  customer_document: string;
+  customer_phone: string;
+  customer_address: string;
+  invoice_number: string;
+  notes: string;
+};
+
+const emptyEditForm: OrderEditForm = {
+  reference_id: "",
+  technician_id: "",
+  service_type: "montaje",
+  scheduled_date: "",
+  cedi_delivery_date: "",
+  customer_name: "",
+  customer_document: "",
+  customer_phone: "",
+  customer_address: "",
+  invoice_number: "",
+  notes: ""
+};
 
 const statusLabel: Record<string, string> = {
   pendiente: "Pendiente",
@@ -92,6 +131,9 @@ function serviceAction(order: ServiceOrder) {
 
 export default function ServicesPage() {
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
+  const [references, setReferences] = useState<ServiceReference[]>([]);
+  const [technicians, setTechnicians] = useState<Technician[]>([]);
+  const [serviceTypesCatalog, setServiceTypesCatalog] = useState<ServiceType[]>([]);
   const [status, setStatus] = useState("");
   const [query, setQuery] = useState("");
   const [dateScope, setDateScope] = useState("");
@@ -100,6 +142,9 @@ export default function ServicesPage() {
   const [sortBy, setSortBy] = useState("priority");
   const [message, setMessage] = useState("");
   const [technicianMode, setTechnicianMode] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<ServiceOrder | null>(null);
+  const [editForm, setEditForm] = useState<OrderEditForm>(emptyEditForm);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   async function load() {
     try {
@@ -112,9 +157,27 @@ export default function ServicesPage() {
     }
   }
 
+  async function loadMasters() {
+    try {
+      const [referenceRows, technicianRows] = await Promise.all([
+        api<ServiceReference[]>("/api/v1/services/references?active=true"),
+        api<Technician[]>("/api/v1/services/technicians")
+      ]);
+      const typeRows = await api<ServiceType[]>("/api/v1/services/service-types").catch(() => []);
+      setReferences(referenceRows);
+      setTechnicians(technicianRows);
+      setServiceTypesCatalog(typeRows.filter((item) => item.active !== false));
+    } catch {
+      setReferences([]);
+      setTechnicians([]);
+    }
+  }
+
   useEffect(() => {
-    setTechnicianMode(localStorage.getItem("role_name")?.toLowerCase() === "tecnico");
+    const isTechnician = localStorage.getItem("role_name")?.toLowerCase() === "tecnico";
+    setTechnicianMode(isTechnician);
     load();
+    if (!isTechnician) loadMasters();
   }, []);
 
   const filtered = useMemo(() => {
@@ -145,6 +208,7 @@ export default function ServicesPage() {
   }, [dateScope, evidenceScope, orders, query, serviceType, sortBy, status]);
 
   const serviceTypes = useMemo(() => [...new Set(orders.map((order) => order.service_type).filter(Boolean))].sort(), [orders]);
+  const editableServiceTypes = serviceTypesCatalog.length ? serviceTypesCatalog : serviceTypes.map((type) => ({ code: type, label: statusLabel[type] || type }));
   const statusCounts = useMemo(() => orders.reduce<Record<string, number>>((acc, order) => {
     acc[order.status] = (acc[order.status] || 0) + 1;
     return acc;
@@ -158,6 +222,74 @@ export default function ServicesPage() {
     setEvidenceScope("");
     setServiceType("");
     setSortBy("priority");
+  }
+
+  function technicianValue(order: ServiceOrder) {
+    return String(order.technician?.id || order.technician_employee_id || order.technician_id || "");
+  }
+
+  function editAllowed(order: ServiceOrder) {
+    return !technicianMode && !["cerrada", "no_ejecutada"].includes(order.status);
+  }
+
+  function openEdit(order: ServiceOrder) {
+    setEditingOrder(order);
+    setEditForm({
+      reference_id: String(order.reference_id || order.reference?.id || ""),
+      technician_id: technicianValue(order),
+      service_type: order.service_type || "montaje",
+      scheduled_date: order.scheduled_date?.slice(0, 10) || "",
+      cedi_delivery_date: String(order.metadata?.cedi_delivery_date || "").slice(0, 10),
+      customer_name: order.customer_name || "",
+      customer_document: String(order.metadata?.customer_document || ""),
+      customer_phone: order.customer_phone || "",
+      customer_address: order.customer_address || "",
+      invoice_number: order.invoice_number || "",
+      notes: order.notes || ""
+    });
+  }
+
+  async function saveEdit() {
+    if (!editingOrder || savingEdit) return;
+    const required: Array<[keyof OrderEditForm, string]> = [
+      ["reference_id", "referencia"],
+      ["technician_id", "tecnico asignado"],
+      ["service_type", "tipo de servicio"],
+      ["scheduled_date", "fecha programada"],
+      ["cedi_delivery_date", "fecha CEDI"],
+      ["customer_name", "cliente"],
+      ["customer_document", "cedula"],
+      ["customer_phone", "telefono"],
+      ["customer_address", "direccion"],
+      ["invoice_number", "factura o pedido"],
+      ["notes", "observaciones"]
+    ];
+    const missing = required.filter(([key]) => !editForm[key].trim()).map(([, label]) => label);
+    if (missing.length) {
+      setMessage(`Completa los campos obligatorios: ${missing.join(", ")}.`);
+      return;
+    }
+    setSavingEdit(true);
+    setMessage("");
+    try {
+      await api<ServiceOrder>(`/api/v1/services/orders/${editingOrder.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          ...editForm,
+          metadata: {
+            customer_document: editForm.customer_document.trim(),
+            cedi_delivery_date: editForm.cedi_delivery_date
+          }
+        })
+      });
+      setMessage("Orden actualizada correctamente.");
+      setEditingOrder(null);
+      await load();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No fue posible actualizar la orden.");
+    } finally {
+      setSavingEdit(false);
+    }
   }
 
   const operational = useMemo(() => {
@@ -312,7 +444,8 @@ export default function ServicesPage() {
 
           <div className="grid gap-3 md:hidden">
             {filtered.map((order) => (
-              <Link className="rounded-md border border-line p-3 text-left transition active:scale-[0.99] hover:border-apex hover:bg-paper" href={`/dashboard/servicios/${order.id}`} key={order.id}>
+              <div className="rounded-md border border-line p-3 text-left transition hover:border-apex hover:bg-paper" key={order.id}>
+              <Link className="block active:scale-[0.99]" href={`/dashboard/servicios/${order.id}`}>
                 <div className="mb-3 flex items-start justify-between gap-2">
                   <div className="flex flex-wrap gap-2">
                     <span className={`rounded-md border px-3 py-2 text-xs font-semibold ${statusTone[order.status] || "border-line bg-paper"}`}>{statusLabel[order.status] || order.status}</span>
@@ -342,6 +475,12 @@ export default function ServicesPage() {
                   </div>
                 </div>
               </Link>
+              {editAllowed(order) ? (
+                <button className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-md border border-line bg-white text-sm font-semibold text-apex" onClick={() => openEdit(order)} type="button">
+                  <Pencil size={15} /> Editar o reasignar
+                </button>
+              ) : null}
+              </div>
             ))}
             {!filtered.length ? (
               <div className="col-span-full rounded-md border border-dashed border-line p-8 text-center sm:p-10">
@@ -398,6 +537,11 @@ export default function ServicesPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-right align-middle">
+                        {editAllowed(order) ? (
+                          <button className="mb-2 inline-flex h-9 items-center gap-2 rounded-md border border-line bg-white px-3 text-xs font-semibold text-neutral-700 shadow-sm transition hover:border-apex hover:text-apex" onClick={() => openEdit(order)} type="button">
+                            <Pencil size={14} /> Editar
+                          </button>
+                        ) : null}
                         <Link className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-white px-3 text-xs font-semibold text-apex shadow-sm transition group-hover:border-apex" href={`/dashboard/servicios/${order.id}`}>
                           {serviceAction(order)}
                           <ChevronRight size={14} />
@@ -419,6 +563,78 @@ export default function ServicesPage() {
           </div>
         </section>
       </section>
+
+      {editingOrder ? (
+        <ModalFrame title={`Editar ${editingOrder.number}`} onClose={() => setEditingOrder(null)} maxWidth="max-w-4xl">
+          <div className="space-y-4">
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+              Edita solo lo necesario. Las ordenes finalizadas se bloquean para proteger la trazabilidad del servicio.
+            </div>
+            <section className="grid gap-3 md:grid-cols-2">
+              <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+                Referencia *
+                <select className="h-11 rounded-md border border-line bg-white px-3" value={editForm.reference_id} onChange={(event) => setEditForm((prev) => ({ ...prev, reference_id: event.target.value }))}>
+                  <option value="">Selecciona una referencia</option>
+                  {references.map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}
+                </select>
+              </label>
+              <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+                Tecnico responsable *
+                <select className="h-11 rounded-md border border-line bg-white px-3" value={editForm.technician_id} onChange={(event) => setEditForm((prev) => ({ ...prev, technician_id: event.target.value }))}>
+                  <option value="">Selecciona un tecnico</option>
+                  {technicians.map((technician) => <option key={technician.id} value={technician.id}>{technician.code || "TEC"} - {technician.user?.name || technician.user?.email || "Tecnico"}</option>)}
+                </select>
+              </label>
+              <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+                Tipo de servicio *
+                <select className="h-11 rounded-md border border-line bg-white px-3" value={editForm.service_type} onChange={(event) => setEditForm((prev) => ({ ...prev, service_type: event.target.value }))}>
+                  {editableServiceTypes.map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}
+                </select>
+              </label>
+              <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+                Fecha programada *
+                <input className="h-11 rounded-md border border-line px-3" type="date" value={editForm.scheduled_date} onChange={(event) => setEditForm((prev) => ({ ...prev, scheduled_date: event.target.value }))} />
+              </label>
+              <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+                Entrega CEDI *
+                <input className="h-11 rounded-md border border-line px-3" type="date" value={editForm.cedi_delivery_date} onChange={(event) => setEditForm((prev) => ({ ...prev, cedi_delivery_date: event.target.value }))} />
+              </label>
+              <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+                Factura o pedido *
+                <input className="h-11 rounded-md border border-line px-3" value={editForm.invoice_number} onChange={(event) => setEditForm((prev) => ({ ...prev, invoice_number: event.target.value }))} />
+              </label>
+            </section>
+            <section className="grid gap-3 md:grid-cols-2">
+              <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+                Cliente *
+                <input className="h-11 rounded-md border border-line px-3" value={editForm.customer_name} onChange={(event) => setEditForm((prev) => ({ ...prev, customer_name: event.target.value }))} />
+              </label>
+              <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+                Cedula *
+                <input className="h-11 rounded-md border border-line px-3" inputMode="numeric" value={editForm.customer_document} onChange={(event) => setEditForm((prev) => ({ ...prev, customer_document: event.target.value.replace(/\D/g, "") }))} />
+              </label>
+              <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+                Telefono *
+                <input className="h-11 rounded-md border border-line px-3" value={editForm.customer_phone} onChange={(event) => setEditForm((prev) => ({ ...prev, customer_phone: event.target.value }))} />
+              </label>
+              <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+                Direccion *
+                <input className="h-11 rounded-md border border-line px-3" value={editForm.customer_address} onChange={(event) => setEditForm((prev) => ({ ...prev, customer_address: event.target.value }))} />
+              </label>
+              <label className="grid gap-1.5 text-sm font-medium text-neutral-700 md:col-span-2">
+                Observaciones *
+                <textarea className="min-h-24 rounded-md border border-line px-3 py-2" value={editForm.notes} onChange={(event) => setEditForm((prev) => ({ ...prev, notes: event.target.value }))} />
+              </label>
+            </section>
+            <div className="grid gap-2 border-t border-line pt-4 sm:flex sm:justify-end">
+              <button className="h-11 rounded-md border border-line px-4 text-sm font-semibold" onClick={() => setEditingOrder(null)} type="button">Cancelar</button>
+              <button className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-60" disabled={savingEdit} onClick={saveEdit} type="button">
+                <Save size={16} /> {savingEdit ? "Guardando..." : "Guardar cambios"}
+              </button>
+            </div>
+          </div>
+        </ModalFrame>
+      ) : null}
 
       {!technicianMode ? <div className="fixed inset-x-0 bottom-0 z-50 grid grid-cols-[1fr_56px_56px] gap-2 border-t border-line bg-white/95 p-3 pb-[calc(env(safe-area-inset-bottom)+12px)] backdrop-blur md:hidden">
         <Link className="inline-flex h-14 min-w-0 items-center justify-center gap-2 rounded-md bg-apex px-3 text-base font-semibold text-white shadow-sm" href="/dashboard/servicios/nuevo">

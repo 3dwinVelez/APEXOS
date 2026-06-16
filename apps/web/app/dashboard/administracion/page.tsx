@@ -3,6 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { api } from "@/lib/api";
+import { loadModuleAccess } from "@/lib/moduleAccess";
+import { MODULES } from "@/lib/modules";
 import { getUserDocumentUrl, uploadUserDocument } from "@/lib/supabaseStorage";
 import {
   Activity,
@@ -58,6 +60,8 @@ type Role = {
 };
 type RoleScopes = { locations: string[]; areas: string[]; cost_centers: string[]; processes: string[] };
 type MasterOption = { code: string; name: string };
+type ServiceType = { code: string; label: string; active?: boolean };
+type SatisfactionQuestion = { id: string; label: string; active?: boolean };
 type UserMasterData = {
   document_types: MasterOption[];
   user_statuses: MasterOption[];
@@ -301,6 +305,56 @@ const fallbackUserMasterData: UserMasterData = {
   banks: [{ code: "BANCOLOMBIA", name: "Bancolombia" }, { code: "BOGOTA", name: "Banco de Bogota" }, { code: "DAVIVIENDA", name: "Davivienda" }]
 };
 
+const defaultServiceTypes: ServiceType[] = [
+  { code: "instalacion", label: "Instalacion", active: true },
+  { code: "mantenimiento", label: "Mantenimiento", active: true },
+  { code: "garantia", label: "Garantia", active: true },
+  { code: "retiro", label: "Retiro", active: true },
+  { code: "diagnostico", label: "Diagnostico", active: true }
+];
+
+const defaultSatisfactionQuestions: SatisfactionQuestion[] = [
+  { id: "service_quality", label: "Como calificas la calidad del servicio realizado?", active: true },
+  { id: "technician_attention", label: "Como calificas la atencion y claridad del tecnico?", active: true },
+  { id: "final_result", label: "Que tan satisfecho quedaste con el resultado final?", active: true }
+];
+
+function normalizeServiceTypeCode(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function normalizeQuestionId(value: string) {
+  return normalizeServiceTypeCode(value);
+}
+
+function normalizeServiceTypes(items: ServiceType[] = []) {
+  const map = new Map<string, ServiceType>();
+  items.forEach((item) => {
+    const code = normalizeServiceTypeCode(item.code || item.label || "");
+    const label = String(item.label || item.code || "").trim();
+    if (!code || !label) return;
+    map.set(code, { code, label, active: item.active !== false });
+  });
+  return Array.from(map.values());
+}
+
+function normalizeSatisfactionQuestions(items: SatisfactionQuestion[] = []) {
+  const map = new Map<string, SatisfactionQuestion>();
+  items.forEach((item) => {
+    const id = normalizeQuestionId(item.id || item.label || "");
+    const label = String(item.label || item.id || "").trim();
+    if (!id || !label) return;
+    map.set(id, { id, label, active: item.active !== false });
+  });
+  return Array.from(map.values());
+}
+
 const categories: ConfigCategory[] = [
   {
     key: "empresa",
@@ -453,28 +507,6 @@ function isSupabaseSession() {
   }
 }
 
-function canManageCompanies() {
-  if (typeof window === "undefined") return false;
-  const email = String(localStorage.getItem("user_email") || "").toLowerCase();
-  if (email.includes("admin") || email.includes("apex")) return true;
-
-  const token = localStorage.getItem("token");
-  if (!token?.includes(".")) return false;
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-    const roleText = [
-      payload.role,
-      payload.app_metadata?.role,
-      payload.user_metadata?.role,
-      payload.user_metadata?.role_name,
-      payload.user_metadata?.profile
-    ].filter(Boolean).join(" ").toLowerCase();
-    return ["admin", "apex", "platform", "super"].some((word) => roleText.includes(word));
-  } catch {
-    return false;
-  }
-}
-
 function statusClass(status: ConfigItem["status"]) {
   if (status === "configurado" || status === "activo") return "bg-emerald-50 text-emerald-700";
   if (status === "restringido") return "bg-rose-50 text-rose-700";
@@ -615,6 +647,8 @@ export default function AdministracionPage() {
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [masterData, setMasterData] = useState<UserMasterData>(fallbackUserMasterData);
+  const [serviceTypes, setServiceTypes] = useState<ServiceType[]>(defaultServiceTypes);
+  const [satisfactionQuestions, setSatisfactionQuestions] = useState<SatisfactionQuestion[]>(defaultSatisfactionQuestions);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
   const [roleForm, setRoleForm] = useState(emptyRoleForm([]));
@@ -631,6 +665,7 @@ export default function AdministracionPage() {
   const [selectedDocumentFile, setSelectedDocumentFile] = useState<File | null>(null);
   const [catalogDraft, setCatalogDraft] = useState({ catalog: "positions", code: "", name: "", description: "" });
   const [message, setMessage] = useState("");
+  const [platformAdmin, setPlatformAdmin] = useState(false);
 
   const selectedRole = useMemo(() => roles.find((role) => role.id === selectedRoleId) || null, [roles, selectedRoleId]);
   const selectedUser = useMemo(() => users.find((user) => user.id === selectedUserId) || null, [users, selectedUserId]);
@@ -649,12 +684,13 @@ export default function AdministracionPage() {
   const filteredConfigItems = useMemo(() => {
     const term = query.trim().toLowerCase();
     return configItems.filter((item) => {
+      if (item.key === "empresas" && !platformAdmin) return false;
       const matchesCategory = categoryFilter === "all" || item.categoryKey === categoryFilter;
       const matchesStatus = configStatusFilter === "all" || item.status === configStatusFilter;
       const text = `${item.categoryTitle} ${item.title} ${item.description}`.toLowerCase();
       return matchesCategory && matchesStatus && (!term || text.includes(term));
     });
-  }, [categoryFilter, configItems, configStatusFilter, query]);
+  }, [categoryFilter, configItems, configStatusFilter, platformAdmin, query]);
   const metrics = useMemo(() => {
     const active = users.filter((user) => user.active).length;
     const inactive = users.length - active;
@@ -696,31 +732,36 @@ export default function AdministracionPage() {
 
   const load = useCallback(async () => {
     setMessage("");
-    const [catalogResult, rolesResult, usersResult, masterResult] = await Promise.allSettled([
+    const [catalogResult, rolesResult, usersResult, masterResult, serviceTypesResult, satisfactionQuestionsResult] = await Promise.allSettled([
       api<CatalogItem[]>("/api/v1/admin/permissions/catalog"),
       api<Role[]>("/api/v1/admin/roles"),
       api<AdminUser[]>("/api/v1/admin/users"),
-      api<UserMasterData>("/api/v1/admin/user-master-data")
+      api<UserMasterData>("/api/v1/admin/user-master-data"),
+      api<ServiceType[]>("/api/v1/services/service-types"),
+      api<SatisfactionQuestion[]>("/api/v1/services/satisfaction-questions")
     ]);
     const catalogData = catalogResult.status === "fulfilled" ? catalogResult.value : [];
     const rolesData = rolesResult.status === "fulfilled" ? rolesResult.value : [];
     const usersData = usersResult.status === "fulfilled" ? usersResult.value : [];
     const masterDataResult = masterResult.status === "fulfilled" ? masterResult.value : fallbackUserMasterData;
+    const serviceTypesData = serviceTypesResult.status === "fulfilled" ? normalizeServiceTypes(serviceTypesResult.value) : defaultServiceTypes;
+    const satisfactionQuestionsData = satisfactionQuestionsResult.status === "fulfilled" ? normalizeSatisfactionQuestions(satisfactionQuestionsResult.value) : defaultSatisfactionQuestions;
     setCatalog(catalogData);
     setRoles(rolesData);
     setUsers(usersData);
     setMasterData({ ...fallbackUserMasterData, ...masterDataResult });
+    setServiceTypes(serviceTypesData.length ? serviceTypesData : defaultServiceTypes);
+    setSatisfactionQuestions(satisfactionQuestionsData.length ? satisfactionQuestionsData : defaultSatisfactionQuestions);
     const errors = [
       catalogResult.status === "rejected" ? "catalogo de permisos" : "",
       rolesResult.status === "rejected" ? "roles" : "",
       usersResult.status === "rejected" ? "usuarios" : "",
-      masterResult.status === "rejected" ? "maestros de usuario" : ""
+      masterResult.status === "rejected" ? "maestros de usuario" : "",
+      serviceTypesResult.status === "rejected" ? "tipos de servicio" : "",
+      satisfactionQuestionsResult.status === "rejected" ? "preguntas de satisfaccion" : ""
     ].filter(Boolean);
     if (errors.length) {
       setMessage(`No fue posible consultar ${errors.join(", ")}. Revisa permisos RLS, empresa activa o conectividad Supabase.`);
-    }
-    if (isSupabaseSession() && !canManageCompanies()) {
-      setMessage("Sesion empresa activa. La gestion de empresas y modulos requiere permisos de administrador de plataforma.");
     }
     const initialRole = rolesData.find((role) => role.name !== "APEX_ADMIN") || rolesData[0];
     if (initialRole && !initializedRole.current) {
@@ -746,6 +787,12 @@ export default function AdministracionPage() {
   useEffect(() => {
     load().catch((error) => setMessage(error.message));
   }, [load]);
+
+  useEffect(() => {
+    loadModuleAccess(MODULES)
+      .then((access) => setPlatformAdmin(access.isPlatformAdmin))
+      .catch(() => setPlatformAdmin(false));
+  }, []);
 
   function openConfig(item: ConfigItem) {
     setSelectedConfig(item);
@@ -984,6 +1031,34 @@ export default function AdministracionPage() {
       setMessage("Catalogo, codigo y nombre son obligatorios.");
       return;
     }
+    if (catalogDraft.catalog === "service_types") {
+      const code = normalizeServiceTypeCode(catalogDraft.code);
+      if (!code) {
+        setMessage("El codigo del tipo de servicio debe tener letras o numeros.");
+        return;
+      }
+      const next = normalizeServiceTypes([
+        ...serviceTypes.filter((item) => item.code !== code),
+        { code, label: catalogDraft.name.trim(), active: true }
+      ]).sort((a, b) => a.label.localeCompare(b.label));
+      await saveServiceTypeCatalog(next, "Tipo de servicio actualizado.");
+      setCatalogDraft({ catalog: catalogDraft.catalog, code: "", name: "", description: "" });
+      return;
+    }
+    if (catalogDraft.catalog === "satisfaction_questions") {
+      const id = normalizeQuestionId(catalogDraft.code);
+      if (!id) {
+        setMessage("El codigo de la pregunta debe tener letras o numeros.");
+        return;
+      }
+      const next = normalizeSatisfactionQuestions([
+        ...satisfactionQuestions.filter((item) => item.id !== id),
+        { id, label: catalogDraft.name.trim(), active: true }
+      ]);
+      await saveSatisfactionQuestionCatalog(next, "Pregunta de satisfaccion actualizada.");
+      setCatalogDraft({ catalog: catalogDraft.catalog, code: "", name: "", description: "" });
+      return;
+    }
     const next = await api<UserMasterData>(`/api/v1/admin/user-master-data/${catalogDraft.catalog}/items`, {
       method: "POST",
       body: JSON.stringify({
@@ -998,6 +1073,68 @@ export default function AdministracionPage() {
     setMessage("Maestro actualizado.");
   }
 
+  async function saveServiceTypeCatalog(nextTypes: ServiceType[], successMessage = "Tipos de servicio actualizados.") {
+    const normalized = normalizeServiceTypes(nextTypes);
+    if (!normalized.length) {
+      setMessage("Debe existir al menos un tipo de servicio.");
+      return;
+    }
+    if (!normalized.some((item) => item.active !== false)) {
+      setMessage("Debe quedar al menos un tipo de servicio activo.");
+      return;
+    }
+    const saved = await api<ServiceType[]>("/api/v1/services/service-types", {
+      method: "PUT",
+      body: JSON.stringify({ types: normalized })
+    });
+    const cleanSaved = normalizeServiceTypes(saved);
+    setServiceTypes(cleanSaved.length ? cleanSaved : normalized);
+    setMessage(successMessage);
+  }
+
+  async function toggleServiceType(code: string) {
+    const next = serviceTypes.map((item) => item.code === code ? { ...item, active: item.active === false } : item);
+    await saveServiceTypeCatalog(next, "Estado del tipo de servicio actualizado.");
+  }
+
+  async function removeServiceType(code: string) {
+    const target = serviceTypes.find((item) => item.code === code);
+    if (!target) return;
+    if (!window.confirm(`Confirmas retirar el tipo de servicio "${target.label}" del maestro?`)) return;
+    await saveServiceTypeCatalog(serviceTypes.filter((item) => item.code !== code), "Tipo de servicio retirado del maestro.");
+  }
+
+  async function saveSatisfactionQuestionCatalog(nextQuestions: SatisfactionQuestion[], successMessage = "Preguntas de satisfaccion actualizadas.") {
+    const normalized = normalizeSatisfactionQuestions(nextQuestions);
+    if (!normalized.length) {
+      setMessage("Debe existir al menos una pregunta de satisfaccion.");
+      return;
+    }
+    if (!normalized.some((item) => item.active !== false)) {
+      setMessage("Debe quedar al menos una pregunta de satisfaccion activa.");
+      return;
+    }
+    const saved = await api<SatisfactionQuestion[]>("/api/v1/services/satisfaction-questions", {
+      method: "PUT",
+      body: JSON.stringify({ questions: normalized })
+    });
+    const cleanSaved = normalizeSatisfactionQuestions(saved);
+    setSatisfactionQuestions(cleanSaved.length ? cleanSaved : normalized);
+    setMessage(successMessage);
+  }
+
+  async function toggleSatisfactionQuestion(id: string) {
+    const next = satisfactionQuestions.map((item) => item.id === id ? { ...item, active: item.active === false } : item);
+    await saveSatisfactionQuestionCatalog(next, "Estado de la pregunta actualizado.");
+  }
+
+  async function removeSatisfactionQuestion(id: string) {
+    const target = satisfactionQuestions.find((item) => item.id === id);
+    if (!target) return;
+    if (!window.confirm(`Confirmas retirar la pregunta "${target.label}" del maestro?`)) return;
+    await saveSatisfactionQuestionCatalog(satisfactionQuestions.filter((item) => item.id !== id), "Pregunta retirada del maestro.");
+  }
+
   function renderMasterCatalogManager() {
     const catalogOptions: Array<[string, string]> = [
       ["user_types", "Tipos de usuario"],
@@ -1010,37 +1147,83 @@ export default function AdministracionPage() {
       ["contract_types", "Tipos de contrato"],
       ["work_shifts", "Turnos"],
       ["user_document_types", "Tipos documentales"],
-      ["banks", "Bancos"]
+      ["banks", "Bancos"],
+      ["service_types", "Tipos de servicio"],
+      ["satisfaction_questions", "Preguntas de satisfaccion"]
     ];
-    const selectedItems = Array.isArray((masterData as Record<string, unknown>)[catalogDraft.catalog])
+    const isServiceTypeCatalog = catalogDraft.catalog === "service_types";
+    const isSatisfactionQuestionCatalog = catalogDraft.catalog === "satisfaction_questions";
+    const isOperationalCatalog = isServiceTypeCatalog || isSatisfactionQuestionCatalog;
+    const selectedItems = !isOperationalCatalog && Array.isArray((masterData as Record<string, unknown>)[catalogDraft.catalog])
       ? (((masterData as unknown) as Record<string, MasterOption[]>)[catalogDraft.catalog] || [])
       : [];
+    const catalogRows: Array<MasterOption & { active?: boolean }> = isServiceTypeCatalog
+      ? serviceTypes.map((item) => ({ code: item.code, name: item.label, active: item.active !== false }))
+      : isSatisfactionQuestionCatalog
+        ? satisfactionQuestions.map((item) => ({ code: item.id, name: item.label, active: item.active !== false }))
+      : selectedItems;
     return (
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
         <div className="rounded-md border border-line bg-paper p-3">
           <div className="grid gap-3">
             <SelectField label="Catalogo" value={catalogDraft.catalog} onChange={(value) => setCatalogDraft((current) => ({ ...current, catalog: value }))} options={catalogOptions} />
-            <Field label="Codigo" value={catalogDraft.code} onChange={(value) => setCatalogDraft((current) => ({ ...current, code: value.toUpperCase().replace(/\s+/g, "-") }))} />
-            <Field label="Nombre" value={catalogDraft.name} onChange={(value) => setCatalogDraft((current) => ({ ...current, name: value }))} />
+            <Field label="Codigo" value={catalogDraft.code} onChange={(value) => setCatalogDraft((current) => ({ ...current, code: isOperationalCatalog ? normalizeServiceTypeCode(value) : value.toUpperCase().replace(/\s+/g, "-") }))} />
+            <Field label={isSatisfactionQuestionCatalog ? "Pregunta" : "Nombre"} value={catalogDraft.name} onChange={(value) => setCatalogDraft((current) => ({ ...current, name: value }))} />
             <Field label="Descripcion" value={catalogDraft.description} onChange={(value) => setCatalogDraft((current) => ({ ...current, description: value }))} />
-            <Button onClick={saveCatalogItem} type="button"><Save size={16} /> Guardar maestro</Button>
+            {isServiceTypeCatalog ? (
+              <p className="rounded-md border border-apex/20 bg-apex/10 px-3 py-2 text-xs text-neutral-600">
+                Estos tipos se usan en la creacion y edicion de ordenes de servicio. Deja activo solo lo que el operador debe seleccionar.
+              </p>
+            ) : null}
+            {isSatisfactionQuestionCatalog ? (
+              <p className="rounded-md border border-apex/20 bg-apex/10 px-3 py-2 text-xs text-neutral-600">
+                Estas preguntas aparecen en el cierre del servicio y son obligatorias cuando estan activas.
+              </p>
+            ) : null}
+            <Button onClick={saveCatalogItem} type="button"><Save size={16} /> {isServiceTypeCatalog ? "Guardar tipo de servicio" : isSatisfactionQuestionCatalog ? "Guardar pregunta" : "Guardar maestro"}</Button>
           </div>
         </div>
         <div className="max-h-[58vh] overflow-auto rounded-md border border-line">
-          <table className="w-full min-w-[520px] text-sm">
+          <table className="w-full min-w-[640px] text-sm">
             <thead className="sticky top-0 bg-white">
               <tr className="border-b border-line text-left text-xs text-neutral-500">
                 <th className="px-3 py-2">Codigo</th>
-                <th className="px-3 py-2">Nombre</th>
+                <th className="px-3 py-2">{isSatisfactionQuestionCatalog ? "Pregunta" : "Nombre"}</th>
+                {isOperationalCatalog ? <th className="px-3 py-2">Estado</th> : null}
+                {isOperationalCatalog ? <th className="px-3 py-2 text-right">Accion</th> : null}
               </tr>
             </thead>
             <tbody>
-              {selectedItems.map((item) => (
+              {catalogRows.map((item) => (
                 <tr className="border-b border-line/70" key={item.code}>
                   <td className="px-3 py-2 font-mono text-xs">{item.code}</td>
                   <td className="px-3 py-2">{item.name}</td>
+                  {isOperationalCatalog ? (
+                    <td className="px-3 py-2">
+                      <span className={`rounded-md px-2 py-1 text-xs font-semibold ${item.active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>
+                        {item.active ? "Activo" : "Inactivo"}
+                      </span>
+                    </td>
+                  ) : null}
+                  {isOperationalCatalog ? (
+                    <td className="px-3 py-2">
+                      <div className="flex justify-end gap-2">
+                        <button className="rounded-md border border-line px-2 py-1 text-xs font-semibold hover:bg-paper" onClick={() => isServiceTypeCatalog ? toggleServiceType(item.code) : toggleSatisfactionQuestion(item.code)} type="button">
+                          {item.active ? "Inactivar" : "Activar"}
+                        </button>
+                        <button className="rounded-md border border-rose-200 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50" onClick={() => isServiceTypeCatalog ? removeServiceType(item.code) : removeSatisfactionQuestion(item.code)} type="button">
+                          Retirar
+                        </button>
+                      </div>
+                    </td>
+                  ) : null}
                 </tr>
               ))}
+              {isOperationalCatalog && !catalogRows.length ? (
+                <tr>
+                  <td className="px-3 py-6 text-center text-sm text-neutral-500" colSpan={4}>No hay registros configurados.</td>
+                </tr>
+              ) : null}
             </tbody>
           </table>
         </div>
@@ -1362,7 +1545,7 @@ export default function AdministracionPage() {
                 <Field label="Nombre del rol" value={roleForm.name} onChange={(value) => setRoleForm((prev) => ({ ...prev, name: value }))} />
                 <Field label="Descripcion" value={roleForm.description} onChange={(value) => setRoleForm((prev) => ({ ...prev, description: value }))} />
                 <Field label="Nivel jerarquico" type="number" value={roleForm.hierarchy_level} onChange={(value) => setRoleForm((prev) => ({ ...prev, hierarchy_level: value }))} />
-                <SelectField label="Tipo de rol" value={roleForm.role_type} onChange={(value) => setRoleForm((prev) => ({ ...prev, role_type: value }))} options={[["custom", "Personalizado"], ["superadmin", "Superadmin"], ["admin_empresa", "Admin empresa"], ["gerencia", "Gerencia"], ["coordinador", "Coordinador"], ["supervisor", "Supervisor"], ["operativo", "Operativo"], ["analista", "Analista"], ["comercial", "Comercial"], ["auditor", "Auditor"], ["soporte", "Soporte"]]} />
+                <SelectField label="Tipo de rol" value={roleForm.role_type} onChange={(value) => setRoleForm((prev) => ({ ...prev, role_type: value }))} options={[["custom", "Personalizado"], ...(platformAdmin ? [["superadmin", "Superadmin"] as [string, string]] : []), ["admin_empresa", "Admin empresa"], ["gerencia", "Gerencia"], ["coordinador", "Coordinador"], ["supervisor", "Supervisor"], ["operativo", "Operativo"], ["analista", "Analista"], ["comercial", "Comercial"], ["auditor", "Auditor"], ["soporte", "Soporte"]]} />
                 <SelectField label="Alcance" value={roleForm.scope} onChange={(value) => setRoleForm((prev) => ({ ...prev, scope: value }))} options={[["company", "Empresa"], ["location", "Sede"], ["area", "Area"], ["cost_center", "Centro de costo"], ["process", "Proceso"]]} />
                 <SelectField label="Copiar desde rol" value="" onChange={copyRole} options={[["", "Seleccionar rol base"], ...roles.map((role) => [String(role.id), role.name] as [string, string])]} />
                 <Toggle label="Puede delegar permisos" checked={roleForm.can_delegate} onChange={(value) => setRoleForm((prev) => ({ ...prev, can_delegate: value }))} />

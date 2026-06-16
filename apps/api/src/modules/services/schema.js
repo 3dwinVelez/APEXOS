@@ -20,6 +20,13 @@ const orderSchema = {
   }
 };
 
+const orderUpdateSchema = {
+  body: {
+    type: "object",
+    properties: orderSchema.body.properties
+  }
+};
+
 const referenceSchema = {
   body: {
     type: "object",
@@ -64,6 +71,50 @@ const referenceSchema = {
         }
       },
       metadata: { type: "object" }
+    }
+  }
+};
+
+const serviceTypesSchema = {
+  body: {
+    type: "object",
+    required: ["types"],
+    properties: {
+      types: {
+        type: "array",
+        minItems: 1,
+        items: {
+          type: "object",
+          required: ["code", "label"],
+          properties: {
+            code: { type: "string" },
+            label: { type: "string" },
+            active: { type: "boolean" }
+          }
+        }
+      }
+    }
+  }
+};
+
+const satisfactionQuestionsSchema = {
+  body: {
+    type: "object",
+    required: ["questions"],
+    properties: {
+      questions: {
+        type: "array",
+        minItems: 1,
+        items: {
+          type: "object",
+          required: ["id", "label"],
+          properties: {
+            id: { type: "string" },
+            label: { type: "string" },
+            active: { type: "boolean" }
+          }
+        }
+      }
     }
   }
 };
@@ -184,4 +235,4 @@ const photoSchema = {
   }
 };
 
-module.exports = { orderSchema, referenceSchema, referenceBulkImportSchema, startSchema, inspectionSchema, closeSchema, incidentSchema, photoSchema };
+module.exports = { orderSchema, orderUpdateSchema, referenceSchema, referenceBulkImportSchema, serviceTypesSchema, satisfactionQuestionsSchema, startSchema, inspectionSchema, closeSchema, incidentSchema, photoSchema };
