@@ -168,7 +168,12 @@ export default function DashboardPage() {
 
   const enabled = (slug: string) => !access.loading && access.bySlug[slug] === true;
   const orderedModules = [...MODULES]
-    .sort((a, b) => (access.orderBySlug?.[a.slug] ?? 999) - (access.orderBySlug?.[b.slug] ?? 999));
+    .sort((a, b) => {
+      const aEnabled = enabled(a.slug);
+      const bEnabled = enabled(b.slug);
+      if (aEnabled !== bEnabled) return aEnabled ? -1 : 1;
+      return (access.orderBySlug?.[a.slug] ?? 999) - (access.orderBySlug?.[b.slug] ?? 999);
+    });
   const activeModules = [...MODULES]
     .filter((module) => enabled(module.slug))
     .sort((a, b) => (access.orderBySlug?.[a.slug] ?? 999) - (access.orderBySlug?.[b.slug] ?? 999));
