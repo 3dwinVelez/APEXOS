@@ -242,12 +242,16 @@ export default function ServiceOperationPage() {
     return Boolean(captures[`pieza_${partId}`]) || Boolean(order?.photos.some((photo) => photo.type === "pieza_averiada" && String(photo.metadata?.part_id) === String(partId)));
   }
 
-  function hasPhoto(type: string) {
-    return Boolean(captures[type]) || Boolean(order?.photos.some((photo) => photo.type === type));
+  function hasPersistedPhoto(type: string) {
+    return Boolean(order?.photos.some((photo) => photo.type === type));
+  }
+
+  function uploadsPending(types: string[]) {
+    return types.some((type) => uploading[type]);
   }
 
   function executionPhotosReady() {
-    return executionPhotoTypes.every((type) => hasPhoto(type));
+    return executionPhotoTypes.every((type) => hasPersistedPhoto(type)) && !uploadsPending(executionPhotoTypes);
   }
 
   function satisfactionReady() {
@@ -255,11 +259,11 @@ export default function ServiceOperationPage() {
   }
 
   function closeReady() {
-    return closePhotoTypes.every((type) => hasPhoto(type)) && satisfactionReady();
+    return closePhotoTypes.every((type) => hasPersistedPhoto(type)) && satisfactionReady() && !uploadsPending(closePhotoTypes);
   }
 
   function noExecutionReady() {
-    return Boolean(noExecutionReason.trim() && hasPhoto("no_ejecutada") && hasPhoto("firma_cliente"));
+    return Boolean(noExecutionReason.trim() && hasPersistedPhoto("no_ejecutada") && hasPersistedPhoto("firma_cliente") && !uploadsPending(["no_ejecutada", "firma_cliente"]));
   }
 
   function validateInspection() {
@@ -495,7 +499,7 @@ export default function ServiceOperationPage() {
                 <PhotoCapture label="Foto 1: Producto abierto" required loading={uploading.producto_abierto} value={captures.producto_abierto || null} onChange={(file) => uploadPhoto("producto_abierto", file)} />
                 <PhotoCapture label="Foto 2: Producto cerrado" required loading={uploading.producto_cerrado} value={captures.producto_cerrado || null} onChange={(file) => uploadPhoto("producto_cerrado", file)} />
               </div>
-              <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white disabled:opacity-50" disabled={!executionPhotosReady()} onClick={() => setClosureMode(true)} type="button"><Camera size={18} /> Continuar al cierre</button>
+              <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white disabled:opacity-50" disabled={!executionPhotosReady()} onClick={() => setClosureMode(true)} type="button"><Camera size={18} /> {uploadsPending(executionPhotoTypes) ? "Guardando evidencias..." : "Continuar al cierre"}</button>
             </>
           ) : (
             <>
@@ -539,7 +543,7 @@ export default function ServiceOperationPage() {
                 </div>
                 <SignatureCapture label="Firma del cliente" required value={captures.firma_cliente || null} onChange={(file) => uploadSignature(file)} />
               </div>
-              <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-emerald-600 text-base font-semibold text-white disabled:opacity-50" disabled={working || !closeReady()} onClick={() => update("close")} type="button"><CheckCircle2 size={18} /> Cerrar servicio</button>
+              <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-emerald-600 text-base font-semibold text-white disabled:opacity-50" disabled={working || !closeReady()} onClick={() => update("close")} type="button"><CheckCircle2 size={18} /> {uploadsPending(closePhotoTypes) ? "Guardando soportes..." : "Cerrar servicio"}</button>
             </>
           )}
         </section>
@@ -553,8 +557,8 @@ export default function ServiceOperationPage() {
           </div>
           <div className="mb-4 grid grid-cols-3 gap-2 text-center text-xs font-semibold">
             <SupportState ready={Boolean(noExecutionReason.trim())} label="Motivo" />
-            <SupportState ready={hasPhoto("no_ejecutada")} label="Evidencia" />
-            <SupportState ready={hasPhoto("firma_cliente")} label="Firma" />
+            <SupportState ready={hasPersistedPhoto("no_ejecutada")} label="Evidencia" />
+            <SupportState ready={hasPersistedPhoto("firma_cliente")} label="Firma" />
           </div>
           <label className="text-sm font-semibold">1. Describe la novedad y por qué no puede continuar</label>
           <textarea className="mt-1 min-h-24 w-full rounded-md border border-line px-3 py-3 text-base md:text-sm" placeholder="Ejemplo: producto incompleto, cliente ausente o pieza faltante..." value={noExecutionReason} onChange={(event) => setNoExecutionReason(event.target.value)} />
@@ -562,7 +566,7 @@ export default function ServiceOperationPage() {
             <PhotoCapture label="2. Evidencia de la novedad" required loading={uploading.no_ejecutada} value={captures.no_ejecutada || null} onChange={(file) => uploadPhoto("no_ejecutada", file, { reason: noExecutionReason })} />
             <SignatureCapture label="3. Firma del cliente" required value={captures.firma_cliente || null} onChange={(file) => uploadSignature(file, { reason: noExecutionReason, closure: "no_ejecutada" })} />
           </div>
-          <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-red-700 text-base font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40" disabled={working || !noExecutionReady()} onClick={() => update("close-not-executed")} type="button"><FileSignature size={17} /> Confirmar novedad y cerrar orden</button>
+          <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-red-700 text-base font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40" disabled={working || !noExecutionReady()} onClick={() => update("close-not-executed")} type="button"><FileSignature size={17} /> {uploadsPending(["no_ejecutada", "firma_cliente"]) ? "Guardando soportes..." : "Confirmar novedad y cerrar orden"}</button>
           <button className="mt-2 h-11 w-full rounded-md border border-line text-sm font-semibold hover:bg-paper" onClick={() => setActivePanel(panelForStatus(order.status))} type="button">Volver al paso actual</button>
         </section>
       ) : null}
