@@ -41,8 +41,13 @@ export function clearSession(reason = "expired") {
   localStorage.removeItem("role_permissions");
   localStorage.removeItem("role_metadata");
   localStorage.removeItem("role_name");
+  localStorage.removeItem("user_email");
+  localStorage.removeItem("apexos_company_id");
+  localStorage.removeItem("apexos_company_name");
+  localStorage.removeItem(LAST_ACTIVITY_KEY);
   localStorage.removeItem(PASSWORD_CHANGE_REQUIRED_KEY);
   localStorage.setItem("apex_session_end_reason", reason);
+  sessionStorage.removeItem("apexos_module_access_cache");
 }
 
 export function assertActiveSession() {
