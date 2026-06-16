@@ -6,6 +6,10 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || proce
 
 type AnyRow = Record<string, unknown>;
 
+class PlatformAccessError extends Error {
+  statusCode = 403;
+}
+
 async function supabaseRequest(path: string, init: RequestInit & { token?: string; service?: boolean } = {}) {
   const { token, service, headers, ...rest } = init;
   const useServiceRole = service && Boolean(SUPABASE_SERVICE_ROLE_KEY);
@@ -29,10 +33,11 @@ async function supabaseRequest(path: string, init: RequestInit & { token?: strin
 }
 
 async function requirePlatformAdmin(token: string) {
-  await supabaseRequest("/rest/v1/v_platform_companies?select=company_id&limit=1", {
+  const companies = await supabaseRequest("/rest/v1/v_platform_companies?select=company_id&limit=1", {
     method: "GET",
     token
-  });
+  }) as unknown[];
+  if (!companies.length) throw new PlatformAccessError("Acceso exclusivo para superadministradores de plataforma.");
 }
 
 function minutesSince(value: unknown) {
@@ -156,7 +161,7 @@ export async function GET(request: NextRequest) {
       users
     });
   } catch (error) {
-    return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible consultar sesiones." }, { status: 500 });
+    return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible consultar sesiones." }, { status: error instanceof PlatformAccessError ? error.statusCode : 500 });
   }
 }
 

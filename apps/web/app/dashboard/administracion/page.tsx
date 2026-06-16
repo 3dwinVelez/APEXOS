@@ -3,6 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { api } from "@/lib/api";
+import { loadModuleAccess } from "@/lib/moduleAccess";
+import { MODULES } from "@/lib/modules";
 import { getUserDocumentUrl, uploadUserDocument } from "@/lib/supabaseStorage";
 import {
   Activity,
@@ -453,28 +455,6 @@ function isSupabaseSession() {
   }
 }
 
-function canManageCompanies() {
-  if (typeof window === "undefined") return false;
-  const email = String(localStorage.getItem("user_email") || "").toLowerCase();
-  if (email.includes("admin") || email.includes("apex")) return true;
-
-  const token = localStorage.getItem("token");
-  if (!token?.includes(".")) return false;
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-    const roleText = [
-      payload.role,
-      payload.app_metadata?.role,
-      payload.user_metadata?.role,
-      payload.user_metadata?.role_name,
-      payload.user_metadata?.profile
-    ].filter(Boolean).join(" ").toLowerCase();
-    return ["admin", "apex", "platform", "super"].some((word) => roleText.includes(word));
-  } catch {
-    return false;
-  }
-}
-
 function statusClass(status: ConfigItem["status"]) {
   if (status === "configurado" || status === "activo") return "bg-emerald-50 text-emerald-700";
   if (status === "restringido") return "bg-rose-50 text-rose-700";
@@ -631,6 +611,7 @@ export default function AdministracionPage() {
   const [selectedDocumentFile, setSelectedDocumentFile] = useState<File | null>(null);
   const [catalogDraft, setCatalogDraft] = useState({ catalog: "positions", code: "", name: "", description: "" });
   const [message, setMessage] = useState("");
+  const [platformAdmin, setPlatformAdmin] = useState(false);
 
   const selectedRole = useMemo(() => roles.find((role) => role.id === selectedRoleId) || null, [roles, selectedRoleId]);
   const selectedUser = useMemo(() => users.find((user) => user.id === selectedUserId) || null, [users, selectedUserId]);
@@ -649,12 +630,13 @@ export default function AdministracionPage() {
   const filteredConfigItems = useMemo(() => {
     const term = query.trim().toLowerCase();
     return configItems.filter((item) => {
+      if (item.key === "empresas" && !platformAdmin) return false;
       const matchesCategory = categoryFilter === "all" || item.categoryKey === categoryFilter;
       const matchesStatus = configStatusFilter === "all" || item.status === configStatusFilter;
       const text = `${item.categoryTitle} ${item.title} ${item.description}`.toLowerCase();
       return matchesCategory && matchesStatus && (!term || text.includes(term));
     });
-  }, [categoryFilter, configItems, configStatusFilter, query]);
+  }, [categoryFilter, configItems, configStatusFilter, platformAdmin, query]);
   const metrics = useMemo(() => {
     const active = users.filter((user) => user.active).length;
     const inactive = users.length - active;
@@ -719,9 +701,6 @@ export default function AdministracionPage() {
     if (errors.length) {
       setMessage(`No fue posible consultar ${errors.join(", ")}. Revisa permisos RLS, empresa activa o conectividad Supabase.`);
     }
-    if (isSupabaseSession() && !canManageCompanies()) {
-      setMessage("Sesion empresa activa. La gestion de empresas y modulos requiere permisos de administrador de plataforma.");
-    }
     const initialRole = rolesData.find((role) => role.name !== "APEX_ADMIN") || rolesData[0];
     if (initialRole && !initializedRole.current) {
       initializedRole.current = true;
@@ -746,6 +725,12 @@ export default function AdministracionPage() {
   useEffect(() => {
     load().catch((error) => setMessage(error.message));
   }, [load]);
+
+  useEffect(() => {
+    loadModuleAccess(MODULES)
+      .then((access) => setPlatformAdmin(access.isPlatformAdmin))
+      .catch(() => setPlatformAdmin(false));
+  }, []);
 
   function openConfig(item: ConfigItem) {
     setSelectedConfig(item);
@@ -1362,7 +1347,7 @@ export default function AdministracionPage() {
                 <Field label="Nombre del rol" value={roleForm.name} onChange={(value) => setRoleForm((prev) => ({ ...prev, name: value }))} />
                 <Field label="Descripcion" value={roleForm.description} onChange={(value) => setRoleForm((prev) => ({ ...prev, description: value }))} />
                 <Field label="Nivel jerarquico" type="number" value={roleForm.hierarchy_level} onChange={(value) => setRoleForm((prev) => ({ ...prev, hierarchy_level: value }))} />
-                <SelectField label="Tipo de rol" value={roleForm.role_type} onChange={(value) => setRoleForm((prev) => ({ ...prev, role_type: value }))} options={[["custom", "Personalizado"], ["superadmin", "Superadmin"], ["admin_empresa", "Admin empresa"], ["gerencia", "Gerencia"], ["coordinador", "Coordinador"], ["supervisor", "Supervisor"], ["operativo", "Operativo"], ["analista", "Analista"], ["comercial", "Comercial"], ["auditor", "Auditor"], ["soporte", "Soporte"]]} />
+                <SelectField label="Tipo de rol" value={roleForm.role_type} onChange={(value) => setRoleForm((prev) => ({ ...prev, role_type: value }))} options={[["custom", "Personalizado"], ...(platformAdmin ? [["superadmin", "Superadmin"] as [string, string]] : []), ["admin_empresa", "Admin empresa"], ["gerencia", "Gerencia"], ["coordinador", "Coordinador"], ["supervisor", "Supervisor"], ["operativo", "Operativo"], ["analista", "Analista"], ["comercial", "Comercial"], ["auditor", "Auditor"], ["soporte", "Soporte"]]} />
                 <SelectField label="Alcance" value={roleForm.scope} onChange={(value) => setRoleForm((prev) => ({ ...prev, scope: value }))} options={[["company", "Empresa"], ["location", "Sede"], ["area", "Area"], ["cost_center", "Centro de costo"], ["process", "Proceso"]]} />
                 <SelectField label="Copiar desde rol" value="" onChange={copyRole} options={[["", "Seleccionar rol base"], ...roles.map((role) => [String(role.id), role.name] as [string, string])]} />
                 <Toggle label="Puede delegar permisos" checked={roleForm.can_delegate} onChange={(value) => setRoleForm((prev) => ({ ...prev, can_delegate: value }))} />

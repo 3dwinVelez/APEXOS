@@ -23,6 +23,14 @@ type CreateCompanyBody = {
   admin_password?: string;
 };
 
+class PlatformAccessError extends Error {
+  statusCode = 403;
+}
+
+function errorStatus(error: unknown) {
+  return error instanceof PlatformAccessError ? error.statusCode : 500;
+}
+
 async function supabaseRequest(path: string, init: RequestInit & { token?: string; service?: boolean } = {}) {
   const { token, service, headers, ...rest } = init;
   const key = service ? SUPABASE_SERVICE_ROLE_KEY : SUPABASE_ANON_KEY;
@@ -49,10 +57,11 @@ function clean(value?: string | null) {
 }
 
 async function requirePlatformAdmin(token: string) {
-  await supabaseRequest("/rest/v1/v_platform_companies?select=company_id&limit=1", {
+  const companies = await supabaseRequest("/rest/v1/v_platform_companies?select=company_id&limit=1", {
     method: "GET",
     token
-  });
+  }) as unknown[];
+  if (!companies.length) throw new PlatformAccessError("Acceso exclusivo para superadministradores de plataforma.");
 }
 
 export async function POST(request: NextRequest) {
@@ -160,7 +169,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ company: platformRows[0], admin_user_id: authUser.id });
   } catch (error) {
-    return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible crear la empresa." }, { status: 500 });
+    return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible crear la empresa." }, { status: errorStatus(error) });
   }
 }
 
@@ -209,7 +218,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ company: platformRows[0] });
   } catch (error) {
-    return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible editar la empresa." }, { status: 500 });
+    return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible editar la empresa." }, { status: errorStatus(error) });
   }
 }
 
@@ -235,6 +244,6 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible eliminar la empresa." }, { status: 500 });
+    return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible eliminar la empresa." }, { status: errorStatus(error) });
   }
 }

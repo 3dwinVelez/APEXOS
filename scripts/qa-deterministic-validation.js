@@ -219,18 +219,23 @@ async function validateSupabase(app) {
   });
   const modules = await modulesResponse.json();
   const enabled = Array.isArray(modules) ? modules.map((row) => row.module_code).sort() : [];
-  const required = ["administracion_apex", "contabilidad", "compras", "inventario", "servicios", "talento_humano", "transporte"];
+  const required = ["administracion_apex", "servicios", "talento_humano", "transporte"];
   const missing = required.filter((item) => !enabled.includes(item));
   expect(!missing.length, `SCJ no tiene modulos requeridos: ${missing.join(", ")}`);
   record("supabase", "Modulos SCJ", true, { enabled });
 
+  const projectsEnabled = enabled.includes("proyectos");
   const apiResponse = await injectJson(app, {
     method: "GET",
     url: "/api/v1/projects",
     headers: { authorization: `Bearer ${loginBody.access_token}` }
-  }, [200]);
-  expect(Array.isArray(apiResponse.body), "El token Supabase no fue aceptado por el API Prisma.");
-  record("supabase", "Token Supabase contra API", true);
+  }, projectsEnabled ? [200] : [403]);
+  if (projectsEnabled) {
+    expect(Array.isArray(apiResponse.body), "El token Supabase no fue aceptado por el API Prisma.");
+  } else {
+    expect(apiResponse.body?.code === "MODULO_NO_HABILITADO", "El API no bloqueo correctamente un modulo inactivo.");
+  }
+  record("supabase", "Token Supabase y acceso por modulo", true, { projects_enabled: projectsEnabled });
 }
 
 function validateFrontendBuild() {

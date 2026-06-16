@@ -241,13 +241,13 @@ function getStoredTenantActiveModules() {
 
 function tenantAllowsPermissionModule(activeModules: string[], module?: string) {
   if (!module) return true;
-  if (!activeModules.length) return true;
+  if (!activeModules.length) return false;
   const allowedCodes = (tenantModuleCodesByPermissionModule[module] || [module]).map((item) => String(item).trim().toLowerCase());
   return allowedCodes.some((code) => activeModules.includes(code));
 }
 
 function filteredAdminPermissionCatalog(activeModules = getStoredTenantActiveModules()) {
-  return adminPermissionCatalog.filter((item) => tenantAllowsPermissionModule(activeModules, item.module));
+  return adminPermissionCatalog.filter((item) => item.key !== "empresas" && tenantAllowsPermissionModule(activeModules, item.module));
 }
 
 function filterAdminPermissions(permissions: Record<string, Record<string, boolean>> | undefined, activeModules = getStoredTenantActiveModules()) {

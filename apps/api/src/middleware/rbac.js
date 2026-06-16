@@ -16,9 +16,10 @@ const MODULE_CODES = {
 };
 
 function tenantHasModule(tenant, module) {
-  if (!tenant || module === "auth" || module === "dashboard") return true;
+  if (module === "auth" || module === "dashboard") return true;
+  if (!tenant) return false;
   const active = Array.isArray(tenant.active_modules) ? tenant.active_modules.map((item) => String(item).toLowerCase()) : [];
-  if (!active.length) return true;
+  if (!active.length) return false;
   const allowedCodes = (MODULE_CODES[module] || [module]).map((item) => String(item).toLowerCase());
   return allowedCodes.some((code) => active.includes(code));
 }
