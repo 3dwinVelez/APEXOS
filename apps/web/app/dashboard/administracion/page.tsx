@@ -681,16 +681,16 @@ export default function AdministracionPage() {
   }, [userSearch, userStatusFilter, users]);
   const currentUserStep = Math.max(0, userSteps.findIndex((step) => step.key === userTab));
   const configItems = useMemo(() => categories.flatMap((category) => category.items.map((item) => ({ ...item, categoryKey: category.key, categoryTitle: category.title, categoryIcon: category.icon }))), []);
+  const visibleConfigItems = useMemo(() => configItems.filter((item) => item.key !== "empresas" || platformAdmin), [configItems, platformAdmin]);
   const filteredConfigItems = useMemo(() => {
     const term = query.trim().toLowerCase();
-    return configItems.filter((item) => {
-      if (item.key === "empresas" && !platformAdmin) return false;
+    return visibleConfigItems.filter((item) => {
       const matchesCategory = categoryFilter === "all" || item.categoryKey === categoryFilter;
       const matchesStatus = configStatusFilter === "all" || item.status === configStatusFilter;
       const text = `${item.categoryTitle} ${item.title} ${item.description}`.toLowerCase();
       return matchesCategory && matchesStatus && (!term || text.includes(term));
     });
-  }, [categoryFilter, configItems, configStatusFilter, platformAdmin, query]);
+  }, [categoryFilter, configStatusFilter, query, visibleConfigItems]);
   const metrics = useMemo(() => {
     const active = users.filter((user) => user.active).length;
     const inactive = users.length - active;
@@ -716,8 +716,8 @@ export default function AdministracionPage() {
     const critical = Object.values(roleForm.permissions).reduce((sum, actionsMap) => sum + ["delete", "administer", "configure", "sensitive", "manage_users", "manage_roles"].filter((action) => actionsMap?.[action]).length, 0);
     return { modules, actions, critical };
   }, [roleForm.permissions]);
-  const configuredItems = configItems.filter((item) => item.status === "configurado" || item.status === "activo").length;
-  const pendingItems = configItems.filter((item) => item.status === "pendiente").length;
+  const configuredItems = visibleConfigItems.filter((item) => item.status === "configurado" || item.status === "activo").length;
+  const pendingItems = visibleConfigItems.filter((item) => item.status === "pendiente").length;
   const activeConfigFilters = [query.trim(), categoryFilter !== "all" ? categoryFilter : "", configStatusFilter !== "all" ? configStatusFilter : ""].filter(Boolean).length;
 
   function clearConfigFilters() {
@@ -1444,7 +1444,7 @@ export default function AdministracionPage() {
         <div>
           <p className="text-sm font-medium text-apex">Configuracion y gobierno</p>
           <h1 className="mt-1 text-3xl font-semibold">Administracion APEX</h1>
-          <p className="mt-2 max-w-3xl text-sm text-neutral-600">Gestiona accesos, permisos, empresas y maestros desde un centro administrativo ordenado.</p>
+          <p className="mt-2 max-w-3xl text-sm text-neutral-600">{platformAdmin ? "Gestiona accesos, permisos, empresas y maestros desde un centro administrativo ordenado." : "Gestiona usuarios, roles y maestros propios de esta empresa desde un centro administrativo ordenado."}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button className="border border-line bg-white text-neutral-800 hover:bg-paper" onClick={() => load().catch((error) => setMessage(error.message))} type="button"><RefreshCw size={16} /> Actualizar</Button>
@@ -1458,22 +1458,22 @@ export default function AdministracionPage() {
         <CompactMetric icon={<Users size={17} />} label="Usuarios activos" value={metrics.active} detail={`${metrics.inactive} inactivos`} />
         <CompactMetric icon={<AlertTriangle size={17} />} label="Requieren atencion" value={metrics.pending + metrics.withoutRole + metrics.withoutSite} detail={`${metrics.pending} pendientes · ${metrics.withoutRole} sin rol`} tone={metrics.pending + metrics.withoutRole + metrics.withoutSite ? "amber" : "default"} />
         <CompactMetric icon={<Shield size={17} />} label="Roles activos" value={roles.filter((role) => role.active).length} detail={`${roles.length} roles configurados`} />
-        <CompactMetric icon={<SlidersHorizontal size={17} />} label="Configuraciones listas" value={`${configuredItems}/${configItems.length}`} detail={`${pendingItems} pendientes`} tone={pendingItems ? "amber" : "default"} />
+        <CompactMetric icon={<SlidersHorizontal size={17} />} label="Configuraciones listas" value={`${configuredItems}/${visibleConfigItems.length}`} detail={`${pendingItems} pendientes`} tone={pendingItems ? "amber" : "default"} />
       </section>
 
       <section className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
         <button className="group flex items-center gap-3 rounded-md border border-line bg-white p-3 text-left hover:border-apex hover:bg-paper" onClick={() => setActiveModal("users")} type="button"><span className="flex h-10 w-10 items-center justify-center rounded-md bg-paper text-apex group-hover:bg-white"><Users size={18} /></span><span><span className="block text-sm font-semibold">Usuarios</span><span className="text-xs text-neutral-500">Accesos y fichas maestras</span></span></button>
         <button className="group flex items-center gap-3 rounded-md border border-line bg-white p-3 text-left hover:border-apex hover:bg-paper" onClick={() => setActiveModal("roles")} type="button"><span className="flex h-10 w-10 items-center justify-center rounded-md bg-paper text-apex group-hover:bg-white"><Shield size={18} /></span><span><span className="block text-sm font-semibold">Roles y permisos</span><span className="text-xs text-neutral-500">Gobierno de acceso</span></span></button>
-        <Link className="group flex items-center gap-3 rounded-md border border-line bg-white p-3 hover:border-apex hover:bg-paper" href="/dashboard/administracion/suscripciones"><span className="flex h-10 w-10 items-center justify-center rounded-md bg-paper text-apex group-hover:bg-white"><Building2 size={18} /></span><span><span className="block text-sm font-semibold">Empresas y modulos</span><span className="text-xs text-neutral-500">Suscripciones y habilitaciones</span></span></Link>
+        {platformAdmin ? <Link className="group flex items-center gap-3 rounded-md border border-line bg-white p-3 hover:border-apex hover:bg-paper" href="/dashboard/administracion/suscripciones"><span className="flex h-10 w-10 items-center justify-center rounded-md bg-paper text-apex group-hover:bg-white"><Building2 size={18} /></span><span><span className="block text-sm font-semibold">Empresas y modulos</span><span className="text-xs text-neutral-500">Suscripciones y habilitaciones</span></span></Link> : null}
         <button className="group flex items-center gap-3 rounded-md border border-line bg-white p-3 text-left hover:border-apex hover:bg-paper" onClick={() => setActiveModal("masters")} type="button"><span className="flex h-10 w-10 items-center justify-center rounded-md bg-paper text-apex group-hover:bg-white"><Database size={18} /></span><span><span className="block text-sm font-semibold">Maestros</span><span className="text-xs text-neutral-500">Catalogos transversales</span></span></button>
       </section>
 
       <section className="overflow-hidden rounded-md border border-line bg-white">
         <div className="border-b border-line p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-semibold">Catalogo administrativo</h2><p className="mt-1 text-sm text-neutral-600">Encuentra configuraciones por nombre, categoria o estado.</p></div><p className="text-sm text-neutral-500">{filteredConfigItems.length} de {configItems.length}</p></div>
+          <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-semibold">Catalogo administrativo</h2><p className="mt-1 text-sm text-neutral-600">Encuentra configuraciones por nombre, categoria o estado.</p></div><p className="text-sm text-neutral-500">{filteredConfigItems.length} de {visibleConfigItems.length}</p></div>
           <div className="mt-4 grid gap-2 lg:grid-cols-[minmax(240px,1fr)_230px_180px]">
             <label className="relative block"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} /><input className="h-10 w-full rounded-md border border-line pl-9 pr-3 text-sm" placeholder="Buscar configuracion, modulo o tarea" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
-            <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}><option value="all">Todas las categorias</option>{categories.map((category) => <option key={category.key} value={category.key}>{category.title}</option>)}</select>
+            <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}><option value="all">Todas las categorias</option>{categories.filter((category) => category.items.some((item) => item.key !== "empresas" || platformAdmin)).map((category) => <option key={category.key} value={category.key}>{category.title}</option>)}</select>
             <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={configStatusFilter} onChange={(event) => setConfigStatusFilter(event.target.value)}><option value="all">Todos los estados</option><option value="configurado">Configurados</option><option value="activo">Activos</option><option value="pendiente">Pendientes</option><option value="restringido">Restringidos</option></select>
           </div>
           {activeConfigFilters ? <button className="mt-3 inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold text-neutral-700 hover:bg-paper" onClick={clearConfigFilters} type="button"><RotateCcw size={15} /> Limpiar {activeConfigFilters} filtro(s)</button> : null}

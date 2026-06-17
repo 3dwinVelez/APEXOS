@@ -11,10 +11,10 @@ type ActionCardProps = {
 };
 
 export function ActionCard({ title, detail, icon: Icon, href, onClick, primary = false }: ActionCardProps) {
-  const className = `flex min-h-24 w-full items-center gap-3 rounded-md border bg-white p-3 text-left transition active:scale-[0.99] hover:bg-paper sm:gap-4 sm:p-4 ${
-    primary ? "border-apex" : "border-line hover:border-apex"
+  const className = `flex min-h-24 w-full items-center gap-3 rounded-lg border p-3 text-left transition active:scale-[0.99] sm:gap-4 sm:p-4 ${
+    primary ? "border-apex bg-apex/10 shadow-sm hover:shadow-md" : "border-line bg-white hover:border-apex hover:bg-paper"
   }`;
-  const iconClass = `flex h-11 w-11 shrink-0 items-center justify-center rounded-md sm:h-12 sm:w-12 ${
+  const iconClass = `flex h-11 w-11 shrink-0 items-center justify-center rounded-lg sm:h-12 sm:w-12 ${
     primary ? "bg-apex text-white" : "bg-paper text-apex"
   }`;
   const content = (

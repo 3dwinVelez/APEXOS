@@ -302,7 +302,7 @@ export default function ServicesPage() {
     : "La operacion de servicios no tiene pendientes criticos en este momento.";
 
   return (
-    <div className="mx-auto max-w-7xl space-y-5 pb-28 md:pb-8">
+    <div className="apex-page-shell space-y-5 pb-28 md:pb-8">
       <header className="sticky top-0 z-20 -mx-3 border-b border-line bg-paper/95 px-3 py-3 backdrop-blur sm:-mx-4 sm:px-4 md:static md:mx-0 md:border-0 md:bg-transparent md:px-0">
         <div className="flex items-center gap-3">
           <Link className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-line bg-white md:hidden" href="/dashboard" aria-label="Volver al inicio">
@@ -316,26 +316,31 @@ export default function ServicesPage() {
         </div>
       </header>
 
-      <section className="overflow-hidden rounded-md bg-[#081411] text-white shadow-sm">
-        <div className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+      <section className="apex-context-hero">
+        <div className="relative z-10 flex flex-col gap-5 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-teal-100">
+            <div className="apex-eyebrow mb-3">
               <Sparkles size={14} />
               Centro operativo de servicios
             </div>
             <h2 className="max-w-3xl text-2xl font-semibold leading-tight sm:text-3xl">{technicianMode ? "Tu siguiente servicio esta aqui" : "Ordenes listas para gestionar"}</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-white/65">{mainMessage} {technicianMode ? "Selecciona una orden para iniciar o continuar el trabajo." : "Usa los filtros para encontrar rapidamente el siguiente servicio."}</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="apex-guide-chip">1. Revisa prioridad</span>
+              <span className="apex-guide-chip">2. Filtra si necesitas</span>
+              <span className="apex-guide-chip">3. Abre y ejecuta</span>
+            </div>
           </div>
           {!technicianMode ? <div className="grid shrink-0 gap-2 sm:flex sm:flex-wrap">
-            <Link className="dark-primary-action inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-[#081411]" href="/dashboard/servicios/nuevo">
+            <Link className="apex-hero-action inline-flex min-w-0 items-center justify-center gap-2 px-5 text-sm font-semibold" href="/dashboard/servicios/nuevo">
               <Plus className="shrink-0" size={17} />
               <span className="truncate">Nueva orden</span>
             </Link>
-            <Link className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-md border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/dashboard/servicios/referencias">
+            <Link className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/dashboard/servicios/referencias">
               <Settings2 className="shrink-0" size={17} />
               <span className="truncate">Referencias</span>
             </Link>
-            <Link className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-md border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/dashboard/servicios/reportes">
+            <Link className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/dashboard/servicios/reportes">
               <BarChart3 className="shrink-0" size={17} />
               <span className="truncate">Reportes</span>
             </Link>
@@ -346,7 +351,7 @@ export default function ServicesPage() {
       {message ? <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{message}</div> : null}
 
       <section className="min-w-0 space-y-4">
-        <aside className="min-w-0 rounded-md border border-line bg-white p-3 sm:p-4">
+        <aside className="apex-section-card min-w-0 p-3 sm:p-4">
           <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
             <div>
             <h2 className="font-semibold">{technicianMode ? "Que debes atender primero" : "Atencion prioritaria"}</h2>
@@ -370,7 +375,7 @@ export default function ServicesPage() {
           </div>
         </aside>
 
-        <section className="min-w-0 rounded-md border border-line bg-white shadow-sm">
+        <section className="apex-section-card min-w-0">
           <div className="border-b border-line p-3 sm:p-4">
             <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
               <div>
