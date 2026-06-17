@@ -165,17 +165,22 @@ export default function TalentPage() {
     : "La operacion de campo se ve estable y con trazabilidad reciente.";
 
   return (
-    <div className="space-y-5">
-      <section className="overflow-hidden rounded-md bg-[#071417] text-white shadow-sm">
-        <div className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+    <div className="apex-page-shell space-y-5">
+      <section className="apex-context-hero">
+        <div className="relative z-10 flex flex-col gap-5 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">M-17 - Talento Humano</p>
+            <p className="apex-eyebrow">M-17 - Talento Humano</p>
             <h1 className="mt-2 max-w-3xl text-2xl font-semibold sm:text-3xl">Operación de personal y jornadas</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-white/65">{statusMessage} Accede directamente a la función que necesitas gestionar.</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="apex-guide-chip">1. Marca o planea</span>
+              <span className="apex-guide-chip">2. Supervisa campo</span>
+              <span className="apex-guide-chip">3. Consulta trazabilidad</span>
+            </div>
           </div>
           <div className="flex shrink-0 flex-wrap gap-2">
-            <Link className="inline-flex h-11 items-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-[#071417]" href="/dashboard/talento-humano/marcacion"><Smartphone size={16} /> Marcación móvil</Link>
-            <Link className="inline-flex h-11 items-center gap-2 rounded-md border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/dashboard/talento-humano/rutas"><Route size={16} /> Nuevo horario</Link>
+            <Link className="apex-hero-action inline-flex items-center gap-2 px-5 text-sm font-semibold" href="/dashboard/talento-humano/marcacion"><Smartphone size={16} /> Marcación móvil</Link>
+            <Link className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/dashboard/talento-humano/rutas"><Route size={16} /> Nuevo horario</Link>
           </div>
         </div>
       </section>
@@ -186,7 +191,7 @@ export default function TalentPage() {
         </section>
       ) : null}
 
-      <section className="rounded-md border border-line bg-white p-4">
+      <section className="apex-section-card p-4">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-apex">Funciones del módulo</p>
@@ -212,7 +217,7 @@ export default function TalentPage() {
         <CompactMetric icon={<MapPinned size={16} />} label="Cobertura GPS" value={`${gpsCoverage}%`} detail={`${operations?.totals.without_gps || 0} personas sin GPS`} alert={openAlerts > 0} />
       </section>
 
-      <section className="overflow-hidden rounded-md border border-line bg-white">
+      <section className="apex-section-card overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line p-4">
           <div>
             <div className="flex items-center gap-2"><MapPinned size={18} className="text-apex" /><h2 className="text-lg font-semibold">Monitor operativo de horarios</h2></div>
@@ -348,15 +353,15 @@ export default function TalentPage() {
 
 function ActionTile({ icon, title, detail, href, primary = false }: { icon: ReactNode; title: string; detail: string; href: string; primary?: boolean }) {
   return (
-    <Link className={`flex min-h-28 items-start gap-3 rounded-md border p-4 transition hover:border-apex hover:shadow-sm ${primary ? "border-apex/40 bg-[#146C6312]" : "border-line bg-white"}`} href={href}>
-      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md ${primary ? "bg-apex text-white" : "bg-paper text-apex"}`}>{icon}</span>
+    <Link className={`flex min-h-28 items-start gap-3 rounded-lg border p-4 transition hover:border-apex hover:shadow-md ${primary ? "border-apex/50 bg-apex/10 shadow-sm" : "border-line bg-white"}`} href={href}>
+      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${primary ? "bg-apex text-white" : "bg-paper text-apex"}`}>{icon}</span>
       <span className="min-w-0"><span className="font-semibold">{title}</span><span className="mt-1 block text-sm leading-5 text-neutral-600">{detail}</span></span>
     </Link>
   );
 }
 
 function CompactMetric({ icon, label, value, detail, alert = false }: { icon: ReactNode; label: string; value: number | string; detail: string; alert?: boolean }) {
-  return <div className="flex items-center gap-3 rounded-md border border-line bg-white px-3 py-2.5"><span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${alert ? "bg-amber-50 text-amber-800" : "bg-paper text-apex"}`}>{icon}</span><div className="min-w-0 flex-1"><div className="flex items-baseline justify-between gap-2"><p className="truncate text-xs font-semibold uppercase text-neutral-500">{label}</p><p className="text-lg font-semibold">{value}</p></div><p className="truncate text-xs text-neutral-500">{detail}</p></div></div>;
+  return <div className="flex items-center gap-3 rounded-lg border border-line bg-white/85 px-3 py-2.5 text-neutral-800"><span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${alert ? "bg-amber-50 text-amber-800" : "bg-paper text-apex"}`}>{icon}</span><div className="min-w-0 flex-1"><div className="flex items-baseline justify-between gap-2"><p className="truncate text-xs font-semibold uppercase text-neutral-600">{label}</p><p className="text-lg font-semibold text-neutral-900">{value}</p></div><p className="truncate text-xs text-neutral-600">{detail}</p></div></div>;
 }
 
 function MonitorStrip({ label, value, hint }: { label: string; value: number | string; hint: string }) {

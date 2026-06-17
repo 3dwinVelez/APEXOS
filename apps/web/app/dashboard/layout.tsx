@@ -7,7 +7,7 @@ import { TechnicianWorkspaceHeader } from "@/components/shell/TechnicianWorkspac
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-paper md:flex">
+    <div className="apex-app-gradient min-h-screen md:flex">
       <div className="technician-hide"><Sidebar /></div>
       <main className="min-w-0 flex-1 overflow-x-hidden p-3 pb-24 sm:p-4 md:p-6 md:pb-6">
         <TechnicianWorkspaceHeader />
