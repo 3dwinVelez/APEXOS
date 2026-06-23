@@ -177,18 +177,25 @@ export default function PublicServiceRequestPage() {
 
   if (created) {
     return (
-      <main className="min-h-screen bg-[radial-gradient(circle_at_top_right,rgba(54,211,186,0.20),transparent_34%),linear-gradient(135deg,#f7f5ee,#ffffff)] px-4 py-8 text-neutral-900">
-        <section className="mx-auto flex min-h-[78vh] max-w-2xl items-center">
-          <div className="w-full rounded-3xl border border-emerald-200 bg-white p-6 text-center shadow-xl sm:p-10">
-            <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-              <CheckCircle2 size={42} />
+      <main className="min-h-screen bg-[radial-gradient(circle_at_top_right,rgba(54,211,186,0.28),transparent_34%),linear-gradient(135deg,#f7f5ee,#ffffff)] px-4 py-6 text-neutral-900">
+        <section className="mx-auto flex min-h-[calc(100vh-48px)] max-w-5xl items-center justify-center">
+          <div className="w-full overflow-hidden rounded-[2rem] border border-emerald-200 bg-white shadow-2xl shadow-teal-950/15">
+            <div className="bg-[linear-gradient(135deg,#05231f,#0d4a40)] px-5 py-10 text-center text-white sm:px-10 sm:py-14">
+              <div className="mx-auto mb-6 flex h-28 w-28 items-center justify-center rounded-full bg-emerald-400/15 text-emerald-200 ring-1 ring-emerald-200/30 sm:h-36 sm:w-36">
+                <CheckCircle2 size={72} />
+              </div>
+              <p className="text-sm font-bold uppercase tracking-[0.26em] text-emerald-100">Solicitud creada con exito</p>
+              <h1 className="mx-auto mt-4 max-w-3xl text-4xl font-bold leading-tight sm:text-6xl">Tu servicio ya fue creado</h1>
+              <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-white/75 sm:text-lg">
+                Numero de seguimiento: <strong className="text-white">{created.number}</strong>. Un asesor revisara la informacion, validara disponibilidad y confirmara la visita.
+              </p>
             </div>
-            <p className="text-sm font-bold uppercase tracking-[0.24em] text-apex">Solicitud recibida</p>
-            <h1 className="mt-3 text-3xl font-bold">Tu servicio ya esta en APEX OS</h1>
-            <p className="mx-auto mt-3 max-w-lg text-neutral-600">Numero de seguimiento: <strong>{created.number}</strong>. Un asesor revisara la informacion, validara disponibilidad y confirmara la visita.</p>
-            <button className="mt-8 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-apex px-6 text-sm font-bold text-white shadow-lg shadow-teal-900/20" onClick={() => { setCreated(null); setForm(initialForm); setStep(0); }} type="button">
-              Crear otra solicitud
-            </button>
+            <div className="grid gap-4 px-5 py-6 text-center sm:px-10 sm:py-8">
+              <button className="mx-auto inline-flex h-14 w-full max-w-sm items-center justify-center gap-2 rounded-xl bg-apex px-6 text-base font-bold text-white shadow-lg shadow-teal-900/20" onClick={() => { setCreated(null); setForm(initialForm); setStep(0); }} type="button">
+                Realizar otra solicitud
+              </button>
+              <p className="text-sm text-neutral-500">Puedes cerrar esta ventana si no necesitas registrar otro servicio.</p>
+            </div>
           </div>
         </section>
       </main>

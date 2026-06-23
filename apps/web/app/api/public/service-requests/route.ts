@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import fs from "node:fs";
+import path from "node:path";
 
-const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || "";
-const PUBLIC_COMPANY_ID = process.env.APEXOS_PUBLIC_SERVICE_COMPANY_ID || process.env.NEXT_PUBLIC_APEXOS_PUBLIC_COMPANY_ID || "";
+let rootEnvCache: Record<string, string> | null = null;
 
 type PublicServiceRequest = {
   company_id?: string;
@@ -31,6 +30,53 @@ function clean(value: unknown) {
   return next || "";
 }
 
+function rootEnv() {
+  if (rootEnvCache) return rootEnvCache;
+  let currentDir = process.cwd();
+  let envPath = "";
+  for (let index = 0; index < 6; index += 1) {
+    const candidate = path.join(currentDir, ".env");
+    if (fs.existsSync(candidate)) {
+      envPath = candidate;
+      break;
+    }
+    const nextDir = path.dirname(currentDir);
+    if (nextDir === currentDir) break;
+    currentDir = nextDir;
+  }
+  if (!fs.existsSync(envPath)) {
+    rootEnvCache = {};
+    return rootEnvCache;
+  }
+  rootEnvCache = Object.fromEntries(fs.readFileSync(envPath, "utf8")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith("#") && line.includes("="))
+    .map((line) => {
+      const separator = line.indexOf("=");
+      return [line.slice(0, separator).trim(), line.slice(separator + 1).trim().replace(/^["']|["']$/g, "")];
+    }));
+  return rootEnvCache;
+}
+
+function envValue(...keys: string[]) {
+  const fallback = rootEnv();
+  for (const key of keys) {
+    const value = process.env[key] || fallback[key];
+    if (value) return value;
+  }
+  return "";
+}
+
+function supabaseConfig() {
+  return {
+    url: envValue("SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL"),
+    anonKey: envValue("SUPABASE_ANON_KEY", "NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+    serviceRoleKey: envValue("SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SECRET_KEY"),
+    publicCompanyId: envValue("APEXOS_PUBLIC_SERVICE_COMPANY_ID", "NEXT_PUBLIC_APEXOS_PUBLIC_COMPANY_ID")
+  };
+}
+
 function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
@@ -41,14 +87,20 @@ function orderNumber() {
 }
 
 async function supabaseRequest<T>(path: string, init: RequestInit = {}) {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error("Falta configuracion de Supabase para recibir solicitudes publicas.");
+  const config = supabaseConfig();
+  if (!config.url || !config.anonKey || !config.serviceRoleKey) {
+    const missing = [
+      !config.url ? "SUPABASE_URL" : "",
+      !config.anonKey ? "SUPABASE_ANON_KEY" : "",
+      !config.serviceRoleKey ? "SUPABASE_SERVICE_ROLE_KEY" : ""
+    ].filter(Boolean).join(", ");
+    throw new Error(`Falta configuracion de Supabase para recibir solicitudes publicas: ${missing}.`);
   }
-  const response = await fetch(`${SUPABASE_URL}${path}`, {
+  const response = await fetch(`${config.url}${path}`, {
     ...init,
     headers: {
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      apikey: config.anonKey,
+      Authorization: `Bearer ${config.serviceRoleKey}`,
       "Content-Type": "application/json",
       ...init.headers
     }
@@ -62,7 +114,8 @@ async function supabaseRequest<T>(path: string, init: RequestInit = {}) {
 }
 
 async function resolveCompanyId(body: PublicServiceRequest, request: NextRequest) {
-  if (PUBLIC_COMPANY_ID && isUuid(PUBLIC_COMPANY_ID)) return PUBLIC_COMPANY_ID;
+  const { publicCompanyId } = supabaseConfig();
+  if (publicCompanyId && isUuid(publicCompanyId)) return publicCompanyId;
 
   const companyName = clean(body.company_name) || clean(request.nextUrl.searchParams.get("empresa"));
   const filter = companyName

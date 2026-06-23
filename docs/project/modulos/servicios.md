@@ -52,7 +52,8 @@
 - La API publica `/api/public/service-requests` valida campos obligatorios, cedula numerica, telefono, fecha tentativa y empresa activa antes de crear la orden.
 - La factura o pedido es opcional en el formulario publico, creacion administrativa, edicion de orden y API/fallback Supabase.
 - La empresa destino del formulario publico se resuelve por `APEXOS_PUBLIC_SERVICE_COMPANY_ID` o `NEXT_PUBLIC_APEXOS_PUBLIC_COMPANY_ID`; si no existe, puede buscar una empresa activa por parametro `empresa`.
-- La API publica acepta configuracion server-side con `SUPABASE_URL`/`SUPABASE_ANON_KEY` o sus equivalentes `NEXT_PUBLIC_*`, siempre con `SUPABASE_SERVICE_ROLE_KEY` solo en servidor.
+- La API publica acepta configuracion server-side con `SUPABASE_URL`/`SUPABASE_ANON_KEY` o sus equivalentes `NEXT_PUBLIC_*`, siempre con `SUPABASE_SERVICE_ROLE_KEY` solo en servidor; en desarrollo tambien puede leer el `.env` raiz aunque Next se ejecute desde `apps/web`.
+- Al finalizar, el formulario muestra una pantalla amplia de confirmacion con el numero de seguimiento y accion principal para realizar otra solicitud.
 - Por seguridad, el endpoint publico no acepta `company_id` arbitrario desde el navegador.
 - El lobby de Servicios incorpora acceso a `Formulario publico` para que administracion pueda copiar o abrir el enlace rapidamente.
 - Las ordenes creadas desde el formulario publico aparecen en el lobby como `Por completar` o `Completar solicitud`, indicando que administracion debe completar referencia, fecha CEDI o tecnico antes de pasar a operacion.
@@ -85,6 +86,7 @@ El formulario publico debe funcionar como una solicitud guiada para personas sin
 - Crear y editar una orden sin factura/pedido.
 - Crear solicitud publica desde `/servicios/solicitar` sin iniciar sesion.
 - Crear solicitud publica sin factura/pedido y verificar que Supabase guarde `invoice_number` como `null`.
+- Confirmar que la pantalla final muestre el servicio creado con exito y permita realizar otra solicitud.
 - Verificar que la solicitud publica genere una orden `pendiente` marcada como `public_request` y `requires_admin_completion`.
 - Verificar que una solicitud publica aparezca en el lobby de Servicios como `Por completar`.
 - Editar la solicitud publica desde administracion para asignar tecnico, referencia, fecha CEDI y observaciones operativas antes de ejecutarla.
