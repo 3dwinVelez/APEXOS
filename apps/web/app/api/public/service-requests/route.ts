@@ -154,10 +154,16 @@ async function resolveCompanyCandidates(body: PublicServiceRequest, request: Nex
 
   if (companyName) {
     const filter = `or=(name.ilike.*${encodeURIComponent(companyName)}*,legal_name.ilike.*${encodeURIComponent(companyName)}*,tax_id.eq.${encodeURIComponent(companyName)})&`;
-    const companies = await supabaseRequest<Array<{ id: string }>>(
+    const activeCompanies = await supabaseRequest<Array<{ id: string }>>(
       `/rest/v1/companies?select=id&${filter}status=eq.active&order=created_at.asc&limit=5`
     ).catch(() => []);
-    candidates.push(...companies.map((item) => item.id).filter(Boolean));
+    candidates.push(...activeCompanies.map((item) => item.id).filter(Boolean));
+    if (!activeCompanies.length) {
+      const namedCompanies = await supabaseRequest<Array<{ id: string }>>(
+        `/rest/v1/companies?select=id&${filter}order=created_at.asc&limit=5`
+      ).catch(() => []);
+      candidates.push(...namedCompanies.map((item) => item.id).filter(Boolean));
+    }
   }
 
   if (publicCompanyId && isUuid(publicCompanyId)) candidates.push(publicCompanyId);
@@ -166,6 +172,20 @@ async function resolveCompanyCandidates(body: PublicServiceRequest, request: Nex
     "/rest/v1/companies?select=id&status=eq.active&order=created_at.asc&limit=10"
   ).catch(() => []);
   candidates.push(...fallbackCompanies.map((item) => item.id).filter(Boolean));
+
+  if (!candidates.length) {
+    const anyCompanies = await supabaseRequest<Array<{ id: string }>>(
+      "/rest/v1/companies?select=id&order=created_at.asc&limit=10"
+    ).catch(() => []);
+    candidates.push(...anyCompanies.map((item) => item.id).filter(Boolean));
+  }
+
+  if (!candidates.length) {
+    const referenceCompanies = await supabaseRequest<Array<{ company_id?: string }>>(
+      `/rest/v1/service_references?select=company_id&active=eq.true&code=neq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&order=created_at.asc&limit=50`
+    ).catch(() => []);
+    candidates.push(...referenceCompanies.map((item) => item.company_id || "").filter(Boolean));
+  }
 
   return [...new Set(candidates)];
 }
