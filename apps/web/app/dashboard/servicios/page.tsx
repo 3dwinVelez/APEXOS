@@ -200,6 +200,36 @@ function effectiveOrder(order: ServiceOrder): ServiceOrder {
   return order;
 }
 
+function orderKey(order: ServiceOrder) {
+  return String(order.id || order.number || "").trim();
+}
+
+function mergeOrders(orders: ServiceOrder[]) {
+  const byId = new Map<string, ServiceOrder>();
+  const byNumber = new Set<string>();
+  for (const order of orders) {
+    const id = orderKey(order);
+    const number = String(order.number || "").trim();
+    if ((id && byId.has(id)) || (number && byNumber.has(number))) continue;
+    if (id) byId.set(id, order);
+    if (number) byNumber.add(number);
+  }
+  return Array.from(byId.values()).sort(newestFirst);
+}
+
+async function loadSupabaseMonitorOrders() {
+  if (typeof window === "undefined") return [];
+  const token = localStorage.getItem("token") || "";
+  if (!token) return [];
+  const companyName = localStorage.getItem("apexos_company_name") || localStorage.getItem("company_name") || "SCJ";
+  const response = await fetch(`/api/services/monitor-orders?empresa=${encodeURIComponent(companyName)}&limit=200`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!response.ok) return [];
+  const body = await response.json() as OrdersResponse;
+  return Array.isArray(body.data) ? body.data : [];
+}
+
 export default function ServicesPage() {
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [references, setReferences] = useState<ServiceReference[]>([]);
@@ -221,8 +251,14 @@ export default function ServicesPage() {
   async function load() {
     try {
       setMessage("");
-      const response = await api<OrdersResponse>("/api/v1/services/orders?limit=200");
-      setOrders(response.data.map(effectiveOrder));
+      const [apiResult, supabaseResult] = await Promise.allSettled([
+        api<OrdersResponse>("/api/v1/services/orders?limit=200"),
+        loadSupabaseMonitorOrders()
+      ]);
+      const apiOrders = apiResult.status === "fulfilled" ? apiResult.value.data : [];
+      const supabaseOrders = supabaseResult.status === "fulfilled" ? supabaseResult.value : [];
+      if (!apiOrders.length && !supabaseOrders.length && apiResult.status === "rejected") throw apiResult.reason;
+      setOrders(mergeOrders([...supabaseOrders, ...apiOrders]).map(effectiveOrder));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No fue posible cargar servicios.");
       setOrders([]);

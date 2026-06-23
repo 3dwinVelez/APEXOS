@@ -63,6 +63,8 @@
 - El enlace administrativo de Servicios se llama `Solicitudes de servicios externas` y abre `/servicios/solicitar?empresa=<empresa>`, evitando que solicitudes nuevas caigan en una empresa activa distinta a la del monitor.
 - Si una solicitud externa fue creada antes de este ajuste en una empresa equivocada, debe reasignarse explicitamente con aprobacion operativa porque es una mutacion cross-tenant.
 - El monitor incorpora filtro `Solicitudes externas / agendado` y boton de estado `Agendado` visible siempre para ubicar rapidamente preordenes originadas desde el link publico.
+- El monitor consulta tambien `/api/services/monitor-orders`, una lectura interna autenticada que usa Supabase server-side, para que las solicitudes publicas aparezcan aunque la sesion administrativa este conectada contra la API local/Prisma.
+- El monitor combina las ordenes de Supabase y de la API existente, elimina duplicados por `id` o consecutivo y conserva el orden descendente por creacion/consecutivo.
 - El monitor ordena por defecto todas las ordenes de mayor a menor creacion/consecutivo, sin importar estado, para que el servicio mas nuevo aparezca primero.
 - El monitor calcula un SLA de 4 dias habiles por orden desde `created_at`; muestra 4/3 en verde, 2 en amarillo y 1 o valores negativos en rojo. El contador solo se congela cuando la orden queda `cerrada` con fecha de cierre.
 - Promocion controlada: estos cambios viven en `desarrollo`; antes de mover a `develop` y luego `main`, aplicar/validar la migracion `20260623173000_service_orders_agendado_status.sql` en el ambiente objetivo y ejecutar la validacion deterministica indicada en `BRANCHING_WORKFLOW.md`.
@@ -89,6 +91,7 @@ El formulario publico debe funcionar como una solicitud guiada para personas sin
 - `SUPABASE_URL` o `NEXT_PUBLIC_SUPABASE_URL`: URL del proyecto Supabase usado por la ruta server-side.
 - `SUPABASE_ANON_KEY` o `NEXT_PUBLIC_SUPABASE_ANON_KEY`: llave anonima usada junto con service role desde servidor.
 - `SUPABASE_SERVICE_ROLE_KEY`: llave server-only requerida para que la API publica inserte solicitudes sin sesion de usuario.
+- `/api/services/monitor-orders` reutiliza las mismas variables server-side y exige encabezado `Authorization` para evitar exponer el monitor como endpoint publico.
 - Si ninguna variable esta configurada, el endpoint intenta resolver empresa activa con el parametro `empresa`, por ejemplo `/servicios/solicitar?empresa=SCJ`.
 
 ## Validaciones esperadas
@@ -102,6 +105,7 @@ El formulario publico debe funcionar como una solicitud guiada para personas sin
 - Verificar que la solicitud publica genere una preorden `agendado` marcada como `public_request` y `requires_admin_completion`.
 - Verificar que el numero mostrado al cliente sea el consecutivo corto `OS-00000`.
 - Verificar que una solicitud publica aparezca en el lobby de Servicios como `Agendado` / `Por completar`.
+- Verificar que el lobby vea la solicitud externa aun cuando la sesion administrativa cargue las ordenes principales desde la API local.
 - Verificar que el boton `Solicitudes de servicios externas` incluya el parametro `empresa` y que las nuevas solicitudes queden en la misma empresa del monitor.
 - Usar el filtro `Solicitudes externas / agendado` y el boton `Agendado` para validar la visibilidad de preordenes.
 - Verificar que la orden demo mas reciente aparezca primero en el listado aunque existan ordenes en otros estados.
