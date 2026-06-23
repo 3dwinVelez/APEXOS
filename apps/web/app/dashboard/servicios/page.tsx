@@ -140,6 +140,17 @@ function slaInfo(order: ServiceOrder) {
   return { remaining, tone, label };
 }
 
+function orderSequence(value?: string) {
+  const match = String(value || "").match(/(\d+)(?!.*\d)/);
+  return match ? Number(match[1]) : 0;
+}
+
+function newestFirst(a: ServiceOrder, b: ServiceOrder) {
+  const dateCompare = String(b.created_at || "").localeCompare(String(a.created_at || ""));
+  if (dateCompare) return dateCompare;
+  return orderSequence(b.number) - orderSequence(a.number);
+}
+
 function isToday(value?: string) {
   if (!value) return false;
   return value.slice(0, 10) === new Date().toISOString().slice(0, 10);
@@ -200,7 +211,7 @@ export default function ServicesPage() {
   const [evidenceScope, setEvidenceScope] = useState("");
   const [requestScope, setRequestScope] = useState("");
   const [serviceType, setServiceType] = useState("");
-  const [sortBy, setSortBy] = useState("priority");
+  const [sortBy, setSortBy] = useState("newest");
   const [message, setMessage] = useState("");
   const [technicianMode, setTechnicianMode] = useState(false);
   const [editingOrder, setEditingOrder] = useState<ServiceOrder | null>(null);
@@ -263,10 +274,11 @@ export default function ServicesPage() {
       const matchesRequestScope = !requestScope || (requestScope === "external" && isExternalRequest);
       return matchesTerm && (!status || order.status === status) && matchesDate && matchesEvidence && matchesRequestScope && (!serviceType || order.service_type === serviceType);
     }).sort((a, b) => {
+      if (sortBy === "newest") return newestFirst(a, b);
       if (sortBy === "date_asc") return (a.scheduled_date || "9999").localeCompare(b.scheduled_date || "9999");
       if (sortBy === "date_desc") return (b.scheduled_date || "").localeCompare(a.scheduled_date || "");
-      if (sortBy === "order") return b.number.localeCompare(a.number);
-      return priorityScore(a) - priorityScore(b) || (a.scheduled_date || "9999").localeCompare(b.scheduled_date || "9999");
+      if (sortBy === "order") return orderSequence(b.number) - orderSequence(a.number) || b.number.localeCompare(a.number);
+      return priorityScore(a) - priorityScore(b) || newestFirst(a, b);
     });
   }, [dateScope, evidenceScope, orders, query, requestScope, serviceType, sortBy, status]);
 
@@ -287,7 +299,7 @@ export default function ServicesPage() {
     setEvidenceScope("");
     setRequestScope("");
     setServiceType("");
-    setSortBy("priority");
+    setSortBy("newest");
   }
 
   function technicianValue(order: ServiceOrder) {
@@ -483,9 +495,9 @@ export default function ServicesPage() {
 
             <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
               <button className={`shrink-0 rounded-md border px-3 py-2 text-xs font-semibold transition ${!status ? "border-apex bg-apex text-white" : "border-line bg-white text-neutral-600 hover:border-apex"}`} onClick={() => setStatus("")} type="button">Todas <span className="ml-1 opacity-70">{orders.length}</span></button>
-              {Object.entries(statusLabel).filter(([key]) => statusCounts[key]).map(([key, label]) => (
+              {Object.entries(statusLabel).map(([key, label]) => (
                 <button className={`shrink-0 rounded-md border px-3 py-2 text-xs font-semibold transition ${status === key ? "border-apex bg-apex text-white" : "border-line bg-white text-neutral-600 hover:border-apex"}`} key={key} onClick={() => setStatus(key)} type="button">
-                  {label} <span className="ml-1 opacity-70">{statusCounts[key]}</span>
+                  {label} <span className="ml-1 opacity-70">{statusCounts[key] || 0}</span>
                 </button>
               ))}
             </div>
@@ -516,10 +528,11 @@ export default function ServicesPage() {
                 <option value="external">Solicitudes externas / agendado</option>
               </select>
               <select className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm" value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
+                <option value="newest">Mas recientes primero</option>
                 <option value="priority">Prioridad operativa</option>
                 <option value="date_asc">Fecha mas cercana</option>
                 <option value="date_desc">Fecha mas lejana</option>
-                <option value="order">Orden mas reciente</option>
+                <option value="order">Consecutivo mayor</option>
               </select>
             </div>
           </div>

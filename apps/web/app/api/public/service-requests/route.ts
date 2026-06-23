@@ -13,7 +13,6 @@ type PublicServiceRequest = {
   customer_email?: string;
   invoice_number?: string;
   service_type?: string;
-  preferred_date?: string;
   reference_id?: string;
   product_reference?: string;
   product_description?: string;
@@ -81,14 +80,14 @@ function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
-function orderNumber() {
-  const stamp = new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
-  return `OS-SOL-${stamp}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
-}
-
 function isStatusConstraintError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error || "");
   return message.includes("service_orders_status_check") || message.includes("violates check constraint");
+}
+
+function isUniqueNumberError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error || "");
+  return message.includes("service_orders_company_number_unique") || message.includes("duplicate key value");
 }
 
 async function supabaseRequest<T>(path: string, init: RequestInit = {}) {
@@ -150,6 +149,18 @@ async function resolveReferenceId(companyId: string, referenceId: string, produc
   return references[0]?.id || null;
 }
 
+async function nextOrderNumber(companyId: string, offset = 1) {
+  const rows = await supabaseRequest<Array<{ number: string }>>(
+    `/rest/v1/service_orders?select=number&company_id=eq.${encodeURIComponent(companyId)}&number=like.OS-*&order=created_at.desc&limit=200`
+  ).catch(() => []);
+  let max = 0;
+  for (const row of rows) {
+    const match = String(row.number || "").match(/^OS-(\d{1,5})$/);
+    if (match) max = Math.max(max, Number(match[1]));
+  }
+  return `OS-${String(max + offset).padStart(5, "0")}`;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const companyId = await resolveCompanyId({}, request);
@@ -171,7 +182,6 @@ export async function POST(request: NextRequest) {
       ["customer_document", "cedula"],
       ["customer_phone", "telefono"],
       ["service_type", "tipo de servicio"],
-      ["preferred_date", "fecha tentativa"],
       ["customer_address", "direccion"],
       ["reference_id", "referencia del producto"]
     ] as const;
@@ -179,7 +189,6 @@ export async function POST(request: NextRequest) {
     if (missing.length) return jsonError(`Completa los campos obligatorios: ${missing.join(", ")}.`);
     if (!/^\d{5,12}$/.test(clean(body.customer_document))) return jsonError("La cedula debe contener entre 5 y 12 numeros.");
     if (!/^[0-9+()\-\s]{7,20}$/.test(clean(body.customer_phone))) return jsonError("Registra un telefono valido para confirmar la visita.");
-    if (Number.isNaN(new Date(clean(body.preferred_date)).getTime())) return jsonError("Selecciona una fecha tentativa valida.");
 
     const companyId = await resolveCompanyId(body, request);
     if (!companyId) return jsonError("No se encontro una empresa activa para registrar la solicitud.", 404);
@@ -197,12 +206,11 @@ export async function POST(request: NextRequest) {
       customer_email: clean(body.customer_email),
       product_reference: clean(body.product_reference),
       product_description: clean(body.product_description),
-      preferred_date: clean(body.preferred_date).slice(0, 10),
       received_at: new Date().toISOString()
     };
     const payload = {
       company_id: companyId,
-      number: orderNumber(),
+      number: await nextOrderNumber(companyId),
       reference_id: referenceId,
       technician_employee_id: null,
       technician_user_id: null,
@@ -212,7 +220,7 @@ export async function POST(request: NextRequest) {
       customer_address: clean(body.customer_address),
       customer_phone: clean(body.customer_phone),
       invoice_number: clean(body.invoice_number) || null,
-      scheduled_date: clean(body.preferred_date).slice(0, 10),
+      scheduled_date: null,
       notes,
       metadata
     };
@@ -221,16 +229,14 @@ export async function POST(request: NextRequest) {
       headers: { Prefer: "return=representation" },
       body: JSON.stringify(nextPayload)
     });
-    const inserted = await insertOrder(payload).catch((error) => {
-      if (!isStatusConstraintError(error)) throw error;
+    const inserted = await insertOrder(payload).catch(async (error) => {
+      if (isStatusConstraintError(error)) {
+        throw new Error("Supabase no permite el estado agendado. Aplica la migracion 20260623173000_service_orders_agendado_status.sql antes de recibir solicitudes externas.");
+      }
+      if (!isUniqueNumberError(error)) throw error;
       return insertOrder({
         ...payload,
-        status: "pendiente",
-        metadata: {
-          ...metadata,
-          status_compatibility_fallback: true,
-          status_compatibility_reason: "Supabase constraint pending agendado migration"
-        }
+        number: await nextOrderNumber(companyId, 2)
       });
     });
 

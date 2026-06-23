@@ -12,7 +12,6 @@ type FormState = {
   customer_email: string;
   invoice_number: string;
   service_type: string;
-  preferred_date: string;
   reference_id: string;
   customer_address: string;
   notes: string;
@@ -34,7 +33,6 @@ const initialForm: FormState = {
   customer_email: "",
   invoice_number: "",
   service_type: "montaje",
-  preferred_date: "",
   reference_id: "",
   customer_address: "",
   notes: ""
@@ -58,7 +56,7 @@ function buildAddress(form: FormState) {
 function requiredForStep(step: number): Array<keyof FormState> {
   if (step === 0) return ["customer_name", "customer_document", "customer_phone"];
   if (step === 1) return ["customer_address"];
-  if (step === 2) return ["service_type", "preferred_date", "reference_id"];
+  if (step === 2) return ["service_type", "reference_id"];
   return [];
 }
 
@@ -143,7 +141,6 @@ function PublicServiceRequestContent() {
           company_name: companyName,
           invoice_number: form.invoice_number,
           service_type: form.service_type,
-          preferred_date: form.preferred_date,
           reference_id: form.reference_id,
           product_reference: selectedReference?.code || "",
           product_description: selectedReference ? `${selectedReference.code} - ${selectedReference.name}` : "",
@@ -280,7 +277,6 @@ function PublicServiceRequestContent() {
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Field label="Factura o pedido (opcional)"><input className="apex-public-input" placeholder="Si lo tienes a la mano" value={form.invoice_number} onChange={(event) => setField("invoice_number", event.target.value)} /></Field>
                   <Field label="Tipo de servicio *"><select className="apex-public-input" value={form.service_type} onChange={(event) => setField("service_type", event.target.value)}><option value="montaje">Montaje</option><option value="desmontaje">Desmontaje</option><option value="ambos">Montaje y desmontaje</option><option value="garantia">Garantia</option></select></Field>
-                  <Field label="Fecha tentativa *"><input className="apex-public-input" type="date" value={form.preferred_date} onChange={(event) => setField("preferred_date", event.target.value)} /></Field>
                   <Field label="Referencia del producto *">
                     <select className="apex-public-input" disabled={loadingReferences} value={form.reference_id} onChange={(event) => setField("reference_id", event.target.value)}>
                       <option value="">{loadingReferences ? "Cargando referencias..." : "Selecciona una referencia"}</option>
@@ -305,7 +301,6 @@ function PublicServiceRequestContent() {
                   <Summary label="Direccion" value={addressPreview} />
                   <Summary label="Servicio" value={`${form.service_type} - ${selectedReference ? `${selectedReference.code} ${selectedReference.name}` : "Sin referencia"}`} />
                   <Summary label="Factura / pedido" value={form.invoice_number || "Sin registrar por ahora"} />
-                  <Summary label="Fecha tentativa" value={form.preferred_date} />
                 </div>
               </div>
             ) : null}

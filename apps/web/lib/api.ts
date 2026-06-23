@@ -194,6 +194,18 @@ function kpisForOrders(orders: Array<{ status?: string }>) {
   };
 }
 
+async function nextSupabaseServiceOrderNumber(companyId: string) {
+  const rows = await supabaseFetch<Array<{ number?: string }>>(
+    `/rest/v1/service_orders?select=number&company_id=eq.${encodeURIComponent(companyId)}&number=like.OS-*&order=created_at.desc&limit=200`
+  ).catch(() => []);
+  let max = 0;
+  for (const row of rows) {
+    const match = String(row.number || "").match(/^OS-(\d{1,5})$/);
+    if (match) max = Math.max(max, Number(match[1]));
+  }
+  return `OS-${String(max + 1).padStart(5, "0")}`;
+}
+
 function effectiveServiceOrderStatus(order: { status?: string; technician_employee_id?: string; metadata?: AnyRow }) {
   if (
     order.status === "pendiente"
@@ -1589,7 +1601,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     if (!referenceId) throw new Error("Selecciona una referencia valida para crear el servicio.");
     const metadata = body.metadata && typeof body.metadata === "object" ? body.metadata : {};
     const serviceType = await ensureSupabaseServiceType(body.service_type || "montaje");
-    const orderNumber = `OS-${new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14)}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+    const orderNumber = await nextSupabaseServiceOrderNumber(companyId);
     const row = {
       company_id: companyId,
       number: orderNumber,
