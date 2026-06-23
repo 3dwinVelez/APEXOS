@@ -679,7 +679,6 @@ async function createOrder(tenantId, user, input) {
     ["customer_address", "direccion"],
     ["customer_phone", "telefono"],
     ["scheduled_date", "fecha programada del servicio"],
-    ["cedi_delivery_date", "fecha de entrega del CEDI"],
     ["notes", "observaciones operativas"]
   ];
   const missing = requiredFields
@@ -687,8 +686,8 @@ async function createOrder(tenantId, user, input) {
     .map(([, label]) => label);
   if (missing.length) throw appError(400, "SERVICE_ORDER_REQUIRED_FIELDS", `Completa los campos obligatorios: ${missing.join(", ")}`);
   if (!/^\d+$/.test(String(input.customer_document))) throw appError(400, "INVALID_CUSTOMER_DOCUMENT", "La cedula del cliente debe contener solo numeros");
-  if (Number.isNaN(new Date(input.scheduled_date).getTime()) || Number.isNaN(new Date(input.cedi_delivery_date).getTime())) {
-    throw appError(400, "INVALID_SERVICE_DATES", "Las fechas del servicio y entrega CEDI deben ser validas");
+  if (Number.isNaN(new Date(input.scheduled_date).getTime())) {
+    throw appError(400, "INVALID_SERVICE_DATES", "La fecha programada del servicio debe ser valida");
   }
 
   return prisma.runWithTenant(tenantId, async () => {
@@ -714,8 +713,7 @@ async function createOrder(tenantId, user, input) {
       created_by: user.id,
       metadata: {
         ...(input.metadata || {}),
-        customer_document: input.customer_document,
-        cedi_delivery_date: input.cedi_delivery_date
+        customer_document: input.customer_document
       }
     },
     include: orderInclude()

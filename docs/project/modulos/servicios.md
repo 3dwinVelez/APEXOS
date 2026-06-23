@@ -29,7 +29,7 @@
 - El listado principal usa una tabla profesional en escritorio para comparar orden, cliente, servicio, agenda, soportes y accion; en movil conserva tarjetas tactiles.
 - El lobby de referencias replica el patron operativo de Servicios: busqueda inmediata, filtros combinables, ordenamiento, tabla comparativa en escritorio y tarjetas tactiles en movil.
 - La consulta de referencias permite comparar estado, categoria, marca/modelo, piezas, documentos y tiempo estimado antes de abrir la ficha tecnica.
-- La creacion de orden exige referencia, tipo, fecha del servicio, fecha de entrega CEDI, nombre, cedula, telefono, direccion y observaciones; factura/pedido queda opcional y cedula/entrega CEDI se conservan en metadata para compatibilidad.
+- La creacion de orden exige referencia, tipo, fecha del servicio, nombre, cedula, telefono, direccion y observaciones; factura/pedido queda opcional y la cedula se conserva en metadata para compatibilidad.
 - La creacion de orden exige asignar un tecnico activo. No se permite crear una orden sin responsable operativo.
 - El rol exacto `Tecnico` solo puede consultar y operar Servicios; no puede crear ordenes, administrar referencias ni abrir reportes globales.
 - Cada tecnico solo visualiza ordenes activas asignadas a su ficha (`pendiente`, `en_curso`, `inspeccion` o `ejecucion`). Las preordenes `agendado`, las ordenes de otros tecnicos y las cerradas quedan fuera de su sesion.
@@ -47,7 +47,7 @@
 - El formulario publico guia al cliente por pasos: datos de contacto, direccion simple, informacion del servicio y confirmacion final.
 - La captura de direccion publica se simplifica a un solo campo de direccion completa, con ayuda contextual para escribirla en lenguaje natural de Medellin y Valle de Aburra.
 - La direccion se muestra en vista previa antes de enviar, reduciendo ambiguedad para el operador administrativo y el tecnico sin fragmentar la captura del cliente.
-- El formulario publico consulta el maestro activo de referencias y obliga a seleccionar la referencia del producto en una lista desplegable; viajan `reference_id`, codigo y nombre en la creacion de la preorden.
+- El formulario publico consulta el maestro activo de referencias y tipos de servicio de la empresa indicada por el enlace administrativo; obliga a seleccionar una referencia y valida que el tipo de servicio exista activo antes de crear la preorden.
 - El formulario publico ya no solicita fecha tentativa; la planeacion operativa se completa luego desde administracion.
 - La solicitud publica crea una preorden en `service_orders` con estado `agendado`, sin tecnico asignado, marcada en metadata como `public_request` y `requires_admin_completion`.
 - La solicitud publica usa consecutivo corto `OS-00000` y lo muestra como numero de seguimiento al finalizar.
@@ -66,11 +66,11 @@
 - El monitor consulta tambien `/api/services/monitor-orders`, una lectura interna autenticada que usa Supabase server-side, para que las solicitudes publicas aparezcan aunque la sesion administrativa este conectada contra la API local/Prisma.
 - El monitor combina las ordenes de Supabase y de la API existente, elimina duplicados por `id` o consecutivo y conserva el orden descendente por creacion/consecutivo.
 - El monitor ordena por defecto todas las ordenes de mayor a menor creacion/consecutivo, sin importar estado, para que el servicio mas nuevo aparezca primero.
-- El monitor calcula un SLA de 4 dias habiles por orden desde `created_at`; muestra 4/3 en verde, 2 en amarillo y 1 o valores negativos en rojo. El contador solo se congela cuando la orden queda `cerrada` con fecha de cierre.
+- El monitor calcula un SLA de 4 dias habiles por orden desde `created_at`; muestra el indicador solo en la columna `Agenda` para evitar duplicidad visual. El contador solo se congela cuando la orden queda `cerrada` con fecha de cierre.
 - Promocion controlada: estos cambios viven en `desarrollo`; antes de mover a `develop` y luego `main`, aplicar/validar la migracion `20260623173000_service_orders_agendado_status.sql` en el ambiente objetivo y ejecutar la validacion deterministica indicada en `BRANCHING_WORKFLOW.md`.
 - Por seguridad, el endpoint publico no acepta `company_id` arbitrario desde el navegador.
 - El lobby de Servicios incorpora acceso a `Formulario publico` para que administracion pueda copiar o abrir el enlace rapidamente.
-- Las ordenes creadas desde el formulario publico aparecen en el lobby como `Por completar` o `Completar solicitud`, indicando que administracion debe completar referencia, fecha CEDI o tecnico antes de pasar a operacion.
+- Las ordenes creadas desde el formulario publico aparecen en el lobby como `Por completar` o `Completar solicitud`, indicando que administracion debe completar referencia o tecnico antes de pasar a operacion.
 - La creacion publica no reemplaza la creacion administrativa interna: administracion sigue usando `/dashboard/servicios/nuevo` cuando ya conoce referencia, tecnico y fechas operativas completas.
 
 ## Regla de experiencia
@@ -103,6 +103,7 @@ El formulario publico debe funcionar como una solicitud guiada para personas sin
 - Crear solicitud publica sin factura/pedido y verificar que Supabase guarde `invoice_number` como `null`, `scheduled_date` como `null` y `status` como `agendado`.
 - Confirmar que la pantalla final muestre el servicio creado con exito y permita realizar otra solicitud.
 - Verificar que la solicitud publica genere una preorden `agendado` marcada como `public_request` y `requires_admin_completion`.
+- Verificar que el formulario publico cargue referencias y tipos de servicio desde los maestros activos de la empresa del enlace, por ejemplo `?empresa=SCJ`.
 - Verificar que el numero mostrado al cliente sea el consecutivo corto `OS-00000`.
 - Verificar que una solicitud publica aparezca en el lobby de Servicios como `Agendado` / `Por completar`.
 - Verificar que el lobby vea la solicitud externa aun cuando la sesion administrativa cargue las ordenes principales desde la API local.
@@ -111,7 +112,7 @@ El formulario publico debe funcionar como una solicitud guiada para personas sin
 - Verificar que la orden demo mas reciente aparezca primero en el listado aunque existan ordenes en otros estados.
 - Verificar que una preorden `agendado` pueda guardarse sin tecnico responsable.
 - Verificar que una preorden solo pueda pasar a `pendiente` despues de asignar tecnico responsable.
-- Editar la solicitud publica desde administracion para asignar tecnico, fecha CEDI y observaciones operativas antes de ejecutarla; la referencia ya debe venir del maestro seleccionado por el cliente.
+- Editar la solicitud publica desde administracion para asignar tecnico y observaciones operativas antes de ejecutarla; la referencia ya debe venir del maestro seleccionado por el cliente.
 - Verificar que el contador SLA inicie en 4 dias habiles, baje por dia habil transcurrido y muestre valores negativos cuando supere el plazo.
 - Verificar que el endpoint publico no permita seleccionar `company_id` libremente desde el cliente.
 - Verificar que un tecnico solo vea sus servicios activos y que no pueda crear ordenes ni consultar servicios ajenos.
