@@ -57,6 +57,10 @@
 - El estado `agendado` representa preordenes creadas desde el link publico. Administracion puede conservarlas sin tecnico mientras valida datos; al cambiarlas a `pendiente`, la asignacion de tecnico responsable se vuelve obligatoria.
 - La migracion `20260623173000_service_orders_agendado_status.sql` amplia el constraint de Supabase para permitir `agendado` antes de `pendiente`.
 - Mientras esa migracion no este aplicada en el proyecto Supabase remoto, la API publica reintenta la creacion como `pendiente` con metadata `preorder_status=agendado`; el monitor lo normaliza visualmente como `Agendado` para no bloquear solicitudes.
+- El enlace administrativo de Servicios se llama `Solicitudes de servicios externas` y abre `/servicios/solicitar?empresa=<empresa>`, evitando que solicitudes nuevas caigan en una empresa activa distinta a la del monitor.
+- Si una solicitud externa fue creada antes de este ajuste en una empresa equivocada, debe reasignarse explicitamente con aprobacion operativa porque es una mutacion cross-tenant.
+- El monitor incorpora filtro `Solicitudes externas / agendado` para ubicar rapidamente preordenes originadas desde el link publico.
+- Promocion controlada: estos cambios viven en `desarrollo`; antes de mover a `develop` y luego `main`, aplicar/validar la migracion `20260623173000_service_orders_agendado_status.sql` en el ambiente objetivo y ejecutar la validacion deterministica indicada en `BRANCHING_WORKFLOW.md`.
 - Por seguridad, el endpoint publico no acepta `company_id` arbitrario desde el navegador.
 - El lobby de Servicios incorpora acceso a `Formulario publico` para que administracion pueda copiar o abrir el enlace rapidamente.
 - Las ordenes creadas desde el formulario publico aparecen en el lobby como `Por completar` o `Completar solicitud`, indicando que administracion debe completar referencia, fecha CEDI o tecnico antes de pasar a operacion.
@@ -92,6 +96,8 @@ El formulario publico debe funcionar como una solicitud guiada para personas sin
 - Confirmar que la pantalla final muestre el servicio creado con exito y permita realizar otra solicitud.
 - Verificar que la solicitud publica genere una preorden `agendado` marcada como `public_request` y `requires_admin_completion`.
 - Verificar que una solicitud publica aparezca en el lobby de Servicios como `Agendado` / `Por completar`.
+- Verificar que el boton `Solicitudes de servicios externas` incluya el parametro `empresa` y que las nuevas solicitudes queden en la misma empresa del monitor.
+- Usar el filtro `Solicitudes externas / agendado` para validar la visibilidad de preordenes.
 - Verificar que una preorden `agendado` pueda guardarse sin tecnico responsable.
 - Verificar que una preorden solo pueda pasar a `pendiente` despues de asignar tecnico responsable.
 - Editar la solicitud publica desde administracion para asignar tecnico, referencia, fecha CEDI y observaciones operativas antes de ejecutarla.

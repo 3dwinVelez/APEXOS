@@ -3,6 +3,7 @@
 import { ArrowRight, CheckCircle2, Home, MapPin, PackageSearch, Send, ShieldCheck, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 type FormState = {
   customer_name: string;
@@ -98,6 +99,8 @@ function requiredForStep(step: number): Array<keyof FormState> {
 }
 
 export default function PublicServiceRequestPage() {
+  const searchParams = useSearchParams();
+  const companyName = searchParams.get("empresa") || "";
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormState>(initialForm);
   const [message, setMessage] = useState("");
@@ -133,7 +136,8 @@ export default function PublicServiceRequestPage() {
     setSaving(true);
     setMessage("");
     try {
-      const response = await fetch("/api/public/service-requests", {
+      const requestPath = companyName ? `/api/public/service-requests?empresa=${encodeURIComponent(companyName)}` : "/api/public/service-requests";
+      const response = await fetch(requestPath, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -141,6 +145,7 @@ export default function PublicServiceRequestPage() {
           customer_document: form.customer_document,
           customer_phone: form.customer_phone,
           customer_email: form.customer_email,
+          company_name: companyName,
           invoice_number: form.invoice_number,
           service_type: form.service_type,
           preferred_date: form.preferred_date,

@@ -516,14 +516,19 @@ async function accessibleSupabaseServiceOrder(orderId: string) {
 async function currentSupabaseCompanyUser() {
   const userId = currentSupabaseUserId();
   if (!userId) return null;
-  const rows = await supabaseFetch<Array<{ company_id: string; company_name?: string; role?: string }>>(
+  const rows: Array<{ company_id: string; company_name?: string; role?: string }> = await supabaseFetch<Array<{ company_id: string; company_name?: string; role?: string }>>(
     `/rest/v1/v_user_companies?select=company_id,company_name,role&user_id=eq.${userId}&limit=20`
   ).catch(() => supabaseFetch<Array<{ company_id: string; role?: string }>>(`/rest/v1/company_users?select=company_id,role&user_id=eq.${userId}&status=eq.active&limit=20`));
   const preferredCompanyId = typeof window !== "undefined" ? localStorage.getItem("apexos_company_id") : "";
-  return rows.find((row) => row.company_id === preferredCompanyId)
+  const selected = rows.find((row) => row.company_id === preferredCompanyId)
     || rows.find((row) => ["owner", "admin", "superadmin"].includes(String(row.role || "").toLowerCase()))
     || rows[0]
     || null;
+  if (selected && typeof window !== "undefined") {
+    localStorage.setItem("apexos_company_id", selected.company_id);
+    if (selected.company_name) localStorage.setItem("apexos_company_name", selected.company_name);
+  }
+  return selected;
 }
 
 async function nextAdminUsersRequest<T>(init: RequestInit = {}, query = "") {

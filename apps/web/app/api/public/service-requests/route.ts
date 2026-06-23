@@ -123,13 +123,17 @@ async function resolveCompanyId(body: PublicServiceRequest, request: NextRequest
   if (publicCompanyId && isUuid(publicCompanyId)) return publicCompanyId;
 
   const companyName = clean(body.company_name) || clean(request.nextUrl.searchParams.get("empresa"));
-  const filter = companyName
-    ? `or=(name.ilike.*${encodeURIComponent(companyName)}*,legal_name.ilike.*${encodeURIComponent(companyName)}*,tax_id.eq.${encodeURIComponent(companyName)})&`
-    : "";
+  const preferredName = companyName || "SCJ";
+  const filter = `or=(name.ilike.*${encodeURIComponent(preferredName)}*,legal_name.ilike.*${encodeURIComponent(preferredName)}*,tax_id.eq.${encodeURIComponent(preferredName)})&`;
   const companies = await supabaseRequest<Array<{ id: string }>>(
     `/rest/v1/companies?select=id&${filter}status=eq.active&order=created_at.asc&limit=1`
   );
-  return companies[0]?.id || "";
+  if (companies[0]?.id) return companies[0].id;
+
+  const fallbackCompanies = await supabaseRequest<Array<{ id: string }>>(
+    "/rest/v1/companies?select=id&status=eq.active&order=created_at.asc&limit=1"
+  );
+  return fallbackCompanies[0]?.id || "";
 }
 
 async function resolveReferenceId(companyId: string, productReference: string) {

@@ -159,6 +159,7 @@ export default function ServicesPage() {
   const [query, setQuery] = useState("");
   const [dateScope, setDateScope] = useState("");
   const [evidenceScope, setEvidenceScope] = useState("");
+  const [requestScope, setRequestScope] = useState("");
   const [serviceType, setServiceType] = useState("");
   const [sortBy, setSortBy] = useState("priority");
   const [message, setMessage] = useState("");
@@ -208,6 +209,7 @@ export default function ServicesPage() {
       const matchesTerm = !term || [order.number, order.customer_name, order.customer_address, order.customer_phone, order.reference?.code, order.reference?.name, order.service_type]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(term))
+      const isExternalRequest = order.status === "agendado" || order.metadata?.public_request === true || order.metadata?.requires_admin_completion === true;
       const matchesDate =
         !dateScope ||
         (dateScope === "today" && isToday(order.scheduled_date)) ||
@@ -219,14 +221,15 @@ export default function ServicesPage() {
         (evidenceScope === "with_evidence" && order.photos.length > 0) ||
         (evidenceScope === "without_evidence" && order.photos.length === 0) ||
         (evidenceScope === "with_incidents" && order.incidents.length > 0);
-      return matchesTerm && (!status || order.status === status) && matchesDate && matchesEvidence && (!serviceType || order.service_type === serviceType);
+      const matchesRequestScope = !requestScope || (requestScope === "external" && isExternalRequest);
+      return matchesTerm && (!status || order.status === status) && matchesDate && matchesEvidence && matchesRequestScope && (!serviceType || order.service_type === serviceType);
     }).sort((a, b) => {
       if (sortBy === "date_asc") return (a.scheduled_date || "9999").localeCompare(b.scheduled_date || "9999");
       if (sortBy === "date_desc") return (b.scheduled_date || "").localeCompare(a.scheduled_date || "");
       if (sortBy === "order") return b.number.localeCompare(a.number);
       return priorityScore(a) - priorityScore(b) || (a.scheduled_date || "9999").localeCompare(b.scheduled_date || "9999");
     });
-  }, [dateScope, evidenceScope, orders, query, serviceType, sortBy, status]);
+  }, [dateScope, evidenceScope, orders, query, requestScope, serviceType, sortBy, status]);
 
   const serviceTypes = useMemo(() => [...new Set(orders.map((order) => order.service_type).filter(Boolean))].sort(), [orders]);
   const editableServiceTypes = serviceTypesCatalog.length ? serviceTypesCatalog : serviceTypes.map((type) => ({ code: type, label: statusLabel[type] || type }));
@@ -234,13 +237,16 @@ export default function ServicesPage() {
     acc[order.status] = (acc[order.status] || 0) + 1;
     return acc;
   }, {}), [orders]);
-  const activeFilters = [status, dateScope, evidenceScope, serviceType].filter(Boolean).length + (query.trim() ? 1 : 0);
+  const activeFilters = [status, dateScope, evidenceScope, requestScope, serviceType].filter(Boolean).length + (query.trim() ? 1 : 0);
+  const externalRequestCompany = typeof window !== "undefined" ? localStorage.getItem("apexos_company_name") || "SCJ" : "SCJ";
+  const externalRequestHref = `/servicios/solicitar?empresa=${encodeURIComponent(externalRequestCompany)}`;
 
   function clearFilters() {
     setQuery("");
     setStatus("");
     setDateScope("");
     setEvidenceScope("");
+    setRequestScope("");
     setServiceType("");
     setSortBy("priority");
   }
@@ -363,9 +369,9 @@ export default function ServicesPage() {
               <Plus className="shrink-0" size={17} />
               <span className="truncate">Nueva orden</span>
             </Link>
-            <Link className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/servicios/solicitar" target="_blank">
+            <Link className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href={externalRequestHref} target="_blank">
               <Sparkles className="shrink-0" size={17} />
-              <span className="truncate">Formulario publico</span>
+              <span className="truncate">Solicitudes de servicios externas</span>
             </Link>
             <Link className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/dashboard/servicios/referencias">
               <Settings2 className="shrink-0" size={17} />
@@ -444,7 +450,7 @@ export default function ServicesPage() {
               ))}
             </div>
 
-            <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
               <label className="relative">
                 <span className="sr-only">Agenda</span>
                 <select className="h-11 w-full appearance-none rounded-md border border-line bg-white px-3 text-sm" value={dateScope} onChange={(event) => setDateScope(event.target.value)}>
@@ -464,6 +470,10 @@ export default function ServicesPage() {
                 <option value="with_evidence">Con evidencia</option>
                 <option value="without_evidence">Sin evidencia</option>
                 <option value="with_incidents">Con novedades</option>
+              </select>
+              <select className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm" value={requestScope} onChange={(event) => setRequestScope(event.target.value)}>
+                <option value="">Todas las solicitudes</option>
+                <option value="external">Solicitudes externas / agendado</option>
               </select>
               <select className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm" value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
                 <option value="priority">Prioridad operativa</option>
