@@ -1618,9 +1618,10 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       customer_phone?: string;
       invoice_number?: string;
       scheduled_date?: string;
+      created_at?: string;
       notes?: string;
       metadata?: AnyRow;
-    }>>("/rest/v1/service_orders?select=id,number,reference_id,technician_employee_id,service_type,status,customer_name,customer_address,customer_phone,invoice_number,scheduled_date,notes,metadata", {
+    }>>("/rest/v1/service_orders?select=id,number,reference_id,technician_employee_id,service_type,status,customer_name,customer_address,customer_phone,invoice_number,scheduled_date,created_at,notes,metadata", {
       method: "POST",
       headers: { Prefer: "return=representation" },
       body: JSON.stringify(row)
@@ -1897,9 +1898,10 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       scheduled_date?: string;
       started_at?: string;
       closed_at?: string;
+      created_at?: string;
       notes?: string;
       metadata?: AnyRow;
-    }>>(`/rest/v1/service_orders?select=id,number,reference_id,technician_employee_id,service_type,status,customer_name,customer_address,customer_phone,invoice_number,scheduled_date,started_at,closed_at,notes,metadata&order=created_at.desc${filters ? `&${filters}` : ""}&limit=${orderLimit}`);
+    }>>(`/rest/v1/service_orders?select=id,number,reference_id,technician_employee_id,service_type,status,customer_name,customer_address,customer_phone,invoice_number,scheduled_date,started_at,closed_at,created_at,notes,metadata&order=created_at.desc${filters ? `&${filters}` : ""}&limit=${orderLimit}`);
     if (serviceOrderDetailMatch && !orders[0]) return null as T;
     const orderIds = orders.map((order) => order.id);
     const orderFilter = orderIds.length ? `&order_id=in.(${orderIds.join(",")})` : "&order_id=is.null";

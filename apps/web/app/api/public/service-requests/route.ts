@@ -14,10 +14,10 @@ type PublicServiceRequest = {
   invoice_number?: string;
   service_type?: string;
   preferred_date?: string;
+  reference_id?: string;
   product_reference?: string;
   product_description?: string;
   customer_address?: string;
-  address?: Record<string, unknown>;
   notes?: string;
 };
 
@@ -136,12 +136,31 @@ async function resolveCompanyId(body: PublicServiceRequest, request: NextRequest
   return fallbackCompanies[0]?.id || "";
 }
 
-async function resolveReferenceId(companyId: string, productReference: string) {
+async function resolveReferenceId(companyId: string, referenceId: string, productReference: string) {
+  if (referenceId && isUuid(referenceId)) {
+    const references = await supabaseRequest<Array<{ id: string }>>(
+      `/rest/v1/service_references?select=id&company_id=eq.${encodeURIComponent(companyId)}&active=eq.true&id=eq.${encodeURIComponent(referenceId)}&limit=1`
+    ).catch(() => []);
+    if (references[0]?.id) return references[0].id;
+  }
   if (!productReference) return null;
   const references = await supabaseRequest<Array<{ id: string }>>(
     `/rest/v1/service_references?select=id&company_id=eq.${encodeURIComponent(companyId)}&active=eq.true&or=(code.ilike.*${encodeURIComponent(productReference)}*,name.ilike.*${encodeURIComponent(productReference)}*)&limit=1`
   ).catch(() => []);
   return references[0]?.id || null;
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const companyId = await resolveCompanyId({}, request);
+    if (!companyId) return jsonError("No se encontro una empresa activa para consultar referencias.", 404);
+    const references = await supabaseRequest<Array<{ id: string; code: string; name: string; category?: string; brand?: string; model?: string }>>(
+      `/rest/v1/service_references?select=id,code,name,category,brand,model&company_id=eq.${encodeURIComponent(companyId)}&active=eq.true&order=code.asc&limit=500`
+    );
+    return NextResponse.json({ ok: true, references });
+  } catch (error) {
+    return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible consultar las referencias." }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -153,8 +172,8 @@ export async function POST(request: NextRequest) {
       ["customer_phone", "telefono"],
       ["service_type", "tipo de servicio"],
       ["preferred_date", "fecha tentativa"],
-      ["customer_address", "direccion guiada"],
-      ["product_description", "producto o referencia"]
+      ["customer_address", "direccion"],
+      ["reference_id", "referencia del producto"]
     ] as const;
     const missing = required.filter(([key]) => !clean(body[key])).map(([, label]) => label);
     if (missing.length) return jsonError(`Completa los campos obligatorios: ${missing.join(", ")}.`);
@@ -166,7 +185,8 @@ export async function POST(request: NextRequest) {
     if (!companyId) return jsonError("No se encontro una empresa activa para registrar la solicitud.", 404);
 
     const productReference = clean(body.product_reference) || clean(body.product_description);
-    const referenceId = await resolveReferenceId(companyId, productReference);
+    const referenceId = await resolveReferenceId(companyId, clean(body.reference_id), productReference);
+    if (!referenceId) return jsonError("Selecciona una referencia activa para el producto que se va a instalar.");
     const notes = clean(body.notes) || "Solicitud creada por formulario publico. Requiere revision administrativa.";
     const metadata: Record<string, unknown> = {
       created_from: "public_service_request",
@@ -178,7 +198,6 @@ export async function POST(request: NextRequest) {
       product_reference: clean(body.product_reference),
       product_description: clean(body.product_description),
       preferred_date: clean(body.preferred_date).slice(0, 10),
-      address: body.address || {},
       received_at: new Date().toISOString()
     };
     const payload = {

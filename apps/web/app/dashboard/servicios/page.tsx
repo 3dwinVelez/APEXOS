@@ -38,6 +38,8 @@ type ServiceOrder = {
   customer_phone: string;
   invoice_number?: string;
   scheduled_date: string;
+  created_at?: string;
+  closed_at?: string;
   notes?: string;
   metadata?: { customer_document?: string; cedi_delivery_date?: string; public_request?: boolean; requires_admin_completion?: boolean; preorder_status?: string; [key: string]: unknown };
   incidents: Array<{ id: number }>;
@@ -104,6 +106,40 @@ function formatDate(value?: string) {
   return date.toLocaleDateString("es-CO", { day: "2-digit", month: "short" });
 }
 
+function localDateOnly(value?: string) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function businessDaysElapsed(fromValue?: string, toValue?: string) {
+  const from = localDateOnly(fromValue);
+  const to = localDateOnly(toValue || new Date().toISOString());
+  if (!from || !to || to <= from) return 0;
+  let count = 0;
+  const cursor = new Date(from);
+  cursor.setDate(cursor.getDate() + 1);
+  while (cursor <= to) {
+    const day = cursor.getDay();
+    if (day !== 0 && day !== 6) count += 1;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return count;
+}
+
+function slaInfo(order: ServiceOrder) {
+  const stopDate = order.status === "cerrada" && order.closed_at ? order.closed_at : undefined;
+  const remaining = 4 - businessDaysElapsed(order.created_at || order.scheduled_date, stopDate);
+  const tone = remaining >= 3
+    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+    : remaining === 2
+      ? "border-amber-200 bg-amber-50 text-amber-800"
+      : "border-rose-200 bg-rose-50 text-rose-800";
+  const label = remaining >= 0 ? `${remaining} dia${remaining === 1 ? "" : "s"}` : `${remaining} dias`;
+  return { remaining, tone, label };
+}
+
 function isToday(value?: string) {
   if (!value) return false;
   return value.slice(0, 10) === new Date().toISOString().slice(0, 10);
@@ -119,6 +155,9 @@ function isOverdue(order: ServiceOrder) {
 }
 
 function priorityScore(order: ServiceOrder) {
+  const sla = slaInfo(order);
+  if (isOpenStatus(order.status) && sla.remaining < 0) return -2;
+  if (isOpenStatus(order.status) && sla.remaining <= 1) return -1;
   if (isOverdue(order)) return 0;
   if (order.status === "no_ejecutada") return 1;
   if (order.status === "agendado") return 2;
@@ -411,6 +450,7 @@ export default function ServicesPage() {
                   </div>
                   <span className={`shrink-0 rounded-md border px-2 py-1 text-[11px] font-semibold ${requiresAdminCompletion(order) ? "border-amber-200 bg-amber-50 text-amber-800" : statusTone[order.status] || "border-line bg-paper"}`}>{requiresAdminCompletion(order) ? "Por completar" : statusLabel[order.status] || order.status}</span>
                 </div>
+                <span className={`mt-3 inline-flex rounded-md border px-2 py-1 text-[11px] font-semibold ${slaInfo(order).tone}`}>SLA {slaInfo(order).label}</span>
               </Link>
             ))}
             {!operational.attention.length ? <p className="rounded-md bg-paper p-3 text-sm text-neutral-500">Sin servicios abiertos para atender.</p> : null}
@@ -503,6 +543,7 @@ export default function ServicesPage() {
                     {requiresAdminCompletion(order) ? <span className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">Completar solicitud</span> : null}
                     {isOverdue(order) ? <span className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">Vencida</span> : null}
                     {isToday(order.scheduled_date) ? <span className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-700">Hoy</span> : null}
+                    <span className={`rounded-md border px-3 py-2 text-xs font-semibold ${slaInfo(order).tone}`}>SLA {slaInfo(order).label}</span>
                   </div>
                   <span className="min-w-0 truncate text-right text-xs font-semibold text-neutral-500">{order.number}</span>
                 </div>
@@ -567,6 +608,7 @@ export default function ServicesPage() {
                           {requiresAdminCompletion(order) ? <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-800">Completar solicitud</span> : null}
                           {isOverdue(order) ? <span className="rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-700">Vencida</span> : null}
                           {isToday(order.scheduled_date) ? <span className="rounded-md border border-sky-200 bg-sky-50 px-2 py-1 text-[11px] font-semibold text-sky-700">Hoy</span> : null}
+                          <span className={`rounded-md border px-2 py-1 text-[11px] font-semibold ${slaInfo(order).tone}`}>SLA {slaInfo(order).label}</span>
                         </div>
                       </td>
                       <td className="max-w-[300px] px-4 py-3 align-top">
@@ -581,6 +623,7 @@ export default function ServicesPage() {
                       <td className="px-4 py-3 align-top">
                         <p className="font-medium text-neutral-800">{formatDate(order.scheduled_date)}</p>
                         <p className="mt-1 text-xs text-neutral-500">{isOverdue(order) ? "Requiere atencion" : isToday(order.scheduled_date) ? "Programada para hoy" : "Agenda registrada"}</p>
+                        <p className={`mt-2 inline-flex rounded-md border px-2 py-1 text-[11px] font-semibold ${slaInfo(order).tone}`}>{slaInfo(order).label} habiles disponibles</p>
                       </td>
                       <td className="px-4 py-3 text-center align-top">
                         <div className="inline-flex items-center gap-2 rounded-md bg-paper px-3 py-2 text-xs font-medium text-neutral-600">

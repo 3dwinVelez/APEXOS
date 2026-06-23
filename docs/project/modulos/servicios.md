@@ -44,11 +44,12 @@
 - Las piezas averiadas o faltantes registradas durante la inspeccion alimentan automaticamente el reporte de requerimientos con orden, tecnico, cliente, referencia, cantidad, accion, observacion y proveedor sugerido.
 - El tecnico puede registrar un proveedor sugerido para una pieza problematica; si no se conoce, el reporte la identifica como `Por definir` para gestion posterior.
 - Se agrega formulario publico de solicitud de servicios en `/servicios/solicitar`, sin login, pensado para clientes finales desde cualquier dispositivo.
-- El formulario publico guia al cliente por pasos: datos de contacto, direccion, informacion del servicio y confirmacion final.
-- La captura de direccion deja de ser un campo abierto y se estructura para contexto de Medellin y Valle de Aburra: tipo de via, numero de la via, via o calle que cruza, numero de casa o apartamento, tipo de lugar, interior o indicacion, barrio/sector, municipio, departamento y sena para llegar.
-- La direccion se normaliza en una vista previa antes de enviar, reduciendo ambiguedad para el operador administrativo y el tecnico.
+- El formulario publico guia al cliente por pasos: datos de contacto, direccion simple, informacion del servicio y confirmacion final.
+- La captura de direccion publica se simplifica a un solo campo de direccion completa, con ayuda contextual para escribirla en lenguaje natural de Medellin y Valle de Aburra.
+- La direccion se muestra en vista previa antes de enviar, reduciendo ambiguedad para el operador administrativo y el tecnico sin fragmentar la captura del cliente.
+- El formulario publico consulta el maestro activo de referencias y obliga a seleccionar la referencia del producto en una lista desplegable; viajan `reference_id`, codigo y nombre en la creacion de la preorden.
 - La solicitud publica crea una preorden en `service_orders` con estado `agendado`, sin tecnico asignado, marcada en metadata como `public_request` y `requires_admin_completion`.
-- La solicitud publica conserva en metadata cedula, correo, referencia/producto, fecha tentativa, direccion estructurada con lenguaje local y fecha de recepcion.
+- La solicitud publica conserva en metadata cedula, correo, referencia/producto, fecha tentativa y fecha de recepcion.
 - La API publica `/api/public/service-requests` valida campos obligatorios, cedula numerica, telefono, fecha tentativa y empresa activa antes de crear la orden.
 - La factura o pedido es opcional en el formulario publico, creacion administrativa, edicion de orden y API/fallback Supabase.
 - La empresa destino del formulario publico se resuelve por `APEXOS_PUBLIC_SERVICE_COMPANY_ID` o `NEXT_PUBLIC_APEXOS_PUBLIC_COMPANY_ID`; si no existe, puede buscar una empresa activa por parametro `empresa`.
@@ -60,6 +61,7 @@
 - El enlace administrativo de Servicios se llama `Solicitudes de servicios externas` y abre `/servicios/solicitar?empresa=<empresa>`, evitando que solicitudes nuevas caigan en una empresa activa distinta a la del monitor.
 - Si una solicitud externa fue creada antes de este ajuste en una empresa equivocada, debe reasignarse explicitamente con aprobacion operativa porque es una mutacion cross-tenant.
 - El monitor incorpora filtro `Solicitudes externas / agendado` para ubicar rapidamente preordenes originadas desde el link publico.
+- El monitor calcula un SLA de 4 dias habiles por orden desde `created_at`; muestra 4/3 en verde, 2 en amarillo y 1 o valores negativos en rojo. El contador solo se congela cuando la orden queda `cerrada` con fecha de cierre.
 - Promocion controlada: estos cambios viven en `desarrollo`; antes de mover a `develop` y luego `main`, aplicar/validar la migracion `20260623173000_service_orders_agendado_status.sql` en el ambiente objetivo y ejecutar la validacion deterministica indicada en `BRANCHING_WORKFLOW.md`.
 - Por seguridad, el endpoint publico no acepta `company_id` arbitrario desde el navegador.
 - El lobby de Servicios incorpora acceso a `Formulario publico` para que administracion pueda copiar o abrir el enlace rapidamente.
@@ -100,7 +102,8 @@ El formulario publico debe funcionar como una solicitud guiada para personas sin
 - Usar el filtro `Solicitudes externas / agendado` para validar la visibilidad de preordenes.
 - Verificar que una preorden `agendado` pueda guardarse sin tecnico responsable.
 - Verificar que una preorden solo pueda pasar a `pendiente` despues de asignar tecnico responsable.
-- Editar la solicitud publica desde administracion para asignar tecnico, referencia, fecha CEDI y observaciones operativas antes de ejecutarla.
+- Editar la solicitud publica desde administracion para asignar tecnico, fecha CEDI y observaciones operativas antes de ejecutarla; la referencia ya debe venir del maestro seleccionado por el cliente.
+- Verificar que el contador SLA inicie en 4 dias habiles, baje por dia habil transcurrido y muestre valores negativos cuando supere el plazo.
 - Verificar que el endpoint publico no permita seleccionar `company_id` libremente desde el cliente.
 - Verificar que un tecnico solo vea sus servicios activos y que no pueda crear ordenes ni consultar servicios ajenos.
 - Iniciar servicio con GPS.
