@@ -48,6 +48,7 @@ type Panel = "inicio" | "inspeccion" | "ejecucion" | "novedad" | "historial";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
 const HAS_CONFIGURED_API_URL = Boolean(process.env.NEXT_PUBLIC_API_URL);
 const statusLabel: Record<string, string> = {
+  agendado: "Agendado",
   pendiente: "Pendiente",
   en_curso: "En curso",
   inspeccion: "Inspeccion",

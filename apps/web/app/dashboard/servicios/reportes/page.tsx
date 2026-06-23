@@ -37,7 +37,7 @@ type PieceRow = Record<string, string | number> & {
 };
 type ReportTab = "servicios" | "satisfaccion" | "piezas";
 
-const statusLabels: Record<string, string> = { pendiente: "Pendiente", en_curso: "En curso", inspeccion: "Inspeccion", ejecucion: "Ejecucion", cerrada: "Cerrada", no_ejecutada: "No ejecutada", cancelada: "Cancelada" };
+const statusLabels: Record<string, string> = { agendado: "Agendado", pendiente: "Pendiente", en_curso: "En curso", inspeccion: "Inspeccion", ejecucion: "Ejecucion", cerrada: "Cerrada", no_ejecutada: "No ejecutada", cancelada: "Cancelada" };
 const serviceColumns: Array<ReportColumn<ServiceRow>> = [
   { key: "fecha", label: "Fecha", width: 70 }, { key: "orden", label: "Orden", width: 75 }, { key: "tecnico", label: "Tecnico", width: 110 },
   { key: "cliente", label: "Cliente", width: 110 }, { key: "estado", label: "Estado", width: 75 }, { key: "servicio", label: "Servicio", width: 80 },

@@ -45,6 +45,7 @@ type ServiceOrder = {
 };
 type OrdersResponse = { data: ServiceOrder[] };
 type OrderEditForm = {
+  status: string;
   reference_id: string;
   technician_id: string;
   service_type: string;
@@ -59,6 +60,7 @@ type OrderEditForm = {
 };
 
 const emptyEditForm: OrderEditForm = {
+  status: "pendiente",
   reference_id: "",
   technician_id: "",
   service_type: "montaje",
@@ -73,6 +75,7 @@ const emptyEditForm: OrderEditForm = {
 };
 
 const statusLabel: Record<string, string> = {
+  agendado: "Agendado",
   pendiente: "Pendiente",
   en_curso: "En curso",
   inspeccion: "Inspeccion",
@@ -83,6 +86,7 @@ const statusLabel: Record<string, string> = {
 };
 
 const statusTone: Record<string, string> = {
+  agendado: "border-teal-200 bg-teal-50 text-teal-800",
   pendiente: "border-slate-200 bg-slate-50 text-slate-700",
   en_curso: "border-sky-200 bg-sky-50 text-sky-700",
   inspeccion: "border-amber-200 bg-amber-50 text-amber-800",
@@ -91,6 +95,7 @@ const statusTone: Record<string, string> = {
   no_ejecutada: "border-rose-200 bg-rose-50 text-rose-800",
   cancelada: "border-neutral-200 bg-neutral-100 text-neutral-700"
 };
+const editableOrderStatuses = new Set(["agendado", "pendiente", "cancelada"]);
 
 function formatDate(value?: string) {
   if (!value) return "Sin fecha";
@@ -105,7 +110,7 @@ function isToday(value?: string) {
 }
 
 function isOpenStatus(status: string) {
-  return ["pendiente", "en_curso", "inspeccion", "ejecucion"].includes(status);
+  return ["agendado", "pendiente", "en_curso", "inspeccion", "ejecucion"].includes(status);
 }
 
 function isOverdue(order: ServiceOrder) {
@@ -116,6 +121,7 @@ function isOverdue(order: ServiceOrder) {
 function priorityScore(order: ServiceOrder) {
   if (isOverdue(order)) return 0;
   if (order.status === "no_ejecutada") return 1;
+  if (order.status === "agendado") return 2;
   if (["en_curso", "inspeccion", "ejecucion"].includes(order.status)) return 2;
   if (isToday(order.scheduled_date)) return 3;
   if (order.status === "pendiente") return 4;
@@ -124,6 +130,7 @@ function priorityScore(order: ServiceOrder) {
 
 function serviceAction(order: ServiceOrder) {
   if (requiresAdminCompletion(order)) return "Completar";
+  if (order.status === "agendado") return "Completar";
   if (order.status === "pendiente") return "Iniciar";
   if (["en_curso", "inspeccion", "ejecucion"].includes(order.status)) return "Continuar";
   if (order.status === "no_ejecutada") return "Revisar";
@@ -132,7 +139,7 @@ function serviceAction(order: ServiceOrder) {
 
 function requiresAdminCompletion(order: ServiceOrder) {
   const withoutTechnician = !order.technician && !order.technician_employee_id && !order.technician_id;
-  return Boolean(order.metadata?.public_request || order.metadata?.requires_admin_completion || withoutTechnician || !order.reference_id);
+  return Boolean(order.status === "agendado" || order.metadata?.requires_admin_completion || withoutTechnician || !order.reference_id);
 }
 
 export default function ServicesPage() {
@@ -241,6 +248,7 @@ export default function ServicesPage() {
   function openEdit(order: ServiceOrder) {
     setEditingOrder(order);
     setEditForm({
+      status: order.status || "pendiente",
       reference_id: String(order.reference_id || order.reference?.id || ""),
       technician_id: technicianValue(order),
       service_type: order.service_type || "montaje",
@@ -258,17 +266,19 @@ export default function ServicesPage() {
   async function saveEdit() {
     if (!editingOrder || savingEdit) return;
     const required: Array<[keyof OrderEditForm, string]> = [
-      ["reference_id", "referencia"],
-      ["technician_id", "tecnico asignado"],
+      ["status", "estado"],
       ["service_type", "tipo de servicio"],
       ["scheduled_date", "fecha programada"],
-      ["cedi_delivery_date", "fecha CEDI"],
       ["customer_name", "cliente"],
       ["customer_document", "cedula"],
       ["customer_phone", "telefono"],
       ["customer_address", "direccion"],
       ["notes", "observaciones"]
     ];
+    if (editForm.status === "pendiente") {
+      required.unshift(["reference_id", "referencia"], ["technician_id", "tecnico asignado"]);
+      required.push(["cedi_delivery_date", "fecha CEDI"]);
+    }
     const missing = required.filter(([key]) => !editForm[key].trim()).map(([, label]) => label);
     if (missing.length) {
       setMessage(`Completa los campos obligatorios: ${missing.join(", ")}.`);
@@ -277,13 +287,16 @@ export default function ServicesPage() {
     setSavingEdit(true);
     setMessage("");
     try {
+      const payload: Partial<OrderEditForm> = { ...editForm };
+      if (!editableOrderStatuses.has(editForm.status)) delete payload.status;
       await api<ServiceOrder>(`/api/v1/services/orders/${editingOrder.id}`, {
         method: "PUT",
         body: JSON.stringify({
-          ...editForm,
+          ...payload,
           metadata: {
             customer_document: editForm.customer_document.trim(),
-            cedi_delivery_date: editForm.cedi_delivery_date
+            cedi_delivery_date: editForm.cedi_delivery_date,
+            requires_admin_completion: editForm.status === "agendado"
           }
         })
       });
@@ -298,7 +311,7 @@ export default function ServicesPage() {
   }
 
   const operational = useMemo(() => {
-    const attention = orders.filter((order) => ["pendiente", "en_curso", "inspeccion", "ejecucion", "no_ejecutada"].includes(order.status));
+    const attention = orders.filter((order) => ["agendado", "pendiente", "en_curso", "inspeccion", "ejecucion", "no_ejecutada"].includes(order.status));
     const publicRequests = orders.filter(requiresAdminCompletion);
     return { attention, publicRequests };
   }, [orders]);
@@ -594,14 +607,23 @@ export default function ServicesPage() {
             </div>
             <section className="grid gap-3 md:grid-cols-2">
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
-                Referencia *
+                Estado *
+                <select className="h-11 rounded-md border border-line bg-white px-3" value={editForm.status} onChange={(event) => setEditForm((prev) => ({ ...prev, status: event.target.value }))}>
+                  <option value="agendado">Agendado - preorden desde solicitud</option>
+                  <option value="pendiente">Pendiente - listo para tecnico</option>
+                  {!editableOrderStatuses.has(editForm.status) ? <option value={editForm.status}>{statusLabel[editForm.status] || editForm.status}</option> : null}
+                  <option value="cancelada">Cancelada</option>
+                </select>
+              </label>
+              <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+                Referencia {editForm.status === "pendiente" ? "*" : "(opcional hasta pasar a pendiente)"}
                 <select className="h-11 rounded-md border border-line bg-white px-3" value={editForm.reference_id} onChange={(event) => setEditForm((prev) => ({ ...prev, reference_id: event.target.value }))}>
                   <option value="">Selecciona una referencia</option>
                   {references.map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}
                 </select>
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
-                Tecnico responsable *
+                Tecnico responsable {editForm.status === "pendiente" ? "*" : "(opcional en agendado)"}
                 <select className="h-11 rounded-md border border-line bg-white px-3" value={editForm.technician_id} onChange={(event) => setEditForm((prev) => ({ ...prev, technician_id: event.target.value }))}>
                   <option value="">Selecciona un tecnico</option>
                   {technicians.map((technician) => <option key={technician.id} value={technician.id}>{technician.code || "TEC"} - {technician.user?.name || technician.user?.email || "Tecnico"}</option>)}
@@ -618,7 +640,7 @@ export default function ServicesPage() {
                 <input className="h-11 rounded-md border border-line px-3" type="date" value={editForm.scheduled_date} onChange={(event) => setEditForm((prev) => ({ ...prev, scheduled_date: event.target.value }))} />
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
-                Entrega CEDI *
+                Entrega CEDI {editForm.status === "pendiente" ? "*" : "(opcional en agendado)"}
                 <input className="h-11 rounded-md border border-line px-3" type="date" value={editForm.cedi_delivery_date} onChange={(event) => setEditForm((prev) => ({ ...prev, cedi_delivery_date: event.target.value }))} />
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">

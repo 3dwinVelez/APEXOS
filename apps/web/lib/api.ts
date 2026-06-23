@@ -185,6 +185,7 @@ function toNumberId(id: unknown) {
 
 function kpisForOrders(orders: Array<{ status?: string }>) {
   return {
+    scheduled: orders.filter((order) => order.status === "agendado").length,
     pending: orders.filter((order) => order.status === "pendiente").length,
     in_progress: orders.filter((order) => ["en_curso", "inspeccion", "ejecucion"].includes(String(order.status))).length,
     closed: orders.filter((order) => order.status === "cerrada").length,
@@ -494,8 +495,8 @@ async function accessibleSupabaseServiceOrder(orderId: string) {
   }
   const technicianFilter = employee ? `&technician_employee_id=eq.${encodeURIComponent(employee.id)}` : "";
   const activeFilter = technicianSession() ? "&status=in.(pendiente,en_curso,inspeccion,ejecucion)" : "";
-  const rows = await supabaseFetch<Array<{ id: string; company_id: string; status?: string; started_at?: string; metadata?: AnyRow }>>(
-    `/rest/v1/service_orders?select=id,company_id,status,started_at,metadata&id=eq.${encodeURIComponent(orderId)}${technicianFilter}${activeFilter}&limit=1`
+  const rows = await supabaseFetch<Array<{ id: string; company_id: string; technician_employee_id?: string; status?: string; started_at?: string; metadata?: AnyRow }>>(
+    `/rest/v1/service_orders?select=id,company_id,technician_employee_id,status,started_at,metadata&id=eq.${encodeURIComponent(orderId)}${technicianFilter}${activeFilter}&limit=1`
   );
   if (!rows[0]) throw new Error("No se encontro el servicio o no tienes permisos para operarlo.");
   return rows[0];
@@ -1644,6 +1645,18 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       patch.technician_user_id = technicians[0].user_id || null;
       nextMetadata.reassigned_at = new Date().toISOString();
       nextMetadata.reassigned_by_user_id = currentSupabaseUserId() || null;
+    }
+    if (body.status != null) {
+      const nextStatus = String(body.status || "").trim() || String(current.status || "agendado");
+      const allowedStatuses = new Set(["agendado", "pendiente", "cancelada"]);
+      if (!allowedStatuses.has(nextStatus)) throw new Error("Selecciona un estado valido para la orden.");
+      const technicianReady = Boolean(patch.technician_employee_id || current.technician_employee_id);
+      if (nextStatus === "pendiente" && !technicianReady) throw new Error("Asigna un tecnico responsable antes de pasar la preorden a pendiente.");
+      patch.status = nextStatus;
+      nextMetadata.requires_admin_completion = nextStatus === "agendado";
+      if (nextStatus === "pendiente") {
+        nextMetadata.scheduled_from_public_request_at = new Date().toISOString();
+      }
     }
     if (body.service_type != null) patch.service_type = await ensureSupabaseServiceType(body.service_type || "montaje");
     if (body.customer_name != null) patch.customer_name = String(body.customer_name || "").trim();

@@ -7,6 +7,7 @@ const orderSchema = {
       reference_id: { type: "integer" },
       technician_id: { type: "integer" },
       service_type: { type: "string" },
+      status: { type: "string" },
       customer_name: { type: "string" },
       customer_document: { type: "string" },
       customer_address: { type: "string" },

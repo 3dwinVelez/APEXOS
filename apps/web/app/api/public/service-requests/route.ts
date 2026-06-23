@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
         technician_employee_id: null,
         technician_user_id: null,
         service_type: clean(body.service_type) || "montaje",
-        status: "pendiente",
+        status: "agendado",
         customer_name: clean(body.customer_name),
         customer_address: clean(body.customer_address),
         customer_phone: clean(body.customer_phone),
