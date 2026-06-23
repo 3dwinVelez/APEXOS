@@ -50,8 +50,8 @@ function envValue(...keys: string[]) {
 
 function supabaseConfig() {
   return {
-    url: envValue("SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL"),
-    anonKey: envValue("SUPABASE_ANON_KEY", "NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+    url: envValue("NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_URL"),
+    anonKey: envValue("NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_ANON_KEY"),
     serviceRoleKey: envValue("SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SECRET_KEY"),
     publicCompanyId: envValue("APEXOS_PUBLIC_SERVICE_COMPANY_ID", "NEXT_PUBLIC_APEXOS_PUBLIC_COMPANY_ID")
   };
