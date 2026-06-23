@@ -41,6 +41,7 @@ type EvidenceImage = {
 };
 
 const statusLabels: Record<string, string> = {
+  agendado: "Agendado",
   pendiente: "Pendiente",
   en_curso: "En curso",
   inspeccion: "Inspeccion",

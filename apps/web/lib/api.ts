@@ -185,12 +185,24 @@ function toNumberId(id: unknown) {
 
 function kpisForOrders(orders: Array<{ status?: string }>) {
   return {
+    scheduled: orders.filter((order) => order.status === "agendado").length,
     pending: orders.filter((order) => order.status === "pendiente").length,
     in_progress: orders.filter((order) => ["en_curso", "inspeccion", "ejecucion"].includes(String(order.status))).length,
     closed: orders.filter((order) => order.status === "cerrada").length,
     not_executed: orders.filter((order) => order.status === "no_ejecutada").length,
     total: orders.length
   };
+}
+
+function effectiveServiceOrderStatus(order: { status?: string; technician_employee_id?: string; metadata?: AnyRow }) {
+  if (
+    order.status === "pendiente"
+    && !order.technician_employee_id
+    && (order.metadata?.preorder_status === "agendado" || order.metadata?.requires_admin_completion === true)
+  ) {
+    return "agendado";
+  }
+  return order.status || "pendiente";
 }
 
 const adminPermissionCatalog = [
@@ -494,8 +506,8 @@ async function accessibleSupabaseServiceOrder(orderId: string) {
   }
   const technicianFilter = employee ? `&technician_employee_id=eq.${encodeURIComponent(employee.id)}` : "";
   const activeFilter = technicianSession() ? "&status=in.(pendiente,en_curso,inspeccion,ejecucion)" : "";
-  const rows = await supabaseFetch<Array<{ id: string; company_id: string; status?: string; started_at?: string; metadata?: AnyRow }>>(
-    `/rest/v1/service_orders?select=id,company_id,status,started_at,metadata&id=eq.${encodeURIComponent(orderId)}${technicianFilter}${activeFilter}&limit=1`
+  const rows = await supabaseFetch<Array<{ id: string; company_id: string; technician_employee_id?: string; status?: string; started_at?: string; metadata?: AnyRow }>>(
+    `/rest/v1/service_orders?select=id,company_id,technician_employee_id,status,started_at,metadata&id=eq.${encodeURIComponent(orderId)}${technicianFilter}${activeFilter}&limit=1`
   );
   if (!rows[0]) throw new Error("No se encontro el servicio o no tienes permisos para operarlo.");
   return rows[0];
@@ -504,14 +516,19 @@ async function accessibleSupabaseServiceOrder(orderId: string) {
 async function currentSupabaseCompanyUser() {
   const userId = currentSupabaseUserId();
   if (!userId) return null;
-  const rows = await supabaseFetch<Array<{ company_id: string; company_name?: string; role?: string }>>(
+  const rows: Array<{ company_id: string; company_name?: string; role?: string }> = await supabaseFetch<Array<{ company_id: string; company_name?: string; role?: string }>>(
     `/rest/v1/v_user_companies?select=company_id,company_name,role&user_id=eq.${userId}&limit=20`
   ).catch(() => supabaseFetch<Array<{ company_id: string; role?: string }>>(`/rest/v1/company_users?select=company_id,role&user_id=eq.${userId}&status=eq.active&limit=20`));
   const preferredCompanyId = typeof window !== "undefined" ? localStorage.getItem("apexos_company_id") : "";
-  return rows.find((row) => row.company_id === preferredCompanyId)
+  const selected = rows.find((row) => row.company_id === preferredCompanyId)
     || rows.find((row) => ["owner", "admin", "superadmin"].includes(String(row.role || "").toLowerCase()))
     || rows[0]
     || null;
+  if (selected && typeof window !== "undefined") {
+    localStorage.setItem("apexos_company_id", selected.company_id);
+    if (selected.company_name) localStorage.setItem("apexos_company_name", selected.company_name);
+  }
+  return selected;
 }
 
 async function nextAdminUsersRequest<T>(init: RequestInit = {}, query = "") {
@@ -1559,7 +1576,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   if (pathname === "/api/v1/services/orders" && method === "POST") {
     const body = JSON.parse(String(options.body || "{}"));
     if (technicianSession()) throw new Error("El tecnico no puede crear ordenes de servicio.");
-    const requiredServiceFields = ["reference_id", "technician_id", "service_type", "scheduled_date", "cedi_delivery_date", "customer_name", "customer_document", "customer_phone", "customer_address", "invoice_number", "notes"];
+    const requiredServiceFields = ["reference_id", "technician_id", "service_type", "scheduled_date", "cedi_delivery_date", "customer_name", "customer_document", "customer_phone", "customer_address", "notes"];
     const missingServiceFields = requiredServiceFields.filter((field) => body[field] == null || String(body[field]).trim() === "");
     if (missingServiceFields.length) throw new Error("Completa todos los campos obligatorios de la orden de servicio.");
     if (!/^\d+$/.test(String(body.customer_document))) throw new Error("La cedula del cliente debe contener solo numeros.");
@@ -1644,6 +1661,19 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       patch.technician_user_id = technicians[0].user_id || null;
       nextMetadata.reassigned_at = new Date().toISOString();
       nextMetadata.reassigned_by_user_id = currentSupabaseUserId() || null;
+    }
+    if (body.status != null) {
+      const nextStatus = String(body.status || "").trim() || String(current.status || "agendado");
+      const allowedStatuses = new Set(["agendado", "pendiente", "cancelada"]);
+      if (!allowedStatuses.has(nextStatus)) throw new Error("Selecciona un estado valido para la orden.");
+      const technicianReady = Boolean(patch.technician_employee_id || current.technician_employee_id);
+      if (nextStatus === "pendiente" && !technicianReady) throw new Error("Asigna un tecnico responsable antes de pasar la preorden a pendiente.");
+      if (nextStatus !== "agendado" || current.status === "agendado") patch.status = nextStatus;
+      nextMetadata.requires_admin_completion = nextStatus === "agendado";
+      nextMetadata.preorder_status = nextStatus === "agendado" ? "agendado" : "";
+      if (nextStatus === "pendiente") {
+        nextMetadata.scheduled_from_public_request_at = new Date().toISOString();
+      }
     }
     if (body.service_type != null) patch.service_type = await ensureSupabaseServiceType(body.service_type || "montaje");
     if (body.customer_name != null) patch.customer_name = String(body.customer_name || "").trim();
@@ -1910,6 +1940,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         manuals: Array.isArray(reference.metadata?.manuals) ? reference.metadata.manuals : []
       } : null;
       const technician = technicians.find((item) => item.id === order.technician_employee_id);
+      const effectiveStatus = effectiveServiceOrderStatus(order);
       return {
         ...order,
         technician: technician ? {
@@ -1922,7 +1953,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         reference: referenceWithParts,
         reference_id: order.reference_id || "",
         service_type: order.service_type || "servicio",
-        status: order.status || "pendiente",
+        status: effectiveStatus,
         customer_phone: order.customer_phone || "",
         scheduled_date: order.scheduled_date || "",
         incidents: incidents.filter((item) => item.order_id === order.id),

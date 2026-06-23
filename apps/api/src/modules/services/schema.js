@@ -1,12 +1,13 @@
 const orderSchema = {
   body: {
     type: "object",
-    required: ["reference_id", "technician_id", "service_type", "customer_name", "customer_document", "customer_address", "customer_phone", "invoice_number", "scheduled_date", "cedi_delivery_date", "notes"],
+    required: ["reference_id", "technician_id", "service_type", "customer_name", "customer_document", "customer_address", "customer_phone", "scheduled_date", "cedi_delivery_date", "notes"],
     properties: {
       reference_item_id: { type: "integer" },
       reference_id: { type: "integer" },
       technician_id: { type: "integer" },
       service_type: { type: "string" },
+      status: { type: "string" },
       customer_name: { type: "string" },
       customer_document: { type: "string" },
       customer_address: { type: "string" },

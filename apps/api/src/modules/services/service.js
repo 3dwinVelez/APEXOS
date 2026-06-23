@@ -125,6 +125,7 @@ function formatReportDate(value) {
 
 function statusReportLabel(value) {
   const labels = {
+    agendado: "Agendado",
     pendiente: "Pendiente",
     en_curso: "En curso",
     inspeccion: "Inspeccion",
@@ -640,6 +641,7 @@ async function listOrders(tenantId, user, query = {}) {
     });
     const enriched = await attachTechnicians(tenantId, data);
     const kpis = {
+      scheduled: data.filter((order) => order.status === "agendado").length,
       pending: data.filter((order) => order.status === "pendiente").length,
       in_progress: data.filter((order) => ["en_curso", "inspeccion", "ejecucion"].includes(order.status)).length,
       closed: data.filter((order) => order.status === "cerrada").length,
@@ -676,7 +678,6 @@ async function createOrder(tenantId, user, input) {
     ["customer_document", "cedula del cliente"],
     ["customer_address", "direccion"],
     ["customer_phone", "telefono"],
-    ["invoice_number", "factura o pedido"],
     ["scheduled_date", "fecha programada del servicio"],
     ["cedi_delivery_date", "fecha de entrega del CEDI"],
     ["notes", "observaciones operativas"]
@@ -748,6 +749,20 @@ async function updateOrder(tenantId, user, id, input = {}) {
       data.technician_id = technician.id;
       nextMetadata.reassigned_at = new Date().toISOString();
       nextMetadata.reassigned_by = user.id;
+    }
+    if (input.status != null) {
+      const nextStatus = String(input.status || "").trim() || order.status;
+      const allowedStatuses = new Set(["agendado", "pendiente", "cancelada"]);
+      if (!allowedStatuses.has(nextStatus)) throw appError(400, "INVALID_SERVICE_STATUS", "Selecciona un estado valido para la orden");
+      const technicianReady = Boolean(data.technician_id || order.technician_id);
+      if (nextStatus === "pendiente" && !technicianReady) {
+        throw appError(400, "SERVICE_TECHNICIAN_REQUIRED_FOR_PENDING", "Asigna un tecnico responsable antes de pasar la preorden a pendiente");
+      }
+      data.status = nextStatus;
+      nextMetadata.requires_admin_completion = nextStatus === "agendado";
+      if (nextStatus === "pendiente" && order.status === "agendado") {
+        nextMetadata.scheduled_from_public_request_at = new Date().toISOString();
+      }
     }
     if (input.service_type != null) data.service_type = await assertValidServiceType(tenantId, input.service_type || "montaje");
     if (input.customer_name != null) data.customer_name = String(input.customer_name || "").trim();

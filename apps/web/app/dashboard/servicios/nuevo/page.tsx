@@ -78,7 +78,6 @@ export default function NewServiceOrderPage() {
       ["customer_document", "cedula del cliente"],
       ["customer_phone", "telefono"],
       ["customer_address", "direccion"],
-      ["invoice_number", "factura o pedido"],
       ["notes", "observaciones operativas"]
     ];
     const missing = requiredFields.filter(([key]) => !form[key].trim()).map(([, label]) => label);
@@ -130,7 +129,7 @@ export default function NewServiceOrderPage() {
       <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-base font-semibold">Referencia y programacion</h2>
-          <span className="text-xs font-medium text-neutral-500">Todos los campos son obligatorios</span>
+          <span className="text-xs font-medium text-neutral-500">Factura o pedido es opcional</span>
         </div>
         <div className="grid gap-3 md:grid-cols-2">
           <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
@@ -185,8 +184,8 @@ export default function NewServiceOrderPage() {
             <input className="h-12 w-full min-w-0 rounded-md border border-line px-3 text-base md:h-10 md:text-sm" inputMode="tel" required value={form.customer_phone} onChange={(event) => setForm((prev) => ({ ...prev, customer_phone: event.target.value }))} />
           </label>
           <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
-            Factura o pedido *
-            <input className="h-12 w-full min-w-0 rounded-md border border-line px-3 text-base md:h-10 md:text-sm" required value={form.invoice_number} onChange={(event) => setForm((prev) => ({ ...prev, invoice_number: event.target.value }))} />
+            Factura o pedido (opcional)
+            <input className="h-12 w-full min-w-0 rounded-md border border-line px-3 text-base md:h-10 md:text-sm" value={form.invoice_number} onChange={(event) => setForm((prev) => ({ ...prev, invoice_number: event.target.value }))} />
           </label>
           <label className="grid gap-1.5 text-sm font-medium text-neutral-700 md:col-span-2">
             Direccion completa del servicio *
