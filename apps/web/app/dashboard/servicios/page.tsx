@@ -41,7 +41,7 @@ type ServiceOrder = {
   created_at?: string;
   closed_at?: string;
   notes?: string;
-  metadata?: { customer_document?: string; cedi_delivery_date?: string; public_request?: boolean; requires_admin_completion?: boolean; preorder_status?: string; [key: string]: unknown };
+  metadata?: { customer_document?: string; public_request?: boolean; requires_admin_completion?: boolean; preorder_status?: string; [key: string]: unknown };
   incidents: Array<{ id: number }>;
   photos: Array<{ id: number }>;
 };
@@ -52,7 +52,6 @@ type OrderEditForm = {
   technician_id: string;
   service_type: string;
   scheduled_date: string;
-  cedi_delivery_date: string;
   customer_name: string;
   customer_document: string;
   customer_phone: string;
@@ -67,7 +66,6 @@ const emptyEditForm: OrderEditForm = {
   technician_id: "",
   service_type: "montaje",
   scheduled_date: "",
-  cedi_delivery_date: "",
   customer_name: "",
   customer_document: "",
   customer_phone: "",
@@ -354,7 +352,6 @@ export default function ServicesPage() {
       technician_id: technicianValue(order),
       service_type: order.service_type || "montaje",
       scheduled_date: order.scheduled_date?.slice(0, 10) || "",
-      cedi_delivery_date: String(order.metadata?.cedi_delivery_date || "").slice(0, 10),
       customer_name: order.customer_name || "",
       customer_document: String(order.metadata?.customer_document || ""),
       customer_phone: order.customer_phone || "",
@@ -378,7 +375,6 @@ export default function ServicesPage() {
     ];
     if (editForm.status === "pendiente") {
       required.unshift(["reference_id", "referencia"], ["technician_id", "tecnico asignado"]);
-      required.push(["cedi_delivery_date", "fecha CEDI"]);
     }
     const missing = required.filter(([key]) => !editForm[key].trim()).map(([, label]) => label);
     if (missing.length) {
@@ -396,7 +392,6 @@ export default function ServicesPage() {
           ...payload,
           metadata: {
             customer_document: editForm.customer_document.trim(),
-            cedi_delivery_date: editForm.cedi_delivery_date,
             requires_admin_completion: editForm.status === "agendado"
           }
         })
@@ -485,7 +480,7 @@ export default function ServicesPage() {
           </div>
           {operational.publicRequests.length ? (
             <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-              <strong>{operational.publicRequests.length} solicitud(es) publica(s)</strong> requieren completar referencia, fecha CEDI o tecnico antes de pasar a operacion.
+              <strong>{operational.publicRequests.length} solicitud(es) publica(s)</strong> requieren completar referencia o tecnico antes de pasar a operacion.
             </div>
           ) : null}
           <div className="flex gap-2 overflow-x-auto pb-1">
@@ -498,7 +493,6 @@ export default function ServicesPage() {
                   </div>
                   <span className={`shrink-0 rounded-md border px-2 py-1 text-[11px] font-semibold ${requiresAdminCompletion(order) ? "border-amber-200 bg-amber-50 text-amber-800" : statusTone[order.status] || "border-line bg-paper"}`}>{requiresAdminCompletion(order) ? "Por completar" : statusLabel[order.status] || order.status}</span>
                 </div>
-                <span className={`mt-3 inline-flex rounded-md border px-2 py-1 text-[11px] font-semibold ${slaInfo(order).tone}`}>SLA {slaInfo(order).label}</span>
               </Link>
             ))}
             {!operational.attention.length ? <p className="rounded-md bg-paper p-3 text-sm text-neutral-500">Sin servicios abiertos para atender.</p> : null}
@@ -592,7 +586,6 @@ export default function ServicesPage() {
                     {requiresAdminCompletion(order) ? <span className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">Completar solicitud</span> : null}
                     {isOverdue(order) ? <span className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">Vencida</span> : null}
                     {isToday(order.scheduled_date) ? <span className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-700">Hoy</span> : null}
-                    <span className={`rounded-md border px-3 py-2 text-xs font-semibold ${slaInfo(order).tone}`}>SLA {slaInfo(order).label}</span>
                   </div>
                   <span className="min-w-0 truncate text-right text-xs font-semibold text-neutral-500">{order.number}</span>
                 </div>
@@ -657,7 +650,6 @@ export default function ServicesPage() {
                           {requiresAdminCompletion(order) ? <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-800">Completar solicitud</span> : null}
                           {isOverdue(order) ? <span className="rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-700">Vencida</span> : null}
                           {isToday(order.scheduled_date) ? <span className="rounded-md border border-sky-200 bg-sky-50 px-2 py-1 text-[11px] font-semibold text-sky-700">Hoy</span> : null}
-                          <span className={`rounded-md border px-2 py-1 text-[11px] font-semibold ${slaInfo(order).tone}`}>SLA {slaInfo(order).label}</span>
                         </div>
                       </td>
                       <td className="max-w-[300px] px-4 py-3 align-top">
@@ -748,10 +740,6 @@ export default function ServicesPage() {
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
                 Fecha programada *
                 <input className="h-11 rounded-md border border-line px-3" type="date" value={editForm.scheduled_date} onChange={(event) => setEditForm((prev) => ({ ...prev, scheduled_date: event.target.value }))} />
-              </label>
-              <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
-                Entrega CEDI {editForm.status === "pendiente" ? "*" : "(opcional en agendado)"}
-                <input className="h-11 rounded-md border border-line px-3" type="date" value={editForm.cedi_delivery_date} onChange={(event) => setEditForm((prev) => ({ ...prev, cedi_delivery_date: event.target.value }))} />
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
                 Factura o pedido (opcional)

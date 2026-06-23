@@ -20,6 +20,13 @@ type PublicServiceRequest = {
   notes?: string;
 };
 
+const DEFAULT_SERVICE_TYPES = [
+  { code: "montaje", label: "Montaje", active: true },
+  { code: "desmontaje", label: "Desmontaje", active: true },
+  { code: "ambos", label: "Montaje y desmontaje", active: true }
+];
+const SERVICE_TYPES_REFERENCE_CODE = "__SERVICE_TYPES__";
+
 function jsonError(message: string, status = 400) {
   return NextResponse.json({ message }, { status });
 }
@@ -80,6 +87,29 @@ function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
+function serviceTypeCode(value: unknown) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9_-]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function normalizeServiceTypes(rows: unknown) {
+  const source = Array.isArray(rows) && rows.length ? rows : DEFAULT_SERVICE_TYPES;
+  const seen = new Set<string>();
+  return source
+    .map((item) => {
+      const row = item && typeof item === "object" ? item as Record<string, unknown> : {};
+      const code = serviceTypeCode(row.code || row.label);
+      const label = String(row.label || row.code || "").trim();
+      return { code, label, active: row.active !== false };
+    })
+    .filter((item) => item.code && item.label && !seen.has(item.code) && seen.add(item.code));
+}
+
 function isStatusConstraintError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error || "");
   return message.includes("service_orders_status_check") || message.includes("violates check constraint");
@@ -117,22 +147,31 @@ async function supabaseRequest<T>(path: string, init: RequestInit = {}) {
   return body as T;
 }
 
-async function resolveCompanyId(body: PublicServiceRequest, request: NextRequest) {
+async function resolveCompanyCandidates(body: PublicServiceRequest, request: NextRequest) {
   const { publicCompanyId } = supabaseConfig();
-  if (publicCompanyId && isUuid(publicCompanyId)) return publicCompanyId;
-
   const companyName = clean(body.company_name) || clean(request.nextUrl.searchParams.get("empresa"));
-  const preferredName = companyName || "SCJ";
-  const filter = `or=(name.ilike.*${encodeURIComponent(preferredName)}*,legal_name.ilike.*${encodeURIComponent(preferredName)}*,tax_id.eq.${encodeURIComponent(preferredName)})&`;
-  const companies = await supabaseRequest<Array<{ id: string }>>(
-    `/rest/v1/companies?select=id&${filter}status=eq.active&order=created_at.asc&limit=1`
-  );
-  if (companies[0]?.id) return companies[0].id;
+  const candidates: string[] = [];
+
+  if (companyName) {
+    const filter = `or=(name.ilike.*${encodeURIComponent(companyName)}*,legal_name.ilike.*${encodeURIComponent(companyName)}*,tax_id.eq.${encodeURIComponent(companyName)})&`;
+    const companies = await supabaseRequest<Array<{ id: string }>>(
+      `/rest/v1/companies?select=id&${filter}status=eq.active&order=created_at.asc&limit=5`
+    ).catch(() => []);
+    candidates.push(...companies.map((item) => item.id).filter(Boolean));
+  }
+
+  if (publicCompanyId && isUuid(publicCompanyId)) candidates.push(publicCompanyId);
 
   const fallbackCompanies = await supabaseRequest<Array<{ id: string }>>(
-    "/rest/v1/companies?select=id&status=eq.active&order=created_at.asc&limit=1"
-  );
-  return fallbackCompanies[0]?.id || "";
+    "/rest/v1/companies?select=id&status=eq.active&order=created_at.asc&limit=10"
+  ).catch(() => []);
+  candidates.push(...fallbackCompanies.map((item) => item.id).filter(Boolean));
+
+  return [...new Set(candidates)];
+}
+
+async function resolveCompanyId(body: PublicServiceRequest, request: NextRequest) {
+  return (await resolveCompanyCandidates(body, request))[0] || "";
 }
 
 async function resolveReferenceId(companyId: string, referenceId: string, productReference: string) {
@@ -161,14 +200,35 @@ async function nextOrderNumber(companyId: string, offset = 1) {
   return `OS-${String(max + offset).padStart(5, "0")}`;
 }
 
+async function activeReferencesForCompany(companyId: string) {
+  return supabaseRequest<Array<{ id: string; code: string; name: string; category?: string; brand?: string; model?: string }>>(
+    `/rest/v1/service_references?select=id,code,name,category,brand,model&company_id=eq.${encodeURIComponent(companyId)}&active=eq.true&code=neq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&order=code.asc&limit=500`
+  );
+}
+
+async function serviceTypesForCompany(companyId: string) {
+  const rows = await supabaseRequest<Array<{ metadata?: Record<string, unknown> }>>(
+    `/rest/v1/service_references?select=metadata&company_id=eq.${encodeURIComponent(companyId)}&code=eq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&limit=1`
+  ).catch(() => []);
+  return normalizeServiceTypes(rows[0]?.metadata?.service_types).filter((item) => item.active);
+}
+
 export async function GET(request: NextRequest) {
   try {
-    const companyId = await resolveCompanyId({}, request);
+    const companyIds = await resolveCompanyCandidates({}, request);
+    let companyId = companyIds[0] || "";
     if (!companyId) return jsonError("No se encontro una empresa activa para consultar referencias.", 404);
-    const references = await supabaseRequest<Array<{ id: string; code: string; name: string; category?: string; brand?: string; model?: string }>>(
-      `/rest/v1/service_references?select=id,code,name,category,brand,model&company_id=eq.${encodeURIComponent(companyId)}&active=eq.true&order=code.asc&limit=500`
-    );
-    return NextResponse.json({ ok: true, references });
+    let references: Awaited<ReturnType<typeof activeReferencesForCompany>> = [];
+    for (const candidateId of companyIds) {
+      const rows = await activeReferencesForCompany(candidateId).catch(() => []);
+      if (rows.length || candidateId === companyId) {
+        companyId = candidateId;
+        references = rows;
+        if (rows.length) break;
+      }
+    }
+    const serviceTypes = await serviceTypesForCompany(companyId);
+    return NextResponse.json({ ok: true, company_id: companyId, references, service_types: serviceTypes });
   } catch (error) {
     return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible consultar las referencias." }, { status: 500 });
   }
@@ -196,6 +256,9 @@ export async function POST(request: NextRequest) {
     const productReference = clean(body.product_reference) || clean(body.product_description);
     const referenceId = await resolveReferenceId(companyId, clean(body.reference_id), productReference);
     if (!referenceId) return jsonError("Selecciona una referencia activa para el producto que se va a instalar.");
+    const serviceTypes = await serviceTypesForCompany(companyId);
+    const serviceType = serviceTypeCode(clean(body.service_type) || "montaje");
+    if (!serviceTypes.some((item) => item.code === serviceType)) return jsonError("Selecciona un tipo de servicio activo para esta empresa.");
     const notes = clean(body.notes) || "Solicitud creada por formulario publico. Requiere revision administrativa.";
     const metadata: Record<string, unknown> = {
       created_from: "public_service_request",
@@ -214,7 +277,7 @@ export async function POST(request: NextRequest) {
       reference_id: referenceId,
       technician_employee_id: null,
       technician_user_id: null,
-      service_type: clean(body.service_type) || "montaje",
+      service_type: serviceType,
       status: "agendado",
       customer_name: clean(body.customer_name),
       customer_address: clean(body.customer_address),
