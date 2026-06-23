@@ -27,7 +27,7 @@ type ServiceOrder = {
   id: number | string;
   number: string;
   reference_id?: number | string;
-  reference: ServiceReference;
+  reference: ServiceReference | null;
   technician?: Technician | null;
   technician_id?: number | string;
   technician_employee_id?: number | string;
@@ -39,7 +39,7 @@ type ServiceOrder = {
   invoice_number?: string;
   scheduled_date: string;
   notes?: string;
-  metadata?: { customer_document?: string; cedi_delivery_date?: string; [key: string]: unknown };
+  metadata?: { customer_document?: string; cedi_delivery_date?: string; public_request?: boolean; requires_admin_completion?: boolean; [key: string]: unknown };
   incidents: Array<{ id: number }>;
   photos: Array<{ id: number }>;
 };
@@ -123,10 +123,16 @@ function priorityScore(order: ServiceOrder) {
 }
 
 function serviceAction(order: ServiceOrder) {
+  if (requiresAdminCompletion(order)) return "Completar";
   if (order.status === "pendiente") return "Iniciar";
   if (["en_curso", "inspeccion", "ejecucion"].includes(order.status)) return "Continuar";
   if (order.status === "no_ejecutada") return "Revisar";
   return "Ver detalle";
+}
+
+function requiresAdminCompletion(order: ServiceOrder) {
+  const withoutTechnician = !order.technician && !order.technician_employee_id && !order.technician_id;
+  return Boolean(order.metadata?.public_request || order.metadata?.requires_admin_completion || withoutTechnician || !order.reference_id);
 }
 
 export default function ServicesPage() {
@@ -294,7 +300,8 @@ export default function ServicesPage() {
 
   const operational = useMemo(() => {
     const attention = orders.filter((order) => ["pendiente", "en_curso", "inspeccion", "ejecucion", "no_ejecutada"].includes(order.status));
-    return { attention };
+    const publicRequests = orders.filter(requiresAdminCompletion);
+    return { attention, publicRequests };
   }, [orders]);
 
   const mainMessage = operational.attention.length
@@ -336,6 +343,10 @@ export default function ServicesPage() {
               <Plus className="shrink-0" size={17} />
               <span className="truncate">Nueva orden</span>
             </Link>
+            <Link className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/servicios/solicitar" target="_blank">
+              <Sparkles className="shrink-0" size={17} />
+              <span className="truncate">Formulario publico</span>
+            </Link>
             <Link className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/dashboard/servicios/referencias">
               <Settings2 className="shrink-0" size={17} />
               <span className="truncate">Referencias</span>
@@ -359,6 +370,11 @@ export default function ServicesPage() {
             </div>
             <span className="rounded-md bg-paper px-3 py-1.5 text-xs font-semibold text-neutral-600">{operational.attention.length} por atender</span>
           </div>
+          {operational.publicRequests.length ? (
+            <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+              <strong>{operational.publicRequests.length} solicitud(es) publica(s)</strong> requieren completar referencia, fecha CEDI o tecnico antes de pasar a operacion.
+            </div>
+          ) : null}
           <div className="flex gap-2 overflow-x-auto pb-1">
             {operational.attention.slice(0, 6).map((order) => (
               <Link className="block min-w-[250px] flex-1 rounded-md border border-line p-3 transition hover:border-apex hover:bg-paper" href={`/dashboard/servicios/${order.id}`} key={order.id}>
@@ -367,7 +383,7 @@ export default function ServicesPage() {
                     <p className="truncate text-sm font-semibold">{order.number} · {order.customer_name}</p>
                     <p className="mt-1 truncate text-xs text-neutral-500">{order.reference?.code || "Sin referencia"} · {formatDate(order.scheduled_date)}</p>
                   </div>
-                  <span className={`shrink-0 rounded-md border px-2 py-1 text-[11px] font-semibold ${statusTone[order.status] || "border-line bg-paper"}`}>{statusLabel[order.status] || order.status}</span>
+                  <span className={`shrink-0 rounded-md border px-2 py-1 text-[11px] font-semibold ${requiresAdminCompletion(order) ? "border-amber-200 bg-amber-50 text-amber-800" : statusTone[order.status] || "border-line bg-paper"}`}>{requiresAdminCompletion(order) ? "Por completar" : statusLabel[order.status] || order.status}</span>
                 </div>
               </Link>
             ))}
@@ -454,6 +470,7 @@ export default function ServicesPage() {
                 <div className="mb-3 flex items-start justify-between gap-2">
                   <div className="flex flex-wrap gap-2">
                     <span className={`rounded-md border px-3 py-2 text-xs font-semibold ${statusTone[order.status] || "border-line bg-paper"}`}>{statusLabel[order.status] || order.status}</span>
+                    {requiresAdminCompletion(order) ? <span className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">Completar solicitud</span> : null}
                     {isOverdue(order) ? <span className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">Vencida</span> : null}
                     {isToday(order.scheduled_date) ? <span className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-700">Hoy</span> : null}
                   </div>
@@ -517,6 +534,7 @@ export default function ServicesPage() {
                         <Link className="font-semibold text-neutral-900 hover:text-apex" href={`/dashboard/servicios/${order.id}`}>{order.number}</Link>
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           <span className={`rounded-md border px-2 py-1 text-[11px] font-semibold ${statusTone[order.status] || "border-line bg-paper"}`}>{statusLabel[order.status] || order.status}</span>
+                          {requiresAdminCompletion(order) ? <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-800">Completar solicitud</span> : null}
                           {isOverdue(order) ? <span className="rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-700">Vencida</span> : null}
                           {isToday(order.scheduled_date) ? <span className="rounded-md border border-sky-200 bg-sky-50 px-2 py-1 text-[11px] font-semibold text-sky-700">Hoy</span> : null}
                         </div>

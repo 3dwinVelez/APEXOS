@@ -17,6 +17,30 @@
   --text-muted: 115 115 115;
 }
 
+.apex-public-input {
+  min-height: 3rem;
+  width: 100%;
+  border-radius: 0.875rem;
+  border: 1px solid rgb(var(--color-line));
+  background: rgb(var(--surface));
+  padding: 0 0.875rem;
+  color: rgb(var(--text-strong));
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.apex-public-input:focus {
+  border-color: rgb(var(--color-apex));
+  box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.14);
+}
+
+.dark .apex-public-input {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.94);
+}
+
 html.dark {
   color-scheme: dark;
   --color-ink: 238 242 241;
