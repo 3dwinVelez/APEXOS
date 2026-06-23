@@ -2,7 +2,7 @@
 
 import { ArrowRight, CheckCircle2, Home, MapPin, PackageSearch, Send, ShieldCheck, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 type FormState = {
@@ -99,6 +99,14 @@ function requiredForStep(step: number): Array<keyof FormState> {
 }
 
 export default function PublicServiceRequestPage() {
+  return (
+    <Suspense fallback={<PublicServiceRequestFallback />}>
+      <PublicServiceRequestContent />
+    </Suspense>
+  );
+}
+
+function PublicServiceRequestContent() {
   const searchParams = useSearchParams();
   const companyName = searchParams.get("empresa") || "";
   const [step, setStep] = useState(0);
@@ -353,6 +361,23 @@ export default function PublicServiceRequestPage() {
           </section>
         </section>
       </div>
+    </main>
+  );
+}
+
+function PublicServiceRequestFallback() {
+  return (
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_right,rgba(54,211,186,0.20),transparent_32%),linear-gradient(135deg,#f7f5ee,#ffffff)] px-4 py-5 text-neutral-900 sm:py-8">
+      <section className="mx-auto flex min-h-[calc(100vh-40px)] max-w-5xl items-center justify-center">
+        <div className="w-full rounded-3xl bg-[linear-gradient(135deg,#061d19,#123d35)] p-8 text-center text-white shadow-xl shadow-teal-950/15">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-white/10 text-teal-100">
+            <Home size={28} />
+          </div>
+          <p className="text-sm font-bold uppercase tracking-[0.18em] text-teal-100">Solicitud de servicio</p>
+          <h1 className="mt-3 text-3xl font-bold">Preparando el formulario</h1>
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-white/70">Estamos cargando la informacion necesaria para crear tu servicio.</p>
+        </div>
+      </section>
     </main>
   );
 }
