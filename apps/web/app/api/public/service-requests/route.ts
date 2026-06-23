@@ -19,6 +19,7 @@ type PublicServiceRequest = {
   customer_address?: string;
   notes?: string;
 };
+type PublicReferenceRow = { id: string; company_id?: string; code: string; name: string; category?: string; brand?: string; model?: string };
 
 const DEFAULT_SERVICE_TYPES = [
   { code: "montaje", label: "Montaje", active: true },
@@ -182,7 +183,7 @@ async function resolveCompanyCandidates(body: PublicServiceRequest, request: Nex
 
   if (!candidates.length) {
     const referenceCompanies = await supabaseRequest<Array<{ company_id?: string }>>(
-      `/rest/v1/service_references?select=company_id&active=eq.true&code=neq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&order=created_at.asc&limit=50`
+      `/rest/v1/service_references?select=company_id&active=eq.true&code=neq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&limit=50`
     ).catch(() => []);
     candidates.push(...referenceCompanies.map((item) => item.company_id || "").filter(Boolean));
   }
@@ -192,6 +193,14 @@ async function resolveCompanyCandidates(body: PublicServiceRequest, request: Nex
 
 async function resolveCompanyId(body: PublicServiceRequest, request: NextRequest) {
   return (await resolveCompanyCandidates(body, request))[0] || "";
+}
+
+async function resolveCompanyIdFromReference(referenceId: string) {
+  if (!isUuid(referenceId)) return "";
+  const references = await supabaseRequest<Array<{ company_id?: string }>>(
+    `/rest/v1/service_references?select=company_id&id=eq.${encodeURIComponent(referenceId)}&active=eq.true&limit=1`
+  ).catch(() => []);
+  return references[0]?.company_id || "";
 }
 
 async function resolveReferenceId(companyId: string, referenceId: string, productReference: string) {
@@ -221,8 +230,14 @@ async function nextOrderNumber(companyId: string, offset = 1) {
 }
 
 async function activeReferencesForCompany(companyId: string) {
-  return supabaseRequest<Array<{ id: string; code: string; name: string; category?: string; brand?: string; model?: string }>>(
-    `/rest/v1/service_references?select=id,code,name,category,brand,model&company_id=eq.${encodeURIComponent(companyId)}&active=eq.true&code=neq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&order=code.asc&limit=500`
+  return supabaseRequest<PublicReferenceRow[]>(
+    `/rest/v1/service_references?select=id,company_id,code,name,category,brand,model&company_id=eq.${encodeURIComponent(companyId)}&active=eq.true&code=neq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&order=code.asc&limit=500`
+  );
+}
+
+async function activeReferencesWithoutCompany() {
+  return supabaseRequest<PublicReferenceRow[]>(
+    `/rest/v1/service_references?select=id,company_id,code,name,category,brand,model&active=eq.true&code=neq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&order=code.asc&limit=500`
   );
 }
 
@@ -237,16 +252,23 @@ export async function GET(request: NextRequest) {
   try {
     const companyIds = await resolveCompanyCandidates({}, request);
     let companyId = companyIds[0] || "";
-    if (!companyId) return jsonError("No se encontro una empresa activa para consultar referencias.", 404);
     let references: Awaited<ReturnType<typeof activeReferencesForCompany>> = [];
-    for (const candidateId of companyIds) {
-      const rows = await activeReferencesForCompany(candidateId).catch(() => []);
-      if (rows.length || candidateId === companyId) {
-        companyId = candidateId;
-        references = rows;
-        if (rows.length) break;
+    if (companyId) {
+      for (const candidateId of companyIds) {
+        const rows = await activeReferencesForCompany(candidateId).catch(() => []);
+        if (rows.length || candidateId === companyId) {
+          companyId = candidateId;
+          references = rows;
+          if (rows.length) break;
+        }
       }
     }
+    if (!references.length) {
+      const rows = await activeReferencesWithoutCompany().catch(() => []);
+      companyId = rows[0]?.company_id || companyId;
+      references = companyId ? rows.filter((item) => item.company_id === companyId) : rows;
+    }
+    if (!companyId || !references.length) return jsonError("No se encontro una empresa con referencias activas para el formulario.", 404);
     const serviceTypes = await serviceTypesForCompany(companyId);
     return NextResponse.json({ ok: true, company_id: companyId, references, service_types: serviceTypes });
   } catch (error) {
@@ -270,7 +292,8 @@ export async function POST(request: NextRequest) {
     if (!/^\d{5,12}$/.test(clean(body.customer_document))) return jsonError("La cedula debe contener entre 5 y 12 numeros.");
     if (!/^[0-9+()\-\s]{7,20}$/.test(clean(body.customer_phone))) return jsonError("Registra un telefono valido para confirmar la visita.");
 
-    const companyId = await resolveCompanyId(body, request);
+    let companyId = await resolveCompanyId(body, request);
+    if (!companyId) companyId = await resolveCompanyIdFromReference(clean(body.reference_id));
     if (!companyId) return jsonError("No se encontro una empresa activa para registrar la solicitud.", 404);
 
     const productReference = clean(body.product_reference) || clean(body.product_description);
