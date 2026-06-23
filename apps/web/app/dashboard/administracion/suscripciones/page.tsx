@@ -1,6 +1,8 @@
 "use client";
 
 import { createPlatformCompanyWithAdmin, deletePlatformCompany, listPlatformCompanies, listPlatformCompanyModuleAccess, listPlatformCompanySessions, PlatformCompany, PlatformCompanyModuleAccess, PlatformCompanySessions, setPlatformCompanyModuleAccess, updatePlatformCompany } from "@/lib/supabaseQa";
+import { loadModuleAccess } from "@/lib/moduleAccess";
+import { MODULES } from "@/lib/modules";
 import { ArrowLeft, Building2, Check, CircleUserRound, LockKeyhole, Pencil, Plus, RefreshCw, ShieldCheck, SlidersHorizontal, Trash2, UsersRound, X } from "lucide-react";
 import Link from "next/link";
 import type { Dispatch, SetStateAction } from "react";
@@ -43,6 +45,7 @@ const emptyCompanyForm: CompanyForm = {
 };
 
 export default function SuscripcionesPage() {
+  const [platformAdmin, setPlatformAdmin] = useState<boolean | null>(null);
   const [companies, setCompanies] = useState<PlatformCompany[]>([]);
   const [modules, setModules] = useState<PlatformCompanyModuleAccess[]>([]);
   const [sessions, setSessions] = useState<PlatformCompanySessions | null>(null);
@@ -230,8 +233,14 @@ export default function SuscripcionesPage() {
   }
 
   useEffect(() => {
-    loadCompanies();
-  }, [loadCompanies]);
+    loadModuleAccess(MODULES)
+      .then((access) => setPlatformAdmin(access.isPlatformAdmin))
+      .catch(() => setPlatformAdmin(false));
+  }, []);
+
+  useEffect(() => {
+    if (platformAdmin) loadCompanies();
+  }, [loadCompanies, platformAdmin]);
 
   async function refreshCompanySessions() {
     if (!selectedCompanyId) return;
@@ -244,6 +253,28 @@ export default function SuscripcionesPage() {
     } finally {
       setSaving("");
     }
+  }
+
+  if (platformAdmin === null) {
+    return <div className="rounded-md border border-line bg-white p-8 text-sm text-neutral-600">Validando permisos de administracion de plataforma...</div>;
+  }
+
+  if (!platformAdmin) {
+    return (
+      <div className="mx-auto max-w-3xl rounded-md border border-line bg-white p-6">
+        <Link className="mb-4 inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href="/dashboard/administracion">
+          <ArrowLeft size={16} /> Volver a Administracion
+        </Link>
+        <div className="flex items-start gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-paper text-apex"><LockKeyhole size={20} /></span>
+          <div>
+            <p className="text-sm font-semibold text-apex">Acceso restringido</p>
+            <h1 className="mt-1 text-2xl font-semibold">Empresas y suscripciones es solo para superadmin</h1>
+            <p className="mt-2 text-sm leading-6 text-neutral-600">Los administradores de empresa gestionan usuarios, roles y maestros propios desde Administracion APEX. La creacion y configuracion global de empresas queda reservada para administradores de plataforma.</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

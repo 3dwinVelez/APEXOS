@@ -247,7 +247,35 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="apex-page-shell space-y-6">
+      <section className="apex-context-hero">
+        <div className="relative z-10 grid gap-4 p-4 sm:p-5 xl:grid-cols-[260px_1fr] xl:items-center">
+          <div className="min-w-0">
+            <p className="apex-eyebrow">Modulos activos</p>
+            <h1 className="mt-3 text-2xl font-semibold sm:text-3xl">Elige donde trabajar</h1>
+            <p className="mt-2 text-sm leading-6 text-white/70">{activeModules.length} modulo(s) disponibles para esta empresa.</p>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+            {activeModules.slice(0, 8).map((module, index) => {
+              const Icon = module.icon;
+              return (
+                <Link className={`group flex min-w-0 items-center gap-3 rounded-xl border border-white/12 p-3 text-white transition hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/10 ${index === 0 ? "bg-white text-[#071411] shadow-lg hover:bg-teal-50" : "bg-white/7"}`} href={`/dashboard/${module.slug}`} key={module.slug}>
+                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${index === 0 ? "bg-apex text-white" : "bg-white/10 text-teal-200"}`}><Icon size={18} /></span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold">{module.name}</span>
+                    <span className={`mt-0.5 block truncate text-xs ${index === 0 ? "text-neutral-600" : "text-white/65"}`}>{module.area}</span>
+                  </span>
+                  <ArrowRight className={`shrink-0 transition group-hover:translate-x-0.5 ${index === 0 ? "text-apex" : "text-white/45"}`} size={16} />
+                </Link>
+              );
+            })}
+            {!activeModules.length ? (
+              <div className="rounded-xl border border-white/12 bg-white/7 p-4 text-sm text-white/70">No hay modulos activos para esta empresa.</div>
+            ) : null}
+          </div>
+        </div>
+      </section>
+
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="overflow-hidden rounded-md bg-neutral-950 text-white">
           <div className="p-5">

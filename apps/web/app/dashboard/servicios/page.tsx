@@ -27,7 +27,7 @@ type ServiceOrder = {
   id: number | string;
   number: string;
   reference_id?: number | string;
-  reference: ServiceReference;
+  reference: ServiceReference | null;
   technician?: Technician | null;
   technician_id?: number | string;
   technician_employee_id?: number | string;
@@ -39,12 +39,13 @@ type ServiceOrder = {
   invoice_number?: string;
   scheduled_date: string;
   notes?: string;
-  metadata?: { customer_document?: string; cedi_delivery_date?: string; [key: string]: unknown };
+  metadata?: { customer_document?: string; cedi_delivery_date?: string; public_request?: boolean; requires_admin_completion?: boolean; preorder_status?: string; [key: string]: unknown };
   incidents: Array<{ id: number }>;
   photos: Array<{ id: number }>;
 };
 type OrdersResponse = { data: ServiceOrder[] };
 type OrderEditForm = {
+  status: string;
   reference_id: string;
   technician_id: string;
   service_type: string;
@@ -59,6 +60,7 @@ type OrderEditForm = {
 };
 
 const emptyEditForm: OrderEditForm = {
+  status: "pendiente",
   reference_id: "",
   technician_id: "",
   service_type: "montaje",
@@ -73,6 +75,7 @@ const emptyEditForm: OrderEditForm = {
 };
 
 const statusLabel: Record<string, string> = {
+  agendado: "Agendado",
   pendiente: "Pendiente",
   en_curso: "En curso",
   inspeccion: "Inspeccion",
@@ -83,6 +86,7 @@ const statusLabel: Record<string, string> = {
 };
 
 const statusTone: Record<string, string> = {
+  agendado: "border-teal-200 bg-teal-50 text-teal-800",
   pendiente: "border-slate-200 bg-slate-50 text-slate-700",
   en_curso: "border-sky-200 bg-sky-50 text-sky-700",
   inspeccion: "border-amber-200 bg-amber-50 text-amber-800",
@@ -91,6 +95,7 @@ const statusTone: Record<string, string> = {
   no_ejecutada: "border-rose-200 bg-rose-50 text-rose-800",
   cancelada: "border-neutral-200 bg-neutral-100 text-neutral-700"
 };
+const editableOrderStatuses = new Set(["agendado", "pendiente", "cancelada"]);
 
 function formatDate(value?: string) {
   if (!value) return "Sin fecha";
@@ -105,7 +110,7 @@ function isToday(value?: string) {
 }
 
 function isOpenStatus(status: string) {
-  return ["pendiente", "en_curso", "inspeccion", "ejecucion"].includes(status);
+  return ["agendado", "pendiente", "en_curso", "inspeccion", "ejecucion"].includes(status);
 }
 
 function isOverdue(order: ServiceOrder) {
@@ -116,6 +121,7 @@ function isOverdue(order: ServiceOrder) {
 function priorityScore(order: ServiceOrder) {
   if (isOverdue(order)) return 0;
   if (order.status === "no_ejecutada") return 1;
+  if (order.status === "agendado") return 2;
   if (["en_curso", "inspeccion", "ejecucion"].includes(order.status)) return 2;
   if (isToday(order.scheduled_date)) return 3;
   if (order.status === "pendiente") return 4;
@@ -123,10 +129,25 @@ function priorityScore(order: ServiceOrder) {
 }
 
 function serviceAction(order: ServiceOrder) {
+  if (requiresAdminCompletion(order)) return "Completar";
+  if (order.status === "agendado") return "Completar";
   if (order.status === "pendiente") return "Iniciar";
   if (["en_curso", "inspeccion", "ejecucion"].includes(order.status)) return "Continuar";
   if (order.status === "no_ejecutada") return "Revisar";
   return "Ver detalle";
+}
+
+function requiresAdminCompletion(order: ServiceOrder) {
+  const withoutTechnician = !order.technician && !order.technician_employee_id && !order.technician_id;
+  return Boolean(order.status === "agendado" || order.metadata?.requires_admin_completion || withoutTechnician || !order.reference_id);
+}
+
+function effectiveOrder(order: ServiceOrder): ServiceOrder {
+  const withoutTechnician = !order.technician && !order.technician_employee_id && !order.technician_id;
+  if (order.status === "pendiente" && withoutTechnician && (order.metadata?.preorder_status === "agendado" || order.metadata?.requires_admin_completion)) {
+    return { ...order, status: "agendado" };
+  }
+  return order;
 }
 
 export default function ServicesPage() {
@@ -138,6 +159,7 @@ export default function ServicesPage() {
   const [query, setQuery] = useState("");
   const [dateScope, setDateScope] = useState("");
   const [evidenceScope, setEvidenceScope] = useState("");
+  const [requestScope, setRequestScope] = useState("");
   const [serviceType, setServiceType] = useState("");
   const [sortBy, setSortBy] = useState("priority");
   const [message, setMessage] = useState("");
@@ -150,7 +172,7 @@ export default function ServicesPage() {
     try {
       setMessage("");
       const response = await api<OrdersResponse>("/api/v1/services/orders?limit=200");
-      setOrders(response.data);
+      setOrders(response.data.map(effectiveOrder));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No fue posible cargar servicios.");
       setOrders([]);
@@ -187,6 +209,7 @@ export default function ServicesPage() {
       const matchesTerm = !term || [order.number, order.customer_name, order.customer_address, order.customer_phone, order.reference?.code, order.reference?.name, order.service_type]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(term))
+      const isExternalRequest = order.status === "agendado" || order.metadata?.public_request === true || order.metadata?.requires_admin_completion === true;
       const matchesDate =
         !dateScope ||
         (dateScope === "today" && isToday(order.scheduled_date)) ||
@@ -198,14 +221,15 @@ export default function ServicesPage() {
         (evidenceScope === "with_evidence" && order.photos.length > 0) ||
         (evidenceScope === "without_evidence" && order.photos.length === 0) ||
         (evidenceScope === "with_incidents" && order.incidents.length > 0);
-      return matchesTerm && (!status || order.status === status) && matchesDate && matchesEvidence && (!serviceType || order.service_type === serviceType);
+      const matchesRequestScope = !requestScope || (requestScope === "external" && isExternalRequest);
+      return matchesTerm && (!status || order.status === status) && matchesDate && matchesEvidence && matchesRequestScope && (!serviceType || order.service_type === serviceType);
     }).sort((a, b) => {
       if (sortBy === "date_asc") return (a.scheduled_date || "9999").localeCompare(b.scheduled_date || "9999");
       if (sortBy === "date_desc") return (b.scheduled_date || "").localeCompare(a.scheduled_date || "");
       if (sortBy === "order") return b.number.localeCompare(a.number);
       return priorityScore(a) - priorityScore(b) || (a.scheduled_date || "9999").localeCompare(b.scheduled_date || "9999");
     });
-  }, [dateScope, evidenceScope, orders, query, serviceType, sortBy, status]);
+  }, [dateScope, evidenceScope, orders, query, requestScope, serviceType, sortBy, status]);
 
   const serviceTypes = useMemo(() => [...new Set(orders.map((order) => order.service_type).filter(Boolean))].sort(), [orders]);
   const editableServiceTypes = serviceTypesCatalog.length ? serviceTypesCatalog : serviceTypes.map((type) => ({ code: type, label: statusLabel[type] || type }));
@@ -213,13 +237,16 @@ export default function ServicesPage() {
     acc[order.status] = (acc[order.status] || 0) + 1;
     return acc;
   }, {}), [orders]);
-  const activeFilters = [status, dateScope, evidenceScope, serviceType].filter(Boolean).length + (query.trim() ? 1 : 0);
+  const activeFilters = [status, dateScope, evidenceScope, requestScope, serviceType].filter(Boolean).length + (query.trim() ? 1 : 0);
+  const externalRequestCompany = typeof window !== "undefined" ? localStorage.getItem("apexos_company_name") || "SCJ" : "SCJ";
+  const externalRequestHref = `/servicios/solicitar?empresa=${encodeURIComponent(externalRequestCompany)}`;
 
   function clearFilters() {
     setQuery("");
     setStatus("");
     setDateScope("");
     setEvidenceScope("");
+    setRequestScope("");
     setServiceType("");
     setSortBy("priority");
   }
@@ -235,6 +262,7 @@ export default function ServicesPage() {
   function openEdit(order: ServiceOrder) {
     setEditingOrder(order);
     setEditForm({
+      status: order.status || "pendiente",
       reference_id: String(order.reference_id || order.reference?.id || ""),
       technician_id: technicianValue(order),
       service_type: order.service_type || "montaje",
@@ -252,18 +280,19 @@ export default function ServicesPage() {
   async function saveEdit() {
     if (!editingOrder || savingEdit) return;
     const required: Array<[keyof OrderEditForm, string]> = [
-      ["reference_id", "referencia"],
-      ["technician_id", "tecnico asignado"],
+      ["status", "estado"],
       ["service_type", "tipo de servicio"],
       ["scheduled_date", "fecha programada"],
-      ["cedi_delivery_date", "fecha CEDI"],
       ["customer_name", "cliente"],
       ["customer_document", "cedula"],
       ["customer_phone", "telefono"],
       ["customer_address", "direccion"],
-      ["invoice_number", "factura o pedido"],
       ["notes", "observaciones"]
     ];
+    if (editForm.status === "pendiente") {
+      required.unshift(["reference_id", "referencia"], ["technician_id", "tecnico asignado"]);
+      required.push(["cedi_delivery_date", "fecha CEDI"]);
+    }
     const missing = required.filter(([key]) => !editForm[key].trim()).map(([, label]) => label);
     if (missing.length) {
       setMessage(`Completa los campos obligatorios: ${missing.join(", ")}.`);
@@ -272,13 +301,16 @@ export default function ServicesPage() {
     setSavingEdit(true);
     setMessage("");
     try {
+      const payload: Partial<OrderEditForm> = { ...editForm };
+      if (!editableOrderStatuses.has(editForm.status)) delete payload.status;
       await api<ServiceOrder>(`/api/v1/services/orders/${editingOrder.id}`, {
         method: "PUT",
         body: JSON.stringify({
-          ...editForm,
+          ...payload,
           metadata: {
             customer_document: editForm.customer_document.trim(),
-            cedi_delivery_date: editForm.cedi_delivery_date
+            cedi_delivery_date: editForm.cedi_delivery_date,
+            requires_admin_completion: editForm.status === "agendado"
           }
         })
       });
@@ -293,8 +325,9 @@ export default function ServicesPage() {
   }
 
   const operational = useMemo(() => {
-    const attention = orders.filter((order) => ["pendiente", "en_curso", "inspeccion", "ejecucion", "no_ejecutada"].includes(order.status));
-    return { attention };
+    const attention = orders.filter((order) => ["agendado", "pendiente", "en_curso", "inspeccion", "ejecucion", "no_ejecutada"].includes(order.status));
+    const publicRequests = orders.filter(requiresAdminCompletion);
+    return { attention, publicRequests };
   }, [orders]);
 
   const mainMessage = operational.attention.length
@@ -302,7 +335,7 @@ export default function ServicesPage() {
     : "La operacion de servicios no tiene pendientes criticos en este momento.";
 
   return (
-    <div className="mx-auto max-w-7xl space-y-5 pb-28 md:pb-8">
+    <div className="apex-page-shell space-y-5 pb-28 md:pb-8">
       <header className="sticky top-0 z-20 -mx-3 border-b border-line bg-paper/95 px-3 py-3 backdrop-blur sm:-mx-4 sm:px-4 md:static md:mx-0 md:border-0 md:bg-transparent md:px-0">
         <div className="flex items-center gap-3">
           <Link className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-line bg-white md:hidden" href="/dashboard" aria-label="Volver al inicio">
@@ -316,26 +349,35 @@ export default function ServicesPage() {
         </div>
       </header>
 
-      <section className="overflow-hidden rounded-md bg-[#081411] text-white shadow-sm">
-        <div className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+      <section className="apex-context-hero">
+        <div className="relative z-10 flex flex-col gap-5 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-teal-100">
+            <div className="apex-eyebrow mb-3">
               <Sparkles size={14} />
               Centro operativo de servicios
             </div>
             <h2 className="max-w-3xl text-2xl font-semibold leading-tight sm:text-3xl">{technicianMode ? "Tu siguiente servicio esta aqui" : "Ordenes listas para gestionar"}</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-white/65">{mainMessage} {technicianMode ? "Selecciona una orden para iniciar o continuar el trabajo." : "Usa los filtros para encontrar rapidamente el siguiente servicio."}</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="apex-guide-chip">1. Revisa prioridad</span>
+              <span className="apex-guide-chip">2. Filtra si necesitas</span>
+              <span className="apex-guide-chip">3. Abre y ejecuta</span>
+            </div>
           </div>
           {!technicianMode ? <div className="grid shrink-0 gap-2 sm:flex sm:flex-wrap">
-            <Link className="dark-primary-action inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-[#081411]" href="/dashboard/servicios/nuevo">
+            <Link className="apex-hero-action inline-flex min-w-0 items-center justify-center gap-2 px-5 text-sm font-semibold" href="/dashboard/servicios/nuevo">
               <Plus className="shrink-0" size={17} />
               <span className="truncate">Nueva orden</span>
             </Link>
-            <Link className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-md border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/dashboard/servicios/referencias">
+            <Link className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href={externalRequestHref} target="_blank">
+              <Sparkles className="shrink-0" size={17} />
+              <span className="truncate">Solicitudes de servicios externas</span>
+            </Link>
+            <Link className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/dashboard/servicios/referencias">
               <Settings2 className="shrink-0" size={17} />
               <span className="truncate">Referencias</span>
             </Link>
-            <Link className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-md border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/dashboard/servicios/reportes">
+            <Link className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/dashboard/servicios/reportes">
               <BarChart3 className="shrink-0" size={17} />
               <span className="truncate">Reportes</span>
             </Link>
@@ -346,7 +388,7 @@ export default function ServicesPage() {
       {message ? <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{message}</div> : null}
 
       <section className="min-w-0 space-y-4">
-        <aside className="min-w-0 rounded-md border border-line bg-white p-3 sm:p-4">
+        <aside className="apex-section-card min-w-0 p-3 sm:p-4">
           <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
             <div>
             <h2 className="font-semibold">{technicianMode ? "Que debes atender primero" : "Atencion prioritaria"}</h2>
@@ -354,6 +396,11 @@ export default function ServicesPage() {
             </div>
             <span className="rounded-md bg-paper px-3 py-1.5 text-xs font-semibold text-neutral-600">{operational.attention.length} por atender</span>
           </div>
+          {operational.publicRequests.length ? (
+            <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+              <strong>{operational.publicRequests.length} solicitud(es) publica(s)</strong> requieren completar referencia, fecha CEDI o tecnico antes de pasar a operacion.
+            </div>
+          ) : null}
           <div className="flex gap-2 overflow-x-auto pb-1">
             {operational.attention.slice(0, 6).map((order) => (
               <Link className="block min-w-[250px] flex-1 rounded-md border border-line p-3 transition hover:border-apex hover:bg-paper" href={`/dashboard/servicios/${order.id}`} key={order.id}>
@@ -362,7 +409,7 @@ export default function ServicesPage() {
                     <p className="truncate text-sm font-semibold">{order.number} · {order.customer_name}</p>
                     <p className="mt-1 truncate text-xs text-neutral-500">{order.reference?.code || "Sin referencia"} · {formatDate(order.scheduled_date)}</p>
                   </div>
-                  <span className={`shrink-0 rounded-md border px-2 py-1 text-[11px] font-semibold ${statusTone[order.status] || "border-line bg-paper"}`}>{statusLabel[order.status] || order.status}</span>
+                  <span className={`shrink-0 rounded-md border px-2 py-1 text-[11px] font-semibold ${requiresAdminCompletion(order) ? "border-amber-200 bg-amber-50 text-amber-800" : statusTone[order.status] || "border-line bg-paper"}`}>{requiresAdminCompletion(order) ? "Por completar" : statusLabel[order.status] || order.status}</span>
                 </div>
               </Link>
             ))}
@@ -370,7 +417,7 @@ export default function ServicesPage() {
           </div>
         </aside>
 
-        <section className="min-w-0 rounded-md border border-line bg-white shadow-sm">
+        <section className="apex-section-card min-w-0">
           <div className="border-b border-line p-3 sm:p-4">
             <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -403,7 +450,7 @@ export default function ServicesPage() {
               ))}
             </div>
 
-            <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
               <label className="relative">
                 <span className="sr-only">Agenda</span>
                 <select className="h-11 w-full appearance-none rounded-md border border-line bg-white px-3 text-sm" value={dateScope} onChange={(event) => setDateScope(event.target.value)}>
@@ -423,6 +470,10 @@ export default function ServicesPage() {
                 <option value="with_evidence">Con evidencia</option>
                 <option value="without_evidence">Sin evidencia</option>
                 <option value="with_incidents">Con novedades</option>
+              </select>
+              <select className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm" value={requestScope} onChange={(event) => setRequestScope(event.target.value)}>
+                <option value="">Todas las solicitudes</option>
+                <option value="external">Solicitudes externas / agendado</option>
               </select>
               <select className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm" value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
                 <option value="priority">Prioridad operativa</option>
@@ -449,6 +500,7 @@ export default function ServicesPage() {
                 <div className="mb-3 flex items-start justify-between gap-2">
                   <div className="flex flex-wrap gap-2">
                     <span className={`rounded-md border px-3 py-2 text-xs font-semibold ${statusTone[order.status] || "border-line bg-paper"}`}>{statusLabel[order.status] || order.status}</span>
+                    {requiresAdminCompletion(order) ? <span className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">Completar solicitud</span> : null}
                     {isOverdue(order) ? <span className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">Vencida</span> : null}
                     {isToday(order.scheduled_date) ? <span className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-700">Hoy</span> : null}
                   </div>
@@ -512,6 +564,7 @@ export default function ServicesPage() {
                         <Link className="font-semibold text-neutral-900 hover:text-apex" href={`/dashboard/servicios/${order.id}`}>{order.number}</Link>
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           <span className={`rounded-md border px-2 py-1 text-[11px] font-semibold ${statusTone[order.status] || "border-line bg-paper"}`}>{statusLabel[order.status] || order.status}</span>
+                          {requiresAdminCompletion(order) ? <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-800">Completar solicitud</span> : null}
                           {isOverdue(order) ? <span className="rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-700">Vencida</span> : null}
                           {isToday(order.scheduled_date) ? <span className="rounded-md border border-sky-200 bg-sky-50 px-2 py-1 text-[11px] font-semibold text-sky-700">Hoy</span> : null}
                         </div>
@@ -572,14 +625,23 @@ export default function ServicesPage() {
             </div>
             <section className="grid gap-3 md:grid-cols-2">
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
-                Referencia *
+                Estado *
+                <select className="h-11 rounded-md border border-line bg-white px-3" value={editForm.status} onChange={(event) => setEditForm((prev) => ({ ...prev, status: event.target.value }))}>
+                  <option value="agendado">Agendado - preorden desde solicitud</option>
+                  <option value="pendiente">Pendiente - listo para tecnico</option>
+                  {!editableOrderStatuses.has(editForm.status) ? <option value={editForm.status}>{statusLabel[editForm.status] || editForm.status}</option> : null}
+                  <option value="cancelada">Cancelada</option>
+                </select>
+              </label>
+              <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+                Referencia {editForm.status === "pendiente" ? "*" : "(opcional hasta pasar a pendiente)"}
                 <select className="h-11 rounded-md border border-line bg-white px-3" value={editForm.reference_id} onChange={(event) => setEditForm((prev) => ({ ...prev, reference_id: event.target.value }))}>
                   <option value="">Selecciona una referencia</option>
                   {references.map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}
                 </select>
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
-                Tecnico responsable *
+                Tecnico responsable {editForm.status === "pendiente" ? "*" : "(opcional en agendado)"}
                 <select className="h-11 rounded-md border border-line bg-white px-3" value={editForm.technician_id} onChange={(event) => setEditForm((prev) => ({ ...prev, technician_id: event.target.value }))}>
                   <option value="">Selecciona un tecnico</option>
                   {technicians.map((technician) => <option key={technician.id} value={technician.id}>{technician.code || "TEC"} - {technician.user?.name || technician.user?.email || "Tecnico"}</option>)}
@@ -596,11 +658,11 @@ export default function ServicesPage() {
                 <input className="h-11 rounded-md border border-line px-3" type="date" value={editForm.scheduled_date} onChange={(event) => setEditForm((prev) => ({ ...prev, scheduled_date: event.target.value }))} />
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
-                Entrega CEDI *
+                Entrega CEDI {editForm.status === "pendiente" ? "*" : "(opcional en agendado)"}
                 <input className="h-11 rounded-md border border-line px-3" type="date" value={editForm.cedi_delivery_date} onChange={(event) => setEditForm((prev) => ({ ...prev, cedi_delivery_date: event.target.value }))} />
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
-                Factura o pedido *
+                Factura o pedido (opcional)
                 <input className="h-11 rounded-md border border-line px-3" value={editForm.invoice_number} onChange={(event) => setEditForm((prev) => ({ ...prev, invoice_number: event.target.value }))} />
               </label>
             </section>
