@@ -86,6 +86,11 @@ function orderNumber() {
   return `OS-SOL-${stamp}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 }
 
+function isStatusConstraintError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error || "");
+  return message.includes("service_orders_status_check") || message.includes("violates check constraint");
+}
+
 async function supabaseRequest<T>(path: string, init: RequestInit = {}) {
   const config = supabaseConfig();
   if (!config.url || !config.anonKey || !config.serviceRoleKey) {
@@ -159,36 +164,51 @@ export async function POST(request: NextRequest) {
     const productReference = clean(body.product_reference) || clean(body.product_description);
     const referenceId = await resolveReferenceId(companyId, productReference);
     const notes = clean(body.notes) || "Solicitud creada por formulario publico. Requiere revision administrativa.";
-    const inserted = await supabaseRequest<Array<{ id: string; number: string }>>("/rest/v1/service_orders?select=id,number", {
+    const metadata: Record<string, unknown> = {
+      created_from: "public_service_request",
+      public_request: true,
+      requires_admin_completion: true,
+      preorder_status: "agendado",
+      customer_document: clean(body.customer_document),
+      customer_email: clean(body.customer_email),
+      product_reference: clean(body.product_reference),
+      product_description: clean(body.product_description),
+      preferred_date: clean(body.preferred_date).slice(0, 10),
+      address: body.address || {},
+      received_at: new Date().toISOString()
+    };
+    const payload = {
+      company_id: companyId,
+      number: orderNumber(),
+      reference_id: referenceId,
+      technician_employee_id: null,
+      technician_user_id: null,
+      service_type: clean(body.service_type) || "montaje",
+      status: "agendado",
+      customer_name: clean(body.customer_name),
+      customer_address: clean(body.customer_address),
+      customer_phone: clean(body.customer_phone),
+      invoice_number: clean(body.invoice_number) || null,
+      scheduled_date: clean(body.preferred_date).slice(0, 10),
+      notes,
+      metadata
+    };
+    const insertOrder = (nextPayload: typeof payload) => supabaseRequest<Array<{ id: string; number: string }>>("/rest/v1/service_orders?select=id,number", {
       method: "POST",
       headers: { Prefer: "return=representation" },
-      body: JSON.stringify({
-        company_id: companyId,
-        number: orderNumber(),
-        reference_id: referenceId,
-        technician_employee_id: null,
-        technician_user_id: null,
-        service_type: clean(body.service_type) || "montaje",
-        status: "agendado",
-        customer_name: clean(body.customer_name),
-        customer_address: clean(body.customer_address),
-        customer_phone: clean(body.customer_phone),
-        invoice_number: clean(body.invoice_number) || null,
-        scheduled_date: clean(body.preferred_date).slice(0, 10),
-        notes,
+      body: JSON.stringify(nextPayload)
+    });
+    const inserted = await insertOrder(payload).catch((error) => {
+      if (!isStatusConstraintError(error)) throw error;
+      return insertOrder({
+        ...payload,
+        status: "pendiente",
         metadata: {
-          created_from: "public_service_request",
-          public_request: true,
-          requires_admin_completion: true,
-          customer_document: clean(body.customer_document),
-          customer_email: clean(body.customer_email),
-          product_reference: clean(body.product_reference),
-          product_description: clean(body.product_description),
-          preferred_date: clean(body.preferred_date).slice(0, 10),
-          address: body.address || {},
-          received_at: new Date().toISOString()
+          ...metadata,
+          status_compatibility_fallback: true,
+          status_compatibility_reason: "Supabase constraint pending agendado migration"
         }
-      })
+      });
     });
 
     const order = inserted[0];

@@ -39,7 +39,7 @@ type ServiceOrder = {
   invoice_number?: string;
   scheduled_date: string;
   notes?: string;
-  metadata?: { customer_document?: string; cedi_delivery_date?: string; public_request?: boolean; requires_admin_completion?: boolean; [key: string]: unknown };
+  metadata?: { customer_document?: string; cedi_delivery_date?: string; public_request?: boolean; requires_admin_completion?: boolean; preorder_status?: string; [key: string]: unknown };
   incidents: Array<{ id: number }>;
   photos: Array<{ id: number }>;
 };
@@ -142,6 +142,14 @@ function requiresAdminCompletion(order: ServiceOrder) {
   return Boolean(order.status === "agendado" || order.metadata?.requires_admin_completion || withoutTechnician || !order.reference_id);
 }
 
+function effectiveOrder(order: ServiceOrder): ServiceOrder {
+  const withoutTechnician = !order.technician && !order.technician_employee_id && !order.technician_id;
+  if (order.status === "pendiente" && withoutTechnician && (order.metadata?.preorder_status === "agendado" || order.metadata?.requires_admin_completion)) {
+    return { ...order, status: "agendado" };
+  }
+  return order;
+}
+
 export default function ServicesPage() {
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [references, setReferences] = useState<ServiceReference[]>([]);
@@ -163,7 +171,7 @@ export default function ServicesPage() {
     try {
       setMessage("");
       const response = await api<OrdersResponse>("/api/v1/services/orders?limit=200");
-      setOrders(response.data);
+      setOrders(response.data.map(effectiveOrder));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No fue posible cargar servicios.");
       setOrders([]);

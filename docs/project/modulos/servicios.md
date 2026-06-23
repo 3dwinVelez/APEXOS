@@ -56,6 +56,7 @@
 - Al finalizar, el formulario muestra una pantalla amplia de confirmacion con el numero de seguimiento y accion principal para realizar otra solicitud.
 - El estado `agendado` representa preordenes creadas desde el link publico. Administracion puede conservarlas sin tecnico mientras valida datos; al cambiarlas a `pendiente`, la asignacion de tecnico responsable se vuelve obligatoria.
 - La migracion `20260623173000_service_orders_agendado_status.sql` amplia el constraint de Supabase para permitir `agendado` antes de `pendiente`.
+- Mientras esa migracion no este aplicada en el proyecto Supabase remoto, la API publica reintenta la creacion como `pendiente` con metadata `preorder_status=agendado`; el monitor lo normaliza visualmente como `Agendado` para no bloquear solicitudes.
 - Por seguridad, el endpoint publico no acepta `company_id` arbitrario desde el navegador.
 - El lobby de Servicios incorpora acceso a `Formulario publico` para que administracion pueda copiar o abrir el enlace rapidamente.
 - Las ordenes creadas desde el formulario publico aparecen en el lobby como `Por completar` o `Completar solicitud`, indicando que administracion debe completar referencia, fecha CEDI o tecnico antes de pasar a operacion.

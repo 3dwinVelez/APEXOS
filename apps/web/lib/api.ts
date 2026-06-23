@@ -194,6 +194,17 @@ function kpisForOrders(orders: Array<{ status?: string }>) {
   };
 }
 
+function effectiveServiceOrderStatus(order: { status?: string; technician_employee_id?: string; metadata?: AnyRow }) {
+  if (
+    order.status === "pendiente"
+    && !order.technician_employee_id
+    && (order.metadata?.preorder_status === "agendado" || order.metadata?.requires_admin_completion === true)
+  ) {
+    return "agendado";
+  }
+  return order.status || "pendiente";
+}
+
 const adminPermissionCatalog = [
   { key: "dashboard", label: "Inicio / Dashboard", group: "core", module: "brain", submodule: "home", actions: ["access", "view", "reports"] },
   { key: "usuarios", label: "Usuarios", group: "administracion", module: "admin", submodule: "users", actions: ["access", "view", "create", "edit", "delete", "export", "import", "attach", "download", "sensitive", "manage_users"] },
@@ -1652,8 +1663,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       if (!allowedStatuses.has(nextStatus)) throw new Error("Selecciona un estado valido para la orden.");
       const technicianReady = Boolean(patch.technician_employee_id || current.technician_employee_id);
       if (nextStatus === "pendiente" && !technicianReady) throw new Error("Asigna un tecnico responsable antes de pasar la preorden a pendiente.");
-      patch.status = nextStatus;
+      if (nextStatus !== "agendado" || current.status === "agendado") patch.status = nextStatus;
       nextMetadata.requires_admin_completion = nextStatus === "agendado";
+      nextMetadata.preorder_status = nextStatus === "agendado" ? "agendado" : "";
       if (nextStatus === "pendiente") {
         nextMetadata.scheduled_from_public_request_at = new Date().toISOString();
       }
@@ -1923,6 +1935,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         manuals: Array.isArray(reference.metadata?.manuals) ? reference.metadata.manuals : []
       } : null;
       const technician = technicians.find((item) => item.id === order.technician_employee_id);
+      const effectiveStatus = effectiveServiceOrderStatus(order);
       return {
         ...order,
         technician: technician ? {
@@ -1935,7 +1948,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         reference: referenceWithParts,
         reference_id: order.reference_id || "",
         service_type: order.service_type || "servicio",
-        status: order.status || "pendiente",
+        status: effectiveStatus,
         customer_phone: order.customer_phone || "",
         scheduled_date: order.scheduled_date || "",
         incidents: incidents.filter((item) => item.order_id === order.id),
