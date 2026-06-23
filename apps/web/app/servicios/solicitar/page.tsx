@@ -2,7 +2,7 @@
 
 import { ArrowRight, CheckCircle2, Home, MapPin, PackageSearch, Send, ShieldCheck, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 type FormState = {
@@ -12,22 +12,18 @@ type FormState = {
   customer_email: string;
   invoice_number: string;
   service_type: string;
-  preferred_date: string;
-  product_reference: string;
-  product_description: string;
-  road_type: string;
-  road_main: string;
-  road_letter: string;
-  road_suffix: string;
-  cross_number: string;
-  door_number: string;
-  address_extra: string;
-  property_type: string;
-  property_detail: string;
-  neighborhood: string;
-  city: string;
-  department: string;
+  reference_id: string;
+  customer_address: string;
   notes: string;
+};
+
+type PublicServiceReference = {
+  id: string;
+  code: string;
+  name: string;
+  category?: string;
+  brand?: string;
+  model?: string;
 };
 
 const initialForm: FormState = {
@@ -37,21 +33,8 @@ const initialForm: FormState = {
   customer_email: "",
   invoice_number: "",
   service_type: "montaje",
-  preferred_date: "",
-  product_reference: "",
-  product_description: "",
-  road_type: "Calle",
-  road_main: "",
-  road_letter: "",
-  road_suffix: "",
-  cross_number: "",
-  door_number: "",
-  address_extra: "",
-  property_type: "Apartamento",
-  property_detail: "",
-  neighborhood: "",
-  city: "Medellin",
-  department: "Antioquia",
+  reference_id: "",
+  customer_address: "",
   notes: ""
 };
 
@@ -62,39 +45,18 @@ const steps = [
   { title: "Confirmar", icon: ShieldCheck }
 ];
 
-const medellinNeighborhoods = [
-  "Laureles",
-  "Belen",
-  "El Poblado",
-  "Envigado",
-  "Sabaneta",
-  "Itagui",
-  "Robledo",
-  "Manrique",
-  "Buenos Aires",
-  "La America",
-  "Castilla",
-  "Aranjuez"
-];
-
-const valleyCities = ["Medellin", "Envigado", "Sabaneta", "Itagui", "Bello", "La Estrella", "Copacabana", "Girardota", "Barbosa", "Caldas"];
-
 function onlyNumbers(value: string) {
   return value.replace(/\D/g, "");
 }
 
 function buildAddress(form: FormState) {
-  const first = [form.road_type, form.road_main, form.road_letter, form.road_suffix].filter(Boolean).join(" ");
-  const placeNumber = form.cross_number && form.door_number ? `# ${form.cross_number} - ${form.door_number}` : "";
-  const detail = [form.property_type, form.property_detail, form.address_extra].filter(Boolean).join(" ");
-  const location = [form.neighborhood ? `Barrio ${form.neighborhood}` : "", form.city, form.department].filter(Boolean).join(", ");
-  return [first, placeNumber, detail, location].filter(Boolean).join(", ");
+  return form.customer_address.trim();
 }
 
 function requiredForStep(step: number): Array<keyof FormState> {
   if (step === 0) return ["customer_name", "customer_document", "customer_phone"];
-  if (step === 1) return ["road_type", "road_main", "cross_number", "door_number", "property_type", "property_detail", "neighborhood", "city"];
-  if (step === 2) return ["service_type", "preferred_date", "product_description"];
+  if (step === 1) return ["customer_address"];
+  if (step === 2) return ["service_type", "reference_id"];
   return [];
 }
 
@@ -114,7 +76,30 @@ function PublicServiceRequestContent() {
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [created, setCreated] = useState<{ number: string } | null>(null);
+  const [references, setReferences] = useState<PublicServiceReference[]>([]);
+  const [loadingReferences, setLoadingReferences] = useState(true);
   const addressPreview = useMemo(() => buildAddress(form), [form]);
+  const selectedReference = useMemo(() => references.find((item) => item.id === form.reference_id), [form.reference_id, references]);
+
+  useEffect(() => {
+    let active = true;
+    const requestPath = companyName ? `/api/public/service-requests?empresa=${encodeURIComponent(companyName)}` : "/api/public/service-requests";
+    setLoadingReferences(true);
+    fetch(requestPath)
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error("No fue posible cargar las referencias.")))
+      .then((body) => {
+        if (active) setReferences(Array.isArray(body.references) ? body.references : []);
+      })
+      .catch(() => {
+        if (active) setReferences([]);
+      })
+      .finally(() => {
+        if (active) setLoadingReferences(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [companyName]);
 
   function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -156,26 +141,11 @@ function PublicServiceRequestContent() {
           company_name: companyName,
           invoice_number: form.invoice_number,
           service_type: form.service_type,
-          preferred_date: form.preferred_date,
-          product_reference: form.product_reference,
-          product_description: form.product_description,
+          reference_id: form.reference_id,
+          product_reference: selectedReference?.code || "",
+          product_description: selectedReference ? `${selectedReference.code} - ${selectedReference.name}` : "",
           customer_address: addressPreview,
-          notes: form.notes,
-          address: {
-            road_type: form.road_type,
-            road_main: form.road_main,
-            road_letter: form.road_letter,
-            road_suffix: form.road_suffix,
-            cross_number: form.cross_number,
-            door_number: form.door_number,
-            property_type: form.property_type,
-            property_detail: form.property_detail,
-            address_extra: form.address_extra,
-            neighborhood: form.neighborhood,
-            city: form.city,
-            department: form.department,
-            normalized: addressPreview
-          }
+          notes: form.notes
         })
       });
       const body = await response.json().catch(() => ({}));
@@ -225,7 +195,7 @@ function PublicServiceRequestContent() {
                 <Home size={14} /> Solicitud de servicio
               </div>
               <h1 className="max-w-2xl text-3xl font-bold leading-tight sm:text-4xl">Agenda tu instalacion de forma clara y rapida</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/70">Te guiaremos paso a paso. La direccion se arma por partes para evitar errores y facilitar la visita tecnica.</p>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/70">Te guiaremos paso a paso con datos simples para crear la solicitud sin usuario ni clave.</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/10 p-4 text-sm text-teal-50">
               <p className="font-semibold">Tiempo estimado</p>
@@ -282,27 +252,15 @@ function PublicServiceRequestContent() {
             {step === 1 ? (
               <div className="space-y-5">
                 <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.18em] text-apex">Direccion guiada</p>
-                  <h2 className="mt-2 text-2xl font-bold">Construyamos la direccion sin ambiguedad</h2>
-                  <p className="mt-2 text-sm text-neutral-600">Usa la forma que normalmente damos en Medellin: via principal, cruce, numero de la casa o apartamento, barrio y una sena facil de ubicar.</p>
+                  <p className="text-sm font-bold uppercase tracking-[0.18em] text-apex">Direccion</p>
+                  <h2 className="mt-2 text-2xl font-bold">Indicanos donde se realizara el servicio</h2>
+                  <p className="mt-2 text-sm text-neutral-600">Escribela como la das normalmente en Medellin: via, numero, interior o torre, barrio, municipio y una referencia para llegar.</p>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-4">
-                  <Field label="Tipo de via *"><select className="apex-public-input" value={form.road_type} onChange={(event) => setField("road_type", event.target.value)}>{["Calle", "Carrera", "Avenida", "Diagonal", "Transversal", "Circular", "Autopista", "Kilometro", "Vereda"].map((item) => <option key={item}>{item}</option>)}</select></Field>
-                  <Field label="Numero de la via *"><input className="apex-public-input" placeholder="ej. 43" value={form.road_main} onChange={(event) => setField("road_main", event.target.value)} /></Field>
-                  <Field label="Letra"><input className="apex-public-input" placeholder="A, B, C" value={form.road_letter} onChange={(event) => setField("road_letter", event.target.value.toUpperCase())} /></Field>
-                  <Field label="Complemento"><select className="apex-public-input" value={form.road_suffix} onChange={(event) => setField("road_suffix", event.target.value)}><option value="">Sin complemento</option><option>Sur</option><option>Norte</option><option>Este</option><option>Oeste</option><option>Bis</option></select></Field>
-                  <Field label="Via o calle que cruza *"><input className="apex-public-input" placeholder="ej. 22" value={form.cross_number} onChange={(event) => setField("cross_number", event.target.value)} /></Field>
-                  <Field label="Numero de casa o apto *"><input className="apex-public-input" placeholder="ej. 90, 906, 301" value={form.door_number} onChange={(event) => setField("door_number", event.target.value)} /></Field>
-                  <Field label="Tipo de lugar *"><select className="apex-public-input" value={form.property_type} onChange={(event) => setField("property_type", event.target.value)}>{["Casa", "Apartamento", "Unidad residencial", "Torre", "Local", "Oficina", "Bodega"].map((item) => <option key={item}>{item}</option>)}</select></Field>
-                  <Field label="Interior o indicacion *"><input className="apex-public-input" placeholder="apto 301, torre 2, porteria" value={form.property_detail} onChange={(event) => setField("property_detail", event.target.value)} /></Field>
-                  <Field label="Barrio o sector *"><input className="apex-public-input" list="medellin-neighborhoods" placeholder="ej. Laureles, Belen, El Poblado" value={form.neighborhood} onChange={(event) => setField("neighborhood", event.target.value)} /></Field>
-                  <Field label="Municipio *"><select className="apex-public-input" value={form.city} onChange={(event) => setField("city", event.target.value)}>{valleyCities.map((item) => <option key={item}>{item}</option>)}</select></Field>
-                  <Field label="Departamento"><input className="apex-public-input" value={form.department} onChange={(event) => setField("department", event.target.value)} /></Field>
-                  <Field label="Sena para llegar"><input className="apex-public-input" placeholder="cerca al parque, porteria, color de fachada" value={form.address_extra} onChange={(event) => setField("address_extra", event.target.value)} /></Field>
+                <div className="grid gap-3">
+                  <Field label="Direccion completa *">
+                    <textarea className="apex-public-input min-h-32 py-3" placeholder="Ej. Carrera 43 C Sur # 22 - 901, apartamento torre 5, cerca al D1, barrio La Magnolia, Envigado" value={form.customer_address} onChange={(event) => setField("customer_address", event.target.value)} />
+                  </Field>
                 </div>
-                <datalist id="medellin-neighborhoods">
-                  {medellinNeighborhoods.map((item) => <option key={item} value={item} />)}
-                </datalist>
                 <div className="rounded-2xl border border-apex/20 bg-apex/10 p-4">
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-apex">Asi quedara registrada</p>
                   <p className="mt-2 font-semibold">{addressPreview || "Completa los datos de direccion."}</p>
@@ -319,11 +277,15 @@ function PublicServiceRequestContent() {
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Field label="Factura o pedido (opcional)"><input className="apex-public-input" placeholder="Si lo tienes a la mano" value={form.invoice_number} onChange={(event) => setField("invoice_number", event.target.value)} /></Field>
                   <Field label="Tipo de servicio *"><select className="apex-public-input" value={form.service_type} onChange={(event) => setField("service_type", event.target.value)}><option value="montaje">Montaje</option><option value="desmontaje">Desmontaje</option><option value="ambos">Montaje y desmontaje</option><option value="garantia">Garantia</option></select></Field>
-                  <Field label="Fecha tentativa *"><input className="apex-public-input" type="date" value={form.preferred_date} onChange={(event) => setField("preferred_date", event.target.value)} /></Field>
-                  <Field label="Codigo o referencia"><input className="apex-public-input" value={form.product_reference} onChange={(event) => setField("product_reference", event.target.value)} /></Field>
-                  <Field label="Producto o descripcion *"><input className="apex-public-input" placeholder="ej. Cocina integral, closet, mueble..." value={form.product_description} onChange={(event) => setField("product_description", event.target.value)} /></Field>
+                  <Field label="Referencia del producto *">
+                    <select className="apex-public-input" disabled={loadingReferences} value={form.reference_id} onChange={(event) => setField("reference_id", event.target.value)}>
+                      <option value="">{loadingReferences ? "Cargando referencias..." : "Selecciona una referencia"}</option>
+                      {references.map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}
+                    </select>
+                  </Field>
                   <Field label="Observaciones"><textarea className="apex-public-input min-h-28 py-3" value={form.notes} onChange={(event) => setField("notes", event.target.value)} /></Field>
                 </div>
+                {!loadingReferences && !references.length ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">No encontramos referencias activas para esta empresa. Activa el maestro de referencias antes de recibir solicitudes externas.</div> : null}
               </div>
             ) : null}
 
@@ -337,9 +299,8 @@ function PublicServiceRequestContent() {
                   <Summary label="Cliente" value={`${form.customer_name} - CC ${form.customer_document}`} />
                   <Summary label="Contacto" value={`${form.customer_phone}${form.customer_email ? ` / ${form.customer_email}` : ""}`} />
                   <Summary label="Direccion" value={addressPreview} />
-                  <Summary label="Servicio" value={`${form.service_type} - ${form.product_description}`} />
+                  <Summary label="Servicio" value={`${form.service_type} - ${selectedReference ? `${selectedReference.code} ${selectedReference.name}` : "Sin referencia"}`} />
                   <Summary label="Factura / pedido" value={form.invoice_number || "Sin registrar por ahora"} />
-                  <Summary label="Fecha tentativa" value={form.preferred_date} />
                 </div>
               </div>
             ) : null}

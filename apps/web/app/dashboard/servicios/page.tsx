@@ -38,6 +38,8 @@ type ServiceOrder = {
   customer_phone: string;
   invoice_number?: string;
   scheduled_date: string;
+  created_at?: string;
+  closed_at?: string;
   notes?: string;
   metadata?: { customer_document?: string; cedi_delivery_date?: string; public_request?: boolean; requires_admin_completion?: boolean; preorder_status?: string; [key: string]: unknown };
   incidents: Array<{ id: number }>;
@@ -104,6 +106,51 @@ function formatDate(value?: string) {
   return date.toLocaleDateString("es-CO", { day: "2-digit", month: "short" });
 }
 
+function localDateOnly(value?: string) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function businessDaysElapsed(fromValue?: string, toValue?: string) {
+  const from = localDateOnly(fromValue);
+  const to = localDateOnly(toValue || new Date().toISOString());
+  if (!from || !to || to <= from) return 0;
+  let count = 0;
+  const cursor = new Date(from);
+  cursor.setDate(cursor.getDate() + 1);
+  while (cursor <= to) {
+    const day = cursor.getDay();
+    if (day !== 0 && day !== 6) count += 1;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return count;
+}
+
+function slaInfo(order: ServiceOrder) {
+  const stopDate = order.status === "cerrada" && order.closed_at ? order.closed_at : undefined;
+  const remaining = 4 - businessDaysElapsed(order.created_at || order.scheduled_date, stopDate);
+  const tone = remaining >= 3
+    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+    : remaining === 2
+      ? "border-amber-200 bg-amber-50 text-amber-800"
+      : "border-rose-200 bg-rose-50 text-rose-800";
+  const label = remaining >= 0 ? `${remaining} dia${remaining === 1 ? "" : "s"}` : `${remaining} dias`;
+  return { remaining, tone, label };
+}
+
+function orderSequence(value?: string) {
+  const match = String(value || "").match(/(\d+)(?!.*\d)/);
+  return match ? Number(match[1]) : 0;
+}
+
+function newestFirst(a: ServiceOrder, b: ServiceOrder) {
+  const dateCompare = String(b.created_at || "").localeCompare(String(a.created_at || ""));
+  if (dateCompare) return dateCompare;
+  return orderSequence(b.number) - orderSequence(a.number);
+}
+
 function isToday(value?: string) {
   if (!value) return false;
   return value.slice(0, 10) === new Date().toISOString().slice(0, 10);
@@ -119,6 +166,9 @@ function isOverdue(order: ServiceOrder) {
 }
 
 function priorityScore(order: ServiceOrder) {
+  const sla = slaInfo(order);
+  if (isOpenStatus(order.status) && sla.remaining < 0) return -2;
+  if (isOpenStatus(order.status) && sla.remaining <= 1) return -1;
   if (isOverdue(order)) return 0;
   if (order.status === "no_ejecutada") return 1;
   if (order.status === "agendado") return 2;
@@ -150,6 +200,36 @@ function effectiveOrder(order: ServiceOrder): ServiceOrder {
   return order;
 }
 
+function orderKey(order: ServiceOrder) {
+  return String(order.id || order.number || "").trim();
+}
+
+function mergeOrders(orders: ServiceOrder[]) {
+  const byId = new Map<string, ServiceOrder>();
+  const byNumber = new Set<string>();
+  for (const order of orders) {
+    const id = orderKey(order);
+    const number = String(order.number || "").trim();
+    if ((id && byId.has(id)) || (number && byNumber.has(number))) continue;
+    if (id) byId.set(id, order);
+    if (number) byNumber.add(number);
+  }
+  return Array.from(byId.values()).sort(newestFirst);
+}
+
+async function loadSupabaseMonitorOrders() {
+  if (typeof window === "undefined") return [];
+  const token = localStorage.getItem("token") || "";
+  if (!token) return [];
+  const companyName = localStorage.getItem("apexos_company_name") || localStorage.getItem("company_name") || "SCJ";
+  const response = await fetch(`/api/services/monitor-orders?empresa=${encodeURIComponent(companyName)}&limit=200`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!response.ok) return [];
+  const body = await response.json() as OrdersResponse;
+  return Array.isArray(body.data) ? body.data : [];
+}
+
 export default function ServicesPage() {
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [references, setReferences] = useState<ServiceReference[]>([]);
@@ -161,7 +241,7 @@ export default function ServicesPage() {
   const [evidenceScope, setEvidenceScope] = useState("");
   const [requestScope, setRequestScope] = useState("");
   const [serviceType, setServiceType] = useState("");
-  const [sortBy, setSortBy] = useState("priority");
+  const [sortBy, setSortBy] = useState("newest");
   const [message, setMessage] = useState("");
   const [technicianMode, setTechnicianMode] = useState(false);
   const [editingOrder, setEditingOrder] = useState<ServiceOrder | null>(null);
@@ -171,8 +251,14 @@ export default function ServicesPage() {
   async function load() {
     try {
       setMessage("");
-      const response = await api<OrdersResponse>("/api/v1/services/orders?limit=200");
-      setOrders(response.data.map(effectiveOrder));
+      const [apiResult, supabaseResult] = await Promise.allSettled([
+        api<OrdersResponse>("/api/v1/services/orders?limit=200"),
+        loadSupabaseMonitorOrders()
+      ]);
+      const apiOrders = apiResult.status === "fulfilled" ? apiResult.value.data : [];
+      const supabaseOrders = supabaseResult.status === "fulfilled" ? supabaseResult.value : [];
+      if (!apiOrders.length && !supabaseOrders.length && apiResult.status === "rejected") throw apiResult.reason;
+      setOrders(mergeOrders([...supabaseOrders, ...apiOrders]).map(effectiveOrder));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No fue posible cargar servicios.");
       setOrders([]);
@@ -224,10 +310,11 @@ export default function ServicesPage() {
       const matchesRequestScope = !requestScope || (requestScope === "external" && isExternalRequest);
       return matchesTerm && (!status || order.status === status) && matchesDate && matchesEvidence && matchesRequestScope && (!serviceType || order.service_type === serviceType);
     }).sort((a, b) => {
+      if (sortBy === "newest") return newestFirst(a, b);
       if (sortBy === "date_asc") return (a.scheduled_date || "9999").localeCompare(b.scheduled_date || "9999");
       if (sortBy === "date_desc") return (b.scheduled_date || "").localeCompare(a.scheduled_date || "");
-      if (sortBy === "order") return b.number.localeCompare(a.number);
-      return priorityScore(a) - priorityScore(b) || (a.scheduled_date || "9999").localeCompare(b.scheduled_date || "9999");
+      if (sortBy === "order") return orderSequence(b.number) - orderSequence(a.number) || b.number.localeCompare(a.number);
+      return priorityScore(a) - priorityScore(b) || newestFirst(a, b);
     });
   }, [dateScope, evidenceScope, orders, query, requestScope, serviceType, sortBy, status]);
 
@@ -248,7 +335,7 @@ export default function ServicesPage() {
     setEvidenceScope("");
     setRequestScope("");
     setServiceType("");
-    setSortBy("priority");
+    setSortBy("newest");
   }
 
   function technicianValue(order: ServiceOrder) {
@@ -411,6 +498,7 @@ export default function ServicesPage() {
                   </div>
                   <span className={`shrink-0 rounded-md border px-2 py-1 text-[11px] font-semibold ${requiresAdminCompletion(order) ? "border-amber-200 bg-amber-50 text-amber-800" : statusTone[order.status] || "border-line bg-paper"}`}>{requiresAdminCompletion(order) ? "Por completar" : statusLabel[order.status] || order.status}</span>
                 </div>
+                <span className={`mt-3 inline-flex rounded-md border px-2 py-1 text-[11px] font-semibold ${slaInfo(order).tone}`}>SLA {slaInfo(order).label}</span>
               </Link>
             ))}
             {!operational.attention.length ? <p className="rounded-md bg-paper p-3 text-sm text-neutral-500">Sin servicios abiertos para atender.</p> : null}
@@ -443,9 +531,9 @@ export default function ServicesPage() {
 
             <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
               <button className={`shrink-0 rounded-md border px-3 py-2 text-xs font-semibold transition ${!status ? "border-apex bg-apex text-white" : "border-line bg-white text-neutral-600 hover:border-apex"}`} onClick={() => setStatus("")} type="button">Todas <span className="ml-1 opacity-70">{orders.length}</span></button>
-              {Object.entries(statusLabel).filter(([key]) => statusCounts[key]).map(([key, label]) => (
+              {Object.entries(statusLabel).map(([key, label]) => (
                 <button className={`shrink-0 rounded-md border px-3 py-2 text-xs font-semibold transition ${status === key ? "border-apex bg-apex text-white" : "border-line bg-white text-neutral-600 hover:border-apex"}`} key={key} onClick={() => setStatus(key)} type="button">
-                  {label} <span className="ml-1 opacity-70">{statusCounts[key]}</span>
+                  {label} <span className="ml-1 opacity-70">{statusCounts[key] || 0}</span>
                 </button>
               ))}
             </div>
@@ -476,10 +564,11 @@ export default function ServicesPage() {
                 <option value="external">Solicitudes externas / agendado</option>
               </select>
               <select className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm" value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
+                <option value="newest">Mas recientes primero</option>
                 <option value="priority">Prioridad operativa</option>
                 <option value="date_asc">Fecha mas cercana</option>
                 <option value="date_desc">Fecha mas lejana</option>
-                <option value="order">Orden mas reciente</option>
+                <option value="order">Consecutivo mayor</option>
               </select>
             </div>
           </div>
@@ -503,6 +592,7 @@ export default function ServicesPage() {
                     {requiresAdminCompletion(order) ? <span className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">Completar solicitud</span> : null}
                     {isOverdue(order) ? <span className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">Vencida</span> : null}
                     {isToday(order.scheduled_date) ? <span className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-700">Hoy</span> : null}
+                    <span className={`rounded-md border px-3 py-2 text-xs font-semibold ${slaInfo(order).tone}`}>SLA {slaInfo(order).label}</span>
                   </div>
                   <span className="min-w-0 truncate text-right text-xs font-semibold text-neutral-500">{order.number}</span>
                 </div>
@@ -567,6 +657,7 @@ export default function ServicesPage() {
                           {requiresAdminCompletion(order) ? <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-800">Completar solicitud</span> : null}
                           {isOverdue(order) ? <span className="rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-700">Vencida</span> : null}
                           {isToday(order.scheduled_date) ? <span className="rounded-md border border-sky-200 bg-sky-50 px-2 py-1 text-[11px] font-semibold text-sky-700">Hoy</span> : null}
+                          <span className={`rounded-md border px-2 py-1 text-[11px] font-semibold ${slaInfo(order).tone}`}>SLA {slaInfo(order).label}</span>
                         </div>
                       </td>
                       <td className="max-w-[300px] px-4 py-3 align-top">
@@ -581,6 +672,7 @@ export default function ServicesPage() {
                       <td className="px-4 py-3 align-top">
                         <p className="font-medium text-neutral-800">{formatDate(order.scheduled_date)}</p>
                         <p className="mt-1 text-xs text-neutral-500">{isOverdue(order) ? "Requiere atencion" : isToday(order.scheduled_date) ? "Programada para hoy" : "Agenda registrada"}</p>
+                        <p className={`mt-2 inline-flex rounded-md border px-2 py-1 text-[11px] font-semibold ${slaInfo(order).tone}`}>{slaInfo(order).label} habiles disponibles</p>
                       </td>
                       <td className="px-4 py-3 text-center align-top">
                         <div className="inline-flex items-center gap-2 rounded-md bg-paper px-3 py-2 text-xs font-medium text-neutral-600">
