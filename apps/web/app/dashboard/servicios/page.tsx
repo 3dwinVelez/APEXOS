@@ -267,7 +267,6 @@ export default function ServicesPage() {
       ["customer_document", "cedula"],
       ["customer_phone", "telefono"],
       ["customer_address", "direccion"],
-      ["invoice_number", "factura o pedido"],
       ["notes", "observaciones"]
     ];
     const missing = required.filter(([key]) => !editForm[key].trim()).map(([, label]) => label);
@@ -623,7 +622,7 @@ export default function ServicesPage() {
                 <input className="h-11 rounded-md border border-line px-3" type="date" value={editForm.cedi_delivery_date} onChange={(event) => setEditForm((prev) => ({ ...prev, cedi_delivery_date: event.target.value }))} />
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
-                Factura o pedido *
+                Factura o pedido (opcional)
                 <input className="h-11 rounded-md border border-line px-3" value={editForm.invoice_number} onChange={(event) => setEditForm((prev) => ({ ...prev, invoice_number: event.target.value }))} />
               </label>
             </section>

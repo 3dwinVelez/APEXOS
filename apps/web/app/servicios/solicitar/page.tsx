@@ -19,7 +19,7 @@ type FormState = {
   road_letter: string;
   road_suffix: string;
   cross_number: string;
-  plate_number: string;
+  door_number: string;
   address_extra: string;
   property_type: string;
   property_detail: string;
@@ -44,7 +44,7 @@ const initialForm: FormState = {
   road_letter: "",
   road_suffix: "",
   cross_number: "",
-  plate_number: "",
+  door_number: "",
   address_extra: "",
   property_type: "Apartamento",
   property_detail: "",
@@ -61,22 +61,39 @@ const steps = [
   { title: "Confirmar", icon: ShieldCheck }
 ];
 
+const medellinNeighborhoods = [
+  "Laureles",
+  "Belen",
+  "El Poblado",
+  "Envigado",
+  "Sabaneta",
+  "Itagui",
+  "Robledo",
+  "Manrique",
+  "Buenos Aires",
+  "La America",
+  "Castilla",
+  "Aranjuez"
+];
+
+const valleyCities = ["Medellin", "Envigado", "Sabaneta", "Itagui", "Bello", "La Estrella", "Copacabana", "Girardota", "Barbosa", "Caldas"];
+
 function onlyNumbers(value: string) {
   return value.replace(/\D/g, "");
 }
 
 function buildAddress(form: FormState) {
   const first = [form.road_type, form.road_main, form.road_letter, form.road_suffix].filter(Boolean).join(" ");
-  const plate = form.cross_number && form.plate_number ? `# ${form.cross_number} - ${form.plate_number}` : "";
+  const placeNumber = form.cross_number && form.door_number ? `# ${form.cross_number} - ${form.door_number}` : "";
   const detail = [form.property_type, form.property_detail, form.address_extra].filter(Boolean).join(" ");
   const location = [form.neighborhood ? `Barrio ${form.neighborhood}` : "", form.city, form.department].filter(Boolean).join(", ");
-  return [first, plate, detail, location].filter(Boolean).join(", ");
+  return [first, placeNumber, detail, location].filter(Boolean).join(", ");
 }
 
 function requiredForStep(step: number): Array<keyof FormState> {
   if (step === 0) return ["customer_name", "customer_document", "customer_phone"];
-  if (step === 1) return ["road_type", "road_main", "cross_number", "plate_number", "property_type", "property_detail", "neighborhood", "city"];
-  if (step === 2) return ["invoice_number", "service_type", "preferred_date", "product_description"];
+  if (step === 1) return ["road_type", "road_main", "cross_number", "door_number", "property_type", "property_detail", "neighborhood", "city"];
+  if (step === 2) return ["service_type", "preferred_date", "product_description"];
   return [];
 }
 
@@ -137,7 +154,7 @@ export default function PublicServiceRequestPage() {
             road_letter: form.road_letter,
             road_suffix: form.road_suffix,
             cross_number: form.cross_number,
-            plate_number: form.plate_number,
+            door_number: form.door_number,
             property_type: form.property_type,
             property_detail: form.property_detail,
             address_extra: form.address_extra,
@@ -247,22 +264,25 @@ export default function PublicServiceRequestPage() {
                 <div>
                   <p className="text-sm font-bold uppercase tracking-[0.18em] text-apex">Direccion guiada</p>
                   <h2 className="mt-2 text-2xl font-bold">Construyamos la direccion sin ambiguedad</h2>
-                  <p className="mt-2 text-sm text-neutral-600">Usa la estructura habitual: tipo de via, numero principal, cruce y placa.</p>
+                  <p className="mt-2 text-sm text-neutral-600">Usa la forma que normalmente damos en Medellin: via principal, cruce, numero de la casa o apartamento, barrio y una sena facil de ubicar.</p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-4">
                   <Field label="Tipo de via *"><select className="apex-public-input" value={form.road_type} onChange={(event) => setField("road_type", event.target.value)}>{["Calle", "Carrera", "Avenida", "Diagonal", "Transversal", "Circular", "Autopista", "Kilometro", "Vereda"].map((item) => <option key={item}>{item}</option>)}</select></Field>
-                  <Field label="Numero *"><input className="apex-public-input" placeholder="ej. 43" value={form.road_main} onChange={(event) => setField("road_main", event.target.value)} /></Field>
+                  <Field label="Numero de la via *"><input className="apex-public-input" placeholder="ej. 43" value={form.road_main} onChange={(event) => setField("road_main", event.target.value)} /></Field>
                   <Field label="Letra"><input className="apex-public-input" placeholder="A, B, C" value={form.road_letter} onChange={(event) => setField("road_letter", event.target.value.toUpperCase())} /></Field>
                   <Field label="Complemento"><select className="apex-public-input" value={form.road_suffix} onChange={(event) => setField("road_suffix", event.target.value)}><option value="">Sin complemento</option><option>Sur</option><option>Norte</option><option>Este</option><option>Oeste</option><option>Bis</option></select></Field>
-                  <Field label="Cruce # *"><input className="apex-public-input" placeholder="ej. 22" value={form.cross_number} onChange={(event) => setField("cross_number", event.target.value)} /></Field>
-                  <Field label="Placa *"><input className="apex-public-input" placeholder="ej. 906" value={form.plate_number} onChange={(event) => setField("plate_number", event.target.value)} /></Field>
-                  <Field label="Tipo inmueble *"><select className="apex-public-input" value={form.property_type} onChange={(event) => setField("property_type", event.target.value)}>{["Casa", "Apartamento", "Unidad", "Torre", "Local", "Oficina", "Bodega"].map((item) => <option key={item}>{item}</option>)}</select></Field>
-                  <Field label="Detalle *"><input className="apex-public-input" placeholder="apto 301, torre 2" value={form.property_detail} onChange={(event) => setField("property_detail", event.target.value)} /></Field>
-                  <Field label="Barrio *"><input className="apex-public-input" value={form.neighborhood} onChange={(event) => setField("neighborhood", event.target.value)} /></Field>
-                  <Field label="Ciudad *"><input className="apex-public-input" value={form.city} onChange={(event) => setField("city", event.target.value)} /></Field>
+                  <Field label="Via o calle que cruza *"><input className="apex-public-input" placeholder="ej. 22" value={form.cross_number} onChange={(event) => setField("cross_number", event.target.value)} /></Field>
+                  <Field label="Numero de casa o apto *"><input className="apex-public-input" placeholder="ej. 90, 906, 301" value={form.door_number} onChange={(event) => setField("door_number", event.target.value)} /></Field>
+                  <Field label="Tipo de lugar *"><select className="apex-public-input" value={form.property_type} onChange={(event) => setField("property_type", event.target.value)}>{["Casa", "Apartamento", "Unidad residencial", "Torre", "Local", "Oficina", "Bodega"].map((item) => <option key={item}>{item}</option>)}</select></Field>
+                  <Field label="Interior o indicacion *"><input className="apex-public-input" placeholder="apto 301, torre 2, porteria" value={form.property_detail} onChange={(event) => setField("property_detail", event.target.value)} /></Field>
+                  <Field label="Barrio o sector *"><input className="apex-public-input" list="medellin-neighborhoods" placeholder="ej. Laureles, Belen, El Poblado" value={form.neighborhood} onChange={(event) => setField("neighborhood", event.target.value)} /></Field>
+                  <Field label="Municipio *"><select className="apex-public-input" value={form.city} onChange={(event) => setField("city", event.target.value)}>{valleyCities.map((item) => <option key={item}>{item}</option>)}</select></Field>
                   <Field label="Departamento"><input className="apex-public-input" value={form.department} onChange={(event) => setField("department", event.target.value)} /></Field>
-                  <Field label="Referencia adicional"><input className="apex-public-input" placeholder="porteria, color de fachada..." value={form.address_extra} onChange={(event) => setField("address_extra", event.target.value)} /></Field>
+                  <Field label="Sena para llegar"><input className="apex-public-input" placeholder="cerca al parque, porteria, color de fachada" value={form.address_extra} onChange={(event) => setField("address_extra", event.target.value)} /></Field>
                 </div>
+                <datalist id="medellin-neighborhoods">
+                  {medellinNeighborhoods.map((item) => <option key={item} value={item} />)}
+                </datalist>
                 <div className="rounded-2xl border border-apex/20 bg-apex/10 p-4">
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-apex">Asi quedara registrada</p>
                   <p className="mt-2 font-semibold">{addressPreview || "Completa los datos de direccion."}</p>
@@ -277,7 +297,7 @@ export default function PublicServiceRequestPage() {
                   <h2 className="mt-2 text-2xl font-bold">Cuentanos que producto necesitas instalar</h2>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Factura o pedido *"><input className="apex-public-input" value={form.invoice_number} onChange={(event) => setField("invoice_number", event.target.value)} /></Field>
+                  <Field label="Factura o pedido (opcional)"><input className="apex-public-input" placeholder="Si lo tienes a la mano" value={form.invoice_number} onChange={(event) => setField("invoice_number", event.target.value)} /></Field>
                   <Field label="Tipo de servicio *"><select className="apex-public-input" value={form.service_type} onChange={(event) => setField("service_type", event.target.value)}><option value="montaje">Montaje</option><option value="desmontaje">Desmontaje</option><option value="ambos">Montaje y desmontaje</option><option value="garantia">Garantia</option></select></Field>
                   <Field label="Fecha tentativa *"><input className="apex-public-input" type="date" value={form.preferred_date} onChange={(event) => setField("preferred_date", event.target.value)} /></Field>
                   <Field label="Codigo o referencia"><input className="apex-public-input" value={form.product_reference} onChange={(event) => setField("product_reference", event.target.value)} /></Field>
@@ -298,7 +318,7 @@ export default function PublicServiceRequestPage() {
                   <Summary label="Contacto" value={`${form.customer_phone}${form.customer_email ? ` / ${form.customer_email}` : ""}`} />
                   <Summary label="Direccion" value={addressPreview} />
                   <Summary label="Servicio" value={`${form.service_type} - ${form.product_description}`} />
-                  <Summary label="Factura / pedido" value={form.invoice_number} />
+                  <Summary label="Factura / pedido" value={form.invoice_number || "Sin registrar por ahora"} />
                   <Summary label="Fecha tentativa" value={form.preferred_date} />
                 </div>
               </div>

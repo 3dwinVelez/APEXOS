@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || "";
 const PUBLIC_COMPANY_ID = process.env.APEXOS_PUBLIC_SERVICE_COMPANY_ID || process.env.NEXT_PUBLIC_APEXOS_PUBLIC_COMPANY_ID || "";
 
@@ -89,7 +89,6 @@ export async function POST(request: NextRequest) {
       ["customer_name", "nombre completo"],
       ["customer_document", "cedula"],
       ["customer_phone", "telefono"],
-      ["invoice_number", "factura o pedido"],
       ["service_type", "tipo de servicio"],
       ["preferred_date", "fecha tentativa"],
       ["customer_address", "direccion guiada"],
@@ -121,7 +120,7 @@ export async function POST(request: NextRequest) {
         customer_name: clean(body.customer_name),
         customer_address: clean(body.customer_address),
         customer_phone: clean(body.customer_phone),
-        invoice_number: clean(body.invoice_number),
+        invoice_number: clean(body.invoice_number) || null,
         scheduled_date: clean(body.preferred_date).slice(0, 10),
         notes,
         metadata: {

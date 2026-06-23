@@ -1559,7 +1559,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   if (pathname === "/api/v1/services/orders" && method === "POST") {
     const body = JSON.parse(String(options.body || "{}"));
     if (technicianSession()) throw new Error("El tecnico no puede crear ordenes de servicio.");
-    const requiredServiceFields = ["reference_id", "technician_id", "service_type", "scheduled_date", "cedi_delivery_date", "customer_name", "customer_document", "customer_phone", "customer_address", "invoice_number", "notes"];
+    const requiredServiceFields = ["reference_id", "technician_id", "service_type", "scheduled_date", "cedi_delivery_date", "customer_name", "customer_document", "customer_phone", "customer_address", "notes"];
     const missingServiceFields = requiredServiceFields.filter((field) => body[field] == null || String(body[field]).trim() === "");
     if (missingServiceFields.length) throw new Error("Completa todos los campos obligatorios de la orden de servicio.");
     if (!/^\d+$/.test(String(body.customer_document))) throw new Error("La cedula del cliente debe contener solo numeros.");

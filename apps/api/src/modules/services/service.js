@@ -676,7 +676,6 @@ async function createOrder(tenantId, user, input) {
     ["customer_document", "cedula del cliente"],
     ["customer_address", "direccion"],
     ["customer_phone", "telefono"],
-    ["invoice_number", "factura o pedido"],
     ["scheduled_date", "fecha programada del servicio"],
     ["cedi_delivery_date", "fecha de entrega del CEDI"],
     ["notes", "observaciones operativas"]
