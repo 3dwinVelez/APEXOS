@@ -44,22 +44,29 @@
 - Las piezas averiadas o faltantes registradas durante la inspeccion alimentan automaticamente el reporte de requerimientos con orden, tecnico, cliente, referencia, cantidad, accion, observacion y proveedor sugerido.
 - El tecnico puede registrar un proveedor sugerido para una pieza problematica; si no se conoce, el reporte la identifica como `Por definir` para gestion posterior.
 - Se agrega formulario publico de solicitud de servicios en `/servicios/solicitar`, sin login, pensado para clientes finales desde cualquier dispositivo.
-- El formulario publico guia al cliente por pasos: datos de contacto, direccion, informacion del servicio y confirmacion final.
-- La captura de direccion deja de ser un campo abierto y se estructura para contexto de Medellin y Valle de Aburra: tipo de via, numero de la via, via o calle que cruza, numero de casa o apartamento, tipo de lugar, interior o indicacion, barrio/sector, municipio, departamento y sena para llegar.
-- La direccion se normaliza en una vista previa antes de enviar, reduciendo ambiguedad para el operador administrativo y el tecnico.
+- El formulario publico guia al cliente por pasos: datos de contacto, direccion simple, informacion del servicio y confirmacion final.
+- La captura de direccion publica se simplifica a un solo campo de direccion completa, con ayuda contextual para escribirla en lenguaje natural de Medellin y Valle de Aburra.
+- La direccion se muestra en vista previa antes de enviar, reduciendo ambiguedad para el operador administrativo y el tecnico sin fragmentar la captura del cliente.
+- El formulario publico consulta el maestro activo de referencias y obliga a seleccionar la referencia del producto en una lista desplegable; viajan `reference_id`, codigo y nombre en la creacion de la preorden.
+- El formulario publico ya no solicita fecha tentativa; la planeacion operativa se completa luego desde administracion.
 - La solicitud publica crea una preorden en `service_orders` con estado `agendado`, sin tecnico asignado, marcada en metadata como `public_request` y `requires_admin_completion`.
-- La solicitud publica conserva en metadata cedula, correo, referencia/producto, fecha tentativa, direccion estructurada con lenguaje local y fecha de recepcion.
-- La API publica `/api/public/service-requests` valida campos obligatorios, cedula numerica, telefono, fecha tentativa y empresa activa antes de crear la orden.
+- La solicitud publica usa consecutivo corto `OS-00000` y lo muestra como numero de seguimiento al finalizar.
+- La solicitud publica conserva en metadata cedula, correo, referencia/producto y fecha de recepcion.
+- La API publica `/api/public/service-requests` valida campos obligatorios, cedula numerica, telefono, referencia activa y empresa activa antes de crear la orden.
 - La factura o pedido es opcional en el formulario publico, creacion administrativa, edicion de orden y API/fallback Supabase.
 - La empresa destino del formulario publico se resuelve por `APEXOS_PUBLIC_SERVICE_COMPANY_ID` o `NEXT_PUBLIC_APEXOS_PUBLIC_COMPANY_ID`; si no existe, puede buscar una empresa activa por parametro `empresa`.
 - La API publica acepta configuracion server-side con `SUPABASE_URL`/`SUPABASE_ANON_KEY` o sus equivalentes `NEXT_PUBLIC_*`, siempre con `SUPABASE_SERVICE_ROLE_KEY` solo en servidor; en desarrollo tambien puede leer el `.env` raiz aunque Next se ejecute desde `apps/web`.
 - Al finalizar, el formulario muestra una pantalla amplia de confirmacion con el numero de seguimiento y accion principal para realizar otra solicitud.
 - El estado `agendado` representa preordenes creadas desde el link publico. Administracion puede conservarlas sin tecnico mientras valida datos; al cambiarlas a `pendiente`, la asignacion de tecnico responsable se vuelve obligatoria.
 - La migracion `20260623173000_service_orders_agendado_status.sql` amplia el constraint de Supabase para permitir `agendado` antes de `pendiente`.
-- Mientras esa migracion no este aplicada en el proyecto Supabase remoto, la API publica reintenta la creacion como `pendiente` con metadata `preorder_status=agendado`; el monitor lo normaliza visualmente como `Agendado` para no bloquear solicitudes.
+- La API publica no degrada solicitudes externas a `pendiente`; si Supabase no acepta `agendado`, rechaza la creacion para evitar ordenes invisibles o con estado incorrecto.
 - El enlace administrativo de Servicios se llama `Solicitudes de servicios externas` y abre `/servicios/solicitar?empresa=<empresa>`, evitando que solicitudes nuevas caigan en una empresa activa distinta a la del monitor.
 - Si una solicitud externa fue creada antes de este ajuste en una empresa equivocada, debe reasignarse explicitamente con aprobacion operativa porque es una mutacion cross-tenant.
-- El monitor incorpora filtro `Solicitudes externas / agendado` para ubicar rapidamente preordenes originadas desde el link publico.
+- El monitor incorpora filtro `Solicitudes externas / agendado` y boton de estado `Agendado` visible siempre para ubicar rapidamente preordenes originadas desde el link publico.
+- El monitor consulta tambien `/api/services/monitor-orders`, una lectura interna autenticada que usa Supabase server-side, para que las solicitudes publicas aparezcan aunque la sesion administrativa este conectada contra la API local/Prisma.
+- El monitor combina las ordenes de Supabase y de la API existente, elimina duplicados por `id` o consecutivo y conserva el orden descendente por creacion/consecutivo.
+- El monitor ordena por defecto todas las ordenes de mayor a menor creacion/consecutivo, sin importar estado, para que el servicio mas nuevo aparezca primero.
+- El monitor calcula un SLA de 4 dias habiles por orden desde `created_at`; muestra 4/3 en verde, 2 en amarillo y 1 o valores negativos en rojo. El contador solo se congela cuando la orden queda `cerrada` con fecha de cierre.
 - Promocion controlada: estos cambios viven en `desarrollo`; antes de mover a `develop` y luego `main`, aplicar/validar la migracion `20260623173000_service_orders_agendado_status.sql` en el ambiente objetivo y ejecutar la validacion deterministica indicada en `BRANCHING_WORKFLOW.md`.
 - Por seguridad, el endpoint publico no acepta `company_id` arbitrario desde el navegador.
 - El lobby de Servicios incorpora acceso a `Formulario publico` para que administracion pueda copiar o abrir el enlace rapidamente.
@@ -84,6 +91,7 @@ El formulario publico debe funcionar como una solicitud guiada para personas sin
 - `SUPABASE_URL` o `NEXT_PUBLIC_SUPABASE_URL`: URL del proyecto Supabase usado por la ruta server-side.
 - `SUPABASE_ANON_KEY` o `NEXT_PUBLIC_SUPABASE_ANON_KEY`: llave anonima usada junto con service role desde servidor.
 - `SUPABASE_SERVICE_ROLE_KEY`: llave server-only requerida para que la API publica inserte solicitudes sin sesion de usuario.
+- `/api/services/monitor-orders` reutiliza las mismas variables server-side y exige encabezado `Authorization` para evitar exponer el monitor como endpoint publico.
 - Si ninguna variable esta configurada, el endpoint intenta resolver empresa activa con el parametro `empresa`, por ejemplo `/servicios/solicitar?empresa=SCJ`.
 
 ## Validaciones esperadas
@@ -92,15 +100,19 @@ El formulario publico debe funcionar como una solicitud guiada para personas sin
 - Crear una orden solo despues de seleccionar un tecnico activo.
 - Crear y editar una orden sin factura/pedido.
 - Crear solicitud publica desde `/servicios/solicitar` sin iniciar sesion.
-- Crear solicitud publica sin factura/pedido y verificar que Supabase guarde `invoice_number` como `null` y `status` como `agendado`.
+- Crear solicitud publica sin factura/pedido y verificar que Supabase guarde `invoice_number` como `null`, `scheduled_date` como `null` y `status` como `agendado`.
 - Confirmar que la pantalla final muestre el servicio creado con exito y permita realizar otra solicitud.
 - Verificar que la solicitud publica genere una preorden `agendado` marcada como `public_request` y `requires_admin_completion`.
+- Verificar que el numero mostrado al cliente sea el consecutivo corto `OS-00000`.
 - Verificar que una solicitud publica aparezca en el lobby de Servicios como `Agendado` / `Por completar`.
+- Verificar que el lobby vea la solicitud externa aun cuando la sesion administrativa cargue las ordenes principales desde la API local.
 - Verificar que el boton `Solicitudes de servicios externas` incluya el parametro `empresa` y que las nuevas solicitudes queden en la misma empresa del monitor.
-- Usar el filtro `Solicitudes externas / agendado` para validar la visibilidad de preordenes.
+- Usar el filtro `Solicitudes externas / agendado` y el boton `Agendado` para validar la visibilidad de preordenes.
+- Verificar que la orden demo mas reciente aparezca primero en el listado aunque existan ordenes en otros estados.
 - Verificar que una preorden `agendado` pueda guardarse sin tecnico responsable.
 - Verificar que una preorden solo pueda pasar a `pendiente` despues de asignar tecnico responsable.
-- Editar la solicitud publica desde administracion para asignar tecnico, referencia, fecha CEDI y observaciones operativas antes de ejecutarla.
+- Editar la solicitud publica desde administracion para asignar tecnico, fecha CEDI y observaciones operativas antes de ejecutarla; la referencia ya debe venir del maestro seleccionado por el cliente.
+- Verificar que el contador SLA inicie en 4 dias habiles, baje por dia habil transcurrido y muestre valores negativos cuando supere el plazo.
 - Verificar que el endpoint publico no permita seleccionar `company_id` libremente desde el cliente.
 - Verificar que un tecnico solo vea sus servicios activos y que no pueda crear ordenes ni consultar servicios ajenos.
 - Iniciar servicio con GPS.
