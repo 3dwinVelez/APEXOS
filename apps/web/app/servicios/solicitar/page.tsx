@@ -25,6 +25,7 @@ type PublicServiceReference = {
   brand?: string;
   model?: string;
 };
+type PublicServiceType = { code: string; label: string; active?: boolean };
 
 const initialForm: FormState = {
   customer_name: "",
@@ -77,6 +78,7 @@ function PublicServiceRequestContent() {
   const [saving, setSaving] = useState(false);
   const [created, setCreated] = useState<{ number: string } | null>(null);
   const [references, setReferences] = useState<PublicServiceReference[]>([]);
+  const [serviceTypes, setServiceTypes] = useState<PublicServiceType[]>([]);
   const [loadingReferences, setLoadingReferences] = useState(true);
   const addressPreview = useMemo(() => buildAddress(form), [form]);
   const selectedReference = useMemo(() => references.find((item) => item.id === form.reference_id), [form.reference_id, references]);
@@ -88,10 +90,20 @@ function PublicServiceRequestContent() {
     fetch(requestPath)
       .then((response) => response.ok ? response.json() : Promise.reject(new Error("No fue posible cargar las referencias.")))
       .then((body) => {
-        if (active) setReferences(Array.isArray(body.references) ? body.references : []);
+        if (!active) return;
+        const nextReferences = Array.isArray(body.references) ? body.references : [];
+        const nextTypes = Array.isArray(body.service_types) ? body.service_types.filter((item: PublicServiceType) => item.active !== false) : [];
+        setReferences(nextReferences);
+        setServiceTypes(nextTypes);
+        if (nextTypes.length) {
+          setForm((current) => nextTypes.some((item: PublicServiceType) => item.code === current.service_type) ? current : { ...current, service_type: nextTypes[0].code });
+        }
       })
       .catch(() => {
-        if (active) setReferences([]);
+        if (active) {
+          setReferences([]);
+          setServiceTypes([]);
+        }
       })
       .finally(() => {
         if (active) setLoadingReferences(false);
@@ -276,7 +288,9 @@ function PublicServiceRequestContent() {
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Field label="Factura o pedido (opcional)"><input className="apex-public-input" placeholder="Si lo tienes a la mano" value={form.invoice_number} onChange={(event) => setField("invoice_number", event.target.value)} /></Field>
-                  <Field label="Tipo de servicio *"><select className="apex-public-input" value={form.service_type} onChange={(event) => setField("service_type", event.target.value)}><option value="montaje">Montaje</option><option value="desmontaje">Desmontaje</option><option value="ambos">Montaje y desmontaje</option><option value="garantia">Garantia</option></select></Field>
+                  <Field label="Tipo de servicio *"><select className="apex-public-input" disabled={loadingReferences} value={form.service_type} onChange={(event) => setField("service_type", event.target.value)}>
+                    {(serviceTypes.length ? serviceTypes : [{ code: "montaje", label: "Montaje" }, { code: "desmontaje", label: "Desmontaje" }, { code: "ambos", label: "Montaje y desmontaje" }]).map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}
+                  </select></Field>
                   <Field label="Referencia del producto *">
                     <select className="apex-public-input" disabled={loadingReferences} value={form.reference_id} onChange={(event) => setField("reference_id", event.target.value)}>
                       <option value="">{loadingReferences ? "Cargando referencias..." : "Selecciona una referencia"}</option>

@@ -16,7 +16,6 @@ type OrderForm = {
   technician_id: string;
   service_type: string;
   scheduled_date: string;
-  cedi_delivery_date: string;
   customer_name: string;
   customer_document: string;
   customer_phone: string;
@@ -40,7 +39,7 @@ export default function NewServiceOrderPage() {
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<OrderForm>({ reference_id: "", technician_id: "", service_type: "montaje", scheduled_date: "", cedi_delivery_date: "", customer_name: "", customer_document: "", customer_phone: "", customer_address: "", invoice_number: "", notes: "" });
+  const [form, setForm] = useState<OrderForm>({ reference_id: "", technician_id: "", service_type: "montaje", scheduled_date: "", customer_name: "", customer_document: "", customer_phone: "", customer_address: "", invoice_number: "", notes: "" });
 
   useEffect(() => {
     if (localStorage.getItem("role_name")?.toLowerCase() === "tecnico") {
@@ -73,7 +72,6 @@ export default function NewServiceOrderPage() {
       ["technician_id", "tecnico asignado"],
       ["service_type", "tipo de servicio"],
       ["scheduled_date", "fecha programada del servicio"],
-      ["cedi_delivery_date", "fecha de entrega del CEDI"],
       ["customer_name", "nombre del cliente"],
       ["customer_document", "cedula del cliente"],
       ["customer_phone", "telefono"],
@@ -96,8 +94,7 @@ export default function NewServiceOrderPage() {
           technician_id: form.technician_id,
           metadata: {
             assignment: "selected_technician",
-            customer_document: form.customer_document.trim(),
-            cedi_delivery_date: form.cedi_delivery_date
+            customer_document: form.customer_document.trim()
           }
         })
       });
@@ -155,10 +152,6 @@ export default function NewServiceOrderPage() {
           <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
             Fecha programada del servicio *
             <input className="h-12 w-full min-w-0 rounded-md border border-line px-3 text-base md:h-10 md:text-sm" required type="date" value={form.scheduled_date} onChange={(event) => setForm((prev) => ({ ...prev, scheduled_date: event.target.value }))} />
-          </label>
-          <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
-            Fecha de entrega del producto por el CEDI *
-            <input className="h-12 w-full min-w-0 rounded-md border border-line px-3 text-base md:h-10 md:text-sm" required type="date" value={form.cedi_delivery_date} onChange={(event) => setForm((prev) => ({ ...prev, cedi_delivery_date: event.target.value }))} />
           </label>
         </div>
         {ref ? (
