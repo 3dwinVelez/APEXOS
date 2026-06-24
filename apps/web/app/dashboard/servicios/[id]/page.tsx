@@ -3,7 +3,6 @@
 import { PhotoCapture, type CapturedFile } from "@/components/operations/PhotoCapture";
 import { SignatureCapture } from "@/components/operations/SignatureCapture";
 import { api } from "@/lib/api";
-import { getGpsFix } from "@/lib/gps";
 import { buildServiceReportPdfBlob } from "@/lib/serviceReportPdf";
 import { ArrowLeft, BookOpen, Camera, CheckCircle2, Circle, Download, FileSignature, MapPin, PackageSearch, Play, Star, Wrench, XCircle } from "lucide-react";
 import Link from "next/link";
@@ -120,7 +119,6 @@ export default function ServiceOperationPage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [noExecutionReason, setNoExecutionReason] = useState("");
-  const [gpsMessage, setGpsMessage] = useState("");
   const [working, setWorking] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
@@ -208,23 +206,9 @@ export default function ServiceOperationPage() {
     });
   }
 
-  async function optionalGps(action: string) {
-    try {
-      setGpsMessage("Obteniendo GPS...");
-      const gps = await getGpsFix();
-      setGpsMessage(`GPS capturado (${Math.round(gps.accuracy_meters || 0)}m).`);
-      return { gps, metadata: { gps_status: "captured", gps_action: action } };
-    } catch (error) {
-      const reason = error instanceof Error ? error.message : "GPS no disponible.";
-      setGpsMessage(`${reason} Se continua el flujo y queda trazado como GPS pendiente.`);
-      return { gps: null, metadata: { gps_status: "unavailable", gps_action: action, gps_error: reason } };
-    }
-  }
-
   async function update(action: "start" | "inspection" | "execution" | "close" | "close-not-executed") {
     setWorking(true);
     try {
-      const gpsResult = ["close", "close-not-executed"].includes(action) ? await optionalGps(action) : { gps: null, metadata: {} };
       const satisfactionSurvey = action === "close" ? {
         version: 1,
         answers: surveyQuestions.map((question) => ({
@@ -240,10 +224,9 @@ export default function ServiceOperationPage() {
         method: "PATCH",
         body: JSON.stringify({
           ...body,
-          ...(gpsResult.gps || {}),
           metadata: {
-            ...gpsResult.metadata,
             ...(action === "start" ? { start_without_gps: true, start_method: "technician_manual_confirmation" } : {}),
+            ...(action === "close" || action === "close-not-executed" ? { close_without_gps: true, close_method: "technician_manual_confirmation" } : {}),
             ...(satisfactionSurvey ? { satisfaction_survey: satisfactionSurvey } : {})
           }
         })
@@ -415,7 +398,6 @@ export default function ServiceOperationPage() {
       </header>
 
       {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-900">{message}</div> : null}
-      {gpsMessage ? <div className="rounded-md border border-sky-200 bg-sky-50 p-4 text-sm font-medium text-sky-900">{gpsMessage}</div> : null}
 
       <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
         <p className="text-sm font-semibold">{order.reference?.code} · {order.reference?.name}</p>
