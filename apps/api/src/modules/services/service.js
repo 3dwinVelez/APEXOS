@@ -268,7 +268,6 @@ function buildReportPdf(report) {
   keyValue("Duracion", order.duration_minutes == null ? "N/A" : `${order.duration_minutes} min`, margin + 356, y, 84);
   keyValue("Evidencias", String(report.totals.evidence), margin + 452, y, 76);
   y -= 64;
-  paragraph(`GPS inicio: ${order.start_latitude || "N/A"}, ${order.start_longitude || "N/A"} | GPS cierre: ${order.close_latitude || "N/A"}, ${order.close_longitude || "N/A"}`);
   if (order.no_execution_reason) paragraph(`Motivo no ejecucion: ${order.no_execution_reason}`);
 
   title("Linea de tiempo");

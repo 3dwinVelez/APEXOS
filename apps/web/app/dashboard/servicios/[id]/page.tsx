@@ -4,7 +4,7 @@ import { PhotoCapture, type CapturedFile } from "@/components/operations/PhotoCa
 import { SignatureCapture } from "@/components/operations/SignatureCapture";
 import { api } from "@/lib/api";
 import { buildServiceReportPdfBlob } from "@/lib/serviceReportPdf";
-import { ArrowLeft, BookOpen, Camera, CheckCircle2, Circle, Download, FileSignature, MapPin, PackageSearch, Play, Star, Wrench, XCircle } from "lucide-react";
+import { ArrowLeft, BookOpen, Camera, CheckCircle2, Circle, Download, FileSignature, PackageSearch, Play, Star, Wrench, XCircle } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
@@ -106,10 +106,6 @@ function photoSrc(photo: ServicePhoto) {
 
 function manualHref(manual: ReferenceManual) {
   return manual.base64_data || manual.file_url || "";
-}
-
-function mapLink(lat?: number, lon?: number) {
-  return lat && lon ? `https://www.google.com/maps?q=${lat},${lon}&z=17` : "";
 }
 
 export default function ServiceOperationPage() {
@@ -646,8 +642,6 @@ export default function ServiceOperationPage() {
             {order.started_at ? <p className="rounded-md bg-paper p-3">Inicio: {new Date(order.started_at).toLocaleString()}</p> : null}
             {order.closed_at ? <p className="rounded-md bg-paper p-3">Cierre: {new Date(order.closed_at).toLocaleString()} · {order.duration_minutes ?? "--"} min</p> : null}
             {order.no_execution_reason ? <p className="rounded-md bg-amber-50 p-3 text-amber-900">No ejecutada: {order.no_execution_reason}</p> : null}
-            {mapLink(order.start_latitude, order.start_longitude) ? <a className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-md border border-line px-3 font-semibold" href={mapLink(order.start_latitude, order.start_longitude)} target="_blank" rel="noreferrer"><MapPin className="shrink-0" size={16} /> <span className="truncate">GPS inicio</span></a> : null}
-            {mapLink(order.close_latitude, order.close_longitude) ? <a className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-md border border-line px-3 font-semibold" href={mapLink(order.close_latitude, order.close_longitude)} target="_blank" rel="noreferrer"><MapPin className="shrink-0" size={16} /> <span className="truncate">GPS cierre</span></a> : null}
           </div>
           {order.metadata?.satisfaction_survey?.answers?.length ? (
             <div className="rounded-md border border-line bg-paper p-3">

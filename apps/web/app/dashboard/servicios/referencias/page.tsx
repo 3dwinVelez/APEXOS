@@ -137,14 +137,23 @@ export default function ServiceReferencesPage() {
       const saved = await api<ServiceStore[]>("/api/v1/services/service-stores", { method: "PUT", body: JSON.stringify({ stores: nextStores }) });
       const token = localStorage.getItem("token") || "";
       const companyName = localStorage.getItem("apexos_company_name") || localStorage.getItem("company_name") || "SCJ";
-      await fetch(`/api/public/service-requests?empresa=${encodeURIComponent(companyName)}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ company_name: companyName, service_stores: saved })
-      }).catch(() => undefined);
+      let syncWarning = "";
+      try {
+        const response = await fetch(`/api/public/service-requests?empresa=${encodeURIComponent(companyName)}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ company_name: companyName, service_stores: saved })
+        });
+        if (!response.ok) {
+          const detail = await response.json().catch(() => ({}));
+          syncWarning = ` Sincronizacion publica pendiente: ${detail.message || response.statusText || response.status}.`;
+        }
+      } catch (syncError) {
+        syncWarning = ` Sincronizacion publica pendiente: ${syncError instanceof Error ? syncError.message : "error desconocido"}.`;
+      }
       setStores(saved);
       setStoreDraft("");
-      setMessage("Almacenes actualizados.");
+      setMessage(`Almacenes actualizados.${syncWarning}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible guardar los almacenes.");
     } finally {
