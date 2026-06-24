@@ -380,6 +380,11 @@ const DEFAULT_SERVICE_TYPES = [
   { code: "ambos", label: "Montaje y desmontaje", active: true }
 ];
 
+const DEFAULT_SERVICE_STORES = [
+  { code: "hogar_y_moda_1", label: "Hogar y Moda 1", active: true },
+  { code: "hogar_y_moda_2", label: "Hogar y Moda 2", active: true }
+];
+
 const DEFAULT_SATISFACTION_QUESTIONS = [
   { id: "service_quality", label: "Como calificas la calidad del servicio realizado?", active: true },
   { id: "technician_attention", label: "Como calificas la atencion y claridad del tecnico?", active: true },
@@ -412,6 +417,18 @@ function normalizeServiceTypes(rows = []) {
     .filter((item) => item.code && item.label && !seen.has(item.code) && seen.add(item.code));
 }
 
+function normalizeServiceStores(rows = []) {
+  const source = Array.isArray(rows) && rows.length ? rows : DEFAULT_SERVICE_STORES;
+  const seen = new Set();
+  return source
+    .map((item) => {
+      const code = serviceTypeCode(item.code || item.label);
+      const label = String(item.label || item.code || "").trim();
+      return { code, label, active: item.active !== false };
+    })
+    .filter((item) => item.code && item.label && !seen.has(item.code) && seen.add(item.code));
+}
+
 function normalizeSatisfactionQuestions(rows = []) {
   const source = Array.isArray(rows) && rows.length ? rows : DEFAULT_SATISFACTION_QUESTIONS;
   const seen = new Set();
@@ -427,6 +444,11 @@ function normalizeSatisfactionQuestions(rows = []) {
 async function configuredServiceTypes(tenantId) {
   const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
   return normalizeServiceTypes(tenant?.config?.services?.service_types);
+}
+
+async function configuredServiceStores(tenantId) {
+  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
+  return normalizeServiceStores(tenant?.config?.services?.service_stores);
 }
 
 async function configuredSatisfactionQuestions(tenantId) {
@@ -445,6 +467,10 @@ async function assertValidServiceType(tenantId, value) {
 
 async function listServiceTypes(tenantId) {
   return configuredServiceTypes(tenantId);
+}
+
+async function listServiceStores(tenantId) {
+  return configuredServiceStores(tenantId);
 }
 
 async function saveServiceTypes(tenantId, user, input = {}) {
@@ -469,6 +495,30 @@ async function saveServiceTypes(tenantId, user, input = {}) {
     select: { config: true }
   });
   return normalizeServiceTypes(updated.config?.services?.service_types);
+}
+
+async function saveServiceStores(tenantId, user, input = {}) {
+  assertAdministrativeServiceUser(user);
+  const stores = normalizeServiceStores(input.stores);
+  if (!stores.some((item) => item.active)) throw appError(400, "SERVICE_STORES_REQUIRED", "Debe existir al menos un almacen activo");
+  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
+  const config = tenant?.config || {};
+  const updated = await prisma.tenant.update({
+    where: { id: tenantId },
+    data: {
+      config: {
+        ...config,
+        services: {
+          ...(config.services || {}),
+          service_stores: stores,
+          service_stores_updated_at: new Date().toISOString(),
+          service_stores_updated_by: user?.id || null
+        }
+      }
+    },
+    select: { config: true }
+  });
+  return normalizeServiceStores(updated.config?.services?.service_stores);
 }
 
 async function listSatisfactionQuestions(tenantId) {
@@ -1118,6 +1168,8 @@ module.exports = {
   listTechnicians,
   listServiceTypes,
   saveServiceTypes,
+  listServiceStores,
+  saveServiceStores,
   listSatisfactionQuestions,
   saveSatisfactionQuestions,
   getOrder,

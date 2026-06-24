@@ -23,6 +23,7 @@ type ServiceReference = {
   manuals?: Manual[];
   total_pieces: number;
 };
+type ServiceStore = { code: string; label: string; active?: boolean };
 const categories = ["muebles", "colchones", "electrodomesticos", "cocina", "oficina", "decoracion", "iluminacion", "textiles", "otros"];
 const emptyPart = { name: "", quantity: 1, unit: "und", description: "" };
 const emptyForm = { code: "", name: "", category: "muebles", description: "", estimated_minutes: 60, brand: "", model: "", active: true, parts: [emptyPart] as Part[], manuals: [] as Manual[] };
@@ -109,18 +110,57 @@ export default function ServiceReferencesPage() {
   const [showForm, setShowForm] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [importRows, setImportRows] = useState<Record<string, string>[]>([]);
+  const [stores, setStores] = useState<ServiceStore[]>([]);
+  const [storeDraft, setStoreDraft] = useState("");
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyForm);
 
   async function load() {
     try {
-      const referenceRows = await api<ServiceReference[]>("/api/v1/services/references");
+      const [referenceRows, storeRows] = await Promise.all([
+        api<ServiceReference[]>("/api/v1/services/references"),
+        api<ServiceStore[]>("/api/v1/services/service-stores").catch(() => [])
+      ]);
       setReferences(referenceRows);
+      setStores(storeRows);
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible cargar las referencias.");
       throw err;
     }
+  }
+
+  async function saveStores(nextStores = stores) {
+    setSaving(true);
+    setError("");
+    try {
+      const saved = await api<ServiceStore[]>("/api/v1/services/service-stores", { method: "PUT", body: JSON.stringify({ stores: nextStores }) });
+      const token = localStorage.getItem("token") || "";
+      const companyName = localStorage.getItem("apexos_company_name") || localStorage.getItem("company_name") || "SCJ";
+      await fetch(`/api/public/service-requests?empresa=${encodeURIComponent(companyName)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ company_name: companyName, service_stores: saved })
+      }).catch(() => undefined);
+      setStores(saved);
+      setStoreDraft("");
+      setMessage("Almacenes actualizados.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No fue posible guardar los almacenes.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function addStore() {
+    const label = storeDraft.trim();
+    if (!label) return;
+    const code = label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9_-]+/g, "_").replace(/^_+|_+$/g, "");
+    if (stores.some((item) => item.code === code)) {
+      setError("Ya existe un almacen con ese nombre.");
+      return;
+    }
+    saveStores([...stores, { code, label, active: true }]);
   }
 
   useEffect(() => {
@@ -306,6 +346,26 @@ export default function ServiceReferencesPage() {
           <Summary label="Activas" value={stats.active} />
           <Summary label="Piezas configuradas" value={stats.parts} />
           <Summary label="Manuales y guias" value={stats.manuals} />
+        </div>
+      </section>
+
+      <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="font-semibold">Almacenes para solicitudes</h2>
+            <p className="mt-1 text-sm text-neutral-500">Lista usada por el formulario publico al seleccionar el almacen origen.</p>
+          </div>
+          <div className="flex w-full gap-2 sm:w-auto">
+            <input className="h-10 min-w-0 flex-1 rounded-md border border-line px-3 text-sm" placeholder="Nuevo almacen" value={storeDraft} onChange={(event) => setStoreDraft(event.target.value)} />
+            <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white disabled:opacity-50" disabled={saving || !storeDraft.trim()} onClick={addStore} type="button"><Plus size={15} /> Agregar</button>
+          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {stores.map((store) => (
+            <button className={`rounded-md border px-3 py-2 text-sm font-semibold ${store.active !== false ? "border-apex bg-apex/10 text-apex" : "border-line bg-paper text-neutral-500"}`} disabled={saving} key={store.code} onClick={() => saveStores(stores.map((item) => item.code === store.code ? { ...item, active: item.active === false } : item))} type="button">
+              {store.label}
+            </button>
+          ))}
         </div>
       </section>
 

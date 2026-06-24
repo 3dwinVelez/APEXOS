@@ -11,6 +11,8 @@ async function servicesRoutes(fastify) {
   fastify.get("/services/technicians", { preHandler: requirePermission("services", "read") }, (request) => service.listTechnicians(request.user?.tenant_id, request.user));
   fastify.get("/services/service-types", { preHandler: requirePermission("services", "read") }, (request) => service.listServiceTypes(request.user?.tenant_id));
   fastify.put("/services/service-types", { schema: schemas.serviceTypesSchema, preHandler: requirePermission("services", "write") }, (request) => service.saveServiceTypes(request.user?.tenant_id, request.user, request.body));
+  fastify.get("/services/service-stores", { preHandler: requirePermission("services", "read") }, (request) => service.listServiceStores(request.user?.tenant_id));
+  fastify.put("/services/service-stores", { schema: schemas.serviceStoresSchema, preHandler: requirePermission("services", "write") }, (request) => service.saveServiceStores(request.user?.tenant_id, request.user, request.body));
   fastify.get("/services/satisfaction-questions", { preHandler: requirePermission("services", "read") }, (request) => service.listSatisfactionQuestions(request.user?.tenant_id));
   fastify.put("/services/satisfaction-questions", { schema: schemas.satisfactionQuestionsSchema, preHandler: requirePermission("services", "write") }, (request) => service.saveSatisfactionQuestions(request.user?.tenant_id, request.user, request.body));
   fastify.get("/services/references", { preHandler: requirePermission("services", "read") }, (request) => service.listReferences(request.user?.tenant_id, request.query));
