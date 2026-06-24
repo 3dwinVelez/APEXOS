@@ -111,16 +111,6 @@ function normalizeServiceTypes(rows: unknown) {
     .filter((item) => item.code && item.label && !seen.has(item.code) && seen.add(item.code));
 }
 
-function isStatusConstraintError(error: unknown) {
-  const message = error instanceof Error ? error.message : String(error || "");
-  return message.includes("service_orders_status_check") || message.includes("violates check constraint");
-}
-
-function isUniqueNumberError(error: unknown) {
-  const message = error instanceof Error ? error.message : String(error || "");
-  return message.includes("service_orders_company_number_unique") || message.includes("duplicate key value");
-}
-
 async function supabaseRequest<T>(path: string, init: RequestInit = {}) {
   const config = supabaseConfig();
   if (!config.url || !config.anonKey || !config.serviceRoleKey) {
@@ -146,6 +136,13 @@ async function supabaseRequest<T>(path: string, init: RequestInit = {}) {
     throw new Error(`Supabase ${response.status}: ${detail}`);
   }
   return body as T;
+}
+
+async function supabaseRpc<T>(functionName: string, payload: Record<string, unknown>) {
+  return supabasePublicRead<T>(`/rest/v1/rpc/${functionName}`, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
 }
 
 async function supabasePublicRead<T>(path: string, init: RequestInit = {}) {
@@ -243,18 +240,6 @@ async function resolveReferenceId(companyId: string, referenceId: string, produc
   return references[0]?.id || null;
 }
 
-async function nextOrderNumber(companyId: string, offset = 1) {
-  const rows = await supabaseRequest<Array<{ number: string }>>(
-    `/rest/v1/service_orders?select=number&company_id=eq.${encodeURIComponent(companyId)}&number=like.OS-*&order=created_at.desc&limit=200`
-  ).catch(() => []);
-  let max = 0;
-  for (const row of rows) {
-    const match = String(row.number || "").match(/^OS-(\d{1,5})$/);
-    if (match) max = Math.max(max, Number(match[1]));
-  }
-  return `OS-${String(max + offset).padStart(5, "0")}`;
-}
-
 async function activeReferencesForCompany(companyId: string) {
   return supabasePublicRead<PublicReferenceRow[]>(
     `/rest/v1/service_references?select=id,company_id,code,name,category,brand,model&company_id=eq.${encodeURIComponent(companyId)}&active=eq.true&code=neq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&order=code.asc&limit=500`
@@ -340,36 +325,15 @@ export async function POST(request: NextRequest) {
       product_description: clean(body.product_description),
       received_at: new Date().toISOString()
     };
-    const payload = {
-      company_id: companyId,
-      number: await nextOrderNumber(companyId),
-      reference_id: referenceId,
-      technician_employee_id: null,
-      technician_user_id: null,
-      service_type: serviceType,
-      status: "agendado",
-      customer_name: clean(body.customer_name),
-      customer_address: clean(body.customer_address),
-      customer_phone: clean(body.customer_phone),
-      invoice_number: clean(body.invoice_number) || null,
-      scheduled_date: null,
-      notes,
-      metadata
-    };
-    const insertOrder = (nextPayload: typeof payload) => supabaseRequest<Array<{ id: string; number: string }>>("/rest/v1/service_orders?select=id,number", {
-      method: "POST",
-      headers: { Prefer: "return=representation" },
-      body: JSON.stringify(nextPayload)
-    });
-    const inserted = await insertOrder(payload).catch(async (error) => {
-      if (isStatusConstraintError(error)) {
-        throw new Error("Supabase no permite el estado agendado. Aplica la migracion 20260623173000_service_orders_agendado_status.sql antes de recibir solicitudes externas.");
-      }
-      if (!isUniqueNumberError(error)) throw error;
-      return insertOrder({
-        ...payload,
-        number: await nextOrderNumber(companyId, 2)
-      });
+    const inserted = await supabaseRpc<Array<{ id: string; number: string }>>("create_public_service_order", {
+      p_reference_id: referenceId,
+      p_service_type: serviceType,
+      p_customer_name: clean(body.customer_name),
+      p_customer_address: clean(body.customer_address),
+      p_customer_phone: clean(body.customer_phone),
+      p_invoice_number: clean(body.invoice_number) || null,
+      p_notes: notes,
+      p_metadata: metadata
     });
 
     const order = inserted[0];

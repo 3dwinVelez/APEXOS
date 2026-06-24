@@ -59,6 +59,7 @@
 - La API publica acepta configuracion server-side con `SUPABASE_URL`/`SUPABASE_ANON_KEY` o sus equivalentes `NEXT_PUBLIC_*`, siempre con `SUPABASE_SERVICE_ROLE_KEY` solo en servidor; en desarrollo tambien puede leer el `.env` raiz aunque Next se ejecute desde `apps/web`.
 - Si el runtime server-side no tiene una service role efectiva, el formulario externo depende de la politica `service_references_public_catalog_select` para listar referencias activas sin sesion de usuario.
 - Las consultas de catalogo publico usan explicitamente `SUPABASE_ANON_KEY` como bearer para referencias y tipos de servicio; la service role se reserva para la insercion controlada de la preorden.
+- La migracion `20260623203000_public_service_request_rpc.sql` agrega la funcion `create_public_service_order` para crear preordenes externas con `anon`, validando referencia activa, tipo de servicio activo, estado `agendado` y consecutivo corto sin exponer service role en Railway.
 - Al finalizar, el formulario muestra una pantalla amplia de confirmacion con el numero de seguimiento y accion principal para realizar otra solicitud.
 - El estado `agendado` representa preordenes creadas desde el link publico. Administracion puede conservarlas sin tecnico mientras valida datos; al cambiarlas a `pendiente`, la asignacion de tecnico responsable se vuelve obligatoria.
 - La migracion `20260623173000_service_orders_agendado_status.sql` amplia el constraint de Supabase para permitir `agendado` antes de `pendiente`.
@@ -109,6 +110,7 @@ El formulario publico debe funcionar como una solicitud guiada para personas sin
 - Verificar que el formulario publico cargue referencias y tipos de servicio desde los maestros activos de la empresa del enlace, por ejemplo `?empresa=SCJ`.
 - Verificar que el endpoint publico pueda listar referencias activas con rol anonimo sin exponer creacion o edicion de maestros.
 - Verificar que `/api/public/service-requests?empresa=SCJ` responda referencias aunque la lectura de empresas autenticadas no este disponible para el runtime anonimo.
+- Verificar que el envio del formulario cree la preorden aunque el runtime no tenga `SUPABASE_SERVICE_ROLE_KEY`, usando la RPC publica controlada.
 - Verificar que el numero mostrado al cliente sea el consecutivo corto `OS-00000`.
 - Verificar que una solicitud publica aparezca en el lobby de Servicios como `Agendado` / `Por completar`.
 - Verificar que el lobby vea la solicitud externa aun cuando la sesion administrativa cargue las ordenes principales desde la API local.
