@@ -14,6 +14,8 @@ type FormState = {
   service_type: string;
   reference_id: string;
   customer_address: string;
+  customer_neighborhood: string;
+  service_store: string;
   notes: string;
 };
 
@@ -26,6 +28,7 @@ type PublicServiceReference = {
   model?: string;
 };
 type PublicServiceType = { code: string; label: string; active?: boolean };
+type PublicServiceStore = { code: string; label: string; active?: boolean };
 
 const initialForm: FormState = {
   customer_name: "",
@@ -36,6 +39,8 @@ const initialForm: FormState = {
   service_type: "montaje",
   reference_id: "",
   customer_address: "",
+  customer_neighborhood: "",
+  service_store: "",
   notes: ""
 };
 
@@ -51,12 +56,12 @@ function onlyNumbers(value: string) {
 }
 
 function buildAddress(form: FormState) {
-  return form.customer_address.trim();
+  return [form.customer_address, form.customer_neighborhood ? `Barrio ${form.customer_neighborhood}` : ""].filter(Boolean).join(" - ").trim();
 }
 
 function requiredForStep(step: number): Array<keyof FormState> {
   if (step === 0) return ["customer_name", "customer_document", "customer_phone"];
-  if (step === 1) return ["customer_address"];
+  if (step === 1) return ["customer_address", "customer_neighborhood", "service_store"];
   if (step === 2) return ["service_type", "reference_id"];
   return [];
 }
@@ -79,6 +84,7 @@ function PublicServiceRequestContent() {
   const [created, setCreated] = useState<{ number: string } | null>(null);
   const [references, setReferences] = useState<PublicServiceReference[]>([]);
   const [serviceTypes, setServiceTypes] = useState<PublicServiceType[]>([]);
+  const [serviceStores, setServiceStores] = useState<PublicServiceStore[]>([]);
   const [loadingReferences, setLoadingReferences] = useState(true);
   const addressPreview = useMemo(() => buildAddress(form), [form]);
   const selectedReference = useMemo(() => references.find((item) => item.id === form.reference_id), [form.reference_id, references]);
@@ -93,16 +99,21 @@ function PublicServiceRequestContent() {
         if (!active) return;
         const nextReferences = Array.isArray(body.references) ? body.references : [];
         const nextTypes = Array.isArray(body.service_types) ? body.service_types.filter((item: PublicServiceType) => item.active !== false) : [];
+        const nextStores = Array.isArray(body.service_stores) ? body.service_stores.filter((item: PublicServiceStore) => item.active !== false) : [];
         setReferences(nextReferences);
         setServiceTypes(nextTypes);
-        if (nextTypes.length) {
-          setForm((current) => nextTypes.some((item: PublicServiceType) => item.code === current.service_type) ? current : { ...current, service_type: nextTypes[0].code });
-        }
+        setServiceStores(nextStores);
+        setForm((current) => ({
+          ...current,
+          service_type: nextTypes.length && !nextTypes.some((item: PublicServiceType) => item.code === current.service_type) ? nextTypes[0].code : current.service_type,
+          service_store: nextStores.length && !nextStores.some((item: PublicServiceStore) => item.code === current.service_store) ? nextStores[0].code : current.service_store
+        }));
       })
       .catch(() => {
         if (active) {
           setReferences([]);
           setServiceTypes([]);
+          setServiceStores([]);
         }
       })
       .finally(() => {
@@ -157,6 +168,8 @@ function PublicServiceRequestContent() {
           product_reference: selectedReference?.code || "",
           product_description: selectedReference ? `${selectedReference.code} - ${selectedReference.name}` : "",
           customer_address: addressPreview,
+          customer_neighborhood: form.customer_neighborhood,
+          service_store: form.service_store,
           notes: form.notes
         })
       });
@@ -272,6 +285,13 @@ function PublicServiceRequestContent() {
                   <Field label="Direccion completa *">
                     <textarea className="apex-public-input min-h-32 py-3" placeholder="Ej. Carrera 43 C Sur # 22 - 901, apartamento torre 5, cerca al D1, barrio La Magnolia, Envigado" value={form.customer_address} onChange={(event) => setField("customer_address", event.target.value)} />
                   </Field>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Field label="Barrio *"><input className="apex-public-input" value={form.customer_neighborhood} onChange={(event) => setField("customer_neighborhood", event.target.value)} /></Field>
+                    <Field label="Almacen *"><select className="apex-public-input" disabled={loadingReferences} value={form.service_store} onChange={(event) => setField("service_store", event.target.value)}>
+                      <option value="">{loadingReferences ? "Cargando almacenes..." : "Selecciona un almacen"}</option>
+                      {(serviceStores.length ? serviceStores : [{ code: "hogar_y_moda_1", label: "Hogar y Moda 1" }, { code: "hogar_y_moda_2", label: "Hogar y Moda 2" }]).map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}
+                    </select></Field>
+                  </div>
                 </div>
                 <div className="rounded-2xl border border-apex/20 bg-apex/10 p-4">
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-apex">Asi quedara registrada</p>
@@ -313,6 +333,7 @@ function PublicServiceRequestContent() {
                   <Summary label="Cliente" value={`${form.customer_name} - CC ${form.customer_document}`} />
                   <Summary label="Contacto" value={`${form.customer_phone}${form.customer_email ? ` / ${form.customer_email}` : ""}`} />
                   <Summary label="Direccion" value={addressPreview} />
+                  <Summary label="Almacen" value={(serviceStores.find((item) => item.code === form.service_store)?.label || form.service_store || "Sin seleccionar")} />
                   <Summary label="Servicio" value={`${form.service_type} - ${selectedReference ? `${selectedReference.code} ${selectedReference.name}` : "Sin referencia"}`} />
                   <Summary label="Factura / pedido" value={form.invoice_number || "Sin registrar por ahora"} />
                 </div>

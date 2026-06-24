@@ -17,6 +17,8 @@ type PublicServiceRequest = {
   product_reference?: string;
   product_description?: string;
   customer_address?: string;
+  customer_neighborhood?: string;
+  service_store?: string;
   notes?: string;
 };
 type PublicReferenceRow = { id: string; company_id?: string; code: string; name: string; category?: string; brand?: string; model?: string };
@@ -25,6 +27,10 @@ const DEFAULT_SERVICE_TYPES = [
   { code: "montaje", label: "Montaje", active: true },
   { code: "desmontaje", label: "Desmontaje", active: true },
   { code: "ambos", label: "Montaje y desmontaje", active: true }
+];
+const DEFAULT_SERVICE_STORES = [
+  { code: "hogar_y_moda_1", label: "Hogar y Moda 1", active: true },
+  { code: "hogar_y_moda_2", label: "Hogar y Moda 2", active: true }
 ];
 const SERVICE_TYPES_REFERENCE_CODE = "__SERVICE_TYPES__";
 
@@ -106,6 +112,19 @@ function normalizeServiceTypes(rows: unknown) {
       const row = item && typeof item === "object" ? item as Record<string, unknown> : {};
       const code = serviceTypeCode(row.code || row.label);
       const label = String(row.label || row.code || "").trim();
+      return { code, label, active: row.active !== false };
+    })
+    .filter((item) => item.code && item.label && !seen.has(item.code) && seen.add(item.code));
+}
+
+function normalizeServiceStores(rows: unknown) {
+  const source = Array.isArray(rows) && rows.length ? rows : DEFAULT_SERVICE_STORES;
+  const seen = new Set<string>();
+  return source
+    .map((item) => {
+      const row = item as Record<string, unknown>;
+      const code = serviceTypeCode(clean(row.code) || clean(row.label));
+      const label = clean(row.label) || clean(row.code);
       return { code, label, active: row.active !== false };
     })
     .filter((item) => item.code && item.label && !seen.has(item.code) && seen.add(item.code));
@@ -259,6 +278,13 @@ async function serviceTypesForCompany(companyId: string) {
   return normalizeServiceTypes(rows[0]?.metadata?.service_types).filter((item) => item.active);
 }
 
+async function serviceStoresForCompany(companyId: string) {
+  const rows = await supabasePublicRead<Array<{ metadata?: Record<string, unknown> }>>(
+    `/rest/v1/service_references?select=metadata&company_id=eq.${encodeURIComponent(companyId)}&code=eq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&limit=1`
+  ).catch(() => []);
+  return normalizeServiceStores(rows[0]?.metadata?.service_stores).filter((item) => item.active);
+}
+
 export async function GET(request: NextRequest) {
   try {
     const companyIds = await resolveCompanyCandidates({}, request);
@@ -280,8 +306,8 @@ export async function GET(request: NextRequest) {
       references = companyId ? rows.filter((item) => item.company_id === companyId) : rows;
     }
     if (!companyId || !references.length) return jsonError("No se encontro una empresa con referencias activas para el formulario.", 404);
-    const serviceTypes = await serviceTypesForCompany(companyId);
-    return NextResponse.json({ ok: true, company_id: companyId, references, service_types: serviceTypes });
+    const [serviceTypes, serviceStores] = await Promise.all([serviceTypesForCompany(companyId), serviceStoresForCompany(companyId)]);
+    return NextResponse.json({ ok: true, company_id: companyId, references, service_types: serviceTypes, service_stores: serviceStores });
   } catch (error) {
     return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible consultar las referencias." }, { status: 500 });
   }
@@ -296,6 +322,8 @@ export async function POST(request: NextRequest) {
       ["customer_phone", "telefono"],
       ["service_type", "tipo de servicio"],
       ["customer_address", "direccion"],
+      ["customer_neighborhood", "barrio"],
+      ["service_store", "almacen"],
       ["reference_id", "referencia del producto"]
     ] as const;
     const missing = required.filter(([key]) => !clean(body[key])).map(([, label]) => label);
@@ -313,6 +341,10 @@ export async function POST(request: NextRequest) {
     const serviceTypes = await serviceTypesForCompany(companyId);
     const serviceType = serviceTypeCode(clean(body.service_type) || "montaje");
     if (!serviceTypes.some((item) => item.code === serviceType)) return jsonError("Selecciona un tipo de servicio activo para esta empresa.");
+    const serviceStores = await serviceStoresForCompany(companyId);
+    const storeCode = serviceTypeCode(clean(body.service_store));
+    const store = serviceStores.find((item) => item.code === storeCode);
+    if (!store) return jsonError("Selecciona un almacen activo para esta empresa.");
     const notes = clean(body.notes) || "Solicitud creada por formulario publico. Requiere revision administrativa.";
     const metadata: Record<string, unknown> = {
       created_from: "public_service_request",
@@ -321,6 +353,9 @@ export async function POST(request: NextRequest) {
       preorder_status: "agendado",
       customer_document: clean(body.customer_document),
       customer_email: clean(body.customer_email),
+      customer_neighborhood: clean(body.customer_neighborhood),
+      service_store: store.code,
+      service_store_label: store.label,
       product_reference: clean(body.product_reference),
       product_description: clean(body.product_description),
       received_at: new Date().toISOString()
@@ -341,5 +376,30 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, order });
   } catch (error) {
     return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible registrar la solicitud." }, { status: 500 });
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const authorization = request.headers.get("authorization") || "";
+    if (!authorization.toLowerCase().startsWith("bearer ")) return jsonError("Sesion requerida para actualizar almacenes.", 401);
+    const body = await request.json().catch(() => ({})) as { company_name?: string; service_stores?: unknown };
+    const stores = normalizeServiceStores(body.service_stores);
+    if (!stores.some((item) => item.active)) return jsonError("Debe existir al menos un almacen activo.");
+    const companyIds = await resolveCompanyCandidates(body, request);
+    const companyId = companyIds[0] || "";
+    if (!companyId) return jsonError("No se encontro empresa para actualizar almacenes.", 404);
+    const rows = await supabaseRequest<Array<{ id: string; metadata?: Record<string, unknown> }>>(
+      `/rest/v1/service_references?select=id,metadata&company_id=eq.${encodeURIComponent(companyId)}&code=eq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&limit=1`
+    );
+    const target = rows[0];
+    if (!target?.id) return jsonError("No existe el registro maestro publico de servicios para esta empresa.", 404);
+    await supabaseRequest(`/rest/v1/service_references?id=eq.${encodeURIComponent(target.id)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ metadata: { ...(target.metadata || {}), service_stores: stores } })
+    });
+    return NextResponse.json({ ok: true, service_stores: stores });
+  } catch (error) {
+    return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible actualizar almacenes." }, { status: 500 });
   }
 }
