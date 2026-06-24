@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 
 export default function VentasPage() {
   return (
-    <div className="apex-page-shell space-y-4">
+    <div className="apex-workspace-shell space-y-4">
       <header className="apex-section-card p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -19,7 +19,7 @@ export default function VentasPage() {
         </div>
       </header>
       <VentasNav />
-      <section className="grid gap-3 md:grid-cols-3">
+      <section className="apex-dense-actions">
         <LobbyLink href="/dashboard/ventas/clientes" icon={<Users size={18} />} title="Clientes" detail="Crear y gestionar cartera comercial." />
         <LobbyLink href="/dashboard/ventas/ordenes/nueva" icon={<Plus size={18} />} title="Nueva orden" detail="Registrar una venta o pedido." primary />
         <LobbyLink href="/dashboard/ventas/ordenes" icon={<FileText size={18} />} title="Seguimiento" detail="Consultar ordenes y estados." />

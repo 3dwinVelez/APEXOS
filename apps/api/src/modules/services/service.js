@@ -26,7 +26,7 @@ function orderListInclude() {
   return {
     reference: { include: { parts: true } },
     incidents: true,
-    photos: { select: { id: true, type: true, created_at: true } }
+    photos: { select: { id: true, type: true, created_at: true, metadata: true } }
   };
 }
 
@@ -933,7 +933,11 @@ async function startOrder(tenantId, user, id, input = {}) {
       started_at: new Date(),
       start_latitude: input.latitude,
       start_longitude: input.longitude,
-      metadata: { ...(input.metadata || {}), start_accuracy_meters: input.accuracy_meters }
+      metadata: {
+        ...(order.metadata || {}),
+        ...(input.metadata || {}),
+        start_accuracy_meters: input.accuracy_meters
+      }
     },
     include: orderInclude()
     });

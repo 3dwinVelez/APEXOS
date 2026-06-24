@@ -165,7 +165,7 @@ export default function TalentPage() {
     : "La operacion de campo se ve estable y con trazabilidad reciente.";
 
   return (
-    <div className="apex-page-shell space-y-5">
+    <div className="apex-workspace-shell space-y-5">
       <section className="apex-context-hero">
         <div className="relative z-10 flex flex-col gap-5 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
@@ -200,7 +200,7 @@ export default function TalentPage() {
           </div>
           <span className={`rounded-md px-3 py-1.5 text-xs font-semibold ${openAlerts ? "bg-amber-50 text-amber-900" : "bg-emerald-50 text-emerald-800"}`}>{openAlerts ? `${openAlerts} punto(s) requieren revisión` : "Operación estable"}</span>
         </div>
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div className="apex-dense-actions">
           <ActionTile icon={<Smartphone size={20} />} title="Registrar jornada" detail="Marcación móvil, GPS y evidencia para personal operativo." href="/dashboard/talento-humano/marcacion" primary />
           <ActionTile icon={<Route size={20} />} title="Planear y asignar horarios" detail="Organiza personas, jornadas y recursos de campo." href="/dashboard/talento-humano/rutas" primary />
           <ActionTile icon={<MapPinned size={20} />} title="Supervisar operación en vivo" detail="Consulta ubicación, actividad y trazabilidad por persona." href="/dashboard/talento-humano/mapa" primary />

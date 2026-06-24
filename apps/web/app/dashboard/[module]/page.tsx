@@ -39,7 +39,7 @@ export default async function ModulePage({ params }: { params: Promise<{ module:
   };
 
   return (
-    <div className="apex-page-shell space-y-4">
+    <div className="apex-workspace-shell space-y-4">
       <header className="apex-section-card p-4">
         <p className="text-sm font-medium text-apex">{moduleConfig.id} · {moduleConfig.area}</p>
         <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -50,7 +50,7 @@ export default async function ModulePage({ params }: { params: Promise<{ module:
         <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-700">{moduleConfig.summary}</p>
       </header>
 
-      <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <section className="apex-dashboard-grid">
         <div className="apex-section-card p-4">
           <h2 className="mb-4 text-base font-semibold">Capacidades del modulo</h2>
           <div className="grid gap-3 sm:grid-cols-2">

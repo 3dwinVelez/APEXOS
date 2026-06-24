@@ -270,7 +270,7 @@ export default function ServiceReferencesPage() {
   }
 
   return (
-    <div className="apex-page-shell space-y-5 pb-24 md:pb-8">
+    <div className="apex-workspace-shell space-y-5 pb-24 md:pb-8">
       <header className="sticky top-0 z-20 -mx-3 border-b border-line bg-paper/95 px-3 py-3 backdrop-blur sm:-mx-4 sm:px-4 md:static md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0">
         <div className="min-w-0">
           <Link className="mb-3 inline-flex h-11 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-medium text-neutral-600 hover:text-apex md:border-0 md:bg-transparent md:px-0" href="/dashboard/servicios"><ArrowLeft size={16} /> Volver a servicios</Link>

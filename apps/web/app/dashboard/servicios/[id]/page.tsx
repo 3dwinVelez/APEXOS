@@ -5,7 +5,7 @@ import { SignatureCapture } from "@/components/operations/SignatureCapture";
 import { api } from "@/lib/api";
 import { getGpsFix } from "@/lib/gps";
 import { buildServiceReportPdfBlob } from "@/lib/serviceReportPdf";
-import { ArrowLeft, BookOpen, Camera, CheckCircle2, Circle, Download, FileSignature, MapPin, Play, Star, Wrench, XCircle } from "lucide-react";
+import { ArrowLeft, BookOpen, Camera, CheckCircle2, Circle, Download, FileSignature, MapPin, PackageSearch, Play, Star, Wrench, XCircle } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
@@ -74,6 +74,7 @@ const photoLabels: Record<string, string> = {
   no_ejecutada: "No ejecutada"
 };
 const inspectionStatusLabel: Record<InspectionStatus, string> = { ok: "OK", averiada: "Averiada", faltante: "Faltante" };
+type InspectionMode = "decision" | "pieces";
 const workflowSteps = [
   { id: "pendiente", label: "Inicio" },
   { id: "inspeccion", label: "Inspección" },
@@ -125,6 +126,7 @@ export default function ServiceOperationPage() {
   const [surveyQuestions, setSurveyQuestions] = useState<SatisfactionQuestion[]>(fallbackSatisfactionQuestions());
   const [satisfactionRatings, setSatisfactionRatings] = useState<Record<string, number>>({});
   const [activePanel, setActivePanel] = useState<Panel>("inicio");
+  const [inspectionMode, setInspectionMode] = useState<InspectionMode>("decision");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -213,7 +215,7 @@ export default function ServiceOperationPage() {
   async function update(action: "start" | "inspection" | "execution" | "close" | "close-not-executed") {
     setWorking(true);
     try {
-      const gpsResult = ["start", "close", "close-not-executed"].includes(action) ? await optionalGps(action) : { gps: null, metadata: {} };
+      const gpsResult = ["close", "close-not-executed"].includes(action) ? await optionalGps(action) : { gps: null, metadata: {} };
       const satisfactionSurvey = action === "close" ? {
         version: 1,
         answers: surveyQuestions.map((question) => ({
@@ -230,7 +232,11 @@ export default function ServiceOperationPage() {
         body: JSON.stringify({
           ...body,
           ...(gpsResult.gps || {}),
-          metadata: { ...gpsResult.metadata, ...(satisfactionSurvey ? { satisfaction_survey: satisfactionSurvey } : {}) }
+          metadata: {
+            ...gpsResult.metadata,
+            ...(action === "start" ? { start_without_gps: true, start_method: "technician_manual_confirmation" } : {}),
+            ...(satisfactionSurvey ? { satisfaction_survey: satisfactionSurvey } : {})
+          }
         })
       });
       setOrder(updated);
@@ -287,7 +293,21 @@ export default function ServiceOperationPage() {
 
   async function saveInspection(decision: "armable" | "no_armable") {
     if (!validateInspection()) return null;
-    return api<ServiceOrder>(`/api/v1/services/orders/${params.id}/inspection`, { method: "PATCH", body: JSON.stringify({ decision, items: inspection, metadata: { source: "apexos_service_flow" } }) });
+    const problems = inspection.filter((item) => item.status !== "ok");
+    return api<ServiceOrder>(`/api/v1/services/orders/${params.id}/inspection`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        decision,
+        items: inspection,
+        metadata: {
+          source: "apexos_service_flow",
+          inspection_method: "three_decision_buttons",
+          piece_issue_count: problems.length,
+          piece_supports_required: problems.length,
+          piece_supports_captured: problems.filter((item) => hasProblemEvidence(item.part_id)).length
+        }
+      })
+    });
   }
 
   async function markArmable() {
@@ -432,15 +452,16 @@ export default function ServiceOperationPage() {
           <h2 className="mb-3 text-base font-semibold">Inicio del servicio</h2>
           <div className="rounded-md border border-line bg-paper p-4">
             <p className="font-semibold">Confirma que estás en el punto de servicio</p>
-            <p className="mt-1 text-sm text-neutral-600">Al iniciar registraremos tu ubicación automáticamente. No necesitas tomar una foto de la fachada.</p>
+            <p className="mt-1 text-sm text-neutral-600">No se solicitará GPS en este paso. Confirma el inicio y continúa con la inspección del producto.</p>
           </div>
-          <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white disabled:opacity-50" disabled={working} onClick={() => update("start")} type="button"><Play size={18} /> Iniciar y registrar GPS</button>
+          <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white disabled:opacity-50" disabled={working} onClick={() => update("start")} type="button"><Play size={18} /> Iniciar servicio</button>
         </section>
       ) : null}
 
       {activePanel === "inspeccion" && ["en_curso", "inspeccion"].includes(order.status) ? (
         <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
-          <h2 className="mb-3 text-base font-semibold">Inspeccion</h2>
+          <h2 className="mb-2 text-base font-semibold">Inspección</h2>
+          <p className="mb-3 text-sm text-neutral-600">Elige una acción. Usa Piezas solo cuando necesites reportar una pieza defectuosa o faltante.</p>
           {referenceManuals.length ? (
             <div className="mb-3 rounded-md border border-sky-200 bg-sky-50 p-3">
               <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-sky-950">
@@ -460,42 +481,79 @@ export default function ServiceOperationPage() {
               </div>
             </div>
           ) : null}
-          <div className="space-y-3">
-            {inspection.map((part, index) => (
-              <div className="rounded-md border border-line p-3" key={part.part_id}>
-                <div className="grid gap-3 sm:flex sm:items-start sm:justify-between">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold">{index + 1}. {part.name}</p>
-                    <p className="text-xs text-neutral-500">{part.quantity} {part.unit}</p>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
-                    {(["ok", "averiada", "faltante"] as InspectionStatus[]).map((status) => (
-                      <button className={`h-11 min-w-0 rounded-md border px-2 text-sm font-semibold ${part.status === status ? "border-apex bg-apex text-white" : "border-line bg-white"}`} key={status} onClick={() => updateInspection(part.part_id, { status, action: status === "ok" ? "ninguna" : part.action })} type="button">
-                        {inspectionStatusLabel[status]}
-                      </button>
-                    ))}
-                  </div>
+          <div className="grid gap-3">
+            <button className={`min-h-24 rounded-md border p-4 text-left shadow-sm transition active:scale-[0.99] ${inspectionMode === "pieces" ? "border-apex bg-apex/10" : "border-line bg-paper hover:border-apex"}`} onClick={() => setInspectionMode("pieces")} type="button">
+              <span className="flex items-center gap-3">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-apex text-white"><PackageSearch size={24} /></span>
+                <span>
+                  <span className="block text-xl font-semibold">Piezas</span>
+                  <span className="mt-1 block text-sm text-neutral-600">Reportar pieza defectuosa o faltante con foto y comentario.</span>
+                </span>
+              </span>
+            </button>
+            <button className="min-h-24 rounded-md border border-emerald-200 bg-emerald-50 p-4 text-left text-emerald-950 shadow-sm transition active:scale-[0.99] disabled:opacity-50" disabled={working} onClick={markArmable} type="button">
+              <span className="flex items-center gap-3">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-emerald-700 text-white"><Wrench size={24} /></span>
+                <span>
+                  <span className="block text-xl font-semibold">Armable</span>
+                  <span className="mt-1 block text-sm text-emerald-800">El producto puede continuar a ejecución.</span>
+                </span>
+              </span>
+            </button>
+            <button className="min-h-24 rounded-md border border-red-200 bg-red-50 p-4 text-left text-red-950 shadow-sm transition active:scale-[0.99] disabled:opacity-50" disabled={working} onClick={markNotArmable} type="button">
+              <span className="flex items-center gap-3">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-red-700 text-white"><XCircle size={24} /></span>
+                <span>
+                  <span className="block text-xl font-semibold">No armable</span>
+                  <span className="mt-1 block text-sm text-red-800">Cerrar por defecto o inconsistencia con soporte final.</span>
+                </span>
+              </span>
+            </button>
+          </div>
+
+          {inspectionMode === "pieces" ? (
+            <div className="mt-4 space-y-3 rounded-md border border-line bg-paper p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 className="font-semibold">Inventario de piezas</h3>
+                  <p className="mt-1 text-sm text-neutral-600">Marca solo las piezas con novedad. Cada pieza reportada requiere comentario y foto.</p>
                 </div>
-                {part.status !== "ok" ? (
-                  <div className="mt-3 space-y-3 rounded-md bg-paper p-3">
-                    <textarea className="min-h-20 w-full rounded-md border border-line px-3 py-2 text-base md:text-sm" placeholder="Comentario obligatorio" value={part.comment} onChange={(event) => updateInspection(part.part_id, { comment: event.target.value })} />
-                    <select className="h-12 w-full rounded-md border border-line px-3 text-base" value={part.action} onChange={(event) => updateInspection(part.part_id, { action: event.target.value })}>
-                      <option value="cambio">Solicitar cambio</option>
-                      <option value="garantia">Solicitar garantia</option>
-                      <option value="revision">Requiere revision</option>
-                      <option value="ninguna">Sin accion adicional</option>
-                    </select>
-                    <input className="h-12 w-full rounded-md border border-line px-3 text-base" placeholder="Proveedor sugerido (opcional)" value={part.supplier_name || ""} onChange={(event) => updateInspection(part.part_id, { supplier_name: event.target.value })} />
-                    <PhotoCapture label={`Evidencia - ${part.name}`} required loading={uploading[`pieza_${part.part_id}`]} value={captures[`pieza_${part.part_id}`] || null} onChange={(file) => uploadPhoto("pieza_averiada", file, { part_id: part.part_id, part_name: part.name, status: part.status, comment: part.comment, action: part.action, supplier_name: part.supplier_name || "" }, `pieza_${part.part_id}`)} />
-                  </div>
-                ) : null}
+                <button className="h-10 rounded-md border border-line bg-white px-3 text-sm font-semibold hover:bg-paper" onClick={() => setInspectionMode("decision")} type="button">Volver</button>
               </div>
-            ))}
-          </div>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            <button className="h-12 rounded-md border border-line text-base font-semibold hover:bg-paper disabled:opacity-50" disabled={working} onClick={markArmable} type="button"><Wrench className="mr-1 inline" size={17} /> Armable</button>
-            <button className="h-12 rounded-md border border-red-200 text-base font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50" disabled={working} onClick={markNotArmable} type="button"><XCircle className="mr-1 inline" size={17} /> No armable</button>
-          </div>
+              <div className="space-y-3">
+                {inspection.map((part, index) => (
+                  <div className="rounded-md border border-line bg-white p-3" key={part.part_id}>
+                    <div className="grid gap-3 sm:flex sm:items-start sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold">{index + 1}. {part.name}</p>
+                        <p className="text-xs text-neutral-500">{part.quantity} {part.unit}</p>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
+                        {(["ok", "averiada", "faltante"] as InspectionStatus[]).map((status) => (
+                          <button className={`h-11 min-w-0 rounded-md border px-2 text-sm font-semibold ${part.status === status ? "border-apex bg-apex text-white" : "border-line bg-white"}`} key={status} onClick={() => updateInspection(part.part_id, { status, action: status === "ok" ? "ninguna" : part.action })} type="button">
+                            {inspectionStatusLabel[status]}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {part.status !== "ok" ? (
+                      <div className="mt-3 space-y-3 rounded-md bg-paper p-3">
+                        <textarea className="min-h-20 w-full rounded-md border border-line px-3 py-2 text-base md:text-sm" placeholder="Comentario obligatorio" value={part.comment} onChange={(event) => updateInspection(part.part_id, { comment: event.target.value })} />
+                        <select className="h-12 w-full rounded-md border border-line px-3 text-base" value={part.action} onChange={(event) => updateInspection(part.part_id, { action: event.target.value })}>
+                          <option value="cambio">Solicitar cambio</option>
+                          <option value="garantia">Solicitar garantia</option>
+                          <option value="revision">Requiere revision</option>
+                          <option value="ninguna">Sin accion adicional</option>
+                        </select>
+                        <input className="h-12 w-full rounded-md border border-line px-3 text-base" placeholder="Proveedor sugerido (opcional)" value={part.supplier_name || ""} onChange={(event) => updateInspection(part.part_id, { supplier_name: event.target.value })} />
+                        <PhotoCapture label={`Evidencia - ${part.name}`} required loading={uploading[`pieza_${part.part_id}`]} value={captures[`pieza_${part.part_id}`] || null} onChange={(file) => uploadPhoto("pieza_averiada", file, { part_id: part.part_id, part_name: part.name, status: part.status, comment: part.comment, action: part.action, supplier_name: part.supplier_name || "" }, `pieza_${part.part_id}`)} />
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </section>
       ) : null}
 

@@ -417,7 +417,7 @@ export default function ServicesPage() {
     : "La operacion de servicios no tiene pendientes criticos en este momento.";
 
   return (
-    <div className="apex-page-shell space-y-5 pb-28 md:pb-8">
+    <div className="apex-workspace-shell space-y-5 pb-28 md:pb-8">
       <header className="sticky top-0 z-20 -mx-3 border-b border-line bg-paper/95 px-3 py-3 backdrop-blur sm:-mx-4 sm:px-4 md:static md:mx-0 md:border-0 md:bg-transparent md:px-0">
         <div className="flex items-center gap-3">
           <Link className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-line bg-white md:hidden" href="/dashboard" aria-label="Volver al inicio">
