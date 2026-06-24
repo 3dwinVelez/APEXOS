@@ -23,6 +23,7 @@ import { useEffect, useMemo, useState } from "react";
 type ServiceReference = { id: number | string; code: string; name: string };
 type Technician = { id: number | string; code?: string; user?: { name?: string; email?: string } };
 type ServiceType = { code: string; label: string; active?: boolean };
+type ServiceStore = { code: string; label: string; active?: boolean };
 type ServiceOrder = {
   id: number | string;
   number: string;
@@ -43,6 +44,9 @@ type ServiceOrder = {
   notes?: string;
   metadata?: {
     customer_document?: string;
+    customer_neighborhood?: string;
+    service_store?: string;
+    service_store_label?: string;
     public_request?: boolean;
     requires_admin_completion?: boolean;
     preorder_status?: string;
@@ -66,6 +70,8 @@ type OrderEditForm = {
   customer_document: string;
   customer_phone: string;
   customer_address: string;
+  customer_neighborhood: string;
+  service_store: string;
   invoice_number: string;
   notes: string;
 };
@@ -80,6 +86,8 @@ const emptyEditForm: OrderEditForm = {
   customer_document: "",
   customer_phone: "",
   customer_address: "",
+  customer_neighborhood: "",
+  service_store: "",
   invoice_number: "",
   notes: ""
 };
@@ -282,6 +290,7 @@ export default function ServicesPage() {
   const [references, setReferences] = useState<ServiceReference[]>([]);
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [serviceTypesCatalog, setServiceTypesCatalog] = useState<ServiceType[]>([]);
+  const [serviceStores, setServiceStores] = useState<ServiceStore[]>([]);
   const [status, setStatus] = useState("");
   const [query, setQuery] = useState("");
   const [dateScope, setDateScope] = useState("");
@@ -319,12 +328,16 @@ export default function ServicesPage() {
         api<Technician[]>("/api/v1/services/technicians")
       ]);
       const typeRows = await api<ServiceType[]>("/api/v1/services/service-types").catch(() => []);
+      const storeRows = await api<ServiceStore[]>("/api/v1/services/service-stores").catch(() => []);
       setReferences(referenceRows);
       setTechnicians(technicianRows);
       setServiceTypesCatalog(typeRows.filter((item) => item.active !== false));
+      setServiceStores(storeRows.filter((item) => item.active !== false));
     } catch {
       setReferences([]);
       setTechnicians([]);
+      setServiceTypesCatalog([]);
+      setServiceStores([]);
     }
   }
 
@@ -406,6 +419,8 @@ export default function ServicesPage() {
       customer_document: String(order.metadata?.customer_document || ""),
       customer_phone: order.customer_phone || "",
       customer_address: order.customer_address || "",
+      customer_neighborhood: String(order.metadata?.customer_neighborhood || ""),
+      service_store: String(order.metadata?.service_store || ""),
       invoice_number: order.invoice_number || "",
       notes: order.notes || ""
     });
@@ -435,9 +450,15 @@ export default function ServicesPage() {
     setMessage("");
     try {
       const payload: Partial<OrderEditForm> = { ...editForm };
+      delete payload.customer_neighborhood;
+      delete payload.service_store;
+      const selectedStore = serviceStores.find((item) => item.code === editForm.service_store);
       const metadata = {
         ...(editingOrder.metadata || {}),
         customer_document: editForm.customer_document.trim(),
+        customer_neighborhood: editForm.customer_neighborhood.trim(),
+        service_store: editForm.service_store,
+        service_store_label: selectedStore?.label || String(editingOrder.metadata?.service_store_label || ""),
         requires_admin_completion: editForm.status === "agendado",
         external_order_id: !isLocalOrder(editingOrder) ? String(editingOrder.id) : String(editingOrder.metadata?.external_order_id || ""),
         external_order_number: !isLocalOrder(editingOrder) ? editingOrder.number : String(editingOrder.metadata?.external_order_number || "")
@@ -811,6 +832,13 @@ export default function ServicesPage() {
                 Factura o pedido (opcional)
                 <input className="h-11 rounded-md border border-line px-3" value={editForm.invoice_number} onChange={(event) => setEditForm((prev) => ({ ...prev, invoice_number: event.target.value }))} />
               </label>
+              <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+                Almacen origen
+                <select className="h-11 rounded-md border border-line bg-white px-3" value={editForm.service_store} onChange={(event) => setEditForm((prev) => ({ ...prev, service_store: event.target.value }))}>
+                  <option value="">Selecciona un almacen</option>
+                  {serviceStores.map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}
+                </select>
+              </label>
             </section>
             <section className="grid gap-3 md:grid-cols-2">
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
@@ -828,6 +856,10 @@ export default function ServicesPage() {
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
                 Direccion *
                 <input className="h-11 rounded-md border border-line px-3" value={editForm.customer_address} onChange={(event) => setEditForm((prev) => ({ ...prev, customer_address: event.target.value }))} />
+              </label>
+              <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+                Barrio
+                <input className="h-11 rounded-md border border-line px-3" value={editForm.customer_neighborhood} onChange={(event) => setEditForm((prev) => ({ ...prev, customer_neighborhood: event.target.value }))} />
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700 md:col-span-2">
                 Observaciones *
