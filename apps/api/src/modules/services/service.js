@@ -26,7 +26,7 @@ function orderListInclude() {
   return {
     reference: { include: { parts: true } },
     incidents: true,
-    photos: { select: { id: true, type: true, created_at: true } }
+    photos: { select: { id: true, type: true, created_at: true, metadata: true } }
   };
 }
 
@@ -595,8 +595,12 @@ async function technicianOrderScope(tenantId, user) {
 }
 
 async function accessibleOrder(tenantId, user, id, include = orderInclude()) {
+  const orderId = Number(id);
+  if (!Number.isInteger(orderId) || orderId <= 0) {
+    throw appError(404, "SERVICE_ORDER_EXTERNAL_NOT_SYNCED", "Esta solicitud externa aun no esta sincronizada como orden operativa local");
+  }
   const scope = await technicianOrderScope(tenantId, user);
-  const order = await prisma.serviceOrder.findFirst({ where: { id: Number(id), ...scope }, include });
+  const order = await prisma.serviceOrder.findFirst({ where: { id: orderId, ...scope }, include });
   if (!order) throw appError(404, "SERVICE_ORDER_NOT_AVAILABLE", "La orden no existe, no esta activa o no esta asignada a este tecnico");
   return order;
 }
@@ -692,6 +696,11 @@ async function createOrder(tenantId, user, input) {
 
   return prisma.runWithTenant(tenantId, async () => {
     const serviceType = await assertValidServiceType(tenantId, input.service_type || "montaje");
+    const requestedNumber = String(input.number || "").trim();
+    if (requestedNumber) {
+      const existing = await prisma.serviceOrder.findFirst({ where: { tenant_id: tenantId, number: requestedNumber }, select: { id: true } });
+      if (existing) throw appError(409, "SERVICE_ORDER_NUMBER_EXISTS", "Ya existe una orden local con este consecutivo");
+    }
     const technician = await prisma.employee.findFirst({
       where: { id: Number(input.technician_id), active: true, user_type: "tecnico", user: { active: true, role: { name: "Tecnico" } } },
       select: { id: true }
@@ -699,7 +708,7 @@ async function createOrder(tenantId, user, input) {
     if (!technician) throw appError(400, "INVALID_SERVICE_TECHNICIAN", "Selecciona un tecnico operativo activo");
     return prisma.serviceOrder.create({
     data: {
-      number: await nextNumber(),
+      number: requestedNumber || await nextNumber(),
       reference_item_id: input.reference_item_id,
       reference_id: input.reference_id,
       technician_id: technician.id,
@@ -933,7 +942,11 @@ async function startOrder(tenantId, user, id, input = {}) {
       started_at: new Date(),
       start_latitude: input.latitude,
       start_longitude: input.longitude,
-      metadata: { ...(input.metadata || {}), start_accuracy_meters: input.accuracy_meters }
+      metadata: {
+        ...(order.metadata || {}),
+        ...(input.metadata || {}),
+        start_accuracy_meters: input.accuracy_meters
+      }
     },
     include: orderInclude()
     });

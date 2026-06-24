@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 
 export default function FacturacionPage() {
   return (
-    <div className="apex-page-shell space-y-4">
+    <div className="apex-workspace-shell space-y-4">
       <header className="apex-section-card p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -19,7 +19,7 @@ export default function FacturacionPage() {
         </div>
       </header>
       <FacturacionNav />
-      <section className="grid gap-3 md:grid-cols-2">
+      <section className="apex-dense-actions">
         <LobbyLink href="/dashboard/facturacion/emitir" icon={<ReceiptText size={18} />} title="Emitir factura" detail="Generar documento desde una orden confirmada." primary />
         <LobbyLink href="/dashboard/facturacion/documentos" icon={<FileText size={18} />} title="Documentos emitidos" detail="Consultar consecutivos, estados y trazabilidad." />
       </section>

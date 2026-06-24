@@ -10,7 +10,11 @@
 - El cierre de servicio ahora replica el patron legacy de firma digital: canvas tactil para que el cliente firme sobre el celular, boton de confirmar y opcion de limpiar antes de guardar.
 - Se elimino la opcion visual de cargar archivos en evidencias; las evidencias fotograficas se capturan desde camara usando `capture="environment"`.
 - La firma del cliente se guarda como evidencia `firma_cliente` en PNG base64 con metadata de firmante y fecha.
-- Se retiro la foto de fachada del inicio; el tecnico confirma su presencia y la plataforma registra el GPS automaticamente.
+- Se retiro la foto de fachada del inicio; el tecnico confirma su presencia y la plataforma inicia el servicio sin solicitar GPS en ese paso.
+- La inspeccion operativa se simplifica a tres decisiones tactiles grandes: `Piezas`, `Armable` y `No armable`.
+- `Piezas` abre el inventario tecnico de la referencia solo cuando existe una novedad, permitiendo marcar piezas averiadas o faltantes con observacion, accion requerida, proveedor sugerido y evidencia fotografica.
+- El tecnico puede registrar piezas con novedad y luego marcar el producto como `Armable` para continuar a ejecucion, conservando los soportes en la orden.
+- El tecnico puede marcar `No armable` desde la inspeccion o despues de registrar piezas, quedando habilitado el cierre no ejecutado por defectos o inconsistencias con evidencia y firma.
 - Se reemplazo la foto final del cliente por una encuesta tactil de satisfaccion con tres preguntas calificadas de 1 a 5 estrellas.
 - El cierre guiado muestra el avance de la encuesta, usa controles grandes para movil y conserva la firma digital como aceptacion final.
 - El backend bloquea el cierre normal si faltan producto abierto, producto cerrado, las tres respuestas de satisfaccion o la firma del cliente.
@@ -123,7 +127,11 @@ El formulario publico debe funcionar como una solicitud guiada para personas sin
 - Verificar que el contador SLA inicie en 4 dias habiles, baje por dia habil transcurrido y muestre valores negativos cuando supere el plazo.
 - Verificar que el endpoint publico no permita seleccionar `company_id` libremente desde el cliente.
 - Verificar que un tecnico solo vea sus servicios activos y que no pueda crear ordenes ni consultar servicios ajenos.
-- Iniciar servicio con GPS.
+- Iniciar servicio sin solicitar GPS al tecnico.
+- Verificar que la inspeccion muestre solo las decisiones `Piezas`, `Armable` y `No armable` antes de abrir el inventario.
+- Reportar una pieza averiada o faltante con fotografia y confirmar que aparezca en reporteria como soporte de pieza.
+- Registrar una pieza defectuosa, marcar el producto como armable y continuar a ejecucion.
+- Registrar o no registrar piezas, marcar el producto como no armable y cerrar como no ejecutado por defectos o inconsistencias.
 - Registrar inspeccion, ejecucion, novedades y fotos.
 - Capturar firma digital del cliente sobre el dispositivo movil.
 - Completar las tres preguntas de satisfaccion y verificar su inclusion en el reporte PDF.

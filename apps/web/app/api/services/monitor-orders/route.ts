@@ -61,6 +61,10 @@ function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i.test(value);
 }
 
+function referenceLabel(reference?: { code?: string; name?: string } | null) {
+  return [reference?.code, reference?.name].filter(Boolean).join(" - ");
+}
+
 async function supabaseRequest<T>(requestPath: string, init: RequestInit = {}) {
   const config = supabaseConfig();
   if (!config.url || !config.anonKey || !config.serviceRoleKey) {
@@ -169,6 +173,13 @@ export async function GET(request: NextRequest) {
     const mapped = orders.map((order) => {
       const reference = references.find((item) => item.id === order.reference_id);
       const technician = technicians.find((item) => item.id === order.technician_employee_id);
+      const metadata = {
+        ...(order.metadata || {}),
+        external_reference_id: order.reference_id || "",
+        external_reference_code: reference?.code || String(order.metadata?.external_reference_code || ""),
+        external_reference_name: reference?.name || String(order.metadata?.external_reference_name || ""),
+        external_reference_label: referenceLabel(reference) || String(order.metadata?.product_reference || order.metadata?.product_description || "")
+      };
       return {
         id: order.id,
         number: order.number,
@@ -193,7 +204,7 @@ export async function GET(request: NextRequest) {
         closed_at: order.closed_at || "",
         created_at: order.created_at || "",
         notes: order.notes || "",
-        metadata: order.metadata || {},
+        metadata,
         incidents: incidents.filter((item) => item.order_id === order.id),
         photos: evidence.filter((item) => item.order_id === order.id).map((item) => ({
           ...item,

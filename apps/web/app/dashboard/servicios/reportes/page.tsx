@@ -21,7 +21,7 @@ type Order = {
   photos?: Evidence[];
 };
 type Incident = { id: string; order_id: string; type?: string; description?: string; action?: string; metadata?: Record<string, unknown> };
-type Evidence = { id: string; order_id: string; evidence_type?: string; storage_path?: string; metadata?: Record<string, unknown> };
+type Evidence = { id: string; order_id: string; type?: string; evidence_type?: string; storage_path?: string; metadata?: Record<string, unknown> };
 type ServiceRow = Record<string, string | number> & {
   id: string; fecha: string; orden: string; tecnico: string; cliente: string; documento_cliente: string; telefono: string; direccion: string;
   estado: string; estado_codigo: string; servicio: string; referencia: string; factura_pedido: string; entrega_cedi: string;
@@ -33,7 +33,7 @@ type SatisfactionRow = Record<string, string | number> & {
 };
 type PieceRow = Record<string, string | number> & {
   id: string; fecha: string; orden: string; tecnico: string; cliente: string; referencia: string; pieza: string; cantidad: number; unidad: string;
-  estado_pieza: string; accion_requerida: string; observacion: string; proveedor: string; novedad: string;
+  estado_pieza: string; accion_requerida: string; observacion: string; proveedor: string; soporte_foto: string; novedad: string;
 };
 type ReportTab = "servicios" | "satisfaccion" | "piezas";
 
@@ -60,7 +60,8 @@ const satisfactionColumns: Array<ReportColumn<SatisfactionRow>> = [
 const pieceColumns: Array<ReportColumn<PieceRow>> = [
   { key: "fecha", label: "Fecha", width: 70 }, { key: "orden", label: "Orden", width: 75 }, { key: "tecnico", label: "Tecnico", width: 105 },
   { key: "referencia", label: "Referencia", width: 120 }, { key: "pieza", label: "Pieza requerida", width: 125 }, { key: "cantidad", label: "Cantidad", width: 60 },
-  { key: "estado_pieza", label: "Estado", width: 70 }, { key: "accion_requerida", label: "Accion", width: 95 }, { key: "proveedor", label: "Proveedor", width: 105 }, { key: "observacion", label: "Observacion", width: 165 }
+  { key: "estado_pieza", label: "Estado", width: 70 }, { key: "accion_requerida", label: "Accion", width: 95 }, { key: "soporte_foto", label: "Soporte", width: 75 },
+  { key: "proveedor", label: "Proveedor", width: 105 }, { key: "observacion", label: "Observacion", width: 165 }
 ];
 
 function today() { return new Date().toISOString().slice(0, 10); }
@@ -152,11 +153,16 @@ export default function ServiceReportsPage() {
       });
       const incidentText = orderIncidents.map((incident) => incident.description).filter(Boolean).join(" | ");
       requiredPieces.forEach((item, index) => {
+        const pieceEvidence = orderEvidence.some((photo) => {
+          const photoType = photo.type || photo.evidence_type;
+          return photoType === "pieza_averiada" && String(photo.metadata?.part_id || "") === String(item.part_id || "");
+        });
         pieces.push({
           id: `${order.id}-${item.part_id || index}`, fecha: order.scheduled_date?.slice(0, 10) || "", orden: order.number, tecnico: technician,
           cliente: order.customer_name || "--", referencia: referenceLabel, pieza: item.name || "Pieza sin identificar", cantidad: Number(item.quantity || 1),
           unidad: item.unit || "und", estado_pieza: item.status || "pendiente", accion_requerida: item.action || "Solicitar cambio",
-          observacion: item.comment || incidentText || "Sin observacion", proveedor: item.supplier_name || item.supplier || "Por definir", novedad: incidentText || "Inspeccion tecnica"
+          observacion: item.comment || incidentText || "Sin observacion", proveedor: item.supplier_name || item.supplier || "Por definir",
+          soporte_foto: pieceEvidence ? "Con foto" : "Pendiente", novedad: incidentText || "Inspeccion tecnica"
         });
       });
     });

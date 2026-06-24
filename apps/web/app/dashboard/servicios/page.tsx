@@ -41,7 +41,17 @@ type ServiceOrder = {
   created_at?: string;
   closed_at?: string;
   notes?: string;
-  metadata?: { customer_document?: string; public_request?: boolean; requires_admin_completion?: boolean; preorder_status?: string; [key: string]: unknown };
+  metadata?: {
+    customer_document?: string;
+    public_request?: boolean;
+    requires_admin_completion?: boolean;
+    preorder_status?: string;
+    external_reference_code?: string;
+    external_reference_name?: string;
+    external_reference_label?: string;
+    external_reference_id?: string;
+    [key: string]: unknown
+  };
   incidents: Array<{ id: number }>;
   photos: Array<{ id: number }>;
 };
@@ -198,19 +208,58 @@ function effectiveOrder(order: ServiceOrder): ServiceOrder {
   return order;
 }
 
+function isLocalOrder(order: ServiceOrder) {
+  return /^\d+$/.test(String(order.id || ""));
+}
+
+function normalizeKey(value: unknown) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function localReferenceForOrder(order: ServiceOrder, references: ServiceReference[]) {
+  const directId = String(order.reference_id || "");
+  const externalCode = normalizeKey(order.reference?.code || order.metadata?.external_reference_code || order.metadata?.product_reference);
+  const externalName = normalizeKey(order.reference?.name || order.metadata?.external_reference_name);
+  return references.find((item) => String(item.id) === directId)
+    || references.find((item) => externalCode && normalizeKey(item.code) === externalCode)
+    || references.find((item) => externalName && normalizeKey(item.name) === externalName)
+    || null;
+}
+
+function externalReferenceText(order: ServiceOrder | null) {
+  if (!order) return "";
+  return String(order.metadata?.external_reference_label || order.metadata?.product_description || order.metadata?.product_reference || "").trim();
+}
+
+function serviceOrderHref(order: ServiceOrder) {
+  if (isLocalOrder(order)) return `/dashboard/servicios/${order.id}`;
+  const externalKey = String(order.number || order.id || "").trim();
+  return `/dashboard/servicios?externa=${encodeURIComponent(externalKey)}`;
+}
+
 function orderKey(order: ServiceOrder) {
   return String(order.id || order.number || "").trim();
 }
 
 function mergeOrders(orders: ServiceOrder[]) {
   const byId = new Map<string, ServiceOrder>();
-  const byNumber = new Set<string>();
+  const byNumber = new Map<string, string>();
   for (const order of orders) {
     const id = orderKey(order);
     const number = String(order.number || "").trim();
-    if ((id && byId.has(id)) || (number && byNumber.has(number))) continue;
+    const existingIdByNumber = number ? byNumber.get(number) : "";
+    if (id && byId.has(id)) continue;
+    if (existingIdByNumber) {
+      const existing = byId.get(existingIdByNumber);
+      if (existing && !isLocalOrder(existing) && isLocalOrder(order)) {
+        byId.delete(existingIdByNumber);
+        byId.set(id, order);
+        byNumber.set(number, id);
+      }
+      continue;
+    }
     if (id) byId.set(id, order);
-    if (number) byNumber.add(number);
+    if (number) byNumber.set(number, id);
   }
   return Array.from(byId.values()).sort(newestFirst);
 }
@@ -345,10 +394,11 @@ export default function ServicesPage() {
   }
 
   function openEdit(order: ServiceOrder) {
+    const localReference = localReferenceForOrder(order, references);
     setEditingOrder(order);
     setEditForm({
       status: order.status || "pendiente",
-      reference_id: String(order.reference_id || order.reference?.id || ""),
+      reference_id: localReference ? String(localReference.id) : "",
       technician_id: technicianValue(order),
       service_type: order.service_type || "montaje",
       scheduled_date: order.scheduled_date?.slice(0, 10) || "",
@@ -385,18 +435,31 @@ export default function ServicesPage() {
     setMessage("");
     try {
       const payload: Partial<OrderEditForm> = { ...editForm };
+      const metadata = {
+        ...(editingOrder.metadata || {}),
+        customer_document: editForm.customer_document.trim(),
+        requires_admin_completion: editForm.status === "agendado",
+        external_order_id: !isLocalOrder(editingOrder) ? String(editingOrder.id) : String(editingOrder.metadata?.external_order_id || ""),
+        external_order_number: !isLocalOrder(editingOrder) ? editingOrder.number : String(editingOrder.metadata?.external_order_number || "")
+      };
       if (!editableOrderStatuses.has(editForm.status)) delete payload.status;
-      await api<ServiceOrder>(`/api/v1/services/orders/${editingOrder.id}`, {
-        method: "PUT",
-        body: JSON.stringify({
-          ...payload,
-          metadata: {
-            customer_document: editForm.customer_document.trim(),
-            requires_admin_completion: editForm.status === "agendado"
-          }
-        })
-      });
-      setMessage("Orden actualizada correctamente.");
+      if (isLocalOrder(editingOrder)) {
+        await api<ServiceOrder>(`/api/v1/services/orders/${editingOrder.id}`, {
+          method: "PUT",
+          body: JSON.stringify({ ...payload, metadata })
+        });
+        setMessage("Orden actualizada correctamente.");
+      } else {
+        if (editForm.status !== "pendiente") {
+          setMessage("Completa referencia, tecnico y fecha; luego cambia el estado a Pendiente para crear la orden operativa.");
+          return;
+        }
+        await api<ServiceOrder>("/api/v1/services/orders", {
+          method: "POST",
+          body: JSON.stringify({ ...payload, number: editingOrder.number, metadata: { ...metadata, synced_from_public_request_at: new Date().toISOString() } })
+        });
+        setMessage("Orden operativa creada correctamente.");
+      }
       setEditingOrder(null);
       await load();
     } catch (error) {
@@ -417,7 +480,7 @@ export default function ServicesPage() {
     : "La operacion de servicios no tiene pendientes criticos en este momento.";
 
   return (
-    <div className="apex-page-shell space-y-5 pb-28 md:pb-8">
+    <div className="apex-workspace-shell space-y-5 pb-28 md:pb-8">
       <header className="sticky top-0 z-20 -mx-3 border-b border-line bg-paper/95 px-3 py-3 backdrop-blur sm:-mx-4 sm:px-4 md:static md:mx-0 md:border-0 md:bg-transparent md:px-0">
         <div className="flex items-center gap-3">
           <Link className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-line bg-white md:hidden" href="/dashboard" aria-label="Volver al inicio">
@@ -485,7 +548,7 @@ export default function ServicesPage() {
           ) : null}
           <div className="flex gap-2 overflow-x-auto pb-1">
             {operational.attention.slice(0, 6).map((order) => (
-              <Link className="block min-w-[250px] flex-1 rounded-md border border-line p-3 transition hover:border-apex hover:bg-paper" href={`/dashboard/servicios/${order.id}`} key={order.id}>
+              <Link className="block min-w-[250px] flex-1 rounded-md border border-line p-3 transition hover:border-apex hover:bg-paper" href={serviceOrderHref(order)} key={order.id}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold">{order.number} · {order.customer_name}</p>
@@ -579,7 +642,7 @@ export default function ServicesPage() {
           <div className="grid gap-3 md:hidden">
             {filtered.map((order) => (
               <div className="rounded-md border border-line p-3 text-left transition hover:border-apex hover:bg-paper" key={order.id}>
-              <Link className="block active:scale-[0.99]" href={`/dashboard/servicios/${order.id}`}>
+              <Link className="block active:scale-[0.99]" href={serviceOrderHref(order)}>
                 <div className="mb-3 flex items-start justify-between gap-2">
                   <div className="flex flex-wrap gap-2">
                     <span className={`rounded-md border px-3 py-2 text-xs font-semibold ${statusTone[order.status] || "border-line bg-paper"}`}>{statusLabel[order.status] || order.status}</span>
@@ -644,7 +707,7 @@ export default function ServicesPage() {
                   {filtered.map((order) => (
                     <tr className="group transition hover:bg-paper" key={order.id}>
                       <td className="px-4 py-3 align-top">
-                        <Link className="font-semibold text-neutral-900 hover:text-apex" href={`/dashboard/servicios/${order.id}`}>{order.number}</Link>
+                        <Link className="font-semibold text-neutral-900 hover:text-apex" href={serviceOrderHref(order)}>{order.number}</Link>
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           <span className={`rounded-md border px-2 py-1 text-[11px] font-semibold ${statusTone[order.status] || "border-line bg-paper"}`}>{statusLabel[order.status] || order.status}</span>
                           {requiresAdminCompletion(order) ? <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-800">Completar solicitud</span> : null}
@@ -679,7 +742,7 @@ export default function ServicesPage() {
                             <Pencil size={14} /> Editar
                           </button>
                         ) : null}
-                        <Link className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-white px-3 text-xs font-semibold text-apex shadow-sm transition group-hover:border-apex" href={`/dashboard/servicios/${order.id}`}>
+                        <Link className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-white px-3 text-xs font-semibold text-apex shadow-sm transition group-hover:border-apex" href={serviceOrderHref(order)}>
                           {serviceAction(order)}
                           <ChevronRight size={14} />
                         </Link>
@@ -723,6 +786,9 @@ export default function ServicesPage() {
                   <option value="">Selecciona una referencia</option>
                   {references.map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}
                 </select>
+                {externalReferenceText(editingOrder) ? (
+                  <span className="text-xs font-medium text-neutral-500">Producto solicitado: {externalReferenceText(editingOrder)}</span>
+                ) : null}
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
                 Tecnico responsable {editForm.status === "pendiente" ? "*" : "(opcional en agendado)"}

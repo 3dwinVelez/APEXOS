@@ -247,7 +247,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="apex-page-shell space-y-6">
+    <div className="apex-workspace-shell space-y-6">
       <section className="apex-context-hero">
         <div className="relative z-10 grid gap-4 p-4 sm:p-5 xl:grid-cols-[260px_1fr] xl:items-center">
           <div className="min-w-0">
@@ -276,7 +276,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <section className="apex-dashboard-grid">
         <div className="overflow-hidden rounded-md bg-neutral-950 text-white">
           <div className="p-5">
             <div className="min-h-48 min-w-0">
@@ -404,7 +404,7 @@ export default function DashboardPage() {
         </section>
       )}
 
-      <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <section className="apex-dashboard-grid">
         <div className="rounded-md border border-line bg-white p-4">
           <h2 className="text-base font-semibold">Resumen por módulo</h2>
           <div className="mt-4 divide-y divide-line">
