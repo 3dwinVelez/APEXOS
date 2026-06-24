@@ -41,7 +41,17 @@ type ServiceOrder = {
   created_at?: string;
   closed_at?: string;
   notes?: string;
-  metadata?: { customer_document?: string; public_request?: boolean; requires_admin_completion?: boolean; preorder_status?: string; [key: string]: unknown };
+  metadata?: {
+    customer_document?: string;
+    public_request?: boolean;
+    requires_admin_completion?: boolean;
+    preorder_status?: string;
+    external_reference_code?: string;
+    external_reference_name?: string;
+    external_reference_label?: string;
+    external_reference_id?: string;
+    [key: string]: unknown
+  };
   incidents: Array<{ id: number }>;
   photos: Array<{ id: number }>;
 };
@@ -200,6 +210,25 @@ function effectiveOrder(order: ServiceOrder): ServiceOrder {
 
 function isLocalOrder(order: ServiceOrder) {
   return /^\d+$/.test(String(order.id || ""));
+}
+
+function normalizeKey(value: unknown) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function localReferenceForOrder(order: ServiceOrder, references: ServiceReference[]) {
+  const directId = String(order.reference_id || "");
+  const externalCode = normalizeKey(order.reference?.code || order.metadata?.external_reference_code || order.metadata?.product_reference);
+  const externalName = normalizeKey(order.reference?.name || order.metadata?.external_reference_name);
+  return references.find((item) => String(item.id) === directId)
+    || references.find((item) => externalCode && normalizeKey(item.code) === externalCode)
+    || references.find((item) => externalName && normalizeKey(item.name) === externalName)
+    || null;
+}
+
+function externalReferenceText(order: ServiceOrder | null) {
+  if (!order) return "";
+  return String(order.metadata?.external_reference_label || order.metadata?.product_description || order.metadata?.product_reference || "").trim();
 }
 
 function serviceOrderHref(order: ServiceOrder) {
@@ -365,10 +394,11 @@ export default function ServicesPage() {
   }
 
   function openEdit(order: ServiceOrder) {
+    const localReference = localReferenceForOrder(order, references);
     setEditingOrder(order);
     setEditForm({
       status: order.status || "pendiente",
-      reference_id: String(order.reference_id || order.reference?.id || ""),
+      reference_id: localReference ? String(localReference.id) : "",
       technician_id: technicianValue(order),
       service_type: order.service_type || "montaje",
       scheduled_date: order.scheduled_date?.slice(0, 10) || "",
@@ -405,18 +435,31 @@ export default function ServicesPage() {
     setMessage("");
     try {
       const payload: Partial<OrderEditForm> = { ...editForm };
+      const metadata = {
+        ...(editingOrder.metadata || {}),
+        customer_document: editForm.customer_document.trim(),
+        requires_admin_completion: editForm.status === "agendado",
+        external_order_id: !isLocalOrder(editingOrder) ? String(editingOrder.id) : String(editingOrder.metadata?.external_order_id || ""),
+        external_order_number: !isLocalOrder(editingOrder) ? editingOrder.number : String(editingOrder.metadata?.external_order_number || "")
+      };
       if (!editableOrderStatuses.has(editForm.status)) delete payload.status;
-      await api<ServiceOrder>(`/api/v1/services/orders/${editingOrder.id}`, {
-        method: "PUT",
-        body: JSON.stringify({
-          ...payload,
-          metadata: {
-            customer_document: editForm.customer_document.trim(),
-            requires_admin_completion: editForm.status === "agendado"
-          }
-        })
-      });
-      setMessage("Orden actualizada correctamente.");
+      if (isLocalOrder(editingOrder)) {
+        await api<ServiceOrder>(`/api/v1/services/orders/${editingOrder.id}`, {
+          method: "PUT",
+          body: JSON.stringify({ ...payload, metadata })
+        });
+        setMessage("Orden actualizada correctamente.");
+      } else {
+        if (editForm.status !== "pendiente") {
+          setMessage("Completa referencia, tecnico y fecha; luego cambia el estado a Pendiente para crear la orden operativa.");
+          return;
+        }
+        await api<ServiceOrder>("/api/v1/services/orders", {
+          method: "POST",
+          body: JSON.stringify({ ...payload, number: editingOrder.number, metadata: { ...metadata, synced_from_public_request_at: new Date().toISOString() } })
+        });
+        setMessage("Orden operativa creada correctamente.");
+      }
       setEditingOrder(null);
       await load();
     } catch (error) {
@@ -743,6 +786,9 @@ export default function ServicesPage() {
                   <option value="">Selecciona una referencia</option>
                   {references.map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}
                 </select>
+                {externalReferenceText(editingOrder) ? (
+                  <span className="text-xs font-medium text-neutral-500">Producto solicitado: {externalReferenceText(editingOrder)}</span>
+                ) : null}
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
                 Tecnico responsable {editForm.status === "pendiente" ? "*" : "(opcional en agendado)"}

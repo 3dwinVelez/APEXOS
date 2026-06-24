@@ -4,6 +4,7 @@ const orderSchema = {
     required: ["reference_id", "technician_id", "service_type", "customer_name", "customer_document", "customer_address", "customer_phone", "scheduled_date", "notes"],
     properties: {
       reference_item_id: { type: "integer" },
+      number: { type: "string" },
       reference_id: { type: "integer" },
       technician_id: { type: "integer" },
       service_type: { type: "string" },

@@ -696,6 +696,11 @@ async function createOrder(tenantId, user, input) {
 
   return prisma.runWithTenant(tenantId, async () => {
     const serviceType = await assertValidServiceType(tenantId, input.service_type || "montaje");
+    const requestedNumber = String(input.number || "").trim();
+    if (requestedNumber) {
+      const existing = await prisma.serviceOrder.findFirst({ where: { tenant_id: tenantId, number: requestedNumber }, select: { id: true } });
+      if (existing) throw appError(409, "SERVICE_ORDER_NUMBER_EXISTS", "Ya existe una orden local con este consecutivo");
+    }
     const technician = await prisma.employee.findFirst({
       where: { id: Number(input.technician_id), active: true, user_type: "tecnico", user: { active: true, role: { name: "Tecnico" } } },
       select: { id: true }
@@ -703,7 +708,7 @@ async function createOrder(tenantId, user, input) {
     if (!technician) throw appError(400, "INVALID_SERVICE_TECHNICIAN", "Selecciona un tecnico operativo activo");
     return prisma.serviceOrder.create({
     data: {
-      number: await nextNumber(),
+      number: requestedNumber || await nextNumber(),
       reference_item_id: input.reference_item_id,
       reference_id: input.reference_id,
       technician_id: technician.id,
