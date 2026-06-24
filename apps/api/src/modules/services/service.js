@@ -595,8 +595,12 @@ async function technicianOrderScope(tenantId, user) {
 }
 
 async function accessibleOrder(tenantId, user, id, include = orderInclude()) {
+  const orderId = Number(id);
+  if (!Number.isInteger(orderId) || orderId <= 0) {
+    throw appError(404, "SERVICE_ORDER_EXTERNAL_NOT_SYNCED", "Esta solicitud externa aun no esta sincronizada como orden operativa local");
+  }
   const scope = await technicianOrderScope(tenantId, user);
-  const order = await prisma.serviceOrder.findFirst({ where: { id: Number(id), ...scope }, include });
+  const order = await prisma.serviceOrder.findFirst({ where: { id: orderId, ...scope }, include });
   if (!order) throw appError(404, "SERVICE_ORDER_NOT_AVAILABLE", "La orden no existe, no esta activa o no esta asignada a este tecnico");
   return order;
 }

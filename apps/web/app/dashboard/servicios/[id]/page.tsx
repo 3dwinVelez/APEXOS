@@ -82,6 +82,10 @@ const workflowSteps = [
   { id: "cerrada", label: "Cierre" }
 ] as const;
 
+function isLocalServiceOrderId(id: unknown) {
+  return /^\d+$/.test(String(id || ""));
+}
+
 function panelForStatus(status: string): Panel {
   if (status === "pendiente") return "inicio";
   if (["en_curso", "inspeccion"].includes(status)) return "inspeccion";
@@ -132,6 +136,11 @@ export default function ServiceOperationPage() {
     setLoading(true);
     setMessage("");
     try {
+      if (!isLocalServiceOrderId(params.id)) {
+        setOrder(null);
+        setMessage("Esta solicitud externa aun no esta disponible como orden operativa local. Vuelve al monitor y completala antes de ejecutar el servicio.");
+        return;
+      }
       const [data, questions] = await Promise.all([
         api<ServiceOrder>(`/api/v1/services/orders/${params.id}`),
         api<SatisfactionQuestion[]>("/api/v1/services/satisfaction-questions").catch(() => fallbackSatisfactionQuestions())
