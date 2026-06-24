@@ -48,6 +48,7 @@
 - La captura de direccion publica se simplifica a un solo campo de direccion completa, con ayuda contextual para escribirla en lenguaje natural de Medellin y Valle de Aburra.
 - La direccion se muestra en vista previa antes de enviar, reduciendo ambiguedad para el operador administrativo y el tecnico sin fragmentar la captura del cliente.
 - El formulario publico consulta el maestro activo de referencias y tipos de servicio de la empresa indicada por el enlace administrativo; obliga a seleccionar una referencia y valida que el tipo de servicio exista activo antes de crear la preorden.
+- La migracion `20260623190000_public_service_reference_catalog_read.sql` habilita lectura anonima solo para referencias activas y el registro tecnico `__SERVICE_TYPES__`; no permite crear ni editar referencias desde el formulario externo.
 - El formulario publico ya no solicita fecha tentativa; la planeacion operativa se completa luego desde administracion.
 - La solicitud publica crea una preorden en `service_orders` con estado `agendado`, sin tecnico asignado, marcada en metadata como `public_request` y `requires_admin_completion`.
 - La solicitud publica usa consecutivo corto `OS-00000` y lo muestra como numero de seguimiento al finalizar.
@@ -56,6 +57,8 @@
 - La factura o pedido es opcional en el formulario publico, creacion administrativa, edicion de orden y API/fallback Supabase.
 - La empresa destino del formulario publico se resuelve por `APEXOS_PUBLIC_SERVICE_COMPANY_ID` o `NEXT_PUBLIC_APEXOS_PUBLIC_COMPANY_ID`; si no existe, puede buscar una empresa activa por parametro `empresa`.
 - La API publica acepta configuracion server-side con `SUPABASE_URL`/`SUPABASE_ANON_KEY` o sus equivalentes `NEXT_PUBLIC_*`, siempre con `SUPABASE_SERVICE_ROLE_KEY` solo en servidor; en desarrollo tambien puede leer el `.env` raiz aunque Next se ejecute desde `apps/web`.
+- Si el runtime server-side no tiene una service role efectiva, el formulario externo depende de la politica `service_references_public_catalog_select` para listar referencias activas sin sesion de usuario.
+- Las consultas de catalogo publico usan explicitamente `SUPABASE_ANON_KEY` como bearer para referencias y tipos de servicio; la service role se reserva para la insercion controlada de la preorden.
 - Al finalizar, el formulario muestra una pantalla amplia de confirmacion con el numero de seguimiento y accion principal para realizar otra solicitud.
 - El estado `agendado` representa preordenes creadas desde el link publico. Administracion puede conservarlas sin tecnico mientras valida datos; al cambiarlas a `pendiente`, la asignacion de tecnico responsable se vuelve obligatoria.
 - La migracion `20260623173000_service_orders_agendado_status.sql` amplia el constraint de Supabase para permitir `agendado` antes de `pendiente`.
@@ -104,6 +107,8 @@ El formulario publico debe funcionar como una solicitud guiada para personas sin
 - Confirmar que la pantalla final muestre el servicio creado con exito y permita realizar otra solicitud.
 - Verificar que la solicitud publica genere una preorden `agendado` marcada como `public_request` y `requires_admin_completion`.
 - Verificar que el formulario publico cargue referencias y tipos de servicio desde los maestros activos de la empresa del enlace, por ejemplo `?empresa=SCJ`.
+- Verificar que el endpoint publico pueda listar referencias activas con rol anonimo sin exponer creacion o edicion de maestros.
+- Verificar que `/api/public/service-requests?empresa=SCJ` responda referencias aunque la lectura de empresas autenticadas no este disponible para el runtime anonimo.
 - Verificar que el numero mostrado al cliente sea el consecutivo corto `OS-00000`.
 - Verificar que una solicitud publica aparezca en el lobby de Servicios como `Agendado` / `Por completar`.
 - Verificar que el lobby vea la solicitud externa aun cuando la sesion administrativa cargue las ordenes principales desde la API local.

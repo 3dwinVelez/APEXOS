@@ -148,6 +148,32 @@ async function supabaseRequest<T>(path: string, init: RequestInit = {}) {
   return body as T;
 }
 
+async function supabasePublicRead<T>(path: string, init: RequestInit = {}) {
+  const config = supabaseConfig();
+  if (!config.url || !config.anonKey) {
+    const missing = [
+      !config.url ? "SUPABASE_URL" : "",
+      !config.anonKey ? "SUPABASE_ANON_KEY" : ""
+    ].filter(Boolean).join(", ");
+    throw new Error(`Falta configuracion publica de Supabase para consultar referencias: ${missing}.`);
+  }
+  const response = await fetch(`${config.url}${path}`, {
+    ...init,
+    headers: {
+      apikey: config.anonKey,
+      Authorization: `Bearer ${config.anonKey}`,
+      "Content-Type": "application/json",
+      ...init.headers
+    }
+  });
+  const body = response.status === 204 ? null : await response.json().catch(() => null);
+  if (!response.ok) {
+    const detail = body?.message || body?.error_description || body?.error || response.statusText;
+    throw new Error(`Supabase ${response.status}: ${detail}`);
+  }
+  return body as T;
+}
+
 async function resolveCompanyCandidates(body: PublicServiceRequest, request: NextRequest) {
   const { publicCompanyId } = supabaseConfig();
   const companyName = clean(body.company_name) || clean(request.nextUrl.searchParams.get("empresa"));
@@ -182,7 +208,7 @@ async function resolveCompanyCandidates(body: PublicServiceRequest, request: Nex
   }
 
   if (!candidates.length) {
-    const referenceCompanies = await supabaseRequest<Array<{ company_id?: string }>>(
+    const referenceCompanies = await supabasePublicRead<Array<{ company_id?: string }>>(
       `/rest/v1/service_references?select=company_id&active=eq.true&code=neq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&limit=50`
     ).catch(() => []);
     candidates.push(...referenceCompanies.map((item) => item.company_id || "").filter(Boolean));
@@ -197,7 +223,7 @@ async function resolveCompanyId(body: PublicServiceRequest, request: NextRequest
 
 async function resolveCompanyIdFromReference(referenceId: string) {
   if (!isUuid(referenceId)) return "";
-  const references = await supabaseRequest<Array<{ company_id?: string }>>(
+  const references = await supabasePublicRead<Array<{ company_id?: string }>>(
     `/rest/v1/service_references?select=company_id&id=eq.${encodeURIComponent(referenceId)}&active=eq.true&limit=1`
   ).catch(() => []);
   return references[0]?.company_id || "";
@@ -205,13 +231,13 @@ async function resolveCompanyIdFromReference(referenceId: string) {
 
 async function resolveReferenceId(companyId: string, referenceId: string, productReference: string) {
   if (referenceId && isUuid(referenceId)) {
-    const references = await supabaseRequest<Array<{ id: string }>>(
+    const references = await supabasePublicRead<Array<{ id: string }>>(
       `/rest/v1/service_references?select=id&company_id=eq.${encodeURIComponent(companyId)}&active=eq.true&id=eq.${encodeURIComponent(referenceId)}&limit=1`
     ).catch(() => []);
     if (references[0]?.id) return references[0].id;
   }
   if (!productReference) return null;
-  const references = await supabaseRequest<Array<{ id: string }>>(
+  const references = await supabasePublicRead<Array<{ id: string }>>(
     `/rest/v1/service_references?select=id&company_id=eq.${encodeURIComponent(companyId)}&active=eq.true&or=(code.ilike.*${encodeURIComponent(productReference)}*,name.ilike.*${encodeURIComponent(productReference)}*)&limit=1`
   ).catch(() => []);
   return references[0]?.id || null;
@@ -230,19 +256,19 @@ async function nextOrderNumber(companyId: string, offset = 1) {
 }
 
 async function activeReferencesForCompany(companyId: string) {
-  return supabaseRequest<PublicReferenceRow[]>(
+  return supabasePublicRead<PublicReferenceRow[]>(
     `/rest/v1/service_references?select=id,company_id,code,name,category,brand,model&company_id=eq.${encodeURIComponent(companyId)}&active=eq.true&code=neq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&order=code.asc&limit=500`
   );
 }
 
 async function activeReferencesWithoutCompany() {
-  return supabaseRequest<PublicReferenceRow[]>(
+  return supabasePublicRead<PublicReferenceRow[]>(
     `/rest/v1/service_references?select=id,company_id,code,name,category,brand,model&active=eq.true&code=neq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&order=code.asc&limit=500`
   );
 }
 
 async function serviceTypesForCompany(companyId: string) {
-  const rows = await supabaseRequest<Array<{ metadata?: Record<string, unknown> }>>(
+  const rows = await supabasePublicRead<Array<{ metadata?: Record<string, unknown> }>>(
     `/rest/v1/service_references?select=metadata&company_id=eq.${encodeURIComponent(companyId)}&code=eq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&limit=1`
   ).catch(() => []);
   return normalizeServiceTypes(rows[0]?.metadata?.service_types).filter((item) => item.active);
