@@ -459,9 +459,8 @@ export default function ServiceOperationPage() {
       {activePanel === "inicio" && order.status === "pendiente" ? (
         <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
           <h2 className="mb-3 text-base font-semibold">Inicio del servicio</h2>
-          <div className="rounded-md border border-line bg-paper p-4">
-            <p className="font-semibold">Confirma que estás en el punto de servicio</p>
-            <p className="mt-1 text-sm text-neutral-600">No se solicitará GPS en este paso. Confirma el inicio y continúa con la inspección del producto.</p>
+          <div className="rounded-md border border-line bg-paper p-3">
+            <p className="font-semibold">Confirma el inicio para continuar con la inspección.</p>
           </div>
           <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white disabled:opacity-50" disabled={working} onClick={() => update("start")} type="button"><Play size={18} /> Iniciar servicio</button>
         </section>
@@ -469,8 +468,7 @@ export default function ServiceOperationPage() {
 
       {activePanel === "inspeccion" && ["en_curso", "inspeccion"].includes(order.status) ? (
         <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
-          <h2 className="mb-2 text-base font-semibold">Inspección</h2>
-          <p className="mb-3 text-sm text-neutral-600">Elige una acción. Usa Piezas solo cuando necesites reportar una pieza defectuosa o faltante.</p>
+          <h2 className="mb-3 text-base font-semibold">Inspección</h2>
           {referenceManuals.length ? (
             <div className="mb-3 rounded-md border border-sky-200 bg-sky-50 p-3">
               <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-sky-950">
@@ -491,30 +489,30 @@ export default function ServiceOperationPage() {
             </div>
           ) : null}
           <div className="grid gap-3">
-            <button className={`min-h-24 rounded-md border p-4 text-left shadow-sm transition active:scale-[0.99] ${inspectionMode === "pieces" ? "border-apex bg-apex/10" : "border-line bg-paper hover:border-apex"}`} onClick={() => setInspectionMode("pieces")} type="button">
+            <button className={`min-h-20 rounded-md border p-4 text-left shadow-sm transition active:scale-[0.99] ${inspectionMode === "pieces" ? "border-apex bg-apex/10" : "border-line bg-paper hover:border-apex"}`} onClick={() => setInspectionMode("pieces")} type="button">
               <span className="flex items-center gap-3">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-apex text-white"><PackageSearch size={24} /></span>
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-apex text-white"><PackageSearch size={23} /></span>
                 <span>
                   <span className="block text-xl font-semibold">Piezas</span>
-                  <span className="mt-1 block text-sm text-neutral-600">Reportar pieza defectuosa o faltante con foto y comentario.</span>
+                  <span className="mt-1 block text-sm text-neutral-600">Registrar novedad</span>
                 </span>
               </span>
             </button>
-            <button className="min-h-24 rounded-md border border-emerald-200 bg-emerald-50 p-4 text-left text-emerald-950 shadow-sm transition active:scale-[0.99] disabled:opacity-50" disabled={working} onClick={markArmable} type="button">
+            <button className="min-h-20 rounded-md border border-emerald-500 bg-emerald-700 p-4 text-left text-white shadow-sm transition hover:bg-emerald-600 active:scale-[0.99] disabled:opacity-50" disabled={working} onClick={markArmable} type="button">
               <span className="flex items-center gap-3">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-emerald-700 text-white"><Wrench size={24} /></span>
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-white/15 text-white"><Wrench size={23} /></span>
                 <span>
                   <span className="block text-xl font-semibold">Armable</span>
-                  <span className="mt-1 block text-sm text-emerald-800">El producto puede continuar a ejecución.</span>
+                  <span className="mt-1 block text-sm text-emerald-50">Continuar</span>
                 </span>
               </span>
             </button>
-            <button className="min-h-24 rounded-md border border-red-200 bg-red-50 p-4 text-left text-red-950 shadow-sm transition active:scale-[0.99] disabled:opacity-50" disabled={working} onClick={markNotArmable} type="button">
+            <button className="min-h-20 rounded-md border border-red-500 bg-red-700 p-4 text-left text-white shadow-sm transition hover:bg-red-600 active:scale-[0.99] disabled:opacity-50" disabled={working} onClick={markNotArmable} type="button">
               <span className="flex items-center gap-3">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-red-700 text-white"><XCircle size={24} /></span>
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-white/15 text-white"><XCircle size={23} /></span>
                 <span>
                   <span className="block text-xl font-semibold">No armable</span>
-                  <span className="mt-1 block text-sm text-red-800">Cerrar por defecto o inconsistencia con soporte final.</span>
+                  <span className="mt-1 block text-sm text-red-50">Cerrar novedad</span>
                 </span>
               </span>
             </button>
@@ -525,7 +523,7 @@ export default function ServiceOperationPage() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <h3 className="font-semibold">Inventario de piezas</h3>
-                  <p className="mt-1 text-sm text-neutral-600">Marca solo las piezas con novedad. Cada pieza reportada requiere comentario y foto.</p>
+                  <p className="mt-1 text-sm text-neutral-600">Marca la pieza y adjunta el soporte.</p>
                 </div>
                 <button className="h-10 rounded-md border border-line bg-white px-3 text-sm font-semibold hover:bg-paper" onClick={() => setInspectionMode("decision")} type="button">Volver</button>
               </div>
