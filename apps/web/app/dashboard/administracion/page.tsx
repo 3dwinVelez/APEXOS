@@ -61,6 +61,7 @@ type Role = {
 type RoleScopes = { locations: string[]; areas: string[]; cost_centers: string[]; processes: string[] };
 type MasterOption = { code: string; name: string };
 type ServiceType = { code: string; label: string; active?: boolean };
+type ServiceStore = { code: string; label: string; active?: boolean };
 type SatisfactionQuestion = { id: string; label: string; active?: boolean };
 type UserMasterData = {
   document_types: MasterOption[];
@@ -313,6 +314,11 @@ const defaultServiceTypes: ServiceType[] = [
   { code: "diagnostico", label: "Diagnostico", active: true }
 ];
 
+const defaultServiceStores: ServiceStore[] = [
+  { code: "hogar_y_moda_1", label: "Hogar y Moda 1", active: true },
+  { code: "hogar_y_moda_2", label: "Hogar y Moda 2", active: true }
+];
+
 const defaultSatisfactionQuestions: SatisfactionQuestion[] = [
   { id: "service_quality", label: "Como calificas la calidad del servicio realizado?", active: true },
   { id: "technician_attention", label: "Como calificas la atencion y claridad del tecnico?", active: true },
@@ -335,6 +341,17 @@ function normalizeQuestionId(value: string) {
 
 function normalizeServiceTypes(items: ServiceType[] = []) {
   const map = new Map<string, ServiceType>();
+  items.forEach((item) => {
+    const code = normalizeServiceTypeCode(item.code || item.label || "");
+    const label = String(item.label || item.code || "").trim();
+    if (!code || !label) return;
+    map.set(code, { code, label, active: item.active !== false });
+  });
+  return Array.from(map.values());
+}
+
+function normalizeServiceStores(items: ServiceStore[] = []) {
+  const map = new Map<string, ServiceStore>();
   items.forEach((item) => {
     const code = normalizeServiceTypeCode(item.code || item.label || "");
     const label = String(item.label || item.code || "").trim();
@@ -389,6 +406,7 @@ const categories: ConfigCategory[] = [
       { key: "vehiculos", title: "Vehiculos", description: "Flota, documentos y conductor autorizado.", status: "activo", modal: "info", href: "/dashboard/transporte" },
       { key: "rutas", title: "Rutas", description: "Planeacion y asignacion operativa.", status: "activo", modal: "info", href: "/dashboard/talento-humano/rutas" },
       { key: "marcaciones", title: "Marcaciones", description: "Reglas operativas de jornada y trazabilidad.", status: "activo", modal: "info", href: "/dashboard/talento-humano/marcacion" },
+      { key: "almacenes-servicio", title: "Almacenes de servicio", description: "Catalogo usado en solicitudes externas y ordenes de servicio.", status: "configurado", modal: "masters" },
       { key: "servicios", title: "Servicios", description: "Ordenes, referencias y parametros de campo.", status: "activo", modal: "info", href: "/dashboard/servicios" }
     ]
   },
@@ -648,6 +666,7 @@ export default function AdministracionPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [masterData, setMasterData] = useState<UserMasterData>(fallbackUserMasterData);
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>(defaultServiceTypes);
+  const [serviceStores, setServiceStores] = useState<ServiceStore[]>(defaultServiceStores);
   const [satisfactionQuestions, setSatisfactionQuestions] = useState<SatisfactionQuestion[]>(defaultSatisfactionQuestions);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
@@ -732,12 +751,13 @@ export default function AdministracionPage() {
 
   const load = useCallback(async () => {
     setMessage("");
-    const [catalogResult, rolesResult, usersResult, masterResult, serviceTypesResult, satisfactionQuestionsResult] = await Promise.allSettled([
+    const [catalogResult, rolesResult, usersResult, masterResult, serviceTypesResult, serviceStoresResult, satisfactionQuestionsResult] = await Promise.allSettled([
       api<CatalogItem[]>("/api/v1/admin/permissions/catalog"),
       api<Role[]>("/api/v1/admin/roles"),
       api<AdminUser[]>("/api/v1/admin/users"),
       api<UserMasterData>("/api/v1/admin/user-master-data"),
       api<ServiceType[]>("/api/v1/services/service-types"),
+      api<ServiceStore[]>("/api/v1/services/service-stores"),
       api<SatisfactionQuestion[]>("/api/v1/services/satisfaction-questions")
     ]);
     const catalogData = catalogResult.status === "fulfilled" ? catalogResult.value : [];
@@ -745,12 +765,14 @@ export default function AdministracionPage() {
     const usersData = usersResult.status === "fulfilled" ? usersResult.value : [];
     const masterDataResult = masterResult.status === "fulfilled" ? masterResult.value : fallbackUserMasterData;
     const serviceTypesData = serviceTypesResult.status === "fulfilled" ? normalizeServiceTypes(serviceTypesResult.value) : defaultServiceTypes;
+    const serviceStoresData = serviceStoresResult.status === "fulfilled" ? normalizeServiceStores(serviceStoresResult.value) : defaultServiceStores;
     const satisfactionQuestionsData = satisfactionQuestionsResult.status === "fulfilled" ? normalizeSatisfactionQuestions(satisfactionQuestionsResult.value) : defaultSatisfactionQuestions;
     setCatalog(catalogData);
     setRoles(rolesData);
     setUsers(usersData);
     setMasterData({ ...fallbackUserMasterData, ...masterDataResult });
     setServiceTypes(serviceTypesData.length ? serviceTypesData : defaultServiceTypes);
+    setServiceStores(serviceStoresData.length ? serviceStoresData : defaultServiceStores);
     setSatisfactionQuestions(satisfactionQuestionsData.length ? satisfactionQuestionsData : defaultSatisfactionQuestions);
     const errors = [
       catalogResult.status === "rejected" ? "catalogo de permisos" : "",
@@ -758,6 +780,7 @@ export default function AdministracionPage() {
       usersResult.status === "rejected" ? "usuarios" : "",
       masterResult.status === "rejected" ? "maestros de usuario" : "",
       serviceTypesResult.status === "rejected" ? "tipos de servicio" : "",
+      serviceStoresResult.status === "rejected" ? "almacenes de servicio" : "",
       satisfactionQuestionsResult.status === "rejected" ? "preguntas de satisfaccion" : ""
     ].filter(Boolean);
     if (errors.length) {
@@ -796,6 +819,9 @@ export default function AdministracionPage() {
 
   function openConfig(item: ConfigItem) {
     setSelectedConfig(item);
+    if (item.key === "almacenes-servicio") {
+      setCatalogDraft((current) => ({ ...current, catalog: "service_stores", code: "", name: "", description: "" }));
+    }
     setActiveModal(item.modal);
   }
 
@@ -1045,6 +1071,20 @@ export default function AdministracionPage() {
       setCatalogDraft({ catalog: catalogDraft.catalog, code: "", name: "", description: "" });
       return;
     }
+    if (catalogDraft.catalog === "service_stores") {
+      const code = normalizeServiceTypeCode(catalogDraft.code);
+      if (!code) {
+        setMessage("El codigo del almacen debe tener letras o numeros.");
+        return;
+      }
+      const next = normalizeServiceStores([
+        ...serviceStores.filter((item) => item.code !== code),
+        { code, label: catalogDraft.name.trim(), active: true }
+      ]).sort((a, b) => a.label.localeCompare(b.label));
+      await saveServiceStoreCatalog(next, "Almacen de servicio actualizado.");
+      setCatalogDraft({ catalog: catalogDraft.catalog, code: "", name: "", description: "" });
+      return;
+    }
     if (catalogDraft.catalog === "satisfaction_questions") {
       const id = normalizeQuestionId(catalogDraft.code);
       if (!id) {
@@ -1104,6 +1144,54 @@ export default function AdministracionPage() {
     await saveServiceTypeCatalog(serviceTypes.filter((item) => item.code !== code), "Tipo de servicio retirado del maestro.");
   }
 
+  async function saveServiceStoreCatalog(nextStores: ServiceStore[], successMessage = "Almacenes de servicio actualizados.") {
+    const normalized = normalizeServiceStores(nextStores);
+    if (!normalized.length) {
+      setMessage("Debe existir al menos un almacen de servicio.");
+      return;
+    }
+    if (!normalized.some((item) => item.active !== false)) {
+      setMessage("Debe quedar al menos un almacen de servicio activo.");
+      return;
+    }
+    const saved = await api<ServiceStore[]>("/api/v1/services/service-stores", {
+      method: "PUT",
+      body: JSON.stringify({ stores: normalized })
+    });
+    const cleanSaved = normalizeServiceStores(saved);
+    const nextSaved = cleanSaved.length ? cleanSaved : normalized;
+    setServiceStores(nextSaved);
+    let syncWarning = "";
+    try {
+      const token = localStorage.getItem("token") || "";
+      const companyName = localStorage.getItem("apexos_company_name") || localStorage.getItem("company_name") || "SCJ";
+      const response = await fetch(`/api/public/service-requests?empresa=${encodeURIComponent(companyName)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ company_name: companyName, service_stores: nextSaved })
+      });
+      if (!response.ok) {
+        const detail = await response.json().catch(() => ({}));
+        syncWarning = `Sincronizacion publica pendiente: ${detail.message || response.statusText || response.status}.`;
+      }
+    } catch (error) {
+      syncWarning = `Sincronizacion publica pendiente: ${error instanceof Error ? error.message : "error desconocido"}.`;
+    }
+    setMessage(syncWarning ? `${successMessage} ${syncWarning}` : successMessage);
+  }
+
+  async function toggleServiceStore(code: string) {
+    const next = serviceStores.map((item) => item.code === code ? { ...item, active: item.active === false } : item);
+    await saveServiceStoreCatalog(next, "Estado del almacen actualizado.");
+  }
+
+  async function removeServiceStore(code: string) {
+    const target = serviceStores.find((item) => item.code === code);
+    if (!target) return;
+    if (!window.confirm(`Confirmas retirar el almacen "${target.label}" del maestro?`)) return;
+    await saveServiceStoreCatalog(serviceStores.filter((item) => item.code !== code), "Almacen retirado del maestro.");
+  }
+
   async function saveSatisfactionQuestionCatalog(nextQuestions: SatisfactionQuestion[], successMessage = "Preguntas de satisfaccion actualizadas.") {
     const normalized = normalizeSatisfactionQuestions(nextQuestions);
     if (!normalized.length) {
@@ -1149,16 +1237,20 @@ export default function AdministracionPage() {
       ["user_document_types", "Tipos documentales"],
       ["banks", "Bancos"],
       ["service_types", "Tipos de servicio"],
+      ["service_stores", "Almacenes de servicio"],
       ["satisfaction_questions", "Preguntas de satisfaccion"]
     ];
     const isServiceTypeCatalog = catalogDraft.catalog === "service_types";
+    const isServiceStoreCatalog = catalogDraft.catalog === "service_stores";
     const isSatisfactionQuestionCatalog = catalogDraft.catalog === "satisfaction_questions";
-    const isOperationalCatalog = isServiceTypeCatalog || isSatisfactionQuestionCatalog;
+    const isOperationalCatalog = isServiceTypeCatalog || isServiceStoreCatalog || isSatisfactionQuestionCatalog;
     const selectedItems = !isOperationalCatalog && Array.isArray((masterData as Record<string, unknown>)[catalogDraft.catalog])
       ? (((masterData as unknown) as Record<string, MasterOption[]>)[catalogDraft.catalog] || [])
       : [];
     const catalogRows: Array<MasterOption & { active?: boolean }> = isServiceTypeCatalog
       ? serviceTypes.map((item) => ({ code: item.code, name: item.label, active: item.active !== false }))
+      : isServiceStoreCatalog
+        ? serviceStores.map((item) => ({ code: item.code, name: item.label, active: item.active !== false }))
       : isSatisfactionQuestionCatalog
         ? satisfactionQuestions.map((item) => ({ code: item.id, name: item.label, active: item.active !== false }))
       : selectedItems;
@@ -1175,12 +1267,17 @@ export default function AdministracionPage() {
                 Estos tipos se usan en la creacion y edicion de ordenes de servicio. Deja activo solo lo que el operador debe seleccionar.
               </p>
             ) : null}
+            {isServiceStoreCatalog ? (
+              <p className="rounded-md border border-apex/20 bg-apex/10 px-3 py-2 text-xs text-neutral-600">
+                Estos almacenes se muestran en las solicitudes externas y quedan asociados a la orden de servicio.
+              </p>
+            ) : null}
             {isSatisfactionQuestionCatalog ? (
               <p className="rounded-md border border-apex/20 bg-apex/10 px-3 py-2 text-xs text-neutral-600">
                 Estas preguntas aparecen en el cierre del servicio y son obligatorias cuando estan activas.
               </p>
             ) : null}
-            <Button onClick={saveCatalogItem} type="button"><Save size={16} /> {isServiceTypeCatalog ? "Guardar tipo de servicio" : isSatisfactionQuestionCatalog ? "Guardar pregunta" : "Guardar maestro"}</Button>
+            <Button onClick={saveCatalogItem} type="button"><Save size={16} /> {isServiceTypeCatalog ? "Guardar tipo de servicio" : isServiceStoreCatalog ? "Guardar almacen" : isSatisfactionQuestionCatalog ? "Guardar pregunta" : "Guardar maestro"}</Button>
           </div>
         </div>
         <div className="max-h-[58vh] overflow-auto rounded-md border border-line">
@@ -1208,10 +1305,10 @@ export default function AdministracionPage() {
                   {isOperationalCatalog ? (
                     <td className="px-3 py-2">
                       <div className="flex justify-end gap-2">
-                        <button className="rounded-md border border-line px-2 py-1 text-xs font-semibold hover:bg-paper" onClick={() => isServiceTypeCatalog ? toggleServiceType(item.code) : toggleSatisfactionQuestion(item.code)} type="button">
+                        <button className="rounded-md border border-line px-2 py-1 text-xs font-semibold hover:bg-paper" onClick={() => isServiceTypeCatalog ? toggleServiceType(item.code) : isServiceStoreCatalog ? toggleServiceStore(item.code) : toggleSatisfactionQuestion(item.code)} type="button">
                           {item.active ? "Inactivar" : "Activar"}
                         </button>
-                        <button className="rounded-md border border-rose-200 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50" onClick={() => isServiceTypeCatalog ? removeServiceType(item.code) : removeSatisfactionQuestion(item.code)} type="button">
+                        <button className="rounded-md border border-rose-200 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50" onClick={() => isServiceTypeCatalog ? removeServiceType(item.code) : isServiceStoreCatalog ? removeServiceStore(item.code) : removeSatisfactionQuestion(item.code)} type="button">
                           Retirar
                         </button>
                       </div>

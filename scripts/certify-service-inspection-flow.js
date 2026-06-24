@@ -9,7 +9,7 @@ async function request(path, options = {}, token) {
   const response = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {})
     }

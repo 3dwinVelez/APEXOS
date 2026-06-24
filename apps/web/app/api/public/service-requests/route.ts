@@ -81,6 +81,10 @@ function envValue(...keys: string[]) {
   return "";
 }
 
+function localApiUrl() {
+  return envValue("NEXT_PUBLIC_API_URL", "API_URL") || "http://127.0.0.1:3000";
+}
+
 function supabaseConfig() {
   return {
     url: envValue("NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_URL"),
@@ -155,6 +159,33 @@ async function supabaseRequest<T>(path: string, init: RequestInit = {}) {
     throw new Error(`Supabase ${response.status}: ${detail}`);
   }
   return body as T;
+}
+
+async function hasAdministrativeSession(authorization: string) {
+  if (!authorization.toLowerCase().startsWith("bearer ")) return false;
+  try {
+    const response = await fetch(`${localApiUrl()}/api/v1/auth/me`, { headers: { Authorization: authorization } });
+    if (!response.ok) return false;
+    const data = await response.json().catch(() => ({})) as {
+      user?: {
+        role?: string;
+        role_metadata?: Record<string, unknown>;
+        role_permissions?: Array<{ module?: string; actions?: string[] }>;
+      };
+    };
+    const role = String(data.user?.role || "").trim().toLowerCase();
+    const roleType = String(data.user?.role_metadata?.role_type || "").trim().toLowerCase();
+    const hasAdminRole = ["apex_admin", "superadmin", "admin"].includes(role) || role.includes("admin") || roleType === "superadmin";
+    const canConfigureServices = Array.isArray(data.user?.role_permissions)
+      && data.user.role_permissions.some((permission) => {
+        const moduleName = String(permission.module || "").toLowerCase();
+        const actions = Array.isArray(permission.actions) ? permission.actions : [];
+        return ["services", "servicios", "admin"].includes(moduleName) && (actions.includes("configure") || actions.includes("administer") || actions.includes("edit"));
+      });
+    return hasAdminRole || canConfigureServices;
+  } catch {
+    return false;
+  }
 }
 
 async function supabaseRpc<T>(functionName: string, payload: Record<string, unknown>) {
@@ -382,7 +413,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const authorization = request.headers.get("authorization") || "";
-    if (!authorization.toLowerCase().startsWith("bearer ")) return jsonError("Sesion requerida para actualizar almacenes.", 401);
+    if (!await hasAdministrativeSession(authorization)) return jsonError("Sesion administrativa requerida para actualizar almacenes.", 401);
     const body = await request.json().catch(() => ({})) as { company_name?: string; service_stores?: unknown };
     const stores = normalizeServiceStores(body.service_stores);
     if (!stores.some((item) => item.active)) return jsonError("Debe existir al menos un almacen activo.");
