@@ -2,6 +2,7 @@ import { ApexModule } from "./modules";
 import { CompanyModuleStatus, listCompanyModuleStatus, listPlatformCompanies, listUserCompanies } from "./supabaseQa";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
+const HAS_CONFIGURED_API_URL = Boolean(process.env.NEXT_PUBLIC_API_URL);
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
 const MODULE_ACCESS_CACHE_KEY = "apexos_module_access_cache";
 const MODULE_ACCESS_CACHE_MS = 60_000;
@@ -170,7 +171,7 @@ function isLocalPlatformAdmin(user?: { role_metadata?: Record<string, unknown>; 
 
 async function loadLocalModuleAccess(modules: ApexModule[]): Promise<ModuleAccessState> {
   const token = getToken();
-  if (token) {
+  if (token && HAS_CONFIGURED_API_URL) {
     try {
       const response = await fetch(`${API_URL}/api/v1/auth/me`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -203,6 +204,7 @@ async function loadLocalModuleAccess(modules: ApexModule[]): Promise<ModuleAcces
     }
   }
   if (!token) return { loading: false, isPlatformAdmin: false, bySlug: {} };
+  if (!HAS_CONFIGURED_API_URL) return stateFromActiveModuleList(modules, []);
   throw new Error("No fue posible consultar modulos del tenant.");
 }
 
