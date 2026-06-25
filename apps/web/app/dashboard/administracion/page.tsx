@@ -63,6 +63,20 @@ type MasterOption = { code: string; name: string };
 type ServiceType = { code: string; label: string; active?: boolean };
 type ServiceStore = { code: string; label: string; active?: boolean };
 type SatisfactionQuestion = { id: string; label: string; active?: boolean };
+type PlatformLog = {
+  id: string;
+  at: string;
+  source: "api" | "backend" | "frontend" | string;
+  level: "info" | "warning" | "error" | string;
+  module: string;
+  route: string;
+  method?: string;
+  status_code?: number | null;
+  code?: string;
+  message: string;
+  request_id?: string;
+  detail?: string;
+};
 type UserMasterData = {
   document_types: MasterOption[];
   user_statuses: MasterOption[];
@@ -115,7 +129,7 @@ type ConfigItem = {
   title: string;
   description: string;
   status: "configurado" | "pendiente" | "activo" | "restringido";
-  modal: "roles" | "users" | "masters" | "info";
+  modal: "roles" | "users" | "masters" | "logs" | "info";
   href?: string;
 };
 type ConfigCategory = {
@@ -466,7 +480,7 @@ const categories: ConfigCategory[] = [
     items: [
       { key: "preferencias", title: "Preferencias generales", description: "Idioma, moneda, zona horaria y comportamiento base.", status: "pendiente", modal: "info" },
       { key: "apariencia", title: "Apariencia", description: "Parametros visuales futuros del tenant.", status: "pendiente", modal: "info" },
-      { key: "logs", title: "Logs", description: "Eventos tecnicos y auditoria operativa.", status: "activo", modal: "info" },
+      { key: "logs", title: "Logs tecnicos", description: "Errores de API, backend y frontend con trazabilidad de soporte.", status: "activo", modal: "logs" },
       { key: "mantenimiento", title: "Mantenimiento", description: "Acciones avanzadas protegidas por permisos.", status: "restringido", modal: "info" }
     ]
   }
@@ -657,7 +671,7 @@ function CompactMetric({ icon, label, value, detail, tone = "default" }: { icon:
 
 export default function AdministracionPage() {
   const initializedRole = useRef(false);
-  const [activeModal, setActiveModal] = useState<"roles" | "users" | "masters" | "info" | null>(null);
+  const [activeModal, setActiveModal] = useState<"roles" | "users" | "masters" | "logs" | "info" | null>(null);
   const [selectedConfig, setSelectedConfig] = useState<ConfigItem | null>(null);
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -668,6 +682,10 @@ export default function AdministracionPage() {
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>(defaultServiceTypes);
   const [serviceStores, setServiceStores] = useState<ServiceStore[]>(defaultServiceStores);
   const [satisfactionQuestions, setSatisfactionQuestions] = useState<SatisfactionQuestion[]>(defaultSatisfactionQuestions);
+  const [platformLogs, setPlatformLogs] = useState<PlatformLog[]>([]);
+  const [logSourceFilter, setLogSourceFilter] = useState("all");
+  const [logLevelFilter, setLogLevelFilter] = useState("all");
+  const [logModuleFilter, setLogModuleFilter] = useState("all");
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
   const [roleForm, setRoleForm] = useState(emptyRoleForm([]));
@@ -720,6 +738,13 @@ export default function AdministracionPage() {
     return { active, inactive, drivers, pending, withoutRole, withoutSite };
   }, [users]);
   const roleGroups = useMemo(() => Array.from(new Set(catalog.map((item) => item.group || "general"))).sort(), [catalog]);
+  const logModules = useMemo(() => Array.from(new Set(platformLogs.map((item) => item.module || "platform").filter(Boolean))).sort(), [platformLogs]);
+  const filteredPlatformLogs = useMemo(() => platformLogs.filter((item) => {
+    const matchesSource = logSourceFilter === "all" || item.source === logSourceFilter;
+    const matchesLevel = logLevelFilter === "all" || item.level === logLevelFilter;
+    const matchesModule = logModuleFilter === "all" || item.module === logModuleFilter;
+    return matchesSource && matchesLevel && matchesModule;
+  }), [logLevelFilter, logModuleFilter, logSourceFilter, platformLogs]);
   const visibleRoleActions = roleActionMode === "full" ? roleActions : compactRoleActions;
   const filteredRoleCatalog = useMemo(() => {
     const term = roleFilter.trim().toLowerCase();
@@ -751,14 +776,15 @@ export default function AdministracionPage() {
 
   const load = useCallback(async () => {
     setMessage("");
-    const [catalogResult, rolesResult, usersResult, masterResult, serviceTypesResult, serviceStoresResult, satisfactionQuestionsResult] = await Promise.allSettled([
+    const [catalogResult, rolesResult, usersResult, masterResult, serviceTypesResult, serviceStoresResult, satisfactionQuestionsResult, platformLogsResult] = await Promise.allSettled([
       api<CatalogItem[]>("/api/v1/admin/permissions/catalog"),
       api<Role[]>("/api/v1/admin/roles"),
       api<AdminUser[]>("/api/v1/admin/users"),
       api<UserMasterData>("/api/v1/admin/user-master-data"),
       api<ServiceType[]>("/api/v1/services/service-types"),
       api<ServiceStore[]>("/api/v1/services/service-stores"),
-      api<SatisfactionQuestion[]>("/api/v1/services/satisfaction-questions")
+      api<SatisfactionQuestion[]>("/api/v1/services/satisfaction-questions"),
+      api<PlatformLog[]>("/api/v1/admin/platform-logs?limit=120")
     ]);
     const catalogData = catalogResult.status === "fulfilled" ? catalogResult.value : [];
     const rolesData = rolesResult.status === "fulfilled" ? rolesResult.value : [];
@@ -767,6 +793,7 @@ export default function AdministracionPage() {
     const serviceTypesData = serviceTypesResult.status === "fulfilled" ? normalizeServiceTypes(serviceTypesResult.value) : defaultServiceTypes;
     const serviceStoresData = serviceStoresResult.status === "fulfilled" ? normalizeServiceStores(serviceStoresResult.value) : defaultServiceStores;
     const satisfactionQuestionsData = satisfactionQuestionsResult.status === "fulfilled" ? normalizeSatisfactionQuestions(satisfactionQuestionsResult.value) : defaultSatisfactionQuestions;
+    const platformLogsData = platformLogsResult.status === "fulfilled" ? platformLogsResult.value : [];
     setCatalog(catalogData);
     setRoles(rolesData);
     setUsers(usersData);
@@ -774,6 +801,7 @@ export default function AdministracionPage() {
     setServiceTypes(serviceTypesData.length ? serviceTypesData : defaultServiceTypes);
     setServiceStores(serviceStoresData.length ? serviceStoresData : defaultServiceStores);
     setSatisfactionQuestions(satisfactionQuestionsData.length ? satisfactionQuestionsData : defaultSatisfactionQuestions);
+    setPlatformLogs(platformLogsData);
     const errors = [
       catalogResult.status === "rejected" ? "catalogo de permisos" : "",
       rolesResult.status === "rejected" ? "roles" : "",
@@ -781,7 +809,8 @@ export default function AdministracionPage() {
       masterResult.status === "rejected" ? "maestros de usuario" : "",
       serviceTypesResult.status === "rejected" ? "tipos de servicio" : "",
       serviceStoresResult.status === "rejected" ? "almacenes de servicio" : "",
-      satisfactionQuestionsResult.status === "rejected" ? "preguntas de satisfaccion" : ""
+      satisfactionQuestionsResult.status === "rejected" ? "preguntas de satisfaccion" : "",
+      platformLogsResult.status === "rejected" ? "logs tecnicos" : ""
     ].filter(Boolean);
     if (errors.length) {
       setMessage(`No fue posible consultar ${errors.join(", ")}. Revisa permisos RLS, empresa activa o conectividad Supabase.`);
@@ -816,6 +845,12 @@ export default function AdministracionPage() {
       .then((access) => setPlatformAdmin(access.isPlatformAdmin))
       .catch(() => setPlatformAdmin(false));
   }, []);
+
+  async function refreshPlatformLogs() {
+    const rows = await api<PlatformLog[]>("/api/v1/admin/platform-logs?limit=120");
+    setPlatformLogs(rows);
+    setMessage("Logs tecnicos actualizados.");
+  }
 
   function openConfig(item: ConfigItem) {
     setSelectedConfig(item);
@@ -1053,12 +1088,15 @@ export default function AdministracionPage() {
   }
 
   async function saveCatalogItem() {
-    if (!catalogDraft.catalog || !catalogDraft.code.trim() || !catalogDraft.name.trim()) {
-      setMessage("Catalogo, codigo y nombre son obligatorios.");
+    const operationalCatalogs = new Set(["service_types", "service_stores", "satisfaction_questions"]);
+    const isOperationalDraft = operationalCatalogs.has(catalogDraft.catalog);
+    const draftCode = catalogDraft.code.trim() || (isOperationalDraft ? catalogDraft.name.trim() : "");
+    if (!catalogDraft.catalog || !catalogDraft.name.trim() || (!isOperationalDraft && !catalogDraft.code.trim())) {
+      setMessage(isOperationalDraft ? "Catalogo y nombre son obligatorios." : "Catalogo, codigo y nombre son obligatorios.");
       return;
     }
     if (catalogDraft.catalog === "service_types") {
-      const code = normalizeServiceTypeCode(catalogDraft.code);
+      const code = normalizeServiceTypeCode(draftCode);
       if (!code) {
         setMessage("El codigo del tipo de servicio debe tener letras o numeros.");
         return;
@@ -1072,7 +1110,7 @@ export default function AdministracionPage() {
       return;
     }
     if (catalogDraft.catalog === "service_stores") {
-      const code = normalizeServiceTypeCode(catalogDraft.code);
+      const code = normalizeServiceTypeCode(draftCode);
       if (!code) {
         setMessage("El codigo del almacen debe tener letras o numeros.");
         return;
@@ -1086,7 +1124,7 @@ export default function AdministracionPage() {
       return;
     }
     if (catalogDraft.catalog === "satisfaction_questions") {
-      const id = normalizeQuestionId(catalogDraft.code);
+      const id = normalizeQuestionId(draftCode);
       if (!id) {
         setMessage("El codigo de la pregunta debe tener letras o numeros.");
         return;
@@ -1223,6 +1261,62 @@ export default function AdministracionPage() {
     await saveSatisfactionQuestionCatalog(satisfactionQuestions.filter((item) => item.id !== id), "Pregunta retirada del maestro.");
   }
 
+  function renderPlatformLogs() {
+    const counts = {
+      total: platformLogs.length,
+      error: platformLogs.filter((item) => item.level === "error").length,
+      warning: platformLogs.filter((item) => item.level === "warning").length,
+      frontend: platformLogs.filter((item) => item.source === "frontend").length
+    };
+    return (
+      <div className="space-y-4">
+        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {[["Eventos", counts.total, "text-neutral-950"], ["Errores", counts.error, "text-rose-700"], ["Alertas", counts.warning, "text-amber-700"], ["Frontend", counts.frontend, "text-sky-700"]].map(([label, value, tone]) => (
+            <div className="rounded-md border border-line bg-white p-3" key={String(label)}>
+              <p className="text-xs font-semibold uppercase text-neutral-500">{label}</p>
+              <p className={`mt-2 text-2xl font-semibold ${tone}`}>{value}</p>
+            </div>
+          ))}
+        </section>
+        <section className="grid gap-3 rounded-md border border-line bg-paper p-3 md:grid-cols-[1fr_1fr_1fr_auto]">
+          <SelectField label="Fuente" value={logSourceFilter} onChange={setLogSourceFilter} options={[["all", "Todas"], ["api", "API"], ["backend", "Backend"], ["frontend", "Frontend"]]} />
+          <SelectField label="Severidad" value={logLevelFilter} onChange={setLogLevelFilter} options={[["all", "Todas"], ["error", "Errores"], ["warning", "Alertas"], ["info", "Info"]]} />
+          <SelectField label="Modulo" value={logModuleFilter} onChange={setLogModuleFilter} options={[["all", "Todos"], ...logModules.map((item) => [item, item] as [string, string])]} />
+          <Button className="self-end" onClick={refreshPlatformLogs} type="button"><RefreshCw size={16} /> Actualizar</Button>
+        </section>
+        <div className="max-h-[58vh] overflow-auto rounded-md border border-line bg-white">
+          <table className="w-full min-w-[980px] text-sm">
+            <thead className="sticky top-0 z-10 bg-paper">
+              <tr className="border-b border-line text-left text-xs font-semibold uppercase text-neutral-500">
+                <th className="px-3 py-3">Fecha</th>
+                <th className="px-3 py-3">Fuente</th>
+                <th className="px-3 py-3">Modulo</th>
+                <th className="px-3 py-3">Ruta</th>
+                <th className="px-3 py-3">Mensaje</th>
+                <th className="px-3 py-3">Request</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredPlatformLogs.map((item) => (
+                <tr className="border-b border-line/70 align-top hover:bg-paper/60" key={item.id}>
+                  <td className="whitespace-nowrap px-3 py-3 text-xs text-neutral-600">{item.at ? new Date(item.at).toLocaleString() : "Sin fecha"}</td>
+                  <td className="px-3 py-3">
+                    <span className={`rounded-md px-2 py-1 text-xs font-semibold ${item.level === "error" ? "bg-rose-50 text-rose-700" : item.level === "warning" ? "bg-amber-50 text-amber-700" : "bg-neutral-100 text-neutral-600"}`}>{item.source}</span>
+                  </td>
+                  <td className="px-3 py-3 font-semibold">{item.module || "platform"}</td>
+                  <td className="px-3 py-3"><p className="font-mono text-xs">{item.method ? `${item.method} ` : ""}{item.route || "-"}</p>{item.status_code ? <p className="mt-1 text-xs text-neutral-500">Estado {item.status_code}</p> : null}</td>
+                  <td className="px-3 py-3"><p className="font-semibold">{item.message || item.code || "Evento tecnico"}</p>{item.detail ? <p className="mt-1 max-w-md break-words text-xs text-neutral-500">{item.detail}</p> : null}</td>
+                  <td className="px-3 py-3 font-mono text-xs text-neutral-500">{item.request_id || "-"}</td>
+                </tr>
+              ))}
+              {!filteredPlatformLogs.length ? <tr><td className="px-4 py-10 text-center text-sm text-neutral-500" colSpan={6}>No hay logs con estos filtros.</td></tr> : null}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
   function renderMasterCatalogManager() {
     const catalogOptions: Array<[string, string]> = [
       ["user_types", "Tipos de usuario"],
@@ -1259,7 +1353,7 @@ export default function AdministracionPage() {
         <div className="rounded-md border border-line bg-paper p-3">
           <div className="grid gap-3">
             <SelectField label="Catalogo" value={catalogDraft.catalog} onChange={(value) => setCatalogDraft((current) => ({ ...current, catalog: value }))} options={catalogOptions} />
-            <Field label="Codigo" value={catalogDraft.code} onChange={(value) => setCatalogDraft((current) => ({ ...current, code: isOperationalCatalog ? normalizeServiceTypeCode(value) : value.toUpperCase().replace(/\s+/g, "-") }))} />
+            <Field label={isOperationalCatalog ? "Codigo opcional" : "Codigo"} value={catalogDraft.code} onChange={(value) => setCatalogDraft((current) => ({ ...current, code: isOperationalCatalog ? normalizeServiceTypeCode(value) : value.toUpperCase().replace(/\s+/g, "-") }))} />
             <Field label={isSatisfactionQuestionCatalog ? "Pregunta" : "Nombre"} value={catalogDraft.name} onChange={(value) => setCatalogDraft((current) => ({ ...current, name: value }))} />
             <Field label="Descripcion" value={catalogDraft.description} onChange={(value) => setCatalogDraft((current) => ({ ...current, description: value }))} />
             {isServiceTypeCatalog ? (
@@ -1563,6 +1657,7 @@ export default function AdministracionPage() {
         <button className="group flex items-center gap-3 rounded-md border border-line bg-white p-3 text-left hover:border-apex hover:bg-paper" onClick={() => setActiveModal("roles")} type="button"><span className="flex h-10 w-10 items-center justify-center rounded-md bg-paper text-apex group-hover:bg-white"><Shield size={18} /></span><span><span className="block text-sm font-semibold">Roles y permisos</span><span className="text-xs text-neutral-500">Gobierno de acceso</span></span></button>
         {platformAdmin ? <Link className="group flex items-center gap-3 rounded-md border border-line bg-white p-3 hover:border-apex hover:bg-paper" href="/dashboard/administracion/suscripciones"><span className="flex h-10 w-10 items-center justify-center rounded-md bg-paper text-apex group-hover:bg-white"><Building2 size={18} /></span><span><span className="block text-sm font-semibold">Empresas y modulos</span><span className="text-xs text-neutral-500">Suscripciones y habilitaciones</span></span></Link> : null}
         <button className="group flex items-center gap-3 rounded-md border border-line bg-white p-3 text-left hover:border-apex hover:bg-paper" onClick={() => setActiveModal("masters")} type="button"><span className="flex h-10 w-10 items-center justify-center rounded-md bg-paper text-apex group-hover:bg-white"><Database size={18} /></span><span><span className="block text-sm font-semibold">Maestros</span><span className="text-xs text-neutral-500">Catalogos transversales</span></span></button>
+        <button className="group flex items-center gap-3 rounded-md border border-line bg-white p-3 text-left hover:border-apex hover:bg-paper" onClick={() => setActiveModal("logs")} type="button"><span className="flex h-10 w-10 items-center justify-center rounded-md bg-paper text-apex group-hover:bg-white"><AlertTriangle size={18} /></span><span><span className="block text-sm font-semibold">Logs tecnicos</span><span className="text-xs text-neutral-500">API, backend y frontend</span></span></button>
       </section>
 
       <section className="overflow-hidden rounded-md border border-line bg-white">
@@ -1694,6 +1789,12 @@ export default function AdministracionPage() {
       {activeModal === "masters" ? (
         <ModalFrame title="Maestros de plataforma" onClose={() => setActiveModal(null)} maxWidth="md:max-w-6xl">
           {renderMasterCatalogManager()}
+        </ModalFrame>
+      ) : null}
+
+      {activeModal === "logs" ? (
+        <ModalFrame title="Logs tecnicos de plataforma" onClose={() => setActiveModal(null)} maxWidth="md:max-w-7xl">
+          {renderPlatformLogs()}
         </ModalFrame>
       ) : null}
 

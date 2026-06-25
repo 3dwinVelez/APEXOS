@@ -327,13 +327,14 @@ export default function ServicesPage() {
         api<ServiceReference[]>("/api/v1/services/references?active=true"),
         api<Technician[]>("/api/v1/services/technicians")
       ]);
-      const typeRows = await api<ServiceType[]>("/api/v1/services/service-types").catch(() => []);
-      const storeRows = await api<ServiceStore[]>("/api/v1/services/service-stores").catch(() => []);
+      const typeRows = await api<ServiceType[]>("/api/v1/services/service-types");
+      const storeRows = await api<ServiceStore[]>("/api/v1/services/service-stores");
       setReferences(referenceRows);
       setTechnicians(technicianRows);
       setServiceTypesCatalog(typeRows.filter((item) => item.active !== false));
       setServiceStores(storeRows.filter((item) => item.active !== false));
-    } catch {
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No fue posible cargar maestros de servicios.");
       setReferences([]);
       setTechnicians([]);
       setServiceTypesCatalog([]);
