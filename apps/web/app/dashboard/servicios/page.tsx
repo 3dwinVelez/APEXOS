@@ -18,7 +18,8 @@ import {
   Wrench
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type ServiceReference = { id: number | string; code: string; name: string };
 type Technician = { id: number | string; code?: string; user?: { name?: string; email?: string } };
@@ -220,6 +221,10 @@ function isLocalOrder(order: ServiceOrder) {
   return /^\d+$/.test(String(order.id || ""));
 }
 
+function isOperableOrderId(id: unknown) {
+  return /^\d+$/.test(String(id || "")) || /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(id || ""));
+}
+
 function normalizeKey(value: unknown) {
   return String(value || "").trim().toLowerCase();
 }
@@ -240,7 +245,7 @@ function externalReferenceText(order: ServiceOrder | null) {
 }
 
 function serviceOrderHref(order: ServiceOrder) {
-  if (isLocalOrder(order)) return `/dashboard/servicios/${order.id}`;
+  if (!requiresAdminCompletion(order) && isOperableOrderId(order.id)) return `/dashboard/servicios/${order.id}`;
   const externalKey = String(order.number || order.id || "").trim();
   return `/dashboard/servicios?externa=${encodeURIComponent(externalKey)}`;
 }
@@ -286,6 +291,7 @@ async function loadSupabaseMonitorOrders() {
 }
 
 export default function ServicesPage() {
+  const searchParams = useSearchParams();
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [references, setReferences] = useState<ServiceReference[]>([]);
   const [technicians, setTechnicians] = useState<Technician[]>([]);
@@ -303,6 +309,7 @@ export default function ServicesPage() {
   const [editingOrder, setEditingOrder] = useState<ServiceOrder | null>(null);
   const [editForm, setEditForm] = useState<OrderEditForm>(emptyEditForm);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [handledExternalKey, setHandledExternalKey] = useState("");
 
   async function load() {
     try {
@@ -407,7 +414,7 @@ export default function ServicesPage() {
     return !technicianMode && !["cerrada", "no_ejecutada"].includes(order.status);
   }
 
-  function openEdit(order: ServiceOrder) {
+  const openEdit = useCallback((order: ServiceOrder) => {
     const localReference = localReferenceForOrder(order, references);
     setEditingOrder(order);
     setEditForm({
@@ -425,7 +432,19 @@ export default function ServicesPage() {
       invoice_number: order.invoice_number || "",
       notes: order.notes || ""
     });
-  }
+  }, [references]);
+
+  useEffect(() => {
+    const externalKey = searchParams.get("externa") || "";
+    if (!externalKey || handledExternalKey === externalKey || technicianMode || !orders.length) return;
+    const match = orders.find((order) => [order.number, order.id, order.metadata?.external_order_number, order.metadata?.external_order_id]
+      .filter(Boolean)
+      .some((value) => String(value) === externalKey));
+    if (!match) return;
+    if (requiresAdminCompletion(match) && !references.length) return;
+    setHandledExternalKey(externalKey);
+    openEdit(match);
+  }, [handledExternalKey, openEdit, orders, references.length, searchParams, technicianMode]);
 
   async function saveEdit() {
     if (!editingOrder || savingEdit) return;
