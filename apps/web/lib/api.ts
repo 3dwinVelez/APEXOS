@@ -72,6 +72,38 @@ function alertRequestFailure(path: string, status: number | null, detail: string
   });
 }
 
+function platformModuleFromPath(path: string) {
+  const parts = path.split("?")[0].split("/").filter(Boolean);
+  const apiIndex = parts.findIndex((part) => part === "v1");
+  return parts[apiIndex + 1] || parts[0] || "frontend";
+}
+
+function reportClientFailure(path: string, status: number | null, detail: string, method = "GET") {
+  if (typeof window === "undefined" || path.includes("/admin/platform-logs")) return;
+  const token = localStorage.getItem("token");
+  if (!token) return;
+  const payload = {
+    source: "frontend",
+    module: platformModuleFromPath(path),
+    route: path,
+    method,
+    status_code: status,
+    message: status === null ? "Backend no disponible desde frontend" : "Solicitud frontend fallida",
+    detail: String(detail || "").slice(0, 1600),
+    metadata: {
+      href: window.location.href,
+      user_email: localStorage.getItem("user_email") || "",
+      provider: localStorage.getItem("auth_provider") || "local"
+    }
+  };
+  fetch(`${API_URL}/api/v1/admin/platform-logs/client`, {
+    method: "POST",
+    keepalive: true,
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload)
+  }).catch(() => undefined);
+}
+
 async function refreshSessionToken() {
   if (typeof window === "undefined") return false;
   if (refreshSessionInFlight) return refreshSessionInFlight;
@@ -134,6 +166,7 @@ export async function authorizedFetch(input: string, options: RequestInit = {}, 
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Servicio no disponible.";
     alertRequestFailure(input, null, detail);
+    reportClientFailure(input, null, detail, String(options.method || "GET"));
     if (error instanceof Error) throw error;
     throw new Error("No fue posible completar la solicitud autenticada.");
   }
@@ -159,12 +192,14 @@ export async function authorizedJson<T>(input: string, options: RequestInit = {}
       const detail = await response.text().catch(() => "");
       const message = requestErrorMessage(input, response.status, detail);
       alertRequestFailure(input, response.status, detail);
+      reportClientFailure(input, response.status, detail, String(options.method || "GET"));
       throw new Error(message);
     }
     const body = await response.json().catch(() => ({ error: response.statusText }));
     const detail = body.error || body.message || response.statusText;
     const message = requestErrorMessage(input, response.status, detail);
     alertRequestFailure(input, response.status, detail);
+    reportClientFailure(input, response.status, detail, String(options.method || "GET"));
     throw new Error(message);
   }
   return response.json() as Promise<T>;
@@ -2387,6 +2422,7 @@ export async function api<T>(path: string, options: RequestInit = {}, retried = 
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Backend no disponible.";
     alertRequestFailure(path, null, detail);
+    reportClientFailure(path, null, detail, String(options.method || "GET"));
     if (error instanceof Error) throw error;
     throw new Error("API no disponible. Revisa el servicio backend.");
   }
@@ -2414,6 +2450,7 @@ export async function api<T>(path: string, options: RequestInit = {}, retried = 
       const detail = await response.text().catch(() => "");
       const message = requestErrorMessage(path, response.status, detail);
       alertRequestFailure(path, response.status, detail);
+      reportClientFailure(path, response.status, detail, String(options.method || "GET"));
       throw new Error(message);
     }
 
@@ -2421,6 +2458,7 @@ export async function api<T>(path: string, options: RequestInit = {}, retried = 
     const detail = body.error || body.message || response.statusText;
     const message = requestErrorMessage(path, response.status, detail);
     alertRequestFailure(path, response.status, detail);
+    reportClientFailure(path, response.status, detail, String(options.method || "GET"));
     throw new Error(message);
   }
   touchSession();
