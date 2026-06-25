@@ -5,6 +5,7 @@ import { getServiceImageUrl, uploadServiceImageData } from "./supabaseStorage";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
 const API_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_API_TIMEOUT_MS || 20000);
+const HAS_CONFIGURED_API_URL = Boolean(process.env.NEXT_PUBLIC_API_URL);
 let refreshSessionInFlight: Promise<boolean> | null = null;
 
 function isSupabaseSession() {
@@ -2408,6 +2409,13 @@ export async function api<T>(path: string, options: RequestInit = {}, retried = 
       touchSession();
       return fallback;
     }
+  }
+
+  if (typeof window !== "undefined" && !HAS_CONFIGURED_API_URL) {
+    const detail = "NEXT_PUBLIC_API_URL no esta configurada para este ambiente y la ruta no tiene fallback Supabase disponible.";
+    alertRequestFailure(path, null, detail);
+    reportClientFailure(path, null, detail, String(options.method || "GET"));
+    throw new Error("API de servicios no configurada en este ambiente. Revisa variables Railway o usa una ruta soportada por Supabase.");
   }
 
   try {
