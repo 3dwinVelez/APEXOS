@@ -129,6 +129,45 @@ async function build() {
   require("./src/fabric/audit").registerAuditHook(fastify);
   bootLog("Registered audit hook");
 
+  bootLog("Registering platform technical log hooks");
+  const { recordPlatformLog, routeModule } = require("./src/fabric/platformLogs");
+  fastify.addHook("onError", async (request, reply, error) => {
+    request.platformErrorLogged = true;
+    await recordPlatformLog({
+      tenant_id: request.user?.tenant_id,
+      user_id: request.user?.id,
+      source: "backend",
+      module: routeModule(request.routeOptions?.url || request.url),
+      route: request.routeOptions?.url || request.url,
+      method: request.method,
+      status_code: error.statusCode || reply.statusCode || 500,
+      code: error.code || "",
+      message: error.message,
+      stack: error.stack,
+      request_id: request.id,
+      ip: request.ip,
+      user_agent: request.headers["user-agent"]
+    });
+  });
+  fastify.addHook("onResponse", async (request, reply) => {
+    if (request.platformErrorLogged || reply.statusCode < 400) return;
+    await recordPlatformLog({
+      tenant_id: request.user?.tenant_id,
+      user_id: request.user?.id,
+      source: "api",
+      module: routeModule(request.routeOptions?.url || request.url),
+      route: request.routeOptions?.url || request.url,
+      method: request.method,
+      status_code: reply.statusCode,
+      code: reply.statusCode >= 500 ? "HTTP_ERROR" : "REQUEST_REJECTED",
+      message: reply.statusCode >= 500 ? "Respuesta de error del API" : "Solicitud rechazada por validacion o permisos",
+      request_id: request.id,
+      ip: request.ip,
+      user_agent: request.headers["user-agent"]
+    });
+  });
+  bootLog("Registered platform technical log hooks");
+
   bootLog("Registering QA performance logging");
   const { currentPerformanceContext, runPerformanceContext, setResponseSizeBytes } = require("./src/core/performanceContext");
   fastify.addHook("onRequest", (request, _reply, done) => {

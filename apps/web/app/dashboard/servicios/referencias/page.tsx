@@ -119,7 +119,7 @@ export default function ServiceReferencesPage() {
     try {
       const [referenceRows, storeRows] = await Promise.all([
         api<ServiceReference[]>("/api/v1/services/references"),
-        api<ServiceStore[]>("/api/v1/services/service-stores").catch(() => [])
+        api<ServiceStore[]>("/api/v1/services/service-stores")
       ]);
       setReferences(referenceRows);
       setStores(storeRows);

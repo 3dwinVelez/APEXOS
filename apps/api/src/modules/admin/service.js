@@ -1,5 +1,6 @@
 const bcrypt = require("bcrypt");
 const prisma = require("../../core/prisma");
+const platformLogs = require("../../fabric/platformLogs");
 const { assertPasswordPolicy } = require("../../security/policy");
 
 function badRequest(message) {
@@ -1192,6 +1193,32 @@ async function removeUserDocument(tenantId, id, documentId, actorId = null) {
   });
 }
 
+async function listPlatformLogs(tenantId, query = {}) {
+  return platformLogs.listPlatformLogs(normalizeTenantId(tenantId), query);
+}
+
+async function createClientPlatformLog(tenantId, user, input = {}, requestMeta = {}) {
+  const message = String(input.message || "").trim();
+  if (!message) throw badRequest("Mensaje requerido para registrar el log.");
+  await platformLogs.recordPlatformLog({
+    tenant_id: normalizeTenantId(tenantId),
+    user_id: user?.id,
+    source: "frontend",
+    module: String(input.module || "frontend").trim(),
+    route: String(input.route || input.path || "frontend").trim(),
+    method: String(input.method || "").trim(),
+    status_code: input.status_code == null ? null : Number(input.status_code),
+    code: String(input.code || "").trim(),
+    message,
+    detail: String(input.detail || "").trim(),
+    request_id: String(input.request_id || "").trim(),
+    ip: requestMeta.ip,
+    user_agent: requestMeta.user_agent,
+    metadata: input.metadata && typeof input.metadata === "object" ? input.metadata : {}
+  });
+  return { ok: true };
+}
+
 module.exports = {
   exportTenantData,
   processBilling,
@@ -1208,6 +1235,8 @@ module.exports = {
   setUserActive,
   updateUserAccess,
   addUserDocument,
-  removeUserDocument
+  removeUserDocument,
+  listPlatformLogs,
+  createClientPlatformLog
 };
 
