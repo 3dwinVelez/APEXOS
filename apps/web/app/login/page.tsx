@@ -7,6 +7,7 @@ import { LogIn } from "lucide-react";
 import { useState } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
+const HAS_CONFIGURED_API_URL = Boolean(process.env.NEXT_PUBLIC_API_URL);
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -27,6 +28,7 @@ export default function LoginPage() {
   }
 
   async function loginWithLocalApi(loginEmail: string, loginPassword: string) {
+    if (!HAS_CONFIGURED_API_URL) throw new Error("No fue posible iniciar sesion con esas credenciales.");
     const response = await fetch(`${API_URL}/api/v1/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

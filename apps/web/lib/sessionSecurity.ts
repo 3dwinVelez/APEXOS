@@ -1,5 +1,6 @@
 const LAST_ACTIVITY_KEY = "apex_last_activity";
 const SESSION_TIMEOUT_MINUTES = Number(process.env.NEXT_PUBLIC_SESSION_TIMEOUT_MINUTES || 45);
+const HAS_CONFIGURED_API_URL = Boolean(process.env.NEXT_PUBLIC_API_URL);
 const PASSWORD_CHANGE_REQUIRED_KEY = "apex_password_change_required";
 const APP_ALERT_EVENT = "apex:alert";
 
@@ -86,6 +87,10 @@ export async function keepSessionAlive() {
   const refresh = localStorage.getItem("refresh");
   if (!token) return;
   if (!shouldRefreshLocalToken(token) || !refresh) {
+    touchSession();
+    return;
+  }
+  if (!HAS_CONFIGURED_API_URL) {
     touchSession();
     return;
   }

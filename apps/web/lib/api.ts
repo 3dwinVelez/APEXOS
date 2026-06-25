@@ -81,6 +81,7 @@ function platformModuleFromPath(path: string) {
 
 function reportClientFailure(path: string, status: number | null, detail: string, method = "GET") {
   if (typeof window === "undefined" || path.includes("/admin/platform-logs")) return;
+  if (!HAS_CONFIGURED_API_URL) return;
   const token = localStorage.getItem("token");
   if (!token) return;
   const payload = {
@@ -125,6 +126,7 @@ async function refreshSessionToken() {
         return true;
       }
 
+      if (!HAS_CONFIGURED_API_URL) return false;
       const response = await fetchWithTimeout(`${API_URL}/api/v1/auth/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -694,6 +696,10 @@ const DEFAULT_SERVICE_TYPES = [
   { code: "desmontaje", label: "Desmontaje", active: true },
   { code: "ambos", label: "Montaje y desmontaje", active: true }
 ];
+const DEFAULT_SERVICE_STORES = [
+  { code: "hogar_y_moda_1", label: "Hogar y Moda 1", active: true },
+  { code: "hogar_y_moda_2", label: "Hogar y Moda 2", active: true }
+];
 const DEFAULT_SATISFACTION_QUESTIONS = [
   { id: "service_quality", label: "Como calificas la calidad del servicio realizado?", active: true },
   { id: "technician_attention", label: "Como calificas la atencion y claridad del tecnico?", active: true },
@@ -713,6 +719,19 @@ function serviceTypeCode(value: unknown) {
 
 function normalizeServiceTypes(rows: unknown) {
   const source = Array.isArray(rows) && rows.length ? rows : DEFAULT_SERVICE_TYPES;
+  const seen = new Set<string>();
+  return source
+    .map((item) => {
+      const row = item && typeof item === "object" ? item as AnyRow : {};
+      const code = serviceTypeCode(row.code || row.label);
+      const label = String(row.label || row.code || "").trim();
+      return { code, label, active: row.active !== false };
+    })
+    .filter((item) => item.code && item.label && !seen.has(item.code) && seen.add(item.code));
+}
+
+function normalizeServiceStores(rows: unknown) {
+  const source = Array.isArray(rows) && rows.length ? rows : DEFAULT_SERVICE_STORES;
   const seen = new Set<string>();
   return source
     .map((item) => {
@@ -791,6 +810,50 @@ async function saveSupabaseServiceTypes(typesInput: unknown) {
     });
   }
   return types;
+}
+
+async function supabaseServiceStores() {
+  const companyId = await currentSupabaseCompanyId();
+  const rows = await supabaseFetch<Array<{ metadata?: AnyRow }>>(
+    `/rest/v1/service_references?select=metadata&company_id=eq.${encodeURIComponent(companyId)}&code=eq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&limit=1`
+  ).catch(() => []);
+  return normalizeServiceStores(rows[0]?.metadata?.service_stores);
+}
+
+async function saveSupabaseServiceStores(storesInput: unknown) {
+  if (technicianSession()) throw new Error("El tecnico no puede modificar almacenes de servicio.");
+  const companyId = await currentSupabaseCompanyId();
+  const stores = normalizeServiceStores(storesInput);
+  if (!stores.some((item) => item.active)) throw new Error("Debe existir al menos un almacen activo.");
+  const existing = await supabaseFetch<Array<{ id: string; metadata?: AnyRow }>>(
+    `/rest/v1/service_references?select=id,metadata&company_id=eq.${encodeURIComponent(companyId)}&code=eq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&limit=1`
+  );
+  const payload = {
+    company_id: companyId,
+    code: SERVICE_TYPES_REFERENCE_CODE,
+    name: "Catalogos de servicio",
+    category: "sistema",
+    description: "Catalogos internos de servicios configurables.",
+    estimated_minutes: 1,
+    brand: "",
+    model: "",
+    active: false,
+    metadata: { ...(existing[0]?.metadata || {}), service_stores: stores, system_catalog: true, updated_at: new Date().toISOString() }
+  };
+  if (existing[0]?.id) {
+    await supabaseFetch(`/rest/v1/service_references?id=eq.${encodeURIComponent(existing[0].id)}`, {
+      method: "PATCH",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify(payload)
+    });
+  } else {
+    await supabaseFetch("/rest/v1/service_references", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify(payload)
+    });
+  }
+  return stores;
 }
 
 async function supabaseSatisfactionQuestions() {
@@ -1612,6 +1675,13 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     if (method === "PUT") {
       const body = JSON.parse(String(options.body || "{}")) as { types?: unknown };
       return await saveSupabaseServiceTypes(body.types) as T;
+    }
+  }
+  if (pathname === "/api/v1/services/service-stores") {
+    if (method === "GET") return await supabaseServiceStores() as T;
+    if (method === "PUT") {
+      const body = JSON.parse(String(options.body || "{}")) as { stores?: unknown };
+      return await saveSupabaseServiceStores(body.stores) as T;
     }
   }
   if (pathname === "/api/v1/services/satisfaction-questions") {
