@@ -111,7 +111,7 @@ where id in (
 )
 or email in ('admin@apexos.qa', 'scj@apexos.qa');
 
--- Clean storage objects only; keep buckets and policies.
-delete from storage.objects;
+-- Keep storage objects untouched here. Supabase Hosted blocks direct deletes
+-- from storage.objects; object cleanup must use the Storage API if ever needed.
 
 commit;
