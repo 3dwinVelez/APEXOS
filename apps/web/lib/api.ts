@@ -6,6 +6,10 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
 const API_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_API_TIMEOUT_MS || 20000);
 const HAS_CONFIGURED_API_URL = Boolean(process.env.NEXT_PUBLIC_API_URL);
+const ADMIN_ROLES_STORAGE_KEY = "apexos_admin_roles";
+const LEGACY_ADMIN_ROLES_STORAGE_KEY = "apexos_admin_roles_qa";
+const USER_MASTER_STORAGE_KEY = "apexos_user_master_data";
+const LEGACY_USER_MASTER_STORAGE_KEY = "apexos_user_master_data_qa";
 let refreshSessionInFlight: Promise<boolean> | null = null;
 
 function isSupabaseSession() {
@@ -366,7 +370,7 @@ function normalizeStoredAdminRoles(roles: ReturnType<typeof defaultAdminRoles>, 
 function storedAdminRoles() {
   const activeModules = getStoredTenantActiveModules();
   if (typeof window === "undefined") return defaultAdminRoles(activeModules);
-  const raw = localStorage.getItem("apexos_admin_roles_qa");
+  const raw = localStorage.getItem(ADMIN_ROLES_STORAGE_KEY) || localStorage.getItem(LEGACY_ADMIN_ROLES_STORAGE_KEY);
   if (!raw) return defaultAdminRoles(activeModules);
   try {
     const parsed = JSON.parse(raw);
@@ -377,12 +381,12 @@ function storedAdminRoles() {
 }
 
 function saveStoredAdminRoles(roles: ReturnType<typeof defaultAdminRoles>) {
-  if (typeof window !== "undefined") localStorage.setItem("apexos_admin_roles_qa", JSON.stringify(roles));
+  if (typeof window !== "undefined") localStorage.setItem(ADMIN_ROLES_STORAGE_KEY, JSON.stringify(roles));
 }
 
 function getStoredUserMasterData() {
   if (typeof window === "undefined") return defaultUserMasterData();
-  const raw = localStorage.getItem("apexos_user_master_data_qa");
+  const raw = localStorage.getItem(USER_MASTER_STORAGE_KEY) || localStorage.getItem(LEGACY_USER_MASTER_STORAGE_KEY);
   if (!raw) return defaultUserMasterData();
   try {
     const parsed = JSON.parse(raw);
@@ -393,7 +397,7 @@ function getStoredUserMasterData() {
 }
 
 function saveStoredUserMasterData(data: ReturnType<typeof defaultUserMasterData>) {
-  if (typeof window !== "undefined") localStorage.setItem("apexos_user_master_data_qa", JSON.stringify(data));
+  if (typeof window !== "undefined") localStorage.setItem(USER_MASTER_STORAGE_KEY, JSON.stringify(data));
 }
 
 function defaultUserMasterData() {
@@ -529,7 +533,7 @@ async function currentSupabaseEmployee() {
     company_id: membership.company_id,
     user_id: userId,
     first_name: "Usuario",
-    last_name: "QA",
+    last_name: "Supabase",
     email,
     position: membership.role || "operario",
     user_type: membership.role === "admin" || membership.role === "owner" ? "administrador" : "operario",
@@ -2258,7 +2262,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const roles = storedAdminRoles();
     if (method === "POST") {
       const body = JSON.parse(String(options.body || "{}"));
-      const fullName = body.name || `${body.first_names || ""} ${body.last_names || ""}`.trim() || body.email || "Usuario demo";
+      const fullName = body.name || `${body.first_names || ""} ${body.last_names || ""}`.trim() || body.email || "Usuario";
       const role = roles.find((item) => item.id === Number(body.role_id)) || roles[0];
       const token = getSupabaseAccessToken();
       if (token) {
@@ -2296,7 +2300,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         first_name: body.first_names || fullName.split(" ")[0] || fullName,
         last_name: body.last_names || fullName.split(" ").slice(1).join(" "),
         document_type: body.document_type || "CC",
-        document_number: body.document || `QA-${Date.now()}`,
+        document_number: body.document || `USR-${Date.now()}`,
         email: body.email,
         phone: body.phone || "",
         position: body.position || body.operational_classification || "operario",
@@ -2305,8 +2309,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         status: body.user_status === "inactivo" ? "inactive" : "active",
         user_type: body.operational_classification || "operario",
         metadata: {
-          is_demo: true,
-          demo_batch: "apexos_admin_user_created",
+          source: "apexos_admin_user_created",
           name: fullName,
           code: body.code || `USR-${Date.now()}`,
           role_id: role.id,

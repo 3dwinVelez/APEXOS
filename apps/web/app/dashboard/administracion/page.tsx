@@ -466,7 +466,7 @@ const categories: ConfigCategory[] = [
     description: "Supabase, APIs, correo, GPS y webhooks.",
     icon: LinkIcon,
     items: [
-      { key: "supabase", title: "Supabase", description: "Conexion QA, Auth, Storage y RLS.", status: "activo", modal: "info" },
+      { key: "supabase", title: "Supabase", description: "Conexion Auth, Storage y RLS.", status: "activo", modal: "info" },
       { key: "apis", title: "APIs externas", description: "Credenciales y endpoints por proveedor.", status: "pendiente", modal: "info" },
       { key: "facturacion", title: "Facturacion electronica futura", description: "Base para integracion tributaria.", status: "pendiente", modal: "info" },
       { key: "correo-webhooks", title: "Correo y webhooks", description: "Canales de salida para avisos e integraciones.", status: "pendiente", modal: "info" }

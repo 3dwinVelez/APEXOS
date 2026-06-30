@@ -175,7 +175,7 @@ async function build() {
   });
   bootLog("Registered platform technical log hooks");
 
-  bootLog("Registering QA performance logging");
+  bootLog("Registering performance logging");
   const { currentPerformanceContext, runPerformanceContext, setResponseSizeBytes } = require("./src/core/performanceContext");
   fastify.addHook("onRequest", (request, _reply, done) => {
     runPerformanceContext({ startedAt: process.hrtime.bigint() }, done);
@@ -219,7 +219,7 @@ async function build() {
     }
     done();
   });
-  bootLog("Registered QA performance logging");
+  bootLog("Registered performance logging");
 
   bootLog("Registering API modules");
   registerRoutes("auth", require("./src/modules/auth/routes"), { prefix: "/api/v1" });

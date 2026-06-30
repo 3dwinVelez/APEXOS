@@ -11,6 +11,21 @@ function normalizeDomain(value) {
     .replace(/^\.+|\.+$/g, "") || "supabase";
 }
 
+function isProductionEnv() {
+  return [process.env.APP_ENV, process.env.TARGET_ENV, process.env.NODE_ENV]
+    .some((value) => String(value || "").toLowerCase() === "production");
+}
+
+function tenantDomainSuffix() {
+  const configured = String(process.env.TENANT_DOMAIN_SUFFIX || "").trim().replace(/^\.+|\.+$/g, "");
+  if (configured) return configured;
+  return isProductionEnv() ? "prod" : "qa";
+}
+
+function tenantSyncPlan() {
+  return isProductionEnv() ? "production_sync" : "qa_sync";
+}
+
 function roleBlueprint(companyRole) {
   const normalized = String(companyRole || "member").toLowerCase();
   if (["owner", "admin", "superadmin"].includes(normalized)) {
@@ -119,7 +134,7 @@ async function ensureRoleWithPermissions(tenantId, companyRole) {
 
 async function ensureTenantMirror(context) {
   const companyName = String(context?.company?.name || "Empresa Supabase").trim() || "Empresa Supabase";
-  const domain = `${normalizeDomain(companyName)}.qa`;
+  const domain = `${normalizeDomain(companyName)}.${tenantDomainSuffix()}`;
   const activeModules = Array.isArray(context?.activeModules)
     ? Array.from(new Set(context.activeModules.map((item) => String(item).trim()).filter(Boolean)))
     : null;
@@ -139,7 +154,7 @@ async function ensureTenantMirror(context) {
       name: companyName,
       domain,
       industry: "supabase_sync",
-      plan: "qa_sync",
+      plan: tenantSyncPlan(),
       active: true,
       active_modules: activeModules || [],
       config: { source: "supabase_auth_sync", company_id: context?.membership?.company_id || null }
