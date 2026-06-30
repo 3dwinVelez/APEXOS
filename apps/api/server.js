@@ -52,7 +52,14 @@ async function build() {
   bootLog("Entering build()");
   bootLog("Starting APEX OS API bootstrap");
   requireEnv(["DATABASE_URL", "JWT_SECRET"]);
-  const configuredOrigins = process.env.ALLOWED_ORIGINS?.split(",").map((origin) => origin.trim()).filter(Boolean) || [];
+  const configuredOrigins = [
+    process.env.ALLOWED_ORIGINS,
+    process.env.CORS_ORIGIN,
+    process.env.FRONTEND_URL
+  ]
+    .flatMap((value) => String(value || "").split(","))
+    .map((origin) => origin.trim())
+    .filter(Boolean);
   const allowedOrigins = process.env.NODE_ENV === "production"
     ? configuredOrigins
     : Array.from(new Set([...configuredOrigins, ...DEFAULT_ALLOWED_ORIGINS]));
@@ -246,7 +253,7 @@ async function build() {
   const { isRedisDisabled } = require("./src/fabric/redisConfig");
   bootLog("Starting background workers");
   if (isRedisDisabled()) {
-    bootLog("QA mode: background workers and crons disabled");
+    bootLog("Redis disabled: background workers and crons disabled");
   } else {
     bootLog("Registering audit worker");
     require("./src/fabric/workers/auditWorker");

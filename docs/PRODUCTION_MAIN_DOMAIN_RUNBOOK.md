@@ -118,8 +118,15 @@ API production env:
 - `JWT_SECRET=<strong generated secret>`
 - `FRONTEND_URL=https://app.<domain>`
 - `ALLOWED_ORIGINS=https://app.<domain>`
-- `REDIS_DISABLED=false`
+- `CORS_ORIGIN=https://app.<domain>` si Railway usa ese nombre; la API lo acepta como alias.
+- `DISABLE_REDIS=true` para la primera salida productiva sin Redis.
+- `REDIS_DISABLED=true` opcional/equivalente.
+- No definir `REDIS_URL` hasta habilitar Redis productivo.
+
+Cuando Redis productivo este listo:
+
 - `DISABLE_REDIS=false`
+- `REDIS_DISABLED=false`
 - `REDIS_URL=<prod redis url>`
 
 Web production env:

@@ -105,10 +105,10 @@ Requeridas:
 - `JWT_SECRET=<secret-prod-rotado>`
 - `FRONTEND_URL=https://<frontend-prod>`
 - `ALLOWED_ORIGINS=https://<frontend-prod>`
-- `CORS_ORIGIN=https://<frontend-prod>` si el proveedor exige ese nombre; mapearlo a `ALLOWED_ORIGINS`.
-- `REDIS_DISABLED=false`
-- `DISABLE_REDIS=false`
-- `REDIS_URL=<redis-prod-url>`
+- `CORS_ORIGIN=https://<frontend-prod>` si Railway usa ese nombre; la API lo acepta como alias.
+- `DISABLE_REDIS=true` para la primera salida productiva sin Redis.
+- `REDIS_DISABLED=true` opcional/equivalente para compatibilidad operacional.
+- No definir `REDIS_URL` hasta habilitar workers/crons con Redis real.
 - `NEXT_PUBLIC_SUPABASE_URL=https://<supabase-prod-ref>.supabase.co`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key-prod>`
 - `SUPABASE_URL=https://<supabase-prod-ref>.supabase.co`
@@ -154,7 +154,7 @@ Busqueda local ejecutada durante QA:
 
 - Rotar `JWT_SECRET` para produccion.
 - Usar service role productiva distinta a QA.
-- Confirmar `ALLOWED_ORIGINS` sin comodines.
+- Confirmar `ALLOWED_ORIGINS`, `CORS_ORIGIN` o `FRONTEND_URL` sin comodines y apuntando solo al frontend productivo.
 - Confirmar `DATABASE_URL` productiva con SSL y pooler adecuado.
 - Confirmar Redis real si se habilitan workers/crons.
-- Confirmar que `REDIS_DISABLED` quede en `false` solo cuando `REDIS_URL` exista.
+- Confirmar que `DISABLE_REDIS`/`REDIS_DISABLED` queden en `false` solo cuando `REDIS_URL` exista y haya sido validado.
