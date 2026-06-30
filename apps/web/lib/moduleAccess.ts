@@ -1,7 +1,7 @@
 import { ApexModule } from "./modules";
 import { CompanyModuleStatus, listCompanyModuleStatus, listPlatformCompanies, listUserCompanies } from "./supabaseQa";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 const HAS_CONFIGURED_API_URL = Boolean(process.env.NEXT_PUBLIC_API_URL);
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
 const MODULE_ACCESS_CACHE_KEY = "apexos_module_access_cache";

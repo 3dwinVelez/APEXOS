@@ -1,4 +1,4 @@
-import { ArrowRight, Building2, LogIn, MessageCircle } from "lucide-react";
+import { Building2, LogIn, MessageCircle, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 
 export default function HomePage() {
@@ -27,14 +27,14 @@ export default function HomePage() {
           </div>
         </div>
         <div className="rounded-md border border-line bg-white p-5">
-          <h2 className="mb-4 text-lg font-semibold">Cuenta de revisión</h2>
-          <div className="space-y-3 text-sm">
-            <p className="rounded-md bg-paper p-3">Correo: demo@apex.local</p>
-            <p className="rounded-md bg-paper p-3">Contraseña: test1234</p>
+          <h2 className="mb-4 text-lg font-semibold">Acceso seguro</h2>
+          <div className="space-y-3 text-sm text-neutral-700">
+            <p className="rounded-md bg-paper p-3">Ingresa con las credenciales asignadas por el administrador de tu empresa.</p>
+            <p className="rounded-md bg-paper p-3">Los accesos de revisión y producción se entregan fuera del repositorio.</p>
           </div>
           <Link className="mt-5 inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white" href="/login">
-            Revisar plataforma
-            <ArrowRight size={16} />
+            Ir al ingreso
+            <ShieldCheck size={16} />
           </Link>
         </div>
       </section>

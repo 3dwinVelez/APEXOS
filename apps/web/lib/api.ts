@@ -2,7 +2,7 @@ import { assertActiveSession, clearSession, emitAppAlert, keepSessionAlive, setP
 import { getSupabaseAccessToken, supabaseAuth, supabaseFetch } from "./supabaseClient";
 import { getServiceImageUrl, uploadServiceImageData } from "./supabaseStorage";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
 const API_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_API_TIMEOUT_MS || 20000);
 const HAS_CONFIGURED_API_URL = Boolean(process.env.NEXT_PUBLIC_API_URL);
