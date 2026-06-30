@@ -95,7 +95,7 @@ export async function keepSessionAlive() {
     return;
   }
   if (!refreshPromise) {
-    refreshPromise = fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000"}/api/v1/auth/refresh`, {
+    refreshPromise = fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/refresh`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refresh })

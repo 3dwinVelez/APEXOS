@@ -82,7 +82,9 @@ function envValue(...keys: string[]) {
 }
 
 function localApiUrl() {
-  return envValue("NEXT_PUBLIC_API_URL", "API_URL") || "http://127.0.0.1:3000";
+  const value = envValue("NEXT_PUBLIC_API_URL", "API_URL");
+  if (!value) throw new Error("API_URL no configurada para service-requests.");
+  return value;
 }
 
 function supabaseConfig() {

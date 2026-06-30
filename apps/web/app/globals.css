@@ -140,6 +140,52 @@ textarea {
   max-width: none;
 }
 
+.apex-app-gradient table {
+  border-spacing: 0;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+.apex-app-gradient table thead th {
+  padding: 0.55rem 0.75rem;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.apex-app-gradient table tbody td {
+  padding: 0.625rem 0.75rem;
+  vertical-align: middle;
+}
+
+.apex-app-gradient table tbody tr {
+  min-height: 0;
+}
+
+.apex-app-gradient table td p {
+  margin-block: 0;
+}
+
+.apex-app-gradient table td p + p {
+  margin-top: 0.125rem;
+}
+
+.apex-app-gradient table td .inline-flex:not(.apex-table-preserve-size),
+.apex-app-gradient table td button.inline-flex:not(.apex-table-preserve-size),
+.apex-app-gradient table td a.inline-flex:not(.apex-table-preserve-size) {
+  min-height: 2rem;
+}
+
+.apex-app-gradient table td button.inline-flex:not(.apex-table-preserve-size),
+.apex-app-gradient table td a.inline-flex:not(.apex-table-preserve-size) {
+  height: 2rem;
+  padding-inline: 0.625rem;
+}
+
+.apex-app-gradient table td [class*="py-2"]:not(.apex-table-preserve-size) {
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
+}
+
 @media (min-width: 1536px) {
   .apex-workspace-shell {
     max-width: min(100%, 112rem);

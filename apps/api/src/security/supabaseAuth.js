@@ -1,5 +1,6 @@
 const bcrypt = require("bcrypt");
 const prisma = require("../core/prisma");
+const { invalidateTenantCache } = require("../core/tenantCache");
 
 function normalizeDomain(value) {
   return String(value || "")
@@ -92,11 +93,13 @@ async function getSupabaseMembershipContext(token, supabaseUser) {
   const modules = await supabaseRest(`/rest/v1/v_company_module_status?select=module_code,enabled&company_id=eq.${encodeURIComponent(String(membership.company_id))}&enabled=eq.true`, {
     token,
     service: true
-  }) || [];
+  });
   return {
     membership,
     company: companies[0] || null,
-    activeModules: modules.filter((item) => item.enabled !== false).map((item) => String(item.module_code || "")).filter(Boolean)
+    activeModules: Array.isArray(modules)
+      ? modules.filter((item) => item.enabled !== false).map((item) => String(item.module_code || "")).filter(Boolean)
+      : null
   };
 }
 
@@ -117,12 +120,17 @@ async function ensureRoleWithPermissions(tenantId, companyRole) {
 async function ensureTenantMirror(context) {
   const companyName = String(context?.company?.name || "Empresa Supabase").trim() || "Empresa Supabase";
   const domain = `${normalizeDomain(companyName)}.qa`;
-  const activeModules = Array.from(new Set((context?.activeModules || []).map((item) => String(item).trim()).filter(Boolean)));
+  const activeModules = Array.isArray(context?.activeModules)
+    ? Array.from(new Set(context.activeModules.map((item) => String(item).trim()).filter(Boolean)))
+    : null;
   const current = await prisma.tenant.findFirst({ where: { OR: [{ domain }, { name: companyName }] } });
   if (current) {
-    const mergedModules = Array.from(new Set([...(Array.isArray(current.active_modules) ? current.active_modules : []), ...activeModules]));
-    if (mergedModules.length !== (Array.isArray(current.active_modules) ? current.active_modules.length : 0) || current.name !== companyName || current.domain !== domain) {
-      return prisma.tenant.update({ where: { id: current.id }, data: { name: companyName, domain, active: true, active_modules: mergedModules } });
+    const data = { name: companyName, domain, active: true };
+    if (Array.isArray(activeModules) && !sameStringSet(current.active_modules, activeModules)) data.active_modules = activeModules;
+    if (Object.keys(data).some((key) => key !== "active" && current[key] !== data[key]) || data.active_modules) {
+      const updated = await prisma.tenant.update({ where: { id: current.id }, data });
+      await invalidateTenantCache(current.id);
+      return updated;
     }
     return current;
   }
@@ -133,12 +141,33 @@ async function ensureTenantMirror(context) {
       industry: "supabase_sync",
       plan: "qa_sync",
       active: true,
-      active_modules: activeModules,
+      active_modules: activeModules || [],
       config: { source: "supabase_auth_sync", company_id: context?.membership?.company_id || null }
     }
   });
 }
 
+function sameStringSet(left, right) {
+  const normalize = (value) => Array.from(new Set((Array.isArray(value) ? value : []).map((item) => String(item).trim()).filter(Boolean))).sort();
+  const a = normalize(left);
+  const b = normalize(right);
+  return a.length === b.length && a.every((item, index) => item === b[index]);
+}
+
+async function syncExistingTenantWithSupabase(user, token, supabaseUser) {
+  const context = await getSupabaseMembershipContext(token, supabaseUser);
+  if (!context?.membership?.company_id) return;
+  const update = {};
+  if (context.company?.name) update.name = String(context.company.name).trim();
+  if (Array.isArray(context.activeModules)) {
+    const activeModules = Array.from(new Set(context.activeModules.map((item) => String(item).trim()).filter(Boolean)));
+    const tenant = await prisma.tenant.findUnique({ where: { id: user.tenant_id } });
+    if (!sameStringSet(tenant?.active_modules, activeModules)) update.active_modules = activeModules;
+  }
+  if (!Object.keys(update).length) return;
+  await prisma.tenant.update({ where: { id: user.tenant_id }, data: update });
+  await invalidateTenantCache(user.tenant_id);
+}
 async function ensureUserMirror(supabaseUser, token) {
   const context = await getSupabaseMembershipContext(token, supabaseUser);
   if (!context?.membership?.company_id) return null;
@@ -190,6 +219,7 @@ async function authenticateSupabaseToken(token) {
   }
 
   const user = users[0];
+  await syncExistingTenantWithSupabase(user, token, supabaseUser);
   return {
     id: user.id,
     tenant_id: user.tenant_id,
