@@ -733,57 +733,65 @@ export default function ServicesPage() {
 
           {filtered.length ? (
             <div className="hidden overflow-x-auto rounded-md border border-line md:block">
-              <table className="w-full min-w-[1040px] border-collapse text-left text-sm">
+              <table className="w-full min-w-[960px] table-fixed border-collapse text-left text-sm">
+                <colgroup>
+                  <col className="w-[15%]" />
+                  <col className="w-[19%]" />
+                  <col className="w-[31%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[11%]" />
+                </colgroup>
                 <thead className="bg-paper text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
                   <tr>
-                    <th className="px-4 py-3">Orden y estado</th>
-                    <th className="px-4 py-3">Cliente y ubicacion</th>
-                    <th className="px-4 py-3">Servicio</th>
-                    <th className="px-4 py-3">Agenda</th>
-                    <th className="px-4 py-3 text-center">Soportes</th>
-                    <th className="px-4 py-3 text-right">Accion</th>
+                    <th>Orden y estado</th>
+                    <th>Cliente y ubicacion</th>
+                    <th>Servicio</th>
+                    <th>Agenda</th>
+                    <th className="text-center">Soportes</th>
+                    <th className="text-right">Accion</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
                   {filtered.map((order) => (
                     <tr className="group transition hover:bg-paper" key={order.id}>
-                      <td className="px-4 py-3 align-top">
+                      <td className="align-top">
                         <Link className="font-semibold text-neutral-900 hover:text-apex" href={serviceOrderHref(order)}>{order.number}</Link>
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          <span className={`rounded-md border px-2 py-1 text-[11px] font-semibold ${statusTone[order.status] || "border-line bg-paper"}`}>{statusLabel[order.status] || order.status}</span>
-                          {requiresAdminCompletion(order) ? <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-800">Completar solicitud</span> : null}
-                          {isOverdue(order) ? <span className="rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-700">Vencida</span> : null}
-                          {isToday(order.scheduled_date) ? <span className="rounded-md border border-sky-200 bg-sky-50 px-2 py-1 text-[11px] font-semibold text-sky-700">Hoy</span> : null}
+                        <div className="mt-1.5 flex flex-wrap gap-1">
+                          <span className={`rounded-md border px-1.5 py-0.5 text-[11px] font-semibold ${statusTone[order.status] || "border-line bg-paper"}`}>{statusLabel[order.status] || order.status}</span>
+                          {requiresAdminCompletion(order) ? <span className="rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[11px] font-semibold text-amber-800">Completar</span> : null}
+                          {isOverdue(order) ? <span className="rounded-md border border-rose-200 bg-rose-50 px-1.5 py-0.5 text-[11px] font-semibold text-rose-700">Vencida</span> : null}
+                          {isToday(order.scheduled_date) ? <span className="rounded-md border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-[11px] font-semibold text-sky-700">Hoy</span> : null}
                         </div>
                       </td>
-                      <td className="max-w-[300px] px-4 py-3 align-top">
+                      <td className="align-top">
                         <p className="truncate font-semibold text-neutral-900">{order.customer_name}</p>
                         <p className="mt-1 truncate text-xs text-neutral-500">{order.customer_address || "Sin direccion registrada"}</p>
                         <p className="mt-1 text-xs text-neutral-500">{order.customer_phone || "Sin telefono"}</p>
                       </td>
-                      <td className="px-4 py-3 align-top">
+                      <td className="align-top">
                         <p className="font-medium text-neutral-800">{order.service_type || "Sin tipo"}</p>
-                        <p className="mt-1 text-xs text-neutral-500">{order.reference?.code || "Sin referencia"} · {order.reference?.name || "Sin nombre"}</p>
+                        <p className="mt-1 text-xs leading-5 text-neutral-500 [overflow-wrap:anywhere]">{order.reference?.code || "Sin referencia"} · {order.reference?.name || "Sin nombre"}</p>
                       </td>
-                      <td className="px-4 py-3 align-top">
+                      <td className="align-top">
                         <p className="font-medium text-neutral-800">{formatDate(order.scheduled_date)}</p>
                         <p className="mt-1 text-xs text-neutral-500">{isOverdue(order) ? "Requiere atencion" : isToday(order.scheduled_date) ? "Programada para hoy" : "Agenda registrada"}</p>
-                        <p className={`mt-2 inline-flex rounded-md border px-2 py-1 text-[11px] font-semibold ${slaInfo(order).tone}`}>{slaInfo(order).label} habiles disponibles</p>
+                        <p className={`mt-1.5 inline-flex rounded-md border px-2 py-1 text-[11px] font-semibold ${slaInfo(order).tone}`}>{slaInfo(order).label} habiles</p>
                       </td>
-                      <td className="px-4 py-3 text-center align-top">
-                        <div className="inline-flex items-center gap-2 rounded-md bg-paper px-3 py-2 text-xs font-medium text-neutral-600">
-                          <span>{order.photos.length} foto(s)</span>
+                      <td className="text-center align-top">
+                        <div className="inline-flex items-center gap-1.5 rounded-md bg-paper px-2 py-1.5 text-[11px] font-medium text-neutral-600">
+                          <span>{order.photos.length} foto</span>
                           <span className="h-3 w-px bg-line" />
-                          <span className={order.incidents.length ? "font-semibold text-amber-700" : ""}>{order.incidents.length} novedad(es)</span>
+                          <span className={order.incidents.length ? "font-semibold text-amber-700" : ""}>{order.incidents.length} nov.</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-right align-middle">
+                      <td className="text-right align-middle">
                         {editAllowed(order) ? (
-                          <button className="mb-2 inline-flex h-9 items-center gap-2 rounded-md border border-line bg-white px-3 text-xs font-semibold text-neutral-700 shadow-sm transition hover:border-apex hover:text-apex" onClick={() => openEdit(order)} type="button">
+                          <button className="mb-1.5 inline-flex h-8 items-center gap-1.5 rounded-md border border-line bg-white px-2 text-xs font-semibold text-neutral-700 shadow-sm transition hover:border-apex hover:text-apex" onClick={() => openEdit(order)} type="button">
                             <Pencil size={14} /> Editar
                           </button>
                         ) : null}
-                        <Link className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-white px-3 text-xs font-semibold text-apex shadow-sm transition group-hover:border-apex" href={serviceOrderHref(order)}>
+                        <Link className="inline-flex h-8 items-center gap-1.5 rounded-md border border-line bg-white px-2 text-xs font-semibold text-apex shadow-sm transition group-hover:border-apex" href={serviceOrderHref(order)}>
                           {serviceAction(order)}
                           <ChevronRight size={14} />
                         </Link>

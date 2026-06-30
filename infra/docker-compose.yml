@@ -23,7 +23,11 @@ services:
       retries: 3
 
   web:
-    build: ../apps/web
+    build:
+      context: ../apps/web
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:3000
+        NEXT_PUBLIC_WS_URL: ws://localhost:3000
     restart: unless-stopped
     ports:
       - "3001:3001"

@@ -6,8 +6,7 @@ import { getSupabaseConfigStatus, supabaseAuth, supabaseFetch } from "@/lib/supa
 import { LogIn } from "lucide-react";
 import { useState } from "react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
-const HAS_CONFIGURED_API_URL = Boolean(process.env.NEXT_PUBLIC_API_URL);
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -28,7 +27,7 @@ export default function LoginPage() {
   }
 
   async function loginWithLocalApi(loginEmail: string, loginPassword: string) {
-    if (!HAS_CONFIGURED_API_URL) throw new Error("No fue posible iniciar sesion con esas credenciales.");
+    if (!API_URL) throw new Error("API no configurada para este ambiente.");
     const response = await fetch(`${API_URL}/api/v1/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -112,12 +111,6 @@ export default function LoginPage() {
     await loginWithCredentials(loginEmail, loginPassword);
   }
 
-  function fillDemoEmail() {
-    setEmail("scj@apexos.qa");
-    setPassword("");
-    setError("Usuario SCJ seleccionado. Ingresa la clave QA asignada.");
-  }
-
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     await login(event.currentTarget);
@@ -140,9 +133,6 @@ export default function LoginPage() {
           <LogIn size={16} />
           {loading ? "Validando..." : "Entrar"}
         </Button>
-        <button className="mt-3 h-10 w-full rounded-md border border-line bg-paper text-sm font-semibold text-neutral-700 hover:bg-white" type="button" onClick={fillDemoEmail}>
-          Usar administrador SCJ QA
-        </button>
       </form>
     </main>
   );
