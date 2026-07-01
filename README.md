@@ -11,6 +11,28 @@ This repo intentionally does not import, connect to, or modify APEX 1.0. The fir
 - Python FastAPI BRAIN service skeleton.
 - Next.js App Router shell, onboarding and dashboard placeholder.
 
+## Node.js Runtime
+
+APEXOS/NYVORA uses Node.js 22 LTS as the official runtime. The root and workspace
+`package.json` files declare `engines.node` as `22.x`, and the repository includes
+`.nvmrc` and `.node-version` with `22`.
+
+Install with nvm:
+
+```powershell
+nvm install 22
+nvm use 22
+node --version
+```
+
+Validate the active runtime before working:
+
+```powershell
+npm run doctor:node
+```
+
+The doctor fails when the active Node.js major version is not 22.
+
 ## Local Start
 
 ```powershell

@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
 
     const createdCompanies = await supabaseRequest("/rest/v1/companies?select=*", {
       method: "POST",
-      token,
+      service: true,
       headers: { Prefer: "return=representation" },
       body: JSON.stringify({
         name,

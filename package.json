@@ -17,6 +17,7 @@
     "infra:up": "docker compose -f infra/docker-compose.yml up -d postgres redis minio brain",
     "infra:up:full": "docker compose -f infra/docker-compose.yml up -d",
     "infra:down": "docker compose -f infra/docker-compose.yml down",
+    "doctor:node": "node scripts/doctor-node.js",
     "check:local": "node scripts/preflight-local.js",
     "prisma:generate": "npm --workspace apps/api run prisma:generate",
     "db:push": "npx prisma db push --schema apps/api/prisma/schema.prisma --skip-generate",

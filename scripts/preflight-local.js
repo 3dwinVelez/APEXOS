@@ -1,6 +1,7 @@
 const { execSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
+require("./doctor-node");
 
 function fail(message, details = []) {
   console.error(`\nAPEX local start check failed:\n${message}`);

@@ -2,6 +2,9 @@
   "name": "@apex-os/api",
   "version": "2.0.0",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "main": "server.js",
   "scripts": {
     "dev": "nodemon server.js",
