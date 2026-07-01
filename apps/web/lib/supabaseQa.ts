@@ -246,14 +246,21 @@ export async function createPlatformCompanyWithAdmin(input: CreatePlatformCompan
 }
 
 export function setPlatformCompanyModuleAccess(input: { company_id: string; module_id: string; enabled: boolean }) {
-  return supabaseFetch("/rest/v1/company_modules?on_conflict=company_id,module_id", {
-    method: "POST",
-    headers: { Prefer: "resolution=merge-duplicates,return=representation" },
-    body: JSON.stringify({
-      company_id: input.company_id,
-      module_id: input.module_id,
-      enabled: input.enabled,
-      source: "manual"
-    })
+  const token = getSupabaseAccessToken();
+  if (!token) throw new Error("Sesion requerida para administrar modulos.");
+
+  return fetch("/api/platform/company-modules", {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(input)
+  }).then(async (response) => {
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(body.message || body.error || "No fue posible cambiar el modulo.");
+    }
+    return response.json();
   });
 }
