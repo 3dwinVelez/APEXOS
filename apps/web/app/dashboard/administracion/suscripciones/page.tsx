@@ -57,6 +57,7 @@ export default function SuscripcionesPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState("");
   const [message, setMessage] = useState("");
+  const [companyModalMessage, setCompanyModalMessage] = useState("");
   const selectedCompanyIdRef = useRef("");
 
   const selectedCompany = useMemo(() => companies.find((company) => company.company_id === selectedCompanyId) || null, [companies, selectedCompanyId]);
@@ -124,9 +125,10 @@ export default function SuscripcionesPage() {
 
   async function createCompany() {
     const name = companyForm.name.trim();
-    if (!name) return;
+    if (!name || saving === "company") return;
     setSaving("company");
     setMessage("");
+    setCompanyModalMessage("");
     try {
       const created = await createPlatformCompanyWithAdmin({
         name,
@@ -153,7 +155,7 @@ export default function SuscripcionesPage() {
       if (nextId) await selectCompany(nextId);
       setMessage("Empresa creada con ambiente propio. Activa solo los modulos contratados.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "No fue posible crear la empresa.");
+      setCompanyModalMessage(error instanceof Error ? error.message : "No fue posible crear la empresa.");
     } finally {
       setSaving("");
     }
@@ -304,7 +306,10 @@ export default function SuscripcionesPage() {
               <Building2 className="text-apex" size={18} />
               <h2 className="font-semibold">Empresas registradas</h2>
             </div>
-            <button className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-apex text-white" onClick={() => setShowCompanyModal(true)} title="Crear empresa" type="button">
+            <button className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-apex text-white" onClick={() => {
+              setCompanyModalMessage("");
+              setShowCompanyModal(true);
+            }} title="Crear empresa" type="button">
               <Plus size={16} />
             </button>
           </div>
@@ -486,6 +491,10 @@ export default function SuscripcionesPage() {
                 createCompany();
               }}
             >
+              {companyModalMessage ? (
+                <p className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800">{companyModalMessage}</p>
+              ) : null}
+
               <div className="grid max-h-[70vh] gap-4 overflow-y-auto pr-1 md:grid-cols-2">
                 <label className="grid gap-1 text-sm font-medium">
                   Nombre comercial
@@ -569,7 +578,7 @@ export default function SuscripcionesPage() {
                 </button>
                 <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-50" disabled={saving === "company" || !companyForm.name.trim() || !companyForm.admin_email.trim() || !companyForm.admin_full_name.trim() || companyForm.admin_password.length < 8} type="submit">
                   <Plus size={16} />
-                  Crear empresa
+                  {saving === "company" ? "Creando..." : "Crear empresa"}
                 </button>
               </div>
             </form>

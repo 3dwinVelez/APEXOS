@@ -23,6 +23,25 @@ type CreateCompanyBody = {
   admin_password?: string;
 };
 
+type CompanyRow = {
+  id: string;
+  name?: string | null;
+  legal_name?: string | null;
+  tax_id?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  company_type?: string | null;
+  parent_company_id?: string | null;
+  business_line?: string | null;
+  country?: string | null;
+  city?: string | null;
+  address?: string | null;
+  status?: string | null;
+  plan_id?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
 class PlatformAccessError extends Error {
   statusCode = 403;
 }
@@ -56,6 +75,32 @@ function clean(value?: string | null) {
   return next ? next : null;
 }
 
+function toPlatformCompany(row: CompanyRow) {
+  return {
+    company_id: row.id,
+    company_name: row.name,
+    legal_name: row.legal_name,
+    tax_id: row.tax_id,
+    email: row.email,
+    phone: row.phone,
+    company_type: row.company_type,
+    parent_company_id: row.parent_company_id,
+    parent_company_name: null,
+    business_line: row.business_line,
+    country: row.country,
+    city: row.city,
+    address: row.address,
+    status: row.status,
+    plan_id: row.plan_id,
+    plan_code: null,
+    plan_name: null,
+    enabled_modules: 0,
+    blocked_modules: 0,
+    created_at: row.created_at,
+    updated_at: row.updated_at
+  };
+}
+
 async function requirePlatformAdmin(token: string) {
   const currentUser = await supabaseRequest("/auth/v1/user", {
     method: "GET",
@@ -77,6 +122,9 @@ async function requirePlatformAdmin(token: string) {
 }
 
 export async function POST(request: NextRequest) {
+  let createdCompanyId: string | null = null;
+  let createdAuthUserId: string | null = null;
+
   try {
     if (!SUPABASE_SERVICE_ROLE_KEY) {
       return NextResponse.json({ message: "Falta SUPABASE_SERVICE_ROLE_KEY en el servidor para crear usuarios Supabase Auth." }, { status: 500 });
@@ -117,10 +165,11 @@ export async function POST(request: NextRequest) {
         status: clean(body.status) || "active",
         plan_id: clean(body.plan_id)
       })
-    }) as Array<{ id: string }>;
+    }) as CompanyRow[];
 
     const company = createdCompanies[0];
     if (!company?.id) throw new Error("La empresa fue creada sin id de respuesta.");
+    createdCompanyId = company.id;
 
     const authUser = await supabaseRequest("/auth/v1/admin/users", {
       method: "POST",
@@ -135,6 +184,7 @@ export async function POST(request: NextRequest) {
         }
       })
     }) as { id: string; email?: string };
+    createdAuthUserId = authUser.id;
 
     await supabaseRequest("/rest/v1/profiles?on_conflict=id", {
       method: "POST",
@@ -179,8 +229,23 @@ export async function POST(request: NextRequest) {
       token
     }) as unknown[];
 
-    return NextResponse.json({ company: platformRows[0], admin_user_id: authUser.id });
+    return NextResponse.json({ company: platformRows[0] || toPlatformCompany(company), admin_user_id: authUser.id });
   } catch (error) {
+    if (createdAuthUserId) {
+      await supabaseRequest(`/auth/v1/admin/users/${encodeURIComponent(createdAuthUserId)}`, {
+        method: "DELETE",
+        service: true
+      }).catch(() => null);
+    }
+
+    if (createdCompanyId) {
+      await supabaseRequest(`/rest/v1/companies?id=eq.${encodeURIComponent(createdCompanyId)}`, {
+        method: "DELETE",
+        service: true,
+        headers: { Prefer: "return=minimal" }
+      }).catch(() => null);
+    }
+
     return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible crear la empresa." }, { status: errorStatus(error) });
   }
 }
