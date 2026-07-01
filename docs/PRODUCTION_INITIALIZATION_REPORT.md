@@ -216,3 +216,106 @@ Resultado esperado y confirmado:
 ```
 
 No se ejecuto dry-run real contra PROD porque en el workspace no existe `.env.production.local` y no hay variables PROD reales disponibles en el proceso. Continuar sin esas variables implicaria riesgo de tocar QA o fallar contra localhost.
+
+## Correccion service_role y ejecucion final 2026-07-01
+
+### Causa exacta del 403
+
+`platform:init:prod` ya cargaba exclusivamente `config/production.env` y `env:doctor:prod` validaba el proyecto PROD `jzbwzmkidfthknsohhnr`, pero Supabase REST devolvio:
+
+```text
+POST /rest/v1/profiles?on_conflict=id -> 403: permission denied for table profiles
+```
+
+El diagnostico de grants confirmo que `public.profiles` y `public.platform_admins` tenian RLS activo y policies para usuarios autenticados, pero `service_role` no tenia `SELECT`, `INSERT` ni `UPDATE` sobre esas tablas. Por eso PostgREST bloqueo la operacion antes del mirror server-side del SuperAdmin.
+
+### Migracion aplicada
+
+Archivo:
+
+```text
+supabase/production/20260701_prod_platform_init_service_role_grants.sql
+```
+
+SQL aplicado:
+
+```sql
+grant usage on schema public to service_role;
+
+grant select, insert, update on table public.profiles to service_role;
+grant select, insert, update on table public.platform_admins to service_role;
+```
+
+Auditoria previa:
+
+- Sin `DROP`.
+- Sin `TRUNCATE`.
+- Sin `DELETE`.
+- Sin `ALTER TABLE ... DROP`.
+- Sin `prisma db push --accept-data-loss`.
+
+### Validaciones de seguridad
+
+- `env:doctor:prod`: OK.
+- `service_role` tiene `select/insert/update` en `profiles`: OK.
+- `service_role` tiene `select/insert/update` en `platform_admins`: OK.
+- `anon` no tiene grant de `insert` en `profiles`: OK.
+- `authenticated` no tiene grant directo de `insert` en `profiles`: OK.
+- RLS permanece activo en `profiles` y `platform_admins`: OK.
+- No se otorgaron permisos nuevos a `anon` ni a `authenticated`.
+- No se tocaron datos QA.
+
+La prueba negativa REST con `anon` fue omitida porque el revisor automatico bloqueo correctamente un intento de escritura falsa en PROD. Se dejo evidencia read-only por grants/RLS.
+
+### Platform Initialization
+
+Comando ejecutado:
+
+```powershell
+npm.cmd run platform:init:prod -- --execute --first-name "Edwin Hernan" --last-name "Velez Urrego" --document "1039458720" --email "ehvelez092@gmail.com" --username "ehvelez"
+```
+
+Resultado:
+
+- Supabase Auth user creado: OK.
+- Profile creado: OK.
+- Platform Admin creado: OK.
+- Tenant tecnico de plataforma creado: OK.
+- Rol `APEX_PLATFORM_SUPERADMIN` creado: OK.
+- Usuario Prisma creado: OK.
+- Auditoria inicial creada: OK.
+- Login Supabase: OK.
+- Login local API/Prisma: OK.
+- Acceso platform admin: OK.
+
+Estado final PROD validado:
+
+```json
+{
+  "auth_users": 1,
+  "auth_user_target": 1,
+  "profile_target": 1,
+  "platform_admins": 1,
+  "tenants": 1,
+  "users": 1,
+  "audit_logs": 1
+}
+```
+
+La re-ejecucion de `platform:init:prod --dry-run` quedo bloqueada correctamente:
+
+```text
+La plataforma ya fue inicializada o no esta vacia: platform_admins=1, auth.users=1, Tenant=1, User=1.
+```
+
+La contrasena temporal no se imprimio en logs ni documentacion. Quedo guardada localmente en:
+
+```text
+config/platform-superadmin-credentials.env
+```
+
+Ese archivo esta ignorado por Git y no debe versionarse.
+
+### Cierre
+
+Platform SuperAdmin creado y validado. No se crearon empresas, administradores cliente ni tecnicos.
