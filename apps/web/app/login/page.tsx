@@ -7,6 +7,29 @@ import { LogIn } from "lucide-react";
 import { useState } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+const LOGIN_ERROR_MESSAGE = "Credenciales no validas o sin acceso autorizado.";
+
+function friendlyLoginError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error || "");
+  const normalized = message.toLowerCase();
+
+  if (
+    normalized.includes("invalid_credentials")
+    || normalized.includes("invalid login credentials")
+    || normalized.includes("token invalido")
+    || normalized.includes("unauthorized")
+    || normalized.includes("401")
+    || normalized.includes("400")
+  ) {
+    return LOGIN_ERROR_MESSAGE;
+  }
+
+  if (normalized.includes("failed to fetch") || normalized.includes("networkerror")) {
+    return "No fue posible conectar con el servicio. Reintenta en unos segundos.";
+  }
+
+  return "No fue posible iniciar sesion. Verifica tus credenciales e intenta nuevamente.";
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -98,7 +121,7 @@ export default function LoginPage() {
       document.documentElement.dataset.role = roleName || "";
       window.location.assign(roleName === "tecnico" ? "/dashboard/servicios" : "/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo iniciar sesion");
+      setError(friendlyLoginError(err));
     } finally {
       setLoading(false);
     }
@@ -128,7 +151,7 @@ export default function LoginPage() {
           Contrasena
           <input className="mt-1 h-10 w-full rounded-md border border-line px-3" name="password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
         </label>
-        {error ? <p className="mb-3 text-sm text-red-700">{error}</p> : null}
+        {error ? <p className="mb-3 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-800">{error}</p> : null}
         <Button className="w-full" disabled={loading} type="submit">
           <LogIn size={16} />
           {loading ? "Validando..." : "Entrar"}
