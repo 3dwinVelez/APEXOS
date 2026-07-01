@@ -19,6 +19,7 @@ Production guardrails used:
 ## Cause
 
 Two blockers were found during the final production validation.
+The post-deploy UI validation also surfaced one frontend access-state issue.
 
 ### Permission Grant Blocker
 
@@ -49,6 +50,18 @@ creation impossible.
 The guard now validates the authenticated Supabase user against
 `public.platform_admins` using `service_role` after reading `/auth/v1/user` from
 the caller token. Only rows with `status = 'active'` pass.
+
+### Frontend Module Access State
+
+The dashboard and sidebar also used `public.v_platform_companies` to infer
+whether the active Supabase session belonged to a Platform SuperAdmin. With
+`public.companies = 0`, the session authenticated correctly but showed zero
+active modules.
+
+The frontend module-access resolver now reads `public.platform_admins` with the
+authenticated user session and checks for an active row. Platform SuperAdmins can
+see Administracion APEX and the platform navigation before the first company is
+created.
 
 ## Tables And Views Audited
 
@@ -86,6 +99,9 @@ Application hardening applied:
 - `requirePlatformAdmin(token)` no longer depends on
   `public.v_platform_companies`; it verifies the caller's Auth user id against
   `public.platform_admins.status = 'active'`.
+- `loadModuleAccess()` no longer infers Platform SuperAdmin status from company
+  visibility; it checks `public.platform_admins.status = 'active'` for the
+  authenticated session.
 
 Permission changes:
 
@@ -119,6 +135,8 @@ Validated after applying the migration:
 - Existing production bootstrap remained: `auth.users = 1`.
 - The production Platform SuperAdmin can pass the new non-destructive
   authorization check even while `public.companies = 0`.
+- The production Platform SuperAdmin can resolve platform module access while
+  `public.companies = 0`.
 
 `npm run validate:production:structure` ran and reported the expected non-empty
 bootstrap tables because Platform Initialization has already been completed:

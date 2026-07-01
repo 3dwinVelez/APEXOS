@@ -54,6 +54,11 @@ export type PlatformCompany = {
   blocked_modules: number;
 };
 
+export type PlatformAdmin = {
+  user_id: string;
+  status: string;
+};
+
 export type CreatePlatformCompanyInput = {
   name: string;
   legal_name?: string | null;
@@ -138,6 +143,10 @@ export function listUserCompanies(limit = 20) {
 
 export function listPlatformCompanies(limit = 100) {
   return supabaseFetch<PlatformCompany[]>(`/rest/v1/v_platform_companies?select=*&order=company_name.asc&limit=${limit}`);
+}
+
+export function listActivePlatformAdmins(limit = 1) {
+  return supabaseFetch<PlatformAdmin[]>(`/rest/v1/platform_admins?select=user_id,status&status=eq.active&limit=${limit}`);
 }
 
 export function listPlatformCompanyModuleAccess(companyId: string, limit = 100) {

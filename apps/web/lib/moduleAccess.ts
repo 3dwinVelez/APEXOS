@@ -1,5 +1,5 @@
 import { ApexModule } from "./modules";
-import { CompanyModuleStatus, listCompanyModuleStatus, listPlatformCompanies, listUserCompanies } from "./supabaseQa";
+import { CompanyModuleStatus, listActivePlatformAdmins, listCompanyModuleStatus, listUserCompanies } from "./supabaseQa";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 const HAS_CONFIGURED_API_URL = Boolean(process.env.NEXT_PUBLIC_API_URL);
@@ -224,11 +224,11 @@ export async function loadModuleAccess(modules: ApexModule[]): Promise<ModuleAcc
   const sessionToken = localStorage.getItem("token") || "";
   if (!moduleAccessInFlight || moduleAccessInFlight.token !== sessionToken) {
     const promise = (async () => {
-      const [platformCompanies, companies] = await Promise.all([
-        listPlatformCompanies(1).catch(() => []),
+      const [platformAdmins, companies] = await Promise.all([
+        listActivePlatformAdmins(1).catch(() => []),
         listUserCompanies(5).catch(() => []) as Promise<UserCompany[]>
       ]);
-      if (platformCompanies.length > 0) {
+      if (platformAdmins.length > 0) {
         const state = {
           loading: false,
           isPlatformAdmin: true,
