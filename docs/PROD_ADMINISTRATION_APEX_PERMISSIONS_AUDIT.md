@@ -18,7 +18,11 @@ Production guardrails used:
 
 ## Cause
 
-The blocker was caused by a mismatch between RLS policies and table grants.
+Two blockers were found during the final production validation.
+
+### Permission Grant Blocker
+
+The first blocker was caused by a mismatch between RLS policies and table grants.
 
 `public.companies` had RLS policies allowing platform administrators to insert,
 select, and update rows, but the database role used through PostgREST did not
@@ -32,6 +36,19 @@ Without the table grant, the request fails before RLS can authorize it:
 ```text
 permission denied for table companies
 ```
+
+### First Company Authorization Blocker
+
+After the permission fix, a second blocker was found in the company endpoint
+guard. `requirePlatformAdmin()` authorized the caller by reading
+`public.v_platform_companies`. In a freshly initialized production environment,
+`public.companies = 0`, so the view legitimately returned zero rows even though
+the Platform SuperAdmin existed and was active. That made the first company
+creation impossible.
+
+The guard now validates the authenticated Supabase user against
+`public.platform_admins` using `service_role` after reading `/auth/v1/user` from
+the caller token. Only rows with `status = 'active'` pass.
 
 ## Tables And Views Audited
 
@@ -66,6 +83,9 @@ Application hardening applied:
 
 - `apps/web/app/api/platform/companies/route.ts` now inserts `companies` with
   `service_role` after `requirePlatformAdmin(token)` succeeds.
+- `requirePlatformAdmin(token)` no longer depends on
+  `public.v_platform_companies`; it verifies the caller's Auth user id against
+  `public.platform_admins.status = 'active'`.
 
 Permission changes:
 
@@ -97,6 +117,8 @@ Validated after applying the migration:
 - No company rows were created: `public.companies = 0`.
 - No onboarding rows were created: `public.company_admin_onboarding = 0`.
 - Existing production bootstrap remained: `auth.users = 1`.
+- The production Platform SuperAdmin can pass the new non-destructive
+  authorization check even while `public.companies = 0`.
 
 `npm run validate:production:structure` ran and reported the expected non-empty
 bootstrap tables because Platform Initialization has already been completed:
@@ -111,9 +133,9 @@ an empty pre-initialization production database.
 
 ## Final State
 
-Administracion APEX is ready for the next controlled UI test to create companies
-in production. No production company or customer user was created during this
-audit.
+Administracion APEX is ready for the next controlled UI test to create the first
+company in production. No production company or customer user was created during
+this audit.
 
 ## Next Steps
 

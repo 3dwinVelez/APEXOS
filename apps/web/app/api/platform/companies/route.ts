@@ -57,11 +57,23 @@ function clean(value?: string | null) {
 }
 
 async function requirePlatformAdmin(token: string) {
-  const companies = await supabaseRequest("/rest/v1/v_platform_companies?select=company_id&limit=1", {
+  const currentUser = await supabaseRequest("/auth/v1/user", {
     method: "GET",
     token
-  }) as unknown[];
-  if (!companies.length) throw new PlatformAccessError("Acceso exclusivo para superadministradores de plataforma.");
+  }) as { id?: string };
+
+  if (!currentUser?.id) {
+    throw new PlatformAccessError("Sesion invalida.");
+  }
+
+  const platformAdmins = await supabaseRequest(`/rest/v1/platform_admins?select=user_id,status&user_id=eq.${encodeURIComponent(currentUser.id)}&status=eq.active&limit=1`, {
+    method: "GET",
+    service: true
+  }) as Array<{ user_id?: string; status?: string }>;
+
+  if (!platformAdmins.length) {
+    throw new PlatformAccessError("Acceso exclusivo para superadministradores de plataforma.");
+  }
 }
 
 export async function POST(request: NextRequest) {
