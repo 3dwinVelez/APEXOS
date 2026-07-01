@@ -121,3 +121,71 @@ Despues de crear el SuperAdmin:
 ## Confirmacion
 
 Platform Initialization no fue ejecutado por falta de documento obligatorio. Produccion permanece vacia y segura.
+
+## Continuacion 2026-07-01
+
+Se recibio el documento faltante del Platform SuperAdmin:
+
+- Documento: `1039458720`
+
+Se intento ejecutar nuevamente `platform:init --execute` de forma controlada, generando la contrasena temporal en memoria y sin imprimirla en logs.
+
+Resultado:
+
+```text
+[platform-initialize]
+Can't reach database server at `localhost:54320`
+```
+
+El intento aborto antes de crear registros. La causa fue que el proceso local cargo la configuracion de `.env`, donde:
+
+- `DATABASE_URL` apunta a `localhost:54320`.
+- `NEXT_PUBLIC_SUPABASE_URL` apunta a una referencia Supabase distinta de PROD.
+
+Por seguridad, se descarto usar las llaves locales porque no corresponden al proyecto PROD `jzbwzmkidfthknsohhnr`.
+
+Validaciones de seguridad realizadas:
+
+- No se uso SQL manual.
+- No se inserto ningun registro directo.
+- No se imprimio ninguna contrasena.
+- No se reutilizaron llaves QA.
+- No se creo ningun usuario Auth.
+- No se creo ninguna empresa.
+
+Estado final tras la continuacion:
+
+- Platform SuperAdmin: no creado.
+- NYVORA INTERNAL: no creada.
+- IMPORTADORA SCJ SAS: no creada.
+- Administrador cliente: no creado.
+- Tecnicos base: no creados.
+- Produccion: permanece sin inicializar desde este proceso local.
+
+Bloqueo actual:
+
+Faltan variables PROD seguras disponibles en el proceso local, o una via aprobada para ejecutar el comando dentro del runtime Railway PROD:
+
+```powershell
+$env:DATABASE_URL="<postgres-prod-url-encoded>"
+$env:SUPABASE_URL="https://jzbwzmkidfthknsohhnr.supabase.co"
+$env:SUPABASE_ANON_KEY="<anon-key-prod>"
+$env:SUPABASE_SERVICE_ROLE_KEY="<service-role-prod>"
+$env:JWT_SECRET="<jwt-secret-prod>"
+```
+
+Siguiente paso minimo:
+
+Ejecutar `platform:init --execute` con esas variables PROD reales cargadas en el proceso, manteniendo:
+
+```powershell
+$env:TARGET_ENV="production"
+$env:CONFIRM_PLATFORM_INIT="true"
+$env:PLATFORM_INIT_FIRST_NAME="Edwin Hernan"
+$env:PLATFORM_INIT_LAST_NAME="Velez Urrego"
+$env:PLATFORM_INIT_DOCUMENT="1039458720"
+$env:PLATFORM_INIT_EMAIL="ehvelez092@gmail.com"
+$env:PLATFORM_INIT_USERNAME="ehvelez"
+```
+
+La contrasena temporal debe generarse en memoria durante la ejecucion y entregarse al operador fuera del repositorio.
