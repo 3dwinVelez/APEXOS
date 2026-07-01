@@ -189,3 +189,30 @@ $env:PLATFORM_INIT_USERNAME="ehvelez"
 ```
 
 La contrasena temporal debe generarse en memoria durante la ejecucion y entregarse al operador fuera del repositorio.
+
+## Continuacion segura con guardas PROD 2026-07-01
+
+Se reforzo `scripts/platform-initialize.js` para evitar que `TARGET_ENV=production` pueda ejecutarse accidentalmente contra `.env` local, QA o localhost.
+
+Guardas agregadas:
+
+- Si `TARGET_ENV=production`, `DATABASE_URL` o `DIRECT_URL` debe contener `jzbwzmkidfthknsohhnr`.
+- Si `TARGET_ENV=production`, `DATABASE_URL`/`DIRECT_URL` no puede apuntar a `localhost`, `127.0.0.1` ni a la referencia QA local detectada.
+- Si `TARGET_ENV=production`, `SUPABASE_URL` debe ser exactamente `https://jzbwzmkidfthknsohhnr.supabase.co`.
+- El script acepta `--env-file .env.production.local` para cargar variables productivas desde un archivo no versionado.
+
+Prueba de bloqueo ejecutada con el `.env` local actual:
+
+```powershell
+$env:TARGET_ENV='production'
+$env:CONFIRM_PLATFORM_INIT='true'
+npm.cmd run platform:init -- --dry-run --first-name "Edwin Hernan" --last-name "Velez Urrego" --document "1039458720" --email "ehvelez092@gmail.com" --username "ehvelez"
+```
+
+Resultado esperado y confirmado:
+
+```text
+[platform-initialize] DATABASE_URL/DIRECT_URL debe apuntar a Supabase PROD jzbwzmkidfthknsohhnr.
+```
+
+No se ejecuto dry-run real contra PROD porque en el workspace no existe `.env.production.local` y no hay variables PROD reales disponibles en el proceso. Continuar sin esas variables implicaria riesgo de tocar QA o fallar contra localhost.

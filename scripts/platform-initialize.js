@@ -1,6 +1,9 @@
 const fs = require("fs");
 const path = require("path");
 
+const PROD_PROJECT_REF = "jzbwzmkidfthknsohhnr";
+const PROD_SUPABASE_URL = `https://${PROD_PROJECT_REF}.supabase.co`;
+
 function loadEnvFile(file = ".env") {
   if (!fs.existsSync(file)) return;
   for (const line of fs.readFileSync(file, "utf8").split(/\r?\n/)) {
@@ -31,6 +34,15 @@ function value(args, key, envKey) {
   return args[key] || process.env[envKey] || "";
 }
 
+function cleanUrl(value = "") {
+  return String(value || "").trim().replace(/\/+$/, "");
+}
+
+function databaseUrlMatchesProjectRef(value = "") {
+  const text = String(value || "");
+  return text.includes(PROD_PROJECT_REF) && !/(localhost|127\.0\.0\.1|jbirkghkekuifgfsgquq)/i.test(text);
+}
+
 function assertRuntime(args) {
   const targetEnv = process.env.TARGET_ENV || "";
   if (!["qa", "production"].includes(targetEnv)) {
@@ -42,11 +54,22 @@ function assertRuntime(args) {
   if (args.execute && args["dry-run"]) {
     throw new Error("Usa --execute o --dry-run, no ambos.");
   }
+  if (targetEnv === "production") {
+    const databaseUrl = process.env.DATABASE_URL || "";
+    const directUrl = process.env.DIRECT_URL || "";
+    const supabaseUrl = cleanUrl(process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "");
+    if (!databaseUrlMatchesProjectRef(databaseUrl) && !databaseUrlMatchesProjectRef(directUrl)) {
+      throw new Error(`DATABASE_URL/DIRECT_URL debe apuntar a Supabase PROD ${PROD_PROJECT_REF}.`);
+    }
+    if (supabaseUrl !== PROD_SUPABASE_URL) {
+      throw new Error(`SUPABASE_URL debe ser exactamente ${PROD_SUPABASE_URL}.`);
+    }
+  }
 }
 
 async function main() {
-  loadEnvFile();
   const args = parseArgs(process.argv.slice(2));
+  loadEnvFile(args["env-file"] || process.env.PLATFORM_INIT_ENV_FILE || ".env");
   assertRuntime(args);
 
   const execute = args.execute === true;
