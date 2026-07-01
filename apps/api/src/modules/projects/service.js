@@ -4,6 +4,11 @@ const APEX_STATUSES = new Set(["pendiente", "activo", "bloqueado", "validacion",
 const OPEN_STATUSES = new Set(["pendiente", "activo", "bloqueado", "validacion"]);
 const HIGH_PRIORITIES = new Set(["alta", "critica"]);
 
+function isProductionEnv() {
+  return [process.env.APP_ENV, process.env.TARGET_ENV, process.env.NODE_ENV]
+    .some((value) => String(value || "").toLowerCase() === "production");
+}
+
 function appError(statusCode, code, message) {
   const error = new Error(message);
   error.statusCode = statusCode;
@@ -196,6 +201,7 @@ async function refreshProject(projectId) {
 }
 
 async function ensureDemo(tenantId) {
+  if (isProductionEnv() && process.env.ALLOW_DEMO_DATA !== "true") return;
   const count = await prisma.project.count();
   if (count) return;
   const employees = await prisma.employee.findMany({ take: 4, orderBy: { id: "asc" } });

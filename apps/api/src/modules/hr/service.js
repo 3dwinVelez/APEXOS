@@ -683,7 +683,7 @@ async function ensureActivityTypes() {
       description: "Catalogo operativo inicial APEXOS",
       sort_order: (index + 1) * 10,
       active: true,
-      metadata: { is_demo: true, system_seed: "apexos_operational_traceability" }
+      metadata: { source: "apexos_operational_traceability" }
     })),
     skipDuplicates: true
   });

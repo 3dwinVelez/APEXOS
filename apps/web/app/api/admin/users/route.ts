@@ -415,7 +415,7 @@ export async function POST(request: NextRequest) {
         first_name: clean(body.first_names) || fullName.split(" ")[0] || fullName,
         last_name: clean(body.last_names) || fullName.split(" ").slice(1).join(" "),
         document_type: clean(body.document_type) || "CC",
-        document_number: clean(body.document) || `QA-${Date.now()}`,
+        document_number: clean(body.document) || `USR-${Date.now()}`,
         email,
         phone: clean(body.phone) || "",
         position: clean(body.position) || (profileKind === "tecnico" ? "TECNICO" : clean(body.operational_classification) || "operario"),
