@@ -63,6 +63,12 @@ authenticated user session and checks for an active row. Platform SuperAdmins ca
 see Administracion APEX and the platform navigation before the first company is
 created.
 
+The resolver must not mark every tenant module as active for Platform
+SuperAdmins. Before a company exists, operational modules such as Servicios,
+Talento Humano, Transporte and APEX AI Core do not have tenant entitlements and
+their backend APIs correctly reject access. The platform session now enables only
+the platform administration module in the shell.
+
 ## Tables And Views Audited
 
 Audited tables and views used by the Administracion APEX company/user flow:
@@ -102,6 +108,8 @@ Application hardening applied:
 - `loadModuleAccess()` no longer infers Platform SuperAdmin status from company
   visibility; it checks `public.platform_admins.status = 'active'` for the
   authenticated session.
+- Platform SuperAdmin module access is restricted to Administracion APEX instead
+  of enabling all tenant modules globally.
 
 Permission changes:
 
@@ -137,6 +145,8 @@ Validated after applying the migration:
   authorization check even while `public.companies = 0`.
 - The production Platform SuperAdmin can resolve platform module access while
   `public.companies = 0`.
+- The Platform SuperAdmin shell does not trigger tenant-only operational modules
+  before the first company exists.
 
 `npm run validate:production:structure` ran and reported the expected non-empty
 bootstrap tables because Platform Initialization has already been completed:

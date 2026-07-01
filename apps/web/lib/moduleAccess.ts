@@ -4,8 +4,9 @@ import { CompanyModuleStatus, listActivePlatformAdmins, listCompanyModuleStatus,
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 const HAS_CONFIGURED_API_URL = Boolean(process.env.NEXT_PUBLIC_API_URL);
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
-const MODULE_ACCESS_CACHE_KEY = "apexos_module_access_cache";
+const MODULE_ACCESS_CACHE_KEY = "apexos_module_access_cache_v2";
 const MODULE_ACCESS_CACHE_MS = 60_000;
+const PLATFORM_ADMIN_MODULE_SLUGS = new Set(["administracion"]);
 let moduleAccessInFlight: { token: string; promise: Promise<ModuleAccessState> } | null = null;
 
 export type ModuleAccessState = {
@@ -232,7 +233,8 @@ export async function loadModuleAccess(modules: ApexModule[]): Promise<ModuleAcc
         const state = {
           loading: false,
           isPlatformAdmin: true,
-          bySlug: Object.fromEntries(modules.map((module) => [module.slug, true]))
+          bySlug: Object.fromEntries(modules.map((module) => [module.slug, PLATFORM_ADMIN_MODULE_SLUGS.has(module.slug)])),
+          orderBySlug: Object.fromEntries(modules.map((module, index) => [module.slug, PLATFORM_ADMIN_MODULE_SLUGS.has(module.slug) ? index : modules.length + index]))
         };
         sessionStorage.setItem(MODULE_ACCESS_CACHE_KEY, JSON.stringify({ at: Date.now(), state }));
         return state;
