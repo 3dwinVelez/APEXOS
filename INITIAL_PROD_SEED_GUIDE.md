@@ -1,17 +1,19 @@
 # Guia de seed inicial productivo
 
+> DEPRECATED para creacion normal de clientes. En produccion, empresas, administradores y usuarios se crean desde Administracion APEX con un Platform SuperAdmin autenticado. Este seed queda solo como herramienta de emergencia documentada.
+
 Script: `scripts/seed-production-initial.js`  
 NPM: `npm run seed:production:initial`
 
 ## Estado
 
-**No ejecutar en la fase de replica estructural vacia.**
+**No ejecutar en la fase de replica estructural vacia ni como onboarding normal de clientes.**
 
-Este script queda preparado para la fase posterior de cargue inicial controlado, una vez `PRODUCTION_SETUP.md` y `RELEASE_PRODUCTION_GO_LIVE_CHECKLIST.md` confirmen que Supabase PROD esta estructuralmente igual a QA, vacio y sin datos demo.
+Este script queda retenido solo para emergencia documentada, aprobada por el operador y trazable. El flujo oficial posterior a Platform Initialization es Administracion APEX.
 
 ## Objetivo
 
-Cargar datos maestros iniciales de una empresa en Supabase produccion de forma controlada, idempotente y sin borrar registros, solo cuando ya se autorice el cargue inicial.
+Herramienta legacy para cargar datos maestros iniciales de una empresa de forma controlada, idempotente y sin borrar registros. No reemplaza Administracion APEX ni debe usarse para onboarding productivo ordinario.
 
 ## Protecciones
 
@@ -29,6 +31,7 @@ Para produccion:
 ```powershell
 $env:TARGET_ENV="production"
 $env:CONFIRM_PROD_SEED="true"
+$env:ALLOW_EMERGENCY_EXTERNAL_SEED="true"
 ```
 
 Variables obligatorias:
@@ -105,15 +108,19 @@ Resumen de contadores de la prueba:
 
 ## Uso en produccion
 
-1. Crear Supabase PROD.
-2. Aplicar migraciones.
-3. Confirmar backups/PITR.
-4. Preparar archivo JSON con datos reales o usar variables seguras.
-5. Ejecutar:
+No usar para la creacion ordinaria de clientes. Usar Administracion APEX.
+
+Solo en emergencia documentada:
+
+1. Confirmar aprobacion operativa.
+2. Confirmar backups/PITR.
+3. Preparar archivo JSON con datos reales o usar variables seguras.
+4. Ejecutar:
 
 ```powershell
 $env:TARGET_ENV="production"
 $env:CONFIRM_PROD_SEED="true"
+$env:ALLOW_EMERGENCY_EXTERNAL_SEED="true"
 $env:SUPABASE_URL="https://<prod-ref>.supabase.co"
 $env:SUPABASE_SERVICE_ROLE_KEY="<server-only-prod-service-role>"
 $env:INITIAL_USER_PASSWORD="<temporary-strong-password>"
@@ -185,6 +192,7 @@ El JSON debe seguir esta estructura:
 
 Despues del seed:
 
+- Registro del incidente y aprobacion.
 - Login del admin inicial.
 - Cambio de contrasena temporal.
 - Ver empresa en Administracion APEX.

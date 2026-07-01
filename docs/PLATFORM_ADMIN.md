@@ -105,6 +105,8 @@ Los modulos adicionales preparados previamente, como `configuracion`, `finanzas`
 
 ## Creacion de empresas
 
+Administracion APEX es el unico flujo oficial para crear empresas/clientes en APEXOS/NYVORA. No se deben crear clientes por scripts externos, SQL manual ni flujos paralelos de onboarding. La unica excepcion operativa es una emergencia documentada y aprobada.
+
 La creacion de empresas se abre desde un boton de accion en una ventana flotante. No debe quedar incrustada dentro del listado de empresas para evitar saturacion visual.
 
 El formulario captura:
@@ -175,42 +177,7 @@ Supabase Auth QA tiene usuarios de prueba creados y confirmados para validar log
 
 No guardar contrasenas planas en documentacion versionada. Las claves temporales se entregan por conversacion al responsable de QA.
 
-Referencia de asociacion admin global:
-
-```sql
-insert into public.profiles (id, full_name, email, status)
-values ('ADMIN_AUTH_USER_ID', 'Administrador APEX OS', 'admin@example.com', 'active')
-on conflict (id) do update set
-  full_name = excluded.full_name,
-  email = excluded.email,
-  status = excluded.status,
-  updated_at = now();
-
-insert into public.platform_admins (user_id, status)
-values ('ADMIN_AUTH_USER_ID', 'active')
-on conflict (user_id) do update set status = 'active', updated_at = now();
-```
-
-Referencia de asociacion SCJ:
-
-```sql
-insert into public.profiles (id, full_name, email, status)
-values ('SCJ_AUTH_USER_ID', 'Administrador SCJ', 'scj@example.com', 'active')
-on conflict (id) do update set
-  full_name = excluded.full_name,
-  email = excluded.email,
-  status = excluded.status,
-  updated_at = now();
-
-insert into public.company_users (company_id, user_id, role, status)
-select c.id, 'SCJ_AUTH_USER_ID', 'admin', 'active'
-from public.companies c
-where c.name = 'SCJ'
-on conflict (company_id, user_id) do update set
-  role = excluded.role,
-  status = excluded.status,
-  updated_at = now();
-```
+No asociar usuarios por SQL manual. El primer Platform SuperAdmin se crea con `platform:init`; los administradores de empresa y usuarios operativos se crean desde Administracion APEX y sus rutas server-side oficiales.
 
 ## Validacion
 

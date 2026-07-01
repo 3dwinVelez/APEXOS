@@ -161,25 +161,8 @@ export function listPlatformCompanySessions(companyId: string, minutes = 30) {
 }
 
 export function createPlatformCompany(input: { name: string; legal_name?: string | null; tax_id?: string | null; email?: string | null; phone?: string | null; company_type?: string | null; parent_company_id?: string | null; business_line?: string | null; country?: string | null; city?: string | null; address?: string | null; status?: string; plan_id?: string | null }) {
-  return supabaseFetch<PlatformCompany[]>("/rest/v1/companies?select=*", {
-    method: "POST",
-    headers: { Prefer: "return=representation" },
-    body: JSON.stringify({
-      name: input.name,
-      legal_name: input.legal_name || null,
-      tax_id: input.tax_id || null,
-      email: input.email || null,
-      phone: input.phone || null,
-      company_type: input.company_type || "company",
-      parent_company_id: input.parent_company_id || null,
-      business_line: input.business_line || null,
-      country: input.country || null,
-      city: input.city || null,
-      address: input.address || null,
-      status: input.status || "active",
-      plan_id: input.plan_id || null
-    })
-  });
+  void input;
+  throw new Error("Flujo deprecated: crea empresas desde Administracion APEX usando createPlatformCompanyWithAdmin.");
 }
 
 export function updatePlatformCompany(companyId: string, input: Partial<Omit<CreatePlatformCompanyInput, "admin_full_name" | "admin_email" | "admin_password">>) {

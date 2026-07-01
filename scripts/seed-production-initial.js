@@ -14,6 +14,7 @@ function loadEnvFile(file = ".env") {
 loadEnvFile();
 
 const TARGET_ENV = process.env.TARGET_ENV || "";
+const ALLOW_EMERGENCY_EXTERNAL_SEED = process.env.ALLOW_EMERGENCY_EXTERNAL_SEED === "true";
 const CONFIRM_PROD_SEED = process.env.CONFIRM_PROD_SEED || "";
 const CONFIRM_QA_SEED = process.env.CONFIRM_QA_SEED || "";
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -26,6 +27,10 @@ const isQa = TARGET_ENV === "qa";
 
 if (!isProduction && !isQa) {
   throw new Error("TARGET_ENV debe ser 'qa' o 'production'.");
+}
+
+if (isProduction && !ALLOW_EMERGENCY_EXTERNAL_SEED) {
+  throw new Error("DEPRECATED: no crear empresas/clientes productivos por seed externo. Usa Administracion APEX con Platform SuperAdmin. Solo emergencia documentada: ALLOW_EMERGENCY_EXTERNAL_SEED=true.");
 }
 
 if (isProduction && CONFIRM_PROD_SEED !== "true") {

@@ -197,23 +197,22 @@ Validar:
 - Redirect URLs productivas definidas.
 - `auth.users` en 0 despues de `cleanup_prod_seed_data.sql`.
 
-No crear usuarios iniciales todavia. El alta de usuarios ocurre en fase de cargue inicial controlado con `scripts/seed-production-initial.js`.
+No crear usuarios iniciales todavia. Despues de Platform Initialization, el alta de empresas, administradores y usuarios ocurre desde Administracion APEX con un Platform SuperAdmin autenticado.
 
-## 8. Seed productivo posterior, no en esta fase
+## 8. Creacion productiva de clientes
 
-El script `scripts/seed-production-initial.js` queda disponible para la siguiente fase. No ejecutarlo hasta que el checklist estructural este OK.
+El flujo oficial es:
 
-Cuando llegue la fase de cargue inicial, el script:
+1. Login como Platform SuperAdmin.
+2. Entrar a Administracion APEX.
+3. Crear empresa.
+4. Activar modulos contratados.
+5. Crear administrador de empresa.
+6. Crear usuarios operativos/tecnicos.
+7. Asignar roles/permisos.
+8. Validar acceso.
 
-- Crea/actualiza empresa.
-- Crea usuarios Auth si no existen.
-- Crea perfiles y membresias.
-- Crea empleados vinculados.
-- Activa modulos.
-- Crea catalogos base.
-- Crea vehiculos base.
-- Crea buckets si faltan.
-- No borra datos.
+`scripts/seed-production-initial.js` queda deprecado para onboarding normal. Solo puede considerarse en emergencia documentada, con aprobacion explicita y `ALLOW_EMERGENCY_EXTERNAL_SEED=true`.
 
 ## 9. Backups/PITR
 

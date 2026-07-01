@@ -15,7 +15,7 @@ Crear el primer Platform SuperAdmin usando un comando interno, no expuesto a Int
 - usuario Prisma;
 - auditoria inicial.
 
-No crea empresas cliente, no crea usuarios tecnicos y no activa modulos de cliente.
+No crea empresas cliente, no crea usuarios tecnicos y no activa modulos de cliente. La creacion de clientes pertenece exclusivamente a Administracion APEX con un Platform SuperAdmin autenticado.
 
 ## Cuando puede ejecutarse
 
@@ -143,12 +143,14 @@ El 2026-07-01 se ejecuto `npm.cmd run platform:init -- --dry-run` contra Supabas
 Cuando el Platform SuperAdmin exista:
 
 1. iniciar sesion en el frontend productivo;
-2. abrir Administracion / Suscripciones;
+2. abrir Administracion APEX / Empresas y suscripciones;
 3. crear empresa real desde el flujo normal;
 4. activar modulos contratados;
 5. crear administrador cliente;
 6. crear usuarios tecnicos desde Administracion;
 7. ejecutar smoke test autenticado.
+
+No ejecutar scripts externos para crear clientes. `platform:init` queda reservado al bootstrap del primer SuperAdmin y queda logicamente deshabilitado despues de esa primera ejecucion.
 
 ## Estado irreversible
 
