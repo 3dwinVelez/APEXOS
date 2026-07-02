@@ -332,7 +332,7 @@ export default function ServiceOperationPage() {
           action: item.action,
           supplier_name: item.supplier_name || ""
         }, captureKey);
-        if (!uploaded) throw new Error(`No fue posible guardar la evidencia de ${item.name}.`);
+        if (!uploaded) return null;
       }
     }
     return api<ServiceOrder>(`/api/v1/services/orders/${params.id}/inspection`, {

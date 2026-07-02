@@ -1991,7 +1991,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       const body = JSON.parse(String(options.body || "{}"));
       const current = await accessibleSupabaseServiceOrder(orderId);
       const originalType = String(body.type || body.evidence_type || "novedad");
-      const allowedType = ["fachada", "producto_abierto", "producto_cerrado", "cliente", "firma_cliente", "no_ejecutada", "pieza_averiada"].includes(originalType) ? originalType : "novedad";
+      const allowedType = ["fachada", "producto_abierto", "producto_cerrado", "cliente", "firma_cliente", "no_ejecutada"].includes(originalType) ? originalType : "novedad";
       const uploaded = body.base64_data && !body.storage_path
         ? await uploadServiceImageData(current.company_id, orderId, {
           base64: String(body.base64_data),
