@@ -299,9 +299,9 @@ export default function SuscripcionesPage() {
 
       {message ? <p className="rounded-md border border-line bg-white px-4 py-3 text-sm text-neutral-700">{message}</p> : null}
 
-      <section className="grid gap-5 xl:grid-cols-[380px_1fr]">
-        <aside className="rounded-md border border-line bg-white p-5">
-          <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="space-y-4">
+        <section className="rounded-md border border-line bg-white p-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Building2 className="text-apex" size={18} />
               <h2 className="font-semibold">Empresas registradas</h2>
@@ -314,13 +314,13 @@ export default function SuscripcionesPage() {
             </button>
           </div>
 
-          <div className="space-y-3">
+          <div className="flex gap-3 overflow-x-auto pb-1">
             {companies.map((company) => (
-              <div className={`rounded-md border p-4 transition ${company.company_id === selectedCompanyId ? "border-apex bg-apex/5 shadow-sm" : "border-line hover:bg-paper"}`} key={company.company_id}>
+              <div className={`w-[300px] shrink-0 rounded-md border p-3 transition ${company.company_id === selectedCompanyId ? "border-apex bg-apex/5 shadow-sm" : "border-line hover:bg-paper"}`} key={company.company_id}>
                 <button className="w-full text-left" onClick={() => selectCompany(company.company_id)} type="button">
-                  <span className="block font-semibold">{company.company_name}</span>
-                  <span className="mt-1 block text-xs text-neutral-500">{company.legal_name || "Sin razon social"}</span>
-                  <span className="mt-1 block text-xs text-neutral-500">{company.tax_id || "Sin NIT"} - {company.parent_company_name || company.company_type || "Empresa"} - {company.enabled_modules} activos</span>
+                  <span className="block truncate font-semibold">{company.company_name}</span>
+                  <span className="mt-1 block truncate text-xs text-neutral-500">{company.legal_name || "Sin razon social"}</span>
+                  <span className="mt-1 block truncate text-xs text-neutral-500">{company.tax_id || "Sin NIT"} - {company.company_type || "Empresa"} - {company.enabled_modules} activos</span>
                 </button>
                 <div className="mt-3 flex justify-end gap-2">
                   <button className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-line bg-white hover:bg-paper" onClick={() => openEditCompany(company)} title="Editar empresa" type="button">
@@ -334,10 +334,10 @@ export default function SuscripcionesPage() {
             ))}
             {!companies.length && !loading ? <p className="rounded-md bg-paper p-4 text-sm text-neutral-500">Sin empresas visibles para este usuario.</p> : null}
           </div>
-        </aside>
+        </section>
 
         <main className="space-y-4">
-          <section className="rounded-md border border-line bg-white p-5">
+          <section className="rounded-md border border-line bg-white p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-apex">{selectedCompany?.plan_name || "Suscripcion manual"}</p>
@@ -357,7 +357,7 @@ export default function SuscripcionesPage() {
           </div>
           </section>
 
-          <section className="rounded-md border border-line bg-white p-5">
+          <section className="rounded-md border border-line bg-white p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="font-semibold">Usuarios conectados</h3>
@@ -369,20 +369,20 @@ export default function SuscripcionesPage() {
               </button>
             </div>
             <div className="grid gap-2 md:grid-cols-3">
-              <div className="rounded-md border border-line bg-paper p-3">
+              <div className="rounded-md border border-line bg-paper px-3 py-2">
                 <p className="text-xs text-neutral-500">Conectados</p>
-                <p className="text-2xl font-semibold text-emerald-700">{sessions?.totals.connected || 0}</p>
+                <p className="text-xl font-semibold text-emerald-700">{sessions?.totals.connected || 0}</p>
               </div>
-              <div className="rounded-md border border-line bg-paper p-3">
+              <div className="rounded-md border border-line bg-paper px-3 py-2">
                 <p className="text-xs text-neutral-500">Usuarios activos</p>
-                <p className="text-2xl font-semibold">{sessions?.totals.active || 0}</p>
+                <p className="text-xl font-semibold">{sessions?.totals.active || 0}</p>
               </div>
-              <div className="rounded-md border border-line bg-paper p-3">
+              <div className="rounded-md border border-line bg-paper px-3 py-2">
                 <p className="text-xs text-neutral-500">Sin cuenta Auth</p>
-                <p className={`text-2xl font-semibold ${(sessions?.totals.without_auth || 0) ? "text-rose-700" : "text-neutral-900"}`}>{sessions?.totals.without_auth || 0}</p>
+                <p className={`text-xl font-semibold ${(sessions?.totals.without_auth || 0) ? "text-rose-700" : "text-neutral-900"}`}>{sessions?.totals.without_auth || 0}</p>
               </div>
             </div>
-            <div className="mt-3 max-h-64 overflow-auto rounded-md border border-line bg-white">
+            <div className="mt-3 max-h-52 overflow-auto rounded-md border border-line bg-white">
               <table className="w-full min-w-[760px] text-sm">
                 <thead className="sticky top-0 bg-white">
                   <tr className="border-b border-line text-left text-xs text-neutral-500">
@@ -430,7 +430,7 @@ export default function SuscripcionesPage() {
             </div>
           </section>
 
-          <section className="rounded-md border border-line bg-white p-5">
+          <section className="rounded-md border border-line bg-white p-4">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="font-semibold">Modulos de la empresa</h3>
@@ -444,38 +444,38 @@ export default function SuscripcionesPage() {
 
             {modules.length ? (
               <div className="overflow-auto rounded-md border border-line">
-                <table className="w-full min-w-[920px] text-sm">
+                <table className="w-full min-w-[820px] text-sm">
                   <thead className="bg-paper">
                     <tr className="border-b border-line text-left text-xs font-semibold uppercase text-neutral-500">
-                      <th className="px-4 py-3">Modulo</th>
-                      <th className="px-4 py-3">Estado</th>
-                      <th className="px-4 py-3">Origen</th>
-                      <th className="px-4 py-3">Ruta</th>
-                      <th className="px-4 py-3 text-right">Accion</th>
+                      <th className="px-3 py-2">Modulo</th>
+                      <th className="px-3 py-2">Estado</th>
+                      <th className="px-3 py-2">Origen</th>
+                      <th className="px-3 py-2">Ruta</th>
+                      <th className="px-3 py-2 text-right">Accion</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-line">
                     {modules.map((item) => (
                       <tr className="bg-white transition hover:bg-paper" key={item.module_id}>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-2">
                           <div className="max-w-xl">
                             <p className="font-semibold text-neutral-900">{item.module_name}</p>
-                            <p className="mt-1 line-clamp-2 text-xs leading-5 text-neutral-500">{item.description || item.module_code}</p>
+                            <p className="mt-1 line-clamp-1 text-xs text-neutral-500">{item.description || item.module_code}</p>
                           </div>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-2">
                           <span className={`inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs font-semibold ${item.enabled ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>
                             {item.enabled ? <Check size={13} /> : <LockKeyhole size={13} />}
                             {item.enabled ? "Habilitado" : "Bloqueado"}
                           </span>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-2">
                           <span className="inline-flex rounded-md bg-paper px-2 py-1 text-xs font-medium text-neutral-600">{item.source}</span>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-2">
                           <span className="text-xs text-neutral-500">{item.route || "Sin ruta"}</span>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-2">
                           <div className="flex justify-end">
                             <button
                               className={`inline-flex h-9 min-w-28 items-center justify-center gap-2 rounded-md border px-3 text-xs font-semibold transition disabled:opacity-50 ${item.enabled ? "border-line bg-white text-neutral-700 hover:bg-paper" : "border-apex bg-apex text-white hover:bg-apex/90"}`}
@@ -502,7 +502,7 @@ export default function SuscripcionesPage() {
             )}
           </section>
         </main>
-      </section>
+      </div>
 
       {showCompanyModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-6">
