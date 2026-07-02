@@ -177,7 +177,7 @@ export default function ServiceOperationPage() {
 
   async function uploadPhoto(type: string, file: CapturedFile | null, metadata: Record<string, unknown> = {}, captureKey = type) {
     setCaptures((current) => ({ ...current, [captureKey]: file }));
-    if (!file) return;
+    if (!file) return true;
     setUploading((current) => ({ ...current, [captureKey]: true }));
     try {
       const savedPhoto = await api<ServicePhoto>(`/api/v1/services/orders/${params.id}/photos`, {
@@ -191,12 +191,19 @@ export default function ServiceOperationPage() {
       }
       setOrder((current) => current ? { ...current, photos } : current);
       setMessage(`Evidencia ${photoLabels[type] || type} cargada.`);
+      return true;
     } catch (error) {
       setCaptures((current) => ({ ...current, [captureKey]: null }));
       setMessage(error instanceof Error ? error.message : "No fue posible guardar la evidencia.");
+      return false;
     } finally {
       setUploading((current) => ({ ...current, [captureKey]: false }));
     }
+  }
+
+  function setProblemEvidence(partId: number | string, file: CapturedFile | null) {
+    setCaptures((current) => ({ ...current, [`pieza_${partId}`]: file }));
+    if (file) setMessage("Evidencia lista. Guarda la inspeccion para registrarla en la orden.");
   }
 
   async function uploadSignature(file: CapturedFile | null, metadata: Record<string, unknown> = {}) {
@@ -262,6 +269,10 @@ export default function ServiceOperationPage() {
     return Boolean(captures[`pieza_${partId}`]) || Boolean(order?.photos.some((photo) => photo.type === "pieza_averiada" && String(photo.metadata?.part_id) === String(partId)));
   }
 
+  function hasPersistedProblemEvidence(partId: number | string) {
+    return Boolean(order?.photos.some((photo) => photo.type === "pieza_averiada" && String(photo.metadata?.part_id) === String(partId)));
+  }
+
   function hasPersistedPhoto(type: string) {
     return Boolean(order?.photos.some((photo) => photo.type === type));
   }
@@ -309,6 +320,21 @@ export default function ServiceOperationPage() {
   async function saveInspection(decision: "armable" | "no_armable") {
     if (!validateInspection()) return null;
     const problems = inspection.filter((item) => item.status !== "ok");
+    for (const item of problems) {
+      const captureKey = `pieza_${item.part_id}`;
+      const pendingFile = captures[captureKey];
+      if (pendingFile && !hasPersistedProblemEvidence(item.part_id)) {
+        const uploaded = await uploadPhoto("pieza_averiada", pendingFile, {
+          part_id: item.part_id,
+          part_name: item.name,
+          status: item.status,
+          comment: item.comment,
+          action: item.action,
+          supplier_name: item.supplier_name || ""
+        }, captureKey);
+        if (!uploaded) throw new Error(`No fue posible guardar la evidencia de ${item.name}.`);
+      }
+    }
     return api<ServiceOrder>(`/api/v1/services/orders/${params.id}/inspection`, {
       method: "PATCH",
       body: JSON.stringify({
@@ -558,7 +584,8 @@ export default function ServiceOperationPage() {
                           <option value="ninguna">Sin accion adicional</option>
                         </select>
                         <input className="h-12 w-full rounded-md border border-line px-3 text-base" placeholder="Proveedor sugerido (opcional)" value={part.supplier_name || ""} onChange={(event) => updateInspection(part.part_id, { supplier_name: event.target.value })} />
-                        <PhotoCapture label={`Evidencia - ${part.name}`} required loading={uploading[`pieza_${part.part_id}`]} value={captures[`pieza_${part.part_id}`] || null} onChange={(file) => uploadPhoto("pieza_averiada", file, { part_id: part.part_id, part_name: part.name, status: part.status, comment: part.comment, action: part.action, supplier_name: part.supplier_name || "" }, `pieza_${part.part_id}`)} />
+                        <PhotoCapture label={`Evidencia - ${part.name}`} required loading={uploading[`pieza_${part.part_id}`]} value={captures[`pieza_${part.part_id}`] || null} onChange={(file) => setProblemEvidence(part.part_id, file)} />
+                        {hasPersistedProblemEvidence(part.part_id) ? <p className="text-xs font-semibold text-emerald-700">Evidencia registrada para esta pieza.</p> : null}
                       </div>
                     ) : null}
                   </div>
