@@ -54,7 +54,7 @@ function requireValue(value, message) {
 
 function companyFilter(name) {
   const value = encodeURIComponent(String(name || "").trim());
-  return `or=(name.eq.${value},legal_name.eq.${value},tax_id.eq.${value},nit.eq.${value})`;
+  return `or=(name.eq.${value},legal_name.eq.${value},tax_id.eq.${value})`;
 }
 
 async function request(config, pathname, options = {}) {
