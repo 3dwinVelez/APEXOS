@@ -1,0 +1,5176 @@
+{
+  "summary": {
+    "source": "C:\\Users\\mq1\\Documents\\plantilla apexos.xlsx",
+    "sheet": "Plantilla ",
+    "raw_rows": 797,
+    "deduplicated_rows": 694,
+    "references": 18,
+    "parts": 694
+  },
+  "references": [
+    {
+      "code": "15000058",
+      "name": "CLOSET MOVAL PANAMA AN: 153 CMS AL: 182 CMS FON: 47 CMS COLOR: FREIJO",
+      "category": "Muebles",
+      "description": "CLOSET MOVAL PANAMA AN: 153 CMS AL: 182 CMS FON: 47 CMS COLOR: FREIJO",
+      "estimated_minutes": 60,
+      "brand": "MOVAL",
+      "model": "Panama",
+      "active": true,
+      "metadata": {
+        "source": "plantilla apexos.xlsx",
+        "initial_load": "service_references_2026_07",
+        "raw_rows": 51
+      },
+      "parts": [
+        {
+          "name": "PUERTA LARGA",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "17",
+          "display_order": 0
+        },
+        {
+          "name": "PUERTA CORTA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "18",
+          "display_order": 1
+        },
+        {
+          "name": "SANEFLA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "43",
+          "display_order": 2
+        },
+        {
+          "name": "FRENTE DE LA CAJONERA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "23",
+          "display_order": 3
+        },
+        {
+          "name": "LATERAL DE LA CAJONERA",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "22",
+          "display_order": 4
+        },
+        {
+          "name": "TRASERO DE LA CAJONERA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "26",
+          "display_order": 5
+        },
+        {
+          "name": "FONDO DEL CAJON",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "27",
+          "display_order": 6
+        },
+        {
+          "name": "LATERAL IZQUIERDO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "1",
+          "display_order": 7
+        },
+        {
+          "name": "LATERAL DERECHO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "2",
+          "display_order": 8
+        },
+        {
+          "name": "DIVISIÓN",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "3",
+          "display_order": 9
+        },
+        {
+          "name": "ESTANTE FIJO",
+          "quantity": 3.0,
+          "unit": "UND",
+          "description": "16",
+          "display_order": 10
+        },
+        {
+          "name": "TRASERO IZQUIERDO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "75",
+          "display_order": 11
+        },
+        {
+          "name": "BASES CUADRO",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "6",
+          "display_order": 12
+        },
+        {
+          "name": "ZOCALO FRONTAL",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "9",
+          "display_order": 13
+        },
+        {
+          "name": "ZOCALO TRASERO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "10",
+          "display_order": 14
+        },
+        {
+          "name": "TRABA DE ZOCALO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "11",
+          "display_order": 15
+        },
+        {
+          "name": "DIVISIÓN DE LA CAJONERA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "58",
+          "display_order": 16
+        },
+        {
+          "name": "BATIENTE",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "12",
+          "display_order": 17
+        },
+        {
+          "name": "CUADRO INTERNO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "8",
+          "display_order": 18
+        },
+        {
+          "name": "TRASERO DEL ROPERO",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "38",
+          "display_order": 19
+        },
+        {
+          "name": "CUADRO TECHO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "5",
+          "display_order": 20
+        },
+        {
+          "name": "TARUGO 6X30",
+          "quantity": 12.0,
+          "unit": "UND",
+          "description": "A",
+          "display_order": 21
+        },
+        {
+          "name": "TORNILLO 40X50",
+          "quantity": 32.0,
+          "unit": "UND",
+          "description": "B",
+          "display_order": 22
+        },
+        {
+          "name": "TORNILLO 40X35",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "C",
+          "display_order": 23
+        },
+        {
+          "name": "TORNILLO 35X40",
+          "quantity": 16.0,
+          "unit": "UND",
+          "description": "D",
+          "display_order": 24
+        },
+        {
+          "name": "TORNILLO 35X25",
+          "quantity": 16.0,
+          "unit": "UND",
+          "description": "E",
+          "display_order": 25
+        },
+        {
+          "name": "TORNILLO 40X20",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "F",
+          "display_order": 26
+        },
+        {
+          "name": "TORNILLO 35X16",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "G",
+          "display_order": 27
+        },
+        {
+          "name": "TORNILLO M-40X22",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "H",
+          "display_order": 28
+        },
+        {
+          "name": "TORNILLO 40X12 (I)",
+          "quantity": 24.0,
+          "unit": "UND",
+          "description": "I",
+          "display_order": 29
+        },
+        {
+          "name": "TORNILLO 40X12 (J)",
+          "quantity": 64.0,
+          "unit": "UND",
+          "description": "J",
+          "display_order": 30
+        },
+        {
+          "name": "TORNILLO 35X12",
+          "quantity": 44.0,
+          "unit": "UND",
+          "description": "K",
+          "display_order": 31
+        },
+        {
+          "name": "CLAVO 10X10",
+          "quantity": 103.0,
+          "unit": "UND",
+          "description": "L",
+          "display_order": 32
+        },
+        {
+          "name": "UNION",
+          "quantity": 12.0,
+          "unit": "UND",
+          "description": "M",
+          "display_order": 33
+        },
+        {
+          "name": "PEGAMENTO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "N",
+          "display_order": 34
+        },
+        {
+          "name": "PROTECCIÓN DE BASE",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "O",
+          "display_order": 35
+        },
+        {
+          "name": "BUJE CILINDRICA",
+          "quantity": 24.0,
+          "unit": "UND",
+          "description": "P",
+          "display_order": 36
+        },
+        {
+          "name": "SOPORTE COLGADOR",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "Q",
+          "display_order": 37
+        },
+        {
+          "name": "SOPORTE U",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "R",
+          "display_order": 38
+        },
+        {
+          "name": "BISAGRA CANGREJO",
+          "quantity": 18.0,
+          "unit": "UND",
+          "description": "S",
+          "display_order": 39
+        },
+        {
+          "name": "CALCE BISAGRA",
+          "quantity": 18.0,
+          "unit": "UND",
+          "description": "T",
+          "display_order": 40
+        },
+        {
+          "name": "PIES",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "U",
+          "display_order": 41
+        },
+        {
+          "name": "CORREDERA (V)",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "V",
+          "display_order": 42
+        },
+        {
+          "name": "CORREDERA (W)",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "W",
+          "display_order": 43
+        },
+        {
+          "name": "MANIJA",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "X",
+          "display_order": 44
+        },
+        {
+          "name": "BASTON COLGADOR",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "Y",
+          "display_order": 45
+        },
+        {
+          "name": "ESQUINERO",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "Z",
+          "display_order": 46
+        },
+        {
+          "name": "ESQUINERO 22X22",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "AA",
+          "display_order": 47
+        },
+        {
+          "name": "TIZA DE CORRECIÓN",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "AB",
+          "display_order": 48
+        },
+        {
+          "name": "PERFIL H 1560MM",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "AC",
+          "display_order": 49
+        },
+        {
+          "name": "TUERCA 4MM",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "AD",
+          "display_order": 50
+        }
+      ]
+    },
+    {
+      "code": "15000060",
+      "name": "CLOSET MOVAL NEW AVAI AN: 177 CMS AL 204 CMS FON 47 CMS COLOR: CASTANO W",
+      "category": "Muebles",
+      "description": "CLOSET MOVAL NEW AVAI AN: 177 CMS AL 204 CMS FON 47 CMS COLOR: CASTANO W",
+      "estimated_minutes": 60,
+      "brand": "MOVAL",
+      "model": "New Avai",
+      "active": true,
+      "metadata": {
+        "source": "plantilla apexos.xlsx",
+        "initial_load": "service_references_2026_07",
+        "raw_rows": 58
+      },
+      "parts": [
+        {
+          "name": "PUERTA LATERAL",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "30",
+          "display_order": 0
+        },
+        {
+          "name": "PUERTA CENTRAL",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "67",
+          "display_order": 1
+        },
+        {
+          "name": "TECHO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "15",
+          "display_order": 2
+        },
+        {
+          "name": "FRENTE DE LA CAJONERA",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "23",
+          "display_order": 3
+        },
+        {
+          "name": "LATERAL DE LA CAJONERA",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "22",
+          "display_order": 4
+        },
+        {
+          "name": "DIVISION DERECHA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "4",
+          "display_order": 5
+        },
+        {
+          "name": "FONDO DEL CAJON",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "27",
+          "display_order": 6
+        },
+        {
+          "name": "TRASERO DEL CAJON",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "26",
+          "display_order": 7
+        },
+        {
+          "name": "LATERAL IZQUIERDO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "1",
+          "display_order": 8
+        },
+        {
+          "name": "LATERAL DERECHO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "2",
+          "display_order": 9
+        },
+        {
+          "name": "CUADRO TECHO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "5",
+          "display_order": 10
+        },
+        {
+          "name": "TRASERO DEL CLOSET",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "38",
+          "display_order": 11
+        },
+        {
+          "name": "MARCO DE PUERTA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "12",
+          "display_order": 12
+        },
+        {
+          "name": "DIVISION DE CAJONES",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "58",
+          "display_order": 13
+        },
+        {
+          "name": "SOPORTE DE CAJON",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "43",
+          "display_order": 14
+        },
+        {
+          "name": "TRABA DE LOS CAJONES",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "41",
+          "display_order": 15
+        },
+        {
+          "name": "CUADRO BASE",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "6",
+          "display_order": 16
+        },
+        {
+          "name": "TRASERO DERECHO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "76",
+          "display_order": 17
+        },
+        {
+          "name": "CUADRO CENTRAL",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "7",
+          "display_order": 18
+        },
+        {
+          "name": "ESTANTE FIJO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "16",
+          "display_order": 19
+        },
+        {
+          "name": "ESTANTERIA MOVIL",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "13",
+          "display_order": 20
+        },
+        {
+          "name": "ZOCALO FRONTAL",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "9",
+          "display_order": 21
+        },
+        {
+          "name": "RODAPIE POSTERIOR",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "10",
+          "display_order": 22
+        },
+        {
+          "name": "RESTRICCION DE ZOCALO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "11",
+          "display_order": 23
+        },
+        {
+          "name": "VARILLA DE MADERA 6X30",
+          "quantity": 20.0,
+          "unit": "UND",
+          "description": "A",
+          "display_order": 24
+        },
+        {
+          "name": "TORNILLO DE CABEZA PLANA DE 3,5X25",
+          "quantity": 20.0,
+          "unit": "UND",
+          "description": "B",
+          "display_order": 25
+        },
+        {
+          "name": "TORNILLO DE CABEZA PLANA 40X12",
+          "quantity": 56.0,
+          "unit": "UND",
+          "description": "C",
+          "display_order": 26
+        },
+        {
+          "name": "TORNILLO CON BRIDA DE 40X12",
+          "quantity": 24.0,
+          "unit": "UND",
+          "description": "D",
+          "display_order": 27
+        },
+        {
+          "name": "TORNILLO PLANO DE 35X12",
+          "quantity": 67.0,
+          "unit": "UND",
+          "description": "E",
+          "display_order": 28
+        },
+        {
+          "name": "TORNILLO PLANO 40X50",
+          "quantity": 32.0,
+          "unit": "UND",
+          "description": "F",
+          "display_order": 29
+        },
+        {
+          "name": "TORNILLO PLANO 40X35",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "G",
+          "display_order": 30
+        },
+        {
+          "name": "CLAVO DE 10X10 CON CABEZA",
+          "quantity": 104.0,
+          "unit": "UND",
+          "description": "H",
+          "display_order": 31
+        },
+        {
+          "name": "TORNILLO PLANO M4-70X25",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "I",
+          "display_order": 32
+        },
+        {
+          "name": "TORNILLO PLANO 40X20",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "J",
+          "display_order": 33
+        },
+        {
+          "name": "TORNILLO PLANO DE 35X16",
+          "quantity": 16.0,
+          "unit": "UND",
+          "description": "K",
+          "display_order": 34
+        },
+        {
+          "name": "TORNILLO PLANO DE 35X40",
+          "quantity": 24.0,
+          "unit": "UND",
+          "description": "L",
+          "display_order": 35
+        },
+        {
+          "name": "ESQUINERO",
+          "quantity": 10.0,
+          "unit": "UND",
+          "description": "M",
+          "display_order": 36
+        },
+        {
+          "name": "SOPORTE DE ESQUINA",
+          "quantity": 5.0,
+          "unit": "UND",
+          "description": "N",
+          "display_order": 37
+        },
+        {
+          "name": "CASQUILLOS CILINDRICO",
+          "quantity": 20.0,
+          "unit": "UND",
+          "description": "O",
+          "display_order": 38
+        },
+        {
+          "name": "TUBOS DE PEGAMENTO",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "P",
+          "display_order": 39
+        },
+        {
+          "name": "ZAPATO EN FORMA DE U",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "Q",
+          "display_order": 40
+        },
+        {
+          "name": "SOPORTE OVALADO",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "R",
+          "display_order": 41
+        },
+        {
+          "name": "TUERCA 4MM",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "S",
+          "display_order": 42
+        },
+        {
+          "name": "BISAGRA",
+          "quantity": 16.0,
+          "unit": "UND",
+          "description": "T",
+          "display_order": 43
+        },
+        {
+          "name": "CUÑA",
+          "quantity": 16.0,
+          "unit": "UND",
+          "description": "U",
+          "display_order": 44
+        },
+        {
+          "name": "VARILLA DE ALUMINIO (V)",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "V",
+          "display_order": 45
+        },
+        {
+          "name": "VARILLA DE ALUMINIO (W)",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "W",
+          "display_order": 46
+        },
+        {
+          "name": "SUJETADOR RECTO",
+          "quantity": 13.0,
+          "unit": "UND",
+          "description": "X",
+          "display_order": 47
+        },
+        {
+          "name": "PIES DE PLASTICO",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "Y",
+          "display_order": 48
+        },
+        {
+          "name": "MANIJA",
+          "quantity": 10.0,
+          "unit": "UND",
+          "description": "Z",
+          "display_order": 49
+        },
+        {
+          "name": "PERFIL H",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "AA",
+          "display_order": 50
+        },
+        {
+          "name": "ETIQUETA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "AB",
+          "display_order": 51
+        },
+        {
+          "name": "SOPORTE DE ESTANTE",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "AC",
+          "display_order": 52
+        },
+        {
+          "name": "SOPORTE U",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "AD",
+          "display_order": 53
+        },
+        {
+          "name": "TIZA DE CORRECIÓN",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "AE",
+          "display_order": 54
+        },
+        {
+          "name": "TOBOGAN METALICO",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "AF",
+          "display_order": 55
+        },
+        {
+          "name": "CORREDERA",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "AG",
+          "display_order": 56
+        },
+        {
+          "name": "TAPA FURO",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "AH",
+          "display_order": 57
+        }
+      ]
+    },
+    {
+      "code": "15000137",
+      "name": "CLOSET MOVAL PANAMA AN:153 CMS AL: 182 CMS FON: 47 CMS COLOR CAST",
+      "category": "Muebles",
+      "description": "CLOSET MOVAL PANAMA AN:153 CMS AL: 182 CMS FON: 47 CMS COLOR CAST",
+      "estimated_minutes": 60,
+      "brand": "MOVAL",
+      "model": "Panama",
+      "active": true,
+      "metadata": {
+        "source": "plantilla apexos.xlsx",
+        "initial_load": "service_references_2026_07",
+        "raw_rows": 51
+      },
+      "parts": [
+        {
+          "name": "PUERTA LARGA",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "17",
+          "display_order": 0
+        },
+        {
+          "name": "PUERTA CORTA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "18",
+          "display_order": 1
+        },
+        {
+          "name": "SANEFLA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "43",
+          "display_order": 2
+        },
+        {
+          "name": "FRENTE DE LA CAJONERA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "23",
+          "display_order": 3
+        },
+        {
+          "name": "LATERAL DE LA CAJONERA",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "22",
+          "display_order": 4
+        },
+        {
+          "name": "TRASERO DE LA CAJONERA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "26",
+          "display_order": 5
+        },
+        {
+          "name": "FONDO DEL CAJON",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "27",
+          "display_order": 6
+        },
+        {
+          "name": "LATERAL IZQUIERDO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "1",
+          "display_order": 7
+        },
+        {
+          "name": "LATERAL DERECHO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "2",
+          "display_order": 8
+        },
+        {
+          "name": "DIVISIÓN",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "3",
+          "display_order": 9
+        },
+        {
+          "name": "ESTANTE FIJO",
+          "quantity": 3.0,
+          "unit": "UND",
+          "description": "16",
+          "display_order": 10
+        },
+        {
+          "name": "TRASERO IZQUIERDO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "75",
+          "display_order": 11
+        },
+        {
+          "name": "BASES CUADRO",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "6",
+          "display_order": 12
+        },
+        {
+          "name": "ZOCALO FRONTAL",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "9",
+          "display_order": 13
+        },
+        {
+          "name": "ZOCALO TRASERO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "10",
+          "display_order": 14
+        },
+        {
+          "name": "TRABA DE ZOCALO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "11",
+          "display_order": 15
+        },
+        {
+          "name": "DIVISIÓN DE LA CAJONERA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "58",
+          "display_order": 16
+        },
+        {
+          "name": "BATIENTE",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "12",
+          "display_order": 17
+        },
+        {
+          "name": "CUADRO INTERNO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "8",
+          "display_order": 18
+        },
+        {
+          "name": "TRASERO DEL ROPERO",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "38",
+          "display_order": 19
+        },
+        {
+          "name": "CUADRO TECHO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "5",
+          "display_order": 20
+        },
+        {
+          "name": "TARUGO 6X30",
+          "quantity": 12.0,
+          "unit": "UND",
+          "description": "A",
+          "display_order": 21
+        },
+        {
+          "name": "TORNILLO 40X50",
+          "quantity": 32.0,
+          "unit": "UND",
+          "description": "B",
+          "display_order": 22
+        },
+        {
+          "name": "TORNILLO 40X35",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "C",
+          "display_order": 23
+        },
+        {
+          "name": "TORNILLO 35X40",
+          "quantity": 16.0,
+          "unit": "UND",
+          "description": "D",
+          "display_order": 24
+        },
+        {
+          "name": "TORNILLO 35X25",
+          "quantity": 16.0,
+          "unit": "UND",
+          "description": "E",
+          "display_order": 25
+        },
+        {
+          "name": "TORNILLO 40X20",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "F",
+          "display_order": 26
+        },
+        {
+          "name": "TORNILLO 35X16",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "G",
+          "display_order": 27
+        },
+        {
+          "name": "TORNILLO M-40X22",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "H",
+          "display_order": 28
+        },
+        {
+          "name": "TORNILLO 40X12 (I)",
+          "quantity": 24.0,
+          "unit": "UND",
+          "description": "I",
+          "display_order": 29
+        },
+        {
+          "name": "TORNILLO 40X12 (J)",
+          "quantity": 64.0,
+          "unit": "UND",
+          "description": "J",
+          "display_order": 30
+        },
+        {
+          "name": "TORNILLO 35X12",
+          "quantity": 44.0,
+          "unit": "UND",
+          "description": "K",
+          "display_order": 31
+        },
+        {
+          "name": "CLAVO 10X10",
+          "quantity": 103.0,
+          "unit": "UND",
+          "description": "L",
+          "display_order": 32
+        },
+        {
+          "name": "UNION",
+          "quantity": 12.0,
+          "unit": "UND",
+          "description": "M",
+          "display_order": 33
+        },
+        {
+          "name": "PEGAMENTO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "N",
+          "display_order": 34
+        },
+        {
+          "name": "PROTECCIÓN DE BASE",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "O",
+          "display_order": 35
+        },
+        {
+          "name": "BUJE CILINDRICA",
+          "quantity": 24.0,
+          "unit": "UND",
+          "description": "P",
+          "display_order": 36
+        },
+        {
+          "name": "SOPORTE COLGADOR",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "Q",
+          "display_order": 37
+        },
+        {
+          "name": "SOPORTE U",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "R",
+          "display_order": 38
+        },
+        {
+          "name": "BISAGRA CANGREJO",
+          "quantity": 18.0,
+          "unit": "UND",
+          "description": "S",
+          "display_order": 39
+        },
+        {
+          "name": "CALCE BISAGRA",
+          "quantity": 18.0,
+          "unit": "UND",
+          "description": "T",
+          "display_order": 40
+        },
+        {
+          "name": "PIES",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "U",
+          "display_order": 41
+        },
+        {
+          "name": "CORREDERA (V)",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "V",
+          "display_order": 42
+        },
+        {
+          "name": "CORREDERA (W)",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "W",
+          "display_order": 43
+        },
+        {
+          "name": "MANIJA",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "X",
+          "display_order": 44
+        },
+        {
+          "name": "BASTON COLGADOR",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "Y",
+          "display_order": 45
+        },
+        {
+          "name": "ESQUINERO",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "Z",
+          "display_order": 46
+        },
+        {
+          "name": "ESQUINERO 22X22",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "AA",
+          "display_order": 47
+        },
+        {
+          "name": "TIZA DE CORRECIÓN",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "AB",
+          "display_order": 48
+        },
+        {
+          "name": "PERFIL H 1560MM",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "AC",
+          "display_order": 49
+        },
+        {
+          "name": "TUERCA 4MM",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "AD",
+          "display_order": 50
+        }
+      ]
+    },
+    {
+      "code": "15000227",
+      "name": "CLOSET MOVAL CHILE AN: 103 CMS AL: 182 CMS FON: 47 CMS COLOR: CASTAÑO WOOD",
+      "category": "Muebles",
+      "description": "CLOSET MOVAL CHILE AN: 103 CMS AL: 182 CMS FON: 47 CMS COLOR: CASTAÑO WOOD",
+      "estimated_minutes": 60,
+      "brand": "MOVAL",
+      "model": "Chile",
+      "active": true,
+      "metadata": {
+        "source": "plantilla apexos.xlsx",
+        "initial_load": "service_references_2026_07",
+        "raw_rows": 41
+      },
+      "parts": [
+        {
+          "name": "LATERAL IZQUIERDO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "1",
+          "display_order": 0
+        },
+        {
+          "name": "LATERAL DERECHO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "2",
+          "display_order": 1
+        },
+        {
+          "name": "DIVISION",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "3",
+          "display_order": 2
+        },
+        {
+          "name": "CUADRO BASE",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6",
+          "display_order": 3
+        },
+        {
+          "name": "CUADRO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "8",
+          "display_order": 4
+        },
+        {
+          "name": "ZOCALO FRONTAL",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "9",
+          "display_order": 5
+        },
+        {
+          "name": "ZOCALO TRASERO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "10",
+          "display_order": 6
+        },
+        {
+          "name": "ESTANTE FIJO",
+          "quantity": 3.0,
+          "unit": "UND",
+          "description": "16",
+          "display_order": 7
+        },
+        {
+          "name": "PUERTA LARGA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "17",
+          "display_order": 8
+        },
+        {
+          "name": "PUERTA CORTA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "18",
+          "display_order": 9
+        },
+        {
+          "name": "CUADRO DE LA CAJONERA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "21",
+          "display_order": 10
+        },
+        {
+          "name": "LATERAL DE LA CAJONERA",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "22",
+          "display_order": 11
+        },
+        {
+          "name": "FRENTE DE LA CAJONERA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "23",
+          "display_order": 12
+        },
+        {
+          "name": "TRASERO DEL CAJON",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "26",
+          "display_order": 13
+        },
+        {
+          "name": "FONDO DEL CAJON",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "27",
+          "display_order": 14
+        },
+        {
+          "name": "TRASERO DEL ROPERO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "38",
+          "display_order": 15
+        },
+        {
+          "name": "SANEFLA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "43",
+          "display_order": 16
+        },
+        {
+          "name": "VARILLA DE MADERA 6X30",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "A",
+          "display_order": 17
+        },
+        {
+          "name": "TORNILLO PHILIPS 40X50 PLANO",
+          "quantity": 32.0,
+          "unit": "UND",
+          "description": "B",
+          "display_order": 18
+        },
+        {
+          "name": "TORNILLO PHILIPS 35X40 PLANO",
+          "quantity": 12.0,
+          "unit": "UND",
+          "description": "C",
+          "display_order": 19
+        },
+        {
+          "name": "TORNILLO PHILIPS 35X25 CON BRIDA",
+          "quantity": 12.0,
+          "unit": "UND",
+          "description": "D",
+          "display_order": 20
+        },
+        {
+          "name": "TORNILLO PHILIPS M4-70X22 PLANO",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "E",
+          "display_order": 21
+        },
+        {
+          "name": "TORNILLO PHILIPS DE CABEZA PLANA DE 3,5X16",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "F",
+          "display_order": 22
+        },
+        {
+          "name": "TORNILLO PHILIPS 40X12 CON BRIDA",
+          "quantity": 16.0,
+          "unit": "UND",
+          "description": "G",
+          "display_order": 23
+        },
+        {
+          "name": "TORNILLO DE CABEZA PLANA PHILIPS 40X12",
+          "quantity": 44.0,
+          "unit": "UND",
+          "description": "H",
+          "display_order": 24
+        },
+        {
+          "name": "TORNILLO DE CABEZA PLANA PHILIPS 35X12",
+          "quantity": 36.0,
+          "unit": "UND",
+          "description": "I",
+          "display_order": 25
+        },
+        {
+          "name": "CLAVOS",
+          "quantity": 87.0,
+          "unit": "UND",
+          "description": "J",
+          "display_order": 26
+        },
+        {
+          "name": "ESCUADRA METALICA",
+          "quantity": 3.0,
+          "unit": "UND",
+          "description": "K",
+          "display_order": 27
+        },
+        {
+          "name": "ESQUINERO",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "L",
+          "display_order": 28
+        },
+        {
+          "name": "TUERCA 4MM",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "M",
+          "display_order": 29
+        },
+        {
+          "name": "CASQUILLOS CILINDRICO",
+          "quantity": 24.0,
+          "unit": "UND",
+          "description": "N",
+          "display_order": 30
+        },
+        {
+          "name": "PEGAMENTO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "O",
+          "display_order": 31
+        },
+        {
+          "name": "ZAPATO EN FORMA DE U",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "P",
+          "display_order": 32
+        },
+        {
+          "name": "SOPORTE SEMICIRCULAR",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "Q",
+          "display_order": 33
+        },
+        {
+          "name": "SUJETADOR RECTO",
+          "quantity": 12.0,
+          "unit": "UND",
+          "description": "R",
+          "display_order": 34
+        },
+        {
+          "name": "PIES DE PLASTICO",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "S",
+          "display_order": 35
+        },
+        {
+          "name": "MANGO DE PLASTICO",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "T",
+          "display_order": 36
+        },
+        {
+          "name": "TOBOGAN METALICO",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "U",
+          "display_order": 37
+        },
+        {
+          "name": "PALO DE MADERA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "V",
+          "display_order": 38
+        },
+        {
+          "name": "BISAGRA",
+          "quantity": 12.0,
+          "unit": "UND",
+          "description": "W",
+          "display_order": 39
+        },
+        {
+          "name": "CUÑAS",
+          "quantity": 12.0,
+          "unit": "UND",
+          "description": "X",
+          "display_order": 40
+        }
+      ]
+    },
+    {
+      "code": "15000252",
+      "name": "CLOSET MOVAL PARATY AN: 111 CM AL 182 CMFON: 47 CM FREIJO/OFF WHITE",
+      "category": "Muebles",
+      "description": "CLOSET MOVAL PARATY AN: 111 CM AL 182 CMFON: 47 CM FREIJO/OFF WHITE",
+      "estimated_minutes": 60,
+      "brand": "MOVAL",
+      "model": "Paraty",
+      "active": true,
+      "metadata": {
+        "source": "plantilla apexos.xlsx",
+        "initial_load": "service_references_2026_07",
+        "raw_rows": 44
+      },
+      "parts": [
+        {
+          "name": "SANEFLA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "43",
+          "display_order": 0
+        },
+        {
+          "name": "PUERTA LARGA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "17",
+          "display_order": 1
+        },
+        {
+          "name": "PUERTA CORTA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "18",
+          "display_order": 2
+        },
+        {
+          "name": "FRENTE DE LA CAJONERA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "23",
+          "display_order": 3
+        },
+        {
+          "name": "LATERAL DE LA CAJONERA",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "22",
+          "display_order": 4
+        },
+        {
+          "name": "TRASERO DE LA CAJONERA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "26",
+          "display_order": 5
+        },
+        {
+          "name": "FONDO DEL CAJON",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "27",
+          "display_order": 6
+        },
+        {
+          "name": "LATERAL IZQUIERDO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "1",
+          "display_order": 7
+        },
+        {
+          "name": "LATERAL DERECHO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "2",
+          "display_order": 8
+        },
+        {
+          "name": "ESTANTE FIJO",
+          "quantity": 3.0,
+          "unit": "UND",
+          "description": "16",
+          "display_order": 9
+        },
+        {
+          "name": "DIVISIÓN",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "175",
+          "display_order": 10
+        },
+        {
+          "name": "BASES CUADRO",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "6",
+          "display_order": 11
+        },
+        {
+          "name": "TRASERO DEL ROPERO",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "38",
+          "display_order": 12
+        },
+        {
+          "name": "BATIENTE",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "12",
+          "display_order": 13
+        },
+        {
+          "name": "CUADRO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "174",
+          "display_order": 14
+        },
+        {
+          "name": "DIVISIÓN DE LA CAJONERA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "58",
+          "display_order": 15
+        },
+        {
+          "name": "ZOCALO FRONTAL",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "9",
+          "display_order": 16
+        },
+        {
+          "name": "ZOCALO TRASERO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "10",
+          "display_order": 17
+        },
+        {
+          "name": "CUADRO TECHO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "5",
+          "display_order": 18
+        },
+        {
+          "name": "TARUGO 6X30",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "A",
+          "display_order": 19
+        },
+        {
+          "name": "TORNILLO PLANO 4X50",
+          "quantity": 24.0,
+          "unit": "UND",
+          "description": "B",
+          "display_order": 20
+        },
+        {
+          "name": "TORNILLO PLANO 3,5X25",
+          "quantity": 32.0,
+          "unit": "UND",
+          "description": "C",
+          "display_order": 21
+        },
+        {
+          "name": "TORNILLO BRINDADO 3,5X25",
+          "quantity": 12.0,
+          "unit": "UND",
+          "description": "D",
+          "display_order": 22
+        },
+        {
+          "name": "TORNILLO PLANO M-4X22",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "E",
+          "display_order": 23
+        },
+        {
+          "name": "TORNILLO SARTÉN 1,0X12",
+          "quantity": 24.0,
+          "unit": "UND",
+          "description": "F",
+          "display_order": 24
+        },
+        {
+          "name": "TORNILLO BRINDADO 1,0X12",
+          "quantity": 44.0,
+          "unit": "UND",
+          "description": "G",
+          "display_order": 25
+        },
+        {
+          "name": "TORNILLO PLANO 3,5X12",
+          "quantity": 40.0,
+          "unit": "UND",
+          "description": "H",
+          "display_order": 26
+        },
+        {
+          "name": "CLAVO 10X10",
+          "quantity": 91.0,
+          "unit": "UND",
+          "description": "I",
+          "display_order": 27
+        },
+        {
+          "name": "ESQUINA17,5X17,5 (J)",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "J",
+          "display_order": 28
+        },
+        {
+          "name": "ESQUINA17,5X17,5 (K)",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "K",
+          "display_order": 29
+        },
+        {
+          "name": "SOPORTE DE MEDIA CAÑA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "L",
+          "display_order": 30
+        },
+        {
+          "name": "BUJE CILINDRICA",
+          "quantity": 24.0,
+          "unit": "UND",
+          "description": "M",
+          "display_order": 31
+        },
+        {
+          "name": "PEGAMENTO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "N",
+          "display_order": 32
+        },
+        {
+          "name": "ZAPATA U",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "O",
+          "display_order": 33
+        },
+        {
+          "name": "BISAGRE",
+          "quantity": 12.0,
+          "unit": "UND",
+          "description": "P",
+          "display_order": 34
+        },
+        {
+          "name": "BISAGRA",
+          "quantity": 12.0,
+          "unit": "UND",
+          "description": "Q",
+          "display_order": 35
+        },
+        {
+          "name": "PERFIL H 1560MM",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "R",
+          "display_order": 36
+        },
+        {
+          "name": "MANIJA",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "S",
+          "display_order": 37
+        },
+        {
+          "name": "RIELES (T)",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "T",
+          "display_order": 38
+        },
+        {
+          "name": "RIELES (U)",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "U",
+          "display_order": 39
+        },
+        {
+          "name": "TUERCA 4MM",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "V",
+          "display_order": 40
+        },
+        {
+          "name": "COLGADOR 779MM",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "W",
+          "display_order": 41
+        },
+        {
+          "name": "PIES",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "X",
+          "display_order": 42
+        },
+        {
+          "name": "CARYON CORRECTIVO",
+          "quantity": 3.0,
+          "unit": "UND",
+          "description": "Y",
+          "display_order": 43
+        }
+      ]
+    },
+    {
+      "code": "15000256",
+      "name": "CLOSET MOVAL ARUBA AN: 165 CM AL: 204 CM FON: 45 CM CARVALLO/FENDI",
+      "category": "Muebles",
+      "description": "CLOSET MOVAL ARUBA AN: 165 CM AL: 204 CM FON: 45 CM CARVALLO/FENDI",
+      "estimated_minutes": 60,
+      "brand": "MOVAL",
+      "model": "Aruba",
+      "active": true,
+      "metadata": {
+        "source": "plantilla apexos.xlsx",
+        "initial_load": "service_references_2026_07",
+        "raw_rows": 23
+      },
+      "parts": [
+        {
+          "name": "PUERTA CENTRAL",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "67",
+          "display_order": 0
+        },
+        {
+          "name": "PUERTA DE LISTONES",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "213",
+          "display_order": 1
+        },
+        {
+          "name": "PUERTA LARGA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "17",
+          "display_order": 2
+        },
+        {
+          "name": "TRASERO DEL CAJON",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "26",
+          "display_order": 3
+        },
+        {
+          "name": "FONDO DEL CAJON",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "27",
+          "display_order": 4
+        },
+        {
+          "name": "LATERAL DE LA CAJONERA",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "22",
+          "display_order": 5
+        },
+        {
+          "name": "FRENTE DE LA CAJONERA",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "23",
+          "display_order": 6
+        },
+        {
+          "name": "CUADRO TECHO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "5",
+          "display_order": 7
+        },
+        {
+          "name": "TECHO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "15",
+          "display_order": 8
+        },
+        {
+          "name": "ESTANTERIA FIJA",
+          "quantity": 3.0,
+          "unit": "UND",
+          "description": "16",
+          "display_order": 9
+        },
+        {
+          "name": "TRASERO",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "176",
+          "display_order": 10
+        },
+        {
+          "name": "LATERAL IZQUIERDO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "1",
+          "display_order": 11
+        },
+        {
+          "name": "BATIENTE",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "12",
+          "display_order": 12
+        },
+        {
+          "name": "DIVISIÓN DERECHA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "4",
+          "display_order": 13
+        },
+        {
+          "name": "TRASERO LATERAL",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "177",
+          "display_order": 14
+        },
+        {
+          "name": "LATERAL DERECHO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "2",
+          "display_order": 15
+        },
+        {
+          "name": "CUADRO INTERNO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "8",
+          "display_order": 16
+        },
+        {
+          "name": "DIVISIÓN IZQUIERDA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "3",
+          "display_order": 17
+        },
+        {
+          "name": "TRABA DE LOS CAJONES",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "41",
+          "display_order": 18
+        },
+        {
+          "name": "ZOCALO FRONTAL",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "9",
+          "display_order": 19
+        },
+        {
+          "name": "BASE DE CUADRO",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "6",
+          "display_order": 20
+        },
+        {
+          "name": "ZOCALO TRASERO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "10",
+          "display_order": 21
+        },
+        {
+          "name": "TRABA DEL ZOCALO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "11",
+          "display_order": 22
+        }
+      ]
+    },
+    {
+      "code": "15000263",
+      "name": "CLOSET MOVAL FLORIDA AN: 204 CM AL: 204 CMFON: 47 CM FREIJO OFF WHITE",
+      "category": "Muebles",
+      "description": "CLOSET MOVAL FLORIDA AN: 204 CM AL: 204 CMFON: 47 CM FREIJO OFF WHITE",
+      "estimated_minutes": 60,
+      "brand": "MOVAL",
+      "model": "Florida",
+      "active": true,
+      "metadata": {
+        "source": "plantilla apexos.xlsx",
+        "initial_load": "service_references_2026_07",
+        "raw_rows": 56
+      },
+      "parts": [
+        {
+          "name": "TECHO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "15",
+          "display_order": 0
+        },
+        {
+          "name": "PUERTA LARGA",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "17",
+          "display_order": 1
+        },
+        {
+          "name": "PUERTA CORTA",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "18",
+          "display_order": 2
+        },
+        {
+          "name": "FRENTE DE LA CAJONERA",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "23",
+          "display_order": 3
+        },
+        {
+          "name": "TRASERA DEL CLOSET",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "37",
+          "display_order": 4
+        },
+        {
+          "name": "LADO TRASERO",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "177",
+          "display_order": 5
+        },
+        {
+          "name": "TRASERO CENTRAL DEL ROPERO",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "39",
+          "display_order": 6
+        },
+        {
+          "name": "LATERAL IZQUIERDO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "1",
+          "display_order": 7
+        },
+        {
+          "name": "LATERAL DERECHO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "2",
+          "display_order": 8
+        },
+        {
+          "name": "CUADRO TECHO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "5",
+          "display_order": 9
+        },
+        {
+          "name": "ESTANTE FIJO",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "16",
+          "display_order": 10
+        },
+        {
+          "name": "CUADRO BASE",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "6",
+          "display_order": 11
+        },
+        {
+          "name": "BATIENTE",
+          "quantity": 3.0,
+          "unit": "UND",
+          "description": "12",
+          "display_order": 12
+        },
+        {
+          "name": "CUADRO CENTRAL",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "7",
+          "display_order": 13
+        },
+        {
+          "name": "DIVISIÓN IZQUIERDA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "3",
+          "display_order": 14
+        },
+        {
+          "name": "DIVISIÓN DEREHA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "4",
+          "display_order": 15
+        },
+        {
+          "name": "BATIENTE LARGO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "145",
+          "display_order": 16
+        },
+        {
+          "name": "CUADRO INTERNO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "8",
+          "display_order": 17
+        },
+        {
+          "name": "DIVISIÓN DE LA CAJONERA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "58",
+          "display_order": 18
+        },
+        {
+          "name": "TRABA DE LA DIVISIÓN",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "36",
+          "display_order": 19
+        },
+        {
+          "name": "ZOCALO FRONTAL",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "9",
+          "display_order": 20
+        },
+        {
+          "name": "ZOCALO TRASERO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "10",
+          "display_order": 21
+        },
+        {
+          "name": "TRABA DEL ZOCALO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "11",
+          "display_order": 22
+        },
+        {
+          "name": "LATERAL DE LA CAJONERA",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "22",
+          "display_order": 23
+        },
+        {
+          "name": "TRASERO DEL CAJON",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "26",
+          "display_order": 24
+        },
+        {
+          "name": "FONDO DEL CAJON",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "27",
+          "display_order": 25
+        },
+        {
+          "name": "VARILLA 6X30",
+          "quantity": 24.0,
+          "unit": "UND",
+          "description": "A",
+          "display_order": 26
+        },
+        {
+          "name": "TORNILLO PLANO 40X50",
+          "quantity": 36.0,
+          "unit": "UND",
+          "description": "B",
+          "display_order": 27
+        },
+        {
+          "name": "TORNILO PLANO 40X35",
+          "quantity": 46.0,
+          "unit": "UND",
+          "description": "C",
+          "display_order": 28
+        },
+        {
+          "name": "TORNILLO DE CABEZA PLANA DE 35X25",
+          "quantity": 24.0,
+          "unit": "UND",
+          "description": "D",
+          "display_order": 29
+        },
+        {
+          "name": "TORNILLO PLANO M4-70X22",
+          "quantity": 10.0,
+          "unit": "UND",
+          "description": "E",
+          "display_order": 30
+        },
+        {
+          "name": "TORNILLO DE CABEZA PLANA DE 40X12",
+          "quantity": 92.0,
+          "unit": "UND",
+          "description": "F",
+          "display_order": 31
+        },
+        {
+          "name": "TORNILLO CON BRIDA DE 40X12",
+          "quantity": 24.0,
+          "unit": "UND",
+          "description": "G",
+          "display_order": 32
+        },
+        {
+          "name": "TORNILLO PLANO 40X20",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "H",
+          "display_order": 33
+        },
+        {
+          "name": "TORNILLO PLANO DE 35X12",
+          "quantity": 63.0,
+          "unit": "UND",
+          "description": "I",
+          "display_order": 34
+        },
+        {
+          "name": "PREGO 10X10",
+          "quantity": 164.0,
+          "unit": "UND",
+          "description": "J",
+          "display_order": 35
+        },
+        {
+          "name": "VARILLA DE 6X50",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "K",
+          "display_order": 36
+        },
+        {
+          "name": "SOPORTE DE ESQUINA",
+          "quantity": 10.0,
+          "unit": "UND",
+          "description": "L",
+          "display_order": 37
+        },
+        {
+          "name": "TUERCA 4MM",
+          "quantity": 10.0,
+          "unit": "UND",
+          "description": "M",
+          "display_order": 38
+        },
+        {
+          "name": "CIERRE RECTO",
+          "quantity": 36.0,
+          "unit": "UND",
+          "description": "N",
+          "display_order": 39
+        },
+        {
+          "name": "PEGAMENTO",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "O",
+          "display_order": 40
+        },
+        {
+          "name": "SOPORTE EN U (P)",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "P",
+          "display_order": 41
+        },
+        {
+          "name": "BUJE CILINDRICA",
+          "quantity": 36.0,
+          "unit": "UND",
+          "description": "Q",
+          "display_order": 42
+        },
+        {
+          "name": "APOYO PLASTICO",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "R",
+          "display_order": 43
+        },
+        {
+          "name": "BISAGRA",
+          "quantity": 24.0,
+          "unit": "UND",
+          "description": "S",
+          "display_order": 44
+        },
+        {
+          "name": "ELENCO",
+          "quantity": 24.0,
+          "unit": "UND",
+          "description": "T",
+          "display_order": 45
+        },
+        {
+          "name": "PIES",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "U",
+          "display_order": 46
+        },
+        {
+          "name": "BARRA DE 495MM",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "V",
+          "display_order": 47
+        },
+        {
+          "name": "MARCO 02",
+          "quantity": 12.0,
+          "unit": "UND",
+          "description": "W",
+          "display_order": 48
+        },
+        {
+          "name": "CORREDERA (X)",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "X",
+          "display_order": 49
+        },
+        {
+          "name": "CORREDERA (Y)",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "Y",
+          "display_order": 50
+        },
+        {
+          "name": "ETIQUETA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "Z",
+          "display_order": 51
+        },
+        {
+          "name": "SOPORTE EN U (AA)",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "AA",
+          "display_order": 52
+        },
+        {
+          "name": "PERFIL H 1560MM",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "AB",
+          "display_order": 53
+        },
+        {
+          "name": "ESCUADRA EN FORMA DE L CON 3 AGUJEROS",
+          "quantity": 5.0,
+          "unit": "UND",
+          "description": "AC",
+          "display_order": 54
+        },
+        {
+          "name": "TIZA DE CORRECIÓN",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "AD",
+          "display_order": 55
+        }
+      ]
+    },
+    {
+      "code": "15000272",
+      "name": "CLOSET MARSALA HOME CHARLOT M02285CLAN:120 AL:180 FON:49.8 CM ROVERE",
+      "category": "Muebles",
+      "description": "CLOSET MARSALA HOME CHARLOT M02285CLAN:120 AL:180 FON:49.8 CM ROVERE",
+      "estimated_minutes": 60,
+      "brand": "MADERKIT",
+      "model": "Marsala Home Charlot M02285Clan:120",
+      "active": true,
+      "metadata": {
+        "source": "plantilla apexos.xlsx",
+        "initial_load": "service_references_2026_07",
+        "raw_rows": 20
+      },
+      "parts": [
+        {
+          "name": "ARANDELA DE 5/32 GALVANIZADA",
+          "quantity": 12.0,
+          "unit": "UND",
+          "description": "0004632",
+          "display_order": 0
+        },
+        {
+          "name": "BISAGRA SEMIPARCHE 35 MM CH",
+          "quantity": 10.0,
+          "unit": "UND",
+          "description": "20040011",
+          "display_order": 1
+        },
+        {
+          "name": "CORREDERA METÁLICA NEGRA 400 MM",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "20080033",
+          "display_order": 2
+        },
+        {
+          "name": "DESLIZADOR DE PATA 15 MM",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "BL 20080024",
+          "display_order": 3
+        },
+        {
+          "name": "GRAPA PARED DORSAL",
+          "quantity": 18.0,
+          "unit": "UND",
+          "description": "0004836",
+          "display_order": 4
+        },
+        {
+          "name": "MANIJA BRAN NEGRA 160",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "00011089",
+          "display_order": 5
+        },
+        {
+          "name": "PERFIL EMPALME H-3 (1220 MM)",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "BL 0004671",
+          "display_order": 6
+        },
+        {
+          "name": "PERFIL EMPALME H-3 (1691 MM)",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "BL 0004671",
+          "display_order": 7
+        },
+        {
+          "name": "PERNO CONECTOR MINIFIX 15 MM",
+          "quantity": 7.0,
+          "unit": "UND",
+          "description": "0002715",
+          "display_order": 8
+        },
+        {
+          "name": "PUNTILLA DE ACERO 3/4",
+          "quantity": 75.0,
+          "unit": "UND",
+          "description": "20020008",
+          "display_order": 9
+        },
+        {
+          "name": "SOPORTE ENTREPAÑO A PRESIÓN",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "20060021",
+          "display_order": 10
+        },
+        {
+          "name": "SOPORTE TUBO ZAMA OVALADO 30 × 15 MM CROMA",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "0004112",
+          "display_order": 11
+        },
+        {
+          "name": "TAPA TORNILLO ADHESIVA",
+          "quantity": 10.0,
+          "unit": "UND",
+          "description": "BL 0002299",
+          "display_order": 12
+        },
+        {
+          "name": "TARUGO 8 × 30",
+          "quantity": 22.0,
+          "unit": "UND",
+          "description": "20030001",
+          "display_order": 13
+        },
+        {
+          "name": "TORNILLO 6 × 1 1/8 AVE PHI AUTOPERFORANTE",
+          "quantity": 18.0,
+          "unit": "UND",
+          "description": "0004842",
+          "display_order": 14
+        },
+        {
+          "name": "TORNILLO 6 × 2 AVE PHI AUTOPERFORANTE",
+          "quantity": 27.0,
+          "unit": "UND",
+          "description": "000152",
+          "display_order": 15
+        },
+        {
+          "name": "TORNILLO 6 × 5/8 AVE PHI ZINC AGLOMERADO",
+          "quantity": 88.0,
+          "unit": "UND",
+          "description": "0004705",
+          "display_order": 16
+        },
+        {
+          "name": "TUBO DE ACERO CROMA OVALADO 15 × 30 MM × 3 M (572 MM)",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "0004655",
+          "display_order": 17
+        },
+        {
+          "name": "TUERCA NÚMERO 2",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "BL 0004674",
+          "display_order": 18
+        },
+        {
+          "name": "SISTEMA DE ANCLAJE A PARED",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 19
+        }
+      ]
+    },
+    {
+      "code": "15000273",
+      "name": "CLOSET MARSALA HOME M01364CL 6 PRTAS AN:180AL:180 FON:49.8 CM NIEBLA",
+      "category": "Muebles",
+      "description": "CLOSET MARSALA HOME M01364CL 6 PRTAS AN:180AL:180 FON:49.8 CM NIEBLA",
+      "estimated_minutes": 60,
+      "brand": "MADERKIT",
+      "model": "Marsala Home M01364Cl 6 Prtas",
+      "active": true,
+      "metadata": {
+        "source": "plantilla apexos.xlsx",
+        "initial_load": "service_references_2026_07",
+        "raw_rows": 20
+      },
+      "parts": [
+        {
+          "name": "ARANDELA GALVANIZADA",
+          "quantity": 18.0,
+          "unit": "UND",
+          "description": "0004632",
+          "display_order": 0
+        },
+        {
+          "name": "BISAGRA SEMIPARCHE",
+          "quantity": 16.0,
+          "unit": "UND",
+          "description": "20040011",
+          "display_order": 1
+        },
+        {
+          "name": "CORREDERA METÁLICA",
+          "quantity": 3.0,
+          "unit": "UND",
+          "description": "20080033",
+          "display_order": 2
+        },
+        {
+          "name": "DESLIZADOR DE PATA",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "BL 20080024",
+          "display_order": 3
+        },
+        {
+          "name": "GRAPA PARED DORSAL",
+          "quantity": 28.0,
+          "unit": "UND",
+          "description": "0004636",
+          "display_order": 4
+        },
+        {
+          "name": "MANIJA SOFT",
+          "quantity": 9.0,
+          "unit": "UND",
+          "description": "0004677",
+          "display_order": 5
+        },
+        {
+          "name": "PERFIL DE EMPALME H-3 (BL 0004671)",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "BL 0004671",
+          "display_order": 6
+        },
+        {
+          "name": "PERFIL DE EMPALME H-3 (BL 0004671) #2",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "BL 0004671",
+          "display_order": 7
+        },
+        {
+          "name": "PERNO CONECTOR MINIFIX",
+          "quantity": 12.0,
+          "unit": "UND",
+          "description": "0002715",
+          "display_order": 8
+        },
+        {
+          "name": "PUNTILLA DE ACERO",
+          "quantity": 90.0,
+          "unit": "UND",
+          "description": "20020006",
+          "display_order": 9
+        },
+        {
+          "name": "SOPORTE ENTREPAÑO A PRESIÓN",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "20060021",
+          "display_order": 10
+        },
+        {
+          "name": "SOPORTE TUBO ZAMAK OVALADO CROMADO",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "0004112",
+          "display_order": 11
+        },
+        {
+          "name": "TAPA PARA TORNILLO ADHESIVA",
+          "quantity": 12.0,
+          "unit": "UND",
+          "description": "BL 0002299",
+          "display_order": 12
+        },
+        {
+          "name": "TARUGO",
+          "quantity": 30.0,
+          "unit": "UND",
+          "description": "20030001",
+          "display_order": 13
+        },
+        {
+          "name": "TORNILLO AUTOPERFORANTE CABEZA AVELLANADA PHILLIPS (0004642)",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "0004642",
+          "display_order": 14
+        },
+        {
+          "name": "TORNILLO AUTOPERFORANTE CABEZA AVELLANADA PHILLIPS (0000152)",
+          "quantity": 38.0,
+          "unit": "UND",
+          "description": "0000152",
+          "display_order": 15
+        },
+        {
+          "name": "TORNILLO PARA AGLOMERADO CABEZA PHILLIPS ZINCADO",
+          "quantity": 140.0,
+          "unit": "UND",
+          "description": "0004705",
+          "display_order": 16
+        },
+        {
+          "name": "TUBO DE ACERO CROMADO OVALADO",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "0004655",
+          "display_order": 17
+        },
+        {
+          "name": "TUERCA NÚMERO 2",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "BL 0004674",
+          "display_order": 18
+        },
+        {
+          "name": "SISTEMA DE ANCLAJE A PARED",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 19
+        }
+      ]
+    },
+    {
+      "code": "15000274",
+      "name": "ESPALDAR MOVAL ARAGUAIA AN:255 AL:115CM+2NOCHEROS/FREIJO:GRIS/OFFWHITE",
+      "category": "Muebles",
+      "description": "ESPALDAR MOVAL ARAGUAIA AN:255 AL:115CM+2NOCHEROS/FREIJO:GRIS/OFFWHITE",
+      "estimated_minutes": 60,
+      "brand": "MOVAL",
+      "model": "Araguaia",
+      "active": true,
+      "metadata": {
+        "source": "plantilla apexos.xlsx",
+        "initial_load": "service_references_2026_07",
+        "raw_rows": 30
+      },
+      "parts": [
+        {
+          "name": "LATERAL IZQUIERDO",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "1",
+          "display_order": 0
+        },
+        {
+          "name": "LATERAL DERECHO",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "2",
+          "display_order": 1
+        },
+        {
+          "name": "CUADRO BASE",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "6",
+          "display_order": 2
+        },
+        {
+          "name": "ZOCALO FRONTAL",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "9",
+          "display_order": 3
+        },
+        {
+          "name": "LATERAL DE LA CAJONERA",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "22",
+          "display_order": 4
+        },
+        {
+          "name": "FRENTE DE LA CAJONERA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "23",
+          "display_order": 5
+        },
+        {
+          "name": "TRASERO DEL CAJON",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "26",
+          "display_order": 6
+        },
+        {
+          "name": "FONDO DEL CAJON",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "27",
+          "display_order": 7
+        },
+        {
+          "name": "REPISA SUPERIOR",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "42",
+          "display_order": 8
+        },
+        {
+          "name": "LATERAL DE LA PARTE INTERNA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "98",
+          "display_order": 9
+        },
+        {
+          "name": "PANEL CENTRAL",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "183",
+          "display_order": 10
+        },
+        {
+          "name": "PANEL LATERAL",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "184",
+          "display_order": 11
+        },
+        {
+          "name": "VARILLA DE 6X30",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "A",
+          "display_order": 12
+        },
+        {
+          "name": "TORNILLO CON BRIDA DE 40X12",
+          "quantity": 12.0,
+          "unit": "UND",
+          "description": "B",
+          "display_order": 13
+        },
+        {
+          "name": "TORNILLO PLANO 40X50",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "C",
+          "display_order": 14
+        },
+        {
+          "name": "TORNILLO CON BRIDA DE 35X25",
+          "quantity": 20.0,
+          "unit": "UND",
+          "description": "D",
+          "display_order": 15
+        },
+        {
+          "name": "TORNILLO PLANO 40X35",
+          "quantity": 12.0,
+          "unit": "UND",
+          "description": "E",
+          "display_order": 16
+        },
+        {
+          "name": "TORNILLO PLANO 35X12",
+          "quantity": 28.0,
+          "unit": "UND",
+          "description": "F",
+          "display_order": 17
+        },
+        {
+          "name": "CLAVO DE 10X10 CON CABEZA",
+          "quantity": 16.0,
+          "unit": "UND",
+          "description": "G",
+          "display_order": 18
+        },
+        {
+          "name": "PASADOR GIROFIX",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "H",
+          "display_order": 19
+        },
+        {
+          "name": "TORNILLO PLANO 40X22",
+          "quantity": 20.0,
+          "unit": "UND",
+          "description": "I",
+          "display_order": 20
+        },
+        {
+          "name": "SOPORTE DE ESTANTE",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "J",
+          "display_order": 21
+        },
+        {
+          "name": "ETIQUETA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "K",
+          "display_order": 22
+        },
+        {
+          "name": "TIZA DE CORRECIÓN",
+          "quantity": 3.0,
+          "unit": "UND",
+          "description": "L",
+          "display_order": 23
+        },
+        {
+          "name": "ZAPATO EN FORMA DE U",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "M",
+          "display_order": 24
+        },
+        {
+          "name": "BUJE CILINDRICA",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "N",
+          "display_order": 25
+        },
+        {
+          "name": "CORREDERA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "O",
+          "display_order": 26
+        },
+        {
+          "name": "TUERCA 02",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "P",
+          "display_order": 27
+        },
+        {
+          "name": "ESTRUCTURA DE LISTONES",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "Q",
+          "display_order": 28
+        },
+        {
+          "name": "PEGAMENTO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "R",
+          "display_order": 29
+        }
+      ]
+    },
+    {
+      "code": "15000280",
+      "name": "ESPALDAR ZANZINI MAGISTRAL JACARANDA MATE AN:2530AL:1085XFO405",
+      "category": "Muebles",
+      "description": "ESPALDAR ZANZINI MAGISTRAL JACARANDA MATE AN:2530AL:1085XFO405",
+      "estimated_minutes": 60,
+      "brand": "ZANZINI",
+      "model": "Magistral Jacaranda Mate",
+      "active": true,
+      "metadata": {
+        "source": "plantilla apexos.xlsx",
+        "initial_load": "service_references_2026_07",
+        "raw_rows": 32
+      },
+      "parts": [
+        {
+          "name": "LATERAL IZQUIERDA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "6859",
+          "display_order": 0
+        },
+        {
+          "name": "LATERAL DERECHA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "6860",
+          "display_order": 1
+        },
+        {
+          "name": "BASE",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "6861",
+          "display_order": 2
+        },
+        {
+          "name": "TAPA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "6862",
+          "display_order": 3
+        },
+        {
+          "name": "PANEL LATERAL DERECHO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6863",
+          "display_order": 4
+        },
+        {
+          "name": "PANEL LATERAL IZQUIERDO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6864",
+          "display_order": 5
+        },
+        {
+          "name": "PANEL CENTRAL",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6953",
+          "display_order": 6
+        },
+        {
+          "name": "FRENTE GAVETA MENOR",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "7255",
+          "display_order": 7
+        },
+        {
+          "name": "LATERAL IZQUIERDA GAVETA MENOR",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "7715",
+          "display_order": 8
+        },
+        {
+          "name": "LATERAL DERECHA GAVETA MENOR",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "7716",
+          "display_order": 9
+        },
+        {
+          "name": "CONTRAFONDO MENOR",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "7717",
+          "display_order": 10
+        },
+        {
+          "name": "FRENTE GAVETA MAYOR",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "7256",
+          "display_order": 11
+        },
+        {
+          "name": "LATERAL IZQUIERDA GAVETA MAYOR",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "7718",
+          "display_order": 12
+        },
+        {
+          "name": "CONTRAFONDO MAYOR",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "7719",
+          "display_order": 13
+        },
+        {
+          "name": "FONDO GAVETA",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "7720",
+          "display_order": 14
+        },
+        {
+          "name": "LATERAL DERECHA GAVETA MAYOR",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "7721",
+          "display_order": 15
+        },
+        {
+          "name": "TORNILLERIA (A054)",
+          "quantity": 60.0,
+          "unit": "UND",
+          "description": "A054",
+          "display_order": 16
+        },
+        {
+          "name": "TORNILLERIA (A261)",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "A261",
+          "display_order": 17
+        },
+        {
+          "name": "TORNILLERIA (A062)",
+          "quantity": 36.0,
+          "unit": "UND",
+          "description": "A062",
+          "display_order": 18
+        },
+        {
+          "name": "TORNILLERIA (A066)",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "A066",
+          "display_order": 19
+        },
+        {
+          "name": "TORNILLERIA (A634)",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "A634",
+          "display_order": 20
+        },
+        {
+          "name": "TORNILLERIA (A314)",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "A314",
+          "display_order": 21
+        },
+        {
+          "name": "TORNILLERIA (A073)",
+          "quantity": 16.0,
+          "unit": "UND",
+          "description": "A073",
+          "display_order": 22
+        },
+        {
+          "name": "TORNILLERIA (A092)",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "A092",
+          "display_order": 23
+        },
+        {
+          "name": "TORNILLERIA (A134)",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "A134",
+          "display_order": 24
+        },
+        {
+          "name": "TORNILLERIA (A135)",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "A135",
+          "display_order": 25
+        },
+        {
+          "name": "TORNILLERIA (A146)",
+          "quantity": 12.0,
+          "unit": "UND",
+          "description": "A146",
+          "display_order": 26
+        },
+        {
+          "name": "TORNILLERIA (A121)",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "A121",
+          "display_order": 27
+        },
+        {
+          "name": "TORNILLERIA (A307)",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "A307",
+          "display_order": 28
+        },
+        {
+          "name": "TORNILLERIA (A308)",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "A308",
+          "display_order": 29
+        },
+        {
+          "name": "TORNILLERIA (A365)",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "A365",
+          "display_order": 30
+        },
+        {
+          "name": "TORNILLERIA (A656)",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "A656",
+          "display_order": 31
+        }
+      ]
+    },
+    {
+      "code": "15000281",
+      "name": "ESPALDAR ZANZINI MAGISTRAL CINAMOMO MATE AN:2530XAL:1085XFO:406",
+      "category": "Muebles",
+      "description": "ESPALDAR ZANZINI MAGISTRAL CINAMOMO MATE AN:2530XAL:1085XFO:406",
+      "estimated_minutes": 60,
+      "brand": "ZANZINI",
+      "model": "Magistral Cinamomo Mate",
+      "active": true,
+      "metadata": {
+        "source": "plantilla apexos.xlsx",
+        "initial_load": "service_references_2026_07",
+        "raw_rows": 32
+      },
+      "parts": [
+        {
+          "name": "LATERAL IZQUIERDA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "6859",
+          "display_order": 0
+        },
+        {
+          "name": "LATERAL DERECHA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "6860",
+          "display_order": 1
+        },
+        {
+          "name": "BASE",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "6861",
+          "display_order": 2
+        },
+        {
+          "name": "TAPA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "6862",
+          "display_order": 3
+        },
+        {
+          "name": "PANEL LATERAL DERECHO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6863",
+          "display_order": 4
+        },
+        {
+          "name": "PANEL LATERAL IZQUIERDO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6864",
+          "display_order": 5
+        },
+        {
+          "name": "PANEL CENTRAL",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6953",
+          "display_order": 6
+        },
+        {
+          "name": "FRENTE GAVETA MENOR",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "7255",
+          "display_order": 7
+        },
+        {
+          "name": "LATERAL IZQUIERDA GAVETA MENOR",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "7715",
+          "display_order": 8
+        },
+        {
+          "name": "LATERAL DERECHA GAVETA MENOR",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "7716",
+          "display_order": 9
+        },
+        {
+          "name": "CONTRAFONDO MENOR",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "7717",
+          "display_order": 10
+        },
+        {
+          "name": "FRENTE GAVETA MAYOR",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "7256",
+          "display_order": 11
+        },
+        {
+          "name": "LATERAL IZQUIERDA GAVETA MAYOR",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "7718",
+          "display_order": 12
+        },
+        {
+          "name": "CONTRAFONDO MAYOR",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "7719",
+          "display_order": 13
+        },
+        {
+          "name": "FONDO GAVETA",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "7720",
+          "display_order": 14
+        },
+        {
+          "name": "LATERAL DERECHA GAVETA MAYOR",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "7721",
+          "display_order": 15
+        },
+        {
+          "name": "TORNILLERIA (A054)",
+          "quantity": 60.0,
+          "unit": "UND",
+          "description": "A054",
+          "display_order": 16
+        },
+        {
+          "name": "TORNILLERIA (A261)",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "A261",
+          "display_order": 17
+        },
+        {
+          "name": "TORNILLERIA (A062)",
+          "quantity": 36.0,
+          "unit": "UND",
+          "description": "A062",
+          "display_order": 18
+        },
+        {
+          "name": "TORNILLERIA (A066)",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "A066",
+          "display_order": 19
+        },
+        {
+          "name": "TORNILLERIA (A634)",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "A634",
+          "display_order": 20
+        },
+        {
+          "name": "TORNILLERIA (A314)",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "A314",
+          "display_order": 21
+        },
+        {
+          "name": "TORNILLERIA (A073)",
+          "quantity": 16.0,
+          "unit": "UND",
+          "description": "A073",
+          "display_order": 22
+        },
+        {
+          "name": "TORNILLERIA (A092)",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "A092",
+          "display_order": 23
+        },
+        {
+          "name": "TORNILLERIA (A134)",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "A134",
+          "display_order": 24
+        },
+        {
+          "name": "TORNILLERIA (A135)",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "A135",
+          "display_order": 25
+        },
+        {
+          "name": "TORNILLERIA (A146)",
+          "quantity": 12.0,
+          "unit": "UND",
+          "description": "A146",
+          "display_order": 26
+        },
+        {
+          "name": "TORNILLERIA (A121)",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "A121",
+          "display_order": 27
+        },
+        {
+          "name": "TORNILLERIA (A307)",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "A307",
+          "display_order": 28
+        },
+        {
+          "name": "TORNILLERIA (A308)",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "A308",
+          "display_order": 29
+        },
+        {
+          "name": "TORNILLERIA (A365)",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "A365",
+          "display_order": 30
+        },
+        {
+          "name": "TORNILLERIA (A656)",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "A656",
+          "display_order": 31
+        }
+      ]
+    },
+    {
+      "code": "15000282",
+      "name": "CLOSET ZANZINI PRIMORDIAL CINAMOMO NEGRO AN:1803XAL:2088XFO:463",
+      "category": "Muebles",
+      "description": "CLOSET ZANZINI PRIMORDIAL CINAMOMO NEGRO AN:1803XAL:2088XFO:463",
+      "estimated_minutes": 60,
+      "brand": "ZANZINI",
+      "model": "Primordial Cinamomo Negro",
+      "active": true,
+      "metadata": {
+        "source": "plantilla apexos.xlsx",
+        "initial_load": "service_references_2026_07",
+        "raw_rows": 48
+      },
+      "parts": [
+        {
+          "name": "LATERAL DERECHA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 0
+        },
+        {
+          "name": "LATERAL IZQUIERDA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 1
+        },
+        {
+          "name": "LATERAL INTERNA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 2
+        },
+        {
+          "name": "LATERAL GAVETERO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 3
+        },
+        {
+          "name": "BASE SUPERIOR",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 4
+        },
+        {
+          "name": "TAPA INFERIOR",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 5
+        },
+        {
+          "name": "TAPA GAVETERO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 6
+        },
+        {
+          "name": "ENTREPAÑO",
+          "quantity": 3.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 7
+        },
+        {
+          "name": "ENTREPAÑO PERFORADO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 8
+        },
+        {
+          "name": "BATIENTE FRONTAL",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 9
+        },
+        {
+          "name": "BATIENTE TRASERO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 10
+        },
+        {
+          "name": "RODAPIÉ",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 11
+        },
+        {
+          "name": "RODAPIÉ TRASERO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 12
+        },
+        {
+          "name": "REFUERZO RODAPIÉ",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 13
+        },
+        {
+          "name": "MOLDURA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 14
+        },
+        {
+          "name": "PUERTA MAYOR",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 15
+        },
+        {
+          "name": "PUERTA MENOR",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 16
+        },
+        {
+          "name": "FRENTE DE GAVETA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 17
+        },
+        {
+          "name": "LATERAL DERECHA GAVETA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 18
+        },
+        {
+          "name": "LATERAL IZQUIERDA GAVETA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 19
+        },
+        {
+          "name": "CONTRAFONDO",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 20
+        },
+        {
+          "name": "FONDO GAVETA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 21
+        },
+        {
+          "name": "FONDO TRASERO",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 22
+        },
+        {
+          "name": "A",
+          "quantity": 28.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 23
+        },
+        {
+          "name": "B",
+          "quantity": 38.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 24
+        },
+        {
+          "name": "C",
+          "quantity": 98.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 25
+        },
+        {
+          "name": "D",
+          "quantity": 118.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 26
+        },
+        {
+          "name": "E",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 27
+        },
+        {
+          "name": "F",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 28
+        },
+        {
+          "name": "G",
+          "quantity": 16.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 29
+        },
+        {
+          "name": "H",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 30
+        },
+        {
+          "name": "I",
+          "quantity": 12.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 31
+        },
+        {
+          "name": "J",
+          "quantity": 90.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 32
+        },
+        {
+          "name": "K",
+          "quantity": 5.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 33
+        },
+        {
+          "name": "L",
+          "quantity": 20.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 34
+        },
+        {
+          "name": "M",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 35
+        },
+        {
+          "name": "N-BLANCO",
+          "quantity": 5.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 36
+        },
+        {
+          "name": "N-JACARANDA",
+          "quantity": 5.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 37
+        },
+        {
+          "name": "N-CINAMOMO",
+          "quantity": 5.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 38
+        },
+        {
+          "name": "O- TABACO",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 39
+        },
+        {
+          "name": "O-BLANCO",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 40
+        },
+        {
+          "name": "O-CINAMOMO",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 41
+        },
+        {
+          "name": "P",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 42
+        },
+        {
+          "name": "Q",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 43
+        },
+        {
+          "name": "R",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 44
+        },
+        {
+          "name": "S",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 45
+        },
+        {
+          "name": "T",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 46
+        },
+        {
+          "name": "U",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "",
+          "display_order": 47
+        }
+      ]
+    },
+    {
+      "code": "15000283",
+      "name": "CLOSET ZANZINI URBAN CINAMOMO NEGRO AN: 1206XAL2030XFO463",
+      "category": "Muebles",
+      "description": "CLOSET ZANZINI URBAN CINAMOMO NEGRO AN: 1206XAL2030XFO463",
+      "estimated_minutes": 60,
+      "brand": "ZANZINI",
+      "model": "Urban Cinamomo Negro",
+      "active": true,
+      "metadata": {
+        "source": "plantilla apexos.xlsx",
+        "initial_load": "service_references_2026_07",
+        "raw_rows": 45
+      },
+      "parts": [
+        {
+          "name": "LATERAL DERECHA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "11452",
+          "display_order": 0
+        },
+        {
+          "name": "LATERAL IZQUIERDA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "11453",
+          "display_order": 1
+        },
+        {
+          "name": "LATERAL INTERNA MENOR",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "11454",
+          "display_order": 2
+        },
+        {
+          "name": "LATERAL INTERNA MAYOR",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "11455",
+          "display_order": 3
+        },
+        {
+          "name": "BASE INFERIOR",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "11456",
+          "display_order": 4
+        },
+        {
+          "name": "BASE MALETERO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "11457",
+          "display_order": 5
+        },
+        {
+          "name": "BASE SUPERIOR",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "11458",
+          "display_order": 6
+        },
+        {
+          "name": "TAPA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "11459",
+          "display_order": 7
+        },
+        {
+          "name": "ENTREPAÑO",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "11460",
+          "display_order": 8
+        },
+        {
+          "name": "BATIENTE",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "11461",
+          "display_order": 9
+        },
+        {
+          "name": "RODAPIÉ",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "11462",
+          "display_order": 10
+        },
+        {
+          "name": "RODAPIÉ TRASERO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "11463",
+          "display_order": 11
+        },
+        {
+          "name": "MOLDURA SUPERIOR",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "11464",
+          "display_order": 12
+        },
+        {
+          "name": "FRENTE DE GAVETA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "11465",
+          "display_order": 13
+        },
+        {
+          "name": "LATERAL DERECHA GAVETA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "11466",
+          "display_order": 14
+        },
+        {
+          "name": "LATERAL IZQUIERDA GAVETA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "11467",
+          "display_order": 15
+        },
+        {
+          "name": "CONTRAFONDO",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "11468",
+          "display_order": 16
+        },
+        {
+          "name": "PUERTA MENOR",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "11469",
+          "display_order": 17
+        },
+        {
+          "name": "PUERTA MAYOR",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "11470",
+          "display_order": 18
+        },
+        {
+          "name": "FONDO GAVETA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "11471",
+          "display_order": 19
+        },
+        {
+          "name": "FONDO TRASERO",
+          "quantity": 5.0,
+          "unit": "UND",
+          "description": "11472",
+          "display_order": 20
+        },
+        {
+          "name": "REFUERZO RODAPIÉ",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "11617",
+          "display_order": 21
+        },
+        {
+          "name": "A",
+          "quantity": 34.0,
+          "unit": "UND",
+          "description": "016600040",
+          "display_order": 22
+        },
+        {
+          "name": "B",
+          "quantity": 32.0,
+          "unit": "UND",
+          "description": "016600037",
+          "display_order": 23
+        },
+        {
+          "name": "C",
+          "quantity": 102.0,
+          "unit": "UND",
+          "description": "016600032",
+          "display_order": 24
+        },
+        {
+          "name": "D",
+          "quantity": 10.0,
+          "unit": "UND",
+          "description": "016600138",
+          "display_order": 25
+        },
+        {
+          "name": "E",
+          "quantity": 10.0,
+          "unit": "UND",
+          "description": "016600137",
+          "display_order": 26
+        },
+        {
+          "name": "F",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "016600089",
+          "display_order": 27
+        },
+        {
+          "name": "G",
+          "quantity": 22.0,
+          "unit": "UND",
+          "description": "016600059",
+          "display_order": 28
+        },
+        {
+          "name": "H",
+          "quantity": 14.0,
+          "unit": "UND",
+          "description": "016600007",
+          "display_order": 29
+        },
+        {
+          "name": "I",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "016600069",
+          "display_order": 30
+        },
+        {
+          "name": "J",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "010000022",
+          "display_order": 31
+        },
+        {
+          "name": "K",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "016600080",
+          "display_order": 32
+        },
+        {
+          "name": "L",
+          "quantity": 5.0,
+          "unit": "UND",
+          "description": "016600006",
+          "display_order": 33
+        },
+        {
+          "name": "M",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "016600016",
+          "display_order": 34
+        },
+        {
+          "name": "N",
+          "quantity": 100.0,
+          "unit": "UND",
+          "description": "016600063",
+          "display_order": 35
+        },
+        {
+          "name": "O",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "011100011",
+          "display_order": 36
+        },
+        {
+          "name": "P-276",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "014002963",
+          "display_order": 37
+        },
+        {
+          "name": "P-284/285",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "014005264",
+          "display_order": 38
+        },
+        {
+          "name": "P-278/279/280",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "014005804",
+          "display_order": 39
+        },
+        {
+          "name": "Q",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "010204886",
+          "display_order": 40
+        },
+        {
+          "name": "R",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "014705143",
+          "display_order": 41
+        },
+        {
+          "name": "S",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "0147055144",
+          "display_order": 42
+        },
+        {
+          "name": "T",
+          "quantity": 20.0,
+          "unit": "UND",
+          "description": "012604129",
+          "display_order": 43
+        },
+        {
+          "name": "U",
+          "quantity": 20.0,
+          "unit": "UND",
+          "description": "012604129",
+          "display_order": 44
+        }
+      ]
+    },
+    {
+      "code": "15000284",
+      "name": "MESA TV CAEMMUN TANNEN AN:180.6CM AL:62.6 CM FON:36 CM FREIJO/OFF WHITE",
+      "category": "Muebles",
+      "description": "MESA TV CAEMMUN TANNEN AN:180.6CM AL:62.6 CM FON:36 CM FREIJO/OFF WHITE",
+      "estimated_minutes": 60,
+      "brand": "CAEMMUN",
+      "model": "Tannen",
+      "active": true,
+      "metadata": {
+        "source": "plantilla apexos.xlsx",
+        "initial_load": "service_references_2026_07",
+        "raw_rows": 29
+      },
+      "parts": [
+        {
+          "name": "TAPA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000200480",
+          "display_order": 0
+        },
+        {
+          "name": "LATERAL IZQUIERDO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000500986",
+          "display_order": 1
+        },
+        {
+          "name": "PRATELEIRA FIJA (ENTREPAÑO FIJO)",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000800539",
+          "display_order": 2
+        },
+        {
+          "name": "DIVISIÓN CENTRAL",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000400547",
+          "display_order": 3
+        },
+        {
+          "name": "LATERAL DERECHO MONDRIAN 1.36 / 1.5",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000500985",
+          "display_order": 4
+        },
+        {
+          "name": "BASE",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000300478",
+          "display_order": 5
+        },
+        {
+          "name": "TRABA LATERAL DERECHA/IZQUIERDA 15 MM",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "6001100518",
+          "display_order": 6
+        },
+        {
+          "name": "TRABA FRONTAL 15 MM",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6001100517",
+          "display_order": 7
+        },
+        {
+          "name": "PUERTA CORREDIZA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000700485",
+          "display_order": 8
+        },
+        {
+          "name": "RODAPIÉ LATERAL DERECHO/IZQUIERDO 25 MM",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "6000900320",
+          "display_order": 9
+        },
+        {
+          "name": "RODAPIÉ FRONTAL 25 MM",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000900319",
+          "display_order": 10
+        },
+        {
+          "name": "PIE BASE MDF",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "1200500075",
+          "display_order": 11
+        },
+        {
+          "name": "PIE CENTRAL",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6001400083",
+          "display_order": 12
+        },
+        {
+          "name": "PIE CENTRAL TRASERO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6001400084",
+          "display_order": 13
+        },
+        {
+          "name": "FONDO SIN PERFORACIÓN",
+          "quantity": 3.0,
+          "unit": "UND",
+          "description": "3001000646",
+          "display_order": 14
+        },
+        {
+          "name": "FONDO CON PERFORACIÓN",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "3001000647",
+          "display_order": 15
+        },
+        {
+          "name": "DESCRIPCIÓN",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "Referencia",
+          "display_order": 16
+        },
+        {
+          "name": "CLAVIJA DE MADERA",
+          "quantity": 16.0,
+          "unit": "UND",
+          "description": "A",
+          "display_order": 17
+        },
+        {
+          "name": "CLAVIJA POLIMÉRICA (PLÁSTICA)",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "B",
+          "display_order": 18
+        },
+        {
+          "name": "TORNILLO (C)",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "C",
+          "display_order": 19
+        },
+        {
+          "name": "SOBRE DE COLA BLANCA (PEGANTE)",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "D",
+          "display_order": 20
+        },
+        {
+          "name": "ZAPATA PARA CLAVO",
+          "quantity": 5.0,
+          "unit": "UND",
+          "description": "E",
+          "display_order": 21
+        },
+        {
+          "name": "KIT JP55 (HERRAJE PARA PUERTA)",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "F1",
+          "display_order": 22
+        },
+        {
+          "name": "TORNILLO PARA KIT JP55",
+          "quantity": 16.0,
+          "unit": "UND",
+          "description": "F2",
+          "display_order": 23
+        },
+        {
+          "name": "CLAVO",
+          "quantity": 35.0,
+          "unit": "UND",
+          "description": "F3",
+          "display_order": 24
+        },
+        {
+          "name": "PERFIL U (G)",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "G",
+          "display_order": 25
+        },
+        {
+          "name": "PERFIL U (H)",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "H",
+          "display_order": 26
+        },
+        {
+          "name": "PINO GUÍA",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "I",
+          "display_order": 27
+        },
+        {
+          "name": "TORNILLO (J (parte inferior))",
+          "quantity": 19.0,
+          "unit": "UND",
+          "description": "J (parte inferior)",
+          "display_order": 28
+        }
+      ]
+    },
+    {
+      "code": "15000285",
+      "name": "MESA TV CAEMMUN MODRIAN AN:150CM AL:61,9CM FON: 36CM OFF WHITE/FREIJO",
+      "category": "Muebles",
+      "description": "MESA TV CAEMMUN MODRIAN AN:150CM AL:61,9CM FON: 36CM OFF WHITE/FREIJO",
+      "estimated_minutes": 60,
+      "brand": "CAEMMUN",
+      "model": "Modrian",
+      "active": true,
+      "metadata": {
+        "source": "plantilla apexos.xlsx",
+        "initial_load": "service_references_2026_07",
+        "raw_rows": 34
+      },
+      "parts": [
+        {
+          "name": "CLAVIJA DE MADERA",
+          "quantity": 22.0,
+          "unit": "UND",
+          "description": "A",
+          "display_order": 0
+        },
+        {
+          "name": "TORNILLO MINIFIX",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "B",
+          "display_order": 1
+        },
+        {
+          "name": "TAMBOR / CAM LOCK 14X11",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "C",
+          "display_order": 2
+        },
+        {
+          "name": "TORNILLO 3,5X25 (D)",
+          "quantity": 5.0,
+          "unit": "UND",
+          "description": "D",
+          "display_order": 3
+        },
+        {
+          "name": "TORNILLO 3,5X40",
+          "quantity": 3.0,
+          "unit": "UND",
+          "description": "E",
+          "display_order": 4
+        },
+        {
+          "name": "TORNILLO 4,0X50",
+          "quantity": 16.0,
+          "unit": "UND",
+          "description": "F",
+          "display_order": 5
+        },
+        {
+          "name": "TORNILLO 3,5X12",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "G",
+          "display_order": 6
+        },
+        {
+          "name": "TORNILLO 3,5X25 (H)",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "H",
+          "display_order": 7
+        },
+        {
+          "name": "CLAVO 10X10",
+          "quantity": 52.0,
+          "unit": "UND",
+          "description": "I",
+          "display_order": 8
+        },
+        {
+          "name": "ESCUADRA METÁLICA 18X18",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "J",
+          "display_order": 9
+        },
+        {
+          "name": "UNIÓN DE FONDO",
+          "quantity": 12.0,
+          "unit": "UND",
+          "description": "K",
+          "display_order": 10
+        },
+        {
+          "name": "TRAPECIO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "L",
+          "display_order": 11
+        },
+        {
+          "name": "SAPATA / PIE",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "M",
+          "display_order": 12
+        },
+        {
+          "name": "SAPATA L / PIE",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "N",
+          "display_order": 13
+        },
+        {
+          "name": "TAPA HUECO 18MM",
+          "quantity": 3.0,
+          "unit": "UND",
+          "description": "O",
+          "display_order": 14
+        },
+        {
+          "name": "SISTEMA CORREDERA (KIT: P1 X2, P2 X2)",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "P",
+          "display_order": 15
+        },
+        {
+          "name": "PERFIL RIEL 1326MM",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "Q",
+          "display_order": 16
+        },
+        {
+          "name": "PERFIL H 654MM",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "R",
+          "display_order": 17
+        },
+        {
+          "name": "TAPA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000200480",
+          "display_order": 18
+        },
+        {
+          "name": "LATERAL IZQUIERDO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000500986",
+          "display_order": 19
+        },
+        {
+          "name": "ESTANTE FIJO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000800539",
+          "display_order": 20
+        },
+        {
+          "name": "DIVISORIA CENTRAL",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000400547",
+          "display_order": 21
+        },
+        {
+          "name": "LATERAL DERECHO MONDRIAN 1.36/1.5",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000500985",
+          "display_order": 22
+        },
+        {
+          "name": "BASE",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000300478",
+          "display_order": 23
+        },
+        {
+          "name": "TRABA LATERAL DER/IZQ 15MM",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "6001100518",
+          "display_order": 24
+        },
+        {
+          "name": "TRABA FRONTAL 15MM",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6001100517",
+          "display_order": 25
+        },
+        {
+          "name": "PUERTA CORREDIZA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000700485",
+          "display_order": 26
+        },
+        {
+          "name": "ZÓCALO LATERAL DER/IZQ 25MM",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "6000900320",
+          "display_order": 27
+        },
+        {
+          "name": "ZÓCALO FRONTAL 25MM",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000900319",
+          "display_order": 28
+        },
+        {
+          "name": "PIE BASE MDF",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "1200500075",
+          "display_order": 29
+        },
+        {
+          "name": "PIE CENTRAL",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6001400083",
+          "display_order": 30
+        },
+        {
+          "name": "PIE CENTRAL TRASERO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6001400084",
+          "display_order": 31
+        },
+        {
+          "name": "FONDO SIN HUECO",
+          "quantity": 3.0,
+          "unit": "UND",
+          "description": "3001000646",
+          "display_order": 32
+        },
+        {
+          "name": "FONDO CON HUECO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "3001000647",
+          "display_order": 33
+        }
+      ]
+    },
+    {
+      "code": "15000286",
+      "name": "MESA TV CAEMMUN MODRIAN AN:136CM AL:61,9CM FON: 36CM OFF WHITE/FREIJO",
+      "category": "Muebles",
+      "description": "MESA TV CAEMMUN MODRIAN AN:136CM AL:61,9CM FON: 36CM OFF WHITE/FREIJO",
+      "estimated_minutes": 60,
+      "brand": "CAEMMUN",
+      "model": "Modrian",
+      "active": true,
+      "metadata": {
+        "source": "plantilla apexos.xlsx",
+        "initial_load": "service_references_2026_07",
+        "raw_rows": 34
+      },
+      "parts": [
+        {
+          "name": "CLAVIJA DE MADERA",
+          "quantity": 22.0,
+          "unit": "UND",
+          "description": "A",
+          "display_order": 0
+        },
+        {
+          "name": "TORNILLO MINIFIX",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "B",
+          "display_order": 1
+        },
+        {
+          "name": "TAMBOR / CAM LOCK 14X11",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "C",
+          "display_order": 2
+        },
+        {
+          "name": "TORNILLO 3,5X25 (D)",
+          "quantity": 5.0,
+          "unit": "UND",
+          "description": "D",
+          "display_order": 3
+        },
+        {
+          "name": "TORNILLO 3,5X40",
+          "quantity": 3.0,
+          "unit": "UND",
+          "description": "E",
+          "display_order": 4
+        },
+        {
+          "name": "TORNILLO 4,0X50",
+          "quantity": 16.0,
+          "unit": "UND",
+          "description": "F",
+          "display_order": 5
+        },
+        {
+          "name": "TORNILLO 3,5X12",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "G",
+          "display_order": 6
+        },
+        {
+          "name": "TORNILLO 3,5X25 (H)",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "H",
+          "display_order": 7
+        },
+        {
+          "name": "CLAVO 10X10",
+          "quantity": 52.0,
+          "unit": "UND",
+          "description": "I",
+          "display_order": 8
+        },
+        {
+          "name": "ESCUADRA METÁLICA 18X18",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "J",
+          "display_order": 9
+        },
+        {
+          "name": "UNIÓN DE FONDO",
+          "quantity": 12.0,
+          "unit": "UND",
+          "description": "K",
+          "display_order": 10
+        },
+        {
+          "name": "TRAPECIO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "L",
+          "display_order": 11
+        },
+        {
+          "name": "SAPATA / PIE",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "M",
+          "display_order": 12
+        },
+        {
+          "name": "SAPATA L / PIE",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "N",
+          "display_order": 13
+        },
+        {
+          "name": "TAPA HUECO 18MM",
+          "quantity": 3.0,
+          "unit": "UND",
+          "description": "O",
+          "display_order": 14
+        },
+        {
+          "name": "SISTEMA CORREDERA (KIT: P1 X2, P2 X2)",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "P",
+          "display_order": 15
+        },
+        {
+          "name": "PERFIL RIEL 1326MM",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "Q",
+          "display_order": 16
+        },
+        {
+          "name": "PERFIL H 654MM",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "R",
+          "display_order": 17
+        },
+        {
+          "name": "TAPA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000200480",
+          "display_order": 18
+        },
+        {
+          "name": "LATERAL IZQUIERDO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000500986",
+          "display_order": 19
+        },
+        {
+          "name": "ESTANTE FIJO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000800539",
+          "display_order": 20
+        },
+        {
+          "name": "DIVISORIA CENTRAL",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000400547",
+          "display_order": 21
+        },
+        {
+          "name": "LATERAL DERECHO MONDRIAN 1.36/1.5",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000500985",
+          "display_order": 22
+        },
+        {
+          "name": "BASE",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000300478",
+          "display_order": 23
+        },
+        {
+          "name": "TRABA LATERAL DER/IZQ 15MM",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "6001100518",
+          "display_order": 24
+        },
+        {
+          "name": "TRABA FRONTAL 15MM",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6001100517",
+          "display_order": 25
+        },
+        {
+          "name": "PUERTA CORREDIZA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000700485",
+          "display_order": 26
+        },
+        {
+          "name": "ZÓCALO LATERAL DER/IZQ 25MM",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "6000900320",
+          "display_order": 27
+        },
+        {
+          "name": "ZÓCALO FRONTAL 25MM",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000900319",
+          "display_order": 28
+        },
+        {
+          "name": "PIE BASE MDF",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "1200500075",
+          "display_order": 29
+        },
+        {
+          "name": "PIE CENTRAL",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6001400083",
+          "display_order": 30
+        },
+        {
+          "name": "PIE CENTRAL TRASERO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6001400084",
+          "display_order": 31
+        },
+        {
+          "name": "FONDO SIN HUECO",
+          "quantity": 3.0,
+          "unit": "UND",
+          "description": "3001000646",
+          "display_order": 32
+        },
+        {
+          "name": "FONDO CON HUECO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "3001000647",
+          "display_order": 33
+        }
+      ]
+    },
+    {
+      "code": "15000287",
+      "name": "CLOSET CAEMMUN SERENO AN:136CM AL:187 CM FON:446.2 CM FREIJO/OFF WHITE",
+      "category": "Muebles",
+      "description": "CLOSET CAEMMUN SERENO AN:136CM AL:187 CM FON:446.2 CM FREIJO/OFF WHITE",
+      "estimated_minutes": 60,
+      "brand": "CAEMMUN",
+      "model": "Sereno",
+      "active": true,
+      "metadata": {
+        "source": "plantilla apexos.xlsx",
+        "initial_load": "service_references_2026_07",
+        "raw_rows": 46
+      },
+      "parts": [
+        {
+          "name": "FONDO DERECHO / IZQUIERDO",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "3001000625",
+          "display_order": 0
+        },
+        {
+          "name": "FONDO GAVETA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "3001000627",
+          "display_order": 1
+        },
+        {
+          "name": "FONDO INFERIOR",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "3001000628",
+          "display_order": 2
+        },
+        {
+          "name": "TAPA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000200472",
+          "display_order": 3
+        },
+        {
+          "name": "BASE",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000300465",
+          "display_order": 4
+        },
+        {
+          "name": "BASE INTERMEDIA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000300466",
+          "display_order": 5
+        },
+        {
+          "name": "DIVISIÓN",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000400530",
+          "display_order": 6
+        },
+        {
+          "name": "LATERAL DERECHO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000500967",
+          "display_order": 7
+        },
+        {
+          "name": "LATERAL IZQUIERDO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000500968",
+          "display_order": 8
+        },
+        {
+          "name": "VISTA CENTRAL",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000600356",
+          "display_order": 9
+        },
+        {
+          "name": "VISTA LATERAL DERECHA / IZQUIERDA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "6000600357",
+          "display_order": 10
+        },
+        {
+          "name": "VISTA SUPERIOR",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000600358",
+          "display_order": 11
+        },
+        {
+          "name": "PUERTA DESLIZANTE",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "6000700472",
+          "display_order": 12
+        },
+        {
+          "name": "ENTREPAÑO FIJO",
+          "quantity": 3.0,
+          "unit": "UND",
+          "description": "6000800521",
+          "display_order": 13
+        },
+        {
+          "name": "RODAPIÉ CENTRAL",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6000900304",
+          "display_order": 14
+        },
+        {
+          "name": "RODAPIÉ TRASERO / FRONTAL",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "6000900305",
+          "display_order": 15
+        },
+        {
+          "name": "TRABA BASE",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "6001100560",
+          "display_order": 16
+        },
+        {
+          "name": "PINZA INFERIOR FRONTAL",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6001300046",
+          "display_order": 17
+        },
+        {
+          "name": "PINZA INFERIOR TRASERA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6001300047",
+          "display_order": 18
+        },
+        {
+          "name": "FRENTE GAVETA DERECHA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6001700150",
+          "display_order": 19
+        },
+        {
+          "name": "FRENTE GAVETA IZQUIERDA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "6001700152",
+          "display_order": 20
+        },
+        {
+          "name": "LATERAL GAVETA",
+          "quantity": 4.0,
+          "unit": "UND",
+          "description": "6001800123",
+          "display_order": 21
+        },
+        {
+          "name": "CONTRA FONDO GAVETA",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "6001900144",
+          "display_order": 22
+        },
+        {
+          "name": "CLAVIJA DE MADERA",
+          "quantity": 46.0,
+          "unit": "UND",
+          "description": "A",
+          "display_order": 23
+        },
+        {
+          "name": "TORNILLO (B)",
+          "quantity": 33.0,
+          "unit": "UND",
+          "description": "B",
+          "display_order": 24
+        },
+        {
+          "name": "TORNILLO (C)",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "C",
+          "display_order": 25
+        },
+        {
+          "name": "TORNILLO (D)",
+          "quantity": 14.0,
+          "unit": "UND",
+          "description": "D",
+          "display_order": 26
+        },
+        {
+          "name": "TORNILLO (E)",
+          "quantity": 16.0,
+          "unit": "UND",
+          "description": "E",
+          "display_order": 27
+        },
+        {
+          "name": "TORNILLO (F)",
+          "quantity": 88.0,
+          "unit": "UND",
+          "description": "F",
+          "display_order": 28
+        },
+        {
+          "name": "ESCUADRA METÁLICA DE ÁNGULO",
+          "quantity": 16.0,
+          "unit": "UND",
+          "description": "G",
+          "display_order": 29
+        },
+        {
+          "name": "MANIJA (JALADERA)",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "H",
+          "display_order": 30
+        },
+        {
+          "name": "CORREDERA DE BALINES",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "I",
+          "display_order": 31
+        },
+        {
+          "name": "ZAPATA PARA PIE",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "J",
+          "display_order": 32
+        },
+        {
+          "name": "ESQUINERA METÁLICA (K)",
+          "quantity": 10.0,
+          "unit": "UND",
+          "description": "K",
+          "display_order": 33
+        },
+        {
+          "name": "UNIÓN DE FONDO",
+          "quantity": 22.0,
+          "unit": "UND",
+          "description": "L",
+          "display_order": 34
+        },
+        {
+          "name": "CLAVO",
+          "quantity": 78.0,
+          "unit": "UND",
+          "description": "M",
+          "display_order": 35
+        },
+        {
+          "name": "PERCHERO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "N",
+          "display_order": 36
+        },
+        {
+          "name": "SOPORTE PARA PERCHERO",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "O",
+          "display_order": 37
+        },
+        {
+          "name": "SISTEMA DE PUERTA CORREDIZA JM300 + GUÍA",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "P",
+          "display_order": 38
+        },
+        {
+          "name": "PERFIL RIEL (TRILHO)",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "Q",
+          "display_order": 39
+        },
+        {
+          "name": "PERFIL H",
+          "quantity": 2.0,
+          "unit": "UND",
+          "description": "R",
+          "display_order": 40
+        },
+        {
+          "name": "TORNILLO MINIFIX",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "S",
+          "display_order": 41
+        },
+        {
+          "name": "TAMBOR MINIFIX",
+          "quantity": 8.0,
+          "unit": "UND",
+          "description": "T",
+          "display_order": 42
+        },
+        {
+          "name": "ESQUINERA METÁLICA (U)",
+          "quantity": 6.0,
+          "unit": "UND",
+          "description": "U",
+          "display_order": 43
+        },
+        {
+          "name": "TAPA ADHESIVA PARA PERFORACIÓN",
+          "quantity": 23.0,
+          "unit": "UND",
+          "description": "V",
+          "display_order": 44
+        },
+        {
+          "name": "KIT PARA ESPEJO: SOPORTE, TORNILLOS, CINTA DOBLE FAZ Y ESPEJO",
+          "quantity": 1.0,
+          "unit": "UND",
+          "description": "X",
+          "display_order": 45
+        }
+      ]
+    }
+  ]
+}

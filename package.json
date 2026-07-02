@@ -26,6 +26,7 @@
     "seed:supabase:ops": "node scripts/seed-supabase-ops.js",
     "seed:supabase:active-demo": "node scripts/seed-supabase-active-demo.js",
     "seed:production:initial": "node scripts/seed-production-initial.js",
+    "seed:service-references": "node scripts/import-service-references.js",
     "platform:init": "node scripts/platform-initialize.js",
     "platform:init:prod": "node scripts/platform-initialize.js --env-file config/production.env",
     "platform:init:qa": "node scripts/platform-initialize.js --env-file config/qa.env",
