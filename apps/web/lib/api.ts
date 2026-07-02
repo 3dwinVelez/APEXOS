@@ -772,6 +772,16 @@ async function currentSupabaseCompanyId() {
   return companyId;
 }
 
+async function activeSupabaseServiceTechnician(companyId: string, technicianId: unknown) {
+  const id = uuidOrNull(technicianId);
+  if (!id) throw new Error("Selecciona un tecnico operativo activo de esta empresa.");
+  const technicians = await supabaseFetch<Array<{ id: string; user_id?: string }>>(
+    `/rest/v1/employees?select=id,user_id&id=eq.${encodeURIComponent(id)}&company_id=eq.${encodeURIComponent(companyId)}&status=eq.active&user_type=eq.tecnico&limit=1`
+  );
+  if (!technicians[0]?.id) throw new Error("Selecciona un tecnico operativo activo de esta empresa.");
+  return technicians[0];
+}
+
 async function supabaseServiceTypes() {
   const companyId = await currentSupabaseCompanyId();
   const rows = await supabaseFetch<Array<{ metadata?: AnyRow }>>(
@@ -1664,8 +1674,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   const serviceOrderDetailMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)$/);
   if (pathname === "/api/v1/services/technicians" && method === "GET") {
     if (technicianSession()) throw new Error("El tecnico no puede consultar el directorio operativo.");
+    const companyId = await currentSupabaseCompanyId();
     const rows = await supabaseFetch<Array<{ id: string; first_name?: string; last_name?: string; email?: string; position?: string; metadata?: AnyRow }>>(
-      "/rest/v1/employees?select=id,first_name,last_name,email,position,metadata&status=eq.active&user_type=eq.tecnico&order=first_name.asc&limit=100"
+      `/rest/v1/employees?select=id,first_name,last_name,email,position,metadata&company_id=eq.${encodeURIComponent(companyId)}&status=eq.active&user_type=eq.tecnico&order=first_name.asc&limit=100`
     );
     return rows.map((row) => ({
       id: row.id,
@@ -1711,13 +1722,14 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     if (!referenceId) throw new Error("Selecciona una referencia valida para crear el servicio.");
     const metadata = body.metadata && typeof body.metadata === "object" ? body.metadata : {};
     const serviceType = await ensureSupabaseServiceType(body.service_type || "montaje");
+    const technician = await activeSupabaseServiceTechnician(companyId, body.technician_id);
     const orderNumber = await nextSupabaseServiceOrderNumber(companyId);
     const row = {
       company_id: companyId,
       number: orderNumber,
       reference_id: referenceId,
-      technician_employee_id: body.technician_id,
-      technician_user_id: null,
+      technician_employee_id: technician.id,
+      technician_user_id: technician.user_id || null,
       service_type: serviceType,
       status: "pendiente",
       customer_name: body.customer_name,
@@ -1774,14 +1786,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       patch.reference_id = referenceId;
     }
     if (body.technician_id) {
-      const technicianId = uuidOrNull(body.technician_id);
-      if (!technicianId) throw new Error("Selecciona un tecnico operativo activo.");
-      const technicians = await supabaseFetch<Array<{ id: string; user_id?: string }>>(
-        `/rest/v1/employees?select=id,user_id&id=eq.${encodeURIComponent(technicianId)}&status=eq.active&user_type=eq.tecnico&limit=1`
-      );
-      if (!technicians[0]?.id) throw new Error("Selecciona un tecnico operativo activo.");
-      patch.technician_employee_id = technicianId;
-      patch.technician_user_id = technicians[0].user_id || null;
+      const technician = await activeSupabaseServiceTechnician(String(current.company_id), body.technician_id);
+      patch.technician_employee_id = technician.id;
+      patch.technician_user_id = technician.user_id || null;
       nextMetadata.reassigned_at = new Date().toISOString();
       nextMetadata.reassigned_by_user_id = currentSupabaseUserId() || null;
     }
@@ -2000,7 +2007,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       ? 1
       : Math.min(Math.max(Number(search.get("limit") || 50), 1), 150);
     const employee = technicianSession() ? await currentSupabaseEmployee() : null;
+    const companyId = employee?.company_id || await currentSupabaseCompanyId();
     const filters = [
+      `company_id=eq.${encodeURIComponent(companyId)}`,
       status ? `status=eq.${encodeURIComponent(status)}` : "",
       serviceOrderDetailMatch ? `id=eq.${encodeURIComponent(serviceOrderDetailMatch[1])}` : "",
       employee && !isVirtualEmployee(employee) ? `technician_employee_id=eq.${encodeURIComponent(employee.id)}` : "",
@@ -2027,11 +2036,13 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     if (serviceOrderDetailMatch && !orders[0]) return null as T;
     const orderIds = orders.map((order) => order.id);
     const orderFilter = orderIds.length ? `&order_id=in.(${orderIds.join(",")})` : "&order_id=is.null";
+    const technicianIds = Array.from(new Set(orders.map((order) => order.technician_employee_id).filter(Boolean) as string[]));
+    const technicianFilter = technicianIds.length ? `&id=in.(${technicianIds.join(",")})` : "&id=is.null";
     const evidenceSelect = serviceOrderDetailMatch
       ? "id,order_id,evidence_type,file_url,storage_bucket,storage_path,mime_type,size_bytes,metadata,created_at"
       : "id,order_id,evidence_type,storage_bucket,storage_path,mime_type,size_bytes,metadata,created_at";
     const [refs, parts, incidents, evidence, technicians] = await Promise.all([
-      supabaseFetch<Array<{ id: string; code: string; name: string; category?: string; estimated_minutes?: number; brand?: string; model?: string; metadata?: AnyRow }>>(`/rest/v1/service_references?select=id,code,name,category,estimated_minutes,brand,model,metadata&code=neq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&limit=200`).catch((error) => {
+      supabaseFetch<Array<{ id: string; code: string; name: string; category?: string; estimated_minutes?: number; brand?: string; model?: string; metadata?: AnyRow }>>(`/rest/v1/service_references?select=id,code,name,category,estimated_minutes,brand,model,metadata&company_id=eq.${encodeURIComponent(companyId)}&code=neq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&limit=200`).catch((error) => {
         safeDevLog("No fue posible consultar referencias de servicios Supabase.", error);
         return [];
       }),
@@ -2047,7 +2058,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         safeDevLog("No fue posible consultar evidencias de servicios Supabase.", error);
         return [];
       }),
-      supabaseFetch<Array<{ id: string; first_name?: string; last_name?: string; email?: string; metadata?: AnyRow }>>("/rest/v1/employees?select=id,first_name,last_name,email,metadata&user_type=eq.tecnico&limit=500").catch((error) => {
+      supabaseFetch<Array<{ id: string; first_name?: string; last_name?: string; email?: string; metadata?: AnyRow }>>(`/rest/v1/employees?select=id,first_name,last_name,email,metadata&company_id=eq.${encodeURIComponent(companyId)}&user_type=eq.tecnico${technicianFilter}&limit=500`).catch((error) => {
         safeDevLog("No fue posible consultar tecnicos de servicios Supabase.", error);
         return [];
       })
