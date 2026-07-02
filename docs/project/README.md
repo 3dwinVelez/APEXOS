@@ -30,3 +30,16 @@ Esta carpeta centraliza la documentacion viva del proyecto APEXOS.
 Todo cambio funcional, visual o de flujo debe documentarse aqui. Los archivos historicos fuera de esta carpeta pueden existir como soporte, pero la referencia principal del proyecto queda en `docs/project`.
 
 La documentacion operativa, de QA, despliegue y legacy se organiza desde [el indice general de documentacion](../README.md).
+
+## Regla permanente para agentes de desarrollo
+
+- Utilizar siempre la arquitectura existente y los flujos oficiales antes de crear alternativas.
+- Modificar unicamente el alcance solicitado.
+- Reutilizar servicios, rutas y helpers existentes antes de agregar piezas nuevas.
+- Evitar auditorias generales innecesarias.
+- Evitar validaciones globales cuando la tarea sea localizada.
+- Mantener cambios pequenos, precisos y documentados.
+- No realizar refactorizaciones no solicitadas.
+- No modificar modulos ajenos a la tarea.
+- No introducir codigo demo o QA en produccion.
+- Optimizar tiempo, recursos y tokens sin sacrificar seguridad ni calidad.
