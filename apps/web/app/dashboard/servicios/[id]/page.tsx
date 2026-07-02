@@ -184,7 +184,12 @@ export default function ServiceOperationPage() {
         method: "POST",
         body: JSON.stringify({ type, base64_data: file.base64, size_bytes: file.size, mime_type: file.type, file_name: file.name, metadata })
       });
-      setOrder((current) => current ? { ...current, photos: [...current.photos.filter((photo) => photo.id !== savedPhoto.id), savedPhoto] } : current);
+      const photos = await api<ServicePhoto[]>(`/api/v1/services/orders/${params.id}/photos`);
+      const savedTypeVisible = photos.some((photo) => photo.id === savedPhoto.id || photo.type === type);
+      if (!savedTypeVisible) {
+        throw new Error(`La evidencia ${photoLabels[type] || type} se envio, pero no quedo visible para esta orden. Revisa permisos RLS/Storage.`);
+      }
+      setOrder((current) => current ? { ...current, photos } : current);
       setMessage(`Evidencia ${photoLabels[type] || type} cargada.`);
     } catch (error) {
       setCaptures((current) => ({ ...current, [captureKey]: null }));
@@ -204,6 +209,14 @@ export default function ServiceOperationPage() {
   }
 
   async function update(action: "start" | "inspection" | "execution" | "close" | "close-not-executed") {
+    if (action === "close" && !closeReady()) {
+      setMessage(`No se puede cerrar todavia. Pendiente: ${closePendingItems().join(", ")}.`);
+      return;
+    }
+    if (action === "close-not-executed" && !noExecutionReady()) {
+      setMessage("No se puede cerrar como no ejecutada todavia. Completa motivo, evidencia y firma.");
+      return;
+    }
     setWorking(true);
     try {
       const satisfactionSurvey = action === "close" ? {
@@ -228,9 +241,12 @@ export default function ServiceOperationPage() {
           }
         })
       });
-      setOrder(updated);
-      setActivePanel(panelForStatus(updated.status));
-      setMessage(`Orden ${statusLabel[updated.status] || updated.status}.`);
+      const finalStatus = action === "close" ? "cerrada" : action === "close-not-executed" ? "no_ejecutada" : "";
+      const safeUpdated = updated?.id ? updated : finalStatus && order ? { ...order, status: finalStatus, closed_at: new Date().toISOString() } : updated;
+      if (!safeUpdated?.id) throw new Error("El servicio avanzo, pero no fue posible leer la orden actualizada.");
+      setOrder(safeUpdated);
+      setActivePanel(panelForStatus(safeUpdated.status));
+      setMessage(`Orden ${statusLabel[safeUpdated.status] || safeUpdated.status}.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No fue posible avanzar el servicio.");
     } finally {
@@ -264,6 +280,16 @@ export default function ServiceOperationPage() {
 
   function closeReady() {
     return closePhotoTypes.every((type) => hasPersistedPhoto(type)) && satisfactionReady() && !uploadsPending(closePhotoTypes);
+  }
+
+  function closePendingItems() {
+    if (!order || order.status !== "ejecucion") return [];
+    const missingPhotos = closePhotoTypes.filter((type) => !hasPersistedPhoto(type)).map((type) => photoLabels[type] || type);
+    const missingSurvey = surveyQuestions.filter((question) => !(satisfactionRatings[question.id] >= 1)).map((question) => question.label);
+    return [
+      ...missingPhotos.map((item) => `Evidencia: ${item}`),
+      ...missingSurvey.map((item) => `Encuesta: ${item}`)
+    ];
   }
 
   function noExecutionReady() {
@@ -597,6 +623,14 @@ export default function ServiceOperationPage() {
                 <SignatureCapture label="Firma del cliente" required value={captures.firma_cliente || null} onChange={(file) => uploadSignature(file)} />
               </div>
               <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-emerald-600 text-base font-semibold text-white disabled:opacity-50" disabled={working || !closeReady()} onClick={() => update("close")} type="button"><CheckCircle2 size={18} /> {uploadsPending(closePhotoTypes) ? "Guardando soportes..." : "Cerrar servicio"}</button>
+              {!closeReady() ? (
+                <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+                  <p className="font-semibold">Pendiente para cerrar</p>
+                  <ul className="mt-2 list-disc space-y-1 pl-5">
+                    {closePendingItems().map((item) => <li key={item}>{item}</li>)}
+                  </ul>
+                </div>
+              ) : null}
             </>
           )}
         </section>

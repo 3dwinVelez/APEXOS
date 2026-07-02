@@ -553,14 +553,14 @@ function isVirtualEmployee(employee: { metadata?: AnyRow } | null | undefined) {
   return employee?.metadata?.virtual_employee === true;
 }
 
-async function accessibleSupabaseServiceOrder(orderId: string) {
+async function accessibleSupabaseServiceOrder(orderId: string, options: { includeFinished?: boolean } = {}) {
   const employee = technicianSession() ? await currentSupabaseEmployee() : null;
   if (technicianSession() && (!employee || isVirtualEmployee(employee))) {
     throw new Error("No se encontro una ficha tecnica activa para operar servicios.");
   }
   const companyId = employee?.company_id || await currentSupabaseCompanyId();
   const technicianFilter = employee ? `&technician_employee_id=eq.${encodeURIComponent(employee.id)}` : "";
-  const activeFilter = technicianSession() ? "&status=in.(pendiente,en_curso,inspeccion,ejecucion)" : "";
+  const activeFilter = technicianSession() && !options.includeFinished ? "&status=in.(pendiente,en_curso,inspeccion,ejecucion)" : "";
   const rows = await supabaseFetch<Array<{ id: string; company_id: string; technician_employee_id?: string; status?: string; started_at?: string; metadata?: AnyRow }>>(
     `/rest/v1/service_orders?select=id,company_id,technician_employee_id,status,started_at,metadata&id=eq.${encodeURIComponent(orderId)}&company_id=eq.${encodeURIComponent(companyId)}${technicianFilter}${activeFilter}&limit=1`
   );
@@ -1991,7 +1991,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       const body = JSON.parse(String(options.body || "{}"));
       const current = await accessibleSupabaseServiceOrder(orderId);
       const originalType = String(body.type || body.evidence_type || "novedad");
-      const allowedType = ["fachada", "producto_abierto", "producto_cerrado", "cliente", "firma_cliente", "no_ejecutada"].includes(originalType) ? originalType : "novedad";
+      const allowedType = ["fachada", "producto_abierto", "producto_cerrado", "cliente", "firma_cliente", "no_ejecutada", "pieza_averiada"].includes(originalType) ? originalType : "novedad";
       const uploaded = body.base64_data && !body.storage_path
         ? await uploadServiceImageData(current.company_id, orderId, {
           base64: String(body.base64_data),
@@ -2035,7 +2035,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       status ? `status=eq.${encodeURIComponent(status)}` : "",
       serviceOrderDetailMatch ? `id=eq.${encodeURIComponent(serviceOrderDetailMatch[1])}` : "",
       employee && !isVirtualEmployee(employee) ? `technician_employee_id=eq.${encodeURIComponent(employee.id)}` : "",
-      technicianSession() ? "status=in.(pendiente,en_curso,inspeccion,ejecucion)" : ""
+      technicianSession() && !serviceOrderDetailMatch ? "status=in.(pendiente,en_curso,inspeccion,ejecucion)" : ""
     ].filter(Boolean).join("&");
     const orders = await supabaseFetch<Array<{
       id: string;
