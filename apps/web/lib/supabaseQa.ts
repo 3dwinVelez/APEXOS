@@ -145,8 +145,9 @@ export function listPlatformCompanies(limit = 100) {
   return supabaseFetch<PlatformCompany[]>(`/rest/v1/v_platform_companies?select=*&order=company_name.asc&limit=${limit}`);
 }
 
-export function listActivePlatformAdmins(limit = 1) {
-  return supabaseFetch<PlatformAdmin[]>(`/rest/v1/platform_admins?select=user_id,status&status=eq.active&limit=${limit}`);
+export function listActivePlatformAdmins(limit = 1, userId = "") {
+  const userFilter = userId ? `&user_id=eq.${encodeURIComponent(userId)}` : "";
+  return supabaseFetch<PlatformAdmin[]>(`/rest/v1/platform_admins?select=user_id,status&status=eq.active${userFilter}&limit=${limit}`);
 }
 
 export function listPlatformCompanyModuleAccess(companyId: string, limit = 100) {

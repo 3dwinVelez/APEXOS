@@ -82,6 +82,17 @@ function getToken() {
   return typeof window !== "undefined" ? localStorage.getItem("token") : null;
 }
 
+function currentSupabaseUserId() {
+  const token = getToken();
+  if (!token?.includes(".")) return "";
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return String(payload.sub || "");
+  } catch {
+    return "";
+  }
+}
+
 export function isSupabaseSession() {
   if (typeof window === "undefined") return false;
   if (localStorage.getItem("auth_provider") === "supabase") return true;
@@ -122,6 +133,8 @@ function permissionCandidates(module: ApexModule) {
 
 function hasRoleModuleAccess(module: ApexModule, permissions: StoredRolePermission[] | null) {
   if (!permissions) return true;
+  const roleName = typeof window !== "undefined" ? String(localStorage.getItem("role_name") || "").toLowerCase() : "";
+  if (["admin", "owner", "superadmin", "administrador", "administrador de empresa"].includes(roleName)) return true;
   const modules = permissionCandidates(module);
   const readActions = new Set(["*", "access", "read", "view", "write", "reports", "administer", "manage_roles", "manage_users"]);
   return permissions.some((permission) => {
@@ -131,6 +144,24 @@ function hasRoleModuleAccess(module: ApexModule, permissions: StoredRolePermissi
     const actionOk = readActions.has(permissionAction);
     return moduleOk && actionOk;
   });
+}
+
+function normalizeModuleKey(value: unknown) {
+  return String(value || "").trim().toLowerCase().replace(/^\/dashboard\//, "").replace(/^dashboard\//, "");
+}
+
+function statusKeys(status: CompanyModuleStatus) {
+  return [
+    status.module_code,
+    status.module_name,
+    status.route,
+    String(status.route || "").split("/").filter(Boolean).pop()
+  ].map(normalizeModuleKey).filter(Boolean);
+}
+
+function statusMatchesModule(status: CompanyModuleStatus, module: ApexModule) {
+  const keys = new Set(statusKeys(status));
+  return moduleKeys(module).map(normalizeModuleKey).some((key) => keys.has(key));
 }
 
 function applyRolePermissions(modules: ApexModule[], state: ModuleAccessState): ModuleAccessState {
@@ -213,20 +244,21 @@ export async function loadModuleAccess(modules: ApexModule[]): Promise<ModuleAcc
   if (!isSupabaseSession()) return loadLocalModuleAccess(modules);
 
   const cached = sessionStorage.getItem(MODULE_ACCESS_CACHE_KEY);
+  const sessionToken = localStorage.getItem("token") || "";
   if (cached) {
     try {
-      const parsed = JSON.parse(cached) as { at: number; state: ModuleAccessState };
-      if (Date.now() - parsed.at < MODULE_ACCESS_CACHE_MS) return applyRolePermissions(modules, parsed.state);
+      const parsed = JSON.parse(cached) as { at: number; token?: string; state: ModuleAccessState };
+      if (parsed.token === sessionToken && Date.now() - parsed.at < MODULE_ACCESS_CACHE_MS) return applyRolePermissions(modules, parsed.state);
     } catch {
       sessionStorage.removeItem(MODULE_ACCESS_CACHE_KEY);
     }
   }
 
-  const sessionToken = localStorage.getItem("token") || "";
   if (!moduleAccessInFlight || moduleAccessInFlight.token !== sessionToken) {
     const promise = (async () => {
+      const userId = currentSupabaseUserId();
       const [platformAdmins, companies] = await Promise.all([
-        listActivePlatformAdmins(1).catch(() => []),
+        listActivePlatformAdmins(1, userId).catch(() => []),
         listUserCompanies(5).catch(() => []) as Promise<UserCompany[]>
       ]);
       if (platformAdmins.length > 0) {
@@ -236,23 +268,36 @@ export async function loadModuleAccess(modules: ApexModule[]): Promise<ModuleAcc
           bySlug: Object.fromEntries(modules.map((module) => [module.slug, PLATFORM_ADMIN_MODULE_SLUGS.has(module.slug)])),
           orderBySlug: Object.fromEntries(modules.map((module, index) => [module.slug, PLATFORM_ADMIN_MODULE_SLUGS.has(module.slug) ? index : modules.length + index]))
         };
-        sessionStorage.setItem(MODULE_ACCESS_CACHE_KEY, JSON.stringify({ at: Date.now(), state }));
+        sessionStorage.setItem(MODULE_ACCESS_CACHE_KEY, JSON.stringify({ at: Date.now(), token: sessionToken, state }));
         return state;
       }
 
-      const companyId = companies[0]?.company_id;
+      const preferredCompanyId = typeof window !== "undefined" ? localStorage.getItem("apexos_company_id") || "" : "";
+      const selectedCompany = companies.find((company) => company.company_id === preferredCompanyId)
+        || companies.find((company) => ["owner", "admin", "superadmin"].includes(String(company.role || "").toLowerCase()))
+        || companies[0];
+      const companyId = selectedCompany?.company_id;
       if (!companyId) return { loading: false, isPlatformAdmin: false, bySlug: {} };
+      if (typeof window !== "undefined") {
+        localStorage.setItem("apexos_company_id", companyId);
+        if (selectedCompany?.company_name) localStorage.setItem("apexos_company_name", selectedCompany.company_name);
+        if (selectedCompany?.role && !localStorage.getItem("role_name")) localStorage.setItem("role_name", selectedCompany.role);
+      }
 
       const statuses = await listCompanyModuleStatus(companyId, 100).catch(() => []) as CompanyModuleStatus[];
-      const enabledByCode = new Map(statuses.map((item) => [item.module_code, item.enabled]));
-      const orderByCode = new Map(statuses.map((item, index) => [item.module_code, item.sort_order ?? index]));
       const state = {
         loading: false,
         isPlatformAdmin: false,
-        bySlug: Object.fromEntries(modules.map((module) => [module.slug, enabledByCode.get(getModuleCode(module)) === true])),
-        orderBySlug: Object.fromEntries(modules.map((module, index) => [module.slug, orderByCode.get(getModuleCode(module)) ?? index]))
+        bySlug: Object.fromEntries(modules.map((module) => {
+          const status = statuses.find((item) => statusMatchesModule(item, module));
+          return [module.slug, status?.enabled === true];
+        })),
+        orderBySlug: Object.fromEntries(modules.map((module, index) => {
+          const status = statuses.find((item) => statusMatchesModule(item, module));
+          return [module.slug, status?.sort_order ?? index];
+        }))
       };
-      sessionStorage.setItem(MODULE_ACCESS_CACHE_KEY, JSON.stringify({ at: Date.now(), state }));
+      sessionStorage.setItem(MODULE_ACCESS_CACHE_KEY, JSON.stringify({ at: Date.now(), token: sessionToken, state }));
       return state;
     })();
     moduleAccessInFlight = { token: sessionToken, promise };

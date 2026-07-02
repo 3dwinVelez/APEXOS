@@ -84,6 +84,7 @@ export default function LoginPage() {
       localStorage.removeItem("role_permissions");
       localStorage.removeItem("role_metadata");
       localStorage.removeItem("role_name");
+      sessionStorage.removeItem("apexos_module_access_cache_v2");
       let authenticatedWithSupabase = false;
       let supabaseLoginError: unknown = null;
       if (getSupabaseConfigStatus().ready) {
