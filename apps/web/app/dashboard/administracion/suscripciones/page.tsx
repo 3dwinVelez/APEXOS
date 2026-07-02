@@ -299,8 +299,8 @@ export default function SuscripcionesPage() {
 
       {message ? <p className="rounded-md border border-line bg-white px-4 py-3 text-sm text-neutral-700">{message}</p> : null}
 
-      <section className="grid gap-5 xl:grid-cols-[360px_1fr]">
-        <aside className="rounded-md border border-line bg-white p-4">
+      <section className="grid gap-5 xl:grid-cols-[380px_1fr]">
+        <aside className="rounded-md border border-line bg-white p-5">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Building2 className="text-apex" size={18} />
@@ -314,13 +314,13 @@ export default function SuscripcionesPage() {
             </button>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             {companies.map((company) => (
-              <div className={`rounded-md border p-3 transition ${company.company_id === selectedCompanyId ? "border-apex bg-paper" : "border-line hover:bg-paper"}`} key={company.company_id}>
+              <div className={`rounded-md border p-4 transition ${company.company_id === selectedCompanyId ? "border-apex bg-apex/5 shadow-sm" : "border-line hover:bg-paper"}`} key={company.company_id}>
                 <button className="w-full text-left" onClick={() => selectCompany(company.company_id)} type="button">
                   <span className="block font-semibold">{company.company_name}</span>
                   <span className="mt-1 block text-xs text-neutral-500">{company.legal_name || "Sin razon social"}</span>
-                  <span className="mt-1 block text-xs text-neutral-500">{company.tax_id || "Sin NIT"} · {company.parent_company_name || company.company_type || "Empresa"} · {company.enabled_modules} activos</span>
+                  <span className="mt-1 block text-xs text-neutral-500">{company.tax_id || "Sin NIT"} - {company.parent_company_name || company.company_type || "Empresa"} - {company.enabled_modules} activos</span>
                 </button>
                 <div className="mt-3 flex justify-end gap-2">
                   <button className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-line bg-white hover:bg-paper" onClick={() => openEditCompany(company)} title="Editar empresa" type="button">
@@ -336,12 +336,13 @@ export default function SuscripcionesPage() {
           </div>
         </aside>
 
-        <main className="rounded-md border border-line bg-white p-4">
-          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <main className="space-y-4">
+          <section className="rounded-md border border-line bg-white p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-apex">{selectedCompany?.plan_name || "Suscripcion manual"}</p>
               <h2 className="text-xl font-semibold">{selectedCompany?.company_name || "Selecciona una empresa"}</h2>
-              <p className="mt-1 text-sm text-neutral-500">{selectedCompany?.legal_name || "Empresa sin razon social"} · {selectedCompany?.tax_id || "Sin NIT"} · {selectedCompany?.parent_company_name || selectedCompany?.company_type || "Sin grupo"} · {selectedCompany?.status || "Sin estado"}</p>
+              <p className="mt-1 text-sm text-neutral-500">{selectedCompany?.legal_name || "Empresa sin razon social"} - {selectedCompany?.tax_id || "Sin NIT"} - {selectedCompany?.parent_company_name || selectedCompany?.company_type || "Sin grupo"} - {selectedCompany?.status || "Sin estado"}</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <div className="rounded-md border border-line bg-paper px-3 py-2 text-sm font-semibold">
@@ -354,8 +355,9 @@ export default function SuscripcionesPage() {
               </div>
             </div>
           </div>
+          </section>
 
-          <section className="mb-4 rounded-md border border-line bg-paper p-3">
+          <section className="rounded-md border border-line bg-white p-5">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="font-semibold">Usuarios conectados</h3>
@@ -367,15 +369,15 @@ export default function SuscripcionesPage() {
               </button>
             </div>
             <div className="grid gap-2 md:grid-cols-3">
-              <div className="rounded-md border border-line bg-white p-3">
+              <div className="rounded-md border border-line bg-paper p-3">
                 <p className="text-xs text-neutral-500">Conectados</p>
                 <p className="text-2xl font-semibold text-emerald-700">{sessions?.totals.connected || 0}</p>
               </div>
-              <div className="rounded-md border border-line bg-white p-3">
+              <div className="rounded-md border border-line bg-paper p-3">
                 <p className="text-xs text-neutral-500">Usuarios activos</p>
                 <p className="text-2xl font-semibold">{sessions?.totals.active || 0}</p>
               </div>
-              <div className="rounded-md border border-line bg-white p-3">
+              <div className="rounded-md border border-line bg-paper p-3">
                 <p className="text-xs text-neutral-500">Sin cuenta Auth</p>
                 <p className={`text-2xl font-semibold ${(sessions?.totals.without_auth || 0) ? "text-rose-700" : "text-neutral-900"}`}>{sessions?.totals.without_auth || 0}</p>
               </div>
@@ -406,7 +408,7 @@ export default function SuscripcionesPage() {
                       </td>
                       <td className="px-3 py-2">
                         <p className="font-medium">{user.role || user.user_type || "Sin rol"}</p>
-                        <p className="text-xs text-neutral-500">{[user.position, user.department].filter(Boolean).join(" · ") || "Sin cargo"}</p>
+                        <p className="text-xs text-neutral-500">{[user.position, user.department].filter(Boolean).join(" - ") || "Sin cargo"}</p>
                       </td>
                       <td className="px-3 py-2">
                         <span className={`inline-flex rounded-md px-2 py-1 text-xs font-semibold ${user.connected ? "bg-emerald-50 text-emerald-700" : user.auth_status === "without_auth" ? "bg-rose-50 text-rose-700" : "bg-neutral-100 text-neutral-600"}`}>
@@ -428,46 +430,77 @@ export default function SuscripcionesPage() {
             </div>
           </section>
 
-          <div className="grid gap-3 md:grid-cols-2">
-            {modules.map((item) => (
-              <div className={`rounded-md border p-4 transition ${item.enabled ? "border-emerald-300 bg-emerald-50/70" : "border-amber-300 bg-amber-50/70"}`} key={item.module_id}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="flex flex-wrap items-center gap-2 font-semibold">
-                      <span>{item.module_name}</span>
-                      <span className={`inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs font-semibold ${item.enabled ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
-                        {item.enabled ? <Check size={13} /> : <LockKeyhole size={13} />}
-                        {item.enabled ? "Habilitado" : "Bloqueado"}
-                      </span>
-                    </p>
-                    <p className={`mt-1 text-sm ${item.enabled ? "text-emerald-900/75" : "text-amber-900/75"}`}>{item.description || item.module_code}</p>
-                  </div>
-                  <button
-                    className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border ${item.enabled ? "border-emerald-700 bg-emerald-700 text-white hover:bg-emerald-800" : "border-amber-500 bg-white text-amber-700 hover:bg-amber-100"}`}
-                    disabled={saving === item.module_code}
-                    onClick={() => toggleModule(item)}
-                    title={item.enabled ? "Bloquear modulo" : "Habilitar modulo"}
-                    type="button"
-                  >
-                    {item.enabled ? <Check size={17} /> : <LockKeyhole size={16} />}
-                  </button>
-                </div>
-                <div className={`mt-3 flex flex-wrap items-center gap-2 text-xs ${item.enabled ? "text-emerald-800" : "text-amber-800"}`}>
-                  <span className={`rounded-md px-2 py-1 ${item.enabled ? "bg-emerald-100" : "bg-amber-100"}`}>{item.module_code}</span>
-                  <span className={`rounded-md px-2 py-1 ${item.enabled ? "bg-emerald-100" : "bg-amber-100"}`}>{item.source}</span>
-                  {item.route ? <span className={`rounded-md px-2 py-1 ${item.enabled ? "bg-emerald-100" : "bg-amber-100"}`}>{item.route}</span> : null}
-                </div>
+          <section className="rounded-md border border-line bg-white p-5">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="font-semibold">Modulos de la empresa</h3>
+                <p className="mt-1 text-xs text-neutral-500">Activa o bloquea los modulos contratados para la empresa seleccionada.</p>
               </div>
-            ))}
-          </div>
-
-          {!modules.length ? (
-            <div className="rounded-md border border-dashed border-line p-8 text-center">
-              <SlidersHorizontal className="mx-auto text-apex" size={28} />
-              <p className="mt-3 font-semibold">Sin permisos de administracion plataforma</p>
-              <p className="mt-1 text-sm text-neutral-500">Este submodulo solo devuelve datos para administradores globales activos.</p>
+              <div className="inline-flex rounded-md border border-line bg-paper p-1 text-xs font-semibold">
+                <span className="rounded-md bg-white px-3 py-1 text-emerald-700">{enabledCount} activos</span>
+                <span className="px-3 py-1 text-neutral-600">{Math.max(0, modules.length - enabledCount)} bloqueados</span>
+              </div>
             </div>
-          ) : null}
+
+            {modules.length ? (
+              <div className="overflow-auto rounded-md border border-line">
+                <table className="w-full min-w-[920px] text-sm">
+                  <thead className="bg-paper">
+                    <tr className="border-b border-line text-left text-xs font-semibold uppercase text-neutral-500">
+                      <th className="px-4 py-3">Modulo</th>
+                      <th className="px-4 py-3">Estado</th>
+                      <th className="px-4 py-3">Origen</th>
+                      <th className="px-4 py-3">Ruta</th>
+                      <th className="px-4 py-3 text-right">Accion</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line">
+                    {modules.map((item) => (
+                      <tr className="bg-white transition hover:bg-paper" key={item.module_id}>
+                        <td className="px-4 py-3">
+                          <div className="max-w-xl">
+                            <p className="font-semibold text-neutral-900">{item.module_name}</p>
+                            <p className="mt-1 line-clamp-2 text-xs leading-5 text-neutral-500">{item.description || item.module_code}</p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs font-semibold ${item.enabled ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>
+                            {item.enabled ? <Check size={13} /> : <LockKeyhole size={13} />}
+                            {item.enabled ? "Habilitado" : "Bloqueado"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="inline-flex rounded-md bg-paper px-2 py-1 text-xs font-medium text-neutral-600">{item.source}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-xs text-neutral-500">{item.route || "Sin ruta"}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex justify-end">
+                            <button
+                              className={`inline-flex h-9 min-w-28 items-center justify-center gap-2 rounded-md border px-3 text-xs font-semibold transition disabled:opacity-50 ${item.enabled ? "border-line bg-white text-neutral-700 hover:bg-paper" : "border-apex bg-apex text-white hover:bg-apex/90"}`}
+                              disabled={saving === item.module_code}
+                              onClick={() => toggleModule(item)}
+                              type="button"
+                            >
+                              {item.enabled ? <LockKeyhole size={14} /> : <Check size={14} />}
+                              {saving === item.module_code ? "Guardando" : item.enabled ? "Bloquear" : "Habilitar"}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="rounded-md border border-dashed border-line p-8 text-center">
+                <SlidersHorizontal className="mx-auto text-apex" size={28} />
+                <p className="mt-3 font-semibold">Sin permisos de administracion plataforma</p>
+                <p className="mt-1 text-sm text-neutral-500">Este submodulo solo devuelve datos para administradores globales activos.</p>
+              </div>
+            )}
+          </section>
         </main>
       </section>
 
