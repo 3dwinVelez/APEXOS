@@ -86,11 +86,13 @@ export default function HrReportsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
+      const companyId = localStorage.getItem("apexos_company_id") || "";
+      const companyFilter = companyId ? `&company_id=eq.${encodeURIComponent(companyId)}` : "";
       const [employeeRows, punchRows, activityRows, routeRows] = await Promise.all([
-        supabaseFetch<Employee[]>("/rest/v1/employees?select=id,first_name,last_name,document_number,user_type,position,metadata&order=first_name.asc&limit=250"),
-        supabaseFetch<Punch[]>(`/rest/v1/time_punches?select=id,employee_id,user_name,route_id,vehicle_plate,punch_type,punched_at,punch_date,punch_time,latitude,longitude,accuracy_meters,extra_minutes,extra_reason,extra_detail,metadata&punch_date=gte.${from}&punch_date=lte.${to}&order=punched_at.asc&limit=1000`),
-        supabaseFetch<Activity[]>(`/rest/v1/gps_pings?select=id,employee_id,user_name,route_id,vehicle_id,latitude,longitude,accuracy_meters,captured_at,metadata&source=eq.work_activity&captured_at=gte.${from}T00:00:00-05:00&captured_at=lte.${to}T23:59:59-05:00&order=captured_at.asc&limit=1000`),
-        supabaseFetch<RouteRow[]>(`/rest/v1/operational_routes?select=id,code,vehicle_plate,start_time,end_time,route_date&route_date=gte.${from}&route_date=lte.${to}&limit=250`)
+        supabaseFetch<Employee[]>(`/rest/v1/employees?select=id,first_name,last_name,document_number,user_type,position,metadata${companyFilter}&order=first_name.asc&limit=250`),
+        supabaseFetch<Punch[]>(`/rest/v1/time_punches?select=id,employee_id,user_name,route_id,vehicle_plate,punch_type,punched_at,punch_date,punch_time,latitude,longitude,accuracy_meters,extra_minutes,extra_reason,extra_detail,metadata&punch_date=gte.${from}&punch_date=lte.${to}${companyFilter}&order=punched_at.asc&limit=1000`),
+        supabaseFetch<Activity[]>(`/rest/v1/gps_pings?select=id,employee_id,user_name,route_id,vehicle_id,latitude,longitude,accuracy_meters,captured_at,metadata&source=eq.work_activity&captured_at=gte.${from}T00:00:00-05:00&captured_at=lte.${to}T23:59:59-05:00${companyFilter}&order=captured_at.asc&limit=1000`),
+        supabaseFetch<RouteRow[]>(`/rest/v1/operational_routes?select=id,code,vehicle_plate,start_time,end_time,route_date&route_date=gte.${from}&route_date=lte.${to}${companyFilter}&limit=250`)
       ]);
       setEmployees(employeeRows);
       setPunches(punchRows);

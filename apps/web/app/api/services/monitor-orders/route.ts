@@ -157,7 +157,7 @@ export async function GET(request: NextRequest) {
     const orderIds = compactInFilter(orders.map((order) => order.id));
     const [references, incidents, evidence, technicians] = await Promise.all([
       referenceIds
-        ? supabaseRequest<Array<{ id: string; code: string; name: string; category?: string; brand?: string; model?: string }>>(`/rest/v1/service_references?select=id,code,name,category,brand,model&id=in.(${referenceIds})&limit=300`).catch(() => [])
+        ? supabaseRequest<Array<{ id: string; code: string; name: string; category?: string; brand?: string; model?: string }>>(`/rest/v1/service_references?select=id,code,name,category,brand,model&company_id=eq.${encodeURIComponent(companyId)}&id=in.(${referenceIds})&limit=300`).catch(() => [])
         : Promise.resolve([]),
       orderIds
         ? supabaseRequest<Array<{ id: string; order_id: string; type?: string; description?: string; action?: string }>>(`/rest/v1/service_incidents?select=id,order_id,type,description,action&order_id=in.(${orderIds})&limit=500`).catch(() => [])
@@ -166,7 +166,7 @@ export async function GET(request: NextRequest) {
         ? supabaseRequest<Array<{ id: string; order_id: string; evidence_type?: string; metadata?: AnyRow; created_at?: string }>>(`/rest/v1/service_evidence?select=id,order_id,evidence_type,metadata,created_at&order_id=in.(${orderIds})&limit=500`).catch(() => [])
         : Promise.resolve([]),
       technicianIds
-        ? supabaseRequest<Array<{ id: string; first_name?: string; last_name?: string; email?: string; metadata?: AnyRow }>>(`/rest/v1/employees?select=id,first_name,last_name,email,metadata&id=in.(${technicianIds})&limit=300`).catch(() => [])
+        ? supabaseRequest<Array<{ id: string; first_name?: string; last_name?: string; email?: string; metadata?: AnyRow }>>(`/rest/v1/employees?select=id,first_name,last_name,email,metadata&company_id=eq.${encodeURIComponent(companyId)}&id=in.(${technicianIds})&limit=300`).catch(() => [])
         : Promise.resolve([])
     ]);
 
