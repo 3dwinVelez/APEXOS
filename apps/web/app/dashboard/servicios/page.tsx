@@ -218,7 +218,7 @@ function effectiveOrder(order: ServiceOrder): ServiceOrder {
 }
 
 function isLocalOrder(order: ServiceOrder) {
-  return /^\d+$/.test(String(order.id || ""));
+  return isOperableOrderId(order.id);
 }
 
 function isOperableOrderId(id: unknown) {
@@ -484,23 +484,15 @@ export default function ServicesPage() {
         external_order_number: !isLocalOrder(editingOrder) ? editingOrder.number : String(editingOrder.metadata?.external_order_number || "")
       };
       if (!editableOrderStatuses.has(editForm.status)) delete payload.status;
-      if (isLocalOrder(editingOrder)) {
-        await api<ServiceOrder>(`/api/v1/services/orders/${editingOrder.id}`, {
-          method: "PUT",
-          body: JSON.stringify({ ...payload, metadata })
-        });
-        setMessage("Orden actualizada correctamente.");
-      } else {
-        if (editForm.status !== "pendiente") {
-          setMessage("Completa referencia, tecnico y fecha; luego cambia el estado a Pendiente para crear la orden operativa.");
-          return;
-        }
-        await api<ServiceOrder>("/api/v1/services/orders", {
-          method: "POST",
-          body: JSON.stringify({ ...payload, number: editingOrder.number, metadata: { ...metadata, synced_from_public_request_at: new Date().toISOString() } })
-        });
-        setMessage("Orden operativa creada correctamente.");
+      if (!isLocalOrder(editingOrder)) {
+        setMessage("No fue posible identificar la orden existente para actualizarla sin duplicar.");
+        return;
       }
+      await api<ServiceOrder>(`/api/v1/services/orders/${editingOrder.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ ...payload, metadata })
+      });
+      setMessage(editForm.status === "pendiente" ? "Orden enviada a pendiente correctamente." : "Orden actualizada correctamente.");
       setEditingOrder(null);
       await load();
     } catch (error) {

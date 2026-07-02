@@ -1734,6 +1734,15 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const referenceId = uuidOrNull(body.reference_id || body.reference_item_id);
     if (!referenceId) throw new Error("Selecciona una referencia valida para crear el servicio.");
     const metadata = body.metadata && typeof body.metadata === "object" ? body.metadata : {};
+    const requestedNumber = String(body.number || "").trim();
+    if (requestedNumber) {
+      const existing = await supabaseFetch<Array<{ id: string; number: string }>>(
+        `/rest/v1/service_orders?select=id,number&company_id=eq.${encodeURIComponent(companyId)}&number=eq.${encodeURIComponent(requestedNumber)}&limit=1`
+      );
+      if (existing[0]?.id) {
+        throw new Error("La orden ya existe. Actualiza la orden existente en lugar de crear una nueva.");
+      }
+    }
     const serviceType = await ensureSupabaseServiceType(body.service_type || "montaje");
     const technician = await activeSupabaseServiceTechnician(companyId, body.technician_id);
     const orderNumber = await nextSupabaseServiceOrderNumber(companyId);
