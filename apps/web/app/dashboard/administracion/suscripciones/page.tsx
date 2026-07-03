@@ -54,6 +54,8 @@ export default function SuscripcionesPage() {
   const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [editingCompany, setEditingCompany] = useState<PlatformCompany | null>(null);
   const [deletingCompany, setDeletingCompany] = useState<PlatformCompany | null>(null);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState("");
   const [message, setMessage] = useState("");
@@ -214,11 +216,21 @@ export default function SuscripcionesPage() {
 
   async function confirmDeleteCompany() {
     if (!deletingCompany) return;
+    if (!deleteReason.trim()) {
+      setMessage("Debes indicar el motivo para inactivar la empresa.");
+      return;
+    }
+    if (deleteConfirmation.trim() !== "INACTIVAR") {
+      setMessage("Debes escribir INACTIVAR para confirmar la accion.");
+      return;
+    }
     setSaving("delete-company");
     setMessage("");
     try {
-      await deletePlatformCompany(deletingCompany.company_id);
+      await deletePlatformCompany(deletingCompany.company_id, deleteReason, deleteConfirmation);
       setDeletingCompany(null);
+      setDeleteReason("");
+      setDeleteConfirmation("");
       if (selectedCompanyId === deletingCompany.company_id) {
         selectedCompanyIdRef.current = "";
         setSelectedCompanyId("");
@@ -226,9 +238,9 @@ export default function SuscripcionesPage() {
         setSessions(null);
       }
       await loadCompanies();
-      setMessage("Empresa eliminada.");
+      setMessage("Empresa inactivada. No se elimino informacion historica.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "No fue posible eliminar la empresa.");
+      setMessage(error instanceof Error ? error.message : "No fue posible inactivar la empresa.");
     } finally {
       setSaving("");
     }
@@ -326,7 +338,7 @@ export default function SuscripcionesPage() {
                   <button className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-line bg-white hover:bg-paper" onClick={() => openEditCompany(company)} title="Editar empresa" type="button">
                     <Pencil size={14} />
                   </button>
-                  <button className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-rose-200 bg-white text-rose-700 hover:bg-rose-50" onClick={() => setDeletingCompany(company)} title="Eliminar empresa" type="button">
+                  <button className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-amber-200 bg-white text-amber-700 hover:bg-amber-50" onClick={() => { setDeletingCompany(company); setDeleteReason(""); setDeleteConfirmation(""); }} title="Inactivar empresa" type="button">
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -662,18 +674,26 @@ export default function SuscripcionesPage() {
                 <Trash2 size={18} />
               </div>
               <div>
-                <h2 className="text-lg font-semibold">Eliminar empresa</h2>
-                <p className="mt-1 text-sm text-neutral-600">Esta accion elimina la empresa y sus relaciones dependientes configuradas con cascade. Para conservar historial operativo, usa estado inactiva o suspendida.</p>
+                <h2 className="text-lg font-semibold">Inactivar empresa</h2>
+                <p className="mt-1 text-sm text-neutral-600">Esta accion conserva historial, usuarios, servicios y evidencias. La politica RLM no permite eliminar empresas fisicamente.</p>
                 <p className="mt-3 rounded-md bg-paper p-3 text-sm font-semibold">{deletingCompany.company_name}</p>
+                <label className="mt-4 grid gap-1 text-sm font-semibold">
+                  Motivo obligatorio
+                  <textarea className="min-h-24 rounded-md border border-line px-3 py-2 text-sm font-normal" value={deleteReason} onChange={(event) => setDeleteReason(event.target.value)} placeholder="Describe por que se inactiva esta empresa." />
+                </label>
+                <label className="mt-4 grid gap-1 text-sm font-semibold">
+                  Confirmacion
+                  <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" value={deleteConfirmation} onChange={(event) => setDeleteConfirmation(event.target.value)} placeholder="Escribe INACTIVAR" />
+                </label>
               </div>
             </div>
             <div className="mt-5 flex justify-end gap-2">
-              <button className="inline-flex h-10 items-center justify-center rounded-md border border-line px-4 text-sm font-semibold hover:bg-paper" onClick={() => setDeletingCompany(null)} type="button">
+              <button className="inline-flex h-10 items-center justify-center rounded-md border border-line px-4 text-sm font-semibold hover:bg-paper" onClick={() => { setDeletingCompany(null); setDeleteReason(""); setDeleteConfirmation(""); }} type="button">
                 Cancelar
               </button>
-              <button className="inline-flex h-10 items-center gap-2 rounded-md bg-rose-700 px-4 text-sm font-semibold text-white disabled:opacity-50" disabled={saving === "delete-company"} onClick={confirmDeleteCompany} type="button">
+              <button className="inline-flex h-10 items-center gap-2 rounded-md bg-amber-700 px-4 text-sm font-semibold text-white disabled:opacity-50" disabled={saving === "delete-company" || !deleteReason.trim() || deleteConfirmation.trim() !== "INACTIVAR"} onClick={confirmDeleteCompany} type="button">
                 <Trash2 size={16} />
-                Eliminar
+                Inactivar
               </button>
             </div>
           </div>

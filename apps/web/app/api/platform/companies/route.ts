@@ -311,16 +311,25 @@ export async function DELETE(request: NextRequest) {
     await requirePlatformAdmin(token);
 
     const companyId = request.nextUrl.searchParams.get("company_id");
+    const reason = clean(request.nextUrl.searchParams.get("reason"));
+    const confirm = clean(request.nextUrl.searchParams.get("confirm"));
     if (!companyId) return NextResponse.json({ message: "Empresa requerida." }, { status: 400 });
+    if (!reason) return NextResponse.json({ message: "Motivo requerido para inactivar la empresa." }, { status: 400 });
+    if (confirm !== "INACTIVAR") return NextResponse.json({ message: "Confirmacion requerida para inactivar la empresa." }, { status: 400 });
 
     await supabaseRequest(`/rest/v1/companies?id=eq.${companyId}`, {
-      method: "DELETE",
+      method: "PATCH",
       service: true,
-      headers: { Prefer: "return=minimal" }
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ status: "inactive" })
     });
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({
+      ok: true,
+      action: "deactivated",
+      message: "Empresa inactivada. La politica RLM no permite eliminar empresas fisicamente."
+    });
   } catch (error) {
-    return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible eliminar la empresa." }, { status: errorStatus(error) });
+    return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible inactivar la empresa." }, { status: errorStatus(error) });
   }
 }

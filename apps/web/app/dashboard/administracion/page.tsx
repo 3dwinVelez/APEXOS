@@ -219,6 +219,7 @@ const actionLabels: Record<string, string> = {
   create: "Crear",
   edit: "Editar",
   delete: "Eliminar",
+  delete_physical_records: "Borrado fisico",
   approve: "Aprobar",
   reject: "Rechazar",
   void: "Anular",
@@ -235,7 +236,7 @@ const actionLabels: Record<string, string> = {
   manage_roles: "Gestionar roles"
 };
 
-const roleActions = ["access", "view", "create", "edit", "delete", "approve", "reject", "void", "export", "import", "attach", "download", "configure", "administer", "execute", "reports", "sensitive", "manage_users", "manage_roles"];
+const roleActions = ["access", "view", "create", "edit", "delete", "delete_physical_records", "approve", "reject", "void", "export", "import", "attach", "download", "configure", "administer", "execute", "reports", "sensitive", "manage_users", "manage_roles"];
 const compactRoleActions = ["access", "view", "create", "edit", "approve", "export", "configure", "sensitive", "manage_users", "manage_roles"];
 const defaultRoleScopes: RoleScopes = { locations: [], areas: [], cost_centers: [], processes: [] };
 
@@ -757,7 +758,7 @@ export default function AdministracionPage() {
   const roleImpact = useMemo(() => {
     const modules = Object.values(roleForm.permissions).filter((actions) => Object.values(actions || {}).some(Boolean)).length;
     const actions = Object.values(roleForm.permissions).reduce((sum, actionsMap) => sum + Object.values(actionsMap || {}).filter(Boolean).length, 0);
-    const critical = Object.values(roleForm.permissions).reduce((sum, actionsMap) => sum + ["delete", "administer", "configure", "sensitive", "manage_users", "manage_roles"].filter((action) => actionsMap?.[action]).length, 0);
+    const critical = Object.values(roleForm.permissions).reduce((sum, actionsMap) => sum + ["delete", "delete_physical_records", "administer", "configure", "sensitive", "manage_users", "manage_roles"].filter((action) => actionsMap?.[action]).length, 0);
     return { modules, actions, critical };
   }, [roleForm.permissions]);
   const configuredItems = visibleConfigItems.filter((item) => item.status === "configurado" || item.status === "activo").length;

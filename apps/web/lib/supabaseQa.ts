@@ -210,18 +210,21 @@ export function updatePlatformCompany(companyId: string, input: Partial<Omit<Cre
   });
 }
 
-export function deletePlatformCompany(companyId: string) {
+export function deletePlatformCompany(companyId: string, reason: string, confirmation: string) {
   const token = getSupabaseAccessToken();
-  if (!token) throw new Error("Sesion requerida para eliminar empresas.");
+  if (!token) throw new Error("Sesion requerida para inactivar empresas.");
+  if (!reason.trim()) throw new Error("Motivo requerido para inactivar la empresa.");
+  if (confirmation.trim() !== "INACTIVAR") throw new Error("Confirmacion requerida para inactivar la empresa.");
 
-  return fetch(`/api/platform/companies?company_id=${encodeURIComponent(companyId)}`, {
+  return fetch(`/api/platform/companies?company_id=${encodeURIComponent(companyId)}&reason=${encodeURIComponent(reason.trim())}&confirm=${encodeURIComponent(confirmation.trim())}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` }
   }).then(async (response) => {
     if (!response.ok) {
       const body = await response.json().catch(() => ({ message: response.statusText }));
-      throw new Error(body.message || "No fue posible eliminar la empresa.");
+      throw new Error(body.message || "No fue posible inactivar la empresa.");
     }
+    return response.json() as Promise<{ ok: boolean; action: "deactivated"; message: string }>;
   });
 }
 
