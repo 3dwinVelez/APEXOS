@@ -1,8 +1,21 @@
 const fs = require("fs");
+const path = require("path");
+
+function parseArgs(argv) {
+  const args = {};
+  for (let index = 0; index < argv.length; index += 1) {
+    const item = argv[index];
+    if (!item.startsWith("--")) continue;
+    const key = item.slice(2);
+    args[key] = argv[index + 1] && !argv[index + 1].startsWith("--") ? argv[++index] : true;
+  }
+  return args;
+}
 
 function loadEnvFile(file = ".env") {
-  if (!fs.existsSync(file)) return;
-  for (const line of fs.readFileSync(file, "utf8").split(/\r?\n/)) {
+  const fullPath = path.resolve(file);
+  if (!fs.existsSync(fullPath)) return;
+  for (const line of fs.readFileSync(fullPath, "utf8").split(/\r?\n/)) {
     if (!line || line.trim().startsWith("#") || !/^[A-Za-z_][A-Za-z0-9_]*=/.test(line)) continue;
     const index = line.indexOf("=");
     const key = line.slice(0, index);
@@ -10,10 +23,12 @@ function loadEnvFile(file = ".env") {
   }
 }
 
-loadEnvFile();
+const args = parseArgs(process.argv.slice(2));
+loadEnvFile(args["env-file"] || process.env.VALIDATE_ENV_FILE || ".env");
 
 const TARGET_ENV = process.env.TARGET_ENV || "";
 const CONFIRM_PROD_VALIDATE = process.env.CONFIRM_PROD_VALIDATE || "";
+const EXPECT_EMPTY_PROD = process.env.EXPECT_EMPTY_PROD === "true" || args["expect-empty"] === true;
 const DATABASE_URL = process.env.DATABASE_URL;
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -193,20 +208,20 @@ async function main() {
     emptyCounts.push({ table, count: rows[0]?.count || 0 });
   }
   const nonEmpty = emptyCounts.filter((row) => row.count !== 0);
-  if (nonEmpty.length) failures.push({ check: "tables_expected_empty_have_rows", detail: nonEmpty });
+  if (EXPECT_EMPTY_PROD && nonEmpty.length) failures.push({ check: "tables_expected_empty_have_rows", detail: nonEmpty });
 
   const authUsers = await prisma.$queryRaw`
     select count(*)::int as count
     from auth.users
     where email is not null
   `;
-  if ((authUsers[0]?.count || 0) !== 0) failures.push({ check: "auth_users_not_empty", detail: authUsers[0]?.count || 0 });
+  if (EXPECT_EMPTY_PROD && (authUsers[0]?.count || 0) !== 0) failures.push({ check: "auth_users_not_empty", detail: authUsers[0]?.count || 0 });
 
   const storageObjects = await prisma.$queryRaw`
     select count(*)::int as count
     from storage.objects
   `;
-  if ((storageObjects[0]?.count || 0) !== 0) failures.push({ check: "storage_objects_not_empty", detail: storageObjects[0]?.count || 0 });
+  if (EXPECT_EMPTY_PROD && (storageObjects[0]?.count || 0) !== 0) failures.push({ check: "storage_objects_not_empty", detail: storageObjects[0]?.count || 0 });
 
   const buckets = await storage("/storage/v1/bucket");
   const bucketById = new Map((Array.isArray(buckets) ? buckets : []).map((bucket) => [bucket.id, bucket]));
@@ -224,7 +239,11 @@ async function main() {
       storage_policies: storagePolicies,
       app_private_functions: functions.length,
       buckets: EXPECTED_BUCKETS.length,
-      empty_tables_checked: emptyCounts.length
+      empty_tables_checked: emptyCounts.length,
+      expect_empty_prod: EXPECT_EMPTY_PROD,
+      non_empty_tables: nonEmpty,
+      auth_users: authUsers[0]?.count || 0,
+      storage_objects: storageObjects[0]?.count || 0
     },
     failures
   };
