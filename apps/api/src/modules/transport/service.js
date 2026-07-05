@@ -82,8 +82,8 @@ function validateVehicleInput(input, partial = false) {
   }
 
   const capacity = numberOrNull(input.capacity_value);
-  if (capacity !== null && capacity <= 0) {
-    const error = new Error("La capacidad de carga debe ser mayor a cero.");
+  if (capacity !== null && capacity < 0) {
+    const error = new Error("La capacidad de carga no puede ser negativa.");
     error.statusCode = 400;
     throw error;
   }
@@ -104,9 +104,9 @@ function vehicleData(input) {
     engine_displacement: input.engine_displacement || input.cylinder_capacity || "",
     cylinder_capacity: input.cylinder_capacity || input.engine_displacement || "",
     load_capacity: input.load_capacity || "",
-    capacity_value: numberOrNull(input.capacity_value),
+    capacity_value: numberOrNull(input.capacity_value) > 0 ? numberOrNull(input.capacity_value) : null,
     capacity_unit: input.capacity_unit || "",
-    volume_available: numberOrNull(input.volume_available),
+    volume_available: numberOrNull(input.volume_available) > 0 ? numberOrNull(input.volume_available) : null,
     fuel: input.fuel || "",
     body_type: input.body_type || "",
     axle_count: numberOrNull(input.axle_count),

@@ -231,6 +231,13 @@ function readFile(file: File) {
   });
 }
 
+function vehiclePayload(form: typeof emptyVehicle) {
+  const payload: Record<string, string | number> = { ...form, plate: form.plate.toUpperCase().replace(/\s+/g, "") };
+  if (!Number(payload.capacity_value)) delete payload.capacity_value;
+  if (!Number(payload.volume_available)) delete payload.volume_available;
+  return payload;
+}
+
 export default function TransportPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -349,7 +356,7 @@ export default function TransportPage() {
     }
     setSaving(true);
     try {
-      const payload = { ...form, plate: form.plate.toUpperCase().replace(/\s+/g, "") };
+      const payload = vehiclePayload(form);
       const saved = selected
         ? await api<Vehicle>(`/api/v1/transport/vehicles/${selected.id}`, { method: "PUT", body: JSON.stringify(payload) })
         : await api<Vehicle>("/api/v1/transport/vehicles", { method: "POST", body: JSON.stringify(payload) });
@@ -382,12 +389,16 @@ export default function TransportPage() {
       setMessage("Selecciona tipo documental y archivo.");
       return;
     }
-    const saved = await api<VehicleDocument>(`/api/v1/transport/vehicles/${selected.id}/documents`, { method: "POST", body: JSON.stringify(documentDraft) });
-    const detail = await api<Vehicle>(`/api/v1/transport/vehicles/${selected.id}`);
-    setSelected(detail);
-    setVehicles((current) => current.map((vehicle) => vehicle.id === detail.id ? detail : vehicle));
-    setDocumentDraft({ document_type: "soat", file_name: "", base64_data: "", mime_type: "", file_size: 0, issued_at: "", expires_at: "", observations: "" });
-    setMessage(`Documento ${saved.file_name} cargado.`);
+    try {
+      const saved = await api<VehicleDocument>(`/api/v1/transport/vehicles/${selected.id}/documents`, { method: "POST", body: JSON.stringify(documentDraft) });
+      const detail = await api<Vehicle>(`/api/v1/transport/vehicles/${selected.id}`);
+      setSelected(detail);
+      setVehicles((current) => current.map((vehicle) => vehicle.id === detail.id ? detail : vehicle));
+      setDocumentDraft({ document_type: "soat", file_name: "", base64_data: "", mime_type: "", file_size: 0, issued_at: "", expires_at: "", observations: "" });
+      setMessage(`Documento ${saved.file_name} cargado.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No fue posible adjuntar el documento.");
+    }
   }
 
   const filtered = useMemo(() => {

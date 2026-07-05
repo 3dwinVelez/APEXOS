@@ -82,9 +82,11 @@ export default function HrReportsPage() {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<ReportRow | null>(null);
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
+    setMessage("");
     try {
       const companyId = localStorage.getItem("apexos_company_id") || "";
       const companyFilter = companyId ? `&company_id=eq.${encodeURIComponent(companyId)}` : "";
@@ -98,6 +100,8 @@ export default function HrReportsPage() {
       setPunches(punchRows);
       setActivities(activityRows);
       setRoutes(routeRows);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No fue posible cargar los reportes de Talento Humano.");
     } finally {
       setLoading(false);
     }
@@ -199,6 +203,8 @@ export default function HrReportsPage() {
         </div>
         <button className="inline-flex h-11 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white" onClick={exportRows} type="button"><Download size={16} /> Exportar CSV</button>
       </header>
+
+      {message ? <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{message}</div> : null}
 
       <section className="grid gap-3 rounded-md border border-line bg-white p-4 lg:grid-cols-[1fr_1fr_1fr_auto_auto]">
         <label className="text-sm font-semibold">Desde<input className="mt-1 h-10 w-full rounded-md border border-line px-3 font-normal" type="date" value={from} onChange={(event) => setFrom(event.target.value)} /></label>

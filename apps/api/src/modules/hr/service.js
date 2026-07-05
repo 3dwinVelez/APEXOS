@@ -83,6 +83,13 @@ function minutesFromTime(value) {
   return Number(value.slice(0, 2)) * 60 + Number(value.slice(3, 5));
 }
 
+function validationError(message, statusCode = 400, code = "VALIDATION_ERROR") {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  error.code = code;
+  return error;
+}
+
 function employeeDisplayName(employee) {
   return employee?.metadata?.name || employee?.user?.name || employee?.code || "";
 }
@@ -295,6 +302,7 @@ async function createEmployee(tenantId, input) {
 }
 
 async function createRoute(tenantId, input) {
+  validateRouteInput(input);
   return prisma.runWithTenant(tenantId, async () => prisma.timeRoute.create({
     data: {
       date: startOfDay(input.date),
@@ -311,6 +319,7 @@ async function createRoute(tenantId, input) {
 }
 
 async function updateRoute(tenantId, id, input) {
+  validateRouteInput(input);
   return prisma.runWithTenant(tenantId, async () => prisma.timeRoute.update({
     where: { id: Number(id) },
     data: {
@@ -325,6 +334,19 @@ async function updateRoute(tenantId, id, input) {
       status: input.status || "active"
     }
   }));
+}
+
+function validateRouteInput(input = {}) {
+  if (!input.date) throw validationError("La fecha del horario es obligatoria.");
+  if (!Array.isArray(input.employees) || !input.employees.filter((item) => String(item || "").trim()).length) {
+    throw validationError("Selecciona al menos una persona para asignar el horario.");
+  }
+  const start = minutesFromTime(input.start_time || "08:00");
+  const end = minutesFromTime(input.end_time || "17:00");
+  if (start === null || end === null) throw validationError("Define horas validas en formato HH:mm.");
+  if (end <= start) throw validationError("La hora de fin debe ser posterior a la hora de inicio.");
+  if (Number(input.tolerance_minutes ?? 15) < 0) throw validationError("La tolerancia no puede ser negativa.");
+  if (Number(input.per_diem || 0) < 0) throw validationError("El viatico o auxilio no puede ser negativo.");
 }
 
 function datesForRouteRange(input) {
@@ -346,6 +368,7 @@ function datesForRouteRange(input) {
 }
 
 async function createRoutesBulk(tenantId, input) {
+  validateRouteInput({ ...input, date: input.start_date });
   const dates = datesForRouteRange(input);
   if (!dates.length) return { created: 0, routes: [] };
   return prisma.runWithTenant(tenantId, async () => {
@@ -934,6 +957,15 @@ async function createPunch(tenantId, input, user) {
         message: "Checklist preoperacional obligatorio antes de iniciar jornada."
       };
     }
+    const resolvedUserName = employee.code || employee.user?.name || employee.user?.email || input.user_name;
+    const punchesToday = await latestPunchesForUser(resolvedUserName, punchedAt);
+    const expectedType = nextPunchType(punchesToday);
+    if (!expectedType) {
+      throw validationError("La jornada ya esta completa para hoy.", 409, "JORNADA_COMPLETA");
+    }
+    if (type !== expectedType) {
+      throw validationError(`La siguiente marcacion permitida es ${expectedType}.`, 409, "MARCACION_FUERA_DE_SECUENCIA");
+    }
     const extraMinutes = type === "salida" && route?.end_time
       ? Math.max(0, Math.round((punchedAt.getHours() * 60 + punchedAt.getMinutes()) - (Number(route.end_time.slice(0, 2)) * 60 + Number(route.end_time.slice(3, 5))) - Number(route.tolerance_minutes || 0)))
       : 0;
@@ -959,7 +991,6 @@ async function createPunch(tenantId, input, user) {
         file_size: input.extra_evidence.size
       }, { maxBytes: MAX_EVIDENCE_BYTES });
     }
-    const resolvedUserName = employee.code || employee.user?.name || employee.user?.email || input.user_name;
     const punch = await prisma.timePunch.create({
       data: {
         employee_id: employee.id,
@@ -1398,6 +1429,7 @@ async function latestPunchesForUser(userName, date = new Date()) {
 
 function nextPunchType(punches) {
   const order = ["entrada", "inicio_almuerzo", "fin_almuerzo", "salida"];
+  if (!punches.length) return "entrada";
   const last = punches[punches.length - 1].type;
   if (!last) return "entrada";
   const idx = order.indexOf(last);

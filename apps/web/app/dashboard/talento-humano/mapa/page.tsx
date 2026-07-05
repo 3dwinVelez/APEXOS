@@ -302,7 +302,7 @@ export default function LiveGpsMapPage() {
   const users = useMemo(() => Array.from(new Set(people.map((person) => person.user_name).filter(Boolean))).sort(), [people]);
   const filteredPeople = useMemo(() => people.filter((person) => {
     const liveOnline = currentAgeSeconds(person, now) != null && Number(currentAgeSeconds(person, now)) <= activeWindowSeconds;
-    if (routeId !== "all" && person.route_id !== routeId) return false;
+    if (routeId !== "all" && String(person.route_id) !== routeId) return false;
     if (userName !== "all" && person.user_name !== userName) return false;
     if (status === "online") return liveOnline;
     if (status === "offline") return person.latitude != null && person.longitude != null && !liveOnline;
@@ -338,7 +338,7 @@ export default function LiveGpsMapPage() {
     if (drag) event.currentTarget.releasePointerCapture(event.pointerId);
     setDrag(null);
   }
-  const routeTrails = (routeId === "all" ? routes : routes.filter((route) => route.id === routeId)).map((route) => ({
+  const routeTrails = (routeId === "all" ? routes : routes.filter((route) => String(route.id) === routeId)).map((route) => ({
     ...route,
     punch_points: userName === "all" ? route.punch_points : (route.punch_points || []).filter((mark) => mark.user_name === userName),
     marks_by_user: userName === "all" ? route.marks_by_user : (route.marks_by_user || []).filter((group) => group.user_name === userName)

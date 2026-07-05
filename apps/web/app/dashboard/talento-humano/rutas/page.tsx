@@ -207,6 +207,7 @@ export default function RoutesPlanningPage() {
   const [modal, setModal] = useState<"route" | "edit" | null>(null);
   const [editingRoute, setEditingRoute] = useState<RouteMonitor | null>(null);
   const [loadingMonitor, setLoadingMonitor] = useState(false);
+  const [savingRoute, setSavingRoute] = useState(false);
   const [form, setForm] = useState({ date: new Date().toISOString().slice(0, 10), vehicle_plate: "", employees: [] as string[], start_time: "08:00", end_time: "17:00", tolerance_minutes: 15, per_diem: 0, notes: "" });
   const [scheduleKind, setScheduleKind] = useState<"administrative" | "operational">("administrative");
   const [administrativeSite, setAdministrativeSite] = useState("SEDE-PRINCIPAL");
@@ -305,6 +306,7 @@ export default function RoutesPlanningPage() {
   }
 
   async function saveRoute() {
+    if (savingRoute) return;
     if (!form.employees.length) {
       setMessage("Selecciona al menos una persona para asignar el horario.");
       return;
@@ -313,23 +315,34 @@ export default function RoutesPlanningPage() {
       setMessage("Define hora de inicio y hora de fin del horario.");
       return;
     }
-    if (modal === "edit" && editingRoute) {
-      await api<TimeRoute>(`/api/v1/hr/routes/${editingRoute.id}`, { method: "PATCH", body: JSON.stringify(routePayload(editingRoute.status || "active")) });
-      setMessage("Horario actualizado correctamente.");
-    } else if (bulkMode) {
-      if (!bulk.start_date || !bulk.end_date || !bulk.weekdays.length) {
-        setMessage("Define rango de fechas y al menos un dia de la semana.");
-        return;
-      }
-      const result = await api<{ created: number }>("/api/v1/hr/routes/bulk", { method: "POST", body: JSON.stringify({ ...routePayload("active"), start_date: bulk.start_date, end_date: bulk.end_date, weekdays: bulk.weekdays }) });
-      setMessage(`${result.created || 0} horario(s) asignado(s) correctamente.`);
-    } else {
-      await api<TimeRoute>("/api/v1/hr/routes", { method: "POST", body: JSON.stringify(routePayload("active")) });
-      setMessage("Horario asignado correctamente.");
+    if (form.end_time <= form.start_time) {
+      setMessage("La hora de fin debe ser posterior a la hora de inicio.");
+      return;
     }
-    resetForm();
-    setModal(null);
-    await load();
+    setSavingRoute(true);
+    try {
+      if (modal === "edit" && editingRoute) {
+        await api<TimeRoute>(`/api/v1/hr/routes/${editingRoute.id}`, { method: "PATCH", body: JSON.stringify(routePayload(editingRoute.status || "active")) });
+        setMessage("Horario actualizado correctamente.");
+      } else if (bulkMode) {
+        if (!bulk.start_date || !bulk.end_date || !bulk.weekdays.length) {
+          setMessage("Define rango de fechas y al menos un dia de la semana.");
+          return;
+        }
+        const result = await api<{ created: number }>("/api/v1/hr/routes/bulk", { method: "POST", body: JSON.stringify({ ...routePayload("active"), start_date: bulk.start_date, end_date: bulk.end_date, weekdays: bulk.weekdays }) });
+        setMessage(`${result.created || 0} horario(s) asignado(s) correctamente.`);
+      } else {
+        await api<TimeRoute>("/api/v1/hr/routes", { method: "POST", body: JSON.stringify(routePayload("active")) });
+        setMessage("Horario asignado correctamente.");
+      }
+      resetForm();
+      setModal(null);
+      await load();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No fue posible guardar el horario.");
+    } finally {
+      setSavingRoute(false);
+    }
   }
 
   const activeRoutes = useMemo(() => routes.filter((route) => route.status !== "closed"), [routes]);
@@ -562,7 +575,7 @@ export default function RoutesPlanningPage() {
           <div className="mt-4">
             <PeoplePicker employees={employees} selected={form.employees} onChange={(next) => setForm((prev) => ({ ...prev, employees: next }))} />
           </div>
-          <button className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white" onClick={saveRoute} type="button"><Save size={17} /> {modal === "edit" ? "Guardar cambios" : bulkMode ? `Crear ${bulkCount} horario(s)` : "Asignar horario"}</button>
+          <button className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white disabled:bg-neutral-300" disabled={savingRoute} onClick={saveRoute} type="button"><Save size={17} /> {savingRoute ? "Guardando..." : modal === "edit" ? "Guardar cambios" : bulkMode ? `Crear ${bulkCount} horario(s)` : "Asignar horario"}</button>
         </ModalFrame>
       ) : null}
 
