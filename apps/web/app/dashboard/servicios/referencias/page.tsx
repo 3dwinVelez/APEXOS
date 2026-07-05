@@ -23,7 +23,6 @@ type ServiceReference = {
   manuals?: Manual[];
   total_pieces: number;
 };
-type ServiceStore = { code: string; label: string; active?: boolean };
 const categories = ["muebles", "colchones", "electrodomesticos", "cocina", "oficina", "decoracion", "iluminacion", "textiles", "otros"];
 const emptyPart = { name: "", quantity: 1, unit: "und", description: "" };
 const emptyForm = { code: "", name: "", category: "muebles", description: "", estimated_minutes: 60, brand: "", model: "", active: true, parts: [emptyPart] as Part[], manuals: [] as Manual[] };
@@ -110,66 +109,18 @@ export default function ServiceReferencesPage() {
   const [showForm, setShowForm] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [importRows, setImportRows] = useState<Record<string, string>[]>([]);
-  const [stores, setStores] = useState<ServiceStore[]>([]);
-  const [storeDraft, setStoreDraft] = useState("");
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyForm);
 
   async function load() {
     try {
-      const [referenceRows, storeRows] = await Promise.all([
-        api<ServiceReference[]>("/api/v1/services/references"),
-        api<ServiceStore[]>("/api/v1/services/service-stores")
-      ]);
+      const referenceRows = await api<ServiceReference[]>("/api/v1/services/references");
       setReferences(referenceRows);
-      setStores(storeRows);
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible cargar las referencias.");
       throw err;
     }
-  }
-
-  async function saveStores(nextStores = stores) {
-    setSaving(true);
-    setError("");
-    try {
-      const saved = await api<ServiceStore[]>("/api/v1/services/service-stores", { method: "PUT", body: JSON.stringify({ stores: nextStores }) });
-      const token = localStorage.getItem("token") || "";
-      const companyName = localStorage.getItem("apexos_company_name") || localStorage.getItem("company_name") || "SCJ";
-      let syncWarning = "";
-      try {
-        const response = await fetch(`/api/public/service-requests?empresa=${encodeURIComponent(companyName)}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ company_name: companyName, service_stores: saved })
-        });
-        if (!response.ok) {
-          const detail = await response.json().catch(() => ({}));
-          syncWarning = ` Sincronizacion publica pendiente: ${detail.message || response.statusText || response.status}.`;
-        }
-      } catch (syncError) {
-        syncWarning = ` Sincronizacion publica pendiente: ${syncError instanceof Error ? syncError.message : "error desconocido"}.`;
-      }
-      setStores(saved);
-      setStoreDraft("");
-      setMessage(`Almacenes actualizados.${syncWarning}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "No fue posible guardar los almacenes.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  function addStore() {
-    const label = storeDraft.trim();
-    if (!label) return;
-    const code = label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9_-]+/g, "_").replace(/^_+|_+$/g, "");
-    if (stores.some((item) => item.code === code)) {
-      setError("Ya existe un almacen con ese nombre.");
-      return;
-    }
-    saveStores([...stores, { code, label, active: true }]);
   }
 
   useEffect(() => {
@@ -319,13 +270,13 @@ export default function ServiceReferencesPage() {
   }
 
   return (
-    <div className="apex-workspace-shell space-y-5 pb-24 md:pb-8">
-      <header className="sticky top-0 z-20 -mx-3 border-b border-line bg-paper/95 px-3 py-3 backdrop-blur sm:-mx-4 sm:px-4 md:static md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0">
+    <div className="apex-workspace-shell space-y-4 pb-24 md:pb-8">
+      <header className="sticky top-0 z-20 -mx-3 border-b border-line bg-paper/95 px-3 py-2 backdrop-blur sm:-mx-4 sm:px-4 md:static md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0">
         <div className="min-w-0">
-          <Link className="mb-3 inline-flex h-11 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-medium text-neutral-600 hover:text-apex md:border-0 md:bg-transparent md:px-0" href="/dashboard/servicios"><ArrowLeft size={16} /> Volver a servicios</Link>
-          <p className="text-sm font-medium text-apex">Servicios</p>
-          <h1 className="text-2xl font-semibold md:text-3xl">Referencias de servicio</h1>
-          <p className="mt-2 max-w-3xl text-sm text-neutral-600">Maestro tecnico para modelos, listas de piezas, tiempos, manuales, guias y carga masiva por CSV.</p>
+          <Link className="mb-2 inline-flex h-9 items-center gap-2 rounded-md border border-line bg-white px-3 text-xs font-medium text-neutral-600 hover:text-apex md:border-0 md:bg-transparent md:px-0" href="/dashboard/servicios"><ArrowLeft size={15} /> Volver a servicios</Link>
+          <p className="text-xs font-medium text-apex">Servicios</p>
+          <h1 className="text-xl font-semibold md:text-2xl">Referencias de servicio</h1>
+          <p className="mt-1 max-w-3xl text-xs text-neutral-600 md:text-sm">Maestro tecnico para modelos, listas de piezas, tiempos, manuales, guias y carga masiva por CSV.</p>
         </div>
       </header>
 
@@ -333,13 +284,13 @@ export default function ServiceReferencesPage() {
       {error ? <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</div> : null}
 
       <section className="apex-context-hero">
-        <div className="relative z-10 flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative z-10 flex flex-col gap-3 p-3 sm:p-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
-            <div className="apex-eyebrow mb-3">
+            <div className="apex-eyebrow mb-2">
               <Sparkles size={14} /> Maestro tecnico de servicios
             </div>
-            <h2 className="max-w-3xl text-2xl font-semibold leading-tight sm:text-3xl">Referencias y listas listas para mantener</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/65">Compara fichas tecnicas, listas de piezas, tiempos y documentos sin abrir cada referencia. Edita solo cuando el maestro cambie.</p>
+            <h2 className="max-w-3xl text-xl font-semibold leading-tight sm:text-2xl">Referencias y listas listas para mantener</h2>
+            <p className="mt-1 max-w-3xl text-sm leading-5 text-white/65">Compara fichas tecnicas, listas de piezas, tiempos y documentos sin abrir cada referencia. Edita solo cuando el maestro cambie.</p>
           </div>
           <div className="grid shrink-0 grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             <button className="apex-hero-action col-span-2 inline-flex items-center justify-center gap-2 px-4 text-sm font-semibold sm:col-span-1" onClick={reset} type="button"><Plus size={17} /> Nueva referencia</button>
@@ -355,26 +306,6 @@ export default function ServiceReferencesPage() {
           <Summary label="Activas" value={stats.active} />
           <Summary label="Piezas configuradas" value={stats.parts} />
           <Summary label="Manuales y guias" value={stats.manuals} />
-        </div>
-      </section>
-
-      <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="font-semibold">Almacenes para solicitudes</h2>
-            <p className="mt-1 text-sm text-neutral-500">Lista usada por el formulario publico al seleccionar el almacen origen.</p>
-          </div>
-          <div className="flex w-full gap-2 sm:w-auto">
-            <input className="h-10 min-w-0 flex-1 rounded-md border border-line px-3 text-sm" placeholder="Nuevo almacen" value={storeDraft} onChange={(event) => setStoreDraft(event.target.value)} />
-            <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white disabled:opacity-50" disabled={saving || !storeDraft.trim()} onClick={addStore} type="button"><Plus size={15} /> Agregar</button>
-          </div>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {stores.map((store) => (
-            <button className={`rounded-md border px-3 py-2 text-sm font-semibold ${store.active !== false ? "border-apex bg-apex/10 text-apex" : "border-line bg-paper text-neutral-500"}`} disabled={saving} key={store.code} onClick={() => saveStores(stores.map((item) => item.code === store.code ? { ...item, active: item.active === false } : item))} type="button">
-              {store.label}
-            </button>
-          ))}
         </div>
       </section>
 
@@ -620,9 +551,9 @@ export default function ServiceReferencesPage() {
 
 function Summary({ label, value }: { label: string; value: number }) {
   return (
-    <div className="border-white/10 px-4 py-3 first:border-0 sm:border-l">
+    <div className="border-white/10 px-3 py-2 first:border-0 sm:border-l">
       <p className="text-xs text-white/55">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-white">{value}</p>
+      <p className="mt-0.5 text-base font-semibold text-white">{value}</p>
     </div>
   );
 }

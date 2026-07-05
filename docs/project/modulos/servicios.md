@@ -33,6 +33,8 @@
 - El listado principal usa una tabla profesional en escritorio para comparar orden, cliente, servicio, agenda, soportes y accion; en movil conserva tarjetas tactiles.
 - El lobby de referencias replica el patron operativo de Servicios: busqueda inmediata, filtros combinables, ordenamiento, tabla comparativa en escritorio y tarjetas tactiles en movil.
 - La consulta de referencias permite comparar estado, categoria, marca/modelo, piezas, documentos y tiempo estimado antes de abrir la ficha tecnica.
+- La pantalla de referencias queda enfocada solo en el maestro tecnico: se retira la edicion rapida de almacenes porque el catalogo oficial se administra desde Administracion > Almacenes de servicio.
+- La cabecera de referencias se compacta para liberar mas espacio vertical al buscador, filtros y tabla comparativa.
 - La creacion de orden exige referencia, tipo, fecha del servicio, nombre, cedula, telefono, direccion y observaciones; factura/pedido queda opcional y la cedula se conserva en metadata para compatibilidad.
 - La creacion de orden exige asignar un tecnico activo. No se permite crear una orden sin responsable operativo.
 - El rol exacto `Tecnico` solo puede consultar y operar Servicios; no puede crear ordenes, administrar referencias ni abrir reportes globales.
