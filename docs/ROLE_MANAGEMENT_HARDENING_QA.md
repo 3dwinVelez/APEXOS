@@ -8,7 +8,7 @@ Fortalecer la creacion y gestion de roles para que la matriz de permisos sea tra
 
 - La matriz anterior solo cubria un subconjunto de modulos y acciones: `access`, `view`, `create`, `edit`, `export`, `approve`.
 - Los roles base estaban limitados a `Tecnico`, `Empleado` y `Coordinador`.
-- El formulario de roles no tenia jerarquia, tipo de rol, alcance, restricciones por sede/area/centro de costo/proceso, copia desde rol ni resumen de impacto.
+- El formulario de roles no tenia jerarquia, tipo de rol, alcance, restricciones por sede/area/centro de costo/proceso ni copia desde rol.
 - La matriz podia quedar vacia de forma silenciosa cuando la lista de modulos activos del tenant llegaba vacia o no estaba disponible.
 - La API ya validaba permisos con `requirePermission`, pero la matriz no expresaba acciones criticas como eliminar, importar, anular, rechazar, adjuntar, descargar, configurar, administrar, automatizar, ver informacion sensible o gestionar usuarios/roles.
 - No habia auditoria explicita para creacion, edicion o cambio de estado de roles.
@@ -111,15 +111,23 @@ Fortalecer la creacion y gestion de roles para que la matriz de permisos sea tra
 - El formulario de roles ahora incluye:
   - nombre
   - descripcion
-  - nivel jerarquico
-  - tipo
-  - alcance
   - copia desde otro rol
-  - flags de delegacion y sensibilidad
   - filtros por grupo
   - buscador
   - vista compacta/completa
-  - resumen de impacto
+- Se elimino de la vista principal la captura de nivel jerarquico, tipo, alcance, sedes, areas, centros de costo, procesos, delegacion y sensibilidad global del rol. Estos datos no son necesarios para crear/asignar roles en el flujo administrativo diario.
+- La sensibilidad se gobierna por permiso de modulo mediante la accion `sensitive`; no existe un check global redundante en el rol.
+- El modal muestra los usuarios existentes que usan el rol seleccionado para validar alcance real antes o despues de ajustar permisos.
+
+## Validacion Con Usuarios Existentes
+
+El modal de Roles y permisos muestra un contador y una lista compacta de usuarios ya asignados al rol seleccionado. Esta vista permite probar cambios con usuarios reales sin navegar al maestro de usuarios:
+
+- Seleccionar un rol existente y confirmar cuantos usuarios lo usan.
+- Copiar un rol base, editar permisos y guardar un nuevo rol.
+- Asignar ese rol desde el maestro de usuarios.
+- Volver al maestro de roles y confirmar que el usuario aparece en la lista de usuarios del rol.
+- Revisar que los permisos sensibles se controlen por modulo con la accion `Sensible`.
 - La carga de catalogo de permisos ahora trata una lista vacia/desconocida de modulos activos como estado no concluyente, no como bloqueo total; asi la matriz no queda sin filas.
 - El frontend usa un catalogo funcional local si el endpoint remoto de permisos falla o responde vacio, y muestra una advertencia visible dentro del modal.
 - Los permisos del rol se normalizan contra el catalogo visible antes de editar, copiar o guardar, evitando perdida silenciosa de acciones.
@@ -142,9 +150,10 @@ Fortalecer la creacion y gestion de roles para que la matriz de permisos sea tra
 
 - `node -c apps/api/src/modules/admin/service.js`
 - `node -c apps/api/src/modules/admin/routes.js`
+- `npm --workspace apps/web run lint`
 - `npm --workspace apps/web run typecheck`
 - `npm --workspace apps/web run build`
-- `npm --workspace apps/api run prisma:validate`
+- `npm --workspace apps/api run prisma:validate` con `DATABASE_URL` dummy local.
 - `npm --workspace apps/api start` con `REDIS_DISABLED=true`, validado hasta `HTTP server listening`.
 - Prueba local de bootstrap API con `REDIS_DISABLED=true` en puerto 3035: el servidor arranco y respondio `/health`; devolvio 500 por usar `DATABASE_URL` temporal sin base local real.
 - Validacion SQL desde `.env`: `DATABASE_URL` apunta a `localhost:55432` y la conexion local fue rechazada porque no hay Postgres escuchando en ese puerto.

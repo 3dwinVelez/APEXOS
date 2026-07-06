@@ -529,14 +529,6 @@ function roleScopesFrom(role?: Role | null, key: "scopes" | "restrictions" = "sc
   };
 }
 
-function csvToList(value: string) {
-  return value.split(",").map((item) => item.trim()).filter(Boolean);
-}
-
-function listToCsv(value: string[]) {
-  return value.join(", ");
-}
-
 function isSupabaseSession() {
   if (typeof window === "undefined") return false;
   if (localStorage.getItem("auth_provider") === "supabase") return true;
@@ -767,12 +759,7 @@ export default function AdministracionPage() {
       return matchesGroup && (!term || text.includes(term));
     });
   }, [catalog, roleFilter, roleGroupFilter]);
-  const roleImpact = useMemo(() => {
-    const modules = Object.values(roleForm.permissions).filter((actions) => Object.values(actions || {}).some(Boolean)).length;
-    const actions = Object.values(roleForm.permissions).reduce((sum, actionsMap) => sum + Object.values(actionsMap || {}).filter(Boolean).length, 0);
-    const critical = Object.values(roleForm.permissions).reduce((sum, actionsMap) => sum + ["delete", "delete_physical_records", "administer", "configure", "sensitive", "manage_users", "manage_roles"].filter((action) => actionsMap?.[action]).length, 0);
-    return { modules, actions, critical };
-  }, [roleForm.permissions]);
+  const assignedRoleUsers = useMemo(() => users.filter((user) => selectedRoleId && Number(user.role_id) === selectedRoleId), [selectedRoleId, users]);
   const activeConfigFilters = [query.trim(), categoryFilter !== "all" ? categoryFilter : "", configStatusFilter !== "all" ? configStatusFilter : ""].filter(Boolean).length;
 
   function clearConfigFilters() {
@@ -936,7 +923,15 @@ export default function AdministracionPage() {
       setMessage("El nombre del rol es obligatorio.");
       return;
     }
-    const payload = { ...roleForm, hierarchy_level: Number(roleForm.hierarchy_level || 10), permissions: normalizeRolePermissions(catalog, roleForm.permissions) };
+    const normalizedPermissions = normalizeRolePermissions(catalog, roleForm.permissions);
+    const hasSensitivePermission = Object.values(normalizedPermissions).some((actions) => actions.sensitive);
+    const payload = {
+      ...roleForm,
+      hierarchy_level: Number(roleForm.hierarchy_level || 10),
+      can_delegate: false,
+      sensitive: hasSensitivePermission,
+      permissions: normalizedPermissions
+    };
     if (selectedRoleId) await api(`/api/v1/admin/roles/${selectedRoleId}`, { method: "PUT", body: JSON.stringify(payload) });
     else await api("/api/v1/admin/roles", { method: "POST", body: JSON.stringify(payload) });
     setMessage("Rol guardado.");
@@ -1793,45 +1788,45 @@ export default function AdministracionPage() {
 
       {activeModal === "roles" ? (
         <ModalFrame title="Roles y permisos" onClose={() => setActiveModal(null)} maxWidth="md:max-w-7xl">
-          <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
+          <div className="grid gap-3 lg:grid-cols-[260px_minmax(0,1fr)]">
             <aside className="space-y-2">
               <Button className="w-full" onClick={newRole} type="button"><Plus size={16} /> Nuevo rol</Button>
               {roles.map((role) => (
                 <button className={`w-full rounded-md border px-3 py-2 text-left text-sm ${selectedRoleId === role.id ? "border-apex bg-paper" : "border-line hover:bg-paper"}`} key={role.id} onClick={() => selectRole(role)} type="button">
                   <span className="block font-semibold">{role.name}</span>
-                  <span className="mt-1 block text-xs text-neutral-500">{role.active ? "Activo" : "Inactivo"} · {role.description || "Sin descripcion"}</span>
+                  <span className="mt-1 block text-xs text-neutral-500">{role.active ? "Activo" : "Inactivo"} - {role.description || "Sin descripcion"}</span>
                 </button>
               ))}
+              <div className="rounded-md border border-line bg-paper p-3">
+                <p className="text-xs font-semibold uppercase text-neutral-500">Usuarios con este rol</p>
+                <p className="mt-1 text-lg font-semibold">{assignedRoleUsers.length}</p>
+                <div className="mt-2 max-h-28 space-y-1 overflow-y-auto">
+                  {assignedRoleUsers.slice(0, 5).map((user) => <p className="truncate text-xs text-neutral-600" key={user.id}>{user.name} - {user.email}</p>)}
+                  {!assignedRoleUsers.length ? <p className="text-xs text-neutral-500">Sin usuarios asignados.</p> : null}
+                  {assignedRoleUsers.length > 5 ? <p className="text-xs font-medium text-neutral-500">+{assignedRoleUsers.length - 5} usuario(s) mas</p> : null}
+                </div>
+              </div>
             </aside>
             <section className="min-w-0">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h3 className="font-semibold">{selectedRole ? selectedRole.name : "Nuevo rol"}</h3>
-                  <p className="text-sm text-neutral-500">{roleImpact.modules} modulo(s), {roleImpact.actions} permiso(s), {roleImpact.critical} critico(s) · {filteredRoleCatalog.length}/{catalog.length} modulos visibles.</p>
+                  {selectedRole ? <p className="text-sm text-neutral-500">{selectedRole.active ? "Activo" : "Inactivo"} - {selectedRole.description || "Sin descripcion"}</p> : null}
                 </div>
                 <Button onClick={saveRole} type="button"><Save size={16} /> Guardar</Button>
               </div>
-              <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div className="mb-3 grid gap-3 rounded-md border border-line bg-white p-3 md:grid-cols-[minmax(180px,0.8fr)_minmax(240px,1.2fr)_220px]">
                 <Field label="Nombre del rol" value={roleForm.name} onChange={(value) => setRoleForm((prev) => ({ ...prev, name: value }))} />
                 <Field label="Descripcion" value={roleForm.description} onChange={(value) => setRoleForm((prev) => ({ ...prev, description: value }))} />
-                <Field label="Nivel jerarquico" type="number" value={roleForm.hierarchy_level} onChange={(value) => setRoleForm((prev) => ({ ...prev, hierarchy_level: value }))} />
-                <SelectField label="Tipo de rol" value={roleForm.role_type} onChange={(value) => setRoleForm((prev) => ({ ...prev, role_type: value }))} options={[["custom", "Personalizado"], ...(platformAdmin ? [["superadmin", "Superadmin"] as [string, string]] : []), ["admin_empresa", "Admin empresa"], ["gerencia", "Gerencia"], ["coordinador", "Coordinador"], ["supervisor", "Supervisor"], ["operativo", "Operativo"], ["analista", "Analista"], ["comercial", "Comercial"], ["auditor", "Auditor"], ["soporte", "Soporte"]]} />
-                <SelectField label="Alcance" value={roleForm.scope} onChange={(value) => setRoleForm((prev) => ({ ...prev, scope: value }))} options={[["company", "Empresa"], ["location", "Sede"], ["area", "Area"], ["cost_center", "Centro de costo"], ["process", "Proceso"]]} />
                 <SelectField label="Copiar desde rol" value="" onChange={copyRole} options={[["", "Seleccionar rol base"], ...roles.map((role) => [String(role.id), role.name] as [string, string])]} />
-                <Toggle label="Puede delegar permisos" checked={roleForm.can_delegate} onChange={(value) => setRoleForm((prev) => ({ ...prev, can_delegate: value }))} />
-                <Toggle label="Acceso sensible" checked={roleForm.sensitive} onChange={(value) => setRoleForm((prev) => ({ ...prev, sensitive: value }))} />
-                <Field label="Sedes permitidas" value={listToCsv(roleForm.scopes.locations)} onChange={(value) => setRoleForm((prev) => ({ ...prev, scopes: { ...prev.scopes, locations: csvToList(value) } }))} />
-                <Field label="Areas permitidas" value={listToCsv(roleForm.scopes.areas)} onChange={(value) => setRoleForm((prev) => ({ ...prev, scopes: { ...prev.scopes, areas: csvToList(value) } }))} />
-                <Field label="Centros costo permitidos" value={listToCsv(roleForm.scopes.cost_centers)} onChange={(value) => setRoleForm((prev) => ({ ...prev, scopes: { ...prev.scopes, cost_centers: csvToList(value) } }))} />
-                <Field label="Procesos permitidos" value={listToCsv(roleForm.scopes.processes)} onChange={(value) => setRoleForm((prev) => ({ ...prev, scopes: { ...prev.scopes, processes: csvToList(value) } }))} />
               </div>
-              <div className="mb-4 grid gap-3 rounded-md border border-line bg-paper p-3 md:grid-cols-[1fr_180px_150px]">
+              <div className="mb-3 grid gap-3 rounded-md border border-line bg-paper p-3 md:grid-cols-[1fr_180px_150px]">
                 <Field label="Buscar permiso" value={roleFilter} onChange={setRoleFilter} />
                 <SelectField label="Grupo" value={roleGroupFilter} onChange={setRoleGroupFilter} options={[["all", "Todos"], ...roleGroups.map((group) => [group, group] as [string, string])]} />
                 <SelectField label="Vista" value={roleActionMode} onChange={(value) => setRoleActionMode(value as "compact" | "full")} options={[["compact", "Compacta"], ["full", "Completa"]]} />
               </div>
               {roleCatalogWarning ? <p className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900">{roleCatalogWarning}</p> : null}
-              <div className="max-h-[58vh] overflow-auto rounded-md border border-line">
+              <div className="max-h-[64vh] overflow-auto rounded-md border border-line">
                 <table className="w-full min-w-[980px] text-sm">
                   <thead className="sticky top-0 z-10 bg-white">
                     <tr className="border-b border-line text-left text-xs text-neutral-500">
@@ -1844,7 +1839,7 @@ export default function AdministracionPage() {
                       <tr className="border-b border-line/70" key={item.key}>
                         <td className="py-2 pl-3">
                           <span className="block font-medium">{item.label}</span>
-                          <span className="text-xs text-neutral-500">{item.group || "general"} · {item.module || item.key}{item.submodule ? `/${item.submodule}` : ""}</span>
+                          <span className="text-xs text-neutral-500">{item.group || "general"} - {item.module || item.key}{item.submodule ? `/${item.submodule}` : ""}</span>
                         </td>
                         {visibleRoleActions.map((action) => (
                           <td className="py-2 text-center" key={action}>
