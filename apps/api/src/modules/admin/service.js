@@ -415,11 +415,8 @@ function validateRequiredUserInput(input, { requirePassword = false } = {}) {
   if (!fullName) throw badRequest("El nombre del usuario es obligatorio.");
   if (!email) throw badRequest("El correo del usuario es obligatorio.");
   if (!cleanText(input.role_id)) throw badRequest("El rol principal es obligatorio.");
+  if (!cleanText(input.company || input.empresa || input.company_id)) throw badRequest("La empresa del usuario es obligatoria.");
   if (!cleanText(input.document)) throw badRequest("El numero de documento es obligatorio.");
-  if (!cleanText(input.first_names)) throw badRequest("Los nombres del usuario son obligatorios.");
-  if (!cleanText(input.last_names)) throw badRequest("Los apellidos del usuario son obligatorios.");
-  if (!cleanText(input.position)) throw badRequest("El cargo del usuario es obligatorio.");
-  if (!cleanText(input.department || input.area)) throw badRequest("El area o departamento del usuario es obligatorio.");
   if (requirePassword && !cleanText(input.password || input.pas)) throw badRequest("La clave inicial es obligatoria.");
   return { fullName, email };
 }

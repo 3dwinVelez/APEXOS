@@ -52,12 +52,9 @@ function validateUserPayload(body: AnyRow, { requirePassword = false } = {}) {
   const fullName = clean(body.name) || `${firstNames || ""} ${lastNames || ""}`.trim();
   if (!email) throw httpError("Correo requerido.", 400);
   if (!fullName) throw httpError("Nombre requerido.", 400);
-  if (!firstNames) throw httpError("Nombres requeridos.", 400);
-  if (!lastNames) throw httpError("Apellidos requeridos.", 400);
   if (!clean(body.role_id) && !clean(body.role_name)) throw httpError("Rol principal requerido.", 400);
+  if (!clean(body.company) && !clean(body.company_id)) throw httpError("Empresa requerida.", 400);
   if (!clean(body.document)) throw httpError("Documento requerido.", 400);
-  if (!clean(body.position) && !clean(body.operational_classification)) throw httpError("Cargo requerido.", 400);
-  if (!clean(body.department) && !clean(body.area)) throw httpError("Area o departamento requerido.", 400);
   if (requirePassword && String(body.password || "").length < 8) throw httpError("La clave temporal debe tener minimo 8 caracteres.", 400);
   return { email, fullName };
 }
@@ -78,13 +75,13 @@ function companyRole(roleName: unknown) {
 }
 
 function normalizeRoleName(profileKind: "tecnico" | "empleado", roleName: unknown) {
-  const value = String(roleName || "").trim().toLowerCase();
+  const rawValue = String(roleName || "").trim();
+  const value = rawValue.toLowerCase();
   if (profileKind === "tecnico") {
     if (!value || value === "soporte tecnico") return "Tecnico";
     return value.includes("tecnico") ? "Tecnico" : "Tecnico";
   }
-  if (!value) return "Empleado";
-  return value.includes("empleado") ? "Empleado" : "Empleado";
+  return rawValue || "Empleado";
 }
 
 function activeStatus(value: unknown) {

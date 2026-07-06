@@ -656,6 +656,12 @@ function optionPairs(items: MasterOption[] = [], placeholder?: string): Array<[s
   return placeholder ? [["", placeholder], ...pairs] : pairs;
 }
 
+function splitFullName(value: string) {
+  const parts = value.trim().split(/\s+/).filter(Boolean);
+  if (parts.length <= 1) return { first_names: parts[0] || "", last_names: "" };
+  return { first_names: parts.slice(0, -1).join(" "), last_names: parts.slice(-1).join(" ") };
+}
+
 function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) {
   return (
     <label className="flex min-h-10 items-center justify-between gap-3 rounded-md border border-line px-3 py-2 text-sm">
@@ -937,24 +943,29 @@ export default function AdministracionPage() {
   }
 
   function newUser() {
+    const companyName = typeof window !== "undefined" ? (localStorage.getItem("apexos_company_name") || localStorage.getItem("company_name") || "Nyvora") : "Nyvora";
     setSelectedUserId(null);
-    setUserForm(emptyUser);
+    setUserForm({ ...emptyUser, company: companyName });
     setUserTab("basicos");
     setSelectedDocumentFile(null);
     setUserEditorOpen(true);
   }
 
   function validateUser() {
-    if (!userForm.first_names.trim()) return "Los nombres son obligatorios.";
-    if (!userForm.last_names.trim()) return "Los apellidos son obligatorios.";
     if (!userForm.name.trim() && !`${userForm.first_names} ${userForm.last_names}`.trim()) return "El nombre es obligatorio.";
     if (!userForm.email.trim()) return "El correo es obligatorio.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userForm.email.trim())) return "El correo debe tener un formato valido.";
+    if (!selectedUserId && users.some((user) => user.email.trim().toLowerCase() === userForm.email.trim().toLowerCase())) return "Ya existe un usuario con este correo.";
+    if (!userForm.company.trim()) return "La empresa es obligatoria.";
     if (!userForm.role_id) return "El rol principal es obligatorio.";
     if (!userForm.document.trim()) return "El documento es obligatorio.";
-    if (!userForm.position.trim()) return "El cargo es obligatorio.";
-    if (!userForm.department.trim() && !userForm.area.trim()) return "El area o departamento es obligatorio.";
     if (!selectedUserId && !userForm.password) return "La clave inicial es obligatoria.";
     if (!selectedUserId && userForm.password.length < 8) return "La clave inicial debe tener minimo 8 caracteres.";
+    if (!selectedUserId) return "";
+    if (!userForm.first_names.trim()) return "Los nombres son obligatorios.";
+    if (!userForm.last_names.trim()) return "Los apellidos son obligatorios.";
+    if (!userForm.position.trim()) return "El cargo es obligatorio.";
+    if (!userForm.department.trim() && !userForm.area.trim()) return "El area o departamento es obligatorio.";
     if (userForm.operational_classification === "conductor" && (!userForm.driver_license || !userForm.license_expires_at)) return "Un conductor requiere licencia y fecha de vencimiento.";
     if (userForm.can_punch_time && (!userForm.base_site || !userForm.base_shift)) return "Para marcar jornada se requiere sede base y turno.";
     if (userForm.salary_base !== "0" && (!userForm.cost_center || !userForm.contract_type)) return "Los datos de nomina requieren centro de costo y tipo de contrato.";
@@ -968,10 +979,17 @@ export default function AdministracionPage() {
       setMessage(validation);
       return;
     }
+    const names = splitFullName(userForm.name || `${userForm.first_names} ${userForm.last_names}`.trim());
+    const role = roles.find((item) => item.id === Number(userForm.role_id));
     const payload = {
       ...userForm,
       name: userForm.name || `${userForm.first_names} ${userForm.last_names}`.trim(),
+      first_names: userForm.first_names || names.first_names,
+      last_names: userForm.last_names || names.last_names,
       role_id: userForm.role_id ? Number(userForm.role_id) : undefined,
+      role_name: role?.name,
+      access_email: userForm.access_email || userForm.email,
+      site: userForm.site || userForm.base_site,
       salary_base: Number(userForm.salary_base || 0),
       documents: selectedUser?.documents || []
     };
@@ -1423,6 +1441,59 @@ export default function AdministracionPage() {
     );
   }
 
+  function renderQuickUserCreation() {
+    return (
+      <div className="space-y-4">
+        <section className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <button className="rounded-md border border-apex bg-apex/5 p-4 text-left shadow-sm" type="button">
+            <span className="inline-flex items-center gap-2 rounded-md bg-apex px-2 py-1 text-xs font-semibold text-white"><UserPlus size={14} /> Principal</span>
+            <h3 className="mt-3 text-lg font-semibold">Crear usuario rapido</h3>
+            <p className="mt-1 text-sm text-neutral-600">Alta operativa con rol, empresa y acceso inicial.</p>
+          </button>
+          <button className="cursor-not-allowed rounded-md border border-line bg-paper p-4 text-left opacity-75" disabled type="button">
+            <span className="inline-flex items-center gap-2 rounded-md bg-white px-2 py-1 text-xs font-semibold text-neutral-600"><LockKeyhole size={14} /> Disponible proximamente</span>
+            <h3 className="mt-3 text-lg font-semibold">Creacion completa</h3>
+            <p className="mt-1 text-sm text-neutral-600">Datos laborales, nomina, documentos y configuraciones avanzadas.</p>
+          </button>
+        </section>
+
+        <section className="rounded-md border border-line bg-white p-4">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <Field label="Nombre completo" value={userForm.name} onChange={(value) => setUserField("name", value)} />
+            <Field label="Correo" value={userForm.email} onChange={(value) => { setUserField("email", value); setUserField("access_email", value); }} />
+            <Field label="Documento" value={userForm.document} onChange={(value) => setUserField("document", value)} />
+            <Field label="Empresa" value={userForm.company} onChange={(value) => setUserField("company", value)} />
+            <SelectField label="Sede" value={userForm.site} onChange={(value) => { setUserField("site", value); setUserField("base_site", value); }} options={optionPairs(masterData.locations, "Sin sede asignada")} />
+            <SelectField label="Rol" value={userForm.role_id} onChange={(value) => setUserField("role_id", value)} options={[["", "Seleccionar rol"], ...roles.filter((role) => role.active).map((role) => [String(role.id), role.name] as [string, string])]} />
+            <SelectField label="Estado" value={userForm.user_status} onChange={(value) => setUserField("user_status", value)} options={optionPairs(masterData.user_statuses)} />
+            <Field label="Clave temporal" type="password" value={userForm.password} onChange={(value) => setUserField("password", value)} />
+            <Toggle label="Exigir cambio de clave" checked={userForm.require_password_change} onChange={(value) => setUserField("require_password_change", value)} />
+          </div>
+          <div className="mt-4 grid gap-2 md:grid-cols-3">
+            <Toggle label="Acceso a servicios" checked={userForm.can_receive_services} onChange={(value) => setUserField("can_receive_services", value)} />
+            <Toggle label="Marcaciones" checked={userForm.can_punch_time} onChange={(value) => setUserField("can_punch_time", value)} />
+            <Toggle label="Asignacion a rutas" checked={userForm.can_be_assigned_routes} onChange={(value) => setUserField("can_be_assigned_routes", value)} />
+          </div>
+        </section>
+
+        <section className="rounded-md border border-dashed border-line bg-paper p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="font-semibold">Creacion completa - proximamente</h3>
+              <p className="mt-1 text-sm text-neutral-600">Campos preservados: centro de costos, cargo, area, contrato, supervisor, nomina, adjuntos, licencias y talento humano avanzado.</p>
+            </div>
+            <span className="rounded-md bg-white px-3 py-2 text-xs font-semibold text-neutral-600">Bloqueada</span>
+          </div>
+        </section>
+
+        <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-4">
+          <button className="h-10 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => setUserEditorOpen(false)} type="button">Cancelar</button>
+          <Button onClick={saveUser} type="button"><Save size={16} /> Crear usuario rapido</Button>
+        </div>
+      </div>
+    );
+  }
+
   function renderUserTab() {
     if (userTab === "basicos") {
       return (
@@ -1608,6 +1679,8 @@ export default function AdministracionPage() {
   }
 
   function renderUserEditor() {
+    if (!selectedUserId) return renderQuickUserCreation();
+
     return (
       <div className="grid gap-4 xl:grid-cols-[250px_1fr]">
         <aside className="space-y-3">
