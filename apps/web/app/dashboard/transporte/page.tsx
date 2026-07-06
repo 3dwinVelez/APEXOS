@@ -2,7 +2,7 @@
 
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { AlertTriangle, Archive, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, FileCheck2, Filter, Gauge, History, MapPin, Paperclip, Plus, RotateCcw, Save, Search, ShieldCheck, Truck, Wrench } from "lucide-react";
+import { Archive, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, FileCheck2, Filter, History, MapPin, Paperclip, Plus, RotateCcw, Save, Search, Truck, Wrench } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
@@ -465,13 +465,6 @@ export default function TransportPage() {
 
       {message ? <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{message}</div> : null}
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <CompactMetric icon={<Truck size={17} />} label="Flota registrada" value={metrics.total} detail={`${ready} aptos para operar`} />
-        <CompactMetric icon={<AlertTriangle size={17} />} label="Requieren atencion" value={metrics.blocked + metrics.warning} detail={`${metrics.blocked} bloqueados · ${metrics.warning} por vencer`} tone={metrics.blocked ? "red" : metrics.warning ? "amber" : "default"} />
-        <CompactMetric icon={<ShieldCheck size={17} />} label="Score promedio" value={`${metrics.avgScore}/100`} detail={scoreLabel(metrics.avgScore)} />
-        <CompactMetric icon={<Gauge size={17} />} label="Fichas incompletas" value={incomplete} detail="Score inferior a 70" tone={incomplete ? "amber" : "default"} />
-      </section>
-
       <section className="overflow-hidden rounded-md border border-line bg-white" id="flota-maestra">
         <div className="border-b border-line p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -479,7 +472,13 @@ export default function TransportPage() {
               <h2 className="text-lg font-semibold">Consulta de flota</h2>
               <p className="text-sm text-neutral-600">Compara placas y abre una ficha solo cuando necesites actuar.</p>
             </div>
-            <p className="text-sm text-neutral-500">{filtered.length} de {vehicles.length} vehiculo(s)</p>
+            <div className="flex flex-wrap justify-end gap-2 text-xs font-semibold text-neutral-600">
+              <span className="rounded-md border border-line px-3 py-1.5">{filtered.length} de {vehicles.length} vehiculo(s)</span>
+              <span className="rounded-md bg-emerald-50 px-3 py-1.5 text-emerald-700">{ready} aptos</span>
+              <span className={`rounded-md px-3 py-1.5 ${metrics.blocked + metrics.warning ? "bg-amber-50 text-amber-800" : "bg-paper text-neutral-600"}`}>{metrics.blocked + metrics.warning} por revisar</span>
+              <span className="rounded-md bg-paper px-3 py-1.5">Score {metrics.avgScore}/100 · {scoreLabel(metrics.avgScore)}</span>
+              {incomplete ? <span className="rounded-md bg-amber-50 px-3 py-1.5 text-amber-800">{incomplete} incompletas</span> : null}
+            </div>
           </div>
           <div className="mt-4 grid gap-2 lg:grid-cols-[minmax(240px,1fr)_repeat(4,minmax(150px,auto))]">
             <label className="relative">
@@ -700,19 +699,6 @@ export default function TransportPage() {
           </div>
         </ModalFrame>
       ) : null}
-    </div>
-  );
-}
-
-function CompactMetric({ icon, label, value, detail, tone = "default" }: { icon: ReactNode; label: string; value: string | number; detail: string; tone?: "default" | "amber" | "red" }) {
-  const toneClass = tone === "red" ? "border-red-200 bg-red-50 text-red-800" : tone === "amber" ? "border-amber-200 bg-amber-50 text-amber-800" : "border-line bg-white text-neutral-800";
-  return (
-    <div className={`flex items-center gap-3 rounded-md border p-3 ${toneClass}`}>
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white/70 text-apex">{icon}</span>
-      <div className="min-w-0">
-        <div className="flex items-baseline gap-2"><p className="text-xl font-semibold">{value}</p><p className="truncate text-sm font-semibold">{label}</p></div>
-        <p className="truncate text-xs opacity-70">{detail}</p>
-      </div>
     </div>
   );
 }

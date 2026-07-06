@@ -671,11 +671,6 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
   );
 }
 
-function CompactMetric({ icon, label, value, detail, tone = "default" }: { icon: React.ReactNode; label: string; value: number | string; detail: string; tone?: "default" | "amber" | "red" }) {
-  const toneClass = tone === "red" ? "border-rose-200 bg-rose-50 text-rose-900" : tone === "amber" ? "border-amber-200 bg-amber-50 text-amber-900" : "border-line bg-white text-neutral-800";
-  return <div className={`flex items-center gap-3 rounded-md border p-3 ${toneClass}`}><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white/70 text-apex">{icon}</span><div className="min-w-0"><div className="flex items-baseline gap-2"><p className="text-xl font-semibold">{value}</p><p className="truncate text-sm font-semibold">{label}</p></div><p className="truncate text-xs opacity-70">{detail}</p></div></div>;
-}
-
 export default function AdministracionPage() {
   const initializedRole = useRef(false);
   const [activeModal, setActiveModal] = useState<"roles" | "users" | "masters" | "logs" | "info" | null>(null);
@@ -767,8 +762,6 @@ export default function AdministracionPage() {
     const critical = Object.values(roleForm.permissions).reduce((sum, actionsMap) => sum + ["delete", "delete_physical_records", "administer", "configure", "sensitive", "manage_users", "manage_roles"].filter((action) => actionsMap?.[action]).length, 0);
     return { modules, actions, critical };
   }, [roleForm.permissions]);
-  const configuredItems = visibleConfigItems.filter((item) => item.status === "configurado" || item.status === "activo").length;
-  const pendingItems = visibleConfigItems.filter((item) => item.status === "pendiente").length;
   const activeConfigFilters = [query.trim(), categoryFilter !== "all" ? categoryFilter : "", configStatusFilter !== "all" ? configStatusFilter : ""].filter(Boolean).length;
 
   function clearConfigFilters() {
@@ -1718,13 +1711,6 @@ export default function AdministracionPage() {
       </header>
 
       {message ? <p className="rounded-md border border-line bg-white px-4 py-3 text-sm text-neutral-700">{message}</p> : null}
-
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <CompactMetric icon={<Users size={17} />} label="Usuarios activos" value={metrics.active} detail={`${metrics.inactive} inactivos`} />
-        <CompactMetric icon={<AlertTriangle size={17} />} label="Requieren atencion" value={metrics.pending + metrics.withoutRole + metrics.withoutSite} detail={`${metrics.pending} pendientes · ${metrics.withoutRole} sin rol`} tone={metrics.pending + metrics.withoutRole + metrics.withoutSite ? "amber" : "default"} />
-        <CompactMetric icon={<Shield size={17} />} label="Roles activos" value={roles.filter((role) => role.active).length} detail={`${roles.length} roles configurados`} />
-        <CompactMetric icon={<SlidersHorizontal size={17} />} label="Configuraciones listas" value={`${configuredItems}/${visibleConfigItems.length}`} detail={`${pendingItems} pendientes`} tone={pendingItems ? "amber" : "default"} />
-      </section>
 
       <section className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
         <button className="group flex items-center gap-3 rounded-md border border-line bg-white p-3 text-left hover:border-apex hover:bg-paper" onClick={() => setActiveModal("users")} type="button"><span className="flex h-10 w-10 items-center justify-center rounded-md bg-paper text-apex group-hover:bg-white"><Users size={18} /></span><span><span className="block text-sm font-semibold">Usuarios</span><span className="text-xs text-neutral-500">Accesos y fichas maestras</span></span></button>

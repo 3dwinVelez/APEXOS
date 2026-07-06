@@ -2,7 +2,7 @@
 
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { Activity, ArrowLeft, Building2, CalendarDays, Camera, CheckSquare2, Clock, Copy, Edit3, Filter, HelpCircle, Navigation, Plus, RefreshCw, RotateCcw, Save, Search, Square, Truck, UserPlus, Users, X } from "lucide-react";
+import { ArrowLeft, Building2, CalendarDays, Camera, CheckSquare2, Clock, Copy, Edit3, Filter, HelpCircle, Navigation, Plus, RefreshCw, RotateCcw, Save, Search, Square, Truck, UserPlus, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
@@ -91,19 +91,6 @@ function notesWithoutAdministrativeSite(value = "") {
 function administrativeSiteFromNotes(value = "") {
   const line = value.split("\n").find((item) => item.trim().startsWith(administrativeSitePrefix));
   return line ? line.replace(administrativeSitePrefix, "").trim() : "";
-}
-
-function CompactMetric({ icon, label, value, hint, tone = "default" }: { icon: React.ReactNode; label: string; value: number | string; hint: string; tone?: "default" | "amber" }) {
-  const toneClass = tone === "amber" ? "border-amber-200 bg-amber-50 text-amber-900" : "border-line bg-white text-neutral-800";
-  return (
-    <div className={`flex items-center gap-3 rounded-md border p-3 ${toneClass}`}>
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white/70 text-apex">{icon}</span>
-      <div className="min-w-0">
-        <div className="flex items-baseline gap-2"><p className="text-xl font-semibold">{value}</p><p className="truncate text-sm font-semibold">{label}</p></div>
-        <p className="truncate text-xs opacity-70">{hint}</p>
-      </div>
-    </div>
-  );
 }
 
 function PeoplePicker({
@@ -404,13 +391,6 @@ export default function RoutesPlanningPage() {
 
       {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-900">{message}</div> : null}
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <CompactMetric icon={<CalendarDays size={17} />} label="Horarios activos" value={activeRoutes.length} hint={`${routes.length} registros totales`} />
-        <CompactMetric icon={<Users size={17} />} label="Personas asignadas" value={totalAssigned} hint={`${employees.length} disponibles`} />
-        <CompactMetric icon={<Building2 size={17} />} label="Tipo de jornada" value={`${administrativeRoutes}/${operationalRoutes}`} hint="Administrativas / operativas" />
-        <CompactMetric icon={<Activity size={17} />} label="Seguimiento" value={`${routeCoverage}%`} hint={`${routesWithoutPeople} horarios sin personas`} tone={routesWithoutPeople ? "amber" : "default"} />
-      </section>
-
       <section className="overflow-hidden rounded-md border border-line bg-white">
         <div className="border-b border-line p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -418,7 +398,14 @@ export default function RoutesPlanningPage() {
               <div className="flex items-center gap-2"><CalendarDays size={18} className="text-apex" /><h2 className="text-lg font-semibold">Consulta de horarios</h2></div>
               <p className="mt-1 text-sm text-neutral-600">Compara fecha, jornada, personas y estado antes de abrir o editar un horario.</p>
             </div>
-            <div className="flex items-center gap-3"><p className="text-sm text-neutral-500">{filteredRoutes.length} de {monitorRoutes.length}</p><button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={load} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={16} /> Actualizar</button></div>
+            <div className="flex flex-wrap items-center justify-end gap-2 text-xs font-semibold text-neutral-600">
+              <span className="rounded-md border border-line px-3 py-1.5">{filteredRoutes.length} de {monitorRoutes.length}</span>
+              <span className="rounded-md bg-emerald-50 px-3 py-1.5 text-emerald-700">{activeRoutes.length} activos</span>
+              <span className="rounded-md bg-paper px-3 py-1.5">{totalAssigned} personas</span>
+              <span className="rounded-md bg-paper px-3 py-1.5">{administrativeRoutes}/{operationalRoutes} adm/op</span>
+              <span className={`rounded-md px-3 py-1.5 ${routesWithoutPeople ? "bg-amber-50 text-amber-800" : "bg-paper text-neutral-600"}`}>{routeCoverage}% seguimiento</span>
+              <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={load} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={16} /> Actualizar</button>
+            </div>
           </div>
           <div className="mt-4 grid gap-2 lg:grid-cols-[minmax(240px,1fr)_180px_180px_170px]">
             <label className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} /><input className="h-10 w-full rounded-md border border-line pl-9 pr-3 text-sm" placeholder="Buscar persona, sede, placa o estado" value={query} onChange={(event) => setQuery(event.target.value)} /></label>

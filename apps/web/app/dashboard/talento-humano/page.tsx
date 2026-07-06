@@ -1,13 +1,12 @@
 "use client";
 
 import { api } from "@/lib/api";
-import { Activity, AlertTriangle, CalendarDays, Camera, CheckCircle2, FileText, MapPinned, Navigation, RefreshCw, Route, Smartphone, Truck, Users, X } from "lucide-react";
+import { AlertTriangle, CalendarDays, Camera, CheckCircle2, FileText, MapPinned, Navigation, RefreshCw, Route, Smartphone, Truck, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
-type Attendance = { user_name: string; next_type: string | null; punches: Array<{ id: number }> };
 type Employee = { id: number };
 type Vehicle = { id: number };
 type TimeRoute = { id: number | string; vehicle_plate: string; employees: string[]; start_time: string; end_time: string; status: string };
@@ -83,7 +82,6 @@ function routeLabel(route: RouteMonitor) {
 }
 
 export default function TalentPage() {
-  const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [routes, setRoutes] = useState<TimeRoute[]>([]);
@@ -94,14 +92,12 @@ export default function TalentPage() {
   async function load() {
     setLoadingMonitor(true);
     const today = new Date().toISOString().slice(0, 10);
-    const [attendanceData, employeeData, vehicleData, routeData, operationsData] = await Promise.all([
-      api<Attendance[]>("/api/v1/hr/attendance").catch(() => []),
+    const [employeeData, vehicleData, routeData, operationsData] = await Promise.all([
       api<Employee[]>("/api/v1/hr/employees").catch(() => []),
       api<Vehicle[]>("/api/v1/transport/vehicles").catch(() => []),
       api<TimeRoute[]>("/api/v1/hr/routes").catch(() => []),
       api<OperationsMap>(`/api/v1/hr/operations-map?date=${today}&minutes=30&footprint_days=30`).catch(() => null)
     ]);
-    setAttendance(attendanceData);
     setEmployees(employeeData);
     setVehicles(vehicleData);
     setRoutes(routeData);
@@ -158,7 +154,6 @@ export default function TalentPage() {
   const onlinePeople = operations?.totals.online ?? 0;
   const gpsCoverage = peopleInField ? Math.round((onlinePeople / peopleInField) * 100) : 0;
   const activeRoutes = monitorRoutes.filter((route) => ["active", "planned", "en_ruta"].includes(String(route.status || "").toLowerCase())).length;
-  const completedMarks = attendance.filter((item) => item.next_type == null).length;
   const openAlerts = (operations?.totals.without_gps || 0) + monitorRoutes.filter((route) => !(route.punch_points?.length || route.activity_points?.length)).length;
   const statusMessage = openAlerts
     ? `Hay ${openAlerts} punto(s) por revisar: horarios sin eventos o personas sin GPS.`
@@ -208,13 +203,6 @@ export default function TalentPage() {
           <ActionTile icon={<FileText size={20} />} title="Configurar nómina" detail="Administra recargos y conceptos contables." href="/dashboard/talento-humano/nomina" />
           <ActionTile icon={<Truck size={20} />} title="Gestionar vehículos" detail="Consulta disponibilidad y estado documental de la flota." href="/dashboard/transporte" />
         </div>
-      </section>
-
-      <section className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-        <CompactMetric icon={<Users size={16} />} label="Personal en campo" value={peopleInField} detail={`${onlinePeople} con señal reciente`} />
-        <CompactMetric icon={<Route size={16} />} label="Horarios activos" value={activeRoutes} detail={`${monitorRoutes.length} planeados hoy`} />
-        <CompactMetric icon={<Activity size={16} />} label="Eventos del día" value={fieldEvents} detail={`${completedMarks} jornadas completas`} />
-        <CompactMetric icon={<MapPinned size={16} />} label="Cobertura GPS" value={`${gpsCoverage}%`} detail={`${operations?.totals.without_gps || 0} personas sin GPS`} alert={openAlerts > 0} />
       </section>
 
       <section className="apex-section-card overflow-hidden">
@@ -358,10 +346,6 @@ function ActionTile({ icon, title, detail, href, primary = false }: { icon: Reac
       <span className="min-w-0"><span className="font-semibold">{title}</span><span className="mt-1 block text-sm leading-5 text-neutral-600">{detail}</span></span>
     </Link>
   );
-}
-
-function CompactMetric({ icon, label, value, detail, alert = false }: { icon: ReactNode; label: string; value: number | string; detail: string; alert?: boolean }) {
-  return <div className="flex items-center gap-3 rounded-lg border border-line bg-white/85 px-3 py-2.5 text-neutral-800"><span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${alert ? "bg-amber-50 text-amber-800" : "bg-paper text-apex"}`}>{icon}</span><div className="min-w-0 flex-1"><div className="flex items-baseline justify-between gap-2"><p className="truncate text-xs font-semibold uppercase text-neutral-600">{label}</p><p className="text-lg font-semibold text-neutral-900">{value}</p></div><p className="truncate text-xs text-neutral-600">{detail}</p></div></div>;
 }
 
 function MonitorStrip({ label, value, hint }: { label: string; value: number | string; hint: string }) {
