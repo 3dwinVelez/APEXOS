@@ -960,7 +960,6 @@ export default function AdministracionPage() {
     if (!userForm.position.trim()) return "El cargo es obligatorio.";
     if (!userForm.department.trim() && !userForm.area.trim()) return "El area o departamento es obligatorio.";
     if (userForm.operational_classification === "conductor" && (!userForm.driver_license || !userForm.license_expires_at)) return "Un conductor requiere licencia y fecha de vencimiento.";
-    if (userForm.can_punch_time && (!userForm.base_site || !userForm.base_shift)) return "Para marcar jornada se requiere sede base y turno.";
     if (userForm.salary_base !== "0" && (!userForm.cost_center || !userForm.contract_type)) return "Los datos de nomina requieren centro de costo y tipo de contrato.";
     if (userForm.end_date && userForm.hire_date && userForm.end_date < userForm.hire_date) return "La fecha de retiro no puede ser anterior al ingreso.";
     return "";
@@ -974,8 +973,22 @@ export default function AdministracionPage() {
     }
     const names = splitFullName(userForm.name || `${userForm.first_names} ${userForm.last_names}`.trim());
     const role = roles.find((item) => item.id === Number(userForm.role_id));
+    const userPayload = { ...userForm } as Partial<UserForm>;
+    const roleGovernedFields: Array<keyof UserForm> = [
+      "additional_roles",
+      "can_approve_documents",
+      "can_authorize_exceptions",
+      "can_be_assigned_routes",
+      "can_manage_inventory",
+      "can_punch_time",
+      "can_receive_services",
+      "special_permissions"
+    ];
+    roleGovernedFields.forEach((field) => {
+      delete userPayload[field];
+    });
     const payload = {
-      ...userForm,
+      ...userPayload,
       name: userForm.name || `${userForm.first_names} ${userForm.last_names}`.trim(),
       first_names: userForm.first_names || names.first_names,
       last_names: userForm.last_names || names.last_names,
@@ -1462,11 +1475,7 @@ export default function AdministracionPage() {
             <Field label="Clave temporal" type="password" value={userForm.password} onChange={(value) => setUserField("password", value)} />
             <Toggle label="Exigir cambio de clave" checked={userForm.require_password_change} onChange={(value) => setUserField("require_password_change", value)} />
           </div>
-          <div className="mt-4 grid gap-2 md:grid-cols-3">
-            <Toggle label="Acceso a servicios" checked={userForm.can_receive_services} onChange={(value) => setUserField("can_receive_services", value)} />
-            <Toggle label="Marcaciones" checked={userForm.can_punch_time} onChange={(value) => setUserField("can_punch_time", value)} />
-            <Toggle label="Asignacion a rutas" checked={userForm.can_be_assigned_routes} onChange={(value) => setUserField("can_be_assigned_routes", value)} />
-          </div>
+          <p className="mt-3 rounded-md bg-paper px-3 py-2 text-xs font-medium text-neutral-600">Los permisos y alcances se administran desde el maestro de Roles y permisos. En esta vista solo se asigna el rol principal del usuario.</p>
         </section>
 
         <section className="rounded-md border border-dashed border-line bg-paper p-4">
@@ -1516,17 +1525,16 @@ export default function AdministracionPage() {
           <Field label="Correo de acceso" value={userForm.access_email} onChange={(value) => setUserField("access_email", value)} />
           <Field label={selectedUserId ? "Nueva clave opcional" : "Clave inicial"} type="password" value={userForm.password} onChange={(value) => setUserField("password", value)} />
           <SelectField label="Rol principal" value={userForm.role_id} onChange={(value) => setUserField("role_id", value)} options={[["", "Seleccionar rol"], ...roles.filter((role) => role.active).map((role) => [String(role.id), role.name] as [string, string])]} />
-          <Field label="Roles adicionales" value={userForm.additional_roles} onChange={(value) => setUserField("additional_roles", value)} />
           <SelectField label="Perfil operativo" value={userForm.operational_profile || userForm.operational_classification} onChange={(value) => { setUserField("operational_profile", value); setUserField("operational_classification", value); }} options={optionPairs(masterData.user_types, "Seleccionar perfil")} />
           <Field label="Empresa" value={userForm.company} onChange={(value) => setUserField("company", value)} />
           <SelectField label="Sede asignada" value={userForm.site} onChange={(value) => setUserField("site", value)} options={optionPairs(masterData.locations, "Seleccionar sede")} />
           <SelectField label="Area" value={userForm.area} onChange={(value) => { setUserField("area", value); setUserField("department", value); }} options={optionPairs(masterData.areas, "Seleccionar area")} />
           <SelectField label="Cargo" value={userForm.position} onChange={(value) => setUserField("position", value)} options={optionPairs(masterData.positions, "Seleccionar cargo")} />
           <Field label="Jefe directo" value={userForm.manager} onChange={(value) => setUserField("manager", value)} />
-          <Field label="Permisos especiales" value={userForm.special_permissions} onChange={(value) => setUserField("special_permissions", value)} />
           <SelectField label="Estado de sesion" value={userForm.session_status} onChange={(value) => setUserField("session_status", value)} options={optionPairs(masterData.session_statuses)} />
           <Toggle label="Requiere cambio de clave" checked={userForm.require_password_change} onChange={(value) => setUserField("require_password_change", value)} />
           <Field label="MFA / 2FA futuro" value={userForm.mfa_status} onChange={(value) => setUserField("mfa_status", value)} />
+          <p className="rounded-md bg-paper px-3 py-2 text-xs font-medium text-neutral-600 md:col-span-2 xl:col-span-3">Los permisos, alcances y roles adicionales se controlan en el maestro de Roles y permisos; aqui solo se asigna el rol principal.</p>
         </div>
       );
     }
@@ -1561,16 +1569,11 @@ export default function AdministracionPage() {
           <SelectField label="Clasificacion operativa" value={userForm.operational_classification} onChange={(value) => setUserField("operational_classification", value)} options={optionPairs(masterData.user_types)} />
           <SelectField label="Sede base" value={userForm.base_site} onChange={(value) => setUserField("base_site", value)} options={optionPairs(masterData.locations, "Seleccionar sede")} />
           <Field label="Zona de operacion" value={userForm.operation_zone} onChange={(value) => setUserField("operation_zone", value)} />
-          <Toggle label="Puede realizar marcaciones" checked={userForm.can_punch_time} onChange={(value) => setUserField("can_punch_time", value)} />
-          <Toggle label="Puede recibir servicios" checked={userForm.can_receive_services} onChange={(value) => setUserField("can_receive_services", value)} />
-          <Toggle label="Puede ser asignado a rutas" checked={userForm.can_be_assigned_routes} onChange={(value) => setUserField("can_be_assigned_routes", value)} />
-          <Toggle label="Puede responder inventario" checked={userForm.can_manage_inventory} onChange={(value) => setUserField("can_manage_inventory", value)} />
-          <Toggle label="Puede aprobar documentos" checked={userForm.can_approve_documents} onChange={(value) => setUserField("can_approve_documents", value)} />
-          <Toggle label="Puede autorizar novedades" checked={userForm.can_authorize_exceptions} onChange={(value) => setUserField("can_authorize_exceptions", value)} />
           <Field label="Licencia de conduccion" value={userForm.driver_license} onChange={(value) => setUserField("driver_license", value)} />
           <Field label="Categoria licencia" value={userForm.license_category} onChange={(value) => setUserField("license_category", value)} />
           <Field label="Vencimiento licencia" type="date" value={userForm.license_expires_at} onChange={(value) => setUserField("license_expires_at", value)} />
           <Field label="Restricciones operativas" value={userForm.operational_restrictions} onChange={(value) => setUserField("operational_restrictions", value)} />
+          <p className="rounded-md bg-paper px-3 py-2 text-xs font-medium text-neutral-600 md:col-span-2 xl:col-span-3">Las capacidades operativas se heredan del rol asignado y se modifican en Roles y permisos.</p>
         </div>
       );
     }

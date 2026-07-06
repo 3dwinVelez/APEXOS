@@ -29,6 +29,7 @@ Fortalecer el modulo de creacion y gestion de usuarios como maestro principal de
 - Frontend:
   - El formulario consume maestros de usuario con fallback seguro.
   - Campos de clasificacion clave pasan a selects: tipo documento, estado usuario, perfil/tipo usuario, sede, area, cargo, tipo vinculacion, tipo contrato, centro costo, jornada/turno, banco y clasificacion operativa.
+  - La creacion/edicion de usuario conserva solo la asignacion del rol principal; los permisos, alcances, roles adicionales y capacidades operativas se administran desde el maestro de Roles y permisos.
   - Se agregan acciones: reset de acceso, bloqueo de acceso, asociar documento y eliminar documento.
   - Documentos quedan visibles como expediente del usuario con tipo, archivo, estado y ruta/URL.
   - Carga binaria directa al bucket privado `user-documents` para PDF, PNG, JPEG y WEBP hasta 10MB.

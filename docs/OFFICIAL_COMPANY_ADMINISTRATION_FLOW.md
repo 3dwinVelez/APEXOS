@@ -15,8 +15,15 @@ La creacion de empresas, clientes, administradores y usuarios operativos debe ej
 5. Activar modulos contratados.
 6. Crear administrador de empresa.
 7. Crear usuarios operativos o tecnicos.
-8. Asignar roles/permisos.
-9. Validar acceso y aislamiento multiempresa.
+8. Asignar el rol principal del usuario.
+9. Configurar permisos y alcances exclusivamente desde el maestro de Roles y permisos.
+10. Validar acceso y aislamiento multiempresa.
+
+## Gobierno De Roles En Usuarios
+
+La pantalla de creacion/edicion de usuarios no debe exponer banderas de permisos operativos como servicios, marcaciones, rutas, inventario, aprobaciones o excepciones.
+
+El formulario de usuario solo asigna el rol principal. La definicion de permisos, alcances, roles adicionales y capacidades operativas pertenece al maestro `Roles y permisos`, para evitar configuraciones paralelas y mantener trazabilidad RBAC/ABAC centralizada.
 
 ## Componentes Oficiales
 
