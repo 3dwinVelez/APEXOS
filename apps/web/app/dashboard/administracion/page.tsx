@@ -1636,25 +1636,25 @@ export default function AdministracionPage() {
 
   function renderUserDirectory() {
     return (
-      <div className="space-y-4">
-        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {[["Total usuarios", users.length, "text-neutral-950"], ["Activos", metrics.active, "text-emerald-700"], ["Inactivos", metrics.inactive, "text-neutral-600"], ["Sin rol", metrics.withoutRole, "text-amber-700"]].map(([label, value, tone]) => (
-            <div className="rounded-md border border-line bg-white p-3" key={String(label)}><p className="text-xs font-semibold uppercase text-neutral-500">{label}</p><p className={`mt-2 text-2xl font-semibold ${tone}`}>{value}</p></div>
-          ))}
-        </section>
-        <section className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-paper p-3">
-          <div className="flex min-w-0 flex-1 flex-wrap gap-2">
+      <div className="space-y-3">
+        <section className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper p-2">
+          <div className="flex min-w-0 flex-1 flex-col gap-2 lg:flex-row lg:items-center">
             <label className="relative min-w-[220px] flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
               <input className="h-11 w-full rounded-md border border-line bg-white pl-9 pr-3 text-sm" placeholder="Buscar nombre, correo, rol, cargo o area..." value={userSearch} onChange={(event) => setUserSearch(event.target.value)} />
             </label>
-            <select className="h-11 rounded-md border border-line bg-white px-3 text-sm font-semibold" value={userStatusFilter} onChange={(event) => setUserStatusFilter(event.target.value)}>
-              <option value="all">Todos los estados</option><option value="active">Activos</option><option value="inactive">Inactivos / suspendidos</option>
-            </select>
+            <div className="flex flex-wrap items-center gap-2">
+              <select className="h-11 min-w-[180px] rounded-md border border-line bg-white px-3 text-sm font-semibold" value={userStatusFilter} onChange={(event) => setUserStatusFilter(event.target.value)}>
+                <option value="all">Todos los estados</option><option value="active">Activos</option><option value="inactive">Inactivos / suspendidos</option>
+              </select>
+              <span className="whitespace-nowrap rounded-md border border-line bg-white px-3 py-2 text-xs font-semibold text-neutral-600">{filteredUsers.length}/{users.length} usuarios</span>
+              <span className="whitespace-nowrap rounded-md bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">{metrics.active} activos</span>
+              {metrics.withoutRole ? <span className="whitespace-nowrap rounded-md bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">{metrics.withoutRole} sin rol</span> : null}
+            </div>
           </div>
           <Button onClick={newUser} type="button"><UserPlus size={16} /> Crear usuario</Button>
         </section>
-        <div className="max-h-[58vh] overflow-auto rounded-md border border-line bg-white">
+        <div className="max-h-[68vh] overflow-auto rounded-md border border-line bg-white">
           <table className="w-full min-w-[900px] text-sm">
             <thead className="sticky top-0 z-10 bg-paper"><tr className="border-b border-line text-left text-xs font-semibold uppercase text-neutral-500"><th className="px-3 py-3">Usuario</th><th className="px-3 py-3">Rol y cargo</th><th className="px-3 py-3">Organizacion</th><th className="px-3 py-3">Estado</th><th className="px-3 py-3 text-right">Acciones</th></tr></thead>
             <tbody>
