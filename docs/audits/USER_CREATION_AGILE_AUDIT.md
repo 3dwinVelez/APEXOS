@@ -112,6 +112,8 @@ Las validaciones estaticas, tipado, build y esquema pasaron. La prueba funcional
 
 Implementacion lista a nivel codigo, build y esquema. La validacion E2E de creacion real queda pendiente por infraestructura local de QA, no por error de compilacion.
 
+Actualizacion 2026-07-06: la validacion real de usuarios, roles y permisos para Nyvora fue ejecutada posteriormente con datos controlados productivos. Evidencia: `docs/audits/NYVORA_USERS_ROLES_QA_TEST.md`.
+
 ## Recomendacion para produccion
 
-No promover a produccion hasta ejecutar E2E en un entorno QA con base activa, creando un usuario Nyvora real, validando login, rol, activo/inactivo, correo duplicado, empresa/sede y acceso a modulos. No requiere migracion.
+La promocion queda soportada por la evidencia posterior de Nyvora en `docs/audits/NYVORA_USERS_ROLES_QA_TEST.md`: usuarios, roles, permisos, login, duplicados, activo/inactivo, aislamiento por tenant y bloqueo de creacion completa quedaron validados con datos reales controlados. No requiere migracion.
