@@ -9,6 +9,7 @@ Fortalecer la creacion y gestion de roles para que la matriz de permisos sea tra
 - La matriz anterior solo cubria un subconjunto de modulos y acciones: `access`, `view`, `create`, `edit`, `export`, `approve`.
 - Los roles base estaban limitados a `Tecnico`, `Empleado` y `Coordinador`.
 - El formulario de roles no tenia jerarquia, tipo de rol, alcance, restricciones por sede/area/centro de costo/proceso, copia desde rol ni resumen de impacto.
+- La matriz podia quedar vacia de forma silenciosa cuando la lista de modulos activos del tenant llegaba vacia o no estaba disponible.
 - La API ya validaba permisos con `requirePermission`, pero la matriz no expresaba acciones criticas como eliminar, importar, anular, rechazar, adjuntar, descargar, configurar, administrar, automatizar, ver informacion sensible o gestionar usuarios/roles.
 - No habia auditoria explicita para creacion, edicion o cambio de estado de roles.
 - Los alcances por sede, area, centro de costo y proceso se guardaban como metadata, pero no se evaluaban en el middleware RBAC.
@@ -119,6 +120,10 @@ Fortalecer la creacion y gestion de roles para que la matriz de permisos sea tra
   - buscador
   - vista compacta/completa
   - resumen de impacto
+- La carga de catalogo de permisos ahora trata una lista vacia/desconocida de modulos activos como estado no concluyente, no como bloqueo total; asi la matriz no queda sin filas.
+- El frontend usa un catalogo funcional local si el endpoint remoto de permisos falla o responde vacio, y muestra una advertencia visible dentro del modal.
+- Los permisos del rol se normalizan contra el catalogo visible antes de editar, copiar o guardar, evitando perdida silenciosa de acciones.
+- La accion `delete_physical_records` queda alineada en backend y frontend para la matriz completa.
 
 ## Seguridad
 

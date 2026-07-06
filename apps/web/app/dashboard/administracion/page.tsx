@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { api } from "@/lib/api";
+import { api, fallbackAdminPermissionCatalog } from "@/lib/api";
 import { loadModuleAccess } from "@/lib/moduleAccess";
 import { MODULES } from "@/lib/modules";
 import { getUserDocumentUrl, uploadUserDocument } from "@/lib/supabaseStorage";
@@ -494,6 +494,16 @@ function emptyPermissions(catalog: CatalogItem[]) {
   ]));
 }
 
+function normalizeRolePermissions(catalog: CatalogItem[], permissions?: Record<string, Record<string, boolean>>) {
+  const base = emptyPermissions(catalog);
+  for (const item of catalog) {
+    for (const action of item.actions) {
+      base[item.key][action] = Boolean(permissions?.[item.key]?.[action]);
+    }
+  }
+  return base;
+}
+
 function emptyRoleForm(catalog: CatalogItem[]) {
   return {
     name: "",
@@ -694,6 +704,7 @@ export default function AdministracionPage() {
   const [roleFilter, setRoleFilter] = useState("");
   const [roleGroupFilter, setRoleGroupFilter] = useState("all");
   const [roleActionMode, setRoleActionMode] = useState<"compact" | "full">("compact");
+  const [roleCatalogWarning, setRoleCatalogWarning] = useState("");
   const [userForm, setUserForm] = useState<UserForm>(emptyUser);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [userTab, setUserTab] = useState<UserTab>("basicos");
@@ -786,7 +797,8 @@ export default function AdministracionPage() {
       api<SatisfactionQuestion[]>("/api/v1/services/satisfaction-questions"),
       api<PlatformLog[]>("/api/v1/admin/platform-logs?limit=120")
     ]);
-    const catalogData = catalogResult.status === "fulfilled" ? catalogResult.value : [];
+    const localCatalog = fallbackAdminPermissionCatalog() as CatalogItem[];
+    const catalogData = catalogResult.status === "fulfilled" && catalogResult.value.length ? catalogResult.value : localCatalog;
     const rolesData = rolesResult.status === "fulfilled" ? rolesResult.value : [];
     const usersData = usersResult.status === "fulfilled" ? usersResult.value : [];
     const masterDataResult = masterResult.status === "fulfilled" ? masterResult.value : fallbackUserMasterData;
@@ -802,8 +814,11 @@ export default function AdministracionPage() {
     setServiceStores(serviceStoresData.length ? serviceStoresData : defaultServiceStores);
     setSatisfactionQuestions(satisfactionQuestionsData.length ? satisfactionQuestionsData : defaultSatisfactionQuestions);
     setPlatformLogs(platformLogsData);
+    setRoleCatalogWarning(catalogResult.status === "fulfilled" && catalogResult.value.length
+      ? ""
+      : "Catalogo remoto de permisos no disponible o vacio. Se activo el catalogo funcional local para evitar una matriz sin permisos.");
     const errors = [
-      catalogResult.status === "rejected" ? "catalogo de permisos" : "",
+      catalogResult.status === "rejected" ? "catalogo remoto de permisos" : "",
       rolesResult.status === "rejected" ? "roles" : "",
       usersResult.status === "rejected" ? "usuarios" : "",
       masterResult.status === "rejected" ? "maestros de usuario" : "",
@@ -831,7 +846,7 @@ export default function AdministracionPage() {
         restrictions: roleScopesFrom(initialRole, "restrictions"),
         can_delegate: Boolean(initialRole.can_delegate),
         sensitive: Boolean(initialRole.sensitive),
-        permissions: initialRole.permissions || emptyPermissions(catalogData)
+        permissions: normalizeRolePermissions(catalogData, initialRole.permissions)
       });
     }
   }, []);
@@ -874,7 +889,7 @@ export default function AdministracionPage() {
       restrictions: roleScopesFrom(role, "restrictions"),
       can_delegate: Boolean(role.can_delegate),
       sensitive: Boolean(role.sensitive),
-      permissions: role.permissions || emptyPermissions(catalog)
+      permissions: normalizeRolePermissions(catalog, role.permissions)
     });
   }
 
@@ -899,7 +914,7 @@ export default function AdministracionPage() {
       restrictions: roleScopesFrom(role, "restrictions"),
       can_delegate: Boolean(role.can_delegate),
       sensitive: Boolean(role.sensitive),
-      permissions: role.permissions || emptyPermissions(catalog)
+      permissions: normalizeRolePermissions(catalog, role.permissions)
     });
   }
 
@@ -921,7 +936,7 @@ export default function AdministracionPage() {
       setMessage("El nombre del rol es obligatorio.");
       return;
     }
-    const payload = { ...roleForm, hierarchy_level: Number(roleForm.hierarchy_level || 10), permissions: roleForm.permissions };
+    const payload = { ...roleForm, hierarchy_level: Number(roleForm.hierarchy_level || 10), permissions: normalizeRolePermissions(catalog, roleForm.permissions) };
     if (selectedRoleId) await api(`/api/v1/admin/roles/${selectedRoleId}`, { method: "PUT", body: JSON.stringify(payload) });
     else await api("/api/v1/admin/roles", { method: "POST", body: JSON.stringify(payload) });
     setMessage("Rol guardado.");
@@ -1792,7 +1807,7 @@ export default function AdministracionPage() {
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h3 className="font-semibold">{selectedRole ? selectedRole.name : "Nuevo rol"}</h3>
-                  <p className="text-sm text-neutral-500">{roleImpact.modules} modulo(s), {roleImpact.actions} permiso(s), {roleImpact.critical} critico(s).</p>
+                  <p className="text-sm text-neutral-500">{roleImpact.modules} modulo(s), {roleImpact.actions} permiso(s), {roleImpact.critical} critico(s) · {filteredRoleCatalog.length}/{catalog.length} modulos visibles.</p>
                 </div>
                 <Button onClick={saveRole} type="button"><Save size={16} /> Guardar</Button>
               </div>
@@ -1815,6 +1830,7 @@ export default function AdministracionPage() {
                 <SelectField label="Grupo" value={roleGroupFilter} onChange={setRoleGroupFilter} options={[["all", "Todos"], ...roleGroups.map((group) => [group, group] as [string, string])]} />
                 <SelectField label="Vista" value={roleActionMode} onChange={(value) => setRoleActionMode(value as "compact" | "full")} options={[["compact", "Compacta"], ["full", "Completa"]]} />
               </div>
+              {roleCatalogWarning ? <p className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900">{roleCatalogWarning}</p> : null}
               <div className="max-h-[58vh] overflow-auto rounded-md border border-line">
                 <table className="w-full min-w-[980px] text-sm">
                   <thead className="sticky top-0 z-10 bg-white">
@@ -1841,6 +1857,13 @@ export default function AdministracionPage() {
                         ))}
                       </tr>
                     ))}
+                    {!filteredRoleCatalog.length ? (
+                      <tr>
+                        <td className="px-3 py-10 text-center text-sm text-neutral-500" colSpan={visibleRoleActions.length + 1}>
+                          No hay permisos para mostrar con estos filtros. Limpia la busqueda o selecciona otro grupo.
+                        </td>
+                      </tr>
+                    ) : null}
                   </tbody>
                 </table>
               </div>
