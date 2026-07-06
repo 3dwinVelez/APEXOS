@@ -110,6 +110,10 @@ function reportClientFailure(path: string, status: number | null, detail: string
   }).catch(() => undefined);
 }
 
+function shouldPreferOperationalApi(path: string) {
+  return path.startsWith("/api/v1/transport") || path.startsWith("/api/v1/hr");
+}
+
 async function refreshSessionToken() {
   if (typeof window === "undefined") return false;
   if (refreshSessionInFlight) return refreshSessionInFlight;
@@ -2514,8 +2518,9 @@ export async function api<T>(path: string, options: RequestInit = {}, retried = 
   await keepSessionAlive();
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
   let response: Response;
+  const preferOperationalApi = HAS_CONFIGURED_API_URL && shouldPreferOperationalApi(path);
 
-  if (isSupabaseSession()) {
+  if (isSupabaseSession() && !preferOperationalApi) {
     const fallback = await supabaseApiFallback<T>(path, options);
     if (fallback !== null) {
       touchSession();

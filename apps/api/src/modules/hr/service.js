@@ -391,7 +391,7 @@ async function createRoutesBulk(tenantId, input) {
 
 async function findEmployee(input) {
   if (input.employee_id) return prisma.employee.findFirst({ where: { id: Number(input.employee_id) } });
-  const name = input.user_name.trim();
+  const name = String(input.user_name || "").trim();
   if (!name) return null;
   return prisma.employee.findFirst({
     where: {

@@ -120,6 +120,84 @@ Correcciones aplicadas:
 Riesgo pendiente:
 - Validar extremo a extremo con base local o QA levantada: crear horario, marcar entrada, checklist conductor, registrar actividad, cerrar jornada, consultar mapa y exportar reporte.
 
+## Validación real con empresa Nyvora
+
+- Fecha: 2026-07-05.
+- Ambiente: production.
+- Empresa utilizada: NYVORA.
+- Company ID: `82c2da06-418d-4026-8c49-b28a2db4552d`.
+- Tenant ID: `9a6ffc43-9aec-4b1b-8943-f098a4046b97`.
+- Sede utilizada: `NYVORA Centro`.
+- Marcador tecnico: `nyvora_real_transport_hr_202607052350`.
+
+### Usuarios/roles utilizados
+
+- `nyvora.real.admin.202607052350@internal.apexos.local`: `NYVORA Real Admin 202607052350`, administracion de Transporte/Talento Humano.
+- `nyvora.real.driver.202607052350@internal.apexos.local`: `NYVORA Real Operativo 202607052350`, conductor operativo para marcaciones, ruta y checklist.
+- `nyvora.real.operativo.202607052350@internal.apexos.local`: `NYVORA Real Operativo 202607052350`, estado de jornada incompleta.
+- `nyvora.real.consulta.202607052350@internal.apexos.local`: `NYVORA Real Consulta 202607052350`, permisos negativos.
+
+### Datos creados o reutilizados
+
+- Empleado conductor Nyvora: `NYV-REAL-202607052350-DRV`, ID 98.
+- Empleado operativo incompleto: `NYV-REAL-202607052350-OPR`, ID 99.
+- Vehiculo Nyvora: `NY2350`, ID 15, sede `NYVORA Centro`, conductor autorizado ID 98.
+- Ruta controlada: ID 5, fecha 2026-07-05, vehiculo `NY2350`.
+- Checklist preoperacional: ID 5, generado desde entrada de conductor y aprobado.
+- Credenciales temporales locales: `config/nyvora-real-test-credentials.env` (ignorado por git; no se documentan contrasenas).
+
+### Flujos probados y resultados
+
+| Flujo | Resultado esperado | Resultado obtenido |
+| --- | --- | --- |
+| Empleados/usuarios/roles Nyvora | Usuarios aislados a Nyvora con roles admin, operativo y consulta. | OK: 4 usuarios y 4 empleados controlados, roles con `hr`/`transport` validados. |
+| Permisos por rol | Admin escribe, operativo marca HR, operativo no administra flota, consulta no escribe HR. | OK: permisos positivos 200 y negativos 403 (`PERMISO_DENEGADO`). |
+| Marcacion completa | Entrada, salida almuerzo, regreso y salida en secuencia. | OK: punches 51, 52, 53 y 54 para ruta 5. |
+| Checklist conductor | Entrada de conductor con ruta/vehiculo exige preoperacional. | OK: primera entrada bloquea; checklist incompleto devuelve 422; checklist completo queda `aprobado`. |
+| GPS | Marcaciones guardan GPS y trazabilidad de ruta. | OK: 4 puntos GPS y tracking de ruta con 4 marcaciones. |
+| Estados incompletos | Jornada con solo entrada queda consultable como incompleta. | OK: siguiente marca `inicio_almuerzo`, sesion activa y alerta `sin_actividades`. |
+| Duplicados/secuencia | Jornada completa no acepta salida adicional. | OK: 409 `JORNADA_COMPLETA`. |
+| Datos faltantes HR | Marcacion sin usuario debe fallar controlado. | Fallo inicial: excepcion por `user_name.trim`; corregido y validado como 400. |
+| Transporte | Vehiculo, conductor, detalle, filtros, planning y estado de ruta. | OK backend/API: 15 vehiculos visibles por API; `NY2350` apto documentalmente; ruta cambiada a `completed`. |
+| Datos inconsistentes Transporte | Ficha incompleta o fechas incoherentes deben fallar. | OK: marca sin `brand` devuelve 400; vencimiento SOAT anterior a emision devuelve 400. |
+| Aislamiento base de datos | No mezclar datos fuera del tenant Nyvora. | OK: conteo cross-tenant 0 en `Employee`, `Vehicle`, `TimePunch`, `GpsPing`. |
+
+### Evidencia tecnica
+
+- Script ejecutado: `node scripts\nyvora-real-transport-hr-validation.js`.
+- Resultado final del script: 27 checks OK, 0 errores.
+- Evidencia detallada: `docs/audits/NYVORA_REAL_TEST_EVIDENCE.md`.
+- API productivo validado con el mismo usuario admin: `/api/v1/transport/vehicles` devolvio 15 vehiculos, incluyendo `NY2350`, `NYV001` a `NYV010`.
+- Base de datos validada por Prisma contra Supabase PROD: company `NYVORA`, tenant `NYVORA`, registros con metadata/control tag y aislamiento multiempresa.
+
+### Errores encontrados
+
+- HR backend: `createPunch` con datos faltantes podia lanzar `Cannot read properties of undefined (reading 'trim')` en vez de devolver error funcional.
+- UX/UI Transporte productivo: con usuario Nyvora autorizado, la pantalla desplegada mostraba `0 de 0 vehiculo(s)` aunque el API operativo devolvia 15 vehiculos.
+- UX movil: no se pudo completar evidencia visual movil final porque el navegador integrado reinicio la sesion durante la inspeccion.
+
+### Correcciones aplicadas
+
+- `apps/api/src/modules/hr/service.js`: `findEmployee` normaliza `user_name` ausente con `String(input.user_name || "").trim()`, permitiendo que `resolveEmployeeForPunch` devuelva el 400 esperado.
+- `apps/web/lib/api.ts`: Transporte y Talento Humano prefieren el API operativo cuando `NEXT_PUBLIC_API_URL` esta configurado; Supabase queda como fallback para evitar tablas vacias con datos reales en Prisma/API.
+- `scripts/nyvora-real-transport-hr-validation.js`: nuevo validador real Nyvora, con datos controlados, horario minimo, credenciales temporales locales y evidencia automatica.
+- `docs/audits/NYVORA_REAL_TEST_EVIDENCE.md`: evidencia detallada creada.
+
+### Validacion posterior
+
+- `node --check apps/api/src/modules/hr/service.js`: OK.
+- `node --check scripts/nyvora-real-transport-hr-validation.js`: OK.
+- `node scripts\nyvora-real-transport-hr-validation.js`: OK, 27 checks, 0 errores.
+- Login productivo con admin temporal Nyvora: OK; dashboard muestra 2 modulos activos (`Talento humano`, `Transporte`).
+- Talento Humano escritorio: OK, pantalla abre con datos reales y sin texto de relleno.
+- Transporte backend/API: OK, 15 vehiculos.
+- Transporte UI desplegada antes de deploy del fix: fallaba mostrando 0; requiere revalidacion posterior al despliegue de este commit.
+
+### Estado final por modulo
+
+- Talento Humano: apto con validacion real Nyvora completa en backend, base y escritorio productivo; pendiente solo captura movil posterior a despliegue.
+- Transporte: backend/base/API apto con datos reales Nyvora; UI corregida en codigo para consumir backend operativo primero; pendiente revalidar pantalla productiva despues del deploy.
+
 ## Recomendacion final
 
 Apto con observaciones para produccion.
