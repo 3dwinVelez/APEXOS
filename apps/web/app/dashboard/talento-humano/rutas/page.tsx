@@ -223,8 +223,15 @@ export default function RoutesPlanningPage() {
 
   useEffect(() => {
     load();
-    const timer = window.setInterval(load, 30000);
-    return () => window.clearInterval(timer);
+    const refreshVisible = () => {
+      if (!document.hidden) load();
+    };
+    const timer = window.setInterval(refreshVisible, 30000);
+    document.addEventListener("visibilitychange", refreshVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", refreshVisible);
+    };
   }, []);
 
   function resetForm() {

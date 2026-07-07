@@ -330,12 +330,12 @@ export default function ServicesPage() {
 
   async function loadMasters() {
     try {
-      const [referenceRows, technicianRows] = await Promise.all([
+      const [referenceRows, technicianRows, typeRows, storeRows] = await Promise.all([
         api<ServiceReference[]>("/api/v1/services/references?active=true"),
-        api<Technician[]>("/api/v1/services/technicians")
+        api<Technician[]>("/api/v1/services/technicians"),
+        api<ServiceType[]>("/api/v1/services/service-types"),
+        api<ServiceStore[]>("/api/v1/services/service-stores")
       ]);
-      const typeRows = await api<ServiceType[]>("/api/v1/services/service-types");
-      const storeRows = await api<ServiceStore[]>("/api/v1/services/service-stores");
       setReferences(referenceRows);
       setTechnicians(technicianRows);
       setServiceTypesCatalog(typeRows.filter((item) => item.active !== false));
