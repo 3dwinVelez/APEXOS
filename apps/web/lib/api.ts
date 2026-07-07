@@ -11,6 +11,7 @@ const LEGACY_ADMIN_ROLES_STORAGE_KEY = "apexos_admin_roles_qa";
 const USER_MASTER_STORAGE_KEY = "apexos_user_master_data";
 const LEGACY_USER_MASTER_STORAGE_KEY = "apexos_user_master_data_qa";
 let refreshSessionInFlight: Promise<boolean> | null = null;
+const inFlightGetRequests = new Map<string, Promise<unknown>>();
 
 function isSupabaseSession() {
   if (typeof window === "undefined") return false;
@@ -2576,6 +2577,17 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
 }
 
 export async function api<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
+  const method = String(options.method || "GET").toUpperCase();
+  const cacheKey = method === "GET" && !retried ? `${isSupabaseSession() ? "supabase" : "api"}:${path}` : "";
+  if (cacheKey && inFlightGetRequests.has(cacheKey)) return inFlightGetRequests.get(cacheKey) as Promise<T>;
+  const request = apiInternal<T>(path, options, retried);
+  if (!cacheKey) return request;
+  inFlightGetRequests.set(cacheKey, request);
+  request.finally(() => inFlightGetRequests.delete(cacheKey));
+  return request;
+}
+
+async function apiInternal<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
   assertActiveSession();
   await keepSessionAlive();
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -2616,7 +2628,7 @@ export async function api<T>(path: string, options: RequestInit = {}, retried = 
 
   if (response.status === 401 && typeof window !== "undefined") {
     if (!retried && await refreshSessionToken()) {
-      return api<T>(path, options, true);
+      return apiInternal<T>(path, options, true);
     }
     alertRequestFailure(path, 401, "Sesion expirada, revocada o no autorizada.");
     clearSession(isSupabaseSession() ? "supabase_unauthorized" : "unauthorized");
