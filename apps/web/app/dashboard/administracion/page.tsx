@@ -1424,13 +1424,12 @@ export default function AdministracionPage() {
     const activeCatalogRows = catalogRows.filter((item) => item.active !== false).length;
     return (
       <div className="space-y-3">
-        <div className="grid gap-3 rounded-md border border-line bg-paper p-3 md:grid-cols-[minmax(240px,320px)_1fr_auto] md:items-end">
+        <div className="grid gap-3 rounded-md border border-line bg-paper p-3 md:grid-cols-[minmax(240px,320px)_1fr] md:items-end">
           <SelectField label="Catalogo maestro" value={catalogDraft.catalog} onChange={(value) => resetCatalogDraft(value)} options={catalogOptions} />
           <div>
             <p className="text-xs font-semibold uppercase text-neutral-500">{selectedCatalogLabel}</p>
             <p className="mt-1 text-sm text-neutral-600">{catalogRows.length} registro(s), {activeCatalogRows} activo(s). Todos se administran desde esta seccion.</p>
           </div>
-          <Button className="border border-line bg-white text-neutral-800 hover:bg-white" onClick={() => resetCatalogDraft()} type="button"><Plus size={16} /> Nuevo</Button>
         </div>
 
         <div className="grid gap-3 lg:grid-cols-[280px_minmax(0,1fr)]">
