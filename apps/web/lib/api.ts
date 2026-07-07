@@ -2194,22 +2194,42 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     return { ...getStoredUserMasterData(), roles: storedAdminRoles() } as T;
   }
 
-  const adminCatalogItemMatch = pathname.match(/^\/api\/v1\/admin\/user-master-data\/([^/]+)\/items$/);
-  if (adminCatalogItemMatch && method === "POST") {
+  const adminCatalogItemMatch = pathname.match(/^\/api\/v1\/admin\/user-master-data\/([^/]+)\/items(?:\/([^/]+))?$/);
+  if (adminCatalogItemMatch && ["POST", "PUT", "DELETE"].includes(method)) {
     const catalogCode = adminCatalogItemMatch[1];
+    const itemCode = adminCatalogItemMatch[2] ? decodeURIComponent(adminCatalogItemMatch[2]) : "";
     const body = JSON.parse(String(options.body || "{}"));
+    const data = getStoredUserMasterData();
+    const current = Array.isArray((data as AnyRow)[catalogCode]) ? ((data as AnyRow)[catalogCode] as Array<{ code: string; name: string; description?: string; active?: boolean; sort_order?: number }>) : [];
+    if (method === "DELETE") {
+      const nextData = { ...data, [catalogCode]: current.filter((entry) => entry.code !== itemCode) };
+      saveStoredUserMasterData(nextData);
+      const membership = await currentSupabaseCompanyUser().catch(() => null);
+      if (membership?.company_id) {
+        const catalogs = await supabaseFetch<Array<{ id: string }>>(
+          `/rest/v1/master_catalogs?select=id&or=(and(code.eq.${encodeURIComponent(catalogCode)},company_id.eq.${encodeURIComponent(membership.company_id)}),and(code.eq.${encodeURIComponent(catalogCode)},company_id.is.null))&limit=1`
+        ).catch(() => []);
+        const catalogId = catalogs[0]?.id;
+        if (catalogId) {
+          await supabaseFetch(`/rest/v1/master_catalog_items?catalog_id=eq.${encodeURIComponent(catalogId)}&company_id=eq.${encodeURIComponent(membership.company_id)}&code=eq.${encodeURIComponent(itemCode)}`, {
+            method: "DELETE"
+          }).catch((error) => safeDevLog("No fue posible eliminar item de catalogo en Supabase.", error));
+        }
+      }
+      return { ...nextData, roles: storedAdminRoles() } as T;
+    }
     const item = {
-      code: String(body.code || "").trim(),
+      code: String(body.code || itemCode || "").trim(),
       name: String(body.name || "").trim(),
       description: String(body.description || "").trim(),
       active: body.active !== false,
       sort_order: Number(body.sort_order || 100)
     };
     if (!item.code || !item.name) throw new Error("Codigo y nombre del catalogo son obligatorios.");
-    const data = getStoredUserMasterData();
-    const current = Array.isArray((data as AnyRow)[catalogCode]) ? ((data as AnyRow)[catalogCode] as Array<{ code: string; name: string }>) : [];
-    const next = current.some((entry) => entry.code === item.code)
-      ? current.map((entry) => entry.code === item.code ? { ...entry, ...item } : entry)
+    const targetCode = itemCode || item.code;
+    if (targetCode !== item.code && current.some((entry) => entry.code === item.code)) throw new Error("Ya existe otro item con ese codigo.");
+    const next = current.some((entry) => entry.code === targetCode)
+      ? current.map((entry) => entry.code === targetCode ? { ...entry, ...item } : entry)
       : [...current, item];
     const nextData = { ...data, [catalogCode]: next };
     saveStoredUserMasterData(nextData);
@@ -2221,6 +2241,11 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       ).catch(() => []);
       const catalogId = catalogs[0]?.id;
       if (catalogId) {
+        if (targetCode !== item.code) {
+          await supabaseFetch(`/rest/v1/master_catalog_items?catalog_id=eq.${encodeURIComponent(catalogId)}&company_id=eq.${encodeURIComponent(membership.company_id)}&code=eq.${encodeURIComponent(targetCode)}`, {
+            method: "DELETE"
+          }).catch((error) => safeDevLog("No fue posible retirar codigo anterior de catalogo en Supabase.", error));
+        }
         await supabaseFetch("/rest/v1/master_catalog_items?on_conflict=catalog_id,code", {
           method: "POST",
           headers: { Prefer: "resolution=merge-duplicates,return=minimal" },

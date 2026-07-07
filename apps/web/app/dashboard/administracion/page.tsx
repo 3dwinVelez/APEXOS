@@ -30,6 +30,7 @@ import {
   Search,
   Shield,
   SlidersHorizontal,
+  Trash2,
   Truck,
   UserCog,
   UserPlus,
@@ -59,7 +60,7 @@ type Role = {
   permissions: Record<string, Record<string, boolean>>;
 };
 type RoleScopes = { locations: string[]; areas: string[]; cost_centers: string[]; processes: string[] };
-type MasterOption = { code: string; name: string };
+type MasterOption = { code: string; name: string; description?: string; active?: boolean; sort_order?: number };
 type ServiceType = { code: string; label: string; active?: boolean };
 type ServiceStore = { code: string; label: string; active?: boolean };
 type SatisfactionQuestion = { id: string; label: string; active?: boolean };
@@ -706,6 +707,7 @@ export default function AdministracionPage() {
   const [documentDraft, setDocumentDraft] = useState({ document_type: "identity", file_name: "", file_url: "", storage_path: "", mime_type: "", file_size: "", observations: "" });
   const [selectedDocumentFile, setSelectedDocumentFile] = useState<File | null>(null);
   const [catalogDraft, setCatalogDraft] = useState({ catalog: "positions", code: "", name: "", description: "" });
+  const [editingCatalogCode, setEditingCatalogCode] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [platformAdmin, setPlatformAdmin] = useState(false);
 
@@ -1137,11 +1139,11 @@ export default function AdministracionPage() {
         return;
       }
       const next = normalizeServiceTypes([
-        ...serviceTypes.filter((item) => item.code !== code),
+        ...serviceTypes.filter((item) => item.code !== code && item.code !== editingCatalogCode),
         { code, label: catalogDraft.name.trim(), active: true }
       ]).sort((a, b) => a.label.localeCompare(b.label));
       await saveServiceTypeCatalog(next, "Tipo de servicio actualizado.");
-      setCatalogDraft({ catalog: catalogDraft.catalog, code: "", name: "", description: "" });
+      resetCatalogDraft(catalogDraft.catalog);
       return;
     }
     if (catalogDraft.catalog === "service_stores") {
@@ -1151,11 +1153,11 @@ export default function AdministracionPage() {
         return;
       }
       const next = normalizeServiceStores([
-        ...serviceStores.filter((item) => item.code !== code),
+        ...serviceStores.filter((item) => item.code !== code && item.code !== editingCatalogCode),
         { code, label: catalogDraft.name.trim(), active: true }
       ]).sort((a, b) => a.label.localeCompare(b.label));
       await saveServiceStoreCatalog(next, "Almacen de servicio actualizado.");
-      setCatalogDraft({ catalog: catalogDraft.catalog, code: "", name: "", description: "" });
+      resetCatalogDraft(catalogDraft.catalog);
       return;
     }
     if (catalogDraft.catalog === "satisfaction_questions") {
@@ -1165,15 +1167,18 @@ export default function AdministracionPage() {
         return;
       }
       const next = normalizeSatisfactionQuestions([
-        ...satisfactionQuestions.filter((item) => item.id !== id),
+        ...satisfactionQuestions.filter((item) => item.id !== id && item.id !== editingCatalogCode),
         { id, label: catalogDraft.name.trim(), active: true }
       ]);
       await saveSatisfactionQuestionCatalog(next, "Pregunta de satisfaccion actualizada.");
-      setCatalogDraft({ catalog: catalogDraft.catalog, code: "", name: "", description: "" });
+      resetCatalogDraft(catalogDraft.catalog);
       return;
     }
-    const next = await api<UserMasterData>(`/api/v1/admin/user-master-data/${catalogDraft.catalog}/items`, {
-      method: "POST",
+    const endpoint = editingCatalogCode
+      ? `/api/v1/admin/user-master-data/${catalogDraft.catalog}/items/${encodeURIComponent(editingCatalogCode)}`
+      : `/api/v1/admin/user-master-data/${catalogDraft.catalog}/items`;
+    const next = await api<UserMasterData>(endpoint, {
+      method: editingCatalogCode ? "PUT" : "POST",
       body: JSON.stringify({
         code: catalogDraft.code.trim(),
         name: catalogDraft.name.trim(),
@@ -1182,8 +1187,40 @@ export default function AdministracionPage() {
       })
     });
     setMasterData({ ...fallbackUserMasterData, ...next });
-    setCatalogDraft({ catalog: catalogDraft.catalog, code: "", name: "", description: "" });
+    resetCatalogDraft(catalogDraft.catalog);
     setMessage("Maestro actualizado.");
+  }
+
+  function resetCatalogDraft(catalog = catalogDraft.catalog) {
+    setCatalogDraft({ catalog, code: "", name: "", description: "" });
+    setEditingCatalogCode(null);
+  }
+
+  function editCatalogRow(item: MasterOption) {
+    setCatalogDraft({
+      catalog: catalogDraft.catalog,
+      code: item.code,
+      name: item.name,
+      description: item.description || ""
+    });
+    setEditingCatalogCode(item.code);
+  }
+
+  async function toggleBaseCatalogItem(item: MasterOption) {
+    const next = await api<UserMasterData>(`/api/v1/admin/user-master-data/${catalogDraft.catalog}/items/${encodeURIComponent(item.code)}`, {
+      method: "PUT",
+      body: JSON.stringify({ ...item, active: item.active === false })
+    });
+    setMasterData({ ...fallbackUserMasterData, ...next });
+    setMessage(item.active === false ? "Maestro activado." : "Maestro inactivado.");
+  }
+
+  async function removeBaseCatalogItem(item: MasterOption) {
+    if (!window.confirm(`Confirmas eliminar "${item.name}" del maestro?`)) return;
+    const next = await api<UserMasterData>(`/api/v1/admin/user-master-data/${catalogDraft.catalog}/items/${encodeURIComponent(item.code)}`, { method: "DELETE" });
+    setMasterData({ ...fallbackUserMasterData, ...next });
+    if (editingCatalogCode === item.code) resetCatalogDraft(catalogDraft.catalog);
+    setMessage("Maestro eliminado.");
   }
 
   async function saveServiceTypeCatalog(nextTypes: ServiceType[], successMessage = "Tipos de servicio actualizados.") {
@@ -1376,82 +1413,83 @@ export default function AdministracionPage() {
     const selectedItems = !isOperationalCatalog && Array.isArray((masterData as Record<string, unknown>)[catalogDraft.catalog])
       ? (((masterData as unknown) as Record<string, MasterOption[]>)[catalogDraft.catalog] || [])
       : [];
+    const selectedCatalogLabel = catalogOptions.find(([value]) => value === catalogDraft.catalog)?.[1] || "Catalogo";
     const catalogRows: Array<MasterOption & { active?: boolean }> = isServiceTypeCatalog
       ? serviceTypes.map((item) => ({ code: item.code, name: item.label, active: item.active !== false }))
       : isServiceStoreCatalog
         ? serviceStores.map((item) => ({ code: item.code, name: item.label, active: item.active !== false }))
       : isSatisfactionQuestionCatalog
         ? satisfactionQuestions.map((item) => ({ code: item.id, name: item.label, active: item.active !== false }))
-      : selectedItems;
+      : selectedItems.map((item) => ({ ...item, active: item.active !== false }));
+    const activeCatalogRows = catalogRows.filter((item) => item.active !== false).length;
     return (
-      <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
-        <div className="rounded-md border border-line bg-paper p-3">
-          <div className="grid gap-3">
-            <SelectField label="Catalogo" value={catalogDraft.catalog} onChange={(value) => setCatalogDraft((current) => ({ ...current, catalog: value }))} options={catalogOptions} />
-            <Field label={isOperationalCatalog ? "Codigo opcional" : "Codigo"} value={catalogDraft.code} onChange={(value) => setCatalogDraft((current) => ({ ...current, code: isOperationalCatalog ? normalizeServiceTypeCode(value) : value.toUpperCase().replace(/\s+/g, "-") }))} />
-            <Field label={isSatisfactionQuestionCatalog ? "Pregunta" : "Nombre"} value={catalogDraft.name} onChange={(value) => setCatalogDraft((current) => ({ ...current, name: value }))} />
-            <Field label="Descripcion" value={catalogDraft.description} onChange={(value) => setCatalogDraft((current) => ({ ...current, description: value }))} />
-            {isServiceTypeCatalog ? (
-              <p className="rounded-md border border-apex/20 bg-apex/10 px-3 py-2 text-xs text-neutral-600">
-                Estos tipos se usan en la creacion y edicion de ordenes de servicio. Deja activo solo lo que el operador debe seleccionar.
-              </p>
-            ) : null}
-            {isServiceStoreCatalog ? (
-              <p className="rounded-md border border-apex/20 bg-apex/10 px-3 py-2 text-xs text-neutral-600">
-                Estos almacenes se muestran en las solicitudes externas y quedan asociados a la orden de servicio.
-              </p>
-            ) : null}
-            {isSatisfactionQuestionCatalog ? (
-              <p className="rounded-md border border-apex/20 bg-apex/10 px-3 py-2 text-xs text-neutral-600">
-                Estas preguntas aparecen en el cierre del servicio y son obligatorias cuando estan activas.
-              </p>
-            ) : null}
-            <Button onClick={saveCatalogItem} type="button"><Save size={16} /> {isServiceTypeCatalog ? "Guardar tipo de servicio" : isServiceStoreCatalog ? "Guardar almacen" : isSatisfactionQuestionCatalog ? "Guardar pregunta" : "Guardar maestro"}</Button>
+      <div className="space-y-3">
+        <div className="grid gap-3 rounded-md border border-line bg-paper p-3 md:grid-cols-[minmax(240px,320px)_1fr_auto] md:items-end">
+          <SelectField label="Catalogo maestro" value={catalogDraft.catalog} onChange={(value) => resetCatalogDraft(value)} options={catalogOptions} />
+          <div>
+            <p className="text-xs font-semibold uppercase text-neutral-500">{selectedCatalogLabel}</p>
+            <p className="mt-1 text-sm text-neutral-600">{catalogRows.length} registro(s), {activeCatalogRows} activo(s). Todos se administran desde esta seccion.</p>
           </div>
+          <Button className="border border-line bg-white text-neutral-800 hover:bg-white" onClick={() => resetCatalogDraft()} type="button"><Plus size={16} /> Nuevo</Button>
         </div>
-        <div className="max-h-[58vh] overflow-auto rounded-md border border-line">
-          <table className="w-full min-w-[640px] text-sm">
+
+        <div className="grid gap-3 lg:grid-cols-[280px_minmax(0,1fr)]">
+          <div className="rounded-md border border-line bg-white p-3">
+            <div className="grid gap-3">
+              <p className="text-sm font-semibold">{editingCatalogCode ? "Editar maestro" : "Nuevo maestro"}</p>
+              <Field label={isOperationalCatalog ? "Codigo" : "Codigo"} value={catalogDraft.code} onChange={(value) => setCatalogDraft((current) => ({ ...current, code: isOperationalCatalog ? normalizeServiceTypeCode(value) : value.toUpperCase().replace(/\s+/g, "-") }))} />
+              <Field label={isSatisfactionQuestionCatalog ? "Pregunta" : "Nombre"} value={catalogDraft.name} onChange={(value) => setCatalogDraft((current) => ({ ...current, name: value }))} />
+              {!isOperationalCatalog ? <Field label="Descripcion" value={catalogDraft.description} onChange={(value) => setCatalogDraft((current) => ({ ...current, description: value }))} /> : null}
+              <div className="grid gap-2">
+                <Button onClick={saveCatalogItem} type="button"><Save size={16} /> {editingCatalogCode ? "Guardar cambios" : "Crear maestro"}</Button>
+                {editingCatalogCode ? <Button className="border border-line bg-white text-neutral-800 hover:bg-paper" onClick={() => resetCatalogDraft()} type="button"><X size={16} /> Cancelar edicion</Button> : null}
+              </div>
+            </div>
+          </div>
+
+          <div className="max-h-[62vh] overflow-auto rounded-md border border-line">
+            <table className="w-full min-w-[760px] text-sm">
             <thead className="sticky top-0 bg-white">
               <tr className="border-b border-line text-left text-xs text-neutral-500">
                 <th className="px-3 py-2">Codigo</th>
                 <th className="px-3 py-2">{isSatisfactionQuestionCatalog ? "Pregunta" : "Nombre"}</th>
-                {isOperationalCatalog ? <th className="px-3 py-2">Estado</th> : null}
-                {isOperationalCatalog ? <th className="px-3 py-2 text-right">Accion</th> : null}
+                {!isOperationalCatalog ? <th className="px-3 py-2">Descripcion</th> : null}
+                <th className="px-3 py-2">Estado</th>
+                <th className="px-3 py-2 text-right">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {catalogRows.map((item) => (
-                <tr className="border-b border-line/70" key={item.code}>
+                <tr className={`border-b border-line/70 ${editingCatalogCode === item.code ? "bg-apex/5" : ""}`} key={item.code}>
                   <td className="px-3 py-2 font-mono text-xs">{item.code}</td>
                   <td className="px-3 py-2">{item.name}</td>
-                  {isOperationalCatalog ? (
-                    <td className="px-3 py-2">
-                      <span className={`rounded-md px-2 py-1 text-xs font-semibold ${item.active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>
-                        {item.active ? "Activo" : "Inactivo"}
-                      </span>
-                    </td>
-                  ) : null}
-                  {isOperationalCatalog ? (
-                    <td className="px-3 py-2">
-                      <div className="flex justify-end gap-2">
-                        <button className="rounded-md border border-line px-2 py-1 text-xs font-semibold hover:bg-paper" onClick={() => isServiceTypeCatalog ? toggleServiceType(item.code) : isServiceStoreCatalog ? toggleServiceStore(item.code) : toggleSatisfactionQuestion(item.code)} type="button">
-                          {item.active ? "Inactivar" : "Activar"}
-                        </button>
-                        <button className="rounded-md border border-rose-200 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50" onClick={() => isServiceTypeCatalog ? removeServiceType(item.code) : isServiceStoreCatalog ? removeServiceStore(item.code) : removeSatisfactionQuestion(item.code)} type="button">
-                          Retirar
-                        </button>
-                      </div>
-                    </td>
-                  ) : null}
+                  {!isOperationalCatalog ? <td className="px-3 py-2 text-neutral-600">{item.description || "-"}</td> : null}
+                  <td className="px-3 py-2">
+                    <span className={`rounded-md px-2 py-1 text-xs font-semibold ${item.active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>
+                      {item.active ? "Activo" : "Inactivo"}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2">
+                    <div className="flex justify-end gap-2">
+                      <button className="rounded-md border border-line px-2 py-1 text-xs font-semibold hover:bg-paper" onClick={() => editCatalogRow(item)} type="button"><Edit3 size={13} /></button>
+                      <button className="rounded-md border border-line px-2 py-1 text-xs font-semibold hover:bg-paper" onClick={() => isServiceTypeCatalog ? toggleServiceType(item.code) : isServiceStoreCatalog ? toggleServiceStore(item.code) : isSatisfactionQuestionCatalog ? toggleSatisfactionQuestion(item.code) : toggleBaseCatalogItem(item)} type="button">
+                        {item.active ? "Inactivar" : "Activar"}
+                      </button>
+                      <button className="rounded-md border border-rose-200 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50" onClick={() => isServiceTypeCatalog ? removeServiceType(item.code) : isServiceStoreCatalog ? removeServiceStore(item.code) : isSatisfactionQuestionCatalog ? removeSatisfactionQuestion(item.code) : removeBaseCatalogItem(item)} type="button">
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
-              {isOperationalCatalog && !catalogRows.length ? (
+              {!catalogRows.length ? (
                 <tr>
-                  <td className="px-3 py-6 text-center text-sm text-neutral-500" colSpan={4}>No hay registros configurados.</td>
+                  <td className="px-3 py-6 text-center text-sm text-neutral-500" colSpan={isOperationalCatalog ? 4 : 5}>No hay registros configurados.</td>
                 </tr>
               ) : null}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     );

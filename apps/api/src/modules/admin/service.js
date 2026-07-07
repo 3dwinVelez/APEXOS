@@ -532,14 +532,16 @@ async function getUserMasterData(tenantId) {
   return prisma.runWithTenant(tenantId, async () => ({ ...USER_MASTER_DATA }));
 }
 
-async function addUserMasterDataItem(tenantId, catalog, input, actorId = null) {
-  tenantId = normalizeTenantId(tenantId);
+function assertUserMasterCatalog(catalog) {
   const allowed = new Set(Object.keys(USER_MASTER_DATA));
   if (!allowed.has(catalog)) {
     const err = new Error("Catalogo de usuario no soportado.");
     err.statusCode = 400;
     throw err;
   }
+}
+
+function normalizeUserMasterItem(input, fallback = {}) {
   const code = String(input.code || "").trim();
   const name = String(input.name || "").trim();
   if (!code || !name) {
@@ -547,30 +549,82 @@ async function addUserMasterDataItem(tenantId, catalog, input, actorId = null) {
     err.statusCode = 400;
     throw err;
   }
-  const item = {
+  return {
+    ...fallback,
     code,
     name,
     description: String(input.description || "").trim(),
     active: input.active !== false,
     sort_order: Number(input.sort_order || 100)
   };
+}
+
+async function auditUserMasterDataItem(tenantId, actorId, action, catalog, code, oldValue, newValue) {
+  await prisma.auditLog.create({
+    data: {
+      tenant_id: tenantId,
+      user_id: actorId,
+      action,
+      module: "admin",
+      entity: `/api/v1/admin/user-master-data/${catalog}/items`,
+      entity_id: code,
+      old_value: oldValue,
+      new_value: newValue
+    }
+  }).catch(() => null);
+}
+
+async function addUserMasterDataItem(tenantId, catalog, input, actorId = null) {
+  tenantId = normalizeTenantId(tenantId);
+  assertUserMasterCatalog(catalog);
+  const item = normalizeUserMasterItem(input);
   const current = Array.isArray(USER_MASTER_DATA[catalog]) ? USER_MASTER_DATA[catalog] : [];
-  USER_MASTER_DATA[catalog] = current.some((entry) => entry.code === code)
-    ? current.map((entry) => entry.code === code ? { ...entry, ...item } : entry)
+  const previous = current.find((entry) => entry.code === item.code) || null;
+  USER_MASTER_DATA[catalog] = current.some((entry) => entry.code === item.code)
+    ? current.map((entry) => entry.code === item.code ? { ...entry, ...item } : entry)
     : [...current, item];
   return prisma.runWithTenant(tenantId, async () => {
-    await prisma.auditLog.create({
-      data: {
-        tenant_id: tenantId,
-        user_id: actorId,
-        action: "catalog_item_upserted",
-        module: "admin",
-        entity: `/api/v1/admin/user-master-data/${catalog}/items`,
-        entity_id: code,
-        old_value: null,
-        new_value: item
-      }
-    }).catch(() => null);
+    await auditUserMasterDataItem(tenantId, actorId, "catalog_item_upserted", catalog, item.code, previous, item);
+    return { ...USER_MASTER_DATA };
+  });
+}
+
+async function updateUserMasterDataItem(tenantId, catalog, code, input, actorId = null) {
+  tenantId = normalizeTenantId(tenantId);
+  assertUserMasterCatalog(catalog);
+  const current = Array.isArray(USER_MASTER_DATA[catalog]) ? USER_MASTER_DATA[catalog] : [];
+  const previous = current.find((entry) => entry.code === code);
+  if (!previous) {
+    const err = new Error("Item de catalogo no encontrado.");
+    err.statusCode = 404;
+    throw err;
+  }
+  const nextItem = normalizeUserMasterItem({ ...previous, ...input, code: input.code || previous.code }, previous);
+  if (nextItem.code !== code && current.some((entry) => entry.code === nextItem.code)) {
+    const err = new Error("Ya existe otro item con ese codigo.");
+    err.statusCode = 409;
+    throw err;
+  }
+  USER_MASTER_DATA[catalog] = current.map((entry) => entry.code === code ? nextItem : entry);
+  return prisma.runWithTenant(tenantId, async () => {
+    await auditUserMasterDataItem(tenantId, actorId, "catalog_item_updated", catalog, nextItem.code, previous, nextItem);
+    return { ...USER_MASTER_DATA };
+  });
+}
+
+async function deleteUserMasterDataItem(tenantId, catalog, code, actorId = null) {
+  tenantId = normalizeTenantId(tenantId);
+  assertUserMasterCatalog(catalog);
+  const current = Array.isArray(USER_MASTER_DATA[catalog]) ? USER_MASTER_DATA[catalog] : [];
+  const previous = current.find((entry) => entry.code === code);
+  if (!previous) {
+    const err = new Error("Item de catalogo no encontrado.");
+    err.statusCode = 404;
+    throw err;
+  }
+  USER_MASTER_DATA[catalog] = current.filter((entry) => entry.code !== code);
+  return prisma.runWithTenant(tenantId, async () => {
+    await auditUserMasterDataItem(tenantId, actorId, "catalog_item_deleted", catalog, code, previous, null);
     return { ...USER_MASTER_DATA };
   });
 }
@@ -1223,6 +1277,8 @@ module.exports = {
   getPermissionCatalog,
   getUserMasterData,
   addUserMasterDataItem,
+  updateUserMasterDataItem,
+  deleteUserMasterDataItem,
   listRoles,
   createRole,
   updateRole,

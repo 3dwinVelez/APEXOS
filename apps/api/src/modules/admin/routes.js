@@ -53,6 +53,14 @@ async function adminRoutes(fastify) {
     preHandler: requirePermission("admin", "write")
   }, async (request, reply) => reply.code(201).send(await service.addUserMasterDataItem(request.user?.tenant_id, request.params.catalog, request.body || {}, request.user?.id)));
 
+  fastify.put("/admin/user-master-data/:catalog/items/:code", {
+    preHandler: requirePermission("admin", "write")
+  }, async (request) => service.updateUserMasterDataItem(request.user?.tenant_id, request.params.catalog, request.params.code, request.body || {}, request.user?.id));
+
+  fastify.delete("/admin/user-master-data/:catalog/items/:code", {
+    preHandler: requirePermission("admin", "write")
+  }, async (request) => service.deleteUserMasterDataItem(request.user?.tenant_id, request.params.catalog, request.params.code, request.user?.id));
+
   fastify.post("/admin/users", {
     preHandler: requirePermission("admin", "write")
   }, async (request, reply) => reply.code(201).send(await service.createUser(request.user?.tenant_id, request.body, request.user?.id)));
