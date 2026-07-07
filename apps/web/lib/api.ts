@@ -62,6 +62,11 @@ function fullName(row: { first_name?: string; last_name?: string; email?: string
   return [row.first_name, row.last_name].filter(Boolean).join(" ").trim() || metadataName || row.email || `Empleado ${String(row.id || "").slice(0, 8)}`;
 }
 
+function isActiveEmployeeStatus(value: unknown) {
+  const status = String(value ?? "active").trim().toLowerCase();
+  return !["inactive", "inactivo", "suspendido", "suspended", "bloqueado", "retirado", "deleted", "false", "0"].includes(status);
+}
+
 function requestErrorMessage(path: string, status: number, detail: string) {
   if (status >= 500) return `Error ${status} en ${path}. Backend no disponible${detail ? `: ${detail}` : ""}`;
   if (status === 401) return `Sesion no autorizada en ${path}. Inicia sesion de nuevo.`;
@@ -1427,10 +1432,11 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   }
 
   if (pathname === "/api/v1/hr/employees") {
-    const statusFilter = active === "true" ? "&status=eq.active" : "";
     const companyId = await currentSupabaseCompanyId();
     const rows = await supabaseFetch<Array<{
       id: string;
+      company_id?: string;
+      user_id?: string;
       first_name?: string;
       last_name?: string;
       document_number?: string;
@@ -1440,9 +1446,36 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       status?: string;
       user_type?: string;
       metadata?: Record<string, unknown>;
-    }>>(`/rest/v1/employees?select=id,first_name,last_name,document_number,email,position,department,status,user_type,metadata&company_id=eq.${encodeURIComponent(companyId)}&order=created_at.desc${statusFilter}&limit=250`);
+    }>>(`/rest/v1/employees?select=id,company_id,user_id,first_name,last_name,document_number,email,position,department,status,user_type,metadata&company_id=eq.${encodeURIComponent(companyId)}&order=created_at.desc&limit=250`).catch((error) => {
+      safeDevLog("No fue posible consultar empleados HR Supabase.", error);
+      return [];
+    });
+    const adminRows = await nextAdminUsersRequest<{ employees: Array<{
+      id: string;
+      company_id?: string;
+      user_id?: string;
+      first_name?: string;
+      last_name?: string;
+      document_number?: string;
+      email?: string;
+      position?: string;
+      department?: string;
+      status?: string;
+      user_type?: string;
+      metadata?: AnyRow;
+    }> }>({ method: "GET" }).then((result) => result.employees).catch((error) => {
+      safeDevLog("No fue posible reconciliar usuarios administrativos para HR.", error);
+      return [];
+    });
+    const rowMap = new Map<string, (typeof rows)[number]>();
+    [...rows, ...adminRows].forEach((row) => {
+      if (!row?.id) return;
+      if (row.company_id && companyId && row.company_id !== companyId) return;
+      rowMap.set(String(row.id), row as (typeof rows)[number]);
+    });
+    const normalizedRows = Array.from(rowMap.values()).filter((row) => active === "true" ? isActiveEmployeeStatus(row.status) : true);
 
-    return rows.map((row) => {
+    return normalizedRows.map((row) => {
       const name = fullName(row);
       const document = row.document_number || String(row.metadata?.document || "");
       return {
@@ -1458,7 +1491,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
           user_type: row.user_type || row.position || row.metadata?.user_type
         },
         user: { name, email: row.email || "" },
-        active: row.status !== "inactive"
+        active: isActiveEmployeeStatus(row.status)
       };
     }) as T;
   }
