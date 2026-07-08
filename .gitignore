@@ -18,7 +18,10 @@ venv/
 .venv/
 .pytest_cache/
 .DS_Store
+~$*.docx
 .local/
+.tmp/
+.commandcode/
 logs/
 .npm-cache/
 supabase/.temp/
