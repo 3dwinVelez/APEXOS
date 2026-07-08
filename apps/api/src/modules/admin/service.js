@@ -802,7 +802,7 @@ async function createUser(tenantId, input, actorId = null) {
       throw err;
     }
     const role = input.role_id
-      ? await prisma.role.findFirstOrThrow({ where: { id: Number(input.role_id) } })
+      ? await prisma.role.findFirst({ where: { id: Number(input.role_id) } })
       : await prisma.role.findFirst({ where: { name: "Empleado" } });
     if (!role) throw badRequest("Debe seleccionar un rol valido para el usuario.");
     if (role?.metadata?.active === false) {
