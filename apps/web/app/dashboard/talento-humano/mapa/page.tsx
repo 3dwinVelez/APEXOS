@@ -152,6 +152,11 @@ function ageLabel(seconds: number | null) {
   return `hace ${Math.round(minutes / 60)}h`;
 }
 
+function isOnline(person: OperatorPoint, activeWindowSeconds: number): boolean {
+  const age = person.age_seconds != null ? person.age_seconds : (person.captured_at ? Math.max(0, Math.round((Date.now() - new Date(person.captured_at).getTime()) / 1000)) : null);
+  return age != null && age <= activeWindowSeconds;
+}
+
 function currentAgeSeconds(person: OperatorPoint, now: number) {
   if (!person.captured_at) return person.age_seconds;
   return Math.max(0, Math.round((now - new Date(person.captured_at).getTime()) / 1000));
@@ -300,15 +305,16 @@ export default function LiveGpsMapPage() {
   const routes = useMemo(() => data?.routes || [], [data?.routes]);
   const activeWindowSeconds = (data?.active_window_minutes || 30) * 60;
   const users = useMemo(() => Array.from(new Set(people.map((person) => person.user_name).filter(Boolean))).sort(), [people]);
+
   const filteredPeople = useMemo(() => people.filter((person) => {
-    const liveOnline = currentAgeSeconds(person, now) != null && Number(currentAgeSeconds(person, now)) <= activeWindowSeconds;
+    const liveOnline = isOnline(person, activeWindowSeconds);
     if (routeId !== "all" && String(person.route_id) !== routeId) return false;
     if (userName !== "all" && person.user_name !== userName) return false;
     if (status === "online") return liveOnline;
     if (status === "offline") return person.latitude != null && person.longitude != null && !liveOnline;
     if (status === "nogps") return person.latitude == null || person.longitude == null;
     return true;
-  }), [activeWindowSeconds, now, people, routeId, userName, status]);
+  }), [activeWindowSeconds, people, routeId, userName, status]);
   const selected = filteredPeople.find((person) => person.key === selectedKey) || null;
   const centerTarget = followSelected && selected?.latitude != null && selected.longitude != null
     ? { latitude: selected.latitude, longitude: selected.longitude }
@@ -519,7 +525,7 @@ export default function LiveGpsMapPage() {
                     vehicle_plate: activity.vehicle_plate,
                     route_id: activity.route_id,
                     extra_minutes: 0,
-                    metadata: { activity: true, observation: activity.observation, evidence: activity.evidence }
+                    metadata: { activity: true, observation: activity.observation, evidence: activity.evidence || [] }
                   });
                 }}
                 style={{ left: `calc(50% + ${offset.x}px)`, top: `calc(50% + ${offset.y}px)` }}

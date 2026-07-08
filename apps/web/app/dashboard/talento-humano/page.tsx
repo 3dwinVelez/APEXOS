@@ -118,8 +118,10 @@ export default function TalentPage() {
     };
   }, []);
 
-  const monitorRoutes: RouteMonitor[] = operations?.routes?.length ? operations.routes : routes.map((route) => ({ ...route, punch_points: [], activity_points: [] }));
-  const selectedRoute = monitorRoutes.find((route) => String(route.id) === selectedRouteId) || null;
+  const monitorRoutes: RouteMonitor[] = useMemo(() =>
+    operations?.routes?.length ? operations.routes : routes.map((route) => ({ ...route, punch_points: [], activity_points: [] })),
+    [operations?.routes, routes]);
+  const selectedRoute = useMemo(() => monitorRoutes.find((route) => String(route.id) === selectedRouteId) || null, [monitorRoutes, selectedRouteId]);
   const selectedPeople = useMemo(() => {
     if (!selectedRoute || !operations) return [];
     return operations.people.filter((person) => String(person.route_id) === String(selectedRoute.id));

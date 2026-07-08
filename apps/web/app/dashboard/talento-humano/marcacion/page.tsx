@@ -129,8 +129,9 @@ export default function MobilePunchPage() {
   })();
 
   useEffect(() => {
-    if (!employee || !gps || !userName) return;
+    if (!employee || !userName) return;
     const timer = window.setInterval(() => {
+      if (document.hidden) return;
       getGpsFix(8000).then((fix) => {
         setGps(fix);
         setGpsStatus("ok");
@@ -148,7 +149,7 @@ export default function MobilePunchPage() {
       }).catch(() => undefined);
     }, 30000);
     return () => window.clearInterval(timer);
-  }, [employee, gps, route?.id, userName, vehiclePlate]);
+  }, [employee, route?.id, userName, vehiclePlate]);
 
   async function refreshGps() {
     setGpsStatus("loading");

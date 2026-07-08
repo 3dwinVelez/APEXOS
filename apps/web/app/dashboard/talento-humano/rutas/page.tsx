@@ -352,7 +352,7 @@ export default function RoutesPlanningPage() {
       return { ...route, ...operation, punch_points: operation?.punch_points || [], activity_points: operation?.activity_points || [] };
     });
   }, [operations, routes]);
-  const selectedRoute = monitorRoutes.find((route) => String(route.id) === selectedRouteId) || null;
+  const selectedRoute = useMemo(() => monitorRoutes.find((route) => String(route.id) === selectedRouteId) || null, [monitorRoutes, selectedRouteId]);
   const selectedPeople = useMemo(() => selectedRoute && operations ? operations.people.filter((person) => String(person.route_id) === String(selectedRoute.id)) : [], [operations, selectedRoute]);
   const selectedTimeline = useMemo(() => {
     if (!selectedRoute) return [];

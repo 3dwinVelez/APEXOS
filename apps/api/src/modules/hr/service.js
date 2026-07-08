@@ -1203,14 +1203,13 @@ async function getOperationsMap(tenantId, query = {}) {
   const day = query.date ? startOfDay(query.date) : startOfDay();
   const activeMinutes = Math.min(Number(query.minutes || 30), 240);
   const footprintDays = Math.min(Number(query.footprint_days || 14), 60);
-  const pingLimit = Math.min(Math.max(Number(query.ping_limit || 1000), 100), 2000);
-  const footprintLimit = Math.min(Math.max(Number(query.footprint_limit || 2000), 200), 5000);
-  const punchLimit = Math.min(Math.max(Number(query.punch_limit || 1000), 100), 2000);
-  const activityLimit = Math.min(Math.max(Number(query.activity_limit || 1000), 100), 2000);
+  const isLiveWindow = activeMinutes <= 60;
+  const pingLimit = Math.min(Math.max(Number(query.ping_limit || (isLiveWindow ? 300 : 1000)), 100), 2000);
+  const punchLimit = Math.min(Math.max(Number(query.punch_limit || (isLiveWindow ? 300 : 1000)), 100), 2000);
+  const activityLimit = Math.min(Math.max(Number(query.activity_limit || (isLiveWindow ? 100 : 1000)), 100), 2000);
   const since = new Date(Date.now() - activeMinutes * 60000);
-  const footprintSince = new Date(day.getTime() - footprintDays * 86400000);
   return prisma.runWithTenant(tenantId, async () => {
-    const [routes, employees, pings, lastFootprints, punches, activities] = await Promise.all([
+    const [routes, employees, pings, punches, activities] = await Promise.all([
       prisma.timeRoute.findMany({
         where: {
           date: { gte: day, lt: endOfDay(day) },
@@ -1225,11 +1224,6 @@ async function getOperationsMap(tenantId, query = {}) {
         orderBy: { captured_at: "desc" },
         take: pingLimit
       }),
-      prisma.gpsPing.findMany({
-        where: { captured_at: { gte: footprintSince, lt: endOfDay(day) } },
-        orderBy: { captured_at: "desc" },
-        take: footprintLimit
-      }),
       prisma.timePunch.findMany({
         where: { date: { gte: day, lt: endOfDay(day) } },
         orderBy: { punched_at: "desc" },
@@ -1242,6 +1236,15 @@ async function getOperationsMap(tenantId, query = {}) {
         take: activityLimit
       })
     ]);
+
+    // Solo obtener huella extendida si es modo historico; en vivo los pings de hoy son suficientes
+    const lastFootprints = footprintDays > 0 && !isLiveWindow && query.footprint_days !== "0"
+      ? await prisma.gpsPing.findMany({
+          where: { captured_at: { gte: new Date(day.getTime() - footprintDays * 86400000), lt: endOfDay(day) } },
+          orderBy: { captured_at: "desc" },
+          take: 1000
+        })
+      : pings;
 
     const employeeByAlias = new Map();
     for (const employee of employees) {
