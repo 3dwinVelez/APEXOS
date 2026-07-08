@@ -1005,16 +1005,17 @@ export default function AdministracionPage() {
       if (selectedUserId) await api(`/api/v1/admin/users/${selectedUserApiId()}`, { method: "PUT", body: JSON.stringify(payload) });
       else await api("/api/v1/admin/users", { method: "POST", body: JSON.stringify(payload) });
       setMessage("Usuario guardado.");
-      await load();
       setSelectedUserId(null);
       setUserForm(emptyUser);
       setUserTab("basicos");
       setUserEditorOpen(false);
+      setTimeout(() => load(), 0);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Error al guardar el usuario. Revisa los datos e intenta de nuevo.");
     } finally {
       setSaving(false);
-    }  }
+    }
+  }
 
   function userApiId(user: AdminUser) {
     return isSupabaseSession() && user.employee_uuid ? user.employee_uuid : user.id;
