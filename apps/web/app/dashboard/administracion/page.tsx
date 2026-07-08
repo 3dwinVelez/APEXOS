@@ -709,6 +709,7 @@ export default function AdministracionPage() {
   const [catalogDraft, setCatalogDraft] = useState({ catalog: "positions", code: "", name: "", description: "" });
   const [editingCatalogCode, setEditingCatalogCode] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+  const [saving, setSaving] = useState(false);
   const [platformAdmin, setPlatformAdmin] = useState(false);
 
   const selectedRole = useMemo(() => roles.find((role) => role.id === selectedRoleId) || null, [roles, selectedRoleId]);
@@ -983,43 +984,37 @@ export default function AdministracionPage() {
       setMessage(validation);
       return;
     }
-    const names = splitFullName(userForm.name || `${userForm.first_names} ${userForm.last_names}`.trim());
-    const role = roles.find((item) => item.id === Number(userForm.role_id));
-    const userPayload = { ...userForm } as Partial<UserForm>;
-    const roleGovernedFields: Array<keyof UserForm> = [
-      "additional_roles",
-      "can_approve_documents",
-      "can_authorize_exceptions",
-      "can_be_assigned_routes",
-      "can_manage_inventory",
-      "can_punch_time",
-      "can_receive_services",
-      "special_permissions"
-    ];
-    roleGovernedFields.forEach((field) => {
-      delete userPayload[field];
-    });
-    const payload = {
-      ...userPayload,
-      name: userForm.name || `${userForm.first_names} ${userForm.last_names}`.trim(),
-      first_names: userForm.first_names || names.first_names,
-      last_names: userForm.last_names || names.last_names,
-      role_id: userForm.role_id ? Number(userForm.role_id) : undefined,
-      role_name: role?.name,
-      access_email: userForm.access_email || userForm.email,
-      site: userForm.site || userForm.base_site,
-      salary_base: Number(userForm.salary_base || 0),
-      documents: selectedUser?.documents || []
-    };
-    if (selectedUserId) await api(`/api/v1/admin/users/${selectedUserApiId()}`, { method: "PUT", body: JSON.stringify(payload) });
-    else await api("/api/v1/admin/users", { method: "POST", body: JSON.stringify(payload) });
-    setMessage("Usuario guardado.");
-    await load();
-    setSelectedUserId(null);
-    setUserForm(emptyUser);
-    setUserTab("basicos");
-    setUserEditorOpen(false);
-  }
+    if (saving) return;
+    setSaving(true);
+    try {
+      const names = splitFullName(userForm.name || `${userForm.first_names} ${userForm.last_names}`.trim());
+      const role = roles.find((item) => item.id === Number(userForm.role_id));
+      const payload = {
+        ...userForm,
+        name: userForm.name || `${userForm.first_names} ${userForm.last_names}`.trim(),
+        first_names: userForm.first_names || names.first_names,
+        last_names: userForm.last_names || names.last_names,
+        role_id: userForm.role_id ? Number(userForm.role_id) : undefined,
+        role_name: role?.name,
+        access_email: userForm.access_email || userForm.email,
+        site: userForm.site || userForm.base_site,
+        salary_base: Number(userForm.salary_base || 0),
+        documents: selectedUser?.documents || []
+      };
+      if (selectedUserId && !payload.password) delete payload.password;
+      if (selectedUserId) await api(`/api/v1/admin/users/${selectedUserApiId()}`, { method: "PUT", body: JSON.stringify(payload) });
+      else await api("/api/v1/admin/users", { method: "POST", body: JSON.stringify(payload) });
+      setMessage("Usuario guardado.");
+      await load();
+      setSelectedUserId(null);
+      setUserForm(emptyUser);
+      setUserTab("basicos");
+      setUserEditorOpen(false);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Error al guardar el usuario. Revisa los datos e intenta de nuevo.");
+    } finally {
+      setSaving(false);
+    }  }
 
   function userApiId(user: AdminUser) {
     return isSupabaseSession() && user.employee_uuid ? user.employee_uuid : user.id;
@@ -1027,16 +1022,24 @@ export default function AdministracionPage() {
 
   async function setUserStatusDirect(user: AdminUser, active: boolean) {
     if (!active && !window.confirm(`Confirmas inactivar a ${user.name} sin eliminar su historial?`)) return;
-    await api(`/api/v1/admin/users/${userApiId(user)}/status`, { method: "PATCH", body: JSON.stringify({ active }) });
-    setMessage(active ? `${user.name} fue activado.` : `${user.name} fue inactivado.`);
-    await load();
+    try {
+      await api(`/api/v1/admin/users/${userApiId(user)}/status`, { method: "PATCH", body: JSON.stringify({ active }) });
+      setMessage(active ? `${user.name} fue activado.` : `${user.name} fue inactivado.`);
+      await load();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Error al cambiar estado del usuario.");
+    }
   }
 
   async function suspendUserDirect(user: AdminUser) {
     if (!window.confirm(`Confirmas suspender el acceso de ${user.name}?`)) return;
-    await api(`/api/v1/admin/users/${userApiId(user)}/access`, { method: "PATCH", body: JSON.stringify({ session_status: "bloqueada", active: false }) });
-    setMessage(`Acceso suspendido para ${user.name}.`);
-    await load();
+    try {
+      await api(`/api/v1/admin/users/${userApiId(user)}/access`, { method: "PATCH", body: JSON.stringify({ session_status: "bloqueada", active: false }) });
+      setMessage(`Acceso suspendido para ${user.name}.`);
+      await load();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Error al suspender acceso del usuario.");
+    }
   }
 
   function moveUserStep(direction: -1 | 1) {
@@ -1048,9 +1051,13 @@ export default function AdministracionPage() {
     const targetId = selectedUserApiId();
     if (!targetId) return;
     if (!active && !window.confirm("Confirmas desactivar este usuario sin eliminar su historial?")) return;
-    await api(`/api/v1/admin/users/${targetId}/status`, { method: "PATCH", body: JSON.stringify({ active }) });
-    setMessage(active ? "Usuario activado." : "Usuario desactivado.");
-    await load();
+    try {
+      await api(`/api/v1/admin/users/${targetId}/status`, { method: "PATCH", body: JSON.stringify({ active }) });
+      setMessage(active ? "Usuario activado." : "Usuario desactivado.");
+      await load();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Error al cambiar estado del usuario.");
+    }
   }
 
   function selectedUserApiId() {
@@ -1060,17 +1067,25 @@ export default function AdministracionPage() {
   async function blockUserAccess() {
     const targetId = selectedUserApiId();
     if (!targetId) return;
-    await api(`/api/v1/admin/users/${targetId}/access`, { method: "PATCH", body: JSON.stringify({ session_status: "bloqueada", active: false }) });
-    setMessage("Acceso de usuario bloqueado.");
-    await load();
+    try {
+      await api(`/api/v1/admin/users/${targetId}/access`, { method: "PATCH", body: JSON.stringify({ session_status: "bloqueada", active: false }) });
+      setMessage("Acceso de usuario bloqueado.");
+      await load();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Error al bloquear acceso del usuario.");
+    }
   }
 
   async function requestPasswordReset() {
     const targetId = selectedUserApiId();
     if (!targetId) return;
-    await api(`/api/v1/admin/users/${targetId}/access`, { method: "PATCH", body: JSON.stringify({ require_password_change: true, session_status: "sin_sesion" }) });
-    setMessage("Cambio de clave solicitado para el proximo ingreso.");
-    await load();
+    try {
+      await api(`/api/v1/admin/users/${targetId}/access`, { method: "PATCH", body: JSON.stringify({ require_password_change: true, session_status: "sin_sesion" }) });
+      setMessage("Cambio de clave solicitado para el proximo ingreso.");
+      await load();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Error al solicitar cambio de clave.");
+    }
   }
 
   async function addDocument() {
@@ -1099,22 +1114,30 @@ export default function AdministracionPage() {
         file_size: String(selectedDocumentFile.size)
       };
     }
-    await api<AdminUser>(`/api/v1/admin/users/${targetId}/documents`, {
-      method: "POST",
-      body: JSON.stringify({ ...nextDraft, file_size: Number(nextDraft.file_size || 0), status: "pending" })
-    });
-    setDocumentDraft({ document_type: "identity", file_name: "", file_url: "", storage_path: "", mime_type: "", file_size: "", observations: "" });
-    setSelectedDocumentFile(null);
-    setMessage("Documento asociado al usuario.");
-    await load();
+    try {
+      await api<AdminUser>(`/api/v1/admin/users/${targetId}/documents`, {
+        method: "POST",
+        body: JSON.stringify({ ...nextDraft, file_size: Number(nextDraft.file_size || 0), status: "pending" })
+      });
+      setDocumentDraft({ document_type: "identity", file_name: "", file_url: "", storage_path: "", mime_type: "", file_size: "", observations: "" });
+      setSelectedDocumentFile(null);
+      setMessage("Documento asociado al usuario.");
+      await load();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Error al asociar documento.");
+    }
   }
 
   async function removeDocument(documentId: string) {
     const targetId = selectedUserApiId();
     if (!targetId) return;
-    await api<AdminUser>(`/api/v1/admin/users/${targetId}/documents/${documentId}`, { method: "DELETE" });
-    setMessage("Documento retirado del expediente.");
-    await load();
+    try {
+      await api<AdminUser>(`/api/v1/admin/users/${targetId}/documents/${documentId}`, { method: "DELETE" });
+      setMessage("Documento retirado del expediente.");
+      await load();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Error al retirar documento.");
+    }
   }
 
   async function openDocument(doc: UserDocument) {
@@ -1537,7 +1560,7 @@ export default function AdministracionPage() {
 
         <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-4">
           <button className="h-10 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => setUserEditorOpen(false)} type="button">Cancelar</button>
-          <Button onClick={saveUser} type="button"><Save size={16} /> Crear usuario rapido</Button>
+          <Button onClick={saveUser} disabled={saving} type="button"><Save size={16} /> {saving ? "Guardando..." : "Crear usuario rapido"}</Button>
         </div>
       </div>
     );
@@ -1739,7 +1762,7 @@ export default function AdministracionPage() {
           <div className="min-h-[380px]">{renderUserTab()}</div>
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
             <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold disabled:opacity-40" disabled={currentUserStep === 0} onClick={() => moveUserStep(-1)} type="button"><ChevronLeft size={16} /> Anterior</button>
-            <div className="flex gap-2"><button className="h-10 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => setUserEditorOpen(false)} type="button">Cancelar</button>{currentUserStep < userSteps.length - 1 ? <Button onClick={() => moveUserStep(1)} type="button">Siguiente <ChevronRight size={16} /></Button> : <Button onClick={saveUser} type="button"><Save size={16} /> {selectedUserId ? "Guardar cambios" : "Crear usuario"}</Button>}</div>
+            <div className="flex gap-2"><button className="h-10 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => setUserEditorOpen(false)} type="button">Cancelar</button>{currentUserStep < userSteps.length - 1 ? <Button onClick={() => moveUserStep(1)} type="button">Siguiente <ChevronRight size={16} /></Button> : <Button onClick={saveUser} disabled={saving} type="button"><Save size={16} /> {saving ? "Guardando..." : (selectedUserId ? "Guardar cambios" : "Crear usuario")}</Button>}</div>
           </div>
         </section>
       </div>
@@ -1946,7 +1969,7 @@ export default function AdministracionPage() {
                   {selectedUserId ? <Button className="border border-line bg-white text-neutral-800 hover:bg-paper" onClick={blockUserAccess} type="button"><X size={16} /> Bloquear acceso</Button> : null}
                   {selectedUserId && selectedUser?.active ? <Button className="bg-rose-700 hover:bg-rose-800" onClick={() => setUserStatus(false)} type="button"><X size={16} /> Desactivar</Button> : null}
                   {selectedUserId && selectedUser && !selectedUser.active ? <Button onClick={() => setUserStatus(true)} type="button"><Check size={16} /> Activar</Button> : null}
-                  <Button onClick={saveUser} type="button"><Save size={16} /> Guardar</Button>
+                  <Button onClick={saveUser} disabled={saving} type="button"><Save size={16} /> {saving ? "Guardando..." : "Guardar"}</Button>
                 </div>
               </div>
               <div className="mb-4 flex gap-2 overflow-x-auto rounded-md border border-line bg-white p-1">
