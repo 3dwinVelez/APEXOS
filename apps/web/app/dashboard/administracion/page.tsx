@@ -1757,6 +1757,7 @@ export default function AdministracionPage() {
   function renderUserDirectory() {
     return (
       <div className="space-y-3">
+        {message ? <p className="mb-2 rounded-md border border-line bg-white px-4 py-3 text-sm text-neutral-700">{message}</p> : null}
         <section className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper p-2">
           <div className="flex min-w-0 flex-1 flex-col gap-2 lg:flex-row lg:items-center">
             <label className="relative min-w-[220px] flex-1">
@@ -1799,10 +1800,16 @@ export default function AdministracionPage() {
   }
 
   function renderUserEditor() {
-    if (!selectedUserId) return renderQuickUserCreation();
+    const feedback = message ? <p className="mb-4 rounded-md border border-line bg-white px-4 py-3 text-sm text-neutral-700">{message}</p> : null;
+    if (message && !selectedUserId) {
+      // Auto-clear feedback after 8s so it doesn't linger forever
+      setTimeout(() => { try { setMessage(""); } catch { /* ignore */ } }, 8000);
+    }
+    if (!selectedUserId) return <>{feedback}{renderQuickUserCreation()}</>;
 
     return (
       <div className="grid gap-4 xl:grid-cols-[250px_1fr]">
+        {feedback}
         <aside className="space-y-3">
           <button className="inline-flex h-10 w-full items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold hover:bg-paper" onClick={() => setUserEditorOpen(false)} type="button"><ChevronLeft size={16} /> Volver a usuarios</button>
           <div className="rounded-md border border-line bg-paper p-3"><p className="text-xs font-semibold uppercase text-neutral-500">{selectedUserId ? "Editando usuario" : "Nuevo usuario"}</p><p className="mt-2 truncate font-semibold">{userForm.name || `${userForm.first_names} ${userForm.last_names}`.trim() || "Sin nombre todavia"}</p><p className="mt-1 truncate text-xs text-neutral-500">{userForm.email || userForm.access_email || "Correo pendiente"}</p><div className="mt-3 h-2 overflow-hidden rounded-full bg-white"><div className="h-full bg-apex" style={{ width: `${userScore}%` }} /></div><p className="mt-2 text-xs font-semibold text-neutral-600">Ficha completa: {userScore}%</p></div>

@@ -108,7 +108,24 @@ Las validaciones estaticas, tipado, build y esquema pasaron. La prueba funcional
 - Preservacion de rol real para permisos.
 - UI con dos caminos claros: rapido activo y completo bloqueado.
 
-## Correcciones aplicadas (2026-07-08) — Hardening Password Policy
+## Correcciones aplicadas (2026-07-08) — Hardening Password Policy + Bug Feedback Invisible
+
+### Bug crítico: mensajes de feedback invisibles dentro del modal
+
+#### Problema detectado (raíz de "no pasa nada al hacer clic")
+El mensaje de feedback del formulario (`{message ...}`) se renderizaba en el markup principal de la página (`AdministracionPage`) mientras que el modal de creación de usuarios usaba `fixed inset-0 z-40`. Cualquier validación, error de API o mensaje de éxito quedaba **físicamente detrás del modal**, completamente invisible para el usuario. El código sí ejecutaba `setMessage()`, el try/catch sí capturaba errores, pero nadie los veía.
+
+Adicionalmente, el mensaje en la página principal también era invisible cuando cualquier modal (`roles`, `users`, `masters`, `logs`) estaba abierto, afectando a todas las operaciones CRUD dentro de modales.
+
+#### Corrección aplicada
+Se agregó feedback visual DENTRO del modal en dos puntos:
+
+1. **`renderUserDirectory()`** — mensaje visible en la lista de usuarios cuando se hacen operaciones de estado/suspender
+2. **`renderUserEditor()`** — mensaje visible en el formulario de creación rápida y en el editor completo (wizard de 6 pasos)
+
+El mensaje original en la página principal se conserva para cuando no hay ningún modal abierto.
+
+### Hardening Password Policy
 
 ### Problema detectado
 La politica de `assertPasswordPolicy()` exigia 8+ caracteres con letras y numeros, pero las capas superiores (frontend, Next API, schema auth) solo validaban longitud minima sin exigir la combinacion alfabetica-numerica. Esto permitia enviar claves como `12345678` al backend, que las rechazaba con error 400, pero la experiencia de usuario era confusa porque el error llegaba desde el servidor sin validacion previa en el cliente.
