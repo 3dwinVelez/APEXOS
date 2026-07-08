@@ -41,6 +41,7 @@ La revision encontro riesgos reales en validaciones de API, manejo de errores y 
 | AUD-TR-002 | Transporte / Adjuntos | Media | Error al adjuntar documento podia no mostrarse al usuario. | Error visible y accionable. | Promesa sin `try/catch` local. | Se agrego manejo de error visible en `saveDocument`. | Typecheck, lint y build en verde. |
 | AUD-TH-004 | Mapa GPS | Media | Filtro por ruta podia fallar si `route_id` llegaba numerico y el selector lo comparaba como texto. | Filtrar por ruta debe funcionar con IDs numericos o string. | Comparacion estricta podia ocultar datos existentes. | Se normalizan comparaciones con `String(route_id)`. | Typecheck, lint y build en verde. |
 | AUD-TH-005 | Reportes HR | Baja | Errores de carga podian verse como tabla vacia sin causa. | Mensaje visible ante falla de consulta. | `catch` externo silencioso en carga inicial. | Se agrego `message` visible para errores de carga. | Typecheck, lint y build en verde. |
+| AUD-HR-EMPLOYEES | Routing frontend HR | Alta | `/api/v1/hr/employees` se ruteaba al backend operativo como cualquier path HR, pero los empleados se gestionan en Supabase Auth/users. | El path de empleados debe resolver desde Supabase, no desde el backend operativo. | Coincidia con el patron generico `path.startsWith("/api/v1/hr")`. | Se agrego excepcion explicita `if (path === "/api/v1/hr/employees" || path.startsWith("/api/v1/hr/employees?")) return false;` en `shouldPreferOperationalApi`. | Typecheck, lint y build en verde. |
 
 ## Hallazgos tecnicos sin cambio
 

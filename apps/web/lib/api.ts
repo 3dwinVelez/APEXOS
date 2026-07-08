@@ -117,6 +117,7 @@ function reportClientFailure(path: string, status: number | null, detail: string
 }
 
 function shouldPreferOperationalApi(path: string) {
+  if (path === "/api/v1/hr/employees" || path.startsWith("/api/v1/hr/employees?")) return false;
   return path.startsWith("/api/v1/transport") || path.startsWith("/api/v1/hr");
 }
 
