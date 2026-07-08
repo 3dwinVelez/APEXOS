@@ -16,6 +16,7 @@ import {
   Check,
   CreditCard,
   Database,
+  Download,
   Edit3,
   Filter,
   FileText,
@@ -764,6 +765,7 @@ export default function AdministracionPage() {
   }, [catalog, roleFilter, roleGroupFilter]);
   const assignedRoleUsers = useMemo(() => users.filter((user) => selectedRoleId && Number(user.role_id) === selectedRoleId), [selectedRoleId, users]);
   const activeConfigFilters = [query.trim(), categoryFilter !== "all" ? categoryFilter : "", configStatusFilter !== "all" ? configStatusFilter : ""].filter(Boolean).length;
+  const activeLogFilters = [logSourceFilter !== "all" ? "fuente" : "", logLevelFilter !== "all" ? "severidad" : "", logModuleFilter !== "all" ? "modulo" : ""].filter(Boolean).length;
 
   function clearConfigFilters() {
     setQuery("");
@@ -855,6 +857,42 @@ export default function AdministracionPage() {
     const rows = await api<PlatformLog[]>("/api/v1/admin/platform-logs?limit=120");
     setPlatformLogs(rows);
     setMessage("Logs tecnicos actualizados.");
+  }
+
+  function clearLogFilters() {
+    setLogSourceFilter("all");
+    setLogLevelFilter("all");
+    setLogModuleFilter("all");
+  }
+
+  function exportLogsToTxt() {
+    if (!filteredPlatformLogs.length) {
+      setMessage("No hay logs para exportar con los filtros actuales.");
+      return;
+    }
+    const header = ["Fecha", "Fuente", "Severidad", "Modulo", "Ruta", "Metodo", "Codigo", "Mensaje", "Detalle", "Request ID"].join("\t");
+    const rows = filteredPlatformLogs.map((item) => [
+      item.at ? new Date(item.at).toISOString() : "Sin fecha",
+      item.source,
+      item.level,
+      item.module || "platform",
+      item.route || "-",
+      item.method || "",
+      item.status_code || "",
+      item.message || "Evento tecnico",
+      (item.detail || "").replace(/\n/g, " | ").replace(/\t/g, " "),
+      item.request_id || "-"
+    ].join("\t"));
+    const txt = [header, ...rows].join("\n");
+    const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `platform-logs-${new Date().toISOString().split("T")[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   function openConfig(item: ConfigItem) {
@@ -1367,19 +1405,25 @@ export default function AdministracionPage() {
     return (
       <div className="space-y-4">
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {[["Eventos", counts.total, "text-neutral-950"], ["Errores", counts.error, "text-rose-700"], ["Alertas", counts.warning, "text-amber-700"], ["Frontend", counts.frontend, "text-sky-700"]].map(([label, value, tone]) => (
-            <div className="rounded-md border border-line bg-white p-3" key={String(label)}>
+          {[["Eventos", counts.total, "text-ink"], ["Errores", counts.error, "text-rose-700"], ["Alertas", counts.warning, "text-amber-700"], ["Frontend", counts.frontend, "text-sky-700"]].map(([label, value, tone]) => (
+            <div className="rounded-md border border-line bg-paper p-3" key={String(label)}>
               <p className="text-xs font-semibold uppercase text-neutral-500">{label}</p>
               <p className={`mt-2 text-2xl font-semibold ${tone}`}>{value}</p>
             </div>
           ))}
         </section>
-        <section className="grid gap-3 rounded-md border border-line bg-paper p-3 md:grid-cols-[1fr_1fr_1fr_auto]">
+        <section className="grid gap-3 rounded-md border border-line bg-paper p-3 md:grid-cols-[1fr_1fr_1fr_auto_auto]">
           <SelectField label="Fuente" value={logSourceFilter} onChange={setLogSourceFilter} options={[["all", "Todas"], ["api", "API"], ["backend", "Backend"], ["frontend", "Frontend"]]} />
           <SelectField label="Severidad" value={logLevelFilter} onChange={setLogLevelFilter} options={[["all", "Todas"], ["error", "Errores"], ["warning", "Alertas"], ["info", "Info"]]} />
           <SelectField label="Modulo" value={logModuleFilter} onChange={setLogModuleFilter} options={[["all", "Todos"], ...logModules.map((item) => [item, item] as [string, string])]} />
           <Button className="self-end" onClick={refreshPlatformLogs} type="button"><RefreshCw size={16} /> Actualizar</Button>
+          {filteredPlatformLogs.length ? <Button className="self-end border border-line bg-white text-neutral-800 hover:bg-paper" onClick={exportLogsToTxt} type="button"><Download size={16} /> Exportar TXT</Button> : null}
         </section>
+        {activeLogFilters > 0 ? (
+          <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold text-neutral-700 hover:bg-paper" onClick={clearLogFilters} type="button">
+            <RotateCcw size={15} /> Limpiar {activeLogFilters} filtro(s)
+          </button>
+        ) : null}
         <div className="max-h-[58vh] overflow-auto rounded-md border border-line bg-white">
           <table className="w-full min-w-[980px] text-sm">
             <thead className="sticky top-0 z-10 bg-paper">
@@ -1405,7 +1449,15 @@ export default function AdministracionPage() {
                   <td className="px-3 py-3 font-mono text-xs text-neutral-500">{item.request_id || "-"}</td>
                 </tr>
               ))}
-              {!filteredPlatformLogs.length ? <tr><td className="px-4 py-10 text-center text-sm text-neutral-500" colSpan={6}>No hay logs con estos filtros.</td></tr> : null}
+              {!filteredPlatformLogs.length ? (
+                <tr>
+                  <td className="px-4 py-10 text-center text-sm text-neutral-500" colSpan={6}>
+                    {activeLogFilters > 0
+                      ? "No hay logs con estos filtros. Limpia los filtros para ver todos los eventos."
+                      : "No hay logs registrados en la plataforma."}
+                  </td>
+                </tr>
+              ) : null}
             </tbody>
           </table>
         </div>
