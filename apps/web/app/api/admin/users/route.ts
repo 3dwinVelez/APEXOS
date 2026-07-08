@@ -55,7 +55,11 @@ function validateUserPayload(body: AnyRow, { requirePassword = false } = {}) {
   if (!clean(body.role_id) && !clean(body.role_name)) throw httpError("Rol principal requerido.", 400);
   if (!clean(body.company) && !clean(body.company_id)) throw httpError("Empresa requerida.", 400);
   if (!clean(body.document)) throw httpError("Documento requerido.", 400);
-  if (requirePassword && String(body.password || "").length < 8) throw httpError("La clave temporal debe tener minimo 8 caracteres.", 400);
+  if (requirePassword) {
+    const pw = String(body.password || "");
+    if (pw.length < 8) throw httpError("La clave temporal debe tener minimo 8 caracteres.", 400);
+    if (!/[A-Za-z]/.test(pw) || !/[0-9]/.test(pw)) throw httpError("La clave temporal debe combinar letras y numeros.", 400);
+  }
   return { email, fullName };
 }
 

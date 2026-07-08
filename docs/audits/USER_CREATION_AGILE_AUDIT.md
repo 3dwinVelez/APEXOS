@@ -101,12 +101,54 @@ Las validaciones estaticas, tipado, build y esquema pasaron. La prueba funcional
 - API local arrancaba, pero la salud fallo por `Can't reach database server at localhost:54320`.
 - Docker no estaba disponible para levantar `infra/docker-compose.yml`.
 
-## Correcciones aplicadas
+## Correcciones aplicadas (2026-07-06)
 
 - Validacion agil en frontend.
 - Validacion minima compatible en Next API y API Node.
 - Preservacion de rol real para permisos.
 - UI con dos caminos claros: rapido activo y completo bloqueado.
+
+## Correcciones aplicadas (2026-07-08) — Hardening Password Policy
+
+### Problema detectado
+La politica de `assertPasswordPolicy()` exigia 8+ caracteres con letras y numeros, pero las capas superiores (frontend, Next API, schema auth) solo validaban longitud minima sin exigir la combinacion alfabetica-numerica. Esto permitia enviar claves como `12345678` al backend, que las rechazaba con error 400, pero la experiencia de usuario era confusa porque el error llegaba desde el servidor sin validacion previa en el cliente.
+
+### Cambios aplicados
+
+1. **Frontend `validateUser()`** (`apps/web/app/dashboard/administracion/page.tsx`)
+   - Se agrego validacion `!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)` en creacion.
+   - Mensaje: "La clave inicial debe combinar letras y numeros."
+
+2. **Next API `validateUserPayload()`** (`apps/web/app/api/admin/users/route.ts`)
+   - Se agrego validacion de letras+numeros ademas de longitud >= 8.
+   - Mensaje: "La clave temporal debe combinar letras y numeros."
+
+3. **Auth schema `registerSchema`** (`apps/api/src/modules/auth/schema.js`)
+   - `minLength` corregido de 6 a 8 para alinear con `assertPasswordPolicy()`.
+
+### Validaciones ejecutadas (18/18 pasaron)
+
+| Capa | Prueba | Resultado |
+|------|--------|-----------|
+| Frontend validateUser | Longitud minima 8 | ✅ |
+| Frontend validateUser | Letras + numeros | ✅ |
+| Frontend validateUser | Mensaje de error | ✅ |
+| Next API validateUserPayload | Longitud minima 8 | ✅ |
+| Next API validateUserPayload | Letras + numeros | ✅ |
+| Next API validateUserPayload | Mensaje de error | ✅ |
+| Auth registerSchema | minLength 8 | ✅ |
+| Backend assertPasswordPolicy | Longitud minima 8 | ✅ |
+| Backend assertPasswordPolicy | Letras + numeros | ✅ |
+| Backend assertPasswordPolicy | Status code 400 | ✅ |
+| Backend createUser | Invoca assertPasswordPolicy | ✅ |
+| Backend createUser | Bcrypt 12 rounds | ✅ |
+| Backend createUser | role_id casteado a Number | ✅ |
+| Typecheck (tsc --noEmit) | apps/web | ✅ |
+| Lint | apps/web | ✅ |
+
+### Resumen
+
+Se cerraron 3 gaps de validacion que existian entre la politica de seguridad del backend y las capas superiores. Ahora todas las capas (frontend → Next API → schema Fastify → backend service) rechazan claves debiles con mensajes claros antes de llegar a la base de datos.
 
 ## Estado final
 

@@ -6,7 +6,7 @@ const registerSchema = {
       company_name: { type: "string", minLength: 2 },
       industry: { type: "string", minLength: 2 },
       email: { type: "string", format: "email" },
-      password: { type: "string", minLength: 6 },
+      password: { type: "string", minLength: 8 },
       name: { type: "string", minLength: 2 },
       country: { type: "string", minLength: 2, maxLength: 2 },
       timezone: { type: "string" },

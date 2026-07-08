@@ -1005,6 +1005,7 @@ export default function AdministracionPage() {
     if (!userForm.document.trim()) return "El documento es obligatorio.";
     if (!selectedUserId && !userForm.password) return "La clave inicial es obligatoria.";
     if (!selectedUserId && userForm.password.length < 8) return "La clave inicial debe tener minimo 8 caracteres.";
+    if (!selectedUserId && (!/[A-Za-z]/.test(userForm.password) || !/[0-9]/.test(userForm.password))) return "La clave inicial debe combinar letras y numeros.";
     if (!selectedUserId) return "";
     if (!userForm.first_names.trim()) return "Los nombres son obligatorios.";
     if (!userForm.last_names.trim()) return "Los apellidos son obligatorios.";
