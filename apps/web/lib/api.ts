@@ -2399,67 +2399,10 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
           } as T;
         }
         const errorBody = await response.json().catch(() => ({ message: response.statusText }));
-        throw new Error(errorBody.message || "No fue posible crear el acceso Auth del usuario.");
+        safeDevLog("No fue posible crear usuario via Next API, delegando al backend:", errorBody);
+        return null;
       }
-      const row = {
-        company_id: body.company_id || undefined,
-        first_name: body.first_names || fullName.split(" ")[0] || fullName,
-        last_name: body.last_names || fullName.split(" ").slice(1).join(" "),
-        document_type: body.document_type || "CC",
-        document_number: body.document || `USR-${Date.now()}`,
-        email: body.email,
-        phone: body.phone || "",
-        position: body.position || body.operational_classification || "operario",
-        department: body.department || body.area || "Operacion",
-        hire_date: body.hire_date || localDate(),
-        status: body.user_status === "inactivo" ? "inactive" : "active",
-        user_type: body.operational_classification || "operario",
-        metadata: {
-          source: "apexos_admin_user_created",
-          name: fullName,
-          code: body.code || `USR-${Date.now()}`,
-          role_id: role.id,
-          role_name: role.name,
-          document: body.document || "",
-          company: body.company || "SCJ",
-          access: { email: normalizeUsernameEmail(body.access_email || body.email), role_id: role.id, role_name: role.name, site: body.site || body.base_site || "", area: body.area || body.department || "" },
-          employment: { cost_center: body.cost_center || "", contract_type: body.contract_type || "" },
-          operational: { classification: body.operational_classification || "operario", base_site: body.base_site || "", zone: body.operation_zone || "" }
-        }
-      };
-      const membership = row.company_id ? null : await currentSupabaseCompanyUser().catch((error) => {
-        safeDevLog("No fue posible resolver empresa activa para usuario.", error);
-        return null;
-      });
-      const companies = row.company_id || membership?.company_id ? [] : await supabaseFetch<Array<{ id: string }>>("/rest/v1/companies?select=id&name=eq.SCJ&limit=1").catch((error) => {
-        safeDevLog("No fue posible consultar empresa SCJ.", error);
-        return [];
-      });
-      const payload = { ...row, company_id: row.company_id || membership?.company_id || companies[0]?.id };
-      const inserted = payload.company_id ? await supabaseFetch<Array<AnyRow>>("/rest/v1/employees?select=id,email,document_number,position,department,status,user_type,metadata", {
-        method: "POST",
-        body: JSON.stringify(payload),
-        headers: { Prefer: "return=representation" }
-      }).catch((error) => {
-        safeDevLog("No fue posible crear empleado Supabase.", error);
-        return null;
-      }) : null;
-      const employee = inserted?.[0] || { ...payload, id: crypto.randomUUID?.() || String(Date.now()) };
-      return {
-        id: toNumberId(employee.id),
-        employee_uuid: employee.id,
-        name: fullName,
-        email: String(employee.email || ""),
-        role_id: role.id,
-        role_name: role.name,
-        active: employee.status === "active",
-        code: String((employee.metadata as AnyRow)?.code || ""),
-        document: String(employee.document_number || ""),
-        company: "SCJ",
-        position: String(employee.position || ""),
-        department: String(employee.department || ""),
-        operational_classification: String(employee.user_type || "")
-      } as T;
+      return null;
     }
     const serverRows = await nextAdminUsersRequest<{ employees: Array<{
       id: string;

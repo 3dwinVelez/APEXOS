@@ -1032,7 +1032,7 @@ export default function AdministracionPage() {
         name: userForm.name || `${userForm.first_names} ${userForm.last_names}`.trim(),
         first_names: userForm.first_names || names.first_names,
         last_names: userForm.last_names || names.last_names,
-        role_id: userForm.role_id ? Number(userForm.role_id) : undefined,
+        role_id: userForm.role_id ? String(userForm.role_id) : undefined,
         role_name: role?.name,
         access_email: userForm.access_email || userForm.email,
         site: userForm.site || userForm.base_site,
