@@ -107,7 +107,7 @@ function PeoplePicker({
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
     const rows = term ? employees.filter((employee) => employeeSearchText(employee).includes(term)) : employees;
-    return rows.slice(0, 20);
+    return rows.slice(0, 50);
   }, [employees, query]);
   const selectedEmployees = useMemo(() => employees.filter((employee) => selectedSet.has(employeeValue(employee))), [employees, selectedSet]);
 
@@ -244,7 +244,8 @@ export default function RoutesPlanningPage() {
     setEditingRoute(null);
   }
 
-  function openCreateModal(route?: RouteMonitor) {
+  async function openCreateModal(route?: RouteMonitor) {
+    await load();
     setSelectedRouteId("");
     resetForm();
     if (route) {

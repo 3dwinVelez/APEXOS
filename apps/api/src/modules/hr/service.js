@@ -272,7 +272,7 @@ async function listEmployees(tenantId, query = {}) {
     },
     include: { user: { select: safeUserSelect } },
     orderBy: { id: "desc" },
-    take: 200
+    take: 500
   }));
 }
 
