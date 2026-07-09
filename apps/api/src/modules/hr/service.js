@@ -397,6 +397,7 @@ async function findEmployee(input) {
     where: {
       OR: [
         { code: name },
+        { metadata: { path: ["name"], equals: name } },
         { user: { name } },
         { user: { email: name } }
       ]
@@ -458,7 +459,7 @@ async function getCurrentEmployee(tenantId, user) {
       data: {
         tenant_id: tenantId,
         user_id: user.id,
-        code: user.email || `usuario-${user.id}`,
+        code: user.name || user.email || `usuario-${user.id}`,
         user_type: inferredType,
         position: inferredType,
         department: "Operacion",
@@ -957,7 +958,7 @@ async function createPunch(tenantId, input, user) {
         message: "Checklist preoperacional obligatorio antes de iniciar jornada."
       };
     }
-    const resolvedUserName = employee.code || employee.user?.name || employee.user?.email || input.user_name;
+    const resolvedUserName = employeeDisplayName(employee) || employee.code || employee.user?.name || employee.user?.email || input.user_name;
     const punchesToday = await latestPunchesForUser(resolvedUserName, punchedAt);
     const expectedType = nextPunchType(punchesToday);
     if (!expectedType) {
@@ -1105,10 +1106,11 @@ async function createPunch(tenantId, input, user) {
 async function createGpsPing(tenantId, input) {
   return prisma.runWithTenant(tenantId, async () => {
     const employee = await resolveEmployeeForPunch(tenantId, input);
+    const resolvedName = employee.code || employeeDisplayName(employee) || input.user_name;
     return prisma.gpsPing.create({
       data: {
         employee_id: employee.id,
-        user_name: input.user_name,
+        user_name: resolvedName,
         vehicle_plate: input.vehicle_plate || "",
         route_id: input.route_id,
         latitude: Number(input.latitude),

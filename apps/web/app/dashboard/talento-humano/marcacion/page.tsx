@@ -49,6 +49,10 @@ function mapsUrl(gps: GpsFix) {
   return `https://www.google.com/maps?q=${gps.latitude},${gps.longitude}&z=17`;
 }
 
+function normalizeKey(value: string) {
+  return String(value || "").trim().toLowerCase();
+}
+
 function osmEmbedUrl(gps: GpsFix) {
   const delta = 0.004;
   const bbox = [
@@ -114,12 +118,21 @@ export default function MobilePunchPage() {
     load();
   }, [load]);
 
-  const userName = employee ? employee.code || employeeName(employee) : "";
-  const currentAttendance = attendance.find((item) => item.user_name === userName) || { user_name: userName, next_type: "entrada", punches: [] };
+  const userName = employeeName(employee) || employee?.code || "";
+  const currentAttendance = attendance.find((item) => {
+    const match = item.user_name === userName || item.user_name === employee?.code || item.user_name === employeeName(employee);
+    return match;
+  }) || { user_name: userName, next_type: "entrada", punches: [] };
   const doneTypes = new Set(currentAttendance.punches.map((punch) => punch.type) || []);
   const nextType = currentAttendance.next_type || "entrada";
-  const displayName = employee ? employeeName(employee) : "";
-  const route = routes.find((item) => item.employees.includes(userName)) || routes.find((item) => displayName && item.employees.includes(displayName));
+  const displayName = employeeName(employee) || "";
+  const route = routes.find((item) => {
+    const routeEmployees = item.employees || [];
+    return routeEmployees.some((emp) => {
+      const empKey = normalizeKey(emp);
+      return empKey === normalizeKey(userName) || empKey === normalizeKey(employee?.code || "") || empKey === normalizeKey(displayName);
+    });
+  }) || routes.find((item) => displayName && item.employees.includes(displayName));
   const vehiclePlate = route?.vehicle_plate || "";
   const isClosingLate = (() => {
     if (nextType !== "salida" || !route?.end_time) return false;
