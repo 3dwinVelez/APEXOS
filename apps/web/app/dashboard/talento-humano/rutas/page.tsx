@@ -245,7 +245,7 @@ export default function RoutesPlanningPage() {
   }
 
   async function openCreateModal(route?: RouteMonitor) {
-    await load();
+    load();
     setSelectedRouteId("");
     resetForm();
     if (route) {
@@ -475,24 +475,24 @@ export default function RoutesPlanningPage() {
       </section>
 
       {modal ? (
-        <ModalFrame title={modal === "edit" ? "Editar asignacion de horario" : "Nueva asignacion de horario"} onClose={() => { setModal(null); resetForm(); }} maxWidth="md:max-w-5xl">
-          <div className="rounded-md border border-apex/20 bg-[#146C630D] p-4">
-            <div className="flex items-start gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-white text-apex">{scheduleKind === "administrative" ? <Building2 size={19} /> : <Truck size={19} />}</span><div><p className="text-xs font-semibold uppercase tracking-wide text-apex">{modal === "edit" ? "Actualizar jornada" : bulkMode ? `Crear ${bulkCount} horarios` : "Crear un horario"}</p><h2 className="mt-1 text-lg font-semibold">{scheduleKind === "administrative" ? "Jornada administrativa o de sede fija" : "Jornada operativa con recurso movil"}</h2><p className="mt-1 text-sm text-neutral-600">Primero define cuando y donde aplica; despues selecciona las personas que trabajaran en esta jornada.</p></div></div>
+        <ModalFrame title={modal === "edit" ? "Editar asignacion de horario" : "Nueva asignacion de horario"} onClose={() => { setModal(null); resetForm(); }} maxWidth="md:max-w-3xl">
+          <div className="rounded-md border border-apex/20 bg-[#146C630D] p-3 md:p-4">
+            <div className="flex items-start gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white text-apex">{scheduleKind === "administrative" ? <Building2 size={17} /> : <Truck size={17} />}</span><div><p className="text-xs font-semibold uppercase tracking-wide text-apex">{modal === "edit" ? "Actualizar jornada" : bulkMode ? `Crear ${bulkCount} horarios` : "Crear un horario"}</p><h2 className="mt-1 text-base font-semibold">{scheduleKind === "administrative" ? "Jornada administrativa o de sede fija" : "Jornada operativa con recurso movil"}</h2><p className="mt-1 text-sm text-neutral-600">Define cuando y donde aplica, luego selecciona las personas de esta jornada.</p></div></div>
           </div>
           {modal !== "edit" ? (
-            <div className="mt-4 grid gap-2 rounded-md border border-line bg-white p-2 sm:grid-cols-2">
-              <button className={`inline-flex h-11 items-center justify-center gap-2 rounded-md text-sm font-semibold ${!bulkMode ? "bg-apex text-white" : "bg-paper text-neutral-700"}`} onClick={() => setBulkMode(false)} type="button"><CalendarDays size={15} /> Un solo dia</button>
-              <button className={`inline-flex h-11 items-center justify-center gap-2 rounded-md text-sm font-semibold ${bulkMode ? "bg-apex text-white" : "bg-paper text-neutral-700"}`} onClick={() => setBulkMode(true)} type="button"><Copy size={15} /> Clonar por rango</button>
+            <div className="mt-3 grid gap-2 rounded-md border border-line bg-white p-1.5 sm:grid-cols-2">
+              <button className={`inline-flex h-10 items-center justify-center gap-2 rounded-md text-sm font-semibold ${!bulkMode ? "bg-apex text-white" : "bg-paper text-neutral-700"}`} onClick={() => setBulkMode(false)} type="button"><CalendarDays size={14} /> Un solo dia</button>
+              <button className={`inline-flex h-10 items-center justify-center gap-2 rounded-md text-sm font-semibold ${bulkMode ? "bg-apex text-white" : "bg-paper text-neutral-700"}`} onClick={() => setBulkMode(true)} type="button"><Copy size={14} /> Clonar por rango</button>
             </div>
           ) : null}
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
             <div className="md:col-span-2">
-              <p className="mb-2 text-sm font-semibold text-neutral-800">Tipo de asignacion</p>
-              <div className="grid gap-2 rounded-md border border-line bg-white p-2 sm:grid-cols-2">
-                <button className={`h-11 rounded-md text-sm font-semibold ${scheduleKind === "administrative" ? "bg-apex text-white" : "bg-paper text-neutral-700"}`} onClick={() => { setScheduleKind("administrative"); setForm((prev) => ({ ...prev, vehicle_plate: "" })); }} type="button">
+              <p className="mb-1.5 text-sm font-semibold text-neutral-800">Tipo de asignacion</p>
+              <div className="grid gap-2 rounded-md border border-line bg-white p-1.5 sm:grid-cols-2">
+                <button className={`h-10 rounded-md text-sm font-semibold ${scheduleKind === "administrative" ? "bg-apex text-white" : "bg-paper text-neutral-700"}`} onClick={() => { setScheduleKind("administrative"); setForm((prev) => ({ ...prev, vehicle_plate: "" })); }} type="button">
                   Administrativo / sede fija
                 </button>
-                <button className={`h-11 rounded-md text-sm font-semibold ${scheduleKind === "operational" ? "bg-apex text-white" : "bg-paper text-neutral-700"}`} onClick={() => setScheduleKind("operational")} type="button">
+                <button className={`h-10 rounded-md text-sm font-semibold ${scheduleKind === "operational" ? "bg-apex text-white" : "bg-paper text-neutral-700"}`} onClick={() => setScheduleKind("operational")} type="button">
                   Operativo / recurso movil
                 </button>
               </div>
@@ -500,35 +500,35 @@ export default function RoutesPlanningPage() {
             {bulkMode && modal !== "edit" ? (
               <>
                 <FieldHelp label="Fecha inicial" help="Primer dia desde el que quieres clonar este horario.">
-                  <input className="h-12 w-full rounded-md border border-line px-3 text-base md:text-sm" type="date" value={bulk.start_date} onChange={(event) => setBulk((prev) => ({ ...prev, start_date: event.target.value }))} />
+                  <input className="h-10 w-full rounded-md border border-line px-3 text-sm" type="date" value={bulk.start_date} onChange={(event) => setBulk((prev) => ({ ...prev, start_date: event.target.value }))} />
                 </FieldHelp>
-                <FieldHelp label="Fecha final" help="Ultimo dia incluido en la creacion masiva. Puedes planear 7, 15 o mas dias en una sola accion.">
-                  <input className="h-12 w-full rounded-md border border-line px-3 text-base md:text-sm" type="date" value={bulk.end_date} onChange={(event) => setBulk((prev) => ({ ...prev, end_date: event.target.value }))} />
+                <FieldHelp label="Fecha final" help="Ultimo dia incluido en la creacion masiva.">
+                  <input className="h-10 w-full rounded-md border border-line px-3 text-sm" type="date" value={bulk.end_date} onChange={(event) => setBulk((prev) => ({ ...prev, end_date: event.target.value }))} />
                 </FieldHelp>
                 <div className="md:col-span-2">
-                  <p className="mb-2 text-sm font-semibold text-neutral-800">Dias de la semana</p>
-                  <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
+                  <p className="mb-1.5 text-sm font-semibold text-neutral-800">Dias de la semana</p>
+                  <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-7">
                     {weekdayOptions.map((day) => {
                       const active = bulk.weekdays.includes(day.value);
                       return (
-                        <button className={`h-10 rounded-md border text-sm font-semibold ${active ? "border-apex bg-apex text-white" : "border-line bg-white text-neutral-700 hover:bg-paper"}`} key={day.value} onClick={() => setBulk((prev) => ({ ...prev, weekdays: active ? prev.weekdays.filter((item) => item !== day.value) : [...prev.weekdays, day.value] }))} type="button">
+                        <button className={`h-9 rounded-md border text-sm font-semibold ${active ? "border-apex bg-apex text-white" : "border-line bg-white text-neutral-700 hover:bg-paper"}`} key={day.value} onClick={() => setBulk((prev) => ({ ...prev, weekdays: active ? prev.weekdays.filter((item) => item !== day.value) : [...prev.weekdays, day.value] }))} type="button">
                           {day.label}
                         </button>
                       );
                     })}
                   </div>
-                  <p className="mt-2 text-xs text-neutral-500">Se crearan {bulkCount} bloque(s) de horario para el grupo seleccionado.</p>
+                  <p className="mt-1.5 text-xs text-neutral-500">Se crearan {bulkCount} bloque(s) de horario para el grupo seleccionado.</p>
                 </div>
               </>
             ) : (
               <FieldHelp label="Fecha del horario" help="Dia en el que aplica la asignacion.">
-                <input className="h-12 w-full rounded-md border border-line px-3 text-base md:text-sm" type="date" value={form.date} onChange={(event) => setForm((prev) => ({ ...prev, date: event.target.value }))} />
+                <input className="h-10 w-full rounded-md border border-line px-3 text-sm" type="date" value={form.date} onChange={(event) => setForm((prev) => ({ ...prev, date: event.target.value }))} />
               </FieldHelp>
             )}
             {scheduleKind === "administrative" ? (
-              <FieldHelp label="Sede administrativa fija" help="Sede, oficina o punto fijo donde aplica la jornada. No requiere vehiculo.">
+              <FieldHelp label="Sede administrativa fija" help="Sede, oficina o punto fijo donde aplica la jornada.">
                 <>
-                  <input className="h-12 w-full rounded-md border border-line px-3 text-base md:text-sm" list="administrative-sites" placeholder="Ej: SEDE-PRINCIPAL" value={administrativeSite} onChange={(event) => setAdministrativeSite(event.target.value)} />
+                  <input className="h-10 w-full rounded-md border border-line px-3 text-sm" list="administrative-sites" placeholder="Ej: SEDE-PRINCIPAL" value={administrativeSite} onChange={(event) => setAdministrativeSite(event.target.value)} />
                   <datalist id="administrative-sites">
                     {administrativeSites.map((site) => <option key={site} value={site} />)}
                   </datalist>
@@ -536,30 +536,30 @@ export default function RoutesPlanningPage() {
               </FieldHelp>
             ) : (
               <FieldHelp label="Recurso o vehiculo" help="Opcional para operacion movil. Selecciona placa cuando el horario dependa de transporte o ruta fisica.">
-                <select className="h-12 w-full rounded-md border border-line px-3 text-base md:text-sm" value={form.vehicle_plate} onChange={(event) => setForm((prev) => ({ ...prev, vehicle_plate: event.target.value }))}>
+                <select className="h-10 w-full rounded-md border border-line px-3 text-sm" value={form.vehicle_plate} onChange={(event) => setForm((prev) => ({ ...prev, vehicle_plate: event.target.value }))}>
                   <option value="">Sin vehiculo asignado</option>
                   {vehicles.map((vehicle) => <option key={vehicle.id} value={vehicle.plate}>{vehicle.plate} - {vehicle.type || vehicle.model || "Movil"}</option>)}
                 </select>
               </FieldHelp>
             )}
             <FieldHelp label="Hora de inicio" help="La primera marcacion se compara contra esta hora para control de llegada.">
-              <input className="h-12 w-full rounded-md border border-line px-3 text-base md:text-sm" type="time" value={form.start_time} onChange={(event) => setForm((prev) => ({ ...prev, start_time: event.target.value }))} />
+              <input className="h-10 w-full rounded-md border border-line px-3 text-sm" type="time" value={form.start_time} onChange={(event) => setForm((prev) => ({ ...prev, start_time: event.target.value }))} />
             </FieldHelp>
             <FieldHelp label="Hora de fin" help="El cierre despues de esta hora puede generar extension o novedad segun tolerancia.">
-              <input className="h-12 w-full rounded-md border border-line px-3 text-base md:text-sm" type="time" value={form.end_time} onChange={(event) => setForm((prev) => ({ ...prev, end_time: event.target.value }))} />
+              <input className="h-10 w-full rounded-md border border-line px-3 text-sm" type="time" value={form.end_time} onChange={(event) => setForm((prev) => ({ ...prev, end_time: event.target.value }))} />
             </FieldHelp>
             <FieldHelp label="Tolerancia en minutos" help="Margen permitido antes de marcar atrasos o extensiones operativas.">
-              <input className="h-12 w-full rounded-md border border-line px-3 text-base md:text-sm" min={0} type="number" value={form.tolerance_minutes} onChange={(event) => setForm((prev) => ({ ...prev, tolerance_minutes: Number(event.target.value) }))} />
+              <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} type="number" value={form.tolerance_minutes} onChange={(event) => setForm((prev) => ({ ...prev, tolerance_minutes: Number(event.target.value) }))} />
             </FieldHelp>
             <FieldHelp label="Viatico o auxilio" help="Valor opcional asociado a la jornada. Usa 0 cuando no aplique.">
-              <input className="h-12 w-full rounded-md border border-line px-3 text-base md:text-sm" min={0} type="number" value={form.per_diem} onChange={(event) => setForm((prev) => ({ ...prev, per_diem: Number(event.target.value) }))} />
+              <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} type="number" value={form.per_diem} onChange={(event) => setForm((prev) => ({ ...prev, per_diem: Number(event.target.value) }))} />
             </FieldHelp>
             <FieldHelp label="Notas internas" help="Indica sede, turno, frente de trabajo, instruccion especial o responsable del horario.">
-              <textarea className="min-h-24 w-full rounded-md border border-line px-3 py-2 text-base md:text-sm" placeholder="Ej: Turno bodega norte, prioridad recepcion, supervisor asignado..." value={form.notes} onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))} />
+              <textarea className="min-h-[72px] w-full rounded-md border border-line px-3 py-2 text-sm" placeholder="Ej: Turno bodega norte, prioridad recepcion, supervisor asignado..." value={form.notes} onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))} />
             </FieldHelp>
-            <div className="rounded-md border border-line bg-paper p-3">
-              <p className="flex items-center gap-2 text-sm font-semibold text-neutral-800"><Clock size={16} className="text-apex" /> Resumen</p>
-              <div className="mt-3 space-y-2 text-sm text-neutral-600">
+            <div className="rounded-md border border-line bg-paper p-2.5">
+              <p className="flex items-center gap-2 text-xs font-semibold text-neutral-800"><Clock size={14} className="text-apex" /> Resumen</p>
+              <div className="mt-2 space-y-1 text-sm text-neutral-600">
                 <p><span className="font-semibold text-neutral-900">{form.start_time || "--"} - {form.end_time || "--"}</span> con {form.tolerance_minutes || 0} min de tolerancia.</p>
                 <p>{selectedEmployeeCount} persona(s) seleccionada(s).</p>
                 <p>{bulkMode && modal !== "edit" ? `${bulkCount} bloque(s) por crear.` : "1 bloque de horario."}</p>
@@ -567,10 +567,10 @@ export default function RoutesPlanningPage() {
               </div>
             </div>
           </div>
-          <div className="mt-4">
+          <div className="mt-3">
             <PeoplePicker employees={employees} selected={form.employees} onChange={(next) => setForm((prev) => ({ ...prev, employees: next }))} />
           </div>
-          <button className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white disabled:bg-neutral-300" disabled={savingRoute} onClick={saveRoute} type="button"><Save size={17} /> {savingRoute ? "Guardando..." : modal === "edit" ? "Guardar cambios" : bulkMode ? `Crear ${bulkCount} horario(s)` : "Asignar horario"}</button>
+          <button className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-apex text-sm font-semibold text-white disabled:bg-neutral-300" disabled={savingRoute} onClick={saveRoute} type="button"><Save size={16} /> {savingRoute ? "Guardando..." : modal === "edit" ? "Guardar cambios" : bulkMode ? `Crear ${bulkCount} horario(s)` : "Asignar horario"}</button>
         </ModalFrame>
       ) : null}
 
