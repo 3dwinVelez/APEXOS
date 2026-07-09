@@ -806,7 +806,7 @@ export default function ServicesPage() {
       </section>
 
       {editingOrder ? (
-        <ModalFrame title={`Editar ${editingOrder.number}`} onClose={() => setEditingOrder(null)} maxWidth="max-w-4xl">
+        <ModalFrame title={`Editar ${editingOrder.number}`} onClose={() => setEditingOrder(null)} maxWidth="max-w-3xl">
           <div className="space-y-4">
             <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
               Edita solo lo necesario. Las ordenes finalizadas se bloquean para proteger la trazabilidad del servicio.
@@ -814,7 +814,7 @@ export default function ServicesPage() {
             <section className="grid gap-3 md:grid-cols-2">
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
                 Estado *
-                <select className="h-11 rounded-md border border-line bg-white px-3" value={editForm.status} onChange={(event) => setEditForm((prev) => ({ ...prev, status: event.target.value }))}>
+                <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={editForm.status} onChange={(event) => setEditForm((prev) => ({ ...prev, status: event.target.value }))}>
                   <option value="agendado">Agendado - preorden desde solicitud</option>
                   <option value="pendiente">Pendiente - listo para tecnico</option>
                   {!editableOrderStatuses.has(editForm.status) ? <option value={editForm.status}>{statusLabel[editForm.status] || editForm.status}</option> : null}
@@ -823,7 +823,7 @@ export default function ServicesPage() {
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
                 Referencia {editForm.status === "pendiente" ? "*" : "(opcional hasta pasar a pendiente)"}
-                <select className="h-11 rounded-md border border-line bg-white px-3" value={editForm.reference_id} onChange={(event) => setEditForm((prev) => ({ ...prev, reference_id: event.target.value }))}>
+                <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={editForm.reference_id} onChange={(event) => setEditForm((prev) => ({ ...prev, reference_id: event.target.value }))}>
                   <option value="">Selecciona una referencia</option>
                   {references.map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}
                 </select>
@@ -833,28 +833,28 @@ export default function ServicesPage() {
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
                 Tecnico responsable {editForm.status === "pendiente" ? "*" : "(opcional en agendado)"}
-                <select className="h-11 rounded-md border border-line bg-white px-3" value={editForm.technician_id} onChange={(event) => setEditForm((prev) => ({ ...prev, technician_id: event.target.value }))}>
+                <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={editForm.technician_id} onChange={(event) => setEditForm((prev) => ({ ...prev, technician_id: event.target.value }))}>
                   <option value="">Selecciona un tecnico</option>
                   {technicians.map((technician) => <option key={technician.id} value={technician.id}>{technician.code || "TEC"} - {technician.user?.name || technician.user?.email || "Tecnico"}</option>)}
                 </select>
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
                 Tipo de servicio *
-                <select className="h-11 rounded-md border border-line bg-white px-3" value={editForm.service_type} onChange={(event) => setEditForm((prev) => ({ ...prev, service_type: event.target.value }))}>
+                <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={editForm.service_type} onChange={(event) => setEditForm((prev) => ({ ...prev, service_type: event.target.value }))}>
                   {editableServiceTypes.map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}
                 </select>
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
                 Fecha programada *
-                <input className="h-11 rounded-md border border-line px-3" type="date" value={editForm.scheduled_date} onChange={(event) => setEditForm((prev) => ({ ...prev, scheduled_date: event.target.value }))} />
+                <input className="h-10 rounded-md border border-line px-3 text-sm" type="date" value={editForm.scheduled_date} onChange={(event) => setEditForm((prev) => ({ ...prev, scheduled_date: event.target.value }))} />
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
                 Factura o pedido (opcional)
-                <input className="h-11 rounded-md border border-line px-3" value={editForm.invoice_number} onChange={(event) => setEditForm((prev) => ({ ...prev, invoice_number: event.target.value }))} />
+                <input className="h-10 rounded-md border border-line px-3 text-sm" value={editForm.invoice_number} onChange={(event) => setEditForm((prev) => ({ ...prev, invoice_number: event.target.value }))} />
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
                 Almacen origen
-                <select className="h-11 rounded-md border border-line bg-white px-3" value={editForm.service_store} onChange={(event) => setEditForm((prev) => ({ ...prev, service_store: event.target.value }))}>
+                <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={editForm.service_store} onChange={(event) => setEditForm((prev) => ({ ...prev, service_store: event.target.value }))}>
                   <option value="">Selecciona un almacen</option>
                   {serviceStores.map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}
                 </select>
@@ -863,32 +863,32 @@ export default function ServicesPage() {
             <section className="grid gap-3 md:grid-cols-2">
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
                 Cliente *
-                <input className="h-11 rounded-md border border-line px-3" value={editForm.customer_name} onChange={(event) => setEditForm((prev) => ({ ...prev, customer_name: event.target.value }))} />
+                <input className="h-10 rounded-md border border-line px-3 text-sm" value={editForm.customer_name} onChange={(event) => setEditForm((prev) => ({ ...prev, customer_name: event.target.value }))} />
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
                 Cedula *
-                <input className="h-11 rounded-md border border-line px-3" inputMode="numeric" value={editForm.customer_document} onChange={(event) => setEditForm((prev) => ({ ...prev, customer_document: event.target.value.replace(/\D/g, "") }))} />
+                <input className="h-10 rounded-md border border-line px-3 text-sm" inputMode="numeric" value={editForm.customer_document} onChange={(event) => setEditForm((prev) => ({ ...prev, customer_document: event.target.value.replace(/\D/g, "") }))} />
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
                 Telefono *
-                <input className="h-11 rounded-md border border-line px-3" value={editForm.customer_phone} onChange={(event) => setEditForm((prev) => ({ ...prev, customer_phone: event.target.value }))} />
+                <input className="h-10 rounded-md border border-line px-3 text-sm" value={editForm.customer_phone} onChange={(event) => setEditForm((prev) => ({ ...prev, customer_phone: event.target.value }))} />
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
                 Direccion *
-                <input className="h-11 rounded-md border border-line px-3" value={editForm.customer_address} onChange={(event) => setEditForm((prev) => ({ ...prev, customer_address: event.target.value }))} />
+                <input className="h-10 rounded-md border border-line px-3 text-sm" value={editForm.customer_address} onChange={(event) => setEditForm((prev) => ({ ...prev, customer_address: event.target.value }))} />
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
                 Barrio
-                <input className="h-11 rounded-md border border-line px-3" value={editForm.customer_neighborhood} onChange={(event) => setEditForm((prev) => ({ ...prev, customer_neighborhood: event.target.value }))} />
+                <input className="h-10 rounded-md border border-line px-3 text-sm" value={editForm.customer_neighborhood} onChange={(event) => setEditForm((prev) => ({ ...prev, customer_neighborhood: event.target.value }))} />
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700 md:col-span-2">
                 Observaciones *
-                <textarea className="min-h-24 rounded-md border border-line px-3 py-2" value={editForm.notes} onChange={(event) => setEditForm((prev) => ({ ...prev, notes: event.target.value }))} />
+                <textarea className="min-h-[72px] rounded-md border border-line px-3 py-2 text-sm" value={editForm.notes} onChange={(event) => setEditForm((prev) => ({ ...prev, notes: event.target.value }))} />
               </label>
             </section>
-            <div className="grid gap-2 border-t border-line pt-4 sm:flex sm:justify-end">
-              <button className="h-11 rounded-md border border-line px-4 text-sm font-semibold" onClick={() => setEditingOrder(null)} type="button">Cancelar</button>
-              <button className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-60" disabled={savingEdit} onClick={saveEdit} type="button">
+            <div className="grid gap-2 border-t border-line pt-3 sm:flex sm:justify-end">
+              <button className="h-10 rounded-md border border-line px-4 text-sm font-semibold" onClick={() => setEditingOrder(null)} type="button">Cancelar</button>
+              <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-60" disabled={savingEdit} onClick={saveEdit} type="button">
                 <Save size={16} /> {savingEdit ? "Guardando..." : "Guardar cambios"}
               </button>
             </div>

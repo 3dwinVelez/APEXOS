@@ -768,7 +768,7 @@ function Textarea({ label, value, onChange }: { label: string; value?: string; o
   return (
     <label className="space-y-1 text-sm md:col-span-2 xl:col-span-3">
       <span className="font-semibold text-neutral-700">{label}</span>
-      <textarea className="min-h-24 w-full rounded-md border border-line p-3 text-sm" value={value || ""} onChange={(event) => onChange(event.target.value)} />
+      <textarea className="min-h-[72px] w-full rounded-md border border-line p-3 text-sm" value={value || ""} onChange={(event) => onChange(event.target.value)} />
     </label>
   );
 }

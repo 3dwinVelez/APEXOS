@@ -689,55 +689,55 @@ function QuickModal({ form, selectedItem, draft, saving, setDraft, onClose, onSa
         <div className="space-y-3">
           {form === "recurso" ? (
             <>
-              <input className="h-12 w-full rounded-md border border-line px-3 text-base" placeholder="Nombre de la persona, tercero o aliado" value={draft.responsible_name || draft.title} onChange={(event) => setDraft((prev) => ({ ...prev, responsible_name: event.target.value, title: event.target.value }))} />
+              <input className="h-10 w-full rounded-md border border-line px-3 text-sm" placeholder="Nombre de la persona, tercero o aliado" value={draft.responsible_name || draft.title} onChange={(event) => setDraft((prev) => ({ ...prev, responsible_name: event.target.value, title: event.target.value }))} />
               <div className="grid gap-3 sm:grid-cols-2">
-                <select className="h-12 rounded-md border border-line bg-white px-3 text-base" value={draft.participant_type} onChange={(event) => setDraft((prev) => ({ ...prev, participant_type: event.target.value }))}>
+                <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={draft.participant_type} onChange={(event) => setDraft((prev) => ({ ...prev, participant_type: event.target.value }))}>
                   <option value="interno">Interno</option>
                   <option value="externo">Externo</option>
                   <option value="cliente">Cliente</option>
                   <option value="proveedor">Proveedor</option>
                   <option value="aliado">Aliado</option>
                 </select>
-                <input className="h-12 rounded-md border border-line px-3 text-base" placeholder="Rol en el proyecto" value={draft.role} onChange={(event) => setDraft((prev) => ({ ...prev, role: event.target.value }))} />
+                <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Rol en el proyecto" value={draft.role} onChange={(event) => setDraft((prev) => ({ ...prev, role: event.target.value }))} />
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <input className="h-12 rounded-md border border-line px-3 text-base" placeholder="Empresa / tercero" value={draft.organization} onChange={(event) => setDraft((prev) => ({ ...prev, organization: event.target.value }))} />
-                <input className="h-12 rounded-md border border-line px-3 text-base" placeholder="Carga %" type="number" min="0" max="100" value={draft.load_level} onChange={(event) => setDraft((prev) => ({ ...prev, load_level: event.target.value }))} />
+                <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Empresa / tercero" value={draft.organization} onChange={(event) => setDraft((prev) => ({ ...prev, organization: event.target.value }))} />
+                <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Carga %" type="number" min="0" max="100" value={draft.load_level} onChange={(event) => setDraft((prev) => ({ ...prev, load_level: event.target.value }))} />
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <input className="h-12 rounded-md border border-line px-3 text-base" placeholder="Correo o contacto opcional" value={draft.contact_email} onChange={(event) => setDraft((prev) => ({ ...prev, contact_email: event.target.value }))} />
-                <input className="h-12 rounded-md border border-line px-3 text-base" placeholder="Telefono opcional" value={draft.phone} onChange={(event) => setDraft((prev) => ({ ...prev, phone: event.target.value }))} />
+                <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Correo o contacto opcional" value={draft.contact_email} onChange={(event) => setDraft((prev) => ({ ...prev, contact_email: event.target.value }))} />
+                <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Telefono opcional" value={draft.phone} onChange={(event) => setDraft((prev) => ({ ...prev, phone: event.target.value }))} />
               </div>
             </>
           ) : form === "seguimiento" ? (
             <>
-              <textarea className="min-h-32 w-full rounded-md border border-line px-3 py-3 text-base" placeholder="Escribe una actualizacion corta: que paso, que falta o que decision se tomo." value={draft.description} onChange={(event) => setDraft((prev) => ({ ...prev, description: event.target.value }))} />
+              <textarea className="min-h-[72px] w-full rounded-md border border-line px-3 py-2 text-sm" placeholder="Escribe una actualizacion corta: que paso, que falta o que decision se tomo." value={draft.description} onChange={(event) => setDraft((prev) => ({ ...prev, description: event.target.value }))} />
               <div className="grid gap-3 sm:grid-cols-3">
-                <select className="h-12 rounded-md border border-line bg-white px-3 text-base" value={draft.status} onChange={(event) => setDraft((prev) => ({ ...prev, status: event.target.value }))}>
+                <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={draft.status} onChange={(event) => setDraft((prev) => ({ ...prev, status: event.target.value }))}>
                   <option value="pendiente">Pendiente</option>
                   <option value="activo">En curso</option>
                   <option value="bloqueado">Bloqueado</option>
                   <option value="validacion">Validacion</option>
                   <option value="finalizado">Finalizado</option>
                 </select>
-                <input className="h-12 rounded-md border border-line px-3 text-base" placeholder="Avance %" type="number" min="0" max="100" value={draft.progress} onChange={(event) => setDraft((prev) => ({ ...prev, progress: event.target.value }))} />
-                <input className="h-12 rounded-md border border-line px-3 text-base" type="date" value={draft.next_date} onChange={(event) => setDraft((prev) => ({ ...prev, next_date: event.target.value }))} />
+                <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Avance %" type="number" min="0" max="100" value={draft.progress} onChange={(event) => setDraft((prev) => ({ ...prev, progress: event.target.value }))} />
+                <input className="h-10 rounded-md border border-line px-3 text-sm" type="date" value={draft.next_date} onChange={(event) => setDraft((prev) => ({ ...prev, next_date: event.target.value }))} />
               </div>
-              <input className="h-12 w-full rounded-md border border-line px-3 text-base" placeholder="Proxima accion" value={draft.next_action} onChange={(event) => setDraft((prev) => ({ ...prev, next_action: event.target.value }))} />
+              <input className="h-10 w-full rounded-md border border-line px-3 text-sm" placeholder="Proxima accion" value={draft.next_action} onChange={(event) => setDraft((prev) => ({ ...prev, next_action: event.target.value }))} />
             </>
           ) : (
             <>
-              <input className="h-12 w-full rounded-md border border-line px-3 text-base" placeholder={form === "riesgo" ? "Accion recomendada" : "Titulo / nombre"} value={draft.title} onChange={(event) => setDraft((prev) => ({ ...prev, title: event.target.value }))} />
-              <input className="h-12 w-full rounded-md border border-line px-3 text-base" placeholder="Responsable o participante" value={draft.responsible_name} onChange={(event) => setDraft((prev) => ({ ...prev, responsible_name: event.target.value }))} />
+              <input className="h-10 w-full rounded-md border border-line px-3 text-sm" placeholder={form === "riesgo" ? "Accion recomendada" : "Titulo / nombre"} value={draft.title} onChange={(event) => setDraft((prev) => ({ ...prev, title: event.target.value }))} />
+              <input className="h-10 w-full rounded-md border border-line px-3 text-sm" placeholder="Responsable o participante" value={draft.responsible_name} onChange={(event) => setDraft((prev) => ({ ...prev, responsible_name: event.target.value }))} />
               <div className="grid gap-3 sm:grid-cols-3">
-                <input className="h-12 rounded-md border border-line px-3 text-base" type="date" value={draft.target_date} onChange={(event) => setDraft((prev) => ({ ...prev, target_date: event.target.value }))} />
-                <select className="h-12 rounded-md border border-line bg-white px-3 text-base" value={draft.priority} onChange={(event) => setDraft((prev) => ({ ...prev, priority: event.target.value }))}>
+                <input className="h-10 rounded-md border border-line px-3 text-sm" type="date" value={draft.target_date} onChange={(event) => setDraft((prev) => ({ ...prev, target_date: event.target.value }))} />
+                <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={draft.priority} onChange={(event) => setDraft((prev) => ({ ...prev, priority: event.target.value }))}>
                   <option value="baja">Prioridad baja</option>
                   <option value="media">Prioridad media</option>
                   <option value="alta">Prioridad alta</option>
                   <option value="critica">Prioridad critica</option>
                 </select>
-                <select className="h-12 rounded-md border border-line bg-white px-3 text-base" value={draft.status} onChange={(event) => setDraft((prev) => ({ ...prev, status: event.target.value }))}>
+                <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={draft.status} onChange={(event) => setDraft((prev) => ({ ...prev, status: event.target.value }))}>
                   <option value="pendiente">Pendiente</option>
                   <option value="activo">En curso</option>
                   <option value="bloqueado">Bloqueado</option>
@@ -746,17 +746,17 @@ function QuickModal({ form, selectedItem, draft, saving, setDraft, onClose, onSa
                 </select>
               </div>
               {form === "riesgo" ? (
-                <select className="h-12 w-full rounded-md border border-line bg-white px-3 text-base" value={draft.kind} onChange={(event) => setDraft((prev) => ({ ...prev, kind: event.target.value }))}>
+                <select className="h-10 w-full rounded-md border border-line bg-white px-3 text-sm" value={draft.kind} onChange={(event) => setDraft((prev) => ({ ...prev, kind: event.target.value }))}>
                   <option value="riesgo">Riesgo</option>
                   <option value="bloqueo">Bloqueo</option>
                 </select>
               ) : null}
             </>
           )}
-          {form !== "seguimiento" ? <textarea className="min-h-28 w-full rounded-md border border-line px-3 py-3 text-base" placeholder={form === "proyecto" ? "Objetivo operacional" : form === "recurso" ? "Responsabilidad dentro del proyecto" : "Descripcion corta"} value={draft.description} onChange={(event) => setDraft((prev) => ({ ...prev, description: event.target.value }))} /> : null}
+          {form !== "seguimiento" ? <textarea className="min-h-[72px] w-full rounded-md border border-line px-3 py-2 text-sm" placeholder={form === "proyecto" ? "Objetivo operacional" : form === "recurso" ? "Responsabilidad dentro del proyecto" : "Descripcion corta"} value={draft.description} onChange={(event) => setDraft((prev) => ({ ...prev, description: event.target.value }))} /> : null}
           <div className="grid gap-2 sm:grid-cols-2">
-            <button className="h-12 rounded-md border border-line bg-white text-base font-semibold" onClick={onClose} type="button">Cancelar</button>
-            <button className="h-12 rounded-md bg-apex text-base font-semibold text-white disabled:opacity-60" disabled={Boolean(disabled)} onClick={onSave} type="button">{saving ? "Guardando..." : "Guardar"}</button>
+            <button className="h-10 rounded-md border border-line bg-white text-sm font-semibold" onClick={onClose} type="button">Cancelar</button>
+            <button className="h-10 rounded-md bg-apex text-sm font-semibold text-white disabled:opacity-60" disabled={Boolean(disabled)} onClick={onSave} type="button">{saving ? "Guardando..." : "Guardar"}</button>
           </div>
         </div>
       </section>

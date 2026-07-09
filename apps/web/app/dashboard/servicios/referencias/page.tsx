@@ -451,33 +451,33 @@ export default function ServiceReferencesPage() {
       </div>
 
       {showForm ? (
-        <ModalFrame title={selected ? "Editar referencia" : "Nueva referencia"} onClose={() => setShowForm(false)} maxWidth="max-w-5xl">
-          <div className="space-y-5">
+        <ModalFrame title={selected ? "Editar referencia" : "Nueva referencia"} onClose={() => setShowForm(false)} maxWidth="max-w-4xl">
+          <div className="space-y-4">
             <section className="grid gap-3 md:grid-cols-4">
-              <input className="h-11 w-full rounded-md border border-line px-3 text-base md:text-sm" placeholder="Codigo *" value={form.code} onChange={(event) => setForm((prev) => ({ ...prev, code: event.target.value.toUpperCase() }))} />
-              <select className="h-11 w-full rounded-md border border-line px-3 text-base md:text-sm" value={form.category} onChange={(event) => setForm((prev) => ({ ...prev, category: event.target.value }))}>
+              <input className="h-10 w-full rounded-md border border-line px-3 text-sm" placeholder="Codigo *" value={form.code} onChange={(event) => setForm((prev) => ({ ...prev, code: event.target.value.toUpperCase() }))} />
+              <select className="h-10 w-full rounded-md border border-line px-3 text-sm" value={form.category} onChange={(event) => setForm((prev) => ({ ...prev, category: event.target.value }))}>
                 {categories.map((item) => <option key={item} value={item}>{item}</option>)}
               </select>
-              <input className="h-11 w-full rounded-md border border-line px-3 text-base md:text-sm" placeholder="Marca" value={form.brand} onChange={(event) => setForm((prev) => ({ ...prev, brand: event.target.value }))} />
-              <input className="h-11 w-full rounded-md border border-line px-3 text-base md:text-sm" placeholder="Modelo" value={form.model} onChange={(event) => setForm((prev) => ({ ...prev, model: event.target.value }))} />
-              <input className="h-11 w-full rounded-md border border-line px-3 text-base md:col-span-3 md:text-sm" placeholder="Nombre *" value={form.name} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))} />
-              <input className="h-11 w-full rounded-md border border-line px-3 text-base md:text-sm" type="number" min={1} value={form.estimated_minutes} onChange={(event) => setForm((prev) => ({ ...prev, estimated_minutes: Number(event.target.value) }))} />
-              <textarea className="min-h-24 rounded-md border border-line px-3 py-2 text-base md:col-span-4 md:text-sm" placeholder="Descripcion tecnica o alcance" value={form.description} onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))} />
+              <input className="h-10 w-full rounded-md border border-line px-3 text-sm" placeholder="Marca" value={form.brand} onChange={(event) => setForm((prev) => ({ ...prev, brand: event.target.value }))} />
+              <input className="h-10 w-full rounded-md border border-line px-3 text-sm" placeholder="Modelo" value={form.model} onChange={(event) => setForm((prev) => ({ ...prev, model: event.target.value }))} />
+              <input className="h-10 w-full rounded-md border border-line px-3 text-sm md:col-span-3" placeholder="Nombre *" value={form.name} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))} />
+              <input className="h-10 w-full rounded-md border border-line px-3 text-sm" type="number" min={1} value={form.estimated_minutes} onChange={(event) => setForm((prev) => ({ ...prev, estimated_minutes: Number(event.target.value) }))} />
+              <textarea className="min-h-[72px] rounded-md border border-line px-3 py-2 text-sm md:col-span-4" placeholder="Descripcion tecnica o alcance" value={form.description} onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))} />
             </section>
 
             <section className="rounded-md border border-line p-3">
               <div className="mb-3 grid gap-2 sm:flex sm:items-center sm:justify-between">
               <div><h2 className="text-sm font-semibold">Lista de piezas para inspeccion</h2><p className="text-xs text-neutral-500">Estas piezas aparecen al tecnico durante la validacion y se actualizan en nuevas ordenes.</p></div>
-                <button className="h-11 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => setForm((prev) => ({ ...prev, parts: [...prev.parts, { ...emptyPart }] }))} type="button">Agregar pieza</button>
+                <button className="h-10 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => setForm((prev) => ({ ...prev, parts: [...prev.parts, { ...emptyPart }] }))} type="button">Agregar pieza</button>
               </div>
               <div className="space-y-2">
                 {form.parts.map((part, index) => (
                   <div className="grid gap-2 md:grid-cols-[1fr_80px_90px_1fr_40px]" key={index}>
-                    <input className="h-11 rounded-md border border-line px-3 text-base md:text-sm" placeholder="Pieza *" value={part.name} onChange={(event) => setForm((prev) => ({ ...prev, parts: prev.parts.map((item, itemIndex) => itemIndex === index ? { ...item, name: event.target.value } : item) }))} />
-                    <input className="h-11 rounded-md border border-line px-2 text-base md:text-sm" type="number" min={0.01} value={part.quantity} onChange={(event) => setForm((prev) => ({ ...prev, parts: prev.parts.map((item, itemIndex) => itemIndex === index ? { ...item, quantity: Number(event.target.value) } : item) }))} />
-                    <input className="h-11 rounded-md border border-line px-2 text-base md:text-sm" value={part.unit} onChange={(event) => setForm((prev) => ({ ...prev, parts: prev.parts.map((item, itemIndex) => itemIndex === index ? { ...item, unit: event.target.value } : item) }))} />
-                    <input className="h-11 rounded-md border border-line px-3 text-base md:text-sm" placeholder="Nota de revision" value={part.description} onChange={(event) => setForm((prev) => ({ ...prev, parts: prev.parts.map((item, itemIndex) => itemIndex === index ? { ...item, description: event.target.value } : item) }))} />
-                    <button className="h-11 rounded-md border border-line text-base hover:bg-paper md:text-sm" onClick={() => setForm((prev) => ({ ...prev, parts: prev.parts.filter((_, itemIndex) => itemIndex !== index) }))} type="button">-</button>
+                    <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Pieza *" value={part.name} onChange={(event) => setForm((prev) => ({ ...prev, parts: prev.parts.map((item, itemIndex) => itemIndex === index ? { ...item, name: event.target.value } : item) }))} />
+                    <input className="h-10 rounded-md border border-line px-2 text-sm" type="number" min={0.01} value={part.quantity} onChange={(event) => setForm((prev) => ({ ...prev, parts: prev.parts.map((item, itemIndex) => itemIndex === index ? { ...item, quantity: Number(event.target.value) } : item) }))} />
+                    <input className="h-10 rounded-md border border-line px-2 text-sm" value={part.unit} onChange={(event) => setForm((prev) => ({ ...prev, parts: prev.parts.map((item, itemIndex) => itemIndex === index ? { ...item, unit: event.target.value } : item) }))} />
+                    <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Nota de revision" value={part.description} onChange={(event) => setForm((prev) => ({ ...prev, parts: prev.parts.map((item, itemIndex) => itemIndex === index ? { ...item, description: event.target.value } : item) }))} />
+                    <button className="h-10 rounded-md border border-line text-sm hover:bg-paper" onClick={() => setForm((prev) => ({ ...prev, parts: prev.parts.filter((_, itemIndex) => itemIndex !== index) }))} type="button">-</button>
                   </div>
                 ))}
               </div>
@@ -507,9 +507,9 @@ export default function ServiceReferencesPage() {
               </div>
             </section>
 
-            <div className="grid gap-2 border-t border-line pt-4 sm:flex sm:justify-end">
-              <button className="h-11 rounded-md border border-line px-4 text-sm" onClick={() => setShowForm(false)} type="button">Cancelar</button>
-              <button className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-60" disabled={saving} onClick={save} type="button"><Save size={16} /> Guardar referencia</button>
+            <div className="grid gap-2 border-t border-line pt-3 sm:flex sm:justify-end">
+              <button className="h-10 rounded-md border border-line px-4 text-sm" onClick={() => setShowForm(false)} type="button">Cancelar</button>
+              <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-60" disabled={saving} onClick={save} type="button"><Save size={16} /> Guardar referencia</button>
             </div>
           </div>
         </ModalFrame>

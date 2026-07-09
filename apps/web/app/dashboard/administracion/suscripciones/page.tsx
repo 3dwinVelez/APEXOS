@@ -540,18 +540,18 @@ export default function SuscripcionesPage() {
                 <p className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800">{companyModalMessage}</p>
               ) : null}
 
-              <div className="grid max-h-[70vh] gap-4 overflow-y-auto pr-1 md:grid-cols-2">
+              <div className="grid max-h-[70vh] gap-3 overflow-y-auto pr-1 md:grid-cols-2">
                 <label className="grid gap-1 text-sm font-medium">
                   Nombre comercial
-                  <input className="h-11 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.name} onChange={(event) => setCompanyForm((current) => ({ ...current, name: event.target.value }))} required />
+                  <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.name} onChange={(event) => setCompanyForm((current) => ({ ...current, name: event.target.value }))} required />
                 </label>
                 <label className="grid gap-1 text-sm font-medium">
                   Razon social
-                  <input className="h-11 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.legal_name} onChange={(event) => setCompanyForm((current) => ({ ...current, legal_name: event.target.value }))} />
+                  <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.legal_name} onChange={(event) => setCompanyForm((current) => ({ ...current, legal_name: event.target.value }))} />
                 </label>
                 <label className="grid gap-1 text-sm font-medium">
                   Tipo de entidad
-                  <select className="h-11 rounded-md border border-line bg-white px-3 text-sm font-normal" value={companyForm.company_type} onChange={(event) => setCompanyForm((current) => ({ ...current, company_type: event.target.value, parent_company_id: event.target.value === "business_group" ? "" : current.parent_company_id }))}>
+                  <select className="h-10 rounded-md border border-line bg-white px-3 text-sm font-normal" value={companyForm.company_type} onChange={(event) => setCompanyForm((current) => ({ ...current, company_type: event.target.value, parent_company_id: event.target.value === "business_group" ? "" : current.parent_company_id }))}>
                     <option value="business_group">Grupo empresarial</option>
                     <option value="company">Sociedad / empresa</option>
                     <option value="business_unit">Unidad de negocio</option>
@@ -560,7 +560,7 @@ export default function SuscripcionesPage() {
                 </label>
                 <label className="grid gap-1 text-sm font-medium">
                   Empresa padre
-                  <select className="h-11 rounded-md border border-line bg-white px-3 text-sm font-normal disabled:bg-paper" disabled={companyForm.company_type === "business_group"} value={companyForm.parent_company_id} onChange={(event) => setCompanyForm((current) => ({ ...current, parent_company_id: event.target.value }))}>
+                  <select className="h-10 rounded-md border border-line bg-white px-3 text-sm font-normal disabled:bg-paper" disabled={companyForm.company_type === "business_group"} value={companyForm.parent_company_id} onChange={(event) => setCompanyForm((current) => ({ ...current, parent_company_id: event.target.value }))}>
                     <option value="">Sin empresa padre</option>
                     {companies.map((company) => (
                       <option key={company.company_id} value={company.company_id}>{company.company_name}</option>
@@ -569,11 +569,11 @@ export default function SuscripcionesPage() {
                 </label>
                 <label className="grid gap-1 text-sm font-medium">
                   NIT / Tax ID
-                  <input className="h-11 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.tax_id} onChange={(event) => setCompanyForm((current) => ({ ...current, tax_id: event.target.value }))} />
+                  <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.tax_id} onChange={(event) => setCompanyForm((current) => ({ ...current, tax_id: event.target.value }))} />
                 </label>
                 <label className="grid gap-1 text-sm font-medium">
                   Estado
-                  <select className="h-11 rounded-md border border-line bg-white px-3 text-sm font-normal" value={companyForm.status} onChange={(event) => setCompanyForm((current) => ({ ...current, status: event.target.value }))}>
+                  <select className="h-10 rounded-md border border-line bg-white px-3 text-sm font-normal" value={companyForm.status} onChange={(event) => setCompanyForm((current) => ({ ...current, status: event.target.value }))}>
                     <option value="active">Activa</option>
                     <option value="inactive">Inactiva</option>
                     <option value="suspended">Suspendida</option>
@@ -581,43 +581,43 @@ export default function SuscripcionesPage() {
                 </label>
                 <label className="grid gap-1 text-sm font-medium">
                   Correo corporativo
-                  <input className="h-11 rounded-md border border-line px-3 text-sm font-normal" type="email" value={companyForm.email} onChange={(event) => setCompanyForm((current) => ({ ...current, email: event.target.value }))} />
+                  <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" type="email" value={companyForm.email} onChange={(event) => setCompanyForm((current) => ({ ...current, email: event.target.value }))} />
                 </label>
                 <label className="grid gap-1 text-sm font-medium">
                   Telefono
-                  <input className="h-11 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.phone} onChange={(event) => setCompanyForm((current) => ({ ...current, phone: event.target.value }))} />
+                  <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.phone} onChange={(event) => setCompanyForm((current) => ({ ...current, phone: event.target.value }))} />
                 </label>
                 <label className="grid gap-1 text-sm font-medium">
                   Linea de negocio
-                  <input className="h-11 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.business_line} onChange={(event) => setCompanyForm((current) => ({ ...current, business_line: event.target.value }))} />
+                  <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.business_line} onChange={(event) => setCompanyForm((current) => ({ ...current, business_line: event.target.value }))} />
                 </label>
                 <label className="grid gap-1 text-sm font-medium">
                   Pais
-                  <input className="h-11 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.country} onChange={(event) => setCompanyForm((current) => ({ ...current, country: event.target.value }))} />
+                  <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.country} onChange={(event) => setCompanyForm((current) => ({ ...current, country: event.target.value }))} />
                 </label>
                 <label className="grid gap-1 text-sm font-medium">
                   Ciudad
-                  <input className="h-11 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.city} onChange={(event) => setCompanyForm((current) => ({ ...current, city: event.target.value }))} />
+                  <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.city} onChange={(event) => setCompanyForm((current) => ({ ...current, city: event.target.value }))} />
                 </label>
                 <label className="grid gap-1 text-sm font-medium">
                   Direccion
-                  <input className="h-11 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.address} onChange={(event) => setCompanyForm((current) => ({ ...current, address: event.target.value }))} />
+                  <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.address} onChange={(event) => setCompanyForm((current) => ({ ...current, address: event.target.value }))} />
                 </label>
                 <label className="grid gap-1 text-sm font-medium">
                   Admin inicial
-                  <input className="h-11 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.admin_full_name} onChange={(event) => setCompanyForm((current) => ({ ...current, admin_full_name: event.target.value }))} required />
+                  <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.admin_full_name} onChange={(event) => setCompanyForm((current) => ({ ...current, admin_full_name: event.target.value }))} required />
                 </label>
                 <label className="grid gap-1 text-sm font-medium">
                   Correo de acceso
-                  <input className="h-11 rounded-md border border-line px-3 text-sm font-normal" type="email" value={companyForm.admin_email} onChange={(event) => setCompanyForm((current) => ({ ...current, admin_email: event.target.value }))} required />
+                  <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" type="email" value={companyForm.admin_email} onChange={(event) => setCompanyForm((current) => ({ ...current, admin_email: event.target.value }))} required />
                 </label>
                 <label className="grid gap-1 text-sm font-medium md:col-span-2">
                   Clave temporal
-                  <input className="h-11 rounded-md border border-line px-3 text-sm font-normal" minLength={8} type="password" value={companyForm.admin_password} onChange={(event) => setCompanyForm((current) => ({ ...current, admin_password: event.target.value }))} required />
+                  <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" minLength={8} type="password" value={companyForm.admin_password} onChange={(event) => setCompanyForm((current) => ({ ...current, admin_password: event.target.value }))} required />
                 </label>
               </div>
 
-              <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-4">
+              <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
                 <button className="inline-flex h-10 items-center justify-center rounded-md border border-line px-4 text-sm font-semibold hover:bg-paper" onClick={() => setShowCompanyModal(false)} type="button">
                   Cancelar
                 </button>
