@@ -1406,10 +1406,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const row = await currentSupabaseEmployee();
     if (!row) return null;
     const name = fullName(row);
-    const code = String(row.metadata?.code || (row.metadata?.name ? String(row.metadata.name).replace(/\s+/g, "_").toLowerCase() : row.id.slice(0, 8)));
     return {
       id: row.id,
-      code,
+      code: String(row.metadata?.code || row.id.slice(0, 8)),
       user_type: row.user_type || row.position || "operario",
       position: row.position || row.user_type || "operario",
       metadata: { ...(row.metadata || {}), name },

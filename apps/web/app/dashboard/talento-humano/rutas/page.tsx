@@ -29,8 +29,8 @@ const weekdayOptions = [
 const administrativeSites = ["SEDE-PRINCIPAL", "BOG-NORTE", "BOG-SUR", "OFICINA-ADMINISTRATIVA", "REMOTO"];
 const administrativeSitePrefix = "Sede administrativa:";
 
-function employeeName(employee: Employee) {
-  return employee.metadata.name || employee.user.name || employee.code || `Empleado ${employee.id}`;
+function employeeName(employee: Employee | null | undefined) {
+  return employee?.metadata?.name || employee?.user?.name || employee?.code || `Empleado ${employee?.id}`;
 }
 
 function formatHour(value?: string | null) {

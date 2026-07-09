@@ -41,8 +41,8 @@ const punchLabels: Record<string, { title: string; desc: string; color: string }
   salida: { title: "Fin jornada", desc: "Registra tu cierre del dia", color: "bg-violet-600" }
 };
 
-function employeeName(employee: Employee) {
-  return employee.metadata.name || employee.user.name || employee.code || "";
+function employeeName(employee: Employee | null) {
+  return employee?.metadata?.name || employee?.user?.name || employee?.code || "";
 }
 
 function mapsUrl(gps: GpsFix) {
