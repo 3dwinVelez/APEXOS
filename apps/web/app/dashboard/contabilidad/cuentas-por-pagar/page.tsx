@@ -520,7 +520,7 @@ export default function CuentasPorPagarPage() {
       </section>
 
       {modalOpen ? (
-        <ModalFrame title={header.document_kind === "credit_note" ? "Nota credito de proveedor" : "Factura de proveedor"} onClose={() => setModalOpen(false)} maxWidth="max-w-7xl">
+        <ModalFrame title={header.document_kind === "credit_note" ? "Nota credito de proveedor" : "Factura de proveedor"} onClose={() => setModalOpen(false)} maxWidth="max-w-6xl">
           <form className="space-y-4" onSubmit={saveDocument}>
             <section className="grid gap-3 md:grid-cols-6">
               <label className="text-sm">

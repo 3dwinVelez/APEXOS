@@ -321,7 +321,7 @@ export default function AsientosContablesPage() {
       </section>
 
       {modalOpen ? (
-        <ModalFrame title="Nuevo asiento contable" onClose={() => setModalOpen(false)} maxWidth="max-w-7xl">
+        <ModalFrame title="Nuevo asiento contable" onClose={() => setModalOpen(false)} maxWidth="max-w-6xl">
           <form className="space-y-4" onSubmit={saveDocument}>
             <section className="grid gap-3 md:grid-cols-5">
               <label className="text-sm">

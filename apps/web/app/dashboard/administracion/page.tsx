@@ -1908,7 +1908,7 @@ export default function AdministracionPage() {
       ) : null}
 
       {activeModal === "roles" ? (
-        <ModalFrame title="Roles y permisos" onClose={() => setActiveModal(null)} maxWidth="md:max-w-7xl">
+        <ModalFrame title="Roles y permisos" onClose={() => setActiveModal(null)} maxWidth="md:max-w-6xl">
           <div className="grid gap-3 lg:grid-cols-[260px_minmax(0,1fr)]">
             <aside className="space-y-2">
               <Button className="w-full" onClick={newRole} type="button"><Plus size={16} /> Nuevo rol</Button>
@@ -1989,19 +1989,19 @@ export default function AdministracionPage() {
       ) : null}
 
       {activeModal === "masters" ? (
-        <ModalFrame title="Maestros de plataforma" onClose={() => setActiveModal(null)} maxWidth="md:max-w-6xl">
+        <ModalFrame title="Maestros de plataforma" onClose={() => setActiveModal(null)} maxWidth="md:max-w-5xl">
           {renderMasterCatalogManager()}
         </ModalFrame>
       ) : null}
 
       {activeModal === "logs" ? (
-        <ModalFrame title="Logs tecnicos de plataforma" onClose={() => setActiveModal(null)} maxWidth="md:max-w-7xl">
+        <ModalFrame title="Logs tecnicos de plataforma" onClose={() => setActiveModal(null)} maxWidth="md:max-w-6xl">
           {renderPlatformLogs()}
         </ModalFrame>
       ) : null}
 
       {activeModal === "users" ? (
-        <ModalFrame title={userEditorOpen ? (selectedUserId ? "Editar usuario" : "Crear usuario") : "Usuarios de plataforma"} onClose={() => { setActiveModal(null); setUserEditorOpen(false); }} maxWidth="md:max-w-7xl">
+        <ModalFrame title={userEditorOpen ? (selectedUserId ? "Editar usuario" : "Crear usuario") : "Usuarios de plataforma"} onClose={() => { setActiveModal(null); setUserEditorOpen(false); }} maxWidth="md:max-w-6xl">
           {userEditorOpen ? renderUserEditor() : renderUserDirectory()}
           {false && (
           <div className="grid gap-4 xl:grid-cols-[300px_1fr]">
