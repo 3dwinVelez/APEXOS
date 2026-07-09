@@ -73,6 +73,7 @@ export default function MobilePunchPage() {
   const [extraDetail, setExtraDetail] = useState("");
   const [extraEvidence, setExtraEvidence] = useState<CapturedFile | null>(null);
   const [gps, setGps] = useState<GpsFix | null>(null);
+  const [gpsUpdatedAt, setGpsUpdatedAt] = useState(0);
   const [gpsStatus, setGpsStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [view, setView] = useState<"marcar" | "historial">("marcar");
   const [preop, setPreop] = useState<PreopChecklist | null>(null);
@@ -118,9 +119,9 @@ export default function MobilePunchPage() {
     load();
   }, [load]);
 
-  const userName = employeeName(employee) || employee?.code || "";
+  const userName = employee?.code || employeeName(employee) || "";
   const currentAttendance = attendance.find((item) => {
-    const match = item.user_name === userName || item.user_name === employee?.code || item.user_name === employeeName(employee);
+    const match = item.user_name === userName || item.user_name === employeeName(employee);
     return match;
   }) || { user_name: userName, next_type: "entrada", punches: [] };
   const doneTypes = new Set(currentAttendance.punches.map((punch) => punch.type) || []);
@@ -147,6 +148,7 @@ export default function MobilePunchPage() {
       if (document.hidden) return;
       getGpsFix(8000).then((fix) => {
         setGps(fix);
+        setGpsUpdatedAt(Date.now());
         setGpsStatus("ok");
         return api("/api/v1/hr/gps/ping", {
           method: "POST",
@@ -165,11 +167,14 @@ export default function MobilePunchPage() {
   }, [employee, route?.id, userName, vehiclePlate]);
 
   async function refreshGps() {
+    // Use cached GPS if less than 25s old — avoids blocking the UI
+    if (gps && Date.now() - gpsUpdatedAt < 25000) return gps;
     setGpsStatus("loading");
     try {
       const fix = await getGpsFix();
       setGps(fix);
       setGpsStatus("ok");
+      setGpsUpdatedAt(Date.now());
       if (userName) {
         await api("/api/v1/hr/gps/ping", {
           method: "POST",
@@ -196,7 +201,7 @@ export default function MobilePunchPage() {
     setMarkingType(type);
     setMessage("");
     try {
-      const fix = gps || await refreshGps();
+      const fix = await refreshGps();
       if (!fix) return;
       if (type === "salida" && isClosingLate && (!extraReason || !extraDetail.trim() || !extraEvidence)) {
         setMessage("Cierre fuera de horario: selecciona motivo, escribe el sustento y adjunta evidencia fotografica.");
@@ -233,7 +238,8 @@ export default function MobilePunchPage() {
       setExtraDetail("");
       setExtraEvidence(null);
       setMessage(`${punchLabels[type].title} registrado.`);
-      await load();
+      // Refresh data in background without blocking the UI
+      load().catch(() => undefined);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No fue posible registrar la marcacion.");
     } finally {
@@ -273,7 +279,7 @@ export default function MobilePunchPage() {
       setActivityMessage("Escribe una observacion corta de la actividad.");
       return;
     }
-    const fix = gps || await refreshGps();
+    const fix = await refreshGps();
     if (!fix) {
       setActivityMessage("GPS obligatorio. Habilita la ubicacion del navegador y reintenta.");
       return;
@@ -298,7 +304,7 @@ export default function MobilePunchPage() {
       setActivityPhoto(null);
       setActivityModal(false);
       setMessage("Actividad registrada con evidencia.");
-      await load();
+      load().catch(() => undefined);
     } catch (error) {
       setActivityMessage(error instanceof Error ? error.message : "No fue posible registrar la actividad.");
     } finally {

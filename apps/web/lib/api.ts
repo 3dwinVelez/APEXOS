@@ -1408,7 +1408,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const name = fullName(row);
     return {
       id: row.id,
-      code: String(row.metadata?.code || row.id.slice(0, 8)),
+      code: String(row.metadata?.code || row.metadata?.name || row.email || `user-${row.id.slice(0, 6)}`),
       user_type: row.user_type || row.position || "operario",
       position: row.position || row.user_type || "operario",
       metadata: { ...(row.metadata || {}), name },

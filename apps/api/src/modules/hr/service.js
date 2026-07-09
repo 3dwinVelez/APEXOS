@@ -958,7 +958,7 @@ async function createPunch(tenantId, input, user) {
         message: "Checklist preoperacional obligatorio antes de iniciar jornada."
       };
     }
-    const resolvedUserName = employeeDisplayName(employee) || employee.code || employee.user?.name || employee.user?.email || input.user_name;
+    const resolvedUserName = employee.code || employee.user?.name || employee.user?.email || input.user_name;
     const punchesToday = await latestPunchesForUser(resolvedUserName, punchedAt);
     const expectedType = nextPunchType(punchesToday);
     if (!expectedType) {
