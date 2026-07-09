@@ -15,7 +15,7 @@ type PreopItem = { section: string; item_key: string; label: string; severity: s
 type PreopChecklist = { id: number; route_id?: number; plate: string; checklist_status: string; risk_level: string };
 type PreopTemplate = { sections: string[]; items: PreopItem[] };
 type PreopAnswer = { answer: string; observations: string; evidence: CapturedFile | null };
-type PunchResponse = { preoperational_required?: boolean; preoperational_checklist?: PreopChecklist | null };
+type PunchResponse = { next?: string | null; preoperational_required?: boolean; preoperational_checklist?: PreopChecklist | null };
 type ActivityType = { id: number; name: string; active: boolean };
 type WorkActivity = { id: number; activity_type_name: string; observation: string; occurred_at: string; latitude: number; longitude: number; accuracy_meters?: number; evidence?: Array<{ base64_data?: string; file_name?: string }> };
 type WorkSession = { id: number; active: boolean; session: { id: number; status: string; started_at: string; closed_at?: string } | null; activities: WorkActivity[]; alerts: Array<{ type: string; severity: string; message: string }> };
@@ -234,11 +234,23 @@ export default function MobilePunchPage() {
         setMessage("Completa el checklist preoperacional para habilitar la Entrada.");
         return;
       }
+      // Optimistically update UI so next button is immediately available
+      const nextPunchType = response.next || null;
+      setAttendance((prev) => {
+        const updated = prev.map((item) =>
+          item.user_name === userName
+            ? { ...item, next_type: nextPunchType, punches: [...item.punches, { id: Date.now(), type, time: new Date().toLocaleTimeString(), vehicle_plate: vehiclePlate }] }
+            : item
+        );
+        if (!updated.some((item) => item.user_name === userName)) {
+          updated.push({ user_name: userName, next_type: nextPunchType, punches: [{ id: Date.now(), type, time: new Date().toLocaleTimeString(), vehicle_plate: vehiclePlate }] });
+        }
+        return updated;
+      });
       setExtraReason("");
       setExtraDetail("");
       setExtraEvidence(null);
       setMessage(`${punchLabels[type].title} registrado.`);
-      // Refresh data in background without blocking the UI
       load().catch(() => undefined);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No fue posible registrar la marcacion.");
