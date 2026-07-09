@@ -116,10 +116,8 @@ function reportClientFailure(path: string, status: number | null, detail: string
   }).catch(() => undefined);
 }
 
-function shouldPreferOperationalApi(path: string, method = "GET") {
+function shouldPreferOperationalApi(path: string) {
   if (path === "/api/v1/hr/employees" || path.startsWith("/api/v1/hr/employees?")) return false;
-  // Write operations (POST/PATCH/PUT) on HR paths should try Supabase first on Supabase sessions
-  if (["POST", "PATCH", "PUT"].includes(method)) return false;
   return path.startsWith("/api/v1/transport") || path.startsWith("/api/v1/hr");
 }
 
@@ -1572,6 +1570,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   }
 
   if (pathname === "/api/v1/hr/routes") {
+    if (method !== "GET") return null;
     const companyId = await currentSupabaseCompanyId();
     const routes = await supabaseFetch<Array<{
       id: string;
@@ -2538,7 +2537,7 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
   await keepSessionAlive();
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
   let response: Response;
-  const preferOperationalApi = HAS_CONFIGURED_API_URL && shouldPreferOperationalApi(path, options.method);
+  const preferOperationalApi = HAS_CONFIGURED_API_URL && shouldPreferOperationalApi(path);
 
   if (isSupabaseSession() && !preferOperationalApi) {
     const fallback = await supabaseApiFallback<T>(path, options);
