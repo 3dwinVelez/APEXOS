@@ -204,8 +204,8 @@ function MapTiles({ center, zoom }: { center: { latitude: number; longitude: num
   const centerTileX = Math.floor(centerWorld.x / TILE_SIZE);
   const centerTileY = Math.floor(centerWorld.y / TILE_SIZE);
   const tiles = [];
-  for (let x = centerTileX - 4; x <= centerTileX + 4; x += 1) {
-    for (let y = centerTileY - 3; y <= centerTileY + 3; y += 1) {
+  for (let x = centerTileX - 3; x <= centerTileX + 3; x += 1) {
+    for (let y = centerTileY - 2; y <= centerTileY + 2; y += 1) {
       if (y < 0 || y >= 2 ** zoom) continue;
       tiles.push({ x, y, left: x * TILE_SIZE - centerWorld.x, top: y * TILE_SIZE - centerWorld.y });
     }
@@ -389,9 +389,9 @@ export default function LiveGpsMapPage() {
       </header>
       {message ? <div className="z-20 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-900">{message}</div> : null}
 
-      <main className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[320px_1fr]">
-        <aside className="z-10 flex max-h-[42vh] flex-col overflow-hidden border-b border-white/10 bg-[#0d1b2a] text-white lg:max-h-none lg:border-b-0 lg:border-r">
-          <div className="grid grid-cols-4 gap-2 p-3">
+      <main className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[280px_1fr]">
+        <aside className="z-10 flex max-h-[35vh] flex-col overflow-hidden border-b border-white/10 bg-[#0d1b2a] text-white lg:max-h-none lg:border-b-0 lg:border-r">
+          <div className="grid grid-cols-4 gap-1.5 p-2">
             <Metric label="Rutas" value={data?.totals.routes || 0} />
             <Metric label="Equipo" value={data?.totals.planned_people || 0} />
             <Metric label="Online" value={data?.totals.online || 0} tone="text-emerald-300" />

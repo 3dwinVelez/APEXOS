@@ -1594,7 +1594,12 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       vehicle_plate: route.vehicle_plate || "",
       employees: assignments
         .filter((assignment) => assignment.route_id === route.id)
-        .map((assignment) => fullName(assignment.employees || {}) || String(assignment.employees?.metadata?.code || assignment.employees?.document_number || "")),
+        .map((assignment) => {
+          const emp = assignment.employees || {};
+          const routeName = fullName(emp);
+          const routeCode = String(emp.metadata?.code || "");
+          return routeCode || routeName;
+        }),
       start_time: route.start_time || "",
       end_time: route.end_time || "",
       status: route.status || "planned",
