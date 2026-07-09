@@ -390,7 +390,19 @@ async function createRoutesBulk(tenantId, input) {
 }
 
 async function findEmployee(input) {
-  if (input.employee_id) return prisma.employee.findFirst({ where: { id: Number(input.employee_id) } });
+  if (input.employee_id) {
+    const id = Number(input.employee_id);
+    if (!Number.isNaN(id)) return prisma.employee.findFirst({ where: { id } });
+    // UUID fallback: search by user_id or code
+    return prisma.employee.findFirst({
+      where: {
+        OR: [
+          { user_id: String(input.employee_id).includes("@") ? undefined : Number(input.employee_id) },
+          { code: String(input.employee_id) }
+        ].filter(Boolean)
+      }
+    });
+  }
   const name = String(input.user_name || "").trim();
   if (!name) return null;
   return prisma.employee.findFirst({

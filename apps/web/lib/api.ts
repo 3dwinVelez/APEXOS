@@ -1224,6 +1224,34 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     } as T;
   }
 
+  if (pathname === "/api/v1/hr/gps/ping" && method === "POST") {
+    const employee = await currentSupabaseEmployee();
+    if (!employee?.company_id) return null;
+    const body = JSON.parse(String(options.body || "{}"));
+    const fix = {
+      company_id: employee.company_id,
+      employee_id: employee.id,
+      user_id: employee.user_id || null,
+      user_name: String(employee.metadata?.code || employee.metadata?.name || employee.email || employee.id).toLowerCase().replace(/[^a-z0-9_@.-]/g, "_").slice(0, 80),
+      route_id: body.route_id || null,
+      vehicle_id: null,
+      latitude: Number(body.latitude || 0),
+      longitude: Number(body.longitude || 0),
+      accuracy_meters: Number(body.accuracy_meters || 0),
+      source: body.source || "mobile",
+      captured_at: new Date().toISOString(),
+      metadata: { user_email: employee.email || "", source: body.source }
+    };
+    await supabaseFetch("/rest/v1/gps_pings", {
+      method: "POST",
+      body: JSON.stringify(fix),
+      headers: { Prefer: "return=minimal" }
+    }).catch((error) => {
+      safeDevLog("No fue posible guardar ping GPS en Supabase.", error);
+    });
+    return { ok: true } as T;
+  }
+
   if (pathname === "/api/v1/hr/schedules") {
     return [] as T;
   }

@@ -389,7 +389,7 @@ export default function LiveGpsMapPage() {
       </header>
       {message ? <div className="z-20 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-900">{message}</div> : null}
 
-      <main className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[280px_1fr]">
+      <main className="min-h-0 flex-1 lg:grid lg:grid-cols-[280px_1fr] xl:grid-cols-[320px_1fr]">
         <aside className="z-10 flex max-h-[35vh] flex-col overflow-hidden border-b border-white/10 bg-[#0d1b2a] text-white lg:max-h-none lg:border-b-0 lg:border-r">
           <div className="grid grid-cols-4 gap-1.5 p-2">
             <Metric label="Rutas" value={data?.totals.routes || 0} />
@@ -564,7 +564,7 @@ export default function LiveGpsMapPage() {
           </div>
 
           {selected ? (
-            <div className="absolute right-4 top-4 z-30 w-[min(360px,calc(100%-32px))] rounded-md border border-line bg-white p-4 shadow-xl">
+            <div className="absolute right-4 top-4 z-30 w-[min(380px,calc(100%-32px))] rounded-md border border-line bg-white p-4 shadow-xl xl:w-[420px]">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase text-apex">{selected.route_label} · {selected.vehicle_plate || "Sin vehiculo"}</p>
