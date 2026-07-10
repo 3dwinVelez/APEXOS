@@ -91,7 +91,18 @@ function validationError(message, statusCode = 400, code = "VALIDATION_ERROR") {
 }
 
 function employeeDisplayName(employee) {
-  return employee?.metadata?.name || employee?.user?.name || employee?.code || "";
+  const metadataName = String(employee?.metadata?.name || "").trim();
+  const genericMetadata = isGenericEmployeeAlias(metadataName);
+  return (!genericMetadata && metadataName) || employee?.user?.name || employee?.code || metadataName || "";
+}
+
+function isGenericEmployeeAlias(value) {
+  return /^usuario[-\s]\d+$/i.test(String(value || "").trim());
+}
+
+function employeeUserName(employee, fallback = "") {
+  const code = String(employee?.code || "").trim();
+  return (!isGenericEmployeeAlias(code) && code) || employee?.user?.name || fallback || employee?.user?.email || employeeDisplayName(employee) || code || "";
 }
 
 function aliasesForEmployee(employee) {
@@ -785,7 +796,7 @@ async function findCurrentWorkSession({ employee, userName, date = new Date() })
 async function getCurrentWorkSession(tenantId, user, query = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const employee = await getCurrentEmployee(tenantId, user).catch(() => null);
-    const userName = query.user_name || employee?.code || employeeDisplayName(employee) || user?.name || user?.email || "";
+    const userName = query.user_name || employeeUserName(employee, user?.name || user?.email || "");
     const session = await findCurrentWorkSession({ employee, userName, date: query.date || new Date() });
     const activities = session?.activities || [];
     return {
@@ -846,7 +857,7 @@ async function createWorkActivity(tenantId, user, input) {
     const employee = input.employee_id
       ? await prisma.employee.findFirst({ where: { id: Number(input.employee_id), tenant_id: tenantId }, include: { user: { select: { name: true, email: true } } } })
       : await getCurrentEmployee(tenantId, user).catch(() => null);
-    const userName = employee?.code || employeeDisplayName(employee) || user?.name || user?.email || "";
+    const userName = employeeUserName(employee, user?.name || user?.email || "");
     const session = await findCurrentWorkSession({ employee, userName });
     if (!session) {
       const err = new Error("No hay jornada activa. Marca Entrada antes de registrar actividades.");
@@ -977,7 +988,7 @@ async function createPunch(tenantId, input, user) {
         message: "Checklist preoperacional obligatorio antes de iniciar jornada."
       };
     }
-    const resolvedUserName = employee.code || employee.user?.name || employee.user?.email || input.user_name;
+    const resolvedUserName = employeeUserName(employee, input.user_name);
     const punchesToday = await latestPunchesForUser(resolvedUserName, punchedAt);
     const expectedType = nextPunchType(punchesToday);
     if (!expectedType) {
@@ -1133,7 +1144,7 @@ async function createGpsPing(tenantId, input) {
     // no deben contaminar el maestro de empleados con registros dummy.
     let employeeId = null;
     const employee = await findEmployee(input).catch(() => null);
-    const resolvedName = employee?.code || employeeDisplayName(employee) || String(input.user_name || "desconocido");
+    const resolvedName = employeeUserName(employee, input.user_name) || "desconocido";
     if (employee) employeeId = employee.id;
     return prisma.gpsPing.create({
       data: {
@@ -1333,11 +1344,17 @@ async function getOperationsMap(tenantId, query = {}) {
         const latestActivity = aliases.map((alias) => latestActivityByUser.get(normalizeKey(alias))).find(Boolean);
         const ageSeconds = latestPing ? Math.max(0, Math.round((Date.now() - new Date(latestPing.captured_at).getTime()) / 1000)) : null;
         const isOnline = Boolean(latestLivePing && new Date(latestLivePing.captured_at) >= since);
+        const displayName = employeeDisplayName(employee) || assignedName;
+        const displayUserName = latestPunch?.user_name
+          || (!isGenericEmployeeAlias(latestPing?.user_name) ? latestPing?.user_name : "")
+          || (!isGenericEmployeeAlias(employee?.code) ? employee?.code : "")
+          || displayName
+          || assignedName;
         people.push({
           key: `${route.id}-${employee?.id || assignedName}`,
           employee_id: employee?.id || null,
-          user_name: latestPing?.user_name || latestPunch?.user_name || employee?.code || assignedName,
-          name: employeeDisplayName(employee) || assignedName,
+          user_name: displayUserName,
+          name: displayName,
           route_id: route.id,
           route_label: `Ruta ${route.id}`,
           vehicle_plate: route.vehicle_plate || latestPing?.vehicle_plate || latestPunch?.vehicle_plate || "",

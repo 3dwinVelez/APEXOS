@@ -442,7 +442,16 @@ function nextPunchFrom(types: string[]) {
 }
 
 function localDate(value = new Date()) {
-  return value.toISOString().slice(0, 10);
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Bogota",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(value).reduce<Record<string, string>>((acc, part) => {
+    acc[part.type] = part.value;
+    return acc;
+  }, {});
+  return `${parts.year}-${parts.month}-${parts.day}`;
 }
 
 function safeDevLog(message: string, error: unknown) {
@@ -592,6 +601,33 @@ function supabaseEmployeeIdentity(employee: {
     user_name: userName || "usuario_supabase",
     virtual
   };
+}
+
+function identityKeys(row: {
+  employee_id?: unknown;
+  user_id?: unknown;
+  user_name?: unknown;
+  email?: unknown;
+  first_name?: unknown;
+  last_name?: unknown;
+  metadata?: AnyRow;
+}) {
+  return Array.from(new Set([
+    row.employee_id,
+    row.user_id,
+    row.user_name,
+    row.email,
+    row.metadata?.code,
+    row.metadata?.name,
+    row.metadata?.supplied_user_name,
+    fullName({
+      first_name: String(row.first_name || ""),
+      last_name: String(row.last_name || ""),
+      email: String(row.email || ""),
+      id: String(row.employee_id || row.user_id || ""),
+      metadata: row.metadata
+    })
+  ].filter(Boolean).map((value) => String(value).trim()).filter(Boolean)));
 }
 
 async function accessibleSupabaseServiceOrder(orderId: string, options: { includeFinished?: boolean } = {}) {
@@ -1295,11 +1331,12 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
 
   if (pathname === "/api/v1/hr/attendance") {
     const companyId = await currentSupabaseCompanyId();
-    const punches = await supabaseFetch<Array<{ id: string; user_name: string; punch_type: string; punched_at: string }>>(`/rest/v1/time_punches?select=id,user_name,punch_type,punched_at&company_id=eq.${encodeURIComponent(companyId)}&order=punched_at.desc&limit=200`);
-    const grouped = new Map<string, Array<{ id: string; type: string; punched_at: string }>>();
+    const day = search.get("date") || search.get("fecha") || localDate();
+    const punches = await supabaseFetch<Array<{ id: string; user_name: string; punch_type: string; punch_time?: string; punched_at: string; vehicle_plate?: string }>>(`/rest/v1/time_punches?select=id,user_name,punch_type,punch_time,punched_at,vehicle_plate&company_id=eq.${encodeURIComponent(companyId)}&punch_date=eq.${encodeURIComponent(day)}&order=punched_at.asc&limit=200`);
+    const grouped = new Map<string, Array<{ id: string; type: string; punched_at: string; time: string; vehicle_plate: string }>>();
     for (const punch of punches) {
       const list = grouped.get(punch.user_name) || [];
-      list.push({ id: punch.id, type: punch.punch_type, punched_at: punch.punched_at });
+      list.push({ id: punch.id, type: punch.punch_type, punched_at: punch.punched_at, time: punch.punch_time || "", vehicle_plate: punch.vehicle_plate || "" });
       grouped.set(punch.user_name, list);
     }
     return Array.from(grouped.entries()).map(([user_name, punches]) => ({
@@ -1311,32 +1348,38 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
 
   if (pathname === "/api/v1/hr/operations-map") {
     const companyId = await currentSupabaseCompanyId();
+    const day = search.get("date") || localDate();
     const [routes, employees, assignments, pings, punches] = await Promise.all([
-      supabaseFetch<Array<{ id: string; code?: string; route_date: string; vehicle_plate?: string; start_time?: string; end_time?: string; status?: string }>>(`/rest/v1/operational_routes?select=id,code,route_date,vehicle_plate,start_time,end_time,status&company_id=eq.${encodeURIComponent(companyId)}&order=route_date.desc&limit=120`),
-      supabaseFetch<Array<{ id: string; first_name?: string; last_name?: string; document_number?: string; user_type?: string; position?: string; metadata?: AnyRow }>>(`/rest/v1/employees?select=id,first_name,last_name,document_number,user_type,position,metadata&company_id=eq.${encodeURIComponent(companyId)}&status=eq.active&limit=250`),
+      supabaseFetch<Array<{ id: string; code?: string; route_date: string; vehicle_plate?: string; start_time?: string; end_time?: string; status?: string }>>(`/rest/v1/operational_routes?select=id,code,route_date,vehicle_plate,start_time,end_time,status&company_id=eq.${encodeURIComponent(companyId)}&route_date=eq.${encodeURIComponent(day)}&order=start_time.asc&limit=120`),
+      supabaseFetch<Array<{ id: string; user_id?: string; first_name?: string; last_name?: string; email?: string; document_number?: string; user_type?: string; position?: string; metadata?: AnyRow }>>(`/rest/v1/employees?select=id,user_id,first_name,last_name,email,document_number,user_type,position,metadata&company_id=eq.${encodeURIComponent(companyId)}&status=eq.active&limit=250`),
       supabaseFetch<Array<{ route_id: string; employee_id: string; role?: string }>>(`/rest/v1/route_assignments?select=route_id,employee_id,role&company_id=eq.${encodeURIComponent(companyId)}&limit=500`),
-      supabaseFetch<Array<{ id: string; employee_id?: string; user_name: string; route_id?: string; vehicle_id?: string; latitude: number; longitude: number; accuracy_meters?: number; source?: string; captured_at: string; metadata?: AnyRow }>>(`/rest/v1/gps_pings?select=id,employee_id,user_name,route_id,vehicle_id,latitude,longitude,accuracy_meters,source,captured_at,metadata&company_id=eq.${encodeURIComponent(companyId)}&order=captured_at.desc&limit=500`),
-      supabaseFetch<Array<{ id: string; employee_id?: string; user_name: string; punch_type: string; punch_time?: string; punched_at: string; route_id?: string; vehicle_id?: string; vehicle_plate?: string; latitude?: number; longitude?: number; accuracy_meters?: number; extra_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: AnyRow; metadata?: AnyRow }>>(`/rest/v1/time_punches?select=id,employee_id,user_name,punch_type,punch_time,punched_at,route_id,vehicle_id,vehicle_plate,latitude,longitude,accuracy_meters,extra_minutes,extra_reason,extra_detail,extra_evidence,metadata&company_id=eq.${encodeURIComponent(companyId)}&order=punched_at.desc&limit=500`)
+      supabaseFetch<Array<{ id: string; employee_id?: string; user_id?: string; user_name: string; route_id?: string; vehicle_id?: string; latitude: number; longitude: number; accuracy_meters?: number; source?: string; captured_at: string; metadata?: AnyRow }>>(`/rest/v1/gps_pings?select=id,employee_id,user_id,user_name,route_id,vehicle_id,latitude,longitude,accuracy_meters,source,captured_at,metadata&company_id=eq.${encodeURIComponent(companyId)}&captured_at=gte.${encodeURIComponent(`${day}T00:00:00-05:00`)}&captured_at=lt.${encodeURIComponent(`${day}T23:59:59-05:00`)}&order=captured_at.desc&limit=500`),
+      supabaseFetch<Array<{ id: string; employee_id?: string; user_id?: string; user_name: string; punch_type: string; punch_time?: string; punched_at: string; route_id?: string; vehicle_id?: string; vehicle_plate?: string; latitude?: number; longitude?: number; accuracy_meters?: number; extra_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: AnyRow; metadata?: AnyRow }>>(`/rest/v1/time_punches?select=id,employee_id,user_id,user_name,punch_type,punch_time,punched_at,route_id,vehicle_id,vehicle_plate,latitude,longitude,accuracy_meters,extra_minutes,extra_reason,extra_detail,extra_evidence,metadata&company_id=eq.${encodeURIComponent(companyId)}&punch_date=eq.${encodeURIComponent(day)}&order=punched_at.desc&limit=500`)
     ]);
 
+    const routeIds = new Set(routes.map((route) => route.id));
+    const dayAssignments = assignments.filter((assignment) => routeIds.has(assignment.route_id));
     const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
     const latestPingByEmployee = new Map<string, (typeof pings)[number]>();
     for (const ping of pings) {
-      const key = ping.employee_id || ping.user_name;
-      if (key && !latestPingByEmployee.has(key)) latestPingByEmployee.set(key, ping);
+      for (const key of identityKeys(ping)) {
+        if (!latestPingByEmployee.has(key)) latestPingByEmployee.set(key, ping);
+      }
     }
     const latestPunchByEmployee = new Map<string, (typeof punches)[number]>();
     for (const punch of punches) {
-      const key = punch.employee_id || punch.user_name;
-      if (key && !latestPunchByEmployee.has(key)) latestPunchByEmployee.set(key, punch);
+      for (const key of identityKeys(punch)) {
+        if (!latestPunchByEmployee.has(key)) latestPunchByEmployee.set(key, punch);
+      }
     }
 
-    const people = assignments.map((assignment) => {
+    const people = dayAssignments.map((assignment) => {
       const employee = employeeById.get(assignment.employee_id);
       const route = routes.find((item) => item.id === assignment.route_id);
       const name = fullName(employee || {});
-      const ping = latestPingByEmployee.get(assignment.employee_id) || latestPingByEmployee.get(name);
-      const punch = latestPunchByEmployee.get(assignment.employee_id) || latestPunchByEmployee.get(name);
+      const aliases = identityKeys({ ...(employee || {}), employee_id: assignment.employee_id, user_name: name });
+      const ping = aliases.map((alias) => latestPingByEmployee.get(alias)).find(Boolean);
+      const punch = aliases.map((alias) => latestPunchByEmployee.get(alias)).find(Boolean);
       const capturedAt = ping?.captured_at || punch?.punched_at || null;
       const ageSeconds = capturedAt ? Math.max(0, Math.round((Date.now() - new Date(capturedAt).getTime()) / 1000)) : null;
       const online = ageSeconds != null && ageSeconds <= Number(search.get("minutes") || 30) * 60;
@@ -1367,7 +1410,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     });
 
     const routeSummaries = routes.map((route) => {
-      const routeAssignments = assignments.filter((assignment) => assignment.route_id === route.id);
+      const routeAssignments = dayAssignments.filter((assignment) => assignment.route_id === route.id);
       const routePeople = people.filter((person) => person.route_id === route.id);
       const routePings = pings.filter((ping) => ping.route_id === route.id);
       const routeActivities = pings

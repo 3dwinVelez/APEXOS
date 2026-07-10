@@ -186,21 +186,19 @@ export default function MobilePunchPage() {
       setGpsStatus("ok");
       setGpsUpdatedAt(Date.now());
       if (userName) {
-        try {
-          await api("/api/v1/hr/gps/ping", {
-            method: "POST",
-            body: JSON.stringify({
-              user_name: userName,
-              employee_id: employee?.id,
-              vehicle_plate: vehiclePlate,
-              route_id: route?.id,
-              ...fix,
-              source: "mobile_presence"
-            })
-          });
-        } catch {
+        void api("/api/v1/hr/gps/ping", {
+          method: "POST",
+          body: JSON.stringify({
+            user_name: userName,
+            employee_id: employee?.id,
+            vehicle_plate: vehiclePlate,
+            route_id: route?.id,
+            ...fix,
+            source: "mobile_presence"
+          })
+        }).catch(() => {
           setMessage("GPS capturado, pero no fue posible sincronizar la presencia en vivo. La marcacion guardara la ubicacion al registrarse.");
-        }
+        });
       }
       return fix;
     } catch (error) {

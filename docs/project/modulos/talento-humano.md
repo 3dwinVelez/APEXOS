@@ -48,6 +48,9 @@ Talento Humano debe separar operacion diaria, configuracion y seguimiento. Marca
 - Confirmar que usuarios Supabase sin ficha `employees` real pueden guardar GPS usando `user_id` sin romper RLS ni foreign keys.
 - Confirmar que una persona sin GPS activo sigue apareciendo con su ultima huella conocida.
 - Confirmar que las cuatro marcaciones de una ruta se conectan visualmente y muestran detalle al hacer clic.
+- Confirmar que la marcacion movil no bloquea el registro esperando el ping redundante de presencia: la marca debe guardar rapido y la presencia se actualiza en segundo plano.
+- Confirmar que el monitor en vivo correlaciona por `employee_id`, `user_id`, `user_name`, email y metadata para usuarios demo/autocreados, evitando aliases genericos tipo `usuario-###`.
+- Confirmar que un flujo real de 4 marcas mas evento operativo deja 4 `punch_points`, al menos 1 `activity_point` y huellas GPS visibles en la ruta del monitor.
 - Confirmar que el modo Historico muestra rutas cerradas con sus 4 marcaciones por usuario, recorrido conectado y detalle clicable de cada marca.
 - Confirmar que el escenario `MAP-101` contiene una ruta historica cerrada con 2 tecnicos y 8 marcaciones georreferenciadas.
 - Confirmar que el escenario `MAP-202` conserva la ultima huella de una persona sin senal activa.
