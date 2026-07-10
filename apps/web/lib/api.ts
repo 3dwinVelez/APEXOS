@@ -223,12 +223,6 @@ export async function authorizedJson<T>(input: string, options: RequestInit = {}
   return response.json() as Promise<T>;
 }
 
-function normalizeUsernameEmail(value: unknown, fallbackDomain = "apex.local") {
-  const text = String(value || "").trim().toLowerCase();
-  if (!text) return "";
-  return text.includes("@") ? text : `${text}@${fallbackDomain}`;
-}
-
 function toNumberId(id: unknown) {
   const text = String(id || "");
   let hash = 0;

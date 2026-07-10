@@ -144,9 +144,8 @@ export default function MobilePunchPage() {
 
   useEffect(() => {
     if (!employee || !userName) return;
-    let timer: number | undefined;
     let mounted = true;
-    timer = window.setInterval(async () => {
+    const timer = window.setInterval(async () => {
       if (document.hidden || !mounted) return;
       try {
         const fix = await getGpsFix(8000);
