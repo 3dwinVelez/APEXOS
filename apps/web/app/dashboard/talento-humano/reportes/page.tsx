@@ -1,14 +1,15 @@
 "use client";
 
-import { supabaseFetch } from "@/lib/supabaseClient";
+import { api } from "@/lib/api";
 import { ArrowLeft, Download, Eye, Filter, Search } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-type Employee = { id: string; first_name?: string; last_name?: string; document_number?: string; user_type?: string; position?: string; metadata?: Record<string, unknown> };
-type Punch = { id: string; employee_id?: string; user_name?: string; route_id?: string; vehicle_plate?: string; punch_type: string; punched_at: string; punch_date?: string; punch_time?: string; latitude?: number; longitude?: number; accuracy_meters?: number; extra_minutes?: number; extra_reason?: string; extra_detail?: string; metadata?: Record<string, unknown> };
-type Activity = { id: string; employee_id?: string; user_name?: string; route_id?: string; source?: string; captured_at: string; latitude?: number; longitude?: number; accuracy_meters?: number; metadata?: Record<string, unknown> };
-type RouteRow = { id: string; code?: string; vehicle_plate?: string; start_time?: string; end_time?: string; route_date?: string };
+type Employee = { id: number; code: string; user_type?: string; position: string; department: string; metadata: { name: string; document: string; user_type?: string }; user: { name: string } };
+type Punch = { id: number; user_name: string; type: string; time: string; punched_at: string; date: string; latitude?: number; longitude?: number; accuracy_meters?: number; vehicle_plate: string; extra_minutes: number; extra_reason?: string; extra_detail?: string };
+type Attendance = { user_name: string; next_type: string | null; punches: Punch[] };
+type WorkActivity = { id: number; activity_type_name: string; observation: string; occurred_at: string; latitude: number; longitude: number; accuracy_meters?: number; user_name: string; route_id?: number; vehicle_plate?: string; evidence?: Array<{ base64_data?: string; file_name?: string }> };
+type TimeRoute = { id: number; date: string; vehicle_plate: string; employees: string[]; start_time: string; end_time: string; status: string };
 type ReportRow = {
   key: string;
   employeeId: string;
@@ -26,7 +27,7 @@ type ReportRow = {
   overtimeMinutes: number;
   overtimeReason: string;
   overtimeDetail: string;
-  activities: Activity[];
+  activities: WorkActivity[];
   events: Array<{ kind: string; title: string; at: string; gps?: string; detail?: string }>;
 };
 
@@ -62,8 +63,7 @@ function downloadCsv(filename: string, rows: Array<Record<string, unknown>>) {
 }
 
 function employeeName(employee?: Employee, fallback = "") {
-  const metaName = typeof employee?.metadata?.name === "string" ? employee.metadata.name : "";
-  return [employee?.first_name, employee?.last_name].filter(Boolean).join(" ").trim() || metaName || fallback || "Sin nombre";
+  return employee?.metadata?.name || employee?.user?.name || fallback || "Sin nombre";
 }
 
 function gps(point: { latitude?: number; longitude?: number }) {
@@ -73,8 +73,8 @@ function gps(point: { latitude?: number; longitude?: number }) {
 export default function HrReportsPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [punches, setPunches] = useState<Punch[]>([]);
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [routes, setRoutes] = useState<RouteRow[]>([]);
+  const [activities, setActivities] = useState<WorkActivity[]>([]);
+  const [routes, setRoutes] = useState<TimeRoute[]>([]);
   const [from, setFrom] = useState(today());
   const [to, setTo] = useState(today());
   const [employeeFilter, setEmployeeFilter] = useState("all");
@@ -88,16 +88,14 @@ export default function HrReportsPage() {
     setLoading(true);
     setMessage("");
     try {
-      const companyId = localStorage.getItem("apexos_company_id") || "";
-      const companyFilter = companyId ? `&company_id=eq.${encodeURIComponent(companyId)}` : "";
       const [employeeRows, punchRows, activityRows, routeRows] = await Promise.all([
-        supabaseFetch<Employee[]>(`/rest/v1/employees?select=id,first_name,last_name,document_number,user_type,position,metadata${companyFilter}&order=first_name.asc&limit=250`),
-        supabaseFetch<Punch[]>(`/rest/v1/time_punches?select=id,employee_id,user_name,route_id,vehicle_plate,punch_type,punched_at,punch_date,punch_time,latitude,longitude,accuracy_meters,extra_minutes,extra_reason,extra_detail,metadata&punch_date=gte.${from}&punch_date=lte.${to}${companyFilter}&order=punched_at.asc&limit=1000`),
-        supabaseFetch<Activity[]>(`/rest/v1/gps_pings?select=id,employee_id,user_name,route_id,vehicle_id,latitude,longitude,accuracy_meters,captured_at,metadata&source=eq.work_activity&captured_at=gte.${from}T00:00:00-05:00&captured_at=lte.${to}T23:59:59-05:00${companyFilter}&order=captured_at.asc&limit=1000`),
-        supabaseFetch<RouteRow[]>(`/rest/v1/operational_routes?select=id,code,vehicle_plate,start_time,end_time,route_date&route_date=gte.${from}&route_date=lte.${to}${companyFilter}&limit=250`)
+        api<Employee[]>("/api/v1/hr/employees?active=true").catch(() => [] as Employee[]),
+        api<Attendance[]>("/api/v1/hr/attendance").catch(() => [] as Attendance[]),
+        api<WorkActivity[]>(`/api/v1/hr/work-activities?limit=500`).catch(() => [] as WorkActivity[]),
+        api<TimeRoute[]>("/api/v1/hr/routes").catch(() => [] as TimeRoute[])
       ]);
       setEmployees(employeeRows);
-      setPunches(punchRows);
+      setPunches(punchRows.flatMap((att) => att.punches || []));
       setActivities(activityRows);
       setRoutes(routeRows);
     } catch (error) {
@@ -105,49 +103,43 @@ export default function HrReportsPage() {
     } finally {
       setLoading(false);
     }
-  }, [from, to]);
+  }, []);
 
   useEffect(() => {
     load().catch(() => undefined);
   }, [load]);
 
   const rows = useMemo(() => {
-    const employeesById = new Map(employees.map((employee) => [String(employee.id), employee]));
-    const routesById = new Map(routes.map((route) => [String(route.id), route]));
     const groups = new Map<string, Punch[]>();
     for (const punch of punches) {
-      const date = punch.punch_date || punch.punched_at.slice(0, 10);
-      const key = `${punch.employee_id || punch.user_name || "sin-empleado"}|${date}|${punch.route_id || "sin-ruta"}`;
+      const date = typeof punch.date === "string" ? punch.date.slice(0, 10) : new Date().toISOString().slice(0, 10);
+      const key = `${punch.user_name || "sin-empleado"}|${date}`;
       groups.set(key, [...(groups.get(key) || []), punch]);
     }
     return Array.from(groups.entries()).map(([key, group]) => {
       const sorted = group.sort((a, b) => new Date(a.punched_at).getTime() - new Date(b.punched_at).getTime());
-      const employee = employeesById.get(String(sorted[0]?.employee_id || ""));
-      const route = routesById.get(String(sorted[0]?.route_id || ""));
-      const entry = sorted.find((item) => item.punch_type === "entrada");
-      const lunchStart = sorted.find((item) => item.punch_type === "inicio_almuerzo");
-      const lunchEnd = sorted.find((item) => item.punch_type === "fin_almuerzo");
-      const exit = sorted.find((item) => item.punch_type === "salida");
+      const userName = sorted[0]?.user_name || "";
+      const employee = employees.find((emp) => employeeName(emp) === userName || emp.code === userName);
+      const route = routes.find((r) => String(r.id) === String(sorted[0]?.route_id));
+      const entry = sorted.find((item) => item.type === "entrada");
+      const lunchStart = sorted.find((item) => item.type === "inicio_almuerzo");
+      const lunchEnd = sorted.find((item) => item.type === "fin_almuerzo");
+      const exit = sorted.find((item) => item.type === "salida");
       const gross = entry && exit ? Math.max(0, new Date(exit.punched_at).getTime() - new Date(entry.punched_at).getTime()) / 60000 : 0;
       const lunch = lunchStart && lunchEnd ? Math.max(0, new Date(lunchEnd.punched_at).getTime() - new Date(lunchStart.punched_at).getTime()) / 60000 : 0;
-      const date = sorted[0]?.punch_date || sorted[0]?.punched_at.slice(0, 10) || "";
-      const routeActivities = activities.filter((activity) => {
-        const sameEmployee = String(activity.employee_id || activity.user_name || "") === String(sorted[0]?.employee_id || sorted[0]?.user_name || "");
-        const sameRoute = String(activity.route_id || "") === String(sorted[0]?.route_id || "");
-        return sameEmployee || sameRoute;
-      });
+      const routeActivities = activities.filter((activity) => activity.user_name === userName);
       const events = [
-        ...sorted.map((punch) => ({ kind: "Marcacion", title: punch.punch_type, at: punch.punched_at, gps: gps(punch), detail: punch.extra_minutes ? `${punch.extra_minutes} min extra` : "" })),
-        ...routeActivities.map((activity) => ({ kind: "Actividad", title: String(activity.metadata?.activity_type_name || "Actividad operativa"), at: activity.captured_at, gps: gps(activity), detail: String(activity.metadata?.observation || "") }))
+        ...sorted.map((punch) => ({ kind: "Marcacion", title: punch.type, at: punch.punched_at, gps: gps(punch), detail: punch.extra_minutes ? `${punch.extra_minutes} min extra` : "" })),
+        ...routeActivities.map((activity) => ({ kind: "Actividad", title: activity.activity_type_name || "Actividad operativa", at: activity.occurred_at, gps: gps(activity), detail: activity.observation || "" }))
       ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
       return {
         key,
-        employeeId: String(sorted[0]?.employee_id || ""),
-        employeeName: employeeName(employee, sorted[0]?.user_name),
+        employeeId: userName,
+        employeeName: employeeName(employee, userName),
         role: String(employee?.user_type || employee?.position || "operativo"),
-        document: employee?.document_number || "",
-        date,
-        route: route?.code || String(sorted[0]?.route_id || "--"),
+        document: employee?.metadata?.document || "",
+        date: sorted[0]?.date?.slice(0, 10) || "",
+        route: route ? `Ruta ${route.id}` : String(sorted[0]?.route_id || "--"),
         vehicle: sorted[0]?.vehicle_plate || route?.vehicle_plate || "--",
         entry,
         lunchStart,
@@ -165,7 +157,7 @@ export default function HrReportsPage() {
 
   const filtered = rows.filter((row) => {
     const term = query.trim().toLowerCase();
-    if (employeeFilter !== "all" && row.employeeId !== employeeFilter) return false;
+    if (employeeFilter !== "all" && row.employeeName !== employeeFilter) return false;
     if (onlyOvertime && !row.overtimeMinutes) return false;
     if (!term) return true;
     return [row.employeeName, row.document, row.route, row.vehicle, row.role].join(" ").toLowerCase().includes(term);
@@ -209,7 +201,7 @@ export default function HrReportsPage() {
       <section className="grid gap-3 rounded-md border border-line bg-white p-4 lg:grid-cols-[1fr_1fr_1fr_auto_auto]">
         <label className="text-sm font-semibold">Desde<input className="mt-1 h-10 w-full rounded-md border border-line px-3 font-normal" type="date" value={from} onChange={(event) => setFrom(event.target.value)} /></label>
         <label className="text-sm font-semibold">Hasta<input className="mt-1 h-10 w-full rounded-md border border-line px-3 font-normal" type="date" value={to} onChange={(event) => setTo(event.target.value)} /></label>
-        <label className="text-sm font-semibold">Empleado<select className="mt-1 h-10 w-full rounded-md border border-line px-3 font-normal" value={employeeFilter} onChange={(event) => setEmployeeFilter(event.target.value)}><option value="all">Todos</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{employeeName(employee)}</option>)}</select></label>
+        <label className="text-sm font-semibold">Empleado<select className="mt-1 h-10 w-full rounded-md border border-line px-3 font-normal" value={employeeFilter} onChange={(event) => setEmployeeFilter(event.target.value)}><option value="all">Todos</option>{employees.map((employee) => <option key={employee.id} value={employeeName(employee)}>{employeeName(employee)}</option>)}</select></label>
         <label className="flex items-end gap-2 pb-2 text-sm font-semibold"><input checked={onlyOvertime} onChange={(event) => setOnlyOvertime(event.target.checked)} type="checkbox" /> Solo extras</label>
         <button className="inline-flex h-10 items-center self-end rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={load} type="button"><Filter size={16} /> Filtrar</button>
       </section>

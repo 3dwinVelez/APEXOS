@@ -144,13 +144,17 @@ export default function MobilePunchPage() {
 
   useEffect(() => {
     if (!employee || !userName) return;
-    const timer = window.setInterval(() => {
-      if (document.hidden) return;
-      getGpsFix(8000).then((fix) => {
+    let timer: number | undefined;
+    let mounted = true;
+    timer = window.setInterval(async () => {
+      if (document.hidden || !mounted) return;
+      try {
+        const fix = await getGpsFix(8000);
+        if (!mounted) return;
         setGps(fix);
         setGpsUpdatedAt(Date.now());
         setGpsStatus("ok");
-        return api("/api/v1/hr/gps/ping", {
+        api("/api/v1/hr/gps/ping", {
           method: "POST",
           body: JSON.stringify({
             user_name: userName,
@@ -160,10 +164,17 @@ export default function MobilePunchPage() {
             ...fix,
             source: "mobile_live_presence"
           })
-        }).catch(() => undefined);
-      }).catch(() => undefined);
+        }).catch(() => {
+          if (mounted) setGpsStatus("error");
+        });
+      } catch {
+        if (mounted) setGpsStatus("error");
+      }
     }, 30000);
-    return () => window.clearInterval(timer);
+    return () => {
+      mounted = false;
+      if (timer) window.clearInterval(timer);
+    };
   }, [employee, route?.id, userName, vehiclePlate]);
 
   async function refreshGps() {

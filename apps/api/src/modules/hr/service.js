@@ -75,7 +75,7 @@ function endOfDay(value = new Date()) {
 }
 
 function timeString(date) {
-  return new Date(date).toTimeString().slice(0, 5);
+  return new Intl.DateTimeFormat("es-CO", { timeZone: OPERATING_TIMEZONE, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(date));
 }
 
 function minutesFromTime(value) {
@@ -980,7 +980,12 @@ async function createPunch(tenantId, input, user) {
       throw validationError(`La siguiente marcacion permitida es ${expectedType}.`, 409, "MARCACION_FUERA_DE_SECUENCIA");
     }
     const extraMinutes = type === "salida" && route?.end_time
-      ? Math.max(0, Math.round((punchedAt.getHours() * 60 + punchedAt.getMinutes()) - (Number(route.end_time.slice(0, 2)) * 60 + Number(route.end_time.slice(3, 5))) - Number(route.tolerance_minutes || 0)))
+      ? (() => {
+          const colParts = new Intl.DateTimeFormat("en-CA", { timeZone: OPERATING_TIMEZONE, hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(punchedAt);
+          const currentMinutes = Number(colParts.find((p) => p.type === "hour")?.value || punchedAt.getHours()) * 60
+            + Number(colParts.find((p) => p.type === "minute")?.value || punchedAt.getMinutes());
+          return Math.max(0, currentMinutes - (Number(route.end_time.slice(0, 2)) * 60 + Number(route.end_time.slice(3, 5))) - Number(route.tolerance_minutes || 0));
+        })()
       : 0;
     if (extraMinutes > 0 && (!String(input.extra_reason || "").trim() || !String(input.extra_detail || "").trim())) {
       const err = new Error("Justifica por que estas marcando fuera de tu horario habitual.");
@@ -1117,11 +1122,15 @@ async function createPunch(tenantId, input, user) {
 
 async function createGpsPing(tenantId, input) {
   return prisma.runWithTenant(tenantId, async () => {
-    const employee = await resolveEmployeeForPunch(tenantId, input);
-    const resolvedName = employee.code || employeeDisplayName(employee) || input.user_name;
+    // Solo buscar empleado existente — NO auto-crear. GPS pings son datos de presencia,
+    // no deben contaminar el maestro de empleados con registros dummy.
+    let employeeId = null;
+    const employee = await findEmployee(input).catch(() => null);
+    const resolvedName = employee?.code || employeeDisplayName(employee) || String(input.user_name || "desconocido");
+    if (employee) employeeId = employee.id;
     return prisma.gpsPing.create({
       data: {
-        employee_id: employee.id,
+        employee_id: employeeId,
         user_name: resolvedName,
         vehicle_plate: input.vehicle_plate || "",
         route_id: input.route_id,
