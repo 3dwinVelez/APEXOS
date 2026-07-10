@@ -5,10 +5,10 @@ import { ArrowLeft, Download, Eye, Filter, Search } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-type Employee = { id: number; code: string; user_type?: string; position: string; department: string; metadata: { name: string; document: string; user_type?: string }; user: { name: string } };
+type Employee = { id: number | string; code: string; user_type?: string; position: string; department: string; metadata: { name: string; document: string; user_type?: string; identity_aliases?: string[] }; user: { name: string; email?: string } };
 type Punch = { id: number; user_name: string; type: string; time: string; punched_at: string; date: string; latitude?: number; longitude?: number; accuracy_meters?: number; vehicle_plate: string; route_id?: number; extra_minutes: number; extra_reason?: string; extra_detail?: string };
 type Attendance = { user_name: string; next_type: string | null; punches: Punch[] };
-type WorkActivity = { id: number; activity_type_name: string; observation: string; occurred_at: string; latitude: number; longitude: number; accuracy_meters?: number; user_name: string; route_id?: number; vehicle_plate?: string; evidence?: Array<{ base64_data?: string; file_name?: string }> };
+type WorkActivity = { id: number; employee_id?: number | string; user_id?: string; activity_type_name: string; observation: string; occurred_at: string; latitude: number; longitude: number; accuracy_meters?: number; user_name: string; route_id?: number | string; vehicle_plate?: string; evidence?: Array<{ base64_data?: string; file_name?: string }>; metadata?: { supplied_user_name?: string; employee_code?: string; employee_name?: string; identity_aliases?: string[] } };
 type TimeRoute = { id: number; date: string; vehicle_plate: string; employees: string[]; start_time: string; end_time: string; status: string };
 type ReportRow = {
   key: string;
@@ -127,7 +127,27 @@ export default function HrReportsPage() {
       const exit = sorted.find((item) => item.type === "salida");
       const gross = entry && exit ? Math.max(0, new Date(exit.punched_at).getTime() - new Date(entry.punched_at).getTime()) / 60000 : 0;
       const lunch = lunchStart && lunchEnd ? Math.max(0, new Date(lunchEnd.punched_at).getTime() - new Date(lunchStart.punched_at).getTime()) / 60000 : 0;
-      const routeActivities = activities.filter((activity) => activity.user_name === userName);
+      const userAliases = new Set([
+        userName,
+        employee?.id,
+        employee?.code,
+        employeeName(employee, ""),
+        employee?.user?.email,
+        employee?.metadata?.name,
+        ...(Array.isArray(employee?.metadata?.identity_aliases) ? employee.metadata.identity_aliases : [])
+      ].filter(Boolean).map((value) => String(value).trim().toLowerCase()));
+      const routeActivities = activities.filter((activity) => {
+        const activityAliases = [
+          activity.user_name,
+          activity.employee_id,
+          activity.user_id,
+          activity.metadata?.supplied_user_name,
+          activity.metadata?.employee_code,
+          activity.metadata?.employee_name,
+          ...(Array.isArray(activity.metadata?.identity_aliases) ? activity.metadata.identity_aliases : [])
+        ].filter(Boolean).map((value) => String(value).trim().toLowerCase());
+        return activityAliases.some((alias) => userAliases.has(alias)) || (activity.route_id && String(activity.route_id) === String(sorted[0]?.route_id));
+      });
       const events = [
         ...sorted.map((punch) => ({ kind: "Marcacion", title: punch.type, at: punch.punched_at, gps: gps(punch), detail: punch.extra_minutes ? `${punch.extra_minutes} min extra` : "" })),
         ...routeActivities.map((activity) => ({ kind: "Actividad", title: activity.activity_type_name || "Actividad operativa", at: activity.occurred_at, gps: gps(activity), detail: activity.observation || "" }))

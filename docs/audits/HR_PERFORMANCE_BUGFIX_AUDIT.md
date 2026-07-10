@@ -56,3 +56,32 @@ Caso local `demo04@apex.local`, ruta 8:
 - Jornada queda cerrada (`session_active: false`).
 - Monitor en vivo muestra `demo04`, `online: true`, `footprint_source: live`, `last_punch_type: salida`.
 - Resumen de ruta: 4 `punch_points`, 1 `activity_point`, 5 `gps_pings`, 1 persona online y con GPS.
+
+## Regresion produccion Supabase - usuario demo04 no visible
+
+Fecha de diagnostico: 2026-07-10.
+
+### Sintomas observados en Railway
+
+- El mapa mostraba una persona asignada como `USR-1783623776426`, pero sin GPS.
+- La marcacion movil mostraba `demo04` y permitia avanzar en marcas, pero indicaba que no habia horario asignado.
+- El monitor administrativo del horario no mostraba marcaciones ni actividades.
+- Una actividad con evidencia se guardaba desde movil, pero no aparecia en reportes ni trazabilidad.
+
+### Causa raiz adicional
+
+- En produccion Supabase, la ficha operativa puede existir como empleado `USR-...` mientras el usuario autenticado opera como `demo04`. El fallback buscaba empleado solo por `user_id`; si la ficha no estaba enlazada, creaba una identidad virtual y las marcas quedaban bajo otro alias.
+- `/hr/me` no devolvia `document_number` ni aliases suficientes para que la pantalla movil encontrara horarios asignados por codigo/documento.
+- La lectura fallback de `/hr/attendance` devolvia datos incompletos para reportes: no incluia `employee_id`, `user_id`, fecha, ruta, GPS ni extras.
+- No existia lectura completa de `/hr/work-activities` desde Supabase; las actividades se guardaban como `gps_pings.source=work_activity`, pero reportes no las recuperaban.
+- El monitor solo asociaba eventos con `route_id` explicito; si una marca/actividad nacia sin ruta por no detectar horario en movil, quedaba huerfana.
+
+### Correccion aplicada
+
+- `currentSupabaseEmployee()` ahora reconcilia por `user_id`, email, nombre, documento, codigo y metadata antes de usar empleado virtual.
+- Marcas, actividades y pings guardan `identity_aliases`, `supplied_user_name`, `employee_code`, `employee_name` y email operativo.
+- Si movil no envia `route_id`, el fallback infiere el horario activo del dia por asignacion y aliases del empleado.
+- `operations-map` asocia eventos sin ruta explicita cuando coinciden con la persona asignada al horario.
+- `/hr/attendance` devuelve contrato completo para reportes y trazabilidad.
+- `/hr/work-activities` GET lee actividades/evidencias desde `gps_pings.source=work_activity`.
+- Marcacion movil y reportes cruzan datos por aliases, no solo por igualdad exacta de `user_name`.

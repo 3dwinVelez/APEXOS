@@ -8,7 +8,7 @@ import { AlertTriangle, ArrowLeft, CheckCircle2, ExternalLink, MapPin, Navigatio
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
-type Employee = { id: number; code: string; user_type?: string; position?: string; metadata: { name: string; user_type?: string }; user: { name: string } };
+type Employee = { id: number | string; user_id?: string; code: string; document_number?: string; user_type?: string; position?: string; metadata: { name: string; user_type?: string; code?: string; identity_aliases?: string[] }; user: { name: string; email?: string } };
 type Attendance = { user_name: string; next_type: string | null; punches: Array<{ id: number; type: string; time: string; vehicle_plate: string }> };
 type TimeRoute = { id: number; vehicle_plate: string; employees: string[]; start_time: string; end_time: string };
 type PreopItem = { section: string; item_key: string; label: string; severity: string; blocks_route: boolean; evidence_required: boolean };
@@ -51,6 +51,21 @@ function mapsUrl(gps: GpsFix) {
 
 function normalizeKey(value: string) {
   return String(value || "").trim().toLowerCase();
+}
+
+function employeeAliases(employee: Employee | null) {
+  if (!employee) return [];
+  return Array.from(new Set([
+    employee.id,
+    employee.user_id,
+    employee.code,
+    employee.document_number,
+    employee.metadata?.code,
+    employee.metadata?.name,
+    employee.user?.name,
+    employee.user?.email,
+    ...(Array.isArray(employee.metadata?.identity_aliases) ? employee.metadata.identity_aliases : [])
+  ].filter(Boolean).map((value) => normalizeKey(String(value)))));
 }
 
 function osmEmbedUrl(gps: GpsFix) {
@@ -120,8 +135,9 @@ export default function MobilePunchPage() {
   }, [load]);
 
   const userName = employee?.code || employeeName(employee) || "";
+  const aliases = employeeAliases(employee);
   const currentAttendance = attendance.find((item) => {
-    const match = item.user_name === userName || item.user_name === employeeName(employee);
+    const match = aliases.includes(normalizeKey(item.user_name)) || item.user_name === userName || item.user_name === employeeName(employee);
     return match;
   }) || { user_name: userName, next_type: "entrada", punches: [] };
   const doneTypes = new Set(currentAttendance.punches.map((punch) => punch.type) || []);
@@ -131,7 +147,7 @@ export default function MobilePunchPage() {
     const routeEmployees = item.employees || [];
     return routeEmployees.some((emp) => {
       const empKey = normalizeKey(emp);
-      return empKey === normalizeKey(userName) || empKey === normalizeKey(employee?.code || "") || empKey === normalizeKey(displayName);
+      return aliases.includes(empKey) || empKey === normalizeKey(userName) || empKey === normalizeKey(employee?.code || "") || empKey === normalizeKey(displayName);
     });
   }) || routes.find((item) => displayName && item.employees.includes(displayName));
   const vehiclePlate = route?.vehicle_plate || "";
