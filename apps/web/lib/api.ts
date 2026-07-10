@@ -568,6 +568,32 @@ function isVirtualEmployee(employee: { metadata?: AnyRow } | null | undefined) {
   return employee?.metadata?.virtual_employee === true;
 }
 
+function supabaseEmployeeIdentity(employee: {
+  id?: string;
+  user_id?: string;
+  email?: string;
+  metadata?: AnyRow;
+  first_name?: string;
+  last_name?: string;
+}, preferredUserName?: unknown) {
+  const virtual = isVirtualEmployee(employee);
+  const userName = String(
+    preferredUserName ||
+    employee.metadata?.code ||
+    employee.metadata?.name ||
+    fullName(employee) ||
+    employee.email ||
+    employee.id ||
+    ""
+  ).trim();
+  return {
+    employee_id: virtual ? null : employee.id || null,
+    user_id: employee.user_id || (virtual ? employee.id || null : null),
+    user_name: userName || "usuario_supabase",
+    virtual
+  };
+}
+
 async function accessibleSupabaseServiceOrder(orderId: string, options: { includeFinished?: boolean } = {}) {
   const employee = technicianSession() ? await currentSupabaseEmployee() : null;
   if (technicianSession() && (!employee || isVirtualEmployee(employee))) {
@@ -1105,6 +1131,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const body = JSON.parse(String(options.body || "{}"));
     const now = body.punched_at ? new Date(body.punched_at) : new Date();
     const name = fullName(employee);
+    const identity = supabaseEmployeeIdentity(employee, body.user_name || name);
     let extraMinutes = 0;
     if ((body.type || body.tipo_marca) === "salida" && body.route_id) {
       const routeRows = await supabaseFetch<Array<{ route_date?: string; end_time?: string }>>(`/rest/v1/operational_routes?select=route_date,end_time&id=eq.${body.route_id}&company_id=eq.${encodeURIComponent(employee.company_id)}&limit=1`).catch((error) => {
@@ -1125,10 +1152,10 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     } : {};
     const row = {
       company_id: employee.company_id,
-      employee_id: isVirtualEmployee(employee) ? null : employee.id,
-      user_id: employee.user_id || null,
+      employee_id: identity.employee_id,
+      user_id: identity.user_id,
       route_id: body.route_id || null,
-      user_name: body.user_name || name,
+      user_name: identity.user_name,
       punch_type: body.type || body.tipo_marca,
       punched_at: now.toISOString(),
       punch_date: localDate(now),
@@ -1159,7 +1186,11 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         headers: { Prefer: "return=representation" }
       });
     }
-    const punchIdentityFilter = isVirtualEmployee(employee) ? `user_id=eq.${employee.user_id}` : `employee_id=eq.${employee.id}`;
+    const punchIdentityFilter = identity.employee_id
+      ? `employee_id=eq.${identity.employee_id}`
+      : identity.user_id
+        ? `user_id=eq.${identity.user_id}`
+        : `user_name=eq.${encodeURIComponent(identity.user_name)}`;
     const punches = await supabaseFetch<Array<{ punch_type: string }>>(`/rest/v1/time_punches?select=punch_type&company_id=eq.${encodeURIComponent(employee.company_id)}&${punchIdentityFilter}&punch_date=eq.${localDate(now)}&order=punched_at.asc&limit=12`).catch((error) => {
       safeDevLog("No fue posible recalcular siguiente marcacion.", error);
       return [];
@@ -1181,12 +1212,13 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const body = JSON.parse(String(options.body || "{}"));
     const type = fallbackActivityTypes.find((item) => item.id === Number(body.activity_type_id)) || fallbackActivityTypes[0];
     const now = body.occurred_at ? new Date(body.occurred_at) : new Date();
+    const identity = supabaseEmployeeIdentity(employee, body.user_name);
     const row = {
       company_id: employee.company_id,
-      employee_id: isVirtualEmployee(employee) ? null : employee.id,
-      user_id: employee.user_id || null,
+      employee_id: identity.employee_id,
+      user_id: identity.user_id,
       route_id: body.route_id || null,
-      user_name: fullName(employee),
+      user_name: identity.user_name,
       latitude: body.latitude,
       longitude: body.longitude,
       accuracy_meters: body.accuracy_meters ?? null,
@@ -1222,28 +1254,35 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const employee = await currentSupabaseEmployee();
     if (!employee?.company_id) return null;
     const body = JSON.parse(String(options.body || "{}"));
+    const capturedAt = body.captured_at ? new Date(body.captured_at) : new Date();
+    const identity = supabaseEmployeeIdentity(employee, body.user_name);
     const fix = {
       company_id: employee.company_id,
-      employee_id: employee.id,
-      user_id: employee.user_id || null,
-      user_name: String(employee.metadata?.code || employee.metadata?.name || employee.email || employee.id).toLowerCase().replace(/[^a-z0-9_@.-]/g, "_").slice(0, 80),
+      employee_id: identity.employee_id,
+      user_id: identity.user_id,
+      user_name: identity.user_name,
       route_id: body.route_id || null,
       vehicle_id: null,
       latitude: Number(body.latitude || 0),
       longitude: Number(body.longitude || 0),
       accuracy_meters: Number(body.accuracy_meters || 0),
       source: body.source || "mobile",
-      captured_at: new Date().toISOString(),
-      metadata: { user_email: employee.email || "", source: body.source }
+      captured_at: capturedAt.toISOString(),
+      metadata: {
+        ...(body.metadata || {}),
+        user_email: employee.email || "",
+        source: body.source,
+        vehicle_plate: body.vehicle_plate || "",
+        supplied_user_name: body.user_name || "",
+        virtual_employee: identity.virtual
+      }
     };
-    await supabaseFetch("/rest/v1/gps_pings", {
+    const inserted = await supabaseFetch<Array<Record<string, unknown>>>("/rest/v1/gps_pings?select=*", {
       method: "POST",
       body: JSON.stringify(fix),
-      headers: { Prefer: "return=minimal" }
-    }).catch((error) => {
-      safeDevLog("No fue posible guardar ping GPS en Supabase.", error);
+      headers: { Prefer: "return=representation" }
     });
-    return { ok: true } as T;
+    return { ok: true, ping: inserted[0] || fix } as T;
   }
 
   if (pathname === "/api/v1/hr/schedules") {

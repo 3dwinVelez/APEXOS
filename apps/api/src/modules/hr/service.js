@@ -102,6 +102,11 @@ function normalizeKey(value) {
   return String(value || "").trim().toLowerCase();
 }
 
+function numericId(value) {
+  const id = Number(value);
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
+
 function employeeType(employee) {
   return normalizeKey(employee?.user_type || employee?.position || employee?.metadata?.user_type || employee?.metadata?.classification);
 }
@@ -391,15 +396,17 @@ async function createRoutesBulk(tenantId, input) {
 
 async function findEmployee(input) {
   if (input.employee_id) {
-    const id = Number(input.employee_id);
-    if (!Number.isNaN(id)) return prisma.employee.findFirst({ where: { id } });
-    // UUID fallback: search by user_id or code
+    const id = numericId(input.employee_id);
+    if (id) return prisma.employee.findFirst({ where: { id } });
+    const key = String(input.employee_id).trim();
+    // Supabase sessions can send UUIDs; Prisma employee/user ids are numeric, so only match stable aliases here.
     return prisma.employee.findFirst({
       where: {
         OR: [
-          { user_id: String(input.employee_id).includes("@") ? undefined : Number(input.employee_id) },
-          { code: String(input.employee_id) }
-        ].filter(Boolean)
+          { code: key },
+          { metadata: { path: ["supabase_employee_id"], equals: key } },
+          { metadata: { path: ["supabase_user_id"], equals: key } }
+        ]
       }
     });
   }

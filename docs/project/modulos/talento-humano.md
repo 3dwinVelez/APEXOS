@@ -24,6 +24,10 @@
 - Cada marcacion en el mapa es clicable y muestra tipo de marca, hora, fecha, placa, ruta, coordenadas, precision y minutos extra cuando aplique.
 - El mapa GPS incorpora modo Historico, equivalente al flujo legacy, para revisar rutas cerradas o pasadas por fecha, ruta y usuario sin depender de que exista GPS activo en ese momento.
 - Se normalizo el rango de fecha operativa a America/Bogota para que las rutas y marcaciones historicas se recuperen correctamente aunque el proceso Node corra con otra zona horaria.
+- El fallback Supabase de GPS ya no confirma exito cuando la escritura falla: cualquier error de RLS, columnas, red o identidad se propaga al frontend para evitar falsos positivos de presencia.
+- La identidad operativa de Supabase se normaliza antes de guardar GPS, marcaciones y actividades: empleados reales usan `employee_id`, usuarios sin ficha operativa usan `user_id`, y `user_name` conserva el alias enviado por la pantalla movil.
+- Las pings GPS guardan la placa y el nombre suministrado dentro de `metadata` cuando la tabla Supabase no tiene columna fisica `vehicle_plate`, manteniendo trazabilidad para diagnostico y reconciliacion.
+- El backend Prisma evita convertir UUIDs de Supabase a IDs numericos: si llega un UUID por `employee_id`, busca aliases/metadatos estables y no genera consultas con `NaN`.
 - Se agregaron escenarios demo para validar mapa historico, recorrido por marcaciones y ultima huella offline:
   - `node scripts/seed-hr-map-demo.js`
   - `node scripts/validate-hr-map-demo.js`
@@ -40,6 +44,8 @@ Talento Humano debe separar operacion diaria, configuracion y seguimiento. Marca
 - Ver ubicacion en mapa y tracking de ruta.
 - Ver en el mapa central todas las personas con ruta planeada, diferenciando online, sin senal y sin GPS.
 - Confirmar que una marcacion movil con GPS actualiza la presencia operativa en vivo.
+- Confirmar que una falla al guardar presencia GPS en Supabase no se muestra como exitosa y deja alerta visible en la pantalla movil.
+- Confirmar que usuarios Supabase sin ficha `employees` real pueden guardar GPS usando `user_id` sin romper RLS ni foreign keys.
 - Confirmar que una persona sin GPS activo sigue apareciendo con su ultima huella conocida.
 - Confirmar que las cuatro marcaciones de una ruta se conectan visualmente y muestran detalle al hacer clic.
 - Confirmar que el modo Historico muestra rutas cerradas con sus 4 marcaciones por usuario, recorrido conectado y detalle clicable de cada marca.
