@@ -11,7 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 type Employee = { id: number | string; user_id?: string; code: string; document_number?: string; user_type?: string; position?: string; metadata: { name: string; user_type?: string; code?: string; identity_aliases?: string[] }; user: { name: string; email?: string } };
 type Attendance = { user_name: string; route_id?: number | string | null; next_type: string | null; punches: Array<{ id: number; type: string; time: string; vehicle_plate: string }> };
 type AttendancePunch = Attendance["punches"][number];
-type TimeRoute = { id: number | string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string };
+type TimeRoute = { id: number | string; code?: string; display_id?: string; source_route_id?: number | string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string };
 type OperationPunch = { id: number | string; user_name: string; type: string; time?: string; punched_at?: string; vehicle_plate?: string; route_id?: number | string | null };
 type OperationActivity = { id: number | string; user_name: string; type: string; time?: string; occurred_at?: string; observation?: string; latitude?: number; longitude?: number; accuracy_meters?: number; evidence?: Array<{ base64_data?: string; file_name?: string }> };
 type OperationRoute = TimeRoute & { punch_points?: OperationPunch[]; activity_points?: OperationActivity[] };
@@ -86,7 +86,7 @@ async function flushPendingSync(onUpdate?: (items: PendingSyncItem[], message?: 
         queue = queue.slice(1);
         writePendingSync(queue);
         changed = true;
-        onUpdate?.(queue, `${item.label} sincronizado.`);
+        onUpdate?.(queue, queue.length ? `${item.label} sincronizado. Quedan ${queue.length} registro(s) por confirmar.` : `${item.label} sincronizado. El monitor ya puede actualizarse.`);
       } catch {
         const next = { ...item, attempts: item.attempts + 1 };
         queue = [next, ...queue.slice(1)];
@@ -153,6 +153,16 @@ function osmEmbedUrl(gps: GpsFix) {
     gps.latitude + delta
   ].join(",");
   return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${gps.latitude},${gps.longitude}`;
+}
+
+function routeSyncMetadata(route: TimeRoute | null | undefined) {
+  if (!route) return {};
+  const displayRouteId = route.display_id || route.code || route.id;
+  return {
+    display_route_id: displayRouteId ? String(displayRouteId) : "",
+    route_code: route.code ? String(route.code) : "",
+    source_route_id: route.source_route_id ? String(route.source_route_id) : ""
+  };
 }
 
 export default function MobilePunchPage() {
@@ -341,6 +351,7 @@ export default function MobilePunchPage() {
             employee_id: employee.id,
             vehicle_plate: vehiclePlate,
             route_id: route?.id,
+            metadata: { source: "mobile_live_presence", ...routeSyncMetadata(route) },
             ...fix,
             source: "mobile_live_presence"
           })
@@ -355,7 +366,7 @@ export default function MobilePunchPage() {
       mounted = false;
       if (timer) window.clearInterval(timer);
     };
-  }, [employee, route?.id, userName, vehiclePlate]);
+  }, [employee, route, userName, vehiclePlate]);
 
   useEffect(() => {
     if (activeSessionRouteId && activeSessionRouteId !== selectedRouteId) {
@@ -387,6 +398,7 @@ export default function MobilePunchPage() {
             employee_id: employee?.id,
             vehicle_plate: vehiclePlate,
             route_id: route?.id,
+            metadata: { source: "mobile_presence", ...routeSyncMetadata(route) },
             ...fix,
             source: "mobile_presence"
           })
@@ -437,7 +449,7 @@ export default function MobilePunchPage() {
         extra_reason: type === "salida" ? extraReason : undefined,
         extra_detail: type === "salida" ? extraDetail : undefined,
         extra_evidence: type === "salida" ? extraEvidence : undefined,
-        metadata: { source: "apexos-mobile", current_user_only: true }
+        metadata: { source: "apexos-mobile", current_user_only: true, ...routeSyncMetadata(route) }
       };
       setExtraReason("");
       setExtraDetail("");
@@ -532,7 +544,7 @@ export default function MobilePunchPage() {
       vehicle_plate: vehiclePlate,
       observation: savedObservation,
       photo: savedPhoto,
-      metadata: { source: "apexos-mobile-activity" }
+      metadata: { source: "apexos-mobile-activity", ...routeSyncMetadata(route) }
     };
     enqueuePendingSync("/api/v1/hr/work-activities", activityPayload, "Actividad");
     setPendingSync(readPendingSync());
@@ -606,7 +618,7 @@ export default function MobilePunchPage() {
       {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-900">{message}</div> : null}
       {pendingSync.length ? (
         <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-950">
-          {pendingSync.length} registro(s) pendiente(s) de sincronizar. Se reintentara automaticamente mientras esta pantalla este abierta.
+          {pendingSync.length} registro(s) pendiente(s) de sincronizar. El monitor se actualizara cuando esta cola quede en cero.
         </div>
       ) : null}
 

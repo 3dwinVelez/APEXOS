@@ -173,6 +173,25 @@ function optionalNumericId(value) {
   return value == null || value === "" ? null : numericId(value);
 }
 
+function operationalRouteNumericId(input = {}) {
+  return optionalNumericId(input.route_id)
+    || optionalNumericId(input.metadata?.display_route_id)
+    || optionalNumericId(input.metadata?.route_code)
+    || optionalNumericId(input.metadata?.legacy_route_id);
+}
+
+function routeEventMetadata(input = {}, routeId = null) {
+  const metadata = input.metadata || {};
+  const displayRouteId = metadata.display_route_id || metadata.route_code || input.route_id || routeId || "";
+  return {
+    ...metadata,
+    display_route_id: displayRouteId ? String(displayRouteId) : "",
+    route_code: metadata.route_code ? String(metadata.route_code) : (displayRouteId ? String(displayRouteId) : ""),
+    source_route_id: metadata.source_route_id ? String(metadata.source_route_id) : "",
+    legacy_route_id: metadata.legacy_route_id ? String(metadata.legacy_route_id) : ""
+  };
+}
+
 function employeeType(employee) {
   return normalizeKey(employee?.user_type || employee?.position || employee?.metadata?.user_type || employee?.metadata?.classification);
 }
@@ -1022,7 +1041,7 @@ async function createWorkActivity(tenantId, user, input) {
     }
     assertSafeFile({ base64_data: input.photo.base64, file_name: input.photo.name, mime_type: input.photo.type, file_size: input.photo.size }, { maxBytes: MAX_EVIDENCE_BYTES });
     const employeeId = optionalNumericId(input.employee_id);
-    const inputRouteId = optionalNumericId(input.route_id);
+    const inputRouteId = operationalRouteNumericId(input);
     const employee = employeeId
       ? await prisma.employee.findFirst({ where: { id: employeeId, tenant_id: tenantId }, include: { user: { select: { name: true, email: true } } } })
       : await getCurrentEmployee(tenantId, user).catch(() => null);
@@ -1058,7 +1077,7 @@ async function createWorkActivity(tenantId, user, input) {
         observation: input.observation,
         alert_level: Number(input.accuracy_meters || 0) > 80 || activityType.name.toLowerCase().includes("varado") || activityType.name.toLowerCase().includes("novedad") ? "warning" : "normal",
         metadata: {
-          ...(input.metadata || {}),
+          ...routeEventMetadata(input, inputRouteId || session.route_id),
           supplied_user_name: input.user_name || "",
           employee_code: employee?.code || "",
           employee_name: employeeDisplayName(employee) || userName || session.user_name,
@@ -1096,6 +1115,7 @@ async function createWorkActivity(tenantId, user, input) {
         metadata: {
           activity_id: activity.id,
           activity_type: activityType.name,
+          ...routeEventMetadata(input, inputRouteId || session.route_id),
           supplied_user_name: input.user_name || "",
           employee_code: employee?.code || "",
           employee_name: employeeDisplayName(employee) || userName || session.user_name,
@@ -1152,7 +1172,7 @@ async function createPunch(tenantId, input, user) {
     }) : null;
     const employee = currentEmployee || await resolveEmployeeForPunch(tenantId, input);
     const type = normalizePunchType(input.type || input.tipo_marca);
-    const inputRouteId = optionalNumericId(input.route_id);
+    const inputRouteId = operationalRouteNumericId(input);
     const route = inputRouteId ? await prisma.timeRoute.findFirst({ where: { id: inputRouteId } }) : null;
     const preopApproved = isDriver(employee) && route?.vehicle_plate && type === "entrada"
       ? await prisma.routePreoperationalChecklist.findFirst({
@@ -1243,7 +1263,7 @@ async function createPunch(tenantId, input, user) {
           })
         } : {},
         metadata: {
-          ...(input.metadata || {}),
+          ...routeEventMetadata(input, route?.id || inputRouteId),
           supplied_user_name: input.user_name || "",
           employee_code: employee.code || "",
           employee_name: employeeDisplayName(employee) || resolvedUserName,
@@ -1266,7 +1286,7 @@ async function createPunch(tenantId, input, user) {
           captured_at: punchedAt,
           metadata: {
             type,
-            ...(input.metadata || {}),
+            ...routeEventMetadata(input, route?.id || inputRouteId),
             supplied_user_name: input.user_name || "",
             employee_code: employee.code || "",
             employee_name: employeeDisplayName(employee) || resolvedUserName,
@@ -1284,7 +1304,7 @@ async function createPunch(tenantId, input, user) {
       vehicle_plate: input.vehicle_plate || "",
       metadata: {
         source: "time_punch",
-        ...(input.metadata || {}),
+        ...routeEventMetadata(input, route?.id || inputRouteId),
         supplied_user_name: input.user_name || "",
         employee_code: employee.code || "",
         employee_name: employeeDisplayName(employee) || resolvedUserName,
@@ -1360,14 +1380,14 @@ async function createGpsPing(tenantId, input) {
         employee_id: employeeId,
         user_name: resolvedName,
         vehicle_plate: input.vehicle_plate || "",
-        route_id: optionalNumericId(input.route_id),
+        route_id: operationalRouteNumericId(input),
         latitude: Number(input.latitude),
         longitude: Number(input.longitude),
         accuracy_meters: input.accuracy_meters,
         source: input.source || "mobile",
         captured_at: input.captured_at ? new Date(input.captured_at) : new Date(),
         metadata: {
-          ...(input.metadata || {}),
+          ...routeEventMetadata(input, operationalRouteNumericId(input)),
           supplied_user_name: input.user_name || "",
           employee_code: employee?.code || "",
           employee_name: employeeDisplayName(employee) || resolvedName,
