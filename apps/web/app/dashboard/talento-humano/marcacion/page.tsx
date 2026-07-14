@@ -10,7 +10,7 @@ import { useCallback, useEffect, useState } from "react";
 
 type Employee = { id: number | string; user_id?: string; code: string; document_number?: string; user_type?: string; position?: string; metadata: { name: string; user_type?: string; code?: string; identity_aliases?: string[] }; user: { name: string; email?: string } };
 type Attendance = { user_name: string; next_type: string | null; punches: Array<{ id: number; type: string; time: string; vehicle_plate: string }> };
-type TimeRoute = { id: number; vehicle_plate: string; employees: string[]; start_time: string; end_time: string };
+type TimeRoute = { id: number | string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string };
 type PreopItem = { section: string; item_key: string; label: string; severity: string; blocks_route: boolean; evidence_required: boolean };
 type PreopChecklist = { id: number; route_id?: number; plate: string; checklist_status: string; risk_level: string };
 type PreopTemplate = { sections: string[]; items: PreopItem[] };
@@ -148,12 +148,12 @@ export default function MobilePunchPage() {
   const nextType = currentAttendance.next_type || "entrada";
   const displayName = employeeName(employee) || "";
   const route = routes.find((item) => {
-    const routeEmployees = item.employees || [];
+    const routeEmployees = [...(item.employees || []), ...(item.employee_ids || []), ...(item.employee_names || [])];
     return routeEmployees.some((emp) => {
       const empKey = normalizeKey(emp);
       return aliases.includes(empKey) || empKey === normalizeKey(userName) || empKey === normalizeKey(employee?.code || "") || empKey === normalizeKey(displayName);
     });
-  }) || routes.find((item) => displayName && item.employees.includes(displayName));
+  }) || routes.find((item) => displayName && [...(item.employees || []), ...(item.employee_names || [])].some((name) => normalizeKey(name) === normalizeKey(displayName)));
   const vehiclePlate = route?.vehicle_plate || "";
   const isClosingLate = (() => {
     if (nextType !== "salida" || !route?.end_time) return false;

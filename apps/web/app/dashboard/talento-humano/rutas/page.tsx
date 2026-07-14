@@ -45,7 +45,9 @@ function routeLabel(route: RouteMonitor) {
 }
 
 function employeeValue(employee: Employee) {
-  return String(employee.id);
+  const code = String(employee.code || "").trim();
+  if (code && !/^(usuario[-\s]\d+|usr-\d+)$/i.test(code)) return code;
+  return employeeName(employee);
 }
 
 function routeEmployeeNames(route: TimeRoute | RouteMonitor) {

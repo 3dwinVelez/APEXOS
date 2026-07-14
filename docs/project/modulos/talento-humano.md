@@ -28,7 +28,8 @@
 - La identidad operativa de Supabase se normaliza antes de guardar GPS, marcaciones y actividades: empleados reales usan `employee_id`, usuarios sin ficha operativa usan `user_id`, y `user_name` conserva el alias enviado por la pantalla movil.
 - Las pings GPS guardan la placa y el nombre suministrado dentro de `metadata` cuando la tabla Supabase no tiene columna fisica `vehicle_plate`, manteniendo trazabilidad para diagnostico y reconciliacion.
 - El backend Prisma evita convertir UUIDs de Supabase a IDs numericos: si llega un UUID por `employee_id`, busca aliases/metadatos estables y no genera consultas con `NaN`.
-- La asignacion de horarios separa identidad tecnica y visual: la UI envia IDs estables de empleado, pero muestra `employee_names`; el monitor correlaciona marcaciones, actividades y GPS por `employee_id`, `user_id`, `user_name`, email y metadata, evitando que aliases genericos como `USR-*` oculten al usuario real.
+- La asignacion de horarios separa identidad tecnica y visual: la UI envia un alias operativo legible de empleado y el monitor expone `employee_names`; la trazabilidad correlaciona marcaciones, actividades y GPS por `employee_id`, `user_id`, `user_name`, email y metadata, evitando que aliases genericos como `USR-*` oculten al usuario real.
+- La creacion/edicion/clonacion de horarios normaliza la persona asignada hacia un alias operativo usable por Marcacion movil; si llega un UUID o ID tecnico, el backend intenta resolverlo contra aliases del empleado antes de guardar `route.employees`.
 - Se agregaron escenarios demo para validar mapa historico, recorrido por marcaciones y ultima huella offline:
   - `node scripts/seed-hr-map-demo.js`
   - `node scripts/validate-hr-map-demo.js`
@@ -52,6 +53,7 @@ Talento Humano debe separar operacion diaria, configuracion y seguimiento. Marca
 - Confirmar que la marcacion movil no bloquea el registro esperando el ping redundante de presencia: la marca debe guardar rapido y la presencia se actualiza en segundo plano.
 - Confirmar que el monitor en vivo correlaciona por `employee_id`, `user_id`, `user_name`, email y metadata para usuarios demo/autocreados, evitando aliases genericos tipo `usuario-###`.
 - Confirmar que un usuario como `deemo04` asignado a un horario aparece con su nombre real y que sus marcaciones/actividades se ven en la trazabilidad aunque existan registros historicos con `USR-*`.
+- Confirmar que al crear un horario desde Administracion, la columna Personas no muestra UUIDs y la pantalla movil detecta el horario asignado antes de guardar marcaciones o actividades.
 - Confirmar que un flujo real de 4 marcas mas evento operativo deja 4 `punch_points`, al menos 1 `activity_point` y huellas GPS visibles en la ruta del monitor.
 - Confirmar que el modo Historico muestra rutas cerradas con sus 4 marcaciones por usuario, recorrido conectado y detalle clicable de cada marca.
 - Confirmar que el escenario `MAP-101` contiene una ruta historica cerrada con 2 tecnicos y 8 marcaciones georreferenciadas.

@@ -326,10 +326,11 @@ async function listRoutes(tenantId, query = {}) {
     for (const employee of employees) {
       for (const alias of aliasesForEmployee(employee)) employeeByAlias.set(normalizeKey(alias), employee);
     }
+    const resolveAssignedEmployee = (value) => employeeByAlias.get(normalizeKey(value));
     return rows.map((route) => ({
       ...route,
-      employee_ids: (Array.isArray(route.employees) ? route.employees : []).map((value) => String(employeeByAlias.get(normalizeKey(value))?.id || value)),
-      employee_names: (Array.isArray(route.employees) ? route.employees : []).map((value) => employeeDisplayName(employeeByAlias.get(normalizeKey(value))) || String(value)),
+      employee_ids: (Array.isArray(route.employees) ? route.employees : []).map((value) => String(resolveAssignedEmployee(value)?.id || value)),
+      employee_names: (Array.isArray(route.employees) ? route.employees : []).map((value) => employeeDisplayName(resolveAssignedEmployee(value)) || String(value)),
       placa: route.vehicle_plate,
       equipo: route.employees,
       h_inicio: route.start_time,
@@ -379,37 +380,43 @@ async function createEmployee(tenantId, input) {
 
 async function createRoute(tenantId, input) {
   validateRouteInput(input);
-  return prisma.runWithTenant(tenantId, async () => prisma.timeRoute.create({
-    data: {
-      date: startOfDay(input.date),
-      vehicle_plate: input.vehicle_plate || "",
-      employees: input.employees || [],
-      start_time: input.start_time || "08:00",
-      end_time: input.end_time || "17:00",
-      tolerance_minutes: input.tolerance_minutes ?? 15,
-      per_diem: Number(input.per_diem || 0),
-      notes: input.notes || "",
-      status: input.status || "active"
-    }
-  }));
+  return prisma.runWithTenant(tenantId, async () => {
+    const employees = await normalizeRouteEmployees(input.employees);
+    return prisma.timeRoute.create({
+      data: {
+        date: startOfDay(input.date),
+        vehicle_plate: input.vehicle_plate || "",
+        employees,
+        start_time: input.start_time || "08:00",
+        end_time: input.end_time || "17:00",
+        tolerance_minutes: input.tolerance_minutes ?? 15,
+        per_diem: Number(input.per_diem || 0),
+        notes: input.notes || "",
+        status: input.status || "active"
+      }
+    });
+  });
 }
 
 async function updateRoute(tenantId, id, input) {
   validateRouteInput(input);
-  return prisma.runWithTenant(tenantId, async () => prisma.timeRoute.update({
-    where: { id: Number(id) },
-    data: {
-      date: startOfDay(input.date),
-      vehicle_plate: input.vehicle_plate || "",
-      employees: input.employees || [],
-      start_time: input.start_time || "08:00",
-      end_time: input.end_time || "17:00",
-      tolerance_minutes: input.tolerance_minutes ?? 15,
-      per_diem: Number(input.per_diem || 0),
-      notes: input.notes || "",
-      status: input.status || "active"
-    }
-  }));
+  return prisma.runWithTenant(tenantId, async () => {
+    const employees = await normalizeRouteEmployees(input.employees);
+    return prisma.timeRoute.update({
+      where: { id: Number(id) },
+      data: {
+        date: startOfDay(input.date),
+        vehicle_plate: input.vehicle_plate || "",
+        employees,
+        start_time: input.start_time || "08:00",
+        end_time: input.end_time || "17:00",
+        tolerance_minutes: input.tolerance_minutes ?? 15,
+        per_diem: Number(input.per_diem || 0),
+        notes: input.notes || "",
+        status: input.status || "active"
+      }
+    });
+  });
 }
 
 function validateRouteInput(input = {}) {
@@ -423,6 +430,20 @@ function validateRouteInput(input = {}) {
   if (end <= start) throw validationError("La hora de fin debe ser posterior a la hora de inicio.");
   if (Number(input.tolerance_minutes ?? 15) < 0) throw validationError("La tolerancia no puede ser negativa.");
   if (Number(input.per_diem || 0) < 0) throw validationError("El viatico o auxilio no puede ser negativo.");
+}
+
+async function normalizeRouteEmployees(inputEmployees = []) {
+  const values = Array.isArray(inputEmployees) ? inputEmployees.map((item) => String(item || "").trim()).filter(Boolean) : [];
+  if (!values.length) return [];
+  const employees = await prisma.employee.findMany({ where: { active: true }, include: { user: { select: safeUserSelect } }, take: 1000 });
+  const employeeByAlias = new Map();
+  for (const employee of employees) {
+    for (const alias of aliasesForEmployee(employee)) employeeByAlias.set(normalizeKey(alias), employee);
+  }
+  return values.map((value) => {
+    const employee = employeeByAlias.get(normalizeKey(value));
+    return employee ? employeeUserName(employee, value) : value;
+  });
 }
 
 function datesForRouteRange(input) {
@@ -448,11 +469,12 @@ async function createRoutesBulk(tenantId, input) {
   const dates = datesForRouteRange(input);
   if (!dates.length) return { created: 0, routes: [] };
   return prisma.runWithTenant(tenantId, async () => {
+    const employees = await normalizeRouteEmployees(input.employees);
     const routes = await prisma.$transaction(dates.map((date) => prisma.timeRoute.create({
       data: {
         date,
         vehicle_plate: input.vehicle_plate || "",
-        employees: input.employees || [],
+        employees,
         start_time: input.start_time || "08:00",
         end_time: input.end_time || "17:00",
         tolerance_minutes: input.tolerance_minutes ?? 15,
@@ -1410,6 +1432,7 @@ async function getOperationsMap(tenantId, query = {}) {
     for (const employee of employees) {
       for (const alias of aliasesForEmployee(employee)) employeeByAlias.set(normalizeKey(alias), employee);
     }
+    const resolveAssignedEmployee = (value) => employeeByAlias.get(normalizeKey(value));
 
     const latestPingByUser = new Map();
     const pingsByRoute = new Map();
@@ -1462,7 +1485,7 @@ async function getOperationsMap(tenantId, query = {}) {
     for (const route of routes) {
       const assigned = Array.isArray(route.employees) ? route.employees : [];
       for (const assignedName of assigned) {
-        const employee = employeeByAlias.get(normalizeKey(assignedName));
+        const employee = resolveAssignedEmployee(assignedName);
         const aliases = employee ? aliasesForEmployee(employee) : [assignedName];
         const latestLivePing = aliases.map((alias) => latestPingByUser.get(normalizeKey(alias))).find(Boolean);
         const lastFootprint = aliases.map((alias) => lastFootprintByUser.get(normalizeKey(alias))).find(Boolean);
