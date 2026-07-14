@@ -121,27 +121,14 @@ function shouldPreferOperationalApi(path: string) {
   return path.startsWith("/api/v1/transport") || path.startsWith("/api/v1/hr");
 }
 
-function shouldUseSupabaseHrFallbackFirst(path: string, method: string) {
+function shouldBlockHrWriteFallback(path: string, method: string) {
   const pathname = path.split("?")[0];
-  if (!pathname.startsWith("/api/v1/hr/")) return false;
-  const readableRuntimePaths = new Set([
-    "/api/v1/hr/activity-types",
-    "/api/v1/hr/attendance",
-    "/api/v1/hr/me",
-    "/api/v1/hr/operations-map",
-    "/api/v1/hr/routes",
-    "/api/v1/hr/routes/preop/active",
-    "/api/v1/hr/routes/preop/template",
-    "/api/v1/hr/work-activities",
-    "/api/v1/hr/work-sessions/current"
-  ]);
-  const writableRuntimePaths = new Set([
+  const criticalWritePaths = new Set([
     "/api/v1/hr/gps/ping",
     "/api/v1/hr/time-punches",
     "/api/v1/hr/work-activities"
   ]);
-  return (method === "GET" && readableRuntimePaths.has(pathname))
-    || (method === "POST" && writableRuntimePaths.has(pathname));
+  return method !== "GET" && criticalWritePaths.has(pathname);
 }
 
 async function refreshSessionToken() {
@@ -3009,9 +2996,7 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
   let response: Response;
   const method = String(options.method || "GET").toUpperCase();
   const supabaseSession = isSupabaseSession();
-  const preferOperationalApi = HAS_CONFIGURED_API_URL
-    && shouldPreferOperationalApi(path)
-    && !(supabaseSession && shouldUseSupabaseHrFallbackFirst(path, method));
+  const preferOperationalApi = HAS_CONFIGURED_API_URL && shouldPreferOperationalApi(path);
 
   if (supabaseSession && !preferOperationalApi) {
     const fallback = await supabaseApiFallback<T>(path, options);
@@ -3056,7 +3041,7 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
   }
 
   if (!response.ok) {
-    if (supabaseSession) {
+    if (supabaseSession && !shouldBlockHrWriteFallback(path, method)) {
       const fallback = await supabaseApiFallback<T>(path, options);
       if (fallback !== null) {
         touchSession();
