@@ -447,6 +447,55 @@ async function runHrFlow(context, data, result) {
     alerts: session.alerts
   });
 
+  const legacyRoute = await hr.createRoute(context.tenant.id, {
+    date: DATE,
+    vehicle_plate: "",
+    employees: [data.incompleteOperator.employee.code],
+    start_time: "08:00",
+    end_time: "17:00",
+    tolerance_minutes: 15,
+    notes: `Ruta metadata legacy Nyvora ${TAG}`,
+    status: "active"
+  });
+  await prisma.timePunch.create({
+    data: {
+      tenant_id: context.tenant.id,
+      employee_id: data.incompleteOperator.employee.id,
+      user_name: data.incompleteOperator.employee.code,
+      type: "entrada",
+      punched_at: new Date(at("10:00")),
+      date: new Date(`${DATE}T00:00:00-05:00`),
+      time: "10:00",
+      latitude: 4.721,
+      longitude: -74.081,
+      accuracy_meters: 10,
+      vehicle_plate: "",
+      route_id: null,
+      metadata: {
+        source: TAG,
+        scenario: "metadata_only_route_match",
+        display_route_id: String(legacyRoute.id),
+        route_code: String(legacyRoute.id),
+        identity_aliases: [data.incompleteOperator.employee.code, data.incompleteOperator.email]
+      }
+    }
+  });
+  const legacyNext = await hr.createPunch(context.tenant.id, {
+    type: "inicio_almuerzo",
+    punched_at: at("12:10"),
+    user_name: data.incompleteOperator.employee.code,
+    route_id: legacyRoute.id,
+    latitude: 4.722,
+    longitude: -74.082,
+    accuracy_meters: 11,
+    metadata: { source: TAG, step: "metadata_route_sequence", display_route_id: String(legacyRoute.id), route_code: String(legacyRoute.id) }
+  }, actor(data.incompleteOperator));
+  record(result, "hr_sequence_accepts_metadata_only_route_marks", legacyNext.ok && legacyNext.punch?.type === "inicio_almuerzo", {
+    route_id: legacyRoute.id,
+    created_type: legacyNext.punch?.type || null,
+    next: legacyNext.next || null
+  });
+
   const gpsHistory = await hr.listGpsHistory(context.tenant.id, { date: DATE, user_name: data.driver.employee.code });
   const routeTracking = await hr.getRouteTracking(context.tenant.id, data.route.id, { date: DATE });
   record(result, "hr_gps_and_route_tracking_queryable", gpsHistory.length >= 4 && routeTracking.totals.punches >= 4, {
@@ -615,6 +664,7 @@ function writeEvidence(result) {
     "",
     "- `apps/api/src/modules/hr/service.js`: se corrigio la busqueda de empleado para normalizar `user_name` ausente y devolver error 400 controlado en marcaciones incompletas.",
     "- `apps/api/src/modules/hr/service.js`: la secuencia de marcacion valida aliases operativos enviados por el movil para alinear API, Marcacion y monitor.",
+    "- `apps/api/src/modules/hr/service.js`: la busqueda por horario acepta `route_id` numerico y metadata (`display_route_id`, `route_code`, `legacy_route_id`, `source_route_id`) para no perder marcas historicas.",
     "- `apps/web/app/dashboard/talento-humano/rutas/page.tsx`: el monitor muestra el ID del horario en la tabla principal.",
     "- `apps/web/lib/api.ts`: Transporte y Talento Humano ahora prefieren el API operativo cuando esta configurado, usando Supabase solo como respaldo para evitar pantallas vacias con datos reales en Prisma/API.",
     "- `scripts/nyvora-real-transport-hr-validation.js`: se agrego validador real Nyvora con datos controlados, horario minimo, credenciales temporales locales y evidencia automatica.",

@@ -369,8 +369,12 @@ export default function MobilePunchPage() {
   }, [employee, route, userName, vehiclePlate]);
 
   useEffect(() => {
-    if (activeSessionRouteId && activeSessionRouteId !== selectedRouteId) {
+    if (!selectedRouteId && activeSessionRouteId) {
       setSelectedRouteId(activeSessionRouteId);
+      return;
+    }
+    if (selectedRouteId && !assignedRoutes.some((item) => String(item.id) === String(selectedRouteId))) {
+      setSelectedRouteId("");
       return;
     }
     if (!selectedRouteId && assignedRoutes.length === 1) setSelectedRouteId(String(assignedRoutes[0].id));

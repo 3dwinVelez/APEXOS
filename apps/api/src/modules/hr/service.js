@@ -205,6 +205,21 @@ function routeEventMetadata(input = {}, routeId = null) {
   };
 }
 
+function routeScopeWhere(routeId = null) {
+  if (!routeId) return {};
+  const routeKey = String(routeId);
+  const routeNumericId = optionalNumericId(routeId);
+  return {
+    OR: [
+      ...(routeNumericId ? [{ route_id: routeNumericId }] : []),
+      { metadata: { path: ["display_route_id"], equals: routeKey } },
+      { metadata: { path: ["route_code"], equals: routeKey } },
+      { metadata: { path: ["legacy_route_id"], equals: routeKey } },
+      { metadata: { path: ["source_route_id"], equals: routeKey } }
+    ]
+  };
+}
+
 function employeeType(employee) {
   return normalizeKey(employee?.user_type || employee?.position || employee?.metadata?.user_type || employee?.metadata?.classification);
 }
@@ -912,11 +927,7 @@ async function findCurrentWorkSession({ employee, userName, routeId = null, date
   ].filter(Boolean).map((value) => String(value).trim()).filter(Boolean)));
   return prisma.workSession.findFirst({
     where: {
-      OR: [
-        { employee_id: employee?.id || -1 },
-        ...(identityAliases.length ? [{ user_name: { in: identityAliases } }] : [{ user_name: userName || "" }])
-      ],
-      ...(routeId ? { route_id: Number(routeId) } : {}),
+      ...operationalIdentityRouteWhere(employee, userName, routeId, identityAliases),
       date: { gte: startOfDay(date), lt: endOfDay(date) },
       status: "activa"
     },
@@ -938,11 +949,19 @@ function punchIdentityWhere(employee, userName, extraAliases = []) {
   return OR.length ? { OR } : { user_name: userName || "" };
 }
 
+function operationalIdentityRouteWhere(employee, userName, routeId = null, extraAliases = []) {
+  return {
+    AND: [
+      punchIdentityWhere(employee, userName, extraAliases),
+      routeScopeWhere(routeId)
+    ].filter((item) => Object.keys(item).length)
+  };
+}
+
 async function latestPunchesForEmployee(employee, userName, date = new Date(), routeId = null, extraAliases = []) {
   return prisma.timePunch.findMany({
     where: {
-      ...punchIdentityWhere(employee, userName, extraAliases),
-      ...(routeId ? { route_id: Number(routeId) } : {}),
+      ...operationalIdentityRouteWhere(employee, userName, routeId, extraAliases),
       date: { gte: startOfDay(date), lt: endOfDay(date) }
     },
     orderBy: { punched_at: "asc" }
@@ -959,8 +978,7 @@ async function ensureWorkSessionFromPunches({ employee, userName, routeId = null
   const resolvedUserName = userName || entry?.user_name || employeeUserName(employee, "");
   const existing = await prisma.workSession.findFirst({
     where: {
-      ...punchIdentityWhere(employee, resolvedUserName),
-      ...(resolvedRouteId ? { route_id: Number(resolvedRouteId) } : {}),
+      ...operationalIdentityRouteWhere(employee, resolvedUserName, resolvedRouteId, extraAliases),
       date: { gte: startOfDay(date), lt: endOfDay(date) },
       status: "activa"
     },
@@ -1341,7 +1359,7 @@ async function createPunch(tenantId, input, user) {
         orderBy: { completed_at: "desc" }
       }).catch(() => null);
       const existing = await prisma.workSession.findFirst({
-        where: { ...punchIdentityWhere(employee, resolvedUserName, identityAliases), route_id: route?.id || inputRouteId, date: { gte: startOfDay(punchedAt), lt: endOfDay(punchedAt) }, status: "activa" },
+        where: { ...operationalIdentityRouteWhere(employee, resolvedUserName, route?.id || inputRouteId, identityAliases), date: { gte: startOfDay(punchedAt), lt: endOfDay(punchedAt) }, status: "activa" },
         orderBy: { started_at: "desc" }
       });
       if (existing) {
@@ -1356,7 +1374,7 @@ async function createPunch(tenantId, input, user) {
       }
     } else {
       const session = await prisma.workSession.findFirst({
-        where: { ...punchIdentityWhere(employee, resolvedUserName, identityAliases), route_id: route?.id || inputRouteId, date: { gte: startOfDay(punchedAt), lt: endOfDay(punchedAt) }, status: "activa" },
+        where: { ...operationalIdentityRouteWhere(employee, resolvedUserName, route?.id || inputRouteId, identityAliases), date: { gte: startOfDay(punchedAt), lt: endOfDay(punchedAt) }, status: "activa" },
         orderBy: { started_at: "desc" }
       });
       if (session) {
