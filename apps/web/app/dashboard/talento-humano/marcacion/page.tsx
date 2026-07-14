@@ -61,6 +61,14 @@ function todayBogota() {
   return new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
 }
 
+function nextPunchForTypes(types: string[]) {
+  if (!types.includes("entrada")) return "entrada";
+  if (!types.includes("inicio_almuerzo")) return "inicio_almuerzo";
+  if (!types.includes("fin_almuerzo")) return "fin_almuerzo";
+  if (!types.includes("salida")) return "salida";
+  return null;
+}
+
 function isGenericIdentityAlias(value: unknown) {
   return /^(usuario[-\s]\d+|usr-\d+)$/i.test(String(value || "").trim());
 }
@@ -112,6 +120,7 @@ export default function MobilePunchPage() {
   const [fuelLevel, setFuelLevel] = useState("");
   const [signature, setSignature] = useState<CapturedFile | null>(null);
   const [session, setSession] = useState<WorkSession | null>(null);
+  const [optimisticActivities, setOptimisticActivities] = useState<WorkActivity[]>([]);
   const [activityTypes, setActivityTypes] = useState<ActivityType[]>([]);
   const [activityModal, setActivityModal] = useState(false);
   const [activityTypeId, setActivityTypeId] = useState("");
@@ -188,11 +197,27 @@ export default function MobilePunchPage() {
     const currentIndex = punchOrder.indexOf(lastType);
     return currentIndex >= 0 && currentIndex < punchOrder.length - 1 ? punchOrder[currentIndex + 1] : null;
   })();
-  const currentAttendance = attendanceForRoute && attendanceForRoute.punches.length
-    ? attendanceForRoute
-    : { user_name: userName, route_id: route?.id || null, next_type: fallbackNextType, punches: operationPunches };
+  const mergedPunches = [...(attendanceForRoute?.punches || []), ...operationPunches]
+    .reduce<Array<{ id: number; type: string; time: string; vehicle_plate: string }>>((acc, punch) => {
+      if (!punch.type || acc.some((item) => item.type === punch.type)) return acc;
+      acc.push(punch);
+      return acc;
+    }, [])
+    .sort((left, right) => {
+      const leftIndex = punchOrder.indexOf(left.type);
+      const rightIndex = punchOrder.indexOf(right.type);
+      return (leftIndex === -1 ? 99 : leftIndex) - (rightIndex === -1 ? 99 : rightIndex);
+    });
+  const currentAttendance = {
+    user_name: userName,
+    route_id: route?.id || attendanceForRoute?.route_id || null,
+    next_type: mergedPunches.length ? nextPunchForTypes(mergedPunches.map((punch) => punch.type)) : (attendanceForRoute?.next_type || fallbackNextType),
+    punches: mergedPunches
+  };
   const operationActivities = (operationRoute?.activity_points || []).filter((activity) => userMatches(activity.user_name));
-  const sessionActivities = session?.activities?.length ? session.activities : operationActivities.map((activity) => ({
+  const sessionActivities = [
+    ...optimisticActivities,
+    ...(session?.activities?.length ? session.activities : operationActivities.map((activity) => ({
     id: Number(activity.id) || Date.parse(String(activity.occurred_at || activity.time || "")) || 0,
     activity_type_name: activity.type,
     observation: activity.observation || "",
@@ -201,7 +226,8 @@ export default function MobilePunchPage() {
     longitude: Number(activity.longitude || 0),
     accuracy_meters: Number(activity.accuracy_meters || 0),
     evidence: activity.evidence || []
-  }));
+    })))
+  ];
   const doneTypes = new Set(currentAttendance.punches.map((punch) => punch.type) || []);
   const nextType = currentAttendance.next_type;
   const sessionActive = Boolean(session?.active || (doneTypes.has("entrada") && !doneTypes.has("salida")));
@@ -308,6 +334,21 @@ export default function MobilePunchPage() {
         setMessage("Cierre fuera de horario: selecciona motivo, escribe el sustento y adjunta evidencia fotografica.");
         return;
       }
+      const optimisticTime = new Date().toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
+      const optimisticTypes = Array.from(new Set([...currentAttendance.punches.map((punch) => punch.type), type]));
+      const localNextPunchType = nextPunchForTypes(optimisticTypes);
+      setAttendance((prev) => {
+        const updated = prev.map((item) =>
+          item.user_name === userName && String(item.route_id || "") === String(route?.id || "")
+            ? { ...item, route_id: route?.id || item.route_id || null, next_type: localNextPunchType, punches: [...item.punches, { id: Date.now(), type, time: optimisticTime, vehicle_plate: vehiclePlate }] }
+            : item
+        );
+        if (!updated.some((item) => item.user_name === userName && String(item.route_id || "") === String(route?.id || ""))) {
+          updated.push({ user_name: userName, route_id: route?.id || null, next_type: localNextPunchType, punches: [{ id: Date.now(), type, time: optimisticTime, vehicle_plate: vehiclePlate }] });
+        }
+        return updated;
+      });
+      setMessage(`${punchLabels[type].title} registrado. Sincronizando...`);
       const response = await api<PunchResponse>("/api/v1/hr/time-punches", {
         method: "POST",
         body: JSON.stringify({
@@ -335,26 +376,13 @@ export default function MobilePunchPage() {
         setMessage("Completa el checklist preoperacional para habilitar la Entrada.");
         return;
       }
-      // Optimistically update UI so next button is immediately available
-      const nextPunchType = response.next || null;
-      setAttendance((prev) => {
-        const updated = prev.map((item) =>
-          item.user_name === userName && String(item.route_id || "") === String(route?.id || "")
-            ? { ...item, route_id: route?.id || item.route_id || null, next_type: nextPunchType, punches: [...item.punches, { id: Date.now(), type, time: new Date().toLocaleTimeString(), vehicle_plate: vehiclePlate }] }
-            : item
-        );
-        if (!updated.some((item) => item.user_name === userName && String(item.route_id || "") === String(route?.id || ""))) {
-          updated.push({ user_name: userName, route_id: route?.id || null, next_type: nextPunchType, punches: [{ id: Date.now(), type, time: new Date().toLocaleTimeString(), vehicle_plate: vehiclePlate }] });
-        }
-        return updated;
-      });
       setExtraReason("");
       setExtraDetail("");
       setExtraEvidence(null);
-      setMessage(`${punchLabels[type].title} registrado.`);
-      load().catch(() => undefined);
+      setMessage(`${punchLabels[type].title} sincronizado.`);
+      window.setTimeout(() => load().catch(() => undefined), 600);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "No fue posible registrar la marcacion.");
+      setMessage(error instanceof Error ? `La marcacion quedo pendiente de confirmar: ${error.message}` : "La marcacion quedo pendiente de confirmar.");
     } finally {
       setMarkingType(null);
     }
@@ -406,6 +434,23 @@ export default function MobilePunchPage() {
       return;
     }
     setActivitySaving(true);
+    const pendingActivity: WorkActivity = {
+      id: Date.now(),
+      activity_type_name: activityTypes.find((item) => String(item.id) === String(activityTypeId))?.name || "Actividad operativa",
+      observation: activityObservation,
+      occurred_at: new Date().toISOString(),
+      latitude: fix.latitude,
+      longitude: fix.longitude,
+      accuracy_meters: fix.accuracy_meters,
+      evidence: activityPhoto ? [{ base64_data: activityPhoto.base64, file_name: activityPhoto.name }] : []
+    };
+    setOptimisticActivities((current) => [pendingActivity, ...current].slice(0, 20));
+    const savedObservation = activityObservation;
+    const savedPhoto = activityPhoto;
+    setActivityObservation("");
+    setActivityPhoto(null);
+    setActivityModal(false);
+    setMessage("Actividad registrada. Sincronizando evidencia...");
     try {
       await api("/api/v1/hr/work-activities", {
         method: "POST",
@@ -416,18 +461,15 @@ export default function MobilePunchPage() {
           accuracy_meters: fix.accuracy_meters,
           route_id: route?.id,
           vehicle_plate: vehiclePlate,
-          observation: activityObservation,
-          photo: activityPhoto,
+          observation: savedObservation,
+          photo: savedPhoto,
           metadata: { source: "apexos-mobile-activity" }
         })
       });
-      setActivityObservation("");
-      setActivityPhoto(null);
-      setActivityModal(false);
-      setMessage("Actividad registrada con evidencia.");
-      load().catch(() => undefined);
+      setMessage("Actividad sincronizada con evidencia.");
+      window.setTimeout(() => load().catch(() => undefined), 600);
     } catch (error) {
-      setActivityMessage(error instanceof Error ? error.message : "No fue posible registrar la actividad.");
+      setMessage(error instanceof Error ? `Actividad pendiente de confirmar: ${error.message}` : "Actividad pendiente de confirmar.");
     } finally {
       setActivitySaving(false);
     }
