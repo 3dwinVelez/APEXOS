@@ -11,6 +11,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 type Employee = { id: number | string; user_id?: string; code: string; document_number?: string; user_type?: string; position?: string; metadata: { name: string; user_type?: string; code?: string; identity_aliases?: string[] }; user: { name: string; email?: string } };
 type Attendance = { user_name: string; route_id?: number | string | null; next_type: string | null; punches: Array<{ id: number; type: string; time: string; vehicle_plate: string }> };
 type TimeRoute = { id: number | string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string };
+type OperationPunch = { id: number | string; user_name: string; type: string; time?: string; punched_at?: string; vehicle_plate?: string; route_id?: number | string | null };
+type OperationActivity = { id: number | string; user_name: string; type: string; time?: string; occurred_at?: string; observation?: string; latitude?: number; longitude?: number; accuracy_meters?: number; evidence?: Array<{ base64_data?: string; file_name?: string }> };
+type OperationRoute = TimeRoute & { punch_points?: OperationPunch[]; activity_points?: OperationActivity[] };
+type OperationsMap = { routes: OperationRoute[] };
 type PreopItem = { section: string; item_key: string; label: string; severity: string; blocks_route: boolean; evidence_required: boolean };
 type PreopChecklist = { id: number; route_id?: number; plate: string; checklist_status: string; risk_level: string };
 type PreopTemplate = { sections: string[]; items: PreopItem[] };
@@ -53,6 +57,10 @@ function normalizeKey(value: string) {
   return String(value || "").trim().toLowerCase();
 }
 
+function todayBogota() {
+  return new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
+}
+
 function isGenericIdentityAlias(value: unknown) {
   return /^(usuario[-\s]\d+|usr-\d+)$/i.test(String(value || "").trim());
 }
@@ -86,6 +94,7 @@ function osmEmbedUrl(gps: GpsFix) {
 export default function MobilePunchPage() {
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [routes, setRoutes] = useState<TimeRoute[]>([]);
+  const [operationsMap, setOperationsMap] = useState<OperationsMap | null>(null);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [message, setMessage] = useState("");
   const [extraReason, setExtraReason] = useState("");
@@ -114,18 +123,20 @@ export default function MobilePunchPage() {
   const [selectedRouteId, setSelectedRouteId] = useState("");
 
   const load = useCallback(async () => {
-    const [me, routeData, attendanceData, typesData, sessionData] = await Promise.all([
+    const [me, routeData, attendanceData, typesData, sessionData, operationsData] = await Promise.all([
       api<Employee>("/api/v1/hr/me").catch(() => null),
       api<TimeRoute[]>("/api/v1/hr/routes").catch(() => []),
       api<Attendance[]>("/api/v1/hr/attendance").catch(() => []),
       api<ActivityType[]>("/api/v1/hr/activity-types").catch(() => []),
-      api<WorkSession>("/api/v1/hr/work-sessions/current").catch(() => null)
+      api<WorkSession>("/api/v1/hr/work-sessions/current").catch(() => null),
+      api<OperationsMap>(`/api/v1/hr/operations-map?date=${todayBogota()}&minutes=30&footprint_days=30`).catch(() => null)
     ]);
     setEmployee(me);
     setRoutes(routeData);
     setAttendance(attendanceData);
     setActivityTypes(typesData);
     setSession(sessionData);
+    setOperationsMap(operationsData);
     if (typesData[0]) setActivityTypeId((current) => current || String(typesData[0].id));
     const active = await api<{ checklist: PreopChecklist | null; template: PreopTemplate }>("/api/v1/hr/routes/preop/active").catch(() => null);
     if (active?.checklist) {
@@ -152,13 +163,47 @@ export default function MobilePunchPage() {
   const route = assignedRoutes.find((item) => String(item.id) === String(selectedRouteId || activeSessionRouteId))
     || (assignedRoutes.length === 1 ? assignedRoutes[0] : null);
   const routeRequired = assignedRoutes.length > 1 && !route;
-  const currentAttendance = attendance.find((item) => {
+  const operationRoute = operationsMap?.routes?.find((item) => String(item.id) === String(route?.id || ""));
+  const userMatches = useCallback((value: unknown) => {
+    const key = normalizeKey(String(value || ""));
+    return Boolean(key && (aliases.includes(key) || key === normalizeKey(userName) || key === normalizeKey(employeeName(employee))));
+  }, [aliases, employee, userName]);
+  const attendanceForRoute = attendance.find((item) => {
     const identityMatch = aliases.includes(normalizeKey(item.user_name)) || item.user_name === userName || item.user_name === employeeName(employee);
     const routeMatch = route ? String(item.route_id || "") === String(route.id) : true;
     return identityMatch && routeMatch;
-  }) || { user_name: userName, route_id: route?.id || null, next_type: "entrada", punches: [] };
+  });
+  const operationPunches = (operationRoute?.punch_points || [])
+    .filter((punch) => userMatches(punch.user_name))
+    .sort((left, right) => String(left.punched_at || left.time || "").localeCompare(String(right.punched_at || right.time || "")))
+    .map((punch) => ({
+      id: Number(punch.id) || Date.parse(String(punch.punched_at || punch.time || "")) || 0,
+      type: punch.type,
+      time: punch.time || (punch.punched_at ? new Date(punch.punched_at).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }) : ""),
+      vehicle_plate: punch.vehicle_plate || route?.vehicle_plate || ""
+    }));
+  const fallbackNextType = (() => {
+    const lastType = operationPunches[operationPunches.length - 1]?.type;
+    if (!lastType) return "entrada";
+    const currentIndex = punchOrder.indexOf(lastType);
+    return currentIndex >= 0 && currentIndex < punchOrder.length - 1 ? punchOrder[currentIndex + 1] : null;
+  })();
+  const currentAttendance = attendanceForRoute && attendanceForRoute.punches.length
+    ? attendanceForRoute
+    : { user_name: userName, route_id: route?.id || null, next_type: fallbackNextType, punches: operationPunches };
+  const operationActivities = (operationRoute?.activity_points || []).filter((activity) => userMatches(activity.user_name));
+  const sessionActivities = session?.activities?.length ? session.activities : operationActivities.map((activity) => ({
+    id: Number(activity.id) || Date.parse(String(activity.occurred_at || activity.time || "")) || 0,
+    activity_type_name: activity.type,
+    observation: activity.observation || "",
+    occurred_at: activity.occurred_at || activity.time || new Date().toISOString(),
+    latitude: Number(activity.latitude || 0),
+    longitude: Number(activity.longitude || 0),
+    accuracy_meters: Number(activity.accuracy_meters || 0),
+    evidence: activity.evidence || []
+  }));
   const doneTypes = new Set(currentAttendance.punches.map((punch) => punch.type) || []);
-  const nextType = currentAttendance.next_type || "entrada";
+  const nextType = currentAttendance.next_type;
   const sessionActive = Boolean(session?.active || (doneTypes.has("entrada") && !doneTypes.has("salida")));
   const sessionClosed = doneTypes.has("salida");
   const vehiclePlate = route?.vehicle_plate || "";
@@ -486,9 +531,9 @@ export default function MobilePunchPage() {
               <div>
                 <p className="text-xs font-semibold uppercase text-neutral-500">Estado operativo</p>
                 <h2 className="mt-1 text-lg font-semibold">{sessionActive ? "Jornada activa" : sessionClosed ? "Jornada cerrada" : "Sin jornada activa"}</h2>
-                <p className="mt-1 text-sm text-neutral-600">{sessionActive ? `Estas sobre el horario ${route?.id || ""}. Proxima marcacion: ${punchLabels[nextType]?.title || "Jornada completa"}.` : sessionClosed ? "Este horario ya tiene salida registrada." : "Marca Entrada para iniciar trazabilidad operativa."}</p>
+                <p className="mt-1 text-sm text-neutral-600">{sessionActive ? `Estas sobre el horario ${route?.id || ""}. Proxima marcacion: ${nextType ? punchLabels[nextType]?.title : "Jornada completa"}.` : sessionClosed ? "Este horario ya tiene salida registrada." : "Marca Entrada para iniciar trazabilidad operativa."}</p>
               </div>
-              <span className={`rounded-md px-2 py-1 text-xs font-semibold ${sessionActive ? "bg-emerald-50 text-emerald-700" : "bg-paper text-neutral-600"}`}>{session?.activities?.length || 0} actividades</span>
+              <span className={`rounded-md px-2 py-1 text-xs font-semibold ${sessionActive ? "bg-emerald-50 text-emerald-700" : "bg-paper text-neutral-600"}`}>{sessionActivities.length} actividades</span>
             </div>
             {session?.alerts?.length ? (
               <div className="mt-3 space-y-2">
@@ -582,7 +627,7 @@ export default function MobilePunchPage() {
         <h3 className="mb-3 mt-5 text-base font-semibold">Timeline operativo</h3>
         <div className="space-y-2">
           {[...currentAttendance.punches.map((punch) => ({ kind: "marca", at: punch.time, title: punchLabels[punch.type]?.title || punch.type, detail: punch.vehicle_plate || "Marcacion" })),
-            ...(session?.activities || []).map((item) => ({ kind: "actividad", at: new Date(item.occurred_at).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }), title: item.activity_type_name, detail: item.observation }))
+            ...sessionActivities.map((item) => ({ kind: "actividad", at: new Date(item.occurred_at).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }), title: item.activity_type_name, detail: item.observation }))
           ].map((event, index) => (
             <div className="flex gap-3 rounded-md bg-paper p-3" key={`${event.kind}-${index}`}>
               <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${event.kind === "marca" ? "bg-apex" : "bg-emerald-600"}`}>{index + 1}</span>
@@ -597,9 +642,9 @@ export default function MobilePunchPage() {
 
       {view === "marcar" ? <div className="fixed inset-x-0 bottom-0 z-50 border-t border-line bg-white/95 px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur md:hidden">
         <button
-          className={`h-14 w-full rounded-md text-base font-semibold text-white shadow-sm ${punchLabels[nextType]?.color || "bg-apex"} disabled:bg-neutral-300`}
+          className={`h-14 w-full rounded-md text-base font-semibold text-white shadow-sm ${nextType ? punchLabels[nextType]?.color : "bg-apex"} disabled:bg-neutral-300`}
           disabled={!employee || !route || routeRequired || !nextType || Boolean(markingType)}
-          onClick={() => mark(nextType)}
+          onClick={() => nextType && mark(nextType)}
           type="button"
         >
           {markingType ? "Registrando..." : !route ? "Selecciona horario" : nextType ? punchLabels[nextType]?.title || "Registrar" : "Jornada completa"}
