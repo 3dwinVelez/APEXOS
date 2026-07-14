@@ -41,6 +41,8 @@
 - La validacion de Marcacion movil debe comprobar que `apexos_hr_mobile_pending_sync` queda vacio despues de sincronizar; si hay registros pendientes, el monitor aun no puede considerarse actualizado aunque la UI movil haya avanzado localmente.
 - Cuando `NEXT_PUBLIC_API_URL` esta configurado, las rutas operativas de Talento Humano usan el API operacional como fuente primaria para que el monitor y la marcacion consulten la misma base. Supabase queda como fallback de lectura, pero las escrituras criticas de marcaciones, actividades y GPS no se confirman por fallback si el API responde error.
 - Cada marca, actividad y ping GPS movil envia `metadata.display_route_id`, `metadata.route_code` y `metadata.source_route_id` cuando estan disponibles. El backend Prisma tambien conserva estos metadatos, de modo que el monitor pueda reconciliar eventos aunque el horario llegue como ID visible, ID tecnico o UUID.
+- El backend valida la secuencia de marcacion con la identidad operativa enviada por el movil (`user_name`, `employee_id` y aliases de metadata), ademas del empleado espejo del login. Esto evita que un usuario como `demo04` vea "Retorno almuerzo" en la UI pero el API responda que la siguiente marca permitida es `entrada`.
+- Las actividades moviles envian `user_name` y `employee_id` junto con GPS, evidencia y horario para que queden asociadas al mismo usuario/ruta que consume el monitor.
 - La pantalla movil solo informa que el monitor puede actualizarse cuando la cola local de sincronizacion queda en cero; mientras existan pendientes, muestra que el monitor se actualizara al confirmar la cola.
 - Se agregaron escenarios demo para validar mapa historico, recorrido por marcaciones y ultima huella offline:
   - `node scripts/seed-hr-map-demo.js`
@@ -68,6 +70,7 @@ Talento Humano debe separar operacion diaria, configuracion y seguimiento. Marca
 - Confirmar que al crear un horario desde Administracion, la columna Personas no muestra UUIDs y la pantalla movil detecta el horario asignado antes de guardar marcaciones o actividades.
 - Confirmar que una persona con 2 o 3 horarios asignados puede elegir el horario correcto, cerrar la jornada de ese horario y registrar actividades sin mezclar eventos de otros horarios del mismo dia.
 - Confirmar que una persona con una `entrada` ya registrada en un horario no vuelve a ver "Inicio jornada" como siguiente accion; debe ver la jornada activa, el horario seleccionado y la proxima marcacion pendiente de ese `route_id`.
+- Confirmar que el monitor administrativo muestra el ID de horario en la tabla principal y que coincide con el horario seleccionado en Marcacion movil.
 - Confirmar que un flujo real de 4 marcas mas evento operativo deja 4 `punch_points`, al menos 1 `activity_point` y huellas GPS visibles en la ruta del monitor.
 - Confirmar que, tras cerrar un ciclo completo de `demo04` en `Horario 11`, `GET /api/v1/hr/operations-map?date=AAAA-MM-DD` expone 4 `punch_points` y las actividades del mismo horario, y que `apexos_hr_mobile_pending_sync` esta vacio.
 - Confirmar que el modo Historico muestra rutas cerradas con sus 4 marcaciones por usuario, recorrido conectado y detalle clicable de cada marca.

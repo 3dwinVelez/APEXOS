@@ -145,6 +145,19 @@ function aliasesForOperationalRow(row) {
   ].filter(Boolean).map((value) => String(value).trim()).filter(Boolean)));
 }
 
+function inputIdentityAliases(input = {}) {
+  const metadataAliases = Array.isArray(input.metadata?.identity_aliases) ? input.metadata.identity_aliases : [];
+  return Array.from(new Set([
+    input.user_name,
+    input.employee_id,
+    input.metadata?.supplied_user_name,
+    input.metadata?.employee_code,
+    input.metadata?.employee_name,
+    input.metadata?.user_email,
+    ...metadataAliases
+  ].filter(Boolean).map((value) => String(value).trim()).filter(Boolean)));
+}
+
 function operationalRouteKey(row) {
   return String(row?.route_id || row?.metadata?.display_route_id || row?.metadata?.legacy_route_id || "").trim();
 }
@@ -912,10 +925,11 @@ async function findCurrentWorkSession({ employee, userName, routeId = null, date
   });
 }
 
-function punchIdentityWhere(employee, userName) {
+function punchIdentityWhere(employee, userName, extraAliases = []) {
   const aliases = Array.from(new Set([
     ...(employee ? aliasesForEmployee(employee) : []),
-    userName
+    userName,
+    ...extraAliases
   ].filter(Boolean).map((value) => String(value).trim()).filter(Boolean)));
   const OR = [
     ...(employee?.id ? [{ employee_id: employee.id }] : []),
@@ -924,10 +938,10 @@ function punchIdentityWhere(employee, userName) {
   return OR.length ? { OR } : { user_name: userName || "" };
 }
 
-async function latestPunchesForEmployee(employee, userName, date = new Date(), routeId = null) {
+async function latestPunchesForEmployee(employee, userName, date = new Date(), routeId = null, extraAliases = []) {
   return prisma.timePunch.findMany({
     where: {
-      ...punchIdentityWhere(employee, userName),
+      ...punchIdentityWhere(employee, userName, extraAliases),
       ...(routeId ? { route_id: Number(routeId) } : {}),
       date: { gte: startOfDay(date), lt: endOfDay(date) }
     },
@@ -935,8 +949,8 @@ async function latestPunchesForEmployee(employee, userName, date = new Date(), r
   });
 }
 
-async function ensureWorkSessionFromPunches({ employee, userName, routeId = null, date = new Date(), vehiclePlate = "" }) {
-  const punches = await latestPunchesForEmployee(employee, userName, date, routeId);
+async function ensureWorkSessionFromPunches({ employee, userName, routeId = null, date = new Date(), vehiclePlate = "", extraAliases = [] }) {
+  const punches = await latestPunchesForEmployee(employee, userName, date, routeId, extraAliases);
   if (!punches.length || !punches.some((punch) => punch.type === "entrada") || punches.some((punch) => punch.type === "salida")) return null;
   const entry = punches.find((punch) => punch.type === "entrada");
   const lunchStart = punches.find((punch) => punch.type === "inicio_almuerzo");
@@ -1045,9 +1059,11 @@ async function createWorkActivity(tenantId, user, input) {
     const employee = employeeId
       ? await prisma.employee.findFirst({ where: { id: employeeId, tenant_id: tenantId }, include: { user: { select: { name: true, email: true } } } })
       : await getCurrentEmployee(tenantId, user).catch(() => null);
-    const userName = employeeUserName(employee, user?.name || user?.email || "");
+    const requestAliases = inputIdentityAliases(input);
+    const explicitUserName = String(input.user_name || "").trim();
+    const userName = (!isGenericEmployeeAlias(explicitUserName) && explicitUserName) || employeeUserName(employee, user?.name || user?.email || "");
     const session = await findCurrentWorkSession({ employee, userName, routeId: inputRouteId })
-      || await ensureWorkSessionFromPunches({ employee, userName, routeId: inputRouteId, vehiclePlate: input.vehicle_plate || "" });
+      || await ensureWorkSessionFromPunches({ employee, userName, routeId: inputRouteId, vehiclePlate: input.vehicle_plate || "", extraAliases: requestAliases });
     if (!session) {
       const err = new Error("No hay jornada activa. Marca Entrada antes de registrar actividades.");
       err.statusCode = 422;
@@ -1082,7 +1098,7 @@ async function createWorkActivity(tenantId, user, input) {
           employee_code: employee?.code || "",
           employee_name: employeeDisplayName(employee) || userName || session.user_name,
           user_email: employee?.user?.email || user?.email || "",
-          identity_aliases: employee ? aliasesForEmployee(employee) : [userName || session.user_name].filter(Boolean)
+          identity_aliases: Array.from(new Set([...(employee ? aliasesForEmployee(employee) : []), ...requestAliases, userName || session.user_name].filter(Boolean)))
         }
       }
     });
@@ -1120,7 +1136,7 @@ async function createWorkActivity(tenantId, user, input) {
           employee_code: employee?.code || "",
           employee_name: employeeDisplayName(employee) || userName || session.user_name,
           user_email: employee?.user?.email || user?.email || "",
-          identity_aliases: employee ? aliasesForEmployee(employee) : [userName || session.user_name].filter(Boolean)
+          identity_aliases: Array.from(new Set([...(employee ? aliasesForEmployee(employee) : []), ...requestAliases, userName || session.user_name].filter(Boolean)))
         }
       }
     });
@@ -1194,8 +1210,11 @@ async function createPunch(tenantId, input, user) {
         message: "Checklist preoperacional obligatorio antes de iniciar jornada."
       };
     }
-    const resolvedUserName = employeeUserName(employee, input.user_name);
-    const punchesToday = await latestPunchesForEmployee(employee, resolvedUserName, punchedAt, route?.id || inputRouteId);
+    const requestAliases = inputIdentityAliases(input);
+    const explicitUserName = String(input.user_name || "").trim();
+    const resolvedUserName = (!isGenericEmployeeAlias(explicitUserName) && explicitUserName) || employeeUserName(employee, explicitUserName);
+    const identityAliases = Array.from(new Set([...aliasesForEmployee(employee), ...requestAliases, resolvedUserName].filter(Boolean)));
+    const punchesToday = await latestPunchesForEmployee(employee, resolvedUserName, punchedAt, route?.id || inputRouteId, identityAliases);
     const expectedType = nextPunchType(punchesToday);
     if (!expectedType) {
       throw validationError("La jornada ya esta completa para hoy.", 409, "JORNADA_COMPLETA");
@@ -1268,7 +1287,7 @@ async function createPunch(tenantId, input, user) {
           employee_code: employee.code || "",
           employee_name: employeeDisplayName(employee) || resolvedUserName,
           user_email: employee.user?.email || user?.email || "",
-          identity_aliases: aliasesForEmployee(employee)
+          identity_aliases: identityAliases
         }
       }
     });
@@ -1291,7 +1310,7 @@ async function createPunch(tenantId, input, user) {
             employee_code: employee.code || "",
             employee_name: employeeDisplayName(employee) || resolvedUserName,
             user_email: employee.user?.email || user?.email || "",
-            identity_aliases: aliasesForEmployee(employee)
+            identity_aliases: identityAliases
           }
         }
       });
@@ -1309,7 +1328,7 @@ async function createPunch(tenantId, input, user) {
         employee_code: employee.code || "",
         employee_name: employeeDisplayName(employee) || resolvedUserName,
         user_email: employee.user?.email || user?.email || "",
-        identity_aliases: aliasesForEmployee(employee)
+        identity_aliases: identityAliases
       }
     };
     if (type === "entrada") {
@@ -1322,7 +1341,7 @@ async function createPunch(tenantId, input, user) {
         orderBy: { completed_at: "desc" }
       }).catch(() => null);
       const existing = await prisma.workSession.findFirst({
-        where: { employee_id: employee.id, route_id: route?.id || inputRouteId, date: { gte: startOfDay(punchedAt), lt: endOfDay(punchedAt) }, status: "activa" },
+        where: { ...punchIdentityWhere(employee, resolvedUserName, identityAliases), route_id: route?.id || inputRouteId, date: { gte: startOfDay(punchedAt), lt: endOfDay(punchedAt) }, status: "activa" },
         orderBy: { started_at: "desc" }
       });
       if (existing) {
@@ -1337,7 +1356,7 @@ async function createPunch(tenantId, input, user) {
       }
     } else {
       const session = await prisma.workSession.findFirst({
-        where: { employee_id: employee.id, route_id: route?.id || inputRouteId, date: { gte: startOfDay(punchedAt), lt: endOfDay(punchedAt) }, status: "activa" },
+        where: { ...punchIdentityWhere(employee, resolvedUserName, identityAliases), route_id: route?.id || inputRouteId, date: { gte: startOfDay(punchedAt), lt: endOfDay(punchedAt) }, status: "activa" },
         orderBy: { started_at: "desc" }
       });
       if (session) {
@@ -1359,7 +1378,7 @@ async function createPunch(tenantId, input, user) {
       minutos_extra: extraMinutes,
       alerta: extraMinutes > 0,
       punch,
-      next: nextPunchType(await latestPunchesForEmployee(employee, resolvedUserName, punchedAt, route?.id || inputRouteId)),
+      next: nextPunchType(await latestPunchesForEmployee(employee, resolvedUserName, punchedAt, route?.id || inputRouteId, identityAliases)),
       preoperational_required: Boolean(preop),
       preoperational_checklist: preop ? { ...preop, id: Number(preop.id) } : null,
       route_authorized: preop ? ["aprobado", "aprobado_con_novedad"].includes(preop.checklist_status) : true

@@ -455,6 +455,16 @@ async function runHrFlow(context, data, result) {
     route_id: data.route.id
   });
 
+  const operationsMap = await hr.getOperationsMap(context.tenant.id, { date: DATE, minutes: 30, footprint_days: 30 });
+  const monitoredRoute = operationsMap.routes.find((item) => Number(item.id) === Number(data.route.id));
+  record(result, "hr_monitor_operations_map_reflects_route_punches", Boolean(monitoredRoute) && (monitoredRoute.punch_points || []).length >= 4, {
+    route_id: data.route.id,
+    monitor_route_id: monitoredRoute?.id || null,
+    monitor_employee_names: monitoredRoute?.employee_names || [],
+    punch_points: monitoredRoute?.punch_points?.map((item) => ({ id: item.id, type: item.type, user_name: item.user_name, route_id: item.route_id })) || [],
+    activity_points: monitoredRoute?.activity_points?.length || 0
+  });
+
   const processed = await hr.processDay(context.tenant.id, { date: DATE });
   const workdays = await hr.listWorkdays(context.tenant.id, { date: DATE });
   record(result, "hr_workday_processing_consults_nyvora_data", processed.processed > 0 && workdays.some((item) => item.employee_id === data.driver.employee.id), {
@@ -604,6 +614,8 @@ function writeEvidence(result) {
     "## Correcciones aplicadas",
     "",
     "- `apps/api/src/modules/hr/service.js`: se corrigio la busqueda de empleado para normalizar `user_name` ausente y devolver error 400 controlado en marcaciones incompletas.",
+    "- `apps/api/src/modules/hr/service.js`: la secuencia de marcacion valida aliases operativos enviados por el movil para alinear API, Marcacion y monitor.",
+    "- `apps/web/app/dashboard/talento-humano/rutas/page.tsx`: el monitor muestra el ID del horario en la tabla principal.",
     "- `apps/web/lib/api.ts`: Transporte y Talento Humano ahora prefieren el API operativo cuando esta configurado, usando Supabase solo como respaldo para evitar pantallas vacias con datos reales en Prisma/API.",
     "- `scripts/nyvora-real-transport-hr-validation.js`: se agrego validador real Nyvora con datos controlados, horario minimo, credenciales temporales locales y evidencia automatica.",
     "- No se borraron datos existentes y no se modificaron datos sensibles fuera de los registros controlados con marcador tecnico.",

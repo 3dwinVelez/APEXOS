@@ -537,6 +537,8 @@ export default function MobilePunchPage() {
     setMessage("Actividad registrada. Sincronizando evidencia en segundo plano...");
     const activityPayload = {
       activity_type_id: Number(activityTypeId),
+      employee_id: employee?.id,
+      user_name: userName,
       latitude: fix.latitude,
       longitude: fix.longitude,
       accuracy_meters: fix.accuracy_meters,
