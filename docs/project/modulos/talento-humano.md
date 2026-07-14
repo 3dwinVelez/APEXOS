@@ -35,6 +35,7 @@
 - Marcacion movil consume la misma trazabilidad de `operations-map` que usa el monitor administrativo como respaldo de `/attendance`; si el monitor ya muestra eventos del horario, el movil tambien debe derivar estado, proxima marca y actividades desde esos `punch_points` y `activity_points`.
 - En el fallback Supabase, los IDs visibles de horario como `11` no se escriben en columnas UUID (`route_id`); se resuelven contra `operational_routes.id` cuando es posible y, si no hay UUID, se conservan como `metadata.display_route_id` para evitar errores 400 al guardar actividades o pings.
 - Marcacion movil fusiona `/attendance` con `operations-map` para calcular la proxima marca por horario, de modo que eventos historicos sin `display_route_id` y eventos nuevos con metadata no rompan la secuencia. La UI avanza de forma optimista mientras Supabase sincroniza en segundo plano.
+- Las marcas y actividades quedan en una cola local optimista mientras Supabase responde; el usuario no espera la carga de evidencias/GPS para continuar operando y solo recibe estado de sincronizacion o pendiente de confirmar.
 - Se agregaron escenarios demo para validar mapa historico, recorrido por marcaciones y ultima huella offline:
   - `node scripts/seed-hr-map-demo.js`
   - `node scripts/validate-hr-map-demo.js`

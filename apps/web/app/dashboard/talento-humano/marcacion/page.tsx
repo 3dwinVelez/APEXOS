@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 type Employee = { id: number | string; user_id?: string; code: string; document_number?: string; user_type?: string; position?: string; metadata: { name: string; user_type?: string; code?: string; identity_aliases?: string[] }; user: { name: string; email?: string } };
 type Attendance = { user_name: string; route_id?: number | string | null; next_type: string | null; punches: Array<{ id: number; type: string; time: string; vehicle_plate: string }> };
+type AttendancePunch = Attendance["punches"][number];
 type TimeRoute = { id: number | string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string };
 type OperationPunch = { id: number | string; user_name: string; type: string; time?: string; punched_at?: string; vehicle_plate?: string; route_id?: number | string | null };
 type OperationActivity = { id: number | string; user_name: string; type: string; time?: string; occurred_at?: string; observation?: string; latitude?: number; longitude?: number; accuracy_meters?: number; evidence?: Array<{ base64_data?: string; file_name?: string }> };
@@ -120,6 +121,7 @@ export default function MobilePunchPage() {
   const [fuelLevel, setFuelLevel] = useState("");
   const [signature, setSignature] = useState<CapturedFile | null>(null);
   const [session, setSession] = useState<WorkSession | null>(null);
+  const [optimisticPunches, setOptimisticPunches] = useState<Array<AttendancePunch & { route_id?: number | string | null }>>([]);
   const [optimisticActivities, setOptimisticActivities] = useState<WorkActivity[]>([]);
   const [activityTypes, setActivityTypes] = useState<ActivityType[]>([]);
   const [activityModal, setActivityModal] = useState(false);
@@ -197,8 +199,9 @@ export default function MobilePunchPage() {
     const currentIndex = punchOrder.indexOf(lastType);
     return currentIndex >= 0 && currentIndex < punchOrder.length - 1 ? punchOrder[currentIndex + 1] : null;
   })();
-  const mergedPunches = [...(attendanceForRoute?.punches || []), ...operationPunches]
-    .reduce<Array<{ id: number; type: string; time: string; vehicle_plate: string }>>((acc, punch) => {
+  const optimisticPunchesForRoute = optimisticPunches.filter((punch) => String(punch.route_id || "") === String(route?.id || ""));
+  const mergedPunches = [...(attendanceForRoute?.punches || []), ...operationPunches, ...optimisticPunchesForRoute]
+    .reduce<AttendancePunch[]>((acc, punch) => {
       if (!punch.type || acc.some((item) => item.type === punch.type)) return acc;
       acc.push(punch);
       return acc;
@@ -335,52 +338,49 @@ export default function MobilePunchPage() {
         return;
       }
       const optimisticTime = new Date().toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
-      const optimisticTypes = Array.from(new Set([...currentAttendance.punches.map((punch) => punch.type), type]));
-      const localNextPunchType = nextPunchForTypes(optimisticTypes);
-      setAttendance((prev) => {
-        const updated = prev.map((item) =>
-          item.user_name === userName && String(item.route_id || "") === String(route?.id || "")
-            ? { ...item, route_id: route?.id || item.route_id || null, next_type: localNextPunchType, punches: [...item.punches, { id: Date.now(), type, time: optimisticTime, vehicle_plate: vehiclePlate }] }
-            : item
-        );
-        if (!updated.some((item) => item.user_name === userName && String(item.route_id || "") === String(route?.id || ""))) {
-          updated.push({ user_name: userName, route_id: route?.id || null, next_type: localNextPunchType, punches: [{ id: Date.now(), type, time: optimisticTime, vehicle_plate: vehiclePlate }] });
-        }
-        return updated;
-      });
-      setMessage(`${punchLabels[type].title} registrado. Sincronizando...`);
-      const response = await api<PunchResponse>("/api/v1/hr/time-punches", {
-        method: "POST",
-        body: JSON.stringify({
-          employee_id: employee.id,
-          user_name: userName,
-          type,
-          punched_at: new Date().toISOString(),
-          latitude: fix.latitude,
-          longitude: fix.longitude,
-          accuracy_meters: fix.accuracy_meters,
-          vehicle_plate: vehiclePlate,
-          route_id: route?.id,
-          extra_reason: type === "salida" ? extraReason : undefined,
-          extra_detail: type === "salida" ? extraDetail : undefined,
-          extra_evidence: type === "salida" ? extraEvidence : undefined,
-          metadata: { source: "apexos-mobile", current_user_only: true }
-        })
-      });
-      if (response.preoperational_required && response.preoperational_checklist) {
-        const template = await api<PreopTemplate>("/api/v1/hr/routes/preop/template");
-        setPreop(response.preoperational_checklist);
-        setPreopTemplate(template);
-        setPreopAnswers(Object.fromEntries(template.items.map((item) => [item.item_key, { answer: "cumple", observations: "", evidence: null }])));
-        setPreopMessage("Checklist preoperacional obligatorio antes de iniciar ruta.");
-        setMessage("Completa el checklist preoperacional para habilitar la Entrada.");
-        return;
-      }
+      setOptimisticPunches((current) => [
+        ...current.filter((punch) => !(String(punch.route_id || "") === String(route?.id || "") && punch.type === type)),
+        { id: Date.now(), type, time: optimisticTime, vehicle_plate: vehiclePlate, route_id: route?.id || null }
+      ].slice(-20));
+      setMessage(`${punchLabels[type].title} registrado. Sincronizando en segundo plano...`);
+      setMarkingType(null);
+      const payload = {
+        employee_id: employee.id,
+        user_name: userName,
+        type,
+        punched_at: new Date().toISOString(),
+        latitude: fix.latitude,
+        longitude: fix.longitude,
+        accuracy_meters: fix.accuracy_meters,
+        vehicle_plate: vehiclePlate,
+        route_id: route?.id,
+        extra_reason: type === "salida" ? extraReason : undefined,
+        extra_detail: type === "salida" ? extraDetail : undefined,
+        extra_evidence: type === "salida" ? extraEvidence : undefined,
+        metadata: { source: "apexos-mobile", current_user_only: true }
+      };
       setExtraReason("");
       setExtraDetail("");
       setExtraEvidence(null);
-      setMessage(`${punchLabels[type].title} sincronizado.`);
-      window.setTimeout(() => load().catch(() => undefined), 600);
+      void api<PunchResponse>("/api/v1/hr/time-punches", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      }).then(async (response) => {
+        if (response.preoperational_required && response.preoperational_checklist) {
+          const template = await api<PreopTemplate>("/api/v1/hr/routes/preop/template");
+          setOptimisticPunches((current) => current.filter((punch) => !(String(punch.route_id || "") === String(route?.id || "") && punch.type === type)));
+          setPreop(response.preoperational_checklist);
+          setPreopTemplate(template);
+          setPreopAnswers(Object.fromEntries(template.items.map((item) => [item.item_key, { answer: "cumple", observations: "", evidence: null }])));
+          setPreopMessage("Checklist preoperacional obligatorio antes de iniciar ruta.");
+          setMessage("Completa el checklist preoperacional para habilitar la Entrada.");
+          return;
+        }
+        setMessage(`${punchLabels[type].title} sincronizado.`);
+        window.setTimeout(() => load().catch(() => undefined), 600);
+      }).catch((error) => {
+        setMessage(error instanceof Error ? `Marcacion pendiente de confirmar: ${error.message}` : "Marcacion pendiente de confirmar.");
+      });
     } catch (error) {
       setMessage(error instanceof Error ? `La marcacion quedo pendiente de confirmar: ${error.message}` : "La marcacion quedo pendiente de confirmar.");
     } finally {
@@ -450,29 +450,27 @@ export default function MobilePunchPage() {
     setActivityObservation("");
     setActivityPhoto(null);
     setActivityModal(false);
-    setMessage("Actividad registrada. Sincronizando evidencia...");
-    try {
-      await api("/api/v1/hr/work-activities", {
-        method: "POST",
-        body: JSON.stringify({
-          activity_type_id: Number(activityTypeId),
-          latitude: fix.latitude,
-          longitude: fix.longitude,
-          accuracy_meters: fix.accuracy_meters,
-          route_id: route?.id,
-          vehicle_plate: vehiclePlate,
-          observation: savedObservation,
-          photo: savedPhoto,
-          metadata: { source: "apexos-mobile-activity" }
-        })
-      });
+    setActivitySaving(false);
+    setMessage("Actividad registrada. Sincronizando evidencia en segundo plano...");
+    void api("/api/v1/hr/work-activities", {
+      method: "POST",
+      body: JSON.stringify({
+        activity_type_id: Number(activityTypeId),
+        latitude: fix.latitude,
+        longitude: fix.longitude,
+        accuracy_meters: fix.accuracy_meters,
+        route_id: route?.id,
+        vehicle_plate: vehiclePlate,
+        observation: savedObservation,
+        photo: savedPhoto,
+        metadata: { source: "apexos-mobile-activity" }
+      })
+    }).then(() => {
       setMessage("Actividad sincronizada con evidencia.");
       window.setTimeout(() => load().catch(() => undefined), 600);
-    } catch (error) {
+    }).catch((error) => {
       setMessage(error instanceof Error ? `Actividad pendiente de confirmar: ${error.message}` : "Actividad pendiente de confirmar.");
-    } finally {
-      setActivitySaving(false);
-    }
+    });
   }
 
   async function evidenceFile(file: File, itemKey: string) {
