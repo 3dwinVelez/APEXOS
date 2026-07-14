@@ -19,7 +19,7 @@ const punchSchema = {
     type: "object",
     required: ["user_name", "type"],
     properties: {
-      employee_id: { type: "integer" },
+      employee_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
       user_name: { type: "string" },
       type: { type: "string" },
       punched_at: { type: "string" },
@@ -27,7 +27,7 @@ const punchSchema = {
       longitude: { type: "number" },
       accuracy_meters: { type: "number" },
       vehicle_plate: { type: "string" },
-      route_id: { type: "integer" },
+      route_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
       extra_reason: { type: "string" },
       extra_detail: { type: "string" },
       extra_evidence: {
@@ -87,10 +87,10 @@ const gpsPingSchema = {
     type: "object",
     required: ["user_name", "latitude", "longitude"],
     properties: {
-      employee_id: { type: "integer" },
+      employee_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
       user_name: { type: "string" },
       vehicle_plate: { type: "string" },
-      route_id: { type: "integer" },
+      route_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
       latitude: { type: "number" },
       longitude: { type: "number" },
       accuracy_meters: { type: "number" },
@@ -121,14 +121,14 @@ const workActivitySchema = {
     required: ["activity_type_id", "latitude", "longitude", "observation", "photo"],
     properties: {
       activity_type_id: { type: "integer" },
-      employee_id: { type: "integer" },
+      employee_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
       occurred_at: { type: "string" },
       latitude: { type: "number" },
       longitude: { type: "number" },
       accuracy_meters: { type: "number" },
       approximate_address: { type: "string" },
       observation: { type: "string" },
-      route_id: { type: "integer" },
+      route_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
       vehicle_plate: { type: "string" },
       metadata: { type: "object" },
       photo: {

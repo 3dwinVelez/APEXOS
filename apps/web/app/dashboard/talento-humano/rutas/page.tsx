@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 
 type Employee = { id: number; code: string; user_type?: string; position: string; department: string; metadata: { name: string; document: string; user_type?: string }; user: { name: string } };
 type Vehicle = { id: number; plate: string; type: string; model: string };
-type TimeRoute = { id: number | string; date: string; vehicle_plate: string; employees: string[]; start_time: string; end_time: string; status: string; tolerance_minutes?: number; per_diem?: number; notes?: string };
+type TimeRoute = { id: number | string; date: string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string; status: string; tolerance_minutes?: number; per_diem?: number; notes?: string };
 type OperatorPoint = { key: string; user_name: string; name: string; route_id: number | string; online?: boolean; last_punch_type?: string; last_activity_type?: string; last_activity_time?: string };
 type PunchPoint = { id: number | string; user_name: string; type: string; time?: string; punched_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; extra_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: { base64_data?: string; file_name?: string; file_url?: string } };
 type ActivityPoint = { id: number | string; user_name: string; type: string; time?: string; occurred_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; observation?: string; evidence?: Array<{ base64_data?: string; file_name?: string; file_url?: string }> };
@@ -45,7 +45,15 @@ function routeLabel(route: RouteMonitor) {
 }
 
 function employeeValue(employee: Employee) {
-  return employee.code || employeeName(employee);
+  return String(employee.id);
+}
+
+function routeEmployeeNames(route: TimeRoute | RouteMonitor) {
+  return (route.employee_names?.length ? route.employee_names : route.employees) || [];
+}
+
+function routeEmployeeValues(route: TimeRoute | RouteMonitor) {
+  return (route.employee_ids?.length ? route.employee_ids : route.employees) || [];
 }
 
 function employeeSearchText(employee: Employee) {
@@ -256,7 +264,7 @@ export default function RoutesPlanningPage() {
       setForm({
         date,
         vehicle_plate: route.vehicle_plate || route.placa || "",
-        employees: route.employees || [],
+        employees: routeEmployeeValues(route),
         start_time: route.start_time || "08:00",
         end_time: route.end_time || "17:00",
         tolerance_minutes: route.tolerance_minutes ?? 15,
@@ -278,7 +286,7 @@ export default function RoutesPlanningPage() {
     setForm({
       date: inputDate(route.date),
       vehicle_plate: route.vehicle_plate || route.placa || "",
-      employees: route.employees || [],
+      employees: routeEmployeeValues(route),
       start_time: route.start_time || "08:00",
       end_time: route.end_time || "17:00",
       tolerance_minutes: route.tolerance_minutes ?? 15,
@@ -341,7 +349,7 @@ export default function RoutesPlanningPage() {
   }
 
   const activeRoutes = useMemo(() => routes.filter((route) => route.status !== "closed"), [routes]);
-  const totalAssigned = useMemo(() => routes.reduce((sum, route) => sum + (route.employees?.length || 0), 0), [routes]);
+  const totalAssigned = useMemo(() => routes.reduce((sum, route) => sum + (routeEmployeeValues(route).length || 0), 0), [routes]);
   const selectedEmployeeCount = form.employees.length;
   const bulkCount = bulkMode ? rangePreview(bulk.start_date, bulk.end_date, bulk.weekdays) : 1;
   const monitorRoutes: RouteMonitor[] = useMemo(() => {
@@ -349,7 +357,7 @@ export default function RoutesPlanningPage() {
     const operationById = new Map((operations?.routes || []).map((route) => [String(route.id), route]));
     return routes.map((route) => {
       const operation = operationById.get(String(route.id));
-      return { ...route, ...operation, punch_points: operation?.punch_points || [], activity_points: operation?.activity_points || [] };
+      return { ...route, ...operation, employee_ids: operation?.employee_ids || route.employee_ids, employee_names: operation?.employee_names || route.employee_names, punch_points: operation?.punch_points || [], activity_points: operation?.activity_points || [] };
     });
   }, [operations, routes]);
   const selectedRoute = useMemo(() => monitorRoutes.find((route) => String(route.id) === selectedRouteId) || null, [monitorRoutes, selectedRouteId]);
@@ -364,11 +372,11 @@ export default function RoutesPlanningPage() {
   const routeCoverage = monitorRoutes.length ? Math.round((monitorRoutes.filter((route) => (route.punch_points?.length || 0) > 0).length / monitorRoutes.length) * 100) : 0;
   const administrativeRoutes = monitorRoutes.filter((route) => !route.vehicle_plate && !route.placa).length;
   const operationalRoutes = monitorRoutes.length - administrativeRoutes;
-  const routesWithoutPeople = monitorRoutes.filter((route) => !(route.assigned_count ?? route.employees?.length ?? 0)).length;
+  const routesWithoutPeople = monitorRoutes.filter((route) => !(route.assigned_count ?? routeEmployeeValues(route).length ?? 0)).length;
   const filteredRoutes = useMemo(() => {
     const term = query.trim().toLowerCase();
     return monitorRoutes
-      .filter((route) => !term || [routeLabel(route), route.status, administrativeSiteFromNotes(route.notes || ""), ...(route.employees || [])].join(" ").toLowerCase().includes(term))
+      .filter((route) => !term || [routeLabel(route), route.status, administrativeSiteFromNotes(route.notes || ""), ...routeEmployeeNames(route)].join(" ").toLowerCase().includes(term))
       .filter((route) => !kindFilter || (kindFilter === "operational" ? Boolean(route.vehicle_plate || route.placa) : !route.vehicle_plate && !route.placa))
       .filter((route) => !statusFilter || route.status === statusFilter)
       .filter((route) => !dateFilter || inputDate(route.date) === dateFilter)
@@ -436,10 +444,10 @@ export default function RoutesPlanningPage() {
                   </div>
                   <span className={`rounded-md px-2 py-1 text-xs font-semibold ${events ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>{events ? "En seguimiento" : "Sin eventos"}</span>
                 </div>
-                  <p className="mt-3 max-h-10 overflow-hidden text-sm text-neutral-600">{route.employees?.join(", ") || "Sin personas asignadas"}</p>
+                  <p className="mt-3 max-h-10 overflow-hidden text-sm text-neutral-600">{routeEmployeeNames(route).join(", ") || "Sin personas asignadas"}</p>
                 <div className="mt-3 flex flex-wrap gap-2 text-xs text-neutral-600">
                   <span className="rounded-md bg-white px-2 py-1">{route.start_time || "--"} - {route.end_time || "--"}</span>
-                  <span className="rounded-md bg-white px-2 py-1">{route.assigned_count ?? route.employees?.length ?? 0} persona(s)</span>
+                  <span className="rounded-md bg-white px-2 py-1">{route.assigned_count ?? routeEmployeeValues(route).length ?? 0} persona(s)</span>
                   <span className="rounded-md bg-white px-2 py-1">{events} evento(s)</span>
                   <span className="rounded-md bg-white px-2 py-1">{route.activity_points?.length || 0} evidencia(s)</span>
                 </div>
@@ -463,7 +471,7 @@ export default function RoutesPlanningPage() {
                 return <tr className="hover:bg-paper/70" key={String(route.id)}>
                   <td className="px-4 py-3"><p className="font-semibold">{inputDate(route.date)}</p><p className="mt-1 text-xs text-neutral-500">{formatHour(route.start_time)} - {formatHour(route.end_time)} · {route.tolerance_minutes ?? 15} min tolerancia</p></td>
                   <td className="px-4 py-3"><p className="flex items-center gap-2 font-semibold">{operational ? <Truck className="text-apex" size={15} /> : <Building2 className="text-apex" size={15} />}{operational ? "Operativa" : "Administrativa"}</p><p className="mt-1 text-xs text-neutral-500">{operational ? routeLabel(route) : administrativeSiteFromNotes(route.notes || "") || "Sin sede definida"}</p></td>
-                  <td className="px-4 py-3"><p className="font-semibold">{route.assigned_count ?? route.employees?.length ?? 0} persona(s)</p><p className="mt-1 max-w-72 truncate text-xs text-neutral-500">{route.employees?.join(", ") || "Sin personas asignadas"}</p></td>
+                  <td className="px-4 py-3"><p className="font-semibold">{route.assigned_count ?? routeEmployeeValues(route).length ?? 0} persona(s)</p><p className="mt-1 max-w-72 truncate text-xs text-neutral-500">{routeEmployeeNames(route).join(", ") || "Sin personas asignadas"}</p></td>
                   <td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${events ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>{events ? "En seguimiento" : "Sin eventos"}</span><p className="mt-1 text-xs capitalize text-neutral-500">{route.status || "active"} · {events} evento(s)</p></td>
                   <td className="px-4 py-3"><div className="flex justify-end gap-2"><button className="h-9 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => setSelectedRouteId(String(route.id))} type="button">Abrir</button><button className="h-9 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => openEditModal(route)} type="button">Editar</button><button className="h-9 rounded-md border border-apex px-3 text-xs font-semibold text-apex hover:bg-paper" onClick={() => openCreateModal(route)} type="button">Clonar</button></div></td>
                 </tr>;
@@ -582,7 +590,7 @@ export default function RoutesPlanningPage() {
                 <div>
                   <p className="text-sm font-semibold text-apex">Monitor administrativo</p>
                   <h2 className="text-2xl font-semibold">{routeLabel(selectedRoute)}</h2>
-                  <p className="mt-1 text-sm text-neutral-600">{formatHour(selectedRoute.start_time)} - {formatHour(selectedRoute.end_time)} - {(selectedRoute.assigned_count ?? selectedRoute.employees?.length ?? 0)} persona(s)</p>
+                  <p className="mt-1 text-sm text-neutral-600">{formatHour(selectedRoute.start_time)} - {formatHour(selectedRoute.end_time)} - {(selectedRoute.assigned_count ?? routeEmployeeValues(selectedRoute).length ?? 0)} persona(s)</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => openEditModal(selectedRoute)} type="button"><Edit3 size={16} /> Editar</button>
@@ -594,7 +602,7 @@ export default function RoutesPlanningPage() {
               <section className="border-b border-line p-4 lg:border-b-0 lg:border-r">
                 <h3 className="text-sm font-semibold uppercase text-neutral-500">Personas asignadas</h3>
                 <div className="mt-3 space-y-2">
-                  {(selectedPeople.length ? selectedPeople : (selectedRoute.employees || []).map((name) => ({ key: String(name), name, user_name: String(name), route_id: selectedRoute.id } as OperatorPoint))).map((person) => (
+                  {(selectedPeople.length ? selectedPeople : routeEmployeeNames(selectedRoute).map((name) => ({ key: String(name), name, user_name: String(name), route_id: selectedRoute.id } as OperatorPoint))).map((person) => (
                     <div className="rounded-md border border-line p-3" key={person.key}>
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">

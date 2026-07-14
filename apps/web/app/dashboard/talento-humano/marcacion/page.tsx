@@ -53,6 +53,10 @@ function normalizeKey(value: string) {
   return String(value || "").trim().toLowerCase();
 }
 
+function isGenericIdentityAlias(value: unknown) {
+  return /^(usuario[-\s]\d+|usr-\d+)$/i.test(String(value || "").trim());
+}
+
 function employeeAliases(employee: Employee | null) {
   if (!employee) return [];
   return Array.from(new Set([
@@ -134,7 +138,7 @@ export default function MobilePunchPage() {
     load();
   }, [load]);
 
-  const userName = employee?.code || employeeName(employee) || "";
+  const userName = !isGenericIdentityAlias(employee?.code) ? employee?.code || employeeName(employee) || "" : employeeName(employee) || employee?.user?.email || String(employee?.id || "");
   const aliases = employeeAliases(employee);
   const currentAttendance = attendance.find((item) => {
     const match = aliases.includes(normalizeKey(item.user_name)) || item.user_name === userName || item.user_name === employeeName(employee);

@@ -580,6 +580,27 @@ function identityAliasValues(row: {
   ].filter(Boolean).map((value) => String(value).trim()).filter(Boolean)));
 }
 
+function isGenericIdentityAlias(value: unknown) {
+  return /^(usuario[-\s]\d+|usr-\d+)$/i.test(String(value || "").trim());
+}
+
+function displayNameForIdentity(row: { user_name?: unknown; first_name?: string; last_name?: string; email?: string; id?: string; employee_id?: unknown; user_id?: unknown; metadata?: AnyRow }) {
+  const metadataName = String(row.metadata?.employee_name || row.metadata?.name || "").trim();
+  const supplied = String(row.metadata?.supplied_user_name || "").trim();
+  const rawUserName = String(row.user_name || "").trim();
+  const name = fullName({
+    first_name: row.first_name,
+    last_name: row.last_name,
+    email: row.email,
+    id: String(row.id || row.employee_id || row.user_id || ""),
+    metadata: row.metadata
+  });
+  return (!isGenericIdentityAlias(metadataName) && metadataName)
+    || (!isGenericIdentityAlias(supplied) && supplied)
+    || (!isGenericIdentityAlias(rawUserName) && rawUserName)
+    || name;
+}
+
 function identityAliasSet(row: Parameters<typeof identityAliasValues>[0]) {
   return new Set(identityAliasValues(row).map((value) => value.toLowerCase()));
 }
@@ -1538,12 +1559,14 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       metadata?: AnyRow;
     }>>();
     for (const punch of punches) {
-      const list = grouped.get(punch.user_name) || [];
+      const groupKey = String(punch.employee_id || punch.user_id || displayNameForIdentity(punch) || punch.user_name);
+      const displayUserName = displayNameForIdentity(punch) || punch.user_name;
+      const list = grouped.get(groupKey) || [];
       list.push({
         id: punch.id,
         employee_id: punch.employee_id,
         user_id: punch.user_id,
-        user_name: punch.user_name,
+        user_name: displayUserName,
         type: punch.punch_type,
         date: punch.punch_date || punch.punched_at,
         punched_at: punch.punched_at,
@@ -1560,10 +1583,10 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         extra_evidence: punch.extra_evidence || (punch.metadata?.extra_evidence as AnyRow | undefined) || {},
         metadata: punch.metadata || {}
       });
-      grouped.set(punch.user_name, list);
+      grouped.set(groupKey, list);
     }
-    return Array.from(grouped.entries()).map(([user_name, punches]) => ({
-      user_name,
+    return Array.from(grouped.values()).map((punches) => ({
+      user_name: punches[0]?.user_name || "",
       next_type: nextPunchFrom(punches.map((punch) => punch.type)),
       punches
     })) as T;
@@ -1612,8 +1635,13 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       const online = ageSeconds != null && ageSeconds <= Number(search.get("minutes") || 30) * 60;
       const latitude = ping?.latitude ?? punch?.latitude ?? null;
       const longitude = ping?.longitude ?? punch?.longitude ?? null;
-      const displayName = name || punch?.metadata?.employee_name || ping?.metadata?.employee_name || punch?.user_name || ping?.user_name || assignment.employee_id;
-      const displayUserName = String(punch?.metadata?.supplied_user_name || ping?.metadata?.supplied_user_name || punch?.user_name || ping?.user_name || displayName);
+      const displayName = displayNameForIdentity({ ...(employee || {}), employee_id: assignment.employee_id, metadata: employee?.metadata || punch?.metadata || ping?.metadata, user_name: name })
+        || displayNameForIdentity(punch || {})
+        || displayNameForIdentity(ping || {})
+        || assignment.employee_id;
+      const displayUserName = displayNameForIdentity(punch || {})
+        || displayNameForIdentity(ping || {})
+        || displayName;
       return {
         key: `${assignment.route_id}-${assignment.employee_id}`,
         employee_id: assignment.employee_id,
@@ -1655,7 +1683,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         .filter((ping) => ping.source === "work_activity" && matchesRouteAssignment(ping))
         .map((activity) => ({
           id: activity.id,
-          user_name: activity.user_name,
+          user_name: displayNameForIdentity(activity) || activity.user_name,
           type: String(activity.metadata?.activity_type_name || "Actividad operativa"),
           time: activity.captured_at ? new Date(activity.captured_at).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }) : "",
           occurred_at: activity.captured_at,
@@ -1672,7 +1700,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         .filter((punch) => matchesRouteAssignment(punch) && punch.latitude != null && punch.longitude != null)
         .map((punch) => ({
           id: punch.id,
-          user_name: punch.user_name,
+          user_name: displayNameForIdentity(punch) || punch.user_name,
           type: punch.punch_type,
           time: punch.punch_time || "",
           punched_at: punch.punched_at,
@@ -1691,7 +1719,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       return {
         id: route.id,
         vehicle_plate: route.vehicle_plate || "",
-        employees: routeAssignments.map((assignment) => fullName(employeeById.get(assignment.employee_id) || {})),
+        employees: routeAssignments.map((assignment) => String(assignment.employee_id)),
+        employee_ids: routeAssignments.map((assignment) => String(assignment.employee_id)),
+        employee_names: routeAssignments.map((assignment) => fullName(employeeById.get(assignment.employee_id) || {})),
         start_time: route.start_time || "",
         end_time: route.end_time || "",
         status: route.status || "planned",
@@ -1929,9 +1959,10 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     }>>(`/rest/v1/operational_routes?select=id,code,route_date,vehicle_plate,start_time,end_time,status,notes&company_id=eq.${encodeURIComponent(companyId)}&order=route_date.desc&limit=120`);
     const assignments = await supabaseFetch<Array<{
       route_id: string;
+      employee_id?: string;
       role?: string;
-      employees?: { first_name?: string; last_name?: string; document_number?: string; metadata?: Record<string, unknown> };
-    }>>(`/rest/v1/route_assignments?select=route_id,role,employees(first_name,last_name,document_number,metadata)&company_id=eq.${encodeURIComponent(companyId)}&limit=500`);
+      employees?: { id?: string; first_name?: string; last_name?: string; document_number?: string; metadata?: Record<string, unknown> };
+    }>>(`/rest/v1/route_assignments?select=route_id,employee_id,role,employees(id,first_name,last_name,document_number,metadata)&company_id=eq.${encodeURIComponent(companyId)}&limit=500`);
 
     return routes.map((route) => ({
       id: route.id,
@@ -1939,11 +1970,17 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       vehicle_plate: route.vehicle_plate || "",
       employees: assignments
         .filter((assignment) => assignment.route_id === route.id)
+        .map((assignment) => String(assignment.employee_id || assignment.employees?.id || "")),
+      employee_ids: assignments
+        .filter((assignment) => assignment.route_id === route.id)
+        .map((assignment) => String(assignment.employee_id || assignment.employees?.id || "")),
+      employee_names: assignments
+        .filter((assignment) => assignment.route_id === route.id)
         .map((assignment) => {
           const emp = assignment.employees || {};
           const routeName = fullName(emp);
           const routeCode = String(emp.metadata?.code || "");
-          return routeCode || routeName;
+          return isGenericIdentityAlias(routeCode) ? routeName : routeName || routeCode;
         }),
       start_time: route.start_time || "",
       end_time: route.end_time || "",

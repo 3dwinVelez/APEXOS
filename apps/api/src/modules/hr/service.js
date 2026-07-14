@@ -97,16 +97,63 @@ function employeeDisplayName(employee) {
 }
 
 function isGenericEmployeeAlias(value) {
-  return /^usuario[-\s]\d+$/i.test(String(value || "").trim());
+  return /^(usuario[-\s]\d+|usr-\d+)$/i.test(String(value || "").trim());
 }
 
 function employeeUserName(employee, fallback = "") {
   const code = String(employee?.code || "").trim();
-  return (!isGenericEmployeeAlias(code) && code) || employee?.user?.name || fallback || employee?.user?.email || employeeDisplayName(employee) || code || "";
+  const metadataName = String(employee?.metadata?.name || "").trim();
+  const safeFallback = !isGenericEmployeeAlias(fallback) ? fallback : "";
+  return (!isGenericEmployeeAlias(code) && code)
+    || (!isGenericEmployeeAlias(metadataName) && metadataName)
+    || employee?.user?.name
+    || safeFallback
+    || employee?.user?.email
+    || employeeDisplayName(employee)
+    || code
+    || "";
 }
 
 function aliasesForEmployee(employee) {
-  return [employee?.code, employee?.metadata?.name, employee?.user?.name, employee?.user?.email].filter(Boolean).map((value) => String(value));
+  const metadataAliases = Array.isArray(employee?.metadata?.identity_aliases) ? employee.metadata.identity_aliases : [];
+  return Array.from(new Set([
+    employee?.id,
+    employee?.code,
+    employee?.metadata?.name,
+    employee?.metadata?.document,
+    employee?.metadata?.employee_code,
+    employee?.metadata?.employee_name,
+    employee?.metadata?.supplied_user_name,
+    employee?.metadata?.supabase_employee_id,
+    employee?.metadata?.supabase_user_id,
+    employee?.user?.name,
+    employee?.user?.email,
+    ...metadataAliases
+  ].filter(Boolean).map((value) => String(value).trim()).filter(Boolean)));
+}
+
+function aliasesForOperationalRow(row) {
+  const metadataAliases = Array.isArray(row?.metadata?.identity_aliases) ? row.metadata.identity_aliases : [];
+  return Array.from(new Set([
+    row?.employee_id,
+    row?.user_name,
+    row?.metadata?.employee_code,
+    row?.metadata?.employee_name,
+    row?.metadata?.supplied_user_name,
+    row?.metadata?.user_email,
+    ...metadataAliases
+  ].filter(Boolean).map((value) => String(value).trim()).filter(Boolean)));
+}
+
+function displayNameForOperationalRow(row, fallback = "") {
+  const metadataName = String(row?.metadata?.employee_name || row?.metadata?.name || "").trim();
+  const supplied = String(row?.metadata?.supplied_user_name || "").trim();
+  const userName = String(row?.user_name || "").trim();
+  return (!isGenericEmployeeAlias(metadataName) && metadataName)
+    || (!isGenericEmployeeAlias(supplied) && supplied)
+    || (!isGenericEmployeeAlias(userName) && userName)
+    || fallback
+    || userName;
 }
 
 function normalizeKey(value) {
@@ -116,6 +163,10 @@ function normalizeKey(value) {
 function numericId(value) {
   const id = Number(value);
   return Number.isInteger(id) && id > 0 ? id : null;
+}
+
+function optionalNumericId(value) {
+  return value == null || value === "" ? null : numericId(value);
 }
 
 function employeeType(employee) {
@@ -263,13 +314,22 @@ async function updateSchedule(tenantId, id, input) {
 async function listRoutes(tenantId, query = {}) {
   const day = query.date ? startOfDay(query.date) : null;
   return prisma.runWithTenant(tenantId, async () => {
-    const rows = await prisma.timeRoute.findMany({
-      where: day ? { date: { gte: day, lt: endOfDay(day) } } : {},
-      orderBy: { date: "desc" },
-      take: 100
-    });
+    const [rows, employees] = await Promise.all([
+      prisma.timeRoute.findMany({
+        where: day ? { date: { gte: day, lt: endOfDay(day) } } : {},
+        orderBy: { date: "desc" },
+        take: 100
+      }),
+      prisma.employee.findMany({ where: { active: true }, include: { user: { select: safeUserSelect } }, take: 500 })
+    ]);
+    const employeeByAlias = new Map();
+    for (const employee of employees) {
+      for (const alias of aliasesForEmployee(employee)) employeeByAlias.set(normalizeKey(alias), employee);
+    }
     return rows.map((route) => ({
       ...route,
+      employee_ids: (Array.isArray(route.employees) ? route.employees : []).map((value) => String(employeeByAlias.get(normalizeKey(value))?.id || value)),
+      employee_names: (Array.isArray(route.employees) ? route.employees : []).map((value) => employeeDisplayName(employeeByAlias.get(normalizeKey(value))) || String(value)),
       placa: route.vehicle_plate,
       equipo: route.employees,
       h_inicio: route.start_time,
@@ -423,13 +483,22 @@ async function findEmployee(input) {
   }
   const name = String(input.user_name || "").trim();
   if (!name) return null;
+  const aliases = [
+    name,
+    input.metadata?.employee_code,
+    input.metadata?.employee_name,
+    input.metadata?.supplied_user_name,
+    input.metadata?.user_email
+  ].filter(Boolean).map((value) => String(value).trim());
   return prisma.employee.findFirst({
     where: {
       OR: [
-        { code: name },
-        { metadata: { path: ["name"], equals: name } },
-        { user: { name } },
-        { user: { email: name } }
+        ...aliases.map((alias) => ({ code: alias })),
+        ...aliases.map((alias) => ({ metadata: { path: ["name"], equals: alias } })),
+        ...aliases.map((alias) => ({ metadata: { path: ["employee_code"], equals: alias } })),
+        ...aliases.map((alias) => ({ metadata: { path: ["employee_name"], equals: alias } })),
+        ...aliases.map((alias) => ({ user: { name: alias } })),
+        ...aliases.map((alias) => ({ user: { email: alias } }))
       ]
     }
   });
@@ -854,8 +923,10 @@ async function createWorkActivity(tenantId, user, input) {
       throw err;
     }
     assertSafeFile({ base64_data: input.photo.base64, file_name: input.photo.name, mime_type: input.photo.type, file_size: input.photo.size }, { maxBytes: MAX_EVIDENCE_BYTES });
-    const employee = input.employee_id
-      ? await prisma.employee.findFirst({ where: { id: Number(input.employee_id), tenant_id: tenantId }, include: { user: { select: { name: true, email: true } } } })
+    const employeeId = optionalNumericId(input.employee_id);
+    const inputRouteId = optionalNumericId(input.route_id);
+    const employee = employeeId
+      ? await prisma.employee.findFirst({ where: { id: employeeId, tenant_id: tenantId }, include: { user: { select: { name: true, email: true } } } })
       : await getCurrentEmployee(tenantId, user).catch(() => null);
     const userName = employeeUserName(employee, user?.name || user?.email || "");
     const session = await findCurrentWorkSession({ employee, userName });
@@ -878,7 +949,7 @@ async function createWorkActivity(tenantId, user, input) {
         activity_type_name: activityType.name,
         employee_id: employee?.id || session.employee_id,
         user_name: userName || session.user_name,
-        route_id: input.route_id || session.route_id,
+        route_id: inputRouteId || session.route_id,
         vehicle_plate: input.vehicle_plate || session.vehicle_plate || "",
         occurred_at: input.occurred_at ? new Date(input.occurred_at) : new Date(),
         latitude: Number(input.latitude),
@@ -887,7 +958,14 @@ async function createWorkActivity(tenantId, user, input) {
         approximate_address: input.approximate_address || "",
         observation: input.observation,
         alert_level: Number(input.accuracy_meters || 0) > 80 || activityType.name.toLowerCase().includes("varado") || activityType.name.toLowerCase().includes("novedad") ? "warning" : "normal",
-        metadata: input.metadata || {}
+        metadata: {
+          ...(input.metadata || {}),
+          supplied_user_name: input.user_name || "",
+          employee_code: employee?.code || "",
+          employee_name: employeeDisplayName(employee) || userName || session.user_name,
+          user_email: employee?.user?.email || user?.email || "",
+          identity_aliases: employee ? aliasesForEmployee(employee) : [userName || session.user_name].filter(Boolean)
+        }
       }
     });
     const fileName = normalizeFileName(input.photo.name || `actividad-${activity.id}.jpg`);
@@ -910,13 +988,21 @@ async function createWorkActivity(tenantId, user, input) {
         employee_id: employee?.id || session.employee_id,
         user_name: userName || session.user_name,
         vehicle_plate: input.vehicle_plate || session.vehicle_plate || "",
-        route_id: input.route_id || session.route_id,
+        route_id: inputRouteId || session.route_id,
         latitude: Number(input.latitude),
         longitude: Number(input.longitude),
         accuracy_meters: input.accuracy_meters,
         source: "work_activity",
         captured_at: activity.occurred_at,
-        metadata: { activity_id: activity.id, activity_type: activityType.name }
+        metadata: {
+          activity_id: activity.id,
+          activity_type: activityType.name,
+          supplied_user_name: input.user_name || "",
+          employee_code: employee?.code || "",
+          employee_name: employeeDisplayName(employee) || userName || session.user_name,
+          user_email: employee?.user?.email || user?.email || "",
+          identity_aliases: employee ? aliasesForEmployee(employee) : [userName || session.user_name].filter(Boolean)
+        }
       }
     });
     return prisma.workActivity.findFirst({
@@ -967,7 +1053,8 @@ async function createPunch(tenantId, input, user) {
     }) : null;
     const employee = currentEmployee || await resolveEmployeeForPunch(tenantId, input);
     const type = normalizePunchType(input.type || input.tipo_marca);
-    const route = input.route_id ? await prisma.timeRoute.findFirst({ where: { id: Number(input.route_id) } }) : null;
+    const inputRouteId = optionalNumericId(input.route_id);
+    const route = inputRouteId ? await prisma.timeRoute.findFirst({ where: { id: inputRouteId } }) : null;
     const preopApproved = isDriver(employee) && route?.vehicle_plate && type === "entrada"
       ? await prisma.routePreoperationalChecklist.findFirst({
         where: {
@@ -1039,7 +1126,7 @@ async function createPunch(tenantId, input, user) {
         longitude: input.longitude,
         accuracy_meters: input.accuracy_meters,
         vehicle_plate: input.vehicle_plate || "",
-        route_id: input.route_id,
+        route_id: route?.id || inputRouteId,
         extra_minutes: extraMinutes,
         extra_reason: input.extra_reason,
         extra_detail: input.extra_detail,
@@ -1056,7 +1143,14 @@ async function createPunch(tenantId, input, user) {
             fileName: input.extra_evidence.name || `extension-${employee.id}.jpg`
           })
         } : {},
-        metadata: input.metadata || {}
+        metadata: {
+          ...(input.metadata || {}),
+          supplied_user_name: input.user_name || "",
+          employee_code: employee.code || "",
+          employee_name: employeeDisplayName(employee) || resolvedUserName,
+          user_email: employee.user?.email || user?.email || "",
+          identity_aliases: aliasesForEmployee(employee)
+        }
       }
     });
     if (input.latitude != null && input.longitude != null) {
@@ -1065,13 +1159,21 @@ async function createPunch(tenantId, input, user) {
           employee_id: employee.id,
           user_name: resolvedUserName,
           vehicle_plate: input.vehicle_plate || "",
-          route_id: input.route_id,
+          route_id: route?.id || inputRouteId,
           latitude: Number(input.latitude),
           longitude: Number(input.longitude),
           accuracy_meters: input.accuracy_meters,
           source: "time_punch",
           captured_at: punchedAt,
-          metadata: { type, ...(input.metadata || {}) }
+          metadata: {
+            type,
+            ...(input.metadata || {}),
+            supplied_user_name: input.user_name || "",
+            employee_code: employee.code || "",
+            employee_name: employeeDisplayName(employee) || resolvedUserName,
+            user_email: employee.user?.email || user?.email || "",
+            identity_aliases: aliasesForEmployee(employee)
+          }
         }
       });
     }
@@ -1079,14 +1181,22 @@ async function createPunch(tenantId, input, user) {
       employee_id: employee.id,
       user_name: resolvedUserName,
       date: startOfDay(punchedAt),
-      route_id: input.route_id,
+      route_id: route?.id || inputRouteId,
       vehicle_plate: input.vehicle_plate || "",
-      metadata: { source: "time_punch", ...(input.metadata || {}) }
+      metadata: {
+        source: "time_punch",
+        ...(input.metadata || {}),
+        supplied_user_name: input.user_name || "",
+        employee_code: employee.code || "",
+        employee_name: employeeDisplayName(employee) || resolvedUserName,
+        user_email: employee.user?.email || user?.email || "",
+        identity_aliases: aliasesForEmployee(employee)
+      }
     };
     if (type === "entrada") {
       const approvedChecklist = await prisma.routePreoperationalChecklist.findFirst({
         where: {
-          route_id: input.route_id || undefined,
+          route_id: route?.id || inputRouteId || undefined,
           driver_id: employee.id,
           checklist_status: { in: ["aprobado", "aprobado_con_novedad"] }
         },
@@ -1099,7 +1209,7 @@ async function createPunch(tenantId, input, user) {
       if (existing) {
         await prisma.workSession.update({
           where: { id: existing.id },
-          data: { entry_punch_id: punch.id, started_at: punchedAt, route_id: input.route_id, vehicle_plate: input.vehicle_plate || existing.vehicle_plate, preop_checklist_id: approvedChecklist?.id || existing.preop_checklist_id }
+          data: { entry_punch_id: punch.id, started_at: punchedAt, route_id: route?.id || inputRouteId, vehicle_plate: input.vehicle_plate || existing.vehicle_plate, preop_checklist_id: approvedChecklist?.id || existing.preop_checklist_id }
         });
       } else {
         await prisma.workSession.create({
@@ -1151,13 +1261,19 @@ async function createGpsPing(tenantId, input) {
         employee_id: employeeId,
         user_name: resolvedName,
         vehicle_plate: input.vehicle_plate || "",
-        route_id: input.route_id,
+        route_id: optionalNumericId(input.route_id),
         latitude: Number(input.latitude),
         longitude: Number(input.longitude),
         accuracy_meters: input.accuracy_meters,
         source: input.source || "mobile",
         captured_at: input.captured_at ? new Date(input.captured_at) : new Date(),
-        metadata: input.metadata || {}
+        metadata: {
+          ...(input.metadata || {}),
+          supplied_user_name: input.user_name || "",
+          employee_code: employee?.code || "",
+          employee_name: employeeDisplayName(employee) || resolvedName,
+          identity_aliases: employee ? aliasesForEmployee(employee) : [resolvedName].filter(Boolean)
+        }
       }
     });
   });
@@ -1218,9 +1334,12 @@ async function getRouteTracking(tenantId, id, query = {}) {
     });
     const latestByUser = new Map();
     for (const ping of pings) latestByUser.set(ping.user_name, ping);
+    const assigned = (Array.isArray(route.employees) ? route.employees : []).map((name) => ({ user_name: String(name), name: String(name) }));
     return {
       route: {
         ...route,
+        employee_ids: assigned.map((person) => String(person.employee_id || person.user_name)).filter(Boolean),
+        employee_names: assigned.map((person) => person.name || person.user_name).filter(Boolean),
         placa: route.vehicle_plate,
         equipo: route.employees,
         h_inicio: route.start_time,
@@ -1295,8 +1414,10 @@ async function getOperationsMap(tenantId, query = {}) {
     const latestPingByUser = new Map();
     const pingsByRoute = new Map();
     for (const ping of pings) {
-      const userKey = normalizeKey(ping.user_name);
-      if (!latestPingByUser.has(userKey)) latestPingByUser.set(userKey, ping);
+      for (const alias of aliasesForOperationalRow(ping)) {
+        const userKey = normalizeKey(alias);
+        if (!latestPingByUser.has(userKey)) latestPingByUser.set(userKey, ping);
+      }
       if (ping.route_id) {
         if (!pingsByRoute.has(Number(ping.route_id))) pingsByRoute.set(Number(ping.route_id), []);
         pingsByRoute.get(Number(ping.route_id)).push(ping);
@@ -1305,15 +1426,19 @@ async function getOperationsMap(tenantId, query = {}) {
 
     const lastFootprintByUser = new Map();
     for (const ping of lastFootprints) {
-      const userKey = normalizeKey(ping.user_name);
-      if (!lastFootprintByUser.has(userKey)) lastFootprintByUser.set(userKey, ping);
+      for (const alias of aliasesForOperationalRow(ping)) {
+        const userKey = normalizeKey(alias);
+        if (!lastFootprintByUser.has(userKey)) lastFootprintByUser.set(userKey, ping);
+      }
     }
 
     const latestPunchByUser = new Map();
     const punchesByRoute = new Map();
     for (const punch of punches) {
-      const userKey = normalizeKey(punch.user_name);
-      if (!latestPunchByUser.has(userKey)) latestPunchByUser.set(userKey, punch);
+      for (const alias of aliasesForOperationalRow(punch)) {
+        const userKey = normalizeKey(alias);
+        if (!latestPunchByUser.has(userKey)) latestPunchByUser.set(userKey, punch);
+      }
       if (punch.route_id && punch.latitude != null && punch.longitude != null) {
         if (!punchesByRoute.has(Number(punch.route_id))) punchesByRoute.set(Number(punch.route_id), []);
         punchesByRoute.get(Number(punch.route_id)).push(punch);
@@ -1323,8 +1448,10 @@ async function getOperationsMap(tenantId, query = {}) {
     const activitiesByRoute = new Map();
     const latestActivityByUser = new Map();
     for (const activity of activities) {
-      const userKey = normalizeKey(activity.user_name);
-      if (!latestActivityByUser.has(userKey)) latestActivityByUser.set(userKey, activity);
+      for (const alias of aliasesForOperationalRow(activity)) {
+        const userKey = normalizeKey(alias);
+        if (!latestActivityByUser.has(userKey)) latestActivityByUser.set(userKey, activity);
+      }
       if (activity.route_id && activity.latitude != null && activity.longitude != null) {
         if (!activitiesByRoute.has(Number(activity.route_id))) activitiesByRoute.set(Number(activity.route_id), []);
         activitiesByRoute.get(Number(activity.route_id)).push(activity);
@@ -1344,8 +1471,12 @@ async function getOperationsMap(tenantId, query = {}) {
         const latestActivity = aliases.map((alias) => latestActivityByUser.get(normalizeKey(alias))).find(Boolean);
         const ageSeconds = latestPing ? Math.max(0, Math.round((Date.now() - new Date(latestPing.captured_at).getTime()) / 1000)) : null;
         const isOnline = Boolean(latestLivePing && new Date(latestLivePing.captured_at) >= since);
-        const displayName = employeeDisplayName(employee) || assignedName;
-        const displayUserName = latestPunch?.user_name
+        const displayName = employeeDisplayName(employee)
+          || displayNameForOperationalRow(latestPunch)
+          || displayNameForOperationalRow(latestPing)
+          || assignedName;
+        const displayUserName = displayNameForOperationalRow(latestPunch)
+          || displayNameForOperationalRow(latestPing)
           || (!isGenericEmployeeAlias(latestPing?.user_name) ? latestPing?.user_name : "")
           || (!isGenericEmployeeAlias(employee?.code) ? employee?.code : "")
           || displayName
@@ -1379,15 +1510,18 @@ async function getOperationsMap(tenantId, query = {}) {
 
     const routeSummaries = routes.map((route) => {
       const assigned = people.filter((person) => person.route_id === route.id);
-      const routePings = (pingsByRoute.get(route.id) || []).sort((a, b) => new Date(a.captured_at) - new Date(b.captured_at));
-      const routePunches = (punchesByRoute.get(route.id) || []).sort((a, b) => new Date(a.punched_at) - new Date(b.punched_at));
-      const routeActivities = (activitiesByRoute.get(route.id) || []).sort((a, b) => new Date(a.occurred_at) - new Date(b.occurred_at));
+      const assignedAliases = new Set(assigned.flatMap((person) => [person.employee_id, person.user_name, person.name]).filter(Boolean).map((value) => normalizeKey(value)));
+      const matchesAssigned = (row) => row.route_id === route.id || aliasesForOperationalRow(row).some((alias) => assignedAliases.has(normalizeKey(alias)));
+      const routePings = pings.filter(matchesAssigned).sort((a, b) => new Date(a.captured_at) - new Date(b.captured_at));
+      const routePunches = punches.filter((punch) => matchesAssigned(punch) && punch.latitude != null && punch.longitude != null).sort((a, b) => new Date(a.punched_at) - new Date(b.punched_at));
+      const routeActivities = activities.filter((activity) => matchesAssigned(activity) && activity.latitude != null && activity.longitude != null).sort((a, b) => new Date(a.occurred_at) - new Date(b.occurred_at));
       const marksByUser = new Map();
       for (const punch of routePunches) {
-        if (!marksByUser.has(punch.user_name)) marksByUser.set(punch.user_name, []);
-        marksByUser.get(punch.user_name).push({
+        const displayUserName = displayNameForOperationalRow(punch);
+        if (!marksByUser.has(displayUserName)) marksByUser.set(displayUserName, []);
+        marksByUser.get(displayUserName).push({
           id: punch.id,
-          user_name: punch.user_name,
+          user_name: displayNameForOperationalRow(punch),
           type: punch.type,
           time: punch.time,
           punched_at: punch.punched_at,
@@ -1405,6 +1539,8 @@ async function getOperationsMap(tenantId, query = {}) {
       }
       return {
         ...route,
+        employee_ids: assigned.map((person) => String(person.employee_id || person.user_name)).filter(Boolean),
+        employee_names: assigned.map((person) => person.name || person.user_name).filter(Boolean),
         placa: route.vehicle_plate,
         equipo: route.employees,
         h_inicio: route.start_time,
@@ -1415,7 +1551,7 @@ async function getOperationsMap(tenantId, query = {}) {
         pings: routePings,
         punch_points: routePunches.map((punch) => ({
           id: punch.id,
-          user_name: punch.user_name,
+          user_name: displayNameForOperationalRow(punch),
           type: punch.type,
           time: punch.time,
           punched_at: punch.punched_at,
@@ -1432,7 +1568,7 @@ async function getOperationsMap(tenantId, query = {}) {
         })),
         activity_points: routeActivities.map((activity) => ({
           id: activity.id,
-          user_name: activity.user_name,
+          user_name: displayNameForOperationalRow(activity),
           type: activity.activity_type_name,
           time: timeString(activity.occurred_at),
           occurred_at: activity.occurred_at,
