@@ -518,9 +518,9 @@ function storedRolePermissions() {
 
 function canDeletePhysicalDocuments() {
   return storedRolePermissions().some((permission) => {
-    const module = String(permission.module || "").toLowerCase();
+    const permissionModule = String(permission.module || "").toLowerCase();
     const action = String(permission.action || "").toLowerCase();
-    return (module === "*" || module === "admin") && (action === "*" || action === "delete_physical_records");
+    return (permissionModule === "*" || permissionModule === "admin") && (action === "*" || action === "delete_physical_records");
   });
 }
 
