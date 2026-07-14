@@ -580,6 +580,20 @@ function identityAliasValues(row: {
   ].filter(Boolean).map((value) => String(value).trim()).filter(Boolean)));
 }
 
+function hasStoredPermission(module: string, action: string) {
+  if (typeof window === "undefined") return false;
+  try {
+    const permissions = JSON.parse(localStorage.getItem("role_permissions") || "[]");
+    return Array.isArray(permissions) && permissions.some((permission) => {
+      const permissionModule = String(permission.module || "").toLowerCase();
+      const permissionAction = String(permission.action || "").toLowerCase();
+      return (permissionModule === "*" || permissionModule === module) && (permissionAction === "*" || permissionAction === action);
+    });
+  } catch {
+    return false;
+  }
+}
+
 function isGenericIdentityAlias(value: unknown) {
   return /^(usuario[-\s]\d+|usr-\d+)$/i.test(String(value || "").trim());
 }
@@ -1250,16 +1264,18 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const code = String(employee.metadata?.code || employee.document_number || employee.id.slice(0, 8));
     const aliases = identityAliasSet(employee);
     const companyFilter = companyId ? `&company_id=eq.${encodeURIComponent(companyId)}` : "";
+    const selectedRouteId = search.get("route_id") || "";
+    const routeFilter = selectedRouteId ? `&route_id=eq.${encodeURIComponent(selectedRouteId)}` : "";
     const punches = (await supabaseFetch<Array<{ id: string; employee_id?: string; user_id?: string; user_name: string; punch_type: string; punched_at: string; punch_time?: string; vehicle_plate?: string; route_id?: string; latitude?: number; longitude?: number; accuracy_meters?: number }>>(
       `/rest/v1/time_punches?select=id,employee_id,user_id,user_name,punch_type,punched_at,punch_time,vehicle_plate,route_id,latitude,longitude,accuracy_meters&punch_date=eq.${localDate()}${companyFilter}&order=punched_at.asc&limit=80`
     ).catch((error) => {
       safeDevLog("No fue posible consultar marcaciones Supabase.", error);
       return [];
-    })).filter((punch) => aliases.has(String(punch.employee_id || "")) || aliases.has(String(punch.user_id || "")) || aliases.has(String(punch.user_name || "")));
+    })).filter((punch) => (!selectedRouteId || String(punch.route_id || "") === selectedRouteId) && (aliases.has(String(punch.employee_id || "")) || aliases.has(String(punch.user_id || "")) || aliases.has(String(punch.user_name || ""))));
     const types = punches.map((punch) => punch.punch_type);
     const activeSession = types.includes("entrada") && !types.includes("salida");
     const activityRows = (await supabaseFetch<Array<{ id: string; employee_id?: string; user_id?: string; user_name: string; latitude: number; longitude: number; accuracy_meters?: number; captured_at: string; metadata?: AnyRow }>>(
-      `/rest/v1/gps_pings?select=id,employee_id,user_id,user_name,latitude,longitude,accuracy_meters,captured_at,metadata&source=eq.work_activity${companyFilter}&order=captured_at.desc&limit=120`
+      `/rest/v1/gps_pings?select=id,employee_id,user_id,user_name,route_id,latitude,longitude,accuracy_meters,captured_at,metadata&source=eq.work_activity${companyFilter}${routeFilter}&order=captured_at.desc&limit=120`
     ).catch((error) => {
       safeDevLog("No fue posible consultar actividades Supabase.", error);
       return [];
@@ -1280,6 +1296,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         id: toNumberId(entry?.id || employee.id),
         status: "activa",
         started_at: entry?.punched_at || new Date().toISOString(),
+        route_id: entry?.route_id || selectedRouteId || null,
         user_name: code || name
       } : null,
       active: activeSession,
@@ -1363,7 +1380,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       : identity.user_id
         ? `user_id=eq.${identity.user_id}`
         : `user_name=eq.${encodeURIComponent(identity.user_name)}`;
-    const punches = await supabaseFetch<Array<{ punch_type: string }>>(`/rest/v1/time_punches?select=punch_type&company_id=eq.${encodeURIComponent(employee.company_id)}&${punchIdentityFilter}&punch_date=eq.${localDate(now)}&order=punched_at.asc&limit=12`).catch((error) => {
+    const routeIdentityFilter = routeId ? `&route_id=eq.${encodeURIComponent(String(routeId))}` : "";
+    const punches = await supabaseFetch<Array<{ punch_type: string }>>(`/rest/v1/time_punches?select=punch_type&company_id=eq.${encodeURIComponent(employee.company_id)}&${punchIdentityFilter}${routeIdentityFilter}&punch_date=eq.${localDate(now)}&order=punched_at.asc&limit=12`).catch((error) => {
       safeDevLog("No fue posible recalcular siguiente marcacion.", error);
       return [];
     });
@@ -1559,7 +1577,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       metadata?: AnyRow;
     }>>();
     for (const punch of punches) {
-      const groupKey = String(punch.employee_id || punch.user_id || displayNameForIdentity(punch) || punch.user_name);
+      const groupKey = `${String(punch.employee_id || punch.user_id || displayNameForIdentity(punch) || punch.user_name)}::${String(punch.route_id || "sin_horario")}`;
       const displayUserName = displayNameForIdentity(punch) || punch.user_name;
       const list = grouped.get(groupKey) || [];
       list.push({
@@ -1587,6 +1605,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     }
     return Array.from(grouped.values()).map((punches) => ({
       user_name: punches[0]?.user_name || "",
+      route_id: punches[0]?.route_id || null,
       next_type: nextPunchFrom(punches.map((punch) => punch.type)),
       punches
     })) as T;
@@ -2691,6 +2710,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   if (adminUserDocumentMatch) {
     const [, userId, documentId] = adminUserDocumentMatch;
     const body = options.body ? JSON.parse(String(options.body)) : {};
+    if (method === "DELETE" && !hasStoredPermission("admin", PHYSICAL_DELETE_PERMISSION)) {
+      throw new Error("No tienes permiso especial para eliminar documentos de la base.");
+    }
     const nextApiOk = await nextAdminUsersRequest({
       method: "PATCH",
       body: JSON.stringify(method === "DELETE"

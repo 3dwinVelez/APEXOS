@@ -13,6 +13,7 @@ El permiso especial `DELETE_PHYSICAL_RECORDS` existe solo como permiso explicito
 Un borrado fisico solo puede ejecutarse cuando se cumplan todas las condiciones:
 
 - Permiso explicito `delete_physical_records`.
+- Para documentos adjuntos de usuarios, la eliminacion fisica exige `delete_physical_records`; el retiro queda auditado y no debe habilitarse con permisos generales de edicion o administracion. En flujos Supabase, el permiso puede asignarse de forma controlada a usuarios especificos mediante `special_permissions`.
 - Doble confirmacion visual.
 - Motivo obligatorio.
 - Validacion de dependencias.

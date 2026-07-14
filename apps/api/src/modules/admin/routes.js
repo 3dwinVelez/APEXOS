@@ -82,7 +82,7 @@ async function adminRoutes(fastify) {
   }, async (request, reply) => reply.code(201).send(await service.addUserDocument(request.user?.tenant_id, request.params.id, request.body || {}, request.user?.id)));
 
   fastify.delete("/admin/users/:id/documents/:documentId", {
-    preHandler: requirePermission("admin", "write")
+    preHandler: requirePermission("admin", "delete_physical_records")
   }, async (request) => service.removeUserDocument(request.user?.tenant_id, request.params.id, request.params.documentId, request.user?.id));
 }
 

@@ -869,13 +869,14 @@ async function updateActivityType(tenantId, id, input) {
   }));
 }
 
-async function findCurrentWorkSession({ employee, userName, date = new Date() }) {
+async function findCurrentWorkSession({ employee, userName, routeId = null, date = new Date() }) {
   return prisma.workSession.findFirst({
     where: {
       OR: [
         { employee_id: employee?.id || -1 },
         { user_name: userName || "" }
       ],
+      ...(routeId ? { route_id: Number(routeId) } : {}),
       date: { gte: startOfDay(date), lt: endOfDay(date) },
       status: "activa"
     },
@@ -888,7 +889,7 @@ async function getCurrentWorkSession(tenantId, user, query = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const employee = await getCurrentEmployee(tenantId, user).catch(() => null);
     const userName = query.user_name || employeeUserName(employee, user?.name || user?.email || "");
-    const session = await findCurrentWorkSession({ employee, userName, date: query.date || new Date() });
+    const session = await findCurrentWorkSession({ employee, userName, routeId: optionalNumericId(query.route_id), date: query.date || new Date() });
     const activities = session?.activities || [];
     return {
       session,
@@ -951,7 +952,7 @@ async function createWorkActivity(tenantId, user, input) {
       ? await prisma.employee.findFirst({ where: { id: employeeId, tenant_id: tenantId }, include: { user: { select: { name: true, email: true } } } })
       : await getCurrentEmployee(tenantId, user).catch(() => null);
     const userName = employeeUserName(employee, user?.name || user?.email || "");
-    const session = await findCurrentWorkSession({ employee, userName });
+    const session = await findCurrentWorkSession({ employee, userName, routeId: inputRouteId });
     if (!session) {
       const err = new Error("No hay jornada activa. Marca Entrada antes de registrar actividades.");
       err.statusCode = 422;
@@ -1098,7 +1099,7 @@ async function createPunch(tenantId, input, user) {
       };
     }
     const resolvedUserName = employeeUserName(employee, input.user_name);
-    const punchesToday = await latestPunchesForUser(resolvedUserName, punchedAt);
+    const punchesToday = await latestPunchesForUser(resolvedUserName, punchedAt, route?.id || inputRouteId);
     const expectedType = nextPunchType(punchesToday);
     if (!expectedType) {
       throw validationError("La jornada ya esta completa para hoy.", 409, "JORNADA_COMPLETA");
@@ -1225,7 +1226,7 @@ async function createPunch(tenantId, input, user) {
         orderBy: { completed_at: "desc" }
       }).catch(() => null);
       const existing = await prisma.workSession.findFirst({
-        where: { employee_id: employee.id, date: { gte: startOfDay(punchedAt), lt: endOfDay(punchedAt) }, status: "activa" },
+        where: { employee_id: employee.id, route_id: route?.id || inputRouteId, date: { gte: startOfDay(punchedAt), lt: endOfDay(punchedAt) }, status: "activa" },
         orderBy: { started_at: "desc" }
       });
       if (existing) {
@@ -1240,7 +1241,7 @@ async function createPunch(tenantId, input, user) {
       }
     } else {
       const session = await prisma.workSession.findFirst({
-        where: { employee_id: employee.id, date: { gte: startOfDay(punchedAt), lt: endOfDay(punchedAt) }, status: "activa" },
+        where: { employee_id: employee.id, route_id: route?.id || inputRouteId, date: { gte: startOfDay(punchedAt), lt: endOfDay(punchedAt) }, status: "activa" },
         orderBy: { started_at: "desc" }
       });
       if (session) {
@@ -1262,7 +1263,7 @@ async function createPunch(tenantId, input, user) {
       minutos_extra: extraMinutes,
       alerta: extraMinutes > 0,
       punch,
-      next: nextPunchType(await latestPunchesForUser(resolvedUserName, punchedAt)),
+      next: nextPunchType(await latestPunchesForUser(resolvedUserName, punchedAt, route?.id || inputRouteId)),
       preoperational_required: Boolean(preop),
       preoperational_checklist: preop ? { ...preop, id: Number(preop.id) } : null,
       route_authorized: preop ? ["aprobado", "aprobado_con_novedad"].includes(preop.checklist_status) : true
@@ -1626,10 +1627,11 @@ async function getOperationsMap(tenantId, query = {}) {
   });
 }
 
-async function latestPunchesForUser(userName, date = new Date()) {
+async function latestPunchesForUser(userName, date = new Date(), routeId = null) {
   return prisma.timePunch.findMany({
     where: {
       user_name: userName,
+      ...(routeId ? { route_id: Number(routeId) } : {}),
       date: { gte: startOfDay(date), lt: endOfDay(date) }
     },
     orderBy: { punched_at: "asc" }
@@ -1673,11 +1675,13 @@ async function listAttendance(tenantId, query = {}) {
     }
     const grouped = new Map();
     for (const punch of punches) {
-      if (!grouped.has(punch.user_name)) grouped.set(punch.user_name, []);
-      grouped.get(punch.user_name).push(punch);
+      const key = `${punch.user_name}::${punch.route_id || "sin_horario"}`;
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key).push(punch);
     }
-    return Array.from(grouped.entries()).map(([user_name, rows]) => ({
-      user_name,
+    return Array.from(grouped.values()).map((rows) => ({
+      user_name: rows[0]?.user_name || "",
+      route_id: rows[0]?.route_id || null,
       last_type: rows[rows.length - 1].type || "sin_marcar",
       next_type: nextPunchType(rows),
       punches: rows

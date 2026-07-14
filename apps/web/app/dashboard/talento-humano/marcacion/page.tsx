@@ -6,10 +6,10 @@ import { SignatureCapture } from "@/components/operations/SignatureCapture";
 import { PhotoCapture, type CapturedFile } from "@/components/operations/PhotoCapture";
 import { AlertTriangle, ArrowLeft, CheckCircle2, ExternalLink, MapPin, Navigation, Plus, RefreshCw, Truck, X } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type Employee = { id: number | string; user_id?: string; code: string; document_number?: string; user_type?: string; position?: string; metadata: { name: string; user_type?: string; code?: string; identity_aliases?: string[] }; user: { name: string; email?: string } };
-type Attendance = { user_name: string; next_type: string | null; punches: Array<{ id: number; type: string; time: string; vehicle_plate: string }> };
+type Attendance = { user_name: string; route_id?: number | string | null; next_type: string | null; punches: Array<{ id: number; type: string; time: string; vehicle_plate: string }> };
 type TimeRoute = { id: number | string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string };
 type PreopItem = { section: string; item_key: string; label: string; severity: string; blocks_route: boolean; evidence_required: boolean };
 type PreopChecklist = { id: number; route_id?: number; plate: string; checklist_status: string; risk_level: string };
@@ -18,7 +18,7 @@ type PreopAnswer = { answer: string; observations: string; evidence: CapturedFil
 type PunchResponse = { next?: string | null; preoperational_required?: boolean; preoperational_checklist?: PreopChecklist | null };
 type ActivityType = { id: number; name: string; active: boolean };
 type WorkActivity = { id: number; activity_type_name: string; observation: string; occurred_at: string; latitude: number; longitude: number; accuracy_meters?: number; evidence?: Array<{ base64_data?: string; file_name?: string }> };
-type WorkSession = { id: number; active: boolean; session: { id: number; status: string; started_at: string; closed_at?: string } | null; activities: WorkActivity[]; alerts: Array<{ type: string; severity: string; message: string }> };
+type WorkSession = { id: number; active: boolean; session: { id: number; status: string; started_at: string; closed_at?: string; route_id?: number | string | null } | null; activities: WorkActivity[]; alerts: Array<{ type: string; severity: string; message: string }> };
 
 const overtimeReasons = [
   ["entrega_cliente_extendida", "Entrega extendida por solicitud del cliente"],
@@ -111,6 +111,7 @@ export default function MobilePunchPage() {
   const [activitySaving, setActivitySaving] = useState(false);
   const [activityMessage, setActivityMessage] = useState("");
   const [markingType, setMarkingType] = useState<string | null>(null);
+  const [selectedRouteId, setSelectedRouteId] = useState("");
 
   const load = useCallback(async () => {
     const [me, routeData, attendanceData, typesData, sessionData] = await Promise.all([
@@ -140,20 +141,24 @@ export default function MobilePunchPage() {
 
   const userName = !isGenericIdentityAlias(employee?.code) ? employee?.code || employeeName(employee) || "" : employeeName(employee) || employee?.user?.email || String(employee?.id || "");
   const aliases = employeeAliases(employee);
-  const currentAttendance = attendance.find((item) => {
-    const match = aliases.includes(normalizeKey(item.user_name)) || item.user_name === userName || item.user_name === employeeName(employee);
-    return match;
-  }) || { user_name: userName, next_type: "entrada", punches: [] };
-  const doneTypes = new Set(currentAttendance.punches.map((punch) => punch.type) || []);
-  const nextType = currentAttendance.next_type || "entrada";
-  const displayName = employeeName(employee) || "";
-  const route = routes.find((item) => {
+  const assignedRoutes = useMemo(() => routes.filter((item) => {
     const routeEmployees = [...(item.employees || []), ...(item.employee_ids || []), ...(item.employee_names || [])];
     return routeEmployees.some((emp) => {
       const empKey = normalizeKey(emp);
-      return aliases.includes(empKey) || empKey === normalizeKey(userName) || empKey === normalizeKey(employee?.code || "") || empKey === normalizeKey(displayName);
+      return aliases.includes(empKey) || empKey === normalizeKey(userName) || empKey === normalizeKey(employee?.code || "") || empKey === normalizeKey(employeeName(employee));
     });
-  }) || routes.find((item) => displayName && [...(item.employees || []), ...(item.employee_names || [])].some((name) => normalizeKey(name) === normalizeKey(displayName)));
+  }), [aliases, employee, routes, userName]);
+  const activeSessionRouteId = session?.session?.route_id ? String(session.session.route_id) : "";
+  const route = assignedRoutes.find((item) => String(item.id) === String(selectedRouteId || activeSessionRouteId))
+    || (assignedRoutes.length === 1 ? assignedRoutes[0] : null);
+  const routeRequired = assignedRoutes.length > 1 && !route;
+  const currentAttendance = attendance.find((item) => {
+    const identityMatch = aliases.includes(normalizeKey(item.user_name)) || item.user_name === userName || item.user_name === employeeName(employee);
+    const routeMatch = route ? String(item.route_id || "") === String(route.id) : true;
+    return identityMatch && routeMatch;
+  }) || { user_name: userName, route_id: route?.id || null, next_type: "entrada", punches: [] };
+  const doneTypes = new Set(currentAttendance.punches.map((punch) => punch.type) || []);
+  const nextType = currentAttendance.next_type || "entrada";
   const vehiclePlate = route?.vehicle_plate || "";
   const isClosingLate = (() => {
     if (nextType !== "salida" || !route?.end_time) return false;
@@ -196,6 +201,19 @@ export default function MobilePunchPage() {
     };
   }, [employee, route?.id, userName, vehiclePlate]);
 
+  useEffect(() => {
+    if (activeSessionRouteId && activeSessionRouteId !== selectedRouteId) {
+      setSelectedRouteId(activeSessionRouteId);
+      return;
+    }
+    if (!selectedRouteId && assignedRoutes.length === 1) setSelectedRouteId(String(assignedRoutes[0].id));
+  }, [activeSessionRouteId, assignedRoutes, selectedRouteId]);
+
+  useEffect(() => {
+    if (!route?.id) return;
+    api<WorkSession>(`/api/v1/hr/work-sessions/current?route_id=${encodeURIComponent(String(route.id))}`).then(setSession).catch(() => undefined);
+  }, [route?.id]);
+
   async function refreshGps() {
     // Use cached GPS if less than 25s old — avoids blocking the UI
     if (gps && Date.now() - gpsUpdatedAt < 25000) return gps;
@@ -230,6 +248,10 @@ export default function MobilePunchPage() {
 
   async function mark(type: string) {
     if (!employee || markingType) return;
+    if (!route) {
+      setMessage(assignedRoutes.length ? "Selecciona el horario sobre el que vas a marcar." : "No tienes horario asignado para marcar.");
+      return;
+    }
     setMarkingType(type);
     setMessage("");
     try {
@@ -298,6 +320,10 @@ export default function MobilePunchPage() {
       await load();
       return;
     }
+    if (!route) {
+      setMessage(assignedRoutes.length ? "Selecciona el horario antes de registrar actividades." : "No tienes horario asignado para registrar actividades.");
+      return;
+    }
     setActivityModal(true);
     if (!gps) {
       void refreshGps();
@@ -309,6 +335,10 @@ export default function MobilePunchPage() {
     if (!session?.active) {
       setActivityMessage("No hay jornada activa. Marca Entrada antes de registrar actividades.");
       await load();
+      return;
+    }
+    if (!route) {
+      setActivityMessage(assignedRoutes.length ? "Selecciona el horario antes de guardar la actividad." : "No tienes horario asignado.");
       return;
     }
     if (!activityTypeId) {
@@ -431,6 +461,27 @@ export default function MobilePunchPage() {
           <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
+                <p className="text-xs font-semibold uppercase text-neutral-500">Horario asignado</p>
+                <h2 className="mt-1 text-lg font-semibold">{route ? `Horario ${route.id}` : assignedRoutes.length ? "Selecciona un horario" : "Sin horario asignado"}</h2>
+                <p className="mt-1 text-sm text-neutral-600">{route ? `${route.start_time || "--"} - ${route.end_time || "--"}${route.vehicle_plate ? ` · ${route.vehicle_plate}` : ""}` : assignedRoutes.length ? "Debes elegir sobre cual horario vas a registrar marcaciones y actividades." : "Consulta con administracion para asignar una jornada antes de marcar."}</p>
+              </div>
+              <span className={`rounded-md px-2 py-1 text-xs font-semibold ${route ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>{assignedRoutes.length} asignado(s)</span>
+            </div>
+            {assignedRoutes.length > 1 ? (
+              <select className="mt-3 h-12 w-full rounded-md border border-line bg-white px-3 text-base" value={selectedRouteId} onChange={(event) => setSelectedRouteId(event.target.value)}>
+                <option value="">Selecciona horario para marcar</option>
+                {assignedRoutes.map((item) => (
+                  <option key={String(item.id)} value={String(item.id)}>
+                    Horario {item.id} - {item.start_time || "--"} a {item.end_time || "--"}{item.vehicle_plate ? ` - ${item.vehicle_plate}` : ""}
+                  </option>
+                ))}
+              </select>
+            ) : null}
+          </section>
+
+          <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
                 <p className="text-xs font-semibold uppercase text-neutral-500">Estado operativo</p>
                 <h2 className="mt-1 text-lg font-semibold">{session?.active ? "Jornada activa" : doneTypes.has("salida") ? "Jornada cerrada" : "Sin jornada activa"}</h2>
                 <p className="mt-1 text-sm text-neutral-600">{session?.active ? "Puedes registrar actividades con GPS, foto y observacion." : "Marca Entrada para iniciar trazabilidad operativa."}</p>
@@ -442,7 +493,7 @@ export default function MobilePunchPage() {
                 {session.alerts.slice(0, 2).map((alert) => <p className="rounded-md bg-amber-50 p-2 text-xs font-semibold text-amber-900" key={alert.type}><AlertTriangle className="mr-1 inline" size={13} />{alert.message}</p>)}
               </div>
             ) : null}
-            <button className="mt-3 inline-flex h-13 min-h-12 w-full items-center justify-center gap-2 rounded-md bg-apex px-4 text-base font-semibold text-white disabled:bg-neutral-300" disabled={!session?.active} onClick={openActivityModal} type="button">
+            <button className="mt-3 inline-flex h-13 min-h-12 w-full items-center justify-center gap-2 rounded-md bg-apex px-4 text-base font-semibold text-white disabled:bg-neutral-300" disabled={!session?.active || !route} onClick={openActivityModal} type="button">
               <Plus size={18} /> Registrar actividad
             </button>
             {!session?.active ? <p className="mt-2 text-xs font-semibold text-neutral-500">Disponible despues de marcar Entrada.</p> : null}
@@ -456,7 +507,7 @@ export default function MobilePunchPage() {
               </div>
             </div>
             <div className="mt-4 rounded-md bg-paper p-3 text-sm text-neutral-700">
-              <Truck className="mr-2 inline text-apex" size={15} /> {route ? `Horario ${route.id} - ${route.start_time || "--"} - ${route.end_time || "--"}` : "Sin horario asignado para este usuario/equipo"}
+              <Truck className="mr-2 inline text-apex" size={15} /> {route ? `Marcando en horario ${route.id} - ${route.start_time || "--"} - ${route.end_time || "--"}` : "Sin horario seleccionado para este usuario/equipo"}
             </div>
             {nextType === "salida" && isClosingLate ? (
               <div className="mt-3 space-y-3 rounded-md border border-amber-200 bg-amber-50 p-3">
@@ -498,14 +549,14 @@ export default function MobilePunchPage() {
               const enabled = type === nextType && !!employee;
               const cfg = punchLabels[type];
               return (
-                  <button className={`min-h-24 w-full rounded-md border p-4 text-left transition active:scale-[0.99] ${enabled ? "border-apex bg-white shadow-sm" : "border-line bg-white opacity-70"}`} disabled={!enabled || Boolean(markingType)} key={type} onClick={() => mark(type)} type="button">
+                  <button className={`min-h-24 w-full rounded-md border p-4 text-left transition active:scale-[0.99] ${enabled && route ? "border-apex bg-white shadow-sm" : "border-line bg-white opacity-70"}`} disabled={!enabled || !route || Boolean(markingType)} key={type} onClick={() => mark(type)} type="button">
                   <div className="flex items-center gap-3">
                     <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-md text-white ${done ? "bg-emerald-600" : enabled ? cfg.color : "bg-neutral-300"}`}>
                       {done ? <CheckCircle2 size={24} /> : <MapPin size={23} />}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-base font-semibold">{cfg.title}</p>
-                      <p className="mt-1 text-sm text-neutral-500">{markingType === type ? "Registrando..." : done ? "Registrado correctamente" : enabled ? cfg.desc : "No disponible aun"}</p>
+                      <p className="mt-1 text-sm text-neutral-500">{markingType === type ? "Registrando..." : done ? "Registrado correctamente" : !route ? "Selecciona un horario" : enabled ? cfg.desc : "No disponible aun"}</p>
                     </div>
                   </div>
                 </button>
@@ -545,11 +596,11 @@ export default function MobilePunchPage() {
       {view === "marcar" ? <div className="fixed inset-x-0 bottom-0 z-50 border-t border-line bg-white/95 px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur md:hidden">
         <button
           className={`h-14 w-full rounded-md text-base font-semibold text-white shadow-sm ${punchLabels[nextType]?.color || "bg-apex"} disabled:bg-neutral-300`}
-          disabled={!employee || !nextType || Boolean(markingType)}
+          disabled={!employee || !route || routeRequired || !nextType || Boolean(markingType)}
           onClick={() => mark(nextType)}
           type="button"
         >
-          {markingType ? "Registrando..." : nextType ? punchLabels[nextType]?.title || "Registrar" : "Jornada completa"}
+          {markingType ? "Registrando..." : !route ? "Selecciona horario" : nextType ? punchLabels[nextType]?.title || "Registrar" : "Jornada completa"}
         </button>
       </div> : null}
 

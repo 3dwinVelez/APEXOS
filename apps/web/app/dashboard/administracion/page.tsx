@@ -506,6 +506,24 @@ function normalizeRolePermissions(catalog: CatalogItem[], permissions?: Record<s
   return base;
 }
 
+function storedRolePermissions() {
+  if (typeof window === "undefined") return [] as Array<{ module?: string; action?: string }>;
+  try {
+    const parsed = JSON.parse(localStorage.getItem("role_permissions") || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function canDeletePhysicalDocuments() {
+  return storedRolePermissions().some((permission) => {
+    const module = String(permission.module || "").toLowerCase();
+    const action = String(permission.action || "").toLowerCase();
+    return (module === "*" || module === "admin") && (action === "*" || action === "delete_physical_records");
+  });
+}
+
 function emptyRoleForm(catalog: CatalogItem[]) {
   return {
     name: "",
@@ -1171,6 +1189,10 @@ export default function AdministracionPage() {
   async function removeDocument(documentId: string) {
     const targetId = selectedUserApiId();
     if (!targetId) return;
+    if (!canDeletePhysicalDocuments()) {
+      setMessage("No tienes permiso especial para eliminar documentos de la base.");
+      return;
+    }
     try {
       await api<AdminUser>(`/api/v1/admin/users/${targetId}/documents/${documentId}`, { method: "DELETE" });
       setMessage("Documento retirado del expediente.");
@@ -1731,7 +1753,7 @@ export default function AdministracionPage() {
               <div className="flex items-center gap-2">
                 <span className="rounded-md bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">{doc.status || "pending"}</span>
                 {(doc.storage_path || doc.file_url) ? <button className="h-9 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => openDocument(doc)} type="button">Ver</button> : null}
-                <button className="h-9 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => removeDocument(doc.id)} type="button">Eliminar</button>
+                {canDeletePhysicalDocuments() ? <button className="h-9 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => removeDocument(doc.id)} type="button">Eliminar</button> : null}
               </div>
             </div>
           ))}

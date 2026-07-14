@@ -45,6 +45,32 @@ function httpError(message: string, status: number) {
   return error;
 }
 
+function jwtSubject(token: string) {
+  try {
+    const [, payload] = token.split(".");
+    if (!payload) return "";
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    return String(JSON.parse(Buffer.from(normalized, "base64").toString("utf8")).sub || "");
+  } catch {
+    return "";
+  }
+}
+
+async function requirePhysicalDocumentDelete(token: string, companyId: string) {
+  const userId = jwtSubject(token);
+  if (!userId) throw httpError("Sesion invalida para validar permiso especial.", 401);
+  const rows = await supabaseRequest(`/rest/v1/employees?select=id,metadata&company_id=eq.${encodeURIComponent(companyId)}&user_id=eq.${encodeURIComponent(userId)}&limit=1`, {
+    method: "GET",
+    service: true
+  }) as Array<{ metadata?: AnyRow }>;
+  const metadata = rows[0]?.metadata && typeof rows[0].metadata === "object" ? rows[0].metadata : {};
+  const access = metadata.access && typeof metadata.access === "object" ? metadata.access as AnyRow : {};
+  const raw = [metadata.special_permissions, access.special_permissions, metadata.permissions].filter(Boolean).join(",");
+  if (!raw.split(/[,\s;]+/).map((item) => item.trim().toLowerCase()).includes("delete_physical_records")) {
+    throw httpError("No tienes permiso especial para eliminar documentos de la base.", 403);
+  }
+}
+
 function validateUserPayload(body: AnyRow, { requirePassword = false } = {}) {
   const email = clean(body.email || body.access_email)?.toLowerCase();
   const firstNames = clean(body.first_names);
@@ -251,6 +277,7 @@ export async function PATCH(request: NextRequest) {
       nextMetadata = { ...metadata, documents: [...documents, document] };
       patch = { metadata: nextMetadata };
     } else if (action === "document_remove") {
+      await requirePhysicalDocumentDelete(token, String(current.company_id));
       const documentId = clean(body.document_id);
       nextMetadata = { ...metadata, documents: documents.filter((document) => String((document as AnyRow).id) !== String(documentId)) };
       patch = { metadata: nextMetadata };
