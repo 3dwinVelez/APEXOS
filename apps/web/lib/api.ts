@@ -1770,6 +1770,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       const userNames = Array.from(new Set([...routePunches.map((punch) => punch.user_name), ...routeActivities.map((activity) => activity.user_name)]));
       return {
         id: route.id,
+        code: route.code || "",
+        display_id: route.code || route.metadata?.display_id || route.id,
         vehicle_plate: route.vehicle_plate || "",
         employees: routeAssignments.map((assignment) => String(assignment.employee_id)),
         employee_ids: routeAssignments.map((assignment) => String(assignment.employee_id)),
@@ -2017,7 +2019,10 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     }>>(`/rest/v1/route_assignments?select=route_id,employee_id,role,employees(id,first_name,last_name,document_number,metadata)&company_id=eq.${encodeURIComponent(companyId)}&limit=500`);
 
     return routes.map((route) => ({
-      id: route.id,
+      id: route.code || route.id,
+      code: route.code || "",
+      display_id: route.code || route.id,
+      source_route_id: route.id,
       date: route.route_date,
       vehicle_plate: route.vehicle_plate || "",
       employees: assignments

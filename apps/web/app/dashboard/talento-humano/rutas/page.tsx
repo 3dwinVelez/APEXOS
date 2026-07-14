@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 
 type Employee = { id: number; code: string; user_type?: string; position: string; department: string; metadata: { name: string; document: string; user_type?: string }; user: { name: string } };
 type Vehicle = { id: number; plate: string; type: string; model: string };
-type TimeRoute = { id: number | string; date: string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string; status: string; tolerance_minutes?: number; per_diem?: number; notes?: string };
+type TimeRoute = { id: number | string; code?: string; display_id?: number | string; date: string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string; status: string; tolerance_minutes?: number; per_diem?: number; notes?: string };
 type OperatorPoint = { key: string; user_name: string; name: string; route_id: number | string; online?: boolean; last_punch_type?: string; last_activity_type?: string; last_activity_time?: string };
 type PunchPoint = { id: number | string; user_name: string; type: string; time?: string; punched_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; extra_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: { base64_data?: string; file_name?: string; file_url?: string } };
 type ActivityPoint = { id: number | string; user_name: string; type: string; time?: string; occurred_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; observation?: string; evidence?: Array<{ base64_data?: string; file_name?: string; file_url?: string }> };
@@ -56,6 +56,10 @@ function routeEmployeeNames(route: TimeRoute | RouteMonitor) {
 
 function routeEmployeeValues(route: TimeRoute | RouteMonitor) {
   return (route.employee_ids?.length ? route.employee_ids : route.employees) || [];
+}
+
+function routeMergeKeys(route: Partial<TimeRoute | RouteMonitor>) {
+  return new Set([route.id, route.code, route.display_id].filter(Boolean).map((value) => String(value)));
 }
 
 function employeeSearchText(employee: Employee) {
@@ -356,9 +360,12 @@ export default function RoutesPlanningPage() {
   const bulkCount = bulkMode ? rangePreview(bulk.start_date, bulk.end_date, bulk.weekdays) : 1;
   const monitorRoutes: RouteMonitor[] = useMemo(() => {
     if (!routes.length) return operations?.routes || [];
-    const operationById = new Map((operations?.routes || []).map((route) => [String(route.id), route]));
     return routes.map((route) => {
-      const operation = operationById.get(String(route.id));
+      const routeKeys = routeMergeKeys(route);
+      const operation = (operations?.routes || []).find((item) => {
+        const operationKeys = routeMergeKeys(item);
+        return Array.from(routeKeys).some((key) => operationKeys.has(key));
+      });
       return { ...route, ...operation, employee_ids: operation?.employee_ids || route.employee_ids, employee_names: operation?.employee_names || route.employee_names, punch_points: operation?.punch_points || [], activity_points: operation?.activity_points || [] };
     });
   }, [operations, routes]);

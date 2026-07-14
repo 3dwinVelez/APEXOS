@@ -37,6 +37,7 @@
 - Marcacion movil fusiona `/attendance` con `operations-map` para calcular la proxima marca por horario, de modo que eventos historicos sin `display_route_id` y eventos nuevos con metadata no rompan la secuencia. La UI avanza de forma optimista mientras Supabase sincroniza en segundo plano.
 - Las marcas y actividades quedan en una cola local optimista mientras Supabase responde; el usuario no espera la carga de evidencias/GPS para continuar operando y solo recibe estado de sincronizacion o pendiente de confirmar.
 - El monitor administrativo asocia marcaciones, GPS y actividades por `route_id` real o por `metadata.display_route_id`; esto permite reflejar ciclos completos guardados desde Marcacion movil aunque Supabase almacene el horario visible fuera de la columna UUID.
+- La validacion funcional del monitor debe cubrir el cruce `route.id = 11` contra `operations.routes[].id = UUID` y `operations.routes[].code/display_id = 11`, esperando que el monitor fusionado conserve las 4 marcaciones y las actividades del usuario.
 - Se agregaron escenarios demo para validar mapa historico, recorrido por marcaciones y ultima huella offline:
   - `node scripts/seed-hr-map-demo.js`
   - `node scripts/validate-hr-map-demo.js`
