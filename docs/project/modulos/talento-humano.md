@@ -33,6 +33,7 @@
 - Marcacion movil muestra los horarios asignados del usuario y, cuando hay mas de uno, exige seleccionar el horario antes de marcar o registrar actividades. La secuencia `entrada -> almuerzo -> retorno -> salida` se calcula por `route_id`, no por todas las marcas del dia.
 - El estado operativo de Marcacion movil se reconstruye desde las marcaciones reales del horario seleccionado: si existe `entrada` sin `salida`, la jornada se muestra activa aunque el registro auxiliar `work_sessions` no exista, y el backend repara esa sesion al consultar o registrar actividades.
 - Marcacion movil consume la misma trazabilidad de `operations-map` que usa el monitor administrativo como respaldo de `/attendance`; si el monitor ya muestra eventos del horario, el movil tambien debe derivar estado, proxima marca y actividades desde esos `punch_points` y `activity_points`.
+- En el fallback Supabase, los IDs visibles de horario como `11` no se escriben en columnas UUID (`route_id`); se resuelven contra `operational_routes.id` cuando es posible y, si no hay UUID, se conservan como `metadata.display_route_id` para evitar errores 400 al guardar actividades o pings.
 - Se agregaron escenarios demo para validar mapa historico, recorrido por marcaciones y ultima huella offline:
   - `node scripts/seed-hr-map-demo.js`
   - `node scripts/validate-hr-map-demo.js`

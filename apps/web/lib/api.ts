@@ -624,6 +624,10 @@ function identityOverlaps(left: string[], right: string[]) {
   return left.some((value) => rightSet.has(value.toLowerCase()));
 }
 
+function isUuid(value: unknown) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || "").trim());
+}
+
 async function currentSupabaseEmployee() {
   const userId = currentSupabaseUserId();
   const userFilter = userId ? `&user_id=eq.${userId}` : "";
@@ -735,12 +739,22 @@ async function currentSupabaseRouteIdForEmployee(employee: {
   document_number?: string;
   metadata?: AnyRow;
 }, preferredRouteId?: unknown) {
-  if (preferredRouteId) return preferredRouteId;
+  const preferred = String(preferredRouteId || "").trim();
+  if (preferred && isUuid(preferred)) return preferred;
   if (!employee.company_id) return null;
   const day = localDate();
-  const routes = await supabaseFetch<Array<{ id: string; route_date: string; status?: string }>>(
-    `/rest/v1/operational_routes?select=id,route_date,status&company_id=eq.${encodeURIComponent(employee.company_id)}&route_date=eq.${encodeURIComponent(day)}&status=neq.cancelled&order=start_time.asc&limit=120`
+  const routes = await supabaseFetch<Array<{ id: string; code?: string; route_date: string; status?: string; metadata?: AnyRow }>>(
+    `/rest/v1/operational_routes?select=id,code,route_date,status,metadata&company_id=eq.${encodeURIComponent(employee.company_id)}&route_date=eq.${encodeURIComponent(day)}&status=neq.cancelled&order=start_time.asc&limit=120`
   ).catch(() => []);
+  if (preferred) {
+    const matchedRoute = routes.find((route) => (
+      route.id === preferred
+      || String(route.code || "") === preferred
+      || String(route.metadata?.legacy_id || "") === preferred
+      || String(route.metadata?.display_id || "") === preferred
+    ));
+    if (matchedRoute?.id && isUuid(matchedRoute.id)) return matchedRoute.id;
+  }
   const routeIds = new Set(routes.map((route) => route.id));
   if (!routeIds.size) return null;
   const assignments = await supabaseFetch<Array<{
@@ -1265,7 +1279,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const aliases = identityAliasSet(employee);
     const companyFilter = companyId ? `&company_id=eq.${encodeURIComponent(companyId)}` : "";
     const selectedRouteId = search.get("route_id") || "";
-    const routeFilter = selectedRouteId ? `&route_id=eq.${encodeURIComponent(selectedRouteId)}` : "";
+    const selectedRouteIsUuid = isUuid(selectedRouteId);
+    const routeFilter = selectedRouteIsUuid ? `&route_id=eq.${encodeURIComponent(selectedRouteId)}` : "";
     const matchesCurrentEmployee = (row: { employee_id?: unknown; user_id?: unknown; user_name?: unknown; metadata?: AnyRow }) => (
       aliases.has(String(row.employee_id || "").toLowerCase())
       || aliases.has(String(row.user_id || "").toLowerCase())
@@ -1277,7 +1292,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     ).catch((error) => {
       safeDevLog("No fue posible consultar marcaciones Supabase.", error);
       return [];
-    })).filter((punch) => (!selectedRouteId || String(punch.route_id || "") === selectedRouteId) && matchesCurrentEmployee(punch));
+    })).filter((punch) => (!selectedRouteIsUuid || String(punch.route_id || "") === selectedRouteId) && matchesCurrentEmployee(punch));
     const types = punches.map((punch) => punch.punch_type);
     const activeSession = types.includes("entrada") && !types.includes("salida");
     const activityRows = (await supabaseFetch<Array<{ id: string; employee_id?: string; user_id?: string; user_name: string; latitude: number; longitude: number; accuracy_meters?: number; captured_at: string; metadata?: AnyRow }>>(
@@ -1357,6 +1372,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       metadata: {
         ...(body.metadata || {}),
         extra_evidence: extraEvidence,
+        display_route_id: body.route_id || "",
         supplied_user_name: body.user_name || "",
         employee_code: employee.metadata?.code || employee.document_number || "",
         employee_name: fullName(employee),
@@ -1386,7 +1402,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       : identity.user_id
         ? `user_id=eq.${identity.user_id}`
         : `user_name=eq.${encodeURIComponent(identity.user_name)}`;
-    const routeIdentityFilter = routeId ? `&route_id=eq.${encodeURIComponent(String(routeId))}` : "";
+    const routeIdentityFilter = routeId && isUuid(routeId) ? `&route_id=eq.${encodeURIComponent(String(routeId))}` : "";
     const punches = await supabaseFetch<Array<{ punch_type: string }>>(`/rest/v1/time_punches?select=punch_type&company_id=eq.${encodeURIComponent(employee.company_id)}&${punchIdentityFilter}${routeIdentityFilter}&punch_date=eq.${localDate(now)}&order=punched_at.asc&limit=12`).catch((error) => {
       safeDevLog("No fue posible recalcular siguiente marcacion.", error);
       return [];
@@ -1464,6 +1480,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         activity_type_id: type.id,
         activity_type_name: type.name,
         observation: body.observation,
+        display_route_id: body.route_id || "",
         photo: body.photo?.base64,
         photo_name: body.photo?.name,
         supplied_user_name: body.user_name || "",
@@ -1515,6 +1532,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         source: body.source,
         vehicle_plate: body.vehicle_plate || "",
         supplied_user_name: body.user_name || "",
+        display_route_id: body.route_id || "",
         employee_code: employee.metadata?.code || employee.document_number || "",
         employee_name: fullName(employee),
         identity_aliases: identity.aliases,
