@@ -31,6 +31,7 @@
 - La asignacion de horarios separa identidad tecnica y visual: la UI envia un alias operativo legible de empleado y el monitor expone `employee_names`; la trazabilidad correlaciona marcaciones, actividades y GPS por `employee_id`, `user_id`, `user_name`, email y metadata, evitando que aliases genericos como `USR-*` oculten al usuario real.
 - La creacion/edicion/clonacion de horarios normaliza la persona asignada hacia un alias operativo usable por Marcacion movil; si llega un UUID o ID tecnico, el backend intenta resolverlo contra aliases del empleado antes de guardar `route.employees`.
 - Marcacion movil muestra los horarios asignados del usuario y, cuando hay mas de uno, exige seleccionar el horario antes de marcar o registrar actividades. La secuencia `entrada -> almuerzo -> retorno -> salida` se calcula por `route_id`, no por todas las marcas del dia.
+- El estado operativo de Marcacion movil se reconstruye desde las marcaciones reales del horario seleccionado: si existe `entrada` sin `salida`, la jornada se muestra activa aunque el registro auxiliar `work_sessions` no exista, y el backend repara esa sesion al consultar o registrar actividades.
 - Se agregaron escenarios demo para validar mapa historico, recorrido por marcaciones y ultima huella offline:
   - `node scripts/seed-hr-map-demo.js`
   - `node scripts/validate-hr-map-demo.js`
@@ -56,6 +57,7 @@ Talento Humano debe separar operacion diaria, configuracion y seguimiento. Marca
 - Confirmar que un usuario como `deemo04` asignado a un horario aparece con su nombre real y que sus marcaciones/actividades se ven en la trazabilidad aunque existan registros historicos con `USR-*`.
 - Confirmar que al crear un horario desde Administracion, la columna Personas no muestra UUIDs y la pantalla movil detecta el horario asignado antes de guardar marcaciones o actividades.
 - Confirmar que una persona con 2 o 3 horarios asignados puede elegir el horario correcto, cerrar la jornada de ese horario y registrar actividades sin mezclar eventos de otros horarios del mismo dia.
+- Confirmar que una persona con una `entrada` ya registrada en un horario no vuelve a ver "Inicio jornada" como siguiente accion; debe ver la jornada activa, el horario seleccionado y la proxima marcacion pendiente de ese `route_id`.
 - Confirmar que un flujo real de 4 marcas mas evento operativo deja 4 `punch_points`, al menos 1 `activity_point` y huellas GPS visibles en la ruta del monitor.
 - Confirmar que el modo Historico muestra rutas cerradas con sus 4 marcaciones por usuario, recorrido conectado y detalle clicable de cada marca.
 - Confirmar que el escenario `MAP-101` contiene una ruta historica cerrada con 2 tecnicos y 8 marcaciones georreferenciadas.

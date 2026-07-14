@@ -870,11 +870,15 @@ async function updateActivityType(tenantId, id, input) {
 }
 
 async function findCurrentWorkSession({ employee, userName, routeId = null, date = new Date() }) {
+  const identityAliases = Array.from(new Set([
+    ...(employee ? aliasesForEmployee(employee) : []),
+    userName
+  ].filter(Boolean).map((value) => String(value).trim()).filter(Boolean)));
   return prisma.workSession.findFirst({
     where: {
       OR: [
         { employee_id: employee?.id || -1 },
-        { user_name: userName || "" }
+        ...(identityAliases.length ? [{ user_name: { in: identityAliases } }] : [{ user_name: userName || "" }])
       ],
       ...(routeId ? { route_id: Number(routeId) } : {}),
       date: { gte: startOfDay(date), lt: endOfDay(date) },
@@ -885,11 +889,78 @@ async function findCurrentWorkSession({ employee, userName, routeId = null, date
   });
 }
 
+function punchIdentityWhere(employee, userName) {
+  const aliases = Array.from(new Set([
+    ...(employee ? aliasesForEmployee(employee) : []),
+    userName
+  ].filter(Boolean).map((value) => String(value).trim()).filter(Boolean)));
+  const OR = [
+    ...(employee?.id ? [{ employee_id: employee.id }] : []),
+    ...(aliases.length ? [{ user_name: { in: aliases } }] : [])
+  ];
+  return OR.length ? { OR } : { user_name: userName || "" };
+}
+
+async function latestPunchesForEmployee(employee, userName, date = new Date(), routeId = null) {
+  return prisma.timePunch.findMany({
+    where: {
+      ...punchIdentityWhere(employee, userName),
+      ...(routeId ? { route_id: Number(routeId) } : {}),
+      date: { gte: startOfDay(date), lt: endOfDay(date) }
+    },
+    orderBy: { punched_at: "asc" }
+  });
+}
+
+async function ensureWorkSessionFromPunches({ employee, userName, routeId = null, date = new Date(), vehiclePlate = "" }) {
+  const punches = await latestPunchesForEmployee(employee, userName, date, routeId);
+  if (!punches.length || !punches.some((punch) => punch.type === "entrada") || punches.some((punch) => punch.type === "salida")) return null;
+  const entry = punches.find((punch) => punch.type === "entrada");
+  const lunchStart = punches.find((punch) => punch.type === "inicio_almuerzo");
+  const lunchEnd = punches.find((punch) => punch.type === "fin_almuerzo");
+  const resolvedRouteId = routeId || entry?.route_id || null;
+  const resolvedUserName = userName || entry?.user_name || employeeUserName(employee, "");
+  const existing = await prisma.workSession.findFirst({
+    where: {
+      ...punchIdentityWhere(employee, resolvedUserName),
+      ...(resolvedRouteId ? { route_id: Number(resolvedRouteId) } : {}),
+      date: { gte: startOfDay(date), lt: endOfDay(date) },
+      status: "activa"
+    },
+    orderBy: { started_at: "desc" },
+    include: { activities: { include: { activity_type: true, evidence: true }, orderBy: { occurred_at: "desc" }, take: 50 } }
+  });
+  if (existing) return existing;
+  const session = await prisma.workSession.create({
+    data: {
+      employee_id: employee?.id || entry?.employee_id || null,
+      user_name: resolvedUserName,
+      date: startOfDay(date),
+      status: "activa",
+      started_at: entry?.punched_at || new Date(),
+      lunch_started_at: lunchStart?.punched_at || null,
+      lunch_ended_at: lunchEnd?.punched_at || null,
+      entry_punch_id: entry?.id || null,
+      route_id: resolvedRouteId ? Number(resolvedRouteId) : null,
+      vehicle_plate: vehiclePlate || entry?.vehicle_plate || "",
+      metadata: {
+        repaired_from: "time_punches",
+        employee_name: employeeDisplayName(employee) || resolvedUserName,
+        identity_aliases: employee ? aliasesForEmployee(employee) : [resolvedUserName].filter(Boolean)
+      }
+    },
+    include: { activities: { include: { activity_type: true, evidence: true }, orderBy: { occurred_at: "desc" }, take: 50 } }
+  });
+  return session;
+}
+
 async function getCurrentWorkSession(tenantId, user, query = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const employee = await getCurrentEmployee(tenantId, user).catch(() => null);
     const userName = query.user_name || employeeUserName(employee, user?.name || user?.email || "");
-    const session = await findCurrentWorkSession({ employee, userName, routeId: optionalNumericId(query.route_id), date: query.date || new Date() });
+    const routeId = optionalNumericId(query.route_id);
+    const session = await findCurrentWorkSession({ employee, userName, routeId, date: query.date || new Date() })
+      || await ensureWorkSessionFromPunches({ employee, userName, routeId, date: query.date || new Date() });
     const activities = session?.activities || [];
     return {
       session,
@@ -952,7 +1023,8 @@ async function createWorkActivity(tenantId, user, input) {
       ? await prisma.employee.findFirst({ where: { id: employeeId, tenant_id: tenantId }, include: { user: { select: { name: true, email: true } } } })
       : await getCurrentEmployee(tenantId, user).catch(() => null);
     const userName = employeeUserName(employee, user?.name || user?.email || "");
-    const session = await findCurrentWorkSession({ employee, userName, routeId: inputRouteId });
+    const session = await findCurrentWorkSession({ employee, userName, routeId: inputRouteId })
+      || await ensureWorkSessionFromPunches({ employee, userName, routeId: inputRouteId, vehiclePlate: input.vehicle_plate || "" });
     if (!session) {
       const err = new Error("No hay jornada activa. Marca Entrada antes de registrar actividades.");
       err.statusCode = 422;
@@ -1099,7 +1171,7 @@ async function createPunch(tenantId, input, user) {
       };
     }
     const resolvedUserName = employeeUserName(employee, input.user_name);
-    const punchesToday = await latestPunchesForUser(resolvedUserName, punchedAt, route?.id || inputRouteId);
+    const punchesToday = await latestPunchesForEmployee(employee, resolvedUserName, punchedAt, route?.id || inputRouteId);
     const expectedType = nextPunchType(punchesToday);
     if (!expectedType) {
       throw validationError("La jornada ya esta completa para hoy.", 409, "JORNADA_COMPLETA");
@@ -1263,7 +1335,7 @@ async function createPunch(tenantId, input, user) {
       minutos_extra: extraMinutes,
       alerta: extraMinutes > 0,
       punch,
-      next: nextPunchType(await latestPunchesForUser(resolvedUserName, punchedAt, route?.id || inputRouteId)),
+      next: nextPunchType(await latestPunchesForEmployee(employee, resolvedUserName, punchedAt, route?.id || inputRouteId)),
       preoperational_required: Boolean(preop),
       preoperational_checklist: preop ? { ...preop, id: Number(preop.id) } : null,
       route_authorized: preop ? ["aprobado", "aprobado_con_novedad"].includes(preop.checklist_status) : true

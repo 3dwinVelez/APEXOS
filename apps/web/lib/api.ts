@@ -1266,12 +1266,18 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const companyFilter = companyId ? `&company_id=eq.${encodeURIComponent(companyId)}` : "";
     const selectedRouteId = search.get("route_id") || "";
     const routeFilter = selectedRouteId ? `&route_id=eq.${encodeURIComponent(selectedRouteId)}` : "";
-    const punches = (await supabaseFetch<Array<{ id: string; employee_id?: string; user_id?: string; user_name: string; punch_type: string; punched_at: string; punch_time?: string; vehicle_plate?: string; route_id?: string; latitude?: number; longitude?: number; accuracy_meters?: number }>>(
-      `/rest/v1/time_punches?select=id,employee_id,user_id,user_name,punch_type,punched_at,punch_time,vehicle_plate,route_id,latitude,longitude,accuracy_meters&punch_date=eq.${localDate()}${companyFilter}&order=punched_at.asc&limit=80`
+    const matchesCurrentEmployee = (row: { employee_id?: unknown; user_id?: unknown; user_name?: unknown; metadata?: AnyRow }) => (
+      aliases.has(String(row.employee_id || "").toLowerCase())
+      || aliases.has(String(row.user_id || "").toLowerCase())
+      || aliases.has(String(row.user_name || "").toLowerCase())
+      || (Array.isArray(row.metadata?.identity_aliases) && row.metadata.identity_aliases.some((alias: unknown) => aliases.has(String(alias || "").toLowerCase())))
+    );
+    const punches = (await supabaseFetch<Array<{ id: string; employee_id?: string; user_id?: string; user_name: string; punch_type: string; punched_at: string; punch_time?: string; vehicle_plate?: string; route_id?: string; latitude?: number; longitude?: number; accuracy_meters?: number; metadata?: AnyRow }>>(
+      `/rest/v1/time_punches?select=id,employee_id,user_id,user_name,punch_type,punched_at,punch_time,vehicle_plate,route_id,latitude,longitude,accuracy_meters,metadata&punch_date=eq.${localDate()}${companyFilter}&order=punched_at.asc&limit=80`
     ).catch((error) => {
       safeDevLog("No fue posible consultar marcaciones Supabase.", error);
       return [];
-    })).filter((punch) => (!selectedRouteId || String(punch.route_id || "") === selectedRouteId) && (aliases.has(String(punch.employee_id || "")) || aliases.has(String(punch.user_id || "")) || aliases.has(String(punch.user_name || ""))));
+    })).filter((punch) => (!selectedRouteId || String(punch.route_id || "") === selectedRouteId) && matchesCurrentEmployee(punch));
     const types = punches.map((punch) => punch.punch_type);
     const activeSession = types.includes("entrada") && !types.includes("salida");
     const activityRows = (await supabaseFetch<Array<{ id: string; employee_id?: string; user_id?: string; user_name: string; latitude: number; longitude: number; accuracy_meters?: number; captured_at: string; metadata?: AnyRow }>>(
@@ -1279,7 +1285,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     ).catch((error) => {
       safeDevLog("No fue posible consultar actividades Supabase.", error);
       return [];
-    })).filter((row) => aliases.has(String(row.employee_id || "")) || aliases.has(String(row.user_id || "")) || aliases.has(String(row.user_name || "")));
+    })).filter((row) => matchesCurrentEmployee(row));
     const activities = activityRows.map((row) => ({
       id: toNumberId(row.id),
       activity_type_name: String(row.metadata?.activity_type_name || "Actividad operativa"),

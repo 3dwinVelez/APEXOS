@@ -159,6 +159,8 @@ export default function MobilePunchPage() {
   }) || { user_name: userName, route_id: route?.id || null, next_type: "entrada", punches: [] };
   const doneTypes = new Set(currentAttendance.punches.map((punch) => punch.type) || []);
   const nextType = currentAttendance.next_type || "entrada";
+  const sessionActive = Boolean(session?.active || (doneTypes.has("entrada") && !doneTypes.has("salida")));
+  const sessionClosed = doneTypes.has("salida");
   const vehiclePlate = route?.vehicle_plate || "";
   const isClosingLate = (() => {
     if (nextType !== "salida" || !route?.end_time) return false;
@@ -292,12 +294,12 @@ export default function MobilePunchPage() {
       const nextPunchType = response.next || null;
       setAttendance((prev) => {
         const updated = prev.map((item) =>
-          item.user_name === userName
-            ? { ...item, next_type: nextPunchType, punches: [...item.punches, { id: Date.now(), type, time: new Date().toLocaleTimeString(), vehicle_plate: vehiclePlate }] }
+          item.user_name === userName && String(item.route_id || "") === String(route?.id || "")
+            ? { ...item, route_id: route?.id || item.route_id || null, next_type: nextPunchType, punches: [...item.punches, { id: Date.now(), type, time: new Date().toLocaleTimeString(), vehicle_plate: vehiclePlate }] }
             : item
         );
-        if (!updated.some((item) => item.user_name === userName)) {
-          updated.push({ user_name: userName, next_type: nextPunchType, punches: [{ id: Date.now(), type, time: new Date().toLocaleTimeString(), vehicle_plate: vehiclePlate }] });
+        if (!updated.some((item) => item.user_name === userName && String(item.route_id || "") === String(route?.id || ""))) {
+          updated.push({ user_name: userName, route_id: route?.id || null, next_type: nextPunchType, punches: [{ id: Date.now(), type, time: new Date().toLocaleTimeString(), vehicle_plate: vehiclePlate }] });
         }
         return updated;
       });
@@ -315,7 +317,7 @@ export default function MobilePunchPage() {
 
   async function openActivityModal() {
     setActivityMessage("");
-    if (!session?.active) {
+    if (!sessionActive) {
       setMessage("Marca Entrada antes de registrar actividades.");
       await load();
       return;
@@ -332,7 +334,7 @@ export default function MobilePunchPage() {
 
   async function saveActivity() {
     setActivityMessage("");
-    if (!session?.active) {
+    if (!sessionActive) {
       setActivityMessage("No hay jornada activa. Marca Entrada antes de registrar actividades.");
       await load();
       return;
@@ -483,20 +485,20 @@ export default function MobilePunchPage() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase text-neutral-500">Estado operativo</p>
-                <h2 className="mt-1 text-lg font-semibold">{session?.active ? "Jornada activa" : doneTypes.has("salida") ? "Jornada cerrada" : "Sin jornada activa"}</h2>
-                <p className="mt-1 text-sm text-neutral-600">{session?.active ? "Puedes registrar actividades con GPS, foto y observacion." : "Marca Entrada para iniciar trazabilidad operativa."}</p>
+                <h2 className="mt-1 text-lg font-semibold">{sessionActive ? "Jornada activa" : sessionClosed ? "Jornada cerrada" : "Sin jornada activa"}</h2>
+                <p className="mt-1 text-sm text-neutral-600">{sessionActive ? `Estas sobre el horario ${route?.id || ""}. Proxima marcacion: ${punchLabels[nextType]?.title || "Jornada completa"}.` : sessionClosed ? "Este horario ya tiene salida registrada." : "Marca Entrada para iniciar trazabilidad operativa."}</p>
               </div>
-              <span className={`rounded-md px-2 py-1 text-xs font-semibold ${session?.active ? "bg-emerald-50 text-emerald-700" : "bg-paper text-neutral-600"}`}>{session?.activities?.length || 0} actividades</span>
+              <span className={`rounded-md px-2 py-1 text-xs font-semibold ${sessionActive ? "bg-emerald-50 text-emerald-700" : "bg-paper text-neutral-600"}`}>{session?.activities?.length || 0} actividades</span>
             </div>
             {session?.alerts?.length ? (
               <div className="mt-3 space-y-2">
                 {session.alerts.slice(0, 2).map((alert) => <p className="rounded-md bg-amber-50 p-2 text-xs font-semibold text-amber-900" key={alert.type}><AlertTriangle className="mr-1 inline" size={13} />{alert.message}</p>)}
               </div>
             ) : null}
-            <button className="mt-3 inline-flex h-13 min-h-12 w-full items-center justify-center gap-2 rounded-md bg-apex px-4 text-base font-semibold text-white disabled:bg-neutral-300" disabled={!session?.active || !route} onClick={openActivityModal} type="button">
+            <button className="mt-3 inline-flex h-13 min-h-12 w-full items-center justify-center gap-2 rounded-md bg-apex px-4 text-base font-semibold text-white disabled:bg-neutral-300" disabled={!sessionActive || !route} onClick={openActivityModal} type="button">
               <Plus size={18} /> Registrar actividad
             </button>
-            {!session?.active ? <p className="mt-2 text-xs font-semibold text-neutral-500">Disponible despues de marcar Entrada.</p> : null}
+            {!sessionActive ? <p className="mt-2 text-xs font-semibold text-neutral-500">{sessionClosed ? "Horario cerrado." : "Disponible despues de marcar Entrada."}</p> : null}
           </section>
 
           <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
