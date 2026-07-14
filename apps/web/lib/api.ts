@@ -1645,7 +1645,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const companyId = await currentSupabaseCompanyId();
     const day = search.get("date") || localDate();
     const [routes, employees, assignments, pings, punches] = await Promise.all([
-      supabaseFetch<Array<{ id: string; code?: string; route_date: string; vehicle_plate?: string; start_time?: string; end_time?: string; status?: string }>>(`/rest/v1/operational_routes?select=id,code,route_date,vehicle_plate,start_time,end_time,status&company_id=eq.${encodeURIComponent(companyId)}&route_date=eq.${encodeURIComponent(day)}&order=start_time.asc&limit=120`),
+      supabaseFetch<Array<{ id: string; code?: string; route_date: string; vehicle_plate?: string; start_time?: string; end_time?: string; status?: string; metadata?: AnyRow }>>(`/rest/v1/operational_routes?select=id,code,route_date,vehicle_plate,start_time,end_time,status,metadata&company_id=eq.${encodeURIComponent(companyId)}&route_date=eq.${encodeURIComponent(day)}&order=start_time.asc&limit=120`),
       supabaseFetch<Array<{ id: string; user_id?: string; first_name?: string; last_name?: string; email?: string; document_number?: string; user_type?: string; position?: string; metadata?: AnyRow }>>(`/rest/v1/employees?select=id,user_id,first_name,last_name,email,document_number,user_type,position,metadata&company_id=eq.${encodeURIComponent(companyId)}&status=eq.active&limit=250`),
       supabaseFetch<Array<{ route_id: string; employee_id: string; role?: string }>>(`/rest/v1/route_assignments?select=route_id,employee_id,role&company_id=eq.${encodeURIComponent(companyId)}&limit=500`),
       supabaseFetch<Array<{ id: string; employee_id?: string; user_id?: string; user_name: string; route_id?: string; vehicle_id?: string; latitude: number; longitude: number; accuracy_meters?: number; source?: string; captured_at: string; metadata?: AnyRow }>>(`/rest/v1/gps_pings?select=id,employee_id,user_id,user_name,route_id,vehicle_id,latitude,longitude,accuracy_meters,source,captured_at,metadata&company_id=eq.${encodeURIComponent(companyId)}&captured_at=gte.${encodeURIComponent(`${day}T00:00:00-05:00`)}&captured_at=lt.${encodeURIComponent(`${day}T23:59:59-05:00`)}&order=captured_at.desc&limit=500`),
@@ -1675,10 +1675,12 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       const aliases = identityKeys({ ...(employee || {}), employee_id: assignment.employee_id, user_name: name });
       const routeAssignments = dayAssignments.filter((item) => item.route_id === assignment.route_id);
       const singlePersonRoute = routeAssignments.length === 1;
+      const routeKeys = new Set([route?.id, route?.code, route?.metadata?.display_id, route?.metadata?.legacy_id].filter(Boolean).map(String));
+      const rowBelongsToRoute = (row: { route_id?: unknown; metadata?: AnyRow }) => routeKeys.has(operationalRouteKey(row));
       const ping = aliases.map((alias) => latestPingByEmployee.get(alias)).find(Boolean)
-        || (singlePersonRoute ? pings.find((item) => item.route_id === assignment.route_id) : undefined);
+        || (singlePersonRoute ? pings.find(rowBelongsToRoute) : undefined);
       const punch = aliases.map((alias) => latestPunchByEmployee.get(alias)).find(Boolean)
-        || (singlePersonRoute ? punches.find((item) => item.route_id === assignment.route_id) : undefined);
+        || (singlePersonRoute ? punches.find(rowBelongsToRoute) : undefined);
       const capturedAt = ping?.captured_at || punch?.punched_at || null;
       const ageSeconds = capturedAt ? Math.max(0, Math.round((Date.now() - new Date(capturedAt).getTime()) / 1000)) : null;
       const online = ageSeconds != null && ageSeconds <= Number(search.get("minutes") || 30) * 60;
@@ -1718,12 +1720,13 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const routeSummaries = routes.map((route) => {
       const routeAssignments = dayAssignments.filter((assignment) => assignment.route_id === route.id);
       const routePeople = people.filter((person) => person.route_id === route.id);
+      const routeKeys = new Set([route.id, route.code, route.metadata?.display_id, route.metadata?.legacy_id].filter(Boolean).map(String));
       const assignmentAliases = routeAssignments.map((assignment) => {
         const employee = employeeById.get(assignment.employee_id);
         return identityKeys({ ...(employee || {}), employee_id: assignment.employee_id, user_name: fullName(employee || {}) });
       });
       const matchesRouteAssignment = (row: { route_id?: string; employee_id?: string; user_id?: string; user_name?: string; metadata?: AnyRow }) => {
-        if (row.route_id === route.id) return true;
+        if (routeKeys.has(operationalRouteKey(row))) return true;
         const rowAliases = identityKeys(row);
         return assignmentAliases.some((aliases) => identityOverlaps(rowAliases, aliases));
       };
@@ -1764,7 +1767,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
           extra_evidence: punch.extra_evidence || punch.metadata?.extra_evidence || {},
           metadata: punch.metadata || {}
         }));
-      const userNames = Array.from(new Set(routePunches.map((punch) => punch.user_name)));
+      const userNames = Array.from(new Set([...routePunches.map((punch) => punch.user_name), ...routeActivities.map((activity) => activity.user_name)]));
       return {
         id: route.id,
         vehicle_plate: route.vehicle_plate || "",

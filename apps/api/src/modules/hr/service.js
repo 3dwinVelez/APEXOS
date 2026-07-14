@@ -145,6 +145,10 @@ function aliasesForOperationalRow(row) {
   ].filter(Boolean).map((value) => String(value).trim()).filter(Boolean)));
 }
 
+function operationalRouteKey(row) {
+  return String(row?.route_id || row?.metadata?.display_route_id || row?.metadata?.legacy_route_id || "").trim();
+}
+
 function displayNameForOperationalRow(row, fallback = "") {
   const metadataName = String(row?.metadata?.employee_name || row?.metadata?.name || "").trim();
   const supplied = String(row?.metadata?.supplied_user_name || "").trim();
@@ -1607,7 +1611,12 @@ async function getOperationsMap(tenantId, query = {}) {
     const routeSummaries = routes.map((route) => {
       const assigned = people.filter((person) => person.route_id === route.id);
       const assignedAliases = new Set(assigned.flatMap((person) => [person.employee_id, person.user_name, person.name]).filter(Boolean).map((value) => normalizeKey(value)));
-      const matchesAssigned = (row) => row.route_id === route.id || aliasesForOperationalRow(row).some((alias) => assignedAliases.has(normalizeKey(alias)));
+      const routeKey = String(route.id);
+      const matchesAssigned = (row) => {
+        const rowRouteKey = operationalRouteKey(row);
+        if (rowRouteKey) return rowRouteKey === routeKey;
+        return aliasesForOperationalRow(row).some((alias) => assignedAliases.has(normalizeKey(alias)));
+      };
       const routePings = pings.filter(matchesAssigned).sort((a, b) => new Date(a.captured_at) - new Date(b.captured_at));
       const routePunches = punches.filter((punch) => matchesAssigned(punch) && punch.latitude != null && punch.longitude != null).sort((a, b) => new Date(a.punched_at) - new Date(b.punched_at));
       const routeActivities = activities.filter((activity) => matchesAssigned(activity) && activity.latitude != null && activity.longitude != null).sort((a, b) => new Date(a.occurred_at) - new Date(b.occurred_at));
