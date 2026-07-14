@@ -20,10 +20,10 @@ type PreopItem = { section: string; item_key: string; label: string; severity: s
 type PreopChecklist = { id: number; route_id?: number; plate: string; checklist_status: string; risk_level: string };
 type PreopTemplate = { sections: string[]; items: PreopItem[] };
 type PreopAnswer = { answer: string; observations: string; evidence: CapturedFile | null };
-type PunchResponse = { next?: string | null; preoperational_required?: boolean; preoperational_checklist?: PreopChecklist | null };
 type ActivityType = { id: number; name: string; active: boolean };
 type WorkActivity = { id: number; activity_type_name: string; observation: string; occurred_at: string; latitude: number; longitude: number; accuracy_meters?: number; evidence?: Array<{ base64_data?: string; file_name?: string }> };
 type WorkSession = { id: number; active: boolean; session: { id: number; status: string; started_at: string; closed_at?: string; route_id?: number | string | null } | null; activities: WorkActivity[]; alerts: Array<{ type: string; severity: string; message: string }> };
+type PendingSyncItem = { id: string; path: string; payload: unknown; created_at: string; attempts: number; label: string };
 
 const overtimeReasons = [
   ["entrega_cliente_extendida", "Entrega extendida por solicitud del cliente"],
@@ -45,6 +45,61 @@ const punchLabels: Record<string, { title: string; desc: string; color: string }
   fin_almuerzo: { title: "Retorno almuerzo", desc: "Registra tu regreso", color: "bg-emerald-600" },
   salida: { title: "Fin jornada", desc: "Registra tu cierre del dia", color: "bg-violet-600" }
 };
+const pendingSyncKey = "apexos_hr_mobile_pending_sync";
+let pendingSyncInFlight = false;
+
+function readPendingSync() {
+  if (typeof window === "undefined") return [] as PendingSyncItem[];
+  try {
+    const parsed = JSON.parse(localStorage.getItem(pendingSyncKey) || "[]");
+    return Array.isArray(parsed) ? parsed as PendingSyncItem[] : [];
+  } catch {
+    return [];
+  }
+}
+
+function writePendingSync(items: PendingSyncItem[]) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(pendingSyncKey, JSON.stringify(items.slice(-50)));
+}
+
+function enqueuePendingSync(path: string, payload: unknown, label: string) {
+  const item: PendingSyncItem = { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, path, payload, created_at: new Date().toISOString(), attempts: 0, label };
+  writePendingSync([...readPendingSync(), item]);
+  return item;
+}
+
+async function flushPendingSync(onUpdate?: (items: PendingSyncItem[], message?: string) => void) {
+  if (typeof window === "undefined" || pendingSyncInFlight) return false;
+  let queue = readPendingSync();
+  if (!queue.length) {
+    onUpdate?.([], "");
+    return false;
+  }
+  pendingSyncInFlight = true;
+  let changed = false;
+  try {
+    while (queue.length) {
+      const item = queue[0];
+      try {
+        await api(item.path, { method: "POST", body: JSON.stringify(item.payload) });
+        queue = queue.slice(1);
+        writePendingSync(queue);
+        changed = true;
+        onUpdate?.(queue, `${item.label} sincronizado.`);
+      } catch {
+        const next = { ...item, attempts: item.attempts + 1 };
+        queue = [next, ...queue.slice(1)];
+        writePendingSync(queue);
+        onUpdate?.(queue, `${item.label} pendiente de confirmar. Se reintentara automaticamente.`);
+        break;
+      }
+    }
+  } finally {
+    pendingSyncInFlight = false;
+  }
+  return changed;
+}
 
 function employeeName(employee: Employee | null) {
   return employee?.metadata?.name || employee?.user?.name || employee?.code || "";
@@ -132,6 +187,7 @@ export default function MobilePunchPage() {
   const [activityMessage, setActivityMessage] = useState("");
   const [markingType, setMarkingType] = useState<string | null>(null);
   const [selectedRouteId, setSelectedRouteId] = useState("");
+  const [pendingSync, setPendingSync] = useState<PendingSyncItem[]>([]);
 
   const load = useCallback(async () => {
     const [me, routeData, attendanceData, typesData, sessionData, operationsData] = await Promise.all([
@@ -159,6 +215,30 @@ export default function MobilePunchPage() {
 
   useEffect(() => {
     load();
+  }, [load]);
+
+  useEffect(() => {
+    setPendingSync(readPendingSync());
+    let mounted = true;
+    const sync = () => {
+      flushPendingSync((items, syncMessage) => {
+        if (!mounted) return;
+        setPendingSync(items);
+        if (syncMessage) setMessage(syncMessage);
+      }).then((changed) => {
+        if (changed && mounted) load().catch(() => undefined);
+      }).catch(() => undefined);
+    };
+    sync();
+    const timer = window.setInterval(sync, 12000);
+    window.addEventListener("online", sync);
+    window.addEventListener("focus", sync);
+    return () => {
+      mounted = false;
+      window.clearInterval(timer);
+      window.removeEventListener("online", sync);
+      window.removeEventListener("focus", sync);
+    };
   }, [load]);
 
   const userName = !isGenericIdentityAlias(employee?.code) ? employee?.code || employeeName(employee) || "" : employeeName(employee) || employee?.user?.email || String(employee?.id || "");
@@ -362,22 +442,13 @@ export default function MobilePunchPage() {
       setExtraReason("");
       setExtraDetail("");
       setExtraEvidence(null);
-      void api<PunchResponse>("/api/v1/hr/time-punches", {
-        method: "POST",
-        body: JSON.stringify(payload)
-      }).then(async (response) => {
-        if (response.preoperational_required && response.preoperational_checklist) {
-          const template = await api<PreopTemplate>("/api/v1/hr/routes/preop/template");
-          setOptimisticPunches((current) => current.filter((punch) => !(String(punch.route_id || "") === String(route?.id || "") && punch.type === type)));
-          setPreop(response.preoperational_checklist);
-          setPreopTemplate(template);
-          setPreopAnswers(Object.fromEntries(template.items.map((item) => [item.item_key, { answer: "cumple", observations: "", evidence: null }])));
-          setPreopMessage("Checklist preoperacional obligatorio antes de iniciar ruta.");
-          setMessage("Completa el checklist preoperacional para habilitar la Entrada.");
-          return;
-        }
-        setMessage(`${punchLabels[type].title} sincronizado.`);
-        window.setTimeout(() => load().catch(() => undefined), 600);
+      enqueuePendingSync("/api/v1/hr/time-punches", payload, punchLabels[type].title);
+      setPendingSync(readPendingSync());
+      void flushPendingSync((items, syncMessage) => {
+        setPendingSync(items);
+        if (syncMessage) setMessage(syncMessage);
+      }).then((changed) => {
+        if (changed) window.setTimeout(() => load().catch(() => undefined), 600);
       }).catch((error) => {
         setMessage(error instanceof Error ? `Marcacion pendiente de confirmar: ${error.message}` : "Marcacion pendiente de confirmar.");
       });
@@ -452,24 +523,24 @@ export default function MobilePunchPage() {
     setActivityModal(false);
     setActivitySaving(false);
     setMessage("Actividad registrada. Sincronizando evidencia en segundo plano...");
-    void api("/api/v1/hr/work-activities", {
-      method: "POST",
-      body: JSON.stringify({
-        activity_type_id: Number(activityTypeId),
-        latitude: fix.latitude,
-        longitude: fix.longitude,
-        accuracy_meters: fix.accuracy_meters,
-        route_id: route?.id,
-        vehicle_plate: vehiclePlate,
-        observation: savedObservation,
-        photo: savedPhoto,
-        metadata: { source: "apexos-mobile-activity" }
-      })
-    }).then(() => {
-      setMessage("Actividad sincronizada con evidencia.");
-      window.setTimeout(() => load().catch(() => undefined), 600);
-    }).catch((error) => {
-      setMessage(error instanceof Error ? `Actividad pendiente de confirmar: ${error.message}` : "Actividad pendiente de confirmar.");
+    const activityPayload = {
+      activity_type_id: Number(activityTypeId),
+      latitude: fix.latitude,
+      longitude: fix.longitude,
+      accuracy_meters: fix.accuracy_meters,
+      route_id: route?.id,
+      vehicle_plate: vehiclePlate,
+      observation: savedObservation,
+      photo: savedPhoto,
+      metadata: { source: "apexos-mobile-activity" }
+    };
+    enqueuePendingSync("/api/v1/hr/work-activities", activityPayload, "Actividad");
+    setPendingSync(readPendingSync());
+    void flushPendingSync((items, syncMessage) => {
+      setPendingSync(items);
+      if (syncMessage) setMessage(syncMessage);
+    }).then((changed) => {
+      if (changed) window.setTimeout(() => load().catch(() => undefined), 600);
     });
   }
 
@@ -533,6 +604,11 @@ export default function MobilePunchPage() {
       </header>
 
       {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-900">{message}</div> : null}
+      {pendingSync.length ? (
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-950">
+          {pendingSync.length} registro(s) pendiente(s) de sincronizar. Se reintentara automaticamente mientras esta pantalla este abierta.
+        </div>
+      ) : null}
 
       <section className="grid grid-cols-2 gap-2 rounded-md border border-line bg-white p-1 shadow-sm">
         <button className={`h-12 rounded-md text-base font-semibold ${view === "marcar" ? "bg-apex text-white" : "text-neutral-700"}`} onClick={() => setView("marcar")} type="button">

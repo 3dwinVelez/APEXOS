@@ -38,6 +38,7 @@
 - Las marcas y actividades quedan en una cola local optimista mientras Supabase responde; el usuario no espera la carga de evidencias/GPS para continuar operando y solo recibe estado de sincronizacion o pendiente de confirmar.
 - El monitor administrativo asocia marcaciones, GPS y actividades por `route_id` real o por `metadata.display_route_id`; esto permite reflejar ciclos completos guardados desde Marcacion movil aunque Supabase almacene el horario visible fuera de la columna UUID.
 - La validacion funcional del monitor debe cubrir el cruce `route.id = 11` contra `operations.routes[].id = UUID` y `operations.routes[].code/display_id = 11`, esperando que el monitor fusionado conserve las 4 marcaciones y las actividades del usuario.
+- La validacion de Marcacion movil debe comprobar que `apexos_hr_mobile_pending_sync` queda vacio despues de sincronizar; si hay registros pendientes, el monitor aun no puede considerarse actualizado aunque la UI movil haya avanzado localmente.
 - Se agregaron escenarios demo para validar mapa historico, recorrido por marcaciones y ultima huella offline:
   - `node scripts/seed-hr-map-demo.js`
   - `node scripts/validate-hr-map-demo.js`
