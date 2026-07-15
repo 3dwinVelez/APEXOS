@@ -78,6 +78,17 @@ La migracion tambien crea `app_private.initialize_company_modules()` para inicia
 
 El frontend mapea todos los slugs visibles de APEXOS a codigos de Supabase para que el menu lateral, el tablero principal y el panel de suscripciones respeten los bloqueos de la empresa activa.
 
+## Permisos de rol en navegacion
+
+La visibilidad final de modulos en frontend combina dos capas:
+
+- Modulos activos de la empresa.
+- Permisos efectivos del rol del usuario.
+
+El frontend debe preferir `role_metadata.legacy_permissions` cuando el contexto de rol fue refrescado por `/api/v1/auth/me` en la sesion actual. Si ese refresh no responde a tiempo, la pantalla no debe quedar bloqueada indefinidamente ni aplicar permisos viejos guardados en `localStorage`; debe continuar con modulos activos y controles backend/RLS, y reintentar el refresco en la siguiente carga.
+
+Los usuarios `platform_admin` no deben ser filtrados por permisos de rol de empresa para la administracion de plataforma.
+
 ## Grupos empresariales y sociedades
 
 Una empresa puede representar un grupo empresarial, una sociedad legal, una unidad de negocio o una sucursal. La jerarquia se guarda en `companies.parent_company_id`.

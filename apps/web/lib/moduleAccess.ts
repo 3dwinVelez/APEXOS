@@ -6,6 +6,8 @@ const HAS_CONFIGURED_API_URL = Boolean(process.env.NEXT_PUBLIC_API_URL);
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
 const MODULE_ACCESS_CACHE_KEY = "apexos_module_access_cache_v2";
 const MODULE_ACCESS_CACHE_MS = 60_000;
+const ROLE_CONTEXT_FETCHED_AT_KEY = "apexos_role_context_fetched_at";
+const ROLE_CONTEXT_TIMEOUT_MS = 2_500;
 const PLATFORM_ADMIN_MODULE_SLUGS = new Set(["administracion"]);
 let moduleAccessInFlight: { token: string; promise: Promise<ModuleAccessState> } | null = null;
 
@@ -131,6 +133,7 @@ function moduleKeys(module: ApexModule) {
 
 function getStoredRolePermissions(): StoredRolePermission[] | null {
   if (typeof window === "undefined") return null;
+  if (!hasFreshRoleContext()) return null;
   const raw = localStorage.getItem("role_permissions");
   if (!raw) return null;
   try {
@@ -142,8 +145,15 @@ function getStoredRolePermissions(): StoredRolePermission[] | null {
   }
 }
 
+function hasFreshRoleContext() {
+  if (typeof window === "undefined") return false;
+  const fetchedAt = Number(localStorage.getItem(ROLE_CONTEXT_FETCHED_AT_KEY) || 0);
+  return fetchedAt > 0 && Date.now() - fetchedAt < MODULE_ACCESS_CACHE_MS * 5;
+}
+
 function getStoredLegacyPermissions(): StoredLegacyPermissions | null {
   if (typeof window === "undefined") return null;
+  if (!hasFreshRoleContext()) return null;
   const raw = localStorage.getItem("role_metadata");
   if (!raw) return null;
   try {
@@ -214,6 +224,7 @@ function statusMatchesModule(status: CompanyModuleStatus, module: ApexModule) {
 }
 
 function applyRolePermissions(modules: ApexModule[], state: ModuleAccessState): ModuleAccessState {
+  if (state.isPlatformAdmin) return state;
   const legacy = getStoredLegacyPermissions();
   if (legacy) {
     return {
@@ -254,6 +265,19 @@ function stateFromActiveModuleList(modules: ApexModule[], activeModules: string[
   });
 }
 
+function stateFromCachedTenantModules(modules: ApexModule[]) {
+  if (typeof window === "undefined") return null;
+  const cached = localStorage.getItem("tenant_active_modules");
+  if (!cached) return null;
+  try {
+    const activeModules = JSON.parse(cached);
+    return Array.isArray(activeModules) ? stateFromActiveModuleList(modules, activeModules) : null;
+  } catch {
+    localStorage.removeItem("tenant_active_modules");
+    return null;
+  }
+}
+
 function isLocalPlatformAdmin(user?: { role_metadata?: Record<string, unknown>; role?: string }) {
   const role = String(user?.role || "").trim().toLowerCase();
   const roleType = String(user?.role_metadata?.role_type || "").trim().toLowerCase();
@@ -263,9 +287,12 @@ function isLocalPlatformAdmin(user?: { role_metadata?: Record<string, unknown>; 
 async function refreshRoleContextFromApi() {
   const token = getToken();
   if (!token || !HAS_CONFIGURED_API_URL) return null;
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), ROLE_CONTEXT_TIMEOUT_MS);
   const response = await fetch(`${API_URL}/api/v1/auth/me`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+    headers: { Authorization: `Bearer ${token}` },
+    signal: controller.signal
+  }).finally(() => window.clearTimeout(timeout));
   if (!response.ok) return null;
   const data = await response.json() as {
     tenant?: { active_modules?: string[] };
@@ -273,8 +300,11 @@ async function refreshRoleContextFromApi() {
   };
   if (Array.isArray(data.tenant?.active_modules)) localStorage.setItem("tenant_active_modules", JSON.stringify(data.tenant.active_modules));
   if (Array.isArray(data.user?.role_permissions)) localStorage.setItem("role_permissions", JSON.stringify(data.user.role_permissions));
+  else localStorage.removeItem("role_permissions");
   if (data.user?.role_metadata) localStorage.setItem("role_metadata", JSON.stringify(data.user.role_metadata));
+  else localStorage.removeItem("role_metadata");
   if (data.user?.role) localStorage.setItem("role_name", data.user.role);
+  localStorage.setItem(ROLE_CONTEXT_FETCHED_AT_KEY, String(Date.now()));
   return data;
 }
 
@@ -310,8 +340,6 @@ async function loadLocalModuleAccess(modules: ApexModule[]): Promise<ModuleAcces
 export async function loadModuleAccess(modules: ApexModule[]): Promise<ModuleAccessState> {
   if (!isSupabaseSession()) return loadLocalModuleAccess(modules);
 
-  await refreshRoleContextFromApi().catch(() => null);
-
   const cached = sessionStorage.getItem(MODULE_ACCESS_CACHE_KEY);
   const sessionToken = localStorage.getItem("token") || "";
   if (cached) {
@@ -325,6 +353,7 @@ export async function loadModuleAccess(modules: ApexModule[]): Promise<ModuleAcc
 
   if (!moduleAccessInFlight || moduleAccessInFlight.token !== sessionToken) {
     const promise = (async () => {
+      await refreshRoleContextFromApi().catch(() => null);
       const userId = currentSupabaseUserId();
       const [platformAdmins, companies] = await Promise.all([
         listActivePlatformAdmins(1, userId).catch(() => []),
@@ -346,7 +375,7 @@ export async function loadModuleAccess(modules: ApexModule[]): Promise<ModuleAcc
         || companies.find((company) => ["owner", "admin", "superadmin"].includes(String(company.role || "").toLowerCase()))
         || companies[0];
       const companyId = selectedCompany?.company_id;
-      if (!companyId) return { loading: false, isPlatformAdmin: false, bySlug: {} };
+      if (!companyId) return stateFromCachedTenantModules(modules) || { loading: false, isPlatformAdmin: false, bySlug: {} };
       if (typeof window !== "undefined") {
         localStorage.setItem("apexos_company_id", companyId);
         if (selectedCompany?.company_name) localStorage.setItem("apexos_company_name", selectedCompany.company_name);
@@ -354,6 +383,7 @@ export async function loadModuleAccess(modules: ApexModule[]): Promise<ModuleAcc
       }
 
       const statuses = await listCompanyModuleStatus(companyId, 100).catch(() => []) as CompanyModuleStatus[];
+      if (!statuses.length) return stateFromCachedTenantModules(modules) || { loading: false, isPlatformAdmin: false, bySlug: {} };
       const state = {
         loading: false,
         isPlatformAdmin: false,
