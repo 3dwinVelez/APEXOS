@@ -41,6 +41,10 @@ async function adminRoutes(fastify) {
     preHandler: requirePermission("admin", "write")
   }, async (request) => service.setRoleActive(request.user?.tenant_id, request.params.id, request.body?.active ?? request.query?.active, request.user?.id));
 
+  fastify.delete("/admin/roles/:id", {
+    preHandler: requirePermission("admin", "write")
+  }, async (request) => service.deleteRole(request.user?.tenant_id, request.params.id, request.user?.id));
+
   fastify.get("/admin/users", {
     preHandler: requirePermission("admin", "read")
   }, async (request) => service.listUsers(request.user?.tenant_id, request.query));
