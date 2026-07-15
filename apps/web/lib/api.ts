@@ -614,6 +614,32 @@ function hasStoredPermission(module: string, action: string) {
   }
 }
 
+function storedRoleName() {
+  return typeof window !== "undefined" ? String(localStorage.getItem("role_name") || "").trim().toLowerCase() : "";
+}
+
+function hasBroadServiceRolePermission() {
+  if (typeof window === "undefined") return false;
+  const roleName = storedRoleName();
+  if (["admin", "owner", "superadmin", "administrador", "administrador de empresa", "supervisor operativo", "soporte tecnico"].includes(roleName)) return true;
+  try {
+    const permissions = JSON.parse(localStorage.getItem("role_permissions") || "[]");
+    if (!Array.isArray(permissions)) return false;
+    const modules = new Set(["*", "services", "servicios"]);
+    const broadActions = new Set(["*", "create", "delete", "approve", "export", "reports", "administer", "manage_users", "manage_roles"]);
+    return permissions.some((permission) => {
+      const row = permission && typeof permission === "object" ? permission as AnyRow : {};
+      const permissionModule = String(row.module || row.key || "").toLowerCase();
+      const actionValues = Array.isArray(row.actions)
+        ? row.actions
+        : [row.action, ...Object.entries(row).filter(([, allowed]) => allowed === true).map(([action]) => action)];
+      return modules.has(permissionModule) && actionValues.some((action) => broadActions.has(String(action || "").toLowerCase()));
+    });
+  } catch {
+    return false;
+  }
+}
+
 function isGenericIdentityAlias(value: unknown) {
   return /^(usuario[-\s]\d+|usr-\d+)$/i.test(String(value || "").trim());
 }
@@ -709,7 +735,15 @@ async function currentSupabaseEmployee() {
 }
 
 function technicianSession() {
-  return typeof window !== "undefined" && localStorage.getItem("role_name")?.toLowerCase() === "tecnico";
+  return storedRoleName() === "tecnico" && !hasBroadServiceRolePermission();
+}
+
+export function isServiceTechnicianSession() {
+  return technicianSession();
+}
+
+function isAdminCompanyMembership(membership: { role?: string } | null | undefined) {
+  return ["owner", "admin", "superadmin", "administrador", "administrador de empresa"].includes(String(membership?.role || "").trim().toLowerCase());
 }
 
 function isVirtualEmployee(employee: { metadata?: AnyRow } | null | undefined) {
@@ -2465,14 +2499,16 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const orderLimit = serviceOrderDetailMatch
       ? 1
       : Math.min(Math.max(Number(search.get("limit") || 50), 1), 150);
-    const employee = technicianSession() ? await currentSupabaseEmployee() : null;
-    const companyId = employee?.company_id || await currentSupabaseCompanyId();
+    const membership = await currentSupabaseCompanyUser().catch(() => null);
+    const applyTechnicianScope = technicianSession() && !isAdminCompanyMembership(membership);
+    const employee = applyTechnicianScope ? await currentSupabaseEmployee() : null;
+    const companyId = employee?.company_id || membership?.company_id || await currentSupabaseCompanyId();
     const filters = [
       `company_id=eq.${encodeURIComponent(companyId)}`,
       status ? `status=eq.${encodeURIComponent(status)}` : "",
       serviceOrderDetailMatch ? `id=eq.${encodeURIComponent(serviceOrderDetailMatch[1])}` : "",
       employee && !isVirtualEmployee(employee) ? `technician_employee_id=eq.${encodeURIComponent(employee.id)}` : "",
-      technicianSession() && !serviceOrderDetailMatch ? "status=in.(pendiente,en_curso,inspeccion,ejecucion)" : ""
+      applyTechnicianScope && !serviceOrderDetailMatch ? "status=in.(pendiente,en_curso,inspeccion,ejecucion)" : ""
     ].filter(Boolean).join("&");
     const orders = await supabaseFetch<Array<{
       id: string;

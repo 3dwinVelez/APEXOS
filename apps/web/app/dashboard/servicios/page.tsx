@@ -1,7 +1,7 @@
 "use client";
 
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { api } from "@/lib/api";
+import { api, isServiceTechnicianSession } from "@/lib/api";
 import {
   ArrowLeft,
   BarChart3,
@@ -353,7 +353,7 @@ export default function ServicesPage() {
   }
 
   useEffect(() => {
-    const isTechnician = localStorage.getItem("role_name")?.toLowerCase() === "tecnico";
+    const isTechnician = isServiceTechnicianSession();
     setTechnicianMode(isTechnician);
     load();
     if (!isTechnician) loadMasters();
