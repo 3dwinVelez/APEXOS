@@ -165,6 +165,7 @@ async function refreshSessionToken() {
       if (data.user?.role) localStorage.setItem("role_name", data.user.role);
       if (Array.isArray(data.user?.role_permissions)) localStorage.setItem("role_permissions", JSON.stringify(data.user.role_permissions));
       if (data.user?.role_metadata) localStorage.setItem("role_metadata", JSON.stringify(data.user.role_metadata));
+      if (Array.isArray(data.user?.role_permissions) || data.user?.role_metadata) localStorage.setItem("apexos_role_context_fetched_at", String(Date.now()));
       setPasswordChangeRequired(Boolean(data.user?.require_password_change));
       touchSession();
       return true;
