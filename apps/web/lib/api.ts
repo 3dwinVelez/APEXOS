@@ -1047,40 +1047,26 @@ async function supabaseServiceTypes() {
   return normalizeServiceTypes(rows[0]?.metadata?.service_types);
 }
 
+async function savePublicServiceCatalog<T>(payload: Record<string, unknown>, responseKey: string, fallback: T) {
+  const companyId = await currentSupabaseCompanyId();
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") || "" : "";
+  const companyName = typeof window !== "undefined" ? localStorage.getItem("apexos_company_name") || localStorage.getItem("company_name") || "" : "";
+  const requestPath = companyName ? `/api/public/service-requests?empresa=${encodeURIComponent(companyName)}` : "/api/public/service-requests";
+  const response = await fetch(requestPath, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify({ company_id: companyId, company_name: companyName, ...payload })
+  });
+  const body = await response.json().catch(() => ({})) as Record<string, unknown>;
+  if (!response.ok) throw new Error(String(body.message || response.statusText || "No fue posible actualizar el catalogo publico."));
+  return (body[responseKey] || fallback) as T;
+}
+
 async function saveSupabaseServiceTypes(typesInput: unknown) {
   if (technicianSession()) throw new Error("El tecnico no puede modificar tipos de servicio.");
-  const companyId = await currentSupabaseCompanyId();
   const types = normalizeServiceTypes(typesInput);
   if (!types.some((item) => item.active)) throw new Error("Debe existir al menos un tipo de servicio activo.");
-  const existing = await supabaseFetch<Array<{ id: string; metadata?: AnyRow }>>(
-    `/rest/v1/service_references?select=id,metadata&company_id=eq.${encodeURIComponent(companyId)}&code=eq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&limit=1`
-  );
-  const payload = {
-    company_id: companyId,
-    code: SERVICE_TYPES_REFERENCE_CODE,
-    name: "Tipos de servicio",
-    category: "sistema",
-    description: "Catalogo interno de tipos de servicio configurables.",
-    estimated_minutes: 1,
-    brand: "",
-    model: "",
-    active: false,
-    metadata: { ...(existing[0]?.metadata || {}), service_types: types, system_catalog: true, updated_at: new Date().toISOString() }
-  };
-  if (existing[0]?.id) {
-    await supabaseFetch(`/rest/v1/service_references?id=eq.${encodeURIComponent(existing[0].id)}`, {
-      method: "PATCH",
-      headers: { Prefer: "return=minimal" },
-      body: JSON.stringify(payload)
-    });
-  } else {
-    await supabaseFetch("/rest/v1/service_references", {
-      method: "POST",
-      headers: { Prefer: "return=minimal" },
-      body: JSON.stringify(payload)
-    });
-  }
-  return types;
+  return savePublicServiceCatalog({ service_types: types }, "service_types", types);
 }
 
 async function supabaseServiceStores() {
@@ -1093,38 +1079,9 @@ async function supabaseServiceStores() {
 
 async function saveSupabaseServiceStores(storesInput: unknown) {
   if (technicianSession()) throw new Error("El tecnico no puede modificar almacenes de servicio.");
-  const companyId = await currentSupabaseCompanyId();
   const stores = normalizeServiceStores(storesInput);
   if (!stores.some((item) => item.active)) throw new Error("Debe existir al menos un almacen activo.");
-  const existing = await supabaseFetch<Array<{ id: string; metadata?: AnyRow }>>(
-    `/rest/v1/service_references?select=id,metadata&company_id=eq.${encodeURIComponent(companyId)}&code=eq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&limit=1`
-  );
-  const payload = {
-    company_id: companyId,
-    code: SERVICE_TYPES_REFERENCE_CODE,
-    name: "Catalogos de servicio",
-    category: "sistema",
-    description: "Catalogos internos de servicios configurables.",
-    estimated_minutes: 1,
-    brand: "",
-    model: "",
-    active: false,
-    metadata: { ...(existing[0]?.metadata || {}), service_stores: stores, system_catalog: true, updated_at: new Date().toISOString() }
-  };
-  if (existing[0]?.id) {
-    await supabaseFetch(`/rest/v1/service_references?id=eq.${encodeURIComponent(existing[0].id)}`, {
-      method: "PATCH",
-      headers: { Prefer: "return=minimal" },
-      body: JSON.stringify(payload)
-    });
-  } else {
-    await supabaseFetch("/rest/v1/service_references", {
-      method: "POST",
-      headers: { Prefer: "return=minimal" },
-      body: JSON.stringify(payload)
-    });
-  }
-  return stores;
+  return savePublicServiceCatalog({ service_stores: stores }, "service_stores", stores);
 }
 
 async function supabaseSatisfactionQuestions() {
@@ -1137,39 +1094,9 @@ async function supabaseSatisfactionQuestions() {
 
 async function saveSupabaseSatisfactionQuestions(questionsInput: unknown) {
   if (technicianSession()) throw new Error("El tecnico no puede modificar preguntas de satisfaccion.");
-  const companyId = await currentSupabaseCompanyId();
   const questions = normalizeSatisfactionQuestions(questionsInput);
   if (!questions.some((item) => item.active)) throw new Error("Debe existir al menos una pregunta de satisfaccion activa.");
-  const existing = await supabaseFetch<Array<{ id: string; metadata?: AnyRow }>>(
-    `/rest/v1/service_references?select=id,metadata&company_id=eq.${encodeURIComponent(companyId)}&code=eq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&limit=1`
-  );
-  const metadata = existing[0]?.metadata || {};
-  const payload = {
-    company_id: companyId,
-    code: SERVICE_TYPES_REFERENCE_CODE,
-    name: "Parametros de servicio",
-    category: "sistema",
-    description: "Catalogos internos de servicios configurables.",
-    estimated_minutes: 1,
-    brand: "",
-    model: "",
-    active: false,
-    metadata: { ...metadata, satisfaction_questions: questions, system_catalog: true, updated_at: new Date().toISOString() }
-  };
-  if (existing[0]?.id) {
-    await supabaseFetch(`/rest/v1/service_references?id=eq.${encodeURIComponent(existing[0].id)}`, {
-      method: "PATCH",
-      headers: { Prefer: "return=minimal" },
-      body: JSON.stringify(payload)
-    });
-  } else {
-    await supabaseFetch("/rest/v1/service_references", {
-      method: "POST",
-      headers: { Prefer: "return=minimal" },
-      body: JSON.stringify(payload)
-    });
-  }
-  return questions;
+  return savePublicServiceCatalog({ satisfaction_questions: questions }, "satisfaction_questions", questions);
 }
 
 async function ensureSupabaseServiceType(value: unknown) {
