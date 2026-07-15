@@ -84,6 +84,7 @@ export default function LoginPage() {
       localStorage.removeItem("role_permissions");
       localStorage.removeItem("role_metadata");
       localStorage.removeItem("role_name");
+      localStorage.removeItem("apexos_role_context_fetched_at");
       sessionStorage.removeItem("apexos_module_access_cache_v2");
       let authenticatedWithSupabase = false;
       let supabaseLoginError: unknown = null;
@@ -116,6 +117,7 @@ export default function LoginPage() {
         if (data.user?.role) localStorage.setItem("role_name", data.user.role);
         if (Array.isArray(data.user?.role_permissions)) localStorage.setItem("role_permissions", JSON.stringify(data.user.role_permissions));
         if (data.user?.role_metadata) localStorage.setItem("role_metadata", JSON.stringify(data.user.role_metadata));
+        if (Array.isArray(data.user?.role_permissions) || data.user?.role_metadata) localStorage.setItem("apexos_role_context_fetched_at", String(Date.now()));
       }
       touchSession();
       const roleName = localStorage.getItem("role_name")?.toLowerCase();

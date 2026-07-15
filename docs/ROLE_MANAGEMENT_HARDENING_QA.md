@@ -165,7 +165,8 @@ El modal de Roles y permisos muestra un contador y una lista compacta de usuario
 - Los alcances por sede, area, centro de costo y proceso ya se validan en middleware cuando el request trae esos campos. Aun falta que cada servicio de dominio filtre proactivamente listados por esos alcances para evitar depender solo de bloqueo posterior.
 - RLS Supabase remoto todavia requiere migraciones SQL aplicadas por conexion Postgres valida. El `DATABASE_URL` local apunta a `localhost:55432` y no permite aplicar DDL remoto desde esta maquina.
 - Para ejecutar migraciones SQL desde CI/Railway/local QA, `DATABASE_URL` debe apuntar al Postgres remoto de Supabase QA, no a `localhost`.
-- La proteccion por URL directa queda activa para sesiones API local. Para sesiones Supabase directas, se mantiene la proteccion por modulos activos y RLS; falta exponer permisos equivalentes de rol Supabase si se quiere una guarda visual identica.
+- La proteccion por URL directa queda activa para sesiones API local y sesiones Supabase que puedan refrescar contexto contra `/api/v1/auth/me`.
+- Para evitar bloqueos en produccion, el refresco de contexto de rol en frontend tiene timeout corto y no debe aplicar permisos visuales viejos si no fueron confirmados en la sesion actual.
 - Las acciones finas como `delete`, `reject`, `void`, `attach`, `download`, `configure` y `administer` ya existen en la matriz, pero algunos endpoints actuales todavia usan permisos agregados `write/read/approve/export`.
 
 ## Recomendaciones
