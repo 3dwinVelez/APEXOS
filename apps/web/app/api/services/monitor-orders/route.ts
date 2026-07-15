@@ -6,6 +6,11 @@ let rootEnvCache: Record<string, string> | null = null;
 
 type AnyRow = Record<string, unknown>;
 type UserCompany = { company_id: string; role?: string };
+type ServiceScope = {
+  companyIds: string[];
+  technicianEmployeeId?: string;
+  technicianOnly: boolean;
+};
 
 function jsonError(message: string, status = 400) {
   return NextResponse.json({ message }, { status });
@@ -117,34 +122,55 @@ async function userCompanies(request: NextRequest) {
   ).catch(() => []);
 }
 
-async function resolveCompanyId(request: NextRequest) {
+async function resolveCompanyIds(request: NextRequest) {
   const { publicCompanyId } = supabaseConfig();
   const requestedCompanyId = request.nextUrl.searchParams.get("company_id")?.trim() || "";
   const companyName = request.nextUrl.searchParams.get("empresa")?.trim() || "SCJ";
   const memberships = await userCompanies(request);
-  if (requestedCompanyId && isUuid(requestedCompanyId) && memberships.some((item) => item.company_id === requestedCompanyId)) return requestedCompanyId;
+  const membershipCompanyIds = Array.from(new Set(memberships.map((item) => item.company_id).filter((id) => isUuid(id))));
+  if (membershipCompanyIds.length) return membershipCompanyIds;
 
   const value = encodeURIComponent(companyName);
   const filter = `or=(name.ilike.*${value}*,legal_name.ilike.*${value}*,tax_id.eq.${value})&`;
   const companies = await supabaseRequest<Array<{ id: string }>>(
     `/rest/v1/companies?select=id&${filter}status=eq.active&order=created_at.asc&limit=5`
   );
-  const membershipCompanyIds = new Set(memberships.map((item) => item.company_id));
-  const namedMembership = companies.find((item) => membershipCompanyIds.has(item.id));
-  if (namedMembership?.id) return namedMembership.id;
 
-  const adminMembership = memberships.find((item) => ["owner", "admin", "superadmin"].includes(String(item.role || "").toLowerCase()));
-  if (adminMembership?.company_id) return adminMembership.company_id;
-  if (memberships[0]?.company_id) return memberships[0].company_id;
-
-  if (requestedCompanyId && isUuid(requestedCompanyId)) return requestedCompanyId;
-  if (publicCompanyId && isUuid(publicCompanyId)) return publicCompanyId;
-  if (companies[0]?.id) return companies[0].id;
+  if (requestedCompanyId && isUuid(requestedCompanyId)) return [requestedCompanyId];
+  if (publicCompanyId && isUuid(publicCompanyId)) return [publicCompanyId];
+  if (companies[0]?.id) return [companies[0].id];
 
   const fallbackCompanies = await supabaseRequest<Array<{ id: string }>>(
     "/rest/v1/companies?select=id&status=eq.active&order=created_at.asc&limit=1"
   );
-  return fallbackCompanies[0]?.id || "";
+  return fallbackCompanies[0]?.id ? [fallbackCompanies[0].id] : [];
+}
+
+async function resolveServiceScope(request: NextRequest): Promise<ServiceScope> {
+  const userId = await currentAuthUserId(request);
+  const companyIds = await resolveCompanyIds(request);
+  if (!userId || !companyIds.length) return { companyIds, technicianOnly: false };
+  const companyFilter = compactInFilter(companyIds);
+  const employees = await supabaseRequest<Array<{
+    id: string;
+    company_id?: string;
+    user_type?: string;
+    metadata?: AnyRow;
+  }>>(
+    `/rest/v1/employees?select=id,company_id,user_type,metadata&user_id=eq.${encodeURIComponent(userId)}&company_id=in.(${companyFilter})&status=eq.active&limit=20`
+  ).catch(() => []);
+  const technician = employees.find((employee) => {
+    const userType = String(employee.user_type || "").trim().toLowerCase();
+    const profileKind = String(employee.metadata?.profile_kind || "").trim().toLowerCase();
+    const roleName = String(employee.metadata?.role_name || "").trim().toLowerCase();
+    return userType === "tecnico" || profileKind === "tecnico" || roleName === "tecnico" || employee.metadata?.services_assigned_only === true;
+  });
+  if (!technician?.id) return { companyIds, technicianOnly: false };
+  return {
+    companyIds: technician.company_id && isUuid(technician.company_id) ? [technician.company_id] : companyIds,
+    technicianEmployeeId: technician.id,
+    technicianOnly: true
+  };
 }
 
 function compactInFilter(values: Array<string | undefined>) {
@@ -166,12 +192,16 @@ export async function GET(request: NextRequest) {
     if (!request.headers.get("authorization")) {
       return jsonError("Sesion requerida para consultar el monitor de servicios.", 401);
     }
-    const companyId = await resolveCompanyId(request);
-    if (!companyId) return jsonError("No se encontro una empresa activa para consultar ordenes.", 404);
+    const scope = await resolveServiceScope(request);
+    if (!scope.companyIds.length) return jsonError("No se encontro una empresa activa para consultar ordenes.", 404);
 
     const limit = Math.min(Math.max(Number(request.nextUrl.searchParams.get("limit") || 200), 1), 300);
+    const companyFilter = compactInFilter(scope.companyIds);
+    const technicianFilter = scope.technicianEmployeeId ? `&technician_employee_id=eq.${encodeURIComponent(scope.technicianEmployeeId)}` : "";
+    const statusFilter = scope.technicianOnly ? "&status=in.(pendiente,en_curso,inspeccion,ejecucion)" : "";
     const orders = await supabaseRequest<Array<{
       id: string;
+      company_id: string;
       number: string;
       reference_id?: string;
       technician_employee_id?: string;
@@ -187,14 +217,14 @@ export async function GET(request: NextRequest) {
       created_at?: string;
       notes?: string;
       metadata?: AnyRow;
-    }>>(`/rest/v1/service_orders?select=id,number,reference_id,technician_employee_id,service_type,status,customer_name,customer_address,customer_phone,invoice_number,scheduled_date,started_at,closed_at,created_at,notes,metadata&company_id=eq.${encodeURIComponent(companyId)}&order=created_at.desc&limit=${limit}`);
+    }>>(`/rest/v1/service_orders?select=id,company_id,number,reference_id,technician_employee_id,service_type,status,customer_name,customer_address,customer_phone,invoice_number,scheduled_date,started_at,closed_at,created_at,notes,metadata&company_id=in.(${companyFilter})${technicianFilter}${statusFilter}&order=created_at.desc&limit=${limit}`);
 
     const referenceIds = compactInFilter(orders.map((order) => order.reference_id));
     const technicianIds = compactInFilter(orders.map((order) => order.technician_employee_id));
     const orderIds = compactInFilter(orders.map((order) => order.id));
     const [references, incidents, evidence, technicians] = await Promise.all([
       referenceIds
-        ? supabaseRequest<Array<{ id: string; code: string; name: string; category?: string; brand?: string; model?: string }>>(`/rest/v1/service_references?select=id,code,name,category,brand,model&company_id=eq.${encodeURIComponent(companyId)}&id=in.(${referenceIds})&limit=300`).catch(() => [])
+        ? supabaseRequest<Array<{ id: string; code: string; name: string; category?: string; brand?: string; model?: string }>>(`/rest/v1/service_references?select=id,code,name,category,brand,model&company_id=in.(${companyFilter})&id=in.(${referenceIds})&limit=300`).catch(() => [])
         : Promise.resolve([]),
       orderIds
         ? supabaseRequest<Array<{ id: string; order_id: string; type?: string; description?: string; action?: string }>>(`/rest/v1/service_incidents?select=id,order_id,type,description,action&order_id=in.(${orderIds})&limit=500`).catch(() => [])
@@ -203,7 +233,7 @@ export async function GET(request: NextRequest) {
         ? supabaseRequest<Array<{ id: string; order_id: string; evidence_type?: string; metadata?: AnyRow; created_at?: string }>>(`/rest/v1/service_evidence?select=id,order_id,evidence_type,metadata,created_at&order_id=in.(${orderIds})&limit=500`).catch(() => [])
         : Promise.resolve([]),
       technicianIds
-        ? supabaseRequest<Array<{ id: string; first_name?: string; last_name?: string; email?: string; metadata?: AnyRow }>>(`/rest/v1/employees?select=id,first_name,last_name,email,metadata&company_id=eq.${encodeURIComponent(companyId)}&id=in.(${technicianIds})&limit=300`).catch(() => [])
+        ? supabaseRequest<Array<{ id: string; first_name?: string; last_name?: string; email?: string; metadata?: AnyRow }>>(`/rest/v1/employees?select=id,first_name,last_name,email,metadata&company_id=in.(${companyFilter})&id=in.(${technicianIds})&limit=300`).catch(() => [])
         : Promise.resolve([])
     ]);
 
