@@ -45,10 +45,10 @@ const initialForm: FormState = {
 };
 
 const steps = [
-  { title: "Tus datos", icon: UserRound },
-  { title: "Direccion", icon: MapPin },
-  { title: "Servicio", icon: PackageSearch },
-  { title: "Confirmar", icon: ShieldCheck }
+  { title: "Quien eres", shortTitle: "Tus datos", helper: "Dinos a quien podemos llamar.", icon: UserRound },
+  { title: "Donde vamos", shortTitle: "Direccion", helper: "Escribe donde se hara el servicio.", icon: MapPin },
+  { title: "Que instalamos", shortTitle: "Producto", helper: "Elige el servicio y la referencia.", icon: PackageSearch },
+  { title: "Revisar y enviar", shortTitle: "Final", helper: "Mira todo antes de enviarlo.", icon: ShieldCheck }
 ];
 
 function onlyNumbers(value: string) {
@@ -88,6 +88,8 @@ function PublicServiceRequestContent() {
   const [loadingReferences, setLoadingReferences] = useState(true);
   const addressPreview = useMemo(() => buildAddress(form), [form]);
   const selectedReference = useMemo(() => references.find((item) => item.id === form.reference_id), [form.reference_id, references]);
+  const progress = Math.round(((step + 1) / steps.length) * 100);
+  const currentStep = steps[step];
 
   useEffect(() => {
     let active = true;
@@ -211,48 +213,55 @@ function PublicServiceRequestContent() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_right,rgba(54,211,186,0.20),transparent_32%),linear-gradient(135deg,#f7f5ee,#ffffff)] px-4 py-5 text-neutral-900 sm:py-8">
-      <div className="mx-auto max-w-5xl">
-        <header className="mb-5 rounded-3xl bg-[linear-gradient(135deg,#061d19,#123d35)] p-5 text-white shadow-xl shadow-teal-950/15 sm:p-7">
-          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#f7f5ee,#ffffff)] px-4 py-4 text-neutral-900 sm:py-6">
+      <div className="mx-auto max-w-6xl">
+        <header className="mb-4 overflow-hidden rounded-3xl bg-[linear-gradient(135deg,#06201c,#0f4d43)] text-white shadow-xl shadow-teal-950/15">
+          <div className="grid gap-4 p-5 md:grid-cols-[1fr_260px] md:p-7">
             <div>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-teal-100">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-teal-100">
                 <Home size={14} /> Solicitud de servicio
               </div>
-              <h1 className="max-w-2xl text-3xl font-bold leading-tight sm:text-4xl">Agenda tu instalacion de forma clara y rapida</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/70">Te guiaremos paso a paso con datos simples para crear la solicitud sin usuario ni clave.</p>
+              <h1 className="max-w-3xl text-3xl font-bold leading-tight sm:text-4xl">Vamos paso a paso</h1>
+              <p className="mt-2 max-w-2xl text-base leading-7 text-white/75">Lee una pregunta, responde y toca continuar. Si sabes enviar un mensaje por WhatsApp, puedes llenar este formulario.</p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/10 p-4 text-sm text-teal-50">
-              <p className="font-semibold">Tiempo estimado</p>
-              <p className="mt-1 text-2xl font-bold">3 min</p>
-              <p className="mt-1 text-white/65">Sin usuario ni clave.</p>
+            <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
+              <div className="flex items-center justify-between text-sm font-semibold text-teal-50">
+                <span>Paso {step + 1} de {steps.length}</span>
+                <span>{progress}%</span>
+              </div>
+              <div className="mt-3 h-3 overflow-hidden rounded-full bg-white/15">
+                <div className="h-full rounded-full bg-emerald-300 transition-all" style={{ width: `${progress}%` }} />
+              </div>
+              <p className="mt-3 text-sm text-white/70">Tiempo estimado: 3 minutos.</p>
             </div>
           </div>
         </header>
 
-        <section className="grid gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
-          <aside className="rounded-3xl border border-line bg-white p-4 shadow-sm lg:sticky lg:top-5 lg:self-start">
-            <div className="space-y-2">
+        <section className="grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
+          <aside className="rounded-3xl border border-line bg-white p-3 shadow-sm lg:sticky lg:top-4 lg:self-start">
+            <div className="grid gap-2">
               {steps.map((item, index) => {
                 const Icon = item.icon;
                 const active = index === step;
                 const done = index < step;
                 return (
                   <button className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition ${active ? "border-apex bg-apex/10 text-apex" : done ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-line bg-white text-neutral-500"}`} key={item.title} onClick={() => index <= step && setStep(index)} type="button">
-                    <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${active ? "bg-apex text-white" : done ? "bg-emerald-600 text-white" : "bg-paper"}`}>
+                    <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${active ? "bg-apex text-white" : done ? "bg-emerald-600 text-white" : "bg-paper"}`}>
                       <Icon size={18} />
                     </span>
-                    <span>
-                      <span className="block text-xs font-bold uppercase tracking-[0.14em]">Paso {index + 1}</span>
-                      <span className="block font-semibold">{item.title}</span>
+                    <span className="min-w-0">
+                      <span className="block text-xs font-bold uppercase tracking-[0.12em]">Paso {index + 1}</span>
+                      <span className="block truncate font-semibold">{item.shortTitle}</span>
+                      <span className="block truncate text-xs opacity-75">{item.helper}</span>
                     </span>
                   </button>
                 );
               })}
             </div>
-            <div className="mt-4 rounded-2xl bg-paper p-3 text-sm text-neutral-600">
-              <p className="font-semibold text-neutral-900">Direccion previa</p>
-              <p className="mt-1 leading-5">{addressPreview || "Aun no has ingresado la direccion."}</p>
+            <div className="mt-3 rounded-2xl bg-paper p-3 text-sm text-neutral-600">
+              <p className="font-semibold text-neutral-900">Vas en: {currentStep.shortTitle}</p>
+              <p className="mt-1 leading-5">{currentStep.helper}</p>
+              {addressPreview ? <p className="mt-3 rounded-xl bg-white p-2 text-xs font-medium text-neutral-700">{addressPreview}</p> : null}
             </div>
           </aside>
 
@@ -261,33 +270,34 @@ function PublicServiceRequestContent() {
 
             {step === 0 ? (
               <div className="space-y-5">
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.18em] text-apex">Datos de contacto</p>
-                  <h2 className="mt-2 text-2xl font-bold">Primero identifiquemos quien solicita</h2>
+                <div className="rounded-2xl bg-apex/10 p-4">
+                  <p className="text-sm font-bold uppercase tracking-[0.14em] text-apex">Paso 1</p>
+                  <h2 className="mt-1 text-2xl font-bold">Cuentanos quien pide el servicio</h2>
+                  <p className="mt-2 text-sm leading-6 text-neutral-600">Necesitamos tu nombre y telefono para llamarte y confirmar la visita.</p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Nombre completo *"><input className="apex-public-input" value={form.customer_name} onChange={(event) => setField("customer_name", event.target.value)} /></Field>
-                  <Field label="Cedula *"><input className="apex-public-input" inputMode="numeric" value={form.customer_document} onChange={(event) => setField("customer_document", onlyNumbers(event.target.value))} /></Field>
-                  <Field label="Telefono / WhatsApp *"><input className="apex-public-input" inputMode="tel" value={form.customer_phone} onChange={(event) => setField("customer_phone", event.target.value)} /></Field>
-                  <Field label="Correo electronico"><input className="apex-public-input" type="email" value={form.customer_email} onChange={(event) => setField("customer_email", event.target.value)} /></Field>
+                  <Field label="Tu nombre completo *" hint="Como aparece en tu cedula o factura."><input className="apex-public-input" placeholder="Ej. Maria Gomez" value={form.customer_name} onChange={(event) => setField("customer_name", event.target.value)} /></Field>
+                  <Field label="Tu cedula *" hint="Solo numeros, sin puntos."><input className="apex-public-input" inputMode="numeric" placeholder="Ej. 1020304050" value={form.customer_document} onChange={(event) => setField("customer_document", onlyNumbers(event.target.value))} /></Field>
+                  <Field label="Telefono o WhatsApp *" hint="A este numero te llamaremos."><input className="apex-public-input" inputMode="tel" placeholder="Ej. 3001234567" value={form.customer_phone} onChange={(event) => setField("customer_phone", event.target.value)} /></Field>
+                  <Field label="Correo electronico" hint="Opcional, por si quieres recibir informacion."><input className="apex-public-input" placeholder="Ej. correo@ejemplo.com" type="email" value={form.customer_email} onChange={(event) => setField("customer_email", event.target.value)} /></Field>
                 </div>
               </div>
             ) : null}
 
             {step === 1 ? (
               <div className="space-y-5">
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.18em] text-apex">Direccion</p>
-                  <h2 className="mt-2 text-2xl font-bold">Indicanos donde se realizara el servicio</h2>
-                  <p className="mt-2 text-sm text-neutral-600">Escribela como la das normalmente en Medellin: via, numero, interior o torre, barrio, municipio y una referencia para llegar.</p>
+                <div className="rounded-2xl bg-apex/10 p-4">
+                  <p className="text-sm font-bold uppercase tracking-[0.14em] text-apex">Paso 2</p>
+                  <h2 className="mt-1 text-2xl font-bold">Dinos dónde debemos ir</h2>
+                  <p className="mt-2 text-sm leading-6 text-neutral-600">Escribe la direccion como si se la explicaras a un mensajero.</p>
                 </div>
                 <div className="grid gap-3">
-                  <Field label="Direccion completa *">
-                    <textarea className="apex-public-input min-h-32 py-3" placeholder="Ej. Carrera 43 C Sur # 22 - 901, apartamento torre 5, cerca al D1, barrio La Magnolia, Envigado" value={form.customer_address} onChange={(event) => setField("customer_address", event.target.value)} />
+                  <Field label="Direccion completa *" hint="Incluye calle/carrera, numero, apartamento, torre o punto de referencia.">
+                    <textarea className="apex-public-input min-h-32 py-3" placeholder="Ej. Carrera 43 C Sur # 22 - 901, torre 5, cerca al D1" value={form.customer_address} onChange={(event) => setField("customer_address", event.target.value)} />
                   </Field>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <Field label="Barrio *"><input className="apex-public-input" value={form.customer_neighborhood} onChange={(event) => setField("customer_neighborhood", event.target.value)} /></Field>
-                    <Field label="Almacen *"><select className="apex-public-input" disabled={loadingReferences} value={form.service_store} onChange={(event) => setField("service_store", event.target.value)}>
+                    <Field label="Barrio *" hint="El barrio ayuda a programar la ruta."><input className="apex-public-input" placeholder="Ej. La Magnolia" value={form.customer_neighborhood} onChange={(event) => setField("customer_neighborhood", event.target.value)} /></Field>
+                    <Field label="Almacen donde compraste *" hint="Si no recuerdas, elige el mas cercano."><select className="apex-public-input" disabled={loadingReferences} value={form.service_store} onChange={(event) => setField("service_store", event.target.value)}>
                       <option value="">{loadingReferences ? "Cargando almacenes..." : "Selecciona un almacen"}</option>
                       {(serviceStores.length ? serviceStores : [{ code: "hogar_y_moda_1", label: "Hogar y Moda 1" }, { code: "hogar_y_moda_2", label: "Hogar y Moda 2" }]).map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}
                     </select></Field>
@@ -302,22 +312,23 @@ function PublicServiceRequestContent() {
 
             {step === 2 ? (
               <div className="space-y-5">
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.18em] text-apex">Datos del servicio</p>
-                  <h2 className="mt-2 text-2xl font-bold">Cuentanos que producto necesitas instalar</h2>
+                <div className="rounded-2xl bg-apex/10 p-4">
+                  <p className="text-sm font-bold uppercase tracking-[0.14em] text-apex">Paso 3</p>
+                  <h2 className="mt-1 text-2xl font-bold">Ahora el producto y el servicio</h2>
+                  <p className="mt-2 text-sm leading-6 text-neutral-600">Si tienes la factura a mano, úsala para escoger la referencia correcta.</p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Factura o pedido (opcional)"><input className="apex-public-input" placeholder="Si lo tienes a la mano" value={form.invoice_number} onChange={(event) => setField("invoice_number", event.target.value)} /></Field>
-                  <Field label="Tipo de servicio *"><select className="apex-public-input" disabled={loadingReferences} value={form.service_type} onChange={(event) => setField("service_type", event.target.value)}>
+                  <Field label="Numero de factura o pedido" hint="Opcional, pero ayuda mucho."><input className="apex-public-input" placeholder="Ej. FAC-12345" value={form.invoice_number} onChange={(event) => setField("invoice_number", event.target.value)} /></Field>
+                  <Field label="Que necesitas hacer *" hint="Escoge una opcion."><select className="apex-public-input" disabled={loadingReferences} value={form.service_type} onChange={(event) => setField("service_type", event.target.value)}>
                     {(serviceTypes.length ? serviceTypes : [{ code: "montaje", label: "Montaje" }, { code: "desmontaje", label: "Desmontaje" }, { code: "ambos", label: "Montaje y desmontaje" }]).map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}
                   </select></Field>
-                  <Field label="Referencia del producto *">
+                  <Field label="Producto que compraste *" hint="Busca el codigo o nombre en tu factura.">
                     <select className="apex-public-input" disabled={loadingReferences} value={form.reference_id} onChange={(event) => setField("reference_id", event.target.value)}>
                       <option value="">{loadingReferences ? "Cargando referencias..." : "Selecciona una referencia"}</option>
                       {references.map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}
                     </select>
                   </Field>
-                  <Field label="Observaciones"><textarea className="apex-public-input min-h-28 py-3" value={form.notes} onChange={(event) => setField("notes", event.target.value)} /></Field>
+                  <Field label="Algo que debamos saber" hint="Opcional: horario, indicaciones o detalles del producto."><textarea className="apex-public-input min-h-28 py-3" placeholder="Ej. Solo hay porteria hasta las 5 pm." value={form.notes} onChange={(event) => setField("notes", event.target.value)} /></Field>
                 </div>
                 {!loadingReferences && !references.length ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">No encontramos referencias activas para esta empresa. Activa el maestro de referencias antes de recibir solicitudes externas.</div> : null}
               </div>
@@ -325,9 +336,10 @@ function PublicServiceRequestContent() {
 
             {step === 3 ? (
               <div className="space-y-5">
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.18em] text-apex">Confirmacion</p>
-                  <h2 className="mt-2 text-2xl font-bold">Revisa antes de enviar</h2>
+                <div className="rounded-2xl bg-emerald-50 p-4">
+                  <p className="text-sm font-bold uppercase tracking-[0.14em] text-emerald-700">Ultimo paso</p>
+                  <h2 className="mt-1 text-2xl font-bold">Revisa y envia</h2>
+                  <p className="mt-2 text-sm leading-6 text-neutral-600">Si algo no esta bien, toca volver. Si todo esta correcto, envia la solicitud.</p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Summary label="Cliente" value={`${form.customer_name} - CC ${form.customer_document}`} />
@@ -378,10 +390,11 @@ function PublicServiceRequestFallback() {
   );
 }
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
     <label className="grid gap-1.5 text-sm font-semibold text-neutral-700">
-      {label}
+      <span>{label}</span>
+      {hint ? <span className="text-xs font-medium leading-5 text-neutral-500">{hint}</span> : null}
       {children}
     </label>
   );
