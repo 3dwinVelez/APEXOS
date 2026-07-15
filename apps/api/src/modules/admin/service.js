@@ -15,6 +15,10 @@ function normalizeTenantId(tenantId) {
   return value;
 }
 
+function normalizeRoleNameKey(value) {
+  return String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
+}
+
 const PHYSICAL_DELETE_PERMISSION = "delete_physical_records";
 const ROLE_ACTIONS = ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import", "attach", "download", "configure", "administer", "execute", "reports", "sensitive", "manage_users", "manage_roles"];
 const READ_ACTIONS = new Set(["access", "view", "download", "reports"]);
@@ -650,7 +654,7 @@ async function createRole(tenantId, input, actorId = null) {
   tenantId = normalizeTenantId(tenantId);
   const activeModules = await getTenantActiveModules(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
-    const name = String(input.name || input.nombre || "").trim();
+    const name = String(input.name || input.nombre || "").trim().replace(/\s+/g, " ");
     if (!name) {
       const err = new Error("El nombre del rol es obligatorio.");
       err.statusCode = 400;
@@ -661,13 +665,14 @@ async function createRole(tenantId, input, actorId = null) {
       err.statusCode = 403;
       throw err;
     }
-    const duplicate = await prisma.role.findUnique({ where: { tenant_id_name: { tenant_id: tenantId, name } } });
-    if (duplicate) {
-      const err = new Error("Ya existe un rol con ese nombre en esta empresa.");
+    const roleNameKey = normalizeRoleNameKey(name);
+    const visualDuplicate = (await prisma.role.findMany({ where: { tenant_id: tenantId }, select: { id: true, name: true } })).find((role) => normalizeRoleNameKey(role.name) === roleNameKey);
+    if (visualDuplicate) {
+      const err = new Error(`Ya existe un rol visualmente igual: "${visualDuplicate.name}". Usa otro nombre o edita el rol existente.`);
       err.statusCode = 409;
       throw err;
     }
-    const role = await upsertRoleFromLegacy(tenantId, { ...input, is_system: false }, activeModules);
+    const role = await upsertRoleFromLegacy(tenantId, { ...input, name, is_system: false }, activeModules);
     await prisma.auditLog.create({
       data: {
         tenant_id: tenantId,
@@ -688,7 +693,7 @@ async function updateRole(tenantId, id, input, actorId = null, actorRoleName = "
   tenantId = normalizeTenantId(tenantId);
   const activeModules = await getTenantActiveModules(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
-    const current = await prisma.role.findFirstOrThrow({ where: { id: Number(id) }, include: { permissions: true } });
+    const current = await prisma.role.findFirstOrThrow({ where: { id: Number(id), tenant_id: tenantId }, include: { permissions: true } });
     const previous = roleDto(current, activeModules);
     if (current.name === "APEX_ADMIN") {
       if (actorRoleName !== "APEX_ADMIN") {
@@ -716,11 +721,13 @@ async function updateRole(tenantId, id, input, actorId = null, actorRoleName = "
     }
     const legacyPermissions = normalizeLegacyPermissions(input.permissions || {}, activeModules);
     const rbacPermissions = legacyToRbacPermissions(legacyPermissions, activeModules);
-    const nextName = current.is_system ? current.name : String(input.name || input.nombre || current.name).trim();
+    const nextName = current.is_system ? current.name : String(input.name || input.nombre || current.name).trim().replace(/\s+/g, " ");
     if (nextName !== current.name) {
-      const duplicate = await prisma.role.findUnique({ where: { tenant_id_name: { tenant_id: tenantId, name: nextName } } });
+      const roleNameKey = normalizeRoleNameKey(nextName);
+      const duplicates = await prisma.role.findMany({ where: { tenant_id: tenantId, NOT: { id: current.id } }, select: { id: true, name: true } });
+      const duplicate = duplicates.find((role) => normalizeRoleNameKey(role.name) === roleNameKey);
       if (duplicate) {
-        const err = new Error("Ya existe un rol con ese nombre en esta empresa.");
+        const err = new Error(`Ya existe un rol visualmente igual: "${duplicate.name}". Usa otro nombre o edita el rol existente.`);
         err.statusCode = 409;
         throw err;
       }
@@ -758,7 +765,7 @@ async function setRoleActive(tenantId, id, active, actorId = null) {
   tenantId = normalizeTenantId(tenantId);
   const activeModules = await getTenantActiveModules(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
-    const current = await prisma.role.findFirstOrThrow({ where: { id: Number(id) }, include: { permissions: true } });
+    const current = await prisma.role.findFirstOrThrow({ where: { id: Number(id), tenant_id: tenantId }, include: { permissions: true } });
     if (current.name === "APEX_ADMIN") return roleDto(current, activeModules);
     const previous = roleDto(current, activeModules);
     const role = await prisma.role.update({
@@ -770,6 +777,40 @@ async function setRoleActive(tenantId, id, active, actorId = null) {
       data: { tenant_id: tenantId, user_id: actorId, action: toBoolean(active) ? "role_activated" : "role_deactivated", module: "admin", entity: "/api/v1/admin/roles/status", entity_id: String(role.id), old_value: previous, new_value: roleDto(role, activeModules) }
     });
     return roleDto(role, activeModules);
+  });
+}
+
+async function deleteRole(tenantId, id, actorId = null) {
+  tenantId = normalizeTenantId(tenantId);
+  const activeModules = await getTenantActiveModules(tenantId);
+  return prisma.runWithTenant(tenantId, async () => {
+    const current = await prisma.role.findFirstOrThrow({ where: { id: Number(id), tenant_id: tenantId }, include: { permissions: true } });
+    if (current.name === "APEX_ADMIN" || current.is_system) {
+      const err = new Error("Los roles de sistema no se pueden eliminar.");
+      err.statusCode = 403;
+      throw err;
+    }
+    const assignedUsers = await prisma.user.count({ where: { role_id: current.id } });
+    if (assignedUsers > 0) {
+      const err = new Error(`No se puede eliminar este rol porque tiene ${assignedUsers} usuario(s) asignado(s). Reasigna o inactiva esos usuarios primero.`);
+      err.statusCode = 409;
+      throw err;
+    }
+    const previous = roleDto(current, activeModules);
+    await prisma.role.delete({ where: { id: current.id } });
+    await prisma.auditLog.create({
+      data: {
+        tenant_id: tenantId,
+        user_id: actorId,
+        action: "role_deleted",
+        module: "admin",
+        entity: "/api/v1/admin/roles",
+        entity_id: String(current.id),
+        old_value: previous,
+        new_value: null
+      }
+    });
+    return { ok: true, id: current.id };
   });
 }
 
@@ -1245,6 +1286,7 @@ module.exports = {
   createRole,
   updateRole,
   setRoleActive,
+  deleteRole,
   listUsers,
   createUser,
   updateUser,

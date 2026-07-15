@@ -514,6 +514,10 @@ function canDeletePhysicalDocuments() {
   });
 }
 
+function normalizeRoleNameKey(value: string) {
+  return value.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
 function emptyRoleForm(catalog: CatalogItem[]) {
   return {
     name: "",
@@ -742,6 +746,7 @@ export default function AdministracionPage() {
   const [editingCatalogCode, setEditingCatalogCode] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [roleSaving, setRoleSaving] = useState(false);
   const [platformAdmin, setPlatformAdmin] = useState(false);
 
   const selectedRole = useMemo(() => roles.find((role) => role.id === selectedRoleId) || null, [roles, selectedRoleId]);
@@ -954,6 +959,7 @@ export default function AdministracionPage() {
   function newRole() {
     setSelectedRoleId(null);
     setRoleForm(emptyRoleForm(catalog));
+    setMessage("");
   }
 
   function copyRole(roleId: string) {
@@ -990,23 +996,82 @@ export default function AdministracionPage() {
   }
 
   async function saveRole() {
+    if (roleSaving) return;
     if (!roleForm.name.trim()) {
       setMessage("El nombre del rol es obligatorio.");
+      return;
+    }
+    const roleNameKey = normalizeRoleNameKey(roleForm.name);
+    const duplicate = roles.find((role) => role.id !== selectedRoleId && normalizeRoleNameKey(role.name) === roleNameKey);
+    if (duplicate) {
+      setMessage(`Ya existe un rol visualmente igual: "${duplicate.name}". Edita ese rol o usa otro nombre.`);
       return;
     }
     const normalizedPermissions = normalizeRolePermissions(catalog, roleForm.permissions);
     const hasSensitivePermission = Object.values(normalizedPermissions).some((actions) => actions.sensitive);
     const payload = {
       ...roleForm,
+      name: roleForm.name.trim().replace(/\s+/g, " "),
       hierarchy_level: Number(roleForm.hierarchy_level || 10),
       can_delegate: false,
       sensitive: hasSensitivePermission,
       permissions: normalizedPermissions
     };
-    if (selectedRoleId) await api(`/api/v1/admin/roles/${selectedRoleId}`, { method: "PUT", body: JSON.stringify(payload) });
-    else await api("/api/v1/admin/roles", { method: "POST", body: JSON.stringify(payload) });
-    setMessage("Rol guardado.");
-    await load();
+    setRoleSaving(true);
+    try {
+      const savedRole = selectedRoleId
+        ? await api<Role>(`/api/v1/admin/roles/${selectedRoleId}`, { method: "PUT", body: JSON.stringify(payload) })
+        : await api<Role>("/api/v1/admin/roles", { method: "POST", body: JSON.stringify(payload) });
+      setSelectedRoleId(savedRole.id);
+      setRoleForm({
+        ...emptyRoleForm(catalog),
+        name: savedRole.name,
+        description: savedRole.description || "",
+        active: savedRole.active,
+        hierarchy_level: String(savedRole.hierarchy_level || 10),
+        role_type: savedRole.role_type || "custom",
+        scope: savedRole.scope || "company",
+        scopes: roleScopesFrom(savedRole, "scopes"),
+        restrictions: roleScopesFrom(savedRole, "restrictions"),
+        can_delegate: Boolean(savedRole.can_delegate),
+        sensitive: Boolean(savedRole.sensitive),
+        permissions: normalizeRolePermissions(catalog, savedRole.permissions)
+      });
+      await load();
+      setMessage(`Rol "${savedRole.name}" guardado correctamente.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Error al guardar el rol.");
+    } finally {
+      setRoleSaving(false);
+    }
+  }
+
+  async function deleteRole() {
+    if (!selectedRole) {
+      setMessage("Selecciona un rol para eliminar.");
+      return;
+    }
+    if (selectedRole.name === "APEX_ADMIN" || selectedRole.is_system) {
+      setMessage("Los roles de sistema no se pueden eliminar.");
+      return;
+    }
+    if (assignedRoleUsers.length) {
+      setMessage(`No se puede eliminar "${selectedRole.name}" porque tiene ${assignedRoleUsers.length} usuario(s) asignado(s).`);
+      return;
+    }
+    if (!window.confirm(`Confirmas eliminar el rol "${selectedRole.name}"? Esta accion retirara sus permisos y no se puede deshacer.`)) return;
+    setRoleSaving(true);
+    try {
+      await api(`/api/v1/admin/roles/${selectedRole.id}`, { method: "DELETE" });
+      setSelectedRoleId(null);
+      setRoleForm(emptyRoleForm(catalog));
+      await load();
+      setMessage(`Rol "${selectedRole.name}" eliminado correctamente.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Error al eliminar el rol.");
+    } finally {
+      setRoleSaving(false);
+    }
   }
 
   function selectUser(user: AdminUser) {
@@ -1936,9 +2001,10 @@ export default function AdministracionPage() {
 
       {activeModal === "roles" ? (
         <ModalFrame title="Roles y permisos" onClose={() => setActiveModal(null)} maxWidth="md:max-w-6xl">
+          {message ? <p className="mb-3 rounded-md border border-line bg-white px-4 py-3 text-sm font-medium text-neutral-700">{message}</p> : null}
           <div className="grid gap-3 lg:grid-cols-[260px_minmax(0,1fr)]">
             <aside className="space-y-2">
-              <Button className="w-full" onClick={newRole} type="button"><Plus size={16} /> Nuevo rol</Button>
+              <Button className="w-full" disabled={roleSaving} onClick={newRole} type="button"><Plus size={16} /> Nuevo rol</Button>
               {roles.map((role) => (
                 <button className={`w-full rounded-md border px-3 py-2 text-left text-sm ${selectedRoleId === role.id ? "border-apex bg-paper" : "border-line hover:bg-paper"}`} key={role.id} onClick={() => selectRole(role)} type="button">
                   <span className="block font-semibold">{role.name}</span>
@@ -1961,7 +2027,14 @@ export default function AdministracionPage() {
                   <h3 className="font-semibold">{selectedRole ? selectedRole.name : "Nuevo rol"}</h3>
                   {selectedRole ? <p className="text-sm text-neutral-500">{selectedRole.active ? "Activo" : "Inactivo"} - {selectedRole.description || "Sin descripcion"}</p> : null}
                 </div>
-                <Button onClick={saveRole} type="button"><Save size={16} /> Guardar</Button>
+                <div className="flex flex-wrap gap-2">
+                  {selectedRole ? (
+                    <Button className="border border-rose-200 bg-white text-rose-700 hover:bg-rose-50" disabled={roleSaving || selectedRole.name === "APEX_ADMIN" || selectedRole.is_system || assignedRoleUsers.length > 0} onClick={deleteRole} type="button">
+                      <Trash2 size={16} /> Eliminar
+                    </Button>
+                  ) : null}
+                  <Button disabled={roleSaving} onClick={saveRole} type="button"><Save size={16} /> {roleSaving ? "Guardando..." : "Guardar"}</Button>
+                </div>
               </div>
               <div className="mb-3 grid gap-3 rounded-md border border-line bg-white p-3 md:grid-cols-[minmax(180px,0.8fr)_minmax(240px,1.2fr)_220px]">
                 <Field label="Nombre del rol" value={roleForm.name} onChange={(value) => setRoleForm((prev) => ({ ...prev, name: value }))} />
