@@ -27,6 +27,8 @@ type StoredRolePermission = {
   action?: string;
 };
 
+type StoredLegacyPermissions = Record<string, Record<string, boolean>>;
+
 const moduleCodeBySlug: Record<string, string> = {
   activos: "activos",
   administracion: "administracion_apex",
@@ -72,6 +74,23 @@ const permissionModulesBySlug: Record<string, string[]> = {
   crm: ["customers", "sales"],
   "comercio-exterior": ["imports", "exports"],
   tesoreria: ["treasury", "accounting"]
+};
+
+const legacyPermissionKeysBySlug: Record<string, string[]> = {
+  administracion: ["usuarios", "roles", "configuracion", "auditoria", "notificaciones"],
+  "apex-ai": ["ia"],
+  compras: ["compras", "proveedores", "importaciones"],
+  contabilidad: ["contabilidad"],
+  facturacion: ["facturacion"],
+  inventario: ["inventarios", "wms"],
+  proyectos: ["proyectos"],
+  servicios: ["servicios"],
+  "talento-humano": ["talento_humano", "marcaciones", "nomina"],
+  transporte: ["transporte", "logistica", "ultima_milla"],
+  ventas: ["ventas", "clientes"],
+  crm: ["clientes", "ventas"],
+  "comercio-exterior": ["importaciones"],
+  tesoreria: ["tesoreria", "contabilidad"]
 };
 
 export function getModuleCode(module: ApexModule) {
@@ -123,6 +142,22 @@ function getStoredRolePermissions(): StoredRolePermission[] | null {
   }
 }
 
+function getStoredLegacyPermissions(): StoredLegacyPermissions | null {
+  if (typeof window === "undefined") return null;
+  const raw = localStorage.getItem("role_metadata");
+  if (!raw) return null;
+  try {
+    const metadata = JSON.parse(raw) as { legacy_permissions?: unknown };
+    const legacy = metadata?.legacy_permissions;
+    return legacy && typeof legacy === "object" && !Array.isArray(legacy)
+      ? legacy as StoredLegacyPermissions
+      : null;
+  } catch {
+    localStorage.removeItem("role_metadata");
+    return null;
+  }
+}
+
 function permissionCandidates(module: ApexModule) {
   return [
     ...(permissionModulesBySlug[module.slug] || []),
@@ -146,6 +181,20 @@ function hasRoleModuleAccess(module: ApexModule, permissions: StoredRolePermissi
   });
 }
 
+function hasLegacyModuleAccess(module: ApexModule, legacy: StoredLegacyPermissions) {
+  const roleName = typeof window !== "undefined" ? String(localStorage.getItem("role_name") || "").toLowerCase() : "";
+  if (["apex_admin", "superadmin"].includes(roleName)) return true;
+  const keys = [
+    ...(legacyPermissionKeysBySlug[module.slug] || []),
+    module.slug.replace(/-/g, "_")
+  ];
+  const allowedActions = new Set(["access", "view", "read", "reports", "create", "edit", "approve", "export", "configure", "execute", "manage_users", "manage_roles"]);
+  return keys.some((key) => {
+    const actions = legacy[key];
+    return actions && Object.entries(actions).some(([action, allowed]) => allowed === true && allowedActions.has(action));
+  });
+}
+
 function normalizeModuleKey(value: unknown) {
   return String(value || "").trim().toLowerCase().replace(/^\/dashboard\//, "").replace(/^dashboard\//, "");
 }
@@ -165,6 +214,16 @@ function statusMatchesModule(status: CompanyModuleStatus, module: ApexModule) {
 }
 
 function applyRolePermissions(modules: ApexModule[], state: ModuleAccessState): ModuleAccessState {
+  const legacy = getStoredLegacyPermissions();
+  if (legacy) {
+    return {
+      ...state,
+      bySlug: Object.fromEntries(modules.map((module) => [
+        module.slug,
+        state.bySlug[module.slug] === true && hasLegacyModuleAccess(module, legacy)
+      ]))
+    };
+  }
   const permissions = getStoredRolePermissions();
   if (!permissions) return state;
   return {
@@ -201,23 +260,31 @@ function isLocalPlatformAdmin(user?: { role_metadata?: Record<string, unknown>; 
   return role === "apex_admin" || role === "superadmin" || roleType === "superadmin";
 }
 
+async function refreshRoleContextFromApi() {
+  const token = getToken();
+  if (!token || !HAS_CONFIGURED_API_URL) return null;
+  const response = await fetch(`${API_URL}/api/v1/auth/me`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!response.ok) return null;
+  const data = await response.json() as {
+    tenant?: { active_modules?: string[] };
+    user?: { role_permissions?: StoredRolePermission[]; role_metadata?: Record<string, unknown>; role?: string };
+  };
+  if (Array.isArray(data.tenant?.active_modules)) localStorage.setItem("tenant_active_modules", JSON.stringify(data.tenant.active_modules));
+  if (Array.isArray(data.user?.role_permissions)) localStorage.setItem("role_permissions", JSON.stringify(data.user.role_permissions));
+  if (data.user?.role_metadata) localStorage.setItem("role_metadata", JSON.stringify(data.user.role_metadata));
+  if (data.user?.role) localStorage.setItem("role_name", data.user.role);
+  return data;
+}
+
 async function loadLocalModuleAccess(modules: ApexModule[]): Promise<ModuleAccessState> {
   const token = getToken();
   if (token && HAS_CONFIGURED_API_URL) {
     try {
-      const response = await fetch(`${API_URL}/api/v1/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json() as {
-          tenant?: { active_modules?: string[] };
-          user?: { role_permissions?: StoredRolePermission[]; role_metadata?: Record<string, unknown>; role?: string };
-        };
+      const data = await refreshRoleContextFromApi();
+      if (data) {
         const activeModules = Array.isArray(data.tenant?.active_modules) ? data.tenant.active_modules : [];
-        localStorage.setItem("tenant_active_modules", JSON.stringify(activeModules));
-        if (Array.isArray(data.user?.role_permissions)) localStorage.setItem("role_permissions", JSON.stringify(data.user.role_permissions));
-        if (data.user?.role_metadata) localStorage.setItem("role_metadata", JSON.stringify(data.user.role_metadata));
-        if (data.user?.role) localStorage.setItem("role_name", data.user.role);
         const state = stateFromActiveModuleList(modules, activeModules);
         return { ...state, isPlatformAdmin: isLocalPlatformAdmin(data.user) };
       }
@@ -242,6 +309,8 @@ async function loadLocalModuleAccess(modules: ApexModule[]): Promise<ModuleAcces
 
 export async function loadModuleAccess(modules: ApexModule[]): Promise<ModuleAccessState> {
   if (!isSupabaseSession()) return loadLocalModuleAccess(modules);
+
+  await refreshRoleContextFromApi().catch(() => null);
 
   const cached = sessionStorage.getItem(MODULE_ACCESS_CACHE_KEY);
   const sessionToken = localStorage.getItem("token") || "";
