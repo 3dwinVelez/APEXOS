@@ -74,6 +74,7 @@ export function UserSessionBadge({ compact = false }: { compact?: boolean }) {
           const company = rows.find((row) => row.company_id === preferredCompanyId)
             || rows.find((row) => ["owner", "admin", "superadmin"].includes(String(row.role || "").toLowerCase()))
             || rows[0];
+          if (company?.company_id) localStorage.setItem("apexos_company_id", company.company_id);
           if (company?.company_name) localStorage.setItem("apexos_company_name", company.company_name);
           setSession((value) => ({
             ...value,
