@@ -74,7 +74,12 @@ function requestErrorMessage(path: string, status: number, detail: string) {
   return `Error ${status} en ${path}: ${detail || "La solicitud no pudo completarse."}`;
 }
 
+function isPlatformLogsPath(path: string) {
+  return path.includes("/admin/platform-logs");
+}
+
 function alertRequestFailure(path: string, status: number | null, detail: string) {
+  if (isPlatformLogsPath(path)) return;
   emitAppAlert({
     title: status === 401 ? "Sesion invalida" : "Fallo tecnico detectado",
     message: status === 401 ? "La sesion actual ya no es valida. Debes autenticarte otra vez." : `No fue posible completar la solicitud solicitada por el modulo actual.`,
@@ -90,7 +95,7 @@ function platformModuleFromPath(path: string) {
 }
 
 function reportClientFailure(path: string, status: number | null, detail: string, method = "GET") {
-  if (typeof window === "undefined" || path.includes("/admin/platform-logs")) return;
+  if (typeof window === "undefined" || isPlatformLogsPath(path)) return;
   if (!HAS_CONFIGURED_API_URL) return;
   const token = localStorage.getItem("token");
   if (!token) return;
@@ -3017,7 +3022,7 @@ export async function api<T>(path: string, options: RequestInit = {}, retried = 
   const request = apiInternal<T>(path, options, retried);
   if (!cacheKey) return request;
   inFlightGetRequests.set(cacheKey, request);
-  request.finally(() => inFlightGetRequests.delete(cacheKey));
+  void request.finally(() => inFlightGetRequests.delete(cacheKey)).catch(() => undefined);
   return request;
 }
 

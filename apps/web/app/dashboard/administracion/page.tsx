@@ -868,8 +868,7 @@ export default function AdministracionPage() {
       masterResult.status === "rejected" ? "maestros de usuario" : "",
       serviceTypesResult.status === "rejected" ? "tipos de servicio" : "",
       serviceStoresResult.status === "rejected" ? "almacenes de servicio" : "",
-      satisfactionQuestionsResult.status === "rejected" ? "preguntas de satisfaccion" : "",
-      platformLogsResult.status === "rejected" ? "logs tecnicos" : ""
+      satisfactionQuestionsResult.status === "rejected" ? "preguntas de satisfaccion" : ""
     ].filter(Boolean);
     if (errors.length) {
       setMessage(`No fue posible consultar ${errors.join(", ")}. Revisa permisos RLS, empresa activa o conectividad Supabase.`);
@@ -906,9 +905,13 @@ export default function AdministracionPage() {
   }, []);
 
   async function refreshPlatformLogs() {
-    const rows = await api<PlatformLog[]>("/api/v1/admin/platform-logs?limit=120");
-    setPlatformLogs(rows);
-    setMessage("Logs tecnicos actualizados.");
+    try {
+      const rows = await api<PlatformLog[]>("/api/v1/admin/platform-logs?limit=120");
+      setPlatformLogs(rows);
+      setMessage("Logs tecnicos actualizados.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No fue posible actualizar logs tecnicos.");
+    }
   }
 
   function clearLogFilters() {
