@@ -5,6 +5,7 @@ import path from "node:path";
 let rootEnvCache: Record<string, string> | null = null;
 
 type AnyRow = Record<string, unknown>;
+type UserCompany = { company_id: string; role?: string };
 
 function jsonError(message: string, status = 400) {
   return NextResponse.json({ message }, { status });
@@ -92,19 +93,52 @@ async function supabaseRequest<T>(requestPath: string, init: RequestInit = {}) {
   return body as T;
 }
 
+async function currentAuthUserId(request: NextRequest) {
+  const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || "";
+  if (!token) return "";
+  const config = supabaseConfig();
+  if (!config.url || !config.anonKey) return "";
+  const response = await fetch(`${config.url}/auth/v1/user`, {
+    headers: {
+      apikey: config.anonKey,
+      Authorization: `Bearer ${token}`
+    }
+  });
+  if (!response.ok) return "";
+  const data = await response.json().catch(() => ({})) as { id?: string };
+  return data.id || "";
+}
+
+async function userCompanies(request: NextRequest) {
+  const userId = await currentAuthUserId(request);
+  if (!userId) return [] as UserCompany[];
+  return supabaseRequest<UserCompany[]>(
+    `/rest/v1/company_users?select=company_id,role,status&user_id=eq.${encodeURIComponent(userId)}&status=eq.active&limit=20`
+  ).catch(() => []);
+}
+
 async function resolveCompanyId(request: NextRequest) {
   const { publicCompanyId } = supabaseConfig();
-  if (publicCompanyId && isUuid(publicCompanyId)) return publicCompanyId;
-
-  const companyId = request.nextUrl.searchParams.get("company_id")?.trim() || "";
-  if (companyId && isUuid(companyId)) return companyId;
-
+  const requestedCompanyId = request.nextUrl.searchParams.get("company_id")?.trim() || "";
   const companyName = request.nextUrl.searchParams.get("empresa")?.trim() || "SCJ";
+  const memberships = await userCompanies(request);
+  if (requestedCompanyId && isUuid(requestedCompanyId) && memberships.some((item) => item.company_id === requestedCompanyId)) return requestedCompanyId;
+
   const value = encodeURIComponent(companyName);
   const filter = `or=(name.ilike.*${value}*,legal_name.ilike.*${value}*,tax_id.eq.${value})&`;
   const companies = await supabaseRequest<Array<{ id: string }>>(
-    `/rest/v1/companies?select=id&${filter}status=eq.active&order=created_at.asc&limit=1`
+    `/rest/v1/companies?select=id&${filter}status=eq.active&order=created_at.asc&limit=5`
   );
+  const membershipCompanyIds = new Set(memberships.map((item) => item.company_id));
+  const namedMembership = companies.find((item) => membershipCompanyIds.has(item.id));
+  if (namedMembership?.id) return namedMembership.id;
+
+  const adminMembership = memberships.find((item) => ["owner", "admin", "superadmin"].includes(String(item.role || "").toLowerCase()));
+  if (adminMembership?.company_id) return adminMembership.company_id;
+  if (memberships[0]?.company_id) return memberships[0].company_id;
+
+  if (requestedCompanyId && isUuid(requestedCompanyId)) return requestedCompanyId;
+  if (publicCompanyId && isUuid(publicCompanyId)) return publicCompanyId;
   if (companies[0]?.id) return companies[0].id;
 
   const fallbackCompanies = await supabaseRequest<Array<{ id: string }>>(
