@@ -1171,20 +1171,19 @@ async function hydrateSupabaseServiceReferences(refs: SupabaseServiceReference[]
 }
 
 async function saveSupabaseServiceReference(input: AnyRow, referenceId?: string) {
-  const membership = await currentSupabaseCompanyUser();
-  if (!membership?.company_id) throw new Error("No se encontro una empresa activa para guardar la referencia.");
-  const payload = serviceReferencePayload(input, membership.company_id);
+  const companyId = await currentSupabaseCompanyId();
+  const payload = serviceReferencePayload(input, companyId);
   if (!payload.code || !payload.name) throw new Error("Codigo y nombre son obligatorios.");
-  const validatedParts = serviceReferenceParts(input, membership.company_id, referenceId || "pending");
+  const validatedParts = serviceReferenceParts(input, companyId, referenceId || "pending");
 
   let saved: SupabaseServiceReference[];
   if (referenceId) {
     saved = await supabaseFetch<SupabaseServiceReference[]>(
-      `/rest/v1/service_references?id=eq.${encodeURIComponent(referenceId)}&company_id=eq.${encodeURIComponent(membership.company_id)}&select=id,company_id,code,name,category,description,estimated_minutes,brand,model,active,metadata`,
+      `/rest/v1/service_references?id=eq.${encodeURIComponent(referenceId)}&company_id=eq.${encodeURIComponent(companyId)}&select=id,company_id,code,name,category,description,estimated_minutes,brand,model,active,metadata`,
       { method: "PATCH", body: JSON.stringify(payload), headers: { Prefer: "return=representation" } }
     );
     if (!saved[0]) throw new Error("La referencia no existe o no tienes permisos para editarla.");
-    await supabaseFetch(`/rest/v1/service_reference_parts?reference_id=eq.${encodeURIComponent(referenceId)}&company_id=eq.${encodeURIComponent(membership.company_id)}`, { method: "DELETE" });
+    await supabaseFetch(`/rest/v1/service_reference_parts?reference_id=eq.${encodeURIComponent(referenceId)}&company_id=eq.${encodeURIComponent(companyId)}`, { method: "DELETE" });
   } else {
     saved = await supabaseFetch<SupabaseServiceReference[]>(
       "/rest/v1/service_references?select=id,company_id,code,name,category,description,estimated_minutes,brand,model,active,metadata",
@@ -1881,9 +1880,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
 
     if (method === "POST" || method === "PUT" || method === "PATCH") {
       const body = JSON.parse(String(options.body || "{}")) as AnyRow;
-      const employee = await currentSupabaseEmployee();
-      const membership = employee?.company_id ? null : await currentSupabaseCompanyUser();
-      const companyId = String(employee?.company_id || membership?.company_id || "");
+      const companyId = await currentSupabaseCompanyId();
       if (!companyId) throw new Error("No se encontro una empresa activa para guardar el vehiculo.");
       if (!body.plate) throw new Error("La placa del vehiculo es obligatoria.");
       const payload = supabaseVehiclePayload(body, method === "POST" ? companyId : undefined);
@@ -2168,9 +2165,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const missingServiceFields = requiredServiceFields.filter((field) => body[field] == null || String(body[field]).trim() === "");
     if (missingServiceFields.length) throw new Error("Completa todos los campos obligatorios de la orden de servicio.");
     if (!/^\d+$/.test(String(body.customer_document))) throw new Error("La cedula del cliente debe contener solo numeros.");
-    const employee = await currentSupabaseEmployee();
-    const membership = employee?.company_id ? null : await currentSupabaseCompanyUser();
-    const companyId = employee?.company_id || membership?.company_id;
+    const companyId = await currentSupabaseCompanyId();
     if (!companyId) throw new Error("No se encontro una empresa activa para crear el servicio.");
     const userId = currentSupabaseUserId();
     const referenceId = uuidOrNull(body.reference_id || body.reference_item_id);
