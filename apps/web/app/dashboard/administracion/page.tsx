@@ -2046,34 +2046,34 @@ export default function AdministracionPage() {
       ) : null}
 
       {activeModal === "roles" ? (
-        <ModalFrame title="Roles y permisos" onClose={() => setActiveModal(null)} maxWidth="md:max-w-6xl">
-          {message ? <p className="mb-3 rounded-md border border-line bg-white px-4 py-3 text-sm font-medium text-neutral-700">{message}</p> : null}
-          <div className="grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
-            <aside className="space-y-3">
-              <div className="rounded-md border border-line bg-white p-3">
-                <Button className="w-full" disabled={roleSaving} onClick={newRole} type="button"><Plus size={16} /> Nuevo rol</Button>
-                <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                  <div className="rounded-md bg-paper p-2">
-                    <span className="block text-neutral-500">Roles activos</span>
-                    <span className="mt-1 block text-lg font-semibold text-neutral-900">{activeRoleCount}</span>
+        <ModalFrame title="Roles y permisos" onClose={() => setActiveModal(null)} maxWidth="md:max-w-[min(96vw,1480px)]">
+          {message ? <p className="mb-2 rounded-md border border-line bg-white px-3 py-2 text-xs font-medium text-neutral-700">{message}</p> : null}
+          <div className="grid gap-3 xl:grid-cols-[250px_minmax(0,1fr)]">
+            <aside className="space-y-2">
+              <div className="rounded-md border border-line bg-white p-2">
+                <Button className="h-9 w-full text-sm" disabled={roleSaving} onClick={newRole} type="button"><Plus size={15} /> Nuevo rol</Button>
+                <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-md bg-paper px-2 py-1.5">
+                    <span className="block text-neutral-500">Activos</span>
+                    <span className="block text-base font-semibold text-neutral-900">{activeRoleCount}</span>
                   </div>
-                  <div className="rounded-md bg-paper p-2">
-                    <span className="block text-neutral-500">Total roles</span>
-                    <span className="mt-1 block text-lg font-semibold text-neutral-900">{roles.length}</span>
+                  <div className="rounded-md bg-paper px-2 py-1.5">
+                    <span className="block text-neutral-500">Total</span>
+                    <span className="block text-base font-semibold text-neutral-900">{roles.length}</span>
                   </div>
                 </div>
               </div>
-              <div className="max-h-[52vh] space-y-2 overflow-y-auto pr-1">
+              <div className="max-h-[30dvh] space-y-1.5 overflow-y-auto pr-1 xl:max-h-[58dvh]">
                 {roles.map((role) => {
                   const assignedCount = users.filter((user) => Number(user.role_id) === role.id).length;
                   return (
-                    <button className={`w-full rounded-md border px-3 py-2 text-left text-sm transition ${selectedRoleId === role.id ? "border-apex bg-paper shadow-sm" : "border-line bg-white hover:border-apex/40 hover:bg-paper"}`} key={role.id} onClick={() => selectRole(role)} type="button">
+                    <button className={`w-full rounded-md border px-2.5 py-2 text-left text-xs transition ${selectedRoleId === role.id ? "border-apex bg-paper shadow-sm" : "border-line bg-white hover:border-apex/40 hover:bg-paper"}`} key={role.id} onClick={() => selectRole(role)} type="button">
                       <span className="flex items-center justify-between gap-2">
                         <span className="truncate font-semibold">{role.name}</span>
-                        <span className={`shrink-0 rounded-md px-2 py-1 text-[11px] font-semibold ${role.active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>{role.active ? "Activo" : "Inactivo"}</span>
+                        <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${role.active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>{role.active ? "Activo" : "Inactivo"}</span>
                       </span>
-                      <span className="mt-1 line-clamp-2 text-xs text-neutral-500">{role.description || "Sin descripcion"}</span>
-                      <span className="mt-2 flex items-center justify-between text-xs text-neutral-500">
+                      <span className="mt-1 line-clamp-1 text-[11px] text-neutral-500">{role.description || "Sin descripcion"}</span>
+                      <span className="mt-1 flex items-center justify-between text-[11px] text-neutral-500">
                         <span>{role.impact_summary?.modules ?? Object.values(role.permissions || {}).filter((actions) => Object.values(actions).some(Boolean)).length} modulo(s)</span>
                         <span>{assignedCount} usuario(s)</span>
                       </span>
@@ -2081,82 +2081,84 @@ export default function AdministracionPage() {
                   );
                 })}
               </div>
-              <div className="rounded-md border border-line bg-paper p-3">
-                <p className="text-xs font-semibold uppercase text-neutral-500">Usuarios con este rol</p>
-                <p className="mt-1 text-lg font-semibold">{assignedRoleUsers.length}</p>
-                <div className="mt-2 max-h-28 space-y-1 overflow-y-auto">
-                  {assignedRoleUsers.slice(0, 5).map((user) => <p className="truncate text-xs text-neutral-600" key={user.id}>{user.name} - {user.email}</p>)}
-                  {!assignedRoleUsers.length ? <p className="text-xs text-neutral-500">Sin usuarios asignados.</p> : null}
-                  {assignedRoleUsers.length > 5 ? <p className="text-xs font-medium text-neutral-500">+{assignedRoleUsers.length - 5} usuario(s) mas</p> : null}
+              <div className="rounded-md border border-line bg-paper p-2">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[11px] font-semibold uppercase text-neutral-500">Usuarios con rol</p>
+                  <p className="text-base font-semibold">{assignedRoleUsers.length}</p>
+                </div>
+                <div className="mt-1 max-h-20 space-y-1 overflow-y-auto">
+                  {assignedRoleUsers.slice(0, 4).map((user) => <p className="truncate text-[11px] text-neutral-600" key={user.id}>{user.name} - {user.email}</p>)}
+                  {!assignedRoleUsers.length ? <p className="text-[11px] text-neutral-500">Sin usuarios asignados.</p> : null}
+                  {assignedRoleUsers.length > 4 ? <p className="text-[11px] font-medium text-neutral-500">+{assignedRoleUsers.length - 4} usuario(s) mas</p> : null}
                 </div>
               </div>
             </aside>
             <section className="min-w-0">
-              <div className="mb-3 grid gap-3 rounded-md border border-line bg-white p-3 md:grid-cols-4">
-                <div className="md:col-span-2">
-                  <p className="text-xs font-semibold uppercase text-neutral-500">Rol seleccionado</p>
-                  <h3 className="mt-1 text-lg font-semibold">{selectedRole ? selectedRole.name : "Nuevo rol"}</h3>
-                  <p className="mt-1 text-sm text-neutral-500">{selectedRole ? selectedRole.description || "Sin descripcion" : "Rol personalizado pendiente de guardar."}</p>
+              <div className="mb-2 flex flex-col gap-2 rounded-md border border-line bg-white p-2 lg:flex-row lg:items-center lg:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="truncate text-base font-semibold">{selectedRole ? selectedRole.name : "Nuevo rol"}</p>
+                    <span className={`rounded-md px-2 py-0.5 text-[11px] font-semibold ${selectedRole?.active ?? true ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>{selectedRole?.active === false ? "Inactivo" : "Activo"}</span>
+                    <span className="text-xs text-neutral-500">{selectedRole ? `nivel ${selectedRole.hierarchy_level || 10} - ${selectedRole.scope || "company"}` : "pendiente de guardar"}</span>
+                  </div>
+                  <p className="mt-0.5 truncate text-xs text-neutral-500">{selectedRole ? selectedRole.description || "Sin descripcion" : "Rol personalizado pendiente de guardar."}</p>
                 </div>
-                <div className="rounded-md bg-paper p-3">
-                  <p className="text-xs font-semibold uppercase text-neutral-500">Permisos</p>
-                  <p className="mt-1 text-lg font-semibold">{roleFormSummary.actions}</p>
-                  <p className="text-xs text-neutral-500">{roleFormSummary.modules} modulo(s)</p>
-                </div>
-                <div className="rounded-md bg-paper p-3">
-                  <p className="text-xs font-semibold uppercase text-neutral-500">Asignacion</p>
-                  <p className="mt-1 text-lg font-semibold">{assignedRoleUsers.length}</p>
-                  <p className="text-xs text-neutral-500">{selectedRoleLocked ? "Rol protegido" : "Editable"}</p>
-                </div>
-              </div>
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  {selectedRole ? <p className="text-sm text-neutral-500">{selectedRole.active ? "Activo" : "Inactivo"} - nivel {selectedRole.hierarchy_level || 10} - {selectedRole.scope || "company"}</p> : null}
-                </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="rounded-md bg-paper px-2.5 py-1.5 text-xs">
+                    <span className="font-semibold text-neutral-900">{roleFormSummary.actions}</span>
+                    <span className="ml-1 text-neutral-500">permisos</span>
+                    <span className="mx-1 text-neutral-300">/</span>
+                    <span className="font-semibold text-neutral-900">{roleFormSummary.modules}</span>
+                    <span className="ml-1 text-neutral-500">modulos</span>
+                  </div>
+                  <div className="rounded-md bg-paper px-2.5 py-1.5 text-xs">
+                    <span className="font-semibold text-neutral-900">{assignedRoleUsers.length}</span>
+                    <span className="ml-1 text-neutral-500">usuarios</span>
+                    <span className="ml-2 text-neutral-500">{selectedRoleLocked ? "protegido" : "editable"}</span>
+                  </div>
                   {selectedRole ? (
-                    <Button className="border border-rose-200 bg-white text-rose-700 hover:bg-rose-50" disabled={roleSaving || selectedRoleLocked || assignedRoleUsers.length > 0} onClick={deleteRole} type="button">
-                      <Trash2 size={16} /> Eliminar
+                    <Button className="h-9 border border-rose-200 bg-white px-3 text-sm text-rose-700 hover:bg-rose-50" disabled={roleSaving || selectedRoleLocked || assignedRoleUsers.length > 0} onClick={deleteRole} type="button">
+                      <Trash2 size={15} /> Eliminar
                     </Button>
                   ) : null}
-                  <Button disabled={roleSaving} onClick={saveRole} type="button"><Save size={16} /> {roleSaving ? "Guardando..." : "Guardar"}</Button>
+                  <Button className="h-9 px-3 text-sm" disabled={roleSaving} onClick={saveRole} type="button"><Save size={15} /> {roleSaving ? "Guardando..." : "Guardar"}</Button>
                 </div>
               </div>
-              <div className="mb-3 grid gap-3 rounded-md border border-line bg-white p-3 md:grid-cols-[minmax(180px,0.8fr)_minmax(240px,1.2fr)_220px]">
+              <div className="mb-2 grid gap-2 rounded-md border border-line bg-white p-2 md:grid-cols-[minmax(160px,0.8fr)_minmax(220px,1.2fr)_200px]">
                 <Field label="Nombre del rol" value={roleForm.name} onChange={(value) => setRoleForm((prev) => ({ ...prev, name: value }))} />
                 <Field label="Descripcion" value={roleForm.description} onChange={(value) => setRoleForm((prev) => ({ ...prev, description: value }))} />
                 <SelectField label="Copiar desde rol" value="" onChange={copyRole} options={[["", "Seleccionar rol base"], ...roles.map((role) => [String(role.id), role.name] as [string, string])]} />
               </div>
-              <div className="mb-3 grid gap-3 rounded-md border border-line bg-paper p-3 md:grid-cols-[1fr_170px_150px_auto]">
+              <div className="mb-2 grid gap-2 rounded-md border border-line bg-paper p-2 md:grid-cols-[1fr_150px_130px_auto]">
                 <Field label="Buscar permiso" value={roleFilter} onChange={setRoleFilter} />
                 <SelectField label="Grupo" value={roleGroupFilter} onChange={setRoleGroupFilter} options={[["all", "Todos"], ...roleGroups.map((group) => [group, group] as [string, string])]} />
                 <SelectField label="Vista" value={roleActionMode} onChange={(value) => setRoleActionMode(value as "compact" | "full")} options={[["compact", "Compacta"], ["full", "Completa"]]} />
                 <div className="flex items-end gap-2">
-                  <Button className="border border-line bg-white text-neutral-700 hover:bg-white" disabled={selectedRoleLocked || roleSaving || !filteredRoleCatalog.length} onClick={() => setVisiblePermissions(true)} type="button"><Check size={16} /> Marcar</Button>
-                  <Button className="border border-line bg-white text-neutral-700 hover:bg-white" disabled={selectedRoleLocked || roleSaving || !filteredRoleCatalog.length} onClick={() => setVisiblePermissions(false)} type="button"><X size={16} /> Limpiar</Button>
+                  <Button className="h-9 border border-line bg-white px-3 text-sm text-neutral-700 hover:bg-white" disabled={selectedRoleLocked || roleSaving || !filteredRoleCatalog.length} onClick={() => setVisiblePermissions(true)} type="button"><Check size={15} /> Marcar</Button>
+                  <Button className="h-9 border border-line bg-white px-3 text-sm text-neutral-700 hover:bg-white" disabled={selectedRoleLocked || roleSaving || !filteredRoleCatalog.length} onClick={() => setVisiblePermissions(false)} type="button"><X size={15} /> Limpiar</Button>
                 </div>
               </div>
-              {roleCatalogWarning ? <p className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900">{roleCatalogWarning}</p> : null}
-              <div className="max-h-[64vh] overflow-auto rounded-md border border-line">
-                <table className="w-full min-w-[980px] text-sm">
+              {roleCatalogWarning ? <p className="mb-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-900">{roleCatalogWarning}</p> : null}
+              <div className="max-h-[48dvh] overflow-auto rounded-md border border-line xl:max-h-[62dvh]">
+                <table className="w-full min-w-[900px] text-xs">
                   <thead className="sticky top-0 z-10 bg-white">
                     <tr className="border-b border-line text-left text-xs text-neutral-500">
                       <th className="py-2 pl-3">Modulo</th>
-                      {visibleRoleActions.map((action) => <th className="py-2 text-center" key={action}>{actionLabels[action]}</th>)}
+                      {visibleRoleActions.map((action) => <th className="px-1 py-2 text-center" key={action}>{actionLabels[action]}</th>)}
                     </tr>
                   </thead>
                   <tbody>
                     {filteredRoleCatalog.map((item) => (
                       <tr className="border-b border-line/70 hover:bg-paper/70" key={item.key}>
-                        <td className="py-2 pl-3">
+                        <td className="py-1.5 pl-3">
                           <span className="block font-medium">{item.label}</span>
-                          <span className="text-xs text-neutral-500">{item.group || "general"} - {item.module || item.key}{item.submodule ? `/${item.submodule}` : ""}</span>
+                          <span className="text-[11px] text-neutral-500">{item.group || "general"} - {item.module || item.key}{item.submodule ? `/${item.submodule}` : ""}</span>
                         </td>
                         {visibleRoleActions.map((action) => (
-                          <td className="py-2 text-center" key={action}>
+                          <td className="px-1 py-1.5 text-center" key={action}>
                             {item.actions.includes(action) ? (
-                              <button className={`inline-flex h-8 w-8 items-center justify-center rounded-md border transition ${roleForm.permissions[item.key]?.[action] ? "border-apex bg-apex text-white shadow-sm" : "border-line bg-white hover:border-apex/40 hover:bg-paper"}`} disabled={selectedRoleLocked} onClick={() => togglePermission(item.key, action)} title={`${item.label}: ${actionLabels[action]}`} type="button">
-                                {roleForm.permissions[item.key]?.[action] ? <Check size={14} /> : null}
+                              <button className={`inline-flex h-7 w-7 items-center justify-center rounded-md border transition ${roleForm.permissions[item.key]?.[action] ? "border-apex bg-apex text-white shadow-sm" : "border-line bg-white hover:border-apex/40 hover:bg-paper"}`} disabled={selectedRoleLocked} onClick={() => togglePermission(item.key, action)} title={`${item.label}: ${actionLabels[action]}`} type="button">
+                                {roleForm.permissions[item.key]?.[action] ? <Check size={13} /> : null}
                               </button>
                             ) : <span className="text-neutral-300">-</span>}
                           </td>
