@@ -182,3 +182,22 @@ El modal de Roles y permisos muestra un contador y una lista compacta de usuario
   - asignar rol a usuario
   - intentar acceso denegado por endpoint
   - intentar acceso por URL directa
+
+## Actualizacion 2026-07-15
+
+- El modal de Roles y permisos se reorganizo en una vista operativa con panel lateral de roles, conteo de roles activos, total de roles, usuarios asignados, permisos marcados y modulos cubiertos.
+- Cada rol muestra estado, descripcion, modulos cubiertos y usuarios asignados para evitar guardar cambios sin contexto visual.
+- Se agregaron acciones masivas sobre la matriz filtrada: marcar permisos visibles y limpiar permisos visibles. Estas acciones respetan los filtros actuales de busqueda, grupo y vista.
+- Los roles de sistema quedan bloqueados visualmente para edicion de permisos masiva y eliminacion.
+- Se agregaron notificaciones emergentes para acciones de roles:
+  - nuevo rol listo
+  - rol creado
+  - rol actualizado
+  - rol eliminado
+  - nombre requerido
+  - duplicado bloqueado
+  - rol protegido
+  - rol con usuarios asignados
+  - errores de guardado o eliminacion
+- La proteccion de duplicados mantiene validacion visual antes de enviar a API y conserva la restriccion backend por tenant/nombre.
+- Revision de logs locales: los archivos disponibles no contienen eventos frescos de Railway/produccion; la evidencia local historica muestra duplicados por `Role_tenant_id_name_key`, consistente con la mejora de bloqueo de duplicados.

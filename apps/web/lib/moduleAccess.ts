@@ -353,7 +353,7 @@ export async function loadModuleAccess(modules: ApexModule[]): Promise<ModuleAcc
 
   if (!moduleAccessInFlight || moduleAccessInFlight.token !== sessionToken) {
     const promise = (async () => {
-      await refreshRoleContextFromApi().catch(() => null);
+      const roleContextPromise = refreshRoleContextFromApi().catch(() => null);
       const userId = currentSupabaseUserId();
       const [platformAdmins, companies] = await Promise.all([
         listActivePlatformAdmins(1, userId).catch(() => []),
@@ -374,6 +374,7 @@ export async function loadModuleAccess(modules: ApexModule[]): Promise<ModuleAcc
       const selectedCompany = companies.find((company) => company.company_id === preferredCompanyId)
         || companies.find((company) => ["owner", "admin", "superadmin"].includes(String(company.role || "").toLowerCase()))
         || companies[0];
+      await roleContextPromise;
       const companyId = selectedCompany?.company_id;
       if (!companyId) return stateFromCachedTenantModules(modules) || { loading: false, isPlatformAdmin: false, bySlug: {} };
       if (typeof window !== "undefined") {

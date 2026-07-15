@@ -89,6 +89,8 @@ El frontend debe preferir `role_metadata.legacy_permissions` cuando el contexto 
 
 Los usuarios `platform_admin` no deben ser filtrados por permisos de rol de empresa para la administracion de plataforma.
 
+Actualizacion 2026-07-15: la carga de permisos para sesiones Supabase refresca `/api/v1/auth/me` en paralelo con la consulta de administradores de plataforma y empresas del usuario. Esto evita sumar el timeout de contexto de rol a la consulta de modulos, pero sigue esperando el contexto antes de aplicar permisos efectivos cuando no se trata de un administrador de plataforma.
+
 ## Grupos empresariales y sociedades
 
 Una empresa puede representar un grupo empresarial, una sociedad legal, una unidad de negocio o una sucursal. La jerarquia se guarda en `companies.parent_company_id`.
