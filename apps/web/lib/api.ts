@@ -409,6 +409,10 @@ function saveStoredAdminRoles(roles: ReturnType<typeof defaultAdminRoles>) {
   if (typeof window !== "undefined") localStorage.setItem(ADMIN_ROLES_STORAGE_KEY, JSON.stringify(roles));
 }
 
+function normalizeAdminRoleNameKey(value: unknown) {
+  return String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
+}
+
 function getStoredUserMasterData() {
   if (typeof window === "undefined") return defaultUserMasterData();
   const raw = localStorage.getItem(USER_MASTER_STORAGE_KEY) || localStorage.getItem(LEGACY_USER_MASTER_STORAGE_KEY);
@@ -2635,9 +2639,12 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const roles = storedAdminRoles();
     if (method === "POST") {
       const body = JSON.parse(String(options.body || "{}"));
+      const name = String(body.name || body.nombre || "Nuevo rol").trim().replace(/\s+/g, " ");
+      const duplicate = roles.find((role) => normalizeAdminRoleNameKey(role.name) === normalizeAdminRoleNameKey(name));
+      if (duplicate) throw new Error(`Ya existe un rol visualmente igual: "${duplicate.name}". Usa otro nombre o edita el rol existente.`);
       const role = {
         id: Math.max(0, ...roles.map((item) => Number(item.id))) + 1,
-        name: body.name || body.nombre || "Nuevo rol",
+        name,
         description: body.description || body.descripcion || "",
         active: body.active !== false && body.activo !== false,
         is_system: false,
@@ -2662,9 +2669,20 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const roles = storedAdminRoles();
     const roleId = Number(adminRoleMatch[1]);
     const body = JSON.parse(String(options.body || "{}"));
+    const current = roles.find((role) => role.id === roleId);
+    if (method === "DELETE") {
+      if (!current) return { ok: true, id: roleId } as T;
+      if (current.is_system || current.name === "APEX_ADMIN") throw new Error("Los roles de sistema no se pueden eliminar.");
+      const next = roles.filter((role) => role.id !== roleId);
+      saveStoredAdminRoles(next);
+      return { ok: true, id: roleId } as T;
+    }
+    const nextName = current?.is_system ? current.name : String(body.name || body.nombre || current?.name || "").trim().replace(/\s+/g, " ");
+    const duplicate = roles.find((role) => role.id !== roleId && normalizeAdminRoleNameKey(role.name) === normalizeAdminRoleNameKey(nextName));
+    if (duplicate) throw new Error(`Ya existe un rol visualmente igual: "${duplicate.name}". Usa otro nombre o edita el rol existente.`);
     const next = roles.map((role) => role.id === roleId ? {
       ...role,
-      name: role.is_system ? role.name : (body.name || body.nombre || role.name),
+      name: role.is_system ? role.name : nextName,
       description: body.description || body.descripcion || role.description,
       active: pathname.endsWith("/status") ? Boolean(body.active ?? body.activo) : (body.active !== false && body.activo !== false),
       hierarchy_level: Number(body.hierarchy_level || role.hierarchy_level || 10),
