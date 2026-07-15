@@ -11,8 +11,6 @@ import {
   AlertTriangle,
   Bell,
   Building2,
-  ChevronLeft,
-  ChevronRight,
   Check,
   CreditCard,
   Database,
@@ -142,14 +140,6 @@ type ConfigCategory = {
   items: ConfigItem[];
 };
 type UserTab = "basicos" | "acceso" | "laboral" | "operacion" | "documentos" | "auditoria";
-const userSteps: Array<{ key: UserTab; label: string; detail: string; icon: typeof UserCog }> = [
-  { key: "basicos", label: "Identidad", detail: "Datos personales y contacto", icon: UserCog },
-  { key: "acceso", label: "Acceso", detail: "Correo, rol y seguridad", icon: Shield },
-  { key: "laboral", label: "Laboral", detail: "Vinculacion y organizacion", icon: FolderKanban },
-  { key: "operacion", label: "Operacion", detail: "Capacidades y asignaciones", icon: Route },
-  { key: "documentos", label: "Documentos", detail: "Expediente privado", icon: FileText },
-  { key: "auditoria", label: "Revision", detail: "Resumen y trazabilidad", icon: Activity }
-];
 type UserForm = {
   name: string;
   first_names: string;
@@ -684,6 +674,29 @@ function splitFullName(value: string) {
   return { first_names: parts.slice(0, -1).join(" "), last_names: parts.slice(-1).join(" ") };
 }
 
+function quickUserPayload(form: UserForm, roles: Role[], includePassword: boolean) {
+  const names = splitFullName(form.name || `${form.first_names} ${form.last_names}`.trim());
+  const role = roles.find((item) => item.id === Number(form.role_id));
+  const payload: Record<string, unknown> = {
+    name: form.name || `${form.first_names} ${form.last_names}`.trim(),
+    first_names: form.first_names || names.first_names,
+    last_names: form.last_names || names.last_names,
+    email: form.email,
+    access_email: form.email,
+    document: form.document,
+    document_type: form.document_type || "CC",
+    company: form.company,
+    site: form.site,
+    base_site: form.site || form.base_site,
+    role_id: form.role_id ? String(form.role_id) : undefined,
+    role_name: role?.name,
+    user_status: form.user_status,
+    require_password_change: form.require_password_change
+  };
+  if (includePassword) payload.password = form.password;
+  return payload;
+}
+
 function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) {
   return (
     <label className="flex min-h-10 items-center justify-between gap-3 rounded-md border border-line px-3 py-2 text-sm">
@@ -743,7 +756,6 @@ export default function AdministracionPage() {
       return matchesStatus && (!term || text.includes(term));
     });
   }, [userSearch, userStatusFilter, users]);
-  const currentUserStep = Math.max(0, userSteps.findIndex((step) => step.key === userTab));
   const configItems = useMemo(() => categories.flatMap((category) => category.items.map((item) => ({ ...item, categoryKey: category.key, categoryTitle: category.title, categoryIcon: category.icon }))), []);
   const visibleConfigItems = useMemo(() => configItems.filter((item) => item.key !== "empresas" || platformAdmin), [configItems, platformAdmin]);
   const filteredConfigItems = useMemo(() => {
@@ -1024,14 +1036,6 @@ export default function AdministracionPage() {
     if (!selectedUserId && !userForm.password) return "La clave inicial es obligatoria.";
     if (!selectedUserId && userForm.password.length < 8) return "La clave inicial debe tener minimo 8 caracteres.";
     if (!selectedUserId && (!/[A-Za-z]/.test(userForm.password) || !/[0-9]/.test(userForm.password))) return "La clave inicial debe combinar letras y numeros.";
-    if (!selectedUserId) return "";
-    if (!userForm.first_names.trim()) return "Los nombres son obligatorios.";
-    if (!userForm.last_names.trim()) return "Los apellidos son obligatorios.";
-    if (!userForm.position.trim()) return "El cargo es obligatorio.";
-    if (!userForm.department.trim() && !userForm.area.trim()) return "El area o departamento es obligatorio.";
-    if (userForm.operational_classification === "conductor" && (!userForm.driver_license || !userForm.license_expires_at)) return "Un conductor requiere licencia y fecha de vencimiento.";
-    if (userForm.salary_base !== "0" && (!userForm.cost_center || !userForm.contract_type)) return "Los datos de nomina requieren centro de costo y tipo de contrato.";
-    if (userForm.end_date && userForm.hire_date && userForm.end_date < userForm.hire_date) return "La fecha de retiro no puede ser anterior al ingreso.";
     return "";
   }
 
@@ -1044,21 +1048,7 @@ export default function AdministracionPage() {
     if (saving) return;
     setSaving(true);
     try {
-      const names = splitFullName(userForm.name || `${userForm.first_names} ${userForm.last_names}`.trim());
-      const role = roles.find((item) => item.id === Number(userForm.role_id));
-      const payload = {
-        ...userForm,
-        name: userForm.name || `${userForm.first_names} ${userForm.last_names}`.trim(),
-        first_names: userForm.first_names || names.first_names,
-        last_names: userForm.last_names || names.last_names,
-        role_id: userForm.role_id ? String(userForm.role_id) : undefined,
-        role_name: role?.name,
-        access_email: userForm.access_email || userForm.email,
-        site: userForm.site || userForm.base_site,
-        salary_base: Number(userForm.salary_base || 0),
-        documents: selectedUser?.documents || []
-      };
-      if (selectedUserId && !payload.password) delete payload.password;
+      const payload = quickUserPayload(userForm, roles, !selectedUserId);
       if (selectedUserId) await api(`/api/v1/admin/users/${selectedUserApiId()}`, { method: "PUT", body: JSON.stringify(payload) });
       else await api("/api/v1/admin/users", { method: "POST", body: JSON.stringify(payload) });
       setMessage("Usuario guardado.");
@@ -1098,11 +1088,6 @@ export default function AdministracionPage() {
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Error al suspender acceso del usuario.");
     }
-  }
-
-  function moveUserStep(direction: -1 | 1) {
-    const next = Math.min(userSteps.length - 1, Math.max(0, currentUserStep + direction));
-    setUserTab(userSteps[next].key);
   }
 
   async function setUserStatus(active: boolean) {
@@ -1642,6 +1627,47 @@ export default function AdministracionPage() {
     );
   }
 
+  function renderQuickUserEdit() {
+    return (
+      <div className="space-y-4">
+        {message ? <p className="rounded-md border border-line bg-white px-4 py-3 text-sm text-neutral-700">{message}</p> : null}
+        <section className="rounded-md border border-apex bg-apex/5 p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-md bg-apex px-2 py-1 text-xs font-semibold text-white"><UserCog size={14} /> Edicion rapida</span>
+              <h3 className="mt-3 text-lg font-semibold">Editar usuario</h3>
+              <p className="mt-1 text-sm text-neutral-600">Solo se actualizan los campos disponibles en la creacion rapida.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button className="border border-line bg-white text-neutral-800 hover:bg-paper" onClick={requestPasswordReset} type="button"><LockKeyhole size={16} /> Restablecer acceso</Button>
+              <Button className="border border-amber-200 bg-white text-amber-800 hover:bg-amber-50" onClick={blockUserAccess} type="button">Suspender</Button>
+              {selectedUser?.active ? <Button className="bg-rose-700 hover:bg-rose-800" onClick={() => setUserStatus(false)} type="button">Inactivar</Button> : <Button onClick={() => setUserStatus(true)} type="button"><Check size={16} /> Activar</Button>}
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-md border border-line bg-white p-4">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <Field label="Nombre completo" value={userForm.name} onChange={(value) => setUserField("name", value)} />
+            <Field label="Correo" value={userForm.email} onChange={(value) => { setUserField("email", value); setUserField("access_email", value); }} />
+            <Field label="Documento" value={userForm.document} onChange={(value) => setUserField("document", value)} />
+            <Field label="Empresa" value={userForm.company} onChange={(value) => setUserField("company", value)} />
+            <SelectField label="Sede" value={userForm.site} onChange={(value) => { setUserField("site", value); setUserField("base_site", value); }} options={optionPairs(masterData.locations, "Sin sede asignada")} />
+            <SelectField label="Rol" value={userForm.role_id} onChange={(value) => setUserField("role_id", value)} options={[["", "Seleccionar rol"], ...roles.filter((role) => role.active).map((role) => [String(role.id), role.name] as [string, string])]} />
+            <SelectField label="Estado" value={userForm.user_status} onChange={(value) => setUserField("user_status", value)} options={optionPairs(masterData.user_statuses)} />
+            <Toggle label="Exigir cambio de clave" checked={userForm.require_password_change} onChange={(value) => setUserField("require_password_change", value)} />
+          </div>
+          <p className="mt-3 rounded-md bg-paper px-3 py-2 text-xs font-medium text-neutral-600">Los campos laborales, nomina, documentos, licencias y configuraciones avanzadas quedan preservados para la segunda etapa.</p>
+        </section>
+
+        <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-4">
+          <button className="h-10 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => setUserEditorOpen(false)} type="button">Cancelar</button>
+          <Button onClick={saveUser} disabled={saving} type="button"><Save size={16} /> {saving ? "Guardando..." : "Guardar cambios"}</Button>
+        </div>
+      </div>
+    );
+  }
+
   function renderUserTab() {
     if (userTab === "basicos") {
       return (
@@ -1828,28 +1854,7 @@ export default function AdministracionPage() {
       setTimeout(() => { try { setMessage(""); } catch { /* ignore */ } }, 8000);
     }
     if (!selectedUserId) return <>{feedback}{renderQuickUserCreation()}</>;
-
-    return (
-      <div className="grid gap-4 xl:grid-cols-[250px_1fr]">
-        {feedback}
-        <aside className="space-y-3">
-          <button className="inline-flex h-10 w-full items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold hover:bg-paper" onClick={() => setUserEditorOpen(false)} type="button"><ChevronLeft size={16} /> Volver a usuarios</button>
-          <div className="rounded-md border border-line bg-paper p-3"><p className="text-xs font-semibold uppercase text-neutral-500">{selectedUserId ? "Editando usuario" : "Nuevo usuario"}</p><p className="mt-2 truncate font-semibold">{userForm.name || `${userForm.first_names} ${userForm.last_names}`.trim() || "Sin nombre todavia"}</p><p className="mt-1 truncate text-xs text-neutral-500">{userForm.email || userForm.access_email || "Correo pendiente"}</p><div className="mt-3 h-2 overflow-hidden rounded-full bg-white"><div className="h-full bg-apex" style={{ width: `${userScore}%` }} /></div><p className="mt-2 text-xs font-semibold text-neutral-600">Ficha completa: {userScore}%</p></div>
-          <nav className="space-y-1" aria-label="Pasos de creacion de usuario">{userSteps.map((step, index) => { const StepIcon = step.icon; const active = userTab === step.key; return <button className={`flex w-full items-start gap-3 rounded-md px-3 py-2 text-left ${active ? "bg-apex text-white" : "hover:bg-paper"}`} key={step.key} onClick={() => setUserTab(step.key)} type="button"><span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs font-bold ${active ? "bg-white/15" : "bg-paper text-apex"}`}>{index + 1}</span><span className="min-w-0"><span className="flex items-center gap-1 text-sm font-semibold"><StepIcon size={14} /> {step.label}</span><span className={`mt-0.5 block text-xs ${active ? "text-white/70" : "text-neutral-500"}`}>{step.detail}</span></span></button>; })}</nav>
-        </aside>
-        <section className="min-w-0">
-          <div className="mb-4 flex flex-wrap items-start justify-between gap-3 border-b border-line pb-4">
-            <div><p className="text-xs font-semibold uppercase text-apex">Paso {currentUserStep + 1} de {userSteps.length}</p><h3 className="mt-1 text-lg font-semibold">{userSteps[currentUserStep].label}</h3><p className="mt-1 text-sm text-neutral-500">{userSteps[currentUserStep].detail}. Completa lo necesario y continua.</p></div>
-            <div className="flex flex-wrap gap-2">{selectedUserId ? <Button className="border border-line bg-white text-neutral-800 hover:bg-paper" onClick={requestPasswordReset} type="button"><LockKeyhole size={16} /> Restablecer acceso</Button> : null}{selectedUserId ? <Button className="border border-amber-200 bg-white text-amber-800 hover:bg-amber-50" onClick={blockUserAccess} type="button">Suspender</Button> : null}{selectedUserId && selectedUser?.active ? <Button className="bg-rose-700 hover:bg-rose-800" onClick={() => setUserStatus(false)} type="button">Inactivar</Button> : null}{selectedUserId && selectedUser && !selectedUser.active ? <Button onClick={() => setUserStatus(true)} type="button"><Check size={16} /> Activar</Button> : null}</div>
-          </div>
-          <div className="min-h-[380px]">{renderUserTab()}</div>
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
-            <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold disabled:opacity-40" disabled={currentUserStep === 0} onClick={() => moveUserStep(-1)} type="button"><ChevronLeft size={16} /> Anterior</button>
-            <div className="flex gap-2"><button className="h-10 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => setUserEditorOpen(false)} type="button">Cancelar</button>{currentUserStep < userSteps.length - 1 ? <Button onClick={() => moveUserStep(1)} type="button">Siguiente <ChevronRight size={16} /></Button> : <Button onClick={saveUser} disabled={saving} type="button"><Save size={16} /> {saving ? "Guardando..." : (selectedUserId ? "Guardar cambios" : "Crear usuario")}</Button>}</div>
-          </div>
-        </section>
-      </div>
-    );
+    return renderQuickUserEdit();
   }
 
   return (

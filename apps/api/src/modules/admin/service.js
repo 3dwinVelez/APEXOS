@@ -928,16 +928,30 @@ async function updateUser(tenantId, id, input, actorId = null) {
     const previousSnapshot = userAuditSnapshot(current, current.employee);
     const previousMetadata = current.employee?.metadata || {};
     const previousAccess = previousMetadata.access || {};
-    const previousEmployment = previousMetadata.employment || {};
-    const previousOperational = previousMetadata.operational || {};
-    const requestedProfileKind = normalizeProfileKind(input.profile_kind || input.user_kind || input.tipo_usuario || input.operational_classification || previousMetadata.profile_kind || previousMetadata.user_kind || previousOperational.classification);
+    const submittedName = cleanText(input.name || input.nombre);
+    const submittedPartsName = `${cleanText(input.first_names)} ${cleanText(input.last_names)}`.trim();
+    const fullName = cleanText(submittedName || submittedPartsName || current.name);
+    const email = normalizeUsernameEmail(input.email || input.username || input.access_email || current.email);
+    const roleId = input.role_id ? Number(input.role_id) : current.role_id;
+    const company = cleanText(input.company || input.empresa || previousMetadata.company);
+    const document = cleanText(input.document || input.documento || previousMetadata.document);
+    if (!fullName) throw badRequest("El nombre del usuario es obligatorio.");
+    if (!email) throw badRequest("El correo del usuario es obligatorio.");
+    if (!roleId) throw badRequest("El rol principal es obligatorio.");
+    if (!company) throw badRequest("La empresa del usuario es obligatoria.");
+    if (!document) throw badRequest("El numero de documento es obligatorio.");
+    const role = await prisma.role.findFirst({ where: { id: roleId } });
+    if (!role) throw badRequest("Debe seleccionar un rol valido para el usuario.");
+    if (role?.metadata?.active === false) throw badRequest("El rol seleccionado esta inactivo");
+    const nameParts = fullName.split(/\s+/).filter(Boolean);
+    const firstNames = cleanText(input.first_names) || (nameParts.length > 1 ? nameParts.slice(0, -1).join(" ") : nameParts[0] || "");
+    const lastNames = cleanText(input.last_names) || (nameParts.length > 1 ? nameParts.slice(-1).join(" ") : "");
     const userStatus = input.user_status || input.labor_status || input.estado_laboral || previousMetadata.user_status || previousMetadata.labor_status || "activo";
     const active = !["inactivo", "suspendido", "retirado"].includes(userStatus) && input.active !== false && input.activo !== false;
-    const fullName = input.name || input.nombre || `${input.first_names || previousMetadata.first_names || ""} ${input.last_names || previousMetadata.last_names || ""}`.trim() || current.name;
     const data = {
       name: fullName,
-      email: normalizeUsernameEmail(input.email || input.username || current.email),
-      role_id: input.role_id ? Number(input.role_id) : current.role_id,
+      email,
+      role_id: roleId,
       active
     };
     if (input.password || input.pas) {
@@ -946,85 +960,33 @@ async function updateUser(tenantId, id, input, actorId = null) {
     }
     await prisma.user.update({ where: { id: current.id }, data });
     const employeeData = {
-      code: input.code || input.id_interno || current.employee?.code || `EMP-${current.id}`,
-      user_type: requestedProfileKind === "tecnico"
-        ? "tecnico"
-        : (current.employee?.user_type === "tecnico" ? "empleado" : current.employee?.user_type || "empleado"),
-      position: input.position || current.employee?.position || "empleado",
-      department: input.department || current.employee?.department || "Operacion",
-      salary_base: Number(input.salary_base || input.salario_base || current.employee?.salary_base || 0),
-      contract_type: input.contract_type || current.employee?.contract_type || "indefinite",
-      hire_date: input.hire_date ? new Date(input.hire_date) : current.employee?.hire_date || new Date(),
-      end_date: input.end_date ? new Date(input.end_date) : null,
+      code: current.employee?.code || input.code || input.id_interno || `EMP-${current.id}`,
+      user_type: current.employee?.user_type || "empleado",
+      position: current.employee?.position || "empleado",
+      department: current.employee?.department || "Operacion",
+      salary_base: Number(current.employee?.salary_base || 0),
+      contract_type: current.employee?.contract_type || "indefinite",
+      hire_date: current.employee?.hire_date || new Date(),
+      end_date: current.employee?.end_date || null,
       active,
       metadata: {
         ...previousMetadata,
         name: data.name,
-        first_names: input.first_names || previousMetadata.first_names || "",
-        last_names: input.last_names || previousMetadata.last_names || "",
+        first_names: firstNames,
+        last_names: lastNames,
         document_type: input.document_type || previousMetadata.document_type || "CC",
-        document: input.document || input.documento || current.employee?.metadata?.document || "",
-        document_issue_date: input.document_issue_date || previousMetadata.document_issue_date || "",
-        document_issue_place: input.document_issue_place || previousMetadata.document_issue_place || "",
-        birth_date: input.birth_date || previousMetadata.birth_date || "",
-        gender: input.gender || previousMetadata.gender || "",
-        phone: input.phone || previousMetadata.phone || "",
-        address: input.address || previousMetadata.address || "",
-        city: input.city || previousMetadata.city || "",
-        state_region: input.state_region || previousMetadata.state_region || "",
-        country: input.country || previousMetadata.country || "Colombia",
-        company: input.company || input.empresa || current.employee?.metadata?.company || "APEX",
+        document,
+        company,
         labor_status: userStatus,
         user_status: userStatus,
-        profile_kind: requestedProfileKind || "administrativo",
-        user_kind: requestedProfileKind || "administrativo",
         access: {
           ...previousAccess,
-          email: normalizeUsernameEmail(input.access_email || input.email || previousAccess.email || data.email),
-          additional_roles: input.additional_roles || previousAccess.additional_roles || "",
-          operational_profile: input.operational_profile || previousAccess.operational_profile || "",
-          site: input.site || previousAccess.site || "",
-          area: input.area || input.department || previousAccess.area || "",
-          manager: input.manager || previousAccess.manager || "",
-          special_permissions: input.special_permissions || previousAccess.special_permissions || "",
-          require_password_change: input.require_password_change === undefined ? Boolean(previousAccess.require_password_change) : toBoolean(input.require_password_change),
-          mfa_status: input.mfa_status || previousAccess.mfa_status || "futuro",
-          session_status: input.session_status || previousAccess.session_status || "sin_sesion"
+          email,
+          site: input.site || input.base_site || previousAccess.site || "",
+          role_id: roleId,
+          role_name: input.role_name || role.name || previousAccess.role_name || "",
+          require_password_change: input.require_password_change === undefined ? Boolean(previousAccess.require_password_change) : toBoolean(input.require_password_change)
         },
-        employment: {
-          ...previousEmployment,
-          engagement_type: input.engagement_type || previousEmployment.engagement_type || "empleado",
-          contract_type: input.contract_type || previousEmployment.contract_type || "indefinite",
-          cost_center: input.cost_center || previousEmployment.cost_center || "",
-          workday: input.workday || previousEmployment.workday || "",
-          base_shift: input.base_shift || previousEmployment.base_shift || "",
-          transport_allowance: input.transport_allowance || previousEmployment.transport_allowance || "",
-          arl_risk: input.arl_risk || previousEmployment.arl_risk || "",
-          eps: input.eps || previousEmployment.eps || "",
-          pension_fund: input.pension_fund || previousEmployment.pension_fund || "",
-          compensation_fund: input.compensation_fund || previousEmployment.compensation_fund || "",
-          bank: input.bank || previousEmployment.bank || "",
-          bank_account_type: input.bank_account_type || previousEmployment.bank_account_type || "",
-          bank_account_number: input.bank_account_number || previousEmployment.bank_account_number || "",
-          labor_notes: input.labor_notes || previousEmployment.labor_notes || ""
-        },
-        operational: {
-          ...previousOperational,
-          classification: input.operational_classification || previousOperational.classification || "administrativo",
-          can_punch_time: input.can_punch_time === undefined ? Boolean(previousOperational.can_punch_time) : toBoolean(input.can_punch_time),
-          can_receive_services: input.can_receive_services === undefined ? Boolean(previousOperational.can_receive_services) : toBoolean(input.can_receive_services),
-          can_be_assigned_routes: input.can_be_assigned_routes === undefined ? Boolean(previousOperational.can_be_assigned_routes) : toBoolean(input.can_be_assigned_routes),
-          can_manage_inventory: input.can_manage_inventory === undefined ? Boolean(previousOperational.can_manage_inventory) : toBoolean(input.can_manage_inventory),
-          can_approve_documents: input.can_approve_documents === undefined ? Boolean(previousOperational.can_approve_documents) : toBoolean(input.can_approve_documents),
-          can_authorize_exceptions: input.can_authorize_exceptions === undefined ? Boolean(previousOperational.can_authorize_exceptions) : toBoolean(input.can_authorize_exceptions),
-          driver_license: input.driver_license || previousOperational.driver_license || "",
-          license_category: input.license_category || previousOperational.license_category || "",
-          license_expires_at: input.license_expires_at || previousOperational.license_expires_at || "",
-          restrictions: input.operational_restrictions || previousOperational.restrictions || "",
-          base_site: input.base_site || previousOperational.base_site || "",
-          zone: input.operation_zone || previousOperational.zone || ""
-        },
-        documents: Array.isArray(input.documents) ? input.documents : (Array.isArray(previousMetadata.documents) ? previousMetadata.documents : []),
         user_audit_trail: [
           ...(Array.isArray(previousMetadata.user_audit_trail) ? previousMetadata.user_audit_trail : []).slice(-9),
           { at: new Date().toISOString(), action: "updated", module: "administracion", actor_id: actorId }

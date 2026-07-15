@@ -114,6 +114,12 @@ function normalizeRoleName(profileKind: "tecnico" | "empleado", roleName: unknow
   return rawValue || "Empleado";
 }
 
+function splitFullName(value: unknown) {
+  const parts = String(clean(value) || "").split(/\s+/).filter(Boolean);
+  if (parts.length <= 1) return { firstName: parts[0] || "", lastName: "" };
+  return { firstName: parts.slice(0, -1).join(" "), lastName: parts.slice(-1).join(" ") };
+}
+
 function activeStatus(value: unknown) {
   return userStatusToEmployeeStatus(value) === "active" ? "active" : "inactive";
 }
@@ -282,41 +288,52 @@ export async function PATCH(request: NextRequest) {
       nextMetadata = { ...metadata, documents: documents.filter((document) => String((document as AnyRow).id) !== String(documentId)) };
       patch = { metadata: nextMetadata };
     } else {
+      const previousAccess = (metadata.access && typeof metadata.access === "object" ? metadata.access : {}) as AnyRow;
       const fullName = clean(body.name) || `${clean(body.first_names) || current.first_name || ""} ${clean(body.last_names) || current.last_name || ""}`.trim();
-      const previousProfileKind = String((metadata.profile_kind || (metadata.operational as AnyRow | undefined)?.classification || current.user_type || "") || "").toLowerCase() === "tecnico" ? "tecnico" : "empleado";
-      const profileKind = String(clean(body.profile_kind) || clean(body.user_kind) || clean(body.tipo_usuario) || previousProfileKind).toLowerCase() === "tecnico" ? "tecnico" : "empleado";
-      const normalizedRoleName = normalizeRoleName(profileKind, body.role_name || (metadata.access as AnyRow | undefined)?.role_name || metadata.role_name);
+      if (!fullName) throw httpError("Nombre requerido.", 400);
+      const splitName = splitFullName(fullName);
+      const email = normalizeUsernameEmail(body.email || body.access_email || current.email);
+      if (!email) throw httpError("Correo requerido.", 400);
+      const roleId = clean(body.role_id) || clean(metadata.role_id);
+      const roleName = clean(body.role_name) || clean(previousAccess.role_name) || clean(metadata.role_name);
+      if (!roleId && !roleName) throw httpError("Rol principal requerido.", 400);
+      const documentNumber = clean(body.document) || clean(current.document_number) || clean(metadata.document);
+      if (!documentNumber) throw httpError("Documento requerido.", 400);
+      const nextStatus = userStatusToEmployeeStatus(body.user_status || metadata.user_status || current.status);
       nextMetadata = {
         ...metadata,
         name: fullName || metadata.name,
-        role_id: body.role_id || metadata.role_id,
-        role_name: normalizedRoleName,
-        profile_kind: profileKind,
-        document: clean(body.document) || metadata.document,
+        role_id: roleId || metadata.role_id,
+        role_name: roleName || metadata.role_name,
+        document: documentNumber,
         document_type: clean(body.document_type) || metadata.document_type,
         user_status: clean(body.user_status) || metadata.user_status,
-        access: { ...((metadata.access && typeof metadata.access === "object" ? metadata.access : {}) as AnyRow), email: normalizeUsernameEmail(body.access_email || body.email) || current.email, site: clean(body.site || body.base_site) || (profileKind === "tecnico" ? "SEDE-PRINCIPAL" : ""), area: clean(body.area || body.department) || (profileKind === "tecnico" ? "SERV" : ""), role_name: normalizedRoleName, profile_kind: profileKind, session_status: clean(body.session_status) || ((metadata.access as AnyRow | undefined)?.session_status as string | undefined) || "sin_sesion" },
-        employment: { ...((metadata.employment && typeof metadata.employment === "object" ? metadata.employment : {}) as AnyRow), cost_center: clean(body.cost_center) || "", contract_type: clean(body.contract_type) || (profileKind === "tecnico" ? "service" : "indefinite"), engagement_type: clean(body.engagement_type) || (profileKind === "tecnico" ? "contratista" : "empleado") },
-        operational: { ...((metadata.operational && typeof metadata.operational === "object" ? metadata.operational : {}) as AnyRow), classification: clean(body.operational_classification) || (profileKind === "tecnico" ? "tecnico" : "administrativo"), base_site: clean(body.base_site) || (profileKind === "tecnico" ? "SEDE-PRINCIPAL" : ""), zone: clean(body.operation_zone) || "", can_receive_services: profileKind === "tecnico" ? true : Boolean(body.can_receive_services ?? (metadata.operational as AnyRow | undefined)?.can_receive_services) },
+        company: clean(body.company) || metadata.company,
+        access: {
+          ...previousAccess,
+          email,
+          site: clean(body.site || body.base_site) || clean(previousAccess.site) || "",
+          role_id: roleId || previousAccess.role_id || null,
+          role_name: roleName || previousAccess.role_name || "",
+          require_password_change: body.require_password_change === undefined ? Boolean(previousAccess.require_password_change) : Boolean(body.require_password_change)
+        },
         user_audit_trail: [...(Array.isArray(metadata.user_audit_trail) ? metadata.user_audit_trail : []).slice(-9), { at: new Date().toISOString(), action: "updated", source: "next-api" }]
       };
       patch = {
-        first_name: clean(body.first_names) || current.first_name,
-        last_name: clean(body.last_names) || current.last_name,
-        email: clean(body.email) || current.email,
-        phone: clean(body.phone) || current.phone,
-        position: clean(body.position || body.operational_classification) || current.position,
-        department: clean(body.department || body.area) || current.department,
-        status: userStatusToEmployeeStatus(body.user_status || current.status),
-        user_type: clean(body.operational_classification) || current.user_type,
+        first_name: clean(body.first_names) || splitName.firstName || current.first_name,
+        last_name: clean(body.last_names) || splitName.lastName || current.last_name,
+        email,
+        document_type: clean(body.document_type) || current.document_type,
+        document_number: documentNumber,
+        status: nextStatus,
         metadata: nextMetadata
       };
       await syncSupabaseUserState({
         userId: current.user_id,
         companyId: current.company_id,
-        email: normalizeUsernameEmail(body.access_email || body.email) || current.email,
+        email,
         fullName,
-        roleName: normalizedRoleName,
+        roleName,
         employeeStatus: patch.status
       });
     }

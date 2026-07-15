@@ -2935,36 +2935,49 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       return false;
     });
     if (!nextApiOk) {
-      const rows = await supabaseFetch<Array<{ id: string; metadata?: AnyRow; status?: string }>>(`/rest/v1/employees?select=id,metadata,status&id=eq.${encodeURIComponent(employeeId)}&limit=1`).catch(() => []);
+      const rows = await supabaseFetch<Array<{ id: string; first_name?: string; last_name?: string; email?: string; document_type?: string; document_number?: string; metadata?: AnyRow; status?: string }>>(`/rest/v1/employees?select=id,first_name,last_name,email,document_type,document_number,metadata,status&id=eq.${encodeURIComponent(employeeId)}&limit=1`).catch(() => []);
       const current = rows[0];
       if (current?.id) {
         const fullName = body.name || `${body.first_names || ""} ${body.last_names || ""}`.trim();
         const status = pathname.endsWith("/status")
           ? (body.active ? "active" : "inactive")
           : (body.user_status === "inactivo" ? "inactive" : body.user_status === "suspendido" ? "inactive" : current.status || "active");
+        const metadata = current.metadata || {};
+        const access = (metadata.access as AnyRow) || {};
+        const nameParts = String(fullName || `${current.first_name || ""} ${current.last_name || ""}`.trim()).trim().split(/\s+/).filter(Boolean);
+        const firstName = body.first_names || (nameParts.length > 1 ? nameParts.slice(0, -1).join(" ") : nameParts[0]) || current.first_name || "";
+        const lastName = body.last_names || (nameParts.length > 1 ? nameParts.slice(-1).join(" ") : "") || current.last_name || "";
+        const nextEmail = body.email || body.access_email || current.email || "";
+        const nextRoleId = body.role_id || metadata.role_id || access.role_id;
+        const nextRoleName = body.role_name || metadata.role_name || access.role_name;
         await supabaseFetch(`/rest/v1/employees?id=eq.${encodeURIComponent(current.id)}`, {
           method: "PATCH",
           body: JSON.stringify({
-            first_name: body.first_names || undefined,
-            last_name: body.last_names || undefined,
-            email: body.email || undefined,
-            phone: body.phone || undefined,
-            position: body.position || body.operational_classification || undefined,
-            department: body.department || body.area || undefined,
+            first_name: firstName,
+            last_name: lastName,
+            email: nextEmail,
+            document_type: body.document_type || current.document_type || "CC",
+            document_number: body.document || current.document_number || metadata.document || "",
             status,
-            user_type: body.operational_classification || undefined,
             metadata: {
-              ...(current.metadata || {}),
-              name: fullName || (current.metadata || {}).name,
-              role_id: body.role_id || (current.metadata || {}).role_id,
-              document: body.document || (current.metadata || {}).document,
-              document_type: body.document_type || (current.metadata || {}).document_type,
+              ...metadata,
+              name: fullName || metadata.name,
+              role_id: nextRoleId,
+              role_name: nextRoleName,
+              document: body.document || current.document_number || metadata.document,
+              document_type: body.document_type || current.document_type || metadata.document_type || "CC",
+              company: body.company || metadata.company,
               user_status: body.user_status || status,
-              access: { ...((current.metadata?.access as AnyRow) || {}), role_id: body.role_id, email: body.access_email || body.email, site: body.site || body.base_site, area: body.area || body.department, session_status: body.session_status },
-              employment: { ...((current.metadata?.employment as AnyRow) || {}), cost_center: body.cost_center, contract_type: body.contract_type, engagement_type: body.engagement_type },
-              operational: { ...((current.metadata?.operational as AnyRow) || {}), classification: body.operational_classification, base_site: body.base_site, zone: body.operation_zone },
+              access: {
+                ...access,
+                role_id: nextRoleId,
+                role_name: nextRoleName,
+                email: nextEmail,
+                site: body.site || body.base_site || access.site || "",
+                require_password_change: body.require_password_change === undefined ? access.require_password_change : Boolean(body.require_password_change)
+              },
               user_audit_trail: [
-                ...(Array.isArray(current.metadata?.user_audit_trail) ? current.metadata.user_audit_trail : []).slice(-9),
+                ...(Array.isArray(metadata.user_audit_trail) ? metadata.user_audit_trail : []).slice(-9),
                 { at: new Date().toISOString(), action: pathname.endsWith("/status") ? "status_updated" : "updated", source: "supabase-fallback" }
               ]
             }
