@@ -282,7 +282,10 @@ async function loadSupabaseMonitorOrders() {
   const token = localStorage.getItem("token") || "";
   if (!token) return [];
   const companyName = localStorage.getItem("apexos_company_name") || localStorage.getItem("company_name") || "SCJ";
-  const response = await fetch(`/api/services/monitor-orders?empresa=${encodeURIComponent(companyName)}&limit=200`, {
+  const companyId = localStorage.getItem("apexos_company_id") || "";
+  const query = new URLSearchParams({ empresa: companyName, limit: "200" });
+  if (companyId) query.set("company_id", companyId);
+  const response = await fetch(`/api/services/monitor-orders?${query.toString()}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   if (!response.ok) return [];
