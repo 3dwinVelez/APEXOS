@@ -136,6 +136,23 @@ function normalizeServiceStores(rows: unknown) {
     .filter((item) => item.code && item.label && !seen.has(item.code) && seen.add(item.code));
 }
 
+function satisfactionQuestionId(value: unknown) {
+  return serviceTypeCode(value || `pregunta_${Date.now()}`);
+}
+
+function normalizeSatisfactionQuestions(rows: unknown) {
+  const source = Array.isArray(rows) ? rows : [];
+  const seen = new Set<string>();
+  return source
+    .map((item) => {
+      const row = item && typeof item === "object" ? item as Record<string, unknown> : {};
+      const label = clean(row.label);
+      const id = satisfactionQuestionId(row.id || label);
+      return { id, label, active: row.active !== false };
+    })
+    .filter((item) => item.id && item.label && !seen.has(item.id) && seen.add(item.id));
+}
+
 async function supabaseRequest<T>(path: string, init: RequestInit = {}) {
   const config = supabaseConfig();
   if (!config.url || !config.anonKey || !config.serviceRoleKey) {
@@ -227,6 +244,8 @@ async function resolveCompanyCandidates(body: PublicServiceRequest, request: Nex
   const { publicCompanyId } = supabaseConfig();
   const companyName = clean(body.company_name) || clean(request.nextUrl.searchParams.get("empresa"));
   const candidates: string[] = [];
+
+  if (body.company_id && isUuid(clean(body.company_id))) candidates.push(clean(body.company_id));
 
   if (companyName) {
     const filter = `or=(name.ilike.*${encodeURIComponent(companyName)}*,legal_name.ilike.*${encodeURIComponent(companyName)}*,tax_id.eq.${encodeURIComponent(companyName)})&`;
@@ -415,24 +434,62 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const authorization = request.headers.get("authorization") || "";
-    if (!await hasAdministrativeSession(authorization)) return jsonError("Sesion administrativa requerida para actualizar almacenes.", 401);
-    const body = await request.json().catch(() => ({})) as { company_name?: string; service_stores?: unknown };
-    const stores = normalizeServiceStores(body.service_stores);
-    if (!stores.some((item) => item.active)) return jsonError("Debe existir al menos un almacen activo.");
+    if (!await hasAdministrativeSession(authorization)) return jsonError("Sesion administrativa requerida para actualizar catalogos publicos.", 401);
+    const body = await request.json().catch(() => ({})) as { company_name?: string; service_types?: unknown; service_stores?: unknown; satisfaction_questions?: unknown };
+    const hasTypes = Array.isArray(body.service_types);
+    const hasStores = Array.isArray(body.service_stores);
+    const hasQuestions = Array.isArray(body.satisfaction_questions);
+    if (!hasTypes && !hasStores && !hasQuestions) return jsonError("No se recibio ningun catalogo publico para actualizar.");
+    const types = hasTypes ? normalizeServiceTypes(body.service_types) : null;
+    const stores = hasStores ? normalizeServiceStores(body.service_stores) : null;
+    const questions = hasQuestions ? normalizeSatisfactionQuestions(body.satisfaction_questions) : null;
+    if (types && !types.some((item) => item.active)) return jsonError("Debe existir al menos un tipo de servicio activo.");
+    if (stores && !stores.some((item) => item.active)) return jsonError("Debe existir al menos un almacen activo.");
+    if (questions && !questions.some((item) => item.active)) return jsonError("Debe existir al menos una pregunta de satisfaccion activa.");
     const companyIds = await resolveCompanyCandidates(body, request);
     const companyId = companyIds[0] || "";
-    if (!companyId) return jsonError("No se encontro empresa para actualizar almacenes.", 404);
+    if (!companyId) return jsonError("No se encontro empresa para actualizar catalogos publicos.", 404);
     const rows = await supabaseRequest<Array<{ id: string; metadata?: Record<string, unknown> }>>(
       `/rest/v1/service_references?select=id,metadata&company_id=eq.${encodeURIComponent(companyId)}&code=eq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&limit=1`
     );
     const target = rows[0];
-    if (!target?.id) return jsonError("No existe el registro maestro publico de servicios para esta empresa.", 404);
-    await supabaseRequest(`/rest/v1/service_references?id=eq.${encodeURIComponent(target.id)}`, {
-      method: "PATCH",
-      body: JSON.stringify({ metadata: { ...(target.metadata || {}), service_stores: stores } })
+    const nextMetadata = {
+      ...(target?.metadata || {}),
+      ...(types ? { service_types: types } : {}),
+      ...(stores ? { service_stores: stores } : {}),
+      ...(questions ? { satisfaction_questions: questions } : {}),
+      system_catalog: true,
+      updated_at: new Date().toISOString()
+    };
+    if (!target?.id) {
+      await supabaseRequest("/rest/v1/service_references", {
+        method: "POST",
+        body: JSON.stringify({
+          company_id: companyId,
+          code: SERVICE_TYPES_REFERENCE_CODE,
+          name: "Catalogos publicos de servicio",
+          category: "sistema",
+          description: "Catalogos internos de servicios configurables.",
+          estimated_minutes: 1,
+          brand: "",
+          model: "",
+          active: false,
+          metadata: nextMetadata
+        })
+      });
+    } else {
+      await supabaseRequest(`/rest/v1/service_references?id=eq.${encodeURIComponent(target.id)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ metadata: nextMetadata })
+      });
+    }
+    return NextResponse.json({
+      ok: true,
+      ...(types ? { service_types: types } : {}),
+      ...(stores ? { service_stores: stores } : {}),
+      ...(questions ? { satisfaction_questions: questions } : {})
     });
-    return NextResponse.json({ ok: true, service_stores: stores });
   } catch (error) {
-    return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible actualizar almacenes." }, { status: 500 });
+    return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible actualizar catalogos publicos." }, { status: 500 });
   }
 }
