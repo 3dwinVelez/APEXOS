@@ -77,6 +77,7 @@ type PlatformLog = {
   request_id?: string;
   detail?: string;
 };
+type ToastState = { title: string; detail?: string; tone: "success" | "warning" | "error" | "info" };
 type UserMasterData = {
   document_types: MasterOption[];
   user_statuses: MasterOption[];
@@ -712,6 +713,7 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
 
 export default function AdministracionPage() {
   const initializedRole = useRef(false);
+  const toastTimer = useRef<number | null>(null);
   const [activeModal, setActiveModal] = useState<"roles" | "users" | "masters" | "logs" | "info" | null>(null);
   const [selectedConfig, setSelectedConfig] = useState<ConfigItem | null>(null);
   const [query, setQuery] = useState("");
@@ -748,6 +750,13 @@ export default function AdministracionPage() {
   const [saving, setSaving] = useState(false);
   const [roleSaving, setRoleSaving] = useState(false);
   const [platformAdmin, setPlatformAdmin] = useState(false);
+  const [toast, setToast] = useState<ToastState | null>(null);
+
+  const notify = useCallback((title: string, detail?: string, tone: ToastState["tone"] = "success") => {
+    if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    setToast({ title, detail, tone });
+    toastTimer.current = window.setTimeout(() => setToast(null), 4200);
+  }, []);
 
   const selectedRole = useMemo(() => roles.find((role) => role.id === selectedRoleId) || null, [roles, selectedRoleId]);
   const selectedUser = useMemo(() => users.find((user) => user.id === selectedUserId) || null, [users, selectedUserId]);
@@ -799,6 +808,14 @@ export default function AdministracionPage() {
     });
   }, [catalog, roleFilter, roleGroupFilter]);
   const assignedRoleUsers = useMemo(() => users.filter((user) => selectedRoleId && Number(user.role_id) === selectedRoleId), [selectedRoleId, users]);
+  const roleFormSummary = useMemo(() => {
+    const entries = Object.values(roleForm.permissions);
+    const modules = entries.filter((actions) => Object.values(actions).some(Boolean)).length;
+    const actions = entries.reduce((count, permissions) => count + Object.values(permissions).filter(Boolean).length, 0);
+    return { modules, actions };
+  }, [roleForm.permissions]);
+  const activeRoleCount = useMemo(() => roles.filter((role) => role.active).length, [roles]);
+  const selectedRoleLocked = Boolean(selectedRole?.name === "APEX_ADMIN" || selectedRole?.is_system);
   const activeConfigFilters = [query.trim(), categoryFilter !== "all" ? categoryFilter : "", configStatusFilter !== "all" ? configStatusFilter : ""].filter(Boolean).length;
   const activeLogFilters = [logSourceFilter !== "all" ? "fuente" : "", logLevelFilter !== "all" ? "severidad" : "", logModuleFilter !== "all" ? "modulo" : ""].filter(Boolean).length;
 
@@ -960,6 +977,7 @@ export default function AdministracionPage() {
     setSelectedRoleId(null);
     setRoleForm(emptyRoleForm(catalog));
     setMessage("");
+    notify("Nuevo rol listo", "Completa el formulario y guarda la matriz de permisos.", "info");
   }
 
   function copyRole(roleId: string) {
@@ -995,16 +1013,34 @@ export default function AdministracionPage() {
     }));
   }
 
+  function setVisiblePermissions(enabled: boolean) {
+    if (selectedRoleLocked) return;
+    setRoleForm((current) => {
+      const permissions = { ...current.permissions };
+      filteredRoleCatalog.forEach((item) => {
+        const currentActions = { ...(permissions[item.key] || {}) };
+        visibleRoleActions.forEach((action) => {
+          if (item.actions.includes(action)) currentActions[action] = enabled;
+        });
+        permissions[item.key] = currentActions;
+      });
+      return { ...current, permissions };
+    });
+    notify(enabled ? "Permisos visibles marcados" : "Permisos visibles limpiados", `${filteredRoleCatalog.length} modulo(s) afectados por los filtros actuales.`, "info");
+  }
+
   async function saveRole() {
     if (roleSaving) return;
     if (!roleForm.name.trim()) {
       setMessage("El nombre del rol es obligatorio.");
+      notify("Nombre requerido", "Asigna un nombre antes de guardar el rol.", "warning");
       return;
     }
     const roleNameKey = normalizeRoleNameKey(roleForm.name);
     const duplicate = roles.find((role) => role.id !== selectedRoleId && normalizeRoleNameKey(role.name) === roleNameKey);
     if (duplicate) {
       setMessage(`Ya existe un rol visualmente igual: "${duplicate.name}". Edita ese rol o usa otro nombre.`);
+      notify("Rol duplicado bloqueado", `Ya existe "${duplicate.name}" con el mismo nombre visual.`, "warning");
       return;
     }
     const normalizedPermissions = normalizeRolePermissions(catalog, roleForm.permissions);
@@ -1037,10 +1073,14 @@ export default function AdministracionPage() {
         sensitive: Boolean(savedRole.sensitive),
         permissions: normalizeRolePermissions(catalog, savedRole.permissions)
       });
+      const actionTitle = selectedRoleId ? "Rol actualizado" : "Rol creado";
       await load();
       setMessage(`Rol "${savedRole.name}" guardado correctamente.`);
+      notify(actionTitle, `"${savedRole.name}" quedo guardado con ${roleFormSummary.modules} modulo(s) y ${roleFormSummary.actions} permiso(s).`);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Error al guardar el rol.");
+      const errorMessage = error instanceof Error ? error.message : "Error al guardar el rol.";
+      setMessage(errorMessage);
+      notify("No se pudo guardar el rol", errorMessage, "error");
     } finally {
       setRoleSaving(false);
     }
@@ -1049,14 +1089,17 @@ export default function AdministracionPage() {
   async function deleteRole() {
     if (!selectedRole) {
       setMessage("Selecciona un rol para eliminar.");
+      notify("Selecciona un rol", "Debes elegir un rol antes de eliminar.", "warning");
       return;
     }
     if (selectedRole.name === "APEX_ADMIN" || selectedRole.is_system) {
       setMessage("Los roles de sistema no se pueden eliminar.");
+      notify("Rol protegido", "Los roles de sistema no se pueden eliminar.", "warning");
       return;
     }
     if (assignedRoleUsers.length) {
       setMessage(`No se puede eliminar "${selectedRole.name}" porque tiene ${assignedRoleUsers.length} usuario(s) asignado(s).`);
+      notify("Rol con usuarios asignados", `Reasigna ${assignedRoleUsers.length} usuario(s) antes de eliminarlo.`, "warning");
       return;
     }
     if (!window.confirm(`Confirmas eliminar el rol "${selectedRole.name}"? Esta accion retirara sus permisos y no se puede deshacer.`)) return;
@@ -1067,8 +1110,11 @@ export default function AdministracionPage() {
       setRoleForm(emptyRoleForm(catalog));
       await load();
       setMessage(`Rol "${selectedRole.name}" eliminado correctamente.`);
+      notify("Rol eliminado", `"${selectedRole.name}" fue retirado correctamente.`);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Error al eliminar el rol.");
+      const errorMessage = error instanceof Error ? error.message : "Error al eliminar el rol.";
+      setMessage(errorMessage);
+      notify("No se pudo eliminar el rol", errorMessage, "error");
     } finally {
       setRoleSaving(false);
     }
@@ -2002,15 +2048,39 @@ export default function AdministracionPage() {
       {activeModal === "roles" ? (
         <ModalFrame title="Roles y permisos" onClose={() => setActiveModal(null)} maxWidth="md:max-w-6xl">
           {message ? <p className="mb-3 rounded-md border border-line bg-white px-4 py-3 text-sm font-medium text-neutral-700">{message}</p> : null}
-          <div className="grid gap-3 lg:grid-cols-[260px_minmax(0,1fr)]">
-            <aside className="space-y-2">
-              <Button className="w-full" disabled={roleSaving} onClick={newRole} type="button"><Plus size={16} /> Nuevo rol</Button>
-              {roles.map((role) => (
-                <button className={`w-full rounded-md border px-3 py-2 text-left text-sm ${selectedRoleId === role.id ? "border-apex bg-paper" : "border-line hover:bg-paper"}`} key={role.id} onClick={() => selectRole(role)} type="button">
-                  <span className="block font-semibold">{role.name}</span>
-                  <span className="mt-1 block text-xs text-neutral-500">{role.active ? "Activo" : "Inactivo"} - {role.description || "Sin descripcion"}</span>
-                </button>
-              ))}
+          <div className="grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
+            <aside className="space-y-3">
+              <div className="rounded-md border border-line bg-white p-3">
+                <Button className="w-full" disabled={roleSaving} onClick={newRole} type="button"><Plus size={16} /> Nuevo rol</Button>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-md bg-paper p-2">
+                    <span className="block text-neutral-500">Roles activos</span>
+                    <span className="mt-1 block text-lg font-semibold text-neutral-900">{activeRoleCount}</span>
+                  </div>
+                  <div className="rounded-md bg-paper p-2">
+                    <span className="block text-neutral-500">Total roles</span>
+                    <span className="mt-1 block text-lg font-semibold text-neutral-900">{roles.length}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="max-h-[52vh] space-y-2 overflow-y-auto pr-1">
+                {roles.map((role) => {
+                  const assignedCount = users.filter((user) => Number(user.role_id) === role.id).length;
+                  return (
+                    <button className={`w-full rounded-md border px-3 py-2 text-left text-sm transition ${selectedRoleId === role.id ? "border-apex bg-paper shadow-sm" : "border-line bg-white hover:border-apex/40 hover:bg-paper"}`} key={role.id} onClick={() => selectRole(role)} type="button">
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="truncate font-semibold">{role.name}</span>
+                        <span className={`shrink-0 rounded-md px-2 py-1 text-[11px] font-semibold ${role.active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>{role.active ? "Activo" : "Inactivo"}</span>
+                      </span>
+                      <span className="mt-1 line-clamp-2 text-xs text-neutral-500">{role.description || "Sin descripcion"}</span>
+                      <span className="mt-2 flex items-center justify-between text-xs text-neutral-500">
+                        <span>{role.impact_summary?.modules ?? Object.values(role.permissions || {}).filter((actions) => Object.values(actions).some(Boolean)).length} modulo(s)</span>
+                        <span>{assignedCount} usuario(s)</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
               <div className="rounded-md border border-line bg-paper p-3">
                 <p className="text-xs font-semibold uppercase text-neutral-500">Usuarios con este rol</p>
                 <p className="mt-1 text-lg font-semibold">{assignedRoleUsers.length}</p>
@@ -2022,14 +2092,30 @@ export default function AdministracionPage() {
               </div>
             </aside>
             <section className="min-w-0">
+              <div className="mb-3 grid gap-3 rounded-md border border-line bg-white p-3 md:grid-cols-4">
+                <div className="md:col-span-2">
+                  <p className="text-xs font-semibold uppercase text-neutral-500">Rol seleccionado</p>
+                  <h3 className="mt-1 text-lg font-semibold">{selectedRole ? selectedRole.name : "Nuevo rol"}</h3>
+                  <p className="mt-1 text-sm text-neutral-500">{selectedRole ? selectedRole.description || "Sin descripcion" : "Rol personalizado pendiente de guardar."}</p>
+                </div>
+                <div className="rounded-md bg-paper p-3">
+                  <p className="text-xs font-semibold uppercase text-neutral-500">Permisos</p>
+                  <p className="mt-1 text-lg font-semibold">{roleFormSummary.actions}</p>
+                  <p className="text-xs text-neutral-500">{roleFormSummary.modules} modulo(s)</p>
+                </div>
+                <div className="rounded-md bg-paper p-3">
+                  <p className="text-xs font-semibold uppercase text-neutral-500">Asignacion</p>
+                  <p className="mt-1 text-lg font-semibold">{assignedRoleUsers.length}</p>
+                  <p className="text-xs text-neutral-500">{selectedRoleLocked ? "Rol protegido" : "Editable"}</p>
+                </div>
+              </div>
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h3 className="font-semibold">{selectedRole ? selectedRole.name : "Nuevo rol"}</h3>
-                  {selectedRole ? <p className="text-sm text-neutral-500">{selectedRole.active ? "Activo" : "Inactivo"} - {selectedRole.description || "Sin descripcion"}</p> : null}
+                  {selectedRole ? <p className="text-sm text-neutral-500">{selectedRole.active ? "Activo" : "Inactivo"} - nivel {selectedRole.hierarchy_level || 10} - {selectedRole.scope || "company"}</p> : null}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {selectedRole ? (
-                    <Button className="border border-rose-200 bg-white text-rose-700 hover:bg-rose-50" disabled={roleSaving || selectedRole.name === "APEX_ADMIN" || selectedRole.is_system || assignedRoleUsers.length > 0} onClick={deleteRole} type="button">
+                    <Button className="border border-rose-200 bg-white text-rose-700 hover:bg-rose-50" disabled={roleSaving || selectedRoleLocked || assignedRoleUsers.length > 0} onClick={deleteRole} type="button">
                       <Trash2 size={16} /> Eliminar
                     </Button>
                   ) : null}
@@ -2041,10 +2127,14 @@ export default function AdministracionPage() {
                 <Field label="Descripcion" value={roleForm.description} onChange={(value) => setRoleForm((prev) => ({ ...prev, description: value }))} />
                 <SelectField label="Copiar desde rol" value="" onChange={copyRole} options={[["", "Seleccionar rol base"], ...roles.map((role) => [String(role.id), role.name] as [string, string])]} />
               </div>
-              <div className="mb-3 grid gap-3 rounded-md border border-line bg-paper p-3 md:grid-cols-[1fr_180px_150px]">
+              <div className="mb-3 grid gap-3 rounded-md border border-line bg-paper p-3 md:grid-cols-[1fr_170px_150px_auto]">
                 <Field label="Buscar permiso" value={roleFilter} onChange={setRoleFilter} />
                 <SelectField label="Grupo" value={roleGroupFilter} onChange={setRoleGroupFilter} options={[["all", "Todos"], ...roleGroups.map((group) => [group, group] as [string, string])]} />
                 <SelectField label="Vista" value={roleActionMode} onChange={(value) => setRoleActionMode(value as "compact" | "full")} options={[["compact", "Compacta"], ["full", "Completa"]]} />
+                <div className="flex items-end gap-2">
+                  <Button className="border border-line bg-white text-neutral-700 hover:bg-white" disabled={selectedRoleLocked || roleSaving || !filteredRoleCatalog.length} onClick={() => setVisiblePermissions(true)} type="button"><Check size={16} /> Marcar</Button>
+                  <Button className="border border-line bg-white text-neutral-700 hover:bg-white" disabled={selectedRoleLocked || roleSaving || !filteredRoleCatalog.length} onClick={() => setVisiblePermissions(false)} type="button"><X size={16} /> Limpiar</Button>
+                </div>
               </div>
               {roleCatalogWarning ? <p className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900">{roleCatalogWarning}</p> : null}
               <div className="max-h-[64vh] overflow-auto rounded-md border border-line">
@@ -2057,7 +2147,7 @@ export default function AdministracionPage() {
                   </thead>
                   <tbody>
                     {filteredRoleCatalog.map((item) => (
-                      <tr className="border-b border-line/70" key={item.key}>
+                      <tr className="border-b border-line/70 hover:bg-paper/70" key={item.key}>
                         <td className="py-2 pl-3">
                           <span className="block font-medium">{item.label}</span>
                           <span className="text-xs text-neutral-500">{item.group || "general"} - {item.module || item.key}{item.submodule ? `/${item.submodule}` : ""}</span>
@@ -2065,7 +2155,7 @@ export default function AdministracionPage() {
                         {visibleRoleActions.map((action) => (
                           <td className="py-2 text-center" key={action}>
                             {item.actions.includes(action) ? (
-                              <button className={`inline-flex h-7 w-7 items-center justify-center rounded-md border ${roleForm.permissions[item.key]?.[action] ? "border-apex bg-apex text-white" : "border-line hover:bg-paper"}`} disabled={selectedRole?.name === "APEX_ADMIN"} onClick={() => togglePermission(item.key, action)} title={`${item.label}: ${actionLabels[action]}`} type="button">
+                              <button className={`inline-flex h-8 w-8 items-center justify-center rounded-md border transition ${roleForm.permissions[item.key]?.[action] ? "border-apex bg-apex text-white shadow-sm" : "border-line bg-white hover:border-apex/40 hover:bg-paper"}`} disabled={selectedRoleLocked} onClick={() => togglePermission(item.key, action)} title={`${item.label}: ${actionLabels[action]}`} type="button">
                                 {roleForm.permissions[item.key]?.[action] ? <Check size={14} /> : null}
                               </button>
                             ) : <span className="text-neutral-300">-</span>}
@@ -2156,6 +2246,22 @@ export default function AdministracionPage() {
           </div>
           )}
         </ModalFrame>
+      ) : null}
+      {toast ? (
+        <div className={`fixed bottom-4 right-4 z-[80] w-[min(360px,calc(100vw-2rem))] rounded-md border bg-white p-4 shadow-xl ${toast.tone === "success" ? "border-emerald-200" : toast.tone === "warning" ? "border-amber-200" : toast.tone === "error" ? "border-rose-200" : "border-line"}`} role="status">
+          <div className="flex items-start gap-3">
+            <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${toast.tone === "success" ? "bg-emerald-50 text-emerald-700" : toast.tone === "warning" ? "bg-amber-50 text-amber-700" : toast.tone === "error" ? "bg-rose-50 text-rose-700" : "bg-paper text-neutral-700"}`}>
+              {toast.tone === "success" ? <Check size={16} /> : toast.tone === "error" || toast.tone === "warning" ? <AlertTriangle size={16} /> : <Bell size={16} />}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-neutral-900">{toast.title}</p>
+              {toast.detail ? <p className="mt-1 text-sm text-neutral-600">{toast.detail}</p> : null}
+            </div>
+            <button className="rounded-md p-1 text-neutral-400 hover:bg-paper hover:text-neutral-700" onClick={() => setToast(null)} type="button" title="Cerrar notificacion">
+              <X size={16} />
+            </button>
+          </div>
+        </div>
       ) : null}
     </div>
   );
