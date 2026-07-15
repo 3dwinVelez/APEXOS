@@ -96,6 +96,9 @@ async function resolveCompanyId(request: NextRequest) {
   const { publicCompanyId } = supabaseConfig();
   if (publicCompanyId && isUuid(publicCompanyId)) return publicCompanyId;
 
+  const companyId = request.nextUrl.searchParams.get("company_id")?.trim() || "";
+  if (companyId && isUuid(companyId)) return companyId;
+
   const companyName = request.nextUrl.searchParams.get("empresa")?.trim() || "SCJ";
   const value = encodeURIComponent(companyName);
   const filter = `or=(name.ilike.*${value}*,legal_name.ilike.*${value}*,tax_id.eq.${value})&`;

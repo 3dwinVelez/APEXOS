@@ -1022,8 +1022,9 @@ function normalizeSatisfactionQuestions(rows: unknown) {
 }
 
 async function currentSupabaseCompanyId() {
+  const membership = await currentSupabaseCompanyUser().catch(() => null);
+  if (!technicianSession() && membership?.company_id) return membership.company_id;
   const employee = await currentSupabaseEmployee().catch(() => null);
-  const membership = employee?.company_id ? null : await currentSupabaseCompanyUser();
   const companyId = employee?.company_id || membership?.company_id;
   if (!companyId) throw new Error("No se encontro una empresa activa para servicios.");
   return companyId;
