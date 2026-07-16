@@ -811,11 +811,16 @@ async function updateOrder(tenantId, user, id, input = {}) {
       const allowedStatuses = new Set(["agendado", "pendiente", "cancelada"]);
       if (!allowedStatuses.has(nextStatus)) throw appError(400, "INVALID_SERVICE_STATUS", "Selecciona un estado valido para la orden");
       const technicianReady = Boolean(data.technician_id || order.technician_id);
+      const referenceReady = Boolean(data.reference_id || order.reference_id);
       if (nextStatus === "pendiente" && !technicianReady) {
         throw appError(400, "SERVICE_TECHNICIAN_REQUIRED_FOR_PENDING", "Asigna un tecnico responsable antes de pasar la preorden a pendiente");
       }
+      if (nextStatus === "pendiente" && !referenceReady) {
+        throw appError(400, "SERVICE_REFERENCE_REQUIRED_FOR_PENDING", "Selecciona una referencia activa antes de pasar la preorden a pendiente");
+      }
       data.status = nextStatus;
       nextMetadata.requires_admin_completion = nextStatus === "agendado";
+      nextMetadata.preorder_status = nextStatus === "agendado" ? "agendado" : "";
       if (nextStatus === "pendiente" && order.status === "agendado") {
         nextMetadata.scheduled_from_public_request_at = new Date().toISOString();
       }
