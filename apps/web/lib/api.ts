@@ -1126,8 +1126,8 @@ async function accessibleSupabaseServiceOrder(orderId: string, options: { includ
   const companyId = employee?.company_id || membership?.company_id || await currentSupabaseCompanyId();
   const technicianFilter = employee ? `&technician_employee_id=eq.${encodeURIComponent(employee.id)}` : "";
   const activeFilter = applyTechnicianScope && !options.includeFinished ? `&${ACTIVE_SERVICE_ORDER_STATUS_FILTER}` : "";
-  const rows = await supabaseFetch<Array<{ id: string; company_id: string; technician_employee_id?: string; status?: string; started_at?: string; metadata?: AnyRow }>>(
-    `/rest/v1/service_orders?select=id,company_id,technician_employee_id,status,started_at,metadata&id=eq.${encodeURIComponent(orderId)}&company_id=eq.${encodeURIComponent(companyId)}${technicianFilter}${activeFilter}&limit=1`
+  const rows = await supabaseFetch<Array<{ id: string; company_id: string; reference_id?: string; technician_employee_id?: string; status?: string; started_at?: string; metadata?: AnyRow }>>(
+    `/rest/v1/service_orders?select=id,company_id,reference_id,technician_employee_id,status,started_at,metadata&id=eq.${encodeURIComponent(orderId)}&company_id=eq.${encodeURIComponent(companyId)}${technicianFilter}${activeFilter}&limit=1`
   );
   if (!rows[0]) throw new Error("No se encontro el servicio o no tienes permisos para operarlo.");
   return rows[0];
@@ -2588,7 +2588,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       const allowedStatuses = new Set(["agendado", "pendiente", "cancelada"]);
       if (!allowedStatuses.has(nextStatus)) throw new Error("Selecciona un estado valido para la orden.");
       const technicianReady = Boolean(patch.technician_employee_id || current.technician_employee_id);
+      const referenceReady = Boolean(patch.reference_id || current.reference_id);
       if (nextStatus === "pendiente" && !technicianReady) throw new Error("Asigna un tecnico responsable antes de pasar la preorden a pendiente.");
+      if (nextStatus === "pendiente" && !referenceReady) throw new Error("Selecciona una referencia activa antes de pasar la preorden a pendiente.");
       if (nextStatus !== "agendado" || current.status === "agendado") patch.status = nextStatus;
       nextMetadata.requires_admin_completion = nextStatus === "agendado";
       nextMetadata.preorder_status = nextStatus === "agendado" ? "agendado" : "";
