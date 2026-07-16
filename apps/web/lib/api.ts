@@ -614,6 +614,32 @@ function hasStoredPermission(module: string, action: string) {
   }
 }
 
+function storedRoleName() {
+  return typeof window !== "undefined" ? String(localStorage.getItem("role_name") || "").trim().toLowerCase() : "";
+}
+
+function hasBroadServiceRolePermission() {
+  if (typeof window === "undefined") return false;
+  const roleName = storedRoleName();
+  if (["admin", "owner", "superadmin", "administrador", "administrador de empresa", "supervisor operativo", "soporte tecnico"].includes(roleName)) return true;
+  try {
+    const permissions = JSON.parse(localStorage.getItem("role_permissions") || "[]");
+    if (!Array.isArray(permissions)) return false;
+    const modules = new Set(["*", "services", "servicios"]);
+    const broadActions = new Set(["*", "create", "delete", "approve", "export", "reports", "administer", "manage_users", "manage_roles"]);
+    return permissions.some((permission) => {
+      const row = permission && typeof permission === "object" ? permission as AnyRow : {};
+      const permissionModule = String(row.module || row.key || "").toLowerCase();
+      const actionValues = Array.isArray(row.actions)
+        ? row.actions
+        : [row.action, ...Object.entries(row).filter(([, allowed]) => allowed === true).map(([action]) => action)];
+      return modules.has(permissionModule) && actionValues.some((action) => broadActions.has(String(action || "").toLowerCase()));
+    });
+  } catch {
+    return false;
+  }
+}
+
 function isGenericIdentityAlias(value: unknown) {
   return /^(usuario[-\s]\d+|usr-\d+)$/i.test(String(value || "").trim());
 }
@@ -709,7 +735,15 @@ async function currentSupabaseEmployee() {
 }
 
 function technicianSession() {
-  return typeof window !== "undefined" && localStorage.getItem("role_name")?.toLowerCase() === "tecnico";
+  return storedRoleName() === "tecnico" && !hasBroadServiceRolePermission();
+}
+
+export function isServiceTechnicianSession() {
+  return technicianSession();
+}
+
+function isAdminCompanyMembership(membership: { role?: string } | null | undefined) {
+  return ["owner", "admin", "superadmin", "administrador", "administrador de empresa"].includes(String(membership?.role || "").trim().toLowerCase());
 }
 
 function isVirtualEmployee(employee: { metadata?: AnyRow } | null | undefined) {
@@ -817,8 +851,8 @@ async function accessibleSupabaseServiceOrder(orderId: string, options: { includ
   const companyId = employee?.company_id || await currentSupabaseCompanyId();
   const technicianFilter = employee ? `&technician_employee_id=eq.${encodeURIComponent(employee.id)}` : "";
   const activeFilter = technicianSession() && !options.includeFinished ? "&status=in.(pendiente,en_curso,inspeccion,ejecucion)" : "";
-  const rows = await supabaseFetch<Array<{ id: string; company_id: string; technician_employee_id?: string; status?: string; started_at?: string; metadata?: AnyRow }>>(
-    `/rest/v1/service_orders?select=id,company_id,technician_employee_id,status,started_at,metadata&id=eq.${encodeURIComponent(orderId)}&company_id=eq.${encodeURIComponent(companyId)}${technicianFilter}${activeFilter}&limit=1`
+  const rows = await supabaseFetch<Array<{ id: string; company_id: string; reference_id?: string; technician_employee_id?: string; status?: string; started_at?: string; metadata?: AnyRow }>>(
+    `/rest/v1/service_orders?select=id,company_id,reference_id,technician_employee_id,status,started_at,metadata&id=eq.${encodeURIComponent(orderId)}&company_id=eq.${encodeURIComponent(companyId)}${technicianFilter}${activeFilter}&limit=1`
   );
   if (!rows[0]) throw new Error("No se encontro el servicio o no tienes permisos para operarlo.");
   return rows[0];
@@ -1022,8 +1056,9 @@ function normalizeSatisfactionQuestions(rows: unknown) {
 }
 
 async function currentSupabaseCompanyId() {
+  const membership = await currentSupabaseCompanyUser().catch(() => null);
+  if (!technicianSession() && membership?.company_id) return membership.company_id;
   const employee = await currentSupabaseEmployee().catch(() => null);
-  const membership = employee?.company_id ? null : await currentSupabaseCompanyUser();
   const companyId = employee?.company_id || membership?.company_id;
   if (!companyId) throw new Error("No se encontro una empresa activa para servicios.");
   return companyId;
@@ -1170,20 +1205,19 @@ async function hydrateSupabaseServiceReferences(refs: SupabaseServiceReference[]
 }
 
 async function saveSupabaseServiceReference(input: AnyRow, referenceId?: string) {
-  const membership = await currentSupabaseCompanyUser();
-  if (!membership?.company_id) throw new Error("No se encontro una empresa activa para guardar la referencia.");
-  const payload = serviceReferencePayload(input, membership.company_id);
+  const companyId = await currentSupabaseCompanyId();
+  const payload = serviceReferencePayload(input, companyId);
   if (!payload.code || !payload.name) throw new Error("Codigo y nombre son obligatorios.");
-  const validatedParts = serviceReferenceParts(input, membership.company_id, referenceId || "pending");
+  const validatedParts = serviceReferenceParts(input, companyId, referenceId || "pending");
 
   let saved: SupabaseServiceReference[];
   if (referenceId) {
     saved = await supabaseFetch<SupabaseServiceReference[]>(
-      `/rest/v1/service_references?id=eq.${encodeURIComponent(referenceId)}&company_id=eq.${encodeURIComponent(membership.company_id)}&select=id,company_id,code,name,category,description,estimated_minutes,brand,model,active,metadata`,
+      `/rest/v1/service_references?id=eq.${encodeURIComponent(referenceId)}&company_id=eq.${encodeURIComponent(companyId)}&select=id,company_id,code,name,category,description,estimated_minutes,brand,model,active,metadata`,
       { method: "PATCH", body: JSON.stringify(payload), headers: { Prefer: "return=representation" } }
     );
     if (!saved[0]) throw new Error("La referencia no existe o no tienes permisos para editarla.");
-    await supabaseFetch(`/rest/v1/service_reference_parts?reference_id=eq.${encodeURIComponent(referenceId)}&company_id=eq.${encodeURIComponent(membership.company_id)}`, { method: "DELETE" });
+    await supabaseFetch(`/rest/v1/service_reference_parts?reference_id=eq.${encodeURIComponent(referenceId)}&company_id=eq.${encodeURIComponent(companyId)}`, { method: "DELETE" });
   } else {
     saved = await supabaseFetch<SupabaseServiceReference[]>(
       "/rest/v1/service_references?select=id,company_id,code,name,category,description,estimated_minutes,brand,model,active,metadata",
@@ -1880,9 +1914,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
 
     if (method === "POST" || method === "PUT" || method === "PATCH") {
       const body = JSON.parse(String(options.body || "{}")) as AnyRow;
-      const employee = await currentSupabaseEmployee();
-      const membership = employee?.company_id ? null : await currentSupabaseCompanyUser();
-      const companyId = String(employee?.company_id || membership?.company_id || "");
+      const companyId = await currentSupabaseCompanyId();
       if (!companyId) throw new Error("No se encontro una empresa activa para guardar el vehiculo.");
       if (!body.plate) throw new Error("La placa del vehiculo es obligatoria.");
       const payload = supabaseVehiclePayload(body, method === "POST" ? companyId : undefined);
@@ -2167,9 +2199,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const missingServiceFields = requiredServiceFields.filter((field) => body[field] == null || String(body[field]).trim() === "");
     if (missingServiceFields.length) throw new Error("Completa todos los campos obligatorios de la orden de servicio.");
     if (!/^\d+$/.test(String(body.customer_document))) throw new Error("La cedula del cliente debe contener solo numeros.");
-    const employee = await currentSupabaseEmployee();
-    const membership = employee?.company_id ? null : await currentSupabaseCompanyUser();
-    const companyId = employee?.company_id || membership?.company_id;
+    const companyId = await currentSupabaseCompanyId();
     if (!companyId) throw new Error("No se encontro una empresa activa para crear el servicio.");
     const userId = currentSupabaseUserId();
     const referenceId = uuidOrNull(body.reference_id || body.reference_item_id);
@@ -2260,7 +2290,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       const allowedStatuses = new Set(["agendado", "pendiente", "cancelada"]);
       if (!allowedStatuses.has(nextStatus)) throw new Error("Selecciona un estado valido para la orden.");
       const technicianReady = Boolean(patch.technician_employee_id || current.technician_employee_id);
+      const referenceReady = Boolean(patch.reference_id || current.reference_id);
       if (nextStatus === "pendiente" && !technicianReady) throw new Error("Asigna un tecnico responsable antes de pasar la preorden a pendiente.");
+      if (nextStatus === "pendiente" && !referenceReady) throw new Error("Selecciona una referencia activa antes de pasar la preorden a pendiente.");
       if (nextStatus !== "agendado" || current.status === "agendado") patch.status = nextStatus;
       nextMetadata.requires_admin_completion = nextStatus === "agendado";
       nextMetadata.preorder_status = nextStatus === "agendado" ? "agendado" : "";
@@ -2469,14 +2501,16 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const orderLimit = serviceOrderDetailMatch
       ? 1
       : Math.min(Math.max(Number(search.get("limit") || 50), 1), 150);
-    const employee = technicianSession() ? await currentSupabaseEmployee() : null;
-    const companyId = employee?.company_id || await currentSupabaseCompanyId();
+    const membership = await currentSupabaseCompanyUser().catch(() => null);
+    const applyTechnicianScope = technicianSession() && !isAdminCompanyMembership(membership);
+    const employee = applyTechnicianScope ? await currentSupabaseEmployee() : null;
+    const companyId = employee?.company_id || membership?.company_id || await currentSupabaseCompanyId();
     const filters = [
       `company_id=eq.${encodeURIComponent(companyId)}`,
       status ? `status=eq.${encodeURIComponent(status)}` : "",
       serviceOrderDetailMatch ? `id=eq.${encodeURIComponent(serviceOrderDetailMatch[1])}` : "",
       employee && !isVirtualEmployee(employee) ? `technician_employee_id=eq.${encodeURIComponent(employee.id)}` : "",
-      technicianSession() && !serviceOrderDetailMatch ? "status=in.(pendiente,en_curso,inspeccion,ejecucion)" : ""
+      applyTechnicianScope && !serviceOrderDetailMatch ? "status=in.(pendiente,en_curso,inspeccion,ejecucion)" : ""
     ].filter(Boolean).join("&");
     const orders = await supabaseFetch<Array<{
       id: string;

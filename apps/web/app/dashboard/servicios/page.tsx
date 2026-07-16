@@ -1,7 +1,7 @@
 "use client";
 
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { api } from "@/lib/api";
+import { api, isServiceTechnicianSession } from "@/lib/api";
 import {
   ArrowLeft,
   BarChart3,
@@ -209,6 +209,12 @@ function requiresAdminCompletion(order: ServiceOrder) {
   return Boolean(order.status === "agendado" || order.metadata?.requires_admin_completion || withoutTechnician || !order.reference_id);
 }
 
+function orderIsReadyForOperation(order: ServiceOrder | null | undefined) {
+  if (!order) return false;
+  const hasTechnician = Boolean(order.technician || order.technician_employee_id || order.technician_id);
+  return order.status === "pendiente" && hasTechnician && Boolean(order.reference_id);
+}
+
 function effectiveOrder(order: ServiceOrder): ServiceOrder {
   const withoutTechnician = !order.technician && !order.technician_employee_id && !order.technician_id;
   if (order.status === "pendiente" && withoutTechnician && (order.metadata?.preorder_status === "agendado" || order.metadata?.requires_admin_completion)) {
@@ -282,7 +288,10 @@ async function loadSupabaseMonitorOrders() {
   const token = localStorage.getItem("token") || "";
   if (!token) return [];
   const companyName = localStorage.getItem("apexos_company_name") || localStorage.getItem("company_name") || "SCJ";
-  const response = await fetch(`/api/services/monitor-orders?empresa=${encodeURIComponent(companyName)}&limit=200`, {
+  const companyId = localStorage.getItem("apexos_company_id") || "";
+  const query = new URLSearchParams({ empresa: companyName, limit: "200" });
+  if (companyId) query.set("company_id", companyId);
+  const response = await fetch(`/api/services/monitor-orders?${query.toString()}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   if (!response.ok) return [];
@@ -350,7 +359,7 @@ export default function ServicesPage() {
   }
 
   useEffect(() => {
-    const isTechnician = localStorage.getItem("role_name")?.toLowerCase() === "tecnico";
+    const isTechnician = isServiceTechnicianSession();
     setTechnicianMode(isTechnician);
     load();
     if (!isTechnician) loadMasters();
@@ -488,10 +497,17 @@ export default function ServicesPage() {
         setMessage("No fue posible identificar la orden existente para actualizarla sin duplicar.");
         return;
       }
-      await api<ServiceOrder>(`/api/v1/services/orders/${editingOrder.id}`, {
+      const updated = await api<ServiceOrder>(`/api/v1/services/orders/${editingOrder.id}`, {
         method: "PUT",
         body: JSON.stringify({ ...payload, metadata })
       });
+      if (editForm.status === "pendiente" && !orderIsReadyForOperation({
+        ...updated,
+        reference_id: updated.reference_id || editForm.reference_id,
+        technician_id: updated.technician_id || updated.technician_employee_id || editForm.technician_id
+      })) {
+        throw new Error("La orden se envio, pero no quedo lista para el tecnico. Verifica referencia y tecnico asignado antes de continuar.");
+      }
       setMessage(editForm.status === "pendiente" ? "Orden enviada a pendiente correctamente." : "Orden actualizada correctamente.");
       setEditingOrder(null);
       await load();
