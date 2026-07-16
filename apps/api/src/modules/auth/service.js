@@ -170,4 +170,29 @@ async function refresh(input, fastify) {
   };
 }
 
-module.exports = { registerTenant, login, me, refresh };
+async function changePassword(user, input = {}) {
+  const currentPassword = String(input.current_password || "");
+  const nextPassword = String(input.new_password || input.password || "");
+  if (!currentPassword) {
+    const err = new Error("Clave actual requerida.");
+    err.statusCode = 400;
+    throw err;
+  }
+  assertPasswordPolicy(nextPassword);
+  const current = await prisma.user.findUnique({ where: { id: user.id } });
+  if (!current || !current.active) {
+    const err = new Error("Usuario no disponible");
+    err.statusCode = 401;
+    throw err;
+  }
+  if (!(await bcrypt.compare(currentPassword, current.password))) {
+    const err = new Error("La clave actual no coincide.");
+    err.statusCode = 403;
+    throw err;
+  }
+  const password = await bcrypt.hash(nextPassword, 12);
+  await prisma.user.update({ where: { id: current.id }, data: { password } });
+  return { ok: true };
+}
+
+module.exports = { registerTenant, login, me, refresh, changePassword };

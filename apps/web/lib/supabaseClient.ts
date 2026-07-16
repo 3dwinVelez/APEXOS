@@ -92,6 +92,12 @@ export const supabaseAuth = {
   getUser() {
     return supabaseFetch<{ user: { id: string; email?: string } }>("/auth/v1/user", { method: "GET" });
   },
+  updatePassword(password: string) {
+    return supabaseFetch<{ user: { id: string; email?: string } }>("/auth/v1/user", {
+      method: "PUT",
+      body: JSON.stringify({ password })
+    });
+  },
   signOut() {
     return supabaseFetch<void>("/auth/v1/logout", { method: "POST" });
   }

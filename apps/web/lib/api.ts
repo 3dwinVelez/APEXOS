@@ -288,6 +288,10 @@ function protectPhysicalDeleteDefaults(actions: string[]) {
   return Object.fromEntries(actions.map((action) => [action, action === PHYSICAL_DELETE_PERMISSION ? false : true]));
 }
 
+function withPhysicalDeletePermission<T extends { actions: string[] }>(item: T): T {
+  return item.actions.includes(PHYSICAL_DELETE_PERMISSION) ? item : { ...item, actions: [...item.actions, PHYSICAL_DELETE_PERMISSION] };
+}
+
 const adminPermissionCatalog = [
   { key: "dashboard", label: "Inicio / Dashboard", group: "core", module: "brain", submodule: "home", actions: ["access", "view", "reports"] },
   { key: "usuarios", label: "Usuarios", group: "administracion", module: "admin", submodule: "users", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "export", "import", "attach", "download", "sensitive", "manage_users"] },
@@ -317,7 +321,7 @@ const adminPermissionCatalog = [
   { key: "notificaciones", label: "Notificaciones", group: "sistema", module: "admin", submodule: "notifications", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "execute", "configure"] },
   { key: "ia", label: "IA / Asistente interno", group: "sistema", module: "brain", submodule: "assistant", actions: ["access", "view", "execute", "configure", "administer", "sensitive"] },
   { key: "nomina", label: "Nomina", group: "finanzas", module: "payroll", submodule: "payroll", actions: ["access", "view", "create", "edit", "approve", "export", "import", "sensitive", "reports"] }
-];
+].map(withPhysicalDeletePermission);
 
 function normalizeTenantActiveModules(value: unknown) {
   return Array.isArray(value) ? value.map((item) => String(item).trim().toLowerCase()).filter(Boolean) : [];
@@ -2986,15 +2990,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       return false;
     });
     if (!nextApiOk) {
-      const employees = await supabaseFetch<Array<{ id: string; metadata?: AnyRow }>>(`/rest/v1/employees?select=id,metadata&id=eq.${encodeURIComponent(adminUserAccessMatch[1])}&limit=1`).catch(() => []);
-      const current = employees[0];
-      const metadata = current?.metadata || {};
-      if (current?.id) {
-        await supabaseFetch(`/rest/v1/employees?id=eq.${encodeURIComponent(current.id)}`, {
-          method: "PATCH",
-          body: JSON.stringify({ metadata: { ...metadata, access: { ...(metadata.access as AnyRow || {}), session_status: body.session_status || "bloqueada", require_password_change: body.require_password_change ?? (metadata.access as AnyRow)?.require_password_change } } })
-        });
-      }
+      throw new Error("No fue posible sincronizar el acceso del usuario con la membresia de empresa.");
     }
     return supabaseApiFallback(`/api/v1/admin/users`) as T;
   }
@@ -3118,59 +3114,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       return false;
     });
     if (!nextApiOk) {
-      const rows = await supabaseFetch<Array<{ id: string; first_name?: string; last_name?: string; email?: string; document_type?: string; document_number?: string; metadata?: AnyRow; status?: string }>>(`/rest/v1/employees?select=id,first_name,last_name,email,document_type,document_number,metadata,status&id=eq.${encodeURIComponent(employeeId)}&limit=1`).catch(() => []);
-      const current = rows[0];
-      if (current?.id) {
-        const fullName = body.name || `${body.first_names || ""} ${body.last_names || ""}`.trim();
-        const status = pathname.endsWith("/status")
-          ? (body.active ? "active" : "inactive")
-          : (body.user_status === "inactivo" ? "inactive" : body.user_status === "suspendido" ? "inactive" : current.status || "active");
-        const metadata = current.metadata || {};
-        const access = (metadata.access as AnyRow) || {};
-        const nameParts = String(fullName || `${current.first_name || ""} ${current.last_name || ""}`.trim()).trim().split(/\s+/).filter(Boolean);
-        const firstName = body.first_names || (nameParts.length > 1 ? nameParts.slice(0, -1).join(" ") : nameParts[0]) || current.first_name || "";
-        const lastName = body.last_names || (nameParts.length > 1 ? nameParts.slice(-1).join(" ") : "") || current.last_name || "";
-        const nextEmail = body.email || body.access_email || current.email || "";
-        const nextRoleId = body.role_id || metadata.role_id || access.role_id;
-        const nextRoleName = role?.name || body.role_name || metadata.role_name || access.role_name;
-        const nextPermissions = role?.permissions || body.role_permissions || metadata.permissions;
-        await supabaseFetch(`/rest/v1/employees?id=eq.${encodeURIComponent(current.id)}`, {
-          method: "PATCH",
-          body: JSON.stringify({
-            first_name: firstName,
-            last_name: lastName,
-            email: nextEmail,
-            document_type: body.document_type || current.document_type || "CC",
-            document_number: body.document || current.document_number || metadata.document || "",
-            status,
-            metadata: {
-              ...metadata,
-              name: fullName || metadata.name,
-              role_id: nextRoleId,
-              role_name: nextRoleName,
-              role_type: role?.role_type || body.role_type || metadata.role_type,
-              permissions: nextPermissions,
-              document: body.document || current.document_number || metadata.document,
-              document_type: body.document_type || current.document_type || metadata.document_type || "CC",
-              company: body.company || metadata.company,
-              user_status: body.user_status || status,
-              access: {
-                ...access,
-                role_id: nextRoleId,
-                role_name: nextRoleName,
-                role_type: role?.role_type || body.role_type || access.role_type,
-                email: nextEmail,
-                site: body.site || body.base_site || access.site || "",
-                require_password_change: body.require_password_change === undefined ? access.require_password_change : Boolean(body.require_password_change)
-              },
-              user_audit_trail: [
-                ...(Array.isArray(metadata.user_audit_trail) ? metadata.user_audit_trail : []).slice(-9),
-                { at: new Date().toISOString(), action: pathname.endsWith("/status") ? "status_updated" : "updated", source: "supabase-fallback" }
-              ]
-            }
-          })
-        });
-      }
+      throw new Error("No fue posible sincronizar el usuario con roles, permisos y membresia de empresa.");
     }
     return supabaseApiFallback(`/api/v1/admin/users`) as T;
   }
