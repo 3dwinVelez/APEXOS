@@ -609,7 +609,12 @@ async function loadSupabaseAdminRoles() {
 async function saveSupabaseAdminRole(role: AdminRole) {
   const membership = await currentSupabaseCompanyUser();
   if (!membership?.company_id) throw new Error("No se encontro una empresa activa para guardar el rol.");
+  const serverResult = await nextAdminRolesRequest<{ role?: AdminRole & { code?: string } }>({
+    method: "POST",
+    body: JSON.stringify({ company_id: membership.company_id, role })
+  });
   forgetDeletedAdminRole(role, membership.company_id);
+  if (serverResult.role) return { ...role, ...serverResult.role };
   const catalogId = await ensureSupabaseCompanyRoleCatalog(membership.company_id);
   const code = roleCatalogCode(role);
   await supabaseFetch("/rest/v1/master_catalog_items?on_conflict=catalog_id,code", {
@@ -645,29 +650,9 @@ async function deleteSupabaseAdminRole(role: AdminRole) {
   const membership = await currentSupabaseCompanyUser();
   if (!membership?.company_id) throw new Error("No se encontro una empresa activa para eliminar el rol.");
   rememberDeletedAdminRole(role, membership.company_id);
-  const catalogId = await ensureSupabaseCompanyRoleCatalog(membership.company_id);
-  const code = roleCatalogCode(role);
-  await supabaseFetch("/rest/v1/master_catalog_items?on_conflict=catalog_id,code", {
-    method: "POST",
-    headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-    body: JSON.stringify({
-      catalog_id: catalogId,
-      company_id: membership.company_id,
-      code,
-      name: role.name,
-      description: role.description || null,
-      active: false,
-      sort_order: Number(role.hierarchy_level || 100),
-      metadata: {
-        role_numeric_id: role.id,
-        role_name: role.name,
-        role_type: role.role_type || "custom",
-        scope: role.scope || "company",
-        deleted: true,
-        deleted_at: new Date().toISOString(),
-        source: "apexos_admin_roles"
-      }
-    })
+  await nextAdminRolesRequest({
+    method: "DELETE",
+    body: JSON.stringify({ company_id: membership.company_id, role })
   });
 }
 
@@ -1169,6 +1154,24 @@ async function nextAdminUsersRequest<T>(init: RequestInit = {}, query = "") {
   if (!response.ok) {
     const body = await response.json().catch(() => ({ message: response.statusText }));
     throw new Error(body.message || "No fue posible gestionar usuarios.");
+  }
+  return response.json() as Promise<T>;
+}
+
+async function nextAdminRolesRequest<T>(init: RequestInit = {}) {
+  const token = getSupabaseAccessToken();
+  if (!token) throw new Error("Sesion requerida para gestionar roles.");
+  const response = await fetch("/api/admin/roles", {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      ...(init.headers || {})
+    }
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(body.message || "No fue posible gestionar roles.");
   }
   return response.json() as Promise<T>;
 }
