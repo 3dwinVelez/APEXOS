@@ -106,10 +106,8 @@ function companyRole(roleName: unknown) {
 
 function normalizeRoleName(profileKind: "tecnico" | "empleado", roleName: unknown) {
   const rawValue = String(roleName || "").trim();
-  const value = rawValue.toLowerCase();
   if (profileKind === "tecnico") {
-    if (!value || value === "soporte tecnico") return "Tecnico";
-    return value.includes("tecnico") ? "Tecnico" : "Tecnico";
+    return rawValue || "Tecnico";
   }
   return rawValue || "Empleado";
 }
@@ -122,6 +120,11 @@ function splitFullName(value: unknown) {
 
 function activeStatus(value: unknown) {
   return userStatusToEmployeeStatus(value) === "active" ? "active" : "inactive";
+}
+
+function rolePermissionsFromBody(body: AnyRow, fallback?: unknown) {
+  const value = body.role_permissions ?? body.permissions ?? fallback;
+  return value && typeof value === "object" ? value : {};
 }
 
 async function syncSupabaseUserState(input: {
@@ -300,11 +303,15 @@ export async function PATCH(request: NextRequest) {
       const documentNumber = clean(body.document) || clean(current.document_number) || clean(metadata.document);
       if (!documentNumber) throw httpError("Documento requerido.", 400);
       const nextStatus = userStatusToEmployeeStatus(body.user_status || metadata.user_status || current.status);
+      const rolePermissions = rolePermissionsFromBody(body, metadata.permissions);
       nextMetadata = {
         ...metadata,
         name: fullName || metadata.name,
         role_id: roleId || metadata.role_id,
         role_name: roleName || metadata.role_name,
+        role_type: clean(body.role_type) || metadata.role_type,
+        role_scope: clean(body.role_scope) || metadata.role_scope,
+        permissions: rolePermissions,
         document: documentNumber,
         document_type: clean(body.document_type) || metadata.document_type,
         user_status: clean(body.user_status) || metadata.user_status,
@@ -315,6 +322,7 @@ export async function PATCH(request: NextRequest) {
           site: clean(body.site || body.base_site) || clean(previousAccess.site) || "",
           role_id: roleId || previousAccess.role_id || null,
           role_name: roleName || previousAccess.role_name || "",
+          role_type: clean(body.role_type) || previousAccess.role_type || "",
           require_password_change: body.require_password_change === undefined ? Boolean(previousAccess.require_password_change) : Boolean(body.require_password_change)
         },
         user_audit_trail: [...(Array.isArray(metadata.user_audit_trail) ? metadata.user_audit_trail : []).slice(-9), { at: new Date().toISOString(), action: "updated", source: "next-api" }]
@@ -369,6 +377,7 @@ export async function POST(request: NextRequest) {
     const normalizedRoleName = normalizeRoleName(profileKind, body.role_name || body.role_id);
     const { email, fullName } = validateUserPayload(body, { requirePassword: true });
     const password = String(body.password || "");
+    const rolePermissions = rolePermissionsFromBody(body);
 
     const requestedCompanyId = clean(body.company_id);
     const membership = await requireCompanyAdmin(token, requestedCompanyId);
@@ -420,6 +429,9 @@ export async function POST(request: NextRequest) {
       profile_kind: profileKind,
       role_id: body.role_id || null,
       role_name: normalizedRoleName,
+      role_type: clean(body.role_type) || "",
+      role_scope: clean(body.role_scope) || "",
+      permissions: rolePermissions,
       document: clean(body.document) || "",
       document_type: clean(body.document_type) || "CC",
       company: clean(body.company) || "",
@@ -427,6 +439,7 @@ export async function POST(request: NextRequest) {
         email,
         role_id: body.role_id || null,
         role_name: normalizedRoleName,
+        role_type: clean(body.role_type) || "",
         profile_kind: profileKind,
         site: clean(body.site || body.base_site) || (profileKind === "tecnico" ? "SEDE-PRINCIPAL" : ""),
         area: clean(body.area || body.department) || (profileKind === "tecnico" ? "SERV" : ""),
