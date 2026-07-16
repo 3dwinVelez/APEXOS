@@ -9,6 +9,8 @@ import { useState } from "react";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 const LOGIN_ERROR_MESSAGE = "Credenciales no validas o sin acceso autorizado.";
 
+type AnyRow = Record<string, unknown>;
+
 function friendlyLoginError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error || "");
   const normalized = message.toLowerCase();
@@ -31,6 +33,25 @@ function friendlyLoginError(error: unknown) {
   return "No fue posible iniciar sesion. Verifica tus credenciales e intenta nuevamente.";
 }
 
+function flattenRolePermissions(value: unknown) {
+  if (Array.isArray(value)) {
+    return value.flatMap((permission) => {
+      const row = permission && typeof permission === "object" ? permission as AnyRow : {};
+      const permissionModule = String(row.module || row.key || "").trim();
+      const actions = Array.isArray(row.actions)
+        ? row.actions
+        : [row.action, ...Object.entries(row).filter(([, allowed]) => allowed === true).map(([action]) => action)];
+      return actions.map((action) => ({ module: permissionModule, action: String(action || "").trim() })).filter((item) => item.module && item.action);
+    });
+  }
+  if (value && typeof value === "object") {
+    return Object.entries(value as Record<string, Record<string, boolean>>).flatMap(([key, actions]) => (
+      Object.entries(actions || {}).filter(([, allowed]) => allowed === true).map(([action]) => ({ module: key, action }))
+    ));
+  }
+  return [];
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,15 +59,30 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   async function resolveSupabaseProfile(email: string) {
-    const rows = await supabaseFetch<Array<{ user_type?: string; metadata?: { role_name?: string; profile_kind?: string } }>>(
+    const rows = await supabaseFetch<Array<{ user_type?: string; metadata?: { role_name?: string; profile_kind?: string; permissions?: unknown; role_type?: string; role_scope?: string } }>>(
       `/rest/v1/employees?select=user_type,metadata&email=eq.${encodeURIComponent(email)}&status=eq.active&limit=1`
     ).catch(() => []);
     const employee = rows[0];
+    const profileKind = employee?.metadata?.profile_kind?.toLowerCase() || employee?.user_type?.toLowerCase() || "";
+    const roleName = employee?.metadata?.role_name || (profileKind === "tecnico" ? "Tecnico" : "");
     const technician = employee?.user_type?.toLowerCase() === "tecnico"
       || employee?.metadata?.profile_kind?.toLowerCase() === "tecnico"
       || employee?.metadata?.role_name?.toLowerCase() === "tecnico";
-    if (technician) localStorage.setItem("role_name", "Tecnico");
-    else if (employee?.metadata?.role_name) localStorage.setItem("role_name", employee.metadata.role_name);
+    if (roleName) localStorage.setItem("role_name", roleName);
+    if (profileKind) localStorage.setItem("profile_kind", profileKind);
+    const flattened = flattenRolePermissions(employee?.metadata?.permissions);
+    if (flattened.length) {
+      localStorage.setItem("role_permissions", JSON.stringify(flattened));
+      if (employee?.metadata?.permissions && typeof employee.metadata.permissions === "object" && !Array.isArray(employee.metadata.permissions)) {
+        localStorage.setItem("role_metadata", JSON.stringify({
+          role_type: employee.metadata.role_type,
+          role_scope: employee.metadata.role_scope,
+          legacy_permissions: employee.metadata.permissions
+        }));
+      }
+      localStorage.setItem("apexos_role_context_fetched_at", String(Date.now()));
+    }
+    if (technician && !roleName) localStorage.setItem("role_name", "Tecnico");
   }
 
   async function loginWithLocalApi(loginEmail: string, loginPassword: string) {
@@ -84,6 +120,7 @@ export default function LoginPage() {
       localStorage.removeItem("role_permissions");
       localStorage.removeItem("role_metadata");
       localStorage.removeItem("role_name");
+      localStorage.removeItem("profile_kind");
       localStorage.removeItem("apexos_role_context_fetched_at");
       sessionStorage.removeItem("apexos_module_access_cache_v2");
       let authenticatedWithSupabase = false;

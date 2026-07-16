@@ -10,6 +10,7 @@ const ADMIN_ROLES_STORAGE_KEY = "apexos_admin_roles";
 const LEGACY_ADMIN_ROLES_STORAGE_KEY = "apexos_admin_roles_qa";
 const USER_MASTER_STORAGE_KEY = "apexos_user_master_data";
 const LEGACY_USER_MASTER_STORAGE_KEY = "apexos_user_master_data_qa";
+const ACTIVE_SERVICE_ORDER_STATUS_FILTER = "status=in.(agendado,pendiente,en_curso,inspeccion,ejecucion,no_ejecutada)";
 let refreshSessionInFlight: Promise<boolean> | null = null;
 const inFlightGetRequests = new Map<string, Promise<unknown>>();
 
@@ -27,6 +28,7 @@ function isSupabaseSession() {
 }
 
 type AnyRow = Record<string, unknown>;
+type AdminRole = ReturnType<typeof defaultAdminRoles>[number];
 
 const fallbackActivityTypes = [
   "Cargue de mercancia en bodega",
@@ -412,7 +414,185 @@ function storedAdminRoles() {
 }
 
 function saveStoredAdminRoles(roles: ReturnType<typeof defaultAdminRoles>) {
-  if (typeof window !== "undefined") localStorage.setItem(ADMIN_ROLES_STORAGE_KEY, JSON.stringify(roles));
+  if (typeof window !== "undefined") {
+    localStorage.setItem(ADMIN_ROLES_STORAGE_KEY, JSON.stringify(roles));
+    sessionStorage.removeItem("apexos_module_access_cache_v2");
+  }
+}
+
+function adminPermissionsFromAny(value: unknown, activeModules = getStoredTenantActiveModules()) {
+  if (!Array.isArray(value)) return filterAdminPermissions(value as Record<string, Record<string, boolean>>, activeModules);
+  const permissions = emptyAdminPermissions(activeModules);
+  for (const permission of value) {
+    const row = permission && typeof permission === "object" ? permission as AnyRow : {};
+    const permissionModule = String(row.module || row.key || "").trim().toLowerCase();
+    const actions = Array.isArray(row.actions)
+      ? row.actions
+      : [row.action, ...Object.entries(row).filter(([, allowed]) => allowed === true).map(([action]) => action)];
+    for (const item of filteredAdminPermissionCatalog(activeModules)) {
+      const moduleMatches = [item.key, item.module, item.submodule].filter(Boolean).map((candidate) => String(candidate).toLowerCase()).includes(permissionModule);
+      if (!moduleMatches && permissionModule !== "*") continue;
+      for (const action of actions.map((entry) => String(entry || "").toLowerCase())) {
+        if (action === "*") {
+          permissions[item.key] = protectPhysicalDeleteDefaults(item.actions);
+        } else if (action === "read") {
+          if (item.actions.includes("access")) permissions[item.key].access = true;
+          if (item.actions.includes("view")) permissions[item.key].view = true;
+        } else if (action === "write") {
+          if (item.actions.includes("create")) permissions[item.key].create = true;
+          if (item.actions.includes("edit")) permissions[item.key].edit = true;
+        } else if (item.actions.includes(action)) {
+          permissions[item.key][action] = true;
+        }
+      }
+    }
+  }
+  return filterAdminPermissions(permissions, activeModules);
+}
+
+function roleCatalogCode(role: Pick<AdminRole, "id" | "name"> & { code?: string; role_code?: string }) {
+  const existing = String(role.code || role.role_code || "").trim();
+  if (existing) return existing;
+  return `role_${Number(role.id) || toNumberId(role.name)}`;
+}
+
+function roleFromCatalogItem(item: {
+  id?: string;
+  code?: string;
+  name?: string;
+  description?: string;
+  active?: boolean;
+  sort_order?: number;
+  metadata?: AnyRow;
+}, activeModules = getStoredTenantActiveModules()): AdminRole {
+  const metadata = item.metadata && typeof item.metadata === "object" ? item.metadata : {};
+  const numericId = Number(metadata.role_numeric_id || metadata.role_id || String(item.code || "").match(/^role_(\d+)$/)?.[1] || 0) || toNumberId(item.id || item.code || item.name);
+  const rawPermissions = metadata.permissions || metadata.legacy_permissions || {};
+  return {
+    id: numericId,
+    name: String(metadata.role_name || item.name || "Rol").trim(),
+    description: String(item.description || metadata.description || ""),
+    active: item.active !== false && metadata.active !== false,
+    is_system: Boolean(metadata.is_system),
+    hierarchy_level: Number(metadata.hierarchy_level || item.sort_order || 10),
+    role_type: String(metadata.role_type || "custom"),
+    scope: String(metadata.scope || "company"),
+    scopes: metadata.scopes as AdminRole["scopes"] || { locations: [], areas: [], cost_centers: [], processes: [] },
+    restrictions: metadata.restrictions as AdminRole["restrictions"] || { locations: [], areas: [], cost_centers: [], processes: [] },
+    can_delegate: Boolean(metadata.can_delegate),
+    sensitive: Boolean(metadata.sensitive),
+    permissions: adminPermissionsFromAny(rawPermissions, activeModules),
+    code: item.code,
+    catalog_item_id: item.id
+  } as AdminRole;
+}
+
+async function supabaseRoleCatalogs(companyId: string) {
+  return supabaseFetch<Array<{ id: string; company_id?: string | null }>>(
+    `/rest/v1/master_catalogs?select=id,company_id&code=eq.roles&or=(company_id.eq.${encodeURIComponent(companyId)},company_id.is.null)&limit=10`
+  ).catch(() => []);
+}
+
+async function ensureSupabaseCompanyRoleCatalog(companyId: string) {
+  const catalogs = await supabaseRoleCatalogs(companyId);
+  const companyCatalog = catalogs.find((catalog) => catalog.company_id === companyId);
+  if (companyCatalog?.id) return companyCatalog.id;
+  const created = await supabaseFetch<Array<{ id: string }>>("/rest/v1/master_catalogs?select=id", {
+    method: "POST",
+    headers: { Prefer: "return=representation" },
+    body: JSON.stringify({
+      company_id: companyId,
+      code: "roles",
+      name: "Roles",
+      description: "Roles y permisos administrativos de la empresa.",
+      scope: "company",
+      active: true,
+      sort_order: 90,
+      metadata: { source: "apexos_admin_roles" }
+    })
+  });
+  if (!created[0]?.id) throw new Error("No fue posible preparar el catalogo de roles de la empresa.");
+  return created[0].id;
+}
+
+async function loadSupabaseAdminRoles() {
+  const membership = await currentSupabaseCompanyUser();
+  if (!membership?.company_id) return storedAdminRoles();
+  const activeModules = getStoredTenantActiveModules();
+  const catalogs = await supabaseRoleCatalogs(membership.company_id);
+  const catalogIds = catalogs.map((catalog) => catalog.id).filter(Boolean);
+  if (!catalogIds.length) return storedAdminRoles();
+  const items = await supabaseFetch<Array<{ id: string; catalog_id: string; company_id?: string | null; code: string; name: string; description?: string; active?: boolean; sort_order?: number; metadata?: AnyRow }>>(
+    `/rest/v1/master_catalog_items?select=id,catalog_id,company_id,code,name,description,active,sort_order,metadata&catalog_id=in.(${catalogIds.map((id) => encodeURIComponent(id)).join(",")})&order=sort_order.asc,name.asc&limit=300`
+  ).catch(() => []);
+  const remoteRoles = items
+    .filter((item) => item.company_id === membership.company_id || item.company_id == null)
+    .map((item) => roleFromCatalogItem(item, activeModules));
+  const roles = normalizeStoredAdminRoles(remoteRoles.length ? remoteRoles : storedAdminRoles(), activeModules);
+  saveStoredAdminRoles(roles);
+  return roles;
+}
+
+async function saveSupabaseAdminRole(role: AdminRole) {
+  const membership = await currentSupabaseCompanyUser();
+  if (!membership?.company_id) throw new Error("No se encontro una empresa activa para guardar el rol.");
+  const catalogId = await ensureSupabaseCompanyRoleCatalog(membership.company_id);
+  const code = roleCatalogCode(role);
+  await supabaseFetch("/rest/v1/master_catalog_items?on_conflict=catalog_id,code", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify({
+      catalog_id: catalogId,
+      company_id: membership.company_id,
+      code,
+      name: role.name,
+      description: role.description || null,
+      active: role.active !== false,
+      sort_order: Number(role.hierarchy_level || 100),
+      metadata: {
+        role_numeric_id: role.id,
+        role_name: role.name,
+        role_type: role.role_type || "custom",
+        scope: role.scope || "company",
+        scopes: role.scopes || { locations: [], areas: [], cost_centers: [], processes: [] },
+        restrictions: role.restrictions || { locations: [], areas: [], cost_centers: [], processes: [] },
+        can_delegate: Boolean(role.can_delegate),
+        sensitive: Boolean(role.sensitive),
+        is_system: Boolean(role.is_system),
+        permissions: filterAdminPermissions(role.permissions || emptyAdminPermissions()),
+        source: "apexos_admin_roles"
+      }
+    })
+  });
+  return { ...role, code };
+}
+
+async function deleteSupabaseAdminRole(role: AdminRole) {
+  const membership = await currentSupabaseCompanyUser();
+  if (!membership?.company_id) throw new Error("No se encontro una empresa activa para eliminar el rol.");
+  const catalogs = await supabaseRoleCatalogs(membership.company_id);
+  const companyCatalog = catalogs.find((catalog) => catalog.company_id === membership.company_id);
+  if (!companyCatalog?.id) return;
+  await supabaseFetch(
+    `/rest/v1/master_catalog_items?catalog_id=eq.${encodeURIComponent(companyCatalog.id)}&code=eq.${encodeURIComponent(roleCatalogCode(role))}`,
+    { method: "DELETE" }
+  );
+}
+
+async function countSupabaseUsersWithRole(role: AdminRole) {
+  const membership = await currentSupabaseCompanyUser();
+  if (!membership?.company_id) return 0;
+  const rows = await supabaseFetch<Array<{ metadata?: AnyRow }>>(
+    `/rest/v1/employees?select=metadata&company_id=eq.${encodeURIComponent(membership.company_id)}&status=eq.active&limit=1000`
+  ).catch(() => []);
+  const roleId = String(role.id);
+  const roleName = normalizeAdminRoleNameKey(role.name);
+  return rows.filter((row) => {
+    const metadata = row.metadata || {};
+    const access = metadata.access && typeof metadata.access === "object" ? metadata.access as AnyRow : {};
+    return String(metadata.role_id || access.role_id || "") === roleId
+      || normalizeAdminRoleNameKey(metadata.role_name || access.role_name) === roleName;
+  }).length;
 }
 
 function normalizeAdminRoleNameKey(value: unknown) {
@@ -735,7 +915,8 @@ async function currentSupabaseEmployee() {
 }
 
 function technicianSession() {
-  return storedRoleName() === "tecnico" && !hasBroadServiceRolePermission();
+  const profileKind = typeof window !== "undefined" ? String(localStorage.getItem("profile_kind") || "").trim().toLowerCase() : "";
+  return (storedRoleName() === "tecnico" || profileKind === "tecnico") && !hasBroadServiceRolePermission();
 }
 
 export function isServiceTechnicianSession() {
@@ -850,7 +1031,7 @@ async function accessibleSupabaseServiceOrder(orderId: string, options: { includ
   }
   const companyId = employee?.company_id || await currentSupabaseCompanyId();
   const technicianFilter = employee ? `&technician_employee_id=eq.${encodeURIComponent(employee.id)}` : "";
-  const activeFilter = technicianSession() && !options.includeFinished ? "&status=in.(pendiente,en_curso,inspeccion,ejecucion)" : "";
+  const activeFilter = technicianSession() && !options.includeFinished ? `&${ACTIVE_SERVICE_ORDER_STATUS_FILTER}` : "";
   const rows = await supabaseFetch<Array<{ id: string; company_id: string; technician_employee_id?: string; status?: string; started_at?: string; metadata?: AnyRow }>>(
     `/rest/v1/service_orders?select=id,company_id,technician_employee_id,status,started_at,metadata&id=eq.${encodeURIComponent(orderId)}&company_id=eq.${encodeURIComponent(companyId)}${technicianFilter}${activeFilter}&limit=1`
   );
@@ -2508,7 +2689,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       status ? `status=eq.${encodeURIComponent(status)}` : "",
       serviceOrderDetailMatch ? `id=eq.${encodeURIComponent(serviceOrderDetailMatch[1])}` : "",
       employee && !isVirtualEmployee(employee) ? `technician_employee_id=eq.${encodeURIComponent(employee.id)}` : "",
-      applyTechnicianScope && !serviceOrderDetailMatch ? "status=in.(pendiente,en_curso,inspeccion,ejecucion)" : ""
+      applyTechnicianScope && !serviceOrderDetailMatch ? ACTIVE_SERVICE_ORDER_STATUS_FILTER : ""
     ].filter(Boolean).join("&");
     const orders = await supabaseFetch<Array<{
       id: string;
@@ -2601,7 +2782,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   }
 
   if (pathname === "/api/v1/admin/roles") {
-    const roles = storedAdminRoles();
+    const roles = await loadSupabaseAdminRoles().catch(() => storedAdminRoles());
     if (method === "POST") {
       const body = JSON.parse(String(options.body || "{}"));
       const name = String(body.name || body.nombre || "Nuevo rol").trim().replace(/\s+/g, " ");
@@ -2622,22 +2803,26 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         sensitive: Boolean(body.sensitive),
         permissions: filterAdminPermissions(body.permissions || emptyAdminPermissions())
       };
-      const next = [...roles, role];
+      const persisted = await saveSupabaseAdminRole(role);
+      const next = [...roles, persisted];
       saveStoredAdminRoles(next);
-      return role as T;
+      return persisted as T;
     }
     return roles as T;
   }
 
   const adminRoleMatch = pathname.match(/^\/api\/v1\/admin\/roles\/(\d+)(?:\/status)?$/);
   if (adminRoleMatch) {
-    const roles = storedAdminRoles();
+    const roles = await loadSupabaseAdminRoles().catch(() => storedAdminRoles());
     const roleId = Number(adminRoleMatch[1]);
     const body = JSON.parse(String(options.body || "{}"));
     const current = roles.find((role) => role.id === roleId);
     if (method === "DELETE") {
       if (!current) return { ok: true, id: roleId } as T;
       if (current.is_system || current.name === "APEX_ADMIN") throw new Error("Los roles de sistema no se pueden eliminar.");
+      const assignedUsers = await countSupabaseUsersWithRole(current);
+      if (assignedUsers > 0) throw new Error(`No se puede eliminar este rol porque tiene ${assignedUsers} usuario(s) asignado(s). Reasigna o inactiva esos usuarios primero.`);
+      await deleteSupabaseAdminRole(current);
       const next = roles.filter((role) => role.id !== roleId);
       saveStoredAdminRoles(next);
       return { ok: true, id: roleId } as T;
@@ -2659,8 +2844,10 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       sensitive: body.sensitive ?? role.sensitive ?? false,
         permissions: filterAdminPermissions(body.permissions || role.permissions)
     } : role);
+    const persisted = next.find((role) => role.id === roleId);
+    if (persisted) await saveSupabaseAdminRole(persisted);
     saveStoredAdminRoles(next);
-    return (next.find((role) => role.id === roleId) || null) as T;
+    return (persisted || null) as T;
   }
 
   if (pathname === "/api/v1/admin/user-master-data") {
@@ -2807,7 +2994,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   }
 
   if (pathname === "/api/v1/admin/users") {
-    const roles = storedAdminRoles();
+    const roles = await loadSupabaseAdminRoles().catch(() => storedAdminRoles());
     if (method === "POST") {
       const body = JSON.parse(String(options.body || "{}"));
       const fullName = body.name || `${body.first_names || ""} ${body.last_names || ""}`.trim() || body.email || "Usuario";
@@ -2817,7 +3004,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         const response = await fetch("/api/admin/users", {
           method: "POST",
           headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ ...body, role_name: role.name })
+          body: JSON.stringify({ ...body, role_name: role.name, role_permissions: role.permissions, role_type: role.role_type, role_scope: role.scope })
         });
         if (response.ok) {
           const created = await response.json() as { user_id: string; employee?: AnyRow };
@@ -2910,9 +3097,16 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   if (adminUserMatch && ["PUT", "PATCH"].includes(method)) {
     const body = options.body ? JSON.parse(String(options.body)) : {};
     const employeeId = adminUserMatch[1];
+    const roles = await loadSupabaseAdminRoles().catch(() => storedAdminRoles());
+    const role = roles.find((item) => item.id === Number(body.role_id));
     const nextApiOk = await nextAdminUsersRequest({
       method: "PATCH",
-      body: JSON.stringify({ employee_id: employeeId, action: pathname.endsWith("/status") ? "status" : "update", ...body })
+      body: JSON.stringify({
+        employee_id: employeeId,
+        action: pathname.endsWith("/status") ? "status" : "update",
+        ...body,
+        ...(role ? { role_name: role.name, role_permissions: role.permissions, role_type: role.role_type, role_scope: role.scope } : {})
+      })
     }).then(() => true).catch((error) => {
       safeDevLog("No fue posible actualizar usuario via Next API.", error);
       return false;
@@ -2932,7 +3126,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         const lastName = body.last_names || (nameParts.length > 1 ? nameParts.slice(-1).join(" ") : "") || current.last_name || "";
         const nextEmail = body.email || body.access_email || current.email || "";
         const nextRoleId = body.role_id || metadata.role_id || access.role_id;
-        const nextRoleName = body.role_name || metadata.role_name || access.role_name;
+        const nextRoleName = role?.name || body.role_name || metadata.role_name || access.role_name;
+        const nextPermissions = role?.permissions || body.role_permissions || metadata.permissions;
         await supabaseFetch(`/rest/v1/employees?id=eq.${encodeURIComponent(current.id)}`, {
           method: "PATCH",
           body: JSON.stringify({
@@ -2947,6 +3142,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
               name: fullName || metadata.name,
               role_id: nextRoleId,
               role_name: nextRoleName,
+              role_type: role?.role_type || body.role_type || metadata.role_type,
+              permissions: nextPermissions,
               document: body.document || current.document_number || metadata.document,
               document_type: body.document_type || current.document_type || metadata.document_type || "CC",
               company: body.company || metadata.company,
@@ -2955,6 +3152,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
                 ...access,
                 role_id: nextRoleId,
                 role_name: nextRoleName,
+                role_type: role?.role_type || body.role_type || access.role_type,
                 email: nextEmail,
                 site: body.site || body.base_site || access.site || "",
                 require_password_change: body.require_password_change === undefined ? access.require_password_change : Boolean(body.require_password_change)
