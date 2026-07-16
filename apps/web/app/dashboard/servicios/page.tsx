@@ -294,7 +294,10 @@ async function loadSupabaseMonitorOrders() {
   const response = await fetch(`/api/services/monitor-orders?${query.toString()}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
-  if (!response.ok) return [];
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({})) as { message?: string };
+    throw new Error(body.message || "No fue posible consultar el monitor de servicios.");
+  }
   const body = await response.json() as OrdersResponse;
   return Array.isArray(body.data) ? body.data : [];
 }
@@ -323,14 +326,21 @@ export default function ServicesPage() {
   async function load() {
     try {
       setMessage("");
-      const [apiResult, supabaseResult] = await Promise.allSettled([
-        api<OrdersResponse>("/api/v1/services/orders?limit=200"),
-        loadSupabaseMonitorOrders()
-      ]);
-      const apiOrders = apiResult.status === "fulfilled" ? apiResult.value.data : [];
-      const supabaseOrders = supabaseResult.status === "fulfilled" ? supabaseResult.value : [];
-      if (!apiOrders.length && !supabaseOrders.length && apiResult.status === "rejected") throw apiResult.reason;
-      setOrders(mergeOrders([...supabaseOrders, ...apiOrders]).map(effectiveOrder));
+      const supabaseSession = localStorage.getItem("auth_provider") === "supabase";
+      if (supabaseSession) {
+        try {
+          const supabaseOrders = await loadSupabaseMonitorOrders();
+          setOrders(mergeOrders(supabaseOrders).map(effectiveOrder));
+          return;
+        } catch (error) {
+          const response = await api<OrdersResponse>("/api/v1/services/orders?limit=200");
+          setOrders(mergeOrders(response.data || []).map(effectiveOrder));
+          if (!response.data?.length) throw error;
+          return;
+        }
+      }
+      const response = await api<OrdersResponse>("/api/v1/services/orders?limit=200");
+      setOrders(mergeOrders(response.data || []).map(effectiveOrder));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No fue posible cargar servicios.");
       setOrders([]);
