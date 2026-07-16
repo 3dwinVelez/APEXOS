@@ -116,8 +116,7 @@ async function currentAuthUserId(request: NextRequest) {
   return data.id || "";
 }
 
-async function userCompanies(request: NextRequest) {
-  const userId = await currentAuthUserId(request);
+async function userCompaniesForUser(userId: string) {
   if (!userId) return [] as UserCompany[];
   return supabaseRequest<UserCompany[]>(
     `/rest/v1/company_users?select=company_id,role,status&user_id=eq.${encodeURIComponent(userId)}&status=eq.active&limit=20`
@@ -128,11 +127,10 @@ function isAdminCompanyRole(role: unknown) {
   return ["owner", "admin", "superadmin", "administrador", "administrador de empresa"].includes(String(role || "").trim().toLowerCase());
 }
 
-async function resolveCompanyIds(request: NextRequest) {
+async function resolveCompanyIds(request: NextRequest, memberships: UserCompany[]) {
   const { publicCompanyId } = supabaseConfig();
   const requestedCompanyId = request.nextUrl.searchParams.get("company_id")?.trim() || "";
   const companyName = request.nextUrl.searchParams.get("empresa")?.trim() || "SCJ";
-  const memberships = await userCompanies(request);
   const membershipCompanyIds = Array.from(new Set(memberships.map((item) => item.company_id).filter((id) => isUuid(id))));
   if (membershipCompanyIds.length) return membershipCompanyIds;
 
@@ -152,11 +150,9 @@ async function resolveCompanyIds(request: NextRequest) {
   return fallbackCompanies[0]?.id ? [fallbackCompanies[0].id] : [];
 }
 
-async function resolveServiceScope(request: NextRequest): Promise<ServiceScope> {
-  const userId = await currentAuthUserId(request);
-  const companyIds = await resolveCompanyIds(request);
+async function resolveServiceScope(request: NextRequest, userId: string, memberships: UserCompany[]): Promise<ServiceScope> {
+  const companyIds = await resolveCompanyIds(request, memberships);
   if (!userId || !companyIds.length) return { companyIds, technicianOnly: false };
-  const memberships = await userCompanies(request);
   const companyIdSet = new Set(companyIds);
   if (memberships.some((membership) => companyIdSet.has(membership.company_id) && isAdminCompanyRole(membership.role))) {
     return { companyIds, technicianOnly: false };
@@ -214,7 +210,9 @@ export async function GET(request: NextRequest) {
     if (!request.headers.get("authorization")) {
       return jsonError("Sesion requerida para consultar el monitor de servicios.", 401);
     }
-    const scope = await resolveServiceScope(request);
+    const userId = await currentAuthUserId(request);
+    const memberships = await userCompaniesForUser(userId);
+    const scope = await resolveServiceScope(request, userId, memberships);
     if (!scope.companyIds.length) return jsonError("No se encontro una empresa activa para consultar ordenes.", 404);
 
     const limit = Math.min(Math.max(Number(request.nextUrl.searchParams.get("limit") || 200), 1), 300);
@@ -259,9 +257,26 @@ export async function GET(request: NextRequest) {
         : Promise.resolve([])
     ]);
 
+    const referencesById = new Map<string, (typeof references)[number]>();
+    const techniciansById = new Map<string, (typeof technicians)[number]>();
+    const incidentsByOrder = new Map<string, typeof incidents>();
+    const evidenceByOrder = new Map<string, typeof evidence>();
+    for (const reference of references) referencesById.set(reference.id, reference);
+    for (const technician of technicians) techniciansById.set(technician.id, technician);
+    for (const incident of incidents) {
+      const current = incidentsByOrder.get(incident.order_id) || [];
+      current.push(incident);
+      incidentsByOrder.set(incident.order_id, current);
+    }
+    for (const item of evidence) {
+      const current = evidenceByOrder.get(item.order_id) || [];
+      current.push(item);
+      evidenceByOrder.set(item.order_id, current);
+    }
+
     const mapped = orders.map((order) => {
-      const reference = references.find((item) => item.id === order.reference_id);
-      const technician = technicians.find((item) => item.id === order.technician_employee_id);
+      const reference = order.reference_id ? referencesById.get(order.reference_id) : undefined;
+      const technician = order.technician_employee_id ? techniciansById.get(order.technician_employee_id) : undefined;
       const metadata = {
         ...(order.metadata || {}),
         external_reference_id: order.reference_id || "",
@@ -295,8 +310,8 @@ export async function GET(request: NextRequest) {
         created_at: order.created_at || "",
         notes: order.notes || "",
         metadata,
-        incidents: incidents.filter((item) => item.order_id === order.id),
-        photos: evidence.filter((item) => item.order_id === order.id).map((item) => ({
+        incidents: incidentsByOrder.get(order.id) || [],
+        photos: (evidenceByOrder.get(order.id) || []).map((item) => ({
           ...item,
           type: String(item.metadata?.original_type || item.evidence_type || "")
         }))
