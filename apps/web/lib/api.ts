@@ -1,5 +1,5 @@
 import { assertActiveSession, clearSession, emitAppAlert, keepSessionAlive, setPasswordChangeRequired, touchSession } from "./sessionSecurity";
-import { getSupabaseAccessToken, supabaseAuth, supabaseFetch } from "./supabaseClient";
+import { clearSupabaseFetchCache, getSupabaseAccessToken, supabaseAuth, supabaseFetch } from "./supabaseClient";
 import { getServiceImageUrl, uploadServiceImageData } from "./supabaseStorage";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
@@ -12,8 +12,20 @@ const ADMIN_ROLE_DELETIONS_STORAGE_KEY = "apexos_admin_role_deletions";
 const USER_MASTER_STORAGE_KEY = "apexos_user_master_data";
 const LEGACY_USER_MASTER_STORAGE_KEY = "apexos_user_master_data_qa";
 const ACTIVE_SERVICE_ORDER_STATUS_FILTER = "status=in.(agendado,pendiente,en_curso,inspeccion,ejecucion,no_ejecutada)";
+const API_GET_CACHE_TTL_MS = Number(process.env.NEXT_PUBLIC_API_GET_CACHE_TTL_MS || 10000);
 let refreshSessionInFlight: Promise<boolean> | null = null;
 const inFlightGetRequests = new Map<string, Promise<unknown>>();
+const completedGetRequests = new Map<string, { at: number; value: unknown }>();
+
+function clearApiReadCaches() {
+  inFlightGetRequests.clear();
+  completedGetRequests.clear();
+  clearSupabaseFetchCache();
+  if (typeof window !== "undefined") {
+    sessionStorage.removeItem("apexos_module_access_cache");
+    sessionStorage.removeItem("apexos_module_access_cache_v2");
+  }
+}
 
 function isSupabaseSession() {
   if (typeof window === "undefined") return false;
@@ -1143,6 +1155,7 @@ async function currentSupabaseCompanyUser() {
 async function nextAdminUsersRequest<T>(init: RequestInit = {}, query = "") {
   const token = getSupabaseAccessToken();
   if (!token) throw new Error("Sesion requerida para gestionar usuarios.");
+  const method = String(init.method || "GET").toUpperCase();
   const response = await fetch(`/api/admin/users${query}`, {
     ...init,
     headers: {
@@ -1155,12 +1168,14 @@ async function nextAdminUsersRequest<T>(init: RequestInit = {}, query = "") {
     const body = await response.json().catch(() => ({ message: response.statusText }));
     throw new Error(body.message || "No fue posible gestionar usuarios.");
   }
+  if (method !== "GET") clearApiReadCaches();
   return response.json() as Promise<T>;
 }
 
 async function nextAdminRolesRequest<T>(init: RequestInit = {}) {
   const token = getSupabaseAccessToken();
   if (!token) throw new Error("Sesion requerida para gestionar roles.");
+  const method = String(init.method || "GET").toUpperCase();
   const response = await fetch("/api/admin/roles", {
     ...init,
     headers: {
@@ -1173,6 +1188,7 @@ async function nextAdminRolesRequest<T>(init: RequestInit = {}) {
     const body = await response.json().catch(() => ({ message: response.statusText }));
     throw new Error(body.message || "No fue posible gestionar roles.");
   }
+  if (method !== "GET") clearApiReadCaches();
   return response.json() as Promise<T>;
 }
 
@@ -2813,17 +2829,20 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     if (serviceOrderDetailMatch && !orders[0]) return null as T;
     const orderIds = orders.map((order) => order.id);
     const orderFilter = orderIds.length ? `&order_id=in.(${orderIds.join(",")})` : "&order_id=is.null";
+    const referenceIds = Array.from(new Set(orders.map((order) => order.reference_id).filter(Boolean) as string[]));
+    const referenceFilter = referenceIds.length ? `&id=in.(${referenceIds.join(",")})` : "&id=is.null";
+    const referencePartFilter = referenceIds.length ? `&reference_id=in.(${referenceIds.join(",")})` : "&reference_id=is.null";
     const technicianIds = Array.from(new Set(orders.map((order) => order.technician_employee_id).filter(Boolean) as string[]));
     const technicianFilter = technicianIds.length ? `&id=in.(${technicianIds.join(",")})` : "&id=is.null";
     const evidenceSelect = serviceOrderDetailMatch
       ? "id,order_id,evidence_type,file_url,storage_bucket,storage_path,mime_type,size_bytes,metadata,created_at"
       : "id,order_id,evidence_type,storage_bucket,storage_path,mime_type,size_bytes,metadata,created_at";
     const [refs, parts, incidents, evidence, technicians] = await Promise.all([
-      supabaseFetch<Array<{ id: string; code: string; name: string; category?: string; estimated_minutes?: number; brand?: string; model?: string; metadata?: AnyRow }>>(`/rest/v1/service_references?select=id,code,name,category,estimated_minutes,brand,model,metadata&company_id=eq.${encodeURIComponent(companyId)}&code=neq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&limit=200`).catch((error) => {
+      supabaseFetch<Array<{ id: string; code: string; name: string; category?: string; estimated_minutes?: number; brand?: string; model?: string; metadata?: AnyRow }>>(`/rest/v1/service_references?select=id,code,name,category,estimated_minutes,brand,model,metadata&company_id=eq.${encodeURIComponent(companyId)}${referenceFilter}&limit=200`).catch((error) => {
         safeDevLog("No fue posible consultar referencias de servicios Supabase.", error);
         return [];
       }),
-      supabaseFetch<Array<{ id: string; reference_id: string; name: string; quantity: number; unit: string; display_order?: number }>>("/rest/v1/service_reference_parts?select=id,reference_id,name,quantity,unit,display_order&order=display_order.asc&limit=1000").catch((error) => {
+      supabaseFetch<Array<{ id: string; reference_id: string; name: string; quantity: number; unit: string; display_order?: number }>>(`/rest/v1/service_reference_parts?select=id,reference_id,name,quantity,unit,display_order${referencePartFilter}&order=display_order.asc&limit=500`).catch((error) => {
         safeDevLog("No fue posible consultar partes de referencias Supabase.", error);
         return [];
       }),
@@ -2844,14 +2863,37 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const resolvedEvidence = serviceOrderDetailMatch
       ? await Promise.all(evidence.map(resolveServiceEvidencePhoto))
       : evidence;
+    const refsById = new Map<string, (typeof refs)[number]>();
+    const partsByReference = new Map<string, typeof parts>();
+    const incidentsByOrder = new Map<string, typeof incidents>();
+    const evidenceByOrder = new Map<string, typeof resolvedEvidence>();
+    const techniciansById = new Map<string, (typeof technicians)[number]>();
+    for (const ref of refs) refsById.set(ref.id, ref);
+    for (const technician of technicians) techniciansById.set(technician.id, technician);
+    for (const part of parts) {
+      const current = partsByReference.get(part.reference_id) || [];
+      current.push(part);
+      partsByReference.set(part.reference_id, current);
+    }
+    for (const incident of incidents) {
+      const current = incidentsByOrder.get(incident.order_id) || [];
+      current.push(incident);
+      incidentsByOrder.set(incident.order_id, current);
+    }
+    for (const item of resolvedEvidence) {
+      const current = evidenceByOrder.get(item.order_id) || [];
+      current.push(item);
+      evidenceByOrder.set(item.order_id, current);
+    }
     const mapped = orders.map((order) => {
-      const reference = refs.find((ref) => ref.id === order.reference_id);
+      const reference = order.reference_id ? refsById.get(order.reference_id) : undefined;
       const referenceWithParts = reference ? {
         ...reference,
-        parts: parts.filter((part) => part.reference_id === reference.id),
+        parts: partsByReference.get(reference.id) || [],
         manuals: Array.isArray(reference.metadata?.manuals) ? reference.metadata.manuals : []
       } : null;
-      const technician = technicians.find((item) => item.id === order.technician_employee_id);
+      const technician = order.technician_employee_id ? techniciansById.get(order.technician_employee_id) : undefined;
+      const orderEvidence = evidenceByOrder.get(order.id) || [];
       const effectiveStatus = effectiveServiceOrderStatus(order);
       return {
         ...order,
@@ -2868,9 +2910,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         status: effectiveStatus,
         customer_phone: order.customer_phone || "",
         scheduled_date: order.scheduled_date || "",
-        incidents: incidents.filter((item) => item.order_id === order.id),
-        photos: resolvedEvidence.filter((item) => item.order_id === order.id).map((item) => ({ ...item, type: String(item.metadata?.original_type || item.evidence_type || "") })),
-        evidence: resolvedEvidence.filter((item) => item.order_id === order.id).map((item) => ({ ...item, type: String(item.metadata?.original_type || item.evidence_type || "") })),
+        incidents: incidentsByOrder.get(order.id) || [],
+        photos: orderEvidence.map((item) => ({ ...item, type: String(item.metadata?.original_type || item.evidence_type || "") })),
+        evidence: orderEvidence.map((item) => ({ ...item, type: String(item.metadata?.original_type || item.evidence_type || "") })),
         inspection_items: referenceWithParts?.parts?.map((part) => ({ part_id: part.id, name: part.name, status: "pendiente" })) || []
       };
     });
@@ -3215,12 +3257,20 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
 
 export async function api<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
   const method = String(options.method || "GET").toUpperCase();
+  if (method !== "GET") clearApiReadCaches();
   const cacheKey = method === "GET" && !retried ? `${isSupabaseSession() ? "supabase" : "api"}:${path}` : "";
+  if (cacheKey) {
+    const completed = completedGetRequests.get(cacheKey);
+    if (completed && Date.now() - completed.at <= API_GET_CACHE_TTL_MS) return completed.value as T;
+  }
   if (cacheKey && inFlightGetRequests.has(cacheKey)) return inFlightGetRequests.get(cacheKey) as Promise<T>;
   const request = apiInternal<T>(path, options, retried);
   if (!cacheKey) return request;
   inFlightGetRequests.set(cacheKey, request);
-  void request.finally(() => inFlightGetRequests.delete(cacheKey)).catch(() => undefined);
+  void request
+    .then((value) => completedGetRequests.set(cacheKey, { at: Date.now(), value }))
+    .catch(() => completedGetRequests.delete(cacheKey))
+    .finally(() => inFlightGetRequests.delete(cacheKey));
   return request;
 }
 
