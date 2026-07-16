@@ -12,6 +12,8 @@ type ServiceScope = {
   technicianOnly: boolean;
 };
 
+const ACTIVE_SERVICE_ORDER_STATUS_FILTER = "status=in.(agendado,pendiente,en_curso,inspeccion,ejecucion,no_ejecutada)";
+
 function jsonError(message: string, status = 400) {
   return NextResponse.json({ message }, { status });
 }
@@ -187,6 +189,17 @@ function kpisForOrders(orders: Array<{ status?: string }>) {
   };
 }
 
+function effectiveServiceOrderStatus(order: { status?: string; technician_employee_id?: string; metadata?: AnyRow }) {
+  if (
+    order.status === "pendiente"
+    && !order.technician_employee_id
+    && (order.metadata?.preorder_status === "agendado" || order.metadata?.requires_admin_completion === true)
+  ) {
+    return "agendado";
+  }
+  return order.status || "agendado";
+}
+
 export async function GET(request: NextRequest) {
   try {
     if (!request.headers.get("authorization")) {
@@ -198,7 +211,7 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(Math.max(Number(request.nextUrl.searchParams.get("limit") || 200), 1), 300);
     const companyFilter = compactInFilter(scope.companyIds);
     const technicianFilter = scope.technicianEmployeeId ? `&technician_employee_id=eq.${encodeURIComponent(scope.technicianEmployeeId)}` : "";
-    const statusFilter = scope.technicianOnly ? "&status=in.(pendiente,en_curso,inspeccion,ejecucion)" : "";
+    const statusFilter = scope.technicianOnly ? `&${ACTIVE_SERVICE_ORDER_STATUS_FILTER}` : "";
     const orders = await supabaseRequest<Array<{
       id: string;
       company_id: string;
@@ -247,6 +260,7 @@ export async function GET(request: NextRequest) {
         external_reference_name: reference?.name || String(order.metadata?.external_reference_name || ""),
         external_reference_label: referenceLabel(reference) || String(order.metadata?.product_reference || order.metadata?.product_description || "")
       };
+      const effectiveStatus = effectiveServiceOrderStatus(order);
       return {
         id: order.id,
         number: order.number,
@@ -261,7 +275,7 @@ export async function GET(request: NextRequest) {
           }
         } : null,
         service_type: order.service_type || "servicio",
-        status: order.status || "agendado",
+        status: effectiveStatus,
         customer_name: order.customer_name || "",
         customer_address: order.customer_address || "",
         customer_phone: order.customer_phone || "",

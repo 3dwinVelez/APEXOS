@@ -1,5 +1,6 @@
 import { ApexModule } from "./modules";
 import { CompanyModuleStatus, listActivePlatformAdmins, listCompanyModuleStatus, listUserCompanies } from "./supabaseQa";
+import { supabaseFetch } from "./supabaseClient";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 const HAS_CONFIGURED_API_URL = Boolean(process.env.NEXT_PUBLIC_API_URL);
@@ -27,6 +28,7 @@ type UserCompany = {
 type StoredRolePermission = {
   module?: string;
   action?: string;
+  actions?: string[];
 };
 
 type StoredLegacyPermissions = Record<string, Record<string, boolean>>;
@@ -143,6 +145,60 @@ function getStoredRolePermissions(): StoredRolePermission[] | null {
     localStorage.removeItem("role_permissions");
     return null;
   }
+}
+
+function flattenRolePermissions(value: unknown): StoredRolePermission[] {
+  if (Array.isArray(value)) {
+    return value.flatMap((permission) => {
+      const row = permission && typeof permission === "object" ? permission as Record<string, unknown> : {};
+      const permissionModule = String(row.module || row.key || "").trim();
+      const actions = Array.isArray(row.actions)
+        ? row.actions
+        : [row.action, ...Object.entries(row).filter(([, allowed]) => allowed === true).map(([action]) => action)];
+      return actions.map((action) => ({ module: permissionModule, action: String(action || "").trim() })).filter((item) => item.module && item.action);
+    });
+  }
+  if (value && typeof value === "object") {
+    return Object.entries(value as Record<string, Record<string, boolean>>).flatMap(([key, actions]) => (
+      Object.entries(actions || {}).filter(([, allowed]) => allowed === true).map(([action]) => ({ module: key, action }))
+    ));
+  }
+  return [];
+}
+
+async function refreshSupabaseEmployeeRoleContext(companyId?: string) {
+  if (typeof window === "undefined" || !isSupabaseSession()) return null;
+  const userId = currentSupabaseUserId();
+  const email = localStorage.getItem("user_email") || "";
+  const filters = [
+    userId ? `user_id=eq.${encodeURIComponent(userId)}` : "",
+    !userId && email ? `email=eq.${encodeURIComponent(email)}` : "",
+    companyId ? `company_id=eq.${encodeURIComponent(companyId)}` : "",
+    "status=eq.active"
+  ].filter(Boolean).join("&");
+  if (!filters) return null;
+  const rows = await supabaseFetch<Array<{ user_type?: string; metadata?: Record<string, unknown> }>>(
+    `/rest/v1/employees?select=user_type,metadata&${filters}&limit=1`
+  ).catch(() => []);
+  const employee = rows[0];
+  const metadata = employee?.metadata || {};
+  const permissions = flattenRolePermissions(metadata.permissions);
+  if (permissions.length) {
+    localStorage.setItem("role_permissions", JSON.stringify(permissions));
+    if (metadata.permissions && typeof metadata.permissions === "object" && !Array.isArray(metadata.permissions)) {
+      localStorage.setItem("role_metadata", JSON.stringify({
+        role_type: metadata.role_type,
+        role_scope: metadata.role_scope,
+        legacy_permissions: metadata.permissions
+      }));
+    }
+  }
+  const roleName = String(metadata.role_name || "").trim();
+  const profileKind = String(metadata.profile_kind || employee?.user_type || "").trim().toLowerCase();
+  if (roleName) localStorage.setItem("role_name", roleName);
+  if (profileKind) localStorage.setItem("profile_kind", profileKind);
+  if (permissions.length || roleName || profileKind) localStorage.setItem(ROLE_CONTEXT_FETCHED_AT_KEY, String(Date.now()));
+  return employee || null;
 }
 
 function hasFreshRoleContext() {
@@ -382,6 +438,7 @@ export async function loadModuleAccess(modules: ApexModule[]): Promise<ModuleAcc
         if (selectedCompany?.company_name) localStorage.setItem("apexos_company_name", selectedCompany.company_name);
         if (selectedCompany?.role && !localStorage.getItem("role_name")) localStorage.setItem("role_name", selectedCompany.role);
       }
+      await refreshSupabaseEmployeeRoleContext(companyId);
 
       const statuses = await listCompanyModuleStatus(companyId, 100).catch(() => []) as CompanyModuleStatus[];
       if (!statuses.length) return stateFromCachedTenantModules(modules) || { loading: false, isPlatformAdmin: false, bySlug: {} };
