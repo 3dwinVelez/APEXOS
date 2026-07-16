@@ -121,6 +121,7 @@ export default function LoginPage() {
       localStorage.removeItem("role_metadata");
       localStorage.removeItem("role_name");
       localStorage.removeItem("profile_kind");
+      localStorage.removeItem("apexos_company_role");
       localStorage.removeItem("apexos_role_context_fetched_at");
       sessionStorage.removeItem("apexos_module_access_cache_v2");
       let authenticatedWithSupabase = false;

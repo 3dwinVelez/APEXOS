@@ -801,6 +801,8 @@ function storedRoleName() {
 function hasBroadServiceRolePermission() {
   if (typeof window === "undefined") return false;
   const roleName = storedRoleName();
+  const companyRole = String(localStorage.getItem("apexos_company_role") || "").trim().toLowerCase();
+  if (["owner", "admin", "superadmin", "administrador", "administrador de empresa"].includes(companyRole)) return true;
   if (["admin", "owner", "superadmin", "administrador", "administrador de empresa", "supervisor operativo", "soporte tecnico"].includes(roleName)) return true;
   try {
     const permissions = JSON.parse(localStorage.getItem("role_permissions") || "[]");
@@ -860,7 +862,9 @@ function operationalRouteKey(row: { route_id?: unknown; metadata?: AnyRow }) {
 
 async function currentSupabaseEmployee() {
   const userId = currentSupabaseUserId();
+  const membership = await currentSupabaseCompanyUser();
   const userFilter = userId ? `&user_id=eq.${userId}` : "";
+  const companyFilter = membership?.company_id ? `&company_id=eq.${encodeURIComponent(membership.company_id)}` : "";
   const rows = await supabaseFetch<Array<{
     id: string;
     company_id?: string;
@@ -872,10 +876,9 @@ async function currentSupabaseEmployee() {
     position?: string;
     user_type?: string;
     metadata?: AnyRow;
-  }>>(`/rest/v1/employees?select=id,company_id,user_id,first_name,last_name,email,document_number,position,user_type,metadata&status=eq.active${userFilter}&order=created_at.desc&limit=1`);
+  }>>(`/rest/v1/employees?select=id,company_id,user_id,first_name,last_name,email,document_number,position,user_type,metadata&status=eq.active${userFilter}${companyFilter}&order=created_at.desc&limit=1`);
   if (rows[0]) return rows[0];
 
-  const membership = await currentSupabaseCompanyUser();
   if (!membership?.company_id || !userId) return null;
   const email = currentSupabaseUserEmail();
   const userName = currentSupabaseUserName();
@@ -1025,13 +1028,15 @@ function identityKeys(row: {
 }
 
 async function accessibleSupabaseServiceOrder(orderId: string, options: { includeFinished?: boolean } = {}) {
-  const employee = technicianSession() ? await currentSupabaseEmployee() : null;
-  if (technicianSession() && (!employee || isVirtualEmployee(employee))) {
+  const membership = await currentSupabaseCompanyUser();
+  const applyTechnicianScope = technicianSession() && !isAdminCompanyMembership(membership);
+  const employee = applyTechnicianScope ? await currentSupabaseEmployee() : null;
+  if (applyTechnicianScope && (!employee || isVirtualEmployee(employee))) {
     throw new Error("No se encontro una ficha tecnica activa para operar servicios.");
   }
-  const companyId = employee?.company_id || await currentSupabaseCompanyId();
+  const companyId = employee?.company_id || membership?.company_id || await currentSupabaseCompanyId();
   const technicianFilter = employee ? `&technician_employee_id=eq.${encodeURIComponent(employee.id)}` : "";
-  const activeFilter = technicianSession() && !options.includeFinished ? `&${ACTIVE_SERVICE_ORDER_STATUS_FILTER}` : "";
+  const activeFilter = applyTechnicianScope && !options.includeFinished ? `&${ACTIVE_SERVICE_ORDER_STATUS_FILTER}` : "";
   const rows = await supabaseFetch<Array<{ id: string; company_id: string; technician_employee_id?: string; status?: string; started_at?: string; metadata?: AnyRow }>>(
     `/rest/v1/service_orders?select=id,company_id,technician_employee_id,status,started_at,metadata&id=eq.${encodeURIComponent(orderId)}&company_id=eq.${encodeURIComponent(companyId)}${technicianFilter}${activeFilter}&limit=1`
   );
@@ -1053,6 +1058,7 @@ async function currentSupabaseCompanyUser() {
   if (selected && typeof window !== "undefined") {
     localStorage.setItem("apexos_company_id", selected.company_id);
     if (selected.company_name) localStorage.setItem("apexos_company_name", selected.company_name);
+    if (selected.role) localStorage.setItem("apexos_company_role", selected.role);
   }
   return selected;
 }
@@ -1238,7 +1244,7 @@ function normalizeSatisfactionQuestions(rows: unknown) {
 
 async function currentSupabaseCompanyId() {
   const membership = await currentSupabaseCompanyUser().catch(() => null);
-  if (!technicianSession() && membership?.company_id) return membership.company_id;
+  if ((!technicianSession() || isAdminCompanyMembership(membership)) && membership?.company_id) return membership.company_id;
   const employee = await currentSupabaseEmployee().catch(() => null);
   const companyId = employee?.company_id || membership?.company_id;
   if (!companyId) throw new Error("No se encontro una empresa activa para servicios.");
