@@ -8,6 +8,7 @@ const API_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_API_TIMEOUT_MS || 20000);
 const HAS_CONFIGURED_API_URL = Boolean(process.env.NEXT_PUBLIC_API_URL);
 const ADMIN_ROLES_STORAGE_KEY = "apexos_admin_roles";
 const LEGACY_ADMIN_ROLES_STORAGE_KEY = "apexos_admin_roles_qa";
+const ADMIN_ROLE_DELETIONS_STORAGE_KEY = "apexos_admin_role_deletions";
 const USER_MASTER_STORAGE_KEY = "apexos_user_master_data";
 const LEGACY_USER_MASTER_STORAGE_KEY = "apexos_user_master_data_qa";
 const ACTIVE_SERVICE_ORDER_STATUS_FILTER = "status=in.(agendado,pendiente,en_curso,inspeccion,ejecucion,no_ejecutada)";
@@ -391,16 +392,63 @@ function defaultAdminRoles(activeModules = getStoredTenantActiveModules()) {
   ];
 }
 
-function normalizeStoredAdminRoles(roles: ReturnType<typeof defaultAdminRoles>, activeModules = getStoredTenantActiveModules()) {
+function adminRoleDeletionStorageKey(companyId?: string | null) {
+  const suffix = companyId || (typeof window !== "undefined" ? localStorage.getItem("apexos_company_id") : "") || "default";
+  return `${ADMIN_ROLE_DELETIONS_STORAGE_KEY}:${suffix}`;
+}
+
+function adminRoleDeletionKeys(role: Pick<AdminRole, "id" | "name"> & { code?: string; role_code?: string }) {
+  const code = roleCatalogCode(role);
+  const id = Number(role.id);
+  return new Set([`code:${code}`, ...(id ? [`id:${id}`] : [])]);
+}
+
+function readDeletedAdminRoleKeys(companyId?: string | null) {
+  if (typeof window === "undefined") return new Set<string>();
+  try {
+    const parsed = JSON.parse(localStorage.getItem(adminRoleDeletionStorageKey(companyId)) || "[]");
+    return new Set(Array.isArray(parsed) ? parsed.map((item) => String(item)) : []);
+  } catch {
+    return new Set<string>();
+  }
+}
+
+function writeDeletedAdminRoleKeys(keys: Set<string>, companyId?: string | null) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(adminRoleDeletionStorageKey(companyId), JSON.stringify(Array.from(keys).sort()));
+}
+
+function rememberDeletedAdminRole(role: Pick<AdminRole, "id" | "name"> & { code?: string; role_code?: string }, companyId?: string | null) {
+  const keys = readDeletedAdminRoleKeys(companyId);
+  for (const key of adminRoleDeletionKeys(role)) keys.add(key);
+  writeDeletedAdminRoleKeys(keys, companyId);
+}
+
+function forgetDeletedAdminRole(role: Pick<AdminRole, "id" | "name"> & { code?: string; role_code?: string }, companyId?: string | null) {
+  const keys = readDeletedAdminRoleKeys(companyId);
+  for (const key of adminRoleDeletionKeys(role)) keys.delete(key);
+  writeDeletedAdminRoleKeys(keys, companyId);
+}
+
+function adminRoleIsDeleted(role: Pick<AdminRole, "id" | "name"> & { code?: string; role_code?: string }, deletedKeys = readDeletedAdminRoleKeys()) {
+  for (const key of adminRoleDeletionKeys(role)) {
+    if (deletedKeys.has(key)) return true;
+  }
+  return false;
+}
+
+function normalizeStoredAdminRoles(roles: ReturnType<typeof defaultAdminRoles>, activeModules = getStoredTenantActiveModules(), deletedKeys = readDeletedAdminRoleKeys()) {
   const defaults = defaultAdminRoles(activeModules);
   const input = Array.isArray(roles) ? roles : [];
   const byName = new Map(input.map((role) => [String(role.name || ""), role]));
-  const normalizedDefaults = defaults.map((role) => {
+  const normalizedDefaults = defaults.filter((role) => !adminRoleIsDeleted(role, deletedKeys)).map((role) => {
     const current = byName.get(role.name);
     return current ? { ...role, ...current, permissions: filterAdminPermissions(current.permissions || role.permissions, activeModules) } : role;
   });
   const existingDefaultNames = new Set(normalizedDefaults.map((role) => role.name));
-  const customRoles = input.filter((role) => !existingDefaultNames.has(String(role.name || ""))).map((role) => ({ ...role, permissions: filterAdminPermissions(role.permissions, activeModules) }));
+  const customRoles = input
+    .filter((role) => !existingDefaultNames.has(String(role.name || "")) && !adminRoleIsDeleted(role, deletedKeys))
+    .map((role) => ({ ...role, permissions: filterAdminPermissions(role.permissions, activeModules) }));
   return [...normalizedDefaults, ...customRoles];
 }
 
@@ -491,6 +539,15 @@ function roleFromCatalogItem(item: {
   } as AdminRole;
 }
 
+function catalogItemRoleIdentity(item: { id?: string; code?: string; name?: string; metadata?: AnyRow }) {
+  const metadata = item.metadata && typeof item.metadata === "object" ? item.metadata : {};
+  return {
+    id: Number(metadata.role_numeric_id || metadata.role_id || String(item.code || "").match(/^role_(\d+)$/)?.[1] || 0) || toNumberId(item.id || item.code || item.name),
+    name: String(metadata.role_name || item.name || "Rol").trim(),
+    code: item.code
+  };
+}
+
 async function supabaseRoleCatalogs(companyId: string) {
   return supabaseFetch<Array<{ id: string; company_id?: string | null }>>(
     `/rest/v1/master_catalogs?select=id,company_id&code=eq.roles&or=(company_id.eq.${encodeURIComponent(companyId)},company_id.is.null)&limit=10`
@@ -523,16 +580,28 @@ async function loadSupabaseAdminRoles() {
   const membership = await currentSupabaseCompanyUser();
   if (!membership?.company_id) return storedAdminRoles();
   const activeModules = getStoredTenantActiveModules();
+  const deletedKeys = readDeletedAdminRoleKeys(membership.company_id);
   const catalogs = await supabaseRoleCatalogs(membership.company_id);
   const catalogIds = catalogs.map((catalog) => catalog.id).filter(Boolean);
   if (!catalogIds.length) return storedAdminRoles();
   const items = await supabaseFetch<Array<{ id: string; catalog_id: string; company_id?: string | null; code: string; name: string; description?: string; active?: boolean; sort_order?: number; metadata?: AnyRow }>>(
     `/rest/v1/master_catalog_items?select=id,catalog_id,company_id,code,name,description,active,sort_order,metadata&catalog_id=in.(${catalogIds.map((id) => encodeURIComponent(id)).join(",")})&order=sort_order.asc,name.asc&limit=300`
   ).catch(() => []);
+  for (const item of items) {
+    const metadata = item.metadata && typeof item.metadata === "object" ? item.metadata : {};
+    if (item.company_id === membership.company_id && metadata.deleted === true) {
+      for (const key of adminRoleDeletionKeys(catalogItemRoleIdentity(item))) deletedKeys.add(key);
+    }
+  }
+  writeDeletedAdminRoleKeys(deletedKeys, membership.company_id);
   const remoteRoles = items
     .filter((item) => item.company_id === membership.company_id || item.company_id == null)
+    .filter((item) => {
+      const metadata = item.metadata && typeof item.metadata === "object" ? item.metadata : {};
+      return metadata.deleted !== true && !adminRoleIsDeleted(catalogItemRoleIdentity(item), deletedKeys);
+    })
     .map((item) => roleFromCatalogItem(item, activeModules));
-  const roles = normalizeStoredAdminRoles(remoteRoles.length ? remoteRoles : storedAdminRoles(), activeModules);
+  const roles = normalizeStoredAdminRoles(remoteRoles.length ? remoteRoles : storedAdminRoles(), activeModules, deletedKeys);
   saveStoredAdminRoles(roles);
   return roles;
 }
@@ -540,6 +609,7 @@ async function loadSupabaseAdminRoles() {
 async function saveSupabaseAdminRole(role: AdminRole) {
   const membership = await currentSupabaseCompanyUser();
   if (!membership?.company_id) throw new Error("No se encontro una empresa activa para guardar el rol.");
+  forgetDeletedAdminRole(role, membership.company_id);
   const catalogId = await ensureSupabaseCompanyRoleCatalog(membership.company_id);
   const code = roleCatalogCode(role);
   await supabaseFetch("/rest/v1/master_catalog_items?on_conflict=catalog_id,code", {
@@ -574,13 +644,31 @@ async function saveSupabaseAdminRole(role: AdminRole) {
 async function deleteSupabaseAdminRole(role: AdminRole) {
   const membership = await currentSupabaseCompanyUser();
   if (!membership?.company_id) throw new Error("No se encontro una empresa activa para eliminar el rol.");
-  const catalogs = await supabaseRoleCatalogs(membership.company_id);
-  const companyCatalog = catalogs.find((catalog) => catalog.company_id === membership.company_id);
-  if (!companyCatalog?.id) return;
-  await supabaseFetch(
-    `/rest/v1/master_catalog_items?catalog_id=eq.${encodeURIComponent(companyCatalog.id)}&code=eq.${encodeURIComponent(roleCatalogCode(role))}`,
-    { method: "DELETE" }
-  );
+  rememberDeletedAdminRole(role, membership.company_id);
+  const catalogId = await ensureSupabaseCompanyRoleCatalog(membership.company_id);
+  const code = roleCatalogCode(role);
+  await supabaseFetch("/rest/v1/master_catalog_items?on_conflict=catalog_id,code", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify({
+      catalog_id: catalogId,
+      company_id: membership.company_id,
+      code,
+      name: role.name,
+      description: role.description || null,
+      active: false,
+      sort_order: Number(role.hierarchy_level || 100),
+      metadata: {
+        role_numeric_id: role.id,
+        role_name: role.name,
+        role_type: role.role_type || "custom",
+        scope: role.scope || "company",
+        deleted: true,
+        deleted_at: new Date().toISOString(),
+        source: "apexos_admin_roles"
+      }
+    })
+  });
 }
 
 async function countSupabaseUsersWithRole(role: AdminRole) {
