@@ -288,7 +288,10 @@ async function loadSupabaseMonitorOrders() {
   const response = await fetch(`/api/services/monitor-orders?${query.toString()}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
-  if (!response.ok) return [];
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({})) as { message?: string };
+    throw new Error(body.message || "No fue posible consultar el monitor de servicios.");
+  }
   const body = await response.json() as OrdersResponse;
   return Array.isArray(body.data) ? body.data : [];
 }
@@ -324,6 +327,7 @@ export default function ServicesPage() {
       const apiOrders = apiResult.status === "fulfilled" ? apiResult.value.data : [];
       const supabaseOrders = supabaseResult.status === "fulfilled" ? supabaseResult.value : [];
       if (!apiOrders.length && !supabaseOrders.length && apiResult.status === "rejected") throw apiResult.reason;
+      if (!apiOrders.length && !supabaseOrders.length && supabaseResult.status === "rejected") throw supabaseResult.reason;
       setOrders(mergeOrders([...supabaseOrders, ...apiOrders]).map(effectiveOrder));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No fue posible cargar servicios.");
