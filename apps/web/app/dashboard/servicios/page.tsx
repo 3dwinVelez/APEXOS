@@ -209,6 +209,12 @@ function requiresAdminCompletion(order: ServiceOrder) {
   return Boolean(order.status === "agendado" || order.metadata?.requires_admin_completion || withoutTechnician || !order.reference_id);
 }
 
+function orderIsReadyForOperation(order: ServiceOrder | null | undefined) {
+  if (!order) return false;
+  const hasTechnician = Boolean(order.technician || order.technician_employee_id || order.technician_id);
+  return order.status === "pendiente" && hasTechnician && Boolean(order.reference_id);
+}
+
 function effectiveOrder(order: ServiceOrder): ServiceOrder {
   const withoutTechnician = !order.technician && !order.technician_employee_id && !order.technician_id;
   if (order.status === "pendiente" && withoutTechnician && (order.metadata?.preorder_status === "agendado" || order.metadata?.requires_admin_completion)) {
@@ -491,10 +497,17 @@ export default function ServicesPage() {
         setMessage("No fue posible identificar la orden existente para actualizarla sin duplicar.");
         return;
       }
-      await api<ServiceOrder>(`/api/v1/services/orders/${editingOrder.id}`, {
+      const updated = await api<ServiceOrder>(`/api/v1/services/orders/${editingOrder.id}`, {
         method: "PUT",
         body: JSON.stringify({ ...payload, metadata })
       });
+      if (editForm.status === "pendiente" && !orderIsReadyForOperation({
+        ...updated,
+        reference_id: updated.reference_id || editForm.reference_id,
+        technician_id: updated.technician_id || updated.technician_employee_id || editForm.technician_id
+      })) {
+        throw new Error("La orden se envio, pero no quedo lista para el tecnico. Verifica referencia y tecnico asignado antes de continuar.");
+      }
       setMessage(editForm.status === "pendiente" ? "Orden enviada a pendiente correctamente." : "Orden actualizada correctamente.");
       setEditingOrder(null);
       await load();
