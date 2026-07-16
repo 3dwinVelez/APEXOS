@@ -51,6 +51,11 @@ function grants(module, actions = ROLE_ACTIONS) {
   }));
 }
 
+function withPhysicalDeletePermission(item) {
+  const actions = item.actions.includes(PHYSICAL_DELETE_PERMISSION) ? item.actions : [...item.actions, PHYSICAL_DELETE_PERMISSION];
+  return { ...item, actions, grants: grants(item.module, actions) };
+}
+
 function normalizeActiveModules(value) {
   return Array.isArray(value) ? value.map((item) => String(item).trim().toLowerCase()).filter(Boolean) : [];
 }
@@ -92,7 +97,7 @@ const PERMISSION_CATALOG = [
   { key: "notificaciones", label: "Notificaciones", group: "sistema", module: "admin", submodule: "notifications", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "execute", "configure"], grants: grants("admin", ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "execute", "configure"]) },
   { key: "ia", label: "IA / Asistente interno", group: "sistema", module: "brain", submodule: "assistant", actions: ["access", "view", "execute", "configure", "administer", "sensitive"], grants: grants("brain", ["access", "view", "execute", "configure", "administer", "sensitive"]) },
   { key: "nomina", label: "Nomina", group: "finanzas", module: "payroll", submodule: "payroll", actions: ["access", "view", "create", "edit", "approve", "export", "import", "sensitive", "reports"], grants: grants("payroll", ["access", "view", "create", "edit", "approve", "export", "import", "sensitive", "reports"]) }
-];
+].map(withPhysicalDeletePermission);
 
 function permissionPreset(keys, allowedActions) {
   const legacy = emptyLegacyPermissions();

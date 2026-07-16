@@ -104,12 +104,38 @@ function companyRole(roleName: unknown) {
   return "member";
 }
 
+function permissionFlag(permissions: unknown, moduleKey: string, action: string) {
+  if (!permissions || typeof permissions !== "object") return false;
+  const row = (permissions as Record<string, unknown>)[moduleKey];
+  return Boolean(row && typeof row === "object" && (row as Record<string, unknown>)[action]);
+}
+
+function companyRoleFromAccess(input: { roleName?: unknown; roleType?: unknown; permissions?: unknown }) {
+  const roleName = String(input.roleName || "").toLowerCase();
+  const roleType = String(input.roleType || "").toLowerCase();
+  if (roleName.includes("owner") || roleType.includes("owner")) return "owner";
+  if (
+    roleName.includes("admin")
+    || roleName.includes("coordinador")
+    || roleType.includes("admin")
+    || roleType.includes("superadmin")
+    || roleType.includes("coordinador")
+    || roleType.includes("soporte")
+    || permissionFlag(input.permissions, "usuarios", "manage_users")
+    || permissionFlag(input.permissions, "roles", "manage_roles")
+    || permissionFlag(input.permissions, "configuracion", "administer")
+    || permissionFlag(input.permissions, "configuracion", "configure")
+  ) {
+    return "admin";
+  }
+  if (roleName.includes("viewer") || roleName.includes("consulta") || roleType.includes("lectura")) return "viewer";
+  return companyRole(roleName);
+}
+
 function normalizeRoleName(profileKind: "tecnico" | "empleado", roleName: unknown) {
   const rawValue = String(roleName || "").trim();
-  const value = rawValue.toLowerCase();
   if (profileKind === "tecnico") {
-    if (!value || value === "soporte tecnico") return "Tecnico";
-    return value.includes("tecnico") ? "Tecnico" : "Tecnico";
+    return rawValue || "Tecnico";
   }
   return rawValue || "Empleado";
 }
@@ -124,12 +150,19 @@ function activeStatus(value: unknown) {
   return userStatusToEmployeeStatus(value) === "active" ? "active" : "inactive";
 }
 
+function rolePermissionsFromBody(body: AnyRow, fallback?: unknown) {
+  const value = body.role_permissions ?? body.permissions ?? fallback;
+  return value && typeof value === "object" ? value : {};
+}
+
 async function syncSupabaseUserState(input: {
   userId?: unknown;
   companyId?: unknown;
   email?: unknown;
   fullName?: unknown;
   roleName?: unknown;
+  roleType?: unknown;
+  permissions?: unknown;
   employeeStatus?: unknown;
 }) {
   const userId = clean(input.userId);
@@ -139,12 +172,9 @@ async function syncSupabaseUserState(input: {
   const email = normalizeUsernameEmail(input.email);
   const fullName = clean(input.fullName);
   const normalizedRoleName = clean(input.roleName);
+  const normalizedRoleType = clean(input.roleType);
   const status = activeStatus(input.employeeStatus);
-  const memberships = await supabaseRequest(`/rest/v1/company_users?select=role&company_id=eq.${encodeURIComponent(companyId)}&user_id=eq.${encodeURIComponent(userId)}&limit=1`, {
-    method: "GET",
-    service: true
-  }) as Array<{ role?: string }>;
-  const membershipRole = clean(memberships[0]?.role) || companyRole(normalizedRoleName);
+  const membershipRole = companyRoleFromAccess({ roleName: normalizedRoleName, roleType: normalizedRoleType, permissions: input.permissions });
 
   await supabaseRequest("/rest/v1/profiles?on_conflict=id", {
     method: "POST",
@@ -255,6 +285,8 @@ export async function PATCH(request: NextRequest) {
         email: ((nextMetadata.access as AnyRow | undefined)?.email as string | undefined) || current.email,
         fullName: metadata.name || `${current.first_name || ""} ${current.last_name || ""}`.trim(),
         roleName: ((nextMetadata.access as AnyRow | undefined)?.role_name as string | undefined) || metadata.role_name,
+        roleType: ((nextMetadata.access as AnyRow | undefined)?.role_type as string | undefined) || metadata.role_type,
+        permissions: metadata.permissions,
         employeeStatus: nextStatus
       });
     } else if (action === "status") {
@@ -265,6 +297,8 @@ export async function PATCH(request: NextRequest) {
         email: ((metadata.access as AnyRow | undefined)?.email as string | undefined) || current.email,
         fullName: metadata.name || `${current.first_name || ""} ${current.last_name || ""}`.trim(),
         roleName: ((metadata.access as AnyRow | undefined)?.role_name as string | undefined) || metadata.role_name,
+        roleType: ((metadata.access as AnyRow | undefined)?.role_type as string | undefined) || metadata.role_type,
+        permissions: metadata.permissions,
         employeeStatus: body.active ? "active" : "inactive"
       });
     } else if (action === "document_add") {
@@ -300,11 +334,15 @@ export async function PATCH(request: NextRequest) {
       const documentNumber = clean(body.document) || clean(current.document_number) || clean(metadata.document);
       if (!documentNumber) throw httpError("Documento requerido.", 400);
       const nextStatus = userStatusToEmployeeStatus(body.user_status || metadata.user_status || current.status);
+      const rolePermissions = rolePermissionsFromBody(body, metadata.permissions);
       nextMetadata = {
         ...metadata,
         name: fullName || metadata.name,
         role_id: roleId || metadata.role_id,
         role_name: roleName || metadata.role_name,
+        role_type: clean(body.role_type) || metadata.role_type,
+        role_scope: clean(body.role_scope) || metadata.role_scope,
+        permissions: rolePermissions,
         document: documentNumber,
         document_type: clean(body.document_type) || metadata.document_type,
         user_status: clean(body.user_status) || metadata.user_status,
@@ -315,6 +353,9 @@ export async function PATCH(request: NextRequest) {
           site: clean(body.site || body.base_site) || clean(previousAccess.site) || "",
           role_id: roleId || previousAccess.role_id || null,
           role_name: roleName || previousAccess.role_name || "",
+          role_type: clean(body.role_type) || previousAccess.role_type || "",
+          role_scope: clean(body.role_scope) || previousAccess.role_scope || "",
+          permissions: rolePermissions,
           require_password_change: body.require_password_change === undefined ? Boolean(previousAccess.require_password_change) : Boolean(body.require_password_change)
         },
         user_audit_trail: [...(Array.isArray(metadata.user_audit_trail) ? metadata.user_audit_trail : []).slice(-9), { at: new Date().toISOString(), action: "updated", source: "next-api" }]
@@ -334,6 +375,8 @@ export async function PATCH(request: NextRequest) {
         email,
         fullName,
         roleName,
+        roleType: clean(body.role_type) || metadata.role_type || previousAccess.role_type,
+        permissions: rolePermissions,
         employeeStatus: patch.status
       });
     }
@@ -369,6 +412,7 @@ export async function POST(request: NextRequest) {
     const normalizedRoleName = normalizeRoleName(profileKind, body.role_name || body.role_id);
     const { email, fullName } = validateUserPayload(body, { requirePassword: true });
     const password = String(body.password || "");
+    const rolePermissions = rolePermissionsFromBody(body);
 
     const requestedCompanyId = clean(body.company_id);
     const membership = await requireCompanyAdmin(token, requestedCompanyId);
@@ -409,7 +453,7 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         company_id: companyId,
         user_id: authUser.id,
-        role: companyRole(normalizedRoleName),
+        role: companyRoleFromAccess({ roleName: normalizedRoleName, roleType: body.role_type, permissions: rolePermissions }),
         status: userStatusToEmployeeStatus(body.user_status) === "active" ? "active" : "inactive"
       })
     });
@@ -420,6 +464,9 @@ export async function POST(request: NextRequest) {
       profile_kind: profileKind,
       role_id: body.role_id || null,
       role_name: normalizedRoleName,
+      role_type: clean(body.role_type) || "",
+      role_scope: clean(body.role_scope) || "",
+      permissions: rolePermissions,
       document: clean(body.document) || "",
       document_type: clean(body.document_type) || "CC",
       company: clean(body.company) || "",
@@ -427,6 +474,9 @@ export async function POST(request: NextRequest) {
         email,
         role_id: body.role_id || null,
         role_name: normalizedRoleName,
+        role_type: clean(body.role_type) || "",
+        role_scope: clean(body.role_scope) || "",
+        permissions: rolePermissions,
         profile_kind: profileKind,
         site: clean(body.site || body.base_site) || (profileKind === "tecnico" ? "SEDE-PRINCIPAL" : ""),
         area: clean(body.area || body.department) || (profileKind === "tecnico" ? "SERV" : ""),
@@ -478,6 +528,8 @@ export async function POST(request: NextRequest) {
       email,
       fullName,
       roleName: normalizedRoleName,
+      roleType: clean(body.role_type),
+      permissions: rolePermissions,
       employeeStatus: userStatusToEmployeeStatus(body.user_status)
     });
 

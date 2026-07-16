@@ -1,8 +1,10 @@
 "use client";
 
-import { getSupabaseAccessToken, supabaseFetch } from "@/lib/supabaseClient";
-import { clearSession } from "@/lib/sessionSecurity";
-import { CircleUserRound, LogOut } from "lucide-react";
+import { api } from "@/lib/api";
+import { getSupabaseAccessToken, supabaseAuth, supabaseFetch } from "@/lib/supabaseClient";
+import { clearSession, setPasswordChangeRequired } from "@/lib/sessionSecurity";
+import { CircleUserRound, KeyRound, LogOut } from "lucide-react";
+import type { FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 type SessionCompany = {
@@ -53,10 +55,41 @@ function initials(email: string) {
 
 export function UserSessionBadge({ compact = false }: { compact?: boolean }) {
   const [session, setSession] = useState<CurrentSession>({ email: "", role: "", provider: "", company: "" });
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ current: "", next: "", confirm: "" });
+  const [passwordStatus, setPasswordStatus] = useState({ saving: false, message: "", error: "" });
 
   function logout() {
     clearSession("manual_logout");
     window.location.assign("/login");
+  }
+
+  async function changePassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const next = passwordForm.next.trim();
+    setPasswordStatus({ saving: true, message: "", error: "" });
+    try {
+      if (!passwordForm.current) throw new Error("Ingresa tu clave actual.");
+      if (next.length < 8 || !/[A-Za-z]/.test(next) || !/[0-9]/.test(next)) {
+        throw new Error("La nueva clave debe tener minimo 8 caracteres y combinar letras y numeros.");
+      }
+      if (next !== passwordForm.confirm.trim()) throw new Error("La confirmacion no coincide.");
+      if (session.provider === "supabase") {
+        await supabaseAuth.signInWithPassword(session.email, passwordForm.current);
+        await supabaseAuth.updatePassword(next);
+      } else {
+        await api("/api/v1/auth/password", {
+          method: "POST",
+          body: JSON.stringify({ current_password: passwordForm.current, new_password: next })
+        });
+      }
+      setPasswordChangeRequired(false);
+      setPasswordForm({ current: "", next: "", confirm: "" });
+      setPasswordStatus({ saving: false, message: "Clave actualizada correctamente.", error: "" });
+      window.setTimeout(() => setPasswordOpen(false), 900);
+    } catch (error) {
+      setPasswordStatus({ saving: false, message: "", error: error instanceof Error ? error.message : "No fue posible cambiar la clave." });
+    }
   }
 
   useEffect(() => {
@@ -131,6 +164,22 @@ export function UserSessionBadge({ compact = false }: { compact?: boolean }) {
         <span className="h-2 w-2 rounded-full bg-emerald-500" />
         Sesion activa
       </div>
+      <button className="mt-3 inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-line bg-white text-xs font-semibold text-neutral-600 transition hover:border-apex hover:text-apex" onClick={() => setPasswordOpen((value) => !value)} type="button">
+        <KeyRound size={14} />
+        Cambiar clave
+      </button>
+      {passwordOpen ? (
+        <form className="mt-3 space-y-2 border-t border-line pt-3" onSubmit={changePassword}>
+          <input className="h-9 w-full rounded-md border border-line px-3 text-xs" autoComplete="current-password" placeholder="Clave actual" type="password" value={passwordForm.current} onChange={(event) => setPasswordForm((current) => ({ ...current, current: event.target.value }))} />
+          <input className="h-9 w-full rounded-md border border-line px-3 text-xs" autoComplete="new-password" placeholder="Nueva clave" type="password" value={passwordForm.next} onChange={(event) => setPasswordForm((current) => ({ ...current, next: event.target.value }))} />
+          <input className="h-9 w-full rounded-md border border-line px-3 text-xs" autoComplete="new-password" placeholder="Confirmar clave" type="password" value={passwordForm.confirm} onChange={(event) => setPasswordForm((current) => ({ ...current, confirm: event.target.value }))} />
+          {passwordStatus.error ? <p className="text-xs font-semibold text-red-600">{passwordStatus.error}</p> : null}
+          {passwordStatus.message ? <p className="text-xs font-semibold text-emerald-700">{passwordStatus.message}</p> : null}
+          <button className="inline-flex h-9 w-full items-center justify-center rounded-md bg-apex text-xs font-semibold text-white disabled:opacity-50" disabled={passwordStatus.saving} type="submit">
+            {passwordStatus.saving ? "Actualizando..." : "Guardar clave"}
+          </button>
+        </form>
+      ) : null}
       <button className="mt-3 inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-line bg-white text-xs font-semibold text-neutral-600 transition hover:border-red-300 hover:text-red-700" onClick={logout} type="button">
         <LogOut size={14} />
         Cerrar sesion

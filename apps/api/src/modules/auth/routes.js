@@ -21,6 +21,10 @@ async function authRoutes(fastify) {
   fastify.post("/auth/refresh", { schema: schemas.refreshSchema }, async (request) => {
     return service.refresh(request.body, fastify);
   });
+
+  fastify.post("/auth/password", { preHandler: fastify.authenticate }, async (request) => {
+    return service.changePassword(request.user, request.body);
+  });
 }
 
 module.exports = authRoutes;
