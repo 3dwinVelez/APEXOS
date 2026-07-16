@@ -124,6 +124,10 @@ async function userCompanies(request: NextRequest) {
   ).catch(() => []);
 }
 
+function isAdminCompanyRole(role: unknown) {
+  return ["owner", "admin", "superadmin", "administrador", "administrador de empresa"].includes(String(role || "").trim().toLowerCase());
+}
+
 async function resolveCompanyIds(request: NextRequest) {
   const { publicCompanyId } = supabaseConfig();
   const requestedCompanyId = request.nextUrl.searchParams.get("company_id")?.trim() || "";
@@ -152,6 +156,11 @@ async function resolveServiceScope(request: NextRequest): Promise<ServiceScope> 
   const userId = await currentAuthUserId(request);
   const companyIds = await resolveCompanyIds(request);
   if (!userId || !companyIds.length) return { companyIds, technicianOnly: false };
+  const memberships = await userCompanies(request);
+  const companyIdSet = new Set(companyIds);
+  if (memberships.some((membership) => companyIdSet.has(membership.company_id) && isAdminCompanyRole(membership.role))) {
+    return { companyIds, technicianOnly: false };
+  }
   const companyFilter = compactInFilter(companyIds);
   const employees = await supabaseRequest<Array<{
     id: string;
