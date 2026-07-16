@@ -436,6 +436,7 @@ export async function loadModuleAccess(modules: ApexModule[]): Promise<ModuleAcc
       if (typeof window !== "undefined") {
         localStorage.setItem("apexos_company_id", companyId);
         if (selectedCompany?.company_name) localStorage.setItem("apexos_company_name", selectedCompany.company_name);
+        if (selectedCompany?.role) localStorage.setItem("apexos_company_role", selectedCompany.role);
         if (selectedCompany?.role && !localStorage.getItem("role_name")) localStorage.setItem("role_name", selectedCompany.role);
       }
       await refreshSupabaseEmployeeRoleContext(companyId);
