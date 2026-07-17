@@ -1217,6 +1217,26 @@ async function nextAdminRolesRequest<T>(init: RequestInit = {}) {
   return response.json() as Promise<T>;
 }
 
+async function nextServiceOrderRequest<T>(orderId: string, init: RequestInit = {}) {
+  const token = getSupabaseAccessToken();
+  if (!token) return null;
+  const method = String(init.method || "GET").toUpperCase();
+  const response = await fetch(`/api/v1/services/orders/${encodeURIComponent(orderId)}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      ...(init.headers || {})
+    }
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(body.message || "No fue posible actualizar la orden de servicio.");
+  }
+  if (method !== "GET") clearApiReadCaches();
+  return response.json() as Promise<T>;
+}
+
 function supabaseVehicleStatus(status: unknown) {
   const value = String(status || "").toLowerCase();
   if (value === "inactivo") return "inactive";
@@ -2584,6 +2604,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const orderId = serviceOrderDetailMatch[1];
     const body = JSON.parse(String(options.body || "{}")) as AnyRow;
     if (technicianSession()) throw new Error("El tecnico no puede editar ordenes de servicio.");
+    const serverUpdated = await nextServiceOrderRequest<T>(orderId, options);
+    if (serverUpdated) return serverUpdated;
     const current = await accessibleSupabaseServiceOrder(orderId);
     if (["cerrada", "no_ejecutada"].includes(String(current.status || ""))) {
       throw new Error("Las ordenes finalizadas no se pueden editar para proteger la trazabilidad.");
