@@ -103,6 +103,34 @@ async function supabaseRequest<T>(requestPath: string, init: RequestInit = {}) {
   return body as T;
 }
 
+async function supabaseUserRequest<T>(requestPath: string, authorization: string, init: RequestInit = {}) {
+  const config = supabaseConfig();
+  const token = authorization.replace(/^Bearer\s+/i, "");
+  if (!config.url || !config.anonKey || !token) {
+    throw new Error("Sesion Supabase requerida para guardar la orden de servicio.");
+  }
+  const response = await fetch(`${config.url}${requestPath}`, {
+    ...init,
+    headers: {
+      apikey: config.anonKey,
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      ...init.headers
+    }
+  });
+  const body = response.status === 204 ? null : await response.json().catch(() => null);
+  if (!response.ok) {
+    const detail = body?.message || body?.error_description || body?.error || response.statusText;
+    throw new Error(`Supabase ${response.status}: ${detail}`);
+  }
+  return body as T;
+}
+
+function isRlsPermissionError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error || "");
+  return /Supabase\s+403/i.test(message) && /permission denied|row-level security|violates row-level security/i.test(message);
+}
+
 function jwtSubject(token: string) {
   try {
     const [, payload] = token.split(".");
@@ -433,14 +461,16 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       last_admin_edit_at: new Date().toISOString()
     };
 
-    const updated = await supabaseRequest<Array<AnyRow>>(
-      `/rest/v1/service_orders?select=id,number,reference_id,technician_employee_id,service_type,status,customer_name,customer_address,customer_phone,invoice_number,scheduled_date,started_at,closed_at,created_at,notes,metadata&id=eq.${encodeURIComponent(orderId)}`,
-      {
-        method: "PATCH",
-        headers: { Prefer: "return=representation" },
-        body: JSON.stringify(patch)
-      }
-    );
+    const updatePath = `/rest/v1/service_orders?select=id,number,reference_id,technician_employee_id,service_type,status,customer_name,customer_address,customer_phone,invoice_number,scheduled_date,started_at,closed_at,created_at,notes,metadata&id=eq.${encodeURIComponent(orderId)}`;
+    const updateInit = {
+      method: "PATCH",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify(patch)
+    };
+    const updated = await supabaseRequest<Array<AnyRow>>(updatePath, updateInit).catch(async (error) => {
+      if (!isRlsPermissionError(error)) throw error;
+      return supabaseUserRequest<Array<AnyRow>>(updatePath, authorization, updateInit);
+    });
     return NextResponse.json(updated[0] || { id: orderId, ...patch });
   } catch (error) {
     return jsonError(error instanceof Error ? error.message : "No fue posible actualizar la orden de servicio.", 500);
