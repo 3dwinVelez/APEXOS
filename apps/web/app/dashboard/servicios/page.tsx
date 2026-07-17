@@ -2,10 +2,12 @@
 
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { api, isServiceTechnicianSession } from "@/lib/api";
+import { downloadExcelWorkbook } from "@/lib/reportExports";
 import {
   ArrowLeft,
   BarChart3,
   ChevronRight,
+  Download,
   Filter,
   Pencil,
   Plus,
@@ -61,6 +63,31 @@ type ServiceOrder = {
   photos: Array<{ id: number }>;
 };
 type OrdersResponse = { data: ServiceOrder[] };
+type ServiceOrderExcelRow = {
+  orden: string;
+  estado: string;
+  accion: string;
+  cliente: string;
+  documento_cliente: string;
+  telefono: string;
+  direccion: string;
+  barrio: string;
+  tipo_servicio: string;
+  referencia_codigo: string;
+  referencia_nombre: string;
+  tecnico: string;
+  factura_pedido: string;
+  almacen: string;
+  fecha_programada: string;
+  fecha_creacion: string;
+  fecha_cierre: string;
+  sla_dias_habiles: number;
+  fotos: number;
+  novedades: number;
+  solicitud_publica: string;
+  requiere_completar: string;
+  observaciones: string;
+};
 type OrderEditForm = {
   status: string;
   reference_id: string;
@@ -121,6 +148,10 @@ function formatDate(value?: string) {
   const date = new Date(`${value.slice(0, 10)}T12:00:00`);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleDateString("es-CO", { day: "2-digit", month: "short" });
+}
+
+function exportDate(value?: string) {
+  return value ? value.slice(0, 10) : "";
 }
 
 function localDateOnly(value?: string) {
@@ -248,6 +279,42 @@ function localReferenceForOrder(order: ServiceOrder, references: ServiceReferenc
 function externalReferenceText(order: ServiceOrder | null) {
   if (!order) return "";
   return String(order.metadata?.external_reference_label || order.metadata?.product_description || order.metadata?.product_reference || "").trim();
+}
+
+function technicianLabel(order: ServiceOrder) {
+  return order.technician?.user?.name || order.technician?.user?.email || String(order.technician_employee_id || order.technician_id || "");
+}
+
+function serviceOrderExcelRows(orders: ServiceOrder[]): ServiceOrderExcelRow[] {
+  return orders.map((order) => {
+    const sla = slaInfo(order);
+    const requiresCompletion = requiresAdminCompletion(order);
+    return {
+      orden: order.number || String(order.id || ""),
+      estado: statusLabel[order.status] || order.status || "",
+      accion: serviceAction(order),
+      cliente: order.customer_name || "",
+      documento_cliente: String(order.metadata?.customer_document || ""),
+      telefono: order.customer_phone || "",
+      direccion: order.customer_address || "",
+      barrio: String(order.metadata?.customer_neighborhood || ""),
+      tipo_servicio: order.service_type || "",
+      referencia_codigo: order.reference?.code || String(order.metadata?.external_reference_code || ""),
+      referencia_nombre: order.reference?.name || String(order.metadata?.external_reference_name || externalReferenceText(order)),
+      tecnico: technicianLabel(order),
+      factura_pedido: order.invoice_number || "",
+      almacen: String(order.metadata?.service_store_label || order.metadata?.service_store || ""),
+      fecha_programada: exportDate(order.scheduled_date),
+      fecha_creacion: exportDate(order.created_at),
+      fecha_cierre: exportDate(order.closed_at),
+      sla_dias_habiles: sla.remaining,
+      fotos: order.photos.length,
+      novedades: order.incidents.length,
+      solicitud_publica: order.metadata?.public_request ? "Si" : "No",
+      requiere_completar: requiresCompletion ? "Si" : "No",
+      observaciones: order.notes || ""
+    };
+  });
 }
 
 function serviceOrderHref(order: ServiceOrder) {
@@ -423,6 +490,39 @@ export default function ServicesPage() {
     setRequestScope("");
     setServiceType("");
     setSortBy("newest");
+  }
+
+  function downloadOrdersExcel() {
+    const today = new Date().toISOString().slice(0, 10);
+    downloadExcelWorkbook(`apexos-ordenes-servicio-${today}.xls`, [{
+      name: "Ordenes de servicio",
+      columns: [
+        { key: "orden", label: "Orden", width: 85 },
+        { key: "estado", label: "Estado", width: 95 },
+        { key: "accion", label: "Accion siguiente", width: 120 },
+        { key: "cliente", label: "Cliente", width: 180 },
+        { key: "documento_cliente", label: "Documento cliente", width: 120 },
+        { key: "telefono", label: "Telefono", width: 110 },
+        { key: "direccion", label: "Direccion", width: 220 },
+        { key: "barrio", label: "Barrio", width: 130 },
+        { key: "tipo_servicio", label: "Tipo de servicio", width: 110 },
+        { key: "referencia_codigo", label: "Codigo referencia", width: 140 },
+        { key: "referencia_nombre", label: "Referencia", width: 260 },
+        { key: "tecnico", label: "Tecnico", width: 160 },
+        { key: "factura_pedido", label: "Factura / pedido", width: 130 },
+        { key: "almacen", label: "Almacen", width: 140 },
+        { key: "fecha_programada", label: "Fecha programada", width: 115 },
+        { key: "fecha_creacion", label: "Fecha creacion", width: 115 },
+        { key: "fecha_cierre", label: "Fecha cierre", width: 115 },
+        { key: "sla_dias_habiles", label: "SLA dias habiles", width: 95 },
+        { key: "fotos", label: "Fotos", width: 60 },
+        { key: "novedades", label: "Novedades", width: 80 },
+        { key: "solicitud_publica", label: "Solicitud publica", width: 100 },
+        { key: "requiere_completar", label: "Requiere completar", width: 120 },
+        { key: "observaciones", label: "Observaciones", width: 260 }
+      ],
+      rows: serviceOrderExcelRows(filtered)
+    }]);
   }
 
   function technicianValue(order: ServiceOrder) {
@@ -695,7 +795,13 @@ export default function ServicesPage() {
               <h2 className="font-semibold">Ordenes de servicio</h2>
               <p className="text-sm text-neutral-500">{filtered.length} de {orders.length} orden(es) visibles</p>
             </div>
-            <p className="hidden text-xs font-medium text-neutral-500 md:block">Selecciona una orden para consultar o continuar el servicio.</p>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <p className="hidden text-xs font-medium text-neutral-500 md:block">Selecciona una orden para consultar o continuar el servicio.</p>
+              <button className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold text-apex shadow-sm transition hover:border-apex disabled:cursor-not-allowed disabled:opacity-50" disabled={!filtered.length} onClick={downloadOrdersExcel} type="button">
+                <Download className="shrink-0" size={16} />
+                <span className="truncate">Descargar Excel</span>
+              </button>
+            </div>
           </div>
 
           <div className="grid gap-3 md:hidden">
