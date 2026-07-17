@@ -3331,7 +3331,17 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
   let response: Response;
   const method = String(options.method || "GET").toUpperCase();
   const supabaseSession = isSupabaseSession();
+  const pathname = path.split("?")[0];
+  const serviceOrderDetailMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)$/);
   const preferOperationalApi = HAS_CONFIGURED_API_URL && shouldPreferOperationalApi(path);
+
+  if (serviceOrderDetailMatch && method === "PUT" && uuidOrNull(serviceOrderDetailMatch[1])) {
+    const updated = await nextServiceOrderRequest<T>(serviceOrderDetailMatch[1], options);
+    if (updated) {
+      touchSession();
+      return updated;
+    }
+  }
 
   if (supabaseSession && !preferOperationalApi) {
     const fallback = await supabaseApiFallback<T>(path, options);
