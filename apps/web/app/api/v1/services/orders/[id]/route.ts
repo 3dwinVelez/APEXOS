@@ -158,6 +158,11 @@ function metadataAllowsServiceAdmin(metadata: AnyRow) {
     || hasServiceWritePermission(access.role_permissions);
 }
 
+function employeeAllowsServiceAdmin(employee: { position?: string; metadata?: AnyRow }, localApiAllows = false) {
+  if (localApiAllows) return true;
+  return isAdministrativeRole(employee.position) || metadataAllowsServiceAdmin(employee.metadata || {});
+}
+
 async function currentSupabaseUser(authorization: string) {
   const token = authorization.replace(/^Bearer\s+/i, "");
   const config = supabaseConfig();
@@ -172,6 +177,27 @@ async function currentSupabaseUser(authorization: string) {
   return await response.json().catch(() => null) as SupabaseUser | null;
 }
 
+async function supabaseAuthUserIdByEmail(email: string) {
+  const target = String(email || "").trim().toLowerCase();
+  const config = supabaseConfig();
+  if (!target || !config.url || !config.serviceRoleKey) return "";
+  for (let page = 1; page <= 10; page += 1) {
+    const response = await fetch(`${config.url}/auth/v1/admin/users?per_page=200&page=${page}`, {
+      headers: {
+        apikey: config.serviceRoleKey,
+        Authorization: `Bearer ${config.serviceRoleKey}`
+      }
+    }).catch(() => null);
+    if (!response?.ok) return "";
+    const body = await response.json().catch(() => ({})) as { users?: Array<{ id?: string; email?: string }> } | Array<{ id?: string; email?: string }>;
+    const users = Array.isArray(body) ? body : Array.isArray(body.users) ? body.users : [];
+    const match = users.find((item) => String(item.email || "").trim().toLowerCase() === target);
+    if (match?.id && isUuid(match.id)) return match.id;
+    if (users.length < 200) return "";
+  }
+  return "";
+}
+
 async function isPlatformAdmin(userId: string) {
   if (!userId) return false;
   const rows = await supabaseRequest<Array<{ user_id?: string; status?: string }>>(
@@ -183,12 +209,14 @@ async function isPlatformAdmin(userId: string) {
 async function hasServiceAdminSession(authorization: string, companyId: string) {
   if (!authorization.toLowerCase().startsWith("bearer ")) return false;
   let localApiAllows = false;
+  let localApiEmail = "";
   const apiUrl = localApiUrl();
   if (apiUrl) {
     try {
       const response = await fetch(`${apiUrl}/api/v1/auth/me`, { headers: { Authorization: authorization } });
       if (response.ok) {
-        const data = await response.json().catch(() => ({})) as { user?: { role?: string; role_metadata?: AnyRow; role_permissions?: unknown } };
+        const data = await response.json().catch(() => ({})) as { user?: { email?: string; role?: string; role_metadata?: AnyRow; role_permissions?: unknown } };
+        localApiEmail = String(data.user?.email || "").trim().toLowerCase();
         if (isAdministrativeRole(data.user?.role)
           || isAdministrativeRole(data.user?.role_metadata?.role_type)
           || hasServiceWritePermission(data.user?.role_permissions)
@@ -204,22 +232,32 @@ async function hasServiceAdminSession(authorization: string, companyId: string) 
   const token = authorization.replace(/^Bearer\s+/i, "");
   const user = await currentSupabaseUser(authorization);
   const userId = user?.id || jwtSubject(token);
-  if (!userId) return false;
-  if (await isPlatformAdmin(userId)) return true;
+  const authEmail = String(user?.email || localApiEmail || "").trim().toLowerCase();
+  const linkedSupabaseUserId = isUuid(userId) ? userId : await supabaseAuthUserIdByEmail(authEmail);
+  const hasSupabaseUserId = isUuid(linkedSupabaseUserId);
+  if (!linkedSupabaseUserId && !authEmail) return false;
+  if (hasSupabaseUserId && await isPlatformAdmin(linkedSupabaseUserId)) return true;
 
-  const memberships = await supabaseRequest<Array<{ company_id: string; role?: string; status?: string }>>(
-    `/rest/v1/company_users?select=company_id,role,status&user_id=eq.${encodeURIComponent(userId)}&company_id=eq.${encodeURIComponent(companyId)}&status=eq.active&limit=5`
-  ).catch(() => []);
+  const memberships = hasSupabaseUserId
+    ? await supabaseRequest<Array<{ company_id: string; role?: string; status?: string }>>(
+      `/rest/v1/company_users?select=company_id,role,status&user_id=eq.${encodeURIComponent(linkedSupabaseUserId)}&company_id=eq.${encodeURIComponent(companyId)}&status=eq.active&limit=5`
+    ).catch(() => [])
+    : [];
   if (localApiAllows && memberships.length) return true;
   if (memberships.some((membership) => isAdministrativeRole(membership.role))) return true;
 
-  const employeeIdentityFilter = user?.email
-    ? `or=(user_id.eq.${encodeURIComponent(userId)},email.eq.${encodeURIComponent(user.email)})`
-    : `user_id=eq.${encodeURIComponent(userId)}`;
-  const employees = await supabaseRequest<Array<{ metadata?: AnyRow }>>(
-    `/rest/v1/employees?select=metadata&company_id=eq.${encodeURIComponent(companyId)}&status=eq.active&${employeeIdentityFilter}&limit=20`
+  const employeeIdentityFilter = hasSupabaseUserId && authEmail
+    ? `or=(user_id.eq.${encodeURIComponent(linkedSupabaseUserId)},email.eq.${encodeURIComponent(authEmail)})`
+    : hasSupabaseUserId
+      ? `user_id=eq.${encodeURIComponent(linkedSupabaseUserId)}`
+      : authEmail
+        ? `email=eq.${encodeURIComponent(authEmail)}`
+        : "";
+  if (!employeeIdentityFilter) return false;
+  const employees = await supabaseRequest<Array<{ position?: string; metadata?: AnyRow }>>(
+    `/rest/v1/employees?select=position,metadata&company_id=eq.${encodeURIComponent(companyId)}&status=eq.active&${employeeIdentityFilter}&limit=20`
   ).catch(() => []);
-  return employees.some((employee) => metadataAllowsServiceAdmin(employee.metadata || {}));
+  return employees.some((employee) => employeeAllowsServiceAdmin(employee, localApiAllows));
 }
 
 function serviceTechnicianEmployee(employee: { user_type?: string; position?: string; metadata?: AnyRow } | null | undefined) {
