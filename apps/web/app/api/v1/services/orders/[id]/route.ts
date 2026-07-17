@@ -172,6 +172,14 @@ async function currentSupabaseUser(authorization: string) {
   return await response.json().catch(() => null) as SupabaseUser | null;
 }
 
+async function isPlatformAdmin(userId: string) {
+  if (!userId) return false;
+  const rows = await supabaseRequest<Array<{ user_id?: string; status?: string }>>(
+    `/rest/v1/platform_admins?select=user_id,status&user_id=eq.${encodeURIComponent(userId)}&status=eq.active&limit=1`
+  ).catch(() => []);
+  return Boolean(rows[0]?.user_id);
+}
+
 async function hasServiceAdminSession(authorization: string, companyId: string) {
   if (!authorization.toLowerCase().startsWith("bearer ")) return false;
   let localApiAllows = false;
@@ -197,6 +205,7 @@ async function hasServiceAdminSession(authorization: string, companyId: string) 
   const user = await currentSupabaseUser(authorization);
   const userId = user?.id || jwtSubject(token);
   if (!userId) return false;
+  if (await isPlatformAdmin(userId)) return true;
 
   const memberships = await supabaseRequest<Array<{ company_id: string; role?: string; status?: string }>>(
     `/rest/v1/company_users?select=company_id,role,status&user_id=eq.${encodeURIComponent(userId)}&company_id=eq.${encodeURIComponent(companyId)}&status=eq.active&limit=5`
@@ -204,8 +213,11 @@ async function hasServiceAdminSession(authorization: string, companyId: string) 
   if (localApiAllows && memberships.length) return true;
   if (memberships.some((membership) => isAdministrativeRole(membership.role))) return true;
 
+  const employeeIdentityFilter = user?.email
+    ? `or=(user_id.eq.${encodeURIComponent(userId)},email.eq.${encodeURIComponent(user.email)})`
+    : `user_id=eq.${encodeURIComponent(userId)}`;
   const employees = await supabaseRequest<Array<{ metadata?: AnyRow }>>(
-    `/rest/v1/employees?select=metadata&user_id=eq.${encodeURIComponent(userId)}&company_id=eq.${encodeURIComponent(companyId)}&status=eq.active&limit=20`
+    `/rest/v1/employees?select=metadata&company_id=eq.${encodeURIComponent(companyId)}&status=eq.active&${employeeIdentityFilter}&limit=20`
   ).catch(() => []);
   return employees.some((employee) => metadataAllowsServiceAdmin(employee.metadata || {}));
 }

@@ -1231,6 +1231,7 @@ async function nextServiceOrderRequest<T>(orderId: string, init: RequestInit = {
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({ message: response.statusText }));
+    if (response.status === 404) return null;
     throw new Error(body.message || "No fue posible actualizar la orden de servicio.");
   }
   if (method !== "GET") clearApiReadCaches();
