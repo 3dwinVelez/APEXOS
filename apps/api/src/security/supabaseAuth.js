@@ -174,9 +174,13 @@ async function syncExistingTenantWithSupabase(user, token, supabaseUser) {
   if (!context?.membership?.company_id) return;
   const update = {};
   if (context.company?.name) update.name = String(context.company.name).trim();
+  const tenant = await prisma.tenant.findUnique({ where: { id: user.tenant_id } });
+  const config = tenant?.config && typeof tenant.config === "object" ? tenant.config : {};
+  if (config.company_id !== context.membership.company_id || config.source !== "supabase_auth_sync") {
+    update.config = { ...config, source: "supabase_auth_sync", company_id: context.membership.company_id };
+  }
   if (Array.isArray(context.activeModules)) {
     const activeModules = Array.from(new Set(context.activeModules.map((item) => String(item).trim()).filter(Boolean)));
-    const tenant = await prisma.tenant.findUnique({ where: { id: user.tenant_id } });
     if (!sameStringSet(tenant?.active_modules, activeModules)) update.active_modules = activeModules;
   }
   if (!Object.keys(update).length) return;

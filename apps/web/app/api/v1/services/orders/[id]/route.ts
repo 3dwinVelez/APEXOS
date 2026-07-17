@@ -121,6 +121,18 @@ function isAdministrativeRole(value: unknown) {
     || role.includes("coordinador");
 }
 
+function normalizeCompanyName(value: unknown) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\b(sas|s a s|sa|s a|ltda|limitada|empresa|compania)\b/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function actionList(value: unknown) {
   if (Array.isArray(value)) return value.map((item) => String(item).trim().toLowerCase());
   if (value && typeof value === "object") {
@@ -206,17 +218,32 @@ async function isPlatformAdmin(userId: string) {
   return Boolean(rows[0]?.user_id);
 }
 
+async function companyName(companyId: string) {
+  if (!isUuid(companyId)) return "";
+  const rows = await supabaseRequest<Array<{ name?: string; legal_name?: string }>>(
+    `/rest/v1/companies?select=name,legal_name&id=eq.${encodeURIComponent(companyId)}&limit=1`
+  ).catch(() => []);
+  return String(rows[0]?.legal_name || rows[0]?.name || "");
+}
+
 async function hasServiceAdminSession(authorization: string, companyId: string) {
   if (!authorization.toLowerCase().startsWith("bearer ")) return false;
   let localApiAllows = false;
   let localApiEmail = "";
+  let localApiCompanyId = "";
+  let localApiTenantName = "";
   const apiUrl = localApiUrl();
   if (apiUrl) {
     try {
       const response = await fetch(`${apiUrl}/api/v1/auth/me`, { headers: { Authorization: authorization } });
       if (response.ok) {
-        const data = await response.json().catch(() => ({})) as { user?: { email?: string; role?: string; role_metadata?: AnyRow; role_permissions?: unknown } };
+        const data = await response.json().catch(() => ({})) as {
+          tenant?: { name?: string; company_id?: string };
+          user?: { email?: string; company_id?: string; role?: string; role_metadata?: AnyRow; role_permissions?: unknown };
+        };
         localApiEmail = String(data.user?.email || "").trim().toLowerCase();
+        localApiCompanyId = String(data.user?.company_id || data.tenant?.company_id || "").trim();
+        localApiTenantName = String(data.tenant?.name || "").trim();
         if (isAdministrativeRole(data.user?.role)
           || isAdministrativeRole(data.user?.role_metadata?.role_type)
           || hasServiceWritePermission(data.user?.role_permissions)
@@ -227,6 +254,13 @@ async function hasServiceAdminSession(authorization: string, companyId: string) 
     } catch {
       // Supabase-auth sessions do not always exist in the local API.
     }
+  }
+
+  if (localApiAllows) {
+    if (localApiCompanyId && localApiCompanyId === companyId) return true;
+    const localName = normalizeCompanyName(localApiTenantName);
+    const remoteName = normalizeCompanyName(await companyName(companyId));
+    if (localName && remoteName && localName === remoteName) return true;
   }
 
   const token = authorization.replace(/^Bearer\s+/i, "");
