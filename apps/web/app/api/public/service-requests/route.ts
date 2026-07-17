@@ -22,6 +22,8 @@ type PublicServiceRequest = {
   notes?: string;
 };
 type PublicReferenceRow = { id: string; company_id?: string; code: string; name: string; category?: string; brand?: string; model?: string };
+type SupabaseUser = { id?: string; email?: string };
+type PermissionRow = { module?: string; actions?: unknown };
 
 const DEFAULT_SERVICE_TYPES = [
   { code: "montaje", label: "Montaje", active: true },
@@ -180,31 +182,112 @@ async function supabaseRequest<T>(path: string, init: RequestInit = {}) {
   return body as T;
 }
 
+function jwtSubject(token: string) {
+  try {
+    const [, payload] = token.split(".");
+    if (!payload) return "";
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    return String(JSON.parse(Buffer.from(normalized, "base64").toString("utf8")).sub || "");
+  } catch {
+    return "";
+  }
+}
+
+function isAdministrativeRole(value: unknown) {
+  const role = String(value || "").trim().toLowerCase();
+  return ["owner", "admin", "superadmin", "administrador", "administrador de empresa", "apex_admin"].includes(role)
+    || role.includes("admin")
+    || role.includes("coordinador");
+}
+
+function actionList(value: unknown) {
+  if (Array.isArray(value)) return value.map((item) => String(item).trim().toLowerCase());
+  if (value && typeof value === "object") {
+    return Object.entries(value as Record<string, unknown>)
+      .filter(([, enabled]) => enabled === true)
+      .map(([action]) => action.trim().toLowerCase());
+  }
+  return [];
+}
+
+function permissionRows(value: unknown): PermissionRow[] {
+  if (Array.isArray(value)) return value.filter((item) => item && typeof item === "object") as PermissionRow[];
+  if (!value || typeof value !== "object") return [];
+  return Object.entries(value as Record<string, unknown>).map(([module, actions]) => ({ module, actions }));
+}
+
+function hasCatalogAdminPermission(value: unknown) {
+  const modules = new Set(["*", "admin", "administracion", "administracion_apex", "services", "servicios", "configuracion"]);
+  const actions = new Set(["*", "edit", "write", "configure", "administer", "manage", "manage_catalogs"]);
+  return permissionRows(value).some((permission) => {
+    const moduleName = String(permission.module || "").trim().toLowerCase();
+    return modules.has(moduleName) && actionList(permission.actions).some((action) => actions.has(action));
+  });
+}
+
+function metadataAllowsCatalogAdmin(metadata: Record<string, unknown>) {
+  const access = metadata.access && typeof metadata.access === "object" ? metadata.access as Record<string, unknown> : {};
+  return isAdministrativeRole(metadata.role_name)
+    || isAdministrativeRole(metadata.role_type)
+    || isAdministrativeRole(access.role_name)
+    || isAdministrativeRole(access.role_type)
+    || hasCatalogAdminPermission(metadata.permissions)
+    || hasCatalogAdminPermission(access.permissions)
+    || hasCatalogAdminPermission(metadata.role_permissions)
+    || hasCatalogAdminPermission(access.role_permissions);
+}
+
+async function currentSupabaseUser(authorization: string) {
+  const token = authorization.replace(/^Bearer\s+/i, "");
+  if (!token || !supabaseConfig().url || !supabaseConfig().anonKey) return null;
+  const response = await fetch(`${supabaseConfig().url}/auth/v1/user`, {
+    headers: {
+      apikey: supabaseConfig().anonKey,
+      Authorization: `Bearer ${token}`
+    }
+  });
+  if (!response.ok) return null;
+  return await response.json().catch(() => null) as SupabaseUser | null;
+}
+
 async function hasAdministrativeSession(authorization: string) {
   if (!authorization.toLowerCase().startsWith("bearer ")) return false;
   try {
     const response = await fetch(`${localApiUrl()}/api/v1/auth/me`, { headers: { Authorization: authorization } });
-    if (!response.ok) return false;
-    const data = await response.json().catch(() => ({})) as {
-      user?: {
-        role?: string;
-        role_metadata?: Record<string, unknown>;
-        role_permissions?: Array<{ module?: string; actions?: string[] }>;
+    if (response.ok) {
+      const data = await response.json().catch(() => ({})) as {
+        user?: {
+          role?: string;
+          role_metadata?: Record<string, unknown>;
+          role_permissions?: unknown;
+        };
       };
-    };
-    const role = String(data.user?.role || "").trim().toLowerCase();
-    const roleType = String(data.user?.role_metadata?.role_type || "").trim().toLowerCase();
-    const hasAdminRole = ["apex_admin", "superadmin", "admin"].includes(role) || role.includes("admin") || roleType === "superadmin";
-    const canConfigureServices = Array.isArray(data.user?.role_permissions)
-      && data.user.role_permissions.some((permission) => {
-        const moduleName = String(permission.module || "").toLowerCase();
-        const actions = Array.isArray(permission.actions) ? permission.actions : [];
-        return ["services", "servicios", "admin"].includes(moduleName) && (actions.includes("configure") || actions.includes("administer") || actions.includes("edit"));
-      });
-    return hasAdminRole || canConfigureServices;
+      if (isAdministrativeRole(data.user?.role)
+        || isAdministrativeRole(data.user?.role_metadata?.role_type)
+        || hasCatalogAdminPermission(data.user?.role_permissions)
+        || metadataAllowsCatalogAdmin(data.user?.role_metadata || {})) {
+        return true;
+      }
+    }
   } catch {
-    return false;
+    // Production commonly uses Supabase Auth without a local API session.
   }
+
+  const token = authorization.replace(/^Bearer\s+/i, "");
+  const user = await currentSupabaseUser(authorization);
+  const userId = user?.id || jwtSubject(token);
+  const config = supabaseConfig();
+  if (!userId || !config.url || !config.anonKey || !config.serviceRoleKey) return false;
+
+  const memberships = await supabaseRequest<Array<{ company_id: string; role?: string; status?: string }>>(
+    `/rest/v1/company_users?select=company_id,role,status&user_id=eq.${encodeURIComponent(userId)}&status=eq.active&limit=20`
+  ).catch(() => []);
+  if (memberships.some((membership) => isAdministrativeRole(membership.role))) return true;
+
+  const employees = await supabaseRequest<Array<{ metadata?: Record<string, unknown> }>>(
+    `/rest/v1/employees?select=metadata&user_id=eq.${encodeURIComponent(userId)}&status=eq.active&limit=20`
+  ).catch(() => []);
+  return employees.some((employee) => metadataAllowsCatalogAdmin(employee.metadata || {}));
 }
 
 async function supabaseRpc<T>(functionName: string, payload: Record<string, unknown>) {
