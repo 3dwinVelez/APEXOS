@@ -382,8 +382,11 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       patch.scheduled_date = String(body.scheduled_date).slice(0, 10);
     }
     if (body.customer_document != null) {
-      if (!/^\d+$/.test(String(body.customer_document))) throw new Error("La cedula del cliente debe contener solo numeros.");
-      nextMetadata.customer_document = String(body.customer_document);
+      const customerDocument = String(body.customer_document || "").trim();
+      if (customerDocument) {
+        if (!/^\d+$/.test(customerDocument)) throw new Error("La cedula del cliente debe contener solo numeros.");
+        nextMetadata.customer_document = customerDocument;
+      }
     }
     if (body.cedi_delivery_date != null && String(body.cedi_delivery_date).trim()) {
       const cediDate = new Date(String(body.cedi_delivery_date));

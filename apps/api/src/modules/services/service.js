@@ -836,8 +836,11 @@ async function updateOrder(tenantId, user, id, input = {}) {
       data.scheduled_date = new Date(input.scheduled_date);
     }
     if (input.customer_document != null) {
-      if (!/^\d+$/.test(String(input.customer_document))) throw appError(400, "INVALID_CUSTOMER_DOCUMENT", "La cedula del cliente debe contener solo numeros");
-      nextMetadata.customer_document = String(input.customer_document);
+      const customerDocument = String(input.customer_document || "").trim();
+      if (customerDocument) {
+        if (!/^\d+$/.test(customerDocument)) throw appError(400, "INVALID_CUSTOMER_DOCUMENT", "La cedula del cliente debe contener solo numeros");
+        nextMetadata.customer_document = customerDocument;
+      }
     }
     if (input.cedi_delivery_date != null && String(input.cedi_delivery_date).trim() !== "") {
       if (Number.isNaN(new Date(input.cedi_delivery_date).getTime())) throw appError(400, "INVALID_SERVICE_DATES", "La fecha de entrega CEDI debe ser valida");
