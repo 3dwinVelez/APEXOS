@@ -140,6 +140,7 @@ function actionList(value: unknown) {
       .filter(([, enabled]) => enabled === true)
       .map(([action]) => action.trim().toLowerCase());
   }
+  if (value != null && String(value).trim()) return [String(value).trim().toLowerCase()];
   return [];
 }
 
