@@ -5,7 +5,7 @@ import path from "node:path";
 let rootEnvCache: Record<string, string> | null = null;
 
 type AnyRow = Record<string, unknown>;
-type PermissionRow = { module?: string; actions?: unknown };
+type PermissionRow = { module?: string; action?: unknown; actions?: unknown };
 type SupabaseUser = { id?: string; email?: string };
 
 function jsonError(message: string, status = 400) {
@@ -154,7 +154,7 @@ function hasServiceWritePermission(value: unknown) {
   const actions = new Set(["*", "edit", "write", "configure", "administer", "manage"]);
   return permissionRows(value).some((permission) => {
     const moduleName = String(permission.module || "").trim().toLowerCase();
-    return modules.has(moduleName) && actionList(permission.actions).some((action) => actions.has(action));
+    return modules.has(moduleName) && actionList(permission.actions ?? permission.action).some((action) => actions.has(action));
   });
 }
 
