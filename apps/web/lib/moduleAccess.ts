@@ -32,6 +32,7 @@ type StoredRolePermission = {
 };
 
 type StoredLegacyPermissions = Record<string, Record<string, boolean>>;
+type AnyRow = Record<string, unknown>;
 
 const moduleCodeBySlug: Record<string, string> = {
   activos: "activos",
@@ -166,6 +167,24 @@ function flattenRolePermissions(value: unknown): StoredRolePermission[] {
   return [];
 }
 
+function serviceTechnicianEmployee(employee: { user_type?: string; metadata?: Record<string, unknown> } | null | undefined) {
+  const metadata = employee?.metadata || {};
+  const access = metadata.access && typeof metadata.access === "object" ? metadata.access as AnyRow : {};
+  const operational = metadata.operational && typeof metadata.operational === "object" ? metadata.operational as AnyRow : {};
+  const values = [
+    employee?.user_type,
+    metadata.profile_kind,
+    metadata.role_name,
+    access.profile_kind,
+    access.role_name,
+    operational.classification
+  ].map((value) => String(value || "").trim().toLowerCase());
+  return values.includes("tecnico")
+    || values.includes("técnico")
+    || metadata.services_assigned_only === true
+    || operational.can_receive_services === true;
+}
+
 async function refreshSupabaseEmployeeRoleContext(companyId?: string) {
   if (typeof window === "undefined" || !isSupabaseSession()) return null;
   const userId = currentSupabaseUserId();
@@ -178,9 +197,9 @@ async function refreshSupabaseEmployeeRoleContext(companyId?: string) {
   ].filter(Boolean).join("&");
   if (!filters) return null;
   const rows = await supabaseFetch<Array<{ user_type?: string; metadata?: Record<string, unknown> }>>(
-    `/rest/v1/employees?select=user_type,metadata&${filters}&limit=1`
+    `/rest/v1/employees?select=user_type,metadata&${filters}&limit=20`
   ).catch(() => []);
-  const employee = rows[0];
+  const employee = rows.find(serviceTechnicianEmployee) || rows[0];
   const metadata = employee?.metadata || {};
   const permissions = flattenRolePermissions(metadata.permissions);
   if (permissions.length) {
