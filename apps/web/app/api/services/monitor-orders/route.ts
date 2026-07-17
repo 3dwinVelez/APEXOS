@@ -12,7 +12,7 @@ type ServiceScope = {
   technicianOnly: boolean;
 };
 
-const ACTIVE_SERVICE_ORDER_STATUS_FILTER = "status=in.(agendado,pendiente,en_curso,inspeccion,ejecucion,no_ejecutada)";
+const ACTIVE_SERVICE_ORDER_STATUS_FILTER = "status=in.(pendiente,en_curso,inspeccion,ejecucion)";
 
 function jsonError(message: string, status = 400) {
   return NextResponse.json({ message }, { status });
@@ -127,6 +127,24 @@ function isAdminCompanyRole(role: unknown) {
   return ["owner", "admin", "superadmin", "administrador", "administrador de empresa"].includes(String(role || "").trim().toLowerCase());
 }
 
+function serviceTechnicianEmployee(employee: { user_type?: string; metadata?: AnyRow }) {
+  const metadata = employee.metadata || {};
+  const access = metadata.access && typeof metadata.access === "object" ? metadata.access as AnyRow : {};
+  const operational = metadata.operational && typeof metadata.operational === "object" ? metadata.operational as AnyRow : {};
+  const values = [
+    employee.user_type,
+    metadata.profile_kind,
+    metadata.role_name,
+    access.profile_kind,
+    access.role_name,
+    operational.classification
+  ].map((value) => String(value || "").trim().toLowerCase());
+  return values.includes("tecnico")
+    || values.includes("técnico")
+    || metadata.services_assigned_only === true
+    || operational.can_receive_services === true;
+}
+
 async function resolveCompanyIds(request: NextRequest, memberships: UserCompany[]) {
   const { publicCompanyId } = supabaseConfig();
   const requestedCompanyId = request.nextUrl.searchParams.get("company_id")?.trim() || "";
@@ -166,12 +184,7 @@ async function resolveServiceScope(request: NextRequest, userId: string, members
   }>>(
     `/rest/v1/employees?select=id,company_id,user_type,metadata&user_id=eq.${encodeURIComponent(userId)}&company_id=in.(${companyFilter})&status=eq.active&limit=20`
   ).catch(() => []);
-  const technician = employees.find((employee) => {
-    const userType = String(employee.user_type || "").trim().toLowerCase();
-    const profileKind = String(employee.metadata?.profile_kind || "").trim().toLowerCase();
-    const roleName = String(employee.metadata?.role_name || "").trim().toLowerCase();
-    return userType === "tecnico" || profileKind === "tecnico" || roleName === "tecnico" || employee.metadata?.services_assigned_only === true;
-  });
+  const technician = employees.find(serviceTechnicianEmployee);
   if (!technician?.id) return { companyIds, technicianOnly: false };
   return {
     companyIds: technician.company_id && isUuid(technician.company_id) ? [technician.company_id] : companyIds,

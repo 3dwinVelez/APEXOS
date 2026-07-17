@@ -11,7 +11,7 @@ const LEGACY_ADMIN_ROLES_STORAGE_KEY = "apexos_admin_roles_qa";
 const ADMIN_ROLE_DELETIONS_STORAGE_KEY = "apexos_admin_role_deletions";
 const USER_MASTER_STORAGE_KEY = "apexos_user_master_data";
 const LEGACY_USER_MASTER_STORAGE_KEY = "apexos_user_master_data_qa";
-const ACTIVE_SERVICE_ORDER_STATUS_FILTER = "status=in.(agendado,pendiente,en_curso,inspeccion,ejecucion,no_ejecutada)";
+const ACTIVE_SERVICE_ORDER_STATUS_FILTER = "status=in.(pendiente,en_curso,inspeccion,ejecucion)";
 const API_GET_CACHE_TTL_MS = Number(process.env.NEXT_PUBLIC_API_GET_CACHE_TTL_MS || 10000);
 let refreshSessionInFlight: Promise<boolean> | null = null;
 const inFlightGetRequests = new Map<string, Promise<unknown>>();
@@ -949,6 +949,25 @@ function operationalRouteKey(row: { route_id?: unknown; metadata?: AnyRow }) {
   return String(row.route_id || row.metadata?.display_route_id || row.metadata?.legacy_route_id || "sin_horario");
 }
 
+function serviceTechnicianEmployee(employee: { user_type?: string; position?: string; metadata?: AnyRow } | null | undefined) {
+  const metadata = employee?.metadata || {};
+  const access = metadata.access && typeof metadata.access === "object" ? metadata.access as AnyRow : {};
+  const operational = metadata.operational && typeof metadata.operational === "object" ? metadata.operational as AnyRow : {};
+  const values = [
+    employee?.user_type,
+    employee?.position,
+    metadata.profile_kind,
+    metadata.role_name,
+    access.profile_kind,
+    access.role_name,
+    operational.classification
+  ].map((value) => String(value || "").trim().toLowerCase());
+  return values.includes("tecnico")
+    || values.includes("técnico")
+    || metadata.services_assigned_only === true
+    || operational.can_receive_services === true;
+}
+
 async function currentSupabaseEmployee() {
   const userId = currentSupabaseUserId();
   const membership = await currentSupabaseCompanyUser();
@@ -965,7 +984,9 @@ async function currentSupabaseEmployee() {
     position?: string;
     user_type?: string;
     metadata?: AnyRow;
-  }>>(`/rest/v1/employees?select=id,company_id,user_id,first_name,last_name,email,document_number,position,user_type,metadata&status=eq.active${userFilter}${companyFilter}&order=created_at.desc&limit=1`);
+  }>>(`/rest/v1/employees?select=id,company_id,user_id,first_name,last_name,email,document_number,position,user_type,metadata&status=eq.active${userFilter}${companyFilter}&order=created_at.desc&limit=20`);
+  const preferredTechnician = technicianSession() ? rows.find(serviceTechnicianEmployee) : null;
+  if (preferredTechnician) return preferredTechnician;
   if (rows[0]) return rows[0];
 
   if (!membership?.company_id || !userId) return null;
@@ -988,6 +1009,10 @@ async function currentSupabaseEmployee() {
     const aliases = identityAliasSet(employee);
     return wanted.some((value) => aliases.has(value));
   });
+  const matchedTechnician = technicianSession()
+    ? candidates.find((employee) => serviceTechnicianEmployee(employee) && wanted.some((value) => identityAliasSet(employee).has(value)))
+    : null;
+  if (matchedTechnician) return matchedTechnician;
   if (matched) return matched;
   return {
     id: userId,
