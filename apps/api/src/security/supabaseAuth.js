@@ -101,14 +101,17 @@ async function getSupabaseMembershipContext(token, supabaseUser) {
   }) || [];
   const membership = memberships.find((item) => ["owner", "admin", "superadmin"].includes(String(item.role || "").toLowerCase())) || memberships[0] || null;
   if (!membership?.company_id) return null;
-  const companies = await supabaseRest(`/rest/v1/companies?select=id,name&id=eq.${encodeURIComponent(String(membership.company_id))}&limit=1`, {
-    token,
-    service: true
-  }) || [];
-  const modules = await supabaseRest(`/rest/v1/v_company_module_status?select=module_code,enabled&company_id=eq.${encodeURIComponent(String(membership.company_id))}&enabled=eq.true`, {
-    token,
-    service: true
-  });
+  const companyId = encodeURIComponent(String(membership.company_id));
+  const [companies, modules] = await Promise.all([
+    supabaseRest(`/rest/v1/companies?select=id,name&id=eq.${companyId}&limit=1`, {
+      token,
+      service: true
+    }).then((rows) => rows || []),
+    supabaseRest(`/rest/v1/v_company_module_status?select=module_code,enabled&company_id=eq.${companyId}&enabled=eq.true`, {
+      token,
+      service: true
+    })
+  ]);
   return {
     membership,
     company: companies[0] || null,

@@ -256,7 +256,7 @@ export async function PATCH(request: NextRequest) {
     const employeeId = clean(body.employee_id);
     if (!employeeId) return NextResponse.json({ message: "Empleado/usuario requerido." }, { status: 400 });
 
-    const rows = await supabaseRequest(`/rest/v1/employees?select=*&id=eq.${employeeId}&limit=1`, { method: "GET", service: true }) as AnyRow[];
+    const rows = await supabaseRequest(`/rest/v1/employees?select=id,company_id,user_id,email,first_name,last_name,document_number,position,department,status,user_type,metadata&id=eq.${employeeId}&limit=1`, { method: "GET", service: true }) as AnyRow[];
     const current = rows[0];
     if (!current?.company_id) return NextResponse.json({ message: "Usuario no encontrado." }, { status: 404 });
     await requireCompanyAdmin(token, String(current.company_id));
