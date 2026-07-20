@@ -101,14 +101,17 @@ async function getSupabaseMembershipContext(token, supabaseUser) {
   }) || [];
   const membership = memberships.find((item) => ["owner", "admin", "superadmin"].includes(String(item.role || "").toLowerCase())) || memberships[0] || null;
   if (!membership?.company_id) return null;
-  const companies = await supabaseRest(`/rest/v1/companies?select=id,name&id=eq.${encodeURIComponent(String(membership.company_id))}&limit=1`, {
-    token,
-    service: true
-  }) || [];
-  const modules = await supabaseRest(`/rest/v1/v_company_module_status?select=module_code,enabled&company_id=eq.${encodeURIComponent(String(membership.company_id))}&enabled=eq.true`, {
-    token,
-    service: true
-  });
+  const companyId = encodeURIComponent(String(membership.company_id));
+  const [companies, modules] = await Promise.all([
+    supabaseRest(`/rest/v1/companies?select=id,name&id=eq.${companyId}&limit=1`, {
+      token,
+      service: true
+    }).then((rows) => rows || []),
+    supabaseRest(`/rest/v1/v_company_module_status?select=module_code,enabled&company_id=eq.${companyId}&enabled=eq.true`, {
+      token,
+      service: true
+    })
+  ]);
   return {
     membership,
     company: companies[0] || null,
@@ -174,9 +177,13 @@ async function syncExistingTenantWithSupabase(user, token, supabaseUser) {
   if (!context?.membership?.company_id) return;
   const update = {};
   if (context.company?.name) update.name = String(context.company.name).trim();
+  const tenant = await prisma.tenant.findUnique({ where: { id: user.tenant_id } });
+  const config = tenant?.config && typeof tenant.config === "object" ? tenant.config : {};
+  if (config.company_id !== context.membership.company_id || config.source !== "supabase_auth_sync") {
+    update.config = { ...config, source: "supabase_auth_sync", company_id: context.membership.company_id };
+  }
   if (Array.isArray(context.activeModules)) {
     const activeModules = Array.from(new Set(context.activeModules.map((item) => String(item).trim()).filter(Boolean)));
-    const tenant = await prisma.tenant.findUnique({ where: { id: user.tenant_id } });
     if (!sameStringSet(tenant?.active_modules, activeModules)) update.active_modules = activeModules;
   }
   if (!Object.keys(update).length) return;

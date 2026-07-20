@@ -13,9 +13,11 @@ const USER_MASTER_STORAGE_KEY = "apexos_user_master_data";
 const LEGACY_USER_MASTER_STORAGE_KEY = "apexos_user_master_data_qa";
 const ACTIVE_SERVICE_ORDER_STATUS_FILTER = "status=in.(pendiente,en_curso,inspeccion,ejecucion)";
 const API_GET_CACHE_TTL_MS = Number(process.env.NEXT_PUBLIC_API_GET_CACHE_TTL_MS || 10000);
+const API_GET_STALE_MS = Number(process.env.NEXT_PUBLIC_API_GET_STALE_MS || 60000);
+const API_GET_CACHE_MAX_ENTRIES = Number(process.env.NEXT_PUBLIC_API_GET_CACHE_MAX_ENTRIES || 160);
 let refreshSessionInFlight: Promise<boolean> | null = null;
 const inFlightGetRequests = new Map<string, Promise<unknown>>();
-const completedGetRequests = new Map<string, { at: number; value: unknown }>();
+const completedGetRequests = new Map<string, { at: number; refreshing?: Promise<unknown>; value: unknown }>();
 
 function clearApiReadCaches() {
   inFlightGetRequests.clear();
@@ -24,6 +26,14 @@ function clearApiReadCaches() {
   if (typeof window !== "undefined") {
     sessionStorage.removeItem("apexos_module_access_cache");
     sessionStorage.removeItem("apexos_module_access_cache_v2");
+  }
+}
+
+function pruneApiReadCaches() {
+  while (completedGetRequests.size > API_GET_CACHE_MAX_ENTRIES) {
+    const oldestKey = completedGetRequests.keys().next().value;
+    if (!oldestKey) return;
+    completedGetRequests.delete(oldestKey);
   }
 }
 
@@ -1212,6 +1222,27 @@ async function nextAdminRolesRequest<T>(init: RequestInit = {}) {
   if (!response.ok) {
     const body = await response.json().catch(() => ({ message: response.statusText }));
     throw new Error(body.message || "No fue posible gestionar roles.");
+  }
+  if (method !== "GET") clearApiReadCaches();
+  return response.json() as Promise<T>;
+}
+
+async function nextServiceOrderRequest<T>(orderId: string, init: RequestInit = {}) {
+  const token = getSupabaseAccessToken();
+  if (!token) return null;
+  const method = String(init.method || "GET").toUpperCase();
+  const response = await fetch(`/api/v1/services/orders/${encodeURIComponent(orderId)}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      ...(init.headers || {})
+    }
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({ message: response.statusText }));
+    if (response.status === 404) return null;
+    throw new Error(body.message || "No fue posible actualizar la orden de servicio.");
   }
   if (method !== "GET") clearApiReadCaches();
   return response.json() as Promise<T>;
@@ -2584,6 +2615,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const orderId = serviceOrderDetailMatch[1];
     const body = JSON.parse(String(options.body || "{}")) as AnyRow;
     if (technicianSession()) throw new Error("El tecnico no puede editar ordenes de servicio.");
+    const serverUpdated = await nextServiceOrderRequest<T>(orderId, options);
+    if (serverUpdated) return serverUpdated;
     const current = await accessibleSupabaseServiceOrder(orderId);
     if (["cerrada", "no_ejecutada"].includes(String(current.status || ""))) {
       throw new Error("Las ordenes finalizadas no se pueden editar para proteger la trazabilidad.");
@@ -3288,14 +3321,33 @@ export async function api<T>(path: string, options: RequestInit = {}, retried = 
   const cacheKey = method === "GET" && !retried ? `${isSupabaseSession() ? "supabase" : "api"}:${path}` : "";
   if (cacheKey) {
     const completed = completedGetRequests.get(cacheKey);
-    if (completed && Date.now() - completed.at <= API_GET_CACHE_TTL_MS) return completed.value as T;
+    if (completed) {
+      const age = Date.now() - completed.at;
+      if (age <= API_GET_CACHE_TTL_MS) return completed.value as T;
+      if (age <= API_GET_CACHE_TTL_MS + API_GET_STALE_MS) {
+        if (!completed.refreshing) {
+          completed.refreshing = apiInternal<T>(path, options, retried)
+            .then((value) => {
+              completedGetRequests.set(cacheKey, { at: Date.now(), value });
+              pruneApiReadCaches();
+              return value;
+            })
+            .catch(() => completed.value);
+          completedGetRequests.set(cacheKey, completed);
+        }
+        return completed.value as T;
+      }
+    }
   }
   if (cacheKey && inFlightGetRequests.has(cacheKey)) return inFlightGetRequests.get(cacheKey) as Promise<T>;
   const request = apiInternal<T>(path, options, retried);
   if (!cacheKey) return request;
   inFlightGetRequests.set(cacheKey, request);
   void request
-    .then((value) => completedGetRequests.set(cacheKey, { at: Date.now(), value }))
+    .then((value) => {
+      completedGetRequests.set(cacheKey, { at: Date.now(), value });
+      pruneApiReadCaches();
+    })
     .catch(() => completedGetRequests.delete(cacheKey))
     .finally(() => inFlightGetRequests.delete(cacheKey));
   return request;
@@ -3308,7 +3360,17 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
   let response: Response;
   const method = String(options.method || "GET").toUpperCase();
   const supabaseSession = isSupabaseSession();
+  const pathname = path.split("?")[0];
+  const serviceOrderDetailMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)$/);
   const preferOperationalApi = HAS_CONFIGURED_API_URL && shouldPreferOperationalApi(path);
+
+  if (serviceOrderDetailMatch && method === "PUT" && uuidOrNull(serviceOrderDetailMatch[1])) {
+    const updated = await nextServiceOrderRequest<T>(serviceOrderDetailMatch[1], options);
+    if (updated) {
+      touchSession();
+      return updated;
+    }
+  }
 
   if (supabaseSession && !preferOperationalApi) {
     const fallback = await supabaseApiFallback<T>(path, options);

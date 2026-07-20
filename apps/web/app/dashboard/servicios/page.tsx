@@ -569,18 +569,21 @@ export default function ServicesPage() {
     if (!editingOrder || savingEdit) return;
     const required: Array<[keyof OrderEditForm, string]> = [
       ["status", "estado"],
-      ["service_type", "tipo de servicio"],
-      ["scheduled_date", "fecha programada"],
-      ["customer_name", "cliente"],
-      ["customer_document", "cedula"],
-      ["customer_phone", "telefono"],
-      ["customer_address", "direccion"],
-      ["notes", "observaciones"]
+      ["service_type", "tipo de servicio"]
     ];
     if (editForm.status === "pendiente") {
-      required.unshift(["reference_id", "referencia"], ["technician_id", "tecnico asignado"]);
+      required.unshift(["reference_id", "referencia"], ["technician_id", "tecnico asignado"], ["scheduled_date", "fecha programada"]);
     }
-    const missing = required.filter(([key]) => !editForm[key].trim()).map(([, label]) => label);
+    const currentValue = (key: keyof OrderEditForm) => {
+      if (key === "reference_id") return editingOrder.reference_id;
+      if (key === "technician_id") return editingOrder.technician_id || editingOrder.technician_employee_id || editingOrder.technician?.id;
+      if (key === "scheduled_date") return editingOrder.scheduled_date;
+      if (key === "customer_document") return editingOrder.metadata?.customer_document;
+      return (editingOrder as unknown as Record<string, unknown>)[key];
+    };
+    const missing = required
+      .filter(([key]) => !editForm[key].trim() && !String(currentValue(key) || "").trim())
+      .map(([, label]) => label);
     if (missing.length) {
       setMessage(`Completa los campos obligatorios: ${missing.join(", ")}.`);
       return;
@@ -588,13 +591,31 @@ export default function ServicesPage() {
     setSavingEdit(true);
     setMessage("");
     try {
-      const payload: Partial<OrderEditForm> = { ...editForm };
-      delete payload.customer_neighborhood;
-      delete payload.service_store;
+      const payload: Partial<OrderEditForm> = {
+        status: editForm.status,
+        service_type: editForm.service_type
+      };
+      const includeWhenPresent = (key: keyof OrderEditForm) => {
+        const value = editForm[key].trim();
+        if (value) payload[key] = value;
+      };
+      const includeEditableText = (key: keyof OrderEditForm) => {
+        const value = editForm[key];
+        const original = String((editingOrder as unknown as Record<string, unknown>)[key] || "");
+        if (value.trim() || value !== original) payload[key] = value.trim();
+      };
+      includeWhenPresent("reference_id");
+      includeWhenPresent("technician_id");
+      includeWhenPresent("scheduled_date");
+      includeWhenPresent("customer_document");
+      includeEditableText("customer_name");
+      includeEditableText("customer_phone");
+      includeEditableText("customer_address");
+      includeEditableText("invoice_number");
+      includeEditableText("notes");
       const selectedStore = serviceStores.find((item) => item.code === editForm.service_store);
-      const metadata = {
+      const metadata: NonNullable<ServiceOrder["metadata"]> = {
         ...(editingOrder.metadata || {}),
-        customer_document: editForm.customer_document.trim(),
         customer_neighborhood: editForm.customer_neighborhood.trim(),
         service_store: editForm.service_store,
         service_store_label: selectedStore?.label || String(editingOrder.metadata?.service_store_label || ""),
@@ -602,6 +623,7 @@ export default function ServicesPage() {
         external_order_id: !isLocalOrder(editingOrder) ? String(editingOrder.id) : String(editingOrder.metadata?.external_order_id || ""),
         external_order_number: !isLocalOrder(editingOrder) ? editingOrder.number : String(editingOrder.metadata?.external_order_number || "")
       };
+      if (editForm.customer_document.trim()) metadata.customer_document = editForm.customer_document.trim();
       if (!editableOrderStatuses.has(editForm.status)) delete payload.status;
       if (!isLocalOrder(editingOrder)) {
         setMessage("No fue posible identificar la orden existente para actualizarla sin duplicar.");
