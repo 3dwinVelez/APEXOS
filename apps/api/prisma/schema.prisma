@@ -720,6 +720,7 @@ model Employee {
   @@unique([tenant_id, code])
   @@index([tenant_id, active])
   @@index([tenant_id, user_type])
+  @@index([tenant_id, active, user_type])
 }
 
 model Project {
@@ -1123,6 +1124,7 @@ model GpsPing {
   @@index([tenant_id, user_name, captured_at])
   @@index([tenant_id, route_id, captured_at])
   @@index([tenant_id, captured_at])
+  @@index([tenant_id, source, captured_at])
 }
 
 model WorkSession {
@@ -1366,6 +1368,7 @@ model TimePunch {
 
   @@index([tenant_id, employee_id, date])
   @@index([tenant_id, user_name, date])
+  @@index([tenant_id, date, punched_at])
 }
 
 model ProcessedWorkday {
@@ -1435,6 +1438,8 @@ model ServiceOrder {
   @@index([tenant_id, status])
   @@index([tenant_id, scheduled_date])
   @@index([tenant_id, created_at])
+  @@index([tenant_id, status, created_at])
+  @@index([tenant_id, technician_id, status, created_at])
 }
 
 model ServiceReference {
@@ -1457,6 +1462,8 @@ model ServiceReference {
   @@unique([tenant_id, code])
   @@index([tenant_id, category])
   @@index([tenant_id, active])
+  @@index([tenant_id, active, code])
+  @@index([tenant_id, category, active, code])
 }
 
 model ServiceReferencePart {
@@ -1471,6 +1478,7 @@ model ServiceReferencePart {
   display_order   Int              @default(0)
 
   @@index([tenant_id, reference_id])
+  @@index([tenant_id, reference_id, display_order])
 }
 
 model ServiceIncident {

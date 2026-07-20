@@ -126,23 +126,23 @@ export type PlatformCompanySessions = {
 };
 
 export function listSupabaseModules(limit = 50) {
-  return supabaseFetch<SupabaseModule[]>(`/rest/v1/modules?select=*&order=sort_order.asc&limit=${limit}`);
+  return supabaseFetch<SupabaseModule[]>(`/rest/v1/modules?select=id,code,name,route,icon,is_active,sort_order&order=sort_order.asc&limit=${limit}`);
 }
 
 export function listSupabasePlans(limit = 20) {
-  return supabaseFetch<SupabasePlan[]>(`/rest/v1/plans?select=*&order=created_at.asc&limit=${limit}`);
+  return supabaseFetch<SupabasePlan[]>(`/rest/v1/plans?select=id,code,name,price,billing_period,is_active&order=created_at.asc&limit=${limit}`);
 }
 
 export function listCompanyModuleStatus(companyId: string, limit = 50) {
-  return supabaseFetch<CompanyModuleStatus[]>(`/rest/v1/v_company_module_status?company_id=eq.${companyId}&select=*&order=sort_order.asc&limit=${limit}`);
+  return supabaseFetch<CompanyModuleStatus[]>(`/rest/v1/v_company_module_status?company_id=eq.${companyId}&select=company_id,company_name,module_code,module_name,route,icon,sort_order,enabled,access_status,source&order=sort_order.asc&limit=${limit}`);
 }
 
 export function listUserCompanies(limit = 20) {
-  return supabaseFetch(`/rest/v1/v_user_companies?select=*&limit=${limit}`);
+  return supabaseFetch(`/rest/v1/v_user_companies?select=company_id,company_name,role&limit=${limit}`);
 }
 
 export function listPlatformCompanies(limit = 100) {
-  return supabaseFetch<PlatformCompany[]>(`/rest/v1/v_platform_companies?select=*&order=company_name.asc&limit=${limit}`);
+  return supabaseFetch<PlatformCompany[]>(`/rest/v1/v_platform_companies?select=company_id,company_name,legal_name,tax_id,email,phone,company_type,parent_company_id,parent_company_name,business_line,country,city,address,status,plan_id,plan_code,plan_name,enabled_modules,blocked_modules&order=company_name.asc&limit=${limit}`);
 }
 
 export function listActivePlatformAdmins(limit = 1, userId = "") {
@@ -151,7 +151,7 @@ export function listActivePlatformAdmins(limit = 1, userId = "") {
 }
 
 export function listPlatformCompanyModuleAccess(companyId: string, limit = 100) {
-  return supabaseFetch<PlatformCompanyModuleAccess[]>(`/rest/v1/v_platform_company_module_access?company_id=eq.${companyId}&select=*&order=sort_order.asc&limit=${limit}`);
+  return supabaseFetch<PlatformCompanyModuleAccess[]>(`/rest/v1/v_platform_company_module_access?company_id=eq.${companyId}&select=company_module_id,company_id,company_name,module_id,module_code,module_name,description,route,icon,sort_order,enabled,source,plan_code,plan_name&order=sort_order.asc&limit=${limit}`);
 }
 
 export function listPlatformCompanySessions(companyId: string, minutes = 30) {

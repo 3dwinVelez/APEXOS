@@ -60,6 +60,25 @@ function roleScopeViolation(role, request) {
   return null;
 }
 
+function isAdministrativeRole(role) {
+  const metadata = role?.metadata && typeof role.metadata === "object" ? role.metadata : {};
+  const values = [
+    role?.name,
+    metadata.role_name,
+    metadata.role_type,
+    metadata.profile_kind,
+    metadata.scope
+  ].map((value) => String(value || "").trim().toLowerCase());
+  return values.some((value) => value === "apex_admin"
+    || value === "owner"
+    || value === "admin"
+    || value === "superadmin"
+    || value === "administrador"
+    || value === "administrador de empresa"
+    || value.includes("admin")
+    || value.includes("coordinador"));
+}
+
 function requirePermission(module, action) {
   return async function rbacMiddleware(request, reply) {
     const role = request.user.role;
@@ -71,7 +90,7 @@ function requirePermission(module, action) {
         details: { module }
       });
     }
-    if (role.name === "APEX_ADMIN") return;
+    if (role.name === "APEX_ADMIN" || isAdministrativeRole(role)) return;
 
     const permissions = role.permissions || [];
     const allowed = permissions.some((permission) => {

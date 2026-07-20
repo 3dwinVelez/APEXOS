@@ -2,6 +2,8 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 const SUPABASE_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_SUPABASE_TIMEOUT_MS || 20000);
 const SUPABASE_GET_CACHE_TTL_MS = Number(process.env.NEXT_PUBLIC_SUPABASE_GET_CACHE_TTL_MS || 12000);
+const SUPABASE_GET_STALE_MS = Number(process.env.NEXT_PUBLIC_SUPABASE_GET_STALE_MS || 60000);
+const SUPABASE_GET_CACHE_MAX_ENTRIES = Number(process.env.NEXT_PUBLIC_SUPABASE_GET_CACHE_MAX_ENTRIES || 120);
 
 type SupabaseFetchOptions = RequestInit & {
   contentType?: string;
@@ -12,6 +14,7 @@ type SupabaseFetchOptions = RequestInit & {
 type SupabaseCacheEntry = {
   at: number;
   token: string;
+  refreshing?: Promise<unknown>;
   promise?: Promise<unknown>;
   value?: unknown;
 };
@@ -56,6 +59,14 @@ function supabaseCacheKey(path: string, token: string) {
   return `${token.slice(0, 24)}:${path}`;
 }
 
+function pruneSupabaseGetCache() {
+  while (supabaseGetCache.size > SUPABASE_GET_CACHE_MAX_ENTRIES) {
+    const oldestKey = supabaseGetCache.keys().next().value;
+    if (!oldestKey) return;
+    supabaseGetCache.delete(oldestKey);
+  }
+}
+
 export function clearSupabaseFetchCache() {
   supabaseGetCache.clear();
 }
@@ -67,11 +78,27 @@ export async function supabaseFetch<T>(path: string, options: SupabaseFetchOptio
   const ttl = cacheTtlMs ?? SUPABASE_GET_CACHE_TTL_MS;
   const canCache = method === "GET" && ttl > 0;
   const key = canCache ? supabaseCacheKey(path, token) : "";
-  if (!canCache) clearSupabaseFetchCache();
+  if (method !== "GET") clearSupabaseFetchCache();
   if (key) {
     const cached = supabaseGetCache.get(key);
     if (cached?.promise) return cached.promise as Promise<T>;
-    if (cached?.value !== undefined && cached.token === token && Date.now() - cached.at <= ttl) return cached.value as T;
+    if (cached?.value !== undefined && cached.token === token) {
+      const age = Date.now() - cached.at;
+      if (age <= ttl) return cached.value as T;
+      if (age <= ttl + SUPABASE_GET_STALE_MS) {
+        if (!cached.refreshing) {
+          cached.refreshing = supabaseFetch<T>(path, { ...options, cacheTtlMs: 0 })
+            .then((value) => {
+              supabaseGetCache.set(key, { at: Date.now(), token, value });
+              pruneSupabaseGetCache();
+              return value;
+            })
+            .catch(() => cached.value);
+          supabaseGetCache.set(key, cached);
+        }
+        return cached.value as T;
+      }
+    }
   }
   const controller = new AbortController();
   const timeout = globalThis.setTimeout(() => controller.abort(), SUPABASE_TIMEOUT_MS);
@@ -83,6 +110,7 @@ export async function supabaseFetch<T>(path: string, options: SupabaseFetchOptio
         signal: controller.signal,
         headers: {
           ...supabaseHeaders({ contentType, requireSession }),
+          Accept: "application/json",
           ...headers
         }
       });
@@ -106,7 +134,13 @@ export async function supabaseFetch<T>(path: string, options: SupabaseFetchOptio
   })();
   if (key) {
     supabaseGetCache.set(key, { at: Date.now(), token, promise: request });
-    request.then((value) => supabaseGetCache.set(key, { at: Date.now(), token, value })).catch(() => supabaseGetCache.delete(key));
+    pruneSupabaseGetCache();
+    request
+      .then((value) => {
+        supabaseGetCache.set(key, { at: Date.now(), token, value });
+        pruneSupabaseGetCache();
+      })
+      .catch(() => supabaseGetCache.delete(key));
   }
   return request;
 }

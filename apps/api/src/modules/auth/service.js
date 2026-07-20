@@ -11,11 +11,13 @@ const ALL_MODULES = Array.from({ length: 26 }, (_, index) => `M-${String(index +
 
 function publicUser(user) {
   const role = user.role || {};
+  const preferences = user.preferences && typeof user.preferences === "object" ? user.preferences : {};
   return {
     id: user.id,
     name: user.name,
     email: user.email,
     tenant_id: user.tenant_id,
+    company_id: preferences.company_id || null,
     role: role.name || null,
     role_id: role.id || user.role_id || null,
     role_permissions: Array.isArray(role.permissions) ? role.permissions : [],
@@ -25,9 +27,11 @@ function publicUser(user) {
 
 function publicTenant(tenant) {
   if (!tenant) return null;
+  const config = tenant.config && typeof tenant.config === "object" ? tenant.config : {};
   return {
     id: tenant.id,
     name: tenant.name,
+    company_id: config.company_id || null,
     industry: tenant.industry,
     country: tenant.country,
     currency: tenant.currency,

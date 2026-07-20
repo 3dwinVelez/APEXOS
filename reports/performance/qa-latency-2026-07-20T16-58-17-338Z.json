@@ -1,0 +1,90 @@
+{
+  "generated_at": "2026-07-20T16:58:17.337Z",
+  "frontend_url": "https://apexos-web-qa-production.up.railway.app",
+  "api_url_configured": false,
+  "scenarios": [
+    10,
+    50,
+    100
+  ],
+  "results": [
+    {
+      "target": "frontend_login",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 447.7,
+      "p95_ms": 491.46,
+      "p99_ms": 491.46,
+      "requests_per_second": 17.61,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      }
+    },
+    {
+      "target": "frontend_dashboard",
+      "concurrency": 10,
+      "requests": 10,
+      "avg_ms": 135.55,
+      "p95_ms": 160.1,
+      "p99_ms": 160.1,
+      "requests_per_second": 61.73,
+      "errors": 0,
+      "statuses": {
+        "200": 10
+      }
+    },
+    {
+      "target": "frontend_login",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 446.55,
+      "p95_ms": 713.16,
+      "p99_ms": 741.82,
+      "requests_per_second": 61.87,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      }
+    },
+    {
+      "target": "frontend_dashboard",
+      "concurrency": 50,
+      "requests": 50,
+      "avg_ms": 244.72,
+      "p95_ms": 328.8,
+      "p99_ms": 331.55,
+      "requests_per_second": 143.77,
+      "errors": 0,
+      "statuses": {
+        "200": 50
+      }
+    },
+    {
+      "target": "frontend_login",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 422.28,
+      "p95_ms": 864.24,
+      "p99_ms": 887.69,
+      "requests_per_second": 103.24,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      }
+    },
+    {
+      "target": "frontend_dashboard",
+      "concurrency": 100,
+      "requests": 100,
+      "avg_ms": 460.88,
+      "p95_ms": 584.12,
+      "p99_ms": 594.2,
+      "requests_per_second": 161.81,
+      "errors": 0,
+      "statuses": {
+        "200": 100
+      }
+    }
+  ]
+}
