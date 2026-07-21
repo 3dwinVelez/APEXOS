@@ -12,6 +12,12 @@ function jsonError(message: string, status = 400) {
   return NextResponse.json({ message }, { status });
 }
 
+function requestError(message: string, statusCode = 400) {
+  const error = new Error(message) as Error & { statusCode?: number };
+  error.statusCode = statusCode;
+  return error;
+}
+
 function rootEnv() {
   if (rootEnvCache) return rootEnvCache;
   let currentDir = process.cwd();
@@ -343,37 +349,62 @@ function serviceTechnicianEmployee(employee: { user_type?: string; position?: st
 }
 
 async function activeServiceTechnician(companyId: string, technicianId: unknown) {
-  if (!isUuid(technicianId)) throw new Error("Selecciona un tecnico operativo activo de esta empresa.");
+  if (!isUuid(technicianId)) throw requestError("Selecciona un tecnico operativo activo de esta empresa.");
   const technicians = await supabaseRequest<Array<{ id: string; user_id?: string; user_type?: string; position?: string; metadata?: AnyRow }>>(
     `/rest/v1/employees?select=id,user_id,user_type,position,metadata&id=eq.${encodeURIComponent(String(technicianId))}&company_id=eq.${encodeURIComponent(companyId)}&status=eq.active&limit=1`
   );
   const technician = technicians[0];
   if (!technician?.id || !serviceTechnicianEmployee(technician)) {
-    throw new Error("Selecciona un tecnico operativo activo de esta empresa.");
+    throw requestError("Selecciona un tecnico operativo activo de esta empresa.");
   }
   return technician;
 }
 
 async function assertActiveReference(companyId: string, referenceId: unknown) {
-  if (!isUuid(referenceId)) throw new Error("Selecciona una referencia valida.");
+  if (!isUuid(referenceId)) throw requestError("Selecciona una referencia valida.");
   const references = await supabaseRequest<Array<{ id: string }>>(
     `/rest/v1/service_references?select=id&id=eq.${encodeURIComponent(String(referenceId))}&company_id=eq.${encodeURIComponent(companyId)}&active=eq.true&limit=1`
   );
-  if (!references[0]?.id) throw new Error("Selecciona una referencia activa.");
+  if (!references[0]?.id) throw requestError("Selecciona una referencia activa.");
   return references[0].id;
 }
 
 async function assertServiceType(companyId: string, value: unknown) {
   const code = serviceTypeCode(value || "montaje");
-  if (!code) throw new Error("Selecciona un tipo de servicio valido.");
+  if (!code) throw requestError("Selecciona un tipo de servicio valido.");
   const rows = await supabaseRequest<Array<{ metadata?: AnyRow }>>(
     `/rest/v1/service_references?select=metadata&company_id=eq.${encodeURIComponent(companyId)}&code=eq.${encodeURIComponent("__SERVICE_TYPES__")}&limit=1`
   ).catch(() => []);
   const types = Array.isArray(rows[0]?.metadata?.service_types) ? rows[0]?.metadata?.service_types as AnyRow[] : [];
   if (types.length && !types.some((item) => serviceTypeCode(item.code || item.label) === code && item.active !== false)) {
-    throw new Error("Selecciona un tipo de servicio activo.");
+    throw requestError("Selecciona un tipo de servicio activo.");
   }
   return code;
+}
+
+function hasServiceValue(value: unknown) {
+  return String(value ?? "").trim() !== "";
+}
+
+function missingOrderEditFields(current: AnyRow, patch: AnyRow, nextMetadata: AnyRow) {
+  const nextStatus = String(patch.status ?? current.status ?? "").trim();
+  const baseFields: Array<[string, unknown]> = [
+    ["estado", nextStatus],
+    ["tipo de servicio", patch.service_type ?? current.service_type],
+    ["nombre del cliente", patch.customer_name ?? current.customer_name],
+    ["cedula del cliente", nextMetadata.customer_document],
+    ["telefono", patch.customer_phone ?? current.customer_phone],
+    ["direccion", patch.customer_address ?? current.customer_address],
+    ["observaciones operativas", patch.notes ?? current.notes]
+  ];
+  const pendingFields: Array<[string, unknown]> = nextStatus === "pendiente" ? [
+    ["referencia", patch.reference_id ?? current.reference_id],
+    ["tecnico asignado", patch.technician_employee_id ?? current.technician_employee_id],
+    ["fecha programada del servicio", patch.scheduled_date ?? current.scheduled_date]
+  ] : [];
+  return [...pendingFields, ...baseFields]
+    .filter(([, value]) => !hasServiceValue(value))
+    .map(([label]) => label);
 }
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -393,9 +424,15 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       reference_id?: string | null;
       technician_employee_id?: string | null;
       status?: string;
+      service_type?: string | null;
+      customer_name?: string | null;
+      customer_address?: string | null;
+      customer_phone?: string | null;
+      scheduled_date?: string | null;
+      notes?: string | null;
       metadata?: AnyRow;
     }>>(
-      `/rest/v1/service_orders?select=id,company_id,number,reference_id,technician_employee_id,status,metadata&id=eq.${encodeURIComponent(orderId)}&limit=1`
+      `/rest/v1/service_orders?select=id,company_id,number,reference_id,technician_employee_id,status,service_type,customer_name,customer_address,customer_phone,scheduled_date,notes,metadata&id=eq.${encodeURIComponent(orderId)}&limit=1`
     );
     const current = rows[0];
     if (!current?.id) return jsonError("No se encontro la orden de servicio.", 404);
@@ -423,11 +460,11 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     if (body.status != null) {
       const nextStatus = String(body.status || "").trim() || String(current.status || "agendado");
       const allowedStatuses = new Set(["agendado", "pendiente", "cancelada"]);
-      if (!allowedStatuses.has(nextStatus)) throw new Error("Selecciona un estado valido para la orden.");
+      if (!allowedStatuses.has(nextStatus)) throw requestError("Selecciona un estado valido para la orden.");
       const technicianReady = Boolean(patch.technician_employee_id || current.technician_employee_id);
       const referenceReady = Boolean(patch.reference_id || current.reference_id);
-      if (nextStatus === "pendiente" && !technicianReady) throw new Error("Asigna un tecnico responsable antes de pasar la preorden a pendiente.");
-      if (nextStatus === "pendiente" && !referenceReady) throw new Error("Selecciona una referencia activa antes de pasar la preorden a pendiente.");
+      if (nextStatus === "pendiente" && !technicianReady) throw requestError("Asigna un tecnico responsable antes de pasar la preorden a pendiente.");
+      if (nextStatus === "pendiente" && !referenceReady) throw requestError("Selecciona una referencia activa antes de pasar la preorden a pendiente.");
       patch.status = nextStatus;
       nextMetadata.requires_admin_completion = nextStatus === "agendado";
       nextMetadata.preorder_status = nextStatus === "agendado" ? "agendado" : "";
@@ -441,20 +478,24 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     if (body.notes != null) patch.notes = String(body.notes || "").trim();
     if (body.scheduled_date != null && String(body.scheduled_date).trim()) {
       const scheduled = new Date(String(body.scheduled_date));
-      if (Number.isNaN(scheduled.getTime())) throw new Error("La fecha programada debe ser valida.");
+      if (Number.isNaN(scheduled.getTime())) throw requestError("La fecha programada debe ser valida.");
       patch.scheduled_date = String(body.scheduled_date).slice(0, 10);
     }
     if (body.customer_document != null) {
       const customerDocument = String(body.customer_document || "").trim();
       if (customerDocument) {
-        if (!/^\d+$/.test(customerDocument)) throw new Error("La cedula del cliente debe contener solo numeros.");
+        if (!/^\d+$/.test(customerDocument)) throw requestError("La cedula del cliente debe contener solo numeros.");
         nextMetadata.customer_document = customerDocument;
       }
     }
     if (body.cedi_delivery_date != null && String(body.cedi_delivery_date).trim()) {
       const cediDate = new Date(String(body.cedi_delivery_date));
-      if (Number.isNaN(cediDate.getTime())) throw new Error("La fecha de entrega CEDI debe ser valida.");
+      if (Number.isNaN(cediDate.getTime())) throw requestError("La fecha de entrega CEDI debe ser valida.");
       nextMetadata.cedi_delivery_date = String(body.cedi_delivery_date).slice(0, 10);
+    }
+    const missing = missingOrderEditFields(current as AnyRow, patch, nextMetadata);
+    if (missing.length) {
+      throw requestError(`Completa los campos obligatorios: ${missing.join(", ")}`);
     }
     patch.metadata = {
       ...nextMetadata,
@@ -473,6 +514,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     });
     return NextResponse.json(updated[0] || { id: orderId, ...patch });
   } catch (error) {
-    return jsonError(error instanceof Error ? error.message : "No fue posible actualizar la orden de servicio.", 500);
+    const status = error && typeof error === "object" && "statusCode" in error ? Number((error as { statusCode?: number }).statusCode) : 500;
+    return jsonError(error instanceof Error ? error.message : "No fue posible actualizar la orden de servicio.", Number.isInteger(status) ? status : 500);
   }
 }

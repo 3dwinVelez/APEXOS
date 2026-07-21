@@ -73,6 +73,31 @@ async function requireSatisfactionSurvey(tenantId, input = {}) {
   }
 }
 
+function hasServiceValue(value) {
+  return String(value ?? "").trim() !== "";
+}
+
+function missingOrderEditFields(order, data, nextMetadata) {
+  const nextStatus = String(data.status ?? order.status ?? "").trim();
+  const baseFields = [
+    ["status", "estado", nextStatus],
+    ["service_type", "tipo de servicio", data.service_type ?? order.service_type],
+    ["customer_name", "nombre del cliente", data.customer_name ?? order.customer_name],
+    ["customer_document", "cedula del cliente", nextMetadata.customer_document],
+    ["customer_phone", "telefono", data.customer_phone ?? order.customer_phone],
+    ["customer_address", "direccion", data.customer_address ?? order.customer_address],
+    ["notes", "observaciones operativas", data.notes ?? order.notes]
+  ];
+  const pendingFields = nextStatus === "pendiente" ? [
+    ["reference_id", "referencia", data.reference_id ?? order.reference_id],
+    ["technician_id", "tecnico asignado", data.technician_id ?? order.technician_id],
+    ["scheduled_date", "fecha programada del servicio", data.scheduled_date ?? order.scheduled_date]
+  ] : [];
+  return [...pendingFields, ...baseFields]
+    .filter(([, , value]) => !hasServiceValue(value))
+    .map(([, label]) => label);
+}
+
 function orderTimeline(order) {
   const events = [
     { label: "Orden creada", at: order.created_at },
@@ -877,6 +902,11 @@ async function updateOrder(tenantId, user, id, input = {}) {
     if (input.cedi_delivery_date != null && String(input.cedi_delivery_date).trim() !== "") {
       if (Number.isNaN(new Date(input.cedi_delivery_date).getTime())) throw appError(400, "INVALID_SERVICE_DATES", "La fecha de entrega CEDI debe ser valida");
       nextMetadata.cedi_delivery_date = String(input.cedi_delivery_date).slice(0, 10);
+    }
+
+    const missing = missingOrderEditFields(order, data, nextMetadata);
+    if (missing.length) {
+      throw appError(400, "SERVICE_ORDER_REQUIRED_FIELDS", `Completa los campos obligatorios: ${missing.join(", ")}`);
     }
 
     data.metadata = {
