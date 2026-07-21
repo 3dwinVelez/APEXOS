@@ -388,6 +388,8 @@ export default function ServicesPage() {
   const [editingOrder, setEditingOrder] = useState<ServiceOrder | null>(null);
   const [editForm, setEditForm] = useState<OrderEditForm>(emptyEditForm);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [refreshingOrders, setRefreshingOrders] = useState(false);
+  const [lastRefreshAt, setLastRefreshAt] = useState<Date | null>(null);
   const [handledExternalKey, setHandledExternalKey] = useState("");
 
   async function load() {
@@ -398,20 +400,33 @@ export default function ServicesPage() {
         try {
           const supabaseOrders = await loadSupabaseMonitorOrders();
           setOrders(mergeOrders(supabaseOrders).map(effectiveOrder));
-          return;
+          setLastRefreshAt(new Date());
+          return true;
         } catch (error) {
           const response = await api<OrdersResponse>("/api/v1/services/orders?limit=200");
           setOrders(mergeOrders(response.data || []).map(effectiveOrder));
           if (!response.data?.length) throw error;
-          return;
+          setLastRefreshAt(new Date());
+          return true;
         }
       }
       const response = await api<OrdersResponse>("/api/v1/services/orders?limit=200");
       setOrders(mergeOrders(response.data || []).map(effectiveOrder));
+      setLastRefreshAt(new Date());
+      return true;
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No fue posible cargar servicios.");
       setOrders([]);
+      return false;
     }
+  }
+
+  async function refreshOrders() {
+    if (refreshingOrders) return;
+    setRefreshingOrders(true);
+    const refreshed = await load();
+    if (refreshed) setMessage("Datos del monitor actualizados correctamente.");
+    setRefreshingOrders(false);
   }
 
   async function loadMasters() {
@@ -755,11 +770,18 @@ export default function ServicesPage() {
                   </div>
                 </div>
               </div>
-              {activeFilters ? (
-                <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold text-neutral-600 hover:border-apex hover:text-apex" onClick={clearFilters} type="button">
-                  <RotateCcw size={15} /> Limpiar {activeFilters} filtro(s)
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                {lastRefreshAt ? <span className="hidden text-xs font-semibold text-neutral-500 md:inline">Actualizado {lastRefreshAt.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}</span> : null}
+                <button className="inline-flex h-10 items-center gap-2 rounded-md border border-emerald-300 bg-emerald-600 px-3 text-sm font-semibold text-white shadow-sm shadow-emerald-900/10 transition hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-70" disabled={refreshingOrders} onClick={refreshOrders} type="button">
+                  <RotateCcw className={refreshingOrders ? "animate-spin" : ""} size={15} />
+                  {refreshingOrders ? "Actualizando..." : "Actualizar datos"}
                 </button>
-              ) : null}
+                {activeFilters ? (
+                  <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold text-neutral-600 hover:border-apex hover:text-apex" onClick={clearFilters} type="button">
+                    <RotateCcw size={15} /> Limpiar {activeFilters} filtro(s)
+                  </button>
+                ) : null}
+              </div>
             </div>
 
             <div className="relative min-w-0">
