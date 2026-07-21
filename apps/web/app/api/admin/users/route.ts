@@ -116,6 +116,16 @@ function permissionFlag(permissions: unknown, moduleKey: string, action: string)
   return Boolean(row && typeof row === "object" && (row as Record<string, unknown>)[action]);
 }
 
+function isAdministrativeAccess(metadata: AnyRow) {
+  const access = metadata.access && typeof metadata.access === "object" ? metadata.access as AnyRow : {};
+  const permissions = access.permissions || access.role_permissions || metadata.permissions || metadata.role_permissions;
+  return companyRoleFromAccess({
+    roleName: access.role_name || metadata.role_name,
+    roleType: access.role_type || metadata.role_type,
+    permissions
+  }) === "admin";
+}
+
 function companyRoleFromAccess(input: { roleName?: unknown; roleType?: unknown; permissions?: unknown }) {
   const roleName = String(input.roleName || "").toLowerCase();
   const roleType = String(input.roleType || "").toLowerCase();
@@ -208,22 +218,50 @@ async function syncSupabaseUserState(input: {
 }
 
 async function requireCompanyAdmin(token: string, companyId?: string | null) {
+  const userId = jwtSubject(token);
+  if (!userId) throw httpError("Sesion invalida para validar permisos de administrador.", 401);
   const filter = companyId ? `&company_id=eq.${encodeURIComponent(companyId)}` : "";
-  const rows = await supabaseRequest(`/rest/v1/company_users?select=company_id,role,status&status=eq.active${filter}&limit=20`, {
+  const rows = await supabaseRequest(`/rest/v1/company_users?select=company_id,user_id,role,status&user_id=eq.${encodeURIComponent(userId)}&status=eq.active${filter}&limit=20`, {
     method: "GET",
     token
-  }) as Array<{ company_id: string; role?: string }>;
+  }) as Array<{ company_id: string; user_id?: string; role?: string }>;
   const admin = rows.find((row) => ["owner", "admin", "superadmin"].includes(String(row.role || "").toLowerCase()));
-  if (!admin) throw new Error("No tienes permisos para crear usuarios en esta empresa.");
-  return admin;
+  if (admin) return admin;
+
+  const employeeFilter = companyId ? `&company_id=eq.${encodeURIComponent(companyId)}` : "";
+  const employees = await supabaseRequest(`/rest/v1/employees?select=company_id,user_id,metadata&user_id=eq.${encodeURIComponent(userId)}&status=eq.active${employeeFilter}&limit=20`, {
+    method: "GET",
+    service: true
+  }) as Array<{ company_id: string; user_id?: string; metadata?: AnyRow }>;
+  const employeeAdmin = employees.find((row) => row.company_id && isAdministrativeAccess(row.metadata || {}));
+  if (employeeAdmin) {
+    await syncSupabaseUserState({
+      userId,
+      companyId: employeeAdmin.company_id,
+      roleName: (employeeAdmin.metadata?.access as AnyRow | undefined)?.role_name || employeeAdmin.metadata?.role_name,
+      roleType: (employeeAdmin.metadata?.access as AnyRow | undefined)?.role_type || employeeAdmin.metadata?.role_type,
+      permissions: (employeeAdmin.metadata?.access as AnyRow | undefined)?.permissions || employeeAdmin.metadata?.permissions,
+      employeeStatus: "active"
+    });
+    return { company_id: employeeAdmin.company_id, user_id: userId, role: "admin" };
+  }
+  throw new Error("No tienes permisos para administrar usuarios en esta empresa.");
 }
 
 async function adminCompanies(token: string) {
-  const rows = await supabaseRequest("/rest/v1/company_users?select=company_id,role,status&status=eq.active&limit=50", {
+  const userId = jwtSubject(token);
+  if (!userId) return [];
+  const rows = await supabaseRequest(`/rest/v1/company_users?select=company_id,user_id,role,status&user_id=eq.${encodeURIComponent(userId)}&status=eq.active&limit=50`, {
     method: "GET",
     token
   }) as Array<{ company_id: string; role?: string }>;
-  return rows.filter((row) => ["owner", "admin", "superadmin"].includes(String(row.role || "").toLowerCase())).map((row) => row.company_id);
+  const companies = rows.filter((row) => ["owner", "admin", "superadmin"].includes(String(row.role || "").toLowerCase())).map((row) => row.company_id);
+  if (companies.length) return companies;
+  const employees = await supabaseRequest(`/rest/v1/employees?select=company_id,user_id,metadata&user_id=eq.${encodeURIComponent(userId)}&status=eq.active&limit=50`, {
+    method: "GET",
+    service: true
+  }) as Array<{ company_id: string; metadata?: AnyRow }>;
+  return employees.filter((row) => row.company_id && isAdministrativeAccess(row.metadata || {})).map((row) => row.company_id);
 }
 
 export async function GET(request: NextRequest) {
