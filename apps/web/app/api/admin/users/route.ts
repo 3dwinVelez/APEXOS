@@ -89,6 +89,12 @@ function validateUserPayload(body: AnyRow, { requirePassword = false } = {}) {
   return { email, fullName };
 }
 
+function assertPasswordPolicy(value: unknown) {
+  const pw = String(value || "");
+  if (pw.length < 8) throw httpError("La clave temporal debe tener minimo 8 caracteres.", 400);
+  if (!/[A-Za-z]/.test(pw) || !/[0-9]/.test(pw)) throw httpError("La clave temporal debe combinar letras y numeros.", 400);
+}
+
 function userStatusToEmployeeStatus(value: unknown) {
   const status = String(value || "activo").toLowerCase();
   if (["inactivo", "inactive"].includes(status)) return "inactive";
@@ -269,14 +275,31 @@ export async function PATCH(request: NextRequest) {
 
     if (action === "access") {
       const nextStatus = body.active === false ? "inactive" : activeStatus(current.status);
+      const nextPassword = clean(body.password);
+      if (nextPassword) {
+        assertPasswordPolicy(nextPassword);
+        if (!current.user_id) throw httpError("El usuario no esta vinculado a Supabase Auth para cambiar la clave.", 409);
+        await supabaseRequest(`/auth/v1/admin/users/${encodeURIComponent(String(current.user_id))}`, {
+          method: "PATCH",
+          service: true,
+          body: JSON.stringify({
+            password: nextPassword,
+            user_metadata: {
+              password_reset_by_admin: true,
+              password_reset_at: new Date().toISOString()
+            }
+          })
+        });
+      }
       nextMetadata = {
         ...metadata,
         access: {
           ...((metadata.access && typeof metadata.access === "object" ? metadata.access : {}) as AnyRow),
-          session_status: clean(body.session_status) || "bloqueada",
-          require_password_change: body.require_password_change ?? ((metadata.access as AnyRow | undefined)?.require_password_change || false)
+          session_status: clean(body.session_status) || (nextPassword ? "sin_sesion" : "bloqueada"),
+          require_password_change: nextPassword ? true : body.require_password_change ?? ((metadata.access as AnyRow | undefined)?.require_password_change || false),
+          ...(nextPassword ? { password_reset_at: new Date().toISOString(), password_reset_mode: "admin_manual" } : {})
         },
-        user_audit_trail: [...(Array.isArray(metadata.user_audit_trail) ? metadata.user_audit_trail : []).slice(-9), { at: new Date().toISOString(), action: "access_updated", source: "next-api" }]
+        user_audit_trail: [...(Array.isArray(metadata.user_audit_trail) ? metadata.user_audit_trail : []).slice(-9), { at: new Date().toISOString(), action: nextPassword ? "password_reset" : "access_updated", source: "next-api" }]
       };
       patch = { metadata: nextMetadata, ...(body.active === false ? { status: "inactive" } : {}) };
       await syncSupabaseUserState({
@@ -333,6 +356,22 @@ export async function PATCH(request: NextRequest) {
       if (!roleId && !roleName) throw httpError("Rol principal requerido.", 400);
       const documentNumber = clean(body.document) || clean(current.document_number) || clean(metadata.document);
       if (!documentNumber) throw httpError("Documento requerido.", 400);
+      const nextPassword = clean(body.password);
+      if (nextPassword) {
+        assertPasswordPolicy(nextPassword);
+        if (!current.user_id) throw httpError("El usuario no esta vinculado a Supabase Auth para cambiar la clave.", 409);
+        await supabaseRequest(`/auth/v1/admin/users/${encodeURIComponent(String(current.user_id))}`, {
+          method: "PATCH",
+          service: true,
+          body: JSON.stringify({
+            password: nextPassword,
+            user_metadata: {
+              password_reset_by_admin: true,
+              password_reset_at: new Date().toISOString()
+            }
+          })
+        });
+      }
       const nextStatus = userStatusToEmployeeStatus(body.user_status || metadata.user_status || current.status);
       const rolePermissions = rolePermissionsFromBody(body, metadata.permissions);
       nextMetadata = {
@@ -356,9 +395,10 @@ export async function PATCH(request: NextRequest) {
           role_type: clean(body.role_type) || previousAccess.role_type || "",
           role_scope: clean(body.role_scope) || previousAccess.role_scope || "",
           permissions: rolePermissions,
-          require_password_change: body.require_password_change === undefined ? Boolean(previousAccess.require_password_change) : Boolean(body.require_password_change)
+          require_password_change: nextPassword ? true : body.require_password_change === undefined ? Boolean(previousAccess.require_password_change) : Boolean(body.require_password_change),
+          ...(nextPassword ? { password_reset_at: new Date().toISOString(), password_reset_mode: "admin_manual" } : {})
         },
-        user_audit_trail: [...(Array.isArray(metadata.user_audit_trail) ? metadata.user_audit_trail : []).slice(-9), { at: new Date().toISOString(), action: "updated", source: "next-api" }]
+        user_audit_trail: [...(Array.isArray(metadata.user_audit_trail) ? metadata.user_audit_trail : []).slice(-9), { at: new Date().toISOString(), action: nextPassword ? "updated_with_password_reset" : "updated", source: "next-api" }]
       };
       patch = {
         first_name: clean(body.first_names) || splitName.firstName || current.first_name,
