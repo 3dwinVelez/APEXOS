@@ -60,6 +60,13 @@ const photoLabels: Record<string, string> = {
   no_ejecutada: "Evidencia no ejecutada"
 };
 
+function inspectionStatusMeta(status?: string) {
+  const normalized = String(status || "").toLowerCase();
+  if (normalized === "ok") return { badge: "OK", label: "Sin novedad", fill: [0.9, 0.98, 0.94], stroke: [0.49, 0.78, 0.59], text: [0.05, 0.42, 0.2] };
+  if (normalized.includes("aver")) return { badge: "!", label: "Averia", fill: [1, 0.96, 0.86], stroke: [0.93, 0.69, 0.28], text: [0.63, 0.32, 0.04] };
+  return { badge: "X", label: "Dano/faltante", fill: [1, 0.92, 0.92], stroke: [0.9, 0.42, 0.42], text: [0.72, 0.08, 0.08] };
+}
+
 function pdfEscape(value: unknown) {
   return String(value ?? "").replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
 }
@@ -235,6 +242,38 @@ export async function buildServiceReportPdfBlob(order: ReportOrder) {
     y -= height + 6;
   }
 
+  function inspectionCard(item: NonNullable<NonNullable<ReportOrder["metadata"]>["inspection"]>["items"][number], x: number, top: number, width: number, height: number) {
+    const status = inspectionStatusMeta(item.status);
+    const hasIssue = String(item.status || "").toLowerCase() !== "ok";
+    const bottom = top - height + 6;
+    rect(x, bottom, width, height, hasIssue ? [1, 0.99, 0.97] : [0.99, 1, 0.99], [0.86, 0.89, 0.86]);
+    rect(x + 8, top - 20, 26, 16, status.fill, status.stroke);
+    text(status.badge, x + 15, top - 15, { size: 7.5, bold: true, fill: status.text });
+    wrap(`${item.name || "Pieza"} (${item.quantity || 1} ${item.unit || "und"})`, 30).slice(0, 2).forEach((line, index) => {
+      text(line, x + 42, top - 8 - index * 10, { size: 8, bold: index === 0 });
+    });
+    text(status.label, x + width - 70, top - 9, { size: 7.5, bold: true, fill: status.text });
+    if (hasIssue) {
+      const detail = [item.comment, item.action, item.supplier_name ? `Proveedor: ${item.supplier_name}` : ""].filter(Boolean).join(" / ") || "Sin observacion";
+      wrap(detail, 38).slice(0, 2).forEach((line, index) => {
+        text(line, x + 42, top - 29 - index * 9, { size: 7.2, fill: [0.35, 0.29, 0.22] });
+      });
+    }
+  }
+
+  function inspectionGrid(items: NonNullable<NonNullable<ReportOrder["metadata"]>["inspection"]>["items"]) {
+    const columnGap = 10;
+    const columnWidth = (pageWidth - margin * 2 - columnGap) / 2;
+    const rowHeight = 46;
+    items.slice(0, 80).forEach((item, index) => {
+      if (index % 2 === 0) ensure(rowHeight + 8);
+      const x = margin + (index % 2) * (columnWidth + columnGap);
+      inspectionCard(item, x, y, columnWidth, rowHeight);
+      if (index % 2 === 1 || index === Math.min(items.length, 80) - 1) y -= rowHeight + 7;
+    });
+    if (items.length > 80) paragraph(`Se muestran 80 de ${items.length} piezas inspeccionadas.`);
+  }
+
   function drawImage(image: EvidenceImage, x: number, bottom: number, boxWidth: number, boxHeight: number) {
     const scale = Math.min(boxWidth / image.width, boxHeight / image.height);
     const width = image.width * scale;
@@ -308,11 +347,9 @@ export async function buildServiceReportPdfBlob(order: ReportOrder) {
   title("Inspeccion");
   const inspection = order.metadata?.inspection?.items || [];
   if (inspection.length) {
-    inspection.slice(0, 40).forEach((item) => row([
-      { text: `${item.name || "Pieza"} (${item.quantity || 1} ${item.unit || "und"})`, x: 10, chars: 36, bold: true },
-      { text: item.status || "N/A", x: 230, chars: 16 },
-      { text: [item.comment, item.action, item.supplier_name ? `Proveedor: ${item.supplier_name}` : ""].filter(Boolean).join(" / ") || "Sin observacion", x: 320, chars: 42, lines: 3 }
-    ], 40));
+    const issueCount = inspection.filter((item) => String(item.status || "").toLowerCase() !== "ok").length;
+    paragraph(`${inspection.length} pieza(s) inspeccionada(s). ${issueCount ? `${issueCount} con alerta.` : "Todas sin novedad."}`);
+    inspectionGrid(inspection);
   } else {
     paragraph("Sin inspeccion registrada.");
   }
