@@ -746,6 +746,8 @@ export default function AdministracionPage() {
   const [selectedDocumentFile, setSelectedDocumentFile] = useState<File | null>(null);
   const [catalogDraft, setCatalogDraft] = useState({ catalog: "positions", code: "", name: "", description: "" });
   const [editingCatalogCode, setEditingCatalogCode] = useState<string | null>(null);
+  const [catalogSaving, setCatalogSaving] = useState("");
+  const [catalogNotice, setCatalogNotice] = useState<ToastState | null>(null);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [roleSaving, setRoleSaving] = useState(false);
@@ -757,6 +759,12 @@ export default function AdministracionPage() {
     setToast({ title, detail, tone });
     toastTimer.current = window.setTimeout(() => setToast(null), 4200);
   }, []);
+
+  const confirmCatalogAction = useCallback((title: string, detail?: string, tone: ToastState["tone"] = "success") => {
+    setCatalogNotice({ title, detail, tone });
+    setMessage(detail ? `${title}. ${detail}` : title);
+    notify(title, detail, tone);
+  }, [notify]);
 
   const selectedRole = useMemo(() => roles.find((role) => role.id === selectedRoleId) || null, [roles, selectedRoleId]);
   const selectedUser = useMemo(() => users.find((user) => user.id === selectedUserId) || null, [users, selectedUserId]);
@@ -1309,70 +1317,79 @@ export default function AdministracionPage() {
   }
 
   async function saveCatalogItem() {
+    if (catalogSaving) return;
     const operationalCatalogs = new Set(["service_types", "service_stores", "satisfaction_questions"]);
     const isOperationalDraft = operationalCatalogs.has(catalogDraft.catalog);
     const draftCode = catalogDraft.code.trim() || (isOperationalDraft ? catalogDraft.name.trim() : "");
     if (!catalogDraft.catalog || !catalogDraft.name.trim() || (!isOperationalDraft && !catalogDraft.code.trim())) {
-      setMessage(isOperationalDraft ? "Catalogo y nombre son obligatorios." : "Catalogo, codigo y nombre son obligatorios.");
+      confirmCatalogAction("Datos incompletos", isOperationalDraft ? "Catalogo y nombre son obligatorios." : "Catalogo, codigo y nombre son obligatorios.", "warning");
       return;
     }
-    if (catalogDraft.catalog === "service_types") {
-      const code = normalizeServiceTypeCode(draftCode);
-      if (!code) {
-        setMessage("El codigo del tipo de servicio debe tener letras o numeros.");
+    setCatalogSaving(editingCatalogCode ? "save" : "create");
+    setCatalogNotice({ title: editingCatalogCode ? "Guardando cambios..." : "Creando maestro...", detail: "Estamos actualizando el catalogo. No cierres esta ventana.", tone: "info" });
+    try {
+      if (catalogDraft.catalog === "service_types") {
+        const code = normalizeServiceTypeCode(draftCode);
+        if (!code) {
+          confirmCatalogAction("Codigo invalido", "El codigo del tipo de servicio debe tener letras o numeros.", "warning");
+          return;
+        }
+        const next = normalizeServiceTypes([
+          ...serviceTypes.filter((item) => item.code !== code && item.code !== editingCatalogCode),
+          { code, label: catalogDraft.name.trim(), active: true }
+        ]).sort((a, b) => a.label.localeCompare(b.label));
+        await saveServiceTypeCatalog(next, editingCatalogCode ? `Tipo de servicio actualizado: ${catalogDraft.name.trim()}.` : `Tipo de servicio creado: ${catalogDraft.name.trim()}.`);
+        resetCatalogDraft(catalogDraft.catalog);
         return;
       }
-      const next = normalizeServiceTypes([
-        ...serviceTypes.filter((item) => item.code !== code && item.code !== editingCatalogCode),
-        { code, label: catalogDraft.name.trim(), active: true }
-      ]).sort((a, b) => a.label.localeCompare(b.label));
-      await saveServiceTypeCatalog(next, "Tipo de servicio actualizado.");
-      resetCatalogDraft(catalogDraft.catalog);
-      return;
-    }
-    if (catalogDraft.catalog === "service_stores") {
-      const code = normalizeServiceTypeCode(draftCode);
-      if (!code) {
-        setMessage("El codigo del almacen debe tener letras o numeros.");
+      if (catalogDraft.catalog === "service_stores") {
+        const code = normalizeServiceTypeCode(draftCode);
+        if (!code) {
+          confirmCatalogAction("Codigo invalido", "El codigo del almacen debe tener letras o numeros.", "warning");
+          return;
+        }
+        const next = normalizeServiceStores([
+          ...serviceStores.filter((item) => item.code !== code && item.code !== editingCatalogCode),
+          { code, label: catalogDraft.name.trim(), active: true }
+        ]).sort((a, b) => a.label.localeCompare(b.label));
+        await saveServiceStoreCatalog(next, editingCatalogCode ? `Almacen de servicio actualizado: ${catalogDraft.name.trim()}.` : `Almacen de servicio creado: ${catalogDraft.name.trim()}.`);
+        resetCatalogDraft(catalogDraft.catalog);
         return;
       }
-      const next = normalizeServiceStores([
-        ...serviceStores.filter((item) => item.code !== code && item.code !== editingCatalogCode),
-        { code, label: catalogDraft.name.trim(), active: true }
-      ]).sort((a, b) => a.label.localeCompare(b.label));
-      await saveServiceStoreCatalog(next, "Almacen de servicio actualizado.");
-      resetCatalogDraft(catalogDraft.catalog);
-      return;
-    }
-    if (catalogDraft.catalog === "satisfaction_questions") {
-      const id = normalizeQuestionId(draftCode);
-      if (!id) {
-        setMessage("El codigo de la pregunta debe tener letras o numeros.");
+      if (catalogDraft.catalog === "satisfaction_questions") {
+        const id = normalizeQuestionId(draftCode);
+        if (!id) {
+          confirmCatalogAction("Codigo invalido", "El codigo de la pregunta debe tener letras o numeros.", "warning");
+          return;
+        }
+        const next = normalizeSatisfactionQuestions([
+          ...satisfactionQuestions.filter((item) => item.id !== id && item.id !== editingCatalogCode),
+          { id, label: catalogDraft.name.trim(), active: true }
+        ]);
+        await saveSatisfactionQuestionCatalog(next, editingCatalogCode ? `Pregunta de satisfaccion actualizada: ${catalogDraft.name.trim()}.` : `Pregunta de satisfaccion creada: ${catalogDraft.name.trim()}.`);
+        resetCatalogDraft(catalogDraft.catalog);
         return;
       }
-      const next = normalizeSatisfactionQuestions([
-        ...satisfactionQuestions.filter((item) => item.id !== id && item.id !== editingCatalogCode),
-        { id, label: catalogDraft.name.trim(), active: true }
-      ]);
-      await saveSatisfactionQuestionCatalog(next, "Pregunta de satisfaccion actualizada.");
+      const endpoint = editingCatalogCode
+        ? `/api/v1/admin/user-master-data/${catalogDraft.catalog}/items/${encodeURIComponent(editingCatalogCode)}`
+        : `/api/v1/admin/user-master-data/${catalogDraft.catalog}/items`;
+      const next = await api<UserMasterData>(endpoint, {
+        method: editingCatalogCode ? "PUT" : "POST",
+        body: JSON.stringify({
+          code: catalogDraft.code.trim(),
+          name: catalogDraft.name.trim(),
+          description: catalogDraft.description.trim(),
+          active: true
+        })
+      });
+      setMasterData({ ...fallbackUserMasterData, ...next });
+      confirmCatalogAction(editingCatalogCode ? "Maestro actualizado" : "Maestro creado", `${catalogDraft.name.trim()} quedo guardado correctamente.`);
       resetCatalogDraft(catalogDraft.catalog);
-      return;
+    } catch (error) {
+      confirmCatalogAction("No se pudo guardar el maestro", error instanceof Error ? error.message : "Operacion interrumpida.", "error");
+    } finally {
+      setCatalogSaving("");
     }
-    const endpoint = editingCatalogCode
-      ? `/api/v1/admin/user-master-data/${catalogDraft.catalog}/items/${encodeURIComponent(editingCatalogCode)}`
-      : `/api/v1/admin/user-master-data/${catalogDraft.catalog}/items`;
-    const next = await api<UserMasterData>(endpoint, {
-      method: editingCatalogCode ? "PUT" : "POST",
-      body: JSON.stringify({
-        code: catalogDraft.code.trim(),
-        name: catalogDraft.name.trim(),
-        description: catalogDraft.description.trim(),
-        active: true
-      })
-    });
-    setMasterData({ ...fallbackUserMasterData, ...next });
-    resetCatalogDraft(catalogDraft.catalog);
-    setMessage("Maestro actualizado.");
   }
 
   function resetCatalogDraft(catalog = catalogDraft.catalog) {
@@ -1391,30 +1408,47 @@ export default function AdministracionPage() {
   }
 
   async function toggleBaseCatalogItem(item: MasterOption) {
-    const next = await api<UserMasterData>(`/api/v1/admin/user-master-data/${catalogDraft.catalog}/items/${encodeURIComponent(item.code)}`, {
-      method: "PUT",
-      body: JSON.stringify({ ...item, active: item.active === false })
-    });
-    setMasterData({ ...fallbackUserMasterData, ...next });
-    setMessage(item.active === false ? "Maestro activado." : "Maestro inactivado.");
+    if (catalogSaving) return;
+    setCatalogSaving(`toggle:${item.code}`);
+    try {
+      const next = await api<UserMasterData>(`/api/v1/admin/user-master-data/${catalogDraft.catalog}/items/${encodeURIComponent(item.code)}`, {
+        method: "PUT",
+        body: JSON.stringify({ ...item, active: item.active === false })
+      });
+      setMasterData({ ...fallbackUserMasterData, ...next });
+      confirmCatalogAction(item.active === false ? "Maestro activado" : "Maestro inactivado", `${item.name} quedo ${item.active === false ? "activo" : "inactivo"}.`);
+    } catch (error) {
+      confirmCatalogAction("No se pudo actualizar el maestro", error instanceof Error ? error.message : "Operacion interrumpida.", "error");
+    } finally {
+      setCatalogSaving("");
+    }
   }
 
   async function removeBaseCatalogItem(item: MasterOption) {
+    if (catalogSaving) return;
     if (!window.confirm(`Confirmas eliminar "${item.name}" del maestro?`)) return;
-    const next = await api<UserMasterData>(`/api/v1/admin/user-master-data/${catalogDraft.catalog}/items/${encodeURIComponent(item.code)}`, { method: "DELETE" });
-    setMasterData({ ...fallbackUserMasterData, ...next });
-    if (editingCatalogCode === item.code) resetCatalogDraft(catalogDraft.catalog);
-    setMessage("Maestro eliminado.");
+    setCatalogSaving(`delete:${item.code}`);
+    setCatalogNotice({ title: "Eliminando maestro...", detail: `Retirando ${item.name} del catalogo.`, tone: "info" });
+    try {
+      const next = await api<UserMasterData>(`/api/v1/admin/user-master-data/${catalogDraft.catalog}/items/${encodeURIComponent(item.code)}`, { method: "DELETE" });
+      setMasterData({ ...fallbackUserMasterData, ...next });
+      if (editingCatalogCode === item.code) resetCatalogDraft(catalogDraft.catalog);
+      confirmCatalogAction("Maestro eliminado", `${item.name} fue retirado correctamente.`);
+    } catch (error) {
+      confirmCatalogAction("No se pudo eliminar el maestro", error instanceof Error ? error.message : "Operacion interrumpida.", "error");
+    } finally {
+      setCatalogSaving("");
+    }
   }
 
   async function saveServiceTypeCatalog(nextTypes: ServiceType[], successMessage = "Tipos de servicio actualizados.") {
     const normalized = normalizeServiceTypes(nextTypes);
     if (!normalized.length) {
-      setMessage("Debe existir al menos un tipo de servicio.");
+      confirmCatalogAction("Catalogo requerido", "Debe existir al menos un tipo de servicio.", "warning");
       return;
     }
     if (!normalized.some((item) => item.active !== false)) {
-      setMessage("Debe quedar al menos un tipo de servicio activo.");
+      confirmCatalogAction("Activo requerido", "Debe quedar al menos un tipo de servicio activo.", "warning");
       return;
     }
     const saved = await api<ServiceType[]>("/api/v1/services/service-types", {
@@ -1423,29 +1457,47 @@ export default function AdministracionPage() {
     });
     const cleanSaved = normalizeServiceTypes(saved);
     setServiceTypes(cleanSaved.length ? cleanSaved : normalized);
-    setMessage(successMessage);
+    confirmCatalogAction("Catalogo actualizado", successMessage);
   }
 
   async function toggleServiceType(code: string) {
+    if (catalogSaving) return;
     const next = serviceTypes.map((item) => item.code === code ? { ...item, active: item.active === false } : item);
-    await saveServiceTypeCatalog(next, "Estado del tipo de servicio actualizado.");
+    const target = serviceTypes.find((item) => item.code === code);
+    setCatalogSaving(`toggle:${code}`);
+    try {
+      await saveServiceTypeCatalog(next, `${target?.label || "Tipo de servicio"} quedo ${target?.active === false ? "activo" : "inactivo"}.`);
+    } catch (error) {
+      confirmCatalogAction("No se pudo actualizar el tipo de servicio", error instanceof Error ? error.message : "Operacion interrumpida.", "error");
+    } finally {
+      setCatalogSaving("");
+    }
   }
 
   async function removeServiceType(code: string) {
+    if (catalogSaving) return;
     const target = serviceTypes.find((item) => item.code === code);
     if (!target) return;
     if (!window.confirm(`Confirmas retirar el tipo de servicio "${target.label}" del maestro?`)) return;
-    await saveServiceTypeCatalog(serviceTypes.filter((item) => item.code !== code), "Tipo de servicio retirado del maestro.");
+    setCatalogSaving(`delete:${code}`);
+    setCatalogNotice({ title: "Eliminando tipo de servicio...", detail: `Retirando ${target.label} del catalogo.`, tone: "info" });
+    try {
+      await saveServiceTypeCatalog(serviceTypes.filter((item) => item.code !== code), `Tipo de servicio eliminado: ${target.label}.`);
+    } catch (error) {
+      confirmCatalogAction("No se pudo eliminar el tipo de servicio", error instanceof Error ? error.message : "Operacion interrumpida.", "error");
+    } finally {
+      setCatalogSaving("");
+    }
   }
 
   async function saveServiceStoreCatalog(nextStores: ServiceStore[], successMessage = "Almacenes de servicio actualizados.") {
     const normalized = normalizeServiceStores(nextStores);
     if (!normalized.length) {
-      setMessage("Debe existir al menos un almacen de servicio.");
+      confirmCatalogAction("Catalogo requerido", "Debe existir al menos un almacen de servicio.", "warning");
       return;
     }
     if (!normalized.some((item) => item.active !== false)) {
-      setMessage("Debe quedar al menos un almacen de servicio activo.");
+      confirmCatalogAction("Activo requerido", "Debe quedar al menos un almacen de servicio activo.", "warning");
       return;
     }
     const saved = await api<ServiceStore[]>("/api/v1/services/service-stores", {
@@ -1471,29 +1523,47 @@ export default function AdministracionPage() {
     } catch (error) {
       syncWarning = `Sincronizacion publica pendiente: ${error instanceof Error ? error.message : "error desconocido"}.`;
     }
-    setMessage(syncWarning ? `${successMessage} ${syncWarning}` : successMessage);
+    confirmCatalogAction("Catalogo actualizado", syncWarning ? `${successMessage} ${syncWarning}` : successMessage, syncWarning ? "warning" : "success");
   }
 
   async function toggleServiceStore(code: string) {
+    if (catalogSaving) return;
     const next = serviceStores.map((item) => item.code === code ? { ...item, active: item.active === false } : item);
-    await saveServiceStoreCatalog(next, "Estado del almacen actualizado.");
+    const target = serviceStores.find((item) => item.code === code);
+    setCatalogSaving(`toggle:${code}`);
+    try {
+      await saveServiceStoreCatalog(next, `${target?.label || "Almacen"} quedo ${target?.active === false ? "activo" : "inactivo"}.`);
+    } catch (error) {
+      confirmCatalogAction("No se pudo actualizar el almacen", error instanceof Error ? error.message : "Operacion interrumpida.", "error");
+    } finally {
+      setCatalogSaving("");
+    }
   }
 
   async function removeServiceStore(code: string) {
+    if (catalogSaving) return;
     const target = serviceStores.find((item) => item.code === code);
     if (!target) return;
     if (!window.confirm(`Confirmas retirar el almacen "${target.label}" del maestro?`)) return;
-    await saveServiceStoreCatalog(serviceStores.filter((item) => item.code !== code), "Almacen retirado del maestro.");
+    setCatalogSaving(`delete:${code}`);
+    setCatalogNotice({ title: "Eliminando almacen...", detail: `Retirando ${target.label} del catalogo.`, tone: "info" });
+    try {
+      await saveServiceStoreCatalog(serviceStores.filter((item) => item.code !== code), `Almacen eliminado: ${target.label}.`);
+    } catch (error) {
+      confirmCatalogAction("No se pudo eliminar el almacen", error instanceof Error ? error.message : "Operacion interrumpida.", "error");
+    } finally {
+      setCatalogSaving("");
+    }
   }
 
   async function saveSatisfactionQuestionCatalog(nextQuestions: SatisfactionQuestion[], successMessage = "Preguntas de satisfaccion actualizadas.") {
     const normalized = normalizeSatisfactionQuestions(nextQuestions);
     if (!normalized.length) {
-      setMessage("Debe existir al menos una pregunta de satisfaccion.");
+      confirmCatalogAction("Catalogo requerido", "Debe existir al menos una pregunta de satisfaccion.", "warning");
       return;
     }
     if (!normalized.some((item) => item.active !== false)) {
-      setMessage("Debe quedar al menos una pregunta de satisfaccion activa.");
+      confirmCatalogAction("Activo requerido", "Debe quedar al menos una pregunta de satisfaccion activa.", "warning");
       return;
     }
     const saved = await api<SatisfactionQuestion[]>("/api/v1/services/satisfaction-questions", {
@@ -1502,19 +1572,37 @@ export default function AdministracionPage() {
     });
     const cleanSaved = normalizeSatisfactionQuestions(saved);
     setSatisfactionQuestions(cleanSaved.length ? cleanSaved : normalized);
-    setMessage(successMessage);
+    confirmCatalogAction("Catalogo actualizado", successMessage);
   }
 
   async function toggleSatisfactionQuestion(id: string) {
+    if (catalogSaving) return;
     const next = satisfactionQuestions.map((item) => item.id === id ? { ...item, active: item.active === false } : item);
-    await saveSatisfactionQuestionCatalog(next, "Estado de la pregunta actualizado.");
+    const target = satisfactionQuestions.find((item) => item.id === id);
+    setCatalogSaving(`toggle:${id}`);
+    try {
+      await saveSatisfactionQuestionCatalog(next, `${target?.label || "Pregunta"} quedo ${target?.active === false ? "activa" : "inactiva"}.`);
+    } catch (error) {
+      confirmCatalogAction("No se pudo actualizar la pregunta", error instanceof Error ? error.message : "Operacion interrumpida.", "error");
+    } finally {
+      setCatalogSaving("");
+    }
   }
 
   async function removeSatisfactionQuestion(id: string) {
+    if (catalogSaving) return;
     const target = satisfactionQuestions.find((item) => item.id === id);
     if (!target) return;
     if (!window.confirm(`Confirmas retirar la pregunta "${target.label}" del maestro?`)) return;
-    await saveSatisfactionQuestionCatalog(satisfactionQuestions.filter((item) => item.id !== id), "Pregunta retirada del maestro.");
+    setCatalogSaving(`delete:${id}`);
+    setCatalogNotice({ title: "Eliminando pregunta...", detail: `Retirando ${target.label} del catalogo.`, tone: "info" });
+    try {
+      await saveSatisfactionQuestionCatalog(satisfactionQuestions.filter((item) => item.id !== id), `Pregunta eliminada: ${target.label}.`);
+    } catch (error) {
+      confirmCatalogAction("No se pudo eliminar la pregunta", error instanceof Error ? error.message : "Operacion interrumpida.", "error");
+    } finally {
+      setCatalogSaving("");
+    }
   }
 
   function renderPlatformLogs() {
@@ -1629,6 +1717,19 @@ export default function AdministracionPage() {
             <p className="mt-1 text-sm text-neutral-600">{catalogRows.length} registro(s), {activeCatalogRows} activo(s). Todos se administran desde esta seccion.</p>
           </div>
         </div>
+        {catalogNotice ? (
+          <div className={`rounded-md border px-3 py-2 text-sm ${catalogNotice.tone === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-900" : catalogNotice.tone === "warning" ? "border-amber-200 bg-amber-50 text-amber-900" : catalogNotice.tone === "error" ? "border-rose-200 bg-rose-50 text-rose-900" : "border-sky-200 bg-sky-50 text-sky-900"}`} role="status">
+            <div className="flex items-start gap-2">
+              <span className="mt-0.5 shrink-0">
+                {catalogNotice.tone === "success" ? <Check size={16} /> : catalogNotice.tone === "error" || catalogNotice.tone === "warning" ? <AlertTriangle size={16} /> : <RefreshCw className={catalogSaving ? "animate-spin" : ""} size={16} />}
+              </span>
+              <span>
+                <span className="block font-semibold">{catalogNotice.title}</span>
+                {catalogNotice.detail ? <span className="mt-0.5 block">{catalogNotice.detail}</span> : null}
+              </span>
+            </div>
+          </div>
+        ) : null}
 
         <div className="grid gap-3 lg:grid-cols-[280px_minmax(0,1fr)]">
           <div className="rounded-md border border-line bg-white p-3">
@@ -1638,8 +1739,11 @@ export default function AdministracionPage() {
               <Field label={isSatisfactionQuestionCatalog ? "Pregunta" : "Nombre"} value={catalogDraft.name} onChange={(value) => setCatalogDraft((current) => ({ ...current, name: value }))} />
               {!isOperationalCatalog ? <Field label="Descripcion" value={catalogDraft.description} onChange={(value) => setCatalogDraft((current) => ({ ...current, description: value }))} /> : null}
               <div className="grid gap-2">
-                <Button onClick={saveCatalogItem} type="button"><Save size={16} /> {editingCatalogCode ? "Guardar cambios" : "Crear maestro"}</Button>
-                {editingCatalogCode ? <Button className="border border-line bg-white text-neutral-800 hover:bg-paper" onClick={() => resetCatalogDraft()} type="button"><X size={16} /> Cancelar edicion</Button> : null}
+                <Button disabled={Boolean(catalogSaving)} onClick={saveCatalogItem} type="button">
+                  {catalogSaving === "create" || catalogSaving === "save" ? <RefreshCw className="animate-spin" size={16} /> : <Save size={16} />}
+                  {catalogSaving === "create" ? "Creando..." : catalogSaving === "save" ? "Guardando..." : editingCatalogCode ? "Guardar cambios" : "Crear maestro"}
+                </Button>
+                {editingCatalogCode ? <Button className="border border-line bg-white text-neutral-800 hover:bg-paper" disabled={Boolean(catalogSaving)} onClick={() => resetCatalogDraft()} type="button"><X size={16} /> Cancelar edicion</Button> : null}
               </div>
             </div>
           </div>
@@ -1668,12 +1772,12 @@ export default function AdministracionPage() {
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex justify-end gap-2">
-                      <button className="rounded-md border border-line px-2 py-1 text-xs font-semibold hover:bg-paper" onClick={() => editCatalogRow(item)} type="button"><Edit3 size={13} /></button>
-                      <button className="rounded-md border border-line px-2 py-1 text-xs font-semibold hover:bg-paper" onClick={() => isServiceTypeCatalog ? toggleServiceType(item.code) : isServiceStoreCatalog ? toggleServiceStore(item.code) : isSatisfactionQuestionCatalog ? toggleSatisfactionQuestion(item.code) : toggleBaseCatalogItem(item)} type="button">
-                        {item.active ? "Inactivar" : "Activar"}
+                      <button className="rounded-md border border-line px-2 py-1 text-xs font-semibold hover:bg-paper disabled:cursor-not-allowed disabled:opacity-50" disabled={Boolean(catalogSaving)} onClick={() => editCatalogRow(item)} type="button"><Edit3 size={13} /></button>
+                      <button className="rounded-md border border-line px-2 py-1 text-xs font-semibold hover:bg-paper disabled:cursor-wait disabled:opacity-50" disabled={Boolean(catalogSaving)} onClick={() => isServiceTypeCatalog ? toggleServiceType(item.code) : isServiceStoreCatalog ? toggleServiceStore(item.code) : isSatisfactionQuestionCatalog ? toggleSatisfactionQuestion(item.code) : toggleBaseCatalogItem(item)} type="button">
+                        {catalogSaving === `toggle:${item.code}` ? "Guardando..." : item.active ? "Inactivar" : "Activar"}
                       </button>
-                      <button className="rounded-md border border-rose-200 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50" onClick={() => isServiceTypeCatalog ? removeServiceType(item.code) : isServiceStoreCatalog ? removeServiceStore(item.code) : isSatisfactionQuestionCatalog ? removeSatisfactionQuestion(item.code) : removeBaseCatalogItem(item)} type="button">
-                        <Trash2 size={13} />
+                      <button className="rounded-md border border-rose-200 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50 disabled:cursor-wait disabled:opacity-50" disabled={Boolean(catalogSaving)} onClick={() => isServiceTypeCatalog ? removeServiceType(item.code) : isServiceStoreCatalog ? removeServiceStore(item.code) : isSatisfactionQuestionCatalog ? removeSatisfactionQuestion(item.code) : removeBaseCatalogItem(item)} type="button">
+                        {catalogSaving === `delete:${item.code}` ? <RefreshCw className="animate-spin" size={13} /> : <Trash2 size={13} />}
                       </button>
                     </div>
                   </td>
