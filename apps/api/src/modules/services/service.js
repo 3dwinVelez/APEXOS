@@ -43,6 +43,13 @@ function photoLabel(type) {
   return labels[type] || type;
 }
 
+function inspectionStatusMeta(status) {
+  const normalized = String(status || "").toLowerCase();
+  if (normalized === "ok") return { badge: "OK", label: "Sin novedad", fill: [0.9, 0.98, 0.94], stroke: [0.49, 0.78, 0.59], text: [0.05, 0.42, 0.2] };
+  if (normalized.includes("aver")) return { badge: "!", label: "Averia", fill: [1, 0.96, 0.86], stroke: [0.93, 0.69, 0.28], text: [0.63, 0.32, 0.04] };
+  return { badge: "X", label: "Dano/faltante", fill: [1, 0.92, 0.92], stroke: [0.9, 0.42, 0.42], text: [0.72, 0.08, 0.08] };
+}
+
 async function requireEvidence(orderId, requiredTypes) {
   const photos = await prisma.servicePhoto.findMany({ where: { order_id: Number(orderId) }, select: { type: true } });
   const available = new Set(photos.map((photo) => photo.type));
@@ -238,6 +245,38 @@ function buildReportPdf(report) {
     y -= height + 6;
   }
 
+  function inspectionCard(item, x, top, width, height) {
+    const status = inspectionStatusMeta(item.status);
+    const hasIssue = String(item.status || "").toLowerCase() !== "ok";
+    const bottom = top - height + 6;
+    rect(x, bottom, width, height, hasIssue ? [1, 0.99, 0.97] : [0.99, 1, 0.99], [0.86, 0.89, 0.86]);
+    rect(x + 8, top - 20, 26, 16, status.fill, status.stroke);
+    text(status.badge, x + 15, top - 15, { size: 7.5, bold: true, fill: status.text });
+    wrapReportText(`${item.name || "Pieza"} (${item.quantity || 1} ${item.unit || "und"})`, 30).slice(0, 2).forEach((line, index) => {
+      text(line, x + 42, top - 8 - index * 10, { size: 8, bold: index === 0 });
+    });
+    text(status.label, x + width - 70, top - 9, { size: 7.5, bold: true, fill: status.text });
+    if (hasIssue) {
+      const detail = [item.comment, item.action, item.supplier_name ? `Proveedor: ${item.supplier_name}` : ""].filter(Boolean).join(" / ") || "Sin observacion";
+      wrapReportText(detail, 38).slice(0, 2).forEach((line, index) => {
+        text(line, x + 42, top - 29 - index * 9, { size: 7.2, fill: [0.35, 0.29, 0.22] });
+      });
+    }
+  }
+
+  function inspectionGrid(items) {
+    const columnGap = 10;
+    const columnWidth = (pageWidth - margin * 2 - columnGap) / 2;
+    const rowHeight = 46;
+    items.slice(0, 80).forEach((item, index) => {
+      if (index % 2 === 0) ensureSpace(rowHeight + 8);
+      const x = margin + (index % 2) * (columnWidth + columnGap);
+      inspectionCard(item, x, y, columnWidth, rowHeight);
+      if (index % 2 === 1 || index === Math.min(items.length, 80) - 1) y -= rowHeight + 7;
+    });
+    if (items.length > 80) paragraph(`Se muestran 80 de ${items.length} piezas inspeccionadas.`);
+  }
+
   function header() {
     rect(0, pageHeight - 108, pageWidth, 108, [0.03, 0.18, 0.16]);
     rect(0, pageHeight - 112, pageWidth, 4, [0.05, 0.55, 0.47]);
@@ -283,16 +322,9 @@ function buildReportPdf(report) {
 
   title("Inspeccion de referencia");
   if (report.inspection_items.length) {
-    tableHeader([{ label: "Pieza", x: 10 }, { label: "Estado", x: 230 }, { label: "Observacion / accion", x: 320 }]);
-    report.inspection_items.slice(0, 40).forEach((item) => tableRow([
-      { key: "part", x: 10, chars: 36, bold: true },
-      { key: "status", x: 230, chars: 16 },
-      { key: "comment", x: 320, chars: 42, lines: 3 }
-    ], {
-      part: `${item.name || "Pieza"} (${item.quantity || 1} ${item.unit || "und"})`,
-      status: item.status || "N/A",
-      comment: [item.comment, item.action, item.supplier_name ? `Proveedor: ${item.supplier_name}` : ""].filter(Boolean).join(" / ") || "Sin observacion"
-    }, 40));
+    const issueCount = report.inspection_items.filter((item) => String(item.status || "").toLowerCase() !== "ok").length;
+    paragraph(`${report.inspection_items.length} pieza(s) inspeccionada(s). ${issueCount ? `${issueCount} con alerta.` : "Todas sin novedad."}`);
+    inspectionGrid(report.inspection_items);
   } else {
     paragraph("Sin inspeccion registrada.");
   }
