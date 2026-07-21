@@ -750,6 +750,7 @@ export default function AdministracionPage() {
   const [catalogNotice, setCatalogNotice] = useState<ToastState | null>(null);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [userAccessSaving, setUserAccessSaving] = useState(false);
   const [roleSaving, setRoleSaving] = useState(false);
   const [platformAdmin, setPlatformAdmin] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -1156,8 +1157,8 @@ export default function AdministracionPage() {
     if (!userForm.role_id) return "El rol principal es obligatorio.";
     if (!userForm.document.trim()) return "El documento es obligatorio.";
     if (!selectedUserId && !userForm.password) return "La clave inicial es obligatoria.";
-    if (!selectedUserId && userForm.password.length < 8) return "La clave inicial debe tener minimo 8 caracteres.";
-    if (!selectedUserId && (!/[A-Za-z]/.test(userForm.password) || !/[0-9]/.test(userForm.password))) return "La clave inicial debe combinar letras y numeros.";
+    if (userForm.password && userForm.password.length < 8) return "La clave debe tener minimo 8 caracteres.";
+    if (userForm.password && (!/[A-Za-z]/.test(userForm.password) || !/[0-9]/.test(userForm.password))) return "La clave debe combinar letras y numeros.";
     return "";
   }
 
@@ -1171,6 +1172,10 @@ export default function AdministracionPage() {
     setSaving(true);
     try {
       const payload = quickUserPayload(userForm, roles, !selectedUserId);
+      if (selectedUserId && userForm.password) {
+        payload.password = userForm.password;
+        payload.require_password_change = true;
+      }
       if (selectedUserId) await api(`/api/v1/admin/users/${selectedUserApiId()}`, { method: "PUT", body: JSON.stringify(payload) });
       else await api("/api/v1/admin/users", { method: "POST", body: JSON.stringify(payload) });
       setMessage("Usuario guardado.");
@@ -1244,12 +1249,32 @@ export default function AdministracionPage() {
   async function requestPasswordReset() {
     const targetId = selectedUserApiId();
     if (!targetId) return;
+    const nextPassword = userForm.password.trim();
+    if (!nextPassword) {
+      setMessage("Escribe una nueva clave temporal antes de cambiar el acceso.");
+      notify("Clave temporal requerida", "Debes escribir la clave temporal que se entregara al usuario.", "warning");
+      return;
+    }
+    if (nextPassword.length < 8 || !/[A-Za-z]/.test(nextPassword) || !/[0-9]/.test(nextPassword)) {
+      setMessage("La clave temporal debe tener minimo 8 caracteres y combinar letras y numeros.");
+      notify("Clave temporal invalida", "Usa minimo 8 caracteres con letras y numeros.", "warning");
+      return;
+    }
+    if (!window.confirm(`Confirmas cambiar la clave de acceso de ${selectedUser?.name || "este usuario"}? El usuario debera cambiarla al ingresar.`)) return;
+    if (userAccessSaving) return;
+    setUserAccessSaving(true);
     try {
-      await api(`/api/v1/admin/users/${targetId}/access`, { method: "PATCH", body: JSON.stringify({ require_password_change: true, session_status: "sin_sesion" }) });
-      setMessage("Cambio de clave solicitado para el proximo ingreso.");
+      await api(`/api/v1/admin/users/${targetId}/access`, { method: "PATCH", body: JSON.stringify({ password: nextPassword, require_password_change: true, session_status: "sin_sesion" }) });
+      setMessage("Clave temporal actualizada. El usuario debera cambiarla en el proximo ingreso.");
+      notify("Clave actualizada", `La clave temporal de ${selectedUser?.name || "usuario"} quedo guardada correctamente.`);
+      setUserField("password", "");
       await load();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Error al solicitar cambio de clave.");
+      const errorMessage = error instanceof Error ? error.message : "Error al cambiar la clave del usuario.";
+      setMessage(errorMessage);
+      notify("No se pudo cambiar la clave", errorMessage, "error");
+    } finally {
+      setUserAccessSaving(false);
     }
   }
 
@@ -1857,9 +1882,9 @@ export default function AdministracionPage() {
               <p className="mt-1 text-sm text-neutral-600">Solo se actualizan los campos disponibles en la creacion rapida.</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button className="border border-line bg-white text-neutral-800 hover:bg-paper" onClick={requestPasswordReset} type="button"><LockKeyhole size={16} /> Restablecer acceso</Button>
-              <Button className="border border-amber-200 bg-white text-amber-800 hover:bg-amber-50" onClick={blockUserAccess} type="button">Suspender</Button>
-              {selectedUser?.active ? <Button className="bg-rose-700 hover:bg-rose-800" onClick={() => setUserStatus(false)} type="button">Inactivar</Button> : <Button onClick={() => setUserStatus(true)} type="button"><Check size={16} /> Activar</Button>}
+              <Button className="border border-line bg-white text-neutral-800 hover:bg-paper" disabled={userAccessSaving} onClick={requestPasswordReset} type="button"><LockKeyhole size={16} /> {userAccessSaving ? "Cambiando..." : "Cambiar clave"}</Button>
+              <Button className="border border-amber-200 bg-white text-amber-800 hover:bg-amber-50" disabled={userAccessSaving} onClick={blockUserAccess} type="button">Suspender</Button>
+              {selectedUser?.active ? <Button className="bg-rose-700 hover:bg-rose-800" disabled={userAccessSaving} onClick={() => setUserStatus(false)} type="button">Inactivar</Button> : <Button disabled={userAccessSaving} onClick={() => setUserStatus(true)} type="button"><Check size={16} /> Activar</Button>}
             </div>
           </div>
         </section>
@@ -1873,14 +1898,15 @@ export default function AdministracionPage() {
             <SelectField label="Sede" value={userForm.site} onChange={(value) => { setUserField("site", value); setUserField("base_site", value); }} options={optionPairs(masterData.locations, "Sin sede asignada")} />
             <SelectField label="Rol" value={userForm.role_id} onChange={(value) => setUserField("role_id", value)} options={[["", "Seleccionar rol"], ...roles.filter((role) => role.active).map((role) => [String(role.id), role.name] as [string, string])]} />
             <SelectField label="Estado" value={userForm.user_status} onChange={(value) => setUserField("user_status", value)} options={optionPairs(masterData.user_statuses)} />
+            <Field label="Nueva clave temporal" type="password" value={userForm.password} onChange={(value) => setUserField("password", value)} />
             <Toggle label="Exigir cambio de clave" checked={userForm.require_password_change} onChange={(value) => setUserField("require_password_change", value)} />
           </div>
-          <p className="mt-3 rounded-md bg-paper px-3 py-2 text-xs font-medium text-neutral-600">Los campos laborales, nomina, documentos, licencias y configuraciones avanzadas quedan preservados para la segunda etapa.</p>
+          <p className="mt-3 rounded-md bg-paper px-3 py-2 text-xs font-medium text-neutral-600">Para cambiar clave sin correo, escribe una clave temporal y usa Cambiar clave. El usuario debera cambiarla en el proximo ingreso.</p>
         </section>
 
         <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-4">
           <button className="h-10 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => setUserEditorOpen(false)} type="button">Cancelar</button>
-          <Button onClick={saveUser} disabled={saving} type="button"><Save size={16} /> {saving ? "Guardando..." : "Guardar cambios"}</Button>
+          <Button onClick={saveUser} disabled={saving || userAccessSaving} type="button"><Save size={16} /> {saving ? "Guardando..." : "Guardar cambios"}</Button>
         </div>
       </div>
     );
@@ -2325,7 +2351,7 @@ export default function AdministracionPage() {
                   <p className="text-sm text-neutral-500">Score maestro: {userScore}/100</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {selectedUserId ? <Button className="border border-line bg-white text-neutral-800 hover:bg-paper" onClick={requestPasswordReset} type="button"><LockKeyhole size={16} /> Reset acceso</Button> : null}
+                  {selectedUserId ? <Button className="border border-line bg-white text-neutral-800 hover:bg-paper" disabled={userAccessSaving} onClick={requestPasswordReset} type="button"><LockKeyhole size={16} /> {userAccessSaving ? "Cambiando..." : "Cambiar clave"}</Button> : null}
                   {selectedUserId ? <Button className="border border-line bg-white text-neutral-800 hover:bg-paper" onClick={blockUserAccess} type="button"><X size={16} /> Bloquear acceso</Button> : null}
                   {selectedUserId && selectedUser?.active ? <Button className="bg-rose-700 hover:bg-rose-800" onClick={() => setUserStatus(false)} type="button"><X size={16} /> Desactivar</Button> : null}
                   {selectedUserId && selectedUser && !selectedUser.active ? <Button onClick={() => setUserStatus(true)} type="button"><Check size={16} /> Activar</Button> : null}
