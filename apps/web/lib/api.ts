@@ -1161,11 +1161,36 @@ async function accessibleSupabaseServiceOrder(orderId: string, options: { includ
   const companyId = employee?.company_id || membership?.company_id || await currentSupabaseCompanyId();
   const technicianFilter = employee ? `&technician_employee_id=eq.${encodeURIComponent(employee.id)}` : "";
   const activeFilter = applyTechnicianScope && !options.includeFinished ? `&${ACTIVE_SERVICE_ORDER_STATUS_FILTER}` : "";
-  const rows = await supabaseFetch<Array<{ id: string; company_id: string; reference_id?: string; technician_employee_id?: string; status?: string; started_at?: string; metadata?: AnyRow }>>(
-    `/rest/v1/service_orders?select=id,company_id,reference_id,technician_employee_id,status,started_at,metadata&id=eq.${encodeURIComponent(orderId)}&company_id=eq.${encodeURIComponent(companyId)}${technicianFilter}${activeFilter}&limit=1`
+  const rows = await supabaseFetch<Array<{ id: string; company_id: string; reference_id?: string; technician_employee_id?: string; status?: string; service_type?: string; customer_name?: string; customer_address?: string; customer_phone?: string; scheduled_date?: string; started_at?: string; notes?: string; metadata?: AnyRow }>>(
+    `/rest/v1/service_orders?select=id,company_id,reference_id,technician_employee_id,status,service_type,customer_name,customer_address,customer_phone,scheduled_date,started_at,notes,metadata&id=eq.${encodeURIComponent(orderId)}&company_id=eq.${encodeURIComponent(companyId)}${technicianFilter}${activeFilter}&limit=1`
   );
   if (!rows[0]) throw new Error("No se encontro el servicio o no tienes permisos para operarlo.");
   return rows[0];
+}
+
+function hasServiceEditValue(value: unknown) {
+  return String(value ?? "").trim() !== "";
+}
+
+function missingSupabaseServiceOrderEditFields(current: AnyRow, patch: AnyRow, nextMetadata: AnyRow) {
+  const nextStatus = String(patch.status ?? current.status ?? "").trim();
+  const baseFields: Array<[string, unknown]> = [
+    ["estado", nextStatus],
+    ["tipo de servicio", patch.service_type ?? current.service_type],
+    ["nombre del cliente", patch.customer_name ?? current.customer_name],
+    ["cedula del cliente", nextMetadata.customer_document],
+    ["telefono", patch.customer_phone ?? current.customer_phone],
+    ["direccion", patch.customer_address ?? current.customer_address],
+    ["observaciones operativas", patch.notes ?? current.notes]
+  ];
+  const pendingFields: Array<[string, unknown]> = nextStatus === "pendiente" ? [
+    ["referencia", patch.reference_id ?? current.reference_id],
+    ["tecnico asignado", patch.technician_employee_id ?? current.technician_employee_id],
+    ["fecha programada del servicio", patch.scheduled_date ?? current.scheduled_date]
+  ] : [];
+  return [...pendingFields, ...baseFields]
+    .filter(([, value]) => !hasServiceEditValue(value))
+    .map(([label]) => label);
 }
 
 async function currentSupabaseCompanyUser() {
@@ -2669,6 +2694,10 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     }
     if (body.cedi_delivery_date != null && String(body.cedi_delivery_date).trim()) {
       nextMetadata.cedi_delivery_date = String(body.cedi_delivery_date).slice(0, 10);
+    }
+    const missing = missingSupabaseServiceOrderEditFields(current as AnyRow, patch, nextMetadata);
+    if (missing.length) {
+      throw new Error(`Completa los campos obligatorios: ${missing.join(", ")}`);
     }
     patch.metadata = {
       ...nextMetadata,

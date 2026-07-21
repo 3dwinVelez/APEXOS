@@ -37,6 +37,7 @@
 - La cabecera de referencias se compacta para liberar mas espacio vertical al buscador, filtros y tabla comparativa.
 - La creacion de orden exige referencia, tipo, fecha del servicio, nombre, cedula, telefono, direccion y observaciones; factura/pedido queda opcional y la cedula se conserva en metadata para compatibilidad.
 - La creacion de orden exige asignar un tecnico activo. No se permite crear una orden sin responsable operativo.
+- La edicion de orden valida los campos obligatorios antes de guardar y muestra una ventana emergente con los datos faltantes. Si la orden queda en `pendiente`, referencia, tecnico responsable y fecha del servicio son obligatorios.
 - El rol exacto `Tecnico` solo puede consultar y operar Servicios; no puede crear ordenes, administrar referencias ni abrir reportes globales.
 - Cada tecnico solo visualiza ordenes activas asignadas a su ficha (`pendiente`, `en_curso`, `inspeccion` o `ejecucion`). Las preordenes `agendado`, las ordenes de otros tecnicos y las cerradas quedan fuera de su sesion.
 - Los usuarios administrativos conservan la consulta total, asignacion de tecnicos, creacion de ordenes, referencias y reportes.
@@ -125,6 +126,7 @@ El formulario publico debe funcionar como una solicitud guiada para personas sin
 - Verificar que la orden demo mas reciente aparezca primero en el listado aunque existan ordenes en otros estados.
 - Verificar que una preorden `agendado` pueda guardarse sin tecnico responsable.
 - Verificar que una preorden solo pueda pasar a `pendiente` despues de asignar tecnico responsable.
+- Verificar que la edicion de orden bloquee el guardado con ventana emergente cuando falten datos obligatorios; al pasar a `pendiente`, debe exigir referencia, tecnico responsable y fecha del servicio.
 - Editar la solicitud publica desde administracion para asignar tecnico y observaciones operativas antes de ejecutarla; la referencia ya debe venir del maestro seleccionado por el cliente.
 - Verificar que el contador SLA inicie en 4 dias habiles, baje por dia habil transcurrido y muestre valores negativos cuando supere el plazo.
 - Verificar que el endpoint publico no permita seleccionar `company_id` libremente desde el cliente.
