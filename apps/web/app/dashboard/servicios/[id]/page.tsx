@@ -307,6 +307,12 @@ export default function ServiceOperationPage() {
     return Boolean(noExecutionReason.trim() && hasPersistedPhoto("no_ejecutada") && hasPersistedPhoto("firma_cliente") && !uploadsPending(["no_ejecutada", "firma_cliente"]));
   }
 
+  function openIncidentReport() {
+    setInspectionMode("decision");
+    setClosureMode(false);
+    setActivePanel("novedad");
+  }
+
   function validateInspection() {
     const problems = inspection.filter((item) => item.status !== "ok");
     const missing = problems.filter((item) => !item.comment.trim() || !hasProblemEvidence(item.part_id));
@@ -377,8 +383,8 @@ export default function ServiceOperationPage() {
       setClosureMode(false);
       const problems = inspection.filter((item) => item.status !== "ok");
       setNoExecutionReason(problems.map((item) => `${inspectionStatusLabel[item.status]}: ${item.name}${item.comment ? ` - ${item.comment}` : ""}`).join("\n"));
-      setActivePanel("novedad");
-      setMessage("Producto no armable. Registra motivo final y evidencia.");
+      openIncidentReport();
+      setMessage("Producto no armable. Completa el reporte unico de novedad para cerrar la orden.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No fue posible guardar la inspeccion.");
     } finally {
@@ -464,8 +470,8 @@ export default function ServiceOperationPage() {
             <p className="mt-1 text-sm text-neutral-600">Paso {workflowStep(order.status) + 1} de {workflowSteps.length}: <span className="font-semibold text-neutral-900">{workflowSteps[workflowStep(order.status)].label}</span></p>
           </div>
           {!["cerrada", "no_ejecutada"].includes(order.status) ? (
-            <button className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-md border border-red-200 px-3 text-sm font-semibold text-red-700 hover:bg-red-50" onClick={() => setActivePanel("novedad")} type="button">
-              <FileSignature size={16} /> Novedad
+            <button className="hidden min-h-11 shrink-0 items-center justify-center gap-2 rounded-md border border-red-200 px-3 text-sm font-semibold text-red-700 hover:bg-red-50 md:inline-flex" onClick={openIncidentReport} type="button">
+              <FileSignature size={16} /> Reportar novedad
             </button>
           ) : null}
         </div>
@@ -525,7 +531,7 @@ export default function ServiceOperationPage() {
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-apex text-white"><PackageSearch size={23} /></span>
                 <span>
                   <span className="block text-xl font-semibold">Piezas</span>
-                  <span className="mt-1 block text-sm text-neutral-600">Registrar novedad</span>
+                  <span className="mt-1 block text-sm text-neutral-600">Revisar piezas y soportes</span>
                 </span>
               </span>
             </button>
@@ -543,7 +549,7 @@ export default function ServiceOperationPage() {
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-white/15 text-white"><XCircle size={23} /></span>
                 <span>
                   <span className="block text-xl font-semibold">No armable</span>
-                  <span className="mt-1 block text-sm text-red-50">Cerrar novedad</span>
+                  <span className="mt-1 block text-sm text-red-50">Enviar a reporte de novedad</span>
                 </span>
               </span>
             </button>
@@ -748,7 +754,7 @@ export default function ServiceOperationPage() {
           <button className="inline-flex h-16 w-full items-center justify-center gap-2 rounded-md bg-emerald-700 px-3 text-lg font-semibold text-white shadow-sm" onClick={() => router.replace("/dashboard/servicios")} type="button"><CheckCircle2 size={22} /> Servicio completado</button>
         ) : activePanel === "historial" ? (
           <button className="h-14 w-full rounded-md bg-apex px-3 text-base font-semibold text-white shadow-sm disabled:opacity-60" disabled={downloadingPdf} onClick={downloadPdf} type="button">{downloadingPdf ? "Generando PDF..." : "Descargar PDF"}</button>
-        ) : activePanel !== "novedad" ? <button className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-md border border-red-200 bg-white text-base font-semibold text-red-700 shadow-sm" onClick={() => setActivePanel("novedad")} type="button"><FileSignature size={18} /> Reportar novedad</button> : null}
+        ) : activePanel !== "novedad" ? <button className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-md border border-red-200 bg-white text-base font-semibold text-red-700 shadow-sm" onClick={openIncidentReport} type="button"><FileSignature size={18} /> Reportar novedad</button> : null}
       </div>
     </div>
   );
