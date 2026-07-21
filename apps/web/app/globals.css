@@ -35,6 +35,136 @@
   box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.14);
 }
 
+.apex-login-field input,
+html.dark .apex-login-field input {
+  background-color: transparent !important;
+}
+
+.apex-public-shell {
+  background:
+    radial-gradient(circle at 0% 100%, rgb(var(--color-apex) / 0.16), transparent 31rem),
+    linear-gradient(180deg, rgb(var(--color-paper)), rgb(var(--surface-soft)));
+}
+
+.apex-public-glow {
+  background:
+    radial-gradient(circle at 78% 11%, rgb(255 255 255 / 0.84), transparent 24rem),
+    radial-gradient(circle at 10% 93%, rgb(var(--color-apex) / 0.1), transparent 26rem);
+}
+
+.apex-public-wave {
+  border-color: rgb(255 255 255 / 0.5);
+  background: linear-gradient(10deg, rgb(var(--color-apex) / 0.12), transparent 66%);
+}
+
+.apex-public-title {
+  color: rgb(15 23 42);
+}
+
+.apex-public-strong {
+  color: rgb(30 41 59);
+}
+
+.apex-public-copy {
+  color: rgb(51 65 85);
+}
+
+.apex-public-muted {
+  color: rgb(71 85 105);
+}
+
+.apex-public-card {
+  border-color: rgb(var(--color-line) / 0.8);
+  background: rgb(255 255 255 / 0.86);
+  box-shadow: 0 26px 70px rgb(15 23 42 / 0.1);
+}
+
+.apex-public-secondary-action {
+  border-color: rgb(var(--color-apex) / 0.5);
+  background: rgb(255 255 255 / 0.75);
+  color: rgb(15 23 42);
+}
+
+.apex-public-secondary-action:hover {
+  border-color: rgb(var(--color-apex));
+  background: rgb(255 255 255);
+}
+
+.apex-login-field {
+  border-color: rgb(var(--color-line));
+  background: rgb(255 255 255);
+  color: rgb(71 85 105);
+}
+
+.apex-login-field input {
+  color: rgb(15 23 42);
+}
+
+html.dark .apex-public-shell {
+  background:
+    radial-gradient(circle at 0% 100%, rgb(var(--color-apex) / 0.12), transparent 30rem),
+    linear-gradient(180deg, rgb(var(--color-paper)), rgb(7 13 13));
+}
+
+html.dark .apex-public-glow {
+  background:
+    radial-gradient(circle at 78% 11%, rgb(var(--color-apex) / 0.07), transparent 25rem),
+    radial-gradient(circle at 8% 90%, rgb(var(--color-apex) / 0.09), transparent 25rem);
+}
+
+html.dark .apex-public-wave {
+  border-color: rgb(255 255 255 / 0.06);
+  background: linear-gradient(10deg, rgb(var(--color-apex) / 0.08), transparent 66%);
+}
+
+html[data-theme="dark"] .apex-public-title,
+html.dark:not([data-theme="light"]) .apex-public-title {
+  color: rgb(255 255 255);
+}
+
+html[data-theme="dark"] .apex-public-strong,
+html.dark:not([data-theme="light"]) .apex-public-strong {
+  color: rgb(226 232 240);
+}
+
+html[data-theme="dark"] .apex-public-copy,
+html.dark:not([data-theme="light"]) .apex-public-copy {
+  color: rgb(203 213 225);
+}
+
+html[data-theme="dark"] .apex-public-muted,
+html.dark:not([data-theme="light"]) .apex-public-muted {
+  color: rgb(203 213 225);
+}
+
+html[data-theme="dark"] .apex-public-card,
+html.dark:not([data-theme="light"]) .apex-public-card {
+  background: rgb(255 255 255 / 0.1);
+  box-shadow: 0 30px 80px rgb(0 0 0 / 0.3);
+}
+
+html[data-theme="dark"] .apex-public-secondary-action,
+html.dark:not([data-theme="light"]) .apex-public-secondary-action {
+  background: rgb(255 255 255 / 0.1);
+  color: rgb(255 255 255);
+}
+
+html[data-theme="dark"] .apex-public-secondary-action:hover,
+html.dark:not([data-theme="light"]) .apex-public-secondary-action:hover {
+  background: rgb(255 255 255 / 0.15);
+}
+
+html[data-theme="dark"] .apex-login-field,
+html.dark:not([data-theme="light"]) .apex-login-field {
+  background: rgb(255 255 255 / 0.1);
+  color: rgb(203 213 225);
+}
+
+html[data-theme="dark"] .apex-login-field input,
+html.dark:not([data-theme="light"]) .apex-login-field input {
+  color: rgb(255 255 255);
+}
+
 .dark .apex-public-input {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.18);
