@@ -5,6 +5,7 @@ import { api, isServiceTechnicianSession } from "@/lib/api";
 import { downloadExcelWorkbook } from "@/lib/reportExports";
 import {
   ArrowLeft,
+  AlertTriangle,
   BarChart3,
   ChevronRight,
   Download,
@@ -119,6 +120,22 @@ const emptyEditForm: OrderEditForm = {
   invoice_number: "",
   notes: ""
 };
+
+const baseEditRequiredFields: Array<[keyof OrderEditForm, string]> = [
+  ["status", "estado"],
+  ["service_type", "tipo de servicio"],
+  ["customer_name", "nombre del cliente"],
+  ["customer_document", "cedula del cliente"],
+  ["customer_phone", "telefono"],
+  ["customer_address", "direccion"],
+  ["notes", "observaciones operativas"]
+];
+
+const pendingEditRequiredFields: Array<[keyof OrderEditForm, string]> = [
+  ["reference_id", "referencia"],
+  ["technician_id", "tecnico asignado"],
+  ["scheduled_date", "fecha programada del servicio"]
+];
 
 const statusLabel: Record<string, string> = {
   agendado: "Agendado",
@@ -281,6 +298,33 @@ function externalReferenceText(order: ServiceOrder | null) {
   return String(order.metadata?.external_reference_label || order.metadata?.product_description || order.metadata?.product_reference || "").trim();
 }
 
+function currentEditValue(order: ServiceOrder, key: keyof OrderEditForm) {
+  if (key === "reference_id") return order.reference_id;
+  if (key === "technician_id") return order.technician_id || order.technician_employee_id || order.technician?.id;
+  if (key === "scheduled_date") return order.scheduled_date;
+  if (key === "customer_document") return order.metadata?.customer_document;
+  if (key === "customer_neighborhood") return order.metadata?.customer_neighborhood;
+  if (key === "service_store") return order.metadata?.service_store;
+  return (order as unknown as Record<string, unknown>)[key];
+}
+
+function effectiveEditValue(form: OrderEditForm, order: ServiceOrder, key: keyof OrderEditForm) {
+  const value = form[key].trim();
+  if (pendingEditRequiredFields.some(([field]) => field === key)) {
+    return value || String(currentEditValue(order, key) || "").trim();
+  }
+  return value;
+}
+
+function missingEditRequirements(form: OrderEditForm, order: ServiceOrder) {
+  const required = form.status === "pendiente"
+    ? [...pendingEditRequiredFields, ...baseEditRequiredFields]
+    : baseEditRequiredFields;
+  return required
+    .filter(([key]) => !effectiveEditValue(form, order, key))
+    .map(([, label]) => label);
+}
+
 function technicianLabel(order: ServiceOrder) {
   return order.technician?.user?.name || order.technician?.user?.email || String(order.technician_employee_id || order.technician_id || "");
 }
@@ -390,6 +434,7 @@ export default function ServicesPage() {
   const [savingEdit, setSavingEdit] = useState(false);
   const [refreshingOrders, setRefreshingOrders] = useState(false);
   const [lastRefreshAt, setLastRefreshAt] = useState<Date | null>(null);
+  const [validationIssues, setValidationIssues] = useState<string[]>([]);
   const [handledExternalKey, setHandledExternalKey] = useState("");
 
   async function load() {
@@ -551,6 +596,7 @@ export default function ServicesPage() {
   const openEdit = useCallback((order: ServiceOrder) => {
     const localReference = localReferenceForOrder(order, references);
     setEditingOrder(order);
+    setValidationIssues([]);
     setEditForm({
       status: order.status || "pendiente",
       reference_id: localReference ? String(localReference.id) : "",
@@ -582,29 +628,15 @@ export default function ServicesPage() {
 
   async function saveEdit() {
     if (!editingOrder || savingEdit) return;
-    const required: Array<[keyof OrderEditForm, string]> = [
-      ["status", "estado"],
-      ["service_type", "tipo de servicio"]
-    ];
-    if (editForm.status === "pendiente") {
-      required.unshift(["reference_id", "referencia"], ["technician_id", "tecnico asignado"], ["scheduled_date", "fecha programada"]);
-    }
-    const currentValue = (key: keyof OrderEditForm) => {
-      if (key === "reference_id") return editingOrder.reference_id;
-      if (key === "technician_id") return editingOrder.technician_id || editingOrder.technician_employee_id || editingOrder.technician?.id;
-      if (key === "scheduled_date") return editingOrder.scheduled_date;
-      if (key === "customer_document") return editingOrder.metadata?.customer_document;
-      return (editingOrder as unknown as Record<string, unknown>)[key];
-    };
-    const missing = required
-      .filter(([key]) => !editForm[key].trim() && !String(currentValue(key) || "").trim())
-      .map(([, label]) => label);
+    const missing = missingEditRequirements(editForm, editingOrder);
     if (missing.length) {
       setMessage(`Completa los campos obligatorios: ${missing.join(", ")}.`);
+      setValidationIssues(missing);
       return;
     }
     setSavingEdit(true);
     setMessage("");
+    setValidationIssues([]);
     try {
       const payload: Partial<OrderEditForm> = {
         status: editForm.status,
@@ -659,7 +691,14 @@ export default function ServicesPage() {
       setEditingOrder(null);
       await load();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "No fue posible actualizar la orden.");
+      const detail = error instanceof Error ? error.message : "No fue posible actualizar la orden.";
+      const match = detail.match(/Completa los campos obligatorios:\s*([^.]*)/i);
+      if (match?.[1]) {
+        setValidationIssues(match[1].split(",").map((item) => item.trim()).filter(Boolean));
+      } else if (/referencia|tecnico|t[eé]cnico|fecha|cedula|c[eé]dula|tipo de servicio|estado/i.test(detail)) {
+        setValidationIssues([detail.replace(/\.$/, "")]);
+      }
+      setMessage(detail);
     } finally {
       setSavingEdit(false);
     }
@@ -982,7 +1021,7 @@ export default function ServicesPage() {
       </section>
 
       {editingOrder ? (
-        <ModalFrame title={`Editar ${editingOrder.number}`} onClose={() => setEditingOrder(null)} maxWidth="max-w-3xl">
+        <ModalFrame title={`Editar ${editingOrder.number}`} onClose={() => { setEditingOrder(null); setValidationIssues([]); }} maxWidth="max-w-3xl">
           <div className="space-y-4">
             <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
               Edita solo lo necesario. Las ordenes finalizadas se bloquean para proteger la trazabilidad del servicio.
@@ -1021,7 +1060,7 @@ export default function ServicesPage() {
                 </select>
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
-                Fecha programada *
+                Fecha programada {editForm.status === "pendiente" ? "*" : "(obligatoria al pasar a pendiente)"}
                 <input className="h-10 rounded-md border border-line px-3 text-sm" type="date" value={editForm.scheduled_date} onChange={(event) => setEditForm((prev) => ({ ...prev, scheduled_date: event.target.value }))} />
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
@@ -1063,10 +1102,32 @@ export default function ServicesPage() {
               </label>
             </section>
             <div className="grid gap-2 border-t border-line pt-3 sm:flex sm:justify-end">
-              <button className="h-10 rounded-md border border-line px-4 text-sm font-semibold" onClick={() => setEditingOrder(null)} type="button">Cancelar</button>
+              <button className="h-10 rounded-md border border-line px-4 text-sm font-semibold" onClick={() => { setEditingOrder(null); setValidationIssues([]); }} type="button">Cancelar</button>
               <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-60" disabled={savingEdit} onClick={saveEdit} type="button">
                 <Save size={16} /> {savingEdit ? "Guardando..." : "Guardar cambios"}
               </button>
+            </div>
+          </div>
+        </ModalFrame>
+      ) : null}
+
+      {validationIssues.length ? (
+        <ModalFrame title="Faltan datos para guardar" onClose={() => setValidationIssues([])} maxWidth="max-w-md">
+          <div className="space-y-4">
+            <div className="flex gap-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+              <AlertTriangle className="mt-0.5 shrink-0" size={18} />
+              <div>
+                <p className="font-semibold">La orden no se guardo porque falta completar informacion obligatoria.</p>
+                <p className="mt-1 text-amber-900">Si el estado queda en Pendiente, la referencia, el tecnico responsable y la fecha del servicio son obligatorios.</p>
+              </div>
+            </div>
+            <ul className="grid gap-2 text-sm text-neutral-700">
+              {validationIssues.map((issue) => (
+                <li className="rounded-md border border-line bg-paper px-3 py-2 font-medium" key={issue}>{issue}</li>
+              ))}
+            </ul>
+            <div className="flex justify-end border-t border-line pt-3">
+              <button className="h-10 rounded-md bg-apex px-4 text-sm font-semibold text-white" onClick={() => setValidationIssues([])} type="button">Entendido</button>
             </div>
           </div>
         </ModalFrame>
