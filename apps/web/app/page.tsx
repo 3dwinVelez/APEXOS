@@ -124,25 +124,25 @@ export default function HomePage() {
       </section>
 
       {pendingFeature ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/35 px-4 backdrop-blur-[1px]">
-          <section className="w-full max-w-md rounded-md border border-line bg-white p-5 shadow-2xl dark:bg-neutral-950">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/25 px-4 backdrop-blur-[1px]">
+          <section className="w-full max-w-md rounded-md border border-slate-200 bg-white p-5 text-slate-900 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div className="flex gap-3">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-apex/10 text-apex">
                   <Settings size={24} />
                 </div>
                 <div>
-                  <h2 className="apex-public-title text-xl font-black">{pendingFeature}</h2>
-                  <p className="apex-public-copy mt-2 text-sm leading-6">
+                  <h2 className="text-xl font-black text-slate-950">{pendingFeature}</h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
                     Esta funcion estara disponible pronto. Estamos trabajando en ella para entregarla de forma segura y completa.
                   </p>
                 </div>
               </div>
-              <button className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line hover:bg-paper" onClick={() => setPendingFeature("")} type="button" aria-label="Cerrar aviso">
+              <button className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800" onClick={() => setPendingFeature("")} type="button" aria-label="Cerrar aviso">
                 <X size={17} />
               </button>
             </div>
-            <div className="mt-5 flex justify-end border-t border-line pt-4">
+            <div className="mt-5 flex justify-end border-t border-slate-200 pt-4">
               <button className="h-10 rounded-md bg-apex px-4 text-sm font-extrabold text-white" onClick={() => setPendingFeature("")} type="button">Entendido</button>
             </div>
           </section>
