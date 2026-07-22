@@ -1,7 +1,11 @@
-import { ArrowRight, Building2, Check, Folder, LockKeyhole, Settings, ShieldCheck, TrendingUp, UserRound, Zap } from "lucide-react";
+"use client";
+
+import { ArrowRight, Building2, Check, Folder, LockKeyhole, Settings, ShieldCheck, TrendingUp, UserRound, X, Zap } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 
 export default function HomePage() {
+  const [pendingFeature, setPendingFeature] = useState("");
   const capabilities = [
     { icon: Folder, label: "Organiza" },
     { icon: ShieldCheck, label: "Controla" },
@@ -62,14 +66,14 @@ export default function HomePage() {
               <ArrowRight size={24} />
               Entrar
             </Link>
-            <Link className="apex-public-secondary-action inline-flex h-14 items-center justify-center gap-3 rounded-md border px-7 text-base font-extrabold shadow-sm transition" href="/register">
+            <button className="apex-public-secondary-action inline-flex h-14 items-center justify-center gap-3 rounded-md border px-7 text-base font-extrabold shadow-sm transition" onClick={() => setPendingFeature("Crear empresa")} type="button">
               <Building2 className="text-apex" size={23} />
               Crear empresa
-            </Link>
-            <Link className="apex-public-secondary-action inline-flex h-14 items-center justify-center gap-3 rounded-md border px-7 text-base font-extrabold shadow-sm transition" href="/onboarding">
+            </button>
+            <button className="apex-public-secondary-action inline-flex h-14 items-center justify-center gap-3 rounded-md border px-7 text-base font-extrabold shadow-sm transition" onClick={() => setPendingFeature("Configuracion inicial")} type="button">
               <Settings className="text-apex" size={23} />
               Configuracion inicial
-            </Link>
+            </button>
           </div>
 
           <p className="apex-public-muted mt-12 inline-flex items-center gap-2 text-sm font-medium sm:text-base">
@@ -118,6 +122,32 @@ export default function HomePage() {
           </p>
         </div>
       </section>
+
+      {pendingFeature ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/35 px-4 backdrop-blur-[1px]">
+          <section className="w-full max-w-md rounded-md border border-line bg-white p-5 shadow-2xl dark:bg-neutral-950">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-apex/10 text-apex">
+                  <Settings size={24} />
+                </div>
+                <div>
+                  <h2 className="apex-public-title text-xl font-black">{pendingFeature}</h2>
+                  <p className="apex-public-copy mt-2 text-sm leading-6">
+                    Esta funcion estara disponible pronto. Estamos trabajando en ella para entregarla de forma segura y completa.
+                  </p>
+                </div>
+              </div>
+              <button className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line hover:bg-paper" onClick={() => setPendingFeature("")} type="button" aria-label="Cerrar aviso">
+                <X size={17} />
+              </button>
+            </div>
+            <div className="mt-5 flex justify-end border-t border-line pt-4">
+              <button className="h-10 rounded-md bg-apex px-4 text-sm font-extrabold text-white" onClick={() => setPendingFeature("")} type="button">Entendido</button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </main>
   );
 }
