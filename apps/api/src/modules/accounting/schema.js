@@ -212,6 +212,18 @@ const vatMasterSchema = {
   }
 };
 
+const retentionMasterSchema = {
+  body: { type: "object", required: ["code", "type", "concept", "percent", "minimum_base", "account_code"], properties: {
+    code: { type: "string", minLength: 1 }, type: { type: "string", enum: ["retefuente", "reteiva", "reteica"] },
+    concept: { type: "string", minLength: 1 }, percent: { type: "number", minimum: 0, maximum: 100 },
+    minimum_base: { type: "number", minimum: 0 }, account_code: { type: "string", minLength: 1 }, active: { type: "boolean" }
+  } }
+};
+
+const supplierRetentionsSchema = {
+  body: { type: "object", required: ["retention_codes"], properties: { retention_codes: { type: "array", uniqueItems: true, items: { type: "string", minLength: 1 } } } }
+};
+
 const payableDocumentSchema = {
   body: {
     type: "object",
@@ -228,6 +240,9 @@ const payableDocumentSchema = {
       supplier_id: { type: "integer" },
       society_code: { type: "string", minLength: 1 },
       associated_account_code: { type: "string", minLength: 1 },
+      retentions: { type: "array", items: { type: "object", required: ["code"], properties: {
+        code: { type: "string", minLength: 1 }, base: { type: "number", minimum: 0 }, amount: { type: "number", minimum: 0 }
+      } } },
       lines: {
         type: "array",
         minItems: 1,
@@ -274,6 +289,8 @@ module.exports = {
   accountingNumberingSchema,
   accountingDocumentSchema,
   vatMasterSchema,
+  retentionMasterSchema,
+  supplierRetentionsSchema,
   payableDocumentSchema,
   payableApplicationSchema
 };

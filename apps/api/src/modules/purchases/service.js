@@ -205,10 +205,13 @@ async function updateSupplier(tenantId, supplierId, data) {
 }
 
 async function enrichPurchaseOrder(po) {
-  const receivedByItem = new Map();
+  const receivedByLine = new Map();
+  const legacyByItem = new Map();
   for (const move of po.movements || []) {
-    if (move.type !== "in") continue;
-    receivedByItem.set(move.item_id, (receivedByItem.get(move.item_id) || 0) + Number(move.qty));
+    const sign = move.type === "in" ? 1 : move.type === "out" ? -1 : 0;
+    if (!sign) continue;
+    if (move.purchase_order_line_id) receivedByLine.set(move.purchase_order_line_id, (receivedByLine.get(move.purchase_order_line_id) || 0) + sign * Number(move.qty));
+    else legacyByItem.set(move.item_id, (legacyByItem.get(move.item_id) || 0) + sign * Number(move.qty));
   }
   const invoiceRows = po.lines?.length ? await prisma.purchaseOrderInvoiceLine.findMany({
     where: { purchase_order_line_id: { in: po.lines.map((line) => line.id) } }
@@ -220,7 +223,7 @@ async function enrichPurchaseOrder(po) {
   }
 
   const lines = (po.lines || []).map((line) => {
-    const received_quantity = receivedByItem.get(line.item_id) || 0;
+    const received_quantity = receivedByLine.has(line.id) ? receivedByLine.get(line.id) : (legacyByItem.get(line.item_id) || 0);
     const pending_quantity = Math.max(0, Number(line.qty) - received_quantity);
     const invoiced_quantity = Math.max(0, invoicedByLine.get(line.id) || 0);
     const pending_invoice_quantity = Math.max(0, Number(line.qty) - invoiced_quantity);
@@ -253,7 +256,7 @@ async function receivePurchaseOrder(tenantId, userId, poId, data) {
       include: { lines: true, party: true }
     });
     if (!po) throw appError(404, "NOT_FOUND", "PO no encontrada");
-    if (!["draft", "sent", "confirmed", "partial"].includes(po.status)) {
+    if (!["confirmed", "partial"].includes(po.status)) {
       throw appError(422, "INVALID_STATUS", "No se puede recibir una PO en este estado");
     }
 
@@ -272,11 +275,8 @@ async function receivePurchaseOrder(tenantId, userId, poId, data) {
       const line = po.lines.find((entry) => entry.id === row.line_id);
       if (!line) throw appError(404, "LINE_NOT_FOUND", `Linea ${row.line_id} no encontrada`);
       if (!row.qty_received || row.qty_received <= 0) throw appError(400, "INVALID_QTY", "qty_received debe ser mayor a 0");
-      const moved = await tx.movement.aggregate({
-        where: { transaction_id: poId, item_id: line.item_id, type: "in" },
-        _sum: { qty: true }
-      });
-      const already = moved._sum.qty || 0;
+      const moved = await tx.movement.findMany({ where: { transaction_id: poId, purchase_order_line_id: line.id } });
+      const already = moved.reduce((sum, move) => sum + (move.type === "in" ? 1 : move.type === "out" ? -1 : 0) * Number(move.qty), 0);
       const pending = Number(line.qty) - Number(already);
       if (row.qty_received > pending + 0.0001) {
         throw appError(422, "EXCEEDS_PENDING", `La cantidad recibida supera el pendiente (${pending})`);
@@ -287,6 +287,10 @@ async function receivePurchaseOrder(tenantId, userId, poId, data) {
         qty: Number(row.qty_received),
         to_location_id: row.location_id || defaultLocationId,
         transaction_id: poId,
+        purchase_order_line_id: line.id,
+        source_type: "purchase_order_receipt",
+        source_id: po.id,
+        idempotency_key: `purchase-receipt:${po.id}:${line.id}:${already}:${Number(row.qty_received)}`,
         cost: line.unit_cost,
         lot: row.lot || null,
         expiry: row.expiry || null,
@@ -299,14 +303,14 @@ async function receivePurchaseOrder(tenantId, userId, poId, data) {
       await accountingService.journalEntryTx(tx, {
         description: `Recepcion de mercancia ${po.number}`,
         transaction_id: po.id,
-        entries: [{ account: "1435", debit: receivedTotal, credit: 0 }, { account: "2205", debit: 0, credit: receivedTotal }]
+        entries: [{ account: "1435", debit: receivedTotal, credit: 0 }, { account: "2610", debit: 0, credit: receivedTotal }]
       });
     }
 
-    const allMoves = await tx.movement.findMany({ where: { transaction_id: po.id, type: "in" } });
-    const byItem = new Map();
-    for (const move of allMoves) byItem.set(move.item_id, (byItem.get(move.item_id) || 0) + Number(move.qty));
-    const fullyReceived = po.lines.every((line) => (byItem.get(line.item_id) || 0) >= Number(line.qty));
+    const allMoves = await tx.movement.findMany({ where: { transaction_id: po.id } });
+    const byLine = new Map();
+    for (const move of allMoves) if (move.purchase_order_line_id) byLine.set(move.purchase_order_line_id, (byLine.get(move.purchase_order_line_id) || 0) + (move.type === "in" ? 1 : -1) * Number(move.qty));
+    const fullyReceived = po.lines.every((line) => (byLine.get(line.id) || 0) >= Number(line.qty));
     const newStatus = fullyReceived ? "received" : "partial";
 
     const updated = await tx.transaction.update({
@@ -317,6 +321,44 @@ async function receivePurchaseOrder(tenantId, userId, poId, data) {
 
     return updated;
   }));
+}
+
+async function returnPurchaseOrder(tenantId, userId, poId, data) {
+  const rows = data.returned_lines || [];
+  if (!rows.length) throw appError(400, "NO_RETURN_LINES", "Debes enviar al menos una linea a devolver");
+  await accountingService.assertPeriodOpen(tenantId, new Date());
+  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
+    const po = await tx.transaction.findFirst({ where: { id: poId, type: "purchase" }, include: { lines: true } });
+    if (!po) throw appError(404, "NOT_FOUND", "PO no encontrada");
+    let value = 0;
+    for (const row of rows) {
+      const line = po.lines.find((item) => item.id === Number(row.line_id));
+      if (!line || Number(row.qty_returned) <= 0) throw appError(400, "INVALID_RETURN_LINE", "Linea o cantidad de devolucion invalida");
+      const moves = await tx.movement.findMany({ where: { transaction_id: po.id, purchase_order_line_id: line.id } });
+      const available = moves.reduce((sum, move) => sum + (move.type === "in" ? 1 : -1) * Number(move.qty), 0);
+      if (Number(row.qty_returned) > available + 0.0001) throw appError(422, "EXCEEDS_RECEIVED", `La devolucion supera lo recibido (${available})`);
+      await inventoryService.stockMoveTx(tx, tenantId, userId, { item_id: line.item_id, type: "out", qty: Number(row.qty_returned), from_location_id: Number(row.location_id), transaction_id: po.id, purchase_order_line_id: line.id, cost: line.unit_cost, source_type: "purchase_return", source_id: po.id, reason: `Devolucion ${po.number}: ${data.reason || "mercancia"}` });
+      value += Number(row.qty_returned) * Number(line.unit_cost);
+    }
+    if (value > 0) await accountingService.journalEntryTx(tx, { description: `Devolucion de mercancia ${po.number}`, transaction_id: po.id, entries: [{ account: "2610", debit: value, credit: 0 }, { account: "1435", debit: 0, credit: value }] });
+    await tx.transaction.update({ where: { id: po.id }, data: { status: "partial" } });
+    return { purchase_order_id: po.id, returned_value: value, returned_lines: rows.length };
+  }));
+}
+
+async function annulPurchaseInvoice(tenantId, userId, documentId, data) {
+  const document = await prisma.runWithTenant(tenantId, () => prisma.cxpCabdoc.findFirst({ where: { id: Number(documentId) } }));
+  if (!document) throw appError(404, "PAYABLE_DOCUMENT_NOT_FOUND", "Factura de compra no encontrada");
+  const result = await accountingService.annulPayableDocument(tenantId, userId, document.id, data);
+  await prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
+    const controls = await tx.purchaseOrderInvoiceLine.findMany({ where: { cxp_cabdoc_id: document.id } });
+    for (const row of controls) await tx.purchaseOrderInvoiceLine.create({ data: { purchase_order_id: row.purchase_order_id, purchase_order_line_id: row.purchase_order_line_id, cxp_cabdoc_id: document.id, item_id: row.item_id, document_kind: row.document_kind === "invoice" ? "credit_note" : "invoice", qty: row.qty, unit_cost: row.unit_cost, amount: row.amount, created_by: userId || null } });
+    for (const poId of [...new Set(controls.map((row) => row.purchase_order_id))]) {
+      const po = await tx.transaction.findUnique({ where: { id: poId } });
+      await tx.transaction.update({ where: { id: poId }, data: { metadata: { ...(po.metadata || {}), invoice_status: "open", last_annulled_invoice: { cxp_id: document.id, at: new Date().toISOString(), by: userId || null } } } });
+    }
+  }));
+  return result;
 }
 
 const PO_TRANSITIONS = {
@@ -652,6 +694,7 @@ function purchaseInvoicePayablePayload(data, prepared) {
     invoice_reference: data.invoice_reference,
     society_code: data.society_code,
     associated_account_code: data.associated_account_code,
+    retentions: data.retentions,
     lines: prepared.payableLines
   };
 }
@@ -688,52 +731,19 @@ async function createPurchaseInvoice(tenantId, userId, data) {
       });
     }
 
-    for (const row of stockUpdates) {
-      const previousQty = Number(row.item.stock_current || 0);
-      const previousCost = Number(row.item.unit_cost || 0);
-      if (isCreditNote && previousQty - row.qty < -0.0001) throw appError(422, "INSUFFICIENT_STOCK", `Stock insuficiente para ${row.item.code}`);
-      const nextQty = isCreditNote ? previousQty - row.qty : previousQty + row.qty;
-      const nextValue = isCreditNote ? nextQty * previousCost : previousQty * previousCost + row.qty * row.unitCost;
-      const nextCost = isCreditNote ? previousCost : (nextQty > 0 ? Math.round((nextValue / nextQty) * 10000) / 10000 : row.unitCost);
-      await tx.productCost.create({
-        data: {
-          item_id: row.item.id,
-          costing_method: "weighted_average",
-          quantity_balance: nextQty,
-          value_balance: Math.round(nextValue * 100) / 100,
-          average_cost: nextCost,
-          last_unit_cost: row.unitCost,
-          source_type: isCreditNote ? "purchase_credit_note" : "purchase_invoice",
-          source_id: cxp.id,
-          created_by: userId || null
-        }
+    for (const [stockIndex, row] of stockUpdates.entries()) {
+      await inventoryService.stockMoveTx(tx, tenantId, userId, {
+        item_id: row.item.id,
+        type: isCreditNote ? "out" : "in",
+        qty: row.qty,
+        from_location_id: isCreditNote ? location.id : null,
+        to_location_id: isCreditNote ? null : location.id,
+        cost: row.unitCost,
+        source_type: isCreditNote ? "purchase_credit_note" : "purchase_invoice",
+        source_id: cxp.id,
+        idempotency_key: `purchase-document:${cxp.id}:line:${stockIndex + 1}`,
+        reason: `${isCreditNote ? "Nota credito compra" : "Factura compra"} ${cxp.number}`
       });
-      if (isCreditNote) {
-        const stockAtLocation = await tx.itemLocation.findFirst({ where: { item_id: row.item.id, location_id: location.id } });
-        if (!stockAtLocation || Number(stockAtLocation.qty || 0) < row.qty) throw appError(422, "INSUFFICIENT_LOCATION_STOCK", `Stock insuficiente en ${location.code} para ${row.item.code}`);
-        await tx.itemLocation.update({ where: { id: stockAtLocation.id }, data: { qty: { decrement: row.qty }, cost: nextCost } });
-      } else {
-        const stockAtLocation = await tx.itemLocation.findFirst({ where: { item_id: row.item.id, location_id: location.id, lot: null } });
-        if (stockAtLocation) {
-          await tx.itemLocation.update({ where: { id: stockAtLocation.id }, data: { qty: { increment: row.qty }, cost: nextCost } });
-        } else {
-          await tx.itemLocation.create({ data: { item_id: row.item.id, location_id: location.id, qty: row.qty, cost: nextCost } });
-        }
-      }
-      await tx.movement.create({
-        data: {
-          type: isCreditNote ? "out" : "in",
-          item_id: row.item.id,
-          transaction_id: po?.id || null,
-          from_location: isCreditNote ? location.id : null,
-          to_location: isCreditNote ? null : location.id,
-          qty: row.qty,
-          cost: row.unitCost,
-          reason: `${isCreditNote ? "Nota credito compra" : "Factura compra"} ${cxp.number}`,
-          created_by: userId || null
-        }
-      });
-      await tx.item.update({ where: { id: row.item.id }, data: { stock_current: { increment: isCreditNote ? -row.qty : row.qty }, unit_cost: nextCost } });
     }
 
     if (po) {
@@ -771,7 +781,9 @@ module.exports = {
   createPurchaseOrder,
   simulatePurchaseInvoice,
   createPurchaseInvoice,
+  annulPurchaseInvoice,
   receivePurchaseOrder,
+  returnPurchaseOrder,
   updatePOStatus,
   approvePurchaseOrder,
   cancelPurchaseOrder,
