@@ -10,6 +10,9 @@
 - La pantalla administrativa Asignar horarios usa indicadores compactos y una tabla comparativa con filtros por persona/sede/placa, tipo de jornada, estado y fecha.
 - La consulta administrativa conserva el historial completo de horarios y agrega sobre cada registro la trazabilidad disponible del dia, sin ocultar jornadas pasadas.
 - Crear, editar y clonar horarios permanece en una ventana separada y guiada visualmente, diferenciando jornadas administrativas de sede fija y jornadas operativas con recurso movil.
+- Las jornadas de sede fija toman sus opciones del maestro administrativo `locations`; no admiten sedes escritas libremente. El formulario informa en una ventana emergente todos los datos faltantes antes de guardar.
+- Los horarios nocturnos pueden finalizar al dia siguiente (por ejemplo, `21:00` a `06:00`). Solo se rechazan horas de inicio y fin iguales. La asignacion de horarios ya no captura ni procesa viaticos.
+- La persistencia de horarios cubre creacion individual, edicion y clonacion por rango tanto en la API operativa como en el respaldo Supabase, incluyendo las personas asignadas.
 - Marcaciones mantiene enfoque movil con acciones tactiles y separacion entre marcar e historial.
 - El mapa GPS usa coordenadas reales, enlace correcto a Google Maps y trazado de rutas.
 - Planeacion de rutas se reorganizo como panel con KPIs, listado y acciones en ventanas flotantes.

@@ -714,6 +714,33 @@ function saveStoredUserMasterData(data: ReturnType<typeof defaultUserMasterData>
   if (typeof window !== "undefined") localStorage.setItem(USER_MASTER_STORAGE_KEY, JSON.stringify(data));
 }
 
+async function loadSupabaseUserMasterData() {
+  const stored = getStoredUserMasterData();
+  const membership = await currentSupabaseCompanyUser().catch(() => null);
+  if (!membership?.company_id) return stored;
+  const catalogs = await supabaseFetch<Array<{ id: string; code: string; company_id?: string | null }>>(
+    `/rest/v1/master_catalogs?select=id,code,company_id&or=(company_id.eq.${encodeURIComponent(membership.company_id)},company_id.is.null)&active=eq.true&limit=200`
+  ).catch(() => []);
+  const catalogIds = catalogs.map((catalog) => catalog.id).filter(Boolean);
+  if (!catalogIds.length) return stored;
+  const items = await supabaseFetch<Array<{ catalog_id: string; company_id?: string | null; code: string; name: string; description?: string; active?: boolean; sort_order?: number }>>(
+    `/rest/v1/master_catalog_items?select=catalog_id,company_id,code,name,description,active,sort_order&catalog_id=in.(${catalogIds.map((id) => encodeURIComponent(id)).join(",")})&order=sort_order.asc,name.asc&limit=2000`
+  ).catch(() => []);
+  if (!items.length) return stored;
+  const next = { ...stored } as ReturnType<typeof defaultUserMasterData> & Record<string, unknown>;
+  for (const catalog of catalogs) {
+    if (!(catalog.code in stored) || catalog.code === "roles") continue;
+    const catalogItems = items.filter((item) => item.catalog_id === catalog.id);
+    if (!catalogItems.length) continue;
+    const byCode = new Map<string, (typeof catalogItems)[number]>();
+    catalogItems.filter((item) => item.company_id == null).forEach((item) => byCode.set(item.code, item));
+    catalogItems.filter((item) => item.company_id === membership.company_id).forEach((item) => byCode.set(item.code, item));
+    next[catalog.code] = Array.from(byCode.values());
+  }
+  saveStoredUserMasterData(next as ReturnType<typeof defaultUserMasterData>);
+  return next;
+}
+
 function defaultUserMasterData() {
   return {
     document_types: [["CC", "Cedula"], ["CE", "Extranjeria"], ["NIT", "NIT"], ["PAS", "Pasaporte"]].map(([code, name]) => ({ code, name })),
@@ -2356,8 +2383,119 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     return (vehicleDetailMatch ? mapped[0] || null : mapped) as T;
   }
 
+  const hrRouteDetailMatch = pathname.match(/^\/api\/v1\/hr\/routes\/([^/]+)$/);
+  const hrRouteWrite = pathname === "/api/v1/hr/routes" || pathname === "/api/v1/hr/routes/bulk" || Boolean(hrRouteDetailMatch);
+  if (hrRouteWrite && method !== "GET") {
+    const companyId = await currentSupabaseCompanyId();
+    if (!companyId) throw new Error("No se encontro una empresa activa para guardar el horario.");
+    const body = JSON.parse(String(options.body || "{}")) as AnyRow;
+    const employees = Array.isArray(body.employees) ? body.employees.map((value) => String(value || "").trim()).filter(Boolean) : [];
+    const startTime = String(body.start_time || "").slice(0, 5);
+    const endTime = String(body.end_time || "").slice(0, 5);
+    const tolerance = Number(body.tolerance_minutes ?? 15);
+    if (!employees.length) throw new Error("Selecciona al menos una persona para asignar el horario.");
+    if (!/^\d{2}:\d{2}$/.test(startTime) || !/^\d{2}:\d{2}$/.test(endTime)) throw new Error("Define una hora de inicio y una hora de fin validas.");
+    if (startTime === endTime) throw new Error("La hora de inicio y la hora de fin no pueden ser iguales.");
+    if (!Number.isFinite(tolerance) || tolerance < 0) throw new Error("La tolerancia debe ser un numero igual o mayor que cero.");
+
+    const employeeRows = await supabaseFetch<Array<{ id: string; first_name?: string; last_name?: string; email?: string; document_number?: string; metadata?: AnyRow }>>(
+      `/rest/v1/employees?select=id,first_name,last_name,email,document_number,metadata&company_id=eq.${encodeURIComponent(companyId)}&status=eq.active&limit=1000`
+    );
+    const employeeAliases = new Map<string, string>();
+    for (const employee of employeeRows) {
+      const aliases = [employee.id, employee.email, employee.document_number, employee.metadata?.code, employee.metadata?.name, fullName(employee)];
+      aliases.filter(Boolean).forEach((alias) => employeeAliases.set(String(alias).trim().toLowerCase(), employee.id));
+    }
+    const employeeIds = [...new Set(employees.map((value) => employeeAliases.get(value.toLowerCase())).filter((value): value is string => Boolean(value)))];
+    if (employeeIds.length !== new Set(employees.map((value) => value.toLowerCase())).size) {
+      throw new Error("Una o mas personas seleccionadas ya no estan activas o no pertenecen a la empresa. Actualiza la lista y vuelve a intentar.");
+    }
+
+    const status = ["planned", "active", "closed", "cancelled"].includes(String(body.status)) ? String(body.status) : "active";
+    const routePayload = (date: string, code: string) => ({
+      company_id: companyId,
+      code,
+      route_date: date,
+      vehicle_plate: String(body.vehicle_plate || "") || null,
+      start_time: startTime,
+      end_time: endTime,
+      tolerance_minutes: tolerance,
+      status,
+      notes: String(body.notes || ""),
+      metadata: { schedule_source: "talento_humano", overnight: endTime < startTime }
+    });
+    const saveAssignments = async (routeId: string) => {
+      await supabaseFetch("/rest/v1/route_assignments?on_conflict=route_id,employee_id", {
+        method: "POST",
+        headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+        body: JSON.stringify(employeeIds.map((employeeId) => ({ company_id: companyId, route_id: routeId, employee_id: employeeId, role: "operator", status: "active" })))
+      });
+      await supabaseFetch<void>(
+        `/rest/v1/route_assignments?route_id=eq.${encodeURIComponent(routeId)}&company_id=eq.${encodeURIComponent(companyId)}&employee_id=not.in.(${employeeIds.map((id) => encodeURIComponent(id)).join(",")})`,
+        { method: "DELETE" }
+      );
+    };
+
+    if (hrRouteDetailMatch && method === "PATCH") {
+      const routeKey = decodeURIComponent(hrRouteDetailMatch[1]);
+      const routeIdentityFilter = uuidOrNull(routeKey)
+        ? `id=eq.${encodeURIComponent(routeKey)}`
+        : `code=eq.${encodeURIComponent(routeKey)}`;
+      const existing = await supabaseFetch<Array<{ id: string; code: string }>>(
+        `/rest/v1/operational_routes?select=id,code&company_id=eq.${encodeURIComponent(companyId)}&${routeIdentityFilter}&limit=1`
+      );
+      if (!existing[0]?.id) throw new Error("El horario que intentas editar ya no existe.");
+      const date = String(body.date || "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("La fecha del horario es obligatoria.");
+      const updated = await supabaseFetch<Array<AnyRow>>(`/rest/v1/operational_routes?id=eq.${encodeURIComponent(existing[0].id)}&company_id=eq.${encodeURIComponent(companyId)}&select=*`, {
+        method: "PATCH",
+        headers: { Prefer: "return=representation" },
+        body: JSON.stringify(routePayload(date, existing[0].code))
+      });
+      await saveAssignments(existing[0].id);
+      return (updated[0] || null) as T;
+    }
+
+    const dates: string[] = [];
+    if (pathname === "/api/v1/hr/routes/bulk") {
+      const startDate = String(body.start_date || "").slice(0, 10);
+      const endDate = String(body.end_date || "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) throw new Error("Define la fecha inicial y final del rango.");
+      if (endDate < startDate) throw new Error("La fecha final no puede ser anterior a la fecha inicial.");
+      const weekdays = new Set((Array.isArray(body.weekdays) ? body.weekdays : []).map(Number));
+      if (!weekdays.size) throw new Error("Selecciona al menos un dia de la semana.");
+      for (let cursor = new Date(`${startDate}T00:00:00`), end = new Date(`${endDate}T00:00:00`); cursor <= end; cursor.setDate(cursor.getDate() + 1)) {
+        if (weekdays.has(cursor.getDay())) dates.push(cursor.toISOString().slice(0, 10));
+      }
+      if (!dates.length) throw new Error("El rango no contiene ninguno de los dias seleccionados.");
+    } else {
+      const date = String(body.date || "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("La fecha del horario es obligatoria.");
+      dates.push(date);
+    }
+
+    const createdRoutes: AnyRow[] = [];
+    for (const date of dates) {
+      const code = `HOR-${date.replace(/-/g, "")}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+      const inserted = await supabaseFetch<Array<AnyRow>>("/rest/v1/operational_routes?select=*", {
+        method: "POST",
+        headers: { Prefer: "return=representation" },
+        body: JSON.stringify(routePayload(date, code))
+      });
+      const routeId = String(inserted[0]?.id || "");
+      if (!routeId) throw new Error("Supabase no devolvio el horario creado.");
+      try {
+        await saveAssignments(routeId);
+      } catch (error) {
+        await supabaseFetch<void>(`/rest/v1/operational_routes?id=eq.${encodeURIComponent(routeId)}&company_id=eq.${encodeURIComponent(companyId)}`, { method: "DELETE" }).catch(() => undefined);
+        throw error;
+      }
+      createdRoutes.push(inserted[0]);
+    }
+    return (pathname === "/api/v1/hr/routes/bulk" ? { created: createdRoutes.length, routes: createdRoutes } : createdRoutes[0]) as T;
+  }
+
   if (pathname === "/api/v1/hr/routes") {
-    if (method !== "GET") return null;
     const companyId = await currentSupabaseCompanyId();
     const routes = await supabaseFetch<Array<{
       id: string;
@@ -2366,9 +2504,10 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       vehicle_plate?: string;
       start_time?: string;
       end_time?: string;
+      tolerance_minutes?: number;
       status?: string;
       notes?: string;
-    }>>(`/rest/v1/operational_routes?select=id,code,route_date,vehicle_plate,start_time,end_time,status,notes&company_id=eq.${encodeURIComponent(companyId)}&order=route_date.desc&limit=120`);
+    }>>(`/rest/v1/operational_routes?select=id,code,route_date,vehicle_plate,start_time,end_time,tolerance_minutes,status,notes&company_id=eq.${encodeURIComponent(companyId)}&order=route_date.desc&limit=120`);
     const assignments = await supabaseFetch<Array<{
       route_id: string;
       employee_id?: string;
@@ -2377,7 +2516,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     }>>(`/rest/v1/route_assignments?select=route_id,employee_id,role,employees(id,first_name,last_name,document_number,metadata)&company_id=eq.${encodeURIComponent(companyId)}&limit=500`);
 
     return routes.map((route) => ({
-      id: route.code || route.id,
+      id: route.id,
       code: route.code || "",
       display_id: route.code || route.id,
       source_route_id: route.id,
@@ -2399,6 +2538,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         }),
       start_time: route.start_time || "",
       end_time: route.end_time || "",
+      tolerance_minutes: route.tolerance_minutes ?? 15,
       status: route.status || "planned",
       notes: route.notes || ""
     })) as T;
@@ -3083,7 +3223,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   }
 
   if (pathname === "/api/v1/admin/user-master-data") {
-    return { ...getStoredUserMasterData(), roles: storedAdminRoles() } as T;
+    return { ...await loadSupabaseUserMasterData(), roles: storedAdminRoles() } as T;
   }
 
   const adminCatalogItemMatch = pathname.match(/^\/api\/v1\/admin\/user-master-data\/([^/]+)\/items(?:\/([^/]+))?$/);
