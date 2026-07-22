@@ -81,7 +81,7 @@ const moveStockSchema = {
     required: ["item_id", "type", "qty"],
     properties: {
       item_id: { type: "integer" },
-      type: { type: "string", enum: ["in", "out", "adjustment"] },
+      type: { type: "string", enum: ["in", "out", "adjustment", "transfer"] },
       qty: { type: "number", exclusiveMinimum: 0 },
       from_location: { type: "integer" },
       to_location: { type: "integer" },
@@ -110,19 +110,4 @@ const adjustStockSchema = {
   }
 };
 
-const warehouseTransferSchema = {
-  body: {
-    type: "object",
-    required: ["origin_place_id", "destination_place_id", "lines"],
-    properties: {
-      origin_place_id: { type: "integer" },
-      destination_place_id: { type: "integer" },
-      reason: { type: "string" },
-      correlation_id: { type: "string" },
-      idempotency_key: { type: "string" },
-      lines: { type: "array", minItems: 1, items: { type: "object", required: ["item_id", "qty"], properties: { item_id: { type: "integer" }, qty: { type: "number", exclusiveMinimum: 0 }, lot: { type: "string" } } } }
-    }
-  }
-};
-
-module.exports = { createItemSchema, moveStockSchema, updateItemSchema, adjustStockSchema, familySchema, warehouseSchema, warehouseTransferSchema };
+module.exports = { createItemSchema, moveStockSchema, updateItemSchema, adjustStockSchema, familySchema, warehouseSchema };

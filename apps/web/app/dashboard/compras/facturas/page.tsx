@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Calculator, Plus, Save, Search, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { ComprasNav } from "@/components/compras-nav";
@@ -10,7 +10,6 @@ type Supplier = { id: number; name: string; tax_id?: string | null; credit_days?
 type Item = { id: number; code: string; name: string; unit: string; unit_cost: number; tax_rate: number };
 type Account = { id: number; code: string; name: string; active: boolean; allows_tx: boolean };
 type VatMaster = { code: string; concept: string; percent: number; active: boolean };
-type Retention = { code: string; type: "retefuente" | "reteiva" | "reteica"; concept: string; percent: number; minimum_base: number; account_code: string; base: number; amount: number };
 type Society = { code: string; name: string; active: boolean };
 type Branch = { code: string; name: string; society_code: string; active: boolean };
 type CostCenter = { code: string; name: string; society_code: string; branch_code: string; active: boolean };
@@ -30,9 +29,6 @@ type PayableSimulation = {
   associated_account_code: string;
   subtotal: number;
   tax_total: number;
-  gross_total: number;
-  retention_total: number;
-  retentions: Retention[];
   total: number;
   referenced_invoice?: { id: number; number: string; supplier_reference: string; due_date: string; balance: number; applied_amount: number } | null;
   totals: { debit: number; credit: number };
@@ -80,7 +76,6 @@ function dueDateFromTerm(postingDate: string, dueTerm: string) {
 }
 
 export default function PurchaseInvoicesPage() {
-  const formRef = useRef<HTMLFormElement>(null);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [items, setItems] = useState<Item[]>([]);
   const [payableAccounts, setPayableAccounts] = useState<Account[]>([]);
@@ -116,13 +111,6 @@ export default function PurchaseInvoicesPage() {
     associated_account_code: ""
   });
   const [lines, setLines] = useState<InvoiceLine[]>([]);
-  const [retentions, setRetentions] = useState<Retention[]>([]);
-
-  async function loadSupplierRetentions(supplierId: string) {
-    if (!supplierId) { setRetentions([]); return; }
-    const result = await api<{ retentions: Omit<Retention, "base" | "amount">[] }>(`/api/v1/accounting/suppliers/${supplierId}/retentions`);
-    setRetentions(result.retentions.map((row) => ({ ...row, base: 0, amount: 0 })));
-  }
 
   async function load() {
     const [supplierRows, itemRows, accounts, orgTree, vatRows, locationRows] = await Promise.all([
@@ -151,7 +139,6 @@ export default function PurchaseInvoicesPage() {
   useEffect(() => {
     load().catch((err) => setError(err instanceof Error ? err.message : "No se pudo cargar facturas de compras"));
   }, []);
-  useEffect(() => { if (header.supplier_id) void loadSupplierRetentions(header.supplier_id).catch((err) => setError(err instanceof Error ? err.message : "No se pudieron cargar retenciones")); }, [header.supplier_id]);
 
   const branches = tree.branches.filter((item) => item.active !== false && item.society_code === header.society_code);
   const costCenters = tree.cost_centers.filter((item) => item.active !== false && item.society_code === header.society_code && (!header.branch_code || item.branch_code === header.branch_code));
@@ -164,25 +151,6 @@ export default function PurchaseInvoicesPage() {
     }, 0);
     return { subtotal, tax, total: subtotal + tax };
   }, [lines, activeVats]);
-  useEffect(() => {
-    setRetentions((current) => current.map((row) => {
-      if (row.base > 0 || row.amount > 0) return row;
-      const base = row.type === "reteiva" ? totals.tax : totals.subtotal;
-      return { ...row, base, amount: base >= row.minimum_base ? Math.round(base * row.percent) / 100 : 0 };
-    }));
-  }, [totals.subtotal, totals.tax]);
-  const missingRequiredHeader = !header.supplier_reference.trim()
-    || !header.header_text.trim()
-    || !header.supplier_id
-    || !header.posting_date
-    || !header.society_code
-    || !header.branch_code
-    || !header.cost_center_code
-    || !header.associated_account_code
-    || (header.with_purchase_order
-      ? (!header.purchase_order_id && !header.purchase_order_reference.trim())
-      : !header.location_id);
-  const canProcessInvoice = !missingRequiredHeader && lines.length > 0 && totals.total > 0;
 
   function setPostingDate(value: string) {
     setHeader((current) => ({ ...current, posting_date: value, due_date: dueDateFromTerm(value, current.due_term) }));
@@ -280,14 +248,10 @@ export default function PurchaseInvoicesPage() {
       document_kind: header.document_kind,
       with_purchase_order: header.with_purchase_order,
       purchase_order_id: header.purchase_order_id ? Number(header.purchase_order_id) : undefined,
-      purchase_order_reference: header.purchase_order_reference.trim(),
       referenced_invoice_id: header.referenced_invoice_id ? Number(header.referenced_invoice_id) : undefined,
-      invoice_reference: header.invoice_reference.trim(),
+      invoice_reference: header.invoice_reference,
       location_id: header.with_purchase_order ? undefined : Number(header.location_id),
-      supplier_reference: header.supplier_reference.trim(),
-      header_text: header.header_text.trim(),
       supplier_id: Number(header.supplier_id),
-      retentions: retentions.map(({ code, base, amount }) => ({ code, base: Number(base), amount: Number(amount) })),
       lines: lines.map((line) => ({
         purchase_order_line_id: line.purchase_order_line_id,
         item_id: line.item_id,
@@ -299,38 +263,9 @@ export default function PurchaseInvoicesPage() {
     };
   }
 
-  function validateInvoiceForm() {
-    setError("");
-    if (!header.supplier_reference.trim()) {
-      setError("Ingrese la referencia de la factura del proveedor.");
-      return false;
-    }
-    if (!header.header_text.trim()) {
-      setError("Ingrese el texto de cabecera de la factura.");
-      return false;
-    }
-    if (header.with_purchase_order && !header.purchase_order_id && !header.purchase_order_reference.trim()) {
-      setError("Seleccione o ingrese una orden de compra.");
-      return false;
-    }
-    if (!header.with_purchase_order && !header.location_id) {
-      setError("Seleccione una bodega o ubicación.");
-      return false;
-    }
-    if (!lines.length || totals.total <= 0) {
-      setError("Agregue al menos una posición con un total mayor que cero.");
-      return false;
-    }
-    if (!formRef.current?.reportValidity()) {
-      setError("Complete todos los campos obligatorios antes de continuar.");
-      return false;
-    }
-    return true;
-  }
-
   async function simulateAccounting() {
-    if (!validateInvoiceForm()) return;
     setSimulating(true);
+    setError("");
     setOk("");
     setSimulation(null);
     try {
@@ -347,8 +282,8 @@ export default function PurchaseInvoicesPage() {
 
   async function save(event: FormEvent) {
     event.preventDefault();
-    if (!validateInvoiceForm()) return;
     setSaving(true);
+    setError("");
     setOk("");
     try {
       const created = await api<{ number: string }>("/api/v1/purchases/invoices", {
@@ -377,7 +312,7 @@ export default function PurchaseInvoicesPage() {
       {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
       {ok ? <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{ok}</p> : null}
 
-      <form className="space-y-4" onSubmit={save} ref={formRef}>
+      <form className="space-y-4" onSubmit={save}>
         <section className="rounded-md border border-line bg-white p-4">
           <div className="grid gap-3 md:grid-cols-6">
             <label className="text-sm">Tipo documento
@@ -391,7 +326,7 @@ export default function PurchaseInvoicesPage() {
               Con referencia a pedido
             </label>
             <label className="text-sm">Proveedor
-              <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={header.supplier_id} onChange={(event) => { const supplierId = event.target.value; setHeader((current) => ({ ...current, supplier_id: supplierId, purchase_order_id: "", purchase_order_reference: "" })); setLines([]); void loadSupplierRetentions(supplierId); }} required>
+              <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={header.supplier_id} onChange={(event) => { setHeader((current) => ({ ...current, supplier_id: event.target.value, purchase_order_id: "", purchase_order_reference: "" })); setLines([]); }} required>
                 <option value="">Seleccionar</option>
                 {suppliers.map((item) => <option key={item.id} value={item.id}>{item.tax_id ? `${item.tax_id} - ` : ""}{item.name}</option>)}
               </select>
@@ -456,21 +391,6 @@ export default function PurchaseInvoicesPage() {
           </div>
         </section>
 
-        <section className="rounded-md border border-line bg-white p-4">
-          <h2 className="text-base font-semibold">Retenciones tributarias de cabecera</h2>
-          <p className="mb-3 text-sm text-neutral-500">Se heredan del proveedor. La base y el importe pueden ajustarse para este documento.</p>
-          <div className="space-y-2">
-            {retentions.map((row, index) => <div className="grid items-end gap-3 rounded-md bg-paper p-3 md:grid-cols-6" key={row.code}>
-              <div className="md:col-span-2"><p className="text-sm font-medium">{row.concept}</p><p className="text-xs text-neutral-500">{row.type.toUpperCase()} · {row.code} · cuenta {row.account_code}</p></div>
-              <label className="text-xs">Porcentaje<input className="mt-1 h-9 w-full rounded-md border border-line bg-white px-2" disabled value={`${row.percent}%`} /></label>
-              <label className="text-xs">Base minima<input className="mt-1 h-9 w-full rounded-md border border-line bg-white px-2" disabled value={money(row.minimum_base)} /></label>
-              <label className="text-xs">Base<input className="mt-1 h-9 w-full rounded-md border border-line bg-white px-2" min="0" step="0.01" type="number" value={row.base} onChange={(event) => setRetentions((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, base: Number(event.target.value) } : item))} /></label>
-              <label className="text-xs">Importe<input className="mt-1 h-9 w-full rounded-md border border-line bg-white px-2" min="0" step="0.01" type="number" value={row.amount} onChange={(event) => setRetentions((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, amount: Number(event.target.value) } : item))} /></label>
-            </div>)}
-            {!retentions.length ? <p className="text-sm text-neutral-500">El proveedor no tiene retenciones asignadas desde Contabilidad.</p> : null}
-          </div>
-        </section>
-
         <section className="rounded-md border border-line bg-white">
           <div className="flex items-center justify-between gap-3 border-b border-line p-4">
             <div>
@@ -507,16 +427,13 @@ export default function PurchaseInvoicesPage() {
           <div className="flex flex-wrap gap-3 text-sm">
             <span>Subtotal: <strong>{money(totals.subtotal)}</strong></span>
             <span>IVA: <strong>{money(totals.tax)}</strong></span>
-            <span>Total bruto: <strong>{money(totals.total)}</strong></span>
-            <span>Retenciones: <strong>{money(retentions.reduce((sum, row) => sum + row.amount, 0))}</strong></span>
-            <span>Neto a pagar: <strong>{money(totals.total - retentions.reduce((sum, row) => sum + row.amount, 0))}</strong></span>
+            <span>Total: <strong>{money(totals.total)}</strong></span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {missingRequiredHeader ? <p className="w-full text-xs text-amber-700">Complete la referencia de factura y los demás datos obligatorios para continuar.</p> : null}
-            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-apex px-4 text-sm font-medium text-apex disabled:opacity-60" disabled={simulating || !canProcessInvoice} onClick={simulateAccounting} type="button">
+            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-apex px-4 text-sm font-medium text-apex disabled:opacity-60" disabled={simulating || !lines.length || totals.total <= 0} onClick={simulateAccounting} type="button">
               <Calculator size={16} /> {simulating ? "Simulando..." : "Simular contabilizacion"}
             </button>
-            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white disabled:opacity-60" disabled={saving || !canProcessInvoice} type="submit"><Save size={16} /> Registrar factura</button>
+            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white disabled:opacity-60" disabled={saving || !lines.length || totals.total <= 0} type="submit"><Save size={16} /> Registrar factura</button>
           </div>
         </section>
 
@@ -533,7 +450,6 @@ export default function PurchaseInvoicesPage() {
               <span className="rounded-md bg-paper px-3 py-2">Debitos: {money(simulation.totals.debit)}</span>
               <span className="rounded-md bg-paper px-3 py-2">Creditos: {money(simulation.totals.credit)}</span>
               <span className="rounded-md bg-paper px-3 py-2">Total: {money(simulation.total)}</span>
-              <span className="rounded-md bg-paper px-3 py-2">Retenciones: {money(simulation.retention_total)}</span>
               {simulation.referenced_invoice ? <span className="rounded-md bg-paper px-3 py-2">Cruza {simulation.referenced_invoice.number}: {money(simulation.referenced_invoice.applied_amount)}</span> : null}
             </div>
           </div>

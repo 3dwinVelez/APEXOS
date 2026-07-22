@@ -119,12 +119,6 @@ async function accountingRoutes(fastify) {
     preHandler: requirePermission("accounting", "write")
   }, async (request) => service.deleteVatMaster(request.user?.tenant_id, request.params.code));
 
-  fastify.get("/accounting/retention-masters", { preHandler: requirePermission("accounting", "read") }, async (request) => service.getRetentionMasters(request.user?.tenant_id));
-  fastify.post("/accounting/retention-masters", { schema: schema.retentionMasterSchema, preHandler: requirePermission("accounting", "write") }, async (request, reply) => reply.code(201).send(await service.saveRetentionMaster(request.user?.tenant_id, request.body)));
-  fastify.delete("/accounting/retention-masters/:code", { preHandler: requirePermission("accounting", "write") }, async (request) => service.deleteRetentionMaster(request.user?.tenant_id, request.params.code));
-  fastify.get("/accounting/suppliers/:supplier_id/retentions", { preHandler: requirePermission("accounting", "read") }, async (request) => service.getSupplierRetentions(request.user?.tenant_id, request.params.supplier_id));
-  fastify.put("/accounting/suppliers/:supplier_id/retentions", { schema: schema.supplierRetentionsSchema, preHandler: requirePermission("accounting", "write") }, async (request) => service.saveSupplierRetentions(request.user?.tenant_id, request.params.supplier_id, request.body));
-
   fastify.get("/accounting/payable-accounts", {
     preHandler: requirePermission("accounting", "read")
   }, async (request) => service.listPayableAccounts(request.user?.tenant_id, request.query));
@@ -159,8 +153,6 @@ async function accountingRoutes(fastify) {
     schema: schema.payableDocumentSchema,
     preHandler: requirePermission("accounting", "write")
   }, async (request, reply) => reply.code(201).send(await service.createPayableDocument(request.user?.tenant_id, request.user?.id, request.body)));
-
-  fastify.post("/accounting/payables/documents/:id/annul", { preHandler: requirePermission("accounting", "write") }, async (request) => service.annulPayableDocument(request.user?.tenant_id, request.user?.id, Number(request.params.id), request.body || {}));
 
   fastify.post("/accounting/payables/applications", {
     schema: schema.payableApplicationSchema,

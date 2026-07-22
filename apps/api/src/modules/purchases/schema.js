@@ -97,7 +97,6 @@ const purchaseInvoiceSchema = {
       branch_code: { type: "string", minLength: 1 },
       cost_center_code: { type: "string", minLength: 1 },
       associated_account_code: { type: "string", minLength: 1 },
-      retentions: { type: "array", items: { type: "object", required: ["code"], properties: { code: { type: "string", minLength: 1 }, base: { type: "number", minimum: 0 }, amount: { type: "number", minimum: 0 } } } },
       lines: {
         type: "array",
         minItems: 1,
@@ -118,29 +117,5 @@ const purchaseInvoiceSchema = {
   }
 };
 
-const purchaseReturnSchema = {
-  body: {
-    type: "object",
-    required: ["returned_lines"],
-    properties: {
-      reason: { type: "string" },
-      returned_lines: {
-        type: "array",
-        minItems: 1,
-        items: {
-          type: "object",
-          required: ["line_id", "qty_returned", "location_id"],
-          properties: {
-            line_id: { type: "integer" },
-            qty_returned: { type: "number", exclusiveMinimum: 0 },
-            location_id: { type: "integer" }
-          }
-        }
-      }
-    }
-  }
-};
-const annulInvoiceSchema = { body: { type: "object", properties: { reason: { type: "string" } } } };
-
-module.exports = { supplierSchema, updateSupplierSchema, purchaseOrderSchema, purchaseInvoiceSchema, purchaseReturnSchema, annulInvoiceSchema };
+module.exports = { supplierSchema, updateSupplierSchema, purchaseOrderSchema, purchaseInvoiceSchema };
 

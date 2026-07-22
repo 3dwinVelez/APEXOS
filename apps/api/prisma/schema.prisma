@@ -174,8 +174,6 @@ model Item {
   bom_lines     BOMLine[]
   movements     Movement[]
   costs         ProductCost[]
-  valuations    SkuValuation[]
-  transfer_lines WarehouseTransferLine[]
 
   @@unique([tenant_id, code])
   @@index([tenant_id, type])
@@ -231,7 +229,6 @@ model ProductCost {
   tenant_id        String
   item_id          Int
   item             Item     @relation(fields: [item_id], references: [id])
-  society_code     String?
   costing_method   String   @default("weighted_average")
   quantity_balance Float    @default(0)
   value_balance    Float    @default(0)
@@ -245,68 +242,6 @@ model ProductCost {
   @@map("inv_product_costs")
   @@index([tenant_id, item_id, created_at])
   @@index([tenant_id, source_type, source_id])
-}
-
-model SkuValuation {
-  id               Int      @id @default(autoincrement())
-  tenant_id        String
-  society_code     String
-  item_id          Int
-  item             Item     @relation(fields: [item_id], references: [id])
-  quantity_balance Float    @default(0)
-  value_balance    Float    @default(0)
-  average_cost     Float    @default(0)
-  version          Int      @default(0)
-  updated_at       DateTime @updatedAt
-  created_at       DateTime @default(now())
-
-  @@map("inv_sku_valuations")
-  @@unique([tenant_id, society_code, item_id])
-  @@index([tenant_id, society_code, item_id])
-}
-
-model WarehouseTransfer {
-  id                   Int       @id @default(autoincrement())
-  tenant_id            String
-  number               String
-  society_code         String
-  origin_place_id      Int
-  destination_place_id Int
-  transit_location_id  Int?
-  status               String    @default("draft")
-  reason               String?
-  correlation_id       String?
-  idempotency_key      String?
-  created_by           Int?
-  dispatched_by        Int?
-  received_by          Int?
-  dispatched_at        DateTime?
-  received_at          DateTime?
-  created_at           DateTime  @default(now())
-  updated_at           DateTime  @updatedAt
-  lines                WarehouseTransferLine[]
-
-  @@map("inv_warehouse_transfers")
-  @@unique([tenant_id, number])
-  @@unique([tenant_id, idempotency_key])
-  @@index([tenant_id, society_code, status])
-}
-
-model WarehouseTransferLine {
-  id          Int               @id @default(autoincrement())
-  tenant_id   String
-  transfer_id Int
-  transfer    WarehouseTransfer @relation(fields: [transfer_id], references: [id], onDelete: Cascade)
-  item_id     Int
-  item        Item              @relation(fields: [item_id], references: [id])
-  qty         Float
-  unit_cost   Float             @default(0)
-  lot         String?
-  created_at  DateTime          @default(now())
-
-  @@map("inv_warehouse_transfer_lines")
-  @@index([tenant_id, transfer_id])
-  @@index([tenant_id, item_id])
 }
 
 model Category {
@@ -445,14 +380,6 @@ model Movement {
   from_location  Int?
   to_location    Int?
   transaction_id Int?
-  purchase_order_line_id Int?
-  society_code   String?
-  source_type    String?
-  source_id      Int?
-  status         String       @default("posted")
-  correlation_id String?
-  idempotency_key String?
-  effective_at   DateTime     @default(now())
   transaction    Transaction? @relation(fields: [transaction_id], references: [id])
   qty            Float
   cost           Float        @default(0)
@@ -463,8 +390,6 @@ model Movement {
 
   @@index([tenant_id, item_id, created_at])
   @@index([tenant_id, type, created_at])
-  @@unique([tenant_id, idempotency_key])
-  @@index([tenant_id, society_code, item_id, effective_at])
 }
 
 model Resource {
@@ -624,12 +549,6 @@ model CntCabdoc {
   header_text     String
   society_code    String
   status          String      @default("posted")
-  is_reversal     Boolean     @default(false)
-  is_cancelled    Boolean     @default(false)
-  reversed_document_id Int?
-  reversal_document_id Int?
-  cancelled_by    Int?
-  cancelled_at    DateTime?
   total_debit     Float       @default(0)
   total_credit    Float       @default(0)
   created_by      Int?
@@ -660,11 +579,6 @@ model CntCuedoc {
   debit             Float     @default(0)
   credit            Float     @default(0)
   description       String
-  tax_type           String?
-  tax_code           String?
-  tax_base           Float     @default(0)
-  tax_rate           Float     @default(0)
-  tax_amount         Float     @default(0)
   ledger_entry_id   Int?
   created_at        DateTime  @default(now())
 
@@ -694,8 +608,6 @@ model CxpCabdoc {
   associated_account_code String
   subtotal                Float       @default(0)
   tax_total               Float       @default(0)
-  retention_total         Float       @default(0)
-  gross_total             Float       @default(0)
   total                   Float       @default(0)
   applied_total           Float       @default(0)
   balance                 Float       @default(0)
@@ -750,11 +662,6 @@ model CxpCuedoc {
   vat_account_code  String?
   vat_percent       Float     @default(0)
   vat_amount        Float     @default(0)
-  tax_type          String?
-  tax_code          String?
-  tax_base          Float     @default(0)
-  tax_rate          Float     @default(0)
-  tax_amount        Float     @default(0)
   description       String
   amount            Float     @default(0)
   total             Float     @default(0)
