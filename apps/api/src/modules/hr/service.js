@@ -441,7 +441,7 @@ async function createRoute(tenantId, input) {
         start_time: input.start_time || "08:00",
         end_time: input.end_time || "17:00",
         tolerance_minutes: input.tolerance_minutes ?? 15,
-        per_diem: Number(input.per_diem || 0),
+        per_diem: 0,
         notes: input.notes || "",
         status: input.status || "active"
       }
@@ -462,7 +462,7 @@ async function updateRoute(tenantId, id, input) {
         start_time: input.start_time || "08:00",
         end_time: input.end_time || "17:00",
         tolerance_minutes: input.tolerance_minutes ?? 15,
-        per_diem: Number(input.per_diem || 0),
+        per_diem: 0,
         notes: input.notes || "",
         status: input.status || "active"
       }
@@ -478,9 +478,8 @@ function validateRouteInput(input = {}) {
   const start = minutesFromTime(input.start_time || "08:00");
   const end = minutesFromTime(input.end_time || "17:00");
   if (start === null || end === null) throw validationError("Define horas validas en formato HH:mm.");
-  if (end <= start) throw validationError("La hora de fin debe ser posterior a la hora de inicio.");
+  if (end === start) throw validationError("La hora de inicio y la hora de fin no pueden ser iguales.");
   if (Number(input.tolerance_minutes ?? 15) < 0) throw validationError("La tolerancia no puede ser negativa.");
-  if (Number(input.per_diem || 0) < 0) throw validationError("El viatico o auxilio no puede ser negativo.");
 }
 
 async function normalizeRouteEmployees(inputEmployees = []) {
@@ -529,7 +528,7 @@ async function createRoutesBulk(tenantId, input) {
         start_time: input.start_time || "08:00",
         end_time: input.end_time || "17:00",
         tolerance_minutes: input.tolerance_minutes ?? 15,
-        per_diem: Number(input.per_diem || 0),
+        per_diem: 0,
         notes: input.notes || "",
         status: input.status || "active"
       }
