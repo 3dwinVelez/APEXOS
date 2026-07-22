@@ -55,7 +55,6 @@ const routeSchema = {
       start_time: { type: "string" },
       end_time: { type: "string" },
       tolerance_minutes: { type: "integer" },
-      per_diem: { type: "number" },
       notes: { type: "string" },
       status: { type: "string" }
     }
@@ -75,7 +74,6 @@ const routeBulkSchema = {
       start_time: { type: "string" },
       end_time: { type: "string" },
       tolerance_minutes: { type: "integer" },
-      per_diem: { type: "number" },
       notes: { type: "string" },
       status: { type: "string" }
     }

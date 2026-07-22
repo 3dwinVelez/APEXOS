@@ -2,14 +2,16 @@
 
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { ArrowLeft, Building2, CalendarDays, Camera, CheckSquare2, Clock, Copy, Edit3, Filter, HelpCircle, Navigation, Plus, RefreshCw, RotateCcw, Save, Search, Square, Truck, UserPlus, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Building2, CalendarDays, Camera, CheckSquare2, Clock, Copy, Edit3, Filter, HelpCircle, Navigation, Plus, RefreshCw, RotateCcw, Save, Search, Square, Truck, UserPlus, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 
-type Employee = { id: number; code: string; user_type?: string; position: string; department: string; metadata: { name: string; document: string; user_type?: string }; user: { name: string } };
-type Vehicle = { id: number; plate: string; type: string; model: string };
-type TimeRoute = { id: number | string; code?: string; display_id?: number | string; date: string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string; status: string; tolerance_minutes?: number; per_diem?: number; notes?: string };
+type Employee = { id: number | string; code: string; user_type?: string; position: string; department: string; metadata: { name: string; document: string; user_type?: string }; user: { name: string } };
+type Vehicle = { id: number | string; plate: string; type: string; model: string };
+type TimeRoute = { id: number | string; code?: string; display_id?: number | string; date: string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string; status: string; tolerance_minutes?: number; notes?: string };
+type MasterOption = { code: string; name: string; active?: boolean; sort_order?: number };
+type UserMasterData = { locations?: MasterOption[] };
 type OperatorPoint = { key: string; user_name: string; name: string; route_id: number | string; online?: boolean; last_punch_type?: string; last_activity_type?: string; last_activity_time?: string };
 type PunchPoint = { id: number | string; user_name: string; type: string; time?: string; punched_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; extra_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: { base64_data?: string; file_name?: string; file_url?: string } };
 type ActivityPoint = { id: number | string; user_name: string; type: string; time?: string; occurred_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; observation?: string; evidence?: Array<{ base64_data?: string; file_name?: string; file_url?: string }> };
@@ -26,7 +28,6 @@ const weekdayOptions = [
   { value: 6, label: "Sab" },
   { value: 0, label: "Dom" }
 ];
-const administrativeSites = ["SEDE-PRINCIPAL", "BOG-NORTE", "BOG-SUR", "OFICINA-ADMINISTRATIVA", "REMOTO"];
 const administrativeSitePrefix = "Sede administrativa:";
 
 function employeeName(employee: Employee | null | undefined) {
@@ -201,6 +202,7 @@ function FieldHelp({ label, help, children }: { label: string; help: string; chi
 export default function RoutesPlanningPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [administrativeSites, setAdministrativeSites] = useState<MasterOption[]>([]);
   const [routes, setRoutes] = useState<TimeRoute[]>([]);
   const [operations, setOperations] = useState<OperationsMap | null>(null);
   const [selectedRouteId, setSelectedRouteId] = useState("");
@@ -209,7 +211,8 @@ export default function RoutesPlanningPage() {
   const [editingRoute, setEditingRoute] = useState<RouteMonitor | null>(null);
   const [loadingMonitor, setLoadingMonitor] = useState(false);
   const [savingRoute, setSavingRoute] = useState(false);
-  const [form, setForm] = useState({ date: new Date().toISOString().slice(0, 10), vehicle_plate: "", employees: [] as string[], start_time: "08:00", end_time: "17:00", tolerance_minutes: 15, per_diem: 0, notes: "" });
+  const [validationIssues, setValidationIssues] = useState<string[]>([]);
+  const [form, setForm] = useState({ date: new Date().toISOString().slice(0, 10), vehicle_plate: "", employees: [] as string[], start_time: "08:00", end_time: "17:00", tolerance_minutes: 15, notes: "" });
   const [scheduleKind, setScheduleKind] = useState<"administrative" | "operational">("administrative");
   const [administrativeSite, setAdministrativeSite] = useState("SEDE-PRINCIPAL");
   const [bulkMode, setBulkMode] = useState(false);
@@ -222,16 +225,20 @@ export default function RoutesPlanningPage() {
   async function load() {
     setLoadingMonitor(true);
     const today = new Date().toISOString().slice(0, 10);
-    const [employeeData, vehicleData, routeData, operationsData] = await Promise.all([
+    const [employeeData, vehicleData, routeData, operationsData, masterData] = await Promise.all([
       api<Employee[]>("/api/v1/hr/employees?active=true").catch(() => []),
       api<Vehicle[]>("/api/v1/transport/vehicles").catch(() => []),
       api<TimeRoute[]>("/api/v1/hr/routes").catch(() => []),
-      api<OperationsMap>(`/api/v1/hr/operations-map?date=${today}&minutes=30&footprint_days=30`).catch(() => null)
+      api<OperationsMap>(`/api/v1/hr/operations-map?date=${today}&minutes=30&footprint_days=30`).catch(() => null),
+      api<UserMasterData>("/api/v1/admin/user-master-data").catch(() => ({ locations: [] }))
     ]);
     setEmployees(employeeData);
     setVehicles(vehicleData);
     setRoutes(routeData);
     setOperations(operationsData);
+    const activeSites = (masterData.locations || []).filter((site) => site.active !== false).sort((a, b) => (a.sort_order || 100) - (b.sort_order || 100));
+    setAdministrativeSites(activeSites);
+    setAdministrativeSite((current) => activeSites.some((site) => site.code === current) ? current : activeSites[0]?.code || "");
     setLoadingMonitor(false);
   }
 
@@ -250,7 +257,7 @@ export default function RoutesPlanningPage() {
 
   function resetForm() {
     const today = new Date().toISOString().slice(0, 10);
-    setForm({ date: today, vehicle_plate: "", employees: [], start_time: "08:00", end_time: "17:00", tolerance_minutes: 15, per_diem: 0, notes: "" });
+    setForm({ date: today, vehicle_plate: "", employees: [], start_time: "08:00", end_time: "17:00", tolerance_minutes: 15, notes: "" });
     setScheduleKind("administrative");
     setAdministrativeSite("SEDE-PRINCIPAL");
     setBulk({ start_date: today, end_date: addDays(today, 4), weekdays: [1, 2, 3, 4, 5] });
@@ -274,7 +281,6 @@ export default function RoutesPlanningPage() {
         start_time: route.start_time || "08:00",
         end_time: route.end_time || "17:00",
         tolerance_minutes: route.tolerance_minutes ?? 15,
-        per_diem: route.per_diem ?? 0,
         notes: notesWithoutAdministrativeSite(route.notes || "")
       });
       setBulk({ start_date: date, end_date: addDays(date, 4), weekdays: [1, 2, 3, 4, 5] });
@@ -296,7 +302,6 @@ export default function RoutesPlanningPage() {
       start_time: route.start_time || "08:00",
       end_time: route.end_time || "17:00",
       tolerance_minutes: route.tolerance_minutes ?? 15,
-      per_diem: route.per_diem ?? 0,
       notes: notesWithoutAdministrativeSite(route.notes || "")
     });
     setModal("edit");
@@ -316,16 +321,22 @@ export default function RoutesPlanningPage() {
 
   async function saveRoute() {
     if (savingRoute) return;
-    if (!form.employees.length) {
-      setMessage("Selecciona al menos una persona para asignar el horario.");
-      return;
-    }
-    if (!form.start_time || !form.end_time) {
-      setMessage("Define hora de inicio y hora de fin del horario.");
-      return;
-    }
-    if (form.end_time <= form.start_time) {
-      setMessage("La hora de fin debe ser posterior a la hora de inicio.");
+    const issues: string[] = [];
+    if (bulkMode && modal !== "edit") {
+      if (!bulk.start_date) issues.push("Selecciona la fecha inicial del rango.");
+      if (!bulk.end_date) issues.push("Selecciona la fecha final del rango.");
+      if (bulk.start_date && bulk.end_date && bulk.end_date < bulk.start_date) issues.push("La fecha final no puede ser anterior a la fecha inicial.");
+      if (!bulk.weekdays.length) issues.push("Selecciona al menos un dia de la semana.");
+      if (bulk.start_date && bulk.end_date && bulk.weekdays.length && bulkCount === 0) issues.push("El rango no contiene ninguno de los dias seleccionados.");
+    } else if (!form.date) issues.push("Selecciona la fecha del horario.");
+    if (scheduleKind === "administrative" && !administrativeSite) issues.push("Selecciona una sede administrativa.");
+    if (!form.start_time) issues.push("Diligencia la hora de inicio.");
+    if (!form.end_time) issues.push("Diligencia la hora de fin.");
+    if (form.start_time && form.end_time && form.end_time === form.start_time) issues.push("La hora de inicio y la hora de fin no pueden ser iguales.");
+    if (!Number.isFinite(form.tolerance_minutes) || form.tolerance_minutes < 0) issues.push("La tolerancia debe ser un numero igual o mayor que cero.");
+    if (!form.employees.length) issues.push("Selecciona al menos una persona para el horario.");
+    if (issues.length) {
+      setValidationIssues(issues);
       return;
     }
     setSavingRoute(true);
@@ -334,10 +345,6 @@ export default function RoutesPlanningPage() {
         await api<TimeRoute>(`/api/v1/hr/routes/${editingRoute.id}`, { method: "PATCH", body: JSON.stringify(routePayload(editingRoute.status || "active")) });
         setMessage("Horario actualizado correctamente.");
       } else if (bulkMode) {
-        if (!bulk.start_date || !bulk.end_date || !bulk.weekdays.length) {
-          setMessage("Define rango de fechas y al menos un dia de la semana.");
-          return;
-        }
         const result = await api<{ created: number }>("/api/v1/hr/routes/bulk", { method: "POST", body: JSON.stringify({ ...routePayload("active"), start_date: bulk.start_date, end_date: bulk.end_date, weekdays: bulk.weekdays }) });
         setMessage(`${result.created || 0} horario(s) asignado(s) correctamente.`);
       } else {
@@ -545,12 +552,10 @@ export default function RoutesPlanningPage() {
             )}
             {scheduleKind === "administrative" ? (
               <FieldHelp label="Sede administrativa fija" help="Sede, oficina o punto fijo donde aplica la jornada.">
-                <>
-                  <input className="h-10 w-full rounded-md border border-line px-3 text-sm" list="administrative-sites" placeholder="Ej: SEDE-PRINCIPAL" value={administrativeSite} onChange={(event) => setAdministrativeSite(event.target.value)} />
-                  <datalist id="administrative-sites">
-                    {administrativeSites.map((site) => <option key={site} value={site} />)}
-                  </datalist>
-                </>
+                <select className="h-10 w-full rounded-md border border-line bg-white px-3 text-sm" value={administrativeSite} onChange={(event) => setAdministrativeSite(event.target.value)}>
+                  <option value="">Seleccionar sede</option>
+                  {administrativeSites.map((site) => <option key={site.code} value={site.code}>{site.code} - {site.name}</option>)}
+                </select>
               </FieldHelp>
             ) : (
               <FieldHelp label="Recurso o vehiculo" help="Opcional para operacion movil. Selecciona placa cuando el horario dependa de transporte o ruta fisica.">
@@ -568,9 +573,6 @@ export default function RoutesPlanningPage() {
             </FieldHelp>
             <FieldHelp label="Tolerancia en minutos" help="Margen permitido antes de marcar atrasos o extensiones operativas.">
               <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} type="number" value={form.tolerance_minutes} onChange={(event) => setForm((prev) => ({ ...prev, tolerance_minutes: Number(event.target.value) }))} />
-            </FieldHelp>
-            <FieldHelp label="Viatico o auxilio" help="Valor opcional asociado a la jornada. Usa 0 cuando no aplique.">
-              <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} type="number" value={form.per_diem} onChange={(event) => setForm((prev) => ({ ...prev, per_diem: Number(event.target.value) }))} />
             </FieldHelp>
             <FieldHelp label="Notas internas" help="Indica sede, turno, frente de trabajo, instruccion especial o responsable del horario.">
               <textarea className="min-h-[72px] w-full rounded-md border border-line px-3 py-2 text-sm" placeholder="Ej: Turno bodega norte, prioridad recepcion, supervisor asignado..." value={form.notes} onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))} />
@@ -590,6 +592,25 @@ export default function RoutesPlanningPage() {
           </div>
           <button className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-apex text-sm font-semibold text-white disabled:bg-neutral-300" disabled={savingRoute} onClick={saveRoute} type="button"><Save size={16} /> {savingRoute ? "Guardando..." : modal === "edit" ? "Guardar cambios" : bulkMode ? `Crear ${bulkCount} horario(s)` : "Asignar horario"}</button>
         </ModalFrame>
+      ) : null}
+
+      {validationIssues.length ? (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-neutral-950/45 p-4" role="dialog" aria-modal="true" aria-labelledby="schedule-validation-title">
+          <section className="w-full max-w-md rounded-md border border-amber-200 bg-white p-5 shadow-xl">
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-amber-50 text-amber-700"><AlertTriangle size={20} /></span>
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold text-neutral-950" id="schedule-validation-title">Faltan datos para guardar</h2>
+                <p className="mt-1 text-sm text-neutral-600">Completa puntualmente lo siguiente:</p>
+              </div>
+              <button className="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line text-neutral-600 hover:bg-paper" onClick={() => setValidationIssues([])} type="button" aria-label="Cerrar validacion"><X size={17} /></button>
+            </div>
+            <ul className="mt-4 space-y-2 rounded-md bg-paper p-3 text-sm text-neutral-800">
+              {validationIssues.map((issue) => <li className="flex gap-2" key={issue}><span className="font-bold text-amber-700">•</span><span>{issue}</span></li>)}
+            </ul>
+            <button className="mt-4 h-10 w-full rounded-md bg-apex text-sm font-semibold text-white" onClick={() => setValidationIssues([])} type="button">Entendido</button>
+          </section>
+        </div>
       ) : null}
 
       {selectedRoute ? (
