@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { InventoryNav } from "@/components/inventory-nav";
 import { api } from "@/lib/api";
 
@@ -18,6 +18,7 @@ type KardexRow = {
   unit_cost: number;
   value: number;
   document_type: string;
+  document_id?: number | null;
   document_number: string;
   reason: string;
   warehouse: string;
@@ -33,12 +34,17 @@ type CostRow = {
   family_name: string;
   unit: string;
   stock_current: number;
+  society_code: string;
+  physical_stock: number;
+  transit_stock: number;
+  available_stock: number;
   average_cost: number;
   last_unit_cost: number;
   value_balance: number;
   last_cost_date?: string | null;
   last_source_type: string;
   warehouses: string[];
+  warehouse_rows: Array<{ location_id: number; warehouse_id: number; warehouse_code: string; warehouse_name: string; location_code: string; type: string; qty: number }>;
 };
 type CostsResponse = { data: CostRow[]; total: number; totals: { stock_units: number; inventory_value: number } };
 
@@ -52,8 +58,13 @@ function dateTime(value?: string | null) {
 }
 
 function movementLabel(type: string) {
-  const labels: Record<string, string> = { in: "Entrada", out: "Salida", transfer: "Transferencia", adjustment: "Ajuste" };
+  const labels: Record<string, string> = { in: "Entrada", out: "Salida", transfer: "Transferencia", transfer_dispatch: "Despacho a tránsito", transfer_receive: "Descarga de tránsito", adjustment: "Ajuste" };
   return labels[type] || type;
+}
+
+function documentLabel(type: string) {
+  const labels: Record<string, string> = { warehouse_transfer: "Traslado entre bodegas", purchase_order_receipt: "Recepción de orden de compra", purchase_return: "Devolución de compra", purchase_invoice: "Factura de compra", sales_invoice: "Factura de venta", movement: "Movimiento de inventario" };
+  return labels[type] || type || "Movimiento de inventario";
 }
 
 export default function ReportesInventarioPage() {
@@ -66,6 +77,9 @@ export default function ReportesInventarioPage() {
   const [costs, setCosts] = useState<CostsResponse | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [stockDetail, setStockDetail] = useState<CostRow | null>(null);
+  const [movementDetail, setMovementDetail] = useState<KardexRow | null>(null);
+  const [transferDetail, setTransferDetail] = useState<any>(null);
 
   async function loadBase() {
     const [itemRows, costRows] = await Promise.all([
@@ -108,6 +122,15 @@ export default function ReportesInventarioPage() {
   }, [costs, query]);
 
   const selectedCost = filteredCosts.find((item) => String(item.id) === selectedItemId) || costs?.data.find((item) => String(item.id) === selectedItemId);
+
+  async function openMovement(row: KardexRow) {
+    setMovementDetail(row);
+    setTransferDetail(null);
+    if (row.document_type === "warehouse_transfer" && row.document_id) {
+      try { setTransferDetail(await api("/api/v1/inventory/transfers/" + row.document_id)); }
+      catch (err) { setError(err instanceof Error ? err.message : "No se pudo cargar el documento"); }
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -173,8 +196,8 @@ export default function ReportesInventarioPage() {
                 <tr className="border-b border-line/70 last:border-0" key={row.id}>
                   <td className="px-3 py-2">{dateTime(row.created_at)}</td>
                   <td className="px-3 py-2">{movementLabel(row.type)}</td>
-                  <td className="px-3 py-2 font-mono text-xs">{row.document_number || row.document_type || row.reason || "--"}</td>
-                  <td className="px-3 py-2"><span className="font-mono text-xs">{row.item_code}</span> {row.item_name}</td>
+                  <td className="px-3 py-2"><button className="font-mono text-xs text-apex hover:underline" onDoubleClick={() => void openMovement(row)} title="Doble clic para ver el documento" type="button">{row.document_number || documentLabel(row.document_type) || row.reason || "--"}</button></td>
+                  <td className="px-3 py-2"><button className="text-left hover:text-apex hover:underline" onDoubleClick={() => { const cost = costs?.data.find((item) => item.code === row.item_code); if (cost) setStockDetail(cost); }} title="Doble clic para ver existencias por bodega" type="button"><span className="font-mono text-xs">{row.item_code}</span> {row.item_name}</button></td>
                   <td className="px-3 py-2">{row.warehouse || row.from_warehouse || row.to_warehouse || "--"}</td>
                   <td className="px-3 py-2 text-right text-emerald-700">{row.in_qty || ""}</td>
                   <td className="px-3 py-2 text-right text-rose-700">{row.out_qty || ""}</td>
@@ -204,30 +227,36 @@ export default function ReportesInventarioPage() {
                 <th className="px-3 py-2">SKU</th>
                 <th className="px-3 py-2">Producto</th>
                 <th className="px-3 py-2">Familia</th>
+                <th className="px-3 py-2">Sociedad</th>
                 <th className="px-3 py-2">Bodegas</th>
-                <th className="px-3 py-2 text-right">Stock</th>
+                <th className="px-3 py-2 text-right">Fisico</th>
+                <th className="px-3 py-2 text-right">Transito</th>
                 <th className="px-3 py-2 text-right">Costo promedio</th>
                 <th className="px-3 py-2 text-right">Ultimo costo</th>
                 <th className="px-3 py-2 text-right">Valor</th>
               </tr>
             </thead>
             <tbody>
-              {filteredCosts.map((row) => (
-                <tr className="border-b border-line/70 last:border-0 hover:bg-paper/70" key={row.id}>
-                  <td className="px-3 py-2 font-mono text-xs">{row.code}</td>
+              {filteredCosts.flatMap((row) => (row.warehouse_rows?.length ? row.warehouse_rows : [{ location_id: 0, warehouse_id: 0, warehouse_code: "--", warehouse_name: "Sin bodega", location_code: "", type: "warehouse", qty: 0 }]).map((warehouse) => (
+                <tr className="border-b border-line/70 last:border-0 hover:bg-paper/70" key={row.id + "-" + warehouse.location_id}>
+                  <td className="px-3 py-2"><button className="font-mono text-xs text-apex hover:underline" onDoubleClick={() => setStockDetail(row)} title="Doble clic para ver existencias por bodega" type="button">{row.code}</button></td>
                   <td className="px-3 py-2">{row.name}</td>
                   <td className="px-3 py-2">{row.family_code ? `${row.family_code} - ${row.family_name}` : "--"}</td>
-                  <td className="px-3 py-2">{row.warehouses.slice(0, 2).join(", ") || "--"}</td>
-                  <td className="px-3 py-2 text-right">{row.stock_current}</td>
+                  <td className="px-3 py-2 font-mono text-xs">{row.society_code || "--"}</td>
+                  <td className="px-3 py-2">{warehouse.type === "transit" ? "Tránsito" : warehouse.warehouse_code + " - " + warehouse.warehouse_name} {warehouse.location_code ? "/ " + warehouse.location_code : ""}</td>
+                  <td className="px-3 py-2 text-right">{warehouse.type === "warehouse" ? warehouse.qty : 0}</td>
+                  <td className="px-3 py-2 text-right text-amber-700">{warehouse.type === "transit" ? warehouse.qty : 0}</td>
                   <td className="px-3 py-2 text-right">{money(row.average_cost)}</td>
                   <td className="px-3 py-2 text-right">{money(row.last_unit_cost)}</td>
-                  <td className="px-3 py-2 text-right font-semibold">{money(row.value_balance)}</td>
+                  <td className="px-3 py-2 text-right font-semibold">{money(warehouse.qty * row.average_cost)}</td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>
       </section>
+      {stockDetail ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4" onMouseDown={() => setStockDetail(null)}><section className="w-full max-w-3xl rounded-lg bg-white shadow-xl" onMouseDown={(event) => event.stopPropagation()}><header className="flex items-start justify-between border-b border-line p-4"><div><p className="text-sm text-neutral-500">Existencias por bodega</p><h2 className="text-xl font-semibold">{stockDetail.code} - {stockDetail.name}</h2></div><button onClick={() => setStockDetail(null)} type="button"><X size={20} /></button></header><table className="w-full text-sm"><thead><tr className="border-b border-line bg-paper text-left"><th className="px-4 py-2">Bodega</th><th className="px-4 py-2">Ubicación</th><th className="px-4 py-2">Estado</th><th className="px-4 py-2 text-right">Cantidad</th></tr></thead><tbody>{stockDetail.warehouse_rows.map((row) => <tr className="border-b border-line/70" key={row.location_id}><td className="px-4 py-2">{row.warehouse_code} - {row.warehouse_name}</td><td className="px-4 py-2">{row.location_code || "--"}</td><td className="px-4 py-2">{row.type === "transit" ? "En tránsito" : "Disponible"}</td><td className="px-4 py-2 text-right">{row.qty}</td></tr>)}</tbody></table></section></div> : null}
+      {movementDetail ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4" onMouseDown={() => setMovementDetail(null)}><section className="max-h-[85vh] w-full max-w-3xl overflow-auto rounded-lg bg-white shadow-xl" onMouseDown={(event) => event.stopPropagation()}><header className="flex items-start justify-between border-b border-line p-4"><div><p className="text-sm text-neutral-500">{documentLabel(movementDetail.document_type)}</p><h2 className="text-xl font-semibold">{movementDetail.document_number || "Movimiento " + movementDetail.id}</h2></div><button onClick={() => setMovementDetail(null)} type="button"><X size={20} /></button></header><div className="grid gap-2 p-4 text-sm md:grid-cols-2"><p><strong>Fecha:</strong> {dateTime(movementDetail.created_at)}</p><p><strong>Movimiento:</strong> {movementLabel(movementDetail.type)}</p><p><strong>Origen:</strong> {movementDetail.from_warehouse || "--"}</p><p><strong>Destino:</strong> {movementDetail.to_warehouse || "--"}</p><p><strong>Cantidad:</strong> {movementDetail.in_qty || movementDetail.out_qty}</p><p><strong>Costo:</strong> {money(movementDetail.unit_cost)}</p></div>{transferDetail ? <div className="border-t border-line p-4"><h3 className="mb-2 font-semibold">Detalle del traslado</h3><p className="mb-3 text-sm">{transferDetail.origin?.name} → {transferDetail.destination?.name}</p><table className="w-full text-sm"><thead><tr className="border-b border-line bg-paper text-left"><th className="px-3 py-2">SKU</th><th className="px-3 py-2">Producto</th><th className="px-3 py-2 text-right">Cantidad</th></tr></thead><tbody>{transferDetail.lines?.map((line: any) => <tr className="border-b border-line/70" key={line.id}><td className="px-3 py-2 font-mono">{line.item?.code}</td><td className="px-3 py-2">{line.item?.name}</td><td className="px-3 py-2 text-right">{line.qty}</td></tr>)}</tbody></table></div> : null}</section></div> : null}
     </div>
   );
 }

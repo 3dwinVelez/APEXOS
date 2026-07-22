@@ -281,30 +281,77 @@ async function applyWeightedAverageCost(tx, tenantId, userId, item, qty, unitCos
   return nextAverage;
 }
 
+async function getSocietyValuationTx(tx, societyCode, itemId) {
+  const society = normalizeCode(societyCode);
+  if (!society) throw appError(400, "SOCIETY_REQUIRED", "La sociedad es obligatoria para valorar inventario");
+  let valuation = await tx.skuValuation.findFirst({ where: { society_code: society, item_id: Number(itemId) } });
+  if (valuation) return valuation;
+  const locations = await tx.itemLocation.findMany({ where: { item_id: Number(itemId), location: { place: { society_code: society } } } });
+  const item = await tx.item.findFirst({ where: { id: Number(itemId) } });
+  const quantity = locations.reduce((sum, row) => sum + Number(row.qty || 0), 0);
+  const average = Number(item?.unit_cost || 0);
+  return tx.skuValuation.create({ data: { society_code: society, item_id: Number(itemId), quantity_balance: quantity, value_balance: Math.round(quantity * average * 100) / 100, average_cost: average } });
+}
+
+function calculateSocietyValuation({ quantityBalance, valueBalance, averageCost, qty, unitCost, direction }) {
+  const previousQty = Number(quantityBalance || 0);
+  const previousValue = Number(valueBalance || 0);
+  const previousAverage = Number(averageCost || 0);
+  const quantity = Number(qty || 0);
+  if (quantity <= 0) throw appError(400, "INVALID_QTY", "La cantidad debe ser mayor a cero");
+  if (direction === "in") {
+    const incomingCost = Number(unitCost ?? previousAverage);
+    const nextQty = previousQty + quantity;
+    const nextValue = previousValue + quantity * incomingCost;
+    return { quantity_balance: nextQty, value_balance: Math.round(nextValue * 100) / 100, average_cost: nextQty > 0 ? Math.round((nextValue / nextQty) * 10000) / 10000 : incomingCost, recognized_cost: incomingCost };
+  }
+  if (direction !== "out") throw appError(400, "INVALID_VALUATION_DIRECTION", "Direccion de valoracion invalida");
+  if (previousQty - quantity < -0.0001) throw appError(422, "INSUFFICIENT_SOCIETY_STOCK", "Stock insuficiente en la sociedad");
+  const nextQty = previousQty - quantity;
+  const nextValue = Math.max(0, previousValue - quantity * previousAverage);
+  return { quantity_balance: nextQty, value_balance: Math.round(nextValue * 100) / 100, average_cost: nextQty > 0 ? previousAverage : 0, recognized_cost: previousAverage };
+}
+
+async function applySocietyValuationTx(tx, tenantId, userId, { societyCode, item, qty, unitCost, direction, sourceType, sourceId }) {
+  await tx.$queryRawUnsafe(
+    "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+    `${tenantId}:${normalizeCode(societyCode)}:${item.id}`
+  );
+  const valuation = await getSocietyValuationTx(tx, societyCode, item.id);
+  const result = calculateSocietyValuation({ quantityBalance: valuation.quantity_balance, valueBalance: valuation.value_balance, averageCost: valuation.average_cost, qty, unitCost, direction });
+  const updated = await tx.skuValuation.update({ where: { id: valuation.id }, data: { quantity_balance: result.quantity_balance, value_balance: result.value_balance, average_cost: result.average_cost, version: { increment: 1 } } });
+  await tx.productCost.create({ data: { item_id: item.id, society_code: normalizeCode(societyCode), costing_method: "weighted_average", quantity_balance: result.quantity_balance, value_balance: updated.value_balance, average_cost: result.average_cost, last_unit_cost: result.recognized_cost, source_type: sourceType, source_id: sourceId, created_by: userId || null } });
+  return { ...updated, recognized_cost: result.recognized_cost };
+}
+
 async function stockMoveTx(tx, tenantId, userId, data) {
   const {
     item_id, type, qty, from_location_id = null, to_location_id = null,
-    transaction_id = null, cost = null, lot = null, reason = null, expiry = null
+    transaction_id = null, purchase_order_line_id = null, cost = null, lot = null, reason = null, expiry = null,
+    society_code = null, source_type = null, source_id = null, correlation_id = null, idempotency_key = null, affect_valuation = true
   } = data;
 
-  if (!["in", "out", "transfer", "adjustment"].includes(type)) {
+  if (type === "transfer") {
+    throw appError(409, "WAREHOUSE_TRANSFER_REQUIRED", "Los traslados deben crearse, despacharse a transito y descargarse completamente desde el modulo de traslados");
+  }
+  if (!["in", "out", "adjustment"].includes(type)) {
     throw appError(400, "INVALID_MOVE_TYPE", "Tipo de movimiento invalido");
   }
   if (!qty || qty <= 0) throw appError(400, "INVALID_QTY", "La cantidad debe ser mayor a 0");
 
   const item = await tx.item.findFirst({ where: { id: item_id, active: true } });
   if (!item) throw appError(404, "ITEM_NOT_FOUND", "Item no encontrado");
-
-  if ((type === "out" || type === "transfer") && !from_location_id) {
-    throw appError(400, "FROM_LOCATION_REQUIRED", "from_location_id es obligatorio para salidas y transferencias");
-  }
-  if ((type === "in" || type === "transfer") && !to_location_id) {
-    throw appError(400, "TO_LOCATION_REQUIRED", "to_location_id es obligatorio para entradas y transferencias");
-  }
-  if (type === "transfer" && from_location_id === to_location_id) {
-    throw appError(400, "SAME_LOCATION", "No puedes transferir a la misma ubicacion");
+  if (idempotency_key) {
+    const existing = await tx.movement.findFirst({ where: { idempotency_key } });
+    if (existing) return { movement: existing, item, idempotent: true };
   }
 
+  if (type === "out" && !from_location_id) {
+    throw appError(400, "FROM_LOCATION_REQUIRED", "from_location_id es obligatorio para salidas");
+  }
+  if (type === "in" && !to_location_id) {
+    throw appError(400, "TO_LOCATION_REQUIRED", "to_location_id es obligatorio para entradas");
+  }
   const delta = (type === "in" || type === "adjustment") ? qty : -qty;
   if (item.stock_current + delta < 0) {
     throw appError(422, "INSUFFICIENT_STOCK", "Stock insuficiente");
@@ -321,9 +368,14 @@ async function stockMoveTx(tx, tenantId, userId, data) {
     });
   }
 
+  const locationId = to_location_id || from_location_id;
+  const location = locationId ? await tx.location.findFirst({ where: { id: locationId }, include: { place: true } }) : null;
+  const movementSociety = normalizeCode(society_code || location?.place?.society_code || item.society_code);
   let nextAverageCost = item.unit_cost;
-  if ((type === "in" || type === "adjustment") && item.costing_method === "weighted_average") {
-    nextAverageCost = await applyWeightedAverageCost(tx, tenantId, userId, item, qty, cost ?? item.unit_cost, "movement", transaction_id);
+  let valuation = null;
+  if (affect_valuation && item.costing_method === "weighted_average") {
+    valuation = await applySocietyValuationTx(tx, tenantId, userId, { societyCode: movementSociety, item, qty, unitCost: cost ?? item.unit_cost, direction: (type === "in" || type === "adjustment") ? "in" : "out", sourceType: source_type || "movement", sourceId: source_id || transaction_id });
+    nextAverageCost = valuation.average_cost;
   }
 
   const movement = await tx.movement.create({
@@ -333,6 +385,12 @@ async function stockMoveTx(tx, tenantId, userId, data) {
       from_location: from_location_id,
       to_location: to_location_id,
       transaction_id,
+      purchase_order_line_id,
+      society_code: movementSociety,
+      source_type,
+      source_id,
+      correlation_id,
+      idempotency_key,
       qty,
       cost: cost ?? item.unit_cost,
       lot,
@@ -346,7 +404,7 @@ async function stockMoveTx(tx, tenantId, userId, data) {
   if (to_location_id) {
     const currentTo = await tx.itemLocation.findFirst({ where: { item_id, location_id: to_location_id, lot: lot ?? null } });
     if (currentTo) {
-      await tx.itemLocation.update({ where: { id: currentTo.id }, data: { qty: { increment: qty } } });
+      await tx.itemLocation.update({ where: { id: currentTo.id }, data: { qty: { increment: qty }, cost: nextAverageCost } });
     } else {
       await tx.itemLocation.create({
         data: { item_id, location_id: to_location_id, qty, lot, expiry: expiry ? new Date(expiry) : null, cost: cost ?? item.unit_cost }
@@ -371,11 +429,125 @@ async function stockMoveTx(tx, tenantId, userId, data) {
     });
   }
 
-  return { movement, item: updated };
+  return { movement, item: updated, valuation };
 }
 
 async function stockMove(tenantId, userId, data) {
   return prisma.runWithTenant(tenantId, async () => prisma.$transaction((tx) => stockMoveTx(tx, tenantId, userId, data)));
+}
+
+async function ensureTransitLocationTx(tx, tenantId, societyCode) {
+  const code = `TRANSITO-${normalizeCode(societyCode)}`;
+  let place = await tx.place.findFirst({ where: { code, type: "transit", __includeInactive: true } });
+  if (!place) place = await tx.place.create({ data: { type: "transit", code, name: `Mercancia en transito ${societyCode}`, society_code: normalizeCode(societyCode), active: true } });
+  let location = await tx.location.findFirst({ where: { place_id: place.id, code: "TRANSITO" } });
+  if (!location) location = await tx.location.create({ data: { place_id: place.id, code: "TRANSITO", zone: "transit", active: true } });
+  return location;
+}
+
+async function createWarehouseTransfer(tenantId, userId, data) {
+  if (!Array.isArray(data.lines) || !data.lines.length) throw appError(400, "NO_TRANSFER_LINES", "El traslado requiere al menos una linea");
+  const itemIds = data.lines.map((line) => Number(line.item_id));
+  if (new Set(itemIds).size !== itemIds.length) throw appError(400, "DUPLICATE_TRANSFER_SKU", "Cada SKU debe aparecer una sola vez en el traslado");
+  if (Number(data.origin_place_id) === Number(data.destination_place_id)) throw appError(400, "SAME_WAREHOUSE", "La bodega origen y destino deben ser diferentes");
+  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
+    if (data.idempotency_key) {
+      const existing = await tx.warehouseTransfer.findFirst({ where: { idempotency_key: data.idempotency_key }, include: { lines: true } });
+      if (existing) return existing;
+    }
+    const [origin, destination] = await Promise.all([
+      tx.place.findFirst({ where: { id: Number(data.origin_place_id), type: "warehouse", active: true } }),
+      tx.place.findFirst({ where: { id: Number(data.destination_place_id), type: "warehouse", active: true } })
+    ]);
+    if (!origin || !destination) throw appError(404, "WAREHOUSE_NOT_FOUND", "Bodega origen o destino no encontrada");
+    if (!origin.society_code || origin.society_code !== destination.society_code) throw appError(422, "CROSS_SOCIETY_TRANSFER", "El traslado debe realizarse entre bodegas de la misma sociedad");
+    const count = await tx.warehouseTransfer.count();
+    const lines = [];
+    for (const row of data.lines) {
+      if (Number(row.qty) <= 0) throw appError(400, "INVALID_QTY", "La cantidad debe ser mayor a cero");
+      const item = await tx.item.findFirst({ where: { id: Number(row.item_id), active: true } });
+      if (!item) throw appError(404, "ITEM_NOT_FOUND", `Item ${row.item_id} no encontrado`);
+      const valuation = await getSocietyValuationTx(tx, origin.society_code, item.id);
+      lines.push({ tenant_id: tenantId, item_id: item.id, qty: Number(row.qty), unit_cost: Number(valuation.average_cost), lot: row.lot || null });
+    }
+    return tx.warehouseTransfer.create({ data: { number: `TR-${String(count + 1).padStart(6, "0")}`, society_code: origin.society_code, origin_place_id: origin.id, destination_place_id: destination.id, reason: data.reason || null, correlation_id: data.correlation_id || crypto.randomUUID(), idempotency_key: data.idempotency_key || null, created_by: userId || null, lines: { create: lines } }, include: { lines: true } });
+  }));
+}
+
+async function dispatchWarehouseTransfer(tenantId, userId, transferId) {
+  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
+    const transfer = await tx.warehouseTransfer.findFirst({ where: { id: Number(transferId) }, include: { lines: true } });
+    if (!transfer) throw appError(404, "TRANSFER_NOT_FOUND", "Traslado no encontrado");
+    if (transfer.status === "in_transit" || transfer.status === "received") return transfer;
+    if (transfer.status !== "draft") throw appError(422, "INVALID_TRANSFER_STATUS", "Solo un traslado en borrador puede despacharse");
+    const originLocation = await tx.location.findFirst({ where: { place_id: transfer.origin_place_id, active: true }, orderBy: { id: "asc" } });
+    if (!originLocation) throw appError(404, "ORIGIN_LOCATION_NOT_FOUND", "La bodega origen no tiene ubicacion activa");
+    const transit = await ensureTransitLocationTx(tx, tenantId, transfer.society_code);
+    for (const line of transfer.lines) {
+      const originStock = await tx.itemLocation.findFirst({ where: { item_id: line.item_id, location_id: originLocation.id, lot: line.lot } });
+      if (!originStock || Number(originStock.qty) < Number(line.qty)) throw appError(422, "INSUFFICIENT_LOCATION_STOCK", `Stock insuficiente para despachar item ${line.item_id}`);
+      await tx.itemLocation.update({ where: { id: originStock.id }, data: { qty: { decrement: line.qty } } });
+      const transitStock = await tx.itemLocation.findFirst({ where: { item_id: line.item_id, location_id: transit.id, lot: line.lot } });
+      if (transitStock) await tx.itemLocation.update({ where: { id: transitStock.id }, data: { qty: { increment: line.qty }, cost: line.unit_cost } });
+      else await tx.itemLocation.create({ data: { item_id: line.item_id, location_id: transit.id, qty: line.qty, lot: line.lot, cost: line.unit_cost } });
+      await tx.movement.create({ data: { type: "transfer_dispatch", item_id: line.item_id, from_location: originLocation.id, to_location: transit.id, qty: line.qty, cost: line.unit_cost, society_code: transfer.society_code, source_type: "warehouse_transfer", source_id: transfer.id, correlation_id: transfer.correlation_id, idempotency_key: `transfer:${transfer.id}:dispatch:${line.id}`, reason: transfer.reason, created_by: userId || null } });
+    }
+    return tx.warehouseTransfer.update({ where: { id: transfer.id }, data: { status: "in_transit", transit_location_id: transit.id, dispatched_by: userId || null, dispatched_at: new Date() }, include: { lines: true } });
+  }));
+}
+
+async function receiveWarehouseTransfer(tenantId, userId, transferId) {
+  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
+    const transfer = await tx.warehouseTransfer.findFirst({ where: { id: Number(transferId) }, include: { lines: true } });
+    if (!transfer) throw appError(404, "TRANSFER_NOT_FOUND", "Traslado no encontrado");
+    if (transfer.status === "received") return transfer;
+    if (transfer.status !== "in_transit") throw appError(422, "INVALID_TRANSFER_STATUS", "Solo un traslado en transito puede descargarse");
+    const destination = await tx.location.findFirst({ where: { place_id: transfer.destination_place_id, active: true }, orderBy: { id: "asc" } });
+    if (!destination) throw appError(404, "DESTINATION_LOCATION_NOT_FOUND", "La bodega destino no tiene ubicacion activa");
+    for (const line of transfer.lines) {
+      const transitStock = await tx.itemLocation.findFirst({ where: { item_id: line.item_id, location_id: transfer.transit_location_id, lot: line.lot } });
+      if (!transitStock || Number(transitStock.qty) < Number(line.qty)) throw appError(409, "TRANSIT_BALANCE_MISMATCH", "El saldo en transito no permite la descarga completa");
+      await tx.itemLocation.update({ where: { id: transitStock.id }, data: { qty: { decrement: line.qty } } });
+      const destinationStock = await tx.itemLocation.findFirst({ where: { item_id: line.item_id, location_id: destination.id, lot: line.lot } });
+      if (destinationStock) await tx.itemLocation.update({ where: { id: destinationStock.id }, data: { qty: { increment: line.qty }, cost: line.unit_cost } });
+      else await tx.itemLocation.create({ data: { item_id: line.item_id, location_id: destination.id, qty: line.qty, lot: line.lot, cost: line.unit_cost } });
+      await tx.movement.create({ data: { type: "transfer_receive", item_id: line.item_id, from_location: transfer.transit_location_id, to_location: destination.id, qty: line.qty, cost: line.unit_cost, society_code: transfer.society_code, source_type: "warehouse_transfer", source_id: transfer.id, correlation_id: transfer.correlation_id, idempotency_key: `transfer:${transfer.id}:receive:${line.id}`, reason: transfer.reason, created_by: userId || null } });
+    }
+    return tx.warehouseTransfer.update({ where: { id: transfer.id }, data: { status: "received", received_by: userId || null, received_at: new Date() }, include: { lines: true } });
+  }));
+}
+
+async function listWarehouseTransfers(tenantId, query = {}) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const where = {
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.society_code ? { society_code: normalizeCode(query.society_code) } : {}),
+      ...(query.origin_place_id ? { origin_place_id: Number(query.origin_place_id) } : {}),
+      ...(query.destination_place_id ? { destination_place_id: Number(query.destination_place_id) } : {})
+    };
+    if (query.from_date || query.to_date) {
+      where.created_at = {};
+      if (query.from_date) where.created_at.gte = new Date(query.from_date + "T00:00:00");
+      if (query.to_date) where.created_at.lte = new Date(query.to_date + "T23:59:59.999");
+    }
+    const rows = await prisma.warehouseTransfer.findMany({ where, include: { lines: { include: { item: true } } }, orderBy: { created_at: "desc" }, take: Math.min(Number(query.limit || 100), 500) });
+    const placeIds = [...new Set(rows.flatMap((row) => [row.origin_place_id, row.destination_place_id]))];
+    const places = placeIds.length ? await prisma.place.findMany({ where: { id: { in: placeIds } } }) : [];
+    const placeById = new Map(places.map((place) => [place.id, place]));
+    return rows.map((row) => ({ ...row, origin: placeById.get(row.origin_place_id) || null, destination: placeById.get(row.destination_place_id) || null }));
+  });
+}
+
+async function getWarehouseTransfer(tenantId, transferId) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const row = await prisma.warehouseTransfer.findFirst({ where: { id: Number(transferId) }, include: { lines: { include: { item: true } } } });
+    if (!row) throw appError(404, "TRANSFER_NOT_FOUND", "Traslado no encontrado");
+    const [origin, destination] = await Promise.all([
+      prisma.place.findFirst({ where: { id: row.origin_place_id } }),
+      prisma.place.findFirst({ where: { id: row.destination_place_id } })
+    ]);
+    return { ...row, origin, destination };
+  });
 }
 
 async function listFamilies(tenantId, query = {}) {
@@ -625,6 +797,9 @@ async function getKardex(tenantId, itemId, filters = {}) {
       prisma.movement.count({ where })
     ]);
     const locationIds = [...new Set(allMovements.flatMap((movement) => [movement.from_location, movement.to_location]).filter(Boolean))];
+    const transferIds = [...new Set(allMovements.filter((movement) => movement.source_type === "warehouse_transfer" && movement.source_id).map((movement) => movement.source_id))];
+    const transfers = transferIds.length ? await prisma.warehouseTransfer.findMany({ where: { id: { in: transferIds } }, select: { id: true, number: true } }) : [];
+    const transferById = new Map(transfers.map((transfer) => [transfer.id, transfer]));
     const locations = locationIds.length ? await prisma.location.findMany({ where: { id: { in: locationIds } }, include: { place: true } }) : [];
     const locationById = new Map(locations.map((location) => [location.id, location]));
 
@@ -637,6 +812,7 @@ async function getKardex(tenantId, itemId, filters = {}) {
 
     function movementSign(movement) {
       if (movement.type === "out") return -1;
+      if (["transfer", "transfer_dispatch", "transfer_receive"].includes(movement.type)) return 0;
       return 1;
     }
 
@@ -654,13 +830,14 @@ async function getKardex(tenantId, itemId, filters = {}) {
         item_code: item.code,
         item_name: item.name,
         qty: Number(movement.qty || 0),
-        in_qty: signedQty > 0 ? Number(movement.qty || 0) : 0,
-        out_qty: signedQty < 0 ? Number(movement.qty || 0) : 0,
+        in_qty: signedQty > 0 || movement.type === "transfer_receive" ? Number(movement.qty || 0) : 0,
+        out_qty: signedQty < 0 || movement.type === "transfer_dispatch" ? Number(movement.qty || 0) : 0,
         balance: Math.round(balance * 10000) / 10000,
         unit_cost: Number(movement.cost || 0),
         value: Math.round(Number(movement.qty || 0) * Number(movement.cost || 0) * 100) / 100,
-        document_type: movement.transaction?.type || movement.reason || movement.type,
-        document_number: movement.transaction?.number || "",
+        document_type: movement.source_type || movement.transaction?.type || movement.type,
+        document_id: movement.source_id || movement.transaction_id || null,
+        document_number: movement.transaction?.number || transferById.get(movement.source_id)?.number || "",
         reason: movement.reason || "",
         from_location_id: movement.from_location,
         to_location_id: movement.to_location,
@@ -677,7 +854,7 @@ async function getKardex(tenantId, itemId, filters = {}) {
 
 async function getInventoryCosts(tenantId, filters = {}) {
   return prisma.runWithTenant(tenantId, async () => {
-    const { search, family_code, page = 1, limit = 100 } = filters;
+    const { search, family_code, society_code, page = 1, limit = 100 } = filters;
     const safePage = Math.max(1, Number(page));
     const safeLimit = Math.min(200, Math.max(1, Number(limit)));
     const where = { active: true };
@@ -704,18 +881,32 @@ async function getInventoryCosts(tenantId, filters = {}) {
       where: { item_id: { in: itemIds } },
       orderBy: { created_at: "desc" }
     }) : [];
+    const valuations = itemIds.length ? await prisma.skuValuation.findMany({ where: { item_id: { in: itemIds }, ...(society_code ? { society_code: normalizeCode(society_code) } : {}) } }) : [];
     const latestCostByItem = new Map();
     for (const row of costRows) {
       if (!latestCostByItem.has(row.item_id)) latestCostByItem.set(row.item_id, row);
     }
     const data = items.map((item) => {
       const latestCost = latestCostByItem.get(item.id);
-      const locationStock = (item.locations || []).reduce((sum, row) => sum + Number(row.qty || 0), 0);
+      const valuation = valuations.find((row) => row.item_id === item.id && row.society_code === normalizeCode(society_code || item.society_code)) || valuations.find((row) => row.item_id === item.id);
+      const physicalStock = (item.locations || []).filter((row) => row.location?.place?.type === "warehouse" && (!valuation || row.location?.place?.society_code === valuation.society_code)).reduce((sum, row) => sum + Number(row.qty || 0), 0);
+      const transitStock = (item.locations || []).filter((row) => row.location?.place?.type === "transit" && (!valuation || row.location?.place?.society_code === valuation.society_code)).reduce((sum, row) => sum + Number(row.qty || 0), 0);
       const warehouseLabels = [...new Set((item.locations || [])
         .filter((row) => Number(row.qty || 0) !== 0)
         .map((row) => `${row.location?.place?.code || ""} ${row.location?.place?.name || ""} / ${row.location?.code || ""}`.trim()))];
-      const averageCost = Number(item.unit_cost || latestCost?.average_cost || 0);
-      const stock = Number(item.stock_current || 0);
+      const warehouseRows = (item.locations || [])
+        .filter((row) => Number(row.qty || 0) !== 0 && (!valuation || row.location?.place?.society_code === valuation.society_code))
+        .map((row) => ({
+          location_id: row.location_id,
+          warehouse_id: row.location?.place_id,
+          warehouse_code: row.location?.place?.code || "",
+          warehouse_name: row.location?.place?.name || "",
+          location_code: row.location?.code || "",
+          type: row.location?.place?.type || "warehouse",
+          qty: Number(row.qty || 0)
+        }));
+      const averageCost = Number(valuation?.average_cost ?? item.unit_cost ?? latestCost?.average_cost ?? 0);
+      const stock = Number(valuation?.quantity_balance ?? item.stock_current ?? 0);
       return {
         id: item.id,
         code: item.code,
@@ -723,15 +914,20 @@ async function getInventoryCosts(tenantId, filters = {}) {
         family_code: item.family_code || item.family?.code || "",
         family_name: item.family?.name || "",
         unit: item.unit,
+        society_code: valuation?.society_code || item.society_code || "",
         stock_current: stock,
-        location_stock: locationStock,
+        physical_stock: physicalStock,
+        transit_stock: transitStock,
+        available_stock: physicalStock,
+        location_stock: physicalStock + transitStock,
         average_cost: averageCost,
         last_unit_cost: Number(latestCost?.last_unit_cost ?? item.unit_cost ?? 0),
-        value_balance: Math.round(stock * averageCost * 100) / 100,
+        value_balance: Number(valuation?.value_balance ?? Math.round(stock * averageCost * 100) / 100),
         last_cost_date: latestCost?.created_at || null,
         last_source_type: latestCost?.source_type || "",
         last_source_id: latestCost?.source_id || null,
-        warehouses: warehouseLabels
+        warehouses: warehouseLabels,
+        warehouse_rows: warehouseRows
       };
     });
     const totals = data.reduce((acc, row) => ({
@@ -795,6 +991,14 @@ module.exports = {
   applyWeightedAverageCost,
   stockMove,
   stockMoveTx,
+  getSocietyValuationTx,
+  calculateSocietyValuation,
+  applySocietyValuationTx,
+  createWarehouseTransfer,
+  dispatchWarehouseTransfer,
+  receiveWarehouseTransfer,
+  listWarehouseTransfers,
+  getWarehouseTransfer,
   adjustStock,
   getKardex,
   getInventoryCosts,

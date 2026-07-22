@@ -21,15 +21,16 @@ async function invoiceSaleOrder(tenantId, userId, soId, data) {
       throw appError(422, "INVALID_STATUS", "La orden no puede ser facturada en su estado actual");
     }
 
-    const selected = invoice_lines.length
-      ? saleOrder.lines.filter((line) => invoice_lines.some((entry) => entry.line_id === line.id))
+    const requestedLines = Array.isArray(invoice_lines) ? invoice_lines : [];
+    const selected = requestedLines.length
+      ? saleOrder.lines.filter((line) => requestedLines.some((entry) => entry.line_id === line.id))
       : saleOrder.lines;
     if (!selected.length) throw appError(400, "NO_LINES", "No hay lineas para facturar");
 
     const invoiceLineData = [];
     const stockCostLines = [];
     for (const soLine of selected) {
-      const requested = invoice_lines.find((entry) => entry.line_id === soLine.id)?.qty ?? soLine.qty;
+      const requested = requestedLines.find((entry) => entry.line_id === soLine.id)?.qty ?? soLine.qty;
       if (!requested || requested <= 0 || requested > soLine.qty) {
         throw appError(422, "INVALID_QTY", `Cantidad invalida para la linea ${soLine.id}`);
       }
@@ -52,12 +53,12 @@ async function invoiceSaleOrder(tenantId, userId, soId, data) {
         tax_amount: taxAmount,
         subtotal,
         total,
-        metadata: soLine.metadata
+        metadata: { ...(soLine.metadata || {}), source_sale_order_line_id: soLine.id }
       });
 
       if (item && ["product", "component", "raw_material"].includes(item.type)) {
         if (!location_id) throw appError(400, "LOCATION_REQUIRED", "location_id es obligatorio para items fisicos");
-        stockCostLines.push({ item, qty: Number(requested), unit_cost: Number(soLine.unit_cost) });
+        stockCostLines.push({ item, sale_order_line_id: soLine.id, qty: Number(requested), unit_cost: Number(soLine.unit_cost) });
       }
     }
 
@@ -88,16 +89,23 @@ async function invoiceSaleOrder(tenantId, userId, soId, data) {
       include: { lines: true, party: true }
     });
 
+    let cogsAmount = 0;
     for (const stockLine of stockCostLines) {
-      await inventoryService.stockMoveTx(tx, tenantId, userId, {
+      const move = await inventoryService.stockMoveTx(tx, tenantId, userId, {
         item_id: stockLine.item.id,
         type: "out",
         qty: stockLine.qty,
         from_location_id: location_id,
-        transaction_id: null,
-        cost: stockLine.unit_cost,
+        transaction_id: invoice.id,
+        source_type: "sales_invoice",
+        source_id: invoice.id,
+        idempotency_key: `sales-invoice:${invoice.id}:line:${stockLine.sale_order_line_id}`,
         reason: `Factura ${invoice.number}`
       });
+      const recognizedCost = Number(move.valuation?.recognized_cost ?? stockLine.item.unit_cost);
+      cogsAmount += stockLine.qty * recognizedCost;
+      const invoiceLine = invoice.lines.find((line) => line.metadata?.source_sale_order_line_id === stockLine.sale_order_line_id);
+      if (invoiceLine) await tx.transactionLine.update({ where: { id: invoiceLine.id }, data: { unit_cost: recognizedCost, metadata: { ...(invoiceLine.metadata || {}), recognized_cost_source: "sku_society_valuation", movement_id: move.movement.id } } });
     }
 
     await tx.party.update({ where: { id: saleOrder.party_id }, data: { balance: { increment: total } } });
@@ -114,7 +122,6 @@ async function invoiceSaleOrder(tenantId, userId, soId, data) {
       ]
     });
 
-    const cogsAmount = stockCostLines.reduce((sum, row) => sum + (row.qty * row.unit_cost), 0);
     if (cogsAmount > 0) {
       await accountingService.journalEntryTx(tx, {
         description: `Costo de venta ${invoice.number}`,

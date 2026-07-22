@@ -57,6 +57,7 @@ type PayableDocument = {
   total: number;
   applied_total: number;
   balance: number;
+  status: string;
   accounting_document_id?: number | null;
   accounting_document?: AccountingDocument | null;
   affected_invoices?: Array<{ id: number; number: string; supplier_reference: string; due_date: string; total: number; balance: number; applied_amount?: number }>;
@@ -140,6 +141,16 @@ export default function CuentasPorPagarPage() {
   const [lines, setLines] = useState<PayableLine[]>([{ ...EMPTY_LINE }]);
   const [vatDraft, setVatDraft] = useState({ code: "", concept: "Compras", percent: 19, account_code: "2408" });
   const [editingVat, setEditingVat] = useState<string | null>(null);
+
+  async function annulDocument(doc: PayableDocument) {
+    const reason = window.prompt(`Motivo de anulacion de ${doc.number}`, "Anulacion de factura");
+    if (reason === null) return;
+    try {
+      const endpoint = ["CP", "NCP"].includes(doc.document_class) ? `/api/v1/purchases/invoices/${doc.id}/annul` : `/api/v1/accounting/payables/documents/${doc.id}/annul`;
+      await api(endpoint, { method: "POST", body: JSON.stringify({ reason }) });
+      setOk(`${doc.number} anulada y asiento de reversion creado`); await load();
+    } catch (err) { setError(err instanceof Error ? err.message : "No se pudo anular el documento"); }
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -414,6 +425,7 @@ export default function CuentasPorPagarPage() {
               <th className="px-4 py-3 text-right">IVA</th>
               <th className="px-4 py-3 text-right">Total</th>
               <th className="px-4 py-3 text-right">Saldo</th>
+              <th className="px-4 py-3 text-right">Accion</th>
             </tr>
           </thead>
           <tbody>
@@ -434,6 +446,7 @@ export default function CuentasPorPagarPage() {
                 <td className="px-4 py-3 text-right">{money(doc.tax_total)}</td>
                 <td className="px-4 py-3 text-right">{money(doc.total)}</td>
                 <td className="px-4 py-3 text-right font-semibold">{money(doc.balance)}</td>
+                <td className="px-4 py-3 text-right">{doc.status === "cancelled" ? <span className="text-rose-700">Anulado</span> : <button className="rounded-md border border-rose-200 px-2 py-1 text-rose-700" onClick={() => void annulDocument(doc)} type="button">Anular</button>}</td>
               </tr>
             ))}
           </tbody>
