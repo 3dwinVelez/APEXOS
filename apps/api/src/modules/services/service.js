@@ -59,8 +59,11 @@ async function requireEvidence(orderId, requiredTypes) {
   }
 }
 
-async function requireSatisfactionSurvey(tenantId, input = {}) {
-  const answers = input.metadata?.satisfaction_survey?.answers;
+async function requireSatisfactionSurvey(tenantId, input = {}, orderMetadata = {}) {
+  // Buscar respuestas primero en el body del close, y como fallback en la metadata persistida de la orden
+  // (la encuesta se recolecta durante inspeccion/ejecucion y se persiste en order.metadata)
+  const answers = input.metadata?.satisfaction_survey?.answers
+    || orderMetadata?.satisfaction_survey?.answers;
   const activeQuestions = (await configuredSatisfactionQuestions(tenantId)).filter((question) => question.active);
   const requiredQuestionIds = new Set(activeQuestions.map((question) => question.id));
   const validQuestionIds = new Set(Array.isArray(answers)
@@ -1130,7 +1133,7 @@ async function moveToExecution(tenantId, user, id) {
 async function closeOrder(tenantId, user, id, input = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const order = await accessibleOrder(tenantId, user, id);
-    await requireSatisfactionSurvey(tenantId, input);
+    await requireSatisfactionSurvey(tenantId, input, order.metadata);
     await requireEvidence(id, ["producto_abierto", "producto_cerrado", "firma_cliente"]);
     const now = new Date();
     const duration = order.started_at ? Math.max(Math.round((now - order.started_at) / 60000), 0) : null;
