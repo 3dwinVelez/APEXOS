@@ -1471,9 +1471,12 @@ async function getRouteTracking(tenantId, id, query = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const route = await prisma.timeRoute.findFirstOrThrow({ where: { id: Number(id) } });
     const dateStart = day || startOfDay(route.date);
+    const routeKey = String(Number(id));
+    const routeScope = routeScopeWhere(id);
+    // Buscar pings por route_id directo O por metadata route_id (backward compat)
     const pings = await prisma.gpsPing.findMany({
       where: {
-        route_id: Number(id),
+        ...routeScope,
         captured_at: { gte: dateStart, lt: endOfDay(dateStart) }
       },
       orderBy: { captured_at: "asc" },
@@ -1481,7 +1484,7 @@ async function getRouteTracking(tenantId, id, query = {}) {
     });
     const punches = await prisma.timePunch.findMany({
       where: {
-        route_id: Number(id),
+        ...routeScope,
         punched_at: { gte: dateStart, lt: endOfDay(dateStart) }
       },
       orderBy: { punched_at: "asc" },
