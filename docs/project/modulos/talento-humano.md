@@ -52,6 +52,9 @@
   - `node scripts/seed-hr-map-demo.js`
   - `node scripts/validate-hr-map-demo.js`
 - Los controles blancos ubicados sobre encabezados y paneles oscuros conservan su tratamiento inverso al alternar el tema, evitando perdida de contraste en el acceso a Marcacion y en los filtros del mapa.
+- **2026-07-23 — Route Tracking ahora busca por metadata route_id.** La función `getRouteTracking` en `service.js` solo buscaba punches/pings GPS por `route_id` numérico directo. Las marcaciones desde móvil que guardan el route_id en `metadata.display_route_id` (por compatibilidad Supabase) quedaban huérfanas del seguimiento de ruta. Se reemplazó `route_id: Number(id)` por `...routeScopeWhere(id)`, una función ya existente que busca tanto por route_id directo como por `metadata.display_route_id`, `route_code`, `legacy_route_id` y `source_route_id`.
+- **2026-07-23 — Script de validación integral HR.** Se agregó `scripts/validate-hr-flow.js` con 50 pruebas que cubren: creación de usuarios con empleados vinculados (conductor/operario), horarios, rutas, marcaciones completas con y sin checklist preoperacional, actividades post-cierre, monitor Operations Map, Route Tracking, Attendance, Work Sessions, procesamiento de jornada, y 6 edge cases de validación.
+- **2026-07-23 — Documentación de auditoría.** Se agregó `docs/audits/HR_ROUTE_TRACKING_METADATA_FIX_20260723.md` con el detalle del bug, corrección y resultados de validación.
 
 ## Regla de experiencia
 
