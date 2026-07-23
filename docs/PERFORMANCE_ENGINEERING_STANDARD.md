@@ -57,3 +57,20 @@
 - [ ] Pruebas: funcionales, multiempresa, carga fría/caliente y regresión.
 
 No está terminado si hay duplicados, N+1, listado ilimitado, ausencia de feedback, presupuesto excedido sin justificación o falta evidencia antes/después.
+
+## Operaciones Móviles Y Evidencias
+
+Esta sección es obligatoria para módulos usados en campo: Servicios, Transporte, Talento Humano y cualquier flujo con fotos, firmas o geolocalización.
+
+- La UI debe responder en menos de 100 ms al toque.
+- Las fotos deben tener preview local inmediata.
+- Las imágenes deben comprimirse/redimensionarse antes de subir y conservar valor probatorio.
+- Cada evidencia debe tener estado independiente: pendiente, cargando, cargada, fallida.
+- Una subida no debe congelar la pantalla ni bloquear pasos no relacionados.
+- Toda evidencia debe llevar identificador idempotente.
+- La aplicación debe conservar datos capturados ante error de red.
+- Los reintentos no deben crear duplicados.
+- Las acciones deben invalidar caché por entidad afectada.
+- Los endpoints operativos deben retornar sólo lo necesario.
+
+El release se bloquea si se recarga toda una entidad grande después de una acción pequeña, se pierde una foto capturada por error de red, se permite doble envío normal o una acción común mantiene la UI congelada durante segundos.

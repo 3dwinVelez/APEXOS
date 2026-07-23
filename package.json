@@ -50,6 +50,7 @@
     "qa:hr-services-stress": "node scripts/qa-hr-services-linear-stress.js",
     "qa:performance": "node scripts/performance/qa-latency-benchmark.js",
     "qa:root-cause": "node scripts/performance/qa-root-cause-benchmark.js",
+    "qa:services-performance": "node scripts/performance/services-execution-smoke.js",
     "qa:request-map": "node scripts/performance/frontend-request-inventory.js",
     "performance:guard": "node scripts/performance/performance-budget-check.js",
     "performance:validate-evidence": "node scripts/performance/validate-service-evidence-uniqueness.js",

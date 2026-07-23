@@ -2,7 +2,7 @@
 
 import { Camera, CheckCircle2, ImagePlus, Loader2, X } from "lucide-react";
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 const SOURCE_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
@@ -15,6 +15,9 @@ export type CapturedFile = {
   size: number;
   type: string;
   name: string;
+  originalSize?: number;
+  previewUrl?: string;
+  processedAt?: string;
 };
 
 type Props = {
@@ -23,6 +26,8 @@ type Props = {
   capture?: boolean;
   locked?: boolean;
   loading?: boolean;
+  progress?: number;
+  status?: "idle" | "processing" | "pending" | "uploading" | "uploaded" | "failed";
   value: CapturedFile | null;
   onChange: (file: CapturedFile | null) => void;
 };
@@ -89,15 +94,29 @@ async function readFile(file: File) {
   const optimized = await optimizeForStorage(file);
   return new Promise<CapturedFile>((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve({ base64: String(reader.result || ""), size: optimized.size, type: optimized.type, name: optimized.name });
+    reader.onload = () => resolve({
+      base64: String(reader.result || ""),
+      size: optimized.size,
+      type: optimized.type,
+      name: optimized.name,
+      originalSize: file.size,
+      processedAt: new Date().toISOString()
+    });
     reader.onerror = () => reject(reader.error);
     reader.readAsDataURL(optimized);
   });
 }
 
-export function PhotoCapture({ label, required, capture = true, locked = false, loading = false, value, onChange }: Props) {
+export function PhotoCapture({ label, required, capture = true, locked = false, loading = false, progress, status = "idle", value, onChange }: Props) {
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const [error, setError] = useState("");
+  const [localPreview, setLocalPreview] = useState("");
+  const visibleStatus = loading ? "uploading" : status;
+  const previewSrc = value?.previewUrl || value?.base64 || localPreview;
+
+  useEffect(() => () => {
+    if (localPreview) URL.revokeObjectURL(localPreview);
+  }, [localPreview]);
 
   async function select(file?: File) {
     if (!file) return;
@@ -110,11 +129,27 @@ export function PhotoCapture({ label, required, capture = true, locked = false, 
       setError("La imagen supera 8 MB.");
       return;
     }
+    const previewUrl = URL.createObjectURL(file);
+    setLocalPreview((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return previewUrl;
+    });
     try {
-      onChange(await readFile(file));
+      const prepared = await readFile(file);
+      onChange({ ...prepared, previewUrl });
     } catch {
+      URL.revokeObjectURL(previewUrl);
+      setLocalPreview("");
       setError("No fue posible preparar la imagen. Intenta con otra foto.");
     }
+  }
+
+  function clear() {
+    setLocalPreview((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return "";
+    });
+    onChange(null);
   }
 
   return (
@@ -125,7 +160,7 @@ export function PhotoCapture({ label, required, capture = true, locked = false, 
           <p className="text-xs text-neutral-500">JPG/PNG/WEBP hasta 8 MB. Se optimiza para guardar.</p>
         </div>
         {value ? (
-          <button className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-neutral-500 hover:bg-paper disabled:opacity-50" disabled={loading} onClick={() => onChange(null)} type="button" aria-label="Quitar evidencia"><X size={18} /></button>
+          <button className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-neutral-500 hover:bg-paper disabled:opacity-50" disabled={loading} onClick={clear} type="button" aria-label="Quitar evidencia"><X size={18} /></button>
         ) : null}
       </div>
       {locked ? (
@@ -143,22 +178,32 @@ export function PhotoCapture({ label, required, capture = true, locked = false, 
         type="file"
         onChange={(event) => select(event.target.files?.[0])}
       />
-      {value ? (
+      {value || localPreview ? (
         <div className="space-y-2">
           <div className="relative overflow-hidden rounded-md border border-line bg-paper">
-            <Image alt={label} className="aspect-[4/3] w-full object-cover" height={480} src={value.base64} unoptimized width={640} />
-            {loading ? (
+            {previewSrc ? <Image alt={label} className="aspect-[4/3] w-full object-cover" height={480} src={previewSrc} unoptimized width={640} /> : null}
+            {visibleStatus === "uploading" ? (
               <div className="absolute inset-0 flex items-center justify-center bg-white/75 text-sm font-semibold text-apex backdrop-blur-sm">
                 <Loader2 className="mr-2 animate-spin" size={18} /> Guardando evidencia
               </div>
             ) : null}
           </div>
+          {visibleStatus === "uploading" ? (
+            <div className="h-2 overflow-hidden rounded-full bg-paper">
+              <div className="h-full rounded-full bg-apex transition-all" style={{ width: `${Math.min(Math.max(progress ?? 35, 8), 95)}%` }} />
+            </div>
+          ) : null}
           <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-            <p className="min-w-0 break-words text-xs text-neutral-500">{value.name} - {Math.round(value.size / 1024)} KB</p>
+            <p className="min-w-0 break-words text-xs text-neutral-500">
+              {value ? `${value.name} - ${Math.round(value.size / 1024)} KB${value.originalSize ? ` optimizada desde ${Math.round(value.originalSize / 1024)} KB` : ""}` : "Preparando vista previa..."}
+            </p>
             <button className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold text-neutral-700 hover:bg-paper disabled:opacity-50 sm:w-auto" disabled={loading} onClick={() => cameraRef.current?.click()} type="button">
               <ImagePlus size={16} /> Cambiar
             </button>
           </div>
+          {visibleStatus === "pending" ? <p className="text-xs font-semibold text-amber-700">Pendiente de guardar.</p> : null}
+          {visibleStatus === "uploaded" ? <p className="text-xs font-semibold text-emerald-700">Evidencia registrada.</p> : null}
+          {visibleStatus === "failed" ? <p className="text-xs font-semibold text-red-700">Fallo la carga. Conserva la foto y reintenta.</p> : null}
         </div>
       ) : (
         <button className="flex min-h-36 w-full flex-col items-center justify-center gap-2 rounded-md border border-dashed border-line bg-paper px-3 py-5 text-center text-base font-semibold text-neutral-700 hover:border-apex hover:text-apex disabled:opacity-50" disabled={loading} onClick={() => cameraRef.current?.click()} type="button">

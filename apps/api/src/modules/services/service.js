@@ -1204,6 +1204,16 @@ async function addPhoto(tenantId, user, orderId, input) {
   const storagePath = input.storage_path || secureStoragePath({ tenantId, module: "services", entity: "orders", entityId: orderId, fileName });
   return prisma.runWithTenant(tenantId, async () => {
     const order = await accessibleOrder(tenantId, user, orderId);
+    const clientUploadId = input.metadata?.client_upload_id ? String(input.metadata.client_upload_id) : "";
+    if (clientUploadId) {
+      const retryMatch = await prisma.servicePhoto.findFirst({
+        where: {
+          order_id: order.id,
+          metadata: { path: ["client_upload_id"], equals: clientUploadId }
+        }
+      });
+      if (retryMatch) return retryMatch;
+    }
     const partId = input.metadata?.part_id == null ? "" : String(input.metadata.part_id);
     const existing = await prisma.servicePhoto.findMany({
       where: { order_id: order.id, type: input.type },
