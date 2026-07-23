@@ -4,7 +4,7 @@ import { PhotoCapture, type CapturedFile } from "@/components/operations/PhotoCa
 import { SignatureCapture } from "@/components/operations/SignatureCapture";
 import { api } from "@/lib/api";
 import { buildServiceReportPdfBlob } from "@/lib/serviceReportPdf";
-import { ArrowLeft, BookOpen, Camera, CheckCircle2, Circle, Download, FileSignature, PackageSearch, Play, Star, Wrench, XCircle } from "lucide-react";
+import { ArrowLeft, BookOpen, Camera, CheckCircle2, Circle, Download, FileSignature, PackageSearch, Play, Star, Wrench, X, XCircle, ZoomIn } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
@@ -126,6 +126,7 @@ export default function ServiceOperationPage() {
   const [satisfactionRatings, setSatisfactionRatings] = useState<Record<string, number>>({});
   const [activePanel, setActivePanel] = useState<Panel>("inicio");
   const [inspectionMode, setInspectionMode] = useState<InspectionMode>("decision");
+  const [zoomedPhoto, setZoomedPhoto] = useState<ServicePhoto | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -176,6 +177,10 @@ export default function ServiceOperationPage() {
   }, [order, noExecutionReason]);
 
   async function uploadPhoto(type: string, file: CapturedFile | null, metadata: Record<string, unknown> = {}, captureKey = type) {
+    if (file && (type === "pieza_averiada" ? hasPersistedProblemEvidence(metadata.part_id as number | string) : hasPersistedPhoto(type))) {
+      setMessage(`La evidencia ${photoLabels[type] || type} ya fue registrada y no puede repetirse.`);
+      return false;
+    }
     setCaptures((current) => ({ ...current, [captureKey]: file }));
     if (!file) return true;
     setUploading((current) => ({ ...current, [captureKey]: true }));
@@ -184,12 +189,7 @@ export default function ServiceOperationPage() {
         method: "POST",
         body: JSON.stringify({ type, base64_data: file.base64, size_bytes: file.size, mime_type: file.type, file_name: file.name, metadata })
       });
-      const photos = await api<ServicePhoto[]>(`/api/v1/services/orders/${params.id}/photos`);
-      const savedTypeVisible = photos.some((photo) => photo.id === savedPhoto.id || photo.type === type);
-      if (!savedTypeVisible) {
-        throw new Error(`La evidencia ${photoLabels[type] || type} se envio, pero no quedo visible para esta orden. Revisa permisos RLS/Storage.`);
-      }
-      setOrder((current) => current ? { ...current, photos } : current);
+      setOrder((current) => current ? { ...current, photos: [...current.photos, savedPhoto] } : current);
       setMessage(`Evidencia ${photoLabels[type] || type} cargada.`);
       return true;
     } catch (error) {
@@ -590,7 +590,7 @@ export default function ServiceOperationPage() {
                           <option value="ninguna">Sin accion adicional</option>
                         </select>
                         <input className="h-12 w-full rounded-md border border-line px-3 text-base" placeholder="Proveedor sugerido (opcional)" value={part.supplier_name || ""} onChange={(event) => updateInspection(part.part_id, { supplier_name: event.target.value })} />
-                        <PhotoCapture label={`Evidencia - ${part.name}`} required loading={uploading[`pieza_${part.part_id}`]} value={captures[`pieza_${part.part_id}`] || null} onChange={(file) => setProblemEvidence(part.part_id, file)} />
+                        <PhotoCapture label={`Evidencia - ${part.name}`} required locked={hasPersistedProblemEvidence(part.part_id)} loading={uploading[`pieza_${part.part_id}`]} value={captures[`pieza_${part.part_id}`] || null} onChange={(file) => setProblemEvidence(part.part_id, file)} />
                         {hasPersistedProblemEvidence(part.part_id) ? <p className="text-xs font-semibold text-emerald-700">Evidencia registrada para esta pieza.</p> : null}
                       </div>
                     ) : null}
@@ -608,8 +608,8 @@ export default function ServiceOperationPage() {
             <>
               <h2 className="mb-3 text-base font-semibold">Ejecucion</h2>
               <div className="grid gap-2">
-                <PhotoCapture label="Foto 1: Producto abierto" required loading={uploading.producto_abierto} value={captures.producto_abierto || null} onChange={(file) => uploadPhoto("producto_abierto", file)} />
-                <PhotoCapture label="Foto 2: Producto cerrado" required loading={uploading.producto_cerrado} value={captures.producto_cerrado || null} onChange={(file) => uploadPhoto("producto_cerrado", file)} />
+                <PhotoCapture label="Foto 1: Producto abierto" required locked={hasPersistedPhoto("producto_abierto")} loading={uploading.producto_abierto} value={captures.producto_abierto || null} onChange={(file) => uploadPhoto("producto_abierto", file)} />
+                <PhotoCapture label="Foto 2: Producto cerrado" required locked={hasPersistedPhoto("producto_cerrado")} loading={uploading.producto_cerrado} value={captures.producto_cerrado || null} onChange={(file) => uploadPhoto("producto_cerrado", file)} />
               </div>
               <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white disabled:opacity-50" disabled={!executionPhotosReady()} onClick={() => setClosureMode(true)} type="button"><Camera size={18} /> {uploadsPending(executionPhotoTypes) ? "Guardando evidencias..." : "Continuar al cierre"}</button>
             </>
@@ -653,7 +653,7 @@ export default function ServiceOperationPage() {
                     })}
                   </div>
                 </div>
-                <SignatureCapture label="Firma del cliente" required value={captures.firma_cliente || null} onChange={(file) => uploadSignature(file)} />
+                <SignatureCapture label="Firma del cliente" required locked={hasPersistedPhoto("firma_cliente")} value={captures.firma_cliente || null} onChange={(file) => uploadSignature(file)} />
               </div>
               <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-emerald-600 text-base font-semibold text-white disabled:opacity-50" disabled={working || !closeReady()} onClick={() => update("close")} type="button"><CheckCircle2 size={18} /> {uploadsPending(closePhotoTypes) ? "Guardando soportes..." : "Cerrar servicio"}</button>
               {!closeReady() ? (
@@ -683,8 +683,8 @@ export default function ServiceOperationPage() {
           <label className="text-sm font-semibold">1. Describe la novedad y por qué no puede continuar</label>
           <textarea className="mt-1 min-h-24 w-full rounded-md border border-line px-3 py-3 text-base md:text-sm" placeholder="Ejemplo: producto incompleto, cliente ausente o pieza faltante..." value={noExecutionReason} onChange={(event) => setNoExecutionReason(event.target.value)} />
           <div className="mt-3 grid gap-3">
-            <PhotoCapture label="2. Evidencia de la novedad" required loading={uploading.no_ejecutada} value={captures.no_ejecutada || null} onChange={(file) => uploadPhoto("no_ejecutada", file, { reason: noExecutionReason })} />
-            <SignatureCapture label="3. Firma del cliente" required value={captures.firma_cliente || null} onChange={(file) => uploadSignature(file, { reason: noExecutionReason, closure: "no_ejecutada" })} />
+            <PhotoCapture label="2. Evidencia de la novedad" required locked={hasPersistedPhoto("no_ejecutada")} loading={uploading.no_ejecutada} value={captures.no_ejecutada || null} onChange={(file) => uploadPhoto("no_ejecutada", file, { reason: noExecutionReason })} />
+            <SignatureCapture label="3. Firma del cliente" required locked={hasPersistedPhoto("firma_cliente")} value={captures.firma_cliente || null} onChange={(file) => uploadSignature(file, { reason: noExecutionReason, closure: "no_ejecutada" })} />
           </div>
           <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-red-700 text-base font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40" disabled={working || !noExecutionReady()} onClick={() => update("close-not-executed")} type="button"><FileSignature size={17} /> {uploadsPending(["no_ejecutada", "firma_cliente"]) ? "Guardando soportes..." : "Confirmar novedad y cerrar orden"}</button>
           <button className="mt-2 h-11 w-full rounded-md border border-line text-sm font-semibold hover:bg-paper" onClick={() => setActivePanel(panelForStatus(order.status))} type="button">Volver al paso actual</button>
@@ -734,7 +734,7 @@ export default function ServiceOperationPage() {
               const src = photoSrc(photo);
               return (
                 <div className="rounded-md border border-line bg-paper p-2" key={photo.id}>
-                  {src ? <Image className="aspect-square w-full rounded-md object-cover" height={480} src={src} alt={photoLabels[photo.type] || photo.type} unoptimized width={480} /> : <div className="flex aspect-square items-center justify-center rounded-md bg-white text-xs text-neutral-500">Sin preview</div>}
+                  {src ? <button className="group relative block w-full overflow-hidden rounded-md" onClick={() => setZoomedPhoto(photo)} type="button"><Image className="aspect-square w-full object-cover" height={480} src={src} alt={photoLabels[photo.type] || photo.type} unoptimized width={480} /><span className="absolute inset-0 flex items-center justify-center bg-black/0 text-white opacity-0 transition group-hover:bg-black/35 group-hover:opacity-100"><ZoomIn size={28} /></span></button> : <div className="flex aspect-square items-center justify-center rounded-md bg-white text-xs text-neutral-500">Sin preview</div>}
                   <p className="mt-2 text-xs font-semibold">{photoLabels[photo.type] || photo.type}</p>
                   {photo.metadata?.part_name ? <p className="text-[11px] text-neutral-500">{String(photo.metadata.part_name)}</p> : null}
                 </div>
@@ -747,6 +747,15 @@ export default function ServiceOperationPage() {
             {!order.photos.length && !order.incidents.length ? <p className="text-sm text-neutral-500">Sin evidencia registrada.</p> : null}
           </div>
         </section>
+      ) : null}
+      {zoomedPhoto && photoSrc(zoomedPhoto) ? (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/85 p-3 sm:p-8" role="dialog" aria-modal="true" aria-label="Vista ampliada de evidencia" onClick={() => setZoomedPhoto(null)}>
+          <button className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-md bg-white text-neutral-900" onClick={() => setZoomedPhoto(null)} type="button" aria-label="Cerrar vista ampliada"><X size={22} /></button>
+          <div className="flex max-h-full max-w-6xl flex-col items-center gap-3" onClick={(event) => event.stopPropagation()}>
+            <Image className="max-h-[82vh] h-auto w-auto max-w-full object-contain" height={1400} src={photoSrc(zoomedPhoto)} alt={photoLabels[zoomedPhoto.type] || zoomedPhoto.type} unoptimized width={1800} />
+            <p className="text-sm font-semibold text-white">{photoLabels[zoomedPhoto.type] || zoomedPhoto.type}</p>
+          </div>
+        </div>
       ) : null}
 
       <div className="fixed inset-x-0 bottom-0 z-50 border-t border-line bg-white/95 px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur md:hidden">

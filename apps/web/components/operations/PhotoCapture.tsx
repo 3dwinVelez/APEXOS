@@ -1,6 +1,6 @@
 "use client";
 
-import { Camera, ImagePlus, Loader2, X } from "lucide-react";
+import { Camera, CheckCircle2, ImagePlus, Loader2, X } from "lucide-react";
 import Image from "next/image";
 import { useRef, useState } from "react";
 
@@ -21,6 +21,7 @@ type Props = {
   label: string;
   required?: boolean;
   capture?: boolean;
+  locked?: boolean;
   loading?: boolean;
   value: CapturedFile | null;
   onChange: (file: CapturedFile | null) => void;
@@ -94,7 +95,7 @@ async function readFile(file: File) {
   });
 }
 
-export function PhotoCapture({ label, required, capture = true, loading = false, value, onChange }: Props) {
+export function PhotoCapture({ label, required, capture = true, locked = false, loading = false, value, onChange }: Props) {
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const [error, setError] = useState("");
 
@@ -127,6 +128,13 @@ export function PhotoCapture({ label, required, capture = true, loading = false,
           <button className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-neutral-500 hover:bg-paper disabled:opacity-50" disabled={loading} onClick={() => onChange(null)} type="button" aria-label="Quitar evidencia"><X size={18} /></button>
         ) : null}
       </div>
+      {locked ? (
+        <div className="flex min-h-24 items-center justify-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 text-center text-sm font-semibold text-emerald-800">
+          <CheckCircle2 size={20} />
+          Evidencia registrada
+        </div>
+      ) : (
+        <>
       <input
         accept="image/jpeg,image/png,image/webp"
         capture={capture ? "environment" : undefined}
@@ -160,6 +168,8 @@ export function PhotoCapture({ label, required, capture = true, loading = false,
         </button>
       )}
       {error ? <p className="mt-2 text-xs font-semibold text-red-700">{error}</p> : null}
+        </>
+      )}
     </div>
   );
 }

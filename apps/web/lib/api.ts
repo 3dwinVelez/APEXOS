@@ -18,6 +18,8 @@ const API_GET_CACHE_MAX_ENTRIES = Number(process.env.NEXT_PUBLIC_API_GET_CACHE_M
 let refreshSessionInFlight: Promise<boolean> | null = null;
 const inFlightGetRequests = new Map<string, Promise<unknown>>();
 const completedGetRequests = new Map<string, { at: number; refreshing?: Promise<unknown>; value: unknown }>();
+let companyMembershipCache: { key: string; at: number; value: { company_id: string; company_name?: string; role?: string } | null } | null = null;
+let companyMembershipRequest: { key: string; promise: Promise<{ company_id: string; company_name?: string; role?: string } | null> } | null = null;
 
 function clearApiReadCaches() {
   inFlightGetRequests.clear();
@@ -1223,10 +1225,16 @@ function missingSupabaseServiceOrderEditFields(current: AnyRow, patch: AnyRow, n
 async function currentSupabaseCompanyUser() {
   const userId = currentSupabaseUserId();
   if (!userId) return null;
+  const preferredCompanyId = typeof window !== "undefined" ? localStorage.getItem("apexos_company_id") || "" : "";
+  const cacheKey = `${userId}:${preferredCompanyId}`;
+  if (companyMembershipCache?.key === cacheKey && Date.now() - companyMembershipCache.at < 30000) {
+    return companyMembershipCache.value;
+  }
+  if (companyMembershipRequest?.key === cacheKey) return companyMembershipRequest.promise;
+  const request = (async () => {
   const rows: Array<{ company_id: string; company_name?: string; role?: string }> = await supabaseFetch<Array<{ company_id: string; company_name?: string; role?: string }>>(
     `/rest/v1/v_user_companies?select=company_id,company_name,role&user_id=eq.${userId}&limit=20`
   ).catch(() => supabaseFetch<Array<{ company_id: string; role?: string }>>(`/rest/v1/company_users?select=company_id,role&user_id=eq.${userId}&status=eq.active&limit=20`));
-  const preferredCompanyId = typeof window !== "undefined" ? localStorage.getItem("apexos_company_id") : "";
   const selected = rows.find((row) => row.company_id === preferredCompanyId)
     || rows.find((row) => ["owner", "admin", "superadmin"].includes(String(row.role || "").toLowerCase()))
     || rows[0]
@@ -1237,6 +1245,16 @@ async function currentSupabaseCompanyUser() {
     if (selected.role) localStorage.setItem("apexos_company_role", selected.role);
   }
   return selected;
+  })();
+  companyMembershipRequest = { key: cacheKey, promise: request };
+  try {
+    const selected = await request;
+    const selectedKey = `${userId}:${selected?.company_id || preferredCompanyId}`;
+    companyMembershipCache = { key: selectedKey, at: Date.now(), value: selected };
+    return selected;
+  } finally {
+    if (companyMembershipRequest?.promise === request) companyMembershipRequest = null;
+  }
 }
 
 async function nextAdminUsersRequest<T>(init: RequestInit = {}, query = "") {
@@ -2990,6 +3008,14 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       const current = await accessibleSupabaseServiceOrder(orderId);
       const originalType = String(body.type || body.evidence_type || "novedad");
       const allowedType = ["fachada", "producto_abierto", "producto_cerrado", "cliente", "firma_cliente", "no_ejecutada"].includes(originalType) ? originalType : "novedad";
+      const partId = body.metadata?.part_id == null ? "" : String(body.metadata.part_id);
+      const existing = await supabaseFetch<Array<{ id: string; metadata?: AnyRow }>>(
+        `/rest/v1/service_evidence?select=id,metadata&order_id=eq.${encodeURIComponent(orderId)}&metadata->>original_type=eq.${encodeURIComponent(originalType)}&limit=20`
+      );
+      const duplicate = originalType === "pieza_averiada"
+        ? existing.some((item) => String(item.metadata?.part_id ?? "") === partId)
+        : existing.length > 0;
+      if (duplicate) throw new Error("Esta evidencia ya fue registrada y no puede repetirse.");
       const uploaded = body.base64_data && !body.storage_path
         ? await uploadServiceImageData(current.company_id, orderId, {
           base64: String(body.base64_data),
@@ -2997,9 +3023,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
           type: String(body.mime_type || "image/jpeg")
         })
         : null;
-      await supabaseFetch<void>("/rest/v1/service_evidence", {
+      const inserted = await supabaseFetch<ServiceEvidenceRow[]>("/rest/v1/service_evidence?select=id,order_id,evidence_type,file_url,storage_bucket,storage_path,mime_type,size_bytes,metadata,created_at", {
         method: "POST",
-        headers: { Prefer: "return=minimal" },
+        headers: { Prefer: "return=representation" },
         body: JSON.stringify({
           company_id: current.company_id,
           order_id: orderId,
@@ -3012,9 +3038,6 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
           metadata: { ...(body.metadata || {}), original_type: originalType, file_name: body.file_name || "" }
         })
       });
-      const inserted = await supabaseFetch<ServiceEvidenceRow[]>(
-        `/rest/v1/service_evidence?select=id,evidence_type,file_url,storage_bucket,storage_path,mime_type,size_bytes,metadata,created_at&order_id=eq.${encodeURIComponent(orderId)}&order=created_at.desc&limit=1`
-      );
       const photo = inserted[0];
       if (!photo?.id) throw new Error("La evidencia se envio, pero no fue posible leer el registro creado.");
       return await resolveServiceEvidencePhoto({ ...photo, metadata: { ...(photo.metadata || {}), original_type: originalType } }) as T;
@@ -3065,13 +3088,13 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const technicianFilter = technicianIds.length ? `&id=in.(${technicianIds.join(",")})` : "&id=is.null";
     const evidenceSelect = serviceOrderDetailMatch
       ? "id,order_id,evidence_type,file_url,storage_bucket,storage_path,mime_type,size_bytes,metadata,created_at"
-      : "id,order_id,evidence_type,storage_bucket,storage_path,mime_type,size_bytes,metadata,created_at";
+      : "id,order_id";
     const [refs, parts, incidents, evidence, technicians] = await Promise.all([
       supabaseFetch<Array<{ id: string; code: string; name: string; category?: string; estimated_minutes?: number; brand?: string; model?: string; metadata?: AnyRow }>>(`/rest/v1/service_references?select=id,code,name,category,estimated_minutes,brand,model,metadata&company_id=eq.${encodeURIComponent(companyId)}${referenceFilter}&limit=200`).catch((error) => {
         safeDevLog("No fue posible consultar referencias de servicios Supabase.", error);
         return [];
       }),
-      supabaseFetch<Array<{ id: string; reference_id: string; name: string; quantity: number; unit: string; display_order?: number }>>(`/rest/v1/service_reference_parts?select=id,reference_id,name,quantity,unit,display_order${referencePartFilter}&order=display_order.asc&limit=500`).catch((error) => {
+      (serviceOrderDetailMatch ? supabaseFetch<Array<{ id: string; reference_id: string; name: string; quantity: number; unit: string; display_order?: number }>>(`/rest/v1/service_reference_parts?select=id,reference_id,name,quantity,unit,display_order${referencePartFilter}&order=display_order.asc&limit=500`) : Promise.resolve([])).catch((error) => {
         safeDevLog("No fue posible consultar partes de referencias Supabase.", error);
         return [];
       }),

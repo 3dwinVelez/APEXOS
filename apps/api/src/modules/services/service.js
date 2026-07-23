@@ -1204,6 +1204,17 @@ async function addPhoto(tenantId, user, orderId, input) {
   const storagePath = input.storage_path || secureStoragePath({ tenantId, module: "services", entity: "orders", entityId: orderId, fileName });
   return prisma.runWithTenant(tenantId, async () => {
     const order = await accessibleOrder(tenantId, user, orderId);
+    const partId = input.metadata?.part_id == null ? "" : String(input.metadata.part_id);
+    const existing = await prisma.servicePhoto.findMany({
+      where: { order_id: order.id, type: input.type },
+      select: { id: true, metadata: true }
+    });
+    const duplicate = input.type === "pieza_averiada"
+      ? existing.some((photo) => String(photo.metadata?.part_id ?? "") === partId)
+      : existing.length > 0;
+    if (duplicate) {
+      throw appError(409, "SERVICE_EVIDENCE_ALREADY_CAPTURED", "Esta evidencia ya fue registrada y no puede repetirse");
+    }
     return prisma.servicePhoto.create({
     data: {
       order_id: order.id,
