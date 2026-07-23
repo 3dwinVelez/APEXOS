@@ -3,7 +3,7 @@
 import { isSupabaseSession, loadModuleAccess, ModuleAccessState } from "@/lib/moduleAccess";
 import { MODULES } from "@/lib/modules";
 import { UserSessionBadge } from "@/components/shell/UserSessionBadge";
-import { ChevronLeft, ChevronRight, Home, LockKeyhole } from "lucide-react";
+import { ChevronLeft, ChevronRight, Home, LockKeyhole, Search, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [technicianMode, setTechnicianMode] = useState(false);
+  const [moduleQuery, setModuleQuery] = useState("");
   const [access, setAccess] = useState<ModuleAccessState>({ loading: true, isPlatformAdmin: false, bySlug: {} });
   const pathname = usePathname();
 
@@ -33,14 +34,17 @@ export function Sidebar() {
     });
   }
 
+  const normalizedQuery = normalizeSearch(moduleQuery);
   const items = MODULES.map((module) => ({
     href: `/dashboard/${module.slug}`,
     slug: module.slug,
     label: module.name,
     icon: module.icon,
-    enabled: access.loading ? true : access.bySlug[module.slug] === true
+    enabled: access.loading ? true : access.bySlug[module.slug] === true,
+    searchText: normalizeSearch([module.name, module.slug, module.area, module.summary, ...module.capabilities, ...module.nextActions].join(" "))
   }));
   const orderedItems = items
+    .filter((item) => !normalizedQuery || (item.enabled && queryMatches(item.searchText, normalizedQuery)))
     .sort((a, b) => {
       if (a.enabled !== b.enabled) return a.enabled ? -1 : 1;
       return (access.orderBySlug?.[a.slug] ?? 999) - (access.orderBySlug?.[b.slug] ?? 999);
@@ -105,12 +109,27 @@ export function Sidebar() {
         </button>
       </div>
       <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
+        {!collapsed ? (
+          <label className="relative mb-3 block">
+            <span className="sr-only">Buscar modulos</span>
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
+            <input
+              className="h-10 w-full rounded-md border border-line bg-paper pl-9 pr-9 text-sm text-neutral-800 outline-none transition placeholder:text-neutral-400 focus:border-apex focus:bg-white"
+              onChange={(event) => setModuleQuery(event.target.value)}
+              placeholder="Buscar modulo"
+              type="search"
+              value={moduleQuery}
+            />
+            {moduleQuery ? <button aria-label="Limpiar busqueda" className="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-neutral-400 hover:bg-white hover:text-neutral-700" onClick={() => setModuleQuery("")} type="button"><X size={15} /></button> : null}
+          </label>
+        ) : null}
         {!technicianMode ? <Link className={linkClass(pathname === "/dashboard")} href="/dashboard" title="Inicio">
           <Home size={18} />
           {!collapsed ? "Inicio" : null}
         </Link> : null}
         {sectionLabel("Activos")}
         {orderedItems.map(renderItem)}
+        {!collapsed && normalizedQuery && orderedItems.length === 0 ? <p className="px-3 py-4 text-sm text-neutral-500">No hay modulos disponibles para esta busqueda.</p> : null}
       </nav>
       {!collapsed ? (
         <div className="mt-3 shrink-0">
@@ -123,4 +142,12 @@ export function Sidebar() {
       )}
     </aside>
   );
+}
+
+function normalizeSearch(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function queryMatches(searchText: string, query: string) {
+  return query.split(" ").filter(Boolean).every((term) => searchText.includes(term));
 }
