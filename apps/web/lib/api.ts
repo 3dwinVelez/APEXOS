@@ -21,14 +21,29 @@ const completedGetRequests = new Map<string, { at: number; refreshing?: Promise<
 let companyMembershipCache: { key: string; at: number; value: { company_id: string; company_name?: string; role?: string } | null } | null = null;
 let companyMembershipRequest: { key: string; promise: Promise<{ company_id: string; company_name?: string; role?: string } | null> } | null = null;
 
-function clearApiReadCaches() {
-  inFlightGetRequests.clear();
-  completedGetRequests.clear();
+function clearApiReadCaches(scopePath = "") {
+  if (scopePath) {
+    for (const key of Array.from(inFlightGetRequests.keys())) {
+      if (key.includes(scopePath)) inFlightGetRequests.delete(key);
+    }
+    for (const key of Array.from(completedGetRequests.keys())) {
+      if (key.includes(scopePath)) completedGetRequests.delete(key);
+    }
+  } else {
+    inFlightGetRequests.clear();
+    completedGetRequests.clear();
+  }
   clearSupabaseFetchCache();
   if (typeof window !== "undefined") {
     sessionStorage.removeItem("apexos_module_access_cache");
     sessionStorage.removeItem("apexos_module_access_cache_v2");
   }
+}
+
+function writeCacheScope(path: string) {
+  const serviceOrderWrite = path.split("?")[0].match(/^\/api\/v1\/services\/orders\/([^/]+)/);
+  if (serviceOrderWrite) return `/api/v1/services/orders/${serviceOrderWrite[1]}`;
+  return "";
 }
 
 function pruneApiReadCaches() {
@@ -3008,6 +3023,13 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       const current = await accessibleSupabaseServiceOrder(orderId);
       const originalType = String(body.type || body.evidence_type || "novedad");
       const allowedType = ["fachada", "producto_abierto", "producto_cerrado", "cliente", "firma_cliente", "no_ejecutada"].includes(originalType) ? originalType : "novedad";
+      const clientUploadId = String(body.metadata?.client_upload_id || "");
+      if (clientUploadId) {
+        const retryMatch = await supabaseFetch<ServiceEvidenceRow[]>(
+          `/rest/v1/service_evidence?select=id,order_id,evidence_type,file_url,storage_bucket,storage_path,mime_type,size_bytes,metadata,created_at&order_id=eq.${encodeURIComponent(orderId)}&metadata->>client_upload_id=eq.${encodeURIComponent(clientUploadId)}&limit=1`
+        ).catch(() => []);
+        if (retryMatch[0]?.id) return await resolveServiceEvidencePhoto({ ...retryMatch[0], metadata: { ...(retryMatch[0].metadata || {}), original_type: originalType } }) as T;
+      }
       const partId = body.metadata?.part_id == null ? "" : String(body.metadata.part_id);
       const existing = await supabaseFetch<Array<{ id: string; metadata?: AnyRow }>>(
         `/rest/v1/service_evidence?select=id,metadata&order_id=eq.${encodeURIComponent(orderId)}&metadata->>original_type=eq.${encodeURIComponent(originalType)}&limit=20`
@@ -3511,7 +3533,10 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
 
 export async function api<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
   const method = String(options.method || "GET").toUpperCase();
-  if (method !== "GET") clearApiReadCaches();
+  if (method !== "GET") {
+    const scope = writeCacheScope(path);
+    clearApiReadCaches(scope);
+  }
   const cacheKey = method === "GET" && !retried ? `${isSupabaseSession() ? "supabase" : "api"}:${path}` : "";
   if (cacheKey) {
     const completed = completedGetRequests.get(cacheKey);

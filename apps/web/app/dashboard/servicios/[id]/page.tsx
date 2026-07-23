@@ -8,7 +8,7 @@ import { ArrowLeft, BookOpen, Camera, CheckCircle2, Circle, Download, FileSignat
 import Link from "next/link";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type ServiceReferencePart = { id: number | string; name: string; quantity: number; unit: string };
 type ReferenceManual = { title: string; file_name?: string; mime_type?: string; file_url?: string; base64_data?: string; notes?: string };
@@ -43,6 +43,7 @@ type ServiceOrder = {
   };
 };
 type Panel = "inicio" | "inspeccion" | "ejecucion" | "novedad" | "historial";
+type UploadStatus = "idle" | "pending" | "uploading" | "uploaded" | "failed";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 const HAS_CONFIGURED_API_URL = Boolean(process.env.NEXT_PUBLIC_API_URL);
@@ -105,6 +106,21 @@ function photoSrc(photo: ServicePhoto) {
   return photo.file_url || "";
 }
 
+function mergeOrderState(current: ServiceOrder | null, incoming: ServiceOrder | null | undefined) {
+  if (!incoming?.id) return current;
+  if (!current?.id) return incoming;
+  const photosById = new Map<string, ServicePhoto>();
+  for (const photo of current.photos || []) photosById.set(String(photo.id), photo);
+  for (const photo of incoming.photos || []) photosById.set(String(photo.id), photo);
+  return {
+    ...current,
+    ...incoming,
+    reference: incoming.reference || current.reference,
+    incidents: incoming.incidents?.length ? incoming.incidents : current.incidents,
+    photos: Array.from(photosById.values())
+  };
+}
+
 function manualHref(manual: ReferenceManual) {
   return manual.base64_data || manual.file_url || "";
 }
@@ -119,6 +135,8 @@ export default function ServiceOperationPage() {
   const [working, setWorking] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
+  const [uploadStatus, setUploadStatus] = useState<Record<string, UploadStatus>>({});
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const [captures, setCaptures] = useState<Record<string, CapturedFile | null>>({});
   const [inspection, setInspection] = useState<InspectionItem[]>([]);
   const [closureMode, setClosureMode] = useState(false);
@@ -127,6 +145,7 @@ export default function ServiceOperationPage() {
   const [activePanel, setActivePanel] = useState<Panel>("inicio");
   const [inspectionMode, setInspectionMode] = useState<InspectionMode>("decision");
   const [zoomedPhoto, setZoomedPhoto] = useState<ServicePhoto | null>(null);
+  const inFlightUploads = useRef(new Set<string>());
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -143,7 +162,7 @@ export default function ServiceOperationPage() {
       ]);
       if (!data?.id) throw new Error("No se encontro el servicio solicitado o no tienes permisos para verlo.");
       const activeQuestions = questions.filter((question) => question.active !== false && question.id && question.label);
-      setOrder(data);
+      setOrder((current) => mergeOrderState(current, data));
       setSurveyQuestions(activeQuestions.length ? activeQuestions : fallbackSatisfactionQuestions());
       setActivePanel((current) => current === "inicio" && data.status !== "pendiente" ? panelForStatus(data.status) : current);
     } catch (error) {
@@ -182,27 +201,60 @@ export default function ServiceOperationPage() {
       return false;
     }
     setCaptures((current) => ({ ...current, [captureKey]: file }));
-    if (!file) return true;
+    if (!file) {
+      setUploadStatus((current) => ({ ...current, [captureKey]: "idle" }));
+      setUploadProgress((current) => ({ ...current, [captureKey]: 0 }));
+      return true;
+    }
+    if (inFlightUploads.current.has(captureKey)) return false;
+    inFlightUploads.current.add(captureKey);
     setUploading((current) => ({ ...current, [captureKey]: true }));
+    setUploadStatus((current) => ({ ...current, [captureKey]: "uploading" }));
+    setUploadProgress((current) => ({ ...current, [captureKey]: 20 }));
     try {
+      const clientUploadId = `${params.id}:${captureKey}:${file.name}:${file.size}:${file.processedAt || Date.now()}`;
       const savedPhoto = await api<ServicePhoto>(`/api/v1/services/orders/${params.id}/photos`, {
         method: "POST",
-        body: JSON.stringify({ type, base64_data: file.base64, size_bytes: file.size, mime_type: file.type, file_name: file.name, metadata })
+        body: JSON.stringify({
+          type,
+          base64_data: file.base64,
+          size_bytes: file.size,
+          mime_type: file.type,
+          file_name: file.name,
+          metadata: {
+            ...metadata,
+            client_upload_id: clientUploadId,
+            original_size_bytes: file.originalSize || file.size,
+            optimized_size_bytes: file.size,
+            captured_at: file.processedAt || new Date().toISOString()
+          }
+        })
       });
-      setOrder((current) => current ? { ...current, photos: [...current.photos, savedPhoto] } : current);
+      setUploadProgress((current) => ({ ...current, [captureKey]: 95 }));
+      if (!savedPhoto?.id) throw new Error(`La evidencia ${photoLabels[type] || type} se envio, pero no quedo visible para esta orden.`);
+      setOrder((current) => current ? {
+        ...current,
+        photos: current.photos.some((photo) => photo.id === savedPhoto.id)
+          ? current.photos.map((photo) => photo.id === savedPhoto.id ? savedPhoto : photo)
+          : [...current.photos, savedPhoto]
+      } : current);
+      setUploadStatus((current) => ({ ...current, [captureKey]: "uploaded" }));
+      setUploadProgress((current) => ({ ...current, [captureKey]: 100 }));
       setMessage(`Evidencia ${photoLabels[type] || type} cargada.`);
       return true;
     } catch (error) {
-      setCaptures((current) => ({ ...current, [captureKey]: null }));
+      setUploadStatus((current) => ({ ...current, [captureKey]: "failed" }));
       setMessage(error instanceof Error ? error.message : "No fue posible guardar la evidencia.");
       return false;
     } finally {
+      inFlightUploads.current.delete(captureKey);
       setUploading((current) => ({ ...current, [captureKey]: false }));
     }
   }
 
   function setProblemEvidence(partId: number | string, file: CapturedFile | null) {
     setCaptures((current) => ({ ...current, [`pieza_${partId}`]: file }));
+    setUploadStatus((current) => ({ ...current, [`pieza_${partId}`]: file ? "pending" : "idle" }));
     if (file) setMessage("Evidencia lista. Guarda la inspeccion para registrarla en la orden.");
   }
 
@@ -251,7 +303,7 @@ export default function ServiceOperationPage() {
       const finalStatus = action === "close" ? "cerrada" : action === "close-not-executed" ? "no_ejecutada" : "";
       const safeUpdated = updated?.id ? updated : finalStatus && order ? { ...order, status: finalStatus, closed_at: new Date().toISOString() } : updated;
       if (!safeUpdated?.id) throw new Error("El servicio avanzo, pero no fue posible leer la orden actualizada.");
-      setOrder(safeUpdated);
+      setOrder((current) => mergeOrderState(current, safeUpdated));
       setActivePanel(panelForStatus(safeUpdated.status));
       setMessage(`Orden ${statusLabel[safeUpdated.status] || safeUpdated.status}.`);
     } catch (error) {
@@ -363,7 +415,7 @@ export default function ServiceOperationPage() {
       const inspected = await saveInspection("armable");
       if (!inspected) return;
       const updated = await api<ServiceOrder>(`/api/v1/services/orders/${params.id}/execution`, { method: "PATCH", body: JSON.stringify({}) });
-      setOrder(updated);
+      setOrder((current) => mergeOrderState(current, updated));
       setClosureMode(false);
       setActivePanel("ejecucion");
       setMessage("Inspeccion guardada. Producto armable.");
@@ -379,7 +431,7 @@ export default function ServiceOperationPage() {
     try {
       const updated = await saveInspection("no_armable");
       if (!updated) return;
-      setOrder(updated);
+      setOrder((current) => mergeOrderState(current, updated));
       setClosureMode(false);
       const problems = inspection.filter((item) => item.status !== "ok");
       setNoExecutionReason(problems.map((item) => `${inspectionStatusLabel[item.status]}: ${item.name}${item.comment ? ` - ${item.comment}` : ""}`).join("\n"));
@@ -593,7 +645,16 @@ export default function ServiceOperationPage() {
                           <option value="ninguna">Sin accion adicional</option>
                         </select>
                         <input className="h-12 w-full rounded-md border border-line px-3 text-base" placeholder="Proveedor sugerido (opcional)" value={part.supplier_name || ""} onChange={(event) => updateInspection(part.part_id, { supplier_name: event.target.value })} />
-                        <PhotoCapture label={`Evidencia - ${part.name}`} required locked={hasPersistedProblemEvidence(part.part_id)} loading={uploading[`pieza_${part.part_id}`]} value={captures[`pieza_${part.part_id}`] || null} onChange={(file) => setProblemEvidence(part.part_id, file)} />
+                        <PhotoCapture
+                          label={`Evidencia - ${part.name}`}
+                          required
+                          locked={hasPersistedProblemEvidence(part.part_id)}
+                          loading={uploading[`pieza_${part.part_id}`]}
+                          progress={uploadProgress[`pieza_${part.part_id}`]}
+                          status={uploadStatus[`pieza_${part.part_id}`]}
+                          value={captures[`pieza_${part.part_id}`] || null}
+                          onChange={(file) => setProblemEvidence(part.part_id, file)}
+                        />
                         {hasPersistedProblemEvidence(part.part_id) ? <p className="text-xs font-semibold text-emerald-700">Evidencia registrada para esta pieza.</p> : null}
                       </div>
                     ) : null}
@@ -611,8 +672,8 @@ export default function ServiceOperationPage() {
             <>
               <h2 className="mb-3 text-base font-semibold">Ejecucion</h2>
               <div className="grid gap-2">
-                <PhotoCapture label="Foto 1: Producto abierto" required locked={hasPersistedPhoto("producto_abierto")} loading={uploading.producto_abierto} value={captures.producto_abierto || null} onChange={(file) => uploadPhoto("producto_abierto", file)} />
-                <PhotoCapture label="Foto 2: Producto cerrado" required locked={hasPersistedPhoto("producto_cerrado")} loading={uploading.producto_cerrado} value={captures.producto_cerrado || null} onChange={(file) => uploadPhoto("producto_cerrado", file)} />
+                <PhotoCapture label="Foto 1: Producto abierto" required locked={hasPersistedPhoto("producto_abierto")} loading={uploading.producto_abierto} progress={uploadProgress.producto_abierto} status={uploadStatus.producto_abierto} value={captures.producto_abierto || null} onChange={(file) => uploadPhoto("producto_abierto", file)} />
+                <PhotoCapture label="Foto 2: Producto cerrado" required locked={hasPersistedPhoto("producto_cerrado")} loading={uploading.producto_cerrado} progress={uploadProgress.producto_cerrado} status={uploadStatus.producto_cerrado} value={captures.producto_cerrado || null} onChange={(file) => uploadPhoto("producto_cerrado", file)} />
               </div>
               <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white disabled:opacity-50" disabled={!executionPhotosReady()} onClick={() => setClosureMode(true)} type="button"><Camera size={18} /> {uploadsPending(executionPhotoTypes) ? "Guardando evidencias..." : "Continuar al cierre"}</button>
             </>
@@ -686,7 +747,7 @@ export default function ServiceOperationPage() {
           <label className="text-sm font-semibold">1. Describe la novedad y por qué no puede continuar</label>
           <textarea className="mt-1 min-h-24 w-full rounded-md border border-line px-3 py-3 text-base md:text-sm" placeholder="Ejemplo: producto incompleto, cliente ausente o pieza faltante..." value={noExecutionReason} onChange={(event) => setNoExecutionReason(event.target.value)} />
           <div className="mt-3 grid gap-3">
-            <PhotoCapture label="2. Evidencia de la novedad" required locked={hasPersistedPhoto("no_ejecutada")} loading={uploading.no_ejecutada} value={captures.no_ejecutada || null} onChange={(file) => uploadPhoto("no_ejecutada", file, { reason: noExecutionReason })} />
+            <PhotoCapture label="2. Evidencia de la novedad" required locked={hasPersistedPhoto("no_ejecutada")} loading={uploading.no_ejecutada} progress={uploadProgress.no_ejecutada} status={uploadStatus.no_ejecutada} value={captures.no_ejecutada || null} onChange={(file) => uploadPhoto("no_ejecutada", file, { reason: noExecutionReason })} />
             <SignatureCapture label="3. Firma del cliente" required locked={hasPersistedPhoto("firma_cliente")} value={captures.firma_cliente || null} onChange={(file) => uploadSignature(file, { reason: noExecutionReason, closure: "no_ejecutada" })} />
           </div>
           <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-red-700 text-base font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40" disabled={working || !noExecutionReady()} onClick={() => update("close-not-executed")} type="button"><FileSignature size={17} /> {uploadsPending(["no_ejecutada", "firma_cliente"]) ? "Guardando soportes..." : "Confirmar novedad y cerrar orden"}</button>
