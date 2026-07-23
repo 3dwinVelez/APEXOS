@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
 let rootEnvCache: Record<string, string> | null = null;
+const AUTH_CONTEXT_TTL_MS = 30_000;
+const authUserCache = new Map<string, { expiresAt: number; userId: string }>();
+const membershipCache = new Map<string, { expiresAt: number; rows: UserCompany[] }>();
 
 type AnyRow = Record<string, unknown>;
 type UserCompany = { company_id: string; role?: string };
@@ -103,6 +107,9 @@ async function supabaseRequest<T>(requestPath: string, init: RequestInit = {}) {
 async function currentAuthUserId(request: NextRequest) {
   const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || "";
   if (!token) return "";
+  const cacheKey = crypto.createHash("sha256").update(token).digest("hex");
+  const cached = authUserCache.get(cacheKey);
+  if (cached?.expiresAt > Date.now()) return cached.userId;
   const config = supabaseConfig();
   if (!config.url || !config.anonKey) return "";
   const response = await fetch(`${config.url}/auth/v1/user`, {
@@ -113,14 +120,24 @@ async function currentAuthUserId(request: NextRequest) {
   });
   if (!response.ok) return "";
   const data = await response.json().catch(() => ({})) as { id?: string };
-  return data.id || "";
+  const userId = data.id || "";
+  if (userId) {
+    if (authUserCache.size >= 500) authUserCache.delete(authUserCache.keys().next().value as string);
+    authUserCache.set(cacheKey, { expiresAt: Date.now() + AUTH_CONTEXT_TTL_MS, userId });
+  }
+  return userId;
 }
 
 async function userCompaniesForUser(userId: string) {
   if (!userId) return [] as UserCompany[];
-  return supabaseRequest<UserCompany[]>(
+  const cached = membershipCache.get(userId);
+  if (cached?.expiresAt > Date.now()) return cached.rows;
+  const rows = await supabaseRequest<UserCompany[]>(
     `/rest/v1/company_users?select=company_id,role,status&user_id=eq.${encodeURIComponent(userId)}&status=eq.active&limit=20`
   ).catch(() => []);
+  if (membershipCache.size >= 500) membershipCache.delete(membershipCache.keys().next().value as string);
+  membershipCache.set(userId, { expiresAt: Date.now() + AUTH_CONTEXT_TTL_MS, rows });
+  return rows;
 }
 
 function isAdminCompanyRole(role: unknown) {

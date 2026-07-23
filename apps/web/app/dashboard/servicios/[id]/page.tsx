@@ -437,6 +437,9 @@ export default function ServiceOperationPage() {
   }
   const referenceManuals = order.reference?.manuals?.length ? order.reference.manuals : order.reference?.metadata?.manuals || [];
   const orderCompleted = ["cerrada", "no_ejecutada"].includes(order.status);
+  const inspectedItems = order.metadata?.inspection?.items || [];
+  const inspectionIssues = inspectedItems.filter((item) => item.status !== "ok");
+  const inspectionOkCount = inspectedItems.length - inspectionIssues.length;
 
   return (
     <div className="mx-auto max-w-xl space-y-4 pb-32 md:pb-8">
@@ -742,7 +745,24 @@ export default function ServiceOperationPage() {
             })}
           </div>
           <div className="space-y-2">
-            {order.metadata?.inspection?.items?.map((item) => <p className="rounded-md bg-paper p-3 text-sm" key={item.part_id}>{item.name}: <span className="font-semibold">{inspectionStatusLabel[item.status]}</span>{item.comment ? ` · ${item.comment}` : ""}</p>)}
+            {inspectedItems.length ? (
+              <div className="rounded-md border border-line bg-paper p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-semibold">Inspeccion de piezas</p>
+                    <p className="mt-0.5 text-xs text-neutral-500">{inspectedItems.length} revisadas · {inspectionOkCount} OK · {inspectionIssues.length} con novedad</p>
+                  </div>
+                  <span className={`rounded-md px-2 py-1 text-xs font-semibold ${inspectionIssues.length ? "bg-amber-100 text-amber-900" : "bg-emerald-100 text-emerald-900"}`}>{inspectionIssues.length ? `${inspectionIssues.length} novedad(es)` : "Todo OK"}</span>
+                </div>
+                {inspectionIssues.length ? <div className="mt-3 grid gap-2">{inspectionIssues.map((item) => <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950" key={item.part_id}><span className="font-semibold">{item.name}: {inspectionStatusLabel[item.status]}</span>{item.comment ? ` · ${item.comment}` : ""}</p>)}</div> : null}
+                <details className="mt-3 border-t border-line pt-2">
+                  <summary className="cursor-pointer text-xs font-semibold text-apex">Ver detalle de todas las piezas</summary>
+                  <div className="mt-2 grid gap-1 sm:grid-cols-2">
+                    {inspectedItems.map((item) => <p className="flex min-w-0 items-center justify-between gap-2 rounded-md bg-white px-2 py-1.5 text-xs" key={item.part_id}><span className="truncate">{item.name}</span><span className={`shrink-0 font-semibold ${item.status === "ok" ? "text-emerald-700" : "text-amber-800"}`}>{inspectionStatusLabel[item.status]}</span></p>)}
+                  </div>
+                </details>
+              </div>
+            ) : null}
             {order.incidents.map((item) => <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-900" key={item.id}>{item.type}: {item.description}</p>)}
             {!order.photos.length && !order.incidents.length ? <p className="text-sm text-neutral-500">Sin evidencia registrada.</p> : null}
           </div>
