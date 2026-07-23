@@ -8,9 +8,25 @@ function runPerformanceContext(context, fn) {
     queryTotalMs: 0,
     queryMaxMs: 0,
     slowQueries: [],
+    phases: {},
     responseSizeBytes: 0,
     ...context
   }, fn);
+}
+
+function recordPhase(name, durationMs) {
+  const context = storage.getStore();
+  if (!context) return;
+  context.phases[name] = Number(((context.phases[name] || 0) + durationMs).toFixed(2));
+}
+
+async function measurePhase(name, fn) {
+  const startedAt = process.hrtime.bigint();
+  try {
+    return await fn();
+  } finally {
+    recordPhase(name, Number(process.hrtime.bigint() - startedAt) / 1e6);
+  }
 }
 
 function recordQuery(query) {
@@ -31,4 +47,4 @@ function currentPerformanceContext() {
   return storage.getStore() || null;
 }
 
-module.exports = { currentPerformanceContext, recordQuery, runPerformanceContext, setResponseSizeBytes };
+module.exports = { currentPerformanceContext, measurePhase, recordPhase, recordQuery, runPerformanceContext, setResponseSizeBytes };

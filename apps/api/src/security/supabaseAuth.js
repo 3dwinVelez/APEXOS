@@ -1,6 +1,24 @@
 const bcrypt = require("bcrypt");
+const crypto = require("node:crypto");
 const prisma = require("../core/prisma");
 const { invalidateTenantCache } = require("../core/tenantCache");
+
+const AUTH_CACHE_TTL_MS = Math.max(Number(process.env.SUPABASE_AUTH_CACHE_TTL_MS || 30000), 1000);
+const AUTH_CACHE_MAX_ENTRIES = Math.max(Number(process.env.SUPABASE_AUTH_CACHE_MAX_ENTRIES || 500), 10);
+const authCache = new Map();
+const authInFlight = new Map();
+
+function authCacheKey(token) {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+function pruneAuthCache() {
+  const now = Date.now();
+  for (const [key, entry] of authCache) {
+    if (entry.expiresAt <= now) authCache.delete(key);
+  }
+  while (authCache.size > AUTH_CACHE_MAX_ENTRIES) authCache.delete(authCache.keys().next().value);
+}
 
 function normalizeDomain(value) {
   return String(value || "")
@@ -123,13 +141,21 @@ async function getSupabaseMembershipContext(token, supabaseUser) {
 
 async function ensureRoleWithPermissions(tenantId, companyRole) {
   const blueprint = roleBlueprint(companyRole);
-  const role = await prisma.role.upsert({
+  let role = await prisma.role.findUnique({
     where: { tenant_id_name: { tenant_id: tenantId, name: blueprint.name } },
-    update: { description: blueprint.description, is_system: blueprint.name === "APEX_ADMIN" },
-    create: { tenant_id: tenantId, name: blueprint.name, description: blueprint.description, is_system: blueprint.name === "APEX_ADMIN" }
+    include: { permissions: true }
   });
+  if (!role) {
+    role = await prisma.role.create({
+      data: { tenant_id: tenantId, name: blueprint.name, description: blueprint.description, is_system: blueprint.name === "APEX_ADMIN" },
+      include: { permissions: true }
+    });
+  }
+  const granted = new Set(role.permissions.map((permission) => `${permission.module}:${permission.action}`));
+  const missing = blueprint.permissions.filter((permission) => !granted.has(`${permission.module}:${permission.action}`));
+  if (!missing.length) return role;
   await prisma.permission.createMany({
-    data: blueprint.permissions.map((permission) => ({ role_id: role.id, module: permission.module, action: permission.action })),
+    data: missing.map((permission) => ({ role_id: role.id, module: permission.module, action: permission.action })),
     skipDuplicates: true
   });
   return prisma.role.findUnique({ where: { id: role.id }, include: { permissions: true } });
@@ -197,10 +223,22 @@ async function ensureUserMirror(supabaseUser, token) {
   const role = await ensureRoleWithPermissions(tenant.id, context.membership.role);
   const email = String(supabaseUser.email || "").trim().toLowerCase();
   const fullName = String(supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || email.split("@")[0] || "Usuario Supabase").trim();
-  const user = await prisma.user.upsert({
+  const existing = await prisma.user.findUnique({
     where: { tenant_id_email: { tenant_id: tenant.id, email } },
-    update: { name: fullName, active: true, role_id: role.id, last_login: new Date() },
-    create: {
+    include: { role: { include: { permissions: true } } }
+  });
+  if (existing) {
+    const patch = {};
+    if (existing.name !== fullName) patch.name = fullName;
+    if (!existing.active) patch.active = true;
+    if (existing.role_id !== role.id) patch.role_id = role.id;
+    const user = Object.keys(patch).length
+      ? await prisma.user.update({ where: { id: existing.id }, data: patch, include: { role: { include: { permissions: true } } } })
+      : existing;
+    return { user, tenant };
+  }
+  const user = await prisma.user.create({
+    data: {
       tenant_id: tenant.id,
       name: fullName,
       email,
@@ -215,6 +253,24 @@ async function ensureUserMirror(supabaseUser, token) {
 }
 
 async function authenticateSupabaseToken(token) {
+  if (!token) throw new Error("Token Supabase requerido");
+  pruneAuthCache();
+  const cacheKey = authCacheKey(token);
+  const cached = authCache.get(cacheKey);
+  if (cached?.expiresAt > Date.now()) return cached.value;
+  if (authInFlight.has(cacheKey)) return authInFlight.get(cacheKey);
+  const request = authenticateSupabaseTokenUncached(token);
+  authInFlight.set(cacheKey, request);
+  try {
+    const value = await request;
+    authCache.set(cacheKey, { expiresAt: Date.now() + AUTH_CACHE_TTL_MS, value });
+    return value;
+  } finally {
+    authInFlight.delete(cacheKey);
+  }
+}
+
+async function authenticateSupabaseTokenUncached(token) {
   const supabaseUser = await getSupabaseUser(token);
   const email = String(supabaseUser?.email || "").trim().toLowerCase();
   if (!email) throw new Error("Supabase token sin email");

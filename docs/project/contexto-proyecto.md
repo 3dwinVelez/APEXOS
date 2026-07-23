@@ -14,6 +14,15 @@ La documentacion de trabajo del proyecto vive en `docs/project`.
 
 Los documentos historicos en `modules/*` y `docs/APEX_LEGACY_MIGRATION.md` se conservan como trazabilidad, pero los cambios nuevos deben registrarse en esta carpeta.
 
+## Gobierno de rendimiento
+
+- El estándar obligatorio vive en `docs/PERFORMANCE_ENGINEERING_STANDARD.md`.
+- Los releases QA y producción ejecutan `npm run performance:guard` contra la línea base más reciente.
+- La API expone `Server-Timing` por aplicación, autenticación, tenant, autorización y Prisma, además de `x-request-id`.
+- La autenticación Supabase reutiliza verificaciones exitosas durante 30 segundos mediante una clave SHA-256; no almacena ni registra tokens en claro.
+- La sincronización Supabase/Prisma sólo escribe cuando usuario, rol, tenant o módulos cambian. Está prohibido calcular bcrypt en cada request.
+- Las pruebas de volumen con escritura se limitan a Nyvora QA y requieren identificador de corrida y limpieza selectiva.
+
 ## Reglas de trabajo
 
 - Leer este contexto antes de modificar codigo.

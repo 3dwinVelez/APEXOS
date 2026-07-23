@@ -104,6 +104,8 @@ async function build() {
 
   bootLog("Registering auth decorator");
   fastify.decorate("authenticate", async (request, reply) => {
+    const { measurePhase } = require("./src/core/performanceContext");
+    return measurePhase("authentication", async () => {
     const auth = request.headers.authorization || "";
     const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
     try {
@@ -129,6 +131,7 @@ async function build() {
     } catch {
       return reply.code(401).send({ error: "Token invalido", code: "TOKEN_INVALIDO" });
     }
+    });
   });
   bootLog("Registered auth decorator");
 
@@ -192,7 +195,15 @@ async function build() {
         : 0;
     setResponseSizeBytes(responseSizeBytes);
     const queryTotalMs = context?.queryTotalMs || 0;
-    reply.header("Server-Timing", `app;dur=${durationMs.toFixed(1)}, db;dur=${queryTotalMs.toFixed(1)}`);
+    const phases = context?.phases || {};
+    reply.header("x-request-id", _request.id);
+    reply.header("Server-Timing", [
+      `app;dur=${durationMs.toFixed(1)}`,
+      `auth;dur=${Number(phases.authentication || 0).toFixed(1)}`,
+      `tenant;dur=${Number(phases.tenant || 0).toFixed(1)}`,
+      `authorization;dur=${Number(phases.authorization || 0).toFixed(1)}`,
+      `db;dur=${queryTotalMs.toFixed(1)}`
+    ].join(", "));
     done(null, payload);
   });
   fastify.addHook("onResponse", (request, reply, done) => {
@@ -201,7 +212,10 @@ async function build() {
       ? Number(process.hrtime.bigint() - context.startedAt) / 1e6
       : Number(reply.elapsedTime || 0);
     if (process.env.PERFORMANCE_LOG_ENABLED === "true" || process.env.APP_ENV === "qa") {
-      fastify.log.info({
+      const simpleBudgetMs = Number(process.env.PERFORMANCE_SIMPLE_BUDGET_MS || 300);
+      const criticalMs = Number(process.env.PERFORMANCE_CRITICAL_MS || 2000);
+      const severity = durationMs >= criticalMs ? "critical" : durationMs >= simpleBudgetMs ? "warning" : "ok";
+      fastify.log[severity === "critical" ? "error" : severity === "warning" ? "warn" : "info"]({
         event: "api_performance",
         endpoint: request.routeOptions?.url || request.url.split("?")[0],
         method: request.method,
@@ -213,7 +227,9 @@ async function build() {
         query_max_ms: Number((context?.queryMaxMs || 0).toFixed(2)),
         slow_query_count: context?.slowQueries?.length || 0,
         slow_queries: (context?.slowQueries || []).slice(0, 10),
-        user_id: request.user?.id || null,
+        phases_ms: context?.phases || {},
+        severity,
+        user_ref: request.user?.id ? require("node:crypto").createHash("sha256").update(String(request.user.id)).digest("hex").slice(0, 16) : null,
         company_id: request.user?.tenant_id || null
       });
     }

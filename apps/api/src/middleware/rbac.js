@@ -1,4 +1,5 @@
 const prisma = require("../core/prisma");
+const { measurePhase } = require("../core/performanceContext");
 
 const MODULE_CODES = {
   accounting: ["M-07", "contabilidad", "finance"],
@@ -81,6 +82,7 @@ function isAdministrativeRole(role) {
 
 function requirePermission(module, action) {
   return async function rbacMiddleware(request, reply) {
+    return measurePhase("authorization", async () => {
     const role = request.user.role;
     if (!role) return reply.code(401).send({ error: "No autenticado", code: "NO_AUTENTICADO" });
     if (!tenantHasModule(request.tenant, module)) {
@@ -123,6 +125,7 @@ function requirePermission(module, action) {
       scopes: role.metadata?.scopes || {},
       restrictions: role.metadata?.restrictions || {}
     };
+    });
   };
 }
 
