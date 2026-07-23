@@ -916,6 +916,13 @@ html.dark .platform-alert-close:hover {
   color: rgb(255 255 255) !important;
 }
 
+@media (min-width: 768px) {
+  .apex-dashboard-content .text-3xl {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+}
+
 @keyframes apexCoachIn {
   from {
     opacity: 0;

@@ -77,11 +77,11 @@ export function PlatformAlerts() {
   if (!alerts.length) return null;
 
   return (
-    <div aria-live="assertive" className="pointer-events-none fixed right-3 top-3 z-[100] flex w-[min(92vw,28rem)] flex-col gap-2">
+    <div aria-live="assertive" className="pointer-events-none fixed right-3 top-3 z-[100] flex w-[min(92vw,24rem)] flex-col gap-2">
       {alerts.map((alert) => {
         const Icon = icons[alert.level || "error"];
         return (
-          <div className={`platform-alert pointer-events-auto rounded-md border p-3 shadow-lg ${styles[alert.level || "error"]}`} key={alert.id} role="alert">
+          <div className={`platform-alert pointer-events-auto rounded-md border p-2.5 shadow-lg ${styles[alert.level || "error"]}`} key={alert.id} role="alert">
             <div className="flex items-start gap-3">
               <Icon className="mt-0.5 shrink-0" size={18} />
               <div className="min-w-0 flex-1">
