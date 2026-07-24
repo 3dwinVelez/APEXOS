@@ -59,4 +59,9 @@ async function invalidateTenantCache(tenantId) {
   }
 }
 
-module.exports = { getTenantFromCache, invalidateTenantCache };
+async function getTenantConfig(tenantId) {
+  const tenant = await getTenantFromCache(tenantId);
+  return tenant?.config && typeof tenant.config === "object" ? tenant.config : {};
+}
+
+module.exports = { getTenantFromCache, getTenantConfig, invalidateTenantCache };

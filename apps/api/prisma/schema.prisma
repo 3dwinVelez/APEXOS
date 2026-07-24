@@ -1497,16 +1497,17 @@ model ServiceIncident {
 }
 
 model ServicePhoto {
-  id          Int          @id @default(autoincrement())
-  tenant_id   String
-  order_id    Int
-  order       ServiceOrder @relation(fields: [order_id], references: [id], onDelete: Cascade)
-  type        String
-  file_url    String?
-  base64_data String?
-  size_bytes  Int?
-  metadata    Json         @default("{}")
-  created_at  DateTime     @default(now())
+  id           Int          @id @default(autoincrement())
+  tenant_id    String
+  order_id     Int
+  order        ServiceOrder @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  type         String
+  file_url     String?
+  base64_data  String?
+  storage_path String?
+  size_bytes   Int?
+  metadata     Json         @default("{}")
+  created_at   DateTime     @default(now())
 
   @@index([tenant_id, order_id])
   @@index([tenant_id, type])

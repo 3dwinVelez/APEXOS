@@ -1,4 +1,5 @@
 const prisma = require("../../core/prisma");
+const { getTenantConfig, invalidateTenantCache } = require("../../core/tenantCache");
 const { MAX_EVIDENCE_BYTES, assertSafeFile, normalizeFileName, secureStoragePath } = require("../../security/policy");
 const { normalizePunchType, processWorkday } = require("./timeLogic");
 
@@ -240,16 +241,14 @@ function mergePayrollConfig(config = {}) {
 
 async function getPayrollConfig(tenantId) {
   return prisma.runWithTenant(tenantId, async () => {
-    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
-    const config = tenant?.config && typeof tenant.config === "object" ? tenant.config : {};
+    const config = await getTenantConfig(tenantId);
     return mergePayrollConfig(config.payroll || {});
   });
 }
 
 async function savePayrollConfig(tenantId, input) {
   return prisma.runWithTenant(tenantId, async () => {
-    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
-    const config = tenant?.config && typeof tenant.config === "object" ? tenant.config : {};
+    const config = await getTenantConfig(tenantId);
     const current = mergePayrollConfig(config.payroll || {});
     const next = mergePayrollConfig({
       ...current,

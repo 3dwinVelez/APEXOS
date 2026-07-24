@@ -7,20 +7,65 @@ services:
     env_file:
       - ../.env
     environment:
-      DATABASE_URL: postgresql://apex:${DB_PASS:-apex_dev_password}@postgres:5432/apexos
+      DATABASE_URL: postgresql://apex:${DB_PASS:-apex_dev_password}@pgbouncer:6432/apexos?pgbouncer=true
+      DIRECT_URL: postgresql://apex:${DB_PASS:-apex_dev_password}@postgres:5432/apexos
       REDIS_URL: redis://redis:6379
       BRAIN_URL: http://brain:8000
       MINIO_ENDPOINT: minio
+      WORKERS_DISABLED: "true"
     depends_on:
-      - postgres
-      - redis
-      - minio
-      - brain
+      pgbouncer:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      brain:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+
+  workers:
+    build:
+      context: ../apps/api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: ["node", "worker.js"]
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_URL: postgresql://apex:${DB_PASS:-apex_dev_password}@pgbouncer:6432/apexos?pgbouncer=true
+      DIRECT_URL: postgresql://apex:${DB_PASS:-apex_dev_password}@postgres:5432/apexos
+      REDIS_URL: redis://redis:6379
+      BRAIN_URL: http://brain:8000
+      MINIO_ENDPOINT: minio
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
 
   web:
     build:
@@ -35,7 +80,16 @@ services:
       NEXT_PUBLIC_API_URL: http://localhost:3000
       NEXT_PUBLIC_WS_URL: ws://localhost:3000
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
 
   brain:
     build: ../services/brain
@@ -45,9 +99,24 @@ services:
     volumes:
       - ../services/brain/models:/app/models
     environment:
-      DATABASE_URL: postgresql://apex:${DB_PASS:-apex_dev_password}@postgres:5432/apexos
+      DATABASE_URL: postgresql://apex:${DB_PASS:-apex_dev_password}@pgbouncer:6432/apexos?pgbouncer=true
     depends_on:
-      - postgres
+      pgbouncer:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import http.client; c=http.client.HTTPConnection('localhost:8000'); c.request('GET','/health'); r=c.getresponse(); exit(0 if r.status==200 else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
 
   postgres:
     image: postgres:16-alpine
@@ -61,15 +130,74 @@ services:
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "55432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U apex"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.5"
+          memory: 256M
+
+  pgbouncer:
+    image: bitnami/pgbouncer:latest
+    restart: unless-stopped
+    ports:
+      - "6432:6432"
+    environment:
+      PGBOUNCER_DATABASE: apexos
+      POSTGRESQL_HOST: postgres
+      POSTGRESQL_PORT: 5432
+      POSTGRESQL_USERNAME: apex
+      POSTGRESQL_PASSWORD: ${DB_PASS:-apex_dev_password}
+      PGBOUNCER_POOL_MODE: transaction
+      PGBOUNCER_DEFAULT_POOL_SIZE: 25
+      PGBOUNCER_MAX_CLIENT_CONN: 100
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "pgbouncer", "--version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+        reservations:
+          cpus: "0.1"
+          memory: 64M
 
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy noeviction
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy volatile-lru
     volumes:
       - redisdata:/data
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
 
   minio:
     image: minio/minio
@@ -83,6 +211,20 @@ services:
     ports:
       - "9000:9000"
       - "9001:9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
 
   nginx:
     image: nginx:alpine
@@ -94,6 +236,14 @@ services:
     depends_on:
       - api
       - web
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+        reservations:
+          cpus: "0.1"
+          memory: 64M
 
   prometheus:
     image: prom/prometheus
@@ -101,6 +251,14 @@ services:
       - "9090:9090"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
 
   grafana:
     image: grafana/grafana
@@ -110,6 +268,14 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASS:-change_me_grafana}
     volumes:
       - grafanadata:/var/lib/grafana
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
 
 volumes:
   pgdata:

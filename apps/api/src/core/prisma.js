@@ -24,7 +24,26 @@ const TENANT_MODELS = new Set([
 
 const WRITE_OPS = new Set(["create", "createMany", "upsert"]);
 const READ_OPS = new Set(["findFirst", "findMany", "count", "aggregate", "groupBy"]);
-const SOFT_DELETE = new Set(["Item", "Party", "Employee", "Resource", "Place"]);
+const DELETE_OPS = new Set(["delete", "deleteMany"]);
+const FIND_OPS = new Set(["findFirst", "findMany"]);
+const SOFT_DELETE = new Set([
+  "Item", "Party", "Employee", "Resource", "Place",
+  "Tenant", "User", "InventoryFamily", "InventoryFamilyAccounting",
+  "Location", "Account", "ProjectResourceAssignment", "WorkSchedule",
+  "ActivityType", "Vehicle", "VehicleDocument", "ServiceReference",
+  "Workflow", "CustomField", "EInvoiceConfig"
+]);
+
+// Modelos que pueden ser borrados físicamente (no tienen campo `active` o es intencional)
+const PHYSICAL_DELETE_ALLOWED = new Set([
+  "Role", "Permission", "SoDRule", "AuditLog", "Movement",
+  "GpsPing", "TimePunch", "ProcessedWorkday", "WorkSession",
+  "WorkActivity", "ActivityEvidence", "ServicePhoto", "ServiceIncident",
+  "SensorReading", "BrainEvent", "BrainMetric",
+  "RoutePreoperationalChecklistAnswer", "RoutePreoperationalChecklistEvidence",
+  "RoutePreoperationalFinding", "RouteStartAuthorization", "RouteBlockEvent",
+  "ItemLocation", "ServiceReferencePart", "TimeRoute"
+]);
 
 function currentTenantId() {
   return tenantStorage.getStore()?.tenantId;
@@ -87,12 +106,29 @@ function createPrismaClient() {
   });
 
   client.$use(async (params, next) => {
-    if (SOFT_DELETE.has(params.model) && ["findMany", "findFirst"].includes(params.action)) {
+    if (SOFT_DELETE.has(params.model) && FIND_OPS.has(params.action)) {
       params.args = params.args || {};
       params.args.where = params.args.where || {};
       const includeInactive = params.args.where.__includeInactive === true;
       delete params.args.where.__includeInactive;
       if (!includeInactive && !("active" in params.args.where)) params.args.where.active = true;
+    }
+    return next(params);
+  });
+
+  client.$use(async (params, next) => {
+    if (DELETE_OPS.has(params.action)) {
+      if (SOFT_DELETE.has(params.model)) {
+        params.action = params.action === "delete" ? "update" : "updateMany";
+        params.args = params.args || {};
+        params.args.data = { ...(params.args.data || {}), active: false };
+      } else if (!PHYSICAL_DELETE_ALLOWED.has(params.model)) {
+        throw new Error(
+          `Operación de borrado físico bloqueada para el modelo "${params.model}". ` +
+          "Este modelo no tiene soft-delete habilitado. " +
+          "Use un método de archivado explícito o agregue el modelo a SOFT_DELETE en prisma.js."
+        );
+      }
     }
     return next(params);
   });
