@@ -1,4 +1,5 @@
 const prisma = require("../../core/prisma");
+const { getTenantConfig, invalidateTenantCache } = require("../../core/tenantCache");
 
 function appError(statusCode, code, message) {
   const error = new Error(message);
@@ -156,19 +157,19 @@ function fullNaturalName(data) {
 }
 
 async function getAccountingConfig(tenantId) {
-  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
-  const config = tenant?.config && typeof tenant.config === "object" ? tenant.config : {};
+  const config = await getTenantConfig(tenantId);
   return config.accounting && typeof config.accounting === "object" ? config.accounting : {};
 }
 
 async function updateAccountingConfig(tenantId, accounting) {
-  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
-  const config = tenant?.config && typeof tenant.config === "object" ? tenant.config : {};
-  return prisma.tenant.update({
+  const config = await getTenantConfig(tenantId);
+  const updated = await prisma.tenant.update({
     where: { id: tenantId },
     data: { config: { ...config, accounting: { ...(config.accounting || {}), ...accounting } } },
     select: { config: true }
   });
+  invalidateTenantCache(tenantId).catch(() => undefined);
+  return updated;
 }
 
 function normalizeCode(value) {

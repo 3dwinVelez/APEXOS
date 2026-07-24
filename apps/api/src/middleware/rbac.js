@@ -75,9 +75,7 @@ function isAdministrativeRole(role) {
     || value === "admin"
     || value === "superadmin"
     || value === "administrador"
-    || value === "administrador de empresa"
-    || value.includes("admin")
-    || value.includes("coordinador"));
+    || value === "administrador de empresa");
 }
 
 function requirePermission(module, action) {

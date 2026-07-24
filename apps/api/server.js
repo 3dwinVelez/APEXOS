@@ -298,6 +298,21 @@ async function build() {
     await prisma.$queryRaw`SELECT 1`;
     return { status: "OK", version: "2.0", modules: MODULES.length };
   });
+
+  fastify.get("/metrics", async (request, reply) => {
+    const { metricsEndpoint } = require("./src/fabric/metrics");
+    const { auditQueue, brainQueue, stockQueue, emailQueue } = require("./src/fabric/queues");
+    reply.header("Content-Type", "text/plain; charset=utf-8");
+    return metricsEndpoint({ audit: auditQueue, brain: brainQueue, stock: stockQueue, email: emailQueue });
+  });
+
+  // Registrar métricas de HTTP en cada respuesta
+  fastify.addHook("onResponse", async (request, reply) => {
+    const { recordHttpRequest } = require("./src/fabric/metrics");
+    const route = request.routeOptions?.url || request.url || "unknown";
+    if (route === "/metrics" || route === "/health") return;
+    recordHttpRequest(request.method, route, reply.statusCode, reply.elapsedTime || 0);
+  });
   bootLog("Registered health route");
 
   fastify.setErrorHandler((error, request, reply) => {
