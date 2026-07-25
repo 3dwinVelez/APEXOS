@@ -167,6 +167,14 @@ function formatDate(value?: string) {
   return date.toLocaleDateString("es-CO", { day: "2-digit", month: "short" });
 }
 
+function formatDateTime(value?: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })
+    + " " + date.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
+}
+
 function exportDate(value?: string) {
   return value ? value.slice(0, 10) : "";
 }
@@ -913,6 +921,7 @@ export default function ServicesPage() {
                     </div>
                     <div className="mt-4 grid min-w-0 gap-2 sm:flex sm:items-center sm:justify-between sm:gap-3">
                       <span className="text-xs font-medium text-neutral-500">{formatDate(order.scheduled_date)}</span>
+                      <span className="text-[11px] font-medium text-neutral-400">{formatDateTime(order.created_at)}</span>
                       <span className="inline-flex h-9 min-w-0 items-center justify-center gap-2 rounded-md bg-white px-3 text-xs font-semibold text-apex shadow-sm ring-1 ring-line sm:w-auto">
                         <span className="truncate">{serviceAction(order)}</span>
                         <ChevronRight className="shrink-0" size={14} />
@@ -942,11 +951,12 @@ export default function ServicesPage() {
             <div className="hidden overflow-x-auto rounded-md border border-line md:block">
               <table className="w-full min-w-[960px] table-fixed border-collapse text-left text-sm">
                 <colgroup>
-                  <col className="w-[15%]" />
-                  <col className="w-[19%]" />
-                  <col className="w-[31%]" />
                   <col className="w-[14%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[28%]" />
                   <col className="w-[10%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[9%]" />
                   <col className="w-[11%]" />
                 </colgroup>
                 <thead className="bg-paper text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
@@ -955,6 +965,7 @@ export default function ServicesPage() {
                     <th>Cliente y ubicacion</th>
                     <th>Servicio</th>
                     <th>Agenda</th>
+                    <th className="text-center">Ingreso</th>
                     <th className="text-center">Soportes</th>
                     <th className="text-right">Accion</th>
                   </tr>
@@ -984,6 +995,9 @@ export default function ServicesPage() {
                         <p className="font-medium text-neutral-800">{formatDate(order.scheduled_date)}</p>
                         <p className="mt-1 text-xs text-neutral-500">{isOverdue(order) ? "Requiere atencion" : isToday(order.scheduled_date) ? "Programada para hoy" : "Agenda registrada"}</p>
                         <p className={`mt-1.5 inline-flex rounded-md border px-2 py-1 text-[11px] font-semibold ${slaInfo(order).tone}`}>{slaInfo(order).label} habiles</p>
+                      </td>
+                      <td className="text-center align-top">
+                        <p className="text-xs font-medium text-neutral-700">{formatDateTime(order.created_at)}</p>
                       </td>
                       <td className="text-center align-top">
                         <div className="inline-flex items-center gap-1.5 rounded-md bg-paper px-2 py-1.5 text-[11px] font-medium text-neutral-600">
