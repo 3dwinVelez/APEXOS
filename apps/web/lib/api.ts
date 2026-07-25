@@ -41,8 +41,17 @@ function clearApiReadCaches(scopePath = "") {
 }
 
 function writeCacheScope(path: string) {
-  const serviceOrderWrite = path.split("?")[0].match(/^\/api\/v1\/services\/orders\/([^/]+)/);
+  const pathname = path.split("?")[0];
+  const serviceOrderWrite = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)/);
   if (serviceOrderWrite) return `/api/v1/services/orders/${serviceOrderWrite[1]}`;
+  const adminUserWrite = pathname.match(/^\/api\/v1\/admin\/users?\b/);
+  if (adminUserWrite) return "/api/v1/admin/users";
+  const adminRoleWrite = pathname.match(/^\/api\/v1\/admin\/roles?\b/);
+  if (adminRoleWrite) return "/api/v1/admin/roles";
+  const hrPunchWrite = pathname === "/api/v1/hr/time-punches" || pathname === "/api/v1/hr/gps/ping";
+  if (hrPunchWrite) return "/api/v1/hr";
+  const transportWrite = pathname.startsWith("/api/v1/transport");
+  if (transportWrite) return "/api/v1/transport";
   return "";
 }
 
@@ -1288,7 +1297,7 @@ async function nextAdminUsersRequest<T>(init: RequestInit = {}, query = "") {
     const body = await response.json().catch(() => ({ message: response.statusText }));
     throw new Error(body.message || "No fue posible gestionar usuarios.");
   }
-  if (method !== "GET") clearApiReadCaches();
+  if (method !== "GET") clearApiReadCaches("/api/admin/users");
   return response.json() as Promise<T>;
 }
 
@@ -1308,7 +1317,7 @@ async function nextAdminRolesRequest<T>(init: RequestInit = {}) {
     const body = await response.json().catch(() => ({ message: response.statusText }));
     throw new Error(body.message || "No fue posible gestionar roles.");
   }
-  if (method !== "GET") clearApiReadCaches();
+  if (method !== "GET") clearApiReadCaches("/api/admin/roles");
   return response.json() as Promise<T>;
 }
 
@@ -1329,7 +1338,11 @@ async function nextServiceOrderRequest<T>(orderId: string, init: RequestInit = {
     if (response.status === 404) return null;
     throw new Error(body.message || "No fue posible actualizar la orden de servicio.");
   }
-  if (method !== "GET") clearApiReadCaches();
+  if (method !== "GET") {
+    const scope = writeCacheScope(`/api/v1/services/orders/${orderId}`);
+    if (scope) clearApiReadCaches(scope);
+    else clearApiReadCaches("/api/v1/services/orders");
+  }
   return response.json() as Promise<T>;
 }
 

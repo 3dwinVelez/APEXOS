@@ -217,6 +217,8 @@ async function build() {
       const simpleBudgetMs = Number(process.env.PERFORMANCE_SIMPLE_BUDGET_MS || 300);
       const criticalMs = Number(process.env.PERFORMANCE_CRITICAL_MS || 2000);
       const severity = durationMs >= criticalMs ? "critical" : durationMs >= simpleBudgetMs ? "warning" : "ok";
+      const interactionId = context?.interactionId || request.id;
+      reply.header("x-interaction-id", interactionId);
       fastify.log[severity === "critical" ? "error" : severity === "warning" ? "warn" : "info"]({
         event: "api_performance",
         endpoint: request.routeOptions?.url || request.url.split("?")[0],
@@ -230,7 +232,10 @@ async function build() {
         slow_query_count: context?.slowQueries?.length || 0,
         slow_queries: (context?.slowQueries || []).slice(0, 10),
         phases_ms: context?.phases || {},
+        serialization_ms: Number((context?.serializationMs || 0).toFixed(2)),
+        db_pool_wait_ms: Number((context?.dbPoolWaitMs || 0).toFixed(2)),
         severity,
+        interaction_id: interactionId,
         user_ref: request.user?.id ? require("node:crypto").createHash("sha256").update(String(request.user.id)).digest("hex").slice(0, 16) : null,
         company_id: request.user?.tenant_id || null
       });

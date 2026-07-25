@@ -35,6 +35,11 @@ function orderListInclude() {
   };
 }
 
+/** Include mínimo para transiciones de estado — solo lo que cambia */
+function orderTransitionInclude() {
+  return { reference: { select: { id: true, code: true, name: true } }, incidents: { select: { id: true } }, photos: { select: { id: true, type: true } } };
+}
+
 function photoLabel(type) {
   const labels = {
     fachada: "Fachada",
@@ -1075,7 +1080,7 @@ async function startOrder(tenantId, user, id, input = {}) {
         start_accuracy_meters: input.accuracy_meters
       }
     },
-    include: orderInclude()
+    select: { id: true, status: true, started_at: true, number: true, reference: { select: { id: true, code: true, name: true } } }
     });
   });
 }
@@ -1109,7 +1114,7 @@ async function moveToInspection(tenantId, user, id, input = {}) {
           }
         }
       },
-      include: orderInclude()
+      select: { id: true, status: true, metadata: { select: { inspection: true } } }
     });
   });
 }
@@ -1130,7 +1135,7 @@ async function moveToExecution(tenantId, user, id) {
           }
         }
       },
-      include: orderInclude()
+      select: { id: true, status: true }
     });
   });
 }
@@ -1152,7 +1157,7 @@ async function closeOrder(tenantId, user, id, input = {}) {
         duration_minutes: duration,
         metadata: { ...(order.metadata || {}), close_accuracy_meters: input.accuracy_meters, ...(input.metadata || {}) }
       },
-      include: orderInclude()
+      select: { id: true, status: true, closed_at: true, duration_minutes: true, number: true }
     });
   });
 }
@@ -1185,7 +1190,7 @@ async function closeNotExecuted(tenantId, user, id, input = {}) {
         no_execution_reason: reason,
         metadata: { ...(order.metadata || {}), close_accuracy_meters: input.accuracy_meters, ...(input.metadata || {}) }
       },
-      include: orderInclude()
+      select: { id: true, status: true, closed_at: true, number: true }
     });
   });
 }
