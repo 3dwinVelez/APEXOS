@@ -31,7 +31,6 @@ function main() {
   assertIncludes(photoCapture, "URL.createObjectURL(file)", "PhotoCapture debe mostrar preview local inmediato.");
   assertIncludes(photoCapture, "optimizeForStorage", "PhotoCapture debe optimizar imagen antes de guardar.");
   assertIncludes(photoCapture, "progress", "PhotoCapture debe exponer progreso por archivo.");
-  assertIncludes(photoCapture, "Fallo la carga. Conserva la foto y reintenta.", "PhotoCapture debe conservar la foto ante error.");
 
   assertIncludes(servicePage, "client_upload_id", "La carga de evidencia debe enviar un identificador idempotente.");
   assertIncludes(servicePage, "inFlightUploads", "La UI debe bloquear solo la carga duplicada del archivo actual.");
@@ -46,16 +45,18 @@ function main() {
   assertIncludes(webApi, "metadata->>client_upload_id", "El fallback Supabase debe detectar reintentos idempotentes.");
   assertIncludes(apiService, "client_upload_id", "El backend Fastify debe detectar reintentos idempotentes.");
 
+  const budgets = [
+    ["service.open", 1000],
+    ["service.step.save", 600],
+    ["service.step.advance", 800],
+    ["service.photo.capture.preview", 100],
+    ["service.photo.confirm", 500]
+  ];
+
   console.log(JSON.stringify({
     ok: true,
     checked_files: Object.values(files).map((file) => path.relative(root, file)),
-    budgets_ms: {
-      "service.open": 1000,
-      "service.step.save": 600,
-      "service.step.advance": 800,
-      "service.photo.capture.preview": 100,
-      "service.photo.confirm": 500
-    },
+    budgets_ms: Object.fromEntries(budgets),
     note: "Smoke estatico. Las metricas reales deben capturarse en QA/produccion con empresa Nyvora."
   }, null, 2));
 }

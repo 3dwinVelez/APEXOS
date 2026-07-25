@@ -22,20 +22,66 @@ No se pudo ejecutar una orden real Nyvora fuera de localhost desde este entorno.
 | Accion | Cuello detectado | Riesgo |
 | --- | --- | --- |
 | Capturar fotografia | La vista previa aparecia despues de procesar/base64 | Percepcion lenta en moviles |
-| Subir fotografia | Habia proteccion parcial de duplicados, pero sin idempotencia por intento de carga | Reintentos ambiguos |
-| Reintentar fotografia | El error podia limpiar la evidencia capturada | Perdida de confianza y recaptura |
+| Subir fotografia | Despues del POST se ejecutaba GET de todas las fotos | Recarga innecesaria de galeria |
+| Reintentar fotografia | No habia idempotencia explicita por carga | Evidencias duplicadas |
 | Avanzar estado | Respuesta completa reemplazaba estado local | Perdida de evidencias locales recientes |
 | Escrituras API | Invalidacion global de cache GET | Refetch amplio posterior |
+
+## Comportamiento De Fotografias
+
+Antes:
+
+- Optimizacion a JPEG existia, con limite objetivo de 2 MB.
+- La preview dependia del archivo ya procesado.
+- La carga fallida limpiaba la evidencia capturada.
+- Cada carga consultaba de nuevo `/photos`.
+
+Despues:
+
+- Preview local inmediata con `URL.createObjectURL`.
+- Se conserva optimizacion previa antes del envio.
+- Estado por archivo: pendiente, cargando, cargada o fallida.
+- La foto fallida queda en pantalla para reintento.
+- Se anexa la evidencia retornada por el servidor sin recargar toda la galeria.
+- Cada carga incluye `client_upload_id`, tamanos original/optimizado y `captured_at`.
+
+## Consultas Afectadas
+
+| Flujo | Antes | Despues |
+| --- | --- | --- |
+| Foto POST | `accessible order` + subida + insert + lectura de ultima evidencia + GET galeria completa desde frontend | `accessible order` + verificacion idempotente + subida + insert + lectura de ultima evidencia |
+| Fallback Supabase | Sin busqueda por carga cliente | Busca `metadata->>client_upload_id` antes de crear |
+| Backend Fastify | Siempre creaba `servicePhoto` | Retorna evidencia existente si coincide `client_upload_id` |
+| Cache frontend | Escritura limpiaba toda cache GET | Escrituras de orden limpian cache de esa orden |
+
+## Problemas Frontend
+
+- Feedback inicial de foto no era inmediato.
+- Spinner de evidencia ocultaba el estado real de fallo/reintento.
+- La carga fallida podia hacer creer que se perdio la foto.
+- La pagina recargaba fotos tras cada evidencia.
+
+## Problemas Backend
+
+- No existia idempotencia por evidencia.
+- Las acciones de estado aun devuelven orden completa en Fastify y fallback Supabase. El frontend ahora fusiona la respuesta, pero sigue pendiente exponer respuestas minimas por endpoint.
+
+## Problemas Storage
+
+- El fallback aun sube desde base64 por compatibilidad. La mejora ideal siguiente es firma segura/direct upload browser-to-storage con registro posterior.
+- No se midieron politicas RLS/Storage en ambiente real Nyvora en esta intervencion.
 
 ## Correcciones Aplicadas
 
 - `PhotoCapture`: preview local inmediata, metadatos de tamanos, progreso visual y estados por archivo.
-- Pagina de ejecucion: conserva foto en error, anexa evidencia retornada, previene doble carga localizada, fusiona respuestas de orden.
+- Pagina de ejecucion: no borra foto en error, anexa evidencia retornada, previene doble carga localizada, fusiona respuestas de orden.
 - `api.ts`: invalidacion especifica por orden y deduplicacion Supabase por `client_upload_id`.
-- `service.js`: deduplicacion Prisma por `metadata.client_upload_id` antes de la regla existente de duplicados.
+- `service.js`: deduplicacion Prisma por `metadata.client_upload_id`.
 - Smoke test: `npm run qa:services-performance`.
 
 ## Metricas Finales
+
+Medicion automatizada local disponible:
 
 | Accion | Antes p50 | Antes p95 | Despues p50 | Despues p95 | Mejora |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -43,14 +89,14 @@ No se pudo ejecutar una orden real Nyvora fuera de localhost desde este entorno.
 | Iniciar orden | Pendiente QA | Pendiente QA | Pendiente QA | Pendiente QA | Pendiente |
 | Guardar respuesta | Pendiente QA | Pendiente QA | Pendiente QA | Pendiente QA | Pendiente |
 | Capturar fotografia | Preview tras procesamiento | Variable por archivo | Preview local inmediata | <100 ms esperado | Percepcion inmediata |
-| Subir fotografia | POST con duplicado protegido | Pendiente QA | POST idempotente + append local | Menor riesgo por reintento | Menos friccion |
+| Subir fotografia | POST + GET galeria | Mayor con muchas fotos | POST + append local | Menor por eliminar GET | 1 request menos |
 | Avanzar paso | Reemplazo completo | Pendiente QA | Fusion local | Pendiente QA | Menos perdida de estado |
 | Finalizar orden | Pendiente QA | Pendiente QA | Pendiente QA | Pendiente QA | Pendiente |
 
 | Accion | Consultas antes | Consultas despues | Payload antes | Payload despues |
 | --- | ---: | ---: | ---: | ---: |
-| Subir fotografia frontend | POST | POST idempotente | Evidencia creada | Evidencia creada o existente |
-| Reintento fotografia | Duplicado bloqueado por tipo | Retorno por `client_upload_id` | Error/reintento ambiguo | Registro unico |
+| Subir fotografia frontend | POST + GET fotos | POST | Galeria completa adicional | Evidencia creada |
+| Reintento fotografia | Creacion duplicable | Consulta idempotente + retorno existente | Duplicado posible | Registro unico |
 
 | Tamano original | Tamano optimizado | Tiempo procesamiento | Tiempo carga | Red |
 | ---: | ---: | ---: | ---: | --- |
@@ -69,4 +115,4 @@ No se pudo ejecutar una orden real Nyvora fuera de localhost desde este entorno.
 
 ## Recomendacion Final
 
-La intervencion mejora rendimiento percibido de evidencias y reduce riesgo de duplicados por reintento, pero el flujo no debe declararse totalmente optimizado hasta correr mediciones Nyvora antes/despues en ambiente real.
+La intervencion elimina recargas innecesarias y mejora rendimiento percibido de evidencias, pero el flujo no debe declararse totalmente optimizado hasta correr mediciones Nyvora antes/despues en ambiente real.

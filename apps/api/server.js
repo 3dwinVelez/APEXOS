@@ -26,7 +26,9 @@ const MODULES = [
   "invoicing",
   "hr",
   "services",
-  "transport"
+  "transport",
+  "sales-invoice",
+  "accounts-receivable"
 ];
 const DEFAULT_ALLOWED_ORIGINS = ["http://localhost:3001", "http://127.0.0.1:3001"];
 
@@ -251,6 +253,8 @@ async function build() {
   registerRoutes("hr", require("./src/modules/hr/routes"), { prefix: "/api/v1" });
   registerRoutes("services", require("./src/modules/services/routes"), { prefix: "/api/v1" });
   registerRoutes("transport", require("./src/modules/transport/routes"), { prefix: "/api/v1" });
+  registerRoutes("sales-invoice", require("./src/modules/sales-invoice/routes"), { prefix: "/api/v1" });
+  registerRoutes("accounts-receivable", require("./src/modules/accounts-receivable/routes"), { prefix: "/api/v1" });
   bootLog("Registered API modules");
 
   bootLog("Registering brain websocket route");

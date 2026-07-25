@@ -28,6 +28,26 @@ Fecha: 2026-07-23
 - Toda funcionalidad de campo debe probarse en red movil estable y lenta.
 - Toda regresion de duplicados, recarga completa o bloqueo global debe bloquear el release.
 
+## Clasificacion De Operaciones
+
+| Operacion | Tipo | Regla |
+| --- | --- | --- |
+| Validacion local de respuesta | Bloqueante obligatoria | Debe ocurrir antes de enviar |
+| Guardado de texto/checklist | Optimista controlada | Reflejar localmente y confirmar servidor |
+| Cambio de paso | Bloqueante minima | Validar integridad, luego navegar |
+| Subida de foto | No bloqueante | Preview y cola local, progreso por archivo |
+| Auditoria secundaria | Diferida | No debe bloquear transicion |
+| Historial completo | Diferida/lazy | No cargar en cada accion |
+| Finalizar orden | Bloqueante obligatoria | Requiere evidencias, encuesta/firma y permisos |
+
+## Evidencias
+
+- `client_upload_id` es obligatorio para cada carga.
+- En error de red, la foto capturada debe permanecer visible.
+- El usuario debe poder reintentar sin duplicar registros.
+- La galeria no debe recargarse completa tras cada upload.
+- Las miniaturas deben cargarse bajo demanda cuando la lista crezca.
+
 ## Release Gate
 
 Antes de liberar Servicios:

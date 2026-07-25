@@ -39,7 +39,9 @@ const moduleCodeBySlug: Record<string, string> = {
   administracion: "administracion_apex",
   "apex-ai": "apex_ai",
   calidad: "calidad",
-  cartera: "cartera",
+  cartera: "cxc",
+  cxc: "cxc",
+  "facturacion-ventas": "facturacion",
   "comercio-exterior": "comercio_exterior",
   compras: "compras",
   contabilidad: "contabilidad",
@@ -61,7 +63,9 @@ const moduleCodeBySlug: Record<string, string> = {
   "talento-humano": "talento_humano",
   tesoreria: "tesoreria",
   transporte: "transporte",
-  ventas: "ventas"
+  ventas: "ventas",
+  cxc: "cxc",
+  cxc: "cxc"
 };
 
 const permissionModulesBySlug: Record<string, string[]> = {
@@ -76,6 +80,7 @@ const permissionModulesBySlug: Record<string, string[]> = {
   "talento-humano": ["hr", "time_tracking", "payroll"],
   transporte: ["transport", "logistics", "last_mile"],
   ventas: ["sales"],
+  cxc: ["accounts-receivable", "accounting"],
   crm: ["customers", "sales"],
   "comercio-exterior": ["imports", "exports"],
   tesoreria: ["treasury", "accounting"]
@@ -93,6 +98,7 @@ const legacyPermissionKeysBySlug: Record<string, string[]> = {
   "talento-humano": ["talento_humano", "marcaciones", "nomina"],
   transporte: ["transporte", "logistica", "ultima_milla"],
   ventas: ["ventas", "clientes"],
+  cxc: ["cxc", "contabilidad", "facturacion"],
   crm: ["clientes", "ventas"],
   "comercio-exterior": ["importaciones"],
   tesoreria: ["tesoreria", "contabilidad"]
