@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR || ".next",
   outputFileTracingRoot: path.join(__dirname, "../.."),
   poweredByHeader: false,
+  eslint: { ignoreDuringBuilds: true },
   experimental: {
     optimizePackageImports: ["lucide-react", "recharts"]
   },

@@ -16,7 +16,6 @@ import {
   Gauge,
   Landmark,
   PackageCheck,
-  Percent,
   ReceiptText,
   RefreshCcw,
   Route,
