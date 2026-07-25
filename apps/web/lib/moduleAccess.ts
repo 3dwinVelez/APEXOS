@@ -64,8 +64,6 @@ const moduleCodeBySlug: Record<string, string> = {
   tesoreria: "tesoreria",
   transporte: "transporte",
   ventas: "ventas",
-  cxc: "cxc",
-  cxc: "cxc"
 };
 
 const permissionModulesBySlug: Record<string, string[]> = {
