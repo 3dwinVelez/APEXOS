@@ -124,6 +124,7 @@ model Party {
   updated_at   DateTime      @updatedAt
   transactions Transaction[]
   contacts     Contact[]
+  salesInvoices SalesInvoice[]
 
   @@index([tenant_id, type])
   @@index([tenant_id, type, active, name])
@@ -174,6 +175,7 @@ model Item {
   bom_lines     BOMLine[]
   movements     Movement[]
   costs         ProductCost[]
+  salesInvoiceLines SalesInvoiceLine[]
 
   @@unique([tenant_id, code])
   @@index([tenant_id, type])
@@ -273,6 +275,8 @@ model Place {
   active           Boolean    @default(true)
   metadata         Json       @default("{}")
   locations        Location[]
+  salesInvoices SalesInvoice[]
+  salesInvoiceLines SalesInvoiceLine[]
 
   @@unique([tenant_id, code])
   @@index([tenant_id, type])
@@ -1497,16 +1501,17 @@ model ServiceIncident {
 }
 
 model ServicePhoto {
-  id          Int          @id @default(autoincrement())
-  tenant_id   String
-  order_id    Int
-  order       ServiceOrder @relation(fields: [order_id], references: [id], onDelete: Cascade)
-  type        String
-  file_url    String?
-  base64_data String?
-  size_bytes  Int?
-  metadata    Json         @default("{}")
-  created_at  DateTime     @default(now())
+  id           Int          @id @default(autoincrement())
+  tenant_id    String
+  order_id     Int
+  order        ServiceOrder @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  type         String
+  file_url     String?
+  base64_data  String?
+  storage_path String?
+  size_bytes   Int?
+  metadata     Json         @default("{}")
+  created_at   DateTime     @default(now())
 
   @@index([tenant_id, order_id])
   @@index([tenant_id, type])
@@ -1533,6 +1538,176 @@ model Payroll {
   @@unique([employee_id, period])
   @@index([tenant_id, status])
   @@index([tenant_id, created_at])
+}
+
+// === FACTURA DE VENTA ===
+model SalesInvoice {
+  id                Int                @id @default(autoincrement())
+  tenant_id         String
+  number            String
+  customer_id       Int
+  customer          Party              @relation(fields: [customer_id], references: [id])
+  place_id          Int?
+  place             Place?             @relation(fields: [place_id], references: [id])
+  date              DateTime           @default(now())
+  due_date          DateTime
+  due_term          String             @default("AP30")
+  subtotal          Float              @default(0)
+  tax_total         Float              @default(0)
+  discount_total    Float              @default(0)
+  retention_total   Float              @default(0)
+  total             Float              @default(0)
+  balance           Float              @default(0)
+  status            String             @default("draft")
+  header_text       String             @default("")
+  society_code      String             @default("")
+  branch_code       String             @default("")
+  cost_center_code  String             @default("")
+  notes             String?
+  created_by        Int?
+  created_at        DateTime           @default(now())
+  updated_at        DateTime           @updatedAt
+  lines             SalesInvoiceLine[]
+  cxc               CxcCabdoc?
+
+  @@map("sales_invoices")
+  @@unique([tenant_id, number])
+  @@index([tenant_id, customer_id])
+  @@index([tenant_id, date])
+  @@index([tenant_id, status])
+}
+
+model SalesInvoiceLine {
+  id                      Int          @id @default(autoincrement())
+  tenant_id               String
+  invoice_id              Int
+  invoice                 SalesInvoice @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
+  line_no                 Int
+  item_id                 Int?
+  item                    Item?        @relation(fields: [item_id], references: [id])
+  description             String
+  qty                     Float
+  unit                    String       @default("UND")
+  unit_price              Float
+  discount                Float        @default(0)
+  subtotal                Float
+  tax_rate                Float        @default(0)
+  tax_amount              Float        @default(0)
+  total                   Float
+  place_id                Int?
+  place                   Place?       @relation(fields: [place_id], references: [id])
+  customer_invoice_number String?
+  cost_value              Float        @default(0)
+  created_at              DateTime     @default(now())
+
+  @@map("sales_invoice_lines")
+  @@index([tenant_id, invoice_id])
+  @@index([tenant_id, item_id])
+}
+
+// === CUENTAS POR COBRAR ===
+model CxcCabdoc {
+  id                      Int         @id @default(autoincrement())
+  tenant_id               String
+  document_kind           String
+  document_class          String
+  number                  String
+  customer_reference      String      @default("")
+  posting_date            DateTime
+  due_term                String
+  due_date                DateTime
+  header_text             String
+  customer_id             Int
+  customer_tax_id         String?
+  society_code            String
+  associated_account_id   Int
+  associated_account_code String
+  sales_invoice_id        Int? @unique
+  salesInvoice            SalesInvoice? @relation(fields: [sales_invoice_id], references: [id])
+  subtotal                Float       @default(0)
+  tax_total               Float       @default(0)
+  total                   Float       @default(0)
+  retention_total         Float       @default(0)
+  applied_total           Float       @default(0)
+  balance                 Float       @default(0)
+  status                  String      @default("open")
+  accounting_document_id  Int?
+  created_by              Int?
+  created_at              DateTime    @default(now())
+  updated_at              DateTime    @updatedAt
+  lines                   CxcCuedoc[]
+  payments                CxcPayment[]
+
+  @@map("cxc_cabdoc")
+  @@unique([tenant_id, number])
+  @@index([tenant_id, customer_id])
+  @@index([tenant_id, customer_id, balance])
+  @@index([tenant_id, posting_date])
+  @@index([tenant_id, due_date])
+  @@index([tenant_id, document_class])
+}
+
+model CxcCuedoc {
+  id                Int       @id @default(autoincrement())
+  tenant_id         String
+  cabdoc_id         Int
+  cabdoc            CxcCabdoc @relation(fields: [cabdoc_id], references: [id], onDelete: Cascade)
+  line_no           Int
+  account_id        Int
+  account_code      String
+  branch_code       String
+  cost_center_code  String
+  movement          String
+  description       String
+  amount            Float     @default(0)
+  total             Float     @default(0)
+  retention_code    String?
+  retention_percent Float     @default(0)
+  retention_amount  Float     @default(0)
+  created_at        DateTime  @default(now())
+
+  @@map("cxc_cuedoc")
+  @@index([tenant_id, cabdoc_id])
+  @@index([tenant_id, account_code])
+}
+
+model CxcPayment {
+  id            Int       @id @default(autoincrement())
+  tenant_id     String
+  cabdoc_id     Int?
+  cabdoc        CxcCabdoc? @relation(fields: [cabdoc_id], references: [id])
+  customer_id   Int?
+  type          String
+  method        String
+  amount        Float
+  date          DateTime  @default(now())
+  reference     String?
+  account_id    Int?
+  notes         String?
+  created_by    Int?
+  created_at    DateTime  @default(now())
+
+  @@map("cxc_payments")
+  @@index([tenant_id, cabdoc_id])
+  @@index([tenant_id, customer_id, date])
+}
+
+// === MAESTRO DE RETENCIONES ===
+model RetentionMaster {
+  id           Int      @id @default(autoincrement())
+  tenant_id    String
+  code         String
+  description  String
+  account_code String
+  percent      Float
+  concept      String?
+  active       Boolean  @default(true)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@map("retention_masters")
+  @@unique([tenant_id, code])
+  @@index([tenant_id, active])
 }
 
 model OKR {

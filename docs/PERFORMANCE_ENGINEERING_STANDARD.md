@@ -1,76 +1,48 @@
 # Performance Engineering Standard
 
+Fecha: 2026-07-23
+
 ## Principios
 
-- Medir antes y después; ninguna afirmación sin reporte reproducible.
-- Ningún listado ilimitado, N+1, consulta dentro de bucles o filtro masivo en Node/React.
-- Seleccionar sólo columnas requeridas; relaciones profundas necesitan justificación.
-- Filtros, búsqueda y ordenamiento se resuelven en base de datos cuando el volumen puede crecer.
-- Toda consulta multiempresa comienza por empresa/tenant y considera un índice compuesto.
-- Seguridad, RLS, auditoría y consistencia nunca se sacrifican por latencia.
-- Datos secundarios no bloquean la pantalla; toda espera visible tiene skeleton, progreso o error.
+- Medir antes y despues cuando exista ambiente representativo.
+- Optimizar rendimiento real y rendimiento percibido.
+- Evitar invalidaciones globales cuando exista una entidad afectada clara.
+- Mantener presupuestos por accion, no solo por pagina.
+- Bloquear releases con regresiones criticas de latencia, duplicados o payload.
 
-## Presupuestos
+## Operaciones Moviles Y Evidencias
 
-| Clase | p95 |
-| --- | ---: |
-| Interacción local | < 100 ms |
-| Endpoint simple | < 300 ms |
-| Endpoint mediano | < 600 ms |
-| Operación compleja | < 1.000 ms |
-| Crítica | >= 2.000 ms |
+Esta seccion es obligatoria para modulos usados en campo: Servicios, Transporte, Talento Humano y cualquier flujo con fotos, firmas o geolocalizacion.
 
-## Frontend
-
-- Deduplicar GET, definir `staleTime`, invalidar sólo dominios afectados y cancelar búsquedas anteriores.
-- Paginar en servidor; virtualizar sobre 200 filas visibles.
-- Catálogos de baja variación se reutilizan y cargan bajo demanda.
-- Imágenes usan miniatura/lazy loading; signed URLs sólo en detalle.
-- Hooks deben tener dependencias estables y ser idempotentes ante Strict Mode.
-- Medir bundle y solicitudes por pantalla antes del merge.
-
-## Backend
-
-- DTO específico, límite máximo y cursor para conjuntos crecientes.
-- Auth/tenant/permisos se instrumentan por fase; no se sincronizan datos sin cambios.
-- Consultas independientes pueden ejecutarse en paralelo con límites.
-- Timeouts obligatorios para Auth, Storage y servicios externos.
-- Logs incluyen request ID, módulo, operación, empresa, referencia de usuario anonimizada, estado, bytes, consultas y severidad.
-- Caché requiere clave, TTL, invalidación, fallback y análisis de obsolescencia.
-
-## Prisma y PostgreSQL
-
-- Un `PrismaClient` por proceso. Preferir `select`; `include` sólo en detalle.
-- Índices documentan consulta, escritura adicional y reversión.
-- Toda FK y combinación frecuente `tenant/status/created_at` debe revisarse.
-- Offset sólo para páginas acotadas; usar cursor/keyset en historiales extensos.
-- `EXPLAIN (ANALYZE, BUFFERS)` únicamente en QA o consulta segura y representativa.
-- Policies RLS evitan funciones costosas por fila y conservan pruebas cross-tenant.
-
-## Checklist y Definition of Done
-
-- [ ] Pantalla: solicitudes, bundle, skeleton, error, paginación.
-- [ ] Endpoint: DTO, límite, timeout, Server-Timing, tamaño.
-- [ ] Tabla/migración: FK, índices, RLS, rollback, costo de escritura.
-- [ ] Dashboard/listado/filtro: volumen, p50/p95, consulta en DB.
-- [ ] Integración/archivos: latencia, lazy load, tamaño, fallo controlado.
-- [ ] Pruebas: funcionales, multiempresa, carga fría/caliente y regresión.
-
-No está terminado si hay duplicados, N+1, listado ilimitado, ausencia de feedback, presupuesto excedido sin justificación o falta evidencia antes/después.
-
-## Operaciones Móviles Y Evidencias
-
-Esta sección es obligatoria para módulos usados en campo: Servicios, Transporte, Talento Humano y cualquier flujo con fotos, firmas o geolocalización.
+### Reglas
 
 - La UI debe responder en menos de 100 ms al toque.
 - Las fotos deben tener preview local inmediata.
-- Las imágenes deben comprimirse/redimensionarse antes de subir y conservar valor probatorio.
+- Las imagenes deben comprimirse/redimensionarse antes de subir.
 - Cada evidencia debe tener estado independiente: pendiente, cargando, cargada, fallida.
 - Una subida no debe congelar la pantalla ni bloquear pasos no relacionados.
 - Toda evidencia debe llevar identificador idempotente.
-- La aplicación debe conservar datos capturados ante error de red.
+- La aplicacion debe conservar datos capturados ante error de red.
 - Los reintentos no deben crear duplicados.
-- Las acciones deben invalidar caché por entidad afectada.
-- Los endpoints operativos deben retornar sólo lo necesario.
+- Las acciones deben invalidar cache por entidad afectada.
+- Los endpoints operativos deben retornar solo lo necesario.
 
-El release se bloquea si se recarga toda una entidad grande después de una acción pequeña, se pierde una foto capturada por error de red, se permite doble envío normal o una acción común mantiene la UI congelada durante segundos.
+### Pruebas Minimas
+
+- Escritorio y viewport movil.
+- Wi-Fi estable.
+- Red movil lenta o simulada.
+- Carga fria y repetida.
+- Multiples archivos.
+- Error de red y reintento.
+- Validacion multiempresa/RLS cuando aplique.
+
+### Criterio De Bloqueo
+
+El release se bloquea si:
+
+- se recarga toda una entidad grande despues de una accion pequena;
+- se pierde una foto capturada por error de red;
+- se permite doble envio normal;
+- una accion comun mantiene la UI congelada durante segundos;
+- aumentan de forma no justificada consultas, payload o p95.

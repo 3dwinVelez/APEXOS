@@ -7,7 +7,9 @@ const ITEMS = [
   { href: "/dashboard/ventas", label: "Resumen" },
   { href: "/dashboard/ventas/clientes", label: "Clientes" },
   { href: "/dashboard/ventas/ordenes/nueva", label: "Nueva OV" },
-  { href: "/dashboard/ventas/ordenes", label: "Órdenes" }
+  { href: "/dashboard/ventas/ordenes", label: "Órdenes" },
+  { href: "/dashboard/ventas/facturas", label: "Facturas" },
+  { href: "/dashboard/ventas/reportes", label: "Reportes" }
 ];
 
 export function VentasNav() {

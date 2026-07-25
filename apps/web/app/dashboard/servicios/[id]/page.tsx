@@ -4,6 +4,7 @@ import { PhotoCapture, type CapturedFile } from "@/components/operations/PhotoCa
 import { SignatureCapture } from "@/components/operations/SignatureCapture";
 import { api } from "@/lib/api";
 import { buildServiceReportPdfBlob } from "@/lib/serviceReportPdf";
+import { uploadServiceImageData, getServiceImageUrl } from "@/lib/supabaseStorage";
 import { ArrowLeft, BookOpen, Camera, CheckCircle2, Circle, Download, FileSignature, PackageSearch, Play, Star, Wrench, X, XCircle, ZoomIn } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -15,7 +16,7 @@ type ReferenceManual = { title: string; file_name?: string; mime_type?: string; 
 type ServiceReference = { code: string; name: string; parts: ServiceReferencePart[]; manuals?: ReferenceManual[]; metadata?: { manuals?: ReferenceManual[] } };
 type InspectionStatus = "ok" | "averiada" | "faltante";
 type InspectionItem = { part_id: number | string; name: string; quantity: number; unit: string; status: InspectionStatus; comment: string; action: string; supplier_name?: string };
-type ServicePhoto = { id: number | string; type: string; file_url?: string; base64_data?: string; metadata?: { mime_type?: string; file_name?: string; part_id?: number | string; part_name?: string; [key: string]: unknown }; created_at?: string };
+type ServicePhoto = { id: number | string; type: string; file_url?: string; base64_data?: string; storage_path?: string; metadata?: { mime_type?: string; file_name?: string; part_id?: number | string; part_name?: string; [key: string]: unknown }; created_at?: string };
 type SatisfactionQuestion = { id: string; label: string; active?: boolean };
 type ServiceOrder = {
   id: number | string;
@@ -101,7 +102,18 @@ function workflowStep(status: string) {
   return 3;
 }
 
+const signedUrlCache = new Map<string, string>();
+
 function photoSrc(photo: ServicePhoto) {
+  if (photo.storage_path) {
+    const cached = signedUrlCache.get(photo.storage_path);
+    if (cached) return cached;
+    // Resolver asincrónicamente sin bloqueAR
+    getServiceImageUrl(photo.storage_path, 3600)
+      .then((url) => { if (url) signedUrlCache.set(photo.storage_path, url); })
+      .catch(() => undefined);
+    // Fallback: si no hay signed URL cacheada, usar base64 o file_url
+  }
   if (photo.base64_data) return photo.base64_data.startsWith("data:") ? photo.base64_data : `data:${photo.metadata?.mime_type || "image/jpeg"};base64,${photo.base64_data}`;
   return photo.file_url || "";
 }
@@ -212,12 +224,29 @@ export default function ServiceOperationPage() {
     setUploadStatus((current) => ({ ...current, [captureKey]: "uploading" }));
     setUploadProgress((current) => ({ ...current, [captureKey]: 20 }));
     try {
+      const companyId = typeof window !== "undefined" ? localStorage.getItem("apexos_company_id") || "" : "";
+      const serviceId = String(params.id);
+      let storagePath = "";
+      if (file.base64 && companyId) {
+        try {
+          const uploaded = await uploadServiceImageData(companyId, serviceId, {
+            base64: file.base64,
+            name: file.name,
+            type: file.type
+          });
+          storagePath = uploaded.storagePath;
+          setUploadProgress((current) => ({ ...current, [captureKey]: 50 }));
+        } catch (storageError) {
+          // Si falla Storage, continuamos con base64 como fallback
+          console.warn("Storage upload failed, falling back to base64:", storageError);
+        }
+      }
       const clientUploadId = `${params.id}:${captureKey}:${file.name}:${file.size}:${file.processedAt || Date.now()}`;
       const savedPhoto = await api<ServicePhoto>(`/api/v1/services/orders/${params.id}/photos`, {
         method: "POST",
         body: JSON.stringify({
           type,
-          base64_data: file.base64,
+          ...(storagePath ? { storage_path: storagePath } : { base64_data: file.base64 }),
           size_bytes: file.size,
           mime_type: file.type,
           file_name: file.name,

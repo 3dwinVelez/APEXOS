@@ -1,5 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import Script from "next/script";
 import { PlatformAlerts } from "@/components/system/PlatformAlerts";
 import { SessionLifecycle } from "@/components/system/SessionLifecycle";
 
@@ -12,7 +13,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem("apex_theme")||"system";var d=t==="dark"||(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);document.documentElement.dataset.theme=t;document.documentElement.dataset.role=(localStorage.getItem("role_name")||"").toLowerCase()}catch(e){}` }} />
+        <Script src="/scripts/theme-init.js" strategy="beforeInteractive" />
       </head>
       <body>
         <SessionLifecycle />

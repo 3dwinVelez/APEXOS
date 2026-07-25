@@ -112,16 +112,18 @@ function splitByOrdinaryLimit(intervals, limitMinutes) {
 }
 
 const OPERATING_TIMEZONE = "America/Bogota";
+const TIME_PARTS_FORMATTER = new Intl.DateTimeFormat("en-CA", { timeZone: OPERATING_TIMEZONE, hour: "2-digit", minute: "2-digit", hour12: false });
+const DAY_PARTS_FORMATTER = new Intl.DateTimeFormat("en-CA", { timeZone: OPERATING_TIMEZONE, year: "numeric", month: "2-digit", day: "2-digit" });
 
 function classifyMinute(date, nature, params, holidays) {
   const nightStart = parseTimeMinutes(params.night_start || "21:00") ?? 1260;
   const nightEnd = parseTimeMinutes(params.night_end || "06:00") ?? 360;
-  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: OPERATING_TIMEZONE, hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(date);
+  const parts = TIME_PARTS_FORMATTER.formatToParts(date);
   const hour = Number(parts.find((p) => p.type === "hour")?.value || date.getHours());
   const minute = Number(parts.find((p) => p.type === "minute")?.value || date.getMinutes());
   const colombiaMinute = hour * 60 + minute;
   const isNight = colombiaMinute >= nightStart || colombiaMinute < nightEnd;
-  const dayParts = new Intl.DateTimeFormat("en-CA", { timeZone: OPERATING_TIMEZONE, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+  const dayParts = DAY_PARTS_FORMATTER.formatToParts(date);
   const key = [dayParts.find((p) => p.type === "year")?.value, dayParts.find((p) => p.type === "month")?.value, dayParts.find((p) => p.type === "day")?.value].join("-");
   const dayOfWeek = new Date(key + "T00:00:00-05:00").getDay();
   const isSpecial = dayOfWeek === 0 || holidays.has(key);
