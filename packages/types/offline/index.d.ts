@@ -87,6 +87,79 @@ export interface DeviceIdentity {
   capabilities: string[];
 }
 
+export interface OfflineBootstrapOrder {
+  serverId: string;
+  orderId: string;
+  orderNumber: string;
+  status: string;
+  assignedTechnicianId: string;
+  customerDisplayName: string;
+  serviceAddress: string;
+  scheduledAt: string | null;
+  minimumOperationalData: {
+    referenceDisplayName?: string;
+    serviceSummary?: string;
+    contactPhone?: string;
+  };
+  serverVersion: number;
+  serverUpdatedAt: string;
+}
+
+export interface OfflineBootstrapActivity {
+  serverId: string;
+  activityId: string;
+  orderId: string;
+  activityType: string;
+  title: string;
+  description: string;
+  status: string;
+  sequence: number;
+  required: boolean;
+  serverVersion: number;
+  serverUpdatedAt: string;
+}
+
+export interface OfflineBootstrapChecklist {
+  serverId: string;
+  checklistId: string;
+  orderId: string;
+  label: string;
+  sequence: number;
+  required: boolean;
+  value: string | boolean | number | null;
+  serverVersion: number;
+  serverUpdatedAt: string;
+}
+
+export interface OfflineBootstrapCatalog {
+  serverId: string;
+  catalogType: string;
+  code: string;
+  label: string;
+  serverVersion: number;
+  serverUpdatedAt: string;
+}
+
+export interface OfflineBootstrapResponse {
+  schemaVersion: 2;
+  snapshotId: string;
+  generatedAt: string;
+  expiresAt: string;
+  environmentId: string;
+  companyId: string;
+  userId: string;
+  serverCheckpoint: string;
+  orders: OfflineBootstrapOrder[];
+  activities: OfflineBootstrapActivity[];
+  checklists: OfflineBootstrapChecklist[];
+  catalogs: OfflineBootstrapCatalog[];
+  metadata: {
+    ttlSeconds: number;
+    hasMore: boolean;
+    versionStrategy: "READ_TIMESTAMP_REVISION";
+  };
+}
+
 export interface OfflineLocalMetadata {
   tenantId: string;
   userId: string;
@@ -109,6 +182,10 @@ export const SYNC_STATUSES: readonly SyncStatus[];
 export const OFFLINE_OPERATION_TYPES: readonly OfflineOperationType[];
 export const SYNC_OPERATION_RESULT_STATUSES: readonly SyncOperationResultStatus[];
 export const SYNC_ERROR_CATEGORIES: readonly SyncErrorCategory[];
+export const OFFLINE_BOOTSTRAP_SCHEMA_VERSION: 2;
 export function validateOfflineOperation(value: unknown): ContractValidationResult<OfflineOperation>;
 export function validateSyncOperationResult(value: unknown): ContractValidationResult<SyncOperationResult>;
+export function validateOfflineBootstrapResponse(
+  value: unknown
+): ContractValidationResult<OfflineBootstrapResponse>;
 export * from "./repositories";
