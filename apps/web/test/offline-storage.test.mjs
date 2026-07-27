@@ -3,10 +3,20 @@ import test, { afterEach } from "node:test";
 import assert from "node:assert/strict";
 import Dexie from "dexie";
 import { initializeOfflineReadStorage } from "../lib/offline/access.ts";
+import {
+  bootstrapToLocalSnapshot,
+  validateBootstrapForContext
+} from "../lib/offline/bootstrapClient.ts";
 import { contextDatabaseName } from "../lib/offline/context.ts";
 import { OFFLINE_SCHEMA_V1 } from "../lib/offline/database.ts";
 import { OfflineStorageError } from "../lib/offline/errors.ts";
 import { OfflineSnapshotHydrator } from "../lib/offline/hydrator.ts";
+import { OfflineTechnicianReadService } from "../lib/offline/readService.ts";
+import {
+  clearOfflineDataOnLogout,
+  readAuthorizedOfflineContext,
+  rememberOfflineContext
+} from "../lib/offline/session.ts";
 import {
   clearAllOfflineData,
   clearCurrentCompanyData,
@@ -93,6 +103,40 @@ async function hydratedAdapter(context = contextA, options = {}) {
   await adapter.open();
   await new OfflineSnapshotHydrator(adapter).hydrate(snapshot(context));
   return adapter;
+}
+
+function bootstrapResponse(context = contextA, overrides = {}) {
+  const local = snapshot(context);
+  return {
+    schemaVersion: 2,
+    snapshotId: "11111111-1111-4111-8111-111111111111",
+    generatedAt: local.generatedAt,
+    expiresAt: local.expiresAt,
+    environmentId: context.environmentId,
+    companyId: context.companyId,
+    userId: context.userId,
+    serverCheckpoint: "bootstrap:checkpoint",
+    orders: local.orders,
+    activities: local.activities,
+    checklists: local.checklists,
+    catalogs: local.catalogs,
+    metadata: {
+      ttlSeconds: 86400,
+      hasMore: false,
+      versionStrategy: "READ_TIMESTAMP_REVISION"
+    },
+    ...overrides
+  };
+}
+
+function capability(context = contextA) {
+  return {
+    technician: true,
+    environmentId: context.environmentId,
+    companyId: context.companyId,
+    userId: context.userId,
+    authorizationSource: "server"
+  };
 }
 
 afterEach(async () => {
@@ -415,4 +459,107 @@ test("contexto manipulado o IndexedDB fallido degrada al flujo conectado", async
     throw new Error("IndexedDB unavailable");
   });
   assert.deepEqual(unavailable, { mode: "connected", reason: "STORAGE_UNAVAILABLE" });
+});
+
+test("contrato bootstrap valido hidrata la base correcta y queda solo lectura", async () => {
+  const response = validateBootstrapForContext(
+    bootstrapResponse(),
+    capability(),
+    contextA,
+    Date.parse("2026-07-27T13:00:00.000Z")
+  );
+  const adapter = new DexieOfflineStorageAdapter(contextA, {
+    now: () => new Date("2026-07-27T13:00:00.000Z")
+  });
+  await adapter.open();
+  await new OfflineSnapshotHydrator(adapter).hydrate(
+    bootstrapToLocalSnapshot(response, contextA)
+  );
+  const read = new OfflineTechnicianReadService(adapter, contextA);
+  assert.equal((await read.listOrders()).length, 1);
+  assert.equal((await read.getOrder("order-1"))?.orderNumber, "TEST-001");
+  assert.equal((await read.listActivities("order-1")).length, 1);
+  assert.equal((await read.listChecklist("order-1")).length, 1);
+  assert.equal((await read.snapshotState()).fresh, true);
+  assert.equal("create" in read, false);
+  assert.equal("update" in read, false);
+  assert.equal("delete" in read, false);
+});
+
+test("cliente rechaza usuario, empresa, ambiente, schema y expiracion incompatibles", () => {
+  const cases = [
+    bootstrapResponse(contextA, { userId: "other-user" }),
+    bootstrapResponse(contextA, { companyId: "other-company" }),
+    bootstrapResponse(contextA, { environmentId: "qa" }),
+    bootstrapResponse(contextA, { schemaVersion: 99 }),
+    bootstrapResponse(contextA, { expiresAt: "2026-07-27T12:30:00.000Z" })
+  ];
+  for (const response of cases) {
+    assert.throws(() =>
+      validateBootstrapForContext(
+        response,
+        capability(),
+        contextA,
+        Date.parse("2026-07-27T13:00:00.000Z")
+      )
+    );
+  }
+});
+
+test("snapshot bootstrap inferior no reemplaza revision local superior", async () => {
+  const adapter = await hydratedAdapter();
+  await adapter.replaceSnapshot(snapshot(contextA, 2));
+  const lower = bootstrapResponse(contextA);
+  await assert.rejects(
+    new OfflineSnapshotHydrator(adapter).hydrate(
+      bootstrapToLocalSnapshot(
+        validateBootstrapForContext(
+          lower,
+          capability(),
+          contextA,
+          Date.parse("2026-07-27T13:00:00.000Z")
+        ),
+        contextA
+      )
+    ),
+    (error) => error instanceof OfflineStorageError && error.code === "SNAPSHOT_STALE"
+  );
+  assert.equal(
+    (await new OfflineTechnicianReadService(adapter, contextA).getOrder("order-1"))
+      ?.serverVersion,
+    2
+  );
+});
+
+test("logout explicito elimina descriptor y base del contexto autorizado", async () => {
+  const storage = new Map();
+  const originalWindow = globalThis.window;
+  const originalLocalStorage = globalThis.localStorage;
+  const claims = Buffer.from(
+    JSON.stringify({
+      id: contextA.userId,
+      tenant_id: contextA.tenantId,
+      exp: Math.floor(Date.now() / 1000) + 3600
+    })
+  ).toString("base64url");
+  globalThis.window = {};
+  globalThis.localStorage = {
+    getItem: (key) => storage.get(key) ?? null,
+    setItem: (key, value) => storage.set(key, String(value)),
+    removeItem: (key) => storage.delete(key)
+  };
+  try {
+    localStorage.setItem("token", `header.${claims}.signature`);
+    const adapter = await hydratedAdapter();
+    rememberOfflineContext(contextA, new Date(Date.now() + 3600000).toISOString());
+    assert.deepEqual(readAuthorizedOfflineContext(), contextA);
+    const name = adapter.getDatabaseNameForTesting();
+    await adapter.close();
+    await clearOfflineDataOnLogout();
+    assert.equal(readAuthorizedOfflineContext(), null);
+    assert.equal((await Dexie.getDatabaseNames()).includes(name), false);
+  } finally {
+    globalThis.window = originalWindow;
+    globalThis.localStorage = originalLocalStorage;
+  }
 });
