@@ -9,17 +9,19 @@ const WEB = "http://127.0.0.1:3001";
 const API_ORIGIN = "http://127.0.0.1:3100";
 const STATE = path.resolve("config/offline-phase3-certification.env");
 const PROFILE = path.join(os.tmpdir(), "apexos-offline-phase3-4-chrome");
-const EVIDENCE = path.resolve("docs/offline/evidence/phase3-4");
+const EVIDENCE = path.resolve(
+  process.env.OFFLINE_CERT_EVIDENCE_DIR || "docs/offline/evidence/phase3-4"
+);
 let activeBrowser = null;
 
-function offlineChunkName() {
+function deferredChunkName(marker, label) {
   const chunkDirectory = path.resolve("apps/web/.next/static/chunks");
   const match = fs.readdirSync(chunkDirectory)
     .filter((name) => name.endsWith(".js"))
     .find((name) =>
-      fs.readFileSync(path.join(chunkDirectory, name), "utf8").includes("DexieOfflineStorageAdapter")
+      fs.readFileSync(path.join(chunkDirectory, name), "utf8").includes(marker)
     );
-  assert.ok(match, "No se encontro el chunk offline diferido.");
+  assert.ok(match, `No se encontro el chunk diferido de ${label}.`);
   return match;
 }
 
@@ -260,7 +262,11 @@ async function main() {
     steps: {},
     defects: []
   };
-  const offlineChunk = offlineChunkName();
+  const offlineChunk = deferredChunkName("DexieOfflineStorageAdapter", "lectura offline");
+  const operationQueueChunk = deferredChunkName(
+    "DexieOfflineOperationQueueRepository",
+    "cola offline"
+  );
 
   let browser = await launch();
   activeBrowser = browser;
@@ -335,10 +341,12 @@ async function main() {
   assert.equal(hydrated.counts.offlineOrders, 2);
   assert.equal(hydrated.counts.offlineActivities, 6);
   assert.equal(hydrated.counts.offlineChecklists, 4);
+  assert.equal(hydrated.counts.offlineOperations, 0);
+  assert.equal(hydrated.counts.offlineOperationMetadata, 0);
   assert.equal(hydrated.metadata.hasInstallationId, true);
   assert.equal(hydrated.metadata.hasSnapshotId, true);
   assert.equal(hydrated.metadata.hasServerCheckpoint, true);
-  for (const forbidden of ["operations", "evidence", "conflicts", "uploads"]) {
+  for (const forbidden of ["evidence", "conflicts", "uploads"]) {
     assert.equal(hydrated.stores.some((store) => store.toLowerCase().includes(forbidden)), false);
   }
   await page.screenshot({ path: path.join(EVIDENCE, "01-prepared.png") });
@@ -512,12 +520,14 @@ async function main() {
     panel: (await page.$$('text/Preparar trabajo sin conexion')).length > 0,
     indexedDb: await databaseState(page),
     requestedBootstrap: isolatedRequests.some((url) => url.includes("/api/v1/offline/bootstrap")),
-    downloadedOfflineChunk: isolatedRequests.some((url) => url.includes(offlineChunk))
+    downloadedOfflineChunk: isolatedRequests.some((url) => url.includes(offlineChunk)),
+    downloadedOperationQueueChunk: isolatedRequests.some((url) => url.includes(operationQueueChunk))
   };
   assert.equal(result.steps.exclusionUser.panel, false);
   assert.equal(result.steps.exclusionUser.indexedDb.selected, null);
   assert.equal(result.steps.exclusionUser.requestedBootstrap, false);
   assert.equal(result.steps.exclusionUser.downloadedOfflineChunk, false);
+  assert.equal(result.steps.exclusionUser.downloadedOperationQueueChunk, false);
   await page.screenshot({ path: path.join(EVIDENCE, "05-exclusion-user.png") });
   console.log("STEP exclusion-user");
 
@@ -536,12 +546,16 @@ async function main() {
     panel: (await page.$$('text/Preparar trabajo sin conexion')).length > 0,
     indexedDb: await databaseState(page),
     requestedBootstrap: unauthorizedRequests.some((url) => url.includes("/api/v1/offline/bootstrap")),
-    downloadedOfflineChunk: unauthorizedRequests.some((url) => url.includes(offlineChunk))
+    downloadedOfflineChunk: unauthorizedRequests.some((url) => url.includes(offlineChunk)),
+    downloadedOperationQueueChunk: unauthorizedRequests.some((url) =>
+      url.includes(operationQueueChunk)
+    )
   };
   assert.equal(result.steps.unauthorizedUser.panel, false);
   assert.equal(result.steps.unauthorizedUser.indexedDb.selected, null);
   assert.equal(result.steps.unauthorizedUser.requestedBootstrap, false);
   assert.equal(result.steps.unauthorizedUser.downloadedOfflineChunk, false);
+  assert.equal(result.steps.unauthorizedUser.downloadedOperationQueueChunk, false);
   console.log("STEP unauthorized-user");
 
   await browser.close();

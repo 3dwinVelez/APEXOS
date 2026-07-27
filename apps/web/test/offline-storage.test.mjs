@@ -273,7 +273,7 @@ test("rechaza snapshot de otra empresa, usuario o esquema", async () => {
   );
 });
 
-test("rechaza campos prohibidos y no crea tablas futuras", async () => {
+test("rechaza campos prohibidos y crea solo tablas autorizadas hasta Fase 4", async () => {
   const adapter = new DexieOfflineStorageAdapter(contextA);
   await adapter.open();
   await assert.rejects(
@@ -286,9 +286,11 @@ test("rechaza campos prohibidos y no crea tablas futuras", async () => {
   const db = new Dexie(adapter.getDatabaseNameForTesting());
   await db.open();
   const names = db.tables.map((table) => table.name);
-  assert.equal(names.includes("offlineOperations"), false);
+  assert.equal(names.includes("offlineOperations"), true);
+  assert.equal(names.includes("offlineOperationMetadata"), true);
   assert.equal(names.includes("offlineEvidence"), false);
   assert.equal(names.includes("offlineConflicts"), false);
+  assert.equal(names.includes("offlineUploads"), false);
   db.close();
 });
 
@@ -356,7 +358,7 @@ test("rechaza un registro local manipulado con contexto ajeno", async () => {
   );
 });
 
-test("migra v1 a v2 conservando datos y agregando retentionState", async () => {
+test("migra v1 a v3 conservando datos, retencion y estado de schema", async () => {
   const name = await contextDatabaseName(contextA);
   const legacy = new Dexie(name);
   legacy.version(1).stores(OFFLINE_SCHEMA_V1);
@@ -380,8 +382,10 @@ test("migra v1 a v2 conservando datos y agregando retentionState", async () => {
   assert.equal(metadata?.retentionState, "ACTIVE");
   const inspect = new Dexie(name);
   await inspect.open();
-  assert.equal(inspect.verno, 2);
+  assert.equal(inspect.verno, 3);
+  assert.equal(await inspect.table("offlineOperations").count(), 0);
   assert.equal((await inspect.table("offlineSchemaState").get("schema")).migrationStatus, "READY");
+  assert.equal((await inspect.table("offlineSchemaState").get("schema")).schemaVersion, 3);
   inspect.close();
 });
 
