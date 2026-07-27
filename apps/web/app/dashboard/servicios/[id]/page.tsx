@@ -39,6 +39,7 @@ type ServiceOrder = {
   incidents: Array<{ id: number | string; description: string; type: string; created_at?: string }>;
   photos: ServicePhoto[];
   metadata?: {
+    customer_phone_secondary?: string;
     inspection?: { items?: InspectionItem[]; decision?: string; problem_count?: number };
     satisfaction_survey?: { answers?: Array<{ question_id: string; question: string; rating: number }>; average?: number; completed_at?: string };
   };
@@ -540,7 +541,9 @@ export default function ServiceOperationPage() {
 
       <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
         <p className="text-sm font-semibold">{order.reference?.code} · {order.reference?.name}</p>
-        <p className="mt-1 text-xs text-neutral-500">{order.reference?.parts.length || 0} pieza(s) · {order.service_type} · {order.customer_phone || "Sin telefono"}</p>
+        <p className="mt-1 text-xs text-neutral-500">
+          {order.reference?.parts.length || 0} pieza(s) · {order.service_type} · {[order.customer_phone, order.metadata?.customer_phone_secondary].filter(Boolean).join(" / ") || "Sin telefono"}
+        </p>
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-neutral-600">
           <span className="rounded-md bg-paper px-3 py-2">{order.photos.length} evidencias</span>
           <span className="rounded-md bg-paper px-3 py-2">{order.incidents.length} novedades</span>

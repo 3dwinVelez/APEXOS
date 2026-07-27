@@ -48,6 +48,7 @@ type ServiceOrder = {
   notes?: string;
   metadata?: {
     customer_document?: string;
+    customer_phone_secondary?: string;
     customer_neighborhood?: string;
     service_store?: string;
     service_store_label?: string;
@@ -71,6 +72,7 @@ type ServiceOrderExcelRow = {
   cliente: string;
   documento_cliente: string;
   telefono: string;
+  telefono_alterno: string;
   direccion: string;
   barrio: string;
   tipo_servicio: string;
@@ -348,6 +350,7 @@ function serviceOrderExcelRows(orders: ServiceOrder[]): ServiceOrderExcelRow[] {
       cliente: order.customer_name || "",
       documento_cliente: String(order.metadata?.customer_document || ""),
       telefono: order.customer_phone || "",
+      telefono_alterno: String(order.metadata?.customer_phone_secondary || ""),
       direccion: order.customer_address || "",
       barrio: String(order.metadata?.customer_neighborhood || ""),
       tipo_servicio: order.service_type || "",
@@ -514,7 +517,7 @@ export default function ServicesPage() {
     const term = query.trim().toLowerCase();
     const today = new Date().toISOString().slice(0, 10);
     return orders.filter((order) => {
-      const matchesTerm = !term || [order.number, order.customer_name, order.customer_address, order.customer_phone, order.reference?.code, order.reference?.name, order.service_type]
+      const matchesTerm = !term || [order.number, order.customer_name, order.customer_address, order.customer_phone, order.metadata?.customer_phone_secondary, order.reference?.code, order.reference?.name, order.service_type]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(term))
       const isExternalRequest = order.status === "agendado" || order.metadata?.public_request === true || order.metadata?.requires_admin_completion === true;
@@ -985,7 +988,9 @@ export default function ServicesPage() {
                       <td className="align-top">
                         <p className="truncate font-semibold text-neutral-900">{order.customer_name}</p>
                         <p className="mt-1 truncate text-xs text-neutral-500">{order.customer_address || "Sin direccion registrada"}</p>
-                        <p className="mt-1 text-xs text-neutral-500">{order.customer_phone || "Sin telefono"}</p>
+                        <p className="mt-1 text-xs text-neutral-500">
+                          {[order.customer_phone, order.metadata?.customer_phone_secondary].filter(Boolean).join(" / ") || "Sin telefono"}
+                        </p>
                       </td>
                       <td className="align-top">
                         <p className="font-medium text-neutral-800">{order.service_type || "Sin tipo"}</p>
