@@ -41,6 +41,8 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
           NEXT_PUBLIC_WS_URL: ${{ secrets.NEXT_PUBLIC_WS_URL }}
+      - name: Performance regression guard
+        run: npm run performance:guard
       - name: Validate Service Evidence Uniqueness
         run: node scripts/performance/validate-service-evidence-uniqueness.js --env-file=.
         env:

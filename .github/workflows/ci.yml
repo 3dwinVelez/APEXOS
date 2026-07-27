@@ -27,7 +27,9 @@ jobs:
       - name: TypeCheck frontend
         run: npx -p typescript tsc --noEmit --project apps/web/tsconfig.json
       - name: Lint
-        run: echo "Lint OK" # Placeholder — agregar linter configurado
+        run: npm run lint
+      - name: Performance regression guard
+        run: npm run performance:guard
 
   build-api:
     name: Build API
