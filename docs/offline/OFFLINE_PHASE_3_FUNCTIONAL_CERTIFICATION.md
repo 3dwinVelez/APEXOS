@@ -51,3 +51,9 @@ node scripts/certify-offline-readonly-local.js prepare
 
 No se solicita autorizar una migracion dentro de esta fase.
 
+## Recuperacion posterior
+
+Fase 3.2 preparo `127.0.0.1:54320/apexos_offline_cert_local` con schema
+compatible, ocho migraciones registradas y cero datos. El bloqueo estructural
+queda resuelto. La certificacion sigue pendiente porque el seed no fue
+ejecutado, conforme a la restriccion de Fase 3.2.

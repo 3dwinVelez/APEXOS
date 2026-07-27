@@ -36,3 +36,7 @@ paso 46/46; no requirio cambio de codigo.
 
 No hubo migraciones, despliegue, merge, push durante Fase 3.1, cambios en
 `main`, activacion de produccion ni uso de empresas cliente.
+
+Fase 3.2 recupero posteriormente una base local compatible y vacia. No cambia
+el resultado de esta corrida: debe reintentarse Fase 3.1 con autorizacion
+expresa para ejecutar el seed y las pruebas funcionales.
