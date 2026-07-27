@@ -113,7 +113,44 @@ function repositoryState(root) {
   return { files: sqlFiles.length, rlsTables: [...rlsTables].sort(), policies: [...policies.values()], functions: [...functions.values()] };
 }
 
-async function inspect(tx) {
+function percentile(values, ratio) {
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * ratio) - 1)] || 0;
+}
+
+async function measurePolicies(tx) {
+  const members = await tx.$queryRawUnsafe(`select user_id::text, company_id::text from public.company_users where user_id is not null limit 1`);
+  if (!members.length) return { status: "skipped", reason: "no_controlled_membership" };
+  await tx.$executeRawUnsafe("SET LOCAL ROLE authenticated");
+  await tx.$queryRawUnsafe(`select set_config('request.jwt.claims', $1, true)`, JSON.stringify({ sub: members[0].user_id, role: "authenticated" }));
+  const targets = {
+    services: `select id from public.service_orders order by created_at desc limit 100`,
+    users: `select id from public.company_users limit 100`,
+    employees: `select id from public.employees limit 100`,
+    evidence: `select id from public.service_evidence order by created_at desc limit 100`,
+    storage: `select id from storage.objects order by created_at desc limit 100`
+  };
+  const measurements = [];
+  for (const [target, sql] of Object.entries(targets)) {
+    const plan = await tx.$queryRawUnsafe(`explain (analyze, buffers, format json) ${sql}`);
+    const durations = [];
+    for (let index = 0; index < 20; index += 1) {
+      const started = performance.now();
+      await tx.$queryRawUnsafe(sql);
+      durations.push(performance.now() - started);
+    }
+    measurements.push({
+      target,
+      p50_ms: Number(percentile(durations, 0.5).toFixed(3)),
+      p95_ms: Number(percentile(durations, 0.95).toFixed(3)),
+      plan: plan[0]?.["QUERY PLAN"]?.[0] || plan[0]?.["QUERY PLAN"] || null
+    });
+  }
+  await tx.$executeRawUnsafe("RESET ROLE");
+  return { status: "measured", samples_per_target: 20, measurements };
+}
+
+async function inspect(tx, includeMeasurements) {
   await tx.$executeRawUnsafe("SET TRANSACTION READ ONLY");
   const identity = await tx.$queryRawUnsafe(`select current_database() database, current_user db_user, inet_server_addr()::text server_address, version() server_version`);
   const relations = await tx.$queryRawUnsafe(`
@@ -141,7 +178,8 @@ async function inspect(tx) {
   const buckets = storagePresence[0]?.relation
     ? await tx.$queryRawUnsafe(`select id, name, public, file_size_limit::text file_size_limit, allowed_mime_types from storage.buckets order by id`)
     : [];
-  return { identity: identity[0], relations, policies, grants, functions, buckets };
+  const performance = includeMeasurements ? await measurePolicies(tx) : { status: "not_requested" };
+  return { identity: identity[0], relations, policies, grants, functions, buckets, performance };
 }
 
 function compare(repository, deployed) {
@@ -194,7 +232,7 @@ async function main() {
   const prisma = new PrismaClient({ datasources: { db: { url: databaseUrl } }, log: [] });
   let deployed;
   try {
-    deployed = await prisma.$transaction((tx) => inspect(tx), { timeout: 60_000 });
+    deployed = await prisma.$transaction((tx) => inspect(tx, args.measure === true), { timeout: 60_000 });
   } finally {
     await prisma.$disconnect();
   }

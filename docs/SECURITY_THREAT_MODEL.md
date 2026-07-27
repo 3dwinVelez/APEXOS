@@ -32,6 +32,13 @@ Fecha: 2026-07-26. Metodología: STRIDE, revisión estática y pruebas negativas
 | Logs | exposición de PII o stack interno | operador no autorizado | Medio | Media | Medio | respuestas 500 genéricas; logs administrativos protegidos |
 | Repudiación | cambios críticos sin evidencia suficiente | usuario privilegiado | Alto | Baja | Medio | AuditLog y logs correlacionados por request |
 
+## Validación de fase 3
+
+- No se detectó drift nominal de policies en producción.
+- Las tablas RLS sin policy quedan deny-by-default para roles expuestos.
+- El principal riesgo residual de Storage no es cross-tenant: es contenido no validado en una ruta legítimamente autorizada.
+- Una URL firmada respeta expiración, pero no convierte un objeto pendiente/no validado en evidencia confiable.
+
 ## Límites de confianza
 
 1. Navegador ↔ Next.js.

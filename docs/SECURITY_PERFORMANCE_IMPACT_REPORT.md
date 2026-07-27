@@ -36,3 +36,19 @@ No se midieron todavía creación de usuario/rol, fotografía, transición/cierr
 El benchmark QA ejecutado durante el bloque A mostró alta variabilidad externa en `service_orders`: p95 812 ms y luego 395 ms, sin errores. El cambio local no estaba desplegado y Servicios HTML permaneció en 120–121 ms, por lo que no existe una relación causal con `/metrics`. El segundo resultado quedó dentro del presupuesto de 700 ms.
 
 La compilación productiva, typecheck, lint, pruebas de contexto y pruebas negativas pasaron después del bloque de archivos. La sobrecarga de firma es despreciable; la decodificación asíncrona es el control necesario para detectar imágenes truncadas y limitar dimensiones, y sucede antes de la transferencia a Storage.
+
+## Fase 3 — dependencias y RLS
+
+El build de Next 15.5.22 conservó 64 rutas y tamaños de bundles equivalentes. Servicios web obtuvo p95 de 116,23 ms y 134,96 ms en las dos repeticiones; la segunda supone +11,9% frente a 120,59 ms y requiere observar la variabilidad, sin cambio desplegado. `service_orders` externo obtuvo 813,65 ms y luego 371,69 ms; la segunda muestra pasó el presupuesto.
+
+Medición productiva simulando el rol `authenticated` y una membresía existente, 20 SELECT por objetivo:
+
+| Flujo RLS | p50 cliente | p95 cliente | Execution Time del plan |
+| --- | ---: | ---: | ---: |
+| Servicios | 192,384 ms | 232,719 ms | 30,157 ms |
+| Usuarios | 163,038 ms | 189,859 ms | 1,880 ms |
+| Empleados | 179,451 ms | 250,119 ms | 7,083 ms |
+| Evidencias | 205,251 ms | 281,743 ms | 34,155 ms |
+| Storage | 200,833 ms | 226,668 ms | 42,675 ms |
+
+El tiempo cliente incluye la conexión remota desde el puesto de auditoría. Los planes completos con buffers permanecen en los reportes temporales no versionados.

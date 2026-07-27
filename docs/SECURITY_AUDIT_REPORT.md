@@ -42,6 +42,13 @@ Fecha: 2026-07-26. Estado: fase 1 de diagnóstico; no constituye una certificaci
 - Archivos: JPEG, PNG, WebP, PDF, MP4 y WebM se identifican por firma cuando sus bytes atraviesan la aplicación. Se rechazan HTML/ejecutable disfrazado, MIME inconsistente, contenido vacío/truncado y exceso de tamaño.
 - Cargas directas web: además de firma, las imágenes deben decodificar correctamente, no superar 4096 px por lado y reciben un nombre con UUID bajo la ruta de empresa/entidad.
 - Riesgo residual: Supabase Storage todavía no ejecuta una confirmación binaria autoritativa después de una llamada directa que evite la aplicación. Resolverlo exige el flujo posterior de autorización/quarantena/confirmación coordinado con RLS.
+
+## Fase 3
+
+- Dependencias: 2 críticas eliminadas; Next core, Fastify, Nodemailer y transitivas alcanzables actualizadas. Permanecen tres advisories subyacentes de tooling/copias internas de Next, documentados sin forzar migración mayor.
+- RLS producción: 99/99 recursos esperados con RLS y 165/165 policies vigentes por nombre; ninguna policy faltante o adicional.
+- QA: la conexión SQL configurada no corresponde al proyecto remoto, por lo que el catálogo no pudo certificarse. Las pruebas REST cross-tenant de lectura devolvieron cero filas/objetos.
+- Storage: confirmado en QA que una carga directa puede presentar HTML como PNG. RLS protege empresa/orden, pero no contenido. Se requiere cuarentena y validación autoritativa.
 | SEC-005 | Estado RLS desplegado no verificado contra catálogo vivo | Alta | migraciones extensas; sin conexión SQL productiva segura en esta fase | drift puede abrir acceso cruzado | auditor SQL de `pg_class/pg_policies` en QA/release | Bajo | Bajo |
 | SEC-006 | Token en `localStorage` aumenta impacto de XSS | Media | cliente obtiene token desde almacenamiento local | secuestro de sesión ante XSS | evaluar cookie HttpOnly por flag; primero CSP | Alto | Bajo |
 | SEC-007 | CSP no comprobada en frontend | Media | respuesta local de Next sin CSP | menor defensa frente a XSS/clickjacking | CSP report-only progresiva | Medio | Bajo |
