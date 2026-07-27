@@ -10,6 +10,12 @@ export type OfflineStorageErrorCode =
   | "DATABASE_CLOSED"
   | "TRANSACTION_ABORTED"
   | "MIGRATION_FAILED"
+  | "OPERATION_INVALID"
+  | "OPERATION_TYPE_DISABLED"
+  | "OPERATION_LIMIT_EXCEEDED"
+  | "OPERATION_NOT_FOUND"
+  | "OPERATION_TRANSITION_INVALID"
+  | "OPERATION_DEPENDENCY_INVALID"
   | "CORRUPT_DATA"
   | "UNKNOWN_STORAGE_ERROR";
 
@@ -57,4 +63,3 @@ export function toOfflineStorageError(error: unknown): OfflineStorageError {
     error
   );
 }
-

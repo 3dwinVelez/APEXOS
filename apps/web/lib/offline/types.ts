@@ -6,7 +6,8 @@ import type {
   OfflineStorageEstimate
 } from "@apex-os/types/offline";
 
-export const OFFLINE_LOCAL_SCHEMA_VERSION = 2;
+export const OFFLINE_LOCAL_SCHEMA_VERSION = 3;
+export const OFFLINE_SNAPSHOT_SCHEMA_VERSION = 2;
 export const OFFLINE_LOCAL_TTL_MS = 24 * 60 * 60 * 1000;
 
 export type OfflineStorageContext = OfflineRepositoryContext & {
@@ -108,6 +109,76 @@ export interface OfflineSchemaStateRecord {
   migratedAt?: string;
   migrationStatus?: "READY" | "FAILED";
   migrationCode?: string;
+}
+
+export type OfflineOperationStatus =
+  | "PENDING"
+  | "PROCESSING"
+  | "RETRYABLE"
+  | "BLOCKED"
+  | "CONFLICT"
+  | "CONFIRMED"
+  | "DISCARDED";
+
+export type OfflineOperationErrorCategory =
+  | "NETWORK"
+  | "TIMEOUT"
+  | "SERVER_TEMPORARY"
+  | "AUTHENTICATION"
+  | "AUTHORIZATION"
+  | "VALIDATION"
+  | "CONFLICT"
+  | "LOCAL_STORAGE"
+  | "UNKNOWN";
+
+export type OfflineOperationType =
+  | "OBSERVATION_ADDED"
+  | "ACTIVITY_COMPLETED"
+  | "CHECKLIST_ITEM_UPDATED"
+  | "SERVICE_STARTED"
+  | "SERVICE_COMPLETION_REQUESTED"
+  | "LOCATION_EVENT_RECORDED"
+  | "EVIDENCE_REGISTERED"
+  | "TEST_OPERATION";
+
+export interface OfflineOperationRecord {
+  operationId: string;
+  idempotencyKey: string;
+  environmentId: string;
+  companyId: string;
+  userId: string;
+  installationId: string;
+  entityType: string;
+  entityId: string;
+  operationType: OfflineOperationType;
+  payload: Record<string, unknown>;
+  baseVersion: number;
+  sequence: number;
+  createdAtDevice: string;
+  createdAtLocal: string;
+  updatedAtLocal: string;
+  status: OfflineOperationStatus;
+  retryCount: number;
+  nextRetryAt: string | null;
+  lastAttemptAt: string | null;
+  lastErrorCode: string | null;
+  lastErrorCategory: OfflineOperationErrorCategory | null;
+  dependsOn: string[];
+  schemaVersion: 1;
+}
+
+export interface OfflineOperationMetadataRecord {
+  key: "queue";
+  environmentId: string;
+  companyId: string;
+  userId: string;
+  nextSequence: number;
+  counts: Partial<Record<OfflineOperationStatus, number>>;
+  lastOperationCreatedAt: string | null;
+  lastTransitionAt: string | null;
+  lastErrorCode: string | null;
+  lastCleanupAt: string | null;
+  schemaVersion: 1;
 }
 
 export interface OfflineSnapshot {

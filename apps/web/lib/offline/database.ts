@@ -4,6 +4,8 @@ import type {
   OfflineCatalogRecord,
   OfflineChecklistRecord,
   OfflineMetadataRecord,
+  OfflineOperationMetadataRecord,
+  OfflineOperationRecord,
   OfflineOrderRecord,
   OfflineSchemaStateRecord
 } from "./types.ts";
@@ -23,6 +25,13 @@ export const OFFLINE_SCHEMA_V2 = {
   offlineMetadata: "key,expiresAt,retentionState"
 } as const;
 
+export const OFFLINE_SCHEMA_V3 = {
+  ...OFFLINE_SCHEMA_V2,
+  offlineOperations:
+    "operationId,&idempotencyKey,status,sequence,entityType,entityId,createdAtLocal,nextRetryAt,[environmentId+companyId+userId],[status+sequence]",
+  offlineOperationMetadata: "key,[environmentId+companyId+userId]"
+} as const;
+
 export class ApexOfflineDatabase extends Dexie {
   offlineOrders!: EntityTable<OfflineOrderRecord, "localKey">;
   offlineActivities!: EntityTable<OfflineActivityRecord, "localKey">;
@@ -30,6 +39,8 @@ export class ApexOfflineDatabase extends Dexie {
   offlineCatalogs!: EntityTable<OfflineCatalogRecord, "localKey">;
   offlineMetadata!: EntityTable<OfflineMetadataRecord, "key">;
   offlineSchemaState!: EntityTable<OfflineSchemaStateRecord, "key">;
+  offlineOperations!: EntityTable<OfflineOperationRecord, "operationId">;
+  offlineOperationMetadata!: EntityTable<OfflineOperationMetadataRecord, "key">;
 
   constructor(name: string, migrationFailure?: () => boolean) {
     super(name, { cache: "disabled" });
@@ -47,6 +58,17 @@ export class ApexOfflineDatabase extends Dexie {
         await transaction.table<OfflineSchemaStateRecord, string>("offlineSchemaState").put({
           key: "schema",
           schemaVersion: 2,
+          migratedAt: new Date().toISOString(),
+          migrationStatus: "READY"
+        });
+      });
+    this.version(3)
+      .stores(OFFLINE_SCHEMA_V3)
+      .upgrade(async (transaction) => {
+        if (migrationFailure?.()) throw new Error("Injected migration failure");
+        await transaction.table<OfflineSchemaStateRecord, string>("offlineSchemaState").put({
+          key: "schema",
+          schemaVersion: 3,
           migratedAt: new Date().toISOString(),
           migrationStatus: "READY"
         });

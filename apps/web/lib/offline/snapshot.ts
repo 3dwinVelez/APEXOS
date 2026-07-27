@@ -1,7 +1,7 @@
 import { assertSameContext, localKey } from "./context.ts";
 import { OfflineStorageError } from "./errors.ts";
 import {
-  OFFLINE_LOCAL_SCHEMA_VERSION,
+  OFFLINE_SNAPSHOT_SCHEMA_VERSION,
   OFFLINE_LOCAL_TTL_MS,
   type OfflineActivityRecord,
   type OfflineCatalogRecord,
@@ -114,7 +114,7 @@ export function validateOfflineSnapshot(
     throw new OfflineStorageError("SNAPSHOT_INVALID", "Snapshot o contexto invalido.");
   }
   assertSameContext(expectedContext, value.context as unknown as OfflineStorageContext);
-  if (value.schemaVersion !== OFFLINE_LOCAL_SCHEMA_VERSION) {
+  if (value.schemaVersion !== OFFLINE_SNAPSHOT_SCHEMA_VERSION) {
     throw new OfflineStorageError("SCHEMA_INCOMPATIBLE", "Version de snapshot no soportada.");
   }
   assertString(value.snapshotId, "snapshotId");
@@ -213,7 +213,7 @@ export function materializeSnapshot(
     userId: context.userId,
     storedAt,
     expiresAt,
-    schemaVersion: OFFLINE_LOCAL_SCHEMA_VERSION
+    schemaVersion: OFFLINE_SNAPSHOT_SCHEMA_VERSION
   };
   return {
     orders: snapshot.orders.map((record) => {
