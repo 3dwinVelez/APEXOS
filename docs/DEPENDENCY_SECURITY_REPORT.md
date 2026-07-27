@@ -15,7 +15,7 @@ Fecha de corte: 2026-07-26. Fuente: `npm audit`, árbol instalado mediante `npm 
 | DEP-007 | `next` | Alta | Directa web | Producción | App Router y rutas servidor sí; no se encontraron Server Actions | 15.5.18 | 15.5.22 | Bajo para advisories core corregidos |
 | DEP-008 | `nodemailer` | Alta | Directa API | Worker de producción | Sí si el job permitiera `raw`/adjuntos arbitrarios; el worker usa campos explícitos | 8.0.8 | 9.0.3 | Bajo |
 | DEP-009 | `postcss` | Alta | Directa build y copia interna Next | Build | Entrada CSS pertenece al repositorio; no se procesa CSS suministrado por usuarios | 8.5.14 / 8.4.31 | 8.5.23 directa; 8.4.31 interna pendiente | Bajo/compensado |
-| DEP-010 | `sharp` | Alta | Opcional de Next | Producción web | Potencial en optimización de imágenes | 0.34.5 | 0.35.0 directa; copia opcional interna de Next pendiente | Medio residual |
+| DEP-010 | `sharp` | Alta | Opcional de Next | Producción web | Potencial en optimización de imágenes | 0.34.5 | Sin versión compatible declarada por Next 15/16; pendiente | Medio residual |
 | DEP-011 | `brace-expansion` | Alta | Transitiva | Lint/desarrollo | Patrones definidos por herramientas, no por usuarios remotos | 1.1.14 / 5.0.6 | 1.1.16 / 5.0.8 mediante overrides | Bajo |
 
 ## Advisories y condiciones
