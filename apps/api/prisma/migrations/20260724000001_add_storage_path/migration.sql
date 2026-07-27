@@ -9,5 +9,5 @@ CREATE INDEX IF NOT EXISTS "ServicePhoto_storage_path_idx" ON "ServicePhoto"("st
 
 -- Índice para identificar registros pendientes de migrar (base64 sin storage_path)
 CREATE INDEX IF NOT EXISTS "ServicePhoto_base64_pending_migration_idx"
-  ON "ServicePhoto"("base64_data", "storage_path")
+  ON "ServicePhoto"("id")
   WHERE "base64_data" IS NOT NULL AND "storage_path" IS NULL;

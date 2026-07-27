@@ -1,0 +1,114 @@
+{
+  "batch": "DET-20260727012435",
+  "generated_at": "2026-07-27T01:27:18.717Z",
+  "summary": {
+    "passed": 15,
+    "failed": 0
+  },
+  "results": [
+    {
+      "area": "api",
+      "name": "Health endpoint",
+      "ok": true,
+      "detail": {
+        "status": "OK"
+      }
+    },
+    {
+      "area": "api",
+      "name": "Login demo local",
+      "ok": true,
+      "detail": {
+        "email": "demo@apex.local"
+      }
+    },
+    {
+      "area": "api",
+      "name": "Plan de cuentas",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "area": "api",
+      "name": "Estructura contable base",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "area": "api",
+      "name": "Familias inventario",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "area": "api",
+      "name": "Bodegas y ubicaciones",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "area": "api",
+      "name": "Productos y costos inventario",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "area": "api",
+      "name": "Proveedores compras",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "area": "api",
+      "name": "Orden de compra y recepcion",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "area": "api",
+      "name": "Configuracion de nomina",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "area": "supabase",
+      "name": "Login SCJ QA",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "area": "supabase",
+      "name": "Modulos SCJ",
+      "ok": true,
+      "detail": {
+        "enabled": [
+          "administracion_apex",
+          "configuracion",
+          "servicios",
+          "talento_humano",
+          "transporte"
+        ]
+      }
+    },
+    {
+      "area": "supabase",
+      "name": "Token Supabase y acceso por modulo",
+      "ok": true,
+      "detail": {
+        "projects_enabled": false
+      }
+    },
+    {
+      "area": "frontend",
+      "name": "Build web",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "area": "frontend",
+      "name": "Rutas criticas compiladas",
+      "ok": true,
+      "detail": {}
+    }
+  ]
+}
