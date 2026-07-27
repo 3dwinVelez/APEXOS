@@ -26,6 +26,7 @@ const MODULES = [
   "invoicing",
   "hr",
   "services",
+  "offline",
   "transport",
   "sales-invoice",
   "accounts-receivable"
@@ -263,6 +264,7 @@ async function build() {
   registerRoutes("invoicing", require("./src/modules/invoicing/routes"), { prefix: "/api/v1" });
   registerRoutes("hr", require("./src/modules/hr/routes"), { prefix: "/api/v1" });
   registerRoutes("services", require("./src/modules/services/routes"), { prefix: "/api/v1" });
+  registerRoutes("offline", require("./src/modules/offline/routes"), { prefix: "/api/v1" });
   registerRoutes("transport", require("./src/modules/transport/routes"), { prefix: "/api/v1" });
   registerRoutes("sales-invoice", require("./src/modules/sales-invoice/routes"), { prefix: "/api/v1" });
   registerRoutes("accounts-receivable", require("./src/modules/accounts-receivable/routes"), { prefix: "/api/v1" });

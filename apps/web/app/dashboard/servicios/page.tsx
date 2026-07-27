@@ -21,8 +21,16 @@ import {
   Wrench
 } from "lucide-react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+
+const OFFLINE_DISCOVERY_ENABLED =
+  process.env.NEXT_PUBLIC_OFFLINE_DISCOVERY_ENABLED === "true";
+const OfflineTechnicianPanel = dynamic(
+  () => import("@/components/offline/OfflineTechnicianPanel"),
+  { ssr: false }
+);
 
 type ServiceReference = { id: number | string; code: string; name: string };
 type Technician = { id: number | string; code?: string; user?: { name?: string; email?: string } };
@@ -739,6 +747,8 @@ export default function ServicesPage() {
           </div>
         </div>
       </header>
+
+      {technicianMode && OFFLINE_DISCOVERY_ENABLED ? <OfflineTechnicianPanel /> : null}
 
       <section className="apex-context-hero">
         <div className="relative z-10 flex flex-col gap-5 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">

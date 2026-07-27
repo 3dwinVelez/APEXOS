@@ -35,6 +35,11 @@ function shouldRefreshLocalToken(token: string | null) {
 }
 
 export function clearSession(reason = "expired") {
+  if (localStorage.getItem("apex_offline_authorized_context_v1")) {
+    import("./offline/session.ts")
+      .then(({ clearOfflineDataOnLogout }) => clearOfflineDataOnLogout())
+      .catch(() => undefined);
+  }
   localStorage.removeItem("token");
   localStorage.removeItem("refresh");
   localStorage.removeItem("auth_provider");
