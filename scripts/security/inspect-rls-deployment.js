@@ -219,6 +219,14 @@ async function main() {
   const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
   if (!databaseUrl) throw new Error("DATABASE_URL es obligatorio.");
   const expectedRef = projectRef(supabaseUrl);
+  const configuredExpectedRef = String(process.env.EXPECTED_SUPABASE_PROJECT_REF || "");
+  const configuredEnvironment = String(process.env.EXPECTED_ENVIRONMENT || "");
+  if (target !== "local" && configuredEnvironment !== target) {
+    throw new Error(`EXPECTED_ENVIRONMENT debe ser ${target}; inspección cancelada antes de conectar.`);
+  }
+  if (target !== "local" && (!configuredExpectedRef || configuredExpectedRef !== expectedRef)) {
+    throw new Error("EXPECTED_SUPABASE_PROJECT_REF no coincide con SUPABASE_URL; inspección cancelada antes de conectar.");
+  }
   const isLocalDatabase = /localhost|127\.0\.0\.1/i.test(databaseUrl);
   if (target !== "local" && (isLocalDatabase || !expectedRef || !databaseUrl.includes(expectedRef))) {
     throw new Error(`La conexión DB no coincide con el proyecto Supabase ${target}; inspección cancelada antes de conectar.`);
