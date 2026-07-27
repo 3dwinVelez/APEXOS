@@ -1,13 +1,25 @@
 "use client";
 
-import { Database, Download, RefreshCw, ShieldCheck, WifiOff } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Database,
+  Download,
+  RefreshCw,
+  ShieldCheck,
+  WifiOff
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import {
   fetchOfflineCapabilities,
   type OfflineCapabilitiesResponse
 } from "@/lib/offline/bootstrapClient.ts";
 import { OfflineBootstrapService } from "@/lib/offline/bootstrapService.ts";
-import type { OfflineOrderRecord } from "@/lib/offline/types.ts";
+import type {
+  OfflineActivityRecord,
+  OfflineChecklistRecord,
+  OfflineOrderRecord
+} from "@/lib/offline/types.ts";
 
 type Connectivity =
   | "ONLINE_CONFIRMED"
@@ -21,6 +33,12 @@ type SnapshotView = {
   fresh: boolean;
   expired: boolean;
   orders: OfflineOrderRecord[];
+};
+
+type OrderDetail = {
+  orderId: string;
+  activities: OfflineActivityRecord[];
+  checklist: OfflineChecklistRecord[];
 };
 
 function formatted(value: string | null) {
@@ -41,6 +59,7 @@ export default function OfflineTechnicianPanel() {
   const [snapshot, setSnapshot] = useState<SnapshotView | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [detail, setDetail] = useState<OrderDetail | null>(null);
 
   const readPrepared = useCallback(async () => {
     const readService = await new OfflineBootstrapService().openPrepared();
@@ -121,6 +140,20 @@ export default function OfflineTechnicianPanel() {
     }
   };
 
+  const toggleDetail = async (order: OfflineOrderRecord) => {
+    if (detail?.orderId === order.orderId) {
+      setDetail(null);
+      return;
+    }
+    const readService = await new OfflineBootstrapService().openPrepared();
+    if (!readService) return;
+    const [activities, checklist] = await Promise.all([
+      readService.listActivities(order.orderId),
+      readService.listChecklist(order.orderId)
+    ]);
+    setDetail({ orderId: order.orderId, activities, checklist });
+  };
+
   if (connectivity === "ONLINE_CONFIRMED" && !capabilities?.offlineTechnician.enabled) {
     return null;
   }
@@ -177,14 +210,50 @@ export default function OfflineTechnicianPanel() {
           </p>
           <div className="divide-y divide-line border-y border-line">
             {snapshot.orders.map((order) => (
-              <div className="grid gap-1 py-3 sm:grid-cols-[120px_1fr_auto]" key={order.localKey}>
-                <span className="text-sm font-semibold text-apex">{order.orderNumber}</span>
-                <span className="min-w-0 text-sm text-neutral-700">
-                  {order.customerDisplayName} - {order.serviceAddress}
-                </span>
-                <span className="text-xs font-semibold uppercase text-neutral-500">
-                  {order.status.replaceAll("_", " ")}
-                </span>
+              <div className="py-3" key={order.localKey}>
+                <button
+                  aria-expanded={detail?.orderId === order.orderId}
+                  className="grid w-full items-center gap-1 text-left sm:grid-cols-[120px_1fr_auto_32px]"
+                  onClick={() => toggleDetail(order)}
+                  type="button"
+                >
+                  <span className="text-sm font-semibold text-apex">{order.orderNumber}</span>
+                  <span className="min-w-0 text-sm text-neutral-700">
+                    {order.customerDisplayName} - {order.serviceAddress}
+                  </span>
+                  <span className="text-xs font-semibold uppercase text-neutral-500">
+                    {order.status.replaceAll("_", " ")}
+                  </span>
+                  {detail?.orderId === order.orderId ? (
+                    <ChevronUp aria-hidden size={16} />
+                  ) : (
+                    <ChevronDown aria-hidden size={16} />
+                  )}
+                </button>
+                {detail?.orderId === order.orderId ? (
+                  <div className="mt-3 grid gap-4 border-t border-line pt-3 sm:grid-cols-2">
+                    <div>
+                      <p className="text-xs font-semibold uppercase text-neutral-500">Actividades</p>
+                      <ul className="mt-2 space-y-2">
+                        {detail.activities.map((activity) => (
+                          <li className="text-sm text-neutral-700" key={activity.localKey}>
+                            {activity.title} - {activity.status}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase text-neutral-500">Checklist</p>
+                      <ul className="mt-2 space-y-2">
+                        {detail.checklist.map((item) => (
+                          <li className="text-sm text-neutral-700" key={item.localKey}>
+                            {item.label} - {item.value || "pendiente"}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>
@@ -200,4 +269,3 @@ export default function OfflineTechnicianPanel() {
     </section>
   );
 }
-
