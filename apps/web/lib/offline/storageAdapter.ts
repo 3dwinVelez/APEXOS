@@ -396,3 +396,7 @@ export async function clearCurrentEnvironmentData(
 export async function clearAllOfflineData(): Promise<OfflineCleanupResult> {
   return deleteMatchingDatabases(() => true);
 }
+
+export async function loadOfflineOperationQueueRepository() {
+  return import("./operationQueue.ts");
+}
