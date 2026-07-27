@@ -189,9 +189,10 @@ export async function uploadAuthorizedServiceImageData(authorization: Authorized
   const bytes = Uint8Array.from(atob(match[2]), (character) => character.charCodeAt(0));
   const file = new File([bytes], image.name || "evidencia.jpg", { type: image.type || match[1] });
   await validateImage(file);
-  const uploadUrl = authorization.signed_upload_url.startsWith("http")
-    ? authorization.signed_upload_url
-    : supabaseUrl(authorization.signed_upload_url);
+  const signedPath = authorization.signed_upload_url.startsWith("/object/")
+    ? `/storage/v1${authorization.signed_upload_url}`
+    : authorization.signed_upload_url;
+  const uploadUrl = signedPath.startsWith("http") ? signedPath : supabaseUrl(signedPath);
   const response = await fetch(uploadUrl, {
     method: "PUT",
     headers: { "Content-Type": file.type, "x-upsert": "false" },

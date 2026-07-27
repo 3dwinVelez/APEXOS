@@ -33,6 +33,32 @@ function companyId(user) {
   return String(user?.company_id || "").trim() || null;
 }
 
+async function assertOrderAccess(tenantId, user, orderKey) {
+  if (/^\d+$/.test(String(orderKey))) {
+    const order = await prisma.serviceOrder.findFirst({ where: { id: Number(orderKey) }, select: { id: true } });
+    if (!order) throw Object.assign(new Error("Orden no encontrada en la empresa."), { statusCode: 404 });
+    return companyId(user);
+  }
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(orderKey))) {
+    throw Object.assign(new Error("Identificador de orden invalido."), { statusCode: 400 });
+  }
+  const current = await prisma.user.findUnique({ where: { id: user.id }, select: { preferences: true } });
+  const company = companyId(user) || String(current?.preferences?.company_id || "").trim();
+  if (!company) throw Object.assign(new Error("La sesion no tiene empresa operativa asociada."), { statusCode: 403 });
+  const query = new URLSearchParams({
+    select: "id",
+    id: `eq.${orderKey}`,
+    company_id: `eq.${company}`,
+    limit: "1"
+  });
+  const response = await storageRequest(`/rest/v1/service_orders?${query.toString()}`);
+  const orders = await response.json();
+  if (!Array.isArray(orders) || orders.length !== 1) {
+    throw Object.assign(new Error("Orden no encontrada en la empresa."), { statusCode: 404 });
+  }
+  return company;
+}
+
 function dimensions(bytes, mime) {
   if (mime === "image/png" && bytes.length >= 24) {
     return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
@@ -97,10 +123,7 @@ async function authorize(tenantId, user, orderKey, input) {
     });
     if (existing && existing.expires_at > new Date() && existing.status === "authorized") return signedResponse(existing);
 
-    if (/^\d+$/.test(String(orderKey))) {
-      const order = await prisma.serviceOrder.findFirst({ where: { id: Number(orderKey) }, select: { id: true } });
-      if (!order) throw Object.assign(new Error("Orden no encontrada en la empresa."), { statusCode: 404 });
-    }
+    const authorizedCompanyId = await assertOrderAccess(tenantId, user, orderKey);
 
     const id = crypto.randomUUID();
     const quarantinePath = `_quarantine/${tenantId}/${user.id}/${id}.${extension(mime)}`;
@@ -108,7 +131,7 @@ async function authorize(tenantId, user, orderKey, input) {
       data: {
         id,
         tenant_id: tenantId,
-        company_id: companyId(user),
+        company_id: authorizedCompanyId,
         order_key: String(orderKey),
         user_id: user.id,
         supabase_user_id: user.supabase_user_id || null,
