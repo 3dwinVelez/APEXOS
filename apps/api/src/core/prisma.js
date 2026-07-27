@@ -15,7 +15,7 @@ const TENANT_MODELS = new Set([
   "ProcessedWorkday", "GpsPing", "WorkSession", "ActivityType", "WorkActivity", "ActivityEvidence",
   "Vehicle", "ServiceOrder", "ServiceReference",
   "VehicleDocument", "VehicleMasterAuditLog", "ServiceReferencePart", "ServiceIncident", "ServicePhoto",
-  "EvidenceUploadAuthorization",
+  "EvidenceUploadAuthorization", "AuthorizationSession",
   "Project", "ProjectCommitment", "ProjectDeliverable", "ProjectRisk", "ProjectResourceAssignment",
   "ProjectComment", "ProjectEvidence", "ProjectAlert", "ProjectLog",
   "Payroll", "Account", "LedgerEntry", "CntCabdoc", "CntCuedoc", "CxpCabdoc", "CxpCuedoc", "CxpApplication", "PurchaseOrderInvoiceLine", "InventoryFamily", "InventoryFamilyAccounting", "ProductCost", "Payment",
@@ -39,7 +39,7 @@ const SOFT_DELETE = new Set([
 const PHYSICAL_DELETE_ALLOWED = new Set([
   "Role", "Permission", "SoDRule", "AuditLog", "Movement",
   "GpsPing", "TimePunch", "ProcessedWorkday", "WorkSession",
-  "WorkActivity", "ActivityEvidence", "ServicePhoto", "ServiceIncident", "EvidenceUploadAuthorization",
+  "WorkActivity", "ActivityEvidence", "ServicePhoto", "ServiceIncident", "EvidenceUploadAuthorization", "AuthorizationSession",
   "SensorReading", "BrainEvent", "BrainMetric",
   "RoutePreoperationalChecklistAnswer", "RoutePreoperationalChecklistEvidence",
   "RoutePreoperationalFinding", "RouteStartAuthorization", "RouteBlockEvent",

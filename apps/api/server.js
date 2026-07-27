@@ -121,6 +121,12 @@ async function build() {
     }
 
     try {
+      request.user = await require("./src/security/authorizationState").validateAuthorization(request.user);
+    } catch (error) {
+      return reply.code(error.statusCode || 401).send({ error: error.message, code: error.code || "SESION_REVOCADA" });
+    }
+
+    try {
       const tenantId = request.user?.tenant_id;
       if (tenantId) {
         const { getTenantFromCache } = require("./src/core/tenantCache");

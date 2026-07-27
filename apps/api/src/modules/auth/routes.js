@@ -25,6 +25,14 @@ async function authRoutes(fastify) {
   fastify.post("/auth/password", { preHandler: fastify.authenticate }, async (request) => {
     return service.changePassword(request.user, request.body);
   });
+
+  fastify.post("/auth/logout", { preHandler: fastify.authenticate }, async (request) => {
+    return service.logout(request.user);
+  });
+
+  fastify.delete("/auth/sessions/:id", { preHandler: fastify.authenticate }, async (request) => {
+    return service.revokeSession(request.user, request.params.id);
+  });
 }
 
 module.exports = authRoutes;
