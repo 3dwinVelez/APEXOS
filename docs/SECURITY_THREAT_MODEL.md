@@ -21,8 +21,8 @@ Fecha: 2026-07-26. Metodología: STRIDE, revisión estática y pruebas negativas
 | Activo | Amenaza STRIDE | Actor | Impacto | Probabilidad | Riesgo | Control actual |
 | --- | --- | --- | --- | --- | --- | --- |
 | Sesión local | Elevación por permisos obsoletos dentro del JWT | usuario desactivado o degradado | Alto | Media | Alto | firma HS256, expiración de 8 h, empresa activa |
-| Métricas | Exposición de topología y comportamiento interno | atacante sin sesión | Medio | Alta | Alto | headers y rate limit global; sin autenticación |
-| Storage | Archivo malicioso con MIME declarado falso | usuario autenticado | Alto | Media | Alto | bucket privado, RLS, tamaño y MIME declarado |
+| Métricas | Exposición de topología y comportamiento interno | atacante sin sesión | Medio | Baja tras desplegar | Bajo | token dedicado con comparación segura y límite específico; cambio aún local |
+| Storage | Archivo malicioso con MIME declarado falso | usuario autenticado | Alto | Baja desde la aplicación | Medio residual | firma binaria, tamaño, dimensiones, bucket privado y RLS; falta verificación autoritativa post-carga |
 | Dependencias | Explotación de advisories en Next/Fastify/tooling | atacante remoto o cadena de suministro | Alto | Media | Alto | lockfile y auditoría manual |
 | Multiempresa | IDOR por ID conocido o companyId manipulado | usuario de otra empresa | Crítico | Media | Alto | tenant derivado del token, filtros tenant, RLS |
 | Roles | Escalación administrativa | administrador de empresa | Crítico | Baja/Media | Alto | RBAC backend y alcance por tenant |

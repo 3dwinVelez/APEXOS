@@ -1,6 +1,8 @@
 import { supabaseFetch, supabaseHeaders, supabaseUrl } from "./supabaseClient";
+import { inspectFileSignature, type AllowedFileMime } from "./fileSignature";
 
 export const IMAGE_MAX_BYTES = 2 * 1024 * 1024;
+export const IMAGE_MAX_DIMENSION = 4096;
 export const IMAGE_MIME_TYPES = ["image/png", "image/jpeg", "image/webp"] as const;
 
 type ImageBucket = "company-assets" | "user-avatars" | "service-images";
@@ -21,33 +23,57 @@ type EncodedImage = {
 const USER_DOCUMENT_MAX_BYTES = 10 * 1024 * 1024;
 const USER_DOCUMENT_MIME_TYPES = ["application/pdf", "image/png", "image/jpeg", "image/webp"] as const;
 
-function validateImage(file: File) {
+async function validateImage(file: File): Promise<AllowedFileMime> {
+  if (!file.size) throw new Error("La imagen esta vacia.");
   if (!IMAGE_MIME_TYPES.includes(file.type as (typeof IMAGE_MIME_TYPES)[number])) {
     throw new Error("Formato no permitido. Usa PNG, JPEG o WEBP.");
   }
   if (file.size > IMAGE_MAX_BYTES) {
     throw new Error("La imagen supera el limite de 2MB.");
   }
+  const detectedMime = await inspectFileSignature(file);
+  if (!detectedMime || detectedMime !== file.type || !IMAGE_MIME_TYPES.includes(detectedMime as (typeof IMAGE_MIME_TYPES)[number])) {
+    throw new Error("El contenido de la imagen no coincide con su formato.");
+  }
+  const bitmap = await createImageBitmap(file).catch(() => null);
+  if (!bitmap) throw new Error("La imagen esta truncada o no puede decodificarse.");
+  const exceedsDimensions = bitmap.width > IMAGE_MAX_DIMENSION || bitmap.height > IMAGE_MAX_DIMENSION;
+  bitmap.close();
+  if (exceedsDimensions) throw new Error(`La imagen supera ${IMAGE_MAX_DIMENSION}px por lado.`);
+  return detectedMime;
 }
 
-function extensionFor(file: File) {
-  if (file.type === "application/pdf") return "pdf";
-  if (file.type === "image/png") return "png";
-  if (file.type === "image/webp") return "webp";
+function extensionFor(mime: AllowedFileMime) {
+  if (mime === "application/pdf") return "pdf";
+  if (mime === "image/png") return "png";
+  if (mime === "image/webp") return "webp";
   return "jpg";
 }
 
-function validateUserDocument(file: File) {
+async function validateUserDocument(file: File): Promise<AllowedFileMime> {
+  if (!file.size) throw new Error("El documento esta vacio.");
   if (!USER_DOCUMENT_MIME_TYPES.includes(file.type as (typeof USER_DOCUMENT_MIME_TYPES)[number])) {
     throw new Error("Formato no permitido. Usa PDF, PNG, JPEG o WEBP.");
   }
   if (file.size > USER_DOCUMENT_MAX_BYTES) {
     throw new Error("El documento supera el limite de 10MB.");
   }
+  const detectedMime = await inspectFileSignature(file);
+  if (!detectedMime || detectedMime !== file.type || !USER_DOCUMENT_MIME_TYPES.includes(detectedMime)) {
+    throw new Error("El contenido del documento no coincide con su formato.");
+  }
+  if (detectedMime !== "application/pdf") {
+    const bitmap = await createImageBitmap(file).catch(() => null);
+    if (!bitmap) throw new Error("La imagen esta truncada o no puede decodificarse.");
+    const exceedsDimensions = bitmap.width > IMAGE_MAX_DIMENSION || bitmap.height > IMAGE_MAX_DIMENSION;
+    bitmap.close();
+    if (exceedsDimensions) throw new Error(`La imagen supera ${IMAGE_MAX_DIMENSION}px por lado.`);
+  }
+  return detectedMime;
 }
 
-function safeName(prefix: string, file: File) {
-  return `${prefix}-${Date.now()}.${extensionFor(file)}`;
+function safeName(prefix: string, mime: AllowedFileMime) {
+  return `${prefix}-${Date.now()}-${crypto.randomUUID()}.${extensionFor(mime)}`;
 }
 
 function encodePath(path: string) {
@@ -70,8 +96,8 @@ export function splitStoragePath(value: string): { bucket: ImageBucket | Documen
   return { bucket: bucket as ImageBucket | DocumentBucket, path: pathParts.join("/") };
 }
 
-async function uploadImage(bucket: ImageBucket, path: string, file: File): Promise<UploadResult> {
-  validateImage(file);
+async function uploadImage(bucket: ImageBucket, path: string, file: File, validatedMime?: AllowedFileMime): Promise<UploadResult> {
+  if (!validatedMime) await validateImage(file);
   const response = await fetch(objectUrl(bucket, path), {
     method: "PUT",
     headers: {
@@ -121,24 +147,27 @@ export async function replaceImage(previousPath: string | null | undefined, next
   return uploaded;
 }
 
-export function uploadCompanyLogo(companyId: string, file: File) {
-  return uploadImage("company-assets", `${companyId}/logos/${safeName("logo", file)}`, file);
+export async function uploadCompanyLogo(companyId: string, file: File) {
+  const mime = await validateImage(file);
+  return uploadImage("company-assets", `${companyId}/logos/${safeName("logo", mime)}`, file, mime);
 }
 
 export function getCompanyLogoUrl(storageValue: string, expiresIn = 3600) {
   return createSignedImageUrl(storageValue, expiresIn);
 }
 
-export function uploadUserAvatar(companyId: string, userId: string, file: File) {
-  return uploadImage("user-avatars", `${companyId}/${userId}/${safeName("avatar", file)}`, file);
+export async function uploadUserAvatar(companyId: string, userId: string, file: File) {
+  const mime = await validateImage(file);
+  return uploadImage("user-avatars", `${companyId}/${userId}/${safeName("avatar", mime)}`, file, mime);
 }
 
 export function getUserAvatarUrl(storageValue: string, expiresIn = 3600) {
   return createSignedImageUrl(storageValue, expiresIn);
 }
 
-export function uploadServiceImage(companyId: string, serviceId: string, file: File) {
-  return uploadImage("service-images", `${companyId}/${serviceId}/${safeName("service", file)}`, file);
+export async function uploadServiceImage(companyId: string, serviceId: string, file: File) {
+  const mime = await validateImage(file);
+  return uploadImage("service-images", `${companyId}/${serviceId}/${safeName("service", mime)}`, file, mime);
 }
 
 export function uploadServiceImageData(companyId: string, serviceId: string, image: EncodedImage) {
@@ -154,9 +183,9 @@ export function getServiceImageUrl(storageValue: string, expiresIn = 3600) {
 }
 
 export async function uploadUserDocument(companyId: string, userId: string, documentType: string, file: File): Promise<UploadResult> {
-  validateUserDocument(file);
+  const mime = await validateUserDocument(file);
   const safeDocumentType = documentType.replace(/[^a-z0-9_-]/gi, "-").toLowerCase() || "internal";
-  const responsePath = `${companyId}/${userId}/${safeDocumentType}/${safeName("document", file)}`;
+  const responsePath = `${companyId}/${userId}/${safeDocumentType}/${safeName("document", mime)}`;
   const response = await fetch(objectUrl("user-documents", responsePath), {
     method: "PUT",
     headers: {

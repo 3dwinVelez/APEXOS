@@ -32,9 +32,16 @@ Fecha: 2026-07-26. Estado: fase 1 de diagnóstico; no constituye una certificaci
 | ID | Hallazgo | Severidad | Evidencia | Impacto | Corrección propuesta | Riesgo funcional | Riesgo performance |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | SEC-001 | Dependencias con advisories | Alta | 2 críticas y 9 altas; incluye Next, `find-my-way`, Nodemailer y tooling | DoS, SSRF o exposición según ruta afectada | actualización selectiva con pruebas | Medio | Bajo/Medio |
-| SEC-002 | Métricas sin autenticación | Alta | `GET /metrics` = 200/7.421 bytes sin token | reconocimiento y fuga operacional | token/red interna o permiso explícito | Bajo | Bajo |
+| SEC-002 | Métricas sin autenticación | Corregida localmente | Commit `5e1ca20`: token dedicado, comparación segura, límite 30/min; no desplegado | reconocimiento y fuga operacional | configurar secreto independiente antes de desplegar | Bajo | Bajo |
 | SEC-003 | Token local conserva rol/permisos hasta 8 h | Alta | `authenticate` valida firma/empresa pero no usuario/rol actual | usuario desactivado o degradado conserva acceso temporal | versión de sesión o caché de usuario activo con invalidación | Medio | Bajo si se cachea |
-| SEC-004 | Archivo validado por MIME declarado, no firma real | Alta | `validateImage` usa `File.type`; carga directa | contenido activo o archivo incompatible en bucket | autorización previa y validación de magic bytes al confirmar | Medio | Medio |
+| SEC-004 | Archivo validado por MIME declarado, no firma real | Parcialmente corregida localmente | firma–MIME en navegador y Base64 API; no desplegado | contenido activo o archivo incompatible en bucket | queda pendiente confirmación/quarantena servidor para clientes directos de Storage | Medio | Bajo |
+
+## Remediación local de fase 2
+
+- `/metrics`: las solicitudes sin token o con token incorrecto reciben una respuesta genérica `401`; el token válido conserva Prometheus y `/health` continúa público.
+- Archivos: JPEG, PNG, WebP, PDF, MP4 y WebM se identifican por firma cuando sus bytes atraviesan la aplicación. Se rechazan HTML/ejecutable disfrazado, MIME inconsistente, contenido vacío/truncado y exceso de tamaño.
+- Cargas directas web: además de firma, las imágenes deben decodificar correctamente, no superar 4096 px por lado y reciben un nombre con UUID bajo la ruta de empresa/entidad.
+- Riesgo residual: Supabase Storage todavía no ejecuta una confirmación binaria autoritativa después de una llamada directa que evite la aplicación. Resolverlo exige el flujo posterior de autorización/quarantena/confirmación coordinado con RLS.
 | SEC-005 | Estado RLS desplegado no verificado contra catálogo vivo | Alta | migraciones extensas; sin conexión SQL productiva segura en esta fase | drift puede abrir acceso cruzado | auditor SQL de `pg_class/pg_policies` en QA/release | Bajo | Bajo |
 | SEC-006 | Token en `localStorage` aumenta impacto de XSS | Media | cliente obtiene token desde almacenamiento local | secuestro de sesión ante XSS | evaluar cookie HttpOnly por flag; primero CSP | Alto | Bajo |
 | SEC-007 | CSP no comprobada en frontend | Media | respuesta local de Next sin CSP | menor defensa frente a XSS/clickjacking | CSP report-only progresiva | Medio | Bajo |

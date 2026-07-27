@@ -23,3 +23,16 @@ Fuente: `reports/performance/qa-root-cause-2026-07-27T01-06-02-427Z.json`.
 - La validación de archivos no debe reenviar el blob por múltiples servicios; se autoriza, carga y confirma de forma separada.
 
 No se midieron todavía creación de usuario/rol, fotografía, transición/cierre ni RLS vivo porque faltan cuentas QA aisladas y credenciales API específicas para esos flujos.
+
+## Fase 2 — resultados locales
+
+| Control | Medición | Resultado |
+| --- | --- | ---: |
+| `/metrics` autorizado | 25 solicitudes, después de calentamiento | p50 2,221 ms; p95 3,489 ms |
+| Firma binaria API | 100.000 detecciones JPEG | 6,434 ms total; 0,064 µs por detección |
+| Firma web | lectura previa | 16 bytes por archivo |
+| Integridad/dimensiones web | `createImageBitmap`, imagen limitada a 2 MB | asíncrono, una decodificación antes de carga |
+
+El benchmark QA ejecutado durante el bloque A mostró alta variabilidad externa en `service_orders`: p95 812 ms y luego 395 ms, sin errores. El cambio local no estaba desplegado y Servicios HTML permaneció en 120–121 ms, por lo que no existe una relación causal con `/metrics`. El segundo resultado quedó dentro del presupuesto de 700 ms.
+
+La compilación productiva, typecheck, lint, pruebas de contexto y pruebas negativas pasaron después del bloque de archivos. La sobrecarga de firma es despreciable; la decodificación asíncrona es el control necesario para detectar imágenes truncadas y limitar dimensiones, y sucede antes de la transferencia a Storage.
