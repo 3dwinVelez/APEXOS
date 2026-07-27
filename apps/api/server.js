@@ -308,7 +308,10 @@ async function build() {
     return { status: "OK", version: "2.0", modules: MODULES.length };
   });
 
-  fastify.get("/metrics", async (request, reply) => {
+  fastify.get("/metrics", {
+    preHandler: require("./src/security/metricsAuth").requireMetricsToken,
+    config: { rateLimit: { max: 30, timeWindow: "1 minute" } }
+  }, async (request, reply) => {
     const { metricsEndpoint } = require("./src/fabric/metrics");
     const { auditQueue, brainQueue, stockQueue, emailQueue } = require("./src/fabric/queues");
     reply.header("Content-Type", "text/plain; charset=utf-8");
