@@ -7,11 +7,16 @@ const TAG = "offline_phase_3_1_local";
 const TENANT_NAME = "Nyvora";
 const TENANT_DOMAIN = "nyvora.offline.local";
 const STATE_PATH = path.resolve("config/offline-phase3-certification.env");
+const EXPECTED_PORT = "54320";
+const EXPECTED_DATABASE = "apexos_offline_cert_local";
 
 function assertLocalRuntime() {
   const databaseUrl = new URL(process.env.DATABASE_URL || "");
   if (!["localhost", "127.0.0.1"].includes(databaseUrl.hostname)) {
     throw new Error("La certificacion solo admite PostgreSQL local.");
+  }
+  if (databaseUrl.port !== EXPECTED_PORT || databaseUrl.pathname.slice(1) !== EXPECTED_DATABASE) {
+    throw new Error("La certificacion requiere la base local dedicada apexos_offline_cert_local:54320.");
   }
   if (!["development", "local"].includes(process.env.APP_ENV || "development")) {
     throw new Error("APP_ENV debe ser development o local.");
@@ -109,7 +114,13 @@ function technicianInput({ name, email, roleId, code }) {
 
 async function prepare() {
   await assertCompatibleSchema();
-  if (await exactTenant()) throw new Error("Nyvora ya existe; inspeccione antes de preparar.");
+  const existingTenant = await exactTenant();
+  if (existingTenant) {
+    if (existingTenant.config?.source !== TAG) {
+      throw new Error("Nyvora ya existe y no pertenece al fixture controlado.");
+    }
+    return inspect();
+  }
 
   const adminPassword = password();
   const registered = await auth.registerTenant({
@@ -154,6 +165,16 @@ async function prepare() {
     },
     adminUser.id
   );
+  const unauthorizedRole = await admin.createRole(
+    tenantId,
+    {
+      name: "Consulta QA sin offline",
+      description: "Usuario QA sin capacidad de Servicios ni offline.",
+      role_type: "consulta",
+      permissions: { dashboard: ["access", "view"] }
+    },
+    adminUser.id
+  );
 
   const primaryInput = technicianInput({
     name: "Tecnico QA Offline",
@@ -169,6 +190,24 @@ async function prepare() {
   });
   const primary = await admin.createUser(tenantId, primaryInput, adminUser.id);
   const exclusion = await admin.createUser(tenantId, exclusionInput, adminUser.id);
+  const unauthorizedInput = {
+    ...technicianInput({
+      name: "Usuario QA No Autorizado",
+      email: "nyvora.offline.unauthorized@internal.apexos.local",
+      roleId: unauthorizedRole.id,
+      code: "NYV-OFFLINE-QA-03"
+    }),
+    profile_kind: "empleado",
+    user_kind: "empleado",
+    operational_classification: "administrativo",
+    can_receive_services: false,
+    position: "Consulta QA"
+  };
+  const unauthorized = await admin.createUser(
+    tenantId,
+    unauthorizedInput,
+    adminUser.id
+  );
   const primaryUser = await prisma.user.findUnique({
     where: { id: primary.id },
     include: { role: { include: { permissions: true } }, employee: true }
@@ -232,7 +271,10 @@ async function prepare() {
     EXCLUSION_USER_ID: exclusionUser.id,
     EXCLUSION_EMPLOYEE_ID: exclusionUser.employee.id,
     EXCLUSION_EMAIL: exclusionInput.email,
-    EXCLUSION_PASSWORD: exclusionInput.password
+    EXCLUSION_PASSWORD: exclusionInput.password,
+    UNAUTHORIZED_USER_ID: unauthorized.id,
+    UNAUTHORIZED_EMAIL: unauthorizedInput.email,
+    UNAUTHORIZED_PASSWORD: unauthorizedInput.password
   });
   return inspect();
 }
