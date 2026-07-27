@@ -1,0 +1,65 @@
+# Security Audit Report — Diagnóstico inicial
+
+Fecha: 2026-07-26. Estado: fase 1 de diagnóstico; no constituye una certificación absoluta de seguridad.
+
+## Alcance y evidencia
+
+- 150 archivos de API, backend y Supabase inventariados.
+- 213 declaraciones de rutas Fastify revisadas por patrón y módulos críticos inspeccionados manualmente.
+- 101 sentencias versionadas para habilitar RLS, 231 políticas y 21 funciones `security definer`.
+- Pruebas negativas sin token contra Administración y Servicios: `401`.
+- CORS local: origen permitido reflejado con credenciales; origen malicioso no reflejado.
+- `/metrics` desde la fuente actual: `200`, 7.421 bytes, sin token.
+- Escaneo de secretos versionados: sin claves privadas ni tokens reales detectados; solo ejemplos/placeholders.
+- `npm audit`: 2 críticas, 9 altas, 0 moderadas/bajas.
+- No se ejecutaron ataques destructivos ni cambios productivos.
+
+## Controles comprobados
+
+- Login con mensaje genérico y límites específicos.
+- JWT firmado, algoritmo restringido y expiración.
+- Refresh consulta nuevamente usuario activo y rol.
+- Middleware de empresa activa y RBAC en módulos críticos.
+- Servicios filtra por tenant y aplica alcance del técnico en servicio.
+- Rutas administrativas inspeccionadas exigen autenticación, empresa y permiso.
+- Buckets principales privados, MIME/tamaño configurados y rutas prefijadas por empresa.
+- Evidencias Base64 rechazadas en base de datos; URLs firmadas para lectura.
+- CORS de producción opera con lista explícita.
+- Errores 500 enviados sin stack al cliente.
+
+## Hallazgos priorizados
+
+| ID | Hallazgo | Severidad | Evidencia | Impacto | Corrección propuesta | Riesgo funcional | Riesgo performance |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SEC-001 | Dependencias con advisories | Alta | 2 críticas y 9 altas; incluye Next, `find-my-way`, Nodemailer y tooling | DoS, SSRF o exposición según ruta afectada | actualización selectiva con pruebas | Medio | Bajo/Medio |
+| SEC-002 | Métricas sin autenticación | Alta | `GET /metrics` = 200/7.421 bytes sin token | reconocimiento y fuga operacional | token/red interna o permiso explícito | Bajo | Bajo |
+| SEC-003 | Token local conserva rol/permisos hasta 8 h | Alta | `authenticate` valida firma/empresa pero no usuario/rol actual | usuario desactivado o degradado conserva acceso temporal | versión de sesión o caché de usuario activo con invalidación | Medio | Bajo si se cachea |
+| SEC-004 | Archivo validado por MIME declarado, no firma real | Alta | `validateImage` usa `File.type`; carga directa | contenido activo o archivo incompatible en bucket | autorización previa y validación de magic bytes al confirmar | Medio | Medio |
+| SEC-005 | Estado RLS desplegado no verificado contra catálogo vivo | Alta | migraciones extensas; sin conexión SQL productiva segura en esta fase | drift puede abrir acceso cruzado | auditor SQL de `pg_class/pg_policies` en QA/release | Bajo | Bajo |
+| SEC-006 | Token en `localStorage` aumenta impacto de XSS | Media | cliente obtiene token desde almacenamiento local | secuestro de sesión ante XSS | evaluar cookie HttpOnly por flag; primero CSP | Alto | Bajo |
+| SEC-007 | CSP no comprobada en frontend | Media | respuesta local de Next sin CSP | menor defensa frente a XSS/clickjacking | CSP report-only progresiva | Medio | Bajo |
+| SEC-008 | Rate limit global no es distribuido | Media | plugin local por proceso/tenant o IP | bypass horizontal entre réplicas | store Redis para rutas de abuso | Medio | Bajo/Medio |
+| SEC-009 | Registro público permite creación de tenants | Media | `/auth/register`, 5/IP/hora | spam y consumo de recursos | invitación/captcha/flag según modelo comercial | Alto | Bajo |
+| SEC-010 | Scripts operativos usan `$queryRawUnsafe` | Baja | solo scripts, algunos nombres dinámicos | inyección si reciben entrada no confiable | whitelist y consultas parametrizadas | Bajo | Nulo |
+
+## Matriz mínima comprobada
+
+| Rol/contexto | Acción no permitida | Frontend | Backend | RLS |
+| --- | --- | --- | --- | --- |
+| Sin sesión | listar usuarios | no confiable | bloqueada `401` | sin evaluación directa |
+| Sin sesión | listar servicios | no confiable | bloqueada `401` | sin evaluación directa |
+| Usuario sin módulo | acceder al módulo | guard visual | `MODULO_NO_HABILITADO` | policies por empresa/módulo versionadas |
+| Técnico | orden no asignada | filtrado visual | alcance aplicado en service | función/policy versionada |
+| Empresa A | registro de empresa B | no confiable | tenant derivado del token | policies versionadas |
+
+## Riesgos y pruebas pendientes
+
+- Verificación viva de todas las tablas/policies RLS en QA y producción.
+- Dos usuarios reales de empresas distintas para pruebas IDOR de lectura/escritura/Storage.
+- Roles reales: administrador, supervisor, técnico, consulta y desactivado.
+- Recuperación de contraseña, sesiones concurrentes y revocación.
+- Archivo con MIME falso y magic bytes inválidos.
+- Configuración Railway, backups, restauración, MFA y accesos del equipo.
+- Escaneo del historial Git y secretos de plataforma con una herramienta dedicada.
+
+No se corrigieron todavía SEC-001 a SEC-009 porque la instrucción limita esta fase a presentar el diagnóstico antes de cambios críticos.
