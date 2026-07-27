@@ -27,7 +27,7 @@ Clases:
 | Logs operativos locales | PERMITIDO_LOCAL_TEMPORAL | Codigos, tiempos, IDs opacos; sin payload | 7 dias |
 | Informacion de otras empresas | PROHIBIDO_LOCAL | Ninguna | 0 |
 | Informacion de otros tecnicos | PROHIBIDO_LOCAL | Ninguna | 0 |
-| Maestros | SOLO_SERVIDOR | Solo subconjunto operacional versionado futuro | 0 en Fase 1 |
+| Catalogos operativos | PERMITIDO_LOCAL | Solo valores usados por el snapshot | Validacion cada 24 h |
 | Documentos personales | PROHIBIDO_LOCAL | Documento de identidad, contratos, salud, nomina | 0 |
 | Metadata de evidencia | PERMITIDO_LOCAL_TEMPORAL | ID local, hash, tipo, estado | 7 dias tras recibo |
 | Recibos/checkpoints | PERMITIDO_LOCAL | IDs y versiones, sin payload sensible | 7 dias |
@@ -43,4 +43,3 @@ se comprimen antes de persistir en una fase autorizada.
 La retencion termina antes si concluye la asignacion, se cierra sesion, cambia
 tenant/usuario, se revoca capacidad o se supera la cuota. La limpieza remueve
 proyecciones, cola, blobs, recibos y logs del contexto afectado.
-

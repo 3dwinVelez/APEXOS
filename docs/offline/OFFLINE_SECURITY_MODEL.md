@@ -34,9 +34,8 @@ prevalece.
   usuario/tenant y revocar la sesion con el mecanismo existente.
 - Cierre sin red: borrar material local y credenciales del cliente; la
   revocacion remota queda pendiente para la proxima conexion.
-- Sesion vencida offline: no crear nuevas operaciones ni sincronizar. Se puede
-  permitir lectura minimizada hasta el TTL solo si una politica posterior lo
-  aprueba; en Fase 1 queda denegada.
+- Sesion vencida offline: bloquear lectura, nuevas operaciones y sincronizacion.
+  La Fase 3 exige JWT local no vencido y snapshot dentro del TTL.
 - Usuario/tenant revocado, rol cambiado o empresa cambiada: el siguiente
   contacto bloquea sync, invalida capacidad y ordena limpieza. El backend no
   acepta operaciones por haber sido creadas antes de la revocacion.
@@ -81,4 +80,3 @@ El piloto acepta que un dispositivo desbloqueado puede exponer PII temporal y
 que la revocacion no llega sin red. Se mitiga con dispositivos controlados,
 minimizacion, TTL corto, bloqueo de sync, auditoria y alcance exclusivo a
 ordenes asignadas. Datos de alta sensibilidad permanecen solo en servidor.
-

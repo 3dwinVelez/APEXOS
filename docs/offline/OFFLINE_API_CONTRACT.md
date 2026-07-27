@@ -1,26 +1,34 @@
 # Contrato conceptual de API offline
 
-Estado: diseno, sin endpoints implementados.
+Estado: bootstrap de solo lectura implementado en Fase 3. Pull, push, estado y
+evidencias permanecen como diseno para fases posteriores.
 
 Todos los endpoints futuros usan `/api/v1/offline`, autenticacion actual,
 capacidad autoritativa, JSON UTF-8, timestamps ISO-8601 UTC, UUID para IDs de
 cliente y versiones enteras monotonas. El servidor deriva tenant y usuario.
 
-## Bootstrap
+## Capacidad implementada
 
-`GET /bootstrap?deviceId=&limit=&cursor=` devuelve capacidad, reloj de servidor,
-ordenes asignadas minimizadas, catalogos permitidos, `nextCursor`,
-`checkpoint` y expiracion. Es paginado y repetible; el checkpoint se activa
-solo al completar todas las paginas.
+`GET /capabilities` no recibe contexto por query. Devuelve la capacidad efectiva
+derivada de sesion y allowlists. En Fase 3 solo puede habilitar
+`offlineTechnician.enabled`; `readOnly=true` y sync, evidencia y auto-sync
+permanecen falsas.
 
-## Pull incremental
+## Bootstrap implementado
+
+`GET /bootstrap` no acepta parametros. Devuelve contexto autoritativo, reloj,
+expiracion, ordenes asignadas minimizadas, actividades, checklists, catalogos,
+`hasMore` y checkpoint opaco. La respuesta esta acotada y no se pagina en esta
+fase; `hasMore=true` indica que no debe considerarse una copia completa.
+
+## Pull incremental (no implementado)
 
 `GET /sync/pull?checkpoint=&limit=&cursor=` devuelve cambios, tombstones de
 asignaciones retiradas, versiones y siguiente checkpoint. Un checkpoint
 desconocido o demasiado antiguo devuelve `410 CHECKPOINT_EXPIRED` y exige
 bootstrap, sin borrar datos pendientes.
 
-## Push por lote
+## Push por lote (no implementado)
 
 `POST /sync/push` recibe `deviceId`, `batchId`, checkpoint observado y hasta 50
 operaciones o 512 KiB, lo que ocurra primero. El payload binario esta prohibido.
@@ -57,12 +65,12 @@ Estados: `APPLIED`, `ALREADY_APPLIED`, `RETRYABLE_ERROR`, `REJECTED`,
 error de transporte o envoltura invalida el lote, no los resultados ya
 confirmados en una respuesta anterior.
 
-## Estado
+## Estado (no implementado)
 
 `GET /sync/status?operationId=` devuelve recibos por IDs solicitados, capacidad
 y hora servidor. Sirve para resolver una respuesta perdida antes de reintentar.
 
-## Evidencia
+## Evidencia (no implementado)
 
 `POST /evidence/prepare` recibe operationId, orden, hash SHA-256, MIME, bytes y
 dimensiones. Devuelve autorizacion corta y destino de cuarentena, o el recibo
@@ -98,4 +106,3 @@ Las reglas de `startOrder`, inspeccion, ejecucion, cierre, incidentes y
 evidencias autorizadas se reutilizan desde servicios de dominio. Los endpoints
 actuales no se invocan en cascada ni cambian de contrato. Auth, tenancy, RBAC y
 estado de autorizacion siguen siendo precondiciones.
-

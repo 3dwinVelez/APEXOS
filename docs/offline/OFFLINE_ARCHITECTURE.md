@@ -97,9 +97,8 @@ exitosos. Cuota excedida produce `BLOCKED` sin perder otras operaciones.
 ## Adaptadores de almacenamiento
 
 `OfflineStorageAdapter` define apertura explicita, transacciones, version de
-esquema, migracion, estimacion de cuota y limpieza por tenant/usuario. El primer
-adaptador funcional sera Dexie sobre IndexedDB, agregado con importacion
-dinamica en Fase 2.
+esquema, migracion, estimacion de cuota y limpieza por tenant/usuario. Dexie
+sobre IndexedDB es el adaptador web desde Fase 2 y se importa dinamicamente.
 
 Las interfaces no exponen tipos Dexie. Un adaptador futuro SQLite para
 Capacitor implementara el mismo contrato; la logica de aplicacion y sync no
@@ -114,10 +113,14 @@ separados y no forman parte del repositorio.
 - Logs cliente minimizados, sin tokens, payload de fotos ni PII innecesaria.
 - Estado visible futuro derivado de datos, no de mensajes de log.
 
+En Fase 3, capacidades y bootstrap son autoritativos. El endpoint genera una
+proyeccion acotada en dos consultas, registra resultado, latencia, cantidad de
+ordenes, bytes y consultas, y el cliente la hidrata transaccionalmente. No hay
+pull, push ni operaciones locales.
+
 ## Rollback
 
 El rollback inmediato apaga la bandera global. Como los fundamentos no se
 conectan al flujo actual, esto evita inicializacion y trafico nuevo. Endpoints y
 tablas futuras seran aditivos. Operaciones ya aplicadas no se borran: quedan
 auditadas y se revierten solo mediante reglas de negocio existentes.
-

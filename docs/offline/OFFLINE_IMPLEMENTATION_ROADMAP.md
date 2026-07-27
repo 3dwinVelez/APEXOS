@@ -7,7 +7,7 @@ de criterio de salida detiene el avance.
 | --- | --- | --- | --- | --- | --- |
 | 1. Fundamentos y contratos | Cerrar arquitectura, seguridad, flags, tipos y puertos. Depende de auditoria aprobada. | Docs, codigo aislado y tests; no almacenamiento ni rutas funcionales. | Validaciones actuales, flags falsas, serializacion y cero cambio de flujo/bundle material. | Retirar imports aislados o apagar flags. | `feat: define offline foundations` |
 | 2. Almacenamiento local de solo lectura | Implementar Dexie tras repositorios. Depende de clasificacion y cuota. | Esquema vacio, migraciones locales y limpieza; no ordenes reales ni UI. | Transacciones, upgrade/downgrade soportado, aislamiento y cuota. | Borrar base versionada y desactivar flag. | `feat: add offline storage adapter` |
-| 3. Bootstrap y consulta offline | Descargar proyeccion minimizada. Depende de version servidor y endpoints. | Lectura de ordenes asignadas; no escrituras operativas. | Paginacion, checkpoint, revocacion, TTL y comparacion online/offline. | Apagar tecnico y eliminar proyeccion. | `feat: add offline bootstrap` |
+| 3. Bootstrap y consulta offline | Implementada: proyeccion minimizada con revision temporal `updated_at`. | Lectura de ordenes asignadas; no escrituras operativas. | Automatizacion aprobada; comparacion online/offline real pendiente de tecnico QA confirmado. | Apagar tecnico y eliminar proyeccion. | `feat: add offline bootstrap` |
 | 4. Cola local de operaciones | Registrar eventos sin enviarlos. Depende de repositorios transaccionales. | Operaciones idempotentes y UI de laboratorio; no push. | Orden causal, serializacion, recuperacion y limites. | Exportar diagnostico y limpiar cola de prueba. | `feat: add offline operation queue` |
 | 5. Sincronizacion manual | Push/pull estructurado. Depende de idempotencia/versiones servidor. | Boton manual y lotes pequenos; no auto sync. | Resultados parciales, replay, revocacion, carga y fallos de red. | Apagar sync; conservar cola local. | `feat: add manual offline sync` |
 | 6. Evidencias | Captura, prepare, cuarentena y confirm. Depende de cuota y Storage autorizado. | Imagen temporal limitada; no base64 ni carga directa. | MIME/firma/hash, expiracion, duplicado, cuota y limpieza. | Apagar evidencia; conservar/exportar pendiente. | `feat: add offline evidence sync` |
@@ -24,4 +24,3 @@ de criterio de salida detiene el avance.
 - Identidad exacta del tenant y usuarios del piloto QA.
 - Incorporacion de Dexie en Fase 2 y presupuesto de bundle diferido.
 - Paso a Capacitor/SQLite solo despues de resultados del piloto PWA.
-
