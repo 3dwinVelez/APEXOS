@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { VentasNav } from "@/components/ventas-nav";
@@ -9,6 +9,17 @@ type Customer = { id: number; name: string; legal_name?: string; tax_id?: string
 type Item = { id: number; code: string; name: string; unit: string; unit_price: number; tax_rate: number };
 type Warehouse = { id: number; code: string; name: string; warehouse_type: string };
 type Line = { item_id: number; item_code: string; item_name: string; qty: number; unit: string; unit_price: number; discount: number; tax_rate: number; place_id: number | null; place_name: string; customer_invoice_number: string };
+type SimulationLine = { line_no: number; item_code: string; item_name: string; qty: number; net_amount?: number; tax_amount?: number; total?: number; revenue_account?: string };
+type SimulationRetention = { description: string; amount: number; percent: number };
+type InvoiceSimulation = {
+  customer?: { name?: string };
+  date?: string;
+  effective_total?: number;
+  retention_total?: number;
+  lines?: SimulationLine[];
+  retentions?: SimulationRetention[];
+};
+type CreatedInvoice = { number?: string };
 
 export default function NuevaFacturaPage() {
   const router = useRouter();
@@ -17,7 +28,7 @@ export default function NuevaFacturaPage() {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
-  const [simulation, setSimulation] = useState<any>(null);
+  const [simulation, setSimulation] = useState<InvoiceSimulation | null>(null);
   const [showSim, setShowSim] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -47,10 +58,10 @@ export default function NuevaFacturaPage() {
     setLines((prev) => [...prev, { item_id: 0, item_code: "", item_name: "", qty: 1, unit: "UND", unit_price: 0, discount: 0, tax_rate: 0, place_id: header.place_id || null, place_name: "", customer_invoice_number: "" }]);
   }
 
-  function updateLine(index: number, field: keyof Line, value: any) {
+  function updateLine<K extends keyof Line>(index: number, field: K, value: Line[K]) {
     setLines((prev) => {
       const next = [...prev];
-      (next[index] as any)[field] = value;
+      next[index] = { ...next[index], [field]: value };
 
       if (field === "item_id") {
         const item = items.find((i) => i.id === Number(value));
@@ -94,7 +105,7 @@ export default function NuevaFacturaPage() {
     if (!header.customer_id) { setError("Seleccione un cliente"); return; }
     if (!lines.length || lines.some((l) => !l.item_id)) { setError("Agregue al menos un producto"); return; }
     try {
-      const res = await api("/api/v1/sales/invoices/simulate", {
+      const res = await api<InvoiceSimulation>("/api/v1/sales/invoices/simulate", {
         method: "POST",
         body: JSON.stringify({
           customer_id: header.customer_id,
@@ -121,7 +132,7 @@ export default function NuevaFacturaPage() {
     if (!lines.length || lines.some((l) => !l.item_id)) { setError("Agregue al menos un producto"); return; }
     setSaving(true);
     try {
-      const res = await api<{ invoice: any }>("/api/v1/sales/invoices", {
+      const res = await api<{ invoice: CreatedInvoice }>("/api/v1/sales/invoices", {
         method: "POST",
         body: JSON.stringify({
           customer_id: header.customer_id,
@@ -222,7 +233,7 @@ export default function NuevaFacturaPage() {
                 return (
                   <tr key={i} className="border-b border-line">
                     <td className="py-1 pr-2">
-                      <select className="h-8 w-full rounded border border-line px-2 text-xs" value={line.item_id} onChange={(e) => updateLine(i, "item_id", e.target.value)}>
+                      <select className="h-8 w-full rounded border border-line px-2 text-xs" value={line.item_id} onChange={(e) => updateLine(i, "item_id", Number(e.target.value))}>
                         <option value={0}>Seleccionar</option>
                         {items.map((item) => <option key={item.id} value={item.id}>{item.code} · {item.name}</option>)}
                       </select>
@@ -287,7 +298,7 @@ export default function NuevaFacturaPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {simulation.lines?.map((l: any, i: number) => (
+                  {simulation.lines?.map((l, i) => (
                     <tr key={i} className="border-b border-line">
                       <td className="py-1 pr-2">{l.line_no}</td>
                       <td className="py-1 pr-2">{l.item_code} · {l.item_name}</td>
@@ -303,7 +314,7 @@ export default function NuevaFacturaPage() {
               {simulation.retentions?.length > 0 && (
                 <div className="mt-2">
                   <p className="font-medium">Retenciones aplicadas:</p>
-                  {simulation.retentions.map((r: any, i: number) => (
+                  {simulation.retentions.map((r, i) => (
                     <p key={i} className="text-xs">{r.description}: <strong>${r.amount.toFixed(2)}</strong> ({r.percent}%)</p>
                   ))}
                 </div>

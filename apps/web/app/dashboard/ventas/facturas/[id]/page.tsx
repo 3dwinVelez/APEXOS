@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { VentasNav } from "@/components/ventas-nav";
 
@@ -17,21 +17,20 @@ type InvoiceDetail = {
 
 export default function FacturaDetailPage() {
   const { id } = useParams();
-  const router = useRouter();
   const [invoice, setInvoice] = useState<InvoiceDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [cancelling, setCancelling] = useState(false);
 
-  function load() {
+  const load = useCallback(() => {
     setLoading(true);
     api<InvoiceDetail>(`/api/v1/sales/invoices/${id}`)
       .then(setInvoice)
       .catch((err) => setError(err instanceof Error ? err.message : "Error"))
       .finally(() => setLoading(false));
-  }
+  }, [id]);
 
-  useEffect(() => { load(); }, [id]);
+  useEffect(() => { load(); }, [load]);
 
   async function handleCancel() {
     if (!confirm("¿Anular esta factura? Se revertirá inventario y CxC.")) return;
@@ -144,7 +143,7 @@ export default function FacturaDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {invoice.cxc.lines.map((l: any, i: number) => (
+                {invoice.cxc.lines.map((l, i) => (
                   <tr key={i} className="border-b border-line">
                     <td className="py-1 pr-2 font-mono">{l.account_code}</td>
                     <td className="py-1 pr-2">{l.movement === "debit" ? "Débito" : "Crédito"}</td>

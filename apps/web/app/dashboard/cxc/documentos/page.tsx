@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { CxcNav } from "@/components/cxc-nav";
@@ -17,7 +17,7 @@ export default function CxcDocumentosPage() {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ open_only: "false", customer_id: "" });
 
-  function load() {
+  const load = useCallback(() => {
     setLoading(true);
     const params = new URLSearchParams();
     if (filters.open_only === "true") params.set("open_only", "true");
@@ -26,9 +26,9 @@ export default function CxcDocumentosPage() {
       .then((res) => setDocs(res || []))
       .catch(() => setDocs([]))
       .finally(() => setLoading(false));
-  }
+  }, [filters.customer_id, filters.open_only]);
 
-  useEffect(() => { load(); }, [filters]);
+  useEffect(() => { load(); }, [load]);
 
   return (
     <div className="space-y-4">

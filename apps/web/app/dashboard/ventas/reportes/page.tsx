@@ -56,7 +56,11 @@ export default function ReportesPage() {
       .finally(() => setLoading(false));
   }
 
-  useEffect(() => { loadReport(); }, [tab]);
+  useEffect(() => {
+    loadReport();
+    // Los filtros se aplican solo al pulsar "Consultar"; el cambio de pestaña sí recarga automáticamente.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
 
   const TABS: { key: Tab; label: string }[] = [
     { key: "customer", label: "Por cliente" },

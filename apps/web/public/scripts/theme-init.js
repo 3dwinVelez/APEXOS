@@ -7,7 +7,7 @@
     document.documentElement.dataset.theme = theme;
     var roleName = localStorage.getItem("role_name") || "";
     document.documentElement.dataset.role = roleName.toLowerCase();
-  } catch (e) {
+  } catch {
     // localStorage no disponible (entorno restringido)
   }
 })();

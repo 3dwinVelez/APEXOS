@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { VentasNav } from "@/components/ventas-nav";
@@ -17,7 +17,7 @@ export default function FacturasPage() {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ status: "", search: "" });
 
-  function load() {
+  const load = useCallback(() => {
     setLoading(true);
     const params = new URLSearchParams();
     if (filters.status) params.set("status", filters.status);
@@ -26,9 +26,9 @@ export default function FacturasPage() {
       .then((res) => setInvoices(res || []))
       .catch(() => setInvoices([]))
       .finally(() => setLoading(false));
-  }
+  }, [filters.search, filters.status]);
 
-  useEffect(() => { load(); }, [filters]);
+  useEffect(() => { load(); }, [load]);
 
   return (
     <div className="space-y-4">
