@@ -80,6 +80,15 @@ reasignacion, cancelacion y revocacion queda pendiente. La fase tecnica queda
 implementada y automatizada, pero la certificacion del piloto requiere que el
 responsable confirme esas identidades.
 
+## Intento de certificacion Fase 3.1
+
+El preflight posterior confirmo que `config/local.env` apunta a PostgreSQL
+local `54320`, no disponible. El PostgreSQL Docker local en `55432` responde,
+pero no contiene un tenant Nyvora exacto y carece de
+`Tenant.authorization_version`. La certificacion se detuvo antes de escribir
+datos porque las migraciones estan prohibidas. Ver
+`OFFLINE_PHASE_3_FUNCTIONAL_CERTIFICATION.md`.
+
 `npm audit --omit=dev` mantiene tres vulnerabilidades altas preexistentes:
 PostCSS y Sharp transitivos de Next. La correccion sugerida usa `--force` y
 propone un downgrade rompiente a Next 9.3.3, por lo que no se aplico. Debe

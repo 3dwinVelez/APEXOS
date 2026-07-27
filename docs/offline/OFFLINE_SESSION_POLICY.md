@@ -20,3 +20,6 @@ bootstrap. El limite residual es el menor vencimiento entre JWT,
 revocacion inmediata en dispositivo desconectado requiere gestion de
 dispositivo futura y no se declara resuelta en Fase 3.
 
+La certificacion exige que las columnas de version de usuario y tenant existan
+realmente en la base. No se admite omitir la verificacion de revocacion para
+acomodar un ambiente local desactualizado.

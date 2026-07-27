@@ -30,3 +30,9 @@ Rollback: apagar primero `OFFLINE_TECHNICIAN_ENABLED` en backend y luego
 `NEXT_PUBLIC_OFFLINE_DISCOVERY_ENABLED` en web. Las sesiones dejan de obtener
 bootstrap; el logout o la limpieza local elimina el snapshot existente.
 
+## Precondicion de ambiente
+
+No activar flags si la base no contiene las columnas de version de autorizacion
+usadas por sesiones y revocacion. Al 2026-07-27, `config/local.env` apunta a un
+servidor no disponible y el PostgreSQL Docker alternativo tiene schema
+anterior. Las allowlists continúan vacias.
