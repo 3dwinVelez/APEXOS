@@ -1,10 +1,13 @@
-import type { DexieOfflineStorageAdapter } from "./storageAdapter.ts";
 import type { OfflineSnapshot } from "./types.ts";
 
-export class OfflineSnapshotHydrator {
-  private readonly storage: DexieOfflineStorageAdapter;
+export interface OfflineSnapshotStorage {
+  replaceSnapshot(snapshot: unknown): Promise<void>;
+}
 
-  constructor(storage: DexieOfflineStorageAdapter) {
+export class OfflineSnapshotHydrator {
+  private readonly storage: OfflineSnapshotStorage;
+
+  constructor(storage: OfflineSnapshotStorage) {
     this.storage = storage;
   }
 

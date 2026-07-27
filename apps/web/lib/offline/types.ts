@@ -1,7 +1,6 @@
 import type {
   OfflineActivityRepository,
   OfflineChecklistRepository,
-  OfflineMetadataRepository,
   OfflineOrderRepository,
   OfflineRepositoryContext,
   OfflineStorageEstimate
@@ -191,7 +190,9 @@ export interface OfflineReadStorageTransaction {
   activities: Pick<OfflineActivityRepository<OfflineActivityRecord>, "listByOrder">;
   checklists: Pick<OfflineChecklistRepository<OfflineChecklistRecord>, "listByOrder">;
   catalogs: OfflineCatalogRepository;
-  metadata: Pick<OfflineMetadataRepository, "get">;
+  metadata: {
+    get(context: OfflineRepositoryContext): Promise<OfflineMetadataRecord | null>;
+  };
 }
 
 export interface OfflineReadStorageAdapter {
