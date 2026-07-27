@@ -1,0 +1,348 @@
+const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
+
+const mode = process.argv[2] || "inspect";
+const TAG = "offline_phase_3_1_local";
+const TENANT_NAME = "Nyvora";
+const TENANT_DOMAIN = "nyvora.offline.local";
+const STATE_PATH = path.resolve("config/offline-phase3-certification.env");
+
+function assertLocalRuntime() {
+  const databaseUrl = new URL(process.env.DATABASE_URL || "");
+  if (!["localhost", "127.0.0.1"].includes(databaseUrl.hostname)) {
+    throw new Error("La certificacion solo admite PostgreSQL local.");
+  }
+  if (!["development", "local"].includes(process.env.APP_ENV || "development")) {
+    throw new Error("APP_ENV debe ser development o local.");
+  }
+  process.env.DISABLE_REDIS = "true";
+  process.env.REDIS_DISABLED = "true";
+}
+
+assertLocalRuntime();
+
+const prisma = require("../apps/api/src/core/prisma");
+const auth = require("../apps/api/src/modules/auth/service");
+const admin = require("../apps/api/src/modules/admin/service");
+const services = require("../apps/api/src/modules/services/service");
+
+function password() {
+  return `Offline-${crypto.randomBytes(12).toString("base64url")}#3`;
+}
+
+function parseState() {
+  if (!fs.existsSync(STATE_PATH)) return {};
+  return Object.fromEntries(
+    fs
+      .readFileSync(STATE_PATH, "utf8")
+      .split(/\r?\n/)
+      .filter((line) => line && !line.startsWith("#"))
+      .map((line) => {
+        const index = line.indexOf("=");
+        return [line.slice(0, index), line.slice(index + 1)];
+      })
+  );
+}
+
+function saveState(values) {
+  fs.writeFileSync(
+    STATE_PATH,
+    [
+      "# Local-only credentials and identifiers. Never commit.",
+      ...Object.entries(values).map(([key, value]) => `${key}=${value}`),
+      ""
+    ].join("\n"),
+    { mode: 0o600 }
+  );
+}
+
+async function exactTenant() {
+  const matches = await prisma.$queryRaw`
+    SELECT id, name, domain, active, active_modules, config
+    FROM public."Tenant"
+    WHERE lower(name) = lower(${TENANT_NAME})
+       OR lower(coalesce(domain, '')) = lower(${TENANT_DOMAIN})
+  `;
+  if (matches.length > 1) throw new Error("Existe mas de un tenant Nyvora compatible.");
+  return matches[0] || null;
+}
+
+async function assertCompatibleSchema() {
+  const rows = await prisma.$queryRaw`
+    SELECT column_name
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'Tenant'
+      AND column_name = 'authorization_version'
+  `;
+  if (rows.length !== 1) {
+    throw new Error(
+      "La base local no contiene Tenant.authorization_version; no se puede certificar sesion/revocacion sin una base development compatible."
+    );
+  }
+}
+
+function technicianInput({ name, email, roleId, code }) {
+  return {
+    profile_kind: "tecnico",
+    user_kind: "tecnico",
+    name,
+    first_names: name,
+    last_names: "Offline",
+    email,
+    password: password(),
+    role_id: roleId,
+    document: code,
+    code,
+    company: TENANT_NAME,
+    position: "Tecnico de servicios",
+    department: "Servicios",
+    user_status: "activo",
+    operational_classification: "tecnico",
+    engagement_type: "contratista",
+    contract_type: "service",
+    can_receive_services: true,
+    metadata: { certification_tag: TAG }
+  };
+}
+
+async function prepare() {
+  await assertCompatibleSchema();
+  if (await exactTenant()) throw new Error("Nyvora ya existe; inspeccione antes de preparar.");
+
+  const adminPassword = password();
+  const registered = await auth.registerTenant({
+    company_name: TENANT_NAME,
+    industry: "internal_qa",
+    country: "CO",
+    timezone: "America/Bogota",
+    currency: "COP",
+    plan: "crown",
+    name: "Nyvora Offline QA Admin",
+    email: "nyvora.offline.admin@internal.apexos.local",
+    password: adminPassword
+  });
+  const tenantId = registered.tenant.id;
+  const adminUser = {
+    id: registered.user.id,
+    tenant_id: tenantId,
+    role: { name: "APEX_ADMIN" },
+    role_id: registered.user.role_id,
+    name: registered.user.name,
+    email: registered.user.email
+  };
+
+  await prisma.tenant.update({
+    where: { id: tenantId },
+    data: {
+      domain: TENANT_DOMAIN,
+      config: { source: TAG, purpose: "read_only_offline_certification" }
+    }
+  });
+
+  const role = await admin.createRole(
+    tenantId,
+    {
+      name: "Tecnico",
+      description: "Tecnico QA restringido a consulta de Servicios.",
+      role_type: "operativo",
+      permissions: {
+        dashboard: ["access", "view"],
+        servicios: ["access", "view"]
+      }
+    },
+    adminUser.id
+  );
+
+  const primaryInput = technicianInput({
+    name: "Tecnico QA Offline",
+    email: "nyvora.offline.technician@internal.apexos.local",
+    roleId: role.id,
+    code: "NYV-OFFLINE-QA-01"
+  });
+  const exclusionInput = technicianInput({
+    name: "Tecnico QA Aislamiento",
+    email: "nyvora.offline.exclusion@internal.apexos.local",
+    roleId: role.id,
+    code: "NYV-OFFLINE-QA-02"
+  });
+  const primary = await admin.createUser(tenantId, primaryInput, adminUser.id);
+  const exclusion = await admin.createUser(tenantId, exclusionInput, adminUser.id);
+  const primaryUser = await prisma.user.findUnique({
+    where: { id: primary.id },
+    include: { role: { include: { permissions: true } }, employee: true }
+  });
+  const exclusionUser = await prisma.user.findUnique({
+    where: { id: exclusion.id },
+    include: { role: { include: { permissions: true } }, employee: true }
+  });
+
+  const reference = await services.createReference(tenantId, adminUser, {
+    code: "OFFLINE-QA-REF",
+    name: "Referencia certificacion offline",
+    category: "qa",
+    description: "Fixture local no productivo",
+    estimated_minutes: 30,
+    active: true,
+    parts: [
+      { name: "Componente A", quantity: 1, unit: "und", description: "Checklist QA" },
+      { name: "Componente B", quantity: 2, unit: "und", description: "Checklist QA" }
+    ],
+    metadata: { certification_tag: TAG }
+  });
+
+  const base = {
+    reference_id: reference.id,
+    service_type: "montaje",
+    customer_name: "Cliente sintetico offline",
+    customer_document: "900000001",
+    customer_address: "Direccion sintetica QA",
+    customer_phone: "3000000000",
+    notes: "Fixture de certificacion offline de solo lectura",
+    metadata: { certification_tag: TAG }
+  };
+  const create = (number, technicianId, days) =>
+    services.createOrder(tenantId, adminUser, {
+      ...base,
+      number,
+      technician_id: technicianId,
+      scheduled_date: new Date(Date.now() + days * 86400000).toISOString()
+    });
+
+  const active = await create("OFF-QA-ACTIVE", primaryUser.employee.id, 0);
+  await services.startOrder(tenantId, primaryUser, active.id, {
+    latitude: 4.711,
+    longitude: -74.0721,
+    accuracy_meters: 10
+  });
+  await create("OFF-QA-FUTURE", primaryUser.employee.id, 3);
+  await create("OFF-QA-OTHER-TECH", exclusionUser.employee.id, 2);
+  await create("OFF-QA-OUTSIDE", primaryUser.employee.id, 10);
+
+  saveState({
+    CERTIFICATION_TAG: TAG,
+    TENANT_ID: tenantId,
+    ADMIN_EMAIL: registered.user.email,
+    ADMIN_PASSWORD: adminPassword,
+    TECHNICIAN_USER_ID: primaryUser.id,
+    TECHNICIAN_EMPLOYEE_ID: primaryUser.employee.id,
+    TECHNICIAN_EMAIL: primaryInput.email,
+    TECHNICIAN_PASSWORD: primaryInput.password,
+    EXCLUSION_USER_ID: exclusionUser.id,
+    EXCLUSION_EMPLOYEE_ID: exclusionUser.employee.id,
+    EXCLUSION_EMAIL: exclusionInput.email,
+    EXCLUSION_PASSWORD: exclusionInput.password
+  });
+  return inspect();
+}
+
+async function inspect() {
+  const tenant = await exactTenant();
+  if (!tenant) {
+    const schemaCompatible = await prisma.$queryRaw`
+      SELECT count(*)::int AS count
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'Tenant'
+        AND column_name = 'authorization_version'
+    `;
+    return {
+      prepared: false,
+      exactTenantMatches: 0,
+      schemaCompatible: schemaCompatible[0]?.count === 1
+    };
+  }
+  await assertCompatibleSchema();
+  const users = await prisma.user.findMany({
+    where: { tenant_id: tenant.id },
+    include: { role: { include: { permissions: true } }, employee: true }
+  });
+  const orders = await prisma.serviceOrder.findMany({
+    where: { tenant_id: tenant.id, metadata: { path: ["certification_tag"], equals: TAG } },
+    select: {
+      number: true,
+      status: true,
+      scheduled_date: true,
+      technician_id: true,
+      metadata: true
+    },
+    orderBy: { number: "asc" }
+  });
+  const technicians = users.filter(
+    (user) =>
+      user.active &&
+      user.role?.name === "Tecnico" &&
+      user.employee?.active &&
+      user.employee?.user_type === "tecnico"
+  );
+  return {
+    prepared: true,
+    environmentId: process.env.APP_ENV || "development",
+    tenant: {
+      name: tenant.name,
+      domain: tenant.domain,
+      active: tenant.active,
+      modules: tenant.active_modules,
+      source: tenant.config?.source
+    },
+    technicians: technicians.map((user) => ({
+      name: user.name,
+      email: user.email,
+      role: user.role.name,
+      servicesPermissions: user.role.permissions.filter((permission) => permission.module === "services"),
+      employeeActive: user.employee.active,
+      userType: user.employee.user_type,
+      code: user.employee.code
+    })),
+    orders: orders.map((order) => ({
+      number: order.number,
+      status: order.status,
+      scheduledAt: order.scheduled_date,
+      technicianCode:
+        technicians.find((user) => user.employee.id === order.technician_id)?.employee.code || "unknown"
+    }))
+  };
+}
+
+async function cleanup() {
+  const state = parseState();
+  const tenant = await exactTenant();
+  if (!tenant) return { cleaned: false, reason: "NOT_FOUND" };
+  if (tenant.config?.source !== TAG || (state.TENANT_ID && state.TENANT_ID !== tenant.id)) {
+    throw new Error("El tenant no coincide con el fixture controlado.");
+  }
+  await prisma.$transaction(async (tx) => {
+    const roles = await tx.role.findMany({ where: { tenant_id: tenant.id }, select: { id: true } });
+    const users = await tx.user.findMany({ where: { tenant_id: tenant.id }, select: { id: true } });
+    const orders = await tx.serviceOrder.findMany({ where: { tenant_id: tenant.id }, select: { id: true } });
+    const references = await tx.serviceReference.findMany({ where: { tenant_id: tenant.id }, select: { id: true } });
+    await tx.serviceIncident.deleteMany({ where: { tenant_id: tenant.id } });
+    await tx.servicePhoto.deleteMany({ where: { tenant_id: tenant.id } });
+    await tx.serviceOrder.deleteMany({ where: { id: { in: orders.map((row) => row.id) } } });
+    await tx.serviceReferencePart.deleteMany({ where: { reference_id: { in: references.map((row) => row.id) } } });
+    await tx.serviceReference.deleteMany({ where: { id: { in: references.map((row) => row.id) } } });
+    await tx.auditLog.deleteMany({ where: { tenant_id: tenant.id } });
+    await tx.authorizationSession.deleteMany({ where: { user_id: { in: users.map((row) => row.id) } } });
+    await tx.employee.deleteMany({ where: { tenant_id: tenant.id } });
+    await tx.user.deleteMany({ where: { tenant_id: tenant.id } });
+    await tx.permission.deleteMany({ where: { role_id: { in: roles.map((row) => row.id) } } });
+    await tx.role.deleteMany({ where: { tenant_id: tenant.id } });
+    await tx.subscription.deleteMany({ where: { tenant_id: tenant.id } });
+    await tx.account.deleteMany({ where: { tenant_id: tenant.id } });
+    await tx.tenant.delete({ where: { id: tenant.id } });
+  });
+  fs.rmSync(STATE_PATH, { force: true });
+  return { cleaned: true };
+}
+
+const actions = { prepare, inspect, cleanup };
+if (!actions[mode]) throw new Error(`Modo no soportado: ${mode}`);
+
+actions[mode]()
+  .then((result) => console.log(JSON.stringify(result, null, 2)))
+  .catch((error) => {
+    console.error(`[offline-certification] ${error.message}`);
+    process.exitCode = 1;
+  })
+  .finally(() => prisma.$disconnect());
