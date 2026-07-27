@@ -74,6 +74,11 @@ sesion, vencer TTL, revocar capacidad, cambiar esquema de forma incompatible o
 superar cuota. Si falla, se bloquea nueva operacion y se informa; no se cambia
 silenciosamente a otro almacenamiento.
 
+Fase 4 no cambia el logout productivo. La politica futura bloquea una limpieza
+silenciosa cuando existan pendientes y exige decision explicita. Los payloads
+rechazan claves de secretos, tienen limites estrictos y nunca se escriben en
+logs o metadata. Los tipos funcionales permanecen deshabilitados.
+
 ## Riesgo residual aceptado
 
 El piloto acepta que un dispositivo desbloqueado puede exponer PII temporal y

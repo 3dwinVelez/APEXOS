@@ -1,7 +1,7 @@
 # Esquema local offline
 
-La base replica una proyeccion minima, no modelos Prisma. No existen tablas de
-operaciones, evidencia, conflictos ni uploads.
+La base replica una proyeccion minima, no modelos Prisma. Fase 4 agrega una
+cola sintetica; no existen tablas de evidencia, conflictos ni uploads.
 
 ## Contexto y campos comunes
 
@@ -44,6 +44,18 @@ Estados de retencion:
 - `BLOCKED`: no utilizable hasta resolver un error.
 - `DELETE_REQUIRED`: debe limpiarse.
 
+## Version 3
+
+La migracion conserva todas las tablas v2 y agrega solamente:
+
+| Tabla | Clave e indices | Contenido |
+|---|---|---|
+| `offlineOperations` | `operationId`, `&idempotencyKey`, estado, secuencia, entidad, fechas, contexto y `[status+sequence]` | Operacion local validada, payload limitado, dependencias y reintentos |
+| `offlineOperationMetadata` | `key`, contexto compuesto | Secuencia siguiente, conteos y ultimos eventos sin payload |
+
+La version del snapshot servidor permanece en 2; la version fisica Dexie es 3.
+Un fallo de upgrade revierte la transaccion y conserva la base anterior.
+
 ## Snapshot de prueba
 
 Un snapshot contiene contexto, `schemaVersion`, `generatedAt`, `expiresAt` y
@@ -59,4 +71,3 @@ listas positivas de campos y rechaza:
 - claves adicionales que puedan introducir datos prohibidos.
 
 La hidratacion reemplaza el snapshot completo en una sola transaccion.
-

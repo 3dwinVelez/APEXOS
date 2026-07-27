@@ -118,6 +118,11 @@ proyeccion acotada en dos consultas, registra resultado, latencia, cantidad de
 ordenes, bytes y consultas, y el cliente la hidrata transaccionalmente. No hay
 pull, push ni operaciones locales.
 
+En Fase 4 la cola local existe como modulo aislado y sin transporte. Dexie v3
+agrega dos tablas, conserva el snapshot y permite solo `TEST_OPERATION` cuando
+un harness automatizado lo habilita explicitamente. No hay integracion React,
+mutacion optimista, endpoint push ni cambio en logout productivo.
+
 ## Rollback
 
 El rollback inmediato apaga la bandera global. Como los fundamentos no se
