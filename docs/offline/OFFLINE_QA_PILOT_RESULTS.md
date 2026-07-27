@@ -46,3 +46,20 @@ expresa para ejecutar el seed y las pruebas funcionales.
 Backend y UI productiva certificados: 2 ordenes, 6 actividades, 4 checklists,
 4.229 bytes, 2 consultas y TTL de 86.400 segundos. Resultado:
 `APROBADA CON OBSERVACIONES`.
+
+## Resultado Fase 3.4
+
+Resultado: **APROBADO** en Google Chrome 150.0.7871.182 real.
+
+- IndexedDB: creada con nombre derivado y almacenes autorizados.
+- Contenido: 2 ordenes, 6 actividades, 4 checklists y 2 catalogos.
+- Persistencia: aprobada tras cierre total y reapertura con API inaccesible.
+- Detalle, actividades y checklist: aprobados en lectura local.
+- TTL y actualizacion manual: aprobados.
+- Logout: eliminacion fisica confirmada y persistente tras reapertura.
+- Aislamiento: tecnico excluido y usuario no autorizado sin panel, bootstrap,
+  chunk offline o IndexedDB.
+- Escrituras offline: ausentes.
+
+Regresion final: API 46/46 y web offline 31/31; Prisma, TypeScript, ESLint,
+build productivo, performance guard y certificadores locales correctos.
