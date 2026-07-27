@@ -64,9 +64,11 @@ async function runTarget(target, concurrency) {
     target: target.name,
     concurrency,
     requests: responses.length,
+    p50_ms: Number(percentile(durations, 0.50).toFixed(2)),
     avg_ms: Number((durations.reduce((sum, value) => sum + value, 0) / durations.length).toFixed(2)),
     p95_ms: Number(percentile(durations, 0.95).toFixed(2)),
     p99_ms: Number(percentile(durations, 0.99).toFixed(2)),
+    max_ms: Number((durations.at(-1) || 0).toFixed(2)),
     avg_kb: Number((responses.reduce((sum, item) => sum + item.bytes, 0) / responses.length / 1024).toFixed(2)),
     requests_per_second: Number((responses.length / (elapsedMs / 1000)).toFixed(2)),
     errors: responses.filter((item) => !item.ok).length,
@@ -113,7 +115,7 @@ async function main() {
     for (const target of targets()) {
       const result = await runTarget(target, concurrency);
       results.push(result);
-      console.log(`[root-cause] ${result.category}/${result.target} c=${concurrency} avg=${result.avg_ms}ms p95=${result.p95_ms}ms kb=${result.avg_kb} errors=${result.errors}`);
+      console.log(`[root-cause] ${result.category}/${result.target} c=${concurrency} p50=${result.p50_ms}ms p95=${result.p95_ms}ms max=${result.max_ms}ms kb=${result.avg_kb} errors=${result.errors}`);
     }
   }
 
