@@ -101,3 +101,8 @@ No se creo cola, edicion, evidencia, push, pull incremental, conflictos,
 Service Worker, Background Sync ni tablas backend. No hubo migraciones, merge,
 push, despliegue, activacion de produccion, uso de empresas cliente ni cambios
 en `main`.
+
+## Adenda Fase 3.3
+
+Se corrigieron permiso del seed, detalle local, CSP del origen API y terminacion
+del runtime. No se agregaron capacidades offline.

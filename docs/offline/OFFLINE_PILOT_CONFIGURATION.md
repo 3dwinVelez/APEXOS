@@ -30,6 +30,13 @@ Rollback: apagar primero `OFFLINE_TECHNICIAN_ENABLED` en backend y luego
 `NEXT_PUBLIC_OFFLINE_DISCOVERY_ENABLED` en web. Las sesiones dejan de obtener
 bootstrap; el logout o la limpieza local elimina el snapshot existente.
 
+## Configuracion local Fase 3.3
+
+La allowlist se inyecta solo al runtime local por ambiente, tenant y usuario
+exactos, sin rol global. Sync, evidencia y auto-sync siguen apagados. CSP admite
+solo el origen http/https normalizado de `NEXT_PUBLIC_API_URL`; valores ausentes
+o invalidos no agregan origen.
+
 ## Precondicion de ambiente
 
 No activar flags si la base no contiene las columnas de version de autorizacion

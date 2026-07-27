@@ -23,3 +23,9 @@ dispositivo futura y no se declara resuelta en Fase 3.
 La certificacion exige que las columnas de version de usuario y tenant existan
 realmente en la base. No se admite omitir la verificacion de revocacion para
 acomodar un ambiente local desactualizado.
+
+## Evidencia Fase 3.3
+
+Logout selectivo revoca la sesion y el token anterior recibe
+`SESSION_REVOKED`. La unica sesion basal admitida pertenece al administrador
+sintetico. Sin red, JWT, `authorizedUntil` y TTL limitan la lectura residual.

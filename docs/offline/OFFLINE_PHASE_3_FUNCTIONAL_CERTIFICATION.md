@@ -57,3 +57,8 @@ Fase 3.2 preparo `127.0.0.1:54320/apexos_offline_cert_local` con schema
 compatible, ocho migraciones registradas y cero datos. El bloqueo estructural
 queda resuelto. La certificacion sigue pendiente porque el seed no fue
 ejecutado, conforme a la restriccion de Fase 3.2.
+
+## Cierre Fase 3.3
+
+Resultado: `APROBADA CON OBSERVACIONES`. La persistencia fisica y limpieza de
+IndexedDB quedan pendientes del checklist manual en Chrome o Edge real.
