@@ -10,6 +10,15 @@ function denied(reason) {
   return error;
 }
 
+function authorizationDecision(payload, user, tenant, session, now = new Date()) {
+  if (!user || !user.active) return "USER_REVOKED";
+  if (!tenant || !tenant.active) return "TENANT_REVOKED";
+  if (payload.sid && (!session || session.user_id !== user.id || session.revoked_at || session.expires_at <= now)) return "SESSION_REVOKED";
+  if (payload.uv !== undefined && payload.uv !== user.authorization_version) return "USER_VERSION_STALE";
+  if (payload.tv !== undefined && payload.tv !== tenant.authorization_version) return "TENANT_VERSION_STALE";
+  return "";
+}
+
 async function createSession(user, tenant, expiresInDays = 30) {
   return prisma.authorizationSession.create({
     data: {
@@ -29,12 +38,7 @@ async function validateAuthorization(payload) {
   });
   const tenant = user ? await prisma.tenant.findUnique({ where: { id: user.tenant_id } }) : null;
   const session = payload.sid ? await prisma.authorizationSession.findUnique({ where: { id: payload.sid } }) : null;
-  let reason = "";
-  if (!user || !user.active) reason = "USER_REVOKED";
-  else if (!tenant || !tenant.active) reason = "TENANT_REVOKED";
-  else if (payload.sid && (!session || session.user_id !== user.id || session.revoked_at || session.expires_at <= new Date())) reason = "SESSION_REVOKED";
-  else if (payload.uv !== undefined && payload.uv !== user.authorization_version) reason = "USER_VERSION_STALE";
-  else if (payload.tv !== undefined && payload.tv !== tenant.authorization_version) reason = "TENANT_VERSION_STALE";
+  const reason = authorizationDecision(payload, user, tenant, session);
 
   if (reason && (observe() || enforce())) {
     console.warn(JSON.stringify({ event: "authorization_version_mismatch", reason, user_id: payload.id, session_id: payload.sid || null }));
@@ -73,4 +77,4 @@ async function revokeRoleUsers(roleId, reason = "role_authorization_changed") {
   return users.length;
 }
 
-module.exports = { createSession, validateAuthorization, revokeSession, revokeAllUserSessions, revokeRoleUsers };
+module.exports = { authorizationDecision, createSession, validateAuthorization, revokeSession, revokeAllUserSessions, revokeRoleUsers };
