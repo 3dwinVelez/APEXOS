@@ -58,7 +58,7 @@ $env:DATABASE_URL = "postgresql://apex_offline_cert:$escaped@127.0.0.1:54320/ape
 $env:DIRECT_URL = $env:DATABASE_URL
 $env:APP_ENV = "development"
 $env:TARGET_ENV = "local"
-$env:NODE_ENV = "development"
+$env:NODE_ENV = "production"
 $env:PORT = "3100"
 $env:JWT_SECRET = "offline-certification-local-only-secret-2026-minimum-32"
 $env:DISABLE_REDIS = "true"
@@ -75,9 +75,16 @@ $env:OFFLINE_AUTO_SYNC_ENABLED = "false"
 $env:NEXT_PUBLIC_API_URL = "http://127.0.0.1:3100"
 $env:NEXT_PUBLIC_OFFLINE_DISCOVERY_ENABLED = "true"
 
+& npm.cmd --workspace apps/web run build
+if ($LASTEXITCODE -ne 0) {
+  throw "Offline certification production build failed."
+}
+
+$env:NODE_ENV = "development"
 $api = Start-Process node -ArgumentList "apps/api/server.js" -WorkingDirectory $Repo `
   -WindowStyle Hidden -RedirectStandardOutput (Join-Path $env:TEMP "apexos-offline-api.log") `
   -RedirectStandardError (Join-Path $env:TEMP "apexos-offline-api.err.log") -PassThru
+$env:NODE_ENV = "production"
 $web = Start-Process npm.cmd -ArgumentList "--workspace", "apps/web", "run", "start" `
   -WorkingDirectory $Repo -WindowStyle Hidden `
   -RedirectStandardOutput (Join-Path $env:TEMP "apexos-offline-web.log") `

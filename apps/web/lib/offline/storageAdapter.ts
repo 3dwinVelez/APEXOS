@@ -211,6 +211,8 @@ export class DexieOfflineStorageAdapter implements OfflineReadStorageAdapter {
           await db.offlineCatalogs.bulkPut(materialized.catalogs);
           await db.offlineMetadata.put({
             key: "snapshot",
+            snapshotId: snapshot.snapshotId,
+            serverCheckpoint: snapshot.serverCheckpoint,
             environmentId: this.context.environmentId,
             companyId: this.context.companyId,
             tenantId: this.context.tenantId,
@@ -239,18 +241,16 @@ export class DexieOfflineStorageAdapter implements OfflineReadStorageAdapter {
     db: ApexOfflineDatabase,
     snapshot: OfflineSnapshot
   ): Promise<void> {
-    const collections = [
-      [await db.offlineOrders.toArray(), snapshot.orders],
-      [await db.offlineActivities.toArray(), snapshot.activities],
-      [await db.offlineChecklists.toArray(), snapshot.checklists],
-      [await db.offlineCatalogs.toArray(), snapshot.catalogs]
-    ] as const;
-    for (const [stored, incoming] of collections) {
+    const assertNoStale = <T extends { serverVersion: number }>(
+      stored: T[],
+      incoming: T[],
+      versionKey: (record: T) => string
+    ) => {
       const versions = new Map<string, number>(
-        stored.map((record) => [record.serverId, record.serverVersion] as const)
+        stored.map((record) => [versionKey(record), record.serverVersion] as const)
       );
       for (const record of incoming) {
-        const current = versions.get(record.serverId);
+        const current = versions.get(versionKey(record));
         if (current !== undefined && record.serverVersion < current) {
           throw new OfflineStorageError(
             "SNAPSHOT_STALE",
@@ -258,7 +258,27 @@ export class DexieOfflineStorageAdapter implements OfflineReadStorageAdapter {
           );
         }
       }
-    }
+    };
+    assertNoStale(
+      await db.offlineOrders.toArray(),
+      snapshot.orders,
+      (record) => record.serverId
+    );
+    assertNoStale(
+      await db.offlineActivities.toArray(),
+      snapshot.activities,
+      (record) => record.serverId
+    );
+    assertNoStale(
+      await db.offlineChecklists.toArray(),
+      snapshot.checklists,
+      (record) => `${record.orderId}:${record.serverId}`
+    );
+    assertNoStale(
+      await db.offlineCatalogs.toArray(),
+      snapshot.catalogs,
+      (record) => record.serverId
+    );
   }
 
   async estimate(): Promise<{ usageBytes: number; quotaBytes: number }> {

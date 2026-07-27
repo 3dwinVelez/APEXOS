@@ -117,6 +117,8 @@ export function validateOfflineSnapshot(
   if (value.schemaVersion !== OFFLINE_LOCAL_SCHEMA_VERSION) {
     throw new OfflineStorageError("SCHEMA_INCOMPATIBLE", "Version de snapshot no soportada.");
   }
+  assertString(value.snapshotId, "snapshotId");
+  assertString(value.serverCheckpoint, "serverCheckpoint");
   assertDate(value.generatedAt, "generatedAt");
   if (value.expiresAt !== undefined) assertDate(value.expiresAt, "expiresAt");
   assertArray(value.orders, "orders");
@@ -138,9 +140,6 @@ export function validateOfflineSnapshot(
       "serviceAddress"
     ]) {
       assertString(record[key], `order.${key}`);
-    }
-    if (record.assignedTechnicianId !== expectedContext.userId) {
-      throw new OfflineStorageError("CONTEXT_MISMATCH", "La orden pertenece a otro tecnico.");
     }
     assertDate(record.scheduledAt, "order.scheduledAt", true);
     assertExactKeys(record.minimumOperationalData, MINIMUM_DATA_KEYS, "minimumOperationalData");
@@ -242,7 +241,10 @@ export function materializeSnapshot(
     };
     }),
     checklists: snapshot.checklists.map((record) => {
-      const recordKey = localKey("checklist", record.checklistId);
+      const recordKey = localKey(
+        "checklist",
+        `${record.orderId}:${record.checklistId}`
+      );
       return {
       ...record,
       ...common,

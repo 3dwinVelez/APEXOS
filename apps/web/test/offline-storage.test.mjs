@@ -35,6 +35,8 @@ function snapshot(context = contextA, version = 1, overrides = {}) {
   return {
     context: { ...context },
     schemaVersion: 2,
+    snapshotId: "11111111-1111-4111-8111-111111111111",
+    serverCheckpoint: "bootstrap:checkpoint",
     generatedAt: "2026-07-27T12:00:00.000Z",
     expiresAt: "2026-07-28T12:00:00.000Z",
     orders: [
@@ -172,6 +174,38 @@ test("hidrata y consulta ordenes, actividades, checklist, catalogo y metadata", 
   assert.equal(result.checklists.length, 1);
   assert.equal(result.catalogs.length, 1);
   assert.equal(result.metadata?.retentionState, "ACTIVE");
+  assert.equal(result.metadata?.snapshotId, "11111111-1111-4111-8111-111111111111");
+  assert.equal(result.metadata?.serverCheckpoint, "bootstrap:checkpoint");
+});
+
+test("conserva el mismo item de checklist cuando pertenece a ordenes distintas", async () => {
+  const adapter = new DexieOfflineStorageAdapter(contextA);
+  await adapter.open();
+  const value = snapshot(contextA);
+  const secondOrder = {
+    ...value.orders[0],
+    serverId: "order-2",
+    orderId: "order-2",
+    orderNumber: "TEST-002"
+  };
+  const sharedChecklistSnapshot = {
+    ...value,
+    orders: [...value.orders, secondOrder],
+    checklists: [
+      ...value.checklists,
+      {
+        ...value.checklists[0],
+        orderId: "order-2",
+        serverVersion: value.checklists[0].serverVersion + 100
+      }
+    ]
+  };
+  await new OfflineSnapshotHydrator(adapter).hydrate(sharedChecklistSnapshot);
+  await new OfflineSnapshotHydrator(adapter).hydrate(sharedChecklistSnapshot);
+  const read = new OfflineTechnicianReadService(adapter, contextA);
+  assert.equal((await read.listChecklist("order-1")).length, 1);
+  assert.equal((await read.listChecklist("order-2")).length, 1);
+  await adapter.deleteDatabase();
 });
 
 test("persiste tras cerrar y reabrir el navegador simulado", async () => {
@@ -224,12 +258,14 @@ test("rechaza snapshot de otra empresa, usuario o esquema", async () => {
     adapter.replaceSnapshot(snapshot(otherCompany)),
     (error) => error instanceof OfflineStorageError && error.code === "CONTEXT_MISMATCH"
   );
-  await assert.rejects(
-    adapter.replaceSnapshot({
-      ...snapshot(contextA),
-      orders: [{ ...snapshot(contextA).orders[0], assignedTechnicianId: "technician-b" }]
-    }),
-    (error) => error instanceof OfflineStorageError && error.code === "CONTEXT_MISMATCH"
+  await adapter.replaceSnapshot({
+    ...snapshot(contextA),
+    orders: [{ ...snapshot(contextA).orders[0], assignedTechnicianId: "employee-17" }]
+  });
+  assert.equal(
+    (await new OfflineTechnicianReadService(adapter, contextA).getOrder("order-1"))
+      .assignedTechnicianId,
+    "employee-17"
   );
   await assert.rejects(
     adapter.replaceSnapshot({ ...snapshot(contextA), schemaVersion: 99 }),

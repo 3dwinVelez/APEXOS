@@ -88,6 +88,8 @@ export function bootstrapToLocalSnapshot(
   return {
     context,
     schemaVersion: response.schemaVersion,
+    snapshotId: response.snapshotId,
+    serverCheckpoint: response.serverCheckpoint,
     generatedAt: response.generatedAt,
     expiresAt: response.expiresAt,
     orders: response.orders,

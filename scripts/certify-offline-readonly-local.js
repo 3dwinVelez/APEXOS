@@ -557,24 +557,26 @@ async function cleanup() {
     throw new Error("El tenant no coincide con el fixture controlado.");
   }
   await prisma.$transaction(async (tx) => {
-    const roles = await tx.role.findMany({ where: { tenant_id: tenant.id }, select: { id: true } });
-    const users = await tx.user.findMany({ where: { tenant_id: tenant.id }, select: { id: true } });
-    const orders = await tx.serviceOrder.findMany({ where: { tenant_id: tenant.id }, select: { id: true } });
-    const references = await tx.serviceReference.findMany({ where: { tenant_id: tenant.id }, select: { id: true } });
-    await tx.serviceIncident.deleteMany({ where: { tenant_id: tenant.id } });
-    await tx.servicePhoto.deleteMany({ where: { tenant_id: tenant.id } });
-    await tx.serviceOrder.deleteMany({ where: { id: { in: orders.map((row) => row.id) } } });
-    await tx.serviceReferencePart.deleteMany({ where: { reference_id: { in: references.map((row) => row.id) } } });
-    await tx.serviceReference.deleteMany({ where: { id: { in: references.map((row) => row.id) } } });
-    await tx.auditLog.deleteMany({ where: { tenant_id: tenant.id } });
-    await tx.authorizationSession.deleteMany({ where: { user_id: { in: users.map((row) => row.id) } } });
-    await tx.employee.deleteMany({ where: { tenant_id: tenant.id } });
-    await tx.user.deleteMany({ where: { tenant_id: tenant.id } });
-    await tx.permission.deleteMany({ where: { role_id: { in: roles.map((row) => row.id) } } });
-    await tx.role.deleteMany({ where: { tenant_id: tenant.id } });
-    await tx.subscription.deleteMany({ where: { tenant_id: tenant.id } });
-    await tx.account.deleteMany({ where: { tenant_id: tenant.id } });
-    await tx.tenant.delete({ where: { id: tenant.id } });
+    await tx.$executeRaw`DELETE FROM "ServiceIncident" WHERE tenant_id = ${tenant.id}`;
+    await tx.$executeRaw`DELETE FROM "ServicePhoto" WHERE tenant_id = ${tenant.id}`;
+    await tx.$executeRaw`DELETE FROM "ServiceOrder" WHERE tenant_id = ${tenant.id}`;
+    await tx.$executeRaw`
+      DELETE FROM "ServiceReferencePart"
+      WHERE reference_id IN (SELECT id FROM "ServiceReference" WHERE tenant_id = ${tenant.id})
+    `;
+    await tx.$executeRaw`DELETE FROM "ServiceReference" WHERE tenant_id = ${tenant.id}`;
+    await tx.$executeRaw`DELETE FROM "AuditLog" WHERE tenant_id = ${tenant.id}`;
+    await tx.$executeRaw`DELETE FROM "AuthorizationSession" WHERE tenant_id = ${tenant.id}`;
+    await tx.$executeRaw`DELETE FROM "Employee" WHERE tenant_id = ${tenant.id}`;
+    await tx.$executeRaw`DELETE FROM "User" WHERE tenant_id = ${tenant.id}`;
+    await tx.$executeRaw`
+      DELETE FROM "Permission"
+      WHERE role_id IN (SELECT id FROM "Role" WHERE tenant_id = ${tenant.id})
+    `;
+    await tx.$executeRaw`DELETE FROM "Role" WHERE tenant_id = ${tenant.id}`;
+    await tx.$executeRaw`DELETE FROM "Subscription" WHERE tenant_id = ${tenant.id}`;
+    await tx.$executeRaw`DELETE FROM "Account" WHERE tenant_id = ${tenant.id}`;
+    await tx.$executeRaw`DELETE FROM "Tenant" WHERE id = ${tenant.id}`;
   });
   fs.rmSync(STATE_PATH, { force: true });
   return { cleaned: true };

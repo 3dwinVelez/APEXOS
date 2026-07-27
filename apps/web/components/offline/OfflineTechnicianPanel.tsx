@@ -133,7 +133,12 @@ export default function OfflineTechnicianPanel() {
       });
       setConnectivity("ONLINE_CONFIRMED");
       setMessage("Informacion almacenada en este dispositivo.");
-    } catch {
+    } catch (error) {
+      const code =
+        error && typeof error === "object" && "code" in error
+          ? String(error.code)
+          : "OFFLINE_PREPARE_FAILED";
+      console.warn(`[offline] prepare failed: ${code}`);
       setMessage("No fue posible preparar los datos. El flujo conectado sigue disponible.");
     } finally {
       setBusy(false);

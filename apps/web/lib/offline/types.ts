@@ -86,6 +86,8 @@ export interface OfflineCatalogRecord extends OfflineLocalRecord {
 
 export interface OfflineMetadataRecord {
   key: "snapshot";
+  snapshotId: string;
+  serverCheckpoint: string;
   environmentId: string;
   companyId: string;
   tenantId: string;
@@ -111,6 +113,8 @@ export interface OfflineSchemaStateRecord {
 export interface OfflineSnapshot {
   context: OfflineStorageContext;
   schemaVersion: number;
+  snapshotId: string;
+  serverCheckpoint: string;
   generatedAt: string;
   expiresAt?: string;
   orders: Array<
