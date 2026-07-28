@@ -215,12 +215,91 @@ const USER_MASTER_DATA = {
     { code: "NOCTURNO", name: "Nocturno" },
     { code: "MIXTO", name: "Mixto" }
   ],
+  activity_types: [
+    { code: "ACT-01", name: "Cargue de mercancia en bodega" },
+    { code: "ACT-02", name: "Inicio de ruta" },
+    { code: "ACT-03", name: "Entrega en tienda" },
+    { code: "ACT-04", name: "Novedad en ruta" }
+  ],
   banks: [
     { code: "BANCOLOMBIA", name: "Bancolombia" },
     { code: "BOGOTA", name: "Banco de Bogota" },
     { code: "DAVIVIENDA", name: "Davivienda" }
   ]
 };
+
+function safeMetadata(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function cloneUserMasterData(overrides = {}) {
+  return Object.fromEntries(Object.entries({ ...USER_MASTER_DATA, ...overrides }).map(([key, value]) => [
+    key,
+    Array.isArray(value) ? value.map((item) => ({ ...item })) : value
+  ]));
+}
+
+function activityTypeMasterCode(activityType) {
+  const metadata = safeMetadata(activityType?.metadata);
+  return String(metadata.code || activityType?.id || "").trim();
+}
+
+function activityTypeToMasterItem(activityType) {
+  return {
+    code: activityTypeMasterCode(activityType),
+    name: activityType.name,
+    description: activityType.description || "",
+    active: activityType.active !== false,
+    sort_order: Number(activityType.sort_order || 100)
+  };
+}
+
+async function ensureAdminActivityTypes() {
+  const current = await prisma.activityType.findMany({ where: { __includeInactive: true }, take: 1 });
+  if (current.length) return;
+  await prisma.activityType.createMany({
+    data: USER_MASTER_DATA.activity_types.map((item, index) => ({
+      name: item.name,
+      description: item.description || "Catalogo operativo inicial APEXOS",
+      active: item.active !== false,
+      sort_order: Number(item.sort_order || ((index + 1) * 10)),
+      metadata: { code: item.code, source: "admin_user_master_data" }
+    })),
+    skipDuplicates: true
+  });
+}
+
+async function listActivityTypeMasterItems() {
+  await ensureAdminActivityTypes();
+  const rows = await prisma.activityType.findMany({
+    where: { __includeInactive: true },
+    orderBy: [{ sort_order: "asc" }, { name: "asc" }]
+  });
+  return rows.map(activityTypeToMasterItem);
+}
+
+async function getActivityTypeByMasterCode(code) {
+  const target = String(code || "").trim();
+  const rows = await prisma.activityType.findMany({
+    where: { __includeInactive: true },
+    orderBy: [{ sort_order: "asc" }, { name: "asc" }]
+  });
+  return rows.find((row) => String(row.id) === target || activityTypeMasterCode(row) === target || row.name === target) || null;
+}
+
+function activityTypeDataFromMasterItem(item, previousMetadata = {}) {
+  return {
+    name: item.name,
+    description: item.description || "",
+    active: item.active !== false,
+    sort_order: Number(item.sort_order || 100),
+    metadata: {
+      ...safeMetadata(previousMetadata),
+      code: item.code,
+      source: "admin_user_master_data"
+    }
+  };
+}
 
 function emptyLegacyPermissions() {
   return Object.fromEntries(PERMISSION_CATALOG.map((item) => [
@@ -540,7 +619,9 @@ async function getPermissionCatalog(tenantId) {
 
 async function getUserMasterData(tenantId) {
   tenantId = normalizeTenantId(tenantId);
-  return prisma.runWithTenant(tenantId, async () => ({ ...USER_MASTER_DATA }));
+  return prisma.runWithTenant(tenantId, async () => cloneUserMasterData({
+    activity_types: await listActivityTypeMasterItems()
+  }));
 }
 
 function assertUserMasterCatalog(catalog) {
@@ -589,6 +670,34 @@ async function addUserMasterDataItem(tenantId, catalog, input, actorId = null) {
   tenantId = normalizeTenantId(tenantId);
   assertUserMasterCatalog(catalog);
   const item = normalizeUserMasterItem(input);
+  if (catalog === "activity_types") {
+    return prisma.runWithTenant(tenantId, async () => {
+      await ensureAdminActivityTypes();
+      const byCode = await getActivityTypeByMasterCode(item.code);
+      const byName = await prisma.activityType.findFirst({
+        where: { __includeInactive: true, name: item.name }
+      });
+      const previous = byCode || byName || null;
+      const target = byCode || byName;
+      if (byCode && byName && byCode.id !== byName.id) {
+        const err = new Error("Ya existe otro tipo de actividad con ese nombre.");
+        err.statusCode = 409;
+        throw err;
+      }
+      if (target) {
+        await prisma.activityType.update({
+          where: { id: target.id },
+          data: activityTypeDataFromMasterItem(item, target.metadata)
+        });
+      } else {
+        await prisma.activityType.create({
+          data: activityTypeDataFromMasterItem(item)
+        });
+      }
+      await auditUserMasterDataItem(tenantId, actorId, "catalog_item_upserted", catalog, item.code, previous && activityTypeToMasterItem(previous), item);
+      return cloneUserMasterData({ activity_types: await listActivityTypeMasterItems() });
+    });
+  }
   const current = Array.isArray(USER_MASTER_DATA[catalog]) ? USER_MASTER_DATA[catalog] : [];
   const previous = current.find((entry) => entry.code === item.code) || null;
   USER_MASTER_DATA[catalog] = current.some((entry) => entry.code === item.code)
@@ -596,13 +705,48 @@ async function addUserMasterDataItem(tenantId, catalog, input, actorId = null) {
     : [...current, item];
   return prisma.runWithTenant(tenantId, async () => {
     await auditUserMasterDataItem(tenantId, actorId, "catalog_item_upserted", catalog, item.code, previous, item);
-    return { ...USER_MASTER_DATA };
+    return cloneUserMasterData({ activity_types: await listActivityTypeMasterItems() });
   });
 }
 
 async function updateUserMasterDataItem(tenantId, catalog, code, input, actorId = null) {
   tenantId = normalizeTenantId(tenantId);
   assertUserMasterCatalog(catalog);
+  if (catalog === "activity_types") {
+    return prisma.runWithTenant(tenantId, async () => {
+      await ensureAdminActivityTypes();
+      const previousRow = await getActivityTypeByMasterCode(code);
+      if (!previousRow) {
+        const err = new Error("Item de catalogo no encontrado.");
+        err.statusCode = 404;
+        throw err;
+      }
+      const previous = activityTypeToMasterItem(previousRow);
+      const nextItem = normalizeUserMasterItem({ ...previous, ...input, code: input.code || previous.code }, previous);
+      if (nextItem.code !== code) {
+        const conflictingCode = await getActivityTypeByMasterCode(nextItem.code);
+        if (conflictingCode && conflictingCode.id !== previousRow.id) {
+          const err = new Error("Ya existe otro item con ese codigo.");
+          err.statusCode = 409;
+          throw err;
+        }
+      }
+      const conflictingName = await prisma.activityType.findFirst({
+        where: { __includeInactive: true, name: nextItem.name }
+      });
+      if (conflictingName && conflictingName.id !== previousRow.id) {
+        const err = new Error("Ya existe otro tipo de actividad con ese nombre.");
+        err.statusCode = 409;
+        throw err;
+      }
+      await prisma.activityType.update({
+        where: { id: previousRow.id },
+        data: activityTypeDataFromMasterItem(nextItem, previousRow.metadata)
+      });
+      await auditUserMasterDataItem(tenantId, actorId, "catalog_item_updated", catalog, nextItem.code, previous, nextItem);
+      return cloneUserMasterData({ activity_types: await listActivityTypeMasterItems() });
+    });
+  }
   const current = Array.isArray(USER_MASTER_DATA[catalog]) ? USER_MASTER_DATA[catalog] : [];
   const previous = current.find((entry) => entry.code === code);
   if (!previous) {
@@ -619,13 +763,28 @@ async function updateUserMasterDataItem(tenantId, catalog, code, input, actorId 
   USER_MASTER_DATA[catalog] = current.map((entry) => entry.code === code ? nextItem : entry);
   return prisma.runWithTenant(tenantId, async () => {
     await auditUserMasterDataItem(tenantId, actorId, "catalog_item_updated", catalog, nextItem.code, previous, nextItem);
-    return { ...USER_MASTER_DATA };
+    return cloneUserMasterData({ activity_types: await listActivityTypeMasterItems() });
   });
 }
 
 async function deleteUserMasterDataItem(tenantId, catalog, code, actorId = null) {
   tenantId = normalizeTenantId(tenantId);
   assertUserMasterCatalog(catalog);
+  if (catalog === "activity_types") {
+    return prisma.runWithTenant(tenantId, async () => {
+      await ensureAdminActivityTypes();
+      const previousRow = await getActivityTypeByMasterCode(code);
+      if (!previousRow) {
+        const err = new Error("Item de catalogo no encontrado.");
+        err.statusCode = 404;
+        throw err;
+      }
+      const previous = activityTypeToMasterItem(previousRow);
+      await prisma.activityType.delete({ where: { id: previousRow.id } });
+      await auditUserMasterDataItem(tenantId, actorId, "catalog_item_deleted", catalog, code, previous, null);
+      return cloneUserMasterData({ activity_types: await listActivityTypeMasterItems() });
+    });
+  }
   const current = Array.isArray(USER_MASTER_DATA[catalog]) ? USER_MASTER_DATA[catalog] : [];
   const previous = current.find((entry) => entry.code === code);
   if (!previous) {
@@ -636,7 +795,7 @@ async function deleteUserMasterDataItem(tenantId, catalog, code, actorId = null)
   USER_MASTER_DATA[catalog] = current.filter((entry) => entry.code !== code);
   return prisma.runWithTenant(tenantId, async () => {
     await auditUserMasterDataItem(tenantId, actorId, "catalog_item_deleted", catalog, code, previous, null);
-    return { ...USER_MASTER_DATA };
+    return cloneUserMasterData({ activity_types: await listActivityTypeMasterItems() });
   });
 }
 
