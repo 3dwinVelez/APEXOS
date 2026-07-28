@@ -2,10 +2,11 @@
 
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
+import { localCalendarDate, scheduleMonitorDate } from "@/lib/hrScheduleMonitor";
 import { AlertTriangle, ArrowLeft, Building2, CalendarDays, Camera, CheckSquare2, Clock, Copy, Edit3, Filter, HelpCircle, Navigation, Plus, RefreshCw, RotateCcw, Save, Search, Square, Truck, UserPlus, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type Employee = { id: number | string; code: string; user_type?: string; position: string; department: string; metadata: { name: string; document: string; user_type?: string }; user: { name: string } };
 type Vehicle = { id: number | string; plate: string; type: string; model: string };
@@ -75,10 +76,10 @@ function employeeSearchText(employee: Employee) {
 }
 
 function inputDate(value?: string | null) {
-  if (!value) return new Date().toISOString().slice(0, 10);
+  if (!value) return localCalendarDate();
   if (/^\d{4}-\d{2}-\d{2}/.test(value)) return value.slice(0, 10);
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? new Date().toISOString().slice(0, 10) : date.toISOString().slice(0, 10);
+  return Number.isNaN(date.getTime()) ? localCalendarDate() : localCalendarDate(date);
 }
 
 function addDays(value: string, days: number) {
@@ -200,11 +201,13 @@ function FieldHelp({ label, help, children }: { label: string; help: string; chi
 }
 
 export default function RoutesPlanningPage() {
+  const initialDate = localCalendarDate();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [administrativeSites, setAdministrativeSites] = useState<MasterOption[]>([]);
   const [routes, setRoutes] = useState<TimeRoute[]>([]);
   const [operations, setOperations] = useState<OperationsMap | null>(null);
+  const [monitorDate, setMonitorDate] = useState(initialDate);
   const [selectedRouteId, setSelectedRouteId] = useState("");
   const [message, setMessage] = useState("");
   const [modal, setModal] = useState<"route" | "edit" | null>(null);
@@ -212,24 +215,23 @@ export default function RoutesPlanningPage() {
   const [loadingMonitor, setLoadingMonitor] = useState(false);
   const [savingRoute, setSavingRoute] = useState(false);
   const [validationIssues, setValidationIssues] = useState<string[]>([]);
-  const [form, setForm] = useState({ date: new Date().toISOString().slice(0, 10), vehicle_plate: "", employees: [] as string[], start_time: "08:00", end_time: "17:00", tolerance_minutes: 15, notes: "" });
+  const [form, setForm] = useState({ date: initialDate, vehicle_plate: "", employees: [] as string[], start_time: "08:00", end_time: "17:00", tolerance_minutes: 15, notes: "" });
   const [scheduleKind, setScheduleKind] = useState<"administrative" | "operational">("administrative");
   const [administrativeSite, setAdministrativeSite] = useState("SEDE-PRINCIPAL");
   const [bulkMode, setBulkMode] = useState(false);
-  const [bulk, setBulk] = useState({ start_date: new Date().toISOString().slice(0, 10), end_date: addDays(new Date().toISOString().slice(0, 10), 4), weekdays: [1, 2, 3, 4, 5] });
+  const [bulk, setBulk] = useState({ start_date: initialDate, end_date: addDays(initialDate, 4), weekdays: [1, 2, 3, 4, 5] });
   const [query, setQuery] = useState("");
   const [kindFilter, setKindFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
 
-  async function load() {
+  const load = useCallback(async (targetDate = monitorDate) => {
     setLoadingMonitor(true);
-    const today = new Date().toISOString().slice(0, 10);
     const [employeeData, vehicleData, routeData, operationsData, masterData] = await Promise.all([
       api<Employee[]>("/api/v1/hr/employees?active=true").catch(() => []),
       api<Vehicle[]>("/api/v1/transport/vehicles").catch(() => []),
       api<TimeRoute[]>("/api/v1/hr/routes").catch(() => []),
-      api<OperationsMap>(`/api/v1/hr/operations-map?date=${today}&minutes=30&footprint_days=30`).catch(() => null),
+      api<OperationsMap>(`/api/v1/hr/operations-map?date=${encodeURIComponent(targetDate)}&minutes=30&footprint_days=30`).catch(() => null),
       api<UserMasterData>("/api/v1/admin/user-master-data").catch(() => ({ locations: [] }))
     ]);
     setEmployees(employeeData);
@@ -240,12 +242,12 @@ export default function RoutesPlanningPage() {
     setAdministrativeSites(activeSites);
     setAdministrativeSite((current) => activeSites.some((site) => site.code === current) ? current : activeSites[0]?.code || "");
     setLoadingMonitor(false);
-  }
+  }, [monitorDate]);
 
   useEffect(() => {
-    load();
+    load(monitorDate);
     const refreshVisible = () => {
-      if (!document.hidden) load();
+      if (!document.hidden) load(monitorDate);
     };
     const timer = window.setInterval(refreshVisible, 30000);
     document.addEventListener("visibilitychange", refreshVisible);
@@ -253,16 +255,21 @@ export default function RoutesPlanningPage() {
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", refreshVisible);
     };
-  }, []);
+  }, [load, monitorDate]);
 
   function resetForm() {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localCalendarDate();
     setForm({ date: today, vehicle_plate: "", employees: [], start_time: "08:00", end_time: "17:00", tolerance_minutes: 15, notes: "" });
     setScheduleKind("administrative");
     setAdministrativeSite("SEDE-PRINCIPAL");
     setBulk({ start_date: today, end_date: addDays(today, 4), weekdays: [1, 2, 3, 4, 5] });
     setBulkMode(false);
     setEditingRoute(null);
+  }
+
+  function openRouteMonitor(route: RouteMonitor) {
+    setSelectedRouteId(String(route.id));
+    setMonitorDate(scheduleMonitorDate(route.date));
   }
 
   async function openCreateModal(route?: RouteMonitor) {
@@ -340,6 +347,7 @@ export default function RoutesPlanningPage() {
       return;
     }
     setSavingRoute(true);
+    const savedMonitorDate = bulkMode && modal !== "edit" ? bulk.start_date : form.date;
     try {
       if (modal === "edit" && editingRoute) {
         await api<TimeRoute>(`/api/v1/hr/routes/${editingRoute.id}`, { method: "PATCH", body: JSON.stringify(routePayload(editingRoute.status || "active")) });
@@ -351,9 +359,10 @@ export default function RoutesPlanningPage() {
         await api<TimeRoute>("/api/v1/hr/routes", { method: "POST", body: JSON.stringify(routePayload("active")) });
         setMessage("Horario asignado correctamente.");
       }
+      setMonitorDate(savedMonitorDate);
       resetForm();
       setModal(null);
-      await load();
+      await load(savedMonitorDate);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No fue posible guardar el horario.");
     } finally {
@@ -436,7 +445,7 @@ export default function RoutesPlanningPage() {
               <span className="rounded-md bg-paper px-3 py-1.5">{totalAssigned} personas</span>
               <span className="rounded-md bg-paper px-3 py-1.5">{administrativeRoutes}/{operationalRoutes} adm/op</span>
               <span className={`rounded-md px-3 py-1.5 ${routesWithoutPeople ? "bg-amber-50 text-amber-800" : "bg-paper text-neutral-600"}`}>{routeCoverage}% seguimiento</span>
-              <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={load} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={16} /> Actualizar</button>
+              <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => load()} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={16} /> Actualizar</button>
             </div>
           </div>
           <div className="mt-4 grid gap-2 lg:grid-cols-[minmax(240px,1fr)_180px_180px_170px]">
@@ -468,7 +477,7 @@ export default function RoutesPlanningPage() {
                   <span className="rounded-md bg-white px-2 py-1">{route.activity_points?.length || 0} evidencia(s)</span>
                 </div>
                 <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                  <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold hover:bg-paper" onClick={() => setSelectedRouteId(String(route.id))} type="button"><Navigation size={15} /> Abrir</button>
+                  <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold hover:bg-paper" onClick={() => openRouteMonitor(route)} type="button"><Navigation size={15} /> Abrir</button>
                   <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold hover:bg-paper" onClick={() => openEditModal(route)} type="button"><Edit3 size={15} /> Editar</button>
                   <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white" onClick={() => openCreateModal(route)} type="button"><Copy size={15} /> Clonar</button>
                 </div>
@@ -490,7 +499,7 @@ export default function RoutesPlanningPage() {
                   <td className="px-4 py-3"><p className="flex items-center gap-2 font-semibold">{operational ? <Truck className="text-apex" size={15} /> : <Building2 className="text-apex" size={15} />}{operational ? "Operativa" : "Administrativa"}</p><p className="mt-1 text-xs text-neutral-500">{operational ? routeLabel(route) : administrativeSiteFromNotes(route.notes || "") || "Sin sede definida"}</p></td>
                   <td className="px-4 py-3"><p className="font-semibold">{route.assigned_count ?? routeEmployeeValues(route).length ?? 0} persona(s)</p><p className="mt-1 max-w-72 truncate text-xs text-neutral-500">{routeEmployeeNames(route).join(", ") || "Sin personas asignadas"}</p></td>
                   <td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${events ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>{events ? "En seguimiento" : "Sin eventos"}</span><p className="mt-1 text-xs capitalize text-neutral-500">{route.status || "active"} · {events} evento(s)</p></td>
-                  <td className="px-4 py-3"><div className="flex justify-end gap-2"><button className="h-9 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => setSelectedRouteId(String(route.id))} type="button">Abrir</button><button className="h-9 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => openEditModal(route)} type="button">Editar</button><button className="h-9 rounded-md border border-apex px-3 text-xs font-semibold text-apex hover:bg-paper" onClick={() => openCreateModal(route)} type="button">Clonar</button></div></td>
+                  <td className="px-4 py-3"><div className="flex justify-end gap-2"><button className="h-9 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => openRouteMonitor(route)} type="button">Abrir</button><button className="h-9 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => openEditModal(route)} type="button">Editar</button><button className="h-9 rounded-md border border-apex px-3 text-xs font-semibold text-apex hover:bg-paper" onClick={() => openCreateModal(route)} type="button">Clonar</button></div></td>
                 </tr>;
               })}
             </tbody>

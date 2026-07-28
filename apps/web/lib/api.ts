@@ -1,6 +1,7 @@
 import { assertActiveSession, clearSession, emitAppAlert, keepSessionAlive, setPasswordChangeRequired, touchSession } from "./sessionSecurity";
 import { clearSupabaseFetchCache, getSupabaseAccessToken, supabaseAuth, supabaseFetch } from "./supabaseClient";
 import { getServiceImageUrl, uploadServiceImageData } from "./supabaseStorage";
+import { scheduleMonitorPunchEvidence } from "./hrScheduleMonitor";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
@@ -2182,7 +2183,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
           metadata: activity.metadata || {}
         }));
       const routePunches = punches
-        .filter((punch) => matchesRouteAssignment(punch) && punch.latitude != null && punch.longitude != null)
+        .filter((punch) => matchesRouteAssignment(punch))
         .map((punch) => ({
           id: punch.id,
           user_name: displayNameForIdentity(punch) || punch.user_name,
@@ -2197,7 +2198,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
           extra_minutes: punch.extra_minutes || 0,
           extra_reason: punch.extra_reason || "",
           extra_detail: punch.extra_detail || "",
-          extra_evidence: punch.extra_evidence || punch.metadata?.extra_evidence || {},
+          extra_evidence: scheduleMonitorPunchEvidence(punch),
           metadata: punch.metadata || {}
         }));
       const userNames = Array.from(new Set([...routePunches.map((punch) => punch.user_name), ...routeActivities.map((activity) => activity.user_name)]));
