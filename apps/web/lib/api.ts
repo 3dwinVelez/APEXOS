@@ -805,29 +805,31 @@ function normalizeActivityTypeOption(item: ActivityTypeLike, index: number) {
 }
 
 function mergeActivityTypeOptions(primary: ActivityTypeLike[] = [], masters: ActivityTypeLike[] = []) {
-  const byKey = new Map<string, ReturnType<typeof normalizeActivityTypeOption>>();
+  const byName = new Map<string, ReturnType<typeof normalizeActivityTypeOption>>();
+  const byCode = new Map<string, ReturnType<typeof normalizeActivityTypeOption>>();
   const put = (item: ActivityTypeLike, index: number, preferExistingId = false) => {
     const normalized = normalizeActivityTypeOption(item, index);
-    const keys = [
-      String(normalized.id || "").toLowerCase(),
-      String(normalized.code || "").toLowerCase(),
-      normalized.name.toLowerCase()
-    ].filter(Boolean);
-    const existing = keys.map((key) => byKey.get(key)).find(Boolean);
-    const next = existing
+    const nameKey = normalized.name.trim().toLowerCase();
+    const codeKey = String(normalized.code || "").trim().toLowerCase();
+    const idKey = String(normalized.id || "").trim().toLowerCase();
+    const existing = byName.get(nameKey) || byCode.get(codeKey) || byCode.get(idKey);
+    const merged = existing
       ? {
         ...existing,
         ...normalized,
-        id: preferExistingId ? existing.id : normalized.id,
+        id: preferExistingId && existing.id ? existing.id : normalized.id,
+        code: normalized.code || existing.code,
         active: normalized.active,
         sort_order: normalized.sort_order
       }
       : normalized;
-    for (const key of keys) byKey.set(key, next);
+    byName.set(nameKey, merged);
+    if (codeKey) byCode.set(codeKey, merged);
+    if (idKey) byCode.set(idKey, merged);
   };
   primary.forEach((item, index) => put(item, index, false));
   masters.forEach((item, index) => put(item, index + primary.length, true));
-  return Array.from(new Set(byKey.values()))
+  return Array.from(byName.values())
     .filter((item) => item.active !== false)
     .sort((left, right) => Number(left.sort_order || 100) - Number(right.sort_order || 100) || left.name.localeCompare(right.name));
 }
