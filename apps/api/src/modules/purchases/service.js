@@ -2,6 +2,8 @@ const prisma = require("../../core/prisma");
 const inventoryService = require("../inventory/service");
 const accountingService = require("../accounting/service");
 
+const PURCHASE_INVOICE_TRANSACTION_OPTIONS = { maxWait: 5_000, timeout: 20_000 };
+
 function appError(statusCode, code, message) {
   const error = new Error(message);
   error.statusCode = statusCode;
@@ -671,7 +673,12 @@ async function createPurchaseInvoice(tenantId, userId, data) {
     const payableLines = [];
     payableLines.push(...prepared.payableLines);
 
-    const cxp = await accountingService.createPayableDocument(tenantId, userId, purchaseInvoicePayablePayload(data, { ...prepared, payableLines }));
+    const cxp = await accountingService.createPayableDocumentInTransaction(
+      tx,
+      tenantId,
+      userId,
+      purchaseInvoicePayablePayload(data, { ...prepared, payableLines })
+    );
 
     for (const row of poInvoiceControls) {
       await tx.purchaseOrderInvoiceLine.create({
@@ -758,7 +765,7 @@ async function createPurchaseInvoice(tenantId, userId, data) {
     }
 
     return { ...cxp, purchase_order: po ? { id: po.id, number: po.number } : null };
-  }));
+  }, PURCHASE_INVOICE_TRANSACTION_OPTIONS));
 }
 
 module.exports = {
