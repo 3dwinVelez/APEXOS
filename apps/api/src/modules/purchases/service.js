@@ -24,7 +24,7 @@ async function createSupplier(tenantId, userId, data) {
       const existing = await prisma.party.findFirst({ where: { tax_id, type: "supplier" } });
       if (existing) throw appError(409, "DUPLICATE_TAX_ID", `Ya existe un proveedor con el ID fiscal ${tax_id}`);
     }
-    return prisma.party.create({
+    const supplier = await prisma.party.create({
       data: {
         type: "supplier",
         name: name.trim(),
@@ -42,6 +42,7 @@ async function createSupplier(tenantId, userId, data) {
         metadata
       }
     });
+    return enrichSupplier(supplier);
   });
 }
 
@@ -187,7 +188,7 @@ async function updateSupplier(tenantId, supplierId, data) {
     return prisma.party.update({
       where: { id: supplier.id },
       data: {
-        name: data.name.trim() || supplier.name,
+        name: data.name === undefined ? supplier.name : data.name.trim() || supplier.name,
         tax_id: data.tax_id ?? supplier.tax_id,
         tax_type: data.tax_type ?? supplier.tax_type,
         email: data.email ?? supplier.email,

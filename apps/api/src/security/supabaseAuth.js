@@ -126,8 +126,7 @@ async function getSupabaseMembershipContext(token, supabaseUser) {
       service: true
     }).then((rows) => rows || []),
     supabaseRest(`/rest/v1/v_company_module_status?select=module_code,enabled&company_id=eq.${companyId}&enabled=eq.true`, {
-      token,
-      service: true
+      token
     })
   ]);
   return {
