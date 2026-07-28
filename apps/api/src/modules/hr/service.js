@@ -919,10 +919,14 @@ async function ensureActivityTypes() {
 async function listActivityTypes(tenantId, query = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     await ensureActivityTypes();
-    return prisma.activityType.findMany({
+    const rows = await prisma.activityType.findMany({
       where: query.active == null ? {} : { active: query.active === "true" || query.active === true },
       orderBy: [{ sort_order: "asc" }, { name: "asc" }]
     });
+    return rows.map((row) => ({
+      ...row,
+      code: row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata) && row.metadata.code ? row.metadata.code : String(row.id)
+    }));
   });
 }
 
@@ -949,6 +953,48 @@ async function updateActivityType(tenantId, id, input) {
       metadata: input.metadata || {}
     }
   }));
+}
+
+async function findOrCreateActivityType(input) {
+  await ensureActivityTypes();
+  const requested = String(input.activity_type_id || "").trim();
+  const requestedId = Number(requested);
+  if (Number.isInteger(requestedId) && requestedId > 0) {
+    const byId = await prisma.activityType.findFirst({ where: { id: requestedId, active: true } });
+    if (byId) return byId;
+  }
+  const metadata = input.metadata && typeof input.metadata === "object" && !Array.isArray(input.metadata) ? input.metadata : {};
+  const requestedCode = String(metadata.activity_type_code || requested).trim();
+  const requestedName = String(metadata.activity_type_name || "").trim();
+  const rows = await prisma.activityType.findMany({ where: { __includeInactive: true } });
+  const existing = rows.find((row) => {
+    const rowMetadata = row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata) ? row.metadata : {};
+    return (requestedCode && String(rowMetadata.code || row.id) === requestedCode)
+      || (requested && row.name === requested)
+      || (requestedName && row.name === requestedName);
+  });
+  if (existing) {
+    if (existing.active !== false) return existing;
+    return prisma.activityType.update({
+      where: { id: existing.id },
+      data: { active: true }
+    });
+  }
+  const name = requestedName || requested;
+  if (!name) {
+    const err = new Error("Tipo de actividad no encontrado.");
+    err.statusCode = 422;
+    throw err;
+  }
+  return prisma.activityType.create({
+    data: {
+      name,
+      description: "Creado desde maestro de actividades",
+      active: true,
+      sort_order: Number(metadata.activity_type_sort_order || 100),
+      metadata: { code: requestedCode || requested, source: "work_activity_master_sync" }
+    }
+  });
 }
 
 async function findCurrentWorkSession({ employee, userName, routeId = null, date = new Date() }) {
@@ -1120,7 +1166,7 @@ async function createWorkActivity(tenantId, user, input) {
       err.statusCode = 422;
       throw err;
     }
-    const activityType = await prisma.activityType.findFirstOrThrow({ where: { id: Number(input.activity_type_id), active: true } });
+    const activityType = await findOrCreateActivityType(input);
     const activity = await prisma.workActivity.create({
       data: {
         session_id: session.id,

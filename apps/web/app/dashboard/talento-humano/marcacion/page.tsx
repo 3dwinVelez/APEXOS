@@ -529,9 +529,10 @@ export default function MobilePunchPage() {
       return;
     }
     setActivitySaving(true);
+    const selectedActivityType = activityTypes.find((item) => String(item.id) === String(activityTypeId) || String(item.code || "") === String(activityTypeId));
     const pendingActivity: WorkActivity = {
       id: Date.now(),
-      activity_type_name: activityTypes.find((item) => String(item.id) === String(activityTypeId))?.name || "Actividad operativa",
+      activity_type_name: selectedActivityType?.name || "Actividad operativa",
       observation: activityObservation.trim(),
       occurred_at: new Date().toISOString(),
       latitude: fix?.latitude ?? null,
@@ -560,7 +561,15 @@ export default function MobilePunchPage() {
       vehicle_plate: vehiclePlate,
       observation: savedObservation,
       photo: savedPhoto,
-      metadata: { source: "apexos-mobile-activity", gps_required: gpsRequired, gps_skipped: !gpsRequired, tracking_mode: gpsRequired ? "gps" : "punch_only", ...routeSyncMetadata(route) }
+      metadata: {
+        source: "apexos-mobile-activity",
+        gps_required: gpsRequired,
+        gps_skipped: !gpsRequired,
+        tracking_mode: gpsRequired ? "gps" : "punch_only",
+        activity_type_code: selectedActivityType?.code || activityTypeId,
+        activity_type_name: selectedActivityType?.name || "",
+        ...routeSyncMetadata(route)
+      }
     };
     enqueuePendingSync("/api/v1/hr/work-activities", activityPayload, "Actividad");
     setPendingSync(readPendingSync());

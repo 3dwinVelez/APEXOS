@@ -95,6 +95,8 @@ const fallbackActivityTypes = [
   "Apoyo operativo"
 ].map((name, index) => ({ id: index + 1, code: `ACT-${String(index + 1).padStart(2, "0")}`, name, active: true, sort_order: (index + 1) * 10 }));
 
+type ActivityTypeLike = { id?: number | string; code?: string; name?: string; description?: string | null; active?: boolean; sort_order?: number; metadata?: AnyRow };
+
 const tenantModuleCodesByPermissionModule: Record<string, string[]> = {
   accounting: ["M-07", "contabilidad", "finance", "accounting"],
   admin: ["M-22", "administracion", "administracion_apex", "admin"],
@@ -785,6 +787,85 @@ function defaultUserMasterData() {
     activity_types: fallbackActivityTypes.map((item) => ({ code: item.code, name: item.name, active: true, sort_order: item.sort_order })),
     banks: [["BANCOLOMBIA", "Bancolombia"], ["BOGOTA", "Banco de Bogota"], ["DAVIVIENDA", "Davivienda"]].map(([code, name]) => ({ code, name }))
   };
+}
+
+function normalizeActivityTypeOption(item: ActivityTypeLike, index: number) {
+  const metadata = item.metadata && typeof item.metadata === "object" ? item.metadata : {};
+  const code = String(item.code || metadata.code || item.id || `ACT-${String(index + 1).padStart(2, "0")}`).trim();
+  const name = String(item.name || code || "Actividad operativa").trim();
+  return {
+    id: item.id || code,
+    code,
+    name,
+    description: item.description || "",
+    active: item.active !== false,
+    sort_order: Number(item.sort_order || ((index + 1) * 10)),
+    metadata
+  };
+}
+
+function mergeActivityTypeOptions(primary: ActivityTypeLike[] = [], masters: ActivityTypeLike[] = []) {
+  const byKey = new Map<string, ReturnType<typeof normalizeActivityTypeOption>>();
+  const put = (item: ActivityTypeLike, index: number, preferExistingId = false) => {
+    const normalized = normalizeActivityTypeOption(item, index);
+    const keys = [
+      String(normalized.id || "").toLowerCase(),
+      String(normalized.code || "").toLowerCase(),
+      normalized.name.toLowerCase()
+    ].filter(Boolean);
+    const existing = keys.map((key) => byKey.get(key)).find(Boolean);
+    const next = existing
+      ? {
+        ...existing,
+        ...normalized,
+        id: preferExistingId ? existing.id : normalized.id,
+        active: normalized.active,
+        sort_order: normalized.sort_order
+      }
+      : normalized;
+    for (const key of keys) byKey.set(key, next);
+  };
+  primary.forEach((item, index) => put(item, index, false));
+  masters.forEach((item, index) => put(item, index + primary.length, true));
+  return Array.from(new Set(byKey.values()))
+    .filter((item) => item.active !== false)
+    .sort((left, right) => Number(left.sort_order || 100) - Number(right.sort_order || 100) || left.name.localeCompare(right.name));
+}
+
+async function syncActivityTypeMasterToOperationalApi(item: ActivityTypeLike, previousCode = "") {
+  if (!HAS_CONFIGURED_API_URL || typeof window === "undefined") return;
+  const token = localStorage.getItem("token");
+  if (!token) return;
+  const normalized = normalizeActivityTypeOption(item, 0);
+  if (!normalized.name) return;
+  try {
+    const response = await fetchWithTimeout(`${API_URL}/api/v1/hr/activity-types`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!response.ok) return;
+    const current = await response.json().catch(() => []) as ActivityTypeLike[];
+    const target = current.find((entry) => {
+      const metadata = entry.metadata && typeof entry.metadata === "object" ? entry.metadata : {};
+      return String(entry.id || "") === String(previousCode || normalized.code)
+        || String(entry.code || metadata.code || "") === String(previousCode || normalized.code)
+        || String(entry.name || "").trim().toLowerCase() === normalized.name.toLowerCase();
+    });
+    const payload = {
+      name: normalized.name,
+      description: normalized.description || "",
+      active: normalized.active,
+      sort_order: normalized.sort_order,
+      metadata: { ...(normalized.metadata || {}), code: normalized.code, source: "admin_user_master_data" }
+    };
+    await fetchWithTimeout(`${API_URL}/api/v1/hr/activity-types${target?.id ? `/${encodeURIComponent(String(target.id))}` : ""}`, {
+      method: target?.id ? "PATCH" : "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }).catch((error) => safeDevLog("No fue posible sincronizar tipo de actividad con HR.", error));
+    clearApiReadCaches("/api/v1/hr/activity-types");
+  } catch (error) {
+    safeDevLog("No fue posible consultar tipos de actividad operativos.", error);
+  }
 }
 
 function nextPunchFrom(types: string[]) {
@@ -1707,11 +1788,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
 
   if (pathname === "/api/v1/hr/activity-types") {
     const masterData = await loadSupabaseUserMasterData().catch(() => defaultUserMasterData());
-    const activityTypes = (Array.isArray((masterData as AnyRow).activity_types) ? (masterData as AnyRow).activity_types as Array<{ code?: string; name?: string; active?: boolean; sort_order?: number }> : [])
-      .filter((item) => item.active !== false)
-      .sort((left, right) => Number(left.sort_order || 100) - Number(right.sort_order || 100))
-      .map((item, index) => ({ id: item.code || `ACT-${index + 1}`, code: item.code || `ACT-${index + 1}`, name: item.name || item.code || "Actividad operativa", active: true, sort_order: item.sort_order || (index + 1) * 10 }));
-    return (activityTypes.length ? activityTypes : fallbackActivityTypes) as T;
+    const activityTypes = Array.isArray((masterData as AnyRow).activity_types) ? (masterData as AnyRow).activity_types as ActivityTypeLike[] : [];
+    return mergeActivityTypeOptions(activityTypes.length ? activityTypes : fallbackActivityTypes) as T;
   }
 
   if (pathname === "/api/v1/hr/work-sessions/current") {
@@ -3313,6 +3391,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const data = getStoredUserMasterData();
     const current = Array.isArray((data as AnyRow)[catalogCode]) ? ((data as AnyRow)[catalogCode] as Array<{ code: string; name: string; description?: string; active?: boolean; sort_order?: number }>) : [];
     if (method === "DELETE") {
+      const previous = current.find((entry) => entry.code === itemCode);
       const nextData = { ...data, [catalogCode]: current.filter((entry) => entry.code !== itemCode) };
       saveStoredUserMasterData(nextData);
       const membership = await currentSupabaseCompanyUser().catch(() => null);
@@ -3326,6 +3405,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
             method: "DELETE"
           }).catch((error) => safeDevLog("No fue posible eliminar item de catalogo en Supabase.", error));
         }
+      }
+      if (catalogCode === "activity_types" && previous) {
+        await syncActivityTypeMasterToOperationalApi({ ...previous, active: false }, itemCode);
       }
       return { ...nextData, roles: storedAdminRoles() } as T;
     }
@@ -3371,6 +3453,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
           })
         }).catch((error) => safeDevLog("No fue posible persistir item de catalogo en Supabase.", error));
       }
+    }
+    if (catalogCode === "activity_types") {
+      await syncActivityTypeMasterToOperationalApi(item, targetCode);
     }
     return { ...nextData, roles: storedAdminRoles() } as T;
   }
@@ -3692,5 +3777,11 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
     throw new Error(message);
   }
   touchSession();
-  return response.json() as Promise<T>;
+  const body = await response.json() as T;
+  if (pathname === "/api/v1/hr/activity-types" && method === "GET") {
+    const masterData = await loadSupabaseUserMasterData().catch(() => defaultUserMasterData());
+    const masterActivityTypes = Array.isArray((masterData as AnyRow).activity_types) ? (masterData as AnyRow).activity_types as ActivityTypeLike[] : [];
+    return mergeActivityTypeOptions(Array.isArray(body) ? body as ActivityTypeLike[] : [], masterActivityTypes) as T;
+  }
+  return body;
 }
