@@ -2,6 +2,7 @@
 
 import { api } from "@/lib/api";
 import { getGpsFix, type GpsFix } from "@/lib/gps";
+import { scheduleGpsRequired } from "@/lib/hrScheduleMonitor";
 import { SignatureCapture } from "@/components/operations/SignatureCapture";
 import { PhotoCapture, type CapturedFile } from "@/components/operations/PhotoCapture";
 import { AlertTriangle, ArrowLeft, CheckCircle2, ExternalLink, MapPin, Navigation, Plus, RefreshCw, Truck, X } from "lucide-react";
@@ -11,7 +12,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 type Employee = { id: number | string; user_id?: string; code: string; document_number?: string; user_type?: string; position?: string; metadata: { name: string; user_type?: string; code?: string; identity_aliases?: string[] }; user: { name: string; email?: string } };
 type Attendance = { user_name: string; route_id?: number | string | null; next_type: string | null; punches: Array<{ id: number; type: string; time: string; vehicle_plate: string }> };
 type AttendancePunch = Attendance["punches"][number];
-type TimeRoute = { id: number | string; code?: string; display_id?: string; source_route_id?: number | string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string };
+type TimeRoute = { id: number | string; code?: string; display_id?: string; source_route_id?: number | string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string; gps_required?: boolean; tracking_mode?: string; metadata?: Record<string, unknown> };
 type OperationPunch = { id: number | string; user_name: string; type: string; time?: string; punched_at?: string; vehicle_plate?: string; route_id?: number | string | null };
 type OperationActivity = { id: number | string; user_name: string; type: string; time?: string; occurred_at?: string; observation?: string; latitude?: number; longitude?: number; accuracy_meters?: number; evidence?: Array<{ base64_data?: string; file_name?: string }> };
 type OperationRoute = TimeRoute & { punch_points?: OperationPunch[]; activity_points?: OperationActivity[] };
@@ -20,8 +21,8 @@ type PreopItem = { section: string; item_key: string; label: string; severity: s
 type PreopChecklist = { id: number; route_id?: number; plate: string; checklist_status: string; risk_level: string };
 type PreopTemplate = { sections: string[]; items: PreopItem[] };
 type PreopAnswer = { answer: string; observations: string; evidence: CapturedFile | null };
-type ActivityType = { id: number; name: string; active: boolean };
-type WorkActivity = { id: number; activity_type_name: string; observation: string; occurred_at: string; latitude: number; longitude: number; accuracy_meters?: number; evidence?: Array<{ base64_data?: string; file_name?: string }> };
+type ActivityType = { id: number | string; code?: string; name: string; active: boolean };
+type WorkActivity = { id: number; activity_type_name: string; observation: string; occurred_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; evidence?: Array<{ base64_data?: string; file_name?: string }> };
 type WorkSession = { id: number; active: boolean; session: { id: number; status: string; started_at: string; closed_at?: string; route_id?: number | string | null } | null; activities: WorkActivity[]; alerts: Array<{ type: string; severity: string; message: string }> };
 type PendingSyncItem = { id: string; path: string; payload: unknown; created_at: string; attempts: number; label: string };
 
@@ -200,20 +201,18 @@ export default function MobilePunchPage() {
   const [pendingSync, setPendingSync] = useState<PendingSyncItem[]>([]);
 
   const load = useCallback(async () => {
-    const [me, routeData, attendanceData, typesData, sessionData, operationsData] = await Promise.all([
+    const [me, routeData, attendanceData, typesData, sessionData] = await Promise.all([
       api<Employee>("/api/v1/hr/me").catch(() => null),
       api<TimeRoute[]>("/api/v1/hr/routes").catch(() => []),
       api<Attendance[]>("/api/v1/hr/attendance").catch(() => []),
       api<ActivityType[]>("/api/v1/hr/activity-types").catch(() => []),
-      api<WorkSession>("/api/v1/hr/work-sessions/current").catch(() => null),
-      api<OperationsMap>(`/api/v1/hr/operations-map?date=${todayBogota()}&minutes=30&footprint_days=30`).catch(() => null)
+      api<WorkSession>("/api/v1/hr/work-sessions/current").catch(() => null)
     ]);
     setEmployee(me);
     setRoutes(routeData);
     setAttendance(attendanceData);
     setActivityTypes(typesData);
     setSession(sessionData);
-    setOperationsMap(operationsData);
     if (typesData[0]) setActivityTypeId((current) => current || String(typesData[0].id));
     const active = await api<{ checklist: PreopChecklist | null; template: PreopTemplate }>("/api/v1/hr/routes/preop/active").catch(() => null);
     if (active?.checklist) {
@@ -263,6 +262,7 @@ export default function MobilePunchPage() {
   const activeSessionRouteId = session?.session?.route_id ? String(session.session.route_id) : "";
   const route = assignedRoutes.find((item) => String(item.id) === String(selectedRouteId || activeSessionRouteId))
     || (assignedRoutes.length === 1 ? assignedRoutes[0] : null);
+  const gpsRequired = scheduleGpsRequired(route);
   const routeRequired = assignedRoutes.length > 1 && !route;
   const operationRoute = operationsMap?.routes?.find((item) => String(item.id) === String(route?.id || ""));
   const userMatches = useCallback((value: unknown) => {
@@ -315,9 +315,9 @@ export default function MobilePunchPage() {
     activity_type_name: activity.type,
     observation: activity.observation || "",
     occurred_at: activity.occurred_at || activity.time || new Date().toISOString(),
-    latitude: Number(activity.latitude || 0),
-    longitude: Number(activity.longitude || 0),
-    accuracy_meters: Number(activity.accuracy_meters || 0),
+    latitude: activity.latitude ?? null,
+    longitude: activity.longitude ?? null,
+    accuracy_meters: activity.accuracy_meters ?? null,
     evidence: activity.evidence || []
     })))
   ];
@@ -334,7 +334,7 @@ export default function MobilePunchPage() {
   })();
 
   useEffect(() => {
-    if (!employee || !userName) return;
+    if (!employee || !userName || !gpsRequired) return;
     let mounted = true;
     const timer = window.setInterval(async () => {
       if (document.hidden || !mounted) return;
@@ -366,7 +366,7 @@ export default function MobilePunchPage() {
       mounted = false;
       if (timer) window.clearInterval(timer);
     };
-  }, [employee, route, userName, vehiclePlate]);
+  }, [employee, gpsRequired, route, userName, vehiclePlate]);
 
   useEffect(() => {
     if (!selectedRouteId && activeSessionRouteId) {
@@ -382,10 +382,22 @@ export default function MobilePunchPage() {
 
   useEffect(() => {
     if (!route?.id) return;
-    api<WorkSession>(`/api/v1/hr/work-sessions/current?route_id=${encodeURIComponent(String(route.id))}`).then(setSession).catch(() => undefined);
+    let mounted = true;
+    Promise.all([
+      api<WorkSession>(`/api/v1/hr/work-sessions/current?route_id=${encodeURIComponent(String(route.id))}`).catch(() => null),
+      api<OperationsMap>(`/api/v1/hr/operations-map?date=${todayBogota()}&minutes=30&footprint_days=30`).catch(() => null)
+    ]).then(([sessionData, operationsData]) => {
+      if (!mounted) return;
+      if (sessionData) setSession(sessionData);
+      setOperationsMap(operationsData);
+    });
+    return () => {
+      mounted = false;
+    };
   }, [route?.id]);
 
   async function refreshGps() {
+    if (!gpsRequired) return null;
     // Use cached GPS if less than 25s old — avoids blocking the UI
     if (gps && Date.now() - gpsUpdatedAt < 25000) return gps;
     setGpsStatus("loading");
@@ -427,8 +439,8 @@ export default function MobilePunchPage() {
     setMarkingType(type);
     setMessage("");
     try {
-      const fix = await refreshGps();
-      if (!fix) return;
+      const fix = gpsRequired ? await refreshGps() : null;
+      if (gpsRequired && !fix) return;
       if (type === "salida" && isClosingLate && (!extraReason || !extraDetail.trim() || !extraEvidence)) {
         setMessage("Cierre fuera de horario: selecciona motivo, escribe el sustento y adjunta evidencia fotografica.");
         return;
@@ -445,15 +457,15 @@ export default function MobilePunchPage() {
         user_name: userName,
         type,
         punched_at: new Date().toISOString(),
-        latitude: fix.latitude,
-        longitude: fix.longitude,
-        accuracy_meters: fix.accuracy_meters,
+        latitude: fix?.latitude,
+        longitude: fix?.longitude,
+        accuracy_meters: fix?.accuracy_meters,
         vehicle_plate: vehiclePlate,
         route_id: route?.id,
         extra_reason: type === "salida" ? extraReason : undefined,
         extra_detail: type === "salida" ? extraDetail : undefined,
         extra_evidence: type === "salida" ? extraEvidence : undefined,
-        metadata: { source: "apexos-mobile", current_user_only: true, ...routeSyncMetadata(route) }
+        metadata: { source: "apexos-mobile", current_user_only: true, gps_required: gpsRequired, tracking_mode: gpsRequired ? "gps" : "punch_only", ...routeSyncMetadata(route) }
       };
       setExtraReason("");
       setExtraDetail("");
@@ -487,7 +499,7 @@ export default function MobilePunchPage() {
       return;
     }
     setActivityModal(true);
-    if (!gps) {
+    if (gpsRequired && !gps) {
       void refreshGps();
     }
   }
@@ -511,12 +523,8 @@ export default function MobilePunchPage() {
       setActivityMessage("Toma o adjunta una foto de evidencia para continuar.");
       return;
     }
-    if (!activityObservation.trim()) {
-      setActivityMessage("Escribe una observacion corta de la actividad.");
-      return;
-    }
-    const fix = await refreshGps();
-    if (!fix) {
+    const fix = gpsRequired ? await refreshGps() : null;
+    if (gpsRequired && !fix) {
       setActivityMessage("GPS obligatorio. Habilita la ubicacion del navegador y reintenta.");
       return;
     }
@@ -524,15 +532,15 @@ export default function MobilePunchPage() {
     const pendingActivity: WorkActivity = {
       id: Date.now(),
       activity_type_name: activityTypes.find((item) => String(item.id) === String(activityTypeId))?.name || "Actividad operativa",
-      observation: activityObservation,
+      observation: activityObservation.trim(),
       occurred_at: new Date().toISOString(),
-      latitude: fix.latitude,
-      longitude: fix.longitude,
-      accuracy_meters: fix.accuracy_meters,
+      latitude: fix?.latitude ?? null,
+      longitude: fix?.longitude ?? null,
+      accuracy_meters: fix?.accuracy_meters ?? null,
       evidence: activityPhoto ? [{ base64_data: activityPhoto.base64, file_name: activityPhoto.name }] : []
     };
     setOptimisticActivities((current) => [pendingActivity, ...current].slice(0, 20));
-    const savedObservation = activityObservation;
+    const savedObservation = activityObservation.trim();
     const savedPhoto = activityPhoto;
     setActivityObservation("");
     setActivityPhoto(null);
@@ -540,17 +548,19 @@ export default function MobilePunchPage() {
     setActivitySaving(false);
     setMessage("Actividad registrada. Sincronizando evidencia en segundo plano...");
     const activityPayload = {
-      activity_type_id: Number(activityTypeId),
+      activity_type_id: activityTypeId,
       employee_id: employee?.id,
       user_name: userName,
-      latitude: fix.latitude,
-      longitude: fix.longitude,
-      accuracy_meters: fix.accuracy_meters,
+      latitude: fix?.latitude,
+      longitude: fix?.longitude,
+      accuracy_meters: fix?.accuracy_meters,
+      gps_required: gpsRequired,
+      gps_skipped: !gpsRequired,
       route_id: route?.id,
       vehicle_plate: vehiclePlate,
       observation: savedObservation,
       photo: savedPhoto,
-      metadata: { source: "apexos-mobile-activity", ...routeSyncMetadata(route) }
+      metadata: { source: "apexos-mobile-activity", gps_required: gpsRequired, gps_skipped: !gpsRequired, tracking_mode: gpsRequired ? "gps" : "punch_only", ...routeSyncMetadata(route) }
     };
     enqueuePendingSync("/api/v1/hr/work-activities", activityPayload, "Actividad");
     setPendingSync(readPendingSync());
@@ -644,7 +654,7 @@ export default function MobilePunchPage() {
               <div>
                 <p className="text-xs font-semibold uppercase text-neutral-500">Horario asignado</p>
                 <h2 className="mt-1 text-lg font-semibold">{route ? `Horario ${route.id}` : assignedRoutes.length ? "Selecciona un horario" : "Sin horario asignado"}</h2>
-                <p className="mt-1 text-sm text-neutral-600">{route ? `${route.start_time || "--"} - ${route.end_time || "--"}${route.vehicle_plate ? ` · ${route.vehicle_plate}` : ""}` : assignedRoutes.length ? "Debes elegir sobre cual horario vas a registrar marcaciones y actividades." : "Consulta con administracion para asignar una jornada antes de marcar."}</p>
+                <p className="mt-1 text-sm text-neutral-600">{route ? `${route.start_time || "--"} - ${route.end_time || "--"}${route.vehicle_plate ? ` · ${route.vehicle_plate}` : ""} · ${gpsRequired ? "GPS activo" : "solo marcaciones"}` : assignedRoutes.length ? "Debes elegir sobre cual horario vas a registrar marcaciones y actividades." : "Consulta con administracion para asignar una jornada antes de marcar."}</p>
               </div>
               <span className={`rounded-md px-2 py-1 text-xs font-semibold ${route ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>{assignedRoutes.length} asignado(s)</span>
             </div>
@@ -706,12 +716,12 @@ export default function MobilePunchPage() {
             ) : nextType === "salida" ? (
               <textarea className="mt-3 min-h-24 w-full rounded-md border border-line px-3 py-3 text-base" placeholder="Observacion opcional de cierre" value={extraDetail} onChange={(event) => setExtraDetail(event.target.value)} />
             ) : null}
-            <button className="mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-md border border-line text-base font-semibold hover:bg-paper" onClick={refreshGps} type="button">
+            {gpsRequired ? <button className="mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-md border border-line text-base font-semibold hover:bg-paper" onClick={refreshGps} type="button">
               <RefreshCw className={gpsStatus === "loading" ? "animate-spin" : ""} size={17} />
               {gpsStatus === "loading" ? "Obteniendo GPS..." : gpsStatus === "ok" && gps ? `GPS activo (${Math.round(gps.accuracy_meters || 0)}m)` : "Activar GPS obligatorio"}
-            </button>
+            </button> : <p className="mt-3 rounded-md bg-paper p-3 text-sm font-semibold text-neutral-600">Este horario permite marcar sin GPS.</p>}
             {gpsStatus === "error" ? <p className="mt-2 text-xs font-semibold text-red-700">GPS obligatorio para marcar. Habilita ubicacion en el navegador.</p> : null}
-            {gps ? (
+            {gpsRequired && gps ? (
               <div className="mt-3 overflow-hidden rounded-md border border-line bg-white">
                 <iframe className="h-40 w-full border-0 sm:h-44" src={osmEmbedUrl(gps)} title="Mi ubicacion GPS" loading="lazy" />
                 <div className="grid gap-2 p-3 text-xs text-neutral-600 sm:flex sm:items-center sm:justify-between">
@@ -856,7 +866,7 @@ export default function MobilePunchPage() {
               <div>
                 <p className="text-sm font-semibold text-apex">Trazabilidad operativa</p>
                 <h2 className="text-xl font-semibold">Registrar actividad</h2>
-                <p className="mt-1 text-sm text-neutral-600">GPS, foto y observacion son obligatorios.</p>
+                <p className="mt-1 text-sm text-neutral-600">{gpsRequired ? "GPS y foto son obligatorios. Observacion opcional." : "Foto obligatoria. Observacion opcional."}</p>
               </div>
               <button className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-line" onClick={() => setActivityModal(false)} type="button" aria-label="Cerrar"><X size={18} /></button>
             </div>
@@ -865,15 +875,15 @@ export default function MobilePunchPage() {
               <select className="h-12 w-full rounded-md border border-line bg-white px-3 text-base" value={activityTypeId} onChange={(event) => setActivityTypeId(event.target.value)}>
                 {activityTypes.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}
               </select>
-              <button className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md border border-line text-base font-semibold" onClick={refreshGps} type="button">
+              {gpsRequired ? <button className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md border border-line text-base font-semibold" onClick={refreshGps} type="button">
                 <RefreshCw className={gpsStatus === "loading" ? "animate-spin" : ""} size={17} />
                 {gps ? `GPS listo (${Math.round(gps.accuracy_meters || 0)}m)` : "Capturar GPS"}
-              </button>
+              </button> : <p className="rounded-md bg-paper p-3 text-sm font-semibold text-neutral-600">Actividad para horario sin GPS.</p>}
               {gps && Number(gps.accuracy_meters || 0) > 80 ? <p className="rounded-md bg-amber-50 p-2 text-xs font-semibold text-amber-900">Precision baja. Puedes reintentar para mejorar auditoria.</p> : null}
               <PhotoCapture label="Foto obligatoria de la actividad" required value={activityPhoto} onChange={setActivityPhoto} />
-              <textarea className="min-h-28 w-full rounded-md border border-line px-3 py-3 text-base" placeholder="Observacion obligatoria: detalle operativo, novedad o informacion de entrega" value={activityObservation} onChange={(event) => setActivityObservation(event.target.value)} />
+              <textarea className="min-h-28 w-full rounded-md border border-line px-3 py-3 text-base" placeholder="Observacion opcional: detalle operativo, novedad o informacion de entrega" value={activityObservation} onChange={(event) => setActivityObservation(event.target.value)} />
               <button className="h-12 w-full rounded-md bg-apex text-base font-semibold text-white disabled:bg-neutral-300" disabled={activitySaving} onClick={saveActivity} type="button">
-                {activitySaving ? "Guardando..." : gps ? "Guardar actividad" : "Capturar GPS y guardar"}
+                {activitySaving ? "Guardando..." : gpsRequired && !gps ? "Capturar GPS y guardar" : "Guardar actividad"}
               </button>
             </div>
           </section>

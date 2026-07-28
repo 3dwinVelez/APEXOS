@@ -2,7 +2,7 @@
 
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { localCalendarDate, scheduleMonitorDate } from "@/lib/hrScheduleMonitor";
+import { localCalendarDate, scheduleGpsRequired, scheduleMonitorDate, scheduleTrackingMode } from "@/lib/hrScheduleMonitor";
 import { AlertTriangle, ArrowLeft, Building2, CalendarDays, Camera, CheckSquare2, Clock, Copy, Edit3, Filter, HelpCircle, Navigation, Plus, RefreshCw, RotateCcw, Save, Search, Square, Truck, UserPlus, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -10,7 +10,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 type Employee = { id: number | string; code: string; user_type?: string; position: string; department: string; metadata: { name: string; document: string; user_type?: string }; user: { name: string } };
 type Vehicle = { id: number | string; plate: string; type: string; model: string };
-type TimeRoute = { id: number | string; code?: string; display_id?: number | string; date: string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string; status: string; tolerance_minutes?: number; notes?: string };
+type TimeRoute = { id: number | string; code?: string; display_id?: number | string; date: string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string; status: string; tolerance_minutes?: number; notes?: string; gps_required?: boolean; tracking_mode?: string; metadata?: Record<string, unknown> };
 type MasterOption = { code: string; name: string; active?: boolean; sort_order?: number };
 type UserMasterData = { locations?: MasterOption[] };
 type OperatorPoint = { key: string; user_name: string; name: string; route_id: number | string; online?: boolean; last_punch_type?: string; last_activity_type?: string; last_activity_time?: string };
@@ -215,7 +215,7 @@ export default function RoutesPlanningPage() {
   const [loadingMonitor, setLoadingMonitor] = useState(false);
   const [savingRoute, setSavingRoute] = useState(false);
   const [validationIssues, setValidationIssues] = useState<string[]>([]);
-  const [form, setForm] = useState({ date: initialDate, vehicle_plate: "", employees: [] as string[], start_time: "08:00", end_time: "17:00", tolerance_minutes: 15, notes: "" });
+  const [form, setForm] = useState({ date: initialDate, vehicle_plate: "", employees: [] as string[], start_time: "08:00", end_time: "17:00", tolerance_minutes: 15, notes: "", gps_required: true });
   const [scheduleKind, setScheduleKind] = useState<"administrative" | "operational">("administrative");
   const [administrativeSite, setAdministrativeSite] = useState("SEDE-PRINCIPAL");
   const [bulkMode, setBulkMode] = useState(false);
@@ -259,7 +259,7 @@ export default function RoutesPlanningPage() {
 
   function resetForm() {
     const today = localCalendarDate();
-    setForm({ date: today, vehicle_plate: "", employees: [], start_time: "08:00", end_time: "17:00", tolerance_minutes: 15, notes: "" });
+    setForm({ date: today, vehicle_plate: "", employees: [], start_time: "08:00", end_time: "17:00", tolerance_minutes: 15, notes: "", gps_required: true });
     setScheduleKind("administrative");
     setAdministrativeSite("SEDE-PRINCIPAL");
     setBulk({ start_date: today, end_date: addDays(today, 4), weekdays: [1, 2, 3, 4, 5] });
@@ -288,7 +288,8 @@ export default function RoutesPlanningPage() {
         start_time: route.start_time || "08:00",
         end_time: route.end_time || "17:00",
         tolerance_minutes: route.tolerance_minutes ?? 15,
-        notes: notesWithoutAdministrativeSite(route.notes || "")
+        notes: notesWithoutAdministrativeSite(route.notes || ""),
+        gps_required: scheduleGpsRequired(route)
       });
       setBulk({ start_date: date, end_date: addDays(date, 4), weekdays: [1, 2, 3, 4, 5] });
     }
@@ -309,7 +310,8 @@ export default function RoutesPlanningPage() {
       start_time: route.start_time || "08:00",
       end_time: route.end_time || "17:00",
       tolerance_minutes: route.tolerance_minutes ?? 15,
-      notes: notesWithoutAdministrativeSite(route.notes || "")
+      notes: notesWithoutAdministrativeSite(route.notes || ""),
+      gps_required: scheduleGpsRequired(route)
     });
     setModal("edit");
   }
@@ -322,6 +324,8 @@ export default function RoutesPlanningPage() {
       ...form,
       vehicle_plate: scheduleKind === "administrative" ? "" : form.vehicle_plate,
       notes: [siteLine, form.notes.trim()].filter(Boolean).join("\n"),
+      gps_required: form.gps_required,
+      tracking_mode: scheduleTrackingMode(form.gps_required),
       status
     };
   }
@@ -474,6 +478,7 @@ export default function RoutesPlanningPage() {
                   <span className="rounded-md bg-white px-2 py-1">{route.start_time || "--"} - {route.end_time || "--"}</span>
                   <span className="rounded-md bg-white px-2 py-1">{route.assigned_count ?? routeEmployeeValues(route).length ?? 0} persona(s)</span>
                   <span className="rounded-md bg-white px-2 py-1">{events} evento(s)</span>
+                  <span className="rounded-md bg-white px-2 py-1">{scheduleGpsRequired(route) ? "GPS" : "Sin GPS"}</span>
                   <span className="rounded-md bg-white px-2 py-1">{route.activity_points?.length || 0} evidencia(s)</span>
                 </div>
                 <div className="mt-4 grid gap-2 sm:grid-cols-3">
@@ -495,7 +500,7 @@ export default function RoutesPlanningPage() {
                 const operational = Boolean(route.vehicle_plate || route.placa);
                 return <tr className="hover:bg-paper/70" key={String(route.id)}>
                   <td className="px-4 py-3"><p className="font-semibold text-apex">{route.display_id || route.code || route.id}</p><p className="mt-1 text-xs text-neutral-500">Horario</p></td>
-                  <td className="px-4 py-3"><p className="font-semibold">{inputDate(route.date)}</p><p className="mt-1 text-xs text-neutral-500">{formatHour(route.start_time)} - {formatHour(route.end_time)} · {route.tolerance_minutes ?? 15} min tolerancia</p></td>
+                  <td className="px-4 py-3"><p className="font-semibold">{inputDate(route.date)}</p><p className="mt-1 text-xs text-neutral-500">{formatHour(route.start_time)} - {formatHour(route.end_time)} · {route.tolerance_minutes ?? 15} min tolerancia · {scheduleGpsRequired(route) ? "GPS" : "sin GPS"}</p></td>
                   <td className="px-4 py-3"><p className="flex items-center gap-2 font-semibold">{operational ? <Truck className="text-apex" size={15} /> : <Building2 className="text-apex" size={15} />}{operational ? "Operativa" : "Administrativa"}</p><p className="mt-1 text-xs text-neutral-500">{operational ? routeLabel(route) : administrativeSiteFromNotes(route.notes || "") || "Sin sede definida"}</p></td>
                   <td className="px-4 py-3"><p className="font-semibold">{route.assigned_count ?? routeEmployeeValues(route).length ?? 0} persona(s)</p><p className="mt-1 max-w-72 truncate text-xs text-neutral-500">{routeEmployeeNames(route).join(", ") || "Sin personas asignadas"}</p></td>
                   <td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${events ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>{events ? "En seguimiento" : "Sin eventos"}</span><p className="mt-1 text-xs capitalize text-neutral-500">{route.status || "active"} · {events} evento(s)</p></td>
@@ -528,6 +533,19 @@ export default function RoutesPlanningPage() {
                 </button>
                 <button className={`h-10 rounded-md text-sm font-semibold ${scheduleKind === "operational" ? "bg-apex text-white" : "bg-paper text-neutral-700"}`} onClick={() => setScheduleKind("operational")} type="button">
                   Operativo / recurso movil
+                </button>
+              </div>
+            </div>
+            <div className="md:col-span-2">
+              <p className="mb-1.5 text-sm font-semibold text-neutral-800">Control de marcacion</p>
+              <div className="grid gap-2 rounded-md border border-line bg-white p-1.5 sm:grid-cols-2">
+                <button className={`rounded-md px-3 py-2 text-left text-sm font-semibold ${form.gps_required ? "bg-apex text-white" : "bg-paper text-neutral-700"}`} onClick={() => setForm((prev) => ({ ...prev, gps_required: true }))} type="button">
+                  Seguimiento GPS
+                  <span className="mt-1 block text-xs font-medium opacity-80">Marcaciones, presencia y actividades con ubicacion.</span>
+                </button>
+                <button className={`rounded-md px-3 py-2 text-left text-sm font-semibold ${!form.gps_required ? "bg-apex text-white" : "bg-paper text-neutral-700"}`} onClick={() => setForm((prev) => ({ ...prev, gps_required: false }))} type="button">
+                  Solo marcaciones
+                  <span className="mt-1 block text-xs font-medium opacity-80">Control horario sin solicitar ubicacion al usuario.</span>
                 </button>
               </div>
             </div>
@@ -593,6 +611,7 @@ export default function RoutesPlanningPage() {
                 <p>{selectedEmployeeCount} persona(s) seleccionada(s).</p>
                 <p>{bulkMode && modal !== "edit" ? `${bulkCount} bloque(s) por crear.` : "1 bloque de horario."}</p>
                 <p>{scheduleKind === "administrative" ? `Sede fija: ${administrativeSite || "sin definir"}.` : form.vehicle_plate ? `Recurso asignado: ${form.vehicle_plate}.` : "Operacion sin vehiculo fijo."}</p>
+                <p>{form.gps_required ? "Seguimiento GPS activo." : "Solo marcaciones, sin GPS obligatorio."}</p>
               </div>
             </div>
           </div>

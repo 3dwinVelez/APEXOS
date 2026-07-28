@@ -3,7 +3,7 @@ import test from "node:test";
 
 process.env.TZ = "America/Bogota";
 
-const { localCalendarDate, scheduleMonitorDate, scheduleMonitorPunchEvidence } = await import(
+const { localCalendarDate, scheduleGpsRequired, scheduleMonitorDate, scheduleMonitorPunchEvidence, scheduleTrackingMode } = await import(
   "../lib/hrScheduleMonitor.ts"
 );
 
@@ -33,4 +33,12 @@ test("normaliza evidencia de marcaciones para el monitor de horarios", () => {
     base64_data: "data:image/png;base64,xyz",
     file_name: "offline.png"
   });
+});
+
+test("mantiene GPS por defecto y permite horarios solo con marcacion", () => {
+  assert.equal(scheduleGpsRequired({}), true);
+  assert.equal(scheduleGpsRequired({ metadata: { gps_required: false } }), false);
+  assert.equal(scheduleGpsRequired({ tracking_mode: "punch_only" }), false);
+  assert.equal(scheduleTrackingMode(true), "gps");
+  assert.equal(scheduleTrackingMode(false), "punch_only");
 });

@@ -40,3 +40,14 @@ export function scheduleMonitorPunchEvidence(row: {
     file_name: fileName || "evidencia.jpg"
   };
 }
+
+export function scheduleGpsRequired(route: { gps_required?: unknown; tracking_mode?: unknown; metadata?: Record<string, unknown> | null } | null | undefined) {
+  if (!route) return true;
+  if (route.gps_required != null) return route.gps_required !== false;
+  if (route.metadata?.gps_required != null) return route.metadata.gps_required !== false;
+  return String(route.tracking_mode || route.metadata?.tracking_mode || "gps").toLowerCase() !== "punch_only";
+}
+
+export function scheduleTrackingMode(gpsRequired: boolean) {
+  return gpsRequired ? "gps" : "punch_only";
+}

@@ -1,7 +1,7 @@
 import { assertActiveSession, clearSession, emitAppAlert, keepSessionAlive, setPasswordChangeRequired, touchSession } from "./sessionSecurity";
 import { clearSupabaseFetchCache, getSupabaseAccessToken, supabaseAuth, supabaseFetch } from "./supabaseClient";
 import { getServiceImageUrl, uploadServiceImageData } from "./supabaseStorage";
-import { scheduleMonitorPunchEvidence } from "./hrScheduleMonitor";
+import { scheduleMonitorPunchEvidence, scheduleTrackingMode } from "./hrScheduleMonitor";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
@@ -93,7 +93,7 @@ const fallbackActivityTypes = [
   "Reintento de entrega",
   "Finalizacion de ruta",
   "Apoyo operativo"
-].map((name, index) => ({ id: index + 1, name, active: true, sort_order: (index + 1) * 10 }));
+].map((name, index) => ({ id: index + 1, code: `ACT-${String(index + 1).padStart(2, "0")}`, name, active: true, sort_order: (index + 1) * 10 }));
 
 const tenantModuleCodesByPermissionModule: Record<string, string[]> = {
   accounting: ["M-07", "contabilidad", "finance", "accounting"],
@@ -782,6 +782,7 @@ function defaultUserMasterData() {
     locations: [["SEDE-PRINCIPAL", "Sede principal"], ["BOG-NORTE", "Bogota Norte"], ["BOG-SUR", "Bogota Sur"]].map(([code, name]) => ({ code, name })),
     cost_centers: [["CC-OPER", "Operacion"], ["CC-TRAN", "Transporte"], ["CC-ADMIN", "Administracion"]].map(([code, name]) => ({ code, name })),
     work_shifts: [["DIURNO", "Diurno"], ["NOCTURNO", "Nocturno"], ["MIXTO", "Mixto"]].map(([code, name]) => ({ code, name })),
+    activity_types: fallbackActivityTypes.map((item) => ({ code: item.code, name: item.name, active: true, sort_order: item.sort_order })),
     banks: [["BANCOLOMBIA", "Bancolombia"], ["BOGOTA", "Banco de Bogota"], ["DAVIVIENDA", "Davivienda"]].map(([code, name]) => ({ code, name }))
   };
 }
@@ -1705,7 +1706,12 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   const method = String(options.method || "GET").toUpperCase();
 
   if (pathname === "/api/v1/hr/activity-types") {
-    return fallbackActivityTypes as T;
+    const masterData = await loadSupabaseUserMasterData().catch(() => defaultUserMasterData());
+    const activityTypes = (Array.isArray((masterData as AnyRow).activity_types) ? (masterData as AnyRow).activity_types as Array<{ code?: string; name?: string; active?: boolean; sort_order?: number }> : [])
+      .filter((item) => item.active !== false)
+      .sort((left, right) => Number(left.sort_order || 100) - Number(right.sort_order || 100))
+      .map((item, index) => ({ id: item.code || `ACT-${index + 1}`, code: item.code || `ACT-${index + 1}`, name: item.name || item.code || "Actividad operativa", active: true, sort_order: item.sort_order || (index + 1) * 10 }));
+    return (activityTypes.length ? activityTypes : fallbackActivityTypes) as T;
   }
 
   if (pathname === "/api/v1/hr/work-sessions/current") {
@@ -1744,9 +1750,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       activity_type_name: String(row.metadata?.activity_type_name || "Actividad operativa"),
       observation: String(row.metadata?.observation || ""),
       occurred_at: row.captured_at,
-      latitude: Number(row.latitude),
-      longitude: Number(row.longitude),
-      accuracy_meters: Number(row.accuracy_meters || 0),
+      latitude: row.metadata?.gps_skipped ? null : Number(row.latitude),
+      longitude: row.metadata?.gps_skipped ? null : Number(row.longitude),
+      accuracy_meters: row.metadata?.gps_skipped ? null : Number(row.accuracy_meters || 0),
       evidence: row.metadata?.photo ? [{ base64_data: row.metadata.photo, file_name: String(row.metadata?.photo_name || "evidencia.jpg") }] : []
     }));
     const entry = punches.find((punch) => punch.punch_type === "entrada");
@@ -1887,9 +1893,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       activity_type_name: String(row.metadata?.activity_type_name || "Actividad operativa"),
       observation: String(row.metadata?.observation || ""),
       occurred_at: row.captured_at,
-      latitude: Number(row.latitude),
-      longitude: Number(row.longitude),
-      accuracy_meters: Number(row.accuracy_meters || 0),
+      latitude: row.metadata?.gps_skipped ? null : Number(row.latitude),
+      longitude: row.metadata?.gps_skipped ? null : Number(row.longitude),
+      accuracy_meters: row.metadata?.gps_skipped ? null : Number(row.accuracy_meters || 0),
       evidence: row.metadata?.photo ? [{ base64_data: String(row.metadata.photo), file_name: String(row.metadata?.photo_name || "evidencia.jpg") }] : [],
       metadata: row.metadata || {}
     })) as T;
@@ -1899,26 +1905,31 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const employee = await currentSupabaseEmployee();
     if (!employee?.company_id) return null;
     const body = JSON.parse(String(options.body || "{}"));
-    const type = fallbackActivityTypes.find((item) => item.id === Number(body.activity_type_id)) || fallbackActivityTypes[0];
+    const activityTypes = await supabaseApiFallback<Array<{ id: number | string; code?: string; name: string }>>("/api/v1/hr/activity-types") || fallbackActivityTypes;
+    const type = activityTypes.find((item) => String(item.id) === String(body.activity_type_id) || String(item.code || "") === String(body.activity_type_id)) || activityTypes[0] || fallbackActivityTypes[0];
     const now = body.occurred_at ? new Date(body.occurred_at) : new Date();
     const identity = supabaseEmployeeIdentity(employee, body.user_name);
     const routeId = await currentSupabaseRouteIdForEmployee(employee, body.route_id);
+    const gpsSkipped = body.gps_required === false || body.gps_skipped === true || body.latitude == null || body.longitude == null;
     const row = {
       company_id: employee.company_id,
       employee_id: identity.employee_id,
       user_id: identity.user_id,
       route_id: routeId || null,
       user_name: identity.user_name,
-      latitude: body.latitude,
-      longitude: body.longitude,
-      accuracy_meters: body.accuracy_meters ?? null,
+      latitude: gpsSkipped ? 0 : body.latitude,
+      longitude: gpsSkipped ? 0 : body.longitude,
+      accuracy_meters: gpsSkipped ? null : body.accuracy_meters ?? null,
       source: "work_activity",
       captured_at: now.toISOString(),
       metadata: {
         ...(body.metadata || {}),
         activity_type_id: type.id,
+        activity_type_code: type.code || type.id,
         activity_type_name: type.name,
-        observation: body.observation,
+        observation: String(body.observation || ""),
+        gps_skipped: gpsSkipped,
+        gps_required: body.gps_required !== false,
         display_route_id: body.route_id || "",
         photo: body.photo?.base64,
         photo_name: body.photo?.name,
@@ -1937,11 +1948,11 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     return {
       id: toNumberId(inserted[0]?.id || now.toISOString()),
       activity_type_name: type.name,
-      observation: body.observation,
+      observation: String(body.observation || ""),
       occurred_at: now.toISOString(),
-      latitude: Number(body.latitude),
-      longitude: Number(body.longitude),
-      accuracy_meters: Number(body.accuracy_meters || 0),
+      latitude: gpsSkipped ? null : Number(body.latitude),
+      longitude: gpsSkipped ? null : Number(body.longitude),
+      accuracy_meters: gpsSkipped ? null : Number(body.accuracy_meters || 0),
       evidence: body.photo ? [{ base64_data: body.photo.base64, file_name: body.photo.name }] : []
     } as T;
   }
@@ -2089,8 +2100,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const routeIds = new Set(routes.map((route) => route.id));
     const dayAssignments = assignments.filter((assignment) => routeIds.has(assignment.route_id));
     const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
+    const locationPings = pings.filter((ping) => ping.metadata?.gps_skipped !== true);
     const latestPingByEmployee = new Map<string, (typeof pings)[number]>();
-    for (const ping of pings) {
+    for (const ping of locationPings) {
       for (const key of identityKeys(ping)) {
         if (!latestPingByEmployee.has(key)) latestPingByEmployee.set(key, ping);
       }
@@ -2112,7 +2124,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       const routeKeys = new Set([route?.id, route?.code, route?.metadata?.display_id, route?.metadata?.legacy_id].filter(Boolean).map(String));
       const rowBelongsToRoute = (row: { route_id?: unknown; metadata?: AnyRow }) => routeKeys.has(operationalRouteKey(row));
       const ping = aliases.map((alias) => latestPingByEmployee.get(alias)).find(Boolean)
-        || (singlePersonRoute ? pings.find(rowBelongsToRoute) : undefined);
+        || (singlePersonRoute ? locationPings.find(rowBelongsToRoute) : undefined);
       const punch = aliases.map((alias) => latestPunchByEmployee.get(alias)).find(Boolean)
         || (singlePersonRoute ? punches.find(rowBelongsToRoute) : undefined);
       const capturedAt = ping?.captured_at || punch?.punched_at || null;
@@ -2164,7 +2176,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         const rowAliases = identityKeys(row);
         return assignmentAliases.some((aliases) => identityOverlaps(rowAliases, aliases));
       };
-      const routePings = pings.filter((ping) => matchesRouteAssignment(ping));
+      const routePings = locationPings.filter((ping) => matchesRouteAssignment(ping));
       const routeActivities = pings
         .filter((ping) => ping.source === "work_activity" && matchesRouteAssignment(ping))
         .map((activity) => ({
@@ -2173,9 +2185,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
           type: String(activity.metadata?.activity_type_name || "Actividad operativa"),
           time: activity.captured_at ? new Date(activity.captured_at).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }) : "",
           occurred_at: activity.captured_at,
-          latitude: Number(activity.latitude),
-          longitude: Number(activity.longitude),
-          accuracy_meters: activity.accuracy_meters ?? null,
+          latitude: activity.metadata?.gps_skipped ? null : Number(activity.latitude),
+          longitude: activity.metadata?.gps_skipped ? null : Number(activity.longitude),
+          accuracy_meters: activity.metadata?.gps_skipped ? null : activity.accuracy_meters ?? null,
           vehicle_plate: route.vehicle_plate || "",
           route_id: route.id,
           observation: String(activity.metadata?.observation || ""),
@@ -2207,6 +2219,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         code: route.code || "",
         display_id: route.code || route.metadata?.display_id || route.id,
         vehicle_plate: route.vehicle_plate || "",
+        gps_required: route.metadata?.gps_required !== false,
+        tracking_mode: String(route.metadata?.tracking_mode || (route.metadata?.gps_required === false ? "punch_only" : "gps")),
+        metadata: route.metadata || {},
         employees: routeAssignments.map((assignment) => String(assignment.employee_id)),
         employee_ids: routeAssignments.map((assignment) => String(assignment.employee_id)),
         employee_names: routeAssignments.map((assignment) => fullName(employeeById.get(assignment.employee_id) || {})),
@@ -2440,6 +2455,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const startTime = String(body.start_time || "").slice(0, 5);
     const endTime = String(body.end_time || "").slice(0, 5);
     const tolerance = Number(body.tolerance_minutes ?? 15);
+    const gpsRequired = body.gps_required !== false && String(body.tracking_mode || "gps") !== "punch_only";
     if (!employees.length) throw new Error("Selecciona al menos una persona para asignar el horario.");
     if (!/^\d{2}:\d{2}$/.test(startTime) || !/^\d{2}:\d{2}$/.test(endTime)) throw new Error("Define una hora de inicio y una hora de fin validas.");
     if (startTime === endTime) throw new Error("La hora de inicio y la hora de fin no pueden ser iguales.");
@@ -2469,7 +2485,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       tolerance_minutes: tolerance,
       status,
       notes: String(body.notes || ""),
-      metadata: { schedule_source: "talento_humano", overnight: endTime < startTime }
+      metadata: { schedule_source: "talento_humano", overnight: endTime < startTime, gps_required: gpsRequired, tracking_mode: scheduleTrackingMode(gpsRequired) }
     });
     const saveAssignments = async (routeId: string) => {
       await supabaseFetch("/rest/v1/route_assignments?on_conflict=route_id,employee_id", {
@@ -2554,7 +2570,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       tolerance_minutes?: number;
       status?: string;
       notes?: string;
-    }>>(`/rest/v1/operational_routes?select=id,code,route_date,vehicle_plate,start_time,end_time,tolerance_minutes,status,notes&company_id=eq.${encodeURIComponent(companyId)}&order=route_date.desc&limit=120`);
+      metadata?: AnyRow;
+    }>>(`/rest/v1/operational_routes?select=id,code,route_date,vehicle_plate,start_time,end_time,tolerance_minutes,status,notes,metadata&company_id=eq.${encodeURIComponent(companyId)}&order=route_date.desc&limit=120`);
     const assignments = await supabaseFetch<Array<{
       route_id: string;
       employee_id?: string;
@@ -2587,7 +2604,10 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       end_time: route.end_time || "",
       tolerance_minutes: route.tolerance_minutes ?? 15,
       status: route.status || "planned",
-      notes: route.notes || ""
+      notes: route.notes || "",
+      gps_required: route.metadata?.gps_required !== false,
+      tracking_mode: String(route.metadata?.tracking_mode || (route.metadata?.gps_required === false ? "punch_only" : "gps")),
+      metadata: route.metadata || {}
     })) as T;
   }
 
