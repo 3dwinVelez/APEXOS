@@ -1781,6 +1781,12 @@ async function getOperationsMap(tenantId, query = {}) {
           metadata: punch.metadata || {}
         });
       }
+      const assignedCount = assigned.length;
+      const closedUsers = Array.from(marksByUser.values()).filter((marks) => marks.some((mark) => mark.type === "salida")).length;
+      const closedByPunches = assignedCount > 0 && closedUsers >= assignedCount;
+      const routeStatus = ["closed", "cerrada", "completed"].includes(String(route.status || "").toLowerCase()) || closedByPunches
+        ? "closed"
+        : route.status || "active";
       return {
         ...route,
         employee_ids: assigned.map((person) => String(person.employee_id || person.user_name)).filter(Boolean),
@@ -1792,7 +1798,9 @@ async function getOperationsMap(tenantId, query = {}) {
         gps_required: routeGpsRequired(route),
         tracking_mode: routeTrackingMode(route),
         metadata: { ...(route.metadata || {}), gps_required: routeGpsRequired(route), tracking_mode: routeTrackingMode(route) },
-        assigned_count: assigned.length,
+        status: routeStatus,
+        assigned_count: assignedCount,
+        closed_count: closedUsers,
         online_count: assigned.filter((person) => person.online).length,
         with_gps_count: assigned.filter((person) => person.latitude != null && person.longitude != null).length,
         pings: routePings,

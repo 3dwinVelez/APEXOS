@@ -64,6 +64,27 @@ function routeMergeKeys(route: Partial<TimeRoute | RouteMonitor>) {
   return new Set([route.id, route.code, route.display_id].filter(Boolean).map((value) => String(value)));
 }
 
+function routeDerivedStatus(route: RouteMonitor | TimeRoute) {
+  const rawStatus = String(route.status || "active").toLowerCase();
+  if (["closed", "cerrada", "completed"].includes(rawStatus)) return "closed";
+  const assignedCount = Number((route as RouteMonitor).assigned_count ?? routeEmployeeValues(route).length ?? 0);
+  const punchPoints = ((route as RouteMonitor).punch_points || []) as PunchPoint[];
+  if (assignedCount > 0) {
+    const closedUsers = new Set(punchPoints.filter((punch) => punch.type === "salida").map((punch) => String(punch.user_name || "").trim().toLowerCase()).filter(Boolean));
+    if (closedUsers.size >= assignedCount) return "closed";
+  }
+  return rawStatus || "active";
+}
+
+function routeDisplayState(route: RouteMonitor | TimeRoute) {
+  const events = (((route as RouteMonitor).punch_points?.length || 0) + ((route as RouteMonitor).activity_points?.length || 0));
+  const status = routeDerivedStatus(route);
+  if (status === "closed") return { status, label: "Cerrado", className: "bg-neutral-100 text-neutral-700" };
+  if (status === "cancelled") return { status, label: "Cancelado", className: "bg-rose-50 text-rose-700" };
+  if (events) return { status, label: "En seguimiento", className: "bg-emerald-50 text-emerald-700" };
+  return { status, label: "Sin eventos", className: "bg-amber-50 text-amber-800" };
+}
+
 function employeeSearchText(employee: Employee) {
   return [
     employeeName(employee),
@@ -374,7 +395,6 @@ export default function RoutesPlanningPage() {
     }
   }
 
-  const activeRoutes = useMemo(() => routes.filter((route) => route.status !== "closed"), [routes]);
   const totalAssigned = useMemo(() => routes.reduce((sum, route) => sum + (routeEmployeeValues(route).length || 0), 0), [routes]);
   const selectedEmployeeCount = form.employees.length;
   const bulkCount = bulkMode ? rangePreview(bulk.start_date, bulk.end_date, bulk.weekdays) : 1;
@@ -389,6 +409,7 @@ export default function RoutesPlanningPage() {
       return { ...route, ...operation, employee_ids: operation?.employee_ids || route.employee_ids, employee_names: operation?.employee_names || route.employee_names, punch_points: operation?.punch_points || [], activity_points: operation?.activity_points || [] };
     });
   }, [operations, routes]);
+  const activeRoutes = useMemo(() => monitorRoutes.filter((route) => routeDerivedStatus(route) !== "closed" && routeDerivedStatus(route) !== "cancelled"), [monitorRoutes]);
   const selectedRoute = useMemo(() => monitorRoutes.find((route) => String(route.id) === selectedRouteId) || null, [monitorRoutes, selectedRouteId]);
   const selectedPeople = useMemo(() => selectedRoute && operations ? operations.people.filter((person) => String(person.route_id) === String(selectedRoute.id)) : [], [operations, selectedRoute]);
   const selectedTimeline = useMemo(() => {
@@ -405,9 +426,9 @@ export default function RoutesPlanningPage() {
   const filteredRoutes = useMemo(() => {
     const term = query.trim().toLowerCase();
     return monitorRoutes
-      .filter((route) => !term || [routeLabel(route), route.status, administrativeSiteFromNotes(route.notes || ""), ...routeEmployeeNames(route)].join(" ").toLowerCase().includes(term))
+      .filter((route) => !term || [routeLabel(route), routeDerivedStatus(route), routeDisplayState(route).label, administrativeSiteFromNotes(route.notes || ""), ...routeEmployeeNames(route)].join(" ").toLowerCase().includes(term))
       .filter((route) => !kindFilter || (kindFilter === "operational" ? Boolean(route.vehicle_plate || route.placa) : !route.vehicle_plate && !route.placa))
-      .filter((route) => !statusFilter || route.status === statusFilter)
+      .filter((route) => !statusFilter || routeDerivedStatus(route) === statusFilter)
       .filter((route) => !dateFilter || inputDate(route.date) === dateFilter)
       .sort((a, b) => inputDate(b.date).localeCompare(inputDate(a.date)) || String(a.start_time || "").localeCompare(String(b.start_time || "")));
   }, [dateFilter, kindFilter, monitorRoutes, query, statusFilter]);
@@ -464,6 +485,7 @@ export default function RoutesPlanningPage() {
         <div className="grid gap-3 p-3 md:hidden">
           {filteredRoutes.map((route) => {
             const events = (route.punch_points?.length || 0) + (route.activity_points?.length || 0);
+            const displayState = routeDisplayState(route);
             return (
               <article className="rounded-md border border-line p-4 text-left transition hover:border-apex hover:bg-paper" key={String(route.id)}>
                 <div className="flex items-center justify-between gap-3">
@@ -471,7 +493,7 @@ export default function RoutesPlanningPage() {
                     <p className="font-semibold">{route.vehicle_plate || route.placa || administrativeSiteFromNotes(route.notes || "") || "Jornada administrativa"}</p>
                     <p className="mt-1 text-xs text-neutral-500">{inputDate(route.date)} · {formatHour(route.start_time)} - {formatHour(route.end_time)}</p>
                   </div>
-                  <span className={`rounded-md px-2 py-1 text-xs font-semibold ${events ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>{events ? "En seguimiento" : "Sin eventos"}</span>
+                  <span className={`rounded-md px-2 py-1 text-xs font-semibold ${displayState.className}`}>{displayState.label}</span>
                 </div>
                   <p className="mt-3 max-h-10 overflow-hidden text-sm text-neutral-600">{routeEmployeeNames(route).join(", ") || "Sin personas asignadas"}</p>
                 <div className="mt-3 flex flex-wrap gap-2 text-xs text-neutral-600">
@@ -498,12 +520,13 @@ export default function RoutesPlanningPage() {
               {filteredRoutes.map((route) => {
                 const events = (route.punch_points?.length || 0) + (route.activity_points?.length || 0);
                 const operational = Boolean(route.vehicle_plate || route.placa);
+                const displayState = routeDisplayState(route);
                 return <tr className="hover:bg-paper/70" key={String(route.id)}>
                   <td className="px-4 py-3"><p className="font-semibold text-apex">{route.display_id || route.code || route.id}</p><p className="mt-1 text-xs text-neutral-500">Horario</p></td>
                   <td className="px-4 py-3"><p className="font-semibold">{inputDate(route.date)}</p><p className="mt-1 text-xs text-neutral-500">{formatHour(route.start_time)} - {formatHour(route.end_time)} · {route.tolerance_minutes ?? 15} min tolerancia · {scheduleGpsRequired(route) ? "GPS" : "sin GPS"}</p></td>
                   <td className="px-4 py-3"><p className="flex items-center gap-2 font-semibold">{operational ? <Truck className="text-apex" size={15} /> : <Building2 className="text-apex" size={15} />}{operational ? "Operativa" : "Administrativa"}</p><p className="mt-1 text-xs text-neutral-500">{operational ? routeLabel(route) : administrativeSiteFromNotes(route.notes || "") || "Sin sede definida"}</p></td>
                   <td className="px-4 py-3"><p className="font-semibold">{route.assigned_count ?? routeEmployeeValues(route).length ?? 0} persona(s)</p><p className="mt-1 max-w-72 truncate text-xs text-neutral-500">{routeEmployeeNames(route).join(", ") || "Sin personas asignadas"}</p></td>
-                  <td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${events ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>{events ? "En seguimiento" : "Sin eventos"}</span><p className="mt-1 text-xs capitalize text-neutral-500">{route.status || "active"} · {events} evento(s)</p></td>
+                  <td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${displayState.className}`}>{displayState.label}</span><p className="mt-1 text-xs capitalize text-neutral-500">{displayState.status} · {events} evento(s)</p></td>
                   <td className="px-4 py-3"><div className="flex justify-end gap-2"><button className="h-9 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => openRouteMonitor(route)} type="button">Abrir</button><button className="h-9 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => openEditModal(route)} type="button">Editar</button><button className="h-9 rounded-md border border-apex px-3 text-xs font-semibold text-apex hover:bg-paper" onClick={() => openCreateModal(route)} type="button">Clonar</button></div></td>
                 </tr>;
               })}
