@@ -804,6 +804,19 @@ function normalizeActivityTypeOption(item: ActivityTypeLike, index: number) {
   };
 }
 
+function normalizePunchExtraEvidence(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const row = value as AnyRow;
+  const base64 = String(row.base64 || row.base64_data || "").trim();
+  if (!base64) return null;
+  return {
+    name: row.name || row.file_name || "",
+    type: row.type || row.mime_type || "image/jpeg",
+    size: row.size || row.file_size || null,
+    base64_data: base64
+  };
+}
+
 function mergeActivityTypeOptions(primary: ActivityTypeLike[] = [], masters: ActivityTypeLike[] = []) {
   const byName = new Map<string, ReturnType<typeof normalizeActivityTypeOption>>();
   const byCode = new Map<string, ReturnType<typeof normalizeActivityTypeOption>>();
@@ -1870,12 +1883,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         extraMinutes = Math.max(0, Math.round((now.getTime() - plannedEnd.getTime()) / 60000));
       }
     }
-    const extraEvidence = body.extra_evidence ? {
-      name: body.extra_evidence.name,
-      type: body.extra_evidence.type,
-      size: body.extra_evidence.size,
-      base64_data: body.extra_evidence.base64
-    } : {};
+    const extraEvidence = normalizePunchExtraEvidence(body.extra_evidence);
     const row = {
       company_id: employee.company_id,
       employee_id: identity.employee_id,
@@ -1892,10 +1900,10 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       extra_minutes: extraMinutes,
       extra_reason: body.extra_reason || null,
       extra_detail: body.extra_detail || null,
-      extra_evidence: extraEvidence,
+      ...(extraEvidence ? { extra_evidence: extraEvidence } : {}),
       metadata: {
         ...(body.metadata || {}),
-        extra_evidence: extraEvidence,
+        ...(extraEvidence ? { extra_evidence: extraEvidence } : {}),
         display_route_id: body.route_id || "",
         supplied_user_name: body.user_name || "",
         employee_code: employee.metadata?.code || employee.document_number || "",

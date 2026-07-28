@@ -91,6 +91,18 @@ function validationError(message, statusCode = 400, code = "VALIDATION_ERROR") {
   return error;
 }
 
+function normalizeExtraEvidence(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const base64 = String(value.base64 || value.base64_data || "").trim();
+  if (!base64) return null;
+  return {
+    base64,
+    name: value.name || value.file_name || "",
+    type: value.type || value.mime_type || "image/jpeg",
+    size: value.size || value.file_size || null
+  };
+}
+
 function employeeDisplayName(employee) {
   const metadataName = String(employee?.metadata?.name || "").trim();
   const genericMetadata = isGenericEmployeeAlias(metadataName);
@@ -1324,8 +1336,9 @@ async function createPunch(tenantId, input, user) {
           const currentMinutes = Number(colParts.find((p) => p.type === "hour")?.value || punchedAt.getHours()) * 60
             + Number(colParts.find((p) => p.type === "minute")?.value || punchedAt.getMinutes());
           return Math.max(0, currentMinutes - (Number(route.end_time.slice(0, 2)) * 60 + Number(route.end_time.slice(3, 5))) - Number(route.tolerance_minutes || 0));
-        })()
+      })()
       : 0;
+    const extraEvidence = normalizeExtraEvidence(input.extra_evidence);
     if (extraMinutes > 0 && (!String(input.extra_reason || "").trim() || !String(input.extra_detail || "").trim())) {
       const err = new Error("Justifica por que estas marcando fuera de tu horario habitual.");
       err.statusCode = 422;
@@ -1333,19 +1346,19 @@ async function createPunch(tenantId, input, user) {
       err.details = { extra_minutes: extraMinutes };
       throw err;
     }
-    if (extraMinutes > 0 && !input.extra_evidence?.base64) {
+    if (extraMinutes > 0 && !extraEvidence) {
       const err = new Error("Adjunta evidencia fotografica para sustentar la extension de horario.");
       err.statusCode = 422;
       err.code = "EVIDENCIA_HORA_EXTRA_REQUERIDA";
       err.details = { extra_minutes: extraMinutes };
       throw err;
     }
-    if (input.extra_evidence?.base64) {
+    if (extraEvidence) {
       assertSafeFile({
-        base64_data: input.extra_evidence.base64,
-        file_name: input.extra_evidence.name,
-        mime_type: input.extra_evidence.type,
-        file_size: input.extra_evidence.size
+        base64_data: extraEvidence.base64,
+        file_name: extraEvidence.name,
+        mime_type: extraEvidence.type,
+        file_size: extraEvidence.size
       }, { maxBytes: MAX_EVIDENCE_BYTES });
     }
     const punch = await prisma.timePunch.create({
@@ -1364,17 +1377,17 @@ async function createPunch(tenantId, input, user) {
         extra_minutes: extraMinutes,
         extra_reason: input.extra_reason,
         extra_detail: input.extra_detail,
-        extra_evidence: input.extra_evidence?.base64 ? {
-          name: normalizeFileName(input.extra_evidence.name || `extension-${employee.id}.jpg`),
-          type: input.extra_evidence.type || "image/jpeg",
-          size: input.extra_evidence.size || null,
-          base64_data: input.extra_evidence.base64,
+        extra_evidence: extraEvidence ? {
+          name: normalizeFileName(extraEvidence.name || `extension-${employee.id}.jpg`),
+          type: extraEvidence.type || "image/jpeg",
+          size: extraEvidence.size || null,
+          base64_data: extraEvidence.base64,
           storage_path: secureStoragePath({
             tenantId,
             module: "hr",
             entity: "overtime-extensions",
             entityId: employee.id,
-            fileName: input.extra_evidence.name || `extension-${employee.id}.jpg`
+            fileName: extraEvidence.name || `extension-${employee.id}.jpg`
           })
         } : {},
         metadata: {

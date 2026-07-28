@@ -31,13 +31,19 @@ const punchSchema = {
       extra_reason: { type: "string" },
       extra_detail: { type: "string" },
       extra_evidence: {
-        type: "object",
-        properties: {
-          base64: { type: "string" },
-          name: { type: "string" },
-          type: { type: "string" },
-          size: { type: "integer" }
-        }
+        anyOf: [
+          { type: "null" },
+          { type: "string" },
+          {
+            type: "object",
+            properties: {
+              base64: { type: "string" },
+              name: { type: "string" },
+              type: { type: "string" },
+              size: { type: "integer" }
+            }
+          }
+        ]
       },
       metadata: { type: "object" }
     }

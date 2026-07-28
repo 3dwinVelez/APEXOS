@@ -452,7 +452,7 @@ export default function MobilePunchPage() {
       ].slice(-20));
       setMessage(`${punchLabels[type].title} registrado. Sincronizando en segundo plano...`);
       setMarkingType(null);
-      const payload = {
+      const payload: Record<string, unknown> = {
         employee_id: employee.id,
         user_name: userName,
         type,
@@ -462,11 +462,14 @@ export default function MobilePunchPage() {
         accuracy_meters: fix?.accuracy_meters,
         vehicle_plate: vehiclePlate,
         route_id: route?.id,
-        extra_reason: type === "salida" ? extraReason : undefined,
-        extra_detail: type === "salida" ? extraDetail : undefined,
-        extra_evidence: type === "salida" ? extraEvidence : undefined,
         metadata: { source: "apexos-mobile", current_user_only: true, gps_required: gpsRequired, tracking_mode: gpsRequired ? "gps" : "punch_only", ...routeSyncMetadata(route) }
       };
+      if (type === "salida") {
+        const closingDetail = extraDetail.trim();
+        if (extraReason) payload.extra_reason = extraReason;
+        if (closingDetail) payload.extra_detail = closingDetail;
+        if (extraEvidence?.base64) payload.extra_evidence = extraEvidence;
+      }
       setExtraReason("");
       setExtraDetail("");
       setExtraEvidence(null);
