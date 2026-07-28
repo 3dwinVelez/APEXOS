@@ -206,6 +206,32 @@ function routeEventMetadata(input = {}, routeId = null) {
   };
 }
 
+const ROUTE_TRACKING_PREFIX = "Control de marcacion:";
+
+function routeGpsRequiredFromInput(input = {}) {
+  return input.gps_required !== false && String(input.tracking_mode || "gps") !== "punch_only";
+}
+
+function routeGpsRequired(route = {}) {
+  const notes = String(route.notes || "");
+  if (notes.split("\n").some((line) => line.trim() === `${ROUTE_TRACKING_PREFIX} punch_only`)) return false;
+  return true;
+}
+
+function routeTrackingMode(route = {}) {
+  return routeGpsRequired(route) ? "gps" : "punch_only";
+}
+
+function routeNotesWithTracking(notes = "", gpsRequired = true) {
+  const visibleNotes = String(notes || "").split("\n").filter((line) => !line.trim().startsWith(ROUTE_TRACKING_PREFIX)).join("\n").trim();
+  const trackingLine = `${ROUTE_TRACKING_PREFIX} ${gpsRequired ? "gps" : "punch_only"}`;
+  return [trackingLine, visibleNotes].filter(Boolean).join("\n");
+}
+
+function routeVisibleNotes(notes = "") {
+  return String(notes || "").split("\n").filter((line) => !line.trim().startsWith(ROUTE_TRACKING_PREFIX)).join("\n").trim();
+}
+
 function routeScopeWhere(routeId = null) {
   if (!routeId) return {};
   const routeKey = String(routeId);
@@ -386,7 +412,11 @@ async function listRoutes(tenantId, query = {}) {
       h_inicio: route.start_time,
       h_fin: route.end_time,
       viaticos: route.per_diem,
-      tolerancia_minutos: route.tolerance_minutes
+      tolerancia_minutos: route.tolerance_minutes,
+      notes: routeVisibleNotes(route.notes),
+      gps_required: routeGpsRequired(route),
+      tracking_mode: routeTrackingMode(route),
+      metadata: { gps_required: routeGpsRequired(route), tracking_mode: routeTrackingMode(route) }
     }));
   });
 }
@@ -432,6 +462,7 @@ async function createRoute(tenantId, input) {
   validateRouteInput(input);
   return prisma.runWithTenant(tenantId, async () => {
     const employees = await normalizeRouteEmployees(input.employees);
+    const gpsRequired = routeGpsRequiredFromInput(input);
     return prisma.timeRoute.create({
       data: {
         date: startOfDay(input.date),
@@ -441,7 +472,7 @@ async function createRoute(tenantId, input) {
         end_time: input.end_time || "17:00",
         tolerance_minutes: input.tolerance_minutes ?? 15,
         per_diem: 0,
-        notes: input.notes || "",
+        notes: routeNotesWithTracking(input.notes || "", gpsRequired),
         status: input.status || "active"
       }
     });
@@ -452,6 +483,7 @@ async function updateRoute(tenantId, id, input) {
   validateRouteInput(input);
   return prisma.runWithTenant(tenantId, async () => {
     const employees = await normalizeRouteEmployees(input.employees);
+    const gpsRequired = routeGpsRequiredFromInput(input);
     return prisma.timeRoute.update({
       where: { id: Number(id) },
       data: {
@@ -462,7 +494,7 @@ async function updateRoute(tenantId, id, input) {
         end_time: input.end_time || "17:00",
         tolerance_minutes: input.tolerance_minutes ?? 15,
         per_diem: 0,
-        notes: input.notes || "",
+        notes: routeNotesWithTracking(input.notes || "", gpsRequired),
         status: input.status || "active"
       }
     });
@@ -519,6 +551,7 @@ async function createRoutesBulk(tenantId, input) {
   if (!dates.length) return { created: 0, routes: [] };
   return prisma.runWithTenant(tenantId, async () => {
     const employees = await normalizeRouteEmployees(input.employees);
+    const gpsRequired = routeGpsRequiredFromInput(input);
     const routes = await prisma.$transaction(dates.map((date) => prisma.timeRoute.create({
       data: {
         date,
@@ -528,7 +561,7 @@ async function createRoutesBulk(tenantId, input) {
         end_time: input.end_time || "17:00",
         tolerance_minutes: input.tolerance_minutes ?? 15,
         per_diem: 0,
-        notes: input.notes || "",
+        notes: routeNotesWithTracking(input.notes || "", gpsRequired),
         status: input.status || "active"
       }
     })));
@@ -1054,13 +1087,9 @@ async function listWorkActivities(tenantId, query = {}) {
 
 async function createWorkActivity(tenantId, user, input) {
   return prisma.runWithTenant(tenantId, async () => {
-    if (input.latitude == null || input.longitude == null) {
+    const gpsSkipped = input.gps_required === false || input.gps_skipped === true || input.latitude == null || input.longitude == null;
+    if (!gpsSkipped && (input.latitude == null || input.longitude == null)) {
       const err = new Error("GPS obligatorio para registrar actividad.");
-      err.statusCode = 422;
-      throw err;
-    }
-    if (!String(input.observation || "").trim()) {
-      const err = new Error("La observacion es obligatoria.");
       err.statusCode = 422;
       throw err;
     }
@@ -1102,14 +1131,17 @@ async function createWorkActivity(tenantId, user, input) {
         route_id: inputRouteId || session.route_id,
         vehicle_plate: input.vehicle_plate || session.vehicle_plate || "",
         occurred_at: input.occurred_at ? new Date(input.occurred_at) : new Date(),
-        latitude: Number(input.latitude),
-        longitude: Number(input.longitude),
-        accuracy_meters: input.accuracy_meters,
+        latitude: gpsSkipped ? 0 : Number(input.latitude),
+        longitude: gpsSkipped ? 0 : Number(input.longitude),
+        accuracy_meters: gpsSkipped ? null : input.accuracy_meters,
         approximate_address: input.approximate_address || "",
-        observation: input.observation,
-        alert_level: Number(input.accuracy_meters || 0) > 80 || activityType.name.toLowerCase().includes("varado") || activityType.name.toLowerCase().includes("novedad") ? "warning" : "normal",
+        observation: String(input.observation || ""),
+        alert_level: !gpsSkipped && Number(input.accuracy_meters || 0) > 80 || activityType.name.toLowerCase().includes("varado") || activityType.name.toLowerCase().includes("novedad") ? "warning" : "normal",
         metadata: {
           ...routeEventMetadata(input, inputRouteId || session.route_id),
+          gps_required: input.gps_required !== false,
+          gps_skipped: gpsSkipped,
+          tracking_mode: gpsSkipped ? "punch_only" : "gps",
           supplied_user_name: input.user_name || "",
           employee_code: employee?.code || "",
           employee_name: employeeDisplayName(employee) || userName || session.user_name,
@@ -1133,29 +1165,31 @@ async function createWorkActivity(tenantId, user, input) {
         metadata: { storage_hint: "company_id/module/work_session_id/user_id/activity_id/file" }
       }
     });
-    await prisma.gpsPing.create({
-      data: {
-        employee_id: employee?.id || session.employee_id,
-        user_name: userName || session.user_name,
-        vehicle_plate: input.vehicle_plate || session.vehicle_plate || "",
-        route_id: inputRouteId || session.route_id,
-        latitude: Number(input.latitude),
-        longitude: Number(input.longitude),
-        accuracy_meters: input.accuracy_meters,
-        source: "work_activity",
-        captured_at: activity.occurred_at,
-        metadata: {
-          activity_id: activity.id,
-          activity_type: activityType.name,
-          ...routeEventMetadata(input, inputRouteId || session.route_id),
-          supplied_user_name: input.user_name || "",
-          employee_code: employee?.code || "",
-          employee_name: employeeDisplayName(employee) || userName || session.user_name,
-          user_email: employee?.user?.email || user?.email || "",
-          identity_aliases: Array.from(new Set([...(employee ? aliasesForEmployee(employee) : []), ...requestAliases, userName || session.user_name].filter(Boolean)))
+    if (!gpsSkipped) {
+      await prisma.gpsPing.create({
+        data: {
+          employee_id: employee?.id || session.employee_id,
+          user_name: userName || session.user_name,
+          vehicle_plate: input.vehicle_plate || session.vehicle_plate || "",
+          route_id: inputRouteId || session.route_id,
+          latitude: Number(input.latitude),
+          longitude: Number(input.longitude),
+          accuracy_meters: input.accuracy_meters,
+          source: "work_activity",
+          captured_at: activity.occurred_at,
+          metadata: {
+            activity_id: activity.id,
+            activity_type: activityType.name,
+            ...routeEventMetadata(input, inputRouteId || session.route_id),
+            supplied_user_name: input.user_name || "",
+            employee_code: employee?.code || "",
+            employee_name: employeeDisplayName(employee) || userName || session.user_name,
+            user_email: employee?.user?.email || user?.email || "",
+            identity_aliases: Array.from(new Set([...(employee ? aliasesForEmployee(employee) : []), ...requestAliases, userName || session.user_name].filter(Boolean)))
+          }
         }
-      }
-    });
+      });
+    }
     return prisma.workActivity.findFirst({
       where: { id: activity.id },
       include: { activity_type: true, evidence: true }
@@ -1569,9 +1603,10 @@ async function getOperationsMap(tenantId, query = {}) {
     }
     const resolveAssignedEmployee = (value) => employeeByAlias.get(normalizeKey(value));
 
+    const locationPings = pings.filter((ping) => ping.metadata?.gps_skipped !== true);
     const latestPingByUser = new Map();
     const pingsByRoute = new Map();
-    for (const ping of pings) {
+    for (const ping of locationPings) {
       for (const alias of aliasesForOperationalRow(ping)) {
         const userKey = normalizeKey(alias);
         if (!latestPingByUser.has(userKey)) latestPingByUser.set(userKey, ping);
@@ -1583,7 +1618,7 @@ async function getOperationsMap(tenantId, query = {}) {
     }
 
     const lastFootprintByUser = new Map();
-    for (const ping of lastFootprints) {
+    for (const ping of lastFootprints.filter((item) => item.metadata?.gps_skipped !== true)) {
       for (const alias of aliasesForOperationalRow(ping)) {
         const userKey = normalizeKey(alias);
         if (!lastFootprintByUser.has(userKey)) lastFootprintByUser.set(userKey, ping);
@@ -1675,9 +1710,9 @@ async function getOperationsMap(tenantId, query = {}) {
         if (rowRouteKey) return rowRouteKey === routeKey;
         return aliasesForOperationalRow(row).some((alias) => assignedAliases.has(normalizeKey(alias)));
       };
-      const routePings = pings.filter(matchesAssigned).sort((a, b) => new Date(a.captured_at) - new Date(b.captured_at));
-      const routePunches = punches.filter((punch) => matchesAssigned(punch) && punch.latitude != null && punch.longitude != null).sort((a, b) => new Date(a.punched_at) - new Date(b.punched_at));
-      const routeActivities = activities.filter((activity) => matchesAssigned(activity) && activity.latitude != null && activity.longitude != null).sort((a, b) => new Date(a.occurred_at) - new Date(b.occurred_at));
+      const routePings = locationPings.filter(matchesAssigned).sort((a, b) => new Date(a.captured_at) - new Date(b.captured_at));
+      const routePunches = punches.filter((punch) => matchesAssigned(punch)).sort((a, b) => new Date(a.punched_at) - new Date(b.punched_at));
+      const routeActivities = activities.filter((activity) => matchesAssigned(activity)).sort((a, b) => new Date(a.occurred_at) - new Date(b.occurred_at));
       const marksByUser = new Map();
       for (const punch of routePunches) {
         const displayUserName = displayNameForOperationalRow(punch);
@@ -1708,6 +1743,9 @@ async function getOperationsMap(tenantId, query = {}) {
         equipo: route.employees,
         h_inicio: route.start_time,
         h_fin: route.end_time,
+        gps_required: routeGpsRequired(route),
+        tracking_mode: routeTrackingMode(route),
+        metadata: { ...(route.metadata || {}), gps_required: routeGpsRequired(route), tracking_mode: routeTrackingMode(route) },
         assigned_count: assigned.length,
         online_count: assigned.filter((person) => person.online).length,
         with_gps_count: assigned.filter((person) => person.latitude != null && person.longitude != null).length,
@@ -1735,9 +1773,9 @@ async function getOperationsMap(tenantId, query = {}) {
           type: activity.activity_type_name,
           time: timeString(activity.occurred_at),
           occurred_at: activity.occurred_at,
-          latitude: activity.latitude,
-          longitude: activity.longitude,
-          accuracy_meters: activity.accuracy_meters,
+          latitude: activity.metadata?.gps_skipped ? null : activity.latitude,
+          longitude: activity.metadata?.gps_skipped ? null : activity.longitude,
+          accuracy_meters: activity.metadata?.gps_skipped ? null : activity.accuracy_meters,
           vehicle_plate: activity.vehicle_plate,
           route_id: activity.route_id,
           observation: activity.observation,
