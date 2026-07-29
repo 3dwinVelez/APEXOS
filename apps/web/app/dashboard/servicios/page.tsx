@@ -339,6 +339,16 @@ function technicianLabel(order: ServiceOrder) {
   return order.technician?.user?.name || order.technician?.user?.email || String(order.technician_employee_id || order.technician_id || "");
 }
 
+function technicianSearchText(order: ServiceOrder) {
+  return [
+    order.technician?.code,
+    order.technician?.user?.name,
+    order.technician?.user?.email,
+    order.technician_employee_id,
+    order.technician_id
+  ].filter(Boolean).join(" ");
+}
+
 function serviceOrderExcelRows(orders: ServiceOrder[]): ServiceOrderExcelRow[] {
   return orders.map((order) => {
     const sla = slaInfo(order);
@@ -437,6 +447,7 @@ export default function ServicesPage() {
   const [evidenceScope, setEvidenceScope] = useState("");
   const [requestScope, setRequestScope] = useState("");
   const [serviceType, setServiceType] = useState("");
+  const [technicianFilter, setTechnicianFilter] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const [message, setMessage] = useState("");
   const [technicianMode, setTechnicianMode] = useState(false);
@@ -517,10 +528,15 @@ export default function ServicesPage() {
     const term = query.trim().toLowerCase();
     const today = new Date().toISOString().slice(0, 10);
     return orders.filter((order) => {
-      const matchesTerm = !term || [order.number, order.customer_name, order.customer_address, order.customer_phone, order.metadata?.customer_phone_secondary, order.reference?.code, order.reference?.name, order.service_type]
+      const matchesTerm = !term || [order.number, order.customer_name, order.customer_address, order.customer_phone, order.metadata?.customer_phone_secondary, order.reference?.code, order.reference?.name, order.service_type, technicianSearchText(order)]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(term))
       const isExternalRequest = order.status === "agendado" || order.metadata?.public_request === true || order.metadata?.requires_admin_completion === true;
+      const orderTechnician = technicianValue(order);
+      const matchesTechnician =
+        !technicianFilter ||
+        (technicianFilter === "__unassigned" && !orderTechnician) ||
+        orderTechnician === technicianFilter;
       const matchesDate =
         !dateScope ||
         (dateScope === "today" && isToday(order.scheduled_date)) ||
@@ -533,7 +549,7 @@ export default function ServicesPage() {
         (evidenceScope === "without_evidence" && order.photos.length === 0) ||
         (evidenceScope === "with_incidents" && order.incidents.length > 0);
       const matchesRequestScope = !requestScope || (requestScope === "external" && isExternalRequest);
-      return matchesTerm && (!status || order.status === status) && matchesDate && matchesEvidence && matchesRequestScope && (!serviceType || order.service_type === serviceType);
+      return matchesTerm && matchesTechnician && (!status || order.status === status) && matchesDate && matchesEvidence && matchesRequestScope && (!serviceType || order.service_type === serviceType);
     }).sort((a, b) => {
       if (sortBy === "newest") return newestFirst(a, b);
       if (sortBy === "date_asc") return (a.scheduled_date || "9999").localeCompare(b.scheduled_date || "9999");
@@ -541,15 +557,29 @@ export default function ServicesPage() {
       if (sortBy === "order") return orderSequence(b.number) - orderSequence(a.number) || b.number.localeCompare(a.number);
       return priorityScore(a) - priorityScore(b) || newestFirst(a, b);
     });
-  }, [dateScope, evidenceScope, orders, query, requestScope, serviceType, sortBy, status]);
+  }, [dateScope, evidenceScope, orders, query, requestScope, serviceType, sortBy, status, technicianFilter]);
 
   const serviceTypes = useMemo(() => [...new Set(orders.map((order) => order.service_type).filter(Boolean))].sort(), [orders]);
   const editableServiceTypes = serviceTypesCatalog.length ? serviceTypesCatalog : serviceTypes.map((type) => ({ code: type, label: statusLabel[type] || type }));
+  const assignedTechnicianOptions = useMemo(() => {
+    const options = new Map<string, string>();
+    for (const technician of technicians) {
+      const id = String(technician.id || "").trim();
+      if (!id) continue;
+      options.set(id, `${technician.code || "TEC"} - ${technician.user?.name || technician.user?.email || "Tecnico"}`);
+    }
+    for (const order of orders) {
+      const id = technicianValue(order);
+      if (!id || options.has(id)) continue;
+      options.set(id, technicianLabel(order) || `Tecnico ${id.slice(0, 8)}`);
+    }
+    return Array.from(options.entries()).sort(([, a], [, b]) => a.localeCompare(b, "es"));
+  }, [orders, technicians]);
   const statusCounts = useMemo(() => orders.reduce<Record<string, number>>((acc, order) => {
     acc[order.status] = (acc[order.status] || 0) + 1;
     return acc;
   }, {}), [orders]);
-  const activeFilters = [status, dateScope, evidenceScope, requestScope, serviceType].filter(Boolean).length + (query.trim() ? 1 : 0);
+  const activeFilters = [status, dateScope, evidenceScope, requestScope, serviceType, technicianFilter].filter(Boolean).length + (query.trim() ? 1 : 0);
   const externalRequestCompany = typeof window !== "undefined" ? localStorage.getItem("apexos_company_name") || "SCJ" : "SCJ";
   const externalRequestHref = `/servicios/solicitar?empresa=${encodeURIComponent(externalRequestCompany)}`;
 
@@ -560,6 +590,7 @@ export default function ServicesPage() {
     setEvidenceScope("");
     setRequestScope("");
     setServiceType("");
+    setTechnicianFilter("");
     setSortBy("newest");
   }
 
@@ -848,7 +879,7 @@ export default function ServicesPage() {
               ))}
             </div>
 
-            <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
               <label className="relative">
                 <span className="sr-only">Agenda</span>
                 <select className="h-11 w-full appearance-none rounded-md border border-line bg-white px-3 text-sm" value={dateScope} onChange={(event) => setDateScope(event.target.value)}>
@@ -863,6 +894,13 @@ export default function ServicesPage() {
                 <option value="">Todos los tipos</option>
                 {serviceTypes.map((type) => <option key={type} value={type}>{type}</option>)}
               </select>
+              {!technicianMode ? (
+                <select className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm" value={technicianFilter} onChange={(event) => setTechnicianFilter(event.target.value)}>
+                  <option value="">Todos los tecnicos</option>
+                  <option value="__unassigned">Sin tecnico asignado</option>
+                  {assignedTechnicianOptions.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+                </select>
+              ) : null}
               <select className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm" value={evidenceScope} onChange={(event) => setEvidenceScope(event.target.value)}>
                 <option value="">Evidencia y novedades</option>
                 <option value="with_evidence">Con evidencia</option>
