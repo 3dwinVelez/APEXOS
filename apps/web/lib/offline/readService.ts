@@ -10,10 +10,16 @@ import type {
 export class OfflineTechnicianReadService {
   private readonly adapter: OfflineReadStorageAdapter;
   private readonly context: OfflineStorageContext;
+  private readonly now: () => number;
 
-  constructor(adapter: OfflineReadStorageAdapter, context: OfflineStorageContext) {
+  constructor(
+    adapter: OfflineReadStorageAdapter,
+    context: OfflineStorageContext,
+    now: () => number = Date.now
+  ) {
     this.adapter = adapter;
     this.context = context;
+    this.now = now;
   }
 
   listOrders(): Promise<OfflineOrderRecord[]> {
@@ -59,7 +65,7 @@ export class OfflineTechnicianReadService {
         expiresAt: null
       };
     }
-    const expired = Date.parse(metadata.expiresAt) <= Date.now();
+    const expired = Date.parse(metadata.expiresAt) <= this.now();
     return {
       available: true,
       fresh: !expired,

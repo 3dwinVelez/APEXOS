@@ -23,6 +23,13 @@ import {
   clearCurrentEnvironmentData,
   DexieOfflineStorageAdapter
 } from "../lib/offline/storageAdapter.ts";
+import {
+  advanceOfflineClock,
+  createExpiredSnapshotTimes,
+  createExpiringSnapshotTimes,
+  createOfflineTestClock,
+  createValidSnapshotTimes
+} from "./helpers/offlineTestClock.mjs";
 
 const contextA = Object.freeze({
   environmentId: "test",
@@ -30,15 +37,24 @@ const contextA = Object.freeze({
   tenantId: "company-a",
   userId: "technician-a"
 });
+const testClock = createOfflineTestClock();
+
+function storageAdapter(context = contextA, options = {}) {
+  return new DexieOfflineStorageAdapter(context, {
+    now: testClock.now,
+    ...options
+  });
+}
 
 function snapshot(context = contextA, version = 1, overrides = {}) {
+  const times = createValidSnapshotTimes(testClock);
   return {
     context: { ...context },
     schemaVersion: 2,
     snapshotId: "11111111-1111-4111-8111-111111111111",
     serverCheckpoint: "bootstrap:checkpoint",
-    generatedAt: "2026-07-27T12:00:00.000Z",
-    expiresAt: "2026-07-28T12:00:00.000Z",
+    generatedAt: times.generatedAt,
+    expiresAt: times.expiresAt,
     orders: [
       {
         serverId: "order-1",
@@ -48,14 +64,14 @@ function snapshot(context = contextA, version = 1, overrides = {}) {
         assignedTechnicianId: context.userId,
         customerDisplayName: "Cliente de prueba",
         serviceAddress: "Direccion de prueba 1",
-        scheduledAt: "2026-07-27T14:00:00.000Z",
+        scheduledAt: times.scheduledAt,
         minimumOperationalData: {
           referenceDisplayName: "Referencia de prueba",
           serviceSummary: "Inspeccion controlada",
           contactPhone: "0000000000"
         },
         serverVersion: version,
-        serverUpdatedAt: "2026-07-27T11:00:00.000Z"
+        serverUpdatedAt: times.serverUpdatedAt
       }
     ],
     activities: [
@@ -70,7 +86,7 @@ function snapshot(context = contextA, version = 1, overrides = {}) {
         sequence: 1,
         required: true,
         serverVersion: version,
-        serverUpdatedAt: "2026-07-27T11:00:00.000Z"
+        serverUpdatedAt: times.serverUpdatedAt
       }
     ],
     checklists: [
@@ -83,7 +99,7 @@ function snapshot(context = contextA, version = 1, overrides = {}) {
         required: true,
         value: null,
         serverVersion: version,
-        serverUpdatedAt: "2026-07-27T11:00:00.000Z"
+        serverUpdatedAt: times.serverUpdatedAt
       }
     ],
     catalogs: [
@@ -93,7 +109,7 @@ function snapshot(context = contextA, version = 1, overrides = {}) {
         code: "pending",
         label: "Pendiente",
         serverVersion: version,
-        serverUpdatedAt: "2026-07-27T11:00:00.000Z"
+        serverUpdatedAt: times.serverUpdatedAt
       }
     ],
     ...overrides
@@ -101,7 +117,7 @@ function snapshot(context = contextA, version = 1, overrides = {}) {
 }
 
 async function hydratedAdapter(context = contextA, options = {}) {
-  const adapter = new DexieOfflineStorageAdapter(context, options);
+  const adapter = storageAdapter(context, options);
   await adapter.open();
   await new OfflineSnapshotHydrator(adapter).hydrate(snapshot(context));
   return adapter;
@@ -142,11 +158,12 @@ function capability(context = contextA) {
 }
 
 afterEach(async () => {
+  testClock.reset();
   await clearAllOfflineData();
 });
 
 test("crea, abre, cierra y elimina una base por contexto", async () => {
-  const adapter = new DexieOfflineStorageAdapter(contextA);
+  const adapter = storageAdapter();
   await adapter.open();
   const name = adapter.getDatabaseNameForTesting();
   assert.match(name, /^apexos-offline-v2-[a-f0-9]{24}-[a-f0-9]{24}-[a-f0-9]{24}$/);
@@ -179,7 +196,7 @@ test("hidrata y consulta ordenes, actividades, checklist, catalogo y metadata", 
 });
 
 test("conserva el mismo item de checklist cuando pertenece a ordenes distintas", async () => {
-  const adapter = new DexieOfflineStorageAdapter(contextA);
+  const adapter = storageAdapter();
   await adapter.open();
   const value = snapshot(contextA);
   const secondOrder = {
@@ -202,7 +219,7 @@ test("conserva el mismo item de checklist cuando pertenece a ordenes distintas",
   };
   await new OfflineSnapshotHydrator(adapter).hydrate(sharedChecklistSnapshot);
   await new OfflineSnapshotHydrator(adapter).hydrate(sharedChecklistSnapshot);
-  const read = new OfflineTechnicianReadService(adapter, contextA);
+  const read = new OfflineTechnicianReadService(adapter, contextA, testClock.nowMs);
   assert.equal((await read.listChecklist("order-1")).length, 1);
   assert.equal((await read.listChecklist("order-2")).length, 1);
   await adapter.deleteDatabase();
@@ -212,7 +229,7 @@ test("persiste tras cerrar y reabrir el navegador simulado", async () => {
   const first = await hydratedAdapter();
   const name = first.getDatabaseNameForTesting();
   await first.close();
-  const second = new DexieOfflineStorageAdapter(contextA);
+  const second = storageAdapter();
   await second.open();
   assert.equal(second.getDatabaseNameForTesting(), name);
   const order = await second.transaction((repositories) =>
@@ -223,7 +240,7 @@ test("persiste tras cerrar y reabrir el navegador simulado", async () => {
 
 test("dos pestanas del mismo contexto consultan el mismo snapshot", async () => {
   const first = await hydratedAdapter();
-  const second = new DexieOfflineStorageAdapter(contextA);
+  const second = storageAdapter();
   await second.open();
   const [fromFirst, fromSecond] = await Promise.all([
     first.transaction((repositories) => repositories.orders.list(contextA)),
@@ -247,7 +264,7 @@ test("aumenta snapshot por serverVersion y rechaza una revision inferior", async
 });
 
 test("rechaza snapshot de otra empresa, usuario o esquema", async () => {
-  const adapter = new DexieOfflineStorageAdapter(contextA);
+  const adapter = storageAdapter();
   await adapter.open();
   const otherCompany = {
     ...contextA,
@@ -263,7 +280,7 @@ test("rechaza snapshot de otra empresa, usuario o esquema", async () => {
     orders: [{ ...snapshot(contextA).orders[0], assignedTechnicianId: "employee-17" }]
   });
   assert.equal(
-    (await new OfflineTechnicianReadService(adapter, contextA).getOrder("order-1"))
+    (await new OfflineTechnicianReadService(adapter, contextA, testClock.nowMs).getOrder("order-1"))
       .assignedTechnicianId,
     "employee-17"
   );
@@ -274,7 +291,7 @@ test("rechaza snapshot de otra empresa, usuario o esquema", async () => {
 });
 
 test("rechaza campos prohibidos y crea solo tablas autorizadas hasta Fase 4", async () => {
-  const adapter = new DexieOfflineStorageAdapter(contextA);
+  const adapter = storageAdapter();
   await adapter.open();
   await assert.rejects(
     adapter.replaceSnapshot({
@@ -295,22 +312,52 @@ test("rechaza campos prohibidos y crea solo tablas autorizadas hasta Fase 4", as
 });
 
 test("marca datos expirados como no vigentes y los limpia por contexto", async () => {
-  const adapter = new DexieOfflineStorageAdapter(contextA, {
-    now: () => new Date("2026-07-29T12:00:00.000Z")
-  });
+  const expired = createExpiredSnapshotTimes(testClock);
+  const adapter = storageAdapter();
   await adapter.open();
   await adapter.replaceSnapshot(
     snapshot(contextA, 1, {
-      generatedAt: "2026-07-27T12:00:00.000Z",
-      expiresAt: "2026-07-28T12:00:00.000Z"
+      generatedAt: expired.generatedAt,
+      expiresAt: expired.expiresAt
     })
   );
   const order = await adapter.transaction((repositories) =>
     repositories.orders.getById(contextA, "order-1")
   );
   assert.equal(order, null);
-  const cleanup = await adapter.clearExpiredData("2026-07-29T12:00:00.000Z");
+  const cleanup = await adapter.clearExpiredData(testClock.now().toISOString());
   assert.equal(cleanup.recordsDeleted, 5);
+});
+
+test("reloj controlado distingue snapshot vigente, proximo a vencer y vencido", async () => {
+  const expiring = createExpiringSnapshotTimes(testClock);
+  const adapter = storageAdapter();
+  await adapter.open();
+  await adapter.replaceSnapshot(snapshot(contextA, 1, expiring));
+  const read = new OfflineTechnicianReadService(adapter, contextA, testClock.nowMs);
+  assert.deepEqual(
+    {
+      fresh: (await read.snapshotState()).fresh,
+      orderCount: (await read.listOrders()).length
+    },
+    { fresh: true, orderCount: 1 }
+  );
+  advanceOfflineClock(testClock, 61 * 1000);
+  assert.deepEqual(
+    {
+      expired: (await read.snapshotState()).expired,
+      orderCount: (await read.listOrders()).length
+    },
+    { expired: true, orderCount: 0 }
+  );
+});
+
+test("fixtures offline no dependen de la fecha real del sistema", async () => {
+  const distantClock = createOfflineTestClock("2042-11-03T08:30:00.000Z");
+  const times = createValidSnapshotTimes(distantClock);
+  assert.equal(Date.parse(times.generatedAt) < distantClock.nowMs(), true);
+  assert.equal(Date.parse(times.expiresAt) > distantClock.nowMs(), true);
+  assert.equal(Date.parse(times.expiresAt) - distantClock.nowMs(), 23 * 60 * 60 * 1000);
 });
 
 test("limpia por usuario, empresa, ambiente y de forma total", async () => {
@@ -319,7 +366,7 @@ test("limpia por usuario, empresa, ambiente y de forma total", async () => {
   const qa = { ...contextA, environmentId: "qa" };
   const adapters = await Promise.all(
     [contextA, companyB, userB, qa].map(async (context) => {
-      const adapter = new DexieOfflineStorageAdapter(context);
+      const adapter = storageAdapter(context);
       await adapter.open();
       return adapter;
     })
@@ -335,12 +382,12 @@ test("limpia por usuario, empresa, ambiente y de forma total", async () => {
 });
 
 test("regenera installationId despues de eliminacion manual", async () => {
-  const first = new DexieOfflineStorageAdapter(contextA);
+  const first = storageAdapter();
   await first.open();
   const firstId = (await first.getInstallationIdentity()).installationId;
   await first.deleteDatabase();
 
-  const second = new DexieOfflineStorageAdapter(contextA);
+  const second = storageAdapter();
   await second.open();
   const secondId = (await second.getInstallationIdentity()).installationId;
   assert.notEqual(firstId, secondId);
@@ -359,6 +406,7 @@ test("rechaza un registro local manipulado con contexto ajeno", async () => {
 });
 
 test("migra v1 a v3 conservando datos, retencion y estado de schema", async () => {
+  const times = createValidSnapshotTimes(testClock);
   const name = await contextDatabaseName(contextA);
   const legacy = new Dexie(name);
   legacy.version(1).stores(OFFLINE_SCHEMA_V1);
@@ -370,13 +418,13 @@ test("migra v1 a v3 conservando datos, retencion y estado de schema", async () =
     tenantId: contextA.tenantId,
     userId: contextA.userId,
     schemaVersion: 1,
-    generatedAt: "2026-07-27T12:00:00.000Z",
-    hydratedAt: "2026-07-27T12:00:00.000Z",
-    expiresAt: "2026-07-28T12:00:00.000Z"
+    generatedAt: times.generatedAt,
+    hydratedAt: times.generatedAt,
+    expiresAt: times.expiresAt
   });
   legacy.close();
 
-  const adapter = new DexieOfflineStorageAdapter(contextA);
+  const adapter = storageAdapter();
   await adapter.open();
   const metadata = await adapter.transaction((repositories) => repositories.metadata.get(contextA));
   assert.equal(metadata?.retentionState, "ACTIVE");
@@ -396,7 +444,7 @@ test("aborta de forma controlada una migracion fallida sin bucle", async () => {
   await legacy.open();
   legacy.close();
   let attempts = 0;
-  const adapter = new DexieOfflineStorageAdapter(contextA, {
+  const adapter = storageAdapter(contextA, {
     migrationFailure: () => {
       attempts += 1;
       return true;
@@ -413,7 +461,7 @@ test("aborta de forma controlada una migracion fallida sin bucle", async () => {
 test("una transaccion abortada conserva el snapshot anterior", async () => {
   const stable = await hydratedAdapter();
   await stable.close();
-  const failing = new DexieOfflineStorageAdapter(contextA, {
+  const failing = storageAdapter(contextA, {
     transactionFailure: () => {
       throw new DOMException("abort", "AbortError");
     }
@@ -424,7 +472,7 @@ test("una transaccion abortada conserva el snapshot anterior", async () => {
     (error) => error instanceof OfflineStorageError && error.code === "TRANSACTION_ABORTED"
   );
   await failing.close();
-  const reopened = new DexieOfflineStorageAdapter(contextA);
+  const reopened = storageAdapter();
   await reopened.open();
   const order = await reopened.transaction((repositories) =>
     repositories.orders.getById(contextA, "order-1")
@@ -438,7 +486,7 @@ test("clasifica cuota insuficiente, almacenamiento restringido y bloqueo", async
     [() => { throw new DOMException("unavailable", "InvalidStateError"); }, "STORAGE_UNAVAILABLE"],
     [() => { throw new OfflineStorageError("DATABASE_BLOCKED", "blocked", true); }, "DATABASE_BLOCKED"]
   ]) {
-    const adapter = new DexieOfflineStorageAdapter(contextA, { openFailure: failure });
+    const adapter = storageAdapter(contextA, { openFailure: failure });
     await assert.rejects(
       adapter.open(),
       (error) => error instanceof OfflineStorageError && error.code === code
@@ -506,16 +554,14 @@ test("contrato bootstrap valido hidrata la base correcta y queda solo lectura", 
     bootstrapResponse(),
     capability(),
     contextA,
-    Date.parse("2026-07-27T13:00:00.000Z")
+    testClock.nowMs()
   );
-  const adapter = new DexieOfflineStorageAdapter(contextA, {
-    now: () => new Date("2026-07-27T13:00:00.000Z")
-  });
+  const adapter = storageAdapter();
   await adapter.open();
   await new OfflineSnapshotHydrator(adapter).hydrate(
     bootstrapToLocalSnapshot(response, contextA)
   );
-  const read = new OfflineTechnicianReadService(adapter, contextA);
+  const read = new OfflineTechnicianReadService(adapter, contextA, testClock.nowMs);
   assert.equal((await read.listOrders()).length, 1);
   assert.equal((await read.getOrder("order-1"))?.orderNumber, "TEST-001");
   assert.equal((await read.listActivities("order-1")).length, 1);
@@ -527,12 +573,13 @@ test("contrato bootstrap valido hidrata la base correcta y queda solo lectura", 
 });
 
 test("cliente rechaza usuario, empresa, ambiente, schema y expiracion incompatibles", () => {
+  const expired = createExpiredSnapshotTimes(testClock);
   const cases = [
     bootstrapResponse(contextA, { userId: "other-user" }),
     bootstrapResponse(contextA, { companyId: "other-company" }),
     bootstrapResponse(contextA, { environmentId: "qa" }),
     bootstrapResponse(contextA, { schemaVersion: 99 }),
-    bootstrapResponse(contextA, { expiresAt: "2026-07-27T12:30:00.000Z" })
+    bootstrapResponse(contextA, { expiresAt: expired.expiresAt })
   ];
   for (const response of cases) {
     assert.throws(() =>
@@ -540,7 +587,7 @@ test("cliente rechaza usuario, empresa, ambiente, schema y expiracion incompatib
         response,
         capability(),
         contextA,
-        Date.parse("2026-07-27T13:00:00.000Z")
+        testClock.nowMs()
       )
     );
   }
@@ -557,7 +604,7 @@ test("snapshot bootstrap inferior no reemplaza revision local superior", async (
           lower,
           capability(),
           contextA,
-          Date.parse("2026-07-27T13:00:00.000Z")
+          testClock.nowMs()
         ),
         contextA
       )
@@ -565,7 +612,7 @@ test("snapshot bootstrap inferior no reemplaza revision local superior", async (
     (error) => error instanceof OfflineStorageError && error.code === "SNAPSHOT_STALE"
   );
   assert.equal(
-    (await new OfflineTechnicianReadService(adapter, contextA).getOrder("order-1"))
+    (await new OfflineTechnicianReadService(adapter, contextA, testClock.nowMs).getOrder("order-1"))
       ?.serverVersion,
     2
   );
