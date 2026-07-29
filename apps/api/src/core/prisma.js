@@ -14,6 +14,7 @@ const TENANT_MODELS = new Set([
   "RouteStartAuthorization", "RouteBlockEvent",
   "ProcessedWorkday", "GpsPing", "WorkSession", "ActivityType", "WorkActivity", "ActivityEvidence",
   "Vehicle", "ServiceOrder", "ServiceReference",
+  "OfflineSyncReceipt",
   "VehicleDocument", "VehicleMasterAuditLog", "ServiceReferencePart", "ServiceIncident", "ServicePhoto",
   "EvidenceUploadAuthorization", "AuthorizationSession",
   "Project", "ProjectCommitment", "ProjectDeliverable", "ProjectRisk", "ProjectResourceAssignment",

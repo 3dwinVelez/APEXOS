@@ -6,6 +6,7 @@ import {
   Database,
   Download,
   RefreshCw,
+  Send,
   ShieldCheck,
   WifiOff
 } from "lucide-react";
@@ -60,6 +61,7 @@ export default function OfflineTechnicianPanel() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [detail, setDetail] = useState<OrderDetail | null>(null);
+  const [pendingSync, setPendingSync] = useState(0);
 
   const readPrepared = useCallback(async () => {
     const readService = await new OfflineBootstrapService().openPrepared();
@@ -145,6 +147,36 @@ export default function OfflineTechnicianPanel() {
     }
   };
 
+  const syncPendingOperations = async () => {
+    if (!capabilities?.offlineTechnician.syncEnabled || !capabilities.context || busy) return;
+    setBusy(true);
+    setMessage("");
+    const context = {
+      ...capabilities.context,
+      tenantId: capabilities.context.companyId
+    };
+    const { DexieOfflineOperationQueueRepository } = await import("@/lib/offline/operationQueue.ts");
+    const { OfflineManualSyncService } = await import("@/lib/offline/manualSyncService.ts");
+    const queue = new DexieOfflineOperationQueueRepository(context, {
+      allowedOperationTypes: ["TEST_OPERATION"]
+    });
+    try {
+      await queue.open();
+      const summary = await new OfflineManualSyncService(context, queue).syncPending();
+      setPendingSync((await queue.listPending()).filter((item) => item.operationType === "TEST_OPERATION").length);
+      setMessage(
+        summary.attempted
+          ? `Sincronizacion manual: ${summary.confirmed} confirmadas, ${summary.retryable} pendientes de reintento.`
+          : "No hay operaciones de prueba pendientes."
+      );
+    } catch {
+      setMessage("No fue posible sincronizar ahora. Las operaciones permanecen guardadas.");
+    } finally {
+      await queue.close();
+      setBusy(false);
+    }
+  };
+
   const toggleDetail = async (order: OfflineOrderRecord) => {
     if (detail?.orderId === order.orderId) {
       setDetail(null);
@@ -188,15 +220,29 @@ export default function OfflineTechnicianPanel() {
           </div>
         </div>
         {!offlineView && capabilities?.offlineTechnician.enabled ? (
-          <button
-            className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-60"
-            disabled={busy}
-            onClick={prepare}
-            type="button"
-          >
-            {busy ? <RefreshCw className="animate-spin" size={16} /> : <Download size={16} />}
-            {snapshot ? "Actualizar descarga" : "Preparar"}
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            {capabilities.offlineTechnician.syncEnabled ? (
+              <button
+                className="inline-flex h-10 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold text-neutral-800 disabled:opacity-60"
+                disabled={busy}
+                onClick={syncPendingOperations}
+                title="Sincronizar operaciones de prueba pendientes"
+                type="button"
+              >
+                <Send size={16} />
+                Sincronizar{pendingSync ? ` (${pendingSync})` : ""}
+              </button>
+            ) : null}
+            <button
+              className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-60"
+              disabled={busy}
+              onClick={prepare}
+              type="button"
+            >
+              {busy ? <RefreshCw className="animate-spin" size={16} /> : <Download size={16} />}
+              {snapshot ? "Actualizar descarga" : "Preparar"}
+            </button>
+          </div>
         ) : null}
       </div>
 

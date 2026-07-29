@@ -295,7 +295,8 @@ test("rutas rechazan query libre y configuran rate limit por usuario y empresa",
   const fakeFastify = {
     authenticate: async () => undefined,
     addHook: () => undefined,
-    get: (path, options, handler) => routes.push({ path, options, handler })
+    get: (path, options, handler) => routes.push({ path, options, handler }),
+    post: (path, options, handler) => routes.push({ path, options, handler })
   };
   await offlineRoutes(fakeFastify);
   const capabilities = routes.find((route) => route.path === "/offline/capabilities");

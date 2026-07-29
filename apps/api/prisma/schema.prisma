@@ -1538,6 +1538,28 @@ model AuthorizationSession {
   @@index([tenant_id, revoked_at])
 }
 
+model OfflineSyncReceipt {
+  id               String   @id @default(uuid())
+  environment_id   String
+  tenant_id        String
+  user_id          Int
+  installation_id  String
+  operation_id     String
+  idempotency_key  String
+  operation_type   String
+  payload_hash     String
+  result_status    String
+  result_code      String
+  processed_at     DateTime @default(now())
+  expires_at       DateTime
+  created_at       DateTime @default(now())
+
+  @@unique([environment_id, tenant_id, user_id, operation_id], map: "OfflineSyncReceipt_context_operation_key")
+  @@unique([environment_id, tenant_id, user_id, idempotency_key], map: "OfflineSyncReceipt_context_idempotency_key")
+  @@index([tenant_id, user_id, processed_at])
+  @@index([expires_at])
+}
+
 model EvidenceUploadAuthorization {
   id                    String   @id @default(uuid())
   tenant_id             String
