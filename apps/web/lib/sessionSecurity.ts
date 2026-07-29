@@ -1,3 +1,5 @@
+import { refreshSupabaseSession } from "./supabaseClient";
+
 const LAST_ACTIVITY_KEY = "apex_last_activity";
 const SESSION_TIMEOUT_MINUTES = Number(process.env.NEXT_PUBLIC_SESSION_TIMEOUT_MINUTES || 45);
 const HAS_CONFIGURED_API_URL = Boolean(process.env.NEXT_PUBLIC_API_URL);
@@ -88,6 +90,11 @@ export async function keepSessionAlive() {
   const token = localStorage.getItem("token");
   const refresh = localStorage.getItem("refresh");
   if (!token) return;
+  if (isSupabaseToken(token) || localStorage.getItem("auth_provider") === "supabase") {
+    const refreshed = await refreshSupabaseSession(false);
+    if (refreshed) touchSession();
+    return;
+  }
   if (!shouldRefreshLocalToken(token) || !refresh) {
     touchSession();
     return;
