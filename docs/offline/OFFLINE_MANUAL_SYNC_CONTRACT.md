@@ -54,10 +54,27 @@ queda ligada al primer recibo y un replay desde otra instalacion se rechaza. El
 hash SHA-256 cubre tipo, payload, version base y fecha del dispositivo usando
 JSON canonico.
 
+La busqueda de recibo, la ejecucion del handler sintetico y la creacion del
+recibo se realizan en una unica transaccion PostgreSQL. Una violacion `P2002`
+durante una carrera se resuelve leyendo el recibo ganador, sin duplicar efectos.
+
 - Repeticion exacta: `ALREADY_APPLIED`.
 - Misma clave con contenido diferente: `REJECTED / IDEMPOTENCY_MISMATCH`.
 - Carrera concurrente: un solo recibo.
 - Retencion inicial del recibo: 30 dias.
+
+## Cliente
+
+La cola entrega solo la siguiente operacion ejecutable: una dependencia no
+confirmada impide enviar sus descendientes. Antes de transmitir, el servicio
+reclama la operacion como `PROCESSING`; si otra pestana gana la carrera, no se
+duplica el envio.
+
+- 401: bloqueo por autenticacion.
+- 403: bloqueo por autorizacion.
+- 409: conflicto.
+- 422: bloqueo por validacion.
+- 429, 5xx, timeout o red: reintentable.
 
 ## Exclusiones
 
