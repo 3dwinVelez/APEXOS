@@ -1,6 +1,7 @@
 param(
   [ValidateSet("start", "stop", "status")]
-  [string]$Mode = "status"
+  [string]$Mode = "status",
+  [switch]$EnableSync
 )
 
 $ErrorActionPreference = "Stop"
@@ -69,7 +70,7 @@ $env:OFFLINE_ALLOWED_ENVIRONMENTS = "development"
 $env:OFFLINE_ALLOWED_TENANT_IDS = $env:TENANT_ID
 $env:OFFLINE_ALLOWED_USER_IDS = $env:TECHNICIAN_USER_ID
 $env:OFFLINE_ALLOWED_ROLES = ""
-$env:OFFLINE_SYNC_ENABLED = "false"
+$env:OFFLINE_SYNC_ENABLED = if ($EnableSync) { "true" } else { "false" }
 $env:OFFLINE_EVIDENCE_UPLOAD_ENABLED = "false"
 $env:OFFLINE_AUTO_SYNC_ENABLED = "false"
 $env:NEXT_PUBLIC_API_URL = "http://127.0.0.1:3100"

@@ -1,0 +1,15 @@
+{
+  "certified": true,
+  "browser": "Google Chrome",
+  "profile": "temporary-isolated",
+  "database": "local-54320",
+  "operations": {
+    "persistedAcrossRestart": "PENDING",
+    "first": "APPLIED",
+    "localAfterSync": "CONFIRMED",
+    "replay": "ALREADY_APPLIED",
+    "interruptedRecovery": "CONFIRMED",
+    "receiptCountPerOperation": 1,
+    "logoutDatabase": "DELETED"
+  }
+}
