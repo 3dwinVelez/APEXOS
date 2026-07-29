@@ -22,6 +22,24 @@ test("incrementar version revoca globalmente tokens anteriores", () => {
   assert.equal(authorizationDecision(payload, { ...user, authorization_version: 4 }, tenant, { user_id: 7, revoked_at: null, expires_at: future }), "USER_VERSION_STALE");
 });
 
+test("token vencido, usuario desactivado y tenant desactivado se rechazan", () => {
+  const now = new Date("2026-07-29T12:00:00.000Z");
+  const expired = {
+    user_id: 7,
+    revoked_at: null,
+    expires_at: new Date("2026-07-29T11:59:59.000Z")
+  };
+  assert.equal(authorizationDecision(payload, user, tenant, expired, now), "SESSION_REVOKED");
+  assert.equal(
+    authorizationDecision(payload, { ...user, active: false }, tenant, null, now),
+    "USER_REVOKED"
+  );
+  assert.equal(
+    authorizationDecision(payload, user, { ...tenant, active: false }, null, now),
+    "TENANT_REVOKED"
+  );
+});
+
 test("el calculo local de decision tiene sobrecosto despreciable", () => {
   const session = { user_id: 7, revoked_at: null, expires_at: future };
   const started = performance.now();

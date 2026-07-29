@@ -22,11 +22,19 @@ export interface OfflinePushResponse {
 
 export class OfflineSyncClientError extends Error {
   readonly code: string;
-  readonly category: "NETWORK" | "TIMEOUT" | "SERVER_TEMPORARY" | "AUTHORIZATION" | "VALIDATION";
+  readonly category:
+    | "NETWORK"
+    | "TIMEOUT"
+    | "SERVER_TEMPORARY"
+    | "AUTHENTICATION"
+    | "AUTHORIZATION"
+    | "VALIDATION"
+    | "CONFLICT"
+    | "RATE_LIMIT";
 
   constructor(
     code: string,
-    category: "NETWORK" | "TIMEOUT" | "SERVER_TEMPORARY" | "AUTHORIZATION" | "VALIDATION"
+    category: OfflineSyncClientError["category"]
   ) {
     super(code);
     this.code = code;
@@ -56,9 +64,17 @@ function validResponse(value: unknown): value is OfflinePushResponse {
 
 export class OfflineSyncClient {
   private readonly timeoutMs: number;
+  private readonly request: (path: string, options: RequestInit) => Promise<unknown>;
 
-  constructor(timeoutMs = 15_000) {
+  constructor(
+    timeoutMs = 15_000,
+    request?: (path: string, options: RequestInit) => Promise<unknown>
+  ) {
     this.timeoutMs = timeoutMs;
+    this.request = request || (async (path, options) => {
+      const { api } = await import("../api.ts");
+      return api<unknown>(path, options);
+    });
   }
 
   async push(
@@ -69,8 +85,7 @@ export class OfflineSyncClient {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
     try {
-      const { api } = await import("../api.ts");
-      const response = await api<unknown>("/api/v1/offline/sync/push", {
+      const response = await this.request("/api/v1/offline/sync/push", {
         method: "POST",
         signal: controller.signal,
         body: JSON.stringify({
@@ -102,6 +117,20 @@ export class OfflineSyncClient {
       if (error instanceof DOMException && error.name === "AbortError") {
         throw new OfflineSyncClientError("OFFLINE_SYNC_TIMEOUT", "TIMEOUT");
       }
+      const status =
+        error && typeof error === "object" && "status" in error
+          ? Number(error.status)
+          : 0;
+      const code =
+        error && typeof error === "object" && "code" in error
+          ? String(error.code)
+          : "OFFLINE_SYNC_REQUEST_FAILED";
+      if (status === 401) throw new OfflineSyncClientError(code, "AUTHENTICATION");
+      if (status === 403) throw new OfflineSyncClientError(code, "AUTHORIZATION");
+      if (status === 409) throw new OfflineSyncClientError(code, "CONFLICT");
+      if (status === 422) throw new OfflineSyncClientError(code, "VALIDATION");
+      if (status === 429) throw new OfflineSyncClientError(code, "RATE_LIMIT");
+      if (status >= 500) throw new OfflineSyncClientError(code, "SERVER_TEMPORARY");
       throw new OfflineSyncClientError("OFFLINE_SYNC_NETWORK_ERROR", "NETWORK");
     } finally {
       clearTimeout(timer);

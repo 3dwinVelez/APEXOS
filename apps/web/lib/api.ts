@@ -3643,7 +3643,10 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
     alertRequestFailure(path, 401, "Sesion expirada, revocada o no autorizada.");
     clearSession(isSupabaseSession() ? "supabase_unauthorized" : "unauthorized");
     window.location.href = "/login";
-    throw new Error("Tu sesión expiró. Inicia sesión de nuevo.");
+    throw Object.assign(new Error("Tu sesión expiró. Inicia sesión de nuevo."), {
+      status: 401,
+      code: "AUTHENTICATION_REQUIRED"
+    });
   }
 
   if (!response.ok) {
@@ -3660,7 +3663,10 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
       const message = requestErrorMessage(path, response.status, detail);
       alertRequestFailure(path, response.status, detail);
       reportClientFailure(path, response.status, detail, String(options.method || "GET"));
-      throw new Error(message);
+      throw Object.assign(new Error(message), {
+        status: response.status,
+        code: "SERVER_ERROR"
+      });
     }
 
     const body = await response.json().catch(() => ({ error: response.statusText }));
@@ -3668,7 +3674,10 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
     const message = requestErrorMessage(path, response.status, detail);
     alertRequestFailure(path, response.status, detail);
     reportClientFailure(path, response.status, detail, String(options.method || "GET"));
-    throw new Error(message);
+    throw Object.assign(new Error(message), {
+      status: response.status,
+      code: typeof body.code === "string" ? body.code : "REQUEST_REJECTED"
+    });
   }
   touchSession();
   return response.json() as Promise<T>;

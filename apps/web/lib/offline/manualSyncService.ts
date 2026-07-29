@@ -6,7 +6,7 @@ import type {
 } from "./types.ts";
 
 export interface OfflineSyncQueueRepository {
-  listPending(): Promise<OfflineOperationRecord[]>;
+  getNextExecutable(): Promise<OfflineOperationRecord | null>;
   markProcessing(id: string): Promise<OfflineOperationRecord>;
   markConfirmed(id: string): Promise<OfflineOperationRecord>;
   markBlocked(id: string, code?: string): Promise<OfflineOperationRecord>;
@@ -62,14 +62,29 @@ export class OfflineManualSyncService {
   }
 
   async syncPending(): Promise<ManualSyncSummary> {
-    const pending = (await this.queue.listPending())
-      .filter((operation) => operation.operationType === "TEST_OPERATION")
-      .slice(0, 20);
     const summary = emptySummary();
-    if (!pending.length) return summary;
-    const installationId = pending[0].installationId;
-    const batch = pending.filter((operation) => operation.installationId === installationId);
-    for (const operation of batch) await this.queue.markProcessing(operation.operationId);
+    const batch: OfflineOperationRecord[] = [];
+    let installationId = "";
+    while (batch.length < 20) {
+      const operation = await this.queue.getNextExecutable();
+      if (!operation) break;
+      if (operation.operationType !== "TEST_OPERATION") {
+        await this.queue.markBlocked(operation.operationId, "OPERATION_TYPE_NOT_ALLOWED");
+        continue;
+      }
+      if (installationId && operation.installationId !== installationId) {
+        await this.queue.markBlocked(operation.operationId, "INSTALLATION_CONTEXT_MISMATCH");
+        continue;
+      }
+      try {
+        await this.queue.markProcessing(operation.operationId);
+      } catch {
+        continue;
+      }
+      installationId ||= operation.installationId;
+      batch.push(operation);
+    }
+    if (!batch.length) return summary;
     summary.attempted = batch.length;
     try {
       const response = await this.client.push(this.context, installationId, batch);
@@ -85,19 +100,30 @@ export class OfflineManualSyncService {
       return summary;
     } catch (error) {
       const code = error instanceof Error ? error.message : "OFFLINE_SYNC_FAILED";
-      const category: OfflineOperationErrorCategory =
+      const category =
         error && typeof error === "object" && "category" in error
-          ? (String(error.category) as OfflineOperationErrorCategory)
+          ? String(error.category)
           : "NETWORK";
       for (const operation of batch) {
-        if (category === "AUTHORIZATION" || category === "VALIDATION") {
+        if (
+          category === "AUTHENTICATION" ||
+          category === "AUTHORIZATION" ||
+          category === "VALIDATION"
+        ) {
           await this.queue.markBlocked(operation.operationId, code);
           summary.blocked += 1;
+        } else if (category === "CONFLICT") {
+          await this.queue.markConflict(operation.operationId, code);
+          summary.conflicts += 1;
         } else {
           await this.queue.markRetryable(
             operation.operationId,
             code,
-            category === "TIMEOUT" ? "TIMEOUT" : "NETWORK"
+            category === "TIMEOUT"
+              ? "TIMEOUT"
+              : category === "SERVER_TEMPORARY" || category === "RATE_LIMIT"
+                ? "SERVER_TEMPORARY"
+                : "NETWORK"
           );
           summary.retryable += 1;
         }

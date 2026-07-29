@@ -41,8 +41,8 @@ function createSyncProcessor(dependencies) {
   const now = dependencies.now || (() => new Date());
   const retentionMs = dependencies.retentionMs || 30 * 86400000;
 
-  async function existingReceipt(context, operation) {
-    return database.offlineSyncReceipt.findFirst({
+  async function existingReceipt(client, context, operation) {
+    return client.offlineSyncReceipt.findFirst({
       where: {
         environment_id: context.environmentId,
         tenant_id: context.tenantId,
@@ -58,37 +58,40 @@ function createSyncProcessor(dependencies) {
   async function processOne(context, operation) {
     const processedAt = now();
     const hash = payloadHash(operation);
-    const existing = await existingReceipt(context, operation);
-    if (existing) {
-      return matches(existing, context, operation, hash)
-        ? result(operation.operationId, "ALREADY_APPLIED", existing.result_code, existing.processed_at)
-        : result(operation.operationId, "REJECTED", "IDEMPOTENCY_MISMATCH", processedAt);
-    }
-
     const handler = HANDLERS[operation.operationType];
     if (!handler) return result(operation.operationId, "REJECTED", "OPERATION_TYPE_NOT_ALLOWED", processedAt);
-    const handled = await handler({ context, operation });
+
     try {
-      const receipt = await database.offlineSyncReceipt.create({
-        data: {
-          environment_id: context.environmentId,
-          tenant_id: context.tenantId,
-          user_id: context.userId,
-          installation_id: context.installationId,
-          operation_id: operation.operationId,
-          idempotency_key: operation.idempotencyKey,
-          operation_type: operation.operationType,
-          payload_hash: hash,
-          result_status: handled.status,
-          result_code: handled.code,
-          processed_at: processedAt,
-          expires_at: new Date(processedAt.getTime() + retentionMs)
+      return await database.$transaction(async (transaction) => {
+        const existing = await existingReceipt(transaction, context, operation);
+        if (existing) {
+          return matches(existing, context, operation, hash)
+            ? result(operation.operationId, "ALREADY_APPLIED", existing.result_code, existing.processed_at)
+            : result(operation.operationId, "REJECTED", "IDEMPOTENCY_MISMATCH", processedAt);
         }
+
+        const handled = await handler({ context, operation });
+        const receipt = await transaction.offlineSyncReceipt.create({
+          data: {
+            environment_id: context.environmentId,
+            tenant_id: context.tenantId,
+            user_id: context.userId,
+            installation_id: context.installationId,
+            operation_id: operation.operationId,
+            idempotency_key: operation.idempotencyKey,
+            operation_type: operation.operationType,
+            payload_hash: hash,
+            result_status: handled.status,
+            result_code: handled.code,
+            processed_at: processedAt,
+            expires_at: new Date(processedAt.getTime() + retentionMs)
+          }
+        });
+        return result(operation.operationId, receipt.result_status, receipt.result_code, receipt.processed_at);
       });
-      return result(operation.operationId, receipt.result_status, receipt.result_code, receipt.processed_at);
     } catch (error) {
       if (error?.code !== "P2002") throw error;
-      const raced = await existingReceipt(context, operation);
+      const raced = await existingReceipt(database, context, operation);
       return raced && matches(raced, context, operation, hash)
         ? result(operation.operationId, "ALREADY_APPLIED", raced.result_code, raced.processed_at)
         : result(operation.operationId, "REJECTED", "IDEMPOTENCY_MISMATCH", processedAt);

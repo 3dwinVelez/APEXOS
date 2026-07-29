@@ -301,10 +301,20 @@ test("rutas rechazan query libre y configuran rate limit por usuario y empresa",
   await offlineRoutes(fakeFastify);
   const capabilities = routes.find((route) => route.path === "/offline/capabilities");
   const bootstrap = routes.find((route) => route.path === "/offline/bootstrap");
+  const sync = routes.find((route) => route.path === "/offline/sync/push");
   assert.equal(capabilities.options.schema.querystring.additionalProperties, false);
   assert.equal(bootstrap.options.config.rateLimit.max, 6);
+  assert.equal(sync.options.config.rateLimit.max, 6);
+  assert.equal(sync.options.schema.body.properties.operations.maxItems, 20);
   assert.equal(
     bootstrap.options.config.rateLimit.keyGenerator({
+      user: { tenant_id: tenantId, id: user.id },
+      ip: "127.0.0.1"
+    }),
+    `${tenantId}:${user.id}`
+  );
+  assert.equal(
+    sync.options.config.rateLimit.keyGenerator({
       user: { tenant_id: tenantId, id: user.id },
       ip: "127.0.0.1"
     }),
@@ -321,6 +331,23 @@ test("usuario no autenticado recibe 401 antes de ejecutar bootstrap", async () =
   const response = await app.inject({ method: "GET", url: "/api/v1/offline/bootstrap" });
   assert.equal(response.statusCode, 401);
   assert.equal(response.json().code, "TOKEN_INVALIDO");
+  const push = await app.inject({
+    method: "POST",
+    url: "/api/v1/offline/sync/push",
+    payload: {
+      installationId: "22222222-2222-4222-8222-222222222222",
+      operations: [{
+        operationId: "11111111-1111-4111-8111-111111111111",
+        idempotencyKey: "unauthorized-test",
+        operationType: "TEST_OPERATION",
+        payload: { marker: "unauthorized" },
+        baseVersion: 0,
+        createdAtDevice: "2026-07-29T12:00:00.000Z"
+      }]
+    }
+  });
+  assert.equal(push.statusCode, 401);
+  assert.equal(push.json().code, "TOKEN_INVALIDO");
   await app.close();
 });
 
