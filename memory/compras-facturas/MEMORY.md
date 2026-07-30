@@ -26,6 +26,7 @@ Conservar el contexto funcional y técnico confirmado durante el desarrollo de l
 - Diagnóstico: el botón `Simular contabilizacion` es `type="button"` y ejecuta la llamada directamente, por lo que no activa la validación HTML del `<form>`. El payload puede incluir `supplier_reference: ""`, aunque el API exige `minLength: 1`.
 - Riesgo relacionado: cualquier otro campo requerido por el esquema puede producir el siguiente error después de corregir la referencia; `header_text` también inicia vacío y exige al menos un carácter.
 - Corrección implementada en el frontend: normalización del payload, validación previa compartida por simulación y registro, bloqueo de acciones mientras falten datos obligatorios y mensaje preventivo visible.
+- Se corrigió el error 500 al registrar la factura: Compras reutiliza su transacción Prisma al crear el documento CXP y el asiento contable, evitando una transacción independiente anidada.
 
 ## Rutas y componentes relacionados
 
@@ -45,6 +46,8 @@ Conservar el contexto funcional y técnico confirmado durante el desarrollo de l
 - Se comprobó de forma transaccional y con rollback el promedio ponderado: 12 unidades a 250.000; entrada de 2 a 100.000 → 228.571,4286; entrada de 3 a 400.000 → 258.823,5294. La prueba no dejó cambios persistidos.
 - Se verificó el reporte `Inventario / Reportes`: muestra unidades, bodega, costo promedio, último costo, valor por SKU y kardex. En los datos locales mostró 12 UND a 250.000, valor 3.000.000 y dos entradas.
 - Se verificó que el IVA de facturas existentes genera líneas contables balanceadas y documento en CXP/contabilidad.
+- El registro de factura, CXP, asiento contable, trazabilidad de OC y movimientos de inventario quedan dentro de una sola transacción.
+- Se agregó una prueba de regresión que confirma que Contabilidad e Inventario reciben exactamente la transacción abierta por Compras.
 
 ## Hallazgos de auditoría pendientes
 

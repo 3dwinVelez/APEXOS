@@ -713,7 +713,7 @@ async function createPurchaseInvoice(tenantId, userId, data) {
     const payableLines = [];
     payableLines.push(...prepared.payableLines);
 
-    const cxp = await accountingService.createPayableDocument(tenantId, userId, purchaseInvoicePayablePayload(data, { ...prepared, payableLines }));
+    const cxp = await accountingService.createPayableDocumentTx(tx, tenantId, userId, purchaseInvoicePayablePayload(data, { ...prepared, payableLines }));
 
     for (const row of poInvoiceControls) {
       await tx.purchaseOrderInvoiceLine.create({
