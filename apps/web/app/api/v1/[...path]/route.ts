@@ -44,7 +44,7 @@ async function proxy(request: NextRequest, context: { params: Promise<{ path: st
     target.search = request.nextUrl.search;
 
     const headers = new Headers();
-    for (const name of ["authorization", "content-type", "accept", "x-request-id", "x-interaction-id"]) {
+    for (const name of ["authorization", "content-type", "accept", "x-company-id", "x-request-id", "x-interaction-id"]) {
       const value = request.headers.get(name);
       if (value) headers.set(name, value);
     }

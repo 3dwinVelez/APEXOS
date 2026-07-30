@@ -52,3 +52,4 @@ La trazabilidad de migracion desde APEX legacy se conserva en `docs/legacy/modul
 - Abrir configuraciones desde el panel principal sin saturar la pantalla.
 - Guardar ficha maestra de usuario sin migraciones de base de datos.
 - En sesiones multiempresa, frontend y backend deben usar la misma empresa seleccionada para resolver tenant, modulos y permisos; una empresa ajena a las membresias del usuario debe ser rechazada.
+- El proxy web de `/api/v1/*` debe reenviar `x-company-id` junto con la autorizacion para conservar el contexto de empresa hasta el API operativo.
