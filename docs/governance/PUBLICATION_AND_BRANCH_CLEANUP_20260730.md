@@ -55,7 +55,8 @@ dd8c32f..598539e  desarrollo -> desarrollo
 Post-push:
 
 - `origin/desarrollo...HEAD`: `0 0`.
-- `origin/desarrollo` points to `598539e`.
+- `origin/desarrollo` first pointed to `598539e`.
+- The cleanup evidence document was then committed and published as `2723a99`.
 
 ## Remote branch audit after publication
 
@@ -156,8 +157,8 @@ C:/Users/mq1/Documents/Proyectos/APEXOS-worktrees/develop-login-visibility    [d
 Containment:
 
 - `origin/desarrollo...desarrollo`: `0 0`
-- `origin/develop...origin/desarrollo`: `0 21`
-- `origin/main...origin/desarrollo`: `0 82`
+- `origin/develop...origin/desarrollo`: `0 22`
+- `origin/main...origin/desarrollo`: `0 83`
 
 ## Dictamen
 
