@@ -1,6 +1,8 @@
 const prisma = require("../../core/prisma");
 const { getTenantConfig, invalidateTenantCache } = require("../../core/tenantCache");
 
+const COMPLEX_TRANSACTION_OPTIONS = { maxWait: 5_000, timeout: 20_000 };
+
 function appError(statusCode, code, message) {
   const error = new Error(message);
   error.statusCode = statusCode;
@@ -1308,9 +1310,12 @@ async function createPayableDocumentTx(tx, tenantId, userId, data) {
 
 async function createPayableDocument(tenantId, userId, data) {
   return prisma.runWithTenant(tenantId, () => prisma.$transaction(
-    (tx) => createPayableDocumentTx(tx, tenantId, userId, data)
+    (tx) => createPayableDocumentTx(tx, tenantId, userId, data),
+    COMPLEX_TRANSACTION_OPTIONS
   ));
 }
+
+const createPayableDocumentInTransaction = createPayableDocumentTx;
 
 async function applyPayableCreditNote(tenantId, userId, data) {
   return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
@@ -1768,6 +1773,7 @@ module.exports = {
   simulatePayableDocument,
   createPayableDocument,
   createPayableDocumentTx,
+  createPayableDocumentInTransaction,
   applyPayableCreditNote,
   listThirdParties,
   saveThirdParty,

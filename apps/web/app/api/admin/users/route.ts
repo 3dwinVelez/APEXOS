@@ -28,6 +28,14 @@ async function supabaseRequest(path: string, init: RequestInit & { token?: strin
   return body;
 }
 
+async function updateSupabaseAuthUser(userId: string, payload: AnyRow) {
+  return supabaseRequest(`/auth/v1/admin/users/${encodeURIComponent(userId)}`, {
+    method: "PUT",
+    service: true,
+    body: JSON.stringify(payload)
+  });
+}
+
 function clean(value: unknown) {
   const text = typeof value === "string" ? value.trim() : "";
   return text || null;
@@ -317,16 +325,12 @@ export async function PATCH(request: NextRequest) {
       if (nextPassword) {
         assertPasswordPolicy(nextPassword);
         if (!current.user_id) throw httpError("El usuario no esta vinculado a Supabase Auth para cambiar la clave.", 409);
-        await supabaseRequest(`/auth/v1/admin/users/${encodeURIComponent(String(current.user_id))}`, {
-          method: "PATCH",
-          service: true,
-          body: JSON.stringify({
-            password: nextPassword,
-            user_metadata: {
-              password_reset_by_admin: true,
-              password_reset_at: new Date().toISOString()
-            }
-          })
+        await updateSupabaseAuthUser(String(current.user_id), {
+          password: nextPassword,
+          user_metadata: {
+            password_reset_by_admin: true,
+            password_reset_at: new Date().toISOString()
+          }
         });
       }
       nextMetadata = {
@@ -398,16 +402,12 @@ export async function PATCH(request: NextRequest) {
       if (nextPassword) {
         assertPasswordPolicy(nextPassword);
         if (!current.user_id) throw httpError("El usuario no esta vinculado a Supabase Auth para cambiar la clave.", 409);
-        await supabaseRequest(`/auth/v1/admin/users/${encodeURIComponent(String(current.user_id))}`, {
-          method: "PATCH",
-          service: true,
-          body: JSON.stringify({
-            password: nextPassword,
-            user_metadata: {
-              password_reset_by_admin: true,
-              password_reset_at: new Date().toISOString()
-            }
-          })
+        await updateSupabaseAuthUser(String(current.user_id), {
+          password: nextPassword,
+          user_metadata: {
+            password_reset_by_admin: true,
+            password_reset_at: new Date().toISOString()
+          }
         });
       }
       const nextStatus = userStatusToEmployeeStatus(body.user_status || metadata.user_status || current.status);
