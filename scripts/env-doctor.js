@@ -117,9 +117,24 @@ function validate(envName, env, config) {
   const databaseUrl = env.DATABASE_URL || "";
   const apiUrl = env.NEXT_PUBLIC_API_URL || "";
   const frontendUrl = env.FRONTEND_URL || "";
+  const expectedEnvironment = String(env.EXPECTED_ENVIRONMENT || "");
+  const expectedProjectRef = String(env.EXPECTED_SUPABASE_PROJECT_REF || "");
 
   for (const key of ["NODE_ENV", "APP_ENV", "TARGET_ENV", "DATABASE_URL", "FRONTEND_URL", "NEXT_PUBLIC_API_URL"]) {
     if (isPlaceholder(env[key])) addFailure(failures, `${key} faltante o placeholder`);
+  }
+  if (envName !== "local") {
+    if (expectedEnvironment !== envName || env.TARGET_ENV !== envName) {
+      addFailure(failures, `EXPECTED_ENVIRONMENT y TARGET_ENV deben ser ${envName}`);
+    }
+    if (isPlaceholder(expectedProjectRef)) addFailure(failures, "EXPECTED_SUPABASE_PROJECT_REF faltante o placeholder");
+    const actualRef = projectRefFromUrl(supabaseUrl || publicSupabaseUrl);
+    if (expectedProjectRef && !isPlaceholder(expectedProjectRef) && actualRef !== expectedProjectRef) {
+      addFailure(failures, "El proyecto Supabase no coincide con EXPECTED_SUPABASE_PROJECT_REF");
+    }
+    if (expectedProjectRef && !isPlaceholder(expectedProjectRef) && !databaseUrl.includes(expectedProjectRef)) {
+      addFailure(failures, "DATABASE_URL no coincide con EXPECTED_SUPABASE_PROJECT_REF");
+    }
   }
 
   const requiredSecrets = envName === "local"

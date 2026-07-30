@@ -673,7 +673,8 @@ async function createPurchaseInvoice(tenantId, userId, data) {
     const payableLines = [];
     payableLines.push(...prepared.payableLines);
 
-    const cxp = await accountingService.createPayableDocumentInTransaction(
+    const createPayableDocumentInTx = accountingService.createPayableDocumentInTransaction || accountingService.createPayableDocumentTx;
+    const cxp = await createPayableDocumentInTx(
       tx,
       tenantId,
       userId,

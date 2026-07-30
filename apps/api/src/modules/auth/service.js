@@ -5,6 +5,7 @@ const { assertLoginAllowed, registerLoginFailure, registerLoginSuccess } = requi
 const jwt = require("../../security/jwt");
 const { assertPasswordPolicy } = require("../../security/policy");
 const accountingService = require("../accounting/service");
+const authorizationState = require("../../security/authorizationState");
 
 const SEED_MODULES = ["M-01", "M-03", "M-04", "M-05", "M-07", "M-22"];
 const ALL_MODULES = Array.from({ length: 26 }, (_, index) => `M-${String(index + 1).padStart(2, "0")}`);
@@ -100,12 +101,17 @@ async function registerTenant(input, fastify) {
     }).catch(() => undefined);
   });
 
-  const token = jwt.sign({
+  const session = await authorizationState.createSession(result.user, result.tenant);
+  const claims = {
     id: result.user.id,
     tenant_id: result.tenant.id,
-    role: { name: result.role.name, permissions: result.role.permissions }
-  }, { expiresIn: "8h" });
-  const refresh = jwt.sign({ id: result.user.id, tenant_id: result.tenant.id, type: "refresh" }, { expiresIn: "30d" });
+    role: { name: result.role.name, permissions: result.role.permissions },
+    sid: session.id,
+    uv: result.user.authorization_version,
+    tv: result.tenant.authorization_version
+  };
+  const token = jwt.sign(claims, { expiresIn: "8h" });
+  const refresh = jwt.sign({ ...claims, role: undefined, type: "refresh" }, { expiresIn: "30d" });
 
   return { token, refresh, tenant: publicTenant(result.tenant), user: publicUser({ ...result.user, role: result.role }) };
 }
@@ -133,8 +139,10 @@ async function login(input, fastify, request = {}) {
   registerLoginSuccess(email, request.ip);
   await prisma.user.update({ where: { id: user.id }, data: { last_login: new Date() } });
   const tenant = await prisma.tenant.findUnique({ where: { id: user.tenant_id } });
-  const token = jwt.sign({ id: user.id, tenant_id: user.tenant_id, role: user.role }, { expiresIn: "8h" });
-  const refresh = jwt.sign({ id: user.id, tenant_id: user.tenant_id, type: "refresh" }, { expiresIn: "30d" });
+  const session = await authorizationState.createSession(user, tenant);
+  const claims = { id: user.id, tenant_id: user.tenant_id, role: user.role, sid: session.id, uv: user.authorization_version, tv: tenant.authorization_version };
+  const token = jwt.sign(claims, { expiresIn: "8h" });
+  const refresh = jwt.sign({ ...claims, role: undefined, type: "refresh" }, { expiresIn: "30d" });
 
   return { token, refresh, tenant: publicTenant(tenant), user: publicUser(user) };
 }
@@ -160,6 +168,7 @@ async function refresh(input, fastify) {
     err.statusCode = 401;
     throw err;
   }
+  const authorization = await authorizationState.validateAuthorization(payload);
   const user = await prisma.user.findUnique({
     where: { id: payload.id },
     include: { role: { include: { permissions: true } } }
@@ -170,7 +179,7 @@ async function refresh(input, fastify) {
     throw err;
   }
   return {
-    token: jwt.sign({ id: user.id, tenant_id: user.tenant_id, role: user.role }, { expiresIn: "8h" })
+    token: jwt.sign({ id: user.id, tenant_id: user.tenant_id, role: user.role, sid: payload.sid, uv: authorization.authorization_user_version, tv: authorization.authorization_tenant_version }, { expiresIn: "8h" })
   };
 }
 
@@ -196,7 +205,17 @@ async function changePassword(user, input = {}) {
   }
   const password = await bcrypt.hash(nextPassword, 12);
   await prisma.user.update({ where: { id: current.id }, data: { password } });
+  await authorizationState.revokeAllUserSessions(current.id, "password_changed");
   return { ok: true };
 }
 
-module.exports = { registerTenant, login, me, refresh, changePassword };
+async function logout(user) {
+  if (!user.sid) return { revoked: false };
+  return authorizationState.revokeSession(user.id, user.sid, "logout");
+}
+
+async function revokeSession(user, sessionId) {
+  return authorizationState.revokeSession(user.id, sessionId, "user_requested");
+}
+
+module.exports = { registerTenant, login, me, refresh, changePassword, logout, revokeSession };
