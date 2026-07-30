@@ -51,7 +51,7 @@ type EvidenceConfirmation = { status: string; storage_path?: string | null };
 const AUTHORIZED_UPLOADS_ENABLED = process.env.NEXT_PUBLIC_AUTHORIZED_EVIDENCE_UPLOADS_ENABLED === "true";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
-const HAS_CONFIGURED_API_URL = Boolean(process.env.NEXT_PUBLIC_API_URL);
+const HAS_CONFIGURED_API_URL = true;
 const statusLabel: Record<string, string> = {
   agendado: "Agendado",
   pendiente: "Pendiente",

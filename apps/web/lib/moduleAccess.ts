@@ -4,7 +4,7 @@ import { CompanyModuleStatus, listActivePlatformAdmins, listCompanyModuleStatus,
 import { supabaseFetch } from "./supabaseClient";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
-const HAS_CONFIGURED_API_URL = Boolean(process.env.NEXT_PUBLIC_API_URL);
+const HAS_CONFIGURED_API_URL = true;
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
 const MODULE_ACCESS_CACHE_KEY = "apexos_module_access_cache_v2";
 const MODULE_ACCESS_CACHE_MS = 60_000;

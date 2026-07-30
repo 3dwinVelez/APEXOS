@@ -5,7 +5,7 @@ import { getServiceImageUrl, uploadServiceImageData } from "./supabaseStorage";
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
 const API_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_API_TIMEOUT_MS || 20000);
-const HAS_CONFIGURED_API_URL = Boolean(process.env.NEXT_PUBLIC_API_URL);
+const HAS_CONFIGURED_API_URL = true;
 const ADMIN_ROLES_STORAGE_KEY = "apexos_admin_roles";
 const LEGACY_ADMIN_ROLES_STORAGE_KEY = "apexos_admin_roles_qa";
 const ADMIN_ROLE_DELETIONS_STORAGE_KEY = "apexos_admin_role_deletions";

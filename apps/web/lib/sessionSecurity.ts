@@ -1,6 +1,6 @@
 const LAST_ACTIVITY_KEY = "apex_last_activity";
 const SESSION_TIMEOUT_MINUTES = Number(process.env.NEXT_PUBLIC_SESSION_TIMEOUT_MINUTES || 45);
-const HAS_CONFIGURED_API_URL = Boolean(process.env.NEXT_PUBLIC_API_URL);
+const HAS_CONFIGURED_API_URL = true;
 const PASSWORD_CHANGE_REQUIRED_KEY = "apex_password_change_required";
 const APP_ALERT_EVENT = "apex:alert";
 

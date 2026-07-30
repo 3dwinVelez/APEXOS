@@ -102,7 +102,6 @@ export default function LoginPage() {
   }
 
   async function loginWithLocalApi(loginEmail: string, loginPassword: string) {
-    if (!API_URL) throw new Error("API no configurada para este ambiente.");
     const response = await fetch(`${API_URL}/api/v1/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
