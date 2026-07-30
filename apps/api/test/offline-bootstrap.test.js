@@ -10,7 +10,7 @@ const {
 const offlineRoutes = require("../src/modules/offline/routes");
 const {
   validateOfflineBootstrapResponse
-} = require("../../../packages/types/offline");
+} = require("../src/offline/bootstrapContract");
 
 const tenantId = "tenant-qa";
 const user = {
