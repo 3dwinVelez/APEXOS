@@ -2,8 +2,9 @@ import { ApexModule } from "./modules";
 import { isAdministrativeRole, mergePlatformAdminModuleAccess } from "./moduleAccessPolicy";
 import { CompanyModuleStatus, listActivePlatformAdmins, listCompanyModuleStatus, listUserCompanies } from "./supabaseQa";
 import { supabaseFetch } from "./supabaseClient";
+import { API_BASE_URL } from "./apiBaseUrl";
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
+const API_URL = API_BASE_URL;
 const HAS_CONFIGURED_API_URL = true;
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
 const MODULE_ACCESS_CACHE_KEY = "apexos_module_access_cache_v2";

@@ -1,3 +1,5 @@
+import { API_BASE_URL } from "./apiBaseUrl";
+
 const LAST_ACTIVITY_KEY = "apex_last_activity";
 const SESSION_TIMEOUT_MINUTES = Number(process.env.NEXT_PUBLIC_SESSION_TIMEOUT_MINUTES || 45);
 const HAS_CONFIGURED_API_URL = true;
@@ -102,7 +104,7 @@ export async function keepSessionAlive() {
     return;
   }
   if (!refreshPromise) {
-    refreshPromise = fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/refresh`, {
+    refreshPromise = fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refresh })
