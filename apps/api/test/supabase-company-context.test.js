@@ -10,7 +10,7 @@ require.cache[prismaPath] = {
   exports: {}
 };
 
-const { selectMembership } = require("../src/security/supabaseAuth");
+const { selectMembership, tenantWithAuthorizationContext } = require("../src/security/supabaseAuth");
 
 const memberships = [
   { company_id: "company-a", role: "admin" },
@@ -30,4 +30,20 @@ test("el backend rechaza una empresa fuera de las membresias del usuario", () =>
     () => selectMembership(memberships, "company-c"),
     /no pertenece al usuario/
   );
+});
+
+test("RBAC usa los modulos autoritativos de la autenticacion aunque el cache del tenant este obsoleto", () => {
+  const cachedTenant = { id: 7, active: true, active_modules: [] };
+  const authenticatedUser = { active_modules: ["M-01", "M-02", "M-07"] };
+
+  assert.deepEqual(
+    tenantWithAuthorizationContext(cachedTenant, authenticatedUser).active_modules,
+    ["M-01", "M-02", "M-07"]
+  );
+  assert.deepEqual(cachedTenant.active_modules, []);
+});
+
+test("sesiones locales conservan los modulos del tenant cacheado", () => {
+  const cachedTenant = { id: 7, active: true, active_modules: ["M-03"] };
+  assert.equal(tenantWithAuthorizationContext(cachedTenant, {}), cachedTenant);
 });

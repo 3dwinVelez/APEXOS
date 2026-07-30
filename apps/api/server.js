@@ -138,7 +138,7 @@ async function build() {
         if (!tenant || !tenant.active) {
           return reply.code(403).send({ error: "Cuenta suspendida o no encontrada", code: "EMPRESA_INACTIVA" });
         }
-        request.tenant = tenant;
+        request.tenant = require("./src/security/supabaseAuth").tenantWithAuthorizationContext(tenant, request.user);
       }
     } catch {
       return reply.code(401).send({ error: "Token invalido", code: "TOKEN_INVALIDO" });

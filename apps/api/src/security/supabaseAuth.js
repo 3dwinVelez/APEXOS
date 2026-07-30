@@ -210,6 +210,11 @@ function sameStringSet(left, right) {
   return a.length === b.length && a.every((item, index) => item === b[index]);
 }
 
+function tenantWithAuthorizationContext(tenant, user) {
+  if (!tenant || !Array.isArray(user?.active_modules)) return tenant;
+  return { ...tenant, active_modules: user.active_modules };
+}
+
 async function ensureUserMirror(supabaseUser, token, requestedCompanyId = "", providedContext = null) {
   const context = providedContext || await getSupabaseMembershipContext(token, supabaseUser, requestedCompanyId);
   if (!context?.membership?.company_id) return null;
@@ -280,8 +285,9 @@ async function authenticateSupabaseTokenUncached(token, requestedCompanyId = "")
     auth_provider: "supabase",
     supabase_user_id: supabaseUser.id,
     email: user.email,
-    name: user.name
+    name: user.name,
+    active_modules: Array.isArray(context?.activeModules) ? context.activeModules : undefined
   };
 }
 
-module.exports = { authenticateSupabaseToken, selectMembership };
+module.exports = { authenticateSupabaseToken, selectMembership, tenantWithAuthorizationContext };
