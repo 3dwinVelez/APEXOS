@@ -3547,11 +3547,12 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
 
 export async function api<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
   const method = String(options.method || "GET").toUpperCase();
+  const companyScope = typeof window !== "undefined" ? localStorage.getItem("apexos_company_id") || "" : "";
   if (method !== "GET") {
     const scope = writeCacheScope(path);
     clearApiReadCaches(scope);
   }
-  const cacheKey = method === "GET" && !retried ? `${isSupabaseSession() ? "supabase" : "api"}:${path}` : "";
+  const cacheKey = method === "GET" && !retried ? `${isSupabaseSession() ? "supabase" : "api"}:${companyScope}:${path}` : "";
   if (cacheKey) {
     const completed = completedGetRequests.get(cacheKey);
     if (completed) {
@@ -3593,6 +3594,7 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
   let response: Response;
   const method = String(options.method || "GET").toUpperCase();
   const supabaseSession = isSupabaseSession();
+  const companyId = typeof window !== "undefined" ? localStorage.getItem("apexos_company_id") || "" : "";
   const pathname = path.split("?")[0];
   const serviceOrderDetailMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)$/);
   const preferOperationalApi = HAS_CONFIGURED_API_URL && shouldPreferOperationalApi(path);
@@ -3626,6 +3628,7 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
       headers: {
         ...(options.body ? { "Content-Type": "application/json" } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(supabaseSession && companyId ? { "x-company-id": companyId } : {}),
         ...options.headers
       }
     });

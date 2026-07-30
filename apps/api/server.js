@@ -115,7 +115,10 @@ async function build() {
       request.user = require("./src/security/jwt").verify(token);
     } catch {
       try {
-        request.user = await require("./src/security/supabaseAuth").authenticateSupabaseToken(token);
+        request.user = await require("./src/security/supabaseAuth").authenticateSupabaseToken(
+          token,
+          request.headers["x-company-id"]
+        );
       } catch {
         return reply.code(401).send({ error: "Token invalido", code: "TOKEN_INVALIDO" });
       }
