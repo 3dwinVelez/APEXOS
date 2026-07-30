@@ -77,7 +77,8 @@ function Assert-LocalEnvironment {
     "pooler.supabase.com"
   )
   foreach ($file in $envFiles) {
-    $text = Get-Content -LiteralPath $file -Raw
+    $envMapForScan = Read-EnvMap $file
+    $text = ($envMapForScan.Values -join "`n")
     foreach ($marker in $forbiddenMarkers) {
       if ($text -match [regex]::Escape($marker)) {
         Stop-Blocked "Configuracion remota detectada en ambiente local." @("Archivo: $(Split-Path $file -Leaf)", "Tipo detectado: $marker", "No se muestran secretos.")
@@ -91,6 +92,14 @@ function Assert-LocalEnvironment {
   }
   if ($envMap["DATABASE_URL"] -notmatch "localhost|127\.0\.0\.1|postgres:5432|pgbouncer:6432") {
     Stop-Blocked "DATABASE_URL no parece local." @("Use PostgreSQL local o servicios Docker locales.")
+  }
+}
+
+function Import-LocalEnvironment {
+  param([string]$RepoRoot)
+  $envMap = Read-EnvMap (Join-Path $RepoRoot ".env")
+  foreach ($key in $envMap.Keys) {
+    [Environment]::SetEnvironmentVariable($key, [string]$envMap[$key], "Process")
   }
 }
 
@@ -172,6 +181,7 @@ if ($ahead -eq 0 -and $behind -gt 0) {
 }
 
 Assert-LocalEnvironment $repoRoot
+Import-LocalEnvironment $repoRoot
 Ensure-Dependencies $repoRoot
 
 if (Test-Port 3000) { Stop-Blocked "Puerto ocupado." @("Puerto 3000/API esta en uso. No se terminan procesos automaticamente.") }
