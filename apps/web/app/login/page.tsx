@@ -254,6 +254,7 @@ export default function LoginPage() {
 
         <form
           className="apex-public-card w-full rounded-[1.35rem] border p-6 backdrop-blur-xl sm:p-8"
+          method="post"
           onSubmit={submit}
         >
           <div className="flex items-start gap-5">
