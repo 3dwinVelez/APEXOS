@@ -14,4 +14,5 @@ test("el proxy operativo reenvia la empresa seleccionada al backend", () => {
 
   assert.match(forwardedHeaders, /"authorization"/);
   assert.match(forwardedHeaders, /"x-company-id"/);
+  assert.match(routeSource, /apexos-api-qa-production\.up\.railway\.app/);
 });

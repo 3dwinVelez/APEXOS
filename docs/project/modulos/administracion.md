@@ -54,3 +54,4 @@ La trazabilidad de migracion desde APEX legacy se conserva en `docs/legacy/modul
 - En sesiones Supabase, RBAC debe evaluar los modulos autoritativos obtenidos durante la autenticacion de la empresa seleccionada, sin depender de una copia posiblemente obsoleta del cache multiinstancia.
 - En sesiones multiempresa, frontend y backend deben usar la misma empresa seleccionada para resolver tenant, modulos y permisos; una empresa ajena a las membresias del usuario debe ser rechazada.
 - El proxy web de `/api/v1/*` debe reenviar `x-company-id` junto con la autorizacion para conservar el contexto de empresa hasta el API operativo.
+- Railway QA debe observar cambios bajo `/apps/api/**`; `/health` publica el hash corto ejecutado para comprobar que las pruebas funcionales usan el backend del commit esperado.
