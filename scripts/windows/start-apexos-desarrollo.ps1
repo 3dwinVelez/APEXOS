@@ -112,6 +112,16 @@ function Test-Port {
   return [bool]$listener
 }
 
+function Test-HttpOk {
+  param([string]$Url)
+  try {
+    $response = Invoke-WebRequest -UseBasicParsing -Uri $Url -TimeoutSec 5
+    return [int]$response.StatusCode -ge 200 -and [int]$response.StatusCode -lt 500
+  } catch {
+    return $false
+  }
+}
+
 function Ensure-Dependencies {
   param([string]$RepoRoot)
   if ($NoInstall) { return }
@@ -213,8 +223,16 @@ Assert-LocalEnvironment $repoRoot
 Import-LocalEnvironment $repoRoot
 Ensure-Dependencies $repoRoot
 
-if (Test-Port 3000) { Stop-Blocked "Puerto ocupado." @("Puerto 3000/API esta en uso. No se terminan procesos automaticamente.") }
-if (Test-Port 3001) { Stop-Blocked "Puerto ocupado." @("Puerto 3001/Web esta en uso. No se terminan procesos automaticamente.") }
+$apiPortBusy = Test-Port 3000
+$webPortBusy = Test-Port 3001
+$apiAlreadyRunning = $apiPortBusy -and (Test-HttpOk "http://localhost:3000/health")
+$webAlreadyRunning = $webPortBusy -and (Test-HttpOk "http://localhost:3001")
+if (($apiPortBusy -or $webPortBusy) -and -not ($apiAlreadyRunning -and $webAlreadyRunning)) {
+  $details = @()
+  if ($apiPortBusy -and -not $apiAlreadyRunning) { $details += "Puerto 3000/API esta ocupado pero no responde salud local." }
+  if ($webPortBusy -and -not $webAlreadyRunning) { $details += "Puerto 3001/Web esta ocupado pero no responde localmente." }
+  Stop-Blocked "Puertos locales ocupados por procesos no verificados." $details
+}
 
 Write-Host "Validando Prisma..." -ForegroundColor Cyan
 & npm run prisma:validate
@@ -224,7 +242,7 @@ Write-Host "Validando TypeScript web..." -ForegroundColor Cyan
 & npm --workspace apps/web run typecheck
 if ($LASTEXITCODE -ne 0) { Stop-Blocked "TypeScript fallo." }
 
-if (-not $CheckOnly -and -not $NoStart) {
+if (-not $CheckOnly -and -not $NoStart -and -not ($apiAlreadyRunning -and $webAlreadyRunning)) {
   Require-Command "docker"
   Start-LocalInfrastructure $repoRoot
   Start-Terminal "APEXOS API - desarrollo" "npm run dev:api" $repoRoot
@@ -235,6 +253,9 @@ if (-not $CheckOnly -and -not $NoStart) {
   if (-not $NoBrowser) {
     Start-Process "http://localhost:3001"
   }
+} elseif (-not $CheckOnly -and -not $NoBrowser -and $apiAlreadyRunning -and $webAlreadyRunning) {
+  Write-Host "API y Web ya estan corriendo. Abriendo navegador..." -ForegroundColor Cyan
+  Start-Process "http://localhost:3001"
 }
 
 Write-Host ""
