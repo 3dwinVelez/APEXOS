@@ -28,3 +28,28 @@ test("RBAC normaliza espacios y mayusculas en los modulos del tenant", () => {
 test("RBAC mantiene bloqueado Inventario cuando no esta habilitado", () => {
   assert.equal(tenantHasModule({ active_modules: ["compras"] }, "inventory"), false);
 });
+
+test("RBAC reconoce los identificadores tecnicos usados por permisos y sincronizacion", () => {
+  const cases = {
+    accounting: "accounting",
+    admin: "admin",
+    brain: "brain",
+    hr: "hr",
+    invoicing: "invoicing",
+    purchases: "purchases",
+    projects: "projects",
+    sales: "sales",
+    "sales-invoice": "sales-invoice",
+    "accounts-receivable": "accounts-receivable",
+    services: "services",
+    transport: "transport"
+  };
+
+  for (const [module, moduleCode] of Object.entries(cases)) {
+    assert.equal(
+      tenantHasModule({ active_modules: [moduleCode] }, module),
+      true,
+      `Debe reconocer ${moduleCode} para ${module}`
+    );
+  }
+});

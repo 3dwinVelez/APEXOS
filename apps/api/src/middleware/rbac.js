@@ -2,20 +2,20 @@ const prisma = require("../core/prisma");
 const { measurePhase } = require("../core/performanceContext");
 
 const MODULE_CODES = {
-  accounting: ["M-07", "contabilidad", "finance"],
-  admin: ["M-22", "administracion", "administracion_apex"],
-  brain: ["AI-CORE", "apex-ai", "apex_ai"],
-  hr: ["M-17", "talento-humano", "talento_humano"],
+  accounting: ["M-07", "contabilidad", "finance", "accounting"],
+  admin: ["M-22", "administracion", "administracion_apex", "admin"],
+  brain: ["AI-CORE", "apex-ai", "apex_ai", "brain"],
+  hr: ["M-17", "talento-humano", "talento_humano", "hr"],
   inventory: ["M-01", "inventario", "inventory"],
-  invoicing: ["M-04", "facturacion"],
+  invoicing: ["M-04", "facturacion", "invoicing"],
   payroll: ["M-17", "nomina", "payroll"],
-  purchases: ["M-02", "compras"],
-  projects: ["M-19", "proyectos"],
-  sales: ["M-03", "ventas"],
-  "sales-invoice": ["M-03", "ventas", "facturacion-ventas"],
-  "accounts-receivable": ["M-07", "contabilidad", "cxc"],
-  services: ["M-26", "servicios"],
-  transport: ["M-14", "transporte"]
+  purchases: ["M-02", "compras", "purchases"],
+  projects: ["M-19", "proyectos", "projects"],
+  sales: ["M-03", "ventas", "sales"],
+  "sales-invoice": ["M-03", "ventas", "sales", "facturacion-ventas", "sales-invoice"],
+  "accounts-receivable": ["M-07", "contabilidad", "accounting", "cxc", "accounts-receivable"],
+  services: ["M-26", "servicios", "services"],
+  transport: ["M-14", "transporte", "transport"]
 };
 
 function tenantHasModule(tenant, module) {
