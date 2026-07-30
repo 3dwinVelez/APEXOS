@@ -16,3 +16,4 @@ Inventario debe separar maestro, bodega, stock y analitica. La vista principal d
 - Consultar WMS.
 - Revisar stock.
 - Abrir reportes de inventario.
+- Las rutas de Inventario deben aceptar los identificadores de modulo `M-01`, `inventario` e `inventory` sincronizados para el tenant.

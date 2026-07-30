@@ -3,6 +3,7 @@
 import { PhotoCapture, type CapturedFile } from "@/components/operations/PhotoCapture";
 import { SignatureCapture } from "@/components/operations/SignatureCapture";
 import { api } from "@/lib/api";
+import { API_BASE_URL } from "@/lib/apiBaseUrl";
 import { buildServiceReportPdfBlob } from "@/lib/serviceReportPdf";
 import { uploadAuthorizedServiceImageData, uploadServiceImageData, getServiceImageUrl } from "@/lib/supabaseStorage";
 import { ArrowLeft, BookOpen, Camera, CheckCircle2, Circle, Download, FileSignature, PackageSearch, Play, Star, Wrench, X, XCircle, ZoomIn } from "lucide-react";
@@ -50,8 +51,8 @@ type EvidenceAuthorization = { authorization_id: string; signed_upload_url: stri
 type EvidenceConfirmation = { status: string; storage_path?: string | null };
 const AUTHORIZED_UPLOADS_ENABLED = process.env.NEXT_PUBLIC_AUTHORIZED_EVIDENCE_UPLOADS_ENABLED === "true";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
-const HAS_CONFIGURED_API_URL = Boolean(process.env.NEXT_PUBLIC_API_URL);
+const API_URL = API_BASE_URL;
+const HAS_CONFIGURED_API_URL = true;
 const statusLabel: Record<string, string> = {
   agendado: "Agendado",
   pendiente: "Pendiente",
