@@ -139,6 +139,24 @@ function Start-Terminal {
   Start-Process powershell.exe -ArgumentList "-NoExit", "-NoProfile", "-Command", "Set-Location `"$RepoRoot`"; `$Host.UI.RawUI.WindowTitle = `"$Title`"; $escaped"
 }
 
+function Start-LocalInfrastructure {
+  param([string]$RepoRoot)
+  Write-Host "Iniciando infraestructura local..." -ForegroundColor Cyan
+  $composeFile = Join-Path $RepoRoot "infra/docker-compose.yml"
+  $output = & docker compose -f $composeFile up -d postgres redis minio brain 2>&1
+  if ($LASTEXITCODE -eq 0) { return }
+
+  $text = ($output -join "`n")
+  if ($text -match "pgbouncer|bitnami/pgbouncer") {
+    Write-Host "PgBouncer/Brain no pudo iniciar con la imagen local configurada. Continuando con infraestructura minima local." -ForegroundColor Yellow
+    $fallback = & docker compose -f $composeFile up -d postgres redis minio 2>&1
+    if ($LASTEXITCODE -eq 0) { return }
+    Stop-Blocked "No se pudo iniciar infraestructura minima local." @($fallback)
+  }
+
+  Stop-Blocked "No se pudo iniciar infraestructura local." @($output)
+}
+
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoCandidate = Resolve-Path (Join-Path $scriptRoot "..\..")
 Set-Location $repoCandidate
@@ -200,9 +218,7 @@ if ($LASTEXITCODE -ne 0) { Stop-Blocked "TypeScript fallo." }
 
 if (-not $CheckOnly -and -not $NoStart) {
   Require-Command "docker"
-  Write-Host "Iniciando infraestructura local..." -ForegroundColor Cyan
-  & npm run infra:up
-  if ($LASTEXITCODE -ne 0) { Stop-Blocked "No se pudo iniciar infraestructura local." }
+  Start-LocalInfrastructure $repoRoot
   Start-Terminal "APEXOS API - desarrollo" "npm run dev:api" $repoRoot
   Start-Terminal "APEXOS WEB - desarrollo" "npm run dev:web" $repoRoot
   if (-not $NoCode -and (Get-Command code -ErrorAction SilentlyContinue)) {
