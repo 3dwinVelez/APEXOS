@@ -39,6 +39,7 @@
     "validate:production:structure": "node scripts/validate-production-structure.js",
     "setup:local": "npm install && npm run check:local && npm run infra:up && npm run prisma:generate && npm run db:push && npm run seed:demo",
     "start:local": "npm run check:local && npm run infra:up && npm run dev",
+    "start:desarrollo:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/start-apexos-desarrollo.ps1",
     "start:local:windows": "node scripts/start-local-windows.js",
     "restart:local:windows": "node scripts/start-local-windows.js --restart",
     "verify:web-assets": "node scripts/ensure-web-css.js --url http://localhost:3001/dashboard",

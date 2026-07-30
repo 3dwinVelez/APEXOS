@@ -41,15 +41,22 @@ Each action above requires explicit and independent user authorization.
 
 ## Agent rules
 
+- Before modifying any file, Codex must run `git branch --show-current` and `git status --short`.
 - Codex and other agents must start from `desarrollo` unless explicitly instructed otherwise.
+- Codex may implement changes only in `desarrollo`.
+- If the active branch is not `desarrollo`, Codex must stop before implementation.
 - Auxiliary branches may only be created with explicit user authorization, a documented purpose, and an expiration/cleanup condition.
+- Names such as `codex/*`, `feature/*`, `chore/*`, `fix/*`, or similar are not authorized by default.
+- A request to implement, fix, or continue is not authorization to create a branch.
 - `develop` receives changes only from `desarrollo`.
 - `main` receives changes only from `develop`.
+- Codex may not promote branches without explicit authorization.
 - No agent may push directly to `main`.
 - No agent may use force push on shared branches.
 - No agent may delete remote branches without a prior audit.
 - No agent may deploy or run remote migrations without explicit authorization.
 - Every promotion must include validation evidence.
+- Every change must include tests and evidence.
 - Production hotfixes require explicit authorization and must be retrointegrated to `develop` and `desarrollo`.
 
 ## Promotion checklist
