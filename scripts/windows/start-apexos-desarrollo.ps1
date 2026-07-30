@@ -143,14 +143,22 @@ function Start-LocalInfrastructure {
   param([string]$RepoRoot)
   Write-Host "Iniciando infraestructura local..." -ForegroundColor Cyan
   $composeFile = Join-Path $RepoRoot "infra/docker-compose.yml"
+  $previousErrorActionPreference = $ErrorActionPreference
+  $ErrorActionPreference = "Continue"
   $output = & docker compose -f $composeFile up -d postgres redis minio brain 2>&1
-  if ($LASTEXITCODE -eq 0) { return }
+  $exitCode = $LASTEXITCODE
+  $ErrorActionPreference = $previousErrorActionPreference
+  if ($exitCode -eq 0) { return }
 
   $text = ($output -join "`n")
   if ($text -match "pgbouncer|bitnami/pgbouncer") {
     Write-Host "PgBouncer/Brain no pudo iniciar con la imagen local configurada. Continuando con infraestructura minima local." -ForegroundColor Yellow
+    $previousErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
     $fallback = & docker compose -f $composeFile up -d postgres redis minio 2>&1
-    if ($LASTEXITCODE -eq 0) { return }
+    $fallbackExitCode = $LASTEXITCODE
+    $ErrorActionPreference = $previousErrorActionPreference
+    if ($fallbackExitCode -eq 0) { return }
     Stop-Blocked "No se pudo iniciar infraestructura minima local." @($fallback)
   }
 
