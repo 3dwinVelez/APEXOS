@@ -101,6 +101,9 @@ function Import-LocalEnvironment {
   foreach ($key in $envMap.Keys) {
     [Environment]::SetEnvironmentVariable($key, [string]$envMap[$key], "Process")
   }
+  if (-not [Environment]::GetEnvironmentVariable("OFFLINE_CERT_DB_PASSWORD", "Process")) {
+    [Environment]::SetEnvironmentVariable("OFFLINE_CERT_DB_PASSWORD", "apex_offline_cert_local_password", "Process")
+  }
 }
 
 function Test-Port {
