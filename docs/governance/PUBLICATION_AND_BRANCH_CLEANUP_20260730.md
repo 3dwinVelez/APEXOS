@@ -56,7 +56,7 @@ Post-push:
 
 - `origin/desarrollo...HEAD`: `0 0`.
 - `origin/desarrollo` first pointed to `598539e`.
-- The cleanup evidence document was then committed and published as `2723a99`.
+- Cleanup evidence was then committed and published on top of the functional publication. Because this document is itself versioned, the exact final tip must be verified with `git rev-parse --short origin/desarrollo`.
 
 ## Remote branch audit after publication
 
@@ -157,8 +157,8 @@ C:/Users/mq1/Documents/Proyectos/APEXOS-worktrees/develop-login-visibility    [d
 Containment:
 
 - `origin/desarrollo...desarrollo`: `0 0`
-- `origin/develop...origin/desarrollo`: `0 22`
-- `origin/main...origin/desarrollo`: `0 83`
+- `origin/develop` is contained in `origin/desarrollo`.
+- `origin/main` is contained in `origin/desarrollo`.
 
 ## Dictamen
 
