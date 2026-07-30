@@ -50,7 +50,7 @@ type EvidenceAuthorization = { authorization_id: string; signed_upload_url: stri
 type EvidenceConfirmation = { status: string; storage_path?: string | null };
 const AUTHORIZED_UPLOADS_ENABLED = process.env.NEXT_PUBLIC_AUTHORIZED_EVIDENCE_UPLOADS_ENABLED === "true";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 const HAS_CONFIGURED_API_URL = Boolean(process.env.NEXT_PUBLIC_API_URL);
 const statusLabel: Record<string, string> = {
   agendado: "Agendado",

@@ -6,7 +6,7 @@ import { getSupabaseConfigStatus, supabaseAuth, supabaseFetch } from "@/lib/supa
 import { ArrowRight, Check, LockKeyhole, Mail, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import { useState } from "react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 const LOGIN_ERROR_MESSAGE = "Credenciales no validas o sin acceso autorizado.";
 
 type AnyRow = Record<string, unknown>;
