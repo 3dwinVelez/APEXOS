@@ -66,11 +66,12 @@ Comandos base:
 
 ```powershell
 npm run workflow:status
+npm run governance:guard
 npm run workflow:sync-desarrollo
 npm run qa:deterministic-validation
-npm run workflow:promote-develop
+powershell -File scripts/git/promote-desarrollo-to-develop.ps1 -DryRun -RunTests
 git switch develop
-npm run workflow:promote-main
+powershell -File scripts/git/promote-develop-to-main.ps1 -DryRun -RunTests -QaVerdict APROBADO -ReleaseId <id> -RollbackPlan <plan>
 ```
 
 Guia detallada:

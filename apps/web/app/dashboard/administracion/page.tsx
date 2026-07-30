@@ -91,6 +91,7 @@ type UserMasterData = {
   locations: MasterOption[];
   cost_centers: MasterOption[];
   work_shifts: MasterOption[];
+  activity_types: MasterOption[];
   banks: MasterOption[];
   roles?: Role[];
 };
@@ -311,6 +312,12 @@ const fallbackUserMasterData: UserMasterData = {
   locations: [{ code: "SEDE-PRINCIPAL", name: "Sede principal" }, { code: "BOG-NORTE", name: "Bogota Norte" }, { code: "BOG-SUR", name: "Bogota Sur" }],
   cost_centers: [{ code: "CC-OPER", name: "Operacion" }, { code: "CC-TRAN", name: "Transporte" }, { code: "CC-ADMIN", name: "Administracion" }],
   work_shifts: [{ code: "DIURNO", name: "Diurno" }, { code: "NOCTURNO", name: "Nocturno" }, { code: "MIXTO", name: "Mixto" }],
+  activity_types: [
+    { code: "ACT-01", name: "Cargue de mercancia en bodega" },
+    { code: "ACT-02", name: "Inicio de ruta" },
+    { code: "ACT-03", name: "Entrega en tienda" },
+    { code: "ACT-04", name: "Novedad en ruta" }
+  ],
   banks: [{ code: "BANCOLOMBIA", name: "Bancolombia" }, { code: "BOGOTA", name: "Banco de Bogota" }, { code: "DAVIVIENDA", name: "Davivienda" }]
 };
 
@@ -1711,6 +1718,7 @@ export default function AdministracionPage() {
       ["cost_centers", "Centros de costo"],
       ["contract_types", "Tipos de contrato"],
       ["work_shifts", "Turnos"],
+      ["activity_types", "Tipos de actividad"],
       ["user_document_types", "Tipos documentales"],
       ["banks", "Bancos"],
       ["service_types", "Tipos de servicio"],
