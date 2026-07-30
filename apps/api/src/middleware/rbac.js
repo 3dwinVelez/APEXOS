@@ -6,7 +6,7 @@ const MODULE_CODES = {
   admin: ["M-22", "administracion", "administracion_apex"],
   brain: ["AI-CORE", "apex-ai", "apex_ai"],
   hr: ["M-17", "talento-humano", "talento_humano"],
-  inventory: ["M-01", "inventario"],
+  inventory: ["M-01", "inventario", "inventory"],
   invoicing: ["M-04", "facturacion"],
   payroll: ["M-17", "nomina", "payroll"],
   purchases: ["M-02", "compras"],
@@ -21,7 +21,9 @@ const MODULE_CODES = {
 function tenantHasModule(tenant, module) {
   if (module === "auth" || module === "dashboard") return true;
   if (!tenant) return false;
-  const active = Array.isArray(tenant.active_modules) ? tenant.active_modules.map((item) => String(item).toLowerCase()) : [];
+  const active = Array.isArray(tenant.active_modules)
+    ? tenant.active_modules.map((item) => String(item).trim().toLowerCase()).filter(Boolean)
+    : [];
   if (!active.length) return false;
   const allowedCodes = (MODULE_CODES[module] || [module]).map((item) => String(item).toLowerCase());
   return allowedCodes.some((code) => active.includes(code));
