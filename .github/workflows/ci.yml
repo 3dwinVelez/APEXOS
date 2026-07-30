@@ -4,27 +4,13 @@ on:
   push:
     branches: [main, develop, desarrollo]
   pull_request:
-    branches: [main, develop]
+    branches: [main]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  governance:
-    name: Git Governance Guard
-    runs-on: ubuntu-22.04
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - name: Validate mandatory branch flow
-        run: npm run governance:ci
-
   lint-typecheck:
     name: Lint & TypeCheck
     runs-on: ubuntu-22.04

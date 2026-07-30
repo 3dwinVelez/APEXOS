@@ -6,17 +6,6 @@
     "node": "22.x"
   },
   "main": "index.ts",
-  "types": "index.ts",
-  "exports": {
-    ".": {
-      "types": "./index.ts",
-      "default": "./index.ts"
-    },
-    "./offline": {
-      "types": "./offline/index.d.ts",
-      "require": "./offline/index.js",
-      "default": "./offline/index.js"
-    }
-  }
+  "types": "index.ts"
 }
 

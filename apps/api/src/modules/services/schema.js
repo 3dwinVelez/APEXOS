@@ -259,18 +259,4 @@ const photoSchema = {
   }
 };
 
-const evidenceAuthorizationSchema = {
-  body: {
-    type: "object",
-    required: ["mime_type", "size_bytes", "purpose", "client_upload_id"],
-    additionalProperties: false,
-    properties: {
-      mime_type: { type: "string", enum: ["image/png", "image/jpeg", "image/webp"] },
-      size_bytes: { type: "integer", minimum: 1, maximum: 2097152 },
-      purpose: { type: "string", minLength: 1, maxLength: 64, pattern: "^[a-z0-9_-]+$" },
-      client_upload_id: { type: "string", minLength: 1, maxLength: 128 }
-    }
-  }
-};
-
-module.exports = { orderSchema, orderUpdateSchema, referenceSchema, referenceBulkImportSchema, serviceTypesSchema, serviceStoresSchema, satisfactionQuestionsSchema, startSchema, inspectionSchema, closeSchema, incidentSchema, photoSchema, evidenceAuthorizationSchema };
+module.exports = { orderSchema, orderUpdateSchema, referenceSchema, referenceBulkImportSchema, serviceTypesSchema, serviceStoresSchema, satisfactionQuestionsSchema, startSchema, inspectionSchema, closeSchema, incidentSchema, photoSchema };

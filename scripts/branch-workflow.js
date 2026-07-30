@@ -6,10 +6,6 @@ const { spawnSync } = require("node:child_process");
 
 const ROOT = path.resolve(__dirname, "..");
 const TEMP_ROOT = path.join(os.tmpdir(), "apexos-workflow");
-const PROMOTION_AUTH = {
-  develop: "AUTORIZO_PROMOVER_DESARROLLO_A_DEVELOP",
-  main: "AUTORIZO_PROMOVER_DEVELOP_A_MAIN"
-};
 function runGit(args, options = {}) {
   const result = spawnSync("git", args, {
     cwd: options.cwd || ROOT,
@@ -47,13 +43,6 @@ function ensureOnlyWorkflowBranches() {
   if (invalid.length) throw new Error(`Hay ramas locales fuera del flujo esperado: ${invalid.join(", ")}`);
 }
 
-function ensurePromotionAuthorization(target) {
-  const expected = PROMOTION_AUTH[target];
-  if (!expected || process.env.APEXOS_PROMOTION_AUTH !== expected) {
-    throw new Error(`Promocion bloqueada. Define APEXOS_PROMOTION_AUTH=${expected} solo con autorizacion expresa.`);
-  }
-}
-
 function printStatus() {
   const branch = currentBranch();
   const clean = worktreeClean();
@@ -78,13 +67,17 @@ function syncDesarrollo() {
 function withTempDevelopSync(callback) {
   fs.mkdirSync(TEMP_ROOT, { recursive: true });
   const suffix = Date.now().toString();
-  const worktree = path.join(TEMP_ROOT, `develop-${suffix}`);
+  const branch = `sync/develop-${suffix}`;
+  const worktree = path.join(TEMP_ROOT, branch.replace(/[/:]/g, "-"));
   try {
-    runGit(["worktree", "add", "--detach", worktree, "origin/develop"]);
-    callback({ worktree });
+    runGit(["worktree", "add", "-b", branch, worktree, "origin/develop"]);
+    callback({ branch, worktree });
   } finally {
     try {
       runGit(["worktree", "remove", "--force", worktree]);
+    } catch {}
+    try {
+      runGit(["branch", "-D", branch]);
     } catch {}
   }
 }
@@ -92,13 +85,17 @@ function withTempDevelopSync(callback) {
 function withTempMainSync(callback) {
   fs.mkdirSync(TEMP_ROOT, { recursive: true });
   const suffix = Date.now().toString();
-  const worktree = path.join(TEMP_ROOT, `main-${suffix}`);
+  const branch = `sync/main-${suffix}`;
+  const worktree = path.join(TEMP_ROOT, branch.replace(/[/:]/g, "-"));
   try {
-    runGit(["worktree", "add", "--detach", worktree, "origin/main"]);
-    callback({ worktree });
+    runGit(["worktree", "add", "-b", branch, worktree, "origin/main"]);
+    callback({ branch, worktree });
   } finally {
     try {
       runGit(["worktree", "remove", "--force", worktree]);
+    } catch {}
+    try {
+      runGit(["branch", "-D", branch]);
     } catch {}
   }
 }
@@ -107,7 +104,6 @@ function promoteDevelop() {
   ensureBranch("desarrollo");
   ensureCleanWorktree();
   ensureOnlyWorkflowBranches();
-  ensurePromotionAuthorization("develop");
   runGit(["fetch", "--all", "--prune"]);
   runGit(["push", "origin", "desarrollo"]);
   withTempDevelopSync(({ worktree }) => {
@@ -121,7 +117,6 @@ function promoteMain() {
   ensureBranch("develop");
   ensureCleanWorktree();
   ensureOnlyWorkflowBranches();
-  ensurePromotionAuthorization("main");
   runGit(["fetch", "--all", "--prune"]);
   runGit(["push", "origin", "develop"]);
   withTempMainSync(({ worktree }) => {

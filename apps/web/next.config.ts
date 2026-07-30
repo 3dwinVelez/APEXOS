@@ -1,6 +1,5 @@
 import type { NextConfig } from "next";
 import path from "node:path";
-import { configuredConnectOrigin } from "./lib/security/csp";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -13,11 +12,6 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ["lucide-react", "recharts"]
   },
   async headers() {
-    const apiOrigin = configuredConnectOrigin(process.env.NEXT_PUBLIC_API_URL);
-    const scriptSrc = process.env.NODE_ENV === "development"
-      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
-      : "script-src 'self' 'unsafe-inline'";
-
     return [
       {
         source: "/:all*(svg|jpg|jpeg|png|webp|avif|gif|ico|woff|woff2)",
@@ -38,10 +32,10 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              scriptSrc,
+              "script-src 'self' 'unsafe-inline'",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https:",
-              `connect-src 'self' https: wss:${apiOrigin ? ` ${apiOrigin}` : ""}`,
+              "connect-src 'self' https: wss:",
               "font-src 'self' data:",
               "frame-ancestors 'none'",
               "base-uri 'self'",

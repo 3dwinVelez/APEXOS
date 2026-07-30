@@ -2,7 +2,6 @@ const bcrypt = require("bcrypt");
 const prisma = require("../../core/prisma");
 const platformLogs = require("../../fabric/platformLogs");
 const { assertPasswordPolicy } = require("../../security/policy");
-const authorizationState = require("../../security/authorizationState");
 
 function badRequest(message) {
   const error = new Error(message);
@@ -921,7 +920,6 @@ async function updateRole(tenantId, id, input, actorId = null, actorRoleName = "
       },
       include: { permissions: true }
     });
-    await authorizationState.revokeRoleUsers(current.id);
     await prisma.auditLog.create({
       data: { tenant_id: tenantId, user_id: actorId, action: "role_updated", module: "admin", entity: "/api/v1/admin/roles", entity_id: String(role.id), old_value: previous, new_value: roleDto(role, activeModules) }
     });
@@ -941,7 +939,6 @@ async function setRoleActive(tenantId, id, active, actorId = null) {
       data: { metadata: { ...(current.metadata || {}), active: toBoolean(active) } },
       include: { permissions: true }
     });
-    await authorizationState.revokeRoleUsers(current.id, "role_status_changed");
     await prisma.auditLog.create({
       data: { tenant_id: tenantId, user_id: actorId, action: toBoolean(active) ? "role_activated" : "role_deactivated", module: "admin", entity: "/api/v1/admin/roles/status", entity_id: String(role.id), old_value: previous, new_value: roleDto(role, activeModules) }
     });
@@ -1169,7 +1166,6 @@ async function updateUser(tenantId, id, input, actorId = null) {
       data.password = await bcrypt.hash(input.password || input.pas, 12);
     }
     await prisma.user.update({ where: { id: current.id }, data });
-    await authorizationState.revokeAllUserSessions(current.id, "user_authorization_changed");
     const employeeData = {
       code: current.employee?.code || input.code || input.id_interno || `EMP-${current.id}`,
       user_type: current.employee?.user_type || "empleado",
@@ -1236,7 +1232,6 @@ async function setUserActive(tenantId, id, active, actorId = null) {
       where: { id: Number(id) },
       data: { active: enabled }
     });
-    await authorizationState.revokeAllUserSessions(current.id, enabled ? "user_reactivated" : "user_deactivated");
     if (current.employee) {
       await prisma.employee.update({
         where: { id: current.employee.id },
@@ -1287,7 +1282,6 @@ async function updateUserAccess(tenantId, id, input, actorId = null) {
         active: input.active === undefined ? current.active : toBoolean(input.active)
       }
     });
-    await authorizationState.revokeAllUserSessions(current.id, "user_access_changed");
     if (current.employee) {
       await prisma.employee.update({
         where: { id: current.employee.id },

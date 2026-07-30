@@ -21,7 +21,6 @@ model Tenant {
   tax_id         String?
   country        String        @default("CO")
   active         Boolean       @default(true)
-  authorization_version Int    @default(1)
   created_at     DateTime      @default(now())
   updated_at     DateTime      @updatedAt
   subscription   Subscription?
@@ -37,14 +36,11 @@ model User {
   role        Role?     @relation(fields: [role_id], references: [id])
   avatar      String?
   active      Boolean   @default(true)
-  authorization_version Int @default(1)
   last_login  DateTime?
   preferences Json      @default("{}")
   created_at  DateTime  @default(now())
   updated_at  DateTime  @updatedAt
   employee    Employee?
-  evidence_upload_authorizations EvidenceUploadAuthorization[]
-  authorization_sessions AuthorizationSession[]
 
   @@unique([tenant_id, email])
   @@index([tenant_id])
@@ -1519,55 +1515,6 @@ model ServicePhoto {
 
   @@index([tenant_id, order_id])
   @@index([tenant_id, type])
-}
-
-model AuthorizationSession {
-  id                     String    @id @default(uuid())
-  user_id                Int
-  tenant_id              String
-  user_version           Int
-  tenant_version         Int
-  revoked_at             DateTime?
-  revoke_reason          String?
-  last_seen_at           DateTime  @default(now())
-  expires_at             DateTime
-  created_at             DateTime  @default(now())
-  user                   User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
-  @@index([user_id, revoked_at])
-  @@index([tenant_id, revoked_at])
-}
-
-model EvidenceUploadAuthorization {
-  id                    String   @id @default(uuid())
-  tenant_id             String
-  company_id            String?
-  order_key             String
-  user_id               Int
-  supabase_user_id      String?
-  purpose               String
-  expected_mime_type    String
-  expected_size_bytes   Int
-  client_upload_id      String
-  quarantine_path       String   @unique
-  final_path            String?
-  status                String   @default("authorized")
-  rejection_reason      String?
-  detected_mime_type    String?
-  detected_size_bytes   Int?
-  detected_width        Int?
-  detected_height       Int?
-  checksum_sha256       String?
-  expires_at            DateTime
-  confirmed_at          DateTime?
-  created_at            DateTime @default(now())
-  updated_at            DateTime @updatedAt
-  user                  User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
-  @@unique([tenant_id, user_id, client_upload_id])
-  @@index([tenant_id, order_key, status])
-  @@index([status, expires_at])
-  @@map("evidence_upload_authorizations")
 }
 
 model Payroll {

@@ -7,8 +7,6 @@ APEXOS/NYVORA uses explicit environment files under `config/` to avoid mixing LO
 - `config/local.env`: local development only. It must point to localhost services.
 - `config/qa.env`: QA only. It must point to Supabase QA `jbirkghkekuifgfsgquq`.
 - `config/production.env`: production only. It must point to Supabase PROD `jzbwzmkidfthknsohhnr`.
-- `config/offline-cert-local.env`: generated local-only credentials for the
-  dedicated read-only offline certification database on `127.0.0.1:54320`.
 - `config/.env.example`: versioned placeholder template.
 
 Real files are ignored by Git. Do not commit `config/*.env`.
