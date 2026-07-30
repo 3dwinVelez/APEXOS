@@ -18,17 +18,21 @@ Flujo obligatorio:
 Comandos recomendados:
 
 1. `npm run workflow:status`
-2. `npm run workflow:sync-desarrollo`
-3. `npm run qa:deterministic-validation`
-4. `npm run workflow:promote-develop`
-5. `git switch develop`
-6. `npm run workflow:promote-main`
+2. `npm run governance:guard`
+3. `npm run workflow:sync-desarrollo`
+4. `npm run qa:deterministic-validation`
+5. `powershell -File scripts/git/promote-desarrollo-to-develop.ps1 -DryRun -RunTests`
+6. `git switch develop`
+7. `powershell -File scripts/git/promote-develop-to-main.ps1 -DryRun -RunTests -QaVerdict APROBADO -ReleaseId <id> -RollbackPlan <plan>`
 
 Reglas operativas:
 
 - La ausencia de autorizacion explicita se interpreta como prohibicion para crear ramas, hacer push, hacer merge en ramas compartidas, desplegar, ejecutar migraciones remotas, eliminar ramas o modificar infraestructura.
 - No trabajar directamente sobre `main`.
 - No trabajar directamente sobre `develop` salvo tareas de integracion controlada.
+- Ningun agente, desarrollador, administrador o automatizacion puede saltarse el flujo `desarrollo -> develop -> main`.
+- Una urgencia productiva modifica la prioridad del cambio, pero nunca modifica el flujo de ramas, las pruebas ni las autorizaciones requeridas.
+- La ausencia de autorizacion expresa debe interpretarse como prohibicion.
 - Mantener sincronizada `desarrollo` con `develop` antes de iniciar un nuevo bloque de trabajo.
 - Evitar ramas temporales persistentes. Si se usan para integracion puntual, deben eliminarse al terminar.
 - Ejecutar `npm run qa:deterministic-validation` antes de promover cambios a `develop`.
@@ -43,6 +47,7 @@ git switch desarrollo
 npm run workflow:status
 npm run workflow:sync-desarrollo
 npm install
+npm run governance:guard
 npm run qa:deterministic-validation
 ```
 
@@ -53,7 +58,7 @@ git switch desarrollo
 git add .
 git commit -m "mensaje claro del ajuste"
 npm run qa:deterministic-validation
-npm run workflow:promote-develop
+powershell -File scripts/git/promote-desarrollo-to-develop.ps1 -DryRun -RunTests
 ```
 
 ### 3. Promover un ambiente validado de develop hacia main
@@ -62,7 +67,7 @@ npm run workflow:promote-develop
 git switch develop
 git pull
 npm run qa:deterministic-validation
-npm run workflow:promote-main
+powershell -File scripts/git/promote-develop-to-main.ps1 -DryRun -RunTests -QaVerdict APROBADO -ReleaseId <id> -RollbackPlan <plan>
 ```
 
 Checklist minimo antes de promover a `main`:

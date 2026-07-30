@@ -11,6 +11,7 @@ Before modifying any file, Codex must execute:
 ```bash
 git branch --show-current
 git status --short
+git remote -v
 ```
 
 Mandatory rules:
@@ -32,5 +33,16 @@ Mandatory rules:
 15. Codex no puede saltarse validaciones para completar una tarea.
 16. Todo cambio debe quedar acompanado por pruebas y evidencia.
 17. La ausencia de autorizacion significa prohibicion.
+18. Ningun agente, desarrollador, administrador o automatizacion puede saltarse el flujo `desarrollo -> develop -> main`.
+19. Una urgencia productiva modifica la prioridad del cambio, pero nunca modifica el flujo de ramas, las pruebas ni las autorizaciones requeridas.
+20. `git push --force-with-lease`, rebase de ramas permanentes, `git reset --hard`, `git clean -fd`, Railway, Supabase, secretos y migraciones remotas requieren autorizacion explicita independiente.
+
+Controles tecnicos disponibles:
+
+```bash
+npm run governance:guard
+npm run governance:ci
+npm run governance:no-aux
+```
 
 Use `scripts/windows/start-apexos-desarrollo.bat` for daily local startup.
