@@ -12,13 +12,20 @@ function configuredApiOrigin() {
 }
 
 function apiOrigin(request: NextRequest) {
+  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+  const hosts = [
+    request.headers.get("host"),
+    forwardedHost,
+    request.nextUrl.hostname
+  ].map((value) => String(value || "").split(":")[0].toLowerCase()).filter(Boolean);
+
+  for (const host of hosts) {
+    if (API_BY_WEB_HOST[host]) return API_BY_WEB_HOST[host];
+  }
+
   const configured = configuredApiOrigin();
   if (configured) return configured;
-
-  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
-  const host = (forwardedHost || request.headers.get("host") || "").split(":")[0].toLowerCase();
-  if (API_BY_WEB_HOST[host]) return API_BY_WEB_HOST[host];
-  if (host === "localhost" || host === "127.0.0.1") return "http://127.0.0.1:3000";
+  if (hosts.some((host) => host === "localhost" || host === "127.0.0.1")) return "http://127.0.0.1:3000";
   return "";
 }
 
