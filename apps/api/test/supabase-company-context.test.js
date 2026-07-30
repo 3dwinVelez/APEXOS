@@ -1,5 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
 
 process.env.REDIS_DISABLED = "true";
 const prismaPath = require.resolve("../src/core/prisma");
@@ -46,4 +47,12 @@ test("RBAC usa los modulos autoritativos de la autenticacion aunque el cache del
 test("sesiones locales conservan los modulos del tenant cacheado", () => {
   const cachedTenant = { id: 7, active: true, active_modules: ["M-03"] };
   assert.equal(tenantWithAuthorizationContext(cachedTenant, {}), cachedTenant);
+});
+
+test("la vista de modulos se consulta con el JWT del usuario para conservar auth.uid()", () => {
+  const source = fs.readFileSync(require.resolve("../src/security/supabaseAuth"), "utf8");
+  assert.match(
+    source,
+    /v_company_module_status[\s\S]*?token,\s*[\s\S]*?service:\s*false/
+  );
 });

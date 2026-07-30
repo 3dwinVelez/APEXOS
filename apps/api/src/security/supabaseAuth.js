@@ -139,7 +139,10 @@ async function getSupabaseMembershipContext(token, supabaseUser, requestedCompan
     }).then((rows) => rows || []),
     supabaseRest(`/rest/v1/v_company_module_status?select=module_code,enabled&company_id=eq.${companyId}&enabled=eq.true`, {
       token,
-      service: true
+      // This view is security_invoker and evaluates auth.uid(). Using the
+      // service-role bearer loses the authenticated user's RLS context and
+      // makes enabled modules look empty.
+      service: false
     })
   ]);
   return {
