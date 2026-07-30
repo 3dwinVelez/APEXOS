@@ -16,7 +16,7 @@ No se revisaron ni modificaron backend, API, Prisma, RLS, seguridad, autenticaci
 
 | Area | Hallazgo |
 | --- | --- |
-| Framework | Next.js 15.1.3, React 19, TypeScript 5.8.2, Tailwind CSS 3.4.17 |
+| Framework | Next.js 15.5.22, React 19, TypeScript 5.8.2, Tailwind CSS 3.4.17 |
 | Estado cliente | Zustand, TanStack React Query, hooks locales con `useState`/`useEffect` |
 | Formularios | Inputs nativos, selects nativos, `react-hook-form`, validaciones con Zod en algunas zonas |
 | Iconografia | `lucide-react` como libreria principal |
