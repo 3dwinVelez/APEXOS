@@ -2,7 +2,7 @@
 
 ## Resumen Ejecutivo
 
-Se ejecuto una primera implementacion real, local y medible sobre la capa visual operativa. La ruta `/dashboard` dejo de cargar `recharts`, redujo decoradores y conserva la funcionalidad de resumen, alertas, modulos activos y acceso a acciones.
+Se ejecuto una continuacion local sobre la capa visual operativa. La ruta `/dashboard` conserva la reduccion fuerte de peso y ahora tambien se intervinieron Administracion, Servicios y Detalle de orden con cambios estructurales reales.
 
 ## Rama Local
 
@@ -19,12 +19,15 @@ Se midio build productivo local antes y despues con `npm --workspace apps/web ru
 ## Pantallas Intervenidas
 
 - `/dashboard`
+- `/dashboard/administracion`
+- `/dashboard/servicios`
+- `/dashboard/servicios/[id]`
 - Shell compartido de dashboard: `Sidebar`, `MobileNav`, `TechnicianWorkspaceHeader`, `ThemeToggle`
 - CSS global operativo: `globals.css`
 
 ## Elementos Decorativos Eliminados
 
-Gradientes, sombras, blur, hover translate y graficos pesados en la ruta principal.
+Gradientes, sombras, blur, hover translate y graficos pesados en la ruta principal. En la continuacion se eliminaron cards de acceso administrativo, columna redundante de usuarios, sombras de roles/permisos, hero decorativo de Servicios, `Sparkles`, blur mobile y sombras en acciones tecnicas.
 
 ## Componentes Eliminados
 
@@ -41,6 +44,10 @@ No se elimino la dependencia del paquete porque `/dashboard/proyectos` aun consu
 ## Reduccion De JavaScript
 
 `/dashboard`: First Load JS de 264 kB a 158 kB.
+
+`/dashboard/servicios`: First Load JS de 157 kB a 156 kB.
+
+Shared First Load JS se mantiene en 103 kB.
 
 ## Reduccion De CSS
 
@@ -72,7 +79,7 @@ El dashboard muestra modulos, alertas e indicadores con menos ruido visual y men
 
 ## Regresiones
 
-No se detectaron en TypeScript, ESLint ni build. `test:offline` reporta 9 fallos en `offline-storage.test.mjs`; no corresponden a archivos modificados por esta fase visual, pero bloquean una aprobacion completa.
+No se detectaron en TypeScript, ESLint ni build. `test:offline` reporta 9 fallos en `offline-storage.test.mjs`; la misma suite falla igual en `develop`, por lo que se clasifican como preexistentes.
 
 ## Cambios Revertidos
 
@@ -80,7 +87,7 @@ Se restauro `apps/web/next-env.d.ts` tras el build porque era un artefacto gener
 
 ## Limitaciones
 
-No se completo la migracion total de las 58 pantallas. No se ejecuto E2E ni medicion DOM/requests en navegador autenticado. Las pruebas offline existentes requieren correccion independiente.
+No se completo la migracion total de las 58 pantallas. No se ejecuto E2E ni medicion DOM/requests en navegador autenticado. Las capturas visuales antes/despues quedan pendientes.
 
 ## Riesgos
 
@@ -88,4 +95,4 @@ Pantallas no intervenidas aun contienen sombras, blur, gradientes y `recharts`.
 
 ## Dictamen Final
 
-APROBADO CON OBSERVACIONES
+NO APROBADO - TRANSFORMACION PARCIAL

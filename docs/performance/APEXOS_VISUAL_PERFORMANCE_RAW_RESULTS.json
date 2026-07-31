@@ -31,7 +31,7 @@
       },
       "sharedFirstLoadJsKb": 103
     },
-    "after": {
+    "afterDashboardPhase": {
       "command": "npm --workspace apps/web run build",
       "compiledInSeconds": 56,
       "routes": {
@@ -55,11 +55,50 @@
       },
       "sharedFirstLoadJsKb": 103
     },
+    "afterContinuation": {
+      "command": "npm --workspace apps/web run build",
+      "compiledInSeconds": 71,
+      "routes": {
+        "/dashboard": {
+          "sizeKb": 7.13,
+          "firstLoadJsKb": 158
+        },
+        "/dashboard/administracion": {
+          "sizeKb": 22.9,
+          "firstLoadJsKb": 181
+        },
+        "/dashboard/servicios": {
+          "sizeKb": 16.4,
+          "firstLoadJsKb": 156
+        },
+        "/dashboard/servicios/[id]": {
+          "sizeKb": 14.9,
+          "firstLoadJsKb": 165
+        },
+        "/dashboard/proyectos": {
+          "sizeKb": 115,
+          "firstLoadJsKb": 255
+        }
+      },
+      "sharedFirstLoadJsKb": 103
+    },
     "delta": {
       "/dashboard": {
         "sizeKb": -4.47,
         "firstLoadJsKb": -106,
         "firstLoadJsPercent": -40.2
+      },
+      "/dashboard/administracion": {
+        "sizeKb": -0.2,
+        "firstLoadJsKb": 0
+      },
+      "/dashboard/servicios": {
+        "sizeKb": -0.4,
+        "firstLoadJsKb": -1
+      },
+      "/dashboard/servicios/[id]": {
+        "sizeKb": 0,
+        "firstLoadJsKb": 0
       },
       "sharedFirstLoadJsKb": 0
     }
@@ -90,7 +129,12 @@
     {
       "command": "npm --workspace apps/web run test:offline",
       "status": "failed",
-      "summary": "40 passed, 9 failed. Failures are in offline-storage.test.mjs snapshot/storage assertions and were not introduced by files changed in this visual phase."
+      "summary": "40 passed, 9 failed. Same result on develop detached at 26b1331, classified as preexisting."
+    },
+    {
+      "command": "npm --workspace apps/web run test:offline on develop detached 26b1331",
+      "status": "failed",
+      "summary": "40 passed, 9 failed. Same offline-storage.test.mjs failures."
     }
   ]
 }

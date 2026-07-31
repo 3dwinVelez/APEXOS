@@ -7,11 +7,11 @@
 | `npm --workspace apps/web run typecheck` | Aprobado |
 | `npm --workspace apps/web run lint` | Aprobado |
 | `npm --workspace apps/web run build` | Aprobado |
-| `npm --workspace apps/web run test:offline` | Fallo parcial: 40 aprobadas, 9 fallidas |
+| `npm --workspace apps/web run test:offline` | Fallo parcial: 40 aprobadas, 9 fallidas; igual en `develop` |
 
 ## Evidencia De Build
 
-`/dashboard` paso de `264 kB` a `158 kB` First Load JS en build productivo local.
+`/dashboard` paso de `264 kB` a `158 kB` First Load JS en build productivo local. `/dashboard/servicios` paso de `157 kB` a `156 kB`.
 
 ## Validaciones Pendientes
 
@@ -36,8 +36,8 @@
 - `contrato bootstrap valido hidrata la base correcta y queda solo lectura`
 - `snapshot bootstrap inferior no reemplaza revision local superior`
 
-Los archivos modificados en esta fase son visuales/documentales y no alteran almacenamiento offline.
+Los archivos modificados en esta fase son visuales/documentales y no alteran almacenamiento offline. La comparacion contra `develop` detached produjo el mismo resultado: 40 aprobadas y 9 fallidas.
 
 ## Dictamen
 
-APROBADO CON OBSERVACIONES para revision local de la primera fase, con riesgo offline preexistente pendiente de resolver.
+NO APROBADO - TRANSFORMACION PARCIAL. Hay avances reales en dashboard, administracion, servicios y detalle tecnico, pero falta migracion transversal completa y evidencia visual con capturas.
