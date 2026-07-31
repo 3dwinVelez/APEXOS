@@ -1,12 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { API_BASE_URL } from "@/lib/apiBaseUrl";
 import { touchSession } from "@/lib/sessionSecurity";
 import { getSupabaseConfigStatus, supabaseAuth, supabaseFetch } from "@/lib/supabaseClient";
 import { ArrowRight, Check, LockKeyhole, Mail, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import { useState } from "react";
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
+const API_URL = API_BASE_URL;
 const LOGIN_ERROR_MESSAGE = "Credenciales no validas o sin acceso autorizado.";
 
 type AnyRow = Record<string, unknown>;
@@ -253,6 +254,7 @@ export default function LoginPage() {
 
         <form
           className="apex-public-card w-full rounded-[1.35rem] border p-6 backdrop-blur-xl sm:p-8"
+          method="post"
           onSubmit={submit}
         >
           <div className="flex items-start gap-5">

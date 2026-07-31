@@ -11,6 +11,7 @@ Fortalecer el modulo de creacion y gestion de usuarios como maestro principal de
 - El tab de documentos del usuario solo mostraba placeholders; no habia accion real para cargar archivos privados ni asociarlos al expediente.
 - Habia acciones de acceso incompletas: activar/inactivar existia, pero bloquear acceso y solicitar cambio de clave no estaban expuestos como accion clara.
 - Varios catalogos requeridos para creacion de usuarios estaban quemados en codigo.
+- El cambio de clave desde Administracion fallaba en Supabase QA/produccion con `Supabase 405: Method Not Allowed` porque la ruta Next usaba `PATCH` contra `/auth/v1/admin/users/:id`; el endpoint Admin Auth de actualizacion debe ejecutarse server-side con service role y metodo `PUT`.
 
 ## Cambios aplicados
 
@@ -24,6 +25,7 @@ Fortalecer el modulo de creacion y gestion de usuarios como maestro principal de
   - `POST /api/admin/users` crea usuario en Supabase Auth con service role server-side.
   - `GET /api/admin/users` lista usuarios de las empresas donde el JWT autenticado es admin/owner.
   - `PATCH /api/admin/users` actualiza ficha, estado, acceso y documentos usando service role server-side con validacion previa de empresa.
+  - El reset de clave usa un helper centralizado de actualizacion de Supabase Auth Admin con `PUT /auth/v1/admin/users/:id`, conserva la validacion de politica de clave temporal y marca `require_password_change`/`sin_sesion` en `employees.metadata.access`.
   - Sincroniza `profiles`, `company_users` y `employees`.
   - Valida que el usuario autenticado sea admin/owner de la empresa antes de crear usuarios.
 - Frontend:
@@ -63,6 +65,8 @@ Fortalecer el modulo de creacion y gestion de usuarios como maestro principal de
 
 - `npm --workspace apps/web run typecheck`
 - `npm --workspace apps/web run build`
+- `npm --workspace apps/web run lint`
+- `git diff --check`
 - `node -c apps/api/src/modules/admin/service.js`
 - `node -c apps/api/src/modules/admin/routes.js`
 - `npm --workspace apps/api run prisma:validate`
@@ -80,7 +84,6 @@ Fortalecer el modulo de creacion y gestion de usuarios como maestro principal de
 - Los usuarios demo quedaron sincronizados en Auth, `profiles`, `company_users` y `employees`.
 - Se creo el bucket privado `user-documents` por API de Storage y se cargo un PDF demo asociado al operativo A en `employees.metadata.documents`.
 - Prueba con JWT anon/key real: `company_users` y `v_user_companies` son visibles para el admin QA, pero `employees` retorna 0 filas por RLS. Se mitigo el modulo de usuarios con ruta server-side segura; la politica SQL de `employees` debe corregirse en la siguiente migracion remota.
-- `npm --workspace apps/web run lint` no se completo porque `next lint` abre configuracion interactiva de ESLint.
 - `npm --workspace apps/api run lint` no existe en `apps/api`.
 
 ## Pendientes recomendados

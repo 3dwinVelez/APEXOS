@@ -1,6 +1,8 @@
 const prisma = require("../../core/prisma");
 const { getTenantConfig, invalidateTenantCache } = require("../../core/tenantCache");
 
+const COMPLEX_TRANSACTION_OPTIONS = { maxWait: 5_000, timeout: 20_000 };
+
 function appError(statusCode, code, message) {
   const error = new Error(message);
   error.statusCode = statusCode;
@@ -1180,9 +1182,8 @@ async function simulatePayableDocument(tenantId, data) {
   });
 }
 
-async function createPayableDocument(tenantId, userId, data) {
-  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
-    const preview = await preparePayableDocument(tx, tenantId, data, { reserveNumber: true });
+async function createPayableDocumentTx(tx, tenantId, userId, data) {
+  const preview = await preparePayableDocument(tx, tenantId, data, { reserveNumber: true });
     const cxp = await tx.cxpCabdoc.create({
       data: {
         document_kind: preview.documentKind,
@@ -1313,9 +1314,17 @@ async function createPayableDocument(tenantId, userId, data) {
       where: { id: tenantId },
       data: { config: { ...preview.config, accounting: { ...preview.accounting, accounting_numbering: nextNumbering } } }
     });
-    return tx.cxpCabdoc.findFirst({ where: { id: cxp.id }, include: { lines: { orderBy: { line_no: "asc" } } } });
-  }));
+  return tx.cxpCabdoc.findFirst({ where: { id: cxp.id }, include: { lines: { orderBy: { line_no: "asc" } } } });
 }
+
+async function createPayableDocument(tenantId, userId, data) {
+  return prisma.runWithTenant(tenantId, () => prisma.$transaction(
+    (tx) => createPayableDocumentTx(tx, tenantId, userId, data),
+    COMPLEX_TRANSACTION_OPTIONS
+  ));
+}
+
+const createPayableDocumentInTransaction = createPayableDocumentTx;
 
 async function applyPayableCreditNote(tenantId, userId, data) {
   return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
@@ -1774,6 +1783,8 @@ module.exports = {
   listSupplierPayableDocuments,
   simulatePayableDocument,
   createPayableDocument,
+  createPayableDocumentTx,
+  createPayableDocumentInTransaction,
   applyPayableCreditNote,
   listThirdParties,
   saveThirdParty,

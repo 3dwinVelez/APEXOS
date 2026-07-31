@@ -30,44 +30,52 @@ function apiOrigin(request: NextRequest) {
 }
 
 async function proxy(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
-  const origin = apiOrigin(request);
-  if (!origin) {
-    return Response.json(
-      { error: "API no configurada para este ambiente", code: "API_NOT_CONFIGURED" },
-      { status: 503 }
-    );
+  try {
+    const origin = apiOrigin(request);
+    if (!origin) {
+      return Response.json(
+        { error: "API no configurada para este ambiente", code: "API_NOT_CONFIGURED" },
+        { status: 503 }
+      );
+    }
+
+    const { path } = await context.params;
+    const target = new URL(`/api/v1/${path.map(encodeURIComponent).join("/")}`, origin);
+    target.search = request.nextUrl.search;
+
+    const headers = new Headers();
+    for (const name of ["authorization", "content-type", "accept", "x-company-id", "x-request-id", "x-interaction-id"]) {
+      const value = request.headers.get(name);
+      if (value) headers.set(name, value);
+    }
+
+    const method = request.method.toUpperCase();
+    const response = await fetch(target, {
+      method,
+      headers,
+      body: method === "GET" || method === "HEAD" ? undefined : await request.arrayBuffer(),
+      cache: "no-store",
+      redirect: "manual"
+    });
+
+    const responseHeaders = new Headers();
+    for (const name of ["content-type", "content-disposition", "x-request-id", "x-interaction-id", "server-timing"]) {
+      const value = response.headers.get(name);
+      if (value) responseHeaders.set(name, value);
+    }
+
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: responseHeaders
+    });
+  } catch (error) {
+    return Response.json({
+      error: "No fue posible conectar el frontend con el API",
+      code: "API_PROXY_FAILED",
+      detail: error instanceof Error ? error.message : String(error)
+    }, { status: 502 });
   }
-
-  const { path } = await context.params;
-  const target = new URL(`/api/v1/${path.map(encodeURIComponent).join("/")}`, origin);
-  target.search = request.nextUrl.search;
-
-  const headers = new Headers();
-  for (const name of ["authorization", "content-type", "accept", "x-request-id", "x-interaction-id"]) {
-    const value = request.headers.get(name);
-    if (value) headers.set(name, value);
-  }
-
-  const method = request.method.toUpperCase();
-  const response = await fetch(target, {
-    method,
-    headers,
-    body: method === "GET" || method === "HEAD" ? undefined : await request.arrayBuffer(),
-    cache: "no-store",
-    redirect: "manual"
-  });
-
-  const responseHeaders = new Headers();
-  for (const name of ["content-type", "content-disposition", "x-request-id", "x-interaction-id", "server-timing"]) {
-    const value = response.headers.get(name);
-    if (value) responseHeaders.set(name, value);
-  }
-
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers: responseHeaders
-  });
 }
 
 export const GET = proxy;

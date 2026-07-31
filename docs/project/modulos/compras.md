@@ -15,3 +15,4 @@ Compras debe guiar el flujo necesidad, orden, aprobacion, recepcion e impacto fi
 - Abrir nueva orden de compra desde el panel.
 - Ir a recepcion WMS.
 - Gestionar proveedores desde su pantalla dedicada.
+- Al registrar una factura de proveedor, crear CXP, asiento contable, trazabilidad de orden e impacto de inventario dentro de una sola transaccion atomica.

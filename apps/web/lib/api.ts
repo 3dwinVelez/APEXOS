@@ -1,8 +1,10 @@
 import { assertActiveSession, clearSession, emitAppAlert, keepSessionAlive, setPasswordChangeRequired, touchSession } from "./sessionSecurity";
 import { clearSupabaseFetchCache, getSupabaseAccessToken, supabaseAuth, supabaseFetch } from "./supabaseClient";
 import { getServiceImageUrl, uploadServiceImageData } from "./supabaseStorage";
+import { API_BASE_URL } from "./apiBaseUrl";
+import { scheduleMonitorPunchEvidence, scheduleTrackingMode } from "./hrScheduleMonitor";
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
+const API_URL = API_BASE_URL;
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
 const API_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_API_TIMEOUT_MS || 20000);
 const HAS_CONFIGURED_API_URL = true;
@@ -92,7 +94,9 @@ const fallbackActivityTypes = [
   "Reintento de entrega",
   "Finalizacion de ruta",
   "Apoyo operativo"
-].map((name, index) => ({ id: index + 1, name, active: true, sort_order: (index + 1) * 10 }));
+].map((name, index) => ({ id: index + 1, code: `ACT-${String(index + 1).padStart(2, "0")}`, name, active: true, sort_order: (index + 1) * 10 }));
+
+type ActivityTypeLike = { id?: number | string; code?: string; name?: string; description?: string | null; active?: boolean; sort_order?: number; metadata?: AnyRow };
 
 const tenantModuleCodesByPermissionModule: Record<string, string[]> = {
   accounting: ["M-07", "contabilidad", "finance", "accounting"],
@@ -781,8 +785,103 @@ function defaultUserMasterData() {
     locations: [["SEDE-PRINCIPAL", "Sede principal"], ["BOG-NORTE", "Bogota Norte"], ["BOG-SUR", "Bogota Sur"]].map(([code, name]) => ({ code, name })),
     cost_centers: [["CC-OPER", "Operacion"], ["CC-TRAN", "Transporte"], ["CC-ADMIN", "Administracion"]].map(([code, name]) => ({ code, name })),
     work_shifts: [["DIURNO", "Diurno"], ["NOCTURNO", "Nocturno"], ["MIXTO", "Mixto"]].map(([code, name]) => ({ code, name })),
+    activity_types: fallbackActivityTypes.map((item) => ({ code: item.code, name: item.name, active: true, sort_order: item.sort_order })),
     banks: [["BANCOLOMBIA", "Bancolombia"], ["BOGOTA", "Banco de Bogota"], ["DAVIVIENDA", "Davivienda"]].map(([code, name]) => ({ code, name }))
   };
+}
+
+function normalizeActivityTypeOption(item: ActivityTypeLike, index: number) {
+  const metadata = item.metadata && typeof item.metadata === "object" ? item.metadata : {};
+  const code = String(item.code || metadata.code || item.id || `ACT-${String(index + 1).padStart(2, "0")}`).trim();
+  const name = String(item.name || code || "Actividad operativa").trim();
+  return {
+    id: item.id || code,
+    code,
+    name,
+    description: item.description || "",
+    active: item.active !== false,
+    sort_order: Number(item.sort_order || ((index + 1) * 10)),
+    metadata
+  };
+}
+
+function normalizePunchExtraEvidence(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const row = value as AnyRow;
+  const base64 = String(row.base64 || row.base64_data || "").trim();
+  if (!base64) return null;
+  return {
+    name: row.name || row.file_name || "",
+    type: row.type || row.mime_type || "image/jpeg",
+    size: row.size || row.file_size || null,
+    base64_data: base64
+  };
+}
+
+function mergeActivityTypeOptions(primary: ActivityTypeLike[] = [], masters: ActivityTypeLike[] = []) {
+  const byName = new Map<string, ReturnType<typeof normalizeActivityTypeOption>>();
+  const byCode = new Map<string, ReturnType<typeof normalizeActivityTypeOption>>();
+  const put = (item: ActivityTypeLike, index: number, preferExistingId = false) => {
+    const normalized = normalizeActivityTypeOption(item, index);
+    const nameKey = normalized.name.trim().toLowerCase();
+    const codeKey = String(normalized.code || "").trim().toLowerCase();
+    const idKey = String(normalized.id || "").trim().toLowerCase();
+    const existing = byName.get(nameKey) || byCode.get(codeKey) || byCode.get(idKey);
+    const merged = existing
+      ? {
+        ...existing,
+        ...normalized,
+        id: preferExistingId && existing.id ? existing.id : normalized.id,
+        code: normalized.code || existing.code,
+        active: normalized.active,
+        sort_order: normalized.sort_order
+      }
+      : normalized;
+    byName.set(nameKey, merged);
+    if (codeKey) byCode.set(codeKey, merged);
+    if (idKey) byCode.set(idKey, merged);
+  };
+  primary.forEach((item, index) => put(item, index, false));
+  masters.forEach((item, index) => put(item, index + primary.length, true));
+  return Array.from(byName.values())
+    .filter((item) => item.active !== false)
+    .sort((left, right) => Number(left.sort_order || 100) - Number(right.sort_order || 100) || left.name.localeCompare(right.name));
+}
+
+async function syncActivityTypeMasterToOperationalApi(item: ActivityTypeLike, previousCode = "") {
+  if (!HAS_CONFIGURED_API_URL || typeof window === "undefined") return;
+  const token = localStorage.getItem("token");
+  if (!token) return;
+  const normalized = normalizeActivityTypeOption(item, 0);
+  if (!normalized.name) return;
+  try {
+    const response = await fetchWithTimeout(`${API_URL}/api/v1/hr/activity-types`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!response.ok) return;
+    const current = await response.json().catch(() => []) as ActivityTypeLike[];
+    const target = current.find((entry) => {
+      const metadata = entry.metadata && typeof entry.metadata === "object" ? entry.metadata : {};
+      return String(entry.id || "") === String(previousCode || normalized.code)
+        || String(entry.code || metadata.code || "") === String(previousCode || normalized.code)
+        || String(entry.name || "").trim().toLowerCase() === normalized.name.toLowerCase();
+    });
+    const payload = {
+      name: normalized.name,
+      description: normalized.description || "",
+      active: normalized.active,
+      sort_order: normalized.sort_order,
+      metadata: { ...(normalized.metadata || {}), code: normalized.code, source: "admin_user_master_data" }
+    };
+    await fetchWithTimeout(`${API_URL}/api/v1/hr/activity-types${target?.id ? `/${encodeURIComponent(String(target.id))}` : ""}`, {
+      method: target?.id ? "PATCH" : "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }).catch((error) => safeDevLog("No fue posible sincronizar tipo de actividad con HR.", error));
+    clearApiReadCaches("/api/v1/hr/activity-types");
+  } catch (error) {
+    safeDevLog("No fue posible consultar tipos de actividad operativos.", error);
+  }
 }
 
 function nextPunchFrom(types: string[]) {
@@ -1704,7 +1803,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   const method = String(options.method || "GET").toUpperCase();
 
   if (pathname === "/api/v1/hr/activity-types") {
-    return fallbackActivityTypes as T;
+    const masterData = await loadSupabaseUserMasterData().catch(() => defaultUserMasterData());
+    const activityTypes = Array.isArray((masterData as AnyRow).activity_types) ? (masterData as AnyRow).activity_types as ActivityTypeLike[] : [];
+    return mergeActivityTypeOptions(activityTypes.length ? activityTypes : fallbackActivityTypes) as T;
   }
 
   if (pathname === "/api/v1/hr/work-sessions/current") {
@@ -1743,9 +1844,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       activity_type_name: String(row.metadata?.activity_type_name || "Actividad operativa"),
       observation: String(row.metadata?.observation || ""),
       occurred_at: row.captured_at,
-      latitude: Number(row.latitude),
-      longitude: Number(row.longitude),
-      accuracy_meters: Number(row.accuracy_meters || 0),
+      latitude: row.metadata?.gps_skipped ? null : Number(row.latitude),
+      longitude: row.metadata?.gps_skipped ? null : Number(row.longitude),
+      accuracy_meters: row.metadata?.gps_skipped ? null : Number(row.accuracy_meters || 0),
       evidence: row.metadata?.photo ? [{ base64_data: row.metadata.photo, file_name: String(row.metadata?.photo_name || "evidencia.jpg") }] : []
     }));
     const entry = punches.find((punch) => punch.punch_type === "entrada");
@@ -1783,12 +1884,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         extraMinutes = Math.max(0, Math.round((now.getTime() - plannedEnd.getTime()) / 60000));
       }
     }
-    const extraEvidence = body.extra_evidence ? {
-      name: body.extra_evidence.name,
-      type: body.extra_evidence.type,
-      size: body.extra_evidence.size,
-      base64_data: body.extra_evidence.base64
-    } : {};
+    const extraEvidence = normalizePunchExtraEvidence(body.extra_evidence);
     const row = {
       company_id: employee.company_id,
       employee_id: identity.employee_id,
@@ -1805,10 +1901,10 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       extra_minutes: extraMinutes,
       extra_reason: body.extra_reason || null,
       extra_detail: body.extra_detail || null,
-      extra_evidence: extraEvidence,
+      ...(extraEvidence ? { extra_evidence: extraEvidence } : {}),
       metadata: {
         ...(body.metadata || {}),
-        extra_evidence: extraEvidence,
+        ...(extraEvidence ? { extra_evidence: extraEvidence } : {}),
         display_route_id: body.route_id || "",
         supplied_user_name: body.user_name || "",
         employee_code: employee.metadata?.code || employee.document_number || "",
@@ -1886,9 +1982,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       activity_type_name: String(row.metadata?.activity_type_name || "Actividad operativa"),
       observation: String(row.metadata?.observation || ""),
       occurred_at: row.captured_at,
-      latitude: Number(row.latitude),
-      longitude: Number(row.longitude),
-      accuracy_meters: Number(row.accuracy_meters || 0),
+      latitude: row.metadata?.gps_skipped ? null : Number(row.latitude),
+      longitude: row.metadata?.gps_skipped ? null : Number(row.longitude),
+      accuracy_meters: row.metadata?.gps_skipped ? null : Number(row.accuracy_meters || 0),
       evidence: row.metadata?.photo ? [{ base64_data: String(row.metadata.photo), file_name: String(row.metadata?.photo_name || "evidencia.jpg") }] : [],
       metadata: row.metadata || {}
     })) as T;
@@ -1898,26 +1994,31 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const employee = await currentSupabaseEmployee();
     if (!employee?.company_id) return null;
     const body = JSON.parse(String(options.body || "{}"));
-    const type = fallbackActivityTypes.find((item) => item.id === Number(body.activity_type_id)) || fallbackActivityTypes[0];
+    const activityTypes = await supabaseApiFallback<Array<{ id: number | string; code?: string; name: string }>>("/api/v1/hr/activity-types") || fallbackActivityTypes;
+    const type = activityTypes.find((item) => String(item.id) === String(body.activity_type_id) || String(item.code || "") === String(body.activity_type_id)) || activityTypes[0] || fallbackActivityTypes[0];
     const now = body.occurred_at ? new Date(body.occurred_at) : new Date();
     const identity = supabaseEmployeeIdentity(employee, body.user_name);
     const routeId = await currentSupabaseRouteIdForEmployee(employee, body.route_id);
+    const gpsSkipped = body.gps_required === false || body.gps_skipped === true || body.latitude == null || body.longitude == null;
     const row = {
       company_id: employee.company_id,
       employee_id: identity.employee_id,
       user_id: identity.user_id,
       route_id: routeId || null,
       user_name: identity.user_name,
-      latitude: body.latitude,
-      longitude: body.longitude,
-      accuracy_meters: body.accuracy_meters ?? null,
+      latitude: gpsSkipped ? 0 : body.latitude,
+      longitude: gpsSkipped ? 0 : body.longitude,
+      accuracy_meters: gpsSkipped ? null : body.accuracy_meters ?? null,
       source: "work_activity",
       captured_at: now.toISOString(),
       metadata: {
         ...(body.metadata || {}),
         activity_type_id: type.id,
+        activity_type_code: type.code || type.id,
         activity_type_name: type.name,
-        observation: body.observation,
+        observation: String(body.observation || ""),
+        gps_skipped: gpsSkipped,
+        gps_required: body.gps_required !== false,
         display_route_id: body.route_id || "",
         photo: body.photo?.base64,
         photo_name: body.photo?.name,
@@ -1936,11 +2037,11 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     return {
       id: toNumberId(inserted[0]?.id || now.toISOString()),
       activity_type_name: type.name,
-      observation: body.observation,
+      observation: String(body.observation || ""),
       occurred_at: now.toISOString(),
-      latitude: Number(body.latitude),
-      longitude: Number(body.longitude),
-      accuracy_meters: Number(body.accuracy_meters || 0),
+      latitude: gpsSkipped ? null : Number(body.latitude),
+      longitude: gpsSkipped ? null : Number(body.longitude),
+      accuracy_meters: gpsSkipped ? null : Number(body.accuracy_meters || 0),
       evidence: body.photo ? [{ base64_data: body.photo.base64, file_name: body.photo.name }] : []
     } as T;
   }
@@ -2088,8 +2189,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const routeIds = new Set(routes.map((route) => route.id));
     const dayAssignments = assignments.filter((assignment) => routeIds.has(assignment.route_id));
     const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
+    const locationPings = pings.filter((ping) => ping.metadata?.gps_skipped !== true);
     const latestPingByEmployee = new Map<string, (typeof pings)[number]>();
-    for (const ping of pings) {
+    for (const ping of locationPings) {
       for (const key of identityKeys(ping)) {
         if (!latestPingByEmployee.has(key)) latestPingByEmployee.set(key, ping);
       }
@@ -2111,7 +2213,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       const routeKeys = new Set([route?.id, route?.code, route?.metadata?.display_id, route?.metadata?.legacy_id].filter(Boolean).map(String));
       const rowBelongsToRoute = (row: { route_id?: unknown; metadata?: AnyRow }) => routeKeys.has(operationalRouteKey(row));
       const ping = aliases.map((alias) => latestPingByEmployee.get(alias)).find(Boolean)
-        || (singlePersonRoute ? pings.find(rowBelongsToRoute) : undefined);
+        || (singlePersonRoute ? locationPings.find(rowBelongsToRoute) : undefined);
       const punch = aliases.map((alias) => latestPunchByEmployee.get(alias)).find(Boolean)
         || (singlePersonRoute ? punches.find(rowBelongsToRoute) : undefined);
       const capturedAt = ping?.captured_at || punch?.punched_at || null;
@@ -2163,7 +2265,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         const rowAliases = identityKeys(row);
         return assignmentAliases.some((aliases) => identityOverlaps(rowAliases, aliases));
       };
-      const routePings = pings.filter((ping) => matchesRouteAssignment(ping));
+      const routePings = locationPings.filter((ping) => matchesRouteAssignment(ping));
       const routeActivities = pings
         .filter((ping) => ping.source === "work_activity" && matchesRouteAssignment(ping))
         .map((activity) => ({
@@ -2172,9 +2274,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
           type: String(activity.metadata?.activity_type_name || "Actividad operativa"),
           time: activity.captured_at ? new Date(activity.captured_at).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }) : "",
           occurred_at: activity.captured_at,
-          latitude: Number(activity.latitude),
-          longitude: Number(activity.longitude),
-          accuracy_meters: activity.accuracy_meters ?? null,
+          latitude: activity.metadata?.gps_skipped ? null : Number(activity.latitude),
+          longitude: activity.metadata?.gps_skipped ? null : Number(activity.longitude),
+          accuracy_meters: activity.metadata?.gps_skipped ? null : activity.accuracy_meters ?? null,
           vehicle_plate: route.vehicle_plate || "",
           route_id: route.id,
           observation: String(activity.metadata?.observation || ""),
@@ -2182,7 +2284,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
           metadata: activity.metadata || {}
         }));
       const routePunches = punches
-        .filter((punch) => matchesRouteAssignment(punch) && punch.latitude != null && punch.longitude != null)
+        .filter((punch) => matchesRouteAssignment(punch))
         .map((punch) => ({
           id: punch.id,
           user_name: displayNameForIdentity(punch) || punch.user_name,
@@ -2197,7 +2299,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
           extra_minutes: punch.extra_minutes || 0,
           extra_reason: punch.extra_reason || "",
           extra_detail: punch.extra_detail || "",
-          extra_evidence: punch.extra_evidence || punch.metadata?.extra_evidence || {},
+          extra_evidence: scheduleMonitorPunchEvidence(punch),
           metadata: punch.metadata || {}
         }));
       const userNames = Array.from(new Set([...routePunches.map((punch) => punch.user_name), ...routeActivities.map((activity) => activity.user_name)]));
@@ -2206,6 +2308,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         code: route.code || "",
         display_id: route.code || route.metadata?.display_id || route.id,
         vehicle_plate: route.vehicle_plate || "",
+        gps_required: route.metadata?.gps_required !== false,
+        tracking_mode: String(route.metadata?.tracking_mode || (route.metadata?.gps_required === false ? "punch_only" : "gps")),
+        metadata: route.metadata || {},
         employees: routeAssignments.map((assignment) => String(assignment.employee_id)),
         employee_ids: routeAssignments.map((assignment) => String(assignment.employee_id)),
         employee_names: routeAssignments.map((assignment) => fullName(employeeById.get(assignment.employee_id) || {})),
@@ -2439,6 +2544,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const startTime = String(body.start_time || "").slice(0, 5);
     const endTime = String(body.end_time || "").slice(0, 5);
     const tolerance = Number(body.tolerance_minutes ?? 15);
+    const gpsRequired = body.gps_required !== false && String(body.tracking_mode || "gps") !== "punch_only";
     if (!employees.length) throw new Error("Selecciona al menos una persona para asignar el horario.");
     if (!/^\d{2}:\d{2}$/.test(startTime) || !/^\d{2}:\d{2}$/.test(endTime)) throw new Error("Define una hora de inicio y una hora de fin validas.");
     if (startTime === endTime) throw new Error("La hora de inicio y la hora de fin no pueden ser iguales.");
@@ -2468,7 +2574,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       tolerance_minutes: tolerance,
       status,
       notes: String(body.notes || ""),
-      metadata: { schedule_source: "talento_humano", overnight: endTime < startTime }
+      metadata: { schedule_source: "talento_humano", overnight: endTime < startTime, gps_required: gpsRequired, tracking_mode: scheduleTrackingMode(gpsRequired) }
     });
     const saveAssignments = async (routeId: string) => {
       await supabaseFetch("/rest/v1/route_assignments?on_conflict=route_id,employee_id", {
@@ -2553,7 +2659,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       tolerance_minutes?: number;
       status?: string;
       notes?: string;
-    }>>(`/rest/v1/operational_routes?select=id,code,route_date,vehicle_plate,start_time,end_time,tolerance_minutes,status,notes&company_id=eq.${encodeURIComponent(companyId)}&order=route_date.desc&limit=120`);
+      metadata?: AnyRow;
+    }>>(`/rest/v1/operational_routes?select=id,code,route_date,vehicle_plate,start_time,end_time,tolerance_minutes,status,notes,metadata&company_id=eq.${encodeURIComponent(companyId)}&order=route_date.desc&limit=120`);
     const assignments = await supabaseFetch<Array<{
       route_id: string;
       employee_id?: string;
@@ -2586,7 +2693,10 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       end_time: route.end_time || "",
       tolerance_minutes: route.tolerance_minutes ?? 15,
       status: route.status || "planned",
-      notes: route.notes || ""
+      notes: route.notes || "",
+      gps_required: route.metadata?.gps_required !== false,
+      tracking_mode: String(route.metadata?.tracking_mode || (route.metadata?.gps_required === false ? "punch_only" : "gps")),
+      metadata: route.metadata || {}
     })) as T;
   }
 
@@ -3292,6 +3402,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const data = getStoredUserMasterData();
     const current = Array.isArray((data as AnyRow)[catalogCode]) ? ((data as AnyRow)[catalogCode] as Array<{ code: string; name: string; description?: string; active?: boolean; sort_order?: number }>) : [];
     if (method === "DELETE") {
+      const previous = current.find((entry) => entry.code === itemCode);
       const nextData = { ...data, [catalogCode]: current.filter((entry) => entry.code !== itemCode) };
       saveStoredUserMasterData(nextData);
       const membership = await currentSupabaseCompanyUser().catch(() => null);
@@ -3305,6 +3416,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
             method: "DELETE"
           }).catch((error) => safeDevLog("No fue posible eliminar item de catalogo en Supabase.", error));
         }
+      }
+      if (catalogCode === "activity_types" && previous) {
+        await syncActivityTypeMasterToOperationalApi({ ...previous, active: false }, itemCode);
       }
       return { ...nextData, roles: storedAdminRoles() } as T;
     }
@@ -3350,6 +3464,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
           })
         }).catch((error) => safeDevLog("No fue posible persistir item de catalogo en Supabase.", error));
       }
+    }
+    if (catalogCode === "activity_types") {
+      await syncActivityTypeMasterToOperationalApi(item, targetCode);
     }
     return { ...nextData, roles: storedAdminRoles() } as T;
   }
@@ -3546,11 +3663,12 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
 
 export async function api<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
   const method = String(options.method || "GET").toUpperCase();
+  const companyScope = typeof window !== "undefined" ? localStorage.getItem("apexos_company_id") || "" : "";
   if (method !== "GET") {
     const scope = writeCacheScope(path);
     clearApiReadCaches(scope);
   }
-  const cacheKey = method === "GET" && !retried ? `${isSupabaseSession() ? "supabase" : "api"}:${path}` : "";
+  const cacheKey = method === "GET" && !retried ? `${isSupabaseSession() ? "supabase" : "api"}:${companyScope}:${path}` : "";
   if (cacheKey) {
     const completed = completedGetRequests.get(cacheKey);
     if (completed) {
@@ -3592,6 +3710,7 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
   let response: Response;
   const method = String(options.method || "GET").toUpperCase();
   const supabaseSession = isSupabaseSession();
+  const companyId = typeof window !== "undefined" ? localStorage.getItem("apexos_company_id") || "" : "";
   const pathname = path.split("?")[0];
   const serviceOrderDetailMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)$/);
   const preferOperationalApi = HAS_CONFIGURED_API_URL && shouldPreferOperationalApi(path);
@@ -3625,6 +3744,7 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
       headers: {
         ...(options.body && !(typeof FormData !== "undefined" && options.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(supabaseSession && companyId ? { "x-company-id": companyId } : {}),
         ...options.headers
       }
     });
@@ -3671,5 +3791,11 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
     throw new Error(message);
   }
   touchSession();
-  return response.json() as Promise<T>;
+  const body = await response.json() as T;
+  if (pathname === "/api/v1/hr/activity-types" && method === "GET") {
+    const masterData = await loadSupabaseUserMasterData().catch(() => defaultUserMasterData());
+    const masterActivityTypes = Array.isArray((masterData as AnyRow).activity_types) ? (masterData as AnyRow).activity_types as ActivityTypeLike[] : [];
+    return mergeActivityTypeOptions(Array.isArray(body) ? body as ActivityTypeLike[] : [], masterActivityTypes) as T;
+  }
+  return body;
 }

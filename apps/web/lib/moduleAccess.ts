@@ -2,8 +2,9 @@ import { ApexModule } from "./modules";
 import { isAdministrativeRole, mergePlatformAdminModuleAccess } from "./moduleAccessPolicy";
 import { CompanyModuleStatus, listActivePlatformAdmins, listCompanyModuleStatus, listUserCompanies } from "./supabaseQa";
 import { supabaseFetch } from "./supabaseClient";
+import { API_BASE_URL } from "./apiBaseUrl";
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
+const API_URL = API_BASE_URL;
 const HAS_CONFIGURED_API_URL = true;
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
 const MODULE_ACCESS_CACHE_KEY = "apexos_module_access_cache_v2";
@@ -397,10 +398,14 @@ function isLocalPlatformAdmin(user?: { role_metadata?: Record<string, unknown>; 
 async function refreshRoleContextFromApi() {
   const token = getToken();
   if (!token || !HAS_CONFIGURED_API_URL) return null;
+  const companyId = typeof window !== "undefined" ? localStorage.getItem("apexos_company_id") || "" : "";
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), ROLE_CONTEXT_TIMEOUT_MS);
   const response = await fetch(`${API_URL}/api/v1/auth/me`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(companyId ? { "x-company-id": companyId } : {})
+    },
     signal: controller.signal
   }).finally(() => window.clearTimeout(timeout));
   if (!response.ok) return null;
@@ -463,7 +468,6 @@ export async function loadModuleAccess(modules: ApexModule[]): Promise<ModuleAcc
 
   if (!moduleAccessInFlight || moduleAccessInFlight.token !== sessionToken) {
     const promise = (async () => {
-      const roleContextPromise = refreshRoleContextFromApi().catch(() => null);
       const userId = currentSupabaseUserId();
       const [platformAdmins, companies] = await Promise.all([
         listActivePlatformAdmins(1, userId).catch(() => []),
@@ -475,7 +479,6 @@ export async function loadModuleAccess(modules: ApexModule[]): Promise<ModuleAcc
       const selectedCompany = companies.find((company) => company.company_id === preferredCompanyId)
         || companies.find((company) => ["owner", "admin", "superadmin"].includes(String(company.role || "").toLowerCase()))
         || companies[0];
-      await roleContextPromise;
       const companyId = selectedCompany?.company_id;
       if (!companyId) {
         const cachedState = stateFromCachedTenantModules(modules);
@@ -491,6 +494,7 @@ export async function loadModuleAccess(modules: ApexModule[]): Promise<ModuleAcc
         if (selectedCompany?.role) localStorage.setItem("apexos_company_role", selectedCompany.role);
         if (selectedCompany?.role && !localStorage.getItem("role_name")) localStorage.setItem("role_name", selectedCompany.role);
       }
+      await refreshRoleContextFromApi().catch(() => null);
       await refreshSupabaseEmployeeRoleContext(companyId);
 
       const statuses = await listCompanyModuleStatus(companyId, 100).catch(() => []) as CompanyModuleStatus[];

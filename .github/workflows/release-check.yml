@@ -25,6 +25,17 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Validate release branch
+        shell: bash
+        run: |
+          if [ "${{ github.event.inputs.environment }}" = "qa" ] && [ "${GITHUB_REF_NAME}" != "develop" ]; then
+            echo "QA release checks must run from develop. Current ref: ${GITHUB_REF_NAME}"
+            exit 1
+          fi
+          if [ "${{ github.event.inputs.environment }}" = "production" ] && [ "${GITHUB_REF_NAME}" != "main" ]; then
+            echo "Production release checks must run from main. Current ref: ${GITHUB_REF_NAME}"
+            exit 1
+          fi
       - name: Prisma generate
         run: npx prisma generate --schema apps/api/prisma/schema.prisma
       - name: Environment Doctor

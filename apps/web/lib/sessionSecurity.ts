@@ -1,3 +1,6 @@
+import { API_BASE_URL } from "./apiBaseUrl";
+import { refreshSupabaseSession } from "./supabaseClient";
+
 const LAST_ACTIVITY_KEY = "apex_last_activity";
 const SESSION_TIMEOUT_MINUTES = Number(process.env.NEXT_PUBLIC_SESSION_TIMEOUT_MINUTES || 45);
 const HAS_CONFIGURED_API_URL = true;
@@ -93,6 +96,11 @@ export async function keepSessionAlive() {
   const token = localStorage.getItem("token");
   const refresh = localStorage.getItem("refresh");
   if (!token) return;
+  if (isSupabaseToken(token) || localStorage.getItem("auth_provider") === "supabase") {
+    const refreshed = await refreshSupabaseSession(false);
+    if (refreshed) touchSession();
+    return;
+  }
   if (!shouldRefreshLocalToken(token) || !refresh) {
     touchSession();
     return;
@@ -102,7 +110,7 @@ export async function keepSessionAlive() {
     return;
   }
   if (!refreshPromise) {
-    refreshPromise = fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/refresh`, {
+    refreshPromise = fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refresh })

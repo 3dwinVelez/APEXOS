@@ -5,6 +5,8 @@ const {
   validateOfflineOperation,
   validateSyncOperationResult
 } = require("../../../packages/types/offline");
+const apiBootstrapContract = require("../src/offline/bootstrapContract");
+const sharedBootstrapContract = require("../../../packages/types/offline");
 
 function validOperation() {
   return {
@@ -70,5 +72,12 @@ test("importar fundamentos no inicializa almacenamiento, listeners ni Servicios"
   );
   assert.equal(globalThis.__APEX_OFFLINE_STORAGE__, undefined);
   assert.equal(globalThis.__APEX_OFFLINE_LISTENERS__, undefined);
+});
+
+test("API y frontend conservan la misma version del contrato bootstrap", () => {
+  assert.equal(
+    apiBootstrapContract.OFFLINE_BOOTSTRAP_SCHEMA_VERSION,
+    sharedBootstrapContract.OFFLINE_BOOTSTRAP_SCHEMA_VERSION
+  );
 });
 

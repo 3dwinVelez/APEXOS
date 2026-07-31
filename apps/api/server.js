@@ -115,7 +115,10 @@ async function build() {
       request.user = require("./src/security/jwt").verify(token);
     } catch {
       try {
-        request.user = await require("./src/security/supabaseAuth").authenticateSupabaseToken(token);
+        request.user = await require("./src/security/supabaseAuth").authenticateSupabaseToken(
+          token,
+          request.headers["x-company-id"]
+        );
       } catch {
         return reply.code(401).send({ error: "Token invalido", code: "TOKEN_INVALIDO" });
       }
@@ -135,7 +138,7 @@ async function build() {
         if (!tenant || !tenant.active) {
           return reply.code(403).send({ error: "Cuenta suspendida o no encontrada", code: "EMPRESA_INACTIVA" });
         }
-        request.tenant = tenant;
+        request.tenant = require("./src/security/supabaseAuth").tenantWithAuthorizationContext(tenant, request.user);
       }
     } catch {
       return reply.code(401).send({ error: "Token invalido", code: "TOKEN_INVALIDO" });
@@ -313,7 +316,8 @@ async function build() {
   fastify.get("/health", async () => {
     const prisma = require("./src/core/prisma");
     await prisma.$queryRaw`SELECT 1`;
-    return { status: "OK", version: "2.0", modules: MODULES.length };
+    const commit = String(process.env.RAILWAY_GIT_COMMIT_SHA || process.env.GIT_COMMIT_SHA || "unknown").slice(0, 12);
+    return { status: "OK", version: "2.0", modules: MODULES.length, commit };
   });
 
   fastify.get("/metrics", {

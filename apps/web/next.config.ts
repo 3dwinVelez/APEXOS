@@ -14,9 +14,10 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     const apiOrigin = configuredConnectOrigin(process.env.NEXT_PUBLIC_API_URL);
-    const scriptSrc = process.env.NODE_ENV === "production"
-      ? "script-src 'self' 'unsafe-inline'"
-      : "script-src 'self' 'unsafe-inline' 'unsafe-eval'";
+    const scriptSrc = process.env.NODE_ENV === "development"
+      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+      : "script-src 'self' 'unsafe-inline'";
+
     return [
       {
         source: "/:all*(svg|jpg|jpeg|png|webp|avif|gif|ico|woff|woff2)",

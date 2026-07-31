@@ -6,7 +6,7 @@ const {
 const {
   OFFLINE_BOOTSTRAP_SCHEMA_VERSION,
   validateOfflineBootstrapResponse
-} = require("../../../../../packages/types/offline");
+} = require("../../offline/bootstrapContract");
 
 const ACTIVE_STATUSES = Object.freeze(["en_curso", "inspeccion", "ejecucion"]);
 const PENDING_STATUS = "pendiente";
