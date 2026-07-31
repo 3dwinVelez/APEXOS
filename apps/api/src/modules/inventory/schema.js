@@ -69,6 +69,7 @@ const warehouseSchema = {
       branch_code: { type: "string", minLength: 1 },
       cost_center_code: { type: "string", minLength: 1 },
       warehouse_type: { type: "string", enum: ["owned", "consignment"] },
+      consignment_customer_id: { type: "integer" },
       active: { type: "boolean" },
       metadata: { type: "object", additionalProperties: true }
     }

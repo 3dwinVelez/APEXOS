@@ -324,6 +324,22 @@ model ItemLocation {
   @@index([tenant_id])
 }
 
+model SkuValuation {
+  id              Int      @id @default(autoincrement())
+  tenant_id       String
+  society_code    String
+  item_id         Int
+  quantity        Float    @default(0)
+  inventory_value Float    @default(0)
+  average_cost    Float    @default(0)
+  version         Int      @default(0)
+  updated_at      DateTime @updatedAt
+
+  @@map("inv_sku_valuations")
+  @@unique([tenant_id, society_code, item_id])
+  @@index([tenant_id, society_code])
+}
+
 model Transaction {
   id            Int               @id @default(autoincrement())
   tenant_id     String
@@ -557,6 +573,11 @@ model CntCabdoc {
   header_text     String
   society_code    String
   status          String      @default("posted")
+  referenced_document_id Int?
+  is_reversal     Boolean     @default(false)
+  is_cancelled    Boolean     @default(false)
+  cancelled_by    Int?
+  cancelled_at    DateTime?
   total_debit     Float       @default(0)
   total_credit    Float       @default(0)
   created_by      Int?
@@ -1612,6 +1633,19 @@ model SalesInvoice {
   total             Float              @default(0)
   balance           Float              @default(0)
   status            String             @default("draft")
+  document_kind     String             @default("invoice")
+  document_class    String             @default("FV")
+  source_order_id   Int?
+  referenced_invoice_id Int?
+  accounting_document_id Int?
+  import_batch_id   String?
+  retentions        Json               @default("[]")
+  is_reversal       Boolean            @default(false)
+  is_cancelled      Boolean            @default(false)
+  posted_by         Int?
+  posted_at         DateTime?
+  cancelled_by      Int?
+  cancelled_at      DateTime?
   header_text       String             @default("")
   society_code      String             @default("")
   branch_code       String             @default("")
@@ -1628,6 +1662,9 @@ model SalesInvoice {
   @@index([tenant_id, customer_id])
   @@index([tenant_id, date])
   @@index([tenant_id, status])
+  @@index([tenant_id, source_order_id])
+  @@index([tenant_id, referenced_invoice_id])
+  @@index([tenant_id, import_batch_id])
 }
 
 model SalesInvoiceLine {
@@ -1651,6 +1688,8 @@ model SalesInvoiceLine {
   place                   Place?       @relation(fields: [place_id], references: [id])
   customer_invoice_number String?
   cost_value              Float        @default(0)
+  movement_id             Int?
+  source_order_line_id    Int?
   created_at              DateTime     @default(now())
 
   @@map("sales_invoice_lines")
@@ -1685,6 +1724,11 @@ model CxcCabdoc {
   balance                 Float       @default(0)
   status                  String      @default("open")
   accounting_document_id  Int?
+  referenced_document_id  Int?
+  is_reversal             Boolean      @default(false)
+  is_cancelled            Boolean      @default(false)
+  cancelled_by            Int?
+  cancelled_at            DateTime?
   created_by              Int?
   created_at              DateTime    @default(now())
   updated_at              DateTime    @updatedAt
@@ -1698,6 +1742,7 @@ model CxcCabdoc {
   @@index([tenant_id, posting_date])
   @@index([tenant_id, due_date])
   @@index([tenant_id, document_class])
+  @@index([tenant_id, referenced_document_id])
 }
 
 model CxcCuedoc {
@@ -1717,6 +1762,11 @@ model CxcCuedoc {
   retention_code    String?
   retention_percent Float     @default(0)
   retention_amount  Float     @default(0)
+  tax_type           String?
+  tax_code           String?
+  tax_base           Float     @default(0)
+  tax_rate           Float     @default(0)
+  tax_amount         Float     @default(0)
   created_at        DateTime  @default(now())
 
   @@map("cxc_cuedoc")
@@ -1736,6 +1786,12 @@ model CxcPayment {
   date          DateTime  @default(now())
   reference     String?
   account_id    Int?
+  group_id      String?
+  accounting_document_id Int?
+  status        String     @default("posted")
+  reversed_payment_id Int?
+  cancelled_by  Int?
+  cancelled_at  DateTime?
   notes         String?
   created_by    Int?
   created_at    DateTime  @default(now())
@@ -1743,6 +1799,7 @@ model CxcPayment {
   @@map("cxc_payments")
   @@index([tenant_id, cabdoc_id])
   @@index([tenant_id, customer_id, date])
+  @@index([tenant_id, group_id])
 }
 
 // === MAESTRO DE RETENCIONES ===
@@ -1754,12 +1811,16 @@ model RetentionMaster {
   account_code String
   percent      Float
   concept      String?
+  scope        String   @default("sales")
+  retention_type String @default("retefuente")
+  minimum_base Float    @default(0)
+  base_type    String   @default("subtotal")
   active       Boolean  @default(true)
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
 
   @@map("retention_masters")
-  @@unique([tenant_id, code])
+  @@unique([tenant_id, scope, code])
   @@index([tenant_id, active])
 }
 

@@ -24,6 +24,18 @@ async function salesInvoiceRoutes(fastify) {
     request.body
   ));
 
+  fastify.post("/sales/invoices/import", {
+    preHandler: requirePermission("sales", "write")
+  }, async (request, reply) => {
+    const file = await request.file();
+    if (!file) return reply.code(400).send({ code: "IMPORT_FILE_REQUIRED", message: "Seleccione un archivo .xlsx" });
+    if (!String(file.filename || "").toLowerCase().endsWith(".xlsx")) {
+      return reply.code(415).send({ code: "INVALID_IMPORT_FORMAT", message: "Solo se admiten archivos .xlsx" });
+    }
+    const buffer = await file.toBuffer();
+    return reply.code(201).send(await service.importSalesInvoices(request.user?.tenant_id, request.user.id, buffer));
+  });
+
   fastify.get("/sales/invoices", {
     preHandler: requirePermission("sales", "read")
   }, async (request) => service.listSalesInvoices(

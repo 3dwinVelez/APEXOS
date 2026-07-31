@@ -1,6 +1,7 @@
 const prisma = require("../../core/prisma");
 const inventoryService = require("../inventory/service");
 const accountingService = require("../accounting/service");
+const { randomUUID } = require("node:crypto");
 
 function appError(statusCode, code, message) {
   const error = new Error(message);
@@ -13,16 +14,41 @@ function round(value) {
   return Math.round((Number(value) || 0) * 100) / 100;
 }
 
-async function getNextInvoiceNumber(tx, tenantId) {
-  const count = await tx.salesInvoice.count({ where: { tenant_id: tenantId } });
-  return `FV-${String(count + 1).padStart(6, "0")}`;
+function calculateSalesLine(lineData, item) {
+  const qty = Number(lineData.qty) || 0;
+  if (qty <= 0) throw appError(422, "INVALID_QTY", "La cantidad debe ser mayor a cero");
+  const unitPrice = lineData.unit_price === undefined || lineData.unit_price === null ? Number(item.unit_price || 0) : Number(lineData.unit_price);
+  const discount = Number(lineData.discount) || 0;
+  if (discount < 0 || discount > 100) throw appError(422, "INVALID_DISCOUNT", "El descuento debe estar entre 0 y 100");
+  const taxRate = Number(lineData.tax_rate) >= 0 ? Number(lineData.tax_rate) : Number(item.tax_rate || 0);
+  const gross = round(qty * unitPrice);
+  const discountAmount = round(gross * discount / 100);
+  const subtotal = round(gross - discountAmount);
+  const taxAmount = round(subtotal * taxRate / 100);
+  return { qty, unitPrice, discount, taxRate, discountAmount, subtotal, taxAmount, total: round(subtotal + taxAmount) };
 }
 
-async function createSalesInvoice(tenantId, userId, data) {
-  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
+async function getNextInvoiceNumber(tx, tenantId) {
+  void tx;
+  void tenantId;
+  return `PEND-${randomUUID()}`;
+}
+
+async function createSalesInvoiceTx(tx, tenantId, userId, data) {
     // 1. Validar cliente activo
     const customer = await tx.party.findFirst({ where: { id: Number(data.customer_id), type: "customer", active: true } });
     if (!customer) throw appError(404, "CUSTOMER_NOT_FOUND", "Cliente no encontrado o inactivo");
+    let salesOrder = null;
+    if (data.sales_order_id) {
+      salesOrder = await tx.transaction.findFirst({
+        where: { id: Number(data.sales_order_id), type: "sale", party_id: customer.id },
+        include: { lines: true }
+      });
+      if (!salesOrder) throw appError(422, "SALES_ORDER_MISMATCH", "La orden de venta no existe o pertenece a otro cliente");
+      if (["cancelled", "closed"].includes(salesOrder.status)) {
+        throw appError(422, "SALES_ORDER_CLOSED", "La orden de venta no esta disponible para facturacion");
+      }
+    }
 
     // 2. Validar bodega default (opcional)
     let defaultPlace = null;
@@ -41,6 +67,23 @@ async function createSalesInvoice(tenantId, userId, data) {
     for (const [index, lineData] of data.lines.entries()) {
       const item = await tx.item.findFirst({ where: { id: Number(lineData.item_id), active: true } });
       if (!item) throw appError(404, "ITEM_NOT_FOUND", `Producto ID ${lineData.item_id} no encontrado`);
+      if (lineData.source_order_line_id) {
+        const sourceLine = salesOrder?.lines.find((row) => row.id === Number(lineData.source_order_line_id));
+        if (!sourceLine || sourceLine.item_id !== item.id) {
+          throw appError(422, "SALES_ORDER_LINE_MISMATCH", `La posicion de orden no coincide con el SKU de la linea ${index + 1}`);
+        }
+        const previouslyInvoiced = await tx.salesInvoiceLine.aggregate({
+          where: {
+            source_order_line_id: sourceLine.id,
+            invoice: { status: "issued", is_cancelled: false }
+          },
+          _sum: { qty: true }
+        });
+        const remainingOrderQty = Number(sourceLine.qty) - Number(previouslyInvoiced._sum.qty || 0);
+        if (Number(lineData.qty) > remainingOrderQty + 0.000001) {
+          throw appError(422, "SALES_ORDER_QTY_EXCEEDED", `La cantidad supera la posicion de la orden en la linea ${index + 1}`);
+        }
+      }
 
       // Validar familia contable con cuentas de ventas
       const familyAccounting = item.family_id ? await tx.inventoryFamilyAccounting.findFirst({ where: { family_id: item.family_id, active: true } }) : null;
@@ -53,22 +96,37 @@ async function createSalesInvoice(tenantId, userId, data) {
       if (linePlaceId) {
         const linePlace = await tx.place.findFirst({ where: { id: Number(linePlaceId), type: "warehouse", active: true } });
         if (!linePlace) throw appError(404, "LINE_PLACE_NOT_FOUND", `Bodega ID ${linePlaceId} no encontrada para linea ${index + 1}`);
+        if (linePlace.society_code && linePlace.society_code !== data.society_code) {
+          throw appError(422, "WAREHOUSE_SOCIETY_MISMATCH", `La bodega ${linePlace.code} no pertenece a la sociedad ${data.society_code}`);
+        }
+        if (linePlace.warehouse_type === "consignment") {
+          const linkedCustomerId = Number(linePlace.metadata?.consignment_customer_id || 0);
+          if (!linkedCustomerId || linkedCustomerId !== customer.id) {
+            throw appError(422, "CONSIGNMENT_CUSTOMER_MISMATCH", `La bodega de consignacion ${linePlace.code} no esta vinculada al cliente facturado`);
+          }
+          if (!String(lineData.customer_invoice_number || "").trim()) {
+            throw appError(422, "CONSIGNMENT_REFERENCE_REQUIRED", `La referencia del cliente es obligatoria para la linea ${index + 1} en consignacion`);
+          }
+        }
         linePlaceId = linePlace.id;
       }
 
-      const qty = Number(lineData.qty) || 0;
-      if (qty <= 0) throw appError(422, "INVALID_QTY", `Cantidad invalida para linea ${index + 1}`);
-      const unitPrice = Number(lineData.unit_price) || 0;
-      const discount = Number(lineData.discount) || 0;
-      const taxRate = Number(lineData.tax_rate) >= 0 ? Number(lineData.tax_rate) : Number(item.tax_rate || 0);
-      const lineSubtotal = round(qty * unitPrice);
-      const lineDiscount = round(lineSubtotal * (discount / 100));
-      const netAmount = round(lineSubtotal - lineDiscount);
-      const lineTax = round(netAmount * (taxRate / 100));
-      const lineTotal = round(netAmount + lineTax);
+      const calculated = calculateSalesLine(lineData, item);
+      const { qty, unitPrice, discount, taxRate } = calculated;
+      const lineDiscount = calculated.discountAmount;
+      const netAmount = calculated.subtotal;
+      const lineTax = calculated.taxAmount;
+      const lineTotal = calculated.total;
 
       // Cost value for inventory deduction
-      const costValue = round(qty * Number(item.unit_cost || 0));
+      const societyAverageCost = await inventoryService.getSocietyAverageCostTx(
+        tx,
+        tenantId,
+        item.id,
+        data.society_code,
+        item.unit_cost
+      );
+      const costValue = round(qty * societyAverageCost);
 
       subtotal = round(subtotal + netAmount);
       taxTotal = round(taxTotal + lineTax);
@@ -89,6 +147,7 @@ async function createSalesInvoice(tenantId, userId, data) {
         total: lineTotal,
         place_id: linePlaceId,
         customer_invoice_number: lineData.customer_invoice_number || null,
+        source_order_line_id: lineData.source_order_line_id ? Number(lineData.source_order_line_id) : null,
         cost_value: costValue
       });
     }
@@ -104,17 +163,20 @@ async function createSalesInvoice(tenantId, userId, data) {
 
     for (const ret of allRetentions) {
       const retMaster = await tx.retentionMaster.findFirst({
-        where: { tenant_id: tenantId, code: ret.code || ret, active: true }
+        where: { tenant_id: tenantId, scope: "sales", code: ret.code || ret, active: true }
       });
       if (!retMaster) continue;
-      const baseAmount = round(Number(ret.base_amount) || subtotal);
-      const retAmount = round(baseAmount * (retMaster.percent / 100));
+      const defaultBase = retMaster.base_type === "iva" ? taxTotal : subtotal;
+      const baseAmount = round(ret.base_amount !== undefined ? Number(ret.base_amount) : defaultBase);
+      if (baseAmount < Number(retMaster.minimum_base || 0)) continue;
+      const percent = round(ret.percent !== undefined ? Number(ret.percent) : retMaster.percent);
+      const retAmount = round(ret.amount !== undefined ? Number(ret.amount) : baseAmount * (percent / 100));
       retentionTotal = round(retentionTotal + retAmount);
       retentionLines.push({
         account_code: retMaster.account_code,
         account_name: retMaster.description,
         amount: retAmount,
-        percent: retMaster.percent,
+        percent,
         code: retMaster.code,
         base_amount: baseAmount
       });
@@ -133,6 +195,7 @@ async function createSalesInvoice(tenantId, userId, data) {
     const dueDate = data.due_date ? new Date(data.due_date) : new Date(postingDate.getTime() + dueDays * 86400000);
 
     // 7. Crear SalesInvoice
+    const associatedAccountCode = String(customer.metadata?.receivable_account_code || data.associated_account_code || "1305");
     const invoice = await tx.salesInvoice.create({
       data: {
         number,
@@ -153,6 +216,9 @@ async function createSalesInvoice(tenantId, userId, data) {
         branch_code: data.branch_code,
         cost_center_code: data.cost_center_code,
         notes: data.notes || null,
+        import_batch_id: data.import_batch_id || null,
+        source_order_id: data.sales_order_id ? Number(data.sales_order_id) : null,
+        retentions: retentionLines,
         created_by: userId || null,
         lines: {
           create: invoiceLines.map((line) => ({
@@ -169,12 +235,19 @@ async function createSalesInvoice(tenantId, userId, data) {
       const item = await tx.item.findFirst({ where: { id: line.item_id, active: true } });
       if (item && ["product", "component", "raw_material"].includes(item.type)) {
         const fromLocation = line.place_id
-          ? await tx.location.findFirst({ where: { place_id: line.place_id }, include: { place: true } })
+          ? await tx.location.findFirst({
+            where: {
+              place_id: line.place_id,
+              active: true,
+              items: { some: { item_id: item.id, qty: { gte: line.qty } } }
+            },
+            include: { place: true }
+          })
           : null;
         if (!fromLocation && line.place_id) {
           throw appError(400, "LOCATION_NOT_FOUND", `No hay ubicaciones en la bodega ${line.place_id} para el producto ${item.code}`);
         }
-        await inventoryService.stockMoveTx(tx, tenantId, userId, {
+        const stockResult = await inventoryService.stockMoveTx(tx, tenantId, userId, {
           item_id: item.id,
           type: "out",
           qty: line.qty,
@@ -183,6 +256,10 @@ async function createSalesInvoice(tenantId, userId, data) {
           cost: line.cost_value > 0 ? round(line.cost_value / line.qty) : Number(item.unit_cost || 0),
           reason: `Factura venta ${number}`
         });
+        const persistedLine = invoice.lines.find((row) => row.line_no === line.line_no);
+        if (persistedLine) {
+          await tx.salesInvoiceLine.update({ where: { id: persistedLine.id }, data: { movement_id: stockResult.movement.id } });
+        }
       }
     }
 
@@ -218,34 +295,50 @@ async function createSalesInvoice(tenantId, userId, data) {
     // Crédito a IVA por pagar (2408)
     if (taxTotal > 0) {
       const taxAccount = await tx.account.findFirst({ where: { code: "2408", active: true } });
-      if (taxAccount) {
-        ledgerLines.push({
-          account_id: taxAccount.id,
-          account_code: taxAccount.code,
-          account_name: taxAccount.name,
-          debit: 0,
-          credit: taxTotal,
-          description: `IVA generado ${number}`
-        });
+      if (!taxAccount) throw appError(404, "VAT_ACCOUNT_NOT_FOUND", "Cuenta de IVA generado 2408 no encontrada");
+      const vatByRate = new Map();
+      for (const line of invoiceLines.filter((row) => row.tax_amount > 0)) {
+        const current = vatByRate.get(line.tax_rate) || { base: 0, amount: 0 };
+        current.base = round(current.base + line.subtotal);
+        current.amount = round(current.amount + line.tax_amount);
+        vatByRate.set(line.tax_rate, current);
       }
+      for (const [rate, vat] of vatByRate) ledgerLines.push({
+        account_id: taxAccount.id,
+        account_code: taxAccount.code,
+        account_name: taxAccount.name,
+        debit: 0,
+        credit: vat.amount,
+        description: `IVA generado ${rate}% ${number}`,
+        tax_type: "iva",
+        tax_code: `IVA-${rate}`,
+        tax_base: vat.base,
+        tax_rate: rate,
+        tax_amount: vat.amount
+      });
     }
 
     // Débito a retenciones
     for (const ret of retentionLines) {
       const retAccount = await tx.account.findFirst({ where: { code: ret.account_code, active: true } });
-      if (retAccount) {
-        ledgerLines.push({
+      if (!retAccount) throw appError(404, "RETENTION_ACCOUNT_NOT_FOUND", `Cuenta de retencion ${ret.account_code} no encontrada`);
+      ledgerLines.push({
           account_id: retAccount.id,
           account_code: retAccount.code,
-          account_name: retAccount.account_name,
+          account_name: retAccount.name,
           debit: ret.amount,
           credit: 0,
           description: `Retencion ${ret.code} ${number}`,
           retention_code: ret.code,
           retention_percent: ret.percent,
-          retention_amount: ret.amount
+          retention_amount: ret.amount,
+          retention_base: ret.base_amount,
+          tax_type: "retention",
+          tax_code: ret.code,
+          tax_base: ret.base_amount,
+          tax_rate: ret.percent,
+          tax_amount: ret.amount
         });
-      }
     }
 
     // Débito a costo de ventas (5105), Crédito a inventarios
@@ -306,25 +399,51 @@ async function createSalesInvoice(tenantId, userId, data) {
       due_date: dueDate.toISOString().split("T")[0],
       header_text: data.header_text,
       society_code: data.society_code,
-      associated_account_code: data.associated_account_code || "1305",
+      associated_account_code: associatedAccountCode,
       subtotal,
       tax_total,
       retention_total,
       total: effectiveTotal,
       // Nota: no pasamos customer_id como número, el service lo toma de data.customer_id
       ...data,
+      associated_account_code: associatedAccountCode,
       ledger_lines: ledgerLines,
       total: effectiveTotal,
       sales_invoice_id: invoice.id
     };
 
-    const cxc = await accountingService.createReceivableDocument(tenantId, userId, cxcData);
+    const cxc = await accountingService.createReceivableDocumentTx(tx, tenantId, userId, cxcData);
 
     // 11. Actualizar factura con referencia al CxC
     await tx.salesInvoice.update({
       where: { id: invoice.id },
-      data: { balance: effectiveTotal }
+      data: {
+        number: cxc.number,
+        balance: effectiveTotal,
+        accounting_document_id: cxc.accounting_document_id,
+        posted_by: userId || null,
+        posted_at: new Date()
+      }
     });
+    if (salesOrder) {
+      const invoicedBySource = await tx.salesInvoiceLine.groupBy({
+        by: ["source_order_line_id"],
+        where: {
+          source_order_line_id: { in: salesOrder.lines.map((line) => line.id) },
+          invoice: { status: "issued", is_cancelled: false }
+        },
+        _sum: { qty: true }
+      });
+      const invoicedMap = new Map(invoicedBySource.map((row) => [row.source_order_line_id, Number(row._sum.qty || 0)]));
+      const fullyInvoiced = salesOrder.lines.every((line) => Number(invoicedMap.get(line.id) || 0) + 0.000001 >= Number(line.qty));
+      await tx.transaction.update({
+        where: { id: salesOrder.id },
+        data: {
+          status: fullyInvoiced ? "invoiced" : "partially_invoiced",
+          metadata: { ...(salesOrder.metadata || {}), sales_invoice_id: invoice.id, sales_invoice_number: cxc.number }
+        }
+      });
+    }
 
     return {
       invoice: await tx.salesInvoice.findFirst({
@@ -332,7 +451,6 @@ async function createSalesInvoice(tenantId, userId, data) {
         include: { lines: { orderBy: { line_no: "asc" } }, cxc: { include: { lines: { orderBy: { line_no: "asc" } } } } }
       })
     };
-  }));
 }
 
 async function simulateSalesInvoice(tenantId, data) {
@@ -349,7 +467,9 @@ async function simulateSalesInvoice(tenantId, data) {
       const item = await prisma.item.findFirst({ where: { id: Number(lineData.item_id), active: true } });
       if (!item) throw appError(404, "ITEM_NOT_FOUND", `Producto ID ${lineData.item_id} no encontrado`);
       const qty = Number(lineData.qty) || 0;
-      const unitPrice = Number(lineData.unit_price) || 0;
+      const unitPrice = lineData.unit_price === undefined || lineData.unit_price === null
+        ? Number(item.unit_price || 0)
+        : Number(lineData.unit_price);
       const discount = Number(lineData.discount) || 0;
       const taxRate = Number(lineData.tax_rate) >= 0 ? Number(lineData.tax_rate) : Number(item.tax_rate || 0);
       const lineSubtotal = round(qty * unitPrice);
@@ -386,12 +506,14 @@ async function simulateSalesInvoice(tenantId, data) {
     const retLines = [];
     let retTotal = 0;
     for (const ret of retCodes) {
-      const master = await prisma.retentionMaster.findFirst({ where: { tenant_id: tenantId, code: ret.code || ret, active: true } });
+      const master = await prisma.retentionMaster.findFirst({ where: { tenant_id: tenantId, scope: "sales", code: ret.code || ret, active: true } });
       if (master) {
-        const base = round(Number(ret.base_amount) || subtotal);
-        const amt = round(base * (master.percent / 100));
+        const base = round(ret.base_amount !== undefined ? Number(ret.base_amount) : master.base_type === "iva" ? taxTotal : subtotal);
+        if (base < Number(master.minimum_base || 0)) continue;
+        const percent = round(ret.percent !== undefined ? Number(ret.percent) : master.percent);
+        const amt = round(ret.amount !== undefined ? Number(ret.amount) : base * (percent / 100));
         retTotal = round(retTotal + amt);
-        retLines.push({ code: master.code, description: master.description, account_code: master.account_code, percent: master.percent, amount: amt });
+        retLines.push({ code: master.code, description: master.description, account_code: master.account_code, percent, base_amount: base, amount: amt });
       }
     }
     const effectiveTotal = round(total - retTotal);
@@ -401,7 +523,7 @@ async function simulateSalesInvoice(tenantId, data) {
       date: data.posting_date,
       due_term: data.due_term || "AP30",
       society_code: data.society_code,
-      associated_account_code: data.associated_account_code || "1305",
+      associated_account_code: customer.metadata?.receivable_account_code || data.associated_account_code || "1305",
       lines: simulatedLines,
       subtotal,
       tax_total: taxTotal,
@@ -474,56 +596,258 @@ async function cancelSalesInvoice(tenantId, userId, id) {
       include: { lines: true, cxc: true }
     });
     if (!invoice) throw appError(404, "INVOICE_NOT_FOUND", "Factura no encontrada");
-    if (invoice.status !== "issued") throw appError(422, "INVALID_STATUS", "Solo se pueden cancelar facturas emitidas");
-    if (invoice.cxc && invoice.cxc.status === "cleared") {
-      throw appError(422, "INVOICE_ALREADY_PAID", "No se puede cancelar una factura que ya ha sido pagada");
+    if (invoice.status !== "issued" || invoice.is_cancelled) throw appError(422, "INVALID_STATUS", "Solo se pueden anular facturas emitidas vigentes");
+    if (!invoice.cxc || !invoice.cxc.accounting_document_id) {
+      throw appError(422, "ACCOUNTING_DOCUMENT_REQUIRED", "La factura no tiene un documento contable reversible");
+    }
+    if (invoice.cxc.applied_total > 0.01) {
+      throw appError(422, "PAYMENTS_MUST_BE_CANCELLED", "Anule primero todos los recaudos aplicados a la factura");
     }
 
-    // Reverse inventory
+    const originalAccounting = await tx.cntCabdoc.findFirst({
+      where: { id: invoice.cxc.accounting_document_id },
+      include: { lines: { orderBy: { line_no: "asc" } } }
+    });
+    if (!originalAccounting) throw appError(404, "ACCOUNTING_DOCUMENT_NOT_FOUND", "Documento contable original no encontrado");
+
+    const creditInvoice = await tx.salesInvoice.create({
+      data: {
+        number: `NCV-TMP-${invoice.id}-${Date.now()}`,
+        customer_id: invoice.customer_id,
+        place_id: invoice.place_id,
+        date: new Date(),
+        due_date: new Date(),
+        due_term: "AP0",
+        subtotal: invoice.subtotal,
+        tax_total: invoice.tax_total,
+        discount_total: invoice.discount_total,
+        retention_total: invoice.retention_total,
+        total: invoice.total,
+        balance: 0,
+        status: "issued",
+        document_kind: "credit_note",
+        document_class: "NCV",
+        referenced_invoice_id: invoice.id,
+        retentions: invoice.retentions || [],
+        is_reversal: true,
+        posted_by: userId || null,
+        posted_at: new Date(),
+        header_text: `Nota credito por anulacion de ${invoice.number}`,
+        society_code: invoice.society_code,
+        branch_code: invoice.branch_code,
+        cost_center_code: invoice.cost_center_code,
+        created_by: userId || null,
+        lines: {
+          create: invoice.lines.map((line) => ({
+            tenant_id: tenantId,
+            line_no: line.line_no,
+            item_id: line.item_id,
+            description: line.description,
+            qty: line.qty,
+            unit: line.unit,
+            unit_price: line.unit_price,
+            discount: line.discount,
+            subtotal: line.subtotal,
+            tax_rate: line.tax_rate,
+            tax_amount: line.tax_amount,
+            total: line.total,
+            place_id: line.place_id,
+            customer_invoice_number: line.customer_invoice_number,
+            cost_value: line.cost_value
+          }))
+        }
+      }
+    });
+
     for (const line of invoice.lines) {
       const item = await tx.item.findFirst({ where: { id: line.item_id } });
       if (item && ["product", "component", "raw_material"].includes(item.type)) {
         const fromLocation = line.place_id
           ? await tx.location.findFirst({ where: { place_id: line.place_id } })
           : null;
-        await inventoryService.stockMoveTx(tx, tenantId, userId, {
+        const reversalMove = await inventoryService.stockMoveTx(tx, tenantId, userId, {
           item_id: item.id,
           type: "in",
           qty: line.qty,
           to_location_id: fromLocation?.id || null,
           transaction_id: null,
-          cost: Number(item.unit_cost || 0),
-          reason: `Cancelacion factura venta ${invoice.number}`
+          cost: line.qty > 0 ? round(line.cost_value / line.qty) : 0,
+          reason: `Nota credito de venta ${invoice.number}`
         });
+        const creditLine = await tx.salesInvoiceLine.findFirst({ where: { invoice_id: creditInvoice.id, line_no: line.line_no } });
+        if (creditLine) await tx.salesInvoiceLine.update({ where: { id: creditLine.id }, data: { movement_id: reversalMove.movement.id } });
       }
     }
 
-    // Reverse CxC balance
-    if (invoice.cxc) {
-      await tx.cxcCabdoc.update({
-        where: { id: invoice.cxc.id },
-        data: {
-          status: "cancelled",
-          balance: 0,
-          applied_total: 0
-        }
-      });
-    }
-
-    // Reverse customer balance
     const effectiveTotal = round(invoice.total - invoice.retention_total);
-    await tx.party.update({
-      where: { id: invoice.customer_id },
-      data: { balance: { decrement: effectiveTotal } }
+    const inverseLines = originalAccounting.lines
+      .filter((line) => line.account_id !== invoice.cxc.associated_account_id)
+      .map((line) => ({
+        account_id: line.account_id,
+        account_code: line.account_code,
+        debit: line.credit,
+        credit: line.debit,
+        description: `Reversion ${line.description}`,
+        branch_code: line.branch_code,
+        cost_center_code: line.cost_center_code
+      }));
+    const creditCxc = await accountingService.createReceivableDocumentTx(tx, tenantId, userId, {
+      document_kind: "credit_note",
+      customer_id: invoice.customer_id,
+      customer_reference: invoice.number,
+      posting_date: new Date().toISOString().slice(0, 10),
+      due_term: "AP0",
+      due_date: new Date().toISOString().slice(0, 10),
+      header_text: `Anulacion factura ${invoice.number}`,
+      society_code: invoice.society_code,
+      branch_code: invoice.branch_code,
+      cost_center_code: invoice.cost_center_code,
+      associated_account_code: invoice.cxc.associated_account_code,
+      subtotal: invoice.subtotal,
+      tax_total: invoice.tax_total,
+      retention_total: invoice.retention_total,
+      total: effectiveTotal,
+      ledger_lines: inverseLines,
+      sales_invoice_id: creditInvoice.id,
+      referenced_document_id: invoice.cxc.id,
+      referenced_accounting_document_id: originalAccounting.id
     });
 
     await tx.salesInvoice.update({
       where: { id: invoice.id },
-      data: { status: "cancelled", balance: 0 }
+      data: {
+        status: "cancelled",
+        balance: 0,
+        is_cancelled: true,
+        cancelled_by: userId || null,
+        cancelled_at: new Date()
+      }
     });
+    await tx.salesInvoice.update({
+      where: { id: creditInvoice.id },
+      data: { number: creditCxc.number, accounting_document_id: creditCxc.accounting_document_id }
+    });
+    await tx.cxcCabdoc.update({
+      where: { id: invoice.cxc.id },
+      data: { status: "cancelled", balance: 0, is_cancelled: true, cancelled_by: userId || null, cancelled_at: new Date() }
+    });
+    await tx.cntCabdoc.update({
+      where: { id: originalAccounting.id },
+      data: { status: "cancelled", is_cancelled: true, cancelled_by: userId || null, cancelled_at: new Date() }
+    });
+    if (invoice.source_order_id) {
+      const order = await tx.transaction.findFirst({ where: { id: invoice.source_order_id, type: "sale" } });
+      if (order) {
+        await tx.transaction.update({
+          where: { id: order.id },
+          data: {
+            status: "confirmed",
+            metadata: {
+              ...(order.metadata || {}),
+              sales_invoice_id: null,
+              sales_invoice_number: null,
+              reopened_by_credit_note_id: creditInvoice.id
+            }
+          }
+        });
+      }
+    }
 
-    return { id: invoice.id, number: invoice.number, status: "cancelled" };
+    return {
+      id: invoice.id,
+      number: invoice.number,
+      status: "cancelled",
+      credit_note_id: creditInvoice.id,
+      credit_note_number: creditCxc.number,
+      accounting_reversal_id: creditCxc.accounting_document_id
+    };
   }));
+}
+
+function normalizeImportRow(raw) {
+  const normalized = {};
+  for (const [key, value] of Object.entries(raw || {})) {
+    const normalizedKey = String(key || "").trim().toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, "_");
+    normalized[normalizedKey] = value;
+  }
+  return normalized;
+}
+
+async function importSalesInvoices(tenantId, userId, workbookBuffer) {
+  const ExcelJS = require("exceljs");
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(workbookBuffer);
+  const sheet = workbook.worksheets[0];
+  if (!sheet || sheet.rowCount < 2) throw appError(400, "EMPTY_IMPORT", "El archivo Excel no contiene facturas");
+  const headers = sheet.getRow(1).values.slice(1).map((value) => String(value || ""));
+  const rows = [];
+  sheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) return;
+    const raw = {};
+    headers.forEach((header, index) => { raw[header] = row.getCell(index + 1).value; });
+    const normalized = normalizeImportRow(raw);
+    if (Object.values(normalized).some((value) => value !== null && value !== undefined && String(value).trim())) rows.push(normalized);
+  });
+  const required = ["grupo_factura", "cliente_nit", "sku", "cantidad", "bodega"];
+  for (const [index, row] of rows.entries()) {
+    const missing = required.filter((field) => !String(row[field] ?? "").trim());
+    if (missing.length) throw appError(422, "INVALID_IMPORT_ROW", `Fila ${index + 2}: faltan ${missing.join(", ")}`);
+  }
+  const groups = new Map();
+  for (const row of rows) {
+    const key = String(row.grupo_factura).trim();
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(row);
+  }
+  const importBatchId = randomUUID();
+  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
+    const created = [];
+    for (const [group, groupRows] of groups) {
+      const first = groupRows[0];
+      const customer = await tx.party.findFirst({ where: { type: "customer", tax_id: String(first.cliente_nit).trim(), active: true } });
+      if (!customer) throw appError(404, "IMPORT_CUSTOMER_NOT_FOUND", `Grupo ${group}: cliente NIT ${first.cliente_nit} no encontrado`);
+      const lines = [];
+      for (const row of groupRows) {
+        if (String(row.cliente_nit).trim() !== String(first.cliente_nit).trim()) {
+          throw appError(422, "IMPORT_MIXED_CUSTOMERS", `Grupo ${group}: contiene clientes diferentes`);
+        }
+        const item = await tx.item.findFirst({ where: { code: String(row.sku).trim().toUpperCase(), active: true } });
+        const place = await tx.place.findFirst({ where: { code: String(row.bodega).trim().toUpperCase(), type: "warehouse", active: true } });
+        if (!item) throw appError(404, "IMPORT_ITEM_NOT_FOUND", `Grupo ${group}: SKU ${row.sku} no encontrado`);
+        if (!place) throw appError(404, "IMPORT_WAREHOUSE_NOT_FOUND", `Grupo ${group}: bodega ${row.bodega} no encontrada`);
+        lines.push({
+          item_id: item.id,
+          qty: Number(row.cantidad),
+          unit_price: row.precio === undefined || row.precio === "" ? item.unit_price : Number(row.precio),
+          discount: Number(row.descuento || 0),
+          tax_rate: row.iva === undefined || row.iva === "" ? item.tax_rate : Number(row.iva),
+          place_id: place.id,
+          customer_invoice_number: String(row.referencia_cliente || "").trim() || undefined
+        });
+      }
+      const result = await createSalesInvoiceTx(tx, tenantId, userId, {
+        customer_id: customer.id,
+        posting_date: String(first.fecha || new Date().toISOString().slice(0, 10)),
+        due_term: String(first.plazo || "AP30"),
+        header_text: String(first.concepto || `Factura importada ${group}`),
+        society_code: String(first.sociedad || "SOC-01").toUpperCase(),
+        branch_code: String(first.sucursal || "SOC-01").toUpperCase(),
+        cost_center_code: String(first.centro_costo || "SOC-01").toUpperCase(),
+        lines,
+        import_batch_id: importBatchId
+      });
+      created.push({ group, id: result.invoice.id, number: result.invoice.number });
+    }
+    return { import_batch_id: importBatchId, count: created.length, invoices: created };
+  }));
+}
+
+async function createSalesInvoice(tenantId, userId, data) {
+  return prisma.runWithTenant(tenantId, () => prisma.$transaction(
+    (tx) => createSalesInvoiceTx(tx, tenantId, userId, data)
+  ));
 }
 
 // ============================================================
@@ -672,6 +996,8 @@ async function getSalesDetail(tenantId, query = {}) {
 
 module.exports = {
   createSalesInvoice,
+  createSalesInvoiceTx,
+  importSalesInvoices,
   simulateSalesInvoice,
   listSalesInvoices,
   getSalesInvoice,
@@ -679,5 +1005,7 @@ module.exports = {
   getSalesByCustomer,
   getSalesByItem,
   getSalesByDate,
-  getSalesDetail
+  getSalesDetail,
+  calculateSalesLine,
+  normalizeImportRow
 };

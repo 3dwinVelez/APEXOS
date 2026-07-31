@@ -94,6 +94,15 @@ function round(value) {
   return Math.round((Number(value) || 0) * 100) / 100;
 }
 
+function assertPaymentWithinBalance(amount, balance) {
+  const payment = round(amount);
+  const available = round(balance);
+  if (payment > available + 0.01) {
+    throw appError(422, "PAYMENT_EXCEEDS_SELECTED_BALANCE", `El recaudo ${payment} supera el saldo seleccionado ${available}`);
+  }
+  return true;
+}
+
 function periodBounds(period) {
   const [year, month] = String(period).split("-").map(Number);
   if (!year || !month || month < 1 || month > 12) throw appError(400, "INVALID_PERIOD", "El periodo debe tener formato YYYY-MM");
@@ -1638,6 +1647,8 @@ async function saveThirdParty(tenantId, data, id = null) {
     tax_responsibilities: data.tax_responsibilities || data.metadata?.tax_responsibilities || [],
     dane_code: masterMatch.location?.dane_code || data.dane_code || data.metadata?.dane_code || null,
     department: masterMatch.location?.department || data.department || data.metadata?.department || null,
+    receivable_account_code: normalizeCode(data.receivable_account_code || data.metadata?.receivable_account_code || ""),
+    withholding_rates: Array.isArray(data.withholding_rates) ? data.withholding_rates : (data.metadata?.withholding_rates || []),
     role_flags: data.role_flags || data.metadata?.role_flags || {},
     dian: {
       cufe: null,
@@ -1769,16 +1780,19 @@ module.exports = {
   registerPayment,
   // Pure helpers (exported for unit tests)
   round,
+  assertPaymentWithinBalance,
   periodBounds,
   periodFromDate,
   // CxC (Cuentas por Cobrar)
   prepareReceivableDocument,
   simulateReceivableDocument,
   createReceivableDocument,
+  createReceivableDocumentTx,
   listReceivableDocuments,
   listOpenReceivableInvoices,
   getCustomerStatement,
   registerPaymentReceivable,
+  cancelPaymentReceivable,
   getAgingReceivablesReport,
   initializeRetentionMasters,
   getRetentionMasters,
@@ -1807,7 +1821,7 @@ async function prepareReceivableDocument(tx, tenantId, data, options = {}) {
   const societyCode = normalizeCode(data.society_code);
   const associatedAccountCode = normalizeCode(data.associated_account_code);
   if (!headerText || !societyCode || !associatedAccountCode) throw appError(400, "REQUIRED_CXC_HEADER", "Descripcion, sociedad y cuenta asociada son obligatorias");
-  if (!Array.isArray(data.ledger_lines) || data.ledger_lines.length < 2) throw appError(400, "MIN_CXC_LINES", "Se requieren al menos 2 lineas contables");
+  if (!Array.isArray(data.ledger_lines) || data.ledger_lines.length < 1) throw appError(400, "MIN_CXC_LINES", "Se requiere al menos una contrapartida contable");
 
   await assertPeriodOpen(tenantId, postingDate);
   const tree = await getOrganizationTree(tenantId);
@@ -1827,7 +1841,16 @@ async function prepareReceivableDocument(tx, tenantId, data, options = {}) {
     credit: round(Number(line.credit) || 0),
     description: String(line.description || "").trim() || `Linea ${i + 1}`,
     branch_code: normalizeCode(line.branch_code || data.branch_code || ""),
-    cost_center_code: normalizeCode(line.cost_center_code || data.cost_center_code || "")
+    cost_center_code: normalizeCode(line.cost_center_code || data.cost_center_code || ""),
+    retention_code: line.retention_code || null,
+    retention_base: round(line.retention_base ?? line.tax_base ?? 0),
+    retention_percent: round(line.retention_percent ?? line.tax_rate ?? 0),
+    retention_amount: round(line.retention_amount ?? line.tax_amount ?? 0),
+    tax_type: line.tax_type || null,
+    tax_code: line.tax_code || line.retention_code || null,
+    tax_base: round(line.tax_base ?? line.retention_base ?? 0),
+    tax_rate: round(line.tax_rate ?? line.retention_percent ?? 0),
+    tax_amount: round(line.tax_amount ?? line.retention_amount ?? 0)
   }));
 
   // Validate organization references for first line
@@ -1926,8 +1949,11 @@ async function simulateReceivableDocument(tenantId, data) {
   });
 }
 
-async function createReceivableDocument(tenantId, userId, data) {
-  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
+async function createReceivableDocumentTx(tx, tenantId, userId, data) {
+    await tx.$executeRawUnsafe(
+      "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+      `${tenantId}:accounting-numbering`
+    );
     const preview = await prepareReceivableDocument(tx, tenantId, data, { reserveNumber: true });
     const cxc = await tx.cxcCabdoc.create({
       data: {
@@ -1945,6 +1971,8 @@ async function createReceivableDocument(tenantId, userId, data) {
         associated_account_id: preview.associatedAccount.id,
         associated_account_code: preview.associatedAccount.code,
         sales_invoice_id: data.sales_invoice_id || null,
+        referenced_document_id: data.referenced_document_id || null,
+        is_reversal: data.document_kind === "credit_note",
         subtotal: preview.subtotal,
         tax_total: preview.taxTotal,
         retention_total: preview.retentionTotal,
@@ -1967,6 +1995,8 @@ async function createReceivableDocument(tenantId, userId, data) {
         society_code: preview.societyCode,
         total_debit: preview.totalDebit,
         total_credit: preview.totalCredit,
+        referenced_document_id: data.referenced_accounting_document_id || null,
+        is_reversal: data.document_kind === "credit_note",
         created_by: userId || null
       }
     });
@@ -2022,7 +2052,12 @@ async function createReceivableDocument(tenantId, userId, data) {
           total: line.debit > 0 ? line.debit : line.credit,
           retention_code: line.retention_code || null,
           retention_percent: line.retention_percent || 0,
-          retention_amount: line.retention_amount || 0
+          retention_amount: line.retention_amount || 0,
+          tax_type: line.tax_type || null,
+          tax_code: line.tax_code || line.retention_code || null,
+          tax_base: line.tax_base || line.retention_base || 0,
+          tax_rate: line.tax_rate || line.retention_percent || 0,
+          tax_amount: line.tax_amount || line.retention_amount || 0
         }
       });
     }
@@ -2053,7 +2088,12 @@ async function createReceivableDocument(tenantId, userId, data) {
     });
 
     return tx.cxcCabdoc.findFirst({ where: { id: cxc.id }, include: { lines: { orderBy: { line_no: "asc" } } } });
-  }));
+}
+
+async function createReceivableDocument(tenantId, userId, data) {
+  return prisma.runWithTenant(tenantId, () => prisma.$transaction(
+    (tx) => createReceivableDocumentTx(tx, tenantId, userId, data)
+  ));
 }
 
 async function listReceivableDocuments(tenantId, query = {}) {
@@ -2189,7 +2229,11 @@ async function registerPaymentReceivable(tenantId, userId, data) {
 
     if (!invoices.length) throw appError(404, "NO_OPEN_INVOICES", "No hay facturas abiertas para este cliente");
 
-    let remaining = amount;
+    const selectedBalance = round(invoices.reduce((sum, invoice) => sum + invoice.balance, 0));
+    assertPaymentWithinBalance(amount, selectedBalance);
+
+    let remaining = round(amount);
+    const groupId = require("node:crypto").randomUUID();
     const paidInvoices = [];
 
     for (const invoice of invoices) {
@@ -2209,6 +2253,7 @@ async function registerPaymentReceivable(tenantId, userId, data) {
           date: new Date(date),
           reference: reference || null,
           account_id: account_id || null,
+          group_id: groupId,
           notes: notes || null,
           created_by: userId || null
         }
@@ -2330,6 +2375,11 @@ async function registerPaymentReceivable(tenantId, userId, data) {
     // Update customer balance
     await tx.party.update({ where: { id: Number(customer_id) }, data: { balance: { decrement: actualPaid } } });
 
+    await tx.cxcPayment.updateMany({
+      where: { group_id: groupId },
+      data: { accounting_document_id: cnt.id }
+    });
+
     const nextNumbering = [...(Array.isArray(accounting.accounting_numbering) ? accounting.accounting_numbering : []).filter((item) => normalizeAccountingDocumentType(item.document_type) !== docType), {
       document_type: docType,
       prefix,
@@ -2347,8 +2397,118 @@ async function registerPaymentReceivable(tenantId, userId, data) {
       remaining,
       applied_to: paidInvoices.map((p) => ({ id: p.invoice.id, number: p.invoice.number, paid: p.paid, new_balance: p.newBalance })),
       accounting_document_id: cnt.id,
-      accounting_document_number: fullNumber
+      accounting_document_number: fullNumber,
+      receipt_group_id: groupId
     };
+  }));
+}
+
+async function cancelPaymentReceivable(tenantId, userId, groupId) {
+  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
+    const payments = await tx.cxcPayment.findMany({
+      where: { group_id: String(groupId), status: "posted" },
+      orderBy: { id: "asc" }
+    });
+    if (!payments.length) throw appError(404, "RECEIPT_NOT_FOUND", "Recaudo no encontrado o ya anulado");
+    const accountingDocumentId = payments[0].accounting_document_id;
+    if (!accountingDocumentId || payments.some((row) => row.accounting_document_id !== accountingDocumentId)) {
+      throw appError(422, "INVALID_RECEIPT_TRACE", "El recaudo no tiene trazabilidad contable consistente");
+    }
+    const original = await tx.cntCabdoc.findFirst({
+      where: { id: accountingDocumentId, is_cancelled: false },
+      include: { lines: { orderBy: { line_no: "asc" } } }
+    });
+    if (!original) throw appError(404, "RECEIPT_ACCOUNTING_NOT_FOUND", "Comprobante contable del recaudo no encontrado");
+    await assertPeriodOpen(tenantId, new Date());
+    await tx.$executeRawUnsafe("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", `${tenantId}:accounting-numbering`);
+
+    const tenant = await tx.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
+    const config = tenant?.config || {};
+    const accounting = config.accounting || {};
+    const documentTypes = mergeByCode(DEFAULT_ACCOUNTING_DOCUMENT_TYPES, accounting.accounting_document_types, "code")
+      .map((row) => ({ ...row, code: normalizeAccountingDocumentType(row.code) }));
+    const numbering = mergeNumbering(documentTypes, accounting.accounting_numbering)
+      .find((item) => item.document_type === "CI" && item.active !== false);
+    if (!numbering) throw appError(400, "CI_NUMBERING_NOT_FOUND", "La clase CI no tiene numeracion activa");
+    const documentNumber = Number(numbering.next_number) || 1;
+    const prefix = normalizeCode(numbering.prefix || "CI");
+    const fullNumber = `${prefix}-${String(documentNumber).padStart(6, "0")}`;
+    const total = round(payments.reduce((sum, row) => sum + row.amount, 0));
+    const reversal = await tx.cntCabdoc.create({
+      data: {
+        document_type: "CI",
+        document_number: documentNumber,
+        full_number: fullNumber,
+        posting_date: new Date(),
+        reference: original.full_number,
+        header_text: `Reversion recaudo ${original.full_number}`,
+        society_code: original.society_code,
+        total_debit: total,
+        total_credit: total,
+        referenced_document_id: original.id,
+        is_reversal: true,
+        created_by: userId || null
+      }
+    });
+    let lineNo = 1;
+    for (const line of original.lines) {
+      const ledger = await tx.ledgerEntry.create({
+        data: {
+          account_id: line.account_id,
+          transaction_id: null,
+          date: new Date(),
+          debit: line.credit,
+          credit: line.debit,
+          balance: 0,
+          description: `Reversion ${line.description}`,
+          period: periodFromDate(new Date())
+        }
+      });
+      await tx.cntCuedoc.create({
+        data: {
+          cabdoc_id: reversal.id,
+          line_no: lineNo++,
+          account_id: line.account_id,
+          account_code: line.account_code,
+          branch_code: line.branch_code,
+          cost_center_code: line.cost_center_code,
+          party_id: line.party_id,
+          party_tax_id: line.party_tax_id,
+          movement: line.credit > 0 ? "debit" : "credit",
+          debit: line.credit,
+          credit: line.debit,
+          description: `Reversion ${line.description}`,
+          ledger_entry_id: ledger.id
+        }
+      });
+    }
+    for (const payment of payments) {
+      const document = await tx.cxcCabdoc.findFirst({ where: { id: payment.cabdoc_id } });
+      if (!document) throw appError(404, "CXC_NOT_FOUND", "Documento aplicado no encontrado");
+      const restoredBalance = round(document.balance + payment.amount);
+      await tx.cxcCabdoc.update({
+        where: { id: document.id },
+        data: { balance: restoredBalance, applied_total: { decrement: payment.amount }, status: "open" }
+      });
+    }
+    await tx.cxcPayment.updateMany({
+      where: { group_id: String(groupId), status: "posted" },
+      data: { status: "cancelled", cancelled_by: userId || null, cancelled_at: new Date() }
+    });
+    await tx.party.update({ where: { id: payments[0].customer_id }, data: { balance: { increment: total } } });
+    await tx.cntCabdoc.update({
+      where: { id: original.id },
+      data: { status: "cancelled", is_cancelled: true, cancelled_by: userId || null, cancelled_at: new Date() }
+    });
+    const nextNumbering = [...(Array.isArray(accounting.accounting_numbering) ? accounting.accounting_numbering : [])
+      .filter((item) => normalizeAccountingDocumentType(item.document_type) !== "CI"), {
+      ...numbering, document_type: "CI", prefix, next_number: documentNumber + 1, active: true
+    }];
+    await tx.tenant.update({
+      where: { id: tenantId },
+      data: { config: { ...config, accounting: { ...accounting, accounting_numbering: nextNumbering } } }
+    });
+    return { receipt_group_id: groupId, status: "cancelled", reversal_document_id: reversal.id, reversal_number: fullNumber };
   }));
 }
 
@@ -2404,21 +2564,26 @@ async function getAgingReceivablesReport(tenantId, query = {}) {
 // ============================================================
 
 const DEFAULT_RETENTIONS = [
-  { code: "RETEFUENTE-1.0", description: "Retencion en la Fuente 1.0%", account_code: "2365", percent: 1.0, concept: "Honorarios" },
-  { code: "RETEFUENTE-2.5", description: "Retencion en la Fuente 2.5%", account_code: "2365", percent: 2.5, concept: "Servicios" },
-  { code: "RETEFUENTE-3.5", description: "Retencion en la Fuente 3.5%", account_code: "2365", percent: 3.5, concept: "Compras" },
-  { code: "RETEFUENTE-11", description: "Retencion en la Fuente 11%", account_code: "2365", percent: 11, concept: "Rendimientos financieros" },
-  { code: "RETEICA-0.5", description: "Retencion ICA 0.5%", account_code: "2368", percent: 0.5, concept: "Industria y Comercio" },
-  { code: "RETEIVA-15", description: "Retencion IVA 15%", account_code: "2367", percent: 15, concept: "IVA retenido" }
+  { code: "RETEFUENTE-1.0", description: "Retencion en la Fuente a favor 1.0%", account_code: "135515", percent: 1.0, concept: "Ventas" },
+  { code: "RETEFUENTE-2.5", description: "Retencion en la Fuente a favor 2.5%", account_code: "135515", percent: 2.5, concept: "Ventas" },
+  { code: "RETEFUENTE-3.5", description: "Retencion en la Fuente a favor 3.5%", account_code: "135515", percent: 3.5, concept: "Ventas" },
+  { code: "RETEFUENTE-11", description: "Retencion en la Fuente a favor 11%", account_code: "135515", percent: 11, concept: "Ventas" },
+  { code: "RETEICA-0.5", description: "Retencion ICA a favor 0.5%", account_code: "135518", percent: 0.5, concept: "Industria y Comercio" },
+  { code: "RETEIVA-15", description: "Retencion IVA a favor 15%", account_code: "135517", percent: 15, concept: "IVA retenido" }
 ];
 
 async function initializeRetentionMasters(tenantId) {
   return prisma.runWithTenant(tenantId, async () => {
-    const existing = await prisma.retentionMaster.findFirst({ where: { tenant_id: tenantId } });
+    const existing = await prisma.retentionMaster.findFirst({ where: { tenant_id: tenantId, scope: "sales" } });
     if (existing) return { message: "Retenciones ya inicializadas" };
     for (const ret of DEFAULT_RETENTIONS) {
       await prisma.retentionMaster.create({
-        data: { tenant_id: tenantId, ...ret }
+        data: {
+          tenant_id: tenantId,
+          ...ret,
+          scope: "sales",
+          retention_type: ret.code.startsWith("RETEIVA") ? "reteiva" : ret.code.startsWith("RETEICA") ? "reteica" : "retefuente"
+        }
       });
     }
     return { message: "Retenciones inicializadas", count: DEFAULT_RETENTIONS.length };
@@ -2428,7 +2593,7 @@ async function initializeRetentionMasters(tenantId) {
 async function getRetentionMasters(tenantId) {
   return prisma.runWithTenant(tenantId, async () => {
     return prisma.retentionMaster.findMany({
-      where: { tenant_id: tenantId },
+      where: { tenant_id: tenantId, scope: "sales" },
       orderBy: { code: "asc" }
     });
   });
@@ -2441,7 +2606,9 @@ async function saveRetentionMaster(tenantId, data, id = null) {
     if (!code || !data.description || !account_code || !data.percent) {
       throw appError(400, "REQUIRED_RETENTION_FIELDS", "Codigo, descripcion, cuenta contable y porcentaje son obligatorios");
     }
-    const existing = await prisma.retentionMaster.findFirst({ where: { tenant_id: tenantId, code, ...(id ? { id: { not: Number(id) } } : {}) } });
+    const scope = data.scope === "purchases" ? "purchases" : "sales";
+    const retentionType = ["retefuente", "reteiva", "reteica"].includes(data.retention_type) ? data.retention_type : "retefuente";
+    const existing = await prisma.retentionMaster.findFirst({ where: { tenant_id: tenantId, scope, code, ...(id ? { id: { not: Number(id) } } : {}) } });
     if (existing) throw appError(409, "DUPLICATE_RETENTION_CODE", `Ya existe una retencion con codigo ${code}`);
 
     const payload = {
@@ -2450,6 +2617,10 @@ async function saveRetentionMaster(tenantId, data, id = null) {
       account_code,
       percent: Number(data.percent),
       concept: data.concept || null,
+      scope,
+      retention_type: retentionType,
+      minimum_base: Math.max(0, Number(data.minimum_base) || 0),
+      base_type: data.base_type === "iva" ? "iva" : "subtotal",
       active: data.active !== false
     };
 

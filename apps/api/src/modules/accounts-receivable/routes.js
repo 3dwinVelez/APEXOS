@@ -35,6 +35,14 @@ async function accountsReceivableRoutes(fastify) {
     request.body
   )));
 
+  fastify.post("/accounts-receivable/payments/:groupId/cancel", {
+    preHandler: requirePermission("accounting", "approve")
+  }, async (request) => service.cancelPayment(
+    request.user?.tenant_id,
+    request.user.id,
+    request.params.groupId
+  ));
+
   // Reports
   fastify.get("/accounts-receivable/reports/aging", {
     preHandler: requirePermission("accounting", "read")

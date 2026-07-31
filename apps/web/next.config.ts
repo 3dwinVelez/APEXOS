@@ -14,6 +14,9 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     const apiOrigin = configuredConnectOrigin(process.env.NEXT_PUBLIC_API_URL);
+    const scriptSrc = process.env.NODE_ENV === "production"
+      ? "script-src 'self' 'unsafe-inline'"
+      : "script-src 'self' 'unsafe-inline' 'unsafe-eval'";
     return [
       {
         source: "/:all*(svg|jpg|jpeg|png|webp|avif|gif|ico|woff|woff2)",
@@ -34,7 +37,7 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline'",
+              scriptSrc,
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https:",
               `connect-src 'self' https: wss:${apiOrigin ? ` ${apiOrigin}` : ""}`,

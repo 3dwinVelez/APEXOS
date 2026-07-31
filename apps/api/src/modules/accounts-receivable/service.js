@@ -65,7 +65,7 @@ async function registerPayment(tenantId, userId, data) {
   const { customer_id, cabdoc_ids = [], amount, method, date, reference, notes, account_id } = data;
   if (!customer_id) throw appError(400, "REQUIRED_CUSTOMER", "El cliente es obligatorio");
 
-  const customer = await prisma.party.findFirst({ where: { id: Number(customer_id), type: "customer" } });
+  const customer = await prisma.runWithTenant(tenantId, () => prisma.party.findFirst({ where: { id: Number(customer_id), type: "customer" } }));
   if (!customer) throw appError(404, "CUSTOMER_NOT_FOUND", "Cliente no encontrado");
 
   return accountingService.registerPaymentReceivable(tenantId, userId, {
@@ -78,6 +78,10 @@ async function registerPayment(tenantId, userId, data) {
     notes: String(notes || ""),
     account_id: account_id ? Number(account_id) : null
   });
+}
+
+async function cancelPayment(tenantId, userId, groupId) {
+  return accountingService.cancelPaymentReceivable(tenantId, userId, groupId);
 }
 
 async function getAgingReport(tenantId, query = {}) {
@@ -107,6 +111,7 @@ module.exports = {
   getCustomerStatement,
   getCustomerBalance,
   registerPayment,
+  cancelPayment,
   getAgingReport,
   listRetentions,
   createRetention,

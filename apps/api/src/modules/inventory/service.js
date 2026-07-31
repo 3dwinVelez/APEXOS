@@ -111,6 +111,8 @@ function warehouseDto(place) {
     branch_code: place.branch_code || "",
     cost_center_code: place.cost_center_code || "",
     active: place.active !== false,
+    consignment_customer_id: Number(place.metadata?.consignment_customer_id || 0) || null,
+    consignment_customer_name: place.metadata?.consignment_customer_name || "",
     locations_count: locations.length,
     stock_total: stockTotal,
     created_at: place.created_at
@@ -281,6 +283,61 @@ async function applyWeightedAverageCost(tx, tenantId, userId, item, qty, unitCos
   return nextAverage;
 }
 
+async function getSocietyAverageCostTx(tx, tenantId, itemId, societyCode, fallbackCost = 0) {
+  const valuation = await tx.skuValuation.findFirst({
+    where: { tenant_id: tenantId, society_code: normalizeCode(societyCode), item_id: Number(itemId) }
+  });
+  return valuation ? Number(valuation.average_cost || 0) : Number(fallbackCost || 0);
+}
+
+async function applySocietyValuationTx(tx, tenantId, item, societyCode, type, qty, incomingCost) {
+  const society = normalizeCode(societyCode);
+  if (!society || type === "transfer") return Number(item.unit_cost || 0);
+  await tx.$executeRawUnsafe(
+    "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+    `${tenantId}:${society}:${item.id}:sku-valuation`
+  );
+  let valuation = await tx.skuValuation.findFirst({
+    where: { tenant_id: tenantId, society_code: society, item_id: item.id }
+  });
+  if (!valuation) {
+    const balances = await tx.itemLocation.findMany({
+      where: { item_id: item.id, location: { place: { society_code: society } } },
+      select: { qty: true }
+    });
+    const initialQty = Math.round(balances.reduce((sum, row) => sum + Number(row.qty || 0), 0) * 10000) / 10000;
+    valuation = await tx.skuValuation.create({
+      data: {
+        tenant_id: tenantId,
+        society_code: society,
+        item_id: item.id,
+        quantity: initialQty,
+        inventory_value: Math.round(initialQty * Number(item.unit_cost || 0) * 100) / 100,
+        average_cost: Number(item.unit_cost || 0)
+      }
+    });
+  }
+  if (type === "out" && Number(valuation.quantity) + 0.000001 < qty) {
+    throw appError(422, "INSUFFICIENT_SOCIETY_STOCK", `Stock insuficiente del SKU en la sociedad ${society}`);
+  }
+  const recognizedCost = Number(valuation.average_cost || item.unit_cost || 0);
+  const increment = type === "in" || type === "adjustment";
+  const nextQty = Math.round((Number(valuation.quantity) + (increment ? qty : -qty)) * 10000) / 10000;
+  const nextValue = increment
+    ? Math.round((Number(valuation.inventory_value) + qty * Number(incomingCost ?? recognizedCost)) * 100) / 100
+    : Math.round(Math.max(0, Number(valuation.inventory_value) - qty * recognizedCost) * 100) / 100;
+  await tx.skuValuation.update({
+    where: { id: valuation.id },
+    data: {
+      quantity: nextQty,
+      inventory_value: nextValue,
+      average_cost: nextQty > 0 ? Math.round((nextValue / nextQty) * 10000) / 10000 : 0,
+      version: { increment: 1 }
+    }
+  });
+  return recognizedCost;
+}
+
 async function stockMoveTx(tx, tenantId, userId, data) {
   const {
     item_id, type, qty, from_location_id = null, to_location_id = null,
@@ -321,6 +378,20 @@ async function stockMoveTx(tx, tenantId, userId, data) {
     });
   }
 
+  const valuationLocationId = type === "out" ? from_location_id : to_location_id;
+  const valuationLocation = valuationLocationId
+    ? await tx.location.findFirst({ where: { id: valuationLocationId }, include: { place: true } })
+    : null;
+  const recognizedSocietyCost = await applySocietyValuationTx(
+    tx,
+    tenantId,
+    item,
+    valuationLocation?.place?.society_code || data.society_code || "",
+    type,
+    qty,
+    cost
+  );
+
   let nextAverageCost = item.unit_cost;
   if ((type === "in" || type === "adjustment") && item.costing_method === "weighted_average") {
     nextAverageCost = await applyWeightedAverageCost(tx, tenantId, userId, item, qty, cost ?? item.unit_cost, "movement", transaction_id);
@@ -334,7 +405,7 @@ async function stockMoveTx(tx, tenantId, userId, data) {
       to_location: to_location_id,
       transaction_id,
       qty,
-      cost: cost ?? item.unit_cost,
+      cost: type === "out" ? recognizedSocietyCost : (cost ?? item.unit_cost),
       lot,
       reason,
       created_by: userId
@@ -471,6 +542,15 @@ async function saveWarehouse(tenantId, data, placeId = null) {
   const warehouseType = String(data.warehouse_type || "owned").trim();
   if (!code || !name) throw appError(400, "REQUIRED_WAREHOUSE", "Codigo y nombre de bodega son obligatorios");
   if (!["owned", "consignment"].includes(warehouseType)) throw appError(400, "INVALID_WAREHOUSE_TYPE", "El tipo de bodega debe ser propia o consignacion");
+  const consignmentCustomerId = warehouseType === "consignment" ? Number(data.consignment_customer_id || 0) : 0;
+  let consignmentCustomer = null;
+  if (warehouseType === "consignment") {
+    if (!consignmentCustomerId) throw appError(400, "CONSIGNMENT_CUSTOMER_REQUIRED", "La bodega en consignacion debe estar enlazada a un cliente");
+    consignmentCustomer = await prisma.runWithTenant(tenantId, () => prisma.party.findFirst({
+      where: { id: consignmentCustomerId, type: "customer", active: true }
+    }));
+    if (!consignmentCustomer) throw appError(404, "CONSIGNMENT_CUSTOMER_NOT_FOUND", "Cliente de consignacion no encontrado o inactivo");
+  }
   await assertWarehouseOrganization(tenantId, societyCode, branchCode, costCenterCode);
 
   return prisma.runWithTenant(tenantId, async () => {
@@ -497,6 +577,9 @@ async function saveWarehouse(tenantId, data, placeId = null) {
         branch_code: branchCode,
         cost_center_code: costCenterCode,
         warehouse_type: warehouseType
+        ,
+        consignment_customer_id: consignmentCustomer?.id || null,
+        consignment_customer_name: consignmentCustomer ? (consignmentCustomer.legal_name || consignmentCustomer.name) : null
       }
     };
 
@@ -793,6 +876,7 @@ module.exports = {
   saveFamily,
   getFamilyAccountingByItem,
   applyWeightedAverageCost,
+  getSocietyAverageCostTx,
   stockMove,
   stockMoveTx,
   adjustStock,
