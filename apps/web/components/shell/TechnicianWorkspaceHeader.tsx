@@ -11,7 +11,7 @@ export function TechnicianWorkspaceHeader() {
   }
 
   return (
-    <header className="technician-only sticky top-0 z-40 mb-4 items-center justify-between gap-3 rounded-md border border-line bg-white/95 px-3 py-2 shadow-sm backdrop-blur sm:px-4">
+    <header className="technician-only sticky top-0 z-40 mb-4 items-center justify-between gap-3 rounded-md border border-line bg-white px-3 py-2 sm:px-4">
       <div className="flex min-w-0 items-center gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-apex text-white">
           <Wrench size={19} />

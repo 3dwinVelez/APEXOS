@@ -52,7 +52,7 @@ export function Sidebar() {
 
   function linkClass(active: boolean, enabled = true) {
     if (!enabled) return "flex h-10 w-full items-center gap-3 rounded-md px-3 text-left text-sm text-neutral-400 opacity-75";
-    return `flex h-10 items-center gap-3 rounded-md px-3 text-sm transition ${active ? "bg-apex text-white shadow-sm" : "text-neutral-700 hover:bg-paper"}`;
+    return `flex h-10 items-center gap-3 rounded-md px-3 text-sm transition-colors ${active ? "bg-apex text-white" : "text-neutral-700 hover:bg-paper"}`;
   }
 
   function sectionLabel(label: string) {
@@ -93,7 +93,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className={`sticky top-0 hidden h-dvh shrink-0 border-r border-line bg-white py-4 transition-[width,padding] duration-200 md:flex md:flex-col ${collapsed ? "w-16 px-2" : "w-72 px-4"}`}>
+    <aside className={`sticky top-0 hidden h-dvh shrink-0 border-r border-line bg-white py-4 transition-[width,padding] duration-150 md:flex md:flex-col ${collapsed ? "w-16 px-2" : "w-72 px-4"}`}>
       <div className="mb-4 flex shrink-0 items-center justify-between">
         <div className={collapsed ? "hidden" : "block"}>
           <p className="text-lg font-semibold tracking-normal">APEX OS</p>

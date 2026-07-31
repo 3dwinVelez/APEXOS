@@ -34,7 +34,7 @@ export function ThemeToggle() {
   return (
     <button
       aria-label={dark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
-      className="fixed bottom-20 right-3 z-[80] inline-flex h-11 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold text-neutral-700 shadow-lg transition hover:bg-paper md:bottom-4 md:right-4"
+      className="fixed bottom-20 right-3 z-[80] inline-flex h-11 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold text-neutral-700 transition-colors hover:bg-paper md:bottom-4 md:right-4"
       onClick={toggleTheme}
       title={dark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
       type="button"

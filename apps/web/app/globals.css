@@ -236,10 +236,6 @@ textarea {
   font: inherit;
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
 body {
   overflow-x: hidden;
 }
@@ -364,22 +360,9 @@ textarea {
   position: relative;
   overflow: hidden;
   border-radius: 0.75rem;
-  background:
-    radial-gradient(circle at top right, rgb(var(--color-apex) / 0.34), transparent 28rem),
-    linear-gradient(135deg, rgb(7 20 17), rgb(10 25 28));
+  border: 1px solid rgb(var(--color-line));
+  background: rgb(15 23 42);
   color: white;
-  box-shadow: 0 14px 34px rgb(15 23 42 / 0.13);
-}
-
-.apex-context-hero::after {
-  content: "";
-  position: absolute;
-  inset: auto -6rem -9rem auto;
-  width: 18rem;
-  height: 18rem;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 0.08);
-  pointer-events: none;
 }
 
 .apex-eyebrow {
@@ -428,14 +411,11 @@ textarea {
   border-radius: 0.625rem;
   background: white;
   color: rgb(7 20 17);
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.34), 0 14px 30px rgb(0 0 0 / 0.2);
-  transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+  transition: background-color 160ms ease;
 }
 
 .apex-hero-action:hover {
   background: rgb(240 253 250);
-  transform: translateY(-1px);
-  box-shadow: 0 0 0 4px rgb(255 255 255 / 0.14), 0 18px 36px rgb(0 0 0 / 0.24);
 }
 
 .apex-guide-chip {
@@ -467,16 +447,12 @@ a.hover\:bg-apex\/90:hover {
 
 .apex-section-card {
   border: 1px solid rgb(var(--color-line));
-  background:
-    linear-gradient(135deg, rgb(var(--surface)), rgb(var(--surface-soft) / 0.72));
+  background: rgb(var(--surface));
   border-radius: 0.75rem;
-  box-shadow: 0 8px 24px rgb(15 23 42 / 0.05);
 }
 
 .apex-soft-gradient {
-  background:
-    radial-gradient(circle at top right, rgb(var(--color-apex) / 0.12), transparent 22rem),
-    linear-gradient(135deg, rgb(var(--surface)), rgb(var(--surface-soft)));
+  background: rgb(var(--surface));
 }
 
 ::-webkit-scrollbar {
@@ -641,15 +617,12 @@ html.dark .text-white\/70 {
 html.dark .apex-section-card,
 html.dark .apex-soft-gradient,
 html.dark .apex-app-gradient {
-  background:
-    radial-gradient(circle at top right, rgb(var(--color-apex) / 0.08), transparent 24rem),
-    linear-gradient(135deg, rgb(var(--surface)), rgb(var(--surface-muted) / 0.78)) !important;
+  background: rgb(var(--surface)) !important;
 }
 
 html.dark .apex-context-hero {
-  background:
-    radial-gradient(circle at top right, rgb(var(--color-apex) / 0.22), transparent 28rem),
-    linear-gradient(135deg, rgb(5 15 14), rgb(13 27 30)) !important;
+  background: rgb(15 23 42) !important;
+  color: white !important;
 }
 
 html.dark .border-neutral-100,
@@ -823,7 +796,7 @@ html.dark .shadow-sm,
 html.dark .shadow-md,
 html.dark .shadow-lg,
 html.dark .shadow-xl {
-  box-shadow: 0 8px 24px rgb(0 0 0 / 0.22);
+  box-shadow: none;
 }
 
 html.dark .dark-primary-action {
