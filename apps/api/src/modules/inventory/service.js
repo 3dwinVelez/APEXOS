@@ -314,7 +314,7 @@ function calculateSocietyValuation({ quantityBalance, valueBalance, averageCost,
 
 async function applySocietyValuationTx(tx, tenantId, userId, { societyCode, item, qty, unitCost, direction, sourceType, sourceId }) {
   await tx.$queryRawUnsafe(
-    "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+    "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))::text AS lock_result",
     `${tenantId}:${normalizeCode(societyCode)}:${item.id}`
   );
   const valuation = await getSocietyValuationTx(tx, societyCode, item.id);
@@ -800,6 +800,10 @@ async function getKardex(tenantId, itemId, filters = {}) {
     const transferIds = [...new Set(allMovements.filter((movement) => movement.source_type === "warehouse_transfer" && movement.source_id).map((movement) => movement.source_id))];
     const transfers = transferIds.length ? await prisma.warehouseTransfer.findMany({ where: { id: { in: transferIds } }, select: { id: true, number: true } }) : [];
     const transferById = new Map(transfers.map((transfer) => [transfer.id, transfer]));
+    const purchaseNumbers = [...new Set(allMovements.filter((movement) => movement.source_type === "purchase_order_receipt" && movement.transaction?.number).map((movement) => movement.transaction.number))];
+    const receiptDocuments = purchaseNumbers.length ? await prisma.cntCabdoc.findMany({ where: { document_type: "EM", reference: { in: purchaseNumbers } }, orderBy: { posting_date: "desc" } }) : [];
+    const receiptDocumentByReference = new Map();
+    for (const document of receiptDocuments) if (!receiptDocumentByReference.has(document.reference)) receiptDocumentByReference.set(document.reference, document);
     const locations = locationIds.length ? await prisma.location.findMany({ where: { id: { in: locationIds } }, include: { place: true } }) : [];
     const locationById = new Map(locations.map((location) => [location.id, location]));
 
@@ -838,6 +842,8 @@ async function getKardex(tenantId, itemId, filters = {}) {
         document_type: movement.source_type || movement.transaction?.type || movement.type,
         document_id: movement.source_id || movement.transaction_id || null,
         document_number: movement.transaction?.number || transferById.get(movement.source_id)?.number || "",
+        accounting_document_id: receiptDocumentByReference.get(movement.transaction?.number)?.id || null,
+        accounting_document_number: receiptDocumentByReference.get(movement.transaction?.number)?.full_number || "",
         reason: movement.reason || "",
         from_location_id: movement.from_location,
         to_location_id: movement.to_location,

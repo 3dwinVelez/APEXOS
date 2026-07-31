@@ -117,6 +117,7 @@ export default function PurchaseInvoicesPage() {
   });
   const [lines, setLines] = useState<InvoiceLine[]>([]);
   const [retentions, setRetentions] = useState<Retention[]>([]);
+  const [activeSection, setActiveSection] = useState<"factura" | "retenciones">("factura");
 
   async function loadSupplierRetentions(supplierId: string) {
     if (!supplierId) { setRetentions([]); return; }
@@ -378,7 +379,11 @@ export default function PurchaseInvoicesPage() {
       {ok ? <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{ok}</p> : null}
 
       <form className="space-y-4" onSubmit={save} ref={formRef}>
-        <section className="rounded-md border border-line bg-white p-4">
+        <nav aria-label="Secciones de factura" className="flex gap-1 rounded-md border border-line bg-white p-1">
+          <button className={`rounded px-4 py-2 text-sm font-medium ${activeSection === "factura" ? "bg-apex text-white" : "text-neutral-600 hover:bg-paper"}`} onClick={() => setActiveSection("factura")} type="button">Factura</button>
+          <button className={`rounded px-4 py-2 text-sm font-medium ${activeSection === "retenciones" ? "bg-apex text-white" : "text-neutral-600 hover:bg-paper"}`} onClick={() => setActiveSection("retenciones")} type="button">Retenciones ({retentions.length})</button>
+        </nav>
+        {activeSection === "factura" ? <section className="rounded-md border border-line bg-white p-4">
           <div className="grid gap-3 md:grid-cols-6">
             <label className="text-sm">Tipo documento
               <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={header.document_kind} onChange={(event) => setHeader((current) => ({ ...current, document_kind: event.target.value }))}>
@@ -454,9 +459,9 @@ export default function PurchaseInvoicesPage() {
               <input className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={header.header_text} onChange={(event) => setHeader((current) => ({ ...current, header_text: event.target.value }))} required />
             </label>
           </div>
-        </section>
+        </section> : null}
 
-        <section className="rounded-md border border-line bg-white p-4">
+        {activeSection === "retenciones" ? <section className="rounded-md border border-line bg-white p-4">
           <h2 className="text-base font-semibold">Retenciones tributarias de cabecera</h2>
           <p className="mb-3 text-sm text-neutral-500">Se heredan del proveedor. La base y el importe pueden ajustarse para este documento.</p>
           <div className="space-y-2">
@@ -469,7 +474,7 @@ export default function PurchaseInvoicesPage() {
             </div>)}
             {!retentions.length ? <p className="text-sm text-neutral-500">El proveedor no tiene retenciones asignadas desde Contabilidad.</p> : null}
           </div>
-        </section>
+        </section> : null}
 
         <section className="rounded-md border border-line bg-white">
           <div className="flex items-center justify-between gap-3 border-b border-line p-4">

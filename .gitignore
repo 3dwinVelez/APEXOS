@@ -26,3 +26,4 @@ venv/
 logs/
 .npm-cache/
 supabase/.temp/
+.agents/reports/

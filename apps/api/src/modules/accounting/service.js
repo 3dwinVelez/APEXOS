@@ -78,7 +78,8 @@ const DEFAULT_ACCOUNTING_DOCUMENT_TYPES = [
   { code: "RE", description: "Factura proveedor" },
   { code: "KG", description: "Nota credito proveedor" },
   { code: "CP", description: "Factura compra" },
-  { code: "NCP", description: "Nota credito compra" }
+  { code: "NCP", description: "Nota credito compra" },
+  { code: "EM", description: "Entrada de mercancia" }
 ].map((row) => ({ ...row, active: true, source: "Sistema" }));
 const DEFAULT_VAT_MASTERS = [
   { code: "COMPRAS-0", concept: "Compras", percent: 0, account_code: "2408" },
@@ -1433,6 +1434,81 @@ async function createPayableDocumentTx(tx, tenantId, userId, data) {
   return tx.cxpCabdoc.findFirst({ where: { id: cxp.id }, include: { lines: { orderBy: { line_no: "asc" } } } });
 }
 
+async function createGoodsReceiptDocumentTx(tx, tenantId, userId, data) {
+  const postingDate = data.posting_date instanceof Date ? data.posting_date : new Date(data.posting_date || Date.now());
+  const tenant = await tx.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
+  const config = tenant?.config && typeof tenant.config === "object" ? tenant.config : {};
+  const accounting = config.accounting && typeof config.accounting === "object" ? config.accounting : {};
+  const documentType = "EM";
+  const documentTypes = mergeByCode(DEFAULT_ACCOUNTING_DOCUMENT_TYPES, accounting.accounting_document_types, "code")
+    .map((row) => ({ ...row, code: normalizeAccountingDocumentType(row.code) }));
+  const numberingRows = mergeNumbering(documentTypes, accounting.accounting_numbering);
+  const numbering = numberingRows.find((row) => row.document_type === documentType && row.active !== false);
+  if (!numbering) throw appError(400, "NUMBERING_NOT_IN_MASTER", "La entrada de mercancia no tiene numeracion contable activa");
+
+  const documentNumber = Number(numbering.next_number) || 1;
+  const prefix = normalizeCode(numbering.prefix || documentType);
+  const fullNumber = `${prefix}-${String(documentNumber).padStart(6, "0")}`;
+  const lines = Array.isArray(data.lines) ? data.lines.filter((line) => round(line.amount) > 0) : [];
+  const total = round(lines.reduce((sum, line) => sum + round(line.amount), 0));
+  if (!lines.length || total <= 0) throw appError(400, "EMPTY_GOODS_RECEIPT", "La recepcion no tiene valores para contabilizar");
+
+  const cabdoc = await tx.cntCabdoc.create({ data: {
+    document_type: documentType,
+    document_number: documentNumber,
+    full_number: fullNumber,
+    posting_date: postingDate,
+    reference: String(data.reference || "").trim() || null,
+    header_text: String(data.header_text || "Entrada de mercancia"),
+    society_code: normalizeCode(data.society_code),
+    total_debit: total,
+    total_credit: total,
+    created_by: userId || null
+  } });
+
+  let lineNo = 1;
+  for (const source of lines) {
+    for (const movement of ["debit", "credit"]) {
+      const accountCode = normalizeCode(movement === "debit" ? source.inventory_account_code : source.gr_ir_account_code);
+      const account = await tx.account.findFirst({ where: { code: accountCode, active: true, allows_tx: true } });
+      if (!account) throw appError(422, "RECEIPT_ACCOUNT_NOT_FOUND", `La cuenta ${accountCode} no existe, esta inactiva o no permite movimientos`);
+      const amount = round(source.amount);
+      const ledger = await tx.ledgerEntry.create({ data: {
+        account_id: account.id,
+        transaction_id: data.transaction_id || null,
+        date: postingDate,
+        debit: movement === "debit" ? amount : 0,
+        credit: movement === "credit" ? amount : 0,
+        balance: 0,
+        description: String(source.description || data.header_text),
+        period: periodFromDate(postingDate)
+      } });
+      await tx.cntCuedoc.create({ data: {
+        cabdoc_id: cabdoc.id,
+        line_no: lineNo++,
+        account_id: account.id,
+        account_code: account.code,
+        branch_code: normalizeCode(data.branch_code),
+        cost_center_code: normalizeCode(data.cost_center_code),
+        party_id: Number(data.party_id),
+        party_tax_id: data.party_tax_id ? String(data.party_tax_id) : null,
+        movement,
+        debit: movement === "debit" ? amount : 0,
+        credit: movement === "credit" ? amount : 0,
+        description: String(source.description || data.header_text),
+        ledger_entry_id: ledger.id
+      } });
+    }
+  }
+
+  const customNumbering = Array.isArray(accounting.accounting_numbering) ? accounting.accounting_numbering : [];
+  const nextNumbering = [...customNumbering.filter((row) => normalizeAccountingDocumentType(row.document_type) !== documentType), {
+    ...numbering, document_type: documentType, prefix, next_number: documentNumber + 1, active: true, source: numbering.source || "Sistema"
+  }];
+  await tx.tenant.update({ where: { id: tenantId }, data: { config: { ...config, accounting: { ...accounting, accounting_numbering: nextNumbering } } } });
+  return tx.cntCabdoc.findUnique({ where: { id: cabdoc.id }, include: { lines: { orderBy: { line_no: "asc" } } } });
+}
+
 async function createPayableDocument(tenantId, userId, data) {
   return prisma.runWithTenant(tenantId, () => prisma.$transaction(
     (tx) => createPayableDocumentTx(tx, tenantId, userId, data)
@@ -1932,6 +2008,7 @@ module.exports = {
   listPayableAccounts,
   listAccountingDocuments,
   createAccountingDocument,
+  createGoodsReceiptDocumentTx,
   listPayableDocuments,
   listOpenPayableInvoices,
   listSupplierPayableDocuments,

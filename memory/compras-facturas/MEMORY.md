@@ -12,7 +12,7 @@ Conservar el contexto funcional y técnico confirmado durante el desarrollo de l
 
 ## Decisiones confirmadas
 
-- Pendiente de recibir las primeras decisiones del usuario.
+- La recepcion de una orden de compra admite entregas parciales por posicion. El usuario debe ver lo pedido e ingresar manualmente las unidades efectivamente recibidas en cada linea.
 
 ## Reglas de negocio
 
@@ -21,6 +21,9 @@ Conservar el contexto funcional y técnico confirmado durante el desarrollo de l
 - Una factura de proveedor debe contabilizar IVA y retenciones aplicables, mantener trazabilidad con la OC/recepción y crear un documento contable balanceado.
 
 ## Correcciones solicitadas
+
+- Se corrigio el error 500 de recepcion causado por la deserializacion del retorno `void` de `pg_advisory_xact_lock`; el bloqueo conserva su funcion transaccional y retorna texto compatible con Prisma.
+- La pantalla de recepcion deja de confirmar automaticamente todo el pendiente y muestra pedido, recibido, saldo e ingreso manual por posicion.
 
 - Revisar el error `400` de `/api/v1/purchases/invoices/simulate`: `body/supplier_reference must NOT have fewer than 1 characters`.
 - Diagnóstico: el botón `Simular contabilizacion` es `type="button"` y ejecuta la llamada directamente, por lo que no activa la validación HTML del `<form>`. El payload puede incluir `supplier_reference: ""`, aunque el API exige `minLength: 1`.
@@ -87,6 +90,15 @@ Conservar el contexto funcional y técnico confirmado durante el desarrollo de l
 - Anulación crea RV contrario y guarda usuario, fecha, banderas y enlaces de reversión; reabre posiciones facturables de OC.
 - Migración aplicada: `20260721190000_purchase_tax_retention_reversals`.
 - QA: `npm run qa:purchases:tax-reversal` cubre maestros, herencia, cálculo, persistencia fiscal, balance, reversión, recepción, devolución y reapertura. Resultado exitoso.
+
+### 2026-07-31 - Contabilizacion de recepciones
+
+- Cada recepcion de OC genera atomicamente un documento contable clase `EM`: debito a inventario alta y credito a EM/RF, usando las cuentas parametrizadas en la familia de cada SKU.
+- El documento conserva NIT del proveedor, usuario, referencia de OC, clase, numero y fecha de contabilizacion; debe verse en Compras, Kardex y Contabilidad.
+- Las retenciones de facturas de compra se presentan en una pestana independiente y conservan base e importe editables.
+- La recepcion de OC se filtra por numero, rango de fechas, estado, proveedor, bodega y producto.
+- La recepcion incluye la opcion `Recibir todo lo pendiente`, que completa el saldo de todas las posiciones; al desmarcarla vuelve al ingreso manual.
+- El diligenciamiento de la recepcion se abre en una ventana modal para mostrar exclusivamente la OC seleccionada y evitar mezclar posiciones de otros pedidos.
 
 ### 2026-07-21 - Decisiones de costo e inventario
 

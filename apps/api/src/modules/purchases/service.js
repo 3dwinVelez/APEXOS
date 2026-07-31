@@ -244,6 +244,21 @@ async function enrichPurchaseOrder(po) {
   };
 }
 
+function purchaseReceiptLineState(line, movements = [], requestedQty) {
+  const quantity = Number(requestedQty);
+  const already = movements.reduce((sum, move) => (
+    sum + (move.type === "in" ? 1 : move.type === "out" ? -1 : 0) * Number(move.qty)
+  ), 0);
+  const pending = Math.max(0, Number(line.qty) - already);
+  if (!Number.isFinite(quantity) || quantity <= 0) {
+    throw appError(400, "INVALID_QTY", "La cantidad recibida debe ser mayor a 0");
+  }
+  if (quantity > pending + 0.0001) {
+    throw appError(422, "EXCEEDS_PENDING", `La cantidad recibida supera el pendiente (${pending})`);
+  }
+  return { quantity, already, pending };
+}
+
 async function receivePurchaseOrder(tenantId, userId, poId, data) {
   const { received_lines = [], notes = null } = data;
   if (!Array.isArray(received_lines) || received_lines.length === 0) {
@@ -269,43 +284,63 @@ async function receivePurchaseOrder(tenantId, userId, poId, data) {
       });
       defaultLocationId = defaultLocation?.id || null;
     }
+    if (!defaultLocationId && received_lines.some((row) => !Number(row.location_id))) {
+      throw appError(422, "WAREHOUSE_LOCATION_REQUIRED", "La bodega de la OC no tiene una ubicacion activa para recibir mercancia");
+    }
 
-    let receivedTotal = 0;
+    const duplicatedLine = received_lines.find((row, index) => (
+      received_lines.findIndex((candidate) => Number(candidate.line_id) === Number(row.line_id)) !== index
+    ));
+    if (duplicatedLine) throw appError(400, "DUPLICATE_RECEIPT_LINE", "Cada posicion de la OC debe enviarse una sola vez por recepcion");
+
+    const accountingLines = [];
     for (const row of received_lines) {
-      const line = po.lines.find((entry) => entry.id === row.line_id);
+      const line = po.lines.find((entry) => entry.id === Number(row.line_id));
       if (!line) throw appError(404, "LINE_NOT_FOUND", `Linea ${row.line_id} no encontrada`);
-      if (!row.qty_received || row.qty_received <= 0) throw appError(400, "INVALID_QTY", "qty_received debe ser mayor a 0");
       const moved = await tx.movement.findMany({ where: { transaction_id: poId, purchase_order_line_id: line.id } });
-      const already = moved.reduce((sum, move) => sum + (move.type === "in" ? 1 : move.type === "out" ? -1 : 0) * Number(move.qty), 0);
-      const pending = Number(line.qty) - Number(already);
-      if (row.qty_received > pending + 0.0001) {
-        throw appError(422, "EXCEEDS_PENDING", `La cantidad recibida supera el pendiente (${pending})`);
-      }
+      const { quantity, already } = purchaseReceiptLineState(line, moved, row.qty_received);
+      const destinationLocationId = Number(row.location_id || defaultLocationId);
+      const destinationLocation = await tx.location.findFirst({ where: { id: destinationLocationId, active: true, place_id: warehouseId } });
+      if (!destinationLocation) throw appError(422, "LOCATION_WAREHOUSE_MISMATCH", "La ubicacion de recepcion debe pertenecer a la bodega de la OC");
       await inventoryService.stockMoveTx(tx, tenantId, userId, {
         item_id: line.item_id,
         type: "in",
-        qty: Number(row.qty_received),
-        to_location_id: row.location_id || defaultLocationId,
+        qty: quantity,
+        to_location_id: destinationLocationId,
         transaction_id: poId,
         purchase_order_line_id: line.id,
         source_type: "purchase_order_receipt",
         source_id: po.id,
-        idempotency_key: `purchase-receipt:${po.id}:${line.id}:${already}:${Number(row.qty_received)}`,
+        idempotency_key: `purchase-receipt:${po.id}:${line.id}:${already}:${quantity}`,
         cost: line.unit_cost,
         lot: row.lot || null,
         expiry: row.expiry || null,
         reason: `Recepcion ${po.number}`
       });
-      receivedTotal += Number(row.qty_received) * Number(line.unit_cost);
-    }
-
-    if (receivedTotal > 0) {
-      await accountingService.journalEntryTx(tx, {
-        description: `Recepcion de mercancia ${po.number}`,
-        transaction_id: po.id,
-        entries: [{ account: "1435", debit: receivedTotal, credit: 0 }, { account: "2610", debit: 0, credit: receivedTotal }]
+      const family = await inventoryService.getFamilyAccountingByItem(tx, line.item_id);
+      if (!family?.accounting?.goods_receipt_account_code || !family?.accounting?.gr_ir_account_code) {
+        throw appError(422, "RECEIPT_ACCOUNTING_REQUIRED", `El SKU ${family?.item?.code || line.item_id} no tiene cuentas de inventario alta y EM/RF parametrizadas en su familia`);
+      }
+      accountingLines.push({
+        inventory_account_code: family.accounting.goods_receipt_account_code,
+        gr_ir_account_code: family.accounting.gr_ir_account_code,
+        amount: quantity * Number(line.unit_cost),
+        description: `Recepcion ${po.number} - ${family.item.code}`
       });
     }
+
+    const accountingDocument = await accountingService.createGoodsReceiptDocumentTx(tx, tenantId, userId, {
+      posting_date: new Date(),
+      reference: po.number,
+      header_text: `Recepcion de mercancia ${po.number}`,
+      society_code: po.metadata?.society_code,
+      branch_code: po.metadata?.branch_code,
+      cost_center_code: po.metadata?.cost_center_code,
+      party_id: po.party_id,
+      party_tax_id: po.party?.tax_id,
+      transaction_id: po.id,
+      lines: accountingLines
+    });
 
     const allMoves = await tx.movement.findMany({ where: { transaction_id: po.id } });
     const byLine = new Map();
@@ -319,7 +354,7 @@ async function receivePurchaseOrder(tenantId, userId, poId, data) {
       include: { lines: true, party: true }
     });
 
-    return updated;
+    return { ...updated, accounting_document: accountingDocument };
   }));
 }
 
@@ -587,7 +622,18 @@ async function listPurchaseOrders(tenantId, query = {}) {
       take: Math.min(Number(query.limit || 100), 200),
       include: { party: true, lines: true, movements: true }
     });
-    return Promise.all(orders.map(enrichPurchaseOrder));
+    const documents = orders.length ? await prisma.cntCabdoc.findMany({
+      where: { document_type: "EM", reference: { in: orders.map((order) => order.number) } },
+      orderBy: { posting_date: "desc" }
+    }) : [];
+    const documentsByOrder = new Map();
+    for (const document of documents) {
+      const current = documentsByOrder.get(document.reference) || [];
+      current.push(document);
+      documentsByOrder.set(document.reference, current);
+    }
+    const enriched = await Promise.all(orders.map(enrichPurchaseOrder));
+    return enriched.map((order) => ({ ...order, receipt_accounting_documents: documentsByOrder.get(order.number) || [] }));
   });
 }
 
@@ -782,6 +828,7 @@ module.exports = {
   simulatePurchaseInvoice,
   createPurchaseInvoice,
   annulPurchaseInvoice,
+  purchaseReceiptLineState,
   receivePurchaseOrder,
   returnPurchaseOrder,
   updatePOStatus,

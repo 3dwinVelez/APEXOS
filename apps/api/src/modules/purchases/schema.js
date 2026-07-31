@@ -118,6 +118,31 @@ const purchaseInvoiceSchema = {
   }
 };
 
+const purchaseReceiptSchema = {
+  body: {
+    type: "object",
+    required: ["received_lines"],
+    properties: {
+      notes: { type: "string" },
+      received_lines: {
+        type: "array",
+        minItems: 1,
+        items: {
+          type: "object",
+          required: ["line_id", "qty_received"],
+          properties: {
+            line_id: { type: "integer" },
+            qty_received: { type: "number", exclusiveMinimum: 0 },
+            location_id: { type: "integer" },
+            lot: { type: "string" },
+            expiry: { type: "string" }
+          }
+        }
+      }
+    }
+  }
+};
+
 const purchaseReturnSchema = {
   body: {
     type: "object",
@@ -142,5 +167,5 @@ const purchaseReturnSchema = {
 };
 const annulInvoiceSchema = { body: { type: "object", properties: { reason: { type: "string" } } } };
 
-module.exports = { supplierSchema, updateSupplierSchema, purchaseOrderSchema, purchaseInvoiceSchema, purchaseReturnSchema, annulInvoiceSchema };
+module.exports = { supplierSchema, updateSupplierSchema, purchaseOrderSchema, purchaseInvoiceSchema, purchaseReceiptSchema, purchaseReturnSchema, annulInvoiceSchema };
 
