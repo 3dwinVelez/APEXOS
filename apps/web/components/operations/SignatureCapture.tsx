@@ -1,12 +1,13 @@
 "use client";
 
-import { Check, PenLine, RotateCcw, X } from "lucide-react";
+import { Check, CheckCircle2, PenLine, RotateCcw, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { CapturedFile } from "./PhotoCapture";
 
 type Props = {
   label?: string;
   required?: boolean;
+  locked?: boolean;
   value: CapturedFile | null;
   onChange: (file: CapturedFile | null) => void;
 };
@@ -16,7 +17,7 @@ function pointerPosition(event: React.PointerEvent<HTMLCanvasElement>, canvas: H
   return { x: event.clientX - rect.left, y: event.clientY - rect.top };
 }
 
-export function SignatureCapture({ label = "Firma del cliente", required, value, onChange }: Props) {
+export function SignatureCapture({ label = "Firma del cliente", required, locked = false, value, onChange }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [drawing, setDrawing] = useState(false);
   const [hasStroke, setHasStroke] = useState(false);
@@ -119,6 +120,13 @@ export function SignatureCapture({ label = "Firma del cliente", required, value,
         </div>
       </div>
 
+      {locked ? (
+        <div className="flex h-28 items-center justify-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 text-sm font-semibold text-emerald-800">
+          <CheckCircle2 size={20} />
+          Firma registrada
+        </div>
+      ) : (
+        <>
       <div className={`relative rounded-md border-2 p-2 ${value ? "border-emerald-300 bg-emerald-50" : required && !hasStroke ? "border-dashed border-amber-300 bg-amber-50/50" : "border-dashed border-line bg-paper"}`}>
         <canvas
           ref={canvasRef}
@@ -150,6 +158,8 @@ export function SignatureCapture({ label = "Firma del cliente", required, value,
           <X size={15} />
           Repetir firma
         </button>
+      )}
+        </>
       )}
     </div>
   );

@@ -31,13 +31,19 @@ const punchSchema = {
       extra_reason: { type: "string" },
       extra_detail: { type: "string" },
       extra_evidence: {
-        type: "object",
-        properties: {
-          base64: { type: "string" },
-          name: { type: "string" },
-          type: { type: "string" },
-          size: { type: "integer" }
-        }
+        anyOf: [
+          { type: "null" },
+          { type: "string" },
+          {
+            type: "object",
+            properties: {
+              base64: { type: "string" },
+              name: { type: "string" },
+              type: { type: "string" },
+              size: { type: "integer" }
+            }
+          }
+        ]
       },
       metadata: { type: "object" }
     }
@@ -56,6 +62,8 @@ const routeSchema = {
       end_time: { type: "string" },
       tolerance_minutes: { type: "integer" },
       notes: { type: "string" },
+      gps_required: { type: "boolean" },
+      tracking_mode: { type: "string" },
       status: { type: "string" }
     }
   }
@@ -75,6 +83,8 @@ const routeBulkSchema = {
       end_time: { type: "string" },
       tolerance_minutes: { type: "integer" },
       notes: { type: "string" },
+      gps_required: { type: "boolean" },
+      tracking_mode: { type: "string" },
       status: { type: "string" }
     }
   }
@@ -116,9 +126,9 @@ const activityTypeSchema = {
 const workActivitySchema = {
   body: {
     type: "object",
-    required: ["activity_type_id", "latitude", "longitude", "observation", "photo"],
+    required: ["activity_type_id", "photo"],
     properties: {
-      activity_type_id: { type: "integer" },
+      activity_type_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
       employee_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
       occurred_at: { type: "string" },
       latitude: { type: "number" },
@@ -126,6 +136,8 @@ const workActivitySchema = {
       accuracy_meters: { type: "number" },
       approximate_address: { type: "string" },
       observation: { type: "string" },
+      gps_required: { type: "boolean" },
+      gps_skipped: { type: "boolean" },
       route_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
       vehicle_plate: { type: "string" },
       metadata: { type: "object" },

@@ -1,5 +1,6 @@
 "use client";
 
+import { UserSessionBadge } from "@/components/shell/UserSessionBadge";
 import { Clock3, Home, MapPinned, Wrench } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -21,7 +22,7 @@ export function MobileNav() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 px-2 pb-[calc(env(safe-area-inset-bottom)+8px)] pt-2 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur md:hidden" aria-label="Navegacion movil">
-      <div className="mx-auto grid max-w-md grid-cols-4 gap-1">
+      <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
         {items.map((item) => {
           const Icon = item.icon;
           const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(`${item.href}/`));
@@ -32,6 +33,7 @@ export function MobileNav() {
             </Link>
           );
         })}
+        <UserSessionBadge compact mobile />
       </div>
     </nav>
   );

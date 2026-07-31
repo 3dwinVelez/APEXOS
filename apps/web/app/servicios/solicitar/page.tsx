@@ -9,6 +9,7 @@ type FormState = {
   customer_name: string;
   customer_document: string;
   customer_phone: string;
+  customer_phone_secondary: string;
   customer_email: string;
   invoice_number: string;
   service_type: string;
@@ -34,6 +35,7 @@ const initialForm: FormState = {
   customer_name: "",
   customer_document: "",
   customer_phone: "",
+  customer_phone_secondary: "",
   customer_email: "",
   invoice_number: "",
   service_type: "montaje",
@@ -60,7 +62,7 @@ function buildAddress(form: FormState) {
 }
 
 function requiredForStep(step: number): Array<keyof FormState> {
-  if (step === 0) return ["customer_name", "customer_document", "customer_phone"];
+  if (step === 0) return ["customer_name", "customer_document", "customer_phone", "customer_phone_secondary"];
   if (step === 1) return ["customer_address", "customer_neighborhood", "service_store"];
   if (step === 2) return ["service_type", "reference_id"];
   return [];
@@ -140,6 +142,18 @@ function PublicServiceRequestContent() {
       setMessage("La cedula debe tener entre 5 y 12 numeros.");
       return false;
     }
+    if (currentStep === 0 && !/^\d{7,15}$/.test(form.customer_phone)) {
+      setMessage("El telefono principal debe tener entre 7 y 15 numeros.");
+      return false;
+    }
+    if (currentStep === 0 && !/^\d{7,15}$/.test(form.customer_phone_secondary)) {
+      setMessage("El telefono alterno debe tener entre 7 y 15 numeros.");
+      return false;
+    }
+    if (currentStep === 0 && form.customer_phone === form.customer_phone_secondary) {
+      setMessage("Los dos telefonos de contacto deben ser diferentes.");
+      return false;
+    }
     setMessage("");
     return true;
   }
@@ -162,6 +176,7 @@ function PublicServiceRequestContent() {
           customer_name: form.customer_name,
           customer_document: form.customer_document,
           customer_phone: form.customer_phone,
+          customer_phone_secondary: form.customer_phone_secondary,
           customer_email: form.customer_email,
           company_name: companyName,
           invoice_number: form.invoice_number,
@@ -273,12 +288,13 @@ function PublicServiceRequestContent() {
                 <div className="rounded-2xl bg-apex/10 p-4">
                   <p className="text-sm font-bold uppercase tracking-[0.14em] text-apex">Paso 1</p>
                   <h2 className="mt-1 text-2xl font-bold">Cuentanos quien pide el servicio</h2>
-                  <p className="mt-2 text-sm leading-6 text-neutral-600">Necesitamos tu nombre y telefono para llamarte y confirmar la visita.</p>
+                  <p className="mt-2 text-sm leading-6 text-neutral-600">Necesitamos tu nombre y dos telefonos de contacto para llamarte y confirmar la visita.</p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Field label="Tu nombre completo *" hint="Como aparece en tu cedula o factura."><input className="apex-public-input" placeholder="Ej. Maria Gomez" value={form.customer_name} onChange={(event) => setField("customer_name", event.target.value)} /></Field>
                   <Field label="Tu cedula *" hint="Solo numeros, sin puntos."><input className="apex-public-input" inputMode="numeric" placeholder="Ej. 1020304050" value={form.customer_document} onChange={(event) => setField("customer_document", onlyNumbers(event.target.value))} /></Field>
-                  <Field label="Telefono o WhatsApp *" hint="A este numero te llamaremos."><input className="apex-public-input" inputMode="tel" placeholder="Ej. 3001234567" value={form.customer_phone} onChange={(event) => setField("customer_phone", event.target.value)} /></Field>
+                  <Field label="Telefono principal o WhatsApp *" hint="A este numero te llamaremos primero."><input className="apex-public-input" inputMode="tel" placeholder="Ej. 3001234567" value={form.customer_phone} onChange={(event) => setField("customer_phone", onlyNumbers(event.target.value))} /></Field>
+                  <Field label="Telefono alterno *" hint="Debe ser diferente al telefono principal."><input className="apex-public-input" inputMode="tel" placeholder="Ej. 3107654321" value={form.customer_phone_secondary} onChange={(event) => setField("customer_phone_secondary", onlyNumbers(event.target.value))} /></Field>
                   <Field label="Correo electronico" hint="Opcional, por si quieres recibir informacion."><input className="apex-public-input" placeholder="Ej. correo@ejemplo.com" type="email" value={form.customer_email} onChange={(event) => setField("customer_email", event.target.value)} /></Field>
                 </div>
               </div>
@@ -343,7 +359,7 @@ function PublicServiceRequestContent() {
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Summary label="Cliente" value={`${form.customer_name} - CC ${form.customer_document}`} />
-                  <Summary label="Contacto" value={`${form.customer_phone}${form.customer_email ? ` / ${form.customer_email}` : ""}`} />
+                  <Summary label="Contactos" value={`${form.customer_phone} / ${form.customer_phone_secondary}${form.customer_email ? ` / ${form.customer_email}` : ""}`} />
                   <Summary label="Direccion" value={addressPreview} />
                   <Summary label="Almacen" value={(serviceStores.find((item) => item.code === form.service_store)?.label || form.service_store || "Sin seleccionar")} />
                   <Summary label="Servicio" value={`${form.service_type} - ${selectedReference ? `${selectedReference.code} ${selectedReference.name}` : "Sin referencia"}`} />

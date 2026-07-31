@@ -1,9 +1,11 @@
 import { ApexModule } from "./modules";
+import { isAdministrativeRole, mergePlatformAdminModuleAccess } from "./moduleAccessPolicy";
 import { CompanyModuleStatus, listActivePlatformAdmins, listCompanyModuleStatus, listUserCompanies } from "./supabaseQa";
 import { supabaseFetch } from "./supabaseClient";
+import { API_BASE_URL } from "./apiBaseUrl";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
-const HAS_CONFIGURED_API_URL = Boolean(process.env.NEXT_PUBLIC_API_URL);
+const API_URL = API_BASE_URL;
+const HAS_CONFIGURED_API_URL = true;
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
 const MODULE_ACCESS_CACHE_KEY = "apexos_module_access_cache_v2";
 const MODULE_ACCESS_CACHE_MS = 60_000;
@@ -39,7 +41,9 @@ const moduleCodeBySlug: Record<string, string> = {
   administracion: "administracion_apex",
   "apex-ai": "apex_ai",
   calidad: "calidad",
-  cartera: "cartera",
+  cartera: "cxc",
+  cxc: "cxc",
+  "facturacion-ventas": "facturacion",
   "comercio-exterior": "comercio_exterior",
   compras: "compras",
   contabilidad: "contabilidad",
@@ -61,7 +65,7 @@ const moduleCodeBySlug: Record<string, string> = {
   "talento-humano": "talento_humano",
   tesoreria: "tesoreria",
   transporte: "transporte",
-  ventas: "ventas"
+  ventas: "ventas",
 };
 
 const permissionModulesBySlug: Record<string, string[]> = {
@@ -76,6 +80,7 @@ const permissionModulesBySlug: Record<string, string[]> = {
   "talento-humano": ["hr", "time_tracking", "payroll"],
   transporte: ["transport", "logistics", "last_mile"],
   ventas: ["sales"],
+  cxc: ["accounts-receivable", "accounting"],
   crm: ["customers", "sales"],
   "comercio-exterior": ["imports", "exports"],
   tesoreria: ["treasury", "accounting"]
@@ -93,6 +98,7 @@ const legacyPermissionKeysBySlug: Record<string, string[]> = {
   "talento-humano": ["talento_humano", "marcaciones", "nomina"],
   transporte: ["transporte", "logistica", "ultima_milla"],
   ventas: ["ventas", "clientes"],
+  cxc: ["cxc", "contabilidad", "facturacion"],
   crm: ["clientes", "ventas"],
   "comercio-exterior": ["importaciones"],
   tesoreria: ["tesoreria", "contabilidad"]
@@ -251,10 +257,17 @@ function permissionCandidates(module: ApexModule) {
   ].map((item) => item.toLowerCase());
 }
 
+function hasAdministrativeRole() {
+  if (typeof window === "undefined") return false;
+  return isAdministrativeRole([
+    localStorage.getItem("role_name"),
+    localStorage.getItem("apexos_company_role")
+  ]);
+}
+
 function hasRoleModuleAccess(module: ApexModule, permissions: StoredRolePermission[] | null) {
   if (!permissions) return true;
-  const roleName = typeof window !== "undefined" ? String(localStorage.getItem("role_name") || "").toLowerCase() : "";
-  if (["admin", "owner", "superadmin", "administrador", "administrador de empresa"].includes(roleName)) return true;
+  if (hasAdministrativeRole()) return true;
   const modules = permissionCandidates(module);
   const readActions = new Set(["*", "access", "read", "view", "write", "reports", "administer", "manage_roles", "manage_users"]);
   return permissions.some((permission) => {
@@ -267,8 +280,7 @@ function hasRoleModuleAccess(module: ApexModule, permissions: StoredRolePermissi
 }
 
 function hasLegacyModuleAccess(module: ApexModule, legacy: StoredLegacyPermissions) {
-  const roleName = typeof window !== "undefined" ? String(localStorage.getItem("role_name") || "").toLowerCase() : "";
-  if (["apex_admin", "superadmin"].includes(roleName)) return true;
+  if (hasAdministrativeRole()) return true;
   const keys = [
     ...(legacyPermissionKeysBySlug[module.slug] || []),
     module.slug.replace(/-/g, "_")
@@ -353,6 +365,30 @@ function stateFromCachedTenantModules(modules: ApexModule[]) {
   }
 }
 
+function platformAdminOnlyState(modules: ApexModule[]): ModuleAccessState {
+  return {
+    loading: false,
+    isPlatformAdmin: true,
+    bySlug: Object.fromEntries(modules.map((module) => [module.slug, PLATFORM_ADMIN_MODULE_SLUGS.has(module.slug)])),
+    orderBySlug: Object.fromEntries(modules.map((module, index) => [
+      module.slug,
+      PLATFORM_ADMIN_MODULE_SLUGS.has(module.slug) ? index : modules.length + index
+    ]))
+  };
+}
+
+function addPlatformAdminAccess(modules: ApexModule[], state: ModuleAccessState): ModuleAccessState {
+  return {
+    ...state,
+    isPlatformAdmin: true,
+    bySlug: mergePlatformAdminModuleAccess(
+      modules.map((module) => module.slug),
+      state.bySlug,
+      PLATFORM_ADMIN_MODULE_SLUGS
+    )
+  };
+}
+
 function isLocalPlatformAdmin(user?: { role_metadata?: Record<string, unknown>; role?: string }) {
   const role = String(user?.role || "").trim().toLowerCase();
   const roleType = String(user?.role_metadata?.role_type || "").trim().toLowerCase();
@@ -362,10 +398,14 @@ function isLocalPlatformAdmin(user?: { role_metadata?: Record<string, unknown>; 
 async function refreshRoleContextFromApi() {
   const token = getToken();
   if (!token || !HAS_CONFIGURED_API_URL) return null;
+  const companyId = typeof window !== "undefined" ? localStorage.getItem("apexos_company_id") || "" : "";
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), ROLE_CONTEXT_TIMEOUT_MS);
   const response = await fetch(`${API_URL}/api/v1/auth/me`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(companyId ? { "x-company-id": companyId } : {})
+    },
     signal: controller.signal
   }).finally(() => window.clearTimeout(timeout));
   if (!response.ok) return null;
@@ -428,41 +468,45 @@ export async function loadModuleAccess(modules: ApexModule[]): Promise<ModuleAcc
 
   if (!moduleAccessInFlight || moduleAccessInFlight.token !== sessionToken) {
     const promise = (async () => {
-      const roleContextPromise = refreshRoleContextFromApi().catch(() => null);
       const userId = currentSupabaseUserId();
       const [platformAdmins, companies] = await Promise.all([
         listActivePlatformAdmins(1, userId).catch(() => []),
         listUserCompanies(5).catch(() => []) as Promise<UserCompany[]>
       ]);
-      if (platformAdmins.length > 0) {
-        const state = {
-          loading: false,
-          isPlatformAdmin: true,
-          bySlug: Object.fromEntries(modules.map((module) => [module.slug, PLATFORM_ADMIN_MODULE_SLUGS.has(module.slug)])),
-          orderBySlug: Object.fromEntries(modules.map((module, index) => [module.slug, PLATFORM_ADMIN_MODULE_SLUGS.has(module.slug) ? index : modules.length + index]))
-        };
-        sessionStorage.setItem(MODULE_ACCESS_CACHE_KEY, JSON.stringify({ at: Date.now(), token: sessionToken, state }));
-        return state;
-      }
+      const isPlatformAdmin = platformAdmins.length > 0;
 
       const preferredCompanyId = typeof window !== "undefined" ? localStorage.getItem("apexos_company_id") || "" : "";
       const selectedCompany = companies.find((company) => company.company_id === preferredCompanyId)
         || companies.find((company) => ["owner", "admin", "superadmin"].includes(String(company.role || "").toLowerCase()))
         || companies[0];
-      await roleContextPromise;
       const companyId = selectedCompany?.company_id;
-      if (!companyId) return stateFromCachedTenantModules(modules) || { loading: false, isPlatformAdmin: false, bySlug: {} };
+      if (!companyId) {
+        const cachedState = stateFromCachedTenantModules(modules);
+        const state = isPlatformAdmin
+          ? (cachedState ? addPlatformAdminAccess(modules, cachedState) : platformAdminOnlyState(modules))
+          : cachedState || { loading: false, isPlatformAdmin: false, bySlug: {} };
+        sessionStorage.setItem(MODULE_ACCESS_CACHE_KEY, JSON.stringify({ at: Date.now(), token: sessionToken, state }));
+        return state;
+      }
       if (typeof window !== "undefined") {
         localStorage.setItem("apexos_company_id", companyId);
         if (selectedCompany?.company_name) localStorage.setItem("apexos_company_name", selectedCompany.company_name);
         if (selectedCompany?.role) localStorage.setItem("apexos_company_role", selectedCompany.role);
         if (selectedCompany?.role && !localStorage.getItem("role_name")) localStorage.setItem("role_name", selectedCompany.role);
       }
+      await refreshRoleContextFromApi().catch(() => null);
       await refreshSupabaseEmployeeRoleContext(companyId);
 
       const statuses = await listCompanyModuleStatus(companyId, 100).catch(() => []) as CompanyModuleStatus[];
-      if (!statuses.length) return stateFromCachedTenantModules(modules) || { loading: false, isPlatformAdmin: false, bySlug: {} };
-      const state = {
+      if (!statuses.length) {
+        const cachedState = stateFromCachedTenantModules(modules);
+        const state = isPlatformAdmin
+          ? (cachedState ? addPlatformAdminAccess(modules, cachedState) : platformAdminOnlyState(modules))
+          : cachedState || { loading: false, isPlatformAdmin: false, bySlug: {} };
+        sessionStorage.setItem(MODULE_ACCESS_CACHE_KEY, JSON.stringify({ at: Date.now(), token: sessionToken, state }));
+        return state;
+      }
+      const companyState = {
         loading: false,
         isPlatformAdmin: false,
         bySlug: Object.fromEntries(modules.map((module) => {
@@ -474,6 +518,7 @@ export async function loadModuleAccess(modules: ApexModule[]): Promise<ModuleAcc
           return [module.slug, status?.sort_order ?? index];
         }))
       };
+      const state = isPlatformAdmin ? addPlatformAdminAccess(modules, companyState) : companyState;
       sessionStorage.setItem(MODULE_ACCESS_CACHE_KEY, JSON.stringify({ at: Date.now(), token: sessionToken, state }));
       return state;
     })();

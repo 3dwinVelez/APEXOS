@@ -7,6 +7,7 @@ Este archivo dirige a las memorias persistentes de cada módulo. Debe leerse al 
 | Compras — Facturas | [`memory/compras-facturas/MEMORY.md`](memory/compras-facturas/MEMORY.md) | Antes de analizar o modificar facturas dentro del módulo de Compras. |
 | Inventario — Valoración y traslados | [`memory/inventario-valoracion-traslados/MEMORY.md`](memory/inventario-valoracion-traslados/MEMORY.md) | Antes de modificar costos, movimientos, reportes o traslados de inventario. |
 | Fundación de agentes | [`memory/agent-foundation/MEMORY.md`](memory/agent-foundation/MEMORY.md) | Antes de cambiar instrucciones, skills, autonomía, controles o automatización de agentes. |
+| Ventas — Facturación y CxC | [`memory/ventas-facturacion-clientes.md`](memory/ventas-facturacion-clientes.md) | Antes de modificar facturas de clientes, notas crédito, cartera, recaudos o retenciones de ventas. |
 
 ## Reglas del índice
 

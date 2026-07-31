@@ -1,4 +1,5 @@
 const prisma = require("../../core/prisma");
+const { getTenantConfig, invalidateTenantCache } = require("../../core/tenantCache");
 const { MAX_DOCUMENT_BYTES, MAX_EVIDENCE_BYTES, assertSafeFile, normalizeFileName, secureStoragePath } = require("../../security/policy");
 
 function appError(statusCode, code, message) {
@@ -14,8 +15,12 @@ function startOfDay(value) {
 }
 
 async function nextNumber() {
-  const count = await prisma.serviceOrder.count();
-  return `OS-${String(count + 1).padStart(5, "0")}`;
+  const last = await prisma.serviceOrder.findFirst({
+    orderBy: { id: "desc" },
+    select: { number: true }
+  });
+  const nextSeq = last ? (parseInt(last.number.replace("OS-", ""), 10) || 0) + 1 : 1;
+  return `OS-${String(nextSeq).padStart(5, "0")}`;
 }
 
 function orderInclude() {
@@ -28,6 +33,11 @@ function orderListInclude() {
     incidents: true,
     photos: { select: { id: true, type: true, created_at: true, metadata: true } }
   };
+}
+
+/** Include mínimo para transiciones de estado — solo lo que cambia */
+function orderTransitionInclude() {
+  return { reference: { select: { id: true, code: true, name: true } }, incidents: { select: { id: true } }, photos: { select: { id: true, type: true } } };
 }
 
 function photoLabel(type) {
@@ -59,8 +69,11 @@ async function requireEvidence(orderId, requiredTypes) {
   }
 }
 
-async function requireSatisfactionSurvey(tenantId, input = {}) {
-  const answers = input.metadata?.satisfaction_survey?.answers;
+async function requireSatisfactionSurvey(tenantId, input = {}, orderMetadata = {}) {
+  // Buscar respuestas primero en el body del close, y como fallback en la metadata persistida de la orden
+  // (la encuesta se recolecta durante inspeccion/ejecucion y se persiste en order.metadata)
+  const answers = input.metadata?.satisfaction_survey?.answers
+    || orderMetadata?.satisfaction_survey?.answers;
   const activeQuestions = (await configuredSatisfactionQuestions(tenantId)).filter((question) => question.active);
   const requiredQuestionIds = new Set(activeQuestions.map((question) => question.id));
   const validQuestionIds = new Set(Array.isArray(answers)
@@ -498,18 +511,18 @@ function normalizeSatisfactionQuestions(rows = []) {
 }
 
 async function configuredServiceTypes(tenantId) {
-  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
-  return normalizeServiceTypes(tenant?.config?.services?.service_types);
+  const config = await getTenantConfig(tenantId);
+  return normalizeServiceTypes(config?.services?.service_types);
 }
 
 async function configuredServiceStores(tenantId) {
-  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
-  return normalizeServiceStores(tenant?.config?.services?.service_stores);
+  const config = await getTenantConfig(tenantId);
+  return normalizeServiceStores(config?.services?.service_stores);
 }
 
 async function configuredSatisfactionQuestions(tenantId) {
-  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
-  return normalizeSatisfactionQuestions(tenant?.config?.services?.satisfaction_questions);
+  const config = await getTenantConfig(tenantId);
+  return normalizeSatisfactionQuestions(config?.services?.satisfaction_questions);
 }
 
 async function assertValidServiceType(tenantId, value) {
@@ -533,8 +546,7 @@ async function saveServiceTypes(tenantId, user, input = {}) {
   assertAdministrativeServiceUser(user);
   const types = normalizeServiceTypes(input.types);
   if (!types.some((item) => item.active)) throw appError(400, "SERVICE_TYPES_REQUIRED", "Debe existir al menos un tipo de servicio activo");
-  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
-  const config = tenant?.config || {};
+  const config = await getTenantConfig(tenantId);
   const updated = await prisma.tenant.update({
     where: { id: tenantId },
     data: {
@@ -550,6 +562,7 @@ async function saveServiceTypes(tenantId, user, input = {}) {
     },
     select: { config: true }
   });
+  invalidateTenantCache(tenantId).catch(() => undefined);
   return normalizeServiceTypes(updated.config?.services?.service_types);
 }
 
@@ -557,8 +570,7 @@ async function saveServiceStores(tenantId, user, input = {}) {
   assertAdministrativeServiceUser(user);
   const stores = normalizeServiceStores(input.stores);
   if (!stores.some((item) => item.active)) throw appError(400, "SERVICE_STORES_REQUIRED", "Debe existir al menos un almacen activo");
-  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
-  const config = tenant?.config || {};
+  const config = await getTenantConfig(tenantId);
   const updated = await prisma.tenant.update({
     where: { id: tenantId },
     data: {
@@ -574,6 +586,7 @@ async function saveServiceStores(tenantId, user, input = {}) {
     },
     select: { config: true }
   });
+  invalidateTenantCache(tenantId).catch(() => undefined);
   return normalizeServiceStores(updated.config?.services?.service_stores);
 }
 
@@ -585,8 +598,7 @@ async function saveSatisfactionQuestions(tenantId, user, input = {}) {
   assertAdministrativeServiceUser(user);
   const questions = normalizeSatisfactionQuestions(input.questions);
   if (!questions.some((item) => item.active)) throw appError(400, "SATISFACTION_QUESTIONS_REQUIRED", "Debe existir al menos una pregunta de satisfaccion activa");
-  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
-  const config = tenant?.config || {};
+  const config = await getTenantConfig(tenantId);
   const updated = await prisma.tenant.update({
     where: { id: tenantId },
     data: {
@@ -602,6 +614,7 @@ async function saveSatisfactionQuestions(tenantId, user, input = {}) {
     },
     select: { config: true }
   });
+  invalidateTenantCache(tenantId).catch(() => undefined);
   return normalizeSatisfactionQuestions(updated.config?.services?.satisfaction_questions);
 }
 
@@ -1067,7 +1080,7 @@ async function startOrder(tenantId, user, id, input = {}) {
         start_accuracy_meters: input.accuracy_meters
       }
     },
-    include: orderInclude()
+    select: { id: true, status: true, started_at: true, number: true, reference: { select: { id: true, code: true, name: true } } }
     });
   });
 }
@@ -1101,7 +1114,7 @@ async function moveToInspection(tenantId, user, id, input = {}) {
           }
         }
       },
-      include: orderInclude()
+      select: { id: true, status: true, metadata: { select: { inspection: true } } }
     });
   });
 }
@@ -1122,7 +1135,7 @@ async function moveToExecution(tenantId, user, id) {
           }
         }
       },
-      include: orderInclude()
+      select: { id: true, status: true }
     });
   });
 }
@@ -1130,7 +1143,7 @@ async function moveToExecution(tenantId, user, id) {
 async function closeOrder(tenantId, user, id, input = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const order = await accessibleOrder(tenantId, user, id);
-    await requireSatisfactionSurvey(tenantId, input);
+    await requireSatisfactionSurvey(tenantId, input, order.metadata);
     await requireEvidence(id, ["producto_abierto", "producto_cerrado", "firma_cliente"]);
     const now = new Date();
     const duration = order.started_at ? Math.max(Math.round((now - order.started_at) / 60000), 0) : null;
@@ -1144,7 +1157,7 @@ async function closeOrder(tenantId, user, id, input = {}) {
         duration_minutes: duration,
         metadata: { ...(order.metadata || {}), close_accuracy_meters: input.accuracy_meters, ...(input.metadata || {}) }
       },
-      include: orderInclude()
+      select: { id: true, status: true, closed_at: true, duration_minutes: true, number: true }
     });
   });
 }
@@ -1177,7 +1190,7 @@ async function closeNotExecuted(tenantId, user, id, input = {}) {
         no_execution_reason: reason,
         metadata: { ...(order.metadata || {}), close_accuracy_meters: input.accuracy_meters, ...(input.metadata || {}) }
       },
-      include: orderInclude()
+      select: { id: true, status: true, closed_at: true, number: true }
     });
   });
 }
@@ -1204,12 +1217,34 @@ async function addPhoto(tenantId, user, orderId, input) {
   const storagePath = input.storage_path || secureStoragePath({ tenantId, module: "services", entity: "orders", entityId: orderId, fileName });
   return prisma.runWithTenant(tenantId, async () => {
     const order = await accessibleOrder(tenantId, user, orderId);
+    const clientUploadId = input.metadata?.client_upload_id ? String(input.metadata.client_upload_id) : "";
+    if (clientUploadId) {
+      const retryMatch = await prisma.servicePhoto.findFirst({
+        where: {
+          order_id: order.id,
+          metadata: { path: ["client_upload_id"], equals: clientUploadId }
+        }
+      });
+      if (retryMatch) return retryMatch;
+    }
+    const partId = input.metadata?.part_id == null ? "" : String(input.metadata.part_id);
+    const existing = await prisma.servicePhoto.findMany({
+      where: { order_id: order.id, type: input.type },
+      select: { id: true, metadata: true }
+    });
+    const duplicate = input.type === "pieza_averiada"
+      ? existing.some((photo) => String(photo.metadata?.part_id ?? "") === partId)
+      : existing.length > 0;
+    if (duplicate) {
+      throw appError(409, "SERVICE_EVIDENCE_ALREADY_CAPTURED", "Esta evidencia ya fue registrada y no puede repetirse");
+    }
     return prisma.servicePhoto.create({
     data: {
       order_id: order.id,
       type: input.type,
       file_url: input.file_url || "",
       base64_data: input.base64_data || "",
+      storage_path: input.storage_path || "",
       size_bytes: input.size_bytes,
       metadata: {
         mime_type: input.mime_type || "",

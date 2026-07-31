@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop, desarrollo]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  governance:
+    name: Git Governance Guard
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Validate mandatory branch flow
+        run: npm run governance:ci
+
+  lint-typecheck:
+    name: Lint & TypeCheck
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Prisma generate
+        run: npx prisma generate --schema apps/api/prisma/schema.prisma
+      - name: TypeCheck frontend
+        run: npx -p typescript tsc --noEmit --project apps/web/tsconfig.json
+      - name: Lint
+        run: npm run lint
+      - name: Performance regression guard
+        run: npm run performance:guard
+
+  build-api:
+    name: Build API
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Prisma generate
+        run: npx prisma generate --schema apps/api/prisma/schema.prisma
+      - name: Syntax check backend
+        run: node --check apps/api/server.js
+      - name: Docker build API
+        run: docker build -t apex-api -f apps/api/Dockerfile apps/api
+
+  build-web:
+    name: Build Web
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build Next.js
+        run: npm --workspace apps/web run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:3000
+          NEXT_PUBLIC_WS_URL: ws://localhost:3000
+      - name: Docker build Web
+        run: docker build -t apex-web -f apps/web/Dockerfile apps/web
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: npm audit
+        run: npm audit --audit-level=high
+        continue-on-error: true

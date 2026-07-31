@@ -1,24 +1,29 @@
 const prisma = require("../core/prisma");
+const { measurePhase } = require("../core/performanceContext");
 
 const MODULE_CODES = {
-  accounting: ["M-07", "contabilidad", "finance"],
-  admin: ["M-22", "administracion", "administracion_apex"],
-  brain: ["AI-CORE", "apex-ai", "apex_ai"],
-  hr: ["M-17", "talento-humano", "talento_humano"],
-  inventory: ["M-01", "inventario"],
-  invoicing: ["M-04", "facturacion"],
+  accounting: ["M-07", "contabilidad", "finance", "accounting"],
+  admin: ["M-22", "administracion", "administracion_apex", "admin"],
+  brain: ["AI-CORE", "apex-ai", "apex_ai", "brain"],
+  hr: ["M-17", "talento-humano", "talento_humano", "hr"],
+  inventory: ["M-01", "inventario", "inventory"],
+  invoicing: ["M-04", "facturacion", "invoicing"],
   payroll: ["M-17", "nomina", "payroll"],
-  purchases: ["M-02", "compras"],
-  projects: ["M-19", "proyectos"],
-  sales: ["M-03", "ventas"],
-  services: ["M-26", "servicios"],
-  transport: ["M-14", "transporte"]
+  purchases: ["M-02", "compras", "purchases"],
+  projects: ["M-19", "proyectos", "projects"],
+  sales: ["M-03", "ventas", "sales"],
+  "sales-invoice": ["M-03", "ventas", "sales", "facturacion-ventas", "sales-invoice"],
+  "accounts-receivable": ["M-07", "contabilidad", "accounting", "cxc", "accounts-receivable"],
+  services: ["M-26", "servicios", "services"],
+  transport: ["M-14", "transporte", "transport"]
 };
 
 function tenantHasModule(tenant, module) {
   if (module === "auth" || module === "dashboard") return true;
   if (!tenant) return false;
-  const active = Array.isArray(tenant.active_modules) ? tenant.active_modules.map((item) => String(item).toLowerCase()) : [];
+  const active = Array.isArray(tenant.active_modules)
+    ? tenant.active_modules.map((item) => String(item).trim().toLowerCase()).filter(Boolean)
+    : [];
   if (!active.length) return false;
   const allowedCodes = (MODULE_CODES[module] || [module]).map((item) => String(item).toLowerCase());
   return allowedCodes.some((code) => active.includes(code));
@@ -74,13 +79,12 @@ function isAdministrativeRole(role) {
     || value === "admin"
     || value === "superadmin"
     || value === "administrador"
-    || value === "administrador de empresa"
-    || value.includes("admin")
-    || value.includes("coordinador"));
+    || value === "administrador de empresa");
 }
 
 function requirePermission(module, action) {
   return async function rbacMiddleware(request, reply) {
+    return measurePhase("authorization", async () => {
     const role = request.user.role;
     if (!role) return reply.code(401).send({ error: "No autenticado", code: "NO_AUTENTICADO" });
     if (!tenantHasModule(request.tenant, module)) {
@@ -123,6 +127,7 @@ function requirePermission(module, action) {
       scopes: role.metadata?.scopes || {},
       restrictions: role.metadata?.restrictions || {}
     };
+    });
   };
 }
 

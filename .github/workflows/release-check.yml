@@ -1,0 +1,60 @@
+name: Release Check
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Entorno a validar"
+        required: true
+        default: qa
+        type: choice
+        options:
+          - qa
+          - production
+
+jobs:
+  release-check:
+    name: Release Check (${{ github.event.inputs.environment }})
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Validate release branch
+        shell: bash
+        run: |
+          if [ "${{ github.event.inputs.environment }}" = "qa" ] && [ "${GITHUB_REF_NAME}" != "develop" ]; then
+            echo "QA release checks must run from develop. Current ref: ${GITHUB_REF_NAME}"
+            exit 1
+          fi
+          if [ "${{ github.event.inputs.environment }}" = "production" ] && [ "${GITHUB_REF_NAME}" != "main" ]; then
+            echo "Production release checks must run from main. Current ref: ${GITHUB_REF_NAME}"
+            exit 1
+          fi
+      - name: Prisma generate
+        run: npx prisma generate --schema apps/api/prisma/schema.prisma
+      - name: Environment Doctor
+        run: node scripts/env-doctor.js --env ${{ github.event.inputs.environment }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      - name: Prisma validate
+        run: npx prisma validate --schema apps/api/prisma/schema.prisma
+      - name: Build Web
+        run: npm --workspace apps/web run build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_WS_URL: ${{ secrets.NEXT_PUBLIC_WS_URL }}
+      - name: Performance regression guard
+        run: npm run performance:guard
+      - name: Validate Service Evidence Uniqueness
+        run: node scripts/performance/validate-service-evidence-uniqueness.js --env-file=.
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}

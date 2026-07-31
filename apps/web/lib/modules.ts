@@ -98,13 +98,13 @@ export const MODULES: ApexModule[] = [
   },
   {
     id: "M-06",
-    slug: "cartera",
-    name: "Cartera",
+    slug: "cxc",
+    name: "Cartera y CxC",
     area: "Finanzas",
-    status: "En construcción",
-    summary: "Cuentas por cobrar, vencimientos, aging y recordatorios de pago.",
-    capabilities: ["Aging", "Recordatorios", "Saldos por cliente", "Promesas de pago"],
-    nextActions: ["Ver vencidos", "Enviar recordatorio", "Registrar pago"],
+    status: "Base funcional",
+    summary: "Cuentas por cobrar, facturación de ventas, vencimientos, aging, estado de cuenta y pagos de clientes.",
+    capabilities: ["Facturación ventas", "CxC", "Aging", "Estado de cuenta", "Pagos"],
+    nextActions: ["Emitir factura", "Ver vencidos", "Registrar pago"],
     icon: BadgeDollarSign
   },
   {

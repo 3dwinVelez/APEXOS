@@ -4,17 +4,21 @@
 
 :root {
   color-scheme: light;
-  --color-ink: 20 22 26;
-  --color-paper: 247 245 239;
-  --color-line: 217 212 200;
-  --color-apex: 20 108 99;
-  --color-signal: 192 86 33;
+  --color-ink: 23 33 43;
+  --color-paper: 245 247 249;
+  --color-line: 229 231 235;
+  --color-apex: 20 184 166;
+  --color-signal: 245 158 11;
+  --color-success: 34 197 94;
+  --color-warning: 245 158 11;
+  --color-error: 239 68 68;
+  --color-info: 37 99 235;
   --surface: 255 255 255;
   --surface-soft: 247 245 239;
   --surface-muted: 241 238 231;
-  --text-strong: 23 23 23;
-  --text-body: 64 64 64;
-  --text-muted: 115 115 115;
+  --text-strong: 23 33 43;
+  --text-body: 71 84 103;
+  --text-muted: 102 112 133;
 }
 
 .apex-public-input {
@@ -173,17 +177,21 @@ html.dark:not([data-theme="light"]) .apex-login-field input {
 
 html.dark {
   color-scheme: dark;
-  --color-ink: 238 242 241;
-  --color-paper: 12 18 18;
-  --color-line: 51 65 63;
-  --color-apex: 52 211 181;
-  --color-signal: 251 146 60;
-  --surface: 20 29 28;
-  --surface-soft: 12 18 18;
-  --surface-muted: 29 40 38;
-  --text-strong: 241 245 244;
-  --text-body: 203 213 211;
-  --text-muted: 148 163 160;
+  --color-ink: 242 245 247;
+  --color-paper: 15 23 32;
+  --color-line: 42 59 71;
+  --color-apex: 20 184 166;
+  --color-signal: 245 158 11;
+  --color-success: 34 197 94;
+  --color-warning: 245 158 11;
+  --color-error: 239 68 68;
+  --color-info: 37 99 235;
+  --surface: 23 35 45;
+  --surface-soft: 15 23 32;
+  --surface-muted: 30 44 55;
+  --text-strong: 242 245 247;
+  --text-body: 202 211 216;
+  --text-muted: 155 170 178;
 }
 
 * {
@@ -193,10 +201,9 @@ html.dark {
 html,
 body {
   min-height: 100%;
-  background:
-    radial-gradient(circle at top left, rgb(var(--color-apex) / 0.08), transparent 28rem),
-    linear-gradient(180deg, rgb(var(--color-paper)), rgb(var(--surface-soft)));
+  background: rgb(var(--color-paper));
   color: rgb(var(--color-ink));
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   transition: background-color 160ms ease, color 160ms ease;
 }
 
@@ -350,9 +357,7 @@ textarea {
 }
 
 .apex-app-gradient {
-  background:
-    radial-gradient(circle at top left, rgb(var(--color-apex) / 0.08), transparent 28rem),
-    linear-gradient(180deg, rgb(var(--color-paper)), rgb(var(--surface-soft)));
+  background: rgb(var(--color-paper));
 }
 
 .apex-context-hero {
@@ -392,17 +397,15 @@ textarea {
 }
 
 .apex-primary-action {
-  min-height: 2.75rem;
-  border-radius: 0.625rem;
+  min-height: 2.5rem;
+  border-radius: 0.5rem;
   background: rgb(var(--color-apex));
   color: white;
-  box-shadow: 0 0 0 1px rgb(var(--color-apex) / 0.18), 0 12px 24px rgb(var(--color-apex) / 0.24);
-  transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+  transition: background-color 160ms ease, color 160ms ease;
 }
 
 .apex-primary-action:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 0 0 4px rgb(var(--color-apex) / 0.12), 0 16px 32px rgb(var(--color-apex) / 0.3);
+  background: rgb(13 148 136);
 }
 
 .apex-secondary-action {
@@ -452,14 +455,14 @@ button.bg-apex,
 a.bg-apex,
 button.bg-apex\/90,
 a.bg-apex\/90 {
-  box-shadow: 0 0 0 1px rgb(var(--color-apex) / 0.15), 0 10px 22px rgb(var(--color-apex) / 0.2);
+  box-shadow: none;
 }
 
 button.bg-apex:hover,
 a.bg-apex:hover,
 button.hover\:bg-apex\/90:hover,
 a.hover\:bg-apex\/90:hover {
-  box-shadow: 0 0 0 4px rgb(var(--color-apex) / 0.1), 0 14px 28px rgb(var(--color-apex) / 0.26);
+  box-shadow: none;
 }
 
 .apex-section-card {
@@ -914,6 +917,13 @@ html.dark .platform-alert-close {
 html.dark .platform-alert-close:hover {
   background: rgb(41 55 53) !important;
   color: rgb(255 255 255) !important;
+}
+
+@media (min-width: 768px) {
+  .apex-dashboard-content .text-3xl {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
 }
 
 @keyframes apexCoachIn {

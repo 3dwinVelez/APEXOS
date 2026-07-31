@@ -2,6 +2,7 @@ const bcrypt = require("bcrypt");
 const prisma = require("../../core/prisma");
 const platformLogs = require("../../fabric/platformLogs");
 const { assertPasswordPolicy } = require("../../security/policy");
+const authorizationState = require("../../security/authorizationState");
 
 function badRequest(message) {
   const error = new Error(message);
@@ -79,6 +80,8 @@ const PERMISSION_CATALOG = [
   { key: "wms", label: "WMS", group: "operacion", module: "inventory", submodule: "wms", actions: ["access", "view", "create", "edit", "approve", "execute", "reports"], grants: grants("inventory", ["access", "view", "create", "edit", "approve", "execute", "reports"]) },
   { key: "compras", label: "Compras", group: "compras", module: "purchases", submodule: "orders", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import", "attach", "download"], grants: grants("purchases", ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import", "attach", "download"]) },
   { key: "ventas", label: "Ventas", group: "comercial", module: "sales", submodule: "orders", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import"], grants: grants("sales", ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import"]) },
+  { key: "facturacion_ventas", label: "Facturacion ventas", group: "comercial", module: "sales-invoice", submodule: "invoices", actions: ["access", "view", "create", "edit", "approve", "void", "export"], grants: grants("sales-invoice", ["access", "view", "create", "edit", "approve", "void", "export"]) },
+  { key: "cxc", label: "Cuentas por cobrar", group: "finanzas", module: "accounts-receivable", submodule: "receivables", actions: ["access", "view", "create", "edit", "approve", "reject", "void", "export", "reports"], grants: grants("accounts-receivable", ["access", "view", "create", "edit", "approve", "reject", "void", "export", "reports"]) },
   { key: "logistica", label: "Logistica", group: "operacion", module: "transport", submodule: "logistics", actions: ["access", "view", "create", "edit", "approve", "execute", "reports"], grants: grants("transport", ["access", "view", "create", "edit", "approve", "execute", "reports"]) },
   { key: "transporte", label: "Transporte", group: "operacion", module: "transport", submodule: "vehicles", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "export", "import", "attach", "download", "configure"], grants: grants("transport", ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "export", "import", "attach", "download", "configure"]) },
   { key: "ultima_milla", label: "Ultima milla", group: "operacion", module: "transport", submodule: "last_mile", actions: ["access", "view", "create", "edit", "approve", "execute", "reports"], grants: grants("transport", ["access", "view", "create", "edit", "approve", "execute", "reports"]) },
@@ -213,12 +216,91 @@ const USER_MASTER_DATA = {
     { code: "NOCTURNO", name: "Nocturno" },
     { code: "MIXTO", name: "Mixto" }
   ],
+  activity_types: [
+    { code: "ACT-01", name: "Cargue de mercancia en bodega" },
+    { code: "ACT-02", name: "Inicio de ruta" },
+    { code: "ACT-03", name: "Entrega en tienda" },
+    { code: "ACT-04", name: "Novedad en ruta" }
+  ],
   banks: [
     { code: "BANCOLOMBIA", name: "Bancolombia" },
     { code: "BOGOTA", name: "Banco de Bogota" },
     { code: "DAVIVIENDA", name: "Davivienda" }
   ]
 };
+
+function safeMetadata(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function cloneUserMasterData(overrides = {}) {
+  return Object.fromEntries(Object.entries({ ...USER_MASTER_DATA, ...overrides }).map(([key, value]) => [
+    key,
+    Array.isArray(value) ? value.map((item) => ({ ...item })) : value
+  ]));
+}
+
+function activityTypeMasterCode(activityType) {
+  const metadata = safeMetadata(activityType?.metadata);
+  return String(metadata.code || activityType?.id || "").trim();
+}
+
+function activityTypeToMasterItem(activityType) {
+  return {
+    code: activityTypeMasterCode(activityType),
+    name: activityType.name,
+    description: activityType.description || "",
+    active: activityType.active !== false,
+    sort_order: Number(activityType.sort_order || 100)
+  };
+}
+
+async function ensureAdminActivityTypes() {
+  const current = await prisma.activityType.findMany({ where: { __includeInactive: true }, take: 1 });
+  if (current.length) return;
+  await prisma.activityType.createMany({
+    data: USER_MASTER_DATA.activity_types.map((item, index) => ({
+      name: item.name,
+      description: item.description || "Catalogo operativo inicial APEXOS",
+      active: item.active !== false,
+      sort_order: Number(item.sort_order || ((index + 1) * 10)),
+      metadata: { code: item.code, source: "admin_user_master_data" }
+    })),
+    skipDuplicates: true
+  });
+}
+
+async function listActivityTypeMasterItems() {
+  await ensureAdminActivityTypes();
+  const rows = await prisma.activityType.findMany({
+    where: { __includeInactive: true },
+    orderBy: [{ sort_order: "asc" }, { name: "asc" }]
+  });
+  return rows.map(activityTypeToMasterItem);
+}
+
+async function getActivityTypeByMasterCode(code) {
+  const target = String(code || "").trim();
+  const rows = await prisma.activityType.findMany({
+    where: { __includeInactive: true },
+    orderBy: [{ sort_order: "asc" }, { name: "asc" }]
+  });
+  return rows.find((row) => String(row.id) === target || activityTypeMasterCode(row) === target || row.name === target) || null;
+}
+
+function activityTypeDataFromMasterItem(item, previousMetadata = {}) {
+  return {
+    name: item.name,
+    description: item.description || "",
+    active: item.active !== false,
+    sort_order: Number(item.sort_order || 100),
+    metadata: {
+      ...safeMetadata(previousMetadata),
+      code: item.code,
+      source: "admin_user_master_data"
+    }
+  };
+}
 
 function emptyLegacyPermissions() {
   return Object.fromEntries(PERMISSION_CATALOG.map((item) => [
@@ -538,7 +620,9 @@ async function getPermissionCatalog(tenantId) {
 
 async function getUserMasterData(tenantId) {
   tenantId = normalizeTenantId(tenantId);
-  return prisma.runWithTenant(tenantId, async () => ({ ...USER_MASTER_DATA }));
+  return prisma.runWithTenant(tenantId, async () => cloneUserMasterData({
+    activity_types: await listActivityTypeMasterItems()
+  }));
 }
 
 function assertUserMasterCatalog(catalog) {
@@ -587,6 +671,34 @@ async function addUserMasterDataItem(tenantId, catalog, input, actorId = null) {
   tenantId = normalizeTenantId(tenantId);
   assertUserMasterCatalog(catalog);
   const item = normalizeUserMasterItem(input);
+  if (catalog === "activity_types") {
+    return prisma.runWithTenant(tenantId, async () => {
+      await ensureAdminActivityTypes();
+      const byCode = await getActivityTypeByMasterCode(item.code);
+      const byName = await prisma.activityType.findFirst({
+        where: { __includeInactive: true, name: item.name }
+      });
+      const previous = byCode || byName || null;
+      const target = byCode || byName;
+      if (byCode && byName && byCode.id !== byName.id) {
+        const err = new Error("Ya existe otro tipo de actividad con ese nombre.");
+        err.statusCode = 409;
+        throw err;
+      }
+      if (target) {
+        await prisma.activityType.update({
+          where: { id: target.id },
+          data: activityTypeDataFromMasterItem(item, target.metadata)
+        });
+      } else {
+        await prisma.activityType.create({
+          data: activityTypeDataFromMasterItem(item)
+        });
+      }
+      await auditUserMasterDataItem(tenantId, actorId, "catalog_item_upserted", catalog, item.code, previous && activityTypeToMasterItem(previous), item);
+      return cloneUserMasterData({ activity_types: await listActivityTypeMasterItems() });
+    });
+  }
   const current = Array.isArray(USER_MASTER_DATA[catalog]) ? USER_MASTER_DATA[catalog] : [];
   const previous = current.find((entry) => entry.code === item.code) || null;
   USER_MASTER_DATA[catalog] = current.some((entry) => entry.code === item.code)
@@ -594,13 +706,48 @@ async function addUserMasterDataItem(tenantId, catalog, input, actorId = null) {
     : [...current, item];
   return prisma.runWithTenant(tenantId, async () => {
     await auditUserMasterDataItem(tenantId, actorId, "catalog_item_upserted", catalog, item.code, previous, item);
-    return { ...USER_MASTER_DATA };
+    return cloneUserMasterData({ activity_types: await listActivityTypeMasterItems() });
   });
 }
 
 async function updateUserMasterDataItem(tenantId, catalog, code, input, actorId = null) {
   tenantId = normalizeTenantId(tenantId);
   assertUserMasterCatalog(catalog);
+  if (catalog === "activity_types") {
+    return prisma.runWithTenant(tenantId, async () => {
+      await ensureAdminActivityTypes();
+      const previousRow = await getActivityTypeByMasterCode(code);
+      if (!previousRow) {
+        const err = new Error("Item de catalogo no encontrado.");
+        err.statusCode = 404;
+        throw err;
+      }
+      const previous = activityTypeToMasterItem(previousRow);
+      const nextItem = normalizeUserMasterItem({ ...previous, ...input, code: input.code || previous.code }, previous);
+      if (nextItem.code !== code) {
+        const conflictingCode = await getActivityTypeByMasterCode(nextItem.code);
+        if (conflictingCode && conflictingCode.id !== previousRow.id) {
+          const err = new Error("Ya existe otro item con ese codigo.");
+          err.statusCode = 409;
+          throw err;
+        }
+      }
+      const conflictingName = await prisma.activityType.findFirst({
+        where: { __includeInactive: true, name: nextItem.name }
+      });
+      if (conflictingName && conflictingName.id !== previousRow.id) {
+        const err = new Error("Ya existe otro tipo de actividad con ese nombre.");
+        err.statusCode = 409;
+        throw err;
+      }
+      await prisma.activityType.update({
+        where: { id: previousRow.id },
+        data: activityTypeDataFromMasterItem(nextItem, previousRow.metadata)
+      });
+      await auditUserMasterDataItem(tenantId, actorId, "catalog_item_updated", catalog, nextItem.code, previous, nextItem);
+      return cloneUserMasterData({ activity_types: await listActivityTypeMasterItems() });
+    });
+  }
   const current = Array.isArray(USER_MASTER_DATA[catalog]) ? USER_MASTER_DATA[catalog] : [];
   const previous = current.find((entry) => entry.code === code);
   if (!previous) {
@@ -617,13 +764,28 @@ async function updateUserMasterDataItem(tenantId, catalog, code, input, actorId 
   USER_MASTER_DATA[catalog] = current.map((entry) => entry.code === code ? nextItem : entry);
   return prisma.runWithTenant(tenantId, async () => {
     await auditUserMasterDataItem(tenantId, actorId, "catalog_item_updated", catalog, nextItem.code, previous, nextItem);
-    return { ...USER_MASTER_DATA };
+    return cloneUserMasterData({ activity_types: await listActivityTypeMasterItems() });
   });
 }
 
 async function deleteUserMasterDataItem(tenantId, catalog, code, actorId = null) {
   tenantId = normalizeTenantId(tenantId);
   assertUserMasterCatalog(catalog);
+  if (catalog === "activity_types") {
+    return prisma.runWithTenant(tenantId, async () => {
+      await ensureAdminActivityTypes();
+      const previousRow = await getActivityTypeByMasterCode(code);
+      if (!previousRow) {
+        const err = new Error("Item de catalogo no encontrado.");
+        err.statusCode = 404;
+        throw err;
+      }
+      const previous = activityTypeToMasterItem(previousRow);
+      await prisma.activityType.delete({ where: { id: previousRow.id } });
+      await auditUserMasterDataItem(tenantId, actorId, "catalog_item_deleted", catalog, code, previous, null);
+      return cloneUserMasterData({ activity_types: await listActivityTypeMasterItems() });
+    });
+  }
   const current = Array.isArray(USER_MASTER_DATA[catalog]) ? USER_MASTER_DATA[catalog] : [];
   const previous = current.find((entry) => entry.code === code);
   if (!previous) {
@@ -634,7 +796,7 @@ async function deleteUserMasterDataItem(tenantId, catalog, code, actorId = null)
   USER_MASTER_DATA[catalog] = current.filter((entry) => entry.code !== code);
   return prisma.runWithTenant(tenantId, async () => {
     await auditUserMasterDataItem(tenantId, actorId, "catalog_item_deleted", catalog, code, previous, null);
-    return { ...USER_MASTER_DATA };
+    return cloneUserMasterData({ activity_types: await listActivityTypeMasterItems() });
   });
 }
 
@@ -759,6 +921,7 @@ async function updateRole(tenantId, id, input, actorId = null, actorRoleName = "
       },
       include: { permissions: true }
     });
+    await authorizationState.revokeRoleUsers(current.id);
     await prisma.auditLog.create({
       data: { tenant_id: tenantId, user_id: actorId, action: "role_updated", module: "admin", entity: "/api/v1/admin/roles", entity_id: String(role.id), old_value: previous, new_value: roleDto(role, activeModules) }
     });
@@ -778,6 +941,7 @@ async function setRoleActive(tenantId, id, active, actorId = null) {
       data: { metadata: { ...(current.metadata || {}), active: toBoolean(active) } },
       include: { permissions: true }
     });
+    await authorizationState.revokeRoleUsers(current.id, "role_status_changed");
     await prisma.auditLog.create({
       data: { tenant_id: tenantId, user_id: actorId, action: toBoolean(active) ? "role_activated" : "role_deactivated", module: "admin", entity: "/api/v1/admin/roles/status", entity_id: String(role.id), old_value: previous, new_value: roleDto(role, activeModules) }
     });
@@ -1005,6 +1169,7 @@ async function updateUser(tenantId, id, input, actorId = null) {
       data.password = await bcrypt.hash(input.password || input.pas, 12);
     }
     await prisma.user.update({ where: { id: current.id }, data });
+    await authorizationState.revokeAllUserSessions(current.id, "user_authorization_changed");
     const employeeData = {
       code: current.employee?.code || input.code || input.id_interno || `EMP-${current.id}`,
       user_type: current.employee?.user_type || "empleado",
@@ -1071,6 +1236,7 @@ async function setUserActive(tenantId, id, active, actorId = null) {
       where: { id: Number(id) },
       data: { active: enabled }
     });
+    await authorizationState.revokeAllUserSessions(current.id, enabled ? "user_reactivated" : "user_deactivated");
     if (current.employee) {
       await prisma.employee.update({
         where: { id: current.employee.id },
@@ -1121,6 +1287,7 @@ async function updateUserAccess(tenantId, id, input, actorId = null) {
         active: input.active === undefined ? current.active : toBoolean(input.active)
       }
     });
+    await authorizationState.revokeAllUserSessions(current.id, "user_access_changed");
     if (current.employee) {
       await prisma.employee.update({
         where: { id: current.employee.id },

@@ -27,7 +27,7 @@ async function hrRoutes(fastify) {
 
   fastify.get("/hr/gps/active", { preHandler: requirePermission("hr", "read") }, (request) => service.listActiveGps(request.user?.tenant_id, request.query));
   fastify.get("/hr/gps/history", { preHandler: requirePermission("hr", "read") }, (request) => service.listGpsHistory(request.user?.tenant_id, request.query));
-  fastify.post("/hr/gps/ping", { schema: schemas.gpsPingSchema, preHandler: requirePermission("hr", "write") }, (request) => service.createGpsPing(request.user?.tenant_id, request.body));
+  fastify.post("/hr/gps/ping", { schema: schemas.gpsPingSchema, preHandler: requirePermission("hr", "write"), config: { rateLimit: { max: 60, timeWindow: "1 minute" } } }, (request) => service.createGpsPing(request.user?.tenant_id, request.body));
 
   fastify.get("/hr/activity-types", { preHandler: requirePermission("hr", "read") }, (request) => service.listActivityTypes(request.user?.tenant_id, request.query));
   fastify.post("/hr/activity-types", { schema: schemas.activityTypeSchema, preHandler: requirePermission("hr", "write") }, (request) => service.createActivityType(request.user?.tenant_id, request.body));

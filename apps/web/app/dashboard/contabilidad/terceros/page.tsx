@@ -29,6 +29,8 @@ type ThirdParty = {
     tax_responsibilities?: string[];
     dane_code?: string | null;
     department?: string | null;
+    receivable_account_code?: string | null;
+    withholding_rates?: Array<{ code: string }>;
   };
 };
 type DocumentTypeMaster = { code: string; description: string; active: boolean; source?: string };
@@ -57,6 +59,8 @@ const EMPTY = {
   department: "",
   dane_code: "",
   tax_responsibilities: "",
+  receivable_account_code: "1305",
+  sales_retention_codes: "",
   active: true
 };
 const EMPTY_MASTERS: ThirdPartyMasters = { document_types: [], locations: [] };
@@ -186,6 +190,8 @@ export default function TercerosContablesPage() {
       department: item.metadata?.department || "",
       dane_code: item.metadata?.dane_code || "",
       tax_responsibilities: item.metadata?.tax_responsibilities?.join(", ") || "",
+      receivable_account_code: item.metadata?.receivable_account_code || "1305",
+      sales_retention_codes: item.metadata?.withholding_rates?.map((row) => row.code).join(", ") || "",
       active: item.active
     });
     setModalOpen(true);
@@ -208,7 +214,8 @@ export default function TercerosContablesPage() {
         legal_name: computedLegalName,
         tax_type: form.document_type,
         verification_digit: calculateVerificationDigit(form.tax_id),
-        tax_responsibilities: form.tax_responsibilities.split(",").map((value) => value.trim()).filter(Boolean)
+        tax_responsibilities: form.tax_responsibilities.split(",").map((value) => value.trim()).filter(Boolean),
+        withholding_rates: form.sales_retention_codes.split(",").map((code) => ({ code: code.trim().toUpperCase() })).filter((row) => row.code)
       };
       await api<ThirdParty>(editing ? `/api/v1/accounting/third-parties/${editing.id}` : "/api/v1/accounting/third-parties", {
         method: editing ? "PUT" : "POST",
@@ -519,6 +526,18 @@ export default function TercerosContablesPage() {
                 Responsabilidades
                 <input className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" placeholder="R-99-PN, O-13..." value={form.tax_responsibilities} onChange={(event) => setForm((prev) => ({ ...prev, tax_responsibilities: event.target.value }))} />
               </label>
+              {form.type === "customer" ? (
+                <>
+                  <label className="text-sm">
+                    Cuenta asociada CxC
+                    <input className="mt-1 h-10 w-full rounded-md border border-line px-3 font-mono text-sm" placeholder="1305" value={form.receivable_account_code} onChange={(event) => setForm((prev) => ({ ...prev, receivable_account_code: event.target.value }))} required />
+                  </label>
+                  <label className="text-sm md:col-span-2">
+                    Retenciones de venta
+                    <input className="mt-1 h-10 w-full rounded-md border border-line px-3 font-mono text-sm" placeholder="RETEFUENTE-2.5, RETEICA-0.5" value={form.sales_retention_codes} onChange={(event) => setForm((prev) => ({ ...prev, sales_retention_codes: event.target.value }))} />
+                  </label>
+                </>
+              ) : null}
               <label className="text-sm md:col-span-4">
                 Direccion
                 <input className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.address} onChange={(event) => setForm((prev) => ({ ...prev, address: event.target.value }))} />

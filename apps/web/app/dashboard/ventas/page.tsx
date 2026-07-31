@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { VentasNav } from "@/components/ventas-nav";
-import { ArrowRight, FileText, Plus, Users } from "lucide-react";
+import { ArrowRight, BarChart3, FileText, Plus, ReceiptText, Users } from "lucide-react";
 import type { ReactNode } from "react";
 
 export default function VentasPage() {
@@ -23,6 +23,8 @@ export default function VentasPage() {
         <LobbyLink href="/dashboard/ventas/clientes" icon={<Users size={18} />} title="Clientes" detail="Crear y gestionar cartera comercial." />
         <LobbyLink href="/dashboard/ventas/ordenes/nueva" icon={<Plus size={18} />} title="Nueva orden" detail="Registrar una venta o pedido." primary />
         <LobbyLink href="/dashboard/ventas/ordenes" icon={<FileText size={18} />} title="Seguimiento" detail="Consultar ordenes y estados." />
+        <LobbyLink href="/dashboard/ventas/facturas/nueva" icon={<ReceiptText size={18} />} title="Facturar" detail="Emitir factura de venta directa (sin pedido)." />
+        <LobbyLink href="/dashboard/ventas/reportes" icon={<BarChart3 size={18} />} title="Reportes" detail="Ventas por cliente, SKU, fecha y detalle completo." />
       </section>
     </div>
   );

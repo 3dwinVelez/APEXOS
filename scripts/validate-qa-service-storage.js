@@ -39,6 +39,7 @@ async function main() {
   const order = orders[0];
   const suffix = Date.now();
   const objectPath = `${order.company_id}/${order.id}/smoke-${suffix}.png`;
+  const bypassObjectPath = `${order.company_id}/${order.id}/browser-bypass-${suffix}.png`;
   const storagePath = `service-images/${objectPath}`;
   const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64");
   let evidenceId = "";
@@ -55,6 +56,18 @@ async function main() {
       body: png
     });
     if (!upload.ok) throw new Error(`Authenticated Storage upload failed: ${upload.status} ${await upload.text()}`);
+
+    const bypassUpload = await fetch(`${url}/storage/v1/object/service-images/${bypassObjectPath}`, {
+      method: "POST",
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "image/png",
+        "x-upsert": "false"
+      },
+      body: Buffer.from("<html>not-an-image</html>", "utf8")
+    });
+    if (!bypassUpload.ok) throw new Error(`Direct Storage bypass behavior changed: ${bypassUpload.status} ${await bypassUpload.text()}`);
 
     const inserted = await jsonRequest("/rest/v1/service_evidence?select=id,storage_path", token, {
       method: "POST",
@@ -76,7 +89,7 @@ async function main() {
 
     const signed = await jsonRequest(`/storage/v1/object/sign/service-images/${objectPath}`, token, {
       method: "POST",
-      body: JSON.stringify({ expiresIn: 60 })
+      body: JSON.stringify({ expiresIn: 3 })
     });
     const signedUrl = signed.signedURL.startsWith("http")
       ? signed.signedURL
@@ -85,6 +98,9 @@ async function main() {
     if (!download.ok || (await download.arrayBuffer()).byteLength !== png.length) {
       throw new Error(`Signed evidence read failed: ${download.status}`);
     }
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    const expiredDownload = await fetch(signedUrl);
+    if (expiredDownload.ok) throw new Error("Signed evidence URL remained valid after expiration.");
 
     const blocked = await fetch(`${url}/rest/v1/service_evidence`, {
       method: "POST",
@@ -108,8 +124,10 @@ async function main() {
       status: "ok",
       login: true,
       authenticated_upload: true,
+      direct_invalid_signature_accepted_by_storage: true,
       metadata_insert: true,
       signed_read: true,
+      signed_url_expiration: true,
       data_uri_rejected: true
     }));
   } finally {
@@ -117,6 +135,10 @@ async function main() {
       await jsonRequest(`/rest/v1/service_evidence?id=eq.${encodeURIComponent(evidenceId)}`, token, { method: "DELETE" }).catch(() => null);
     }
     await fetch(`${url}/storage/v1/object/service-images/${objectPath}`, {
+      method: "DELETE",
+      headers: { apikey: anonKey, Authorization: `Bearer ${token}` }
+    }).catch(() => null);
+    await fetch(`${url}/storage/v1/object/service-images/${bypassObjectPath}`, {
       method: "DELETE",
       headers: { apikey: anonKey, Authorization: `Bearer ${token}` }
     }).catch(() => null);

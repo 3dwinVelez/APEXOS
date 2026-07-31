@@ -84,12 +84,6 @@ async function inventoryRoutes(fastify) {
   fastify.post("/inventory/slotting/run", {
     preHandler: requirePermission("inventory", "approve")
   }, async (request) => service.runSlotting(request.user?.tenant_id, request.body.place_id || null));
-
-  fastify.get("/inventory/transfers", { preHandler: requirePermission("inventory", "read") }, async (request) => service.listWarehouseTransfers(request.user?.tenant_id, request.query));
-  fastify.get("/inventory/transfers/:id", { preHandler: requirePermission("inventory", "read") }, async (request) => service.getWarehouseTransfer(request.user?.tenant_id, Number(request.params.id)));
-  fastify.post("/inventory/transfers", { schema: schemas.warehouseTransferSchema, preHandler: requirePermission("inventory", "write") }, async (request, reply) => reply.code(201).send(await service.createWarehouseTransfer(request.user?.tenant_id, request.user.id, request.body)));
-  fastify.post("/inventory/transfers/:id/dispatch", { preHandler: requirePermission("inventory", "approve") }, async (request) => service.dispatchWarehouseTransfer(request.user?.tenant_id, request.user.id, Number(request.params.id)));
-  fastify.post("/inventory/transfers/:id/receive", { preHandler: requirePermission("inventory", "approve") }, async (request) => service.receiveWarehouseTransfer(request.user?.tenant_id, request.user.id, Number(request.params.id)));
 }
 
 module.exports = inventoryRoutes;

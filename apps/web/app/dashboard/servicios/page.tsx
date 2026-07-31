@@ -21,8 +21,16 @@ import {
   Wrench
 } from "lucide-react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+
+const OFFLINE_DISCOVERY_ENABLED =
+  process.env.NEXT_PUBLIC_OFFLINE_DISCOVERY_ENABLED === "true";
+const OfflineTechnicianPanel = dynamic(
+  () => import("@/components/offline/OfflineTechnicianPanel"),
+  { ssr: false }
+);
 
 type ServiceReference = { id: number | string; code: string; name: string };
 type Technician = { id: number | string; code?: string; user?: { name?: string; email?: string } };
@@ -48,6 +56,7 @@ type ServiceOrder = {
   notes?: string;
   metadata?: {
     customer_document?: string;
+    customer_phone_secondary?: string;
     customer_neighborhood?: string;
     service_store?: string;
     service_store_label?: string;
@@ -71,6 +80,7 @@ type ServiceOrderExcelRow = {
   cliente: string;
   documento_cliente: string;
   telefono: string;
+  telefono_alterno: string;
   direccion: string;
   barrio: string;
   tipo_servicio: string;
@@ -165,6 +175,14 @@ function formatDate(value?: string) {
   const date = new Date(`${value.slice(0, 10)}T12:00:00`);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleDateString("es-CO", { day: "2-digit", month: "short" });
+}
+
+function formatDateTime(value?: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })
+    + " " + date.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
 }
 
 function exportDate(value?: string) {
@@ -329,6 +347,16 @@ function technicianLabel(order: ServiceOrder) {
   return order.technician?.user?.name || order.technician?.user?.email || String(order.technician_employee_id || order.technician_id || "");
 }
 
+function technicianSearchText(order: ServiceOrder) {
+  return [
+    order.technician?.code,
+    order.technician?.user?.name,
+    order.technician?.user?.email,
+    order.technician_employee_id,
+    order.technician_id
+  ].filter(Boolean).join(" ");
+}
+
 function serviceOrderExcelRows(orders: ServiceOrder[]): ServiceOrderExcelRow[] {
   return orders.map((order) => {
     const sla = slaInfo(order);
@@ -340,6 +368,7 @@ function serviceOrderExcelRows(orders: ServiceOrder[]): ServiceOrderExcelRow[] {
       cliente: order.customer_name || "",
       documento_cliente: String(order.metadata?.customer_document || ""),
       telefono: order.customer_phone || "",
+      telefono_alterno: String(order.metadata?.customer_phone_secondary || ""),
       direccion: order.customer_address || "",
       barrio: String(order.metadata?.customer_neighborhood || ""),
       tipo_servicio: order.service_type || "",
@@ -426,6 +455,7 @@ export default function ServicesPage() {
   const [evidenceScope, setEvidenceScope] = useState("");
   const [requestScope, setRequestScope] = useState("");
   const [serviceType, setServiceType] = useState("");
+  const [technicianFilter, setTechnicianFilter] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const [message, setMessage] = useState("");
   const [technicianMode, setTechnicianMode] = useState(false);
@@ -506,10 +536,15 @@ export default function ServicesPage() {
     const term = query.trim().toLowerCase();
     const today = new Date().toISOString().slice(0, 10);
     return orders.filter((order) => {
-      const matchesTerm = !term || [order.number, order.customer_name, order.customer_address, order.customer_phone, order.reference?.code, order.reference?.name, order.service_type]
+      const matchesTerm = !term || [order.number, order.customer_name, order.customer_address, order.customer_phone, order.metadata?.customer_phone_secondary, order.reference?.code, order.reference?.name, order.service_type, technicianSearchText(order)]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(term))
       const isExternalRequest = order.status === "agendado" || order.metadata?.public_request === true || order.metadata?.requires_admin_completion === true;
+      const orderTechnician = technicianValue(order);
+      const matchesTechnician =
+        !technicianFilter ||
+        (technicianFilter === "__unassigned" && !orderTechnician) ||
+        orderTechnician === technicianFilter;
       const matchesDate =
         !dateScope ||
         (dateScope === "today" && isToday(order.scheduled_date)) ||
@@ -522,7 +557,7 @@ export default function ServicesPage() {
         (evidenceScope === "without_evidence" && order.photos.length === 0) ||
         (evidenceScope === "with_incidents" && order.incidents.length > 0);
       const matchesRequestScope = !requestScope || (requestScope === "external" && isExternalRequest);
-      return matchesTerm && (!status || order.status === status) && matchesDate && matchesEvidence && matchesRequestScope && (!serviceType || order.service_type === serviceType);
+      return matchesTerm && matchesTechnician && (!status || order.status === status) && matchesDate && matchesEvidence && matchesRequestScope && (!serviceType || order.service_type === serviceType);
     }).sort((a, b) => {
       if (sortBy === "newest") return newestFirst(a, b);
       if (sortBy === "date_asc") return (a.scheduled_date || "9999").localeCompare(b.scheduled_date || "9999");
@@ -530,15 +565,29 @@ export default function ServicesPage() {
       if (sortBy === "order") return orderSequence(b.number) - orderSequence(a.number) || b.number.localeCompare(a.number);
       return priorityScore(a) - priorityScore(b) || newestFirst(a, b);
     });
-  }, [dateScope, evidenceScope, orders, query, requestScope, serviceType, sortBy, status]);
+  }, [dateScope, evidenceScope, orders, query, requestScope, serviceType, sortBy, status, technicianFilter]);
 
   const serviceTypes = useMemo(() => [...new Set(orders.map((order) => order.service_type).filter(Boolean))].sort(), [orders]);
   const editableServiceTypes = serviceTypesCatalog.length ? serviceTypesCatalog : serviceTypes.map((type) => ({ code: type, label: statusLabel[type] || type }));
+  const assignedTechnicianOptions = useMemo(() => {
+    const options = new Map<string, string>();
+    for (const technician of technicians) {
+      const id = String(technician.id || "").trim();
+      if (!id) continue;
+      options.set(id, `${technician.code || "TEC"} - ${technician.user?.name || technician.user?.email || "Tecnico"}`);
+    }
+    for (const order of orders) {
+      const id = technicianValue(order);
+      if (!id || options.has(id)) continue;
+      options.set(id, technicianLabel(order) || `Tecnico ${id.slice(0, 8)}`);
+    }
+    return Array.from(options.entries()).sort(([, a], [, b]) => a.localeCompare(b, "es"));
+  }, [orders, technicians]);
   const statusCounts = useMemo(() => orders.reduce<Record<string, number>>((acc, order) => {
     acc[order.status] = (acc[order.status] || 0) + 1;
     return acc;
   }, {}), [orders]);
-  const activeFilters = [status, dateScope, evidenceScope, requestScope, serviceType].filter(Boolean).length + (query.trim() ? 1 : 0);
+  const activeFilters = [status, dateScope, evidenceScope, requestScope, serviceType, technicianFilter].filter(Boolean).length + (query.trim() ? 1 : 0);
   const externalRequestCompany = typeof window !== "undefined" ? localStorage.getItem("apexos_company_name") || "SCJ" : "SCJ";
   const externalRequestHref = `/servicios/solicitar?empresa=${encodeURIComponent(externalRequestCompany)}`;
 
@@ -549,6 +598,7 @@ export default function ServicesPage() {
     setEvidenceScope("");
     setRequestScope("");
     setServiceType("");
+    setTechnicianFilter("");
     setSortBy("newest");
   }
 
@@ -729,6 +779,8 @@ export default function ServicesPage() {
         </div>
       </header>
 
+      {technicianMode && OFFLINE_DISCOVERY_ENABLED ? <OfflineTechnicianPanel /> : null}
+
       <section className="apex-context-hero">
         <div className="relative z-10 flex flex-col gap-5 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
@@ -837,7 +889,7 @@ export default function ServicesPage() {
               ))}
             </div>
 
-            <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
               <label className="relative">
                 <span className="sr-only">Agenda</span>
                 <select className="h-11 w-full appearance-none rounded-md border border-line bg-white px-3 text-sm" value={dateScope} onChange={(event) => setDateScope(event.target.value)}>
@@ -852,6 +904,13 @@ export default function ServicesPage() {
                 <option value="">Todos los tipos</option>
                 {serviceTypes.map((type) => <option key={type} value={type}>{type}</option>)}
               </select>
+              {!technicianMode ? (
+                <select className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm" value={technicianFilter} onChange={(event) => setTechnicianFilter(event.target.value)}>
+                  <option value="">Todos los tecnicos</option>
+                  <option value="__unassigned">Sin tecnico asignado</option>
+                  {assignedTechnicianOptions.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+                </select>
+              ) : null}
               <select className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm" value={evidenceScope} onChange={(event) => setEvidenceScope(event.target.value)}>
                 <option value="">Evidencia y novedades</option>
                 <option value="with_evidence">Con evidencia</option>
@@ -913,6 +972,7 @@ export default function ServicesPage() {
                     </div>
                     <div className="mt-4 grid min-w-0 gap-2 sm:flex sm:items-center sm:justify-between sm:gap-3">
                       <span className="text-xs font-medium text-neutral-500">{formatDate(order.scheduled_date)}</span>
+                      <span className="text-[11px] font-medium text-neutral-400">{formatDateTime(order.created_at)}</span>
                       <span className="inline-flex h-9 min-w-0 items-center justify-center gap-2 rounded-md bg-white px-3 text-xs font-semibold text-apex shadow-sm ring-1 ring-line sm:w-auto">
                         <span className="truncate">{serviceAction(order)}</span>
                         <ChevronRight className="shrink-0" size={14} />
@@ -942,11 +1002,12 @@ export default function ServicesPage() {
             <div className="hidden overflow-x-auto rounded-md border border-line md:block">
               <table className="w-full min-w-[960px] table-fixed border-collapse text-left text-sm">
                 <colgroup>
-                  <col className="w-[15%]" />
-                  <col className="w-[19%]" />
-                  <col className="w-[31%]" />
                   <col className="w-[14%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[28%]" />
                   <col className="w-[10%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[9%]" />
                   <col className="w-[11%]" />
                 </colgroup>
                 <thead className="bg-paper text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
@@ -955,6 +1016,7 @@ export default function ServicesPage() {
                     <th>Cliente y ubicacion</th>
                     <th>Servicio</th>
                     <th>Agenda</th>
+                    <th className="text-center">Ingreso</th>
                     <th className="text-center">Soportes</th>
                     <th className="text-right">Accion</th>
                   </tr>
@@ -974,7 +1036,9 @@ export default function ServicesPage() {
                       <td className="align-top">
                         <p className="truncate font-semibold text-neutral-900">{order.customer_name}</p>
                         <p className="mt-1 truncate text-xs text-neutral-500">{order.customer_address || "Sin direccion registrada"}</p>
-                        <p className="mt-1 text-xs text-neutral-500">{order.customer_phone || "Sin telefono"}</p>
+                        <p className="mt-1 text-xs text-neutral-500">
+                          {[order.customer_phone, order.metadata?.customer_phone_secondary].filter(Boolean).join(" / ") || "Sin telefono"}
+                        </p>
                       </td>
                       <td className="align-top">
                         <p className="font-medium text-neutral-800">{order.service_type || "Sin tipo"}</p>
@@ -984,6 +1048,9 @@ export default function ServicesPage() {
                         <p className="font-medium text-neutral-800">{formatDate(order.scheduled_date)}</p>
                         <p className="mt-1 text-xs text-neutral-500">{isOverdue(order) ? "Requiere atencion" : isToday(order.scheduled_date) ? "Programada para hoy" : "Agenda registrada"}</p>
                         <p className={`mt-1.5 inline-flex rounded-md border px-2 py-1 text-[11px] font-semibold ${slaInfo(order).tone}`}>{slaInfo(order).label} habiles</p>
+                      </td>
+                      <td className="text-center align-top">
+                        <p className="text-xs font-medium text-neutral-700">{formatDateTime(order.created_at)}</p>
                       </td>
                       <td className="text-center align-top">
                         <div className="inline-flex items-center gap-1.5 rounded-md bg-paper px-2 py-1.5 text-[11px] font-medium text-neutral-600">

@@ -2,7 +2,7 @@ const schemas = require("./schema");
 const service = require("./service");
 
 async function authRoutes(fastify) {
-  fastify.post("/auth/register", { schema: schemas.registerSchema }, async (request, reply) => {
+  fastify.post("/auth/register", { schema: schemas.registerSchema, config: { rateLimit: { max: 5, timeWindow: "1 hour" } } }, async (request, reply) => {
     const result = await service.registerTenant(request.body, fastify);
     return reply.code(201).send(result);
   });
@@ -24,6 +24,14 @@ async function authRoutes(fastify) {
 
   fastify.post("/auth/password", { preHandler: fastify.authenticate }, async (request) => {
     return service.changePassword(request.user, request.body);
+  });
+
+  fastify.post("/auth/logout", { preHandler: fastify.authenticate }, async (request) => {
+    return service.logout(request.user);
+  });
+
+  fastify.delete("/auth/sessions/:id", { preHandler: fastify.authenticate }, async (request) => {
+    return service.revokeSession(request.user, request.params.id);
   });
 }
 

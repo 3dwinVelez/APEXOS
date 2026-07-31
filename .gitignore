@@ -1,11 +1,12 @@
 node_modules/
-.tools/
+.apexos-local/
 .env
 .env.*
 !.env.example
 *.env
 config/*.env
 !config/.env.example
+!config/qa.env.example
 .next/
 .next-dev/
 apps/web/.next-dev-*/

@@ -1,5 +1,13 @@
 # Modulo Ventas
 
+## Facturación a clientes
+
+La factura interna se integra de forma atómica con inventario, kardex, contabilidad y cuentas por cobrar. Admite orden de venta opcional, precio editable, descuento por posición, IVA del SKU, retenciones de ventas y bodegas propias o en consignación.
+
+Las facturas están en `/dashboard/ventas/facturas`. Cartera, recaudos, vencimientos y retenciones están en `/dashboard/cxc/documentos`, también accesible desde Contabilidad.
+
+La importación `.xlsx` agrupa facturas por `grupo_factura`; un error invalida el lote completo. La anulación genera NCV y asiento inverso, devuelve unidades con el costo histórico y conserva la trazabilidad.
+
 ## Cambios aplicados
 
 - La creacion de clientes se movio a ventana flotante.

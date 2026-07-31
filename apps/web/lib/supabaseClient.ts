@@ -4,11 +4,13 @@ const SUPABASE_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_SUPABASE_TIMEOUT_MS |
 const SUPABASE_GET_CACHE_TTL_MS = Number(process.env.NEXT_PUBLIC_SUPABASE_GET_CACHE_TTL_MS || 12000);
 const SUPABASE_GET_STALE_MS = Number(process.env.NEXT_PUBLIC_SUPABASE_GET_STALE_MS || 60000);
 const SUPABASE_GET_CACHE_MAX_ENTRIES = Number(process.env.NEXT_PUBLIC_SUPABASE_GET_CACHE_MAX_ENTRIES || 120);
+const SUPABASE_SESSION_REFRESH_WINDOW_MS = 5 * 60 * 1000;
 
 type SupabaseFetchOptions = RequestInit & {
   contentType?: string;
   requireSession?: boolean;
   cacheTtlMs?: number;
+  skipAuthRefresh?: boolean;
 };
 
 type SupabaseCacheEntry = {
@@ -20,6 +22,7 @@ type SupabaseCacheEntry = {
 };
 
 const supabaseGetCache = new Map<string, SupabaseCacheEntry>();
+let supabaseRefreshInFlight: Promise<boolean> | null = null;
 
 export function getSupabaseConfigStatus() {
   return {
@@ -37,6 +40,55 @@ export function requireSupabaseConfig() {
 
 export function getSupabaseAccessToken() {
   return typeof window !== "undefined" ? localStorage.getItem("token") : null;
+}
+
+function parseTokenPayload(token: string | null) {
+  if (!token?.includes(".")) return null;
+  try {
+    return JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))) as { exp?: number; iss?: string };
+  } catch {
+    return null;
+  }
+}
+
+function isSupabaseSessionToken(token: string | null) {
+  const payload = parseTokenPayload(token);
+  return Boolean(payload?.iss && String(payload.iss).includes("supabase"));
+}
+
+function shouldRefreshSupabaseToken(token: string | null) {
+  const payload = parseTokenPayload(token);
+  if (!payload?.exp) return false;
+  return payload.exp * 1000 - Date.now() <= SUPABASE_SESSION_REFRESH_WINDOW_MS;
+}
+
+export async function refreshSupabaseSession(force = false) {
+  if (typeof window === "undefined") return false;
+  const token = localStorage.getItem("token");
+  const provider = localStorage.getItem("auth_provider");
+  if (provider !== "supabase" && !isSupabaseSessionToken(token)) return false;
+  if (!force && !shouldRefreshSupabaseToken(token)) return true;
+
+  const refreshToken = localStorage.getItem("refresh");
+  if (!refreshToken) return false;
+  if (!supabaseRefreshInFlight) {
+    supabaseRefreshInFlight = (async () => {
+      try {
+        const data = await supabaseAuth.refreshSession(refreshToken);
+        if (!data.access_token) return false;
+        localStorage.setItem("token", data.access_token);
+        if (data.refresh_token) localStorage.setItem("refresh", data.refresh_token);
+        if (data.user?.email) localStorage.setItem("user_email", data.user.email);
+        clearSupabaseFetchCache();
+        return true;
+      } catch {
+        return false;
+      } finally {
+        supabaseRefreshInFlight = null;
+      }
+    })();
+  }
+  return supabaseRefreshInFlight;
 }
 
 export function supabaseUrl(path: string) {
@@ -71,9 +123,51 @@ export function clearSupabaseFetchCache() {
   supabaseGetCache.clear();
 }
 
+async function executeSupabaseFetch<T>(
+  path: string,
+  options: SupabaseFetchOptions,
+  controller: AbortController
+): Promise<T> {
+  const { contentType = "application/json", requireSession = true, headers, cacheTtlMs, skipAuthRefresh, ...init } = options;
+  void cacheTtlMs;
+  void skipAuthRefresh;
+  let response: Response;
+  try {
+    response = await fetch(supabaseUrl(path), {
+      ...init,
+      signal: controller.signal,
+      headers: {
+        ...supabaseHeaders({ contentType, requireSession }),
+        Accept: "application/json",
+        ...headers
+      }
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("Supabase no respondio a tiempo. Reintenta en unos segundos.");
+    }
+    throw error;
+  }
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({ message: response.statusText }));
+    const detail = body.message || body.error_description || body.error || JSON.stringify(body);
+    throw new Error(`Supabase ${response.status}: ${detail}`);
+  }
+  if (response.status === 204) return undefined as T;
+  const text = await response.text();
+  if (!text) return undefined as T;
+  return JSON.parse(text) as T;
+}
+
+function isSupabaseUnauthorizedError(error: unknown) {
+  if (!(error instanceof Error)) return false;
+  return /^Supabase 401\b/.test(error.message);
+}
+
 export async function supabaseFetch<T>(path: string, options: SupabaseFetchOptions = {}): Promise<T> {
-  const { contentType = "application/json", requireSession = true, headers, cacheTtlMs, ...init } = options;
+  const { contentType = "application/json", requireSession = true, headers, cacheTtlMs, skipAuthRefresh = false, ...init } = options;
   const method = String(init.method || "GET").toUpperCase();
+  if (requireSession && !skipAuthRefresh) await refreshSupabaseSession(false);
   const token = getSupabaseAccessToken() || "";
   const ttl = cacheTtlMs ?? SUPABASE_GET_CACHE_TTL_MS;
   const canCache = method === "GET" && ttl > 0;
@@ -103,34 +197,16 @@ export async function supabaseFetch<T>(path: string, options: SupabaseFetchOptio
   const controller = new AbortController();
   const timeout = globalThis.setTimeout(() => controller.abort(), SUPABASE_TIMEOUT_MS);
   const request = (async () => {
-    let response: Response;
     try {
-      response = await fetch(supabaseUrl(path), {
-        ...init,
-        signal: controller.signal,
-        headers: {
-          ...supabaseHeaders({ contentType, requireSession }),
-          Accept: "application/json",
-          ...headers
-        }
-      });
+      return await executeSupabaseFetch<T>(path, { contentType, requireSession, headers, cacheTtlMs, skipAuthRefresh, ...init }, controller);
     } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") {
-        throw new Error("Supabase no respondio a tiempo. Reintenta en unos segundos.");
+      if (!skipAuthRefresh && requireSession && isSupabaseUnauthorizedError(error) && await refreshSupabaseSession(true)) {
+        return executeSupabaseFetch<T>(path, { contentType, requireSession, headers, cacheTtlMs: 0, skipAuthRefresh: true, ...init }, controller);
       }
       throw error;
     } finally {
       globalThis.clearTimeout(timeout);
     }
-    if (!response.ok) {
-      const body = await response.json().catch(() => ({ message: response.statusText }));
-      const detail = body.message || body.error_description || body.error || JSON.stringify(body);
-      throw new Error(`Supabase ${response.status}: ${detail}`);
-    }
-    if (response.status === 204) return undefined as T;
-    const text = await response.text();
-    if (!text) return undefined as T;
-    return JSON.parse(text) as T;
   })();
   if (key) {
     supabaseGetCache.set(key, { at: Date.now(), token, promise: request });
@@ -157,6 +233,7 @@ export const supabaseAuth = {
     return supabaseFetch<{ access_token: string; refresh_token: string; user: { id: string; email?: string } }>("/auth/v1/token?grant_type=refresh_token", {
       method: "POST",
       requireSession: false,
+      skipAuthRefresh: true,
       body: JSON.stringify({ refresh_token })
     });
   },

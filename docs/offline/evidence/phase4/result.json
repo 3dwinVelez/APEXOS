@@ -1,0 +1,235 @@
+{
+  "browser": "Google Chrome",
+  "version": "Chrome/150.0.7871.182",
+  "profile": "temporary-isolated",
+  "steps": {
+    "initial": {
+      "indexedDb": {
+        "databases": [],
+        "selected": null
+      },
+      "serviceWorkers": 0
+    },
+    "login": {
+      "path": "/dashboard/servicios",
+      "panel": true
+    },
+    "hydration": {
+      "durationMs": 711.35,
+      "requests": [
+        {
+          "path": "/api/v1/offline/capabilities",
+          "status": 204
+        },
+        {
+          "path": "/api/v1/offline/capabilities",
+          "status": 200
+        },
+        {
+          "path": "/api/v1/offline/bootstrap",
+          "status": 204
+        },
+        {
+          "path": "/api/v1/offline/bootstrap",
+          "status": 200
+        }
+      ],
+      "indexedDb": {
+        "databases": [
+          "apexos-offline-v2-875b9380866e9d56e7110b0e-55c318025706637a789dbc36-e7f6c011776e8db7cd330b54"
+        ],
+        "selected": {
+          "derivedName": true,
+          "stores": [
+            "offlineActivities",
+            "offlineCatalogs",
+            "offlineChecklists",
+            "offlineMetadata",
+            "offlineOperationMetadata",
+            "offlineOperations",
+            "offlineOrders",
+            "offlineSchemaState"
+          ],
+          "counts": {
+            "offlineActivities": 6,
+            "offlineCatalogs": 2,
+            "offlineChecklists": 4,
+            "offlineMetadata": 1,
+            "offlineOperationMetadata": 0,
+            "offlineOperations": 0,
+            "offlineOrders": 2,
+            "offlineSchemaState": 1
+          },
+          "metadata": {
+            "schemaVersion": 3,
+            "generatedAt": "2026-07-27T19:53:16.258Z",
+            "expiresAt": "2026-07-28T19:53:16.258Z",
+            "hasInstallationId": true,
+            "hasSnapshotId": true,
+            "hasServerCheckpoint": true
+          }
+        }
+      }
+    },
+    "offline": {
+      "url": "/dashboard/servicios",
+      "offlineIndicator": true,
+      "localReadOnly": false,
+      "lastUpdated": true,
+      "activeOrder": true,
+      "futureOrder": true,
+      "otherTechnicianOrder": false,
+      "outsideWindowOrder": false,
+      "activities": true,
+      "checklist": true,
+      "expiredWarning": false,
+      "writeControls": []
+    },
+    "reopen": {
+      "indexedDb": {
+        "databases": [
+          "apexos-offline-v2-875b9380866e9d56e7110b0e-55c318025706637a789dbc36-e7f6c011776e8db7cd330b54"
+        ],
+        "selected": {
+          "derivedName": true,
+          "stores": [
+            "offlineActivities",
+            "offlineCatalogs",
+            "offlineChecklists",
+            "offlineMetadata",
+            "offlineOperationMetadata",
+            "offlineOperations",
+            "offlineOrders",
+            "offlineSchemaState"
+          ],
+          "counts": {
+            "offlineActivities": 6,
+            "offlineCatalogs": 2,
+            "offlineChecklists": 4,
+            "offlineMetadata": 1,
+            "offlineOperationMetadata": 0,
+            "offlineOperations": 0,
+            "offlineOrders": 2,
+            "offlineSchemaState": 1
+          },
+          "metadata": {
+            "schemaVersion": 3,
+            "generatedAt": "2026-07-27T19:53:16.258Z",
+            "expiresAt": "2026-07-28T19:53:16.258Z",
+            "hasInstallationId": true,
+            "hasSnapshotId": true,
+            "hasServerCheckpoint": true
+          }
+        }
+      },
+      "visible": {
+        "url": "/dashboard/servicios",
+        "offlineIndicator": true,
+        "localReadOnly": false,
+        "lastUpdated": true,
+        "activeOrder": true,
+        "futureOrder": true,
+        "otherTechnicianOrder": false,
+        "outsideWindowOrder": false,
+        "activities": false,
+        "checklist": false,
+        "expiredWarning": false,
+        "writeControls": []
+      },
+      "detail": {
+        "url": "/dashboard/servicios",
+        "offlineIndicator": true,
+        "localReadOnly": false,
+        "lastUpdated": true,
+        "activeOrder": true,
+        "futureOrder": true,
+        "otherTechnicianOrder": false,
+        "outsideWindowOrder": false,
+        "activities": true,
+        "checklist": true,
+        "expiredWarning": false,
+        "writeControls": []
+      }
+    },
+    "ttl": {
+      "url": "/dashboard/servicios",
+      "offlineIndicator": true,
+      "localReadOnly": false,
+      "lastUpdated": true,
+      "activeOrder": true,
+      "futureOrder": true,
+      "otherTechnicianOrder": false,
+      "outsideWindowOrder": false,
+      "activities": false,
+      "checklist": false,
+      "expiredWarning": true,
+      "writeControls": []
+    },
+    "refresh": {
+      "databases": [
+        "apexos-offline-v2-875b9380866e9d56e7110b0e-55c318025706637a789dbc36-e7f6c011776e8db7cd330b54"
+      ],
+      "selected": {
+        "derivedName": true,
+        "stores": [
+          "offlineActivities",
+          "offlineCatalogs",
+          "offlineChecklists",
+          "offlineMetadata",
+          "offlineOperationMetadata",
+          "offlineOperations",
+          "offlineOrders",
+          "offlineSchemaState"
+        ],
+        "counts": {
+          "offlineActivities": 6,
+          "offlineCatalogs": 2,
+          "offlineChecklists": 4,
+          "offlineMetadata": 1,
+          "offlineOperationMetadata": 0,
+          "offlineOperations": 0,
+          "offlineOrders": 2,
+          "offlineSchemaState": 1
+        },
+        "metadata": {
+          "schemaVersion": 3,
+          "generatedAt": "2026-07-27T19:53:33.286Z",
+          "expiresAt": "2026-07-28T19:53:33.286Z",
+          "hasInstallationId": true,
+          "hasSnapshotId": true,
+          "hasServerCheckpoint": true
+        }
+      }
+    },
+    "logout": {
+      "existedBefore": true,
+      "existsAfter": false
+    },
+    "afterReopenLogout": {
+      "databases": [],
+      "selected": null
+    },
+    "exclusionUser": {
+      "panel": false,
+      "indexedDb": {
+        "databases": [],
+        "selected": null
+      },
+      "requestedBootstrap": false,
+      "downloadedOfflineChunk": false,
+      "downloadedOperationQueueChunk": false
+    },
+    "unauthorizedUser": {
+      "panel": false,
+      "indexedDb": {
+        "databases": [],
+        "selected": null
+      },
+      "requestedBootstrap": false,
+      "downloadedOfflineChunk": false,
+      "downloadedOperationQueueChunk": false
+    }
+  },
+  "defects": [],
+  "result": "APROBADO"
+}

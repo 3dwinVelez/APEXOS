@@ -8,7 +8,6 @@ const ITEMS = [
   { href: "/dashboard/inventario/productos/nuevo", label: "Productos" },
   { href: "/dashboard/inventario/familias", label: "Familias" },
   { href: "/dashboard/inventario/bodegas", label: "Bodegas" },
-  { href: "/dashboard/inventario/traslados", label: "Traslados" },
   { href: "/dashboard/inventario/wms", label: "WMS" },
   { href: "/dashboard/inventario/stock", label: "Stock" },
   { href: "/dashboard/inventario/reportes", label: "Reportes" }

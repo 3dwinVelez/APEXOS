@@ -2,6 +2,7 @@ const tenancy = require("../../middleware/tenancy");
 const { requirePermission } = require("../../middleware/rbac");
 const schemas = require("./schema");
 const service = require("./service");
+const evidenceUploads = require("./evidenceUploads");
 
 async function servicesRoutes(fastify) {
   fastify.addHook("preHandler", fastify.authenticate);
@@ -39,6 +40,12 @@ async function servicesRoutes(fastify) {
   fastify.post("/services/orders/:id/incidents", { schema: schemas.incidentSchema, preHandler: requirePermission("services", "write") }, (request) => service.addIncident(request.user?.tenant_id, request.user, request.params.id, request.body));
   fastify.get("/services/orders/:id/photos", { preHandler: requirePermission("services", "read") }, (request) => service.listPhotos(request.user?.tenant_id, request.user, request.params.id));
   fastify.post("/services/orders/:id/photos", { schema: schemas.photoSchema, preHandler: requirePermission("services", "write") }, (request) => service.addPhoto(request.user?.tenant_id, request.user, request.params.id, request.body));
+  fastify.post("/services/orders/:id/evidence-upload-authorizations", { schema: schemas.evidenceAuthorizationSchema, preHandler: requirePermission("services", "write") }, (request) =>
+    evidenceUploads.authorize(request.user?.tenant_id, request.user, request.params.id, request.body));
+  fastify.post("/services/evidence-upload-authorizations/:id/confirm", { preHandler: requirePermission("services", "write") }, (request) =>
+    evidenceUploads.confirm(request.user?.tenant_id, request.user, request.params.id));
+  fastify.get("/services/evidence-upload-authorizations/:id", { preHandler: requirePermission("services", "read") }, (request) =>
+    evidenceUploads.status(request.user?.tenant_id, request.user, request.params.id));
 }
 
 module.exports = servicesRoutes;

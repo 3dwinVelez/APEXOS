@@ -26,7 +26,10 @@ const MODULES = [
   "invoicing",
   "hr",
   "services",
-  "transport"
+  "offline",
+  "transport",
+  "sales-invoice",
+  "accounts-receivable"
 ];
 const DEFAULT_ALLOWED_ORIGINS = ["http://localhost:3001", "http://127.0.0.1:3001"];
 
@@ -104,16 +107,27 @@ async function build() {
 
   bootLog("Registering auth decorator");
   fastify.decorate("authenticate", async (request, reply) => {
+    const { measurePhase } = require("./src/core/performanceContext");
+    return measurePhase("authentication", async () => {
     const auth = request.headers.authorization || "";
     const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
     try {
       request.user = require("./src/security/jwt").verify(token);
     } catch {
       try {
-        request.user = await require("./src/security/supabaseAuth").authenticateSupabaseToken(token);
+        request.user = await require("./src/security/supabaseAuth").authenticateSupabaseToken(
+          token,
+          request.headers["x-company-id"]
+        );
       } catch {
         return reply.code(401).send({ error: "Token invalido", code: "TOKEN_INVALIDO" });
       }
+    }
+
+    try {
+      request.user = await require("./src/security/authorizationState").validateAuthorization(request.user);
+    } catch (error) {
+      return reply.code(error.statusCode || 401).send({ error: error.message, code: error.code || "SESION_REVOCADA" });
     }
 
     try {
@@ -124,11 +138,12 @@ async function build() {
         if (!tenant || !tenant.active) {
           return reply.code(403).send({ error: "Cuenta suspendida o no encontrada", code: "EMPRESA_INACTIVA" });
         }
-        request.tenant = tenant;
+        request.tenant = require("./src/security/supabaseAuth").tenantWithAuthorizationContext(tenant, request.user);
       }
     } catch {
       return reply.code(401).send({ error: "Token invalido", code: "TOKEN_INVALIDO" });
     }
+    });
   });
   bootLog("Registered auth decorator");
 
@@ -192,7 +207,15 @@ async function build() {
         : 0;
     setResponseSizeBytes(responseSizeBytes);
     const queryTotalMs = context?.queryTotalMs || 0;
-    reply.header("Server-Timing", `app;dur=${durationMs.toFixed(1)}, db;dur=${queryTotalMs.toFixed(1)}`);
+    const phases = context?.phases || {};
+    reply.header("x-request-id", _request.id);
+    reply.header("Server-Timing", [
+      `app;dur=${durationMs.toFixed(1)}`,
+      `auth;dur=${Number(phases.authentication || 0).toFixed(1)}`,
+      `tenant;dur=${Number(phases.tenant || 0).toFixed(1)}`,
+      `authorization;dur=${Number(phases.authorization || 0).toFixed(1)}`,
+      `db;dur=${queryTotalMs.toFixed(1)}`
+    ].join(", "));
     done(null, payload);
   });
   fastify.addHook("onResponse", (request, reply, done) => {
@@ -201,7 +224,12 @@ async function build() {
       ? Number(process.hrtime.bigint() - context.startedAt) / 1e6
       : Number(reply.elapsedTime || 0);
     if (process.env.PERFORMANCE_LOG_ENABLED === "true" || process.env.APP_ENV === "qa") {
-      fastify.log.info({
+      const simpleBudgetMs = Number(process.env.PERFORMANCE_SIMPLE_BUDGET_MS || 300);
+      const criticalMs = Number(process.env.PERFORMANCE_CRITICAL_MS || 2000);
+      const severity = durationMs >= criticalMs ? "critical" : durationMs >= simpleBudgetMs ? "warning" : "ok";
+      const interactionId = context?.interactionId || request.id;
+      reply.header("x-interaction-id", interactionId);
+      fastify.log[severity === "critical" ? "error" : severity === "warning" ? "warn" : "info"]({
         event: "api_performance",
         endpoint: request.routeOptions?.url || request.url.split("?")[0],
         method: request.method,
@@ -213,7 +241,12 @@ async function build() {
         query_max_ms: Number((context?.queryMaxMs || 0).toFixed(2)),
         slow_query_count: context?.slowQueries?.length || 0,
         slow_queries: (context?.slowQueries || []).slice(0, 10),
-        user_id: request.user?.id || null,
+        phases_ms: context?.phases || {},
+        serialization_ms: Number((context?.serializationMs || 0).toFixed(2)),
+        db_pool_wait_ms: Number((context?.dbPoolWaitMs || 0).toFixed(2)),
+        severity,
+        interaction_id: interactionId,
+        user_ref: request.user?.id ? require("node:crypto").createHash("sha256").update(String(request.user.id)).digest("hex").slice(0, 16) : null,
         company_id: request.user?.tenant_id || null
       });
     }
@@ -234,7 +267,10 @@ async function build() {
   registerRoutes("invoicing", require("./src/modules/invoicing/routes"), { prefix: "/api/v1" });
   registerRoutes("hr", require("./src/modules/hr/routes"), { prefix: "/api/v1" });
   registerRoutes("services", require("./src/modules/services/routes"), { prefix: "/api/v1" });
+  registerRoutes("offline", require("./src/modules/offline/routes"), { prefix: "/api/v1" });
   registerRoutes("transport", require("./src/modules/transport/routes"), { prefix: "/api/v1" });
+  registerRoutes("sales-invoice", require("./src/modules/sales-invoice/routes"), { prefix: "/api/v1" });
+  registerRoutes("accounts-receivable", require("./src/modules/accounts-receivable/routes"), { prefix: "/api/v1" });
   bootLog("Registered API modules");
 
   bootLog("Registering brain websocket route");
@@ -280,7 +316,26 @@ async function build() {
   fastify.get("/health", async () => {
     const prisma = require("./src/core/prisma");
     await prisma.$queryRaw`SELECT 1`;
-    return { status: "OK", version: "2.0", modules: MODULES.length };
+    const commit = String(process.env.RAILWAY_GIT_COMMIT_SHA || process.env.GIT_COMMIT_SHA || "unknown").slice(0, 12);
+    return { status: "OK", version: "2.0", modules: MODULES.length, commit };
+  });
+
+  fastify.get("/metrics", {
+    preHandler: require("./src/security/metricsAuth").requireMetricsToken,
+    config: { rateLimit: { max: 30, timeWindow: "1 minute" } }
+  }, async (request, reply) => {
+    const { metricsEndpoint } = require("./src/fabric/metrics");
+    const { auditQueue, brainQueue, stockQueue, emailQueue } = require("./src/fabric/queues");
+    reply.header("Content-Type", "text/plain; charset=utf-8");
+    return metricsEndpoint({ audit: auditQueue, brain: brainQueue, stock: stockQueue, email: emailQueue });
+  });
+
+  // Registrar métricas de HTTP en cada respuesta
+  fastify.addHook("onResponse", async (request, reply) => {
+    const { recordHttpRequest } = require("./src/fabric/metrics");
+    const route = request.routeOptions?.url || request.url || "unknown";
+    if (route === "/metrics" || route === "/health") return;
+    recordHttpRequest(request.method, route, reply.statusCode, reply.elapsedTime || 0);
   });
   bootLog("Registered health route");
 

@@ -112,8 +112,10 @@ export default function ProveedoresPage() {
 
   async function load() {
     const data = await api<Supplier[]>("/api/v1/purchases/suppliers");
-    setSuppliers(data || []);
-    setSelectedSupplier((current) => current ? (data || []).find((supplier) => supplier.id === current.id) || (data || [])[0] || null : (data || [])[0] || null);
+    const rows = data || [];
+    setSuppliers(rows);
+    setSelectedSupplier((current) => current ? rows.find((supplier) => supplier.id === current.id) || rows[0] || null : rows[0] || null);
+    return rows;
   }
 
   const filteredSuppliers = useMemo(() => {
@@ -167,8 +169,8 @@ export default function ProveedoresPage() {
       setOk(`${created.name} creado y disponible para ordenes de compra`);
       setForm({ name: "", tax_id: "", email: "", phone: "", city: "", country: "", credit_days: 30, segment: "abastecimiento", category: "insumos", owner: "Compras", notes: "" });
       setActiveTab("directorio");
-      await load();
-      setSelectedSupplier(created);
+      const refreshed = await load();
+      setSelectedSupplier(refreshed.find((supplier) => supplier.id === created.id) || created);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo crear proveedor");
     } finally {

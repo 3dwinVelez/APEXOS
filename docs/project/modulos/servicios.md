@@ -83,6 +83,9 @@
 - El lobby de Servicios incorpora acceso a `Formulario publico` para que administracion pueda copiar o abrir el enlace rapidamente.
 - Las ordenes creadas desde el formulario publico aparecen en el lobby como `Por completar` o `Completar solicitud`, indicando que administracion debe completar referencia o tecnico antes de pasar a operacion.
 - La creacion publica no reemplaza la creacion administrativa interna: administracion sigue usando `/dashboard/servicios/nuevo` cuando ya conoce referencia, tecnico y fechas operativas completas.
+- **2026-07-23 — Cierre de orden lee encuesta de satisfacción de order.metadata como fallback.** La función `requireSatisfactionSurvey` en `service.js` solo buscaba la encuesta en el body del request de cierre (`input.metadata.satisfaction_survey.answers`). El frontend y la app móvil recolectan la encuesta durante inspección/ejecución y la persisten en `order.metadata`. Se agregó `orderMetadata?.satisfaction_survey?.answers` como fallback, con prioridad del body sobre metadata persistida. Esto resuelve una regresión introducida en commit `fe0d728` que bloqueaba todo cierre de orden con HTTP 422.
+- **2026-07-23 — Script de validación del fix de cierre.** Se agregó `scripts/validate-service-close-fix.js` con 10 pruebas que cubren: encuesta en body, encuesta en metadata persistida, body prioritario, ausencia de encuesta, y ciclo E2E completo (referencia → fotos → inspección con encuesta → cierre sin body).
+- **2026-07-23 — Documentación de auditoría.** Se agregó `docs/audits/SERVICES_CLOSE_SATISFACTION_SURVEY_FIX_20260723.md` con el detalle de la regresión, corrección y resultados.
 
 ## Regla de experiencia
 

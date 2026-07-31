@@ -1,6 +1,24 @@
 const bcrypt = require("bcrypt");
+const crypto = require("node:crypto");
 const prisma = require("../core/prisma");
 const { invalidateTenantCache } = require("../core/tenantCache");
+
+const AUTH_CACHE_TTL_MS = Math.max(Number(process.env.SUPABASE_AUTH_CACHE_TTL_MS || 30000), 1000);
+const AUTH_CACHE_MAX_ENTRIES = Math.max(Number(process.env.SUPABASE_AUTH_CACHE_MAX_ENTRIES || 500), 10);
+const authCache = new Map();
+const authInFlight = new Map();
+
+function authCacheKey(token) {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+function pruneAuthCache() {
+  const now = Date.now();
+  for (const [key, entry] of authCache) {
+    if (entry.expiresAt <= now) authCache.delete(key);
+  }
+  while (authCache.size > AUTH_CACHE_MAX_ENTRIES) authCache.delete(authCache.keys().next().value);
+}
 
 function normalizeDomain(value) {
   return String(value || "")
@@ -94,12 +112,24 @@ async function supabaseRest(path, { token, service = false } = {}) {
   return response.json();
 }
 
-async function getSupabaseMembershipContext(token, supabaseUser) {
+function selectMembership(memberships, requestedCompanyId = "") {
+  const requested = String(requestedCompanyId || "").trim();
+  if (requested) {
+    const selected = memberships.find((item) => String(item.company_id || "") === requested);
+    if (!selected) throw new Error("La empresa solicitada no pertenece al usuario");
+    return selected;
+  }
+  return memberships.find((item) => ["owner", "admin", "superadmin"].includes(String(item.role || "").toLowerCase()))
+    || memberships[0]
+    || null;
+}
+
+async function getSupabaseMembershipContext(token, supabaseUser, requestedCompanyId = "") {
   const memberships = await supabaseRest(`/rest/v1/company_users?select=company_id,role,status&user_id=eq.${encodeURIComponent(String(supabaseUser.id || ""))}&status=eq.active&limit=20`, {
     token,
     service: true
   }) || [];
-  const membership = memberships.find((item) => ["owner", "admin", "superadmin"].includes(String(item.role || "").toLowerCase())) || memberships[0] || null;
+  const membership = selectMembership(memberships, requestedCompanyId);
   if (!membership?.company_id) return null;
   const companyId = encodeURIComponent(String(membership.company_id));
   const [companies, modules] = await Promise.all([
@@ -109,7 +139,10 @@ async function getSupabaseMembershipContext(token, supabaseUser) {
     }).then((rows) => rows || []),
     supabaseRest(`/rest/v1/v_company_module_status?select=module_code,enabled&company_id=eq.${companyId}&enabled=eq.true`, {
       token,
-      service: true
+      // This view is security_invoker and evaluates auth.uid(). Using the
+      // service-role bearer loses the authenticated user's RLS context and
+      // makes enabled modules look empty.
+      service: false
     })
   ]);
   return {
@@ -123,13 +156,21 @@ async function getSupabaseMembershipContext(token, supabaseUser) {
 
 async function ensureRoleWithPermissions(tenantId, companyRole) {
   const blueprint = roleBlueprint(companyRole);
-  const role = await prisma.role.upsert({
+  let role = await prisma.role.findUnique({
     where: { tenant_id_name: { tenant_id: tenantId, name: blueprint.name } },
-    update: { description: blueprint.description, is_system: blueprint.name === "APEX_ADMIN" },
-    create: { tenant_id: tenantId, name: blueprint.name, description: blueprint.description, is_system: blueprint.name === "APEX_ADMIN" }
+    include: { permissions: true }
   });
+  if (!role) {
+    role = await prisma.role.create({
+      data: { tenant_id: tenantId, name: blueprint.name, description: blueprint.description, is_system: blueprint.name === "APEX_ADMIN" },
+      include: { permissions: true }
+    });
+  }
+  const granted = new Set(role.permissions.map((permission) => `${permission.module}:${permission.action}`));
+  const missing = blueprint.permissions.filter((permission) => !granted.has(`${permission.module}:${permission.action}`));
+  if (!missing.length) return role;
   await prisma.permission.createMany({
-    data: blueprint.permissions.map((permission) => ({ role_id: role.id, module: permission.module, action: permission.action })),
+    data: missing.map((permission) => ({ role_id: role.id, module: permission.module, action: permission.action })),
     skipDuplicates: true
   });
   return prisma.role.findUnique({ where: { id: role.id }, include: { permissions: true } });
@@ -172,35 +213,34 @@ function sameStringSet(left, right) {
   return a.length === b.length && a.every((item, index) => item === b[index]);
 }
 
-async function syncExistingTenantWithSupabase(user, token, supabaseUser) {
-  const context = await getSupabaseMembershipContext(token, supabaseUser);
-  if (!context?.membership?.company_id) return;
-  const update = {};
-  if (context.company?.name) update.name = String(context.company.name).trim();
-  const tenant = await prisma.tenant.findUnique({ where: { id: user.tenant_id } });
-  const config = tenant?.config && typeof tenant.config === "object" ? tenant.config : {};
-  if (config.company_id !== context.membership.company_id || config.source !== "supabase_auth_sync") {
-    update.config = { ...config, source: "supabase_auth_sync", company_id: context.membership.company_id };
-  }
-  if (Array.isArray(context.activeModules)) {
-    const activeModules = Array.from(new Set(context.activeModules.map((item) => String(item).trim()).filter(Boolean)));
-    if (!sameStringSet(tenant?.active_modules, activeModules)) update.active_modules = activeModules;
-  }
-  if (!Object.keys(update).length) return;
-  await prisma.tenant.update({ where: { id: user.tenant_id }, data: update });
-  await invalidateTenantCache(user.tenant_id);
+function tenantWithAuthorizationContext(tenant, user) {
+  if (!tenant || !Array.isArray(user?.active_modules)) return tenant;
+  return { ...tenant, active_modules: user.active_modules };
 }
-async function ensureUserMirror(supabaseUser, token) {
-  const context = await getSupabaseMembershipContext(token, supabaseUser);
+
+async function ensureUserMirror(supabaseUser, token, requestedCompanyId = "", providedContext = null) {
+  const context = providedContext || await getSupabaseMembershipContext(token, supabaseUser, requestedCompanyId);
   if (!context?.membership?.company_id) return null;
   const tenant = await ensureTenantMirror(context);
   const role = await ensureRoleWithPermissions(tenant.id, context.membership.role);
   const email = String(supabaseUser.email || "").trim().toLowerCase();
   const fullName = String(supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || email.split("@")[0] || "Usuario Supabase").trim();
-  const user = await prisma.user.upsert({
+  const existing = await prisma.user.findUnique({
     where: { tenant_id_email: { tenant_id: tenant.id, email } },
-    update: { name: fullName, active: true, role_id: role.id, last_login: new Date() },
-    create: {
+    include: { role: { include: { permissions: true } } }
+  });
+  if (existing) {
+    const patch = {};
+    if (existing.name !== fullName) patch.name = fullName;
+    if (!existing.active) patch.active = true;
+    if (existing.role_id !== role.id) patch.role_id = role.id;
+    const user = Object.keys(patch).length
+      ? await prisma.user.update({ where: { id: existing.id }, data: patch, include: { role: { include: { permissions: true } } } })
+      : existing;
+    return { user, tenant };
+  }
+  const user = await prisma.user.create({
+    data: {
       tenant_id: tenant.id,
       name: fullName,
       email,
@@ -214,34 +254,33 @@ async function ensureUserMirror(supabaseUser, token) {
   return { user, tenant };
 }
 
-async function authenticateSupabaseToken(token) {
+async function authenticateSupabaseToken(token, requestedCompanyId = "") {
+  if (!token) throw new Error("Token Supabase requerido");
+  pruneAuthCache();
+  const normalizedCompanyId = String(requestedCompanyId || "").trim();
+  const cacheKey = authCacheKey(`${token}:${normalizedCompanyId}`);
+  const cached = authCache.get(cacheKey);
+  if (cached?.expiresAt > Date.now()) return cached.value;
+  if (authInFlight.has(cacheKey)) return authInFlight.get(cacheKey);
+  const request = authenticateSupabaseTokenUncached(token, normalizedCompanyId);
+  authInFlight.set(cacheKey, request);
+  try {
+    const value = await request;
+    authCache.set(cacheKey, { expiresAt: Date.now() + AUTH_CACHE_TTL_MS, value });
+    return value;
+  } finally {
+    authInFlight.delete(cacheKey);
+  }
+}
+
+async function authenticateSupabaseTokenUncached(token, requestedCompanyId = "") {
   const supabaseUser = await getSupabaseUser(token);
   const email = String(supabaseUser?.email || "").trim().toLowerCase();
   if (!email) throw new Error("Supabase token sin email");
-
-  const users = await prisma.user.findMany({
-    where: { email, active: true },
-    include: { role: { include: { permissions: true } } },
-    take: 2
-  });
-  if (users.length !== 1) {
-    const mirrored = await ensureUserMirror(supabaseUser, token);
-    if (!mirrored?.user) {
-      throw new Error(users.length ? "Email Supabase ambiguo en usuarios Prisma" : "Usuario Supabase sin espejo Prisma");
-    }
-    return {
-      id: mirrored.user.id,
-      tenant_id: mirrored.user.tenant_id,
-      role: mirrored.user.role,
-      auth_provider: "supabase",
-      supabase_user_id: supabaseUser.id,
-      email: mirrored.user.email,
-      name: mirrored.user.name
-    };
-  }
-
-  const user = users[0];
-  await syncExistingTenantWithSupabase(user, token, supabaseUser);
+  const context = await getSupabaseMembershipContext(token, supabaseUser, requestedCompanyId);
+  const mirrored = await ensureUserMirror(supabaseUser, token, requestedCompanyId, context);
+  if (!mirrored?.user) throw new Error("Usuario Supabase sin espejo Prisma para la empresa seleccionada");
+  const user = mirrored.user;
   return {
     id: user.id,
     tenant_id: user.tenant_id,
@@ -249,8 +288,9 @@ async function authenticateSupabaseToken(token) {
     auth_provider: "supabase",
     supabase_user_id: supabaseUser.id,
     email: user.email,
-    name: user.name
+    name: user.name,
+    active_modules: Array.isArray(context?.activeModules) ? context.activeModules : undefined
   };
 }
 
-module.exports = { authenticateSupabaseToken };
+module.exports = { authenticateSupabaseToken, selectMembership, tenantWithAuthorizationContext };

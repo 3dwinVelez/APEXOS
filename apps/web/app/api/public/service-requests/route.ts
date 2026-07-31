@@ -10,6 +10,7 @@ type PublicServiceRequest = {
   customer_name?: string;
   customer_document?: string;
   customer_phone?: string;
+  customer_phone_secondary?: string;
   customer_email?: string;
   invoice_number?: string;
   service_type?: string;
@@ -455,6 +456,7 @@ export async function POST(request: NextRequest) {
       ["customer_name", "nombre completo"],
       ["customer_document", "cedula"],
       ["customer_phone", "telefono"],
+      ["customer_phone_secondary", "telefono alterno"],
       ["service_type", "tipo de servicio"],
       ["customer_address", "direccion"],
       ["customer_neighborhood", "barrio"],
@@ -465,6 +467,10 @@ export async function POST(request: NextRequest) {
     if (missing.length) return jsonError(`Completa los campos obligatorios: ${missing.join(", ")}.`);
     if (!/^\d{5,12}$/.test(clean(body.customer_document))) return jsonError("La cedula debe contener entre 5 y 12 numeros.");
     if (!/^[0-9+()\-\s]{7,20}$/.test(clean(body.customer_phone))) return jsonError("Registra un telefono valido para confirmar la visita.");
+    if (!/^[0-9+()\-\s]{7,20}$/.test(clean(body.customer_phone_secondary))) return jsonError("Registra un telefono alterno valido para confirmar la visita.");
+    if (clean(body.customer_phone).replace(/\D/g, "") === clean(body.customer_phone_secondary).replace(/\D/g, "")) {
+      return jsonError("Los dos telefonos de contacto deben ser diferentes.");
+    }
 
     let companyId = await resolveCompanyId(body, request);
     if (!companyId) companyId = await resolveCompanyIdFromReference(clean(body.reference_id));
@@ -487,6 +493,7 @@ export async function POST(request: NextRequest) {
       requires_admin_completion: true,
       preorder_status: "agendado",
       customer_document: clean(body.customer_document),
+      customer_phone_secondary: clean(body.customer_phone_secondary),
       customer_email: clean(body.customer_email),
       customer_neighborhood: clean(body.customer_neighborhood),
       service_store: store.code,
