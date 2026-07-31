@@ -273,4 +273,77 @@ const evidenceAuthorizationSchema = {
   }
 };
 
-module.exports = { orderSchema, orderUpdateSchema, referenceSchema, referenceBulkImportSchema, serviceTypesSchema, serviceStoresSchema, satisfactionQuestionsSchema, startSchema, inspectionSchema, closeSchema, incidentSchema, photoSchema, evidenceAuthorizationSchema };
+const correctionChangeProperties = {
+  type: { type: "string", enum: ["FIELD_UPDATED", "EVIDENCE_ADDED", "EVIDENCE_REMOVED", "STATUS_CHANGED", "ORDER_REOPENED", "ORDER_FORCE_CLOSED", "OBSERVATION_ADDED"] },
+  field: { type: "string", maxLength: 64 },
+  value: {},
+  evidence_id: { type: "integer" },
+  observation: { type: "string", maxLength: 4000 },
+  pending_requirements: { type: "array", maxItems: 100, items: { type: "string", maxLength: 240 } }
+};
+
+const correctionReasonProperties = {
+  reason_code: { type: "string", enum: ["INCOMPLETE_INFORMATION", "DATA_ENTRY_ERROR", "MISSING_EVIDENCE", "INCORRECT_EVIDENCE", "INCORRECT_STATUS", "INCOMPLETE_CLOSURE", "CUSTOMER_REQUEST", "BILLING_CORRECTION", "OTHER"] },
+  description: { type: "string", minLength: 12, maxLength: 4000 },
+  confirmed: { type: "boolean", const: true },
+  expected_version: { type: "integer", minimum: 1 },
+  idempotency_key: { type: "string", minLength: 8, maxLength: 128 }
+};
+
+const correctionSchema = {
+  body: {
+    type: "object",
+    additionalProperties: false,
+    required: ["reason_code", "description", "confirmed", "expected_version", "changes"],
+    properties: {
+      ...correctionReasonProperties,
+      changes: { type: "array", minItems: 1, maxItems: 100, items: { type: "object", additionalProperties: false, required: ["type"], properties: correctionChangeProperties } }
+    }
+  }
+};
+
+const correctionActionSchema = {
+  body: {
+    type: "object",
+    additionalProperties: false,
+    required: ["reason_code", "description", "confirmed", "expected_version"],
+    properties: correctionReasonProperties
+  }
+};
+
+const forceCloseSchema = {
+  body: {
+    type: "object",
+    additionalProperties: false,
+    required: ["reason_code", "description", "confirmed", "expected_version", "observation", "pending_requirements", "evidence_reviewed"],
+    properties: {
+      ...correctionReasonProperties,
+      observation: { type: "string", minLength: 8, maxLength: 4000 },
+      pending_requirements: { type: "array", maxItems: 100, items: { type: "string", maxLength: 240 } },
+      evidence_reviewed: { type: "boolean", const: true }
+    }
+  }
+};
+
+const correctionRejectSchema = {
+  body: {
+    type: "object",
+    additionalProperties: false,
+    required: ["rejection_reason"],
+    properties: { rejection_reason: { type: "string", minLength: 8, maxLength: 2000 } }
+  }
+};
+
+const correctionEvidenceSchema = {
+  body: {
+    type: "object",
+    additionalProperties: false,
+    required: ["authorization_id", "type"],
+    properties: {
+      authorization_id: { type: "string", minLength: 8, maxLength: 128 },
+      type: { type: "string", minLength: 1, maxLength: 64, pattern: "^[a-z0-9_-]+$" }
+    }
+  }
+};
+
+module.exports = { orderSchema, orderUpdateSchema, referenceSchema, referenceBulkImportSchema, serviceTypesSchema, serviceStoresSchema, satisfactionQuestionsSchema, startSchema, inspectionSchema, closeSchema, incidentSchema, photoSchema, evidenceAuthorizationSchema, correctionSchema, correctionActionSchema, forceCloseSchema, correctionRejectSchema, correctionEvidenceSchema };

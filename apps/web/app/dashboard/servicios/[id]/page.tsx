@@ -2,6 +2,7 @@
 
 import { PhotoCapture, type CapturedFile } from "@/components/operations/PhotoCapture";
 import { SignatureCapture } from "@/components/operations/SignatureCapture";
+import { AdministrativeCorrectionPanel } from "@/components/services/AdministrativeCorrectionPanel";
 import { api } from "@/lib/api";
 import { API_BASE_URL } from "@/lib/apiBaseUrl";
 import { buildServiceReportPdfBlob } from "@/lib/serviceReportPdf";
@@ -29,6 +30,11 @@ type ServiceOrder = {
   customer_address: string;
   customer_phone: string;
   invoice_number: string;
+  scheduled_date?: string;
+  version?: number;
+  billing_status?: string;
+  billing_blocked?: boolean;
+  administratively_modified?: boolean;
   started_at?: string;
   closed_at?: string;
   start_latitude?: number;
@@ -553,6 +559,8 @@ export default function ServiceOperationPage() {
       </header>
 
       {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-900">{message}</div> : null}
+
+      <AdministrativeCorrectionPanel order={order} onApplied={load} />
 
       <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
         <p className="text-sm font-semibold">{order.reference?.code} · {order.reference?.name}</p>

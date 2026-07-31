@@ -15,6 +15,7 @@ const MODULE_CODES = {
   "sales-invoice": ["M-03", "ventas", "sales", "facturacion-ventas", "sales-invoice"],
   "accounts-receivable": ["M-07", "contabilidad", "accounting", "cxc", "accounts-receivable"],
   services: ["M-26", "servicios", "services"],
+  "services.orders": ["M-26", "servicios", "services"],
   transport: ["M-14", "transporte", "transport"]
 };
 

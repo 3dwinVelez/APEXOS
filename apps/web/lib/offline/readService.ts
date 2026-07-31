@@ -59,10 +59,10 @@ export class OfflineTechnicianReadService {
         expiresAt: null
       };
     }
-    const expired = Date.parse(metadata.expiresAt) <= Date.now();
+    const expired = metadata.retentionState === "EXPIRED_RETAINED";
     return {
       available: true,
-      fresh: !expired,
+      fresh: metadata.retentionState === "ACTIVE",
       expired,
       generatedAt: metadata.generatedAt,
       expiresAt: metadata.expiresAt
