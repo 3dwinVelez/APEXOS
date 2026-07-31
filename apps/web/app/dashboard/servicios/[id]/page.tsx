@@ -539,9 +539,9 @@ export default function ServiceOperationPage() {
   const inspectionOkCount = inspectedItems.length - inspectionIssues.length;
 
   return (
-    <div className="mx-auto max-w-xl space-y-4 pb-32 md:pb-8">
-      <header className="sticky top-0 z-20 -mx-3 border-b border-line bg-paper/95 px-3 py-3 backdrop-blur sm:-mx-4 sm:px-4 md:static md:mx-0 md:border-0 md:bg-transparent md:px-0">
-        <Link className="mb-3 inline-flex h-11 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-medium text-neutral-600 hover:text-apex md:border-0 md:bg-transparent md:px-0" href="/dashboard/servicios"><ArrowLeft size={18} /> Monitor</Link>
+    <div className="mx-auto max-w-2xl space-y-3 pb-32 md:pb-8">
+      <header className="sticky top-0 z-20 -mx-3 border-b border-line bg-paper px-3 py-3 sm:-mx-4 sm:px-4 md:static md:mx-0 md:border-0 md:bg-transparent md:px-0">
+        <Link className="mb-2 inline-flex h-10 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-medium text-neutral-600 hover:text-apex md:border-0 md:bg-transparent md:px-0" href="/dashboard/servicios"><ArrowLeft size={18} /> Monitor</Link>
         <div className="grid gap-3 sm:flex sm:items-start sm:justify-between">
           <div className="min-w-0">
             <p className="text-sm font-medium text-apex">{order.number}</p>
@@ -554,7 +554,7 @@ export default function ServiceOperationPage() {
 
       {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-900">{message}</div> : null}
 
-      <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
+      <section className="rounded-md border border-line bg-white p-3 sm:p-4">
         <p className="text-sm font-semibold">{order.reference?.code} · {order.reference?.name}</p>
         <p className="mt-1 text-xs text-neutral-500">
           {order.reference?.parts.length || 0} pieza(s) · {order.service_type} · {[order.customer_phone, order.metadata?.customer_phone_secondary].filter(Boolean).join(" / ") || "Sin telefono"}
@@ -565,7 +565,7 @@ export default function ServiceOperationPage() {
         </div>
       </section>
 
-      <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
+      <section className="rounded-md border border-line bg-white p-3 sm:p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-apex">Avance de la orden</p>
@@ -596,7 +596,7 @@ export default function ServiceOperationPage() {
       </section>
 
       {activePanel === "inicio" && order.status === "pendiente" ? (
-        <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
+        <section className="rounded-md border border-line bg-white p-3 sm:p-4">
           <h2 className="mb-3 text-base font-semibold">Inicio del servicio</h2>
           <div className="rounded-md border border-line bg-paper p-3">
             <p className="font-semibold">Confirma el inicio para continuar con la inspección.</p>
@@ -606,7 +606,7 @@ export default function ServiceOperationPage() {
       ) : null}
 
       {activePanel === "inspeccion" && ["en_curso", "inspeccion"].includes(order.status) ? (
-        <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
+        <section className="rounded-md border border-line bg-white p-3 sm:p-4">
           <h2 className="mb-3 text-base font-semibold">Inspección</h2>
           {referenceManuals.length ? (
             <div className="mb-3 rounded-md border border-sky-200 bg-sky-50 p-3">
@@ -628,7 +628,7 @@ export default function ServiceOperationPage() {
             </div>
           ) : null}
           <div className="grid gap-3">
-            <button className={`min-h-20 rounded-md border p-4 text-left shadow-sm transition active:scale-[0.99] ${inspectionMode === "pieces" ? "border-apex bg-apex/10" : "border-line bg-paper hover:border-apex"}`} onClick={() => setInspectionMode("pieces")} type="button">
+            <button className={`min-h-20 rounded-md border p-4 text-left transition-colors active:scale-[0.99] ${inspectionMode === "pieces" ? "border-apex bg-apex/10" : "border-line bg-paper hover:border-apex"}`} onClick={() => setInspectionMode("pieces")} type="button">
               <span className="flex items-center gap-3">
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-apex text-white"><PackageSearch size={23} /></span>
                 <span>
@@ -637,7 +637,7 @@ export default function ServiceOperationPage() {
                 </span>
               </span>
             </button>
-            <button className="min-h-20 rounded-md border border-emerald-500 bg-emerald-700 p-4 text-left text-white shadow-sm transition hover:bg-emerald-600 active:scale-[0.99] disabled:opacity-50" disabled={working} onClick={markArmable} type="button">
+            <button className="min-h-20 rounded-md border border-emerald-500 bg-emerald-700 p-4 text-left text-white transition-colors hover:bg-emerald-600 active:scale-[0.99] disabled:opacity-50" disabled={working} onClick={markArmable} type="button">
               <span className="flex items-center gap-3">
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-white/15 text-white"><Wrench size={23} /></span>
                 <span>
@@ -646,7 +646,7 @@ export default function ServiceOperationPage() {
                 </span>
               </span>
             </button>
-            <button className="min-h-20 rounded-md border border-red-500 bg-red-700 p-4 text-left text-white shadow-sm transition hover:bg-red-600 active:scale-[0.99] disabled:opacity-50" disabled={working} onClick={markNotArmable} type="button">
+            <button className="min-h-20 rounded-md border border-red-500 bg-red-700 p-4 text-left text-white transition-colors hover:bg-red-600 active:scale-[0.99] disabled:opacity-50" disabled={working} onClick={markNotArmable} type="button">
               <span className="flex items-center gap-3">
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-white/15 text-white"><XCircle size={23} /></span>
                 <span>
@@ -714,7 +714,7 @@ export default function ServiceOperationPage() {
       ) : null}
 
       {activePanel === "ejecucion" && order.status === "ejecucion" ? (
-        <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
+        <section className="rounded-md border border-line bg-white p-3 sm:p-4">
           {!closureMode ? (
             <>
               <h2 className="mb-3 text-base font-semibold">Ejecucion</h2>
@@ -781,7 +781,7 @@ export default function ServiceOperationPage() {
       ) : null}
 
       {activePanel === "novedad" && !["cerrada", "no_ejecutada"].includes(order.status) ? (
-        <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
+        <section className="rounded-md border border-line bg-white p-3 sm:p-4">
           <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-amber-950">
             <h2 className="text-base font-semibold">Reportar novedad y cerrar orden</h2>
             <p className="mt-1 text-sm">Esta acción finaliza completamente la orden. Para proteger la trazabilidad debes registrar los tres soportes obligatorios.</p>
@@ -803,16 +803,16 @@ export default function ServiceOperationPage() {
       ) : null}
 
       {orderCompleted ? (
-        <section className="rounded-md border border-emerald-300 bg-emerald-50 p-4 text-center shadow-sm">
+        <section className="rounded-md border border-emerald-300 bg-emerald-50 p-4 text-center">
           <CheckCircle2 className="mx-auto text-emerald-700" size={40} />
           <h2 className="mt-2 text-xl font-semibold text-emerald-950">Orden finalizada correctamente</h2>
           <p className="mt-1 text-sm text-emerald-900">Los soportes quedaron registrados. Continúa con el siguiente servicio desde el monitor.</p>
-          <button className="mt-4 inline-flex h-16 w-full items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 text-lg font-semibold text-white shadow-sm hover:bg-emerald-800" onClick={() => router.replace("/dashboard/servicios")} type="button"><CheckCircle2 size={22} /> Servicio completado</button>
+          <button className="mt-4 inline-flex h-16 w-full items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 text-lg font-semibold text-white hover:bg-emerald-800" onClick={() => router.replace("/dashboard/servicios")} type="button"><CheckCircle2 size={22} /> Servicio completado</button>
         </section>
       ) : null}
 
       {activePanel === "historial" ? (
-        <section className="space-y-3 rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
+        <section className="space-y-3 rounded-md border border-line bg-white p-3 sm:p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-base font-semibold">Historial y evidencias</h2>
             <button className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white disabled:opacity-60" disabled={downloadingPdf} onClick={downloadPdf} type="button"><Download className="shrink-0" size={16} /> <span className="truncate">{downloadingPdf ? "Generando..." : "PDF"}</span></button>
@@ -886,12 +886,12 @@ export default function ServiceOperationPage() {
         </div>
       ) : null}
 
-      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-line bg-white/95 px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur md:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-line bg-white px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 md:hidden">
         {orderCompleted ? (
-          <button className="inline-flex h-16 w-full items-center justify-center gap-2 rounded-md bg-emerald-700 px-3 text-lg font-semibold text-white shadow-sm" onClick={() => router.replace("/dashboard/servicios")} type="button"><CheckCircle2 size={22} /> Servicio completado</button>
+          <button className="inline-flex h-16 w-full items-center justify-center gap-2 rounded-md bg-emerald-700 px-3 text-lg font-semibold text-white" onClick={() => router.replace("/dashboard/servicios")} type="button"><CheckCircle2 size={22} /> Servicio completado</button>
         ) : activePanel === "historial" ? (
-          <button className="h-14 w-full rounded-md bg-apex px-3 text-base font-semibold text-white shadow-sm disabled:opacity-60" disabled={downloadingPdf} onClick={downloadPdf} type="button">{downloadingPdf ? "Generando PDF..." : "Descargar PDF"}</button>
-        ) : activePanel !== "novedad" ? <button className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-md border border-red-200 bg-white text-base font-semibold text-red-700 shadow-sm" onClick={openIncidentReport} type="button"><FileSignature size={18} /> Reportar novedad</button> : null}
+          <button className="h-14 w-full rounded-md bg-apex px-3 text-base font-semibold text-white disabled:opacity-60" disabled={downloadingPdf} onClick={downloadPdf} type="button">{downloadingPdf ? "Generando PDF..." : "Descargar PDF"}</button>
+        ) : activePanel !== "novedad" ? <button className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-md border border-red-200 bg-white text-base font-semibold text-red-700" onClick={openIncidentReport} type="button"><FileSignature size={18} /> Reportar novedad</button> : null}
       </div>
     </div>
   );
