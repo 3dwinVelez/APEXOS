@@ -39,6 +39,41 @@ function Invoke-RepoGit {
   return $output
 }
 
+function Get-WorktreePathForBranch {
+  param([string]$BranchName)
+  $currentWorktree = $null
+  foreach ($line in Invoke-RepoGit @("worktree", "list", "--porcelain")) {
+    if ($line -like "worktree *") {
+      $currentWorktree = $line.Substring("worktree ".Length)
+      continue
+    }
+    if ($line -eq "branch refs/heads/$BranchName" -and $currentWorktree) {
+      return $currentWorktree
+    }
+  }
+  return $null
+}
+
+function Invoke-DesarrolloWorktreeStarter {
+  param([string]$WorktreePath)
+  $starter = Join-Path $WorktreePath "scripts/windows/start-apexos-desarrollo.ps1"
+  if (-not (Test-Path -LiteralPath $starter)) {
+    Stop-Blocked "La rama desarrollo ya esta abierta en otro worktree, pero no se encontro su starter." @("Worktree: $WorktreePath", "Starter esperado: $starter")
+  }
+
+  $forwardArgs = @()
+  if ($CheckOnly) { $forwardArgs += "-CheckOnly" }
+  if ($NoInstall) { $forwardArgs += "-NoInstall" }
+  if ($NoStart) { $forwardArgs += "-NoStart" }
+  if ($NoCode) { $forwardArgs += "-NoCode" }
+  if ($NoBrowser) { $forwardArgs += "-NoBrowser" }
+
+  Write-Host "La rama desarrollo ya esta abierta en otro worktree." -ForegroundColor Cyan
+  Write-Host "Delegando inicio a: $WorktreePath" -ForegroundColor Cyan
+  & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $starter @forwardArgs
+  exit $LASTEXITCODE
+}
+
 function Read-EnvMap {
   param([string]$Path)
   $map = @{}
@@ -197,6 +232,15 @@ if ($status) {
 }
 
 if ($branch -ne "desarrollo") {
+  $desarrolloWorktree = Get-WorktreePathForBranch "desarrollo"
+  if ($desarrolloWorktree) {
+    $currentRoot = (Resolve-Path -LiteralPath $repoRoot).Path
+    $targetRoot = (Resolve-Path -LiteralPath $desarrolloWorktree).Path
+    if ($targetRoot -ne $currentRoot) {
+      Invoke-DesarrolloWorktreeStarter $targetRoot
+    }
+  }
+
   & git show-ref --verify --quiet refs/heads/desarrollo
   $branchExists = $LASTEXITCODE
   if ($branchExists -ne 0) {
