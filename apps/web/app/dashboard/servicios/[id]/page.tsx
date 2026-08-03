@@ -8,7 +8,7 @@ import { ArrowLeft, BookOpen, Camera, CheckCircle2, Circle, Download, FileSignat
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const PhotoCapture = dynamic(() => import("@/components/operations/PhotoCapture").then((module) => module.PhotoCapture), { ssr: false });
@@ -157,6 +157,7 @@ function manualHref(manual: ReferenceManual) {
 export default function ServiceOperationPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [order, setOrder] = useState<ServiceOrder | null>(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -573,7 +574,7 @@ export default function ServiceOperationPage() {
       {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-900">{message}</div> : null}
 
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(300px,0.8fr)]">
-        <AdministrativeCorrectionPanel order={order} onApplied={load} />
+        <AdministrativeCorrectionPanel initiallyOpen={searchParams.get("corregir") === "1"} order={order} onApplied={load} />
         <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
         <p className="text-sm font-semibold">{order.reference?.code} · {order.reference?.name}</p>
         <p className="mt-1 text-xs text-neutral-500">

@@ -1,11 +1,11 @@
 "use client";
 
 import { api } from "@/lib/api";
+import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { uploadAuthorizedServiceImageData } from "@/lib/supabaseStorage";
 import { AlertTriangle, Check, FileClock, History, LockKeyhole, RefreshCw, ShieldCheck, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-type Permission = { module?: string; action?: string };
 type Evidence = { id: number | string; type: string; created_at?: string };
 type Order = {
   id: number | string;
@@ -62,16 +62,8 @@ const fields = [
 const administrativeStatuses = ["agendado", "pendiente", "en_curso", "inspeccion", "ejecucion", "cerrada", "no_ejecutada", "cancelada", "revision", "reabierta", "lista_facturacion"];
 const SPECIAL_EDIT_PERMISSION = "edit_any_state";
 
-function storedAccess() {
-  if (typeof window === "undefined") return { role: "", permissions: [] as Permission[] };
-  let permissions: Permission[] = [];
-  try { permissions = JSON.parse(localStorage.getItem("role_permissions") || "[]"); } catch { permissions = []; }
-  return { role: String(localStorage.getItem("role_name") || "").toLowerCase(), permissions };
-}
-
 function allowed() {
-  const access = storedAccess();
-  return access.permissions.some((permission) => (permission.module === "*" || permission.module === "services.orders") && (permission.action === "*" || permission.action === SPECIAL_EDIT_PERMISSION));
+  return hasStoredRolePermission("services.orders", SPECIAL_EDIT_PERMISSION);
 }
 
 function displayValue(value: unknown) {
@@ -89,7 +81,7 @@ function fileBase64(file: File) {
   });
 }
 
-export function AdministrativeCorrectionPanel({ order, onApplied }: { order: Order; onApplied: () => Promise<void> | void }) {
+export function AdministrativeCorrectionPanel({ order, onApplied, initiallyOpen = false }: { order: Order; onApplied: () => Promise<void> | void; initiallyOpen?: boolean }) {
   const canCorrect = allowed();
   const canHistory = canCorrect;
   const canApprove = false;
@@ -98,7 +90,7 @@ export function AdministrativeCorrectionPanel({ order, onApplied }: { order: Ord
   const canState = canCorrect;
   const canEvidence = canCorrect;
   const canForceClose = canCorrect;
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initiallyOpen && canCorrect);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [history, setHistory] = useState<Correction[]>([]);
   const [mode, setMode] = useState<Mode>(() => canInfo ? "field" : canObservation ? "observation" : canState ? "status" : canEvidence ? "add-evidence" : "force-close");

@@ -8,6 +8,44 @@ const AUTH_CACHE_MAX_ENTRIES = Math.max(Number(process.env.SUPABASE_AUTH_CACHE_M
 const authCache = new Map();
 const authInFlight = new Map();
 
+const permissionModuleAliases = {
+  servicios_correcciones: "services.orders"
+};
+
+function normalizeRolePermissions(value) {
+  const rows = Array.isArray(value)
+    ? value
+    : value && typeof value === "object"
+      ? Object.entries(value).map(([module, actions]) => ({ module, actions }))
+      : [];
+  return rows.flatMap((permission) => {
+    const row = permission && typeof permission === "object" ? permission : {};
+    const rawModule = String(row.module || row.key || "").trim().toLowerCase();
+    const module = permissionModuleAliases[rawModule] || rawModule;
+    const actions = Array.isArray(row.actions)
+      ? row.actions
+      : row.actions && typeof row.actions === "object"
+        ? Object.entries(row.actions).filter(([, enabled]) => enabled === true).map(([action]) => action)
+        : [row.action, ...Object.entries(row).filter(([, enabled]) => enabled === true).map(([action]) => action)];
+    return actions
+      .map((action) => ({ module, action: String(action || "").trim().toLowerCase() }))
+      .filter((permission) => permission.module && permission.action);
+  });
+}
+
+function employeeRoleContext(employee) {
+  const metadata = employee?.metadata && typeof employee.metadata === "object" ? employee.metadata : {};
+  const access = metadata.access && typeof metadata.access === "object" ? metadata.access : {};
+  const permissions = [metadata.permissions, access.permissions, metadata.role_permissions, access.role_permissions]
+    .flatMap(normalizeRolePermissions);
+  const unique = Array.from(new Map(permissions.map((permission) => [`${permission.module}:${permission.action}`, permission])).values());
+  return {
+    id: String(metadata.role_id || access.role_id || "").trim(),
+    name: String(metadata.role_name || access.role_name || "").trim(),
+    permissions: unique
+  };
+}
+
 function authCacheKey(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
@@ -44,7 +82,7 @@ function tenantSyncPlan() {
   return isProductionEnv() ? "production_sync" : "qa_sync";
 }
 
-function roleBlueprint(companyRole) {
+function roleBlueprint(companyRole, employee) {
   const normalized = String(companyRole || "member").toLowerCase();
   if (["owner", "admin", "superadmin"].includes(normalized)) {
     return {
@@ -60,7 +98,7 @@ function roleBlueprint(companyRole) {
       permissions: [{ module: "*", action: "read" }]
     };
   }
-  return {
+  const base = {
     name: "Supabase Member",
     description: "Usuario operativo sincronizado desde Supabase.",
     permissions: [
@@ -72,6 +110,17 @@ function roleBlueprint(companyRole) {
       { module: "inventory", action: "write" },
       { module: "purchases", action: "write" }
     ]
+  };
+  const employeeRole = employeeRoleContext(employee);
+  const specialPermissions = employeeRole.permissions.filter((permission) => permission.module === "services.orders" && permission.action === "edit_any_state");
+  if (!specialPermissions.length) return base;
+  const identity = (employeeRole.id || employeeRole.name || "member").replace(/[^a-z0-9_-]+/gi, "-").slice(0, 48);
+  return {
+    ...base,
+    name: `Supabase Role ${identity}`,
+    description: `Rol sincronizado desde Supabase: ${employeeRole.name || identity}.`,
+    permissions: [...base.permissions, ...specialPermissions],
+    managed: true
   };
 }
 
@@ -132,7 +181,11 @@ async function getSupabaseMembershipContext(token, supabaseUser, requestedCompan
   const membership = selectMembership(memberships, requestedCompanyId);
   if (!membership?.company_id) return null;
   const companyId = encodeURIComponent(String(membership.company_id));
-  const [companies, modules] = await Promise.all([
+  const employeeIdentity = [
+    supabaseUser.id ? `user_id.eq.${encodeURIComponent(String(supabaseUser.id))}` : "",
+    supabaseUser.email ? `email.eq.${encodeURIComponent(String(supabaseUser.email).trim().toLowerCase())}` : ""
+  ].filter(Boolean).join(",");
+  const [companies, modules, employees] = await Promise.all([
     supabaseRest(`/rest/v1/companies?select=id,name&id=eq.${companyId}&limit=1`, {
       token,
       service: true
@@ -143,19 +196,24 @@ async function getSupabaseMembershipContext(token, supabaseUser, requestedCompan
       // service-role bearer loses the authenticated user's RLS context and
       // makes enabled modules look empty.
       service: false
-    })
+    }),
+    supabaseRest(`/rest/v1/employees?select=id,user_id,email,metadata&company_id=eq.${companyId}&or=(${employeeIdentity})&status=eq.active&limit=5`, {
+      token,
+      service: true
+    }).then((rows) => rows || [])
   ]);
   return {
     membership,
     company: companies[0] || null,
+    employee: employees[0] || null,
     activeModules: Array.isArray(modules)
       ? modules.filter((item) => item.enabled !== false).map((item) => String(item.module_code || "")).filter(Boolean)
       : null
   };
 }
 
-async function ensureRoleWithPermissions(tenantId, companyRole) {
-  const blueprint = roleBlueprint(companyRole);
+async function ensureRoleWithPermissions(tenantId, companyRole, employee) {
+  const blueprint = roleBlueprint(companyRole, employee);
   let role = await prisma.role.findUnique({
     where: { tenant_id_name: { tenant_id: tenantId, name: blueprint.name } },
     include: { permissions: true }
@@ -168,11 +226,18 @@ async function ensureRoleWithPermissions(tenantId, companyRole) {
   }
   const granted = new Set(role.permissions.map((permission) => `${permission.module}:${permission.action}`));
   const missing = blueprint.permissions.filter((permission) => !granted.has(`${permission.module}:${permission.action}`));
-  if (!missing.length) return role;
-  await prisma.permission.createMany({
-    data: missing.map((permission) => ({ role_id: role.id, module: permission.module, action: permission.action })),
-    skipDuplicates: true
-  });
+  const expected = new Set(blueprint.permissions.map((permission) => `${permission.module}:${permission.action}`));
+  const extraIds = blueprint.managed
+    ? role.permissions.filter((permission) => !expected.has(`${permission.module}:${permission.action}`)).map((permission) => permission.id)
+    : [];
+  if (missing.length) {
+    await prisma.permission.createMany({
+      data: missing.map((permission) => ({ role_id: role.id, module: permission.module, action: permission.action })),
+      skipDuplicates: true
+    });
+  }
+  if (extraIds.length) await prisma.permission.deleteMany({ where: { id: { in: extraIds } } });
+  if (!missing.length && !extraIds.length) return role;
   return prisma.role.findUnique({ where: { id: role.id }, include: { permissions: true } });
 }
 
@@ -222,7 +287,7 @@ async function ensureUserMirror(supabaseUser, token, requestedCompanyId = "", pr
   const context = providedContext || await getSupabaseMembershipContext(token, supabaseUser, requestedCompanyId);
   if (!context?.membership?.company_id) return null;
   const tenant = await ensureTenantMirror(context);
-  const role = await ensureRoleWithPermissions(tenant.id, context.membership.role);
+  const role = await ensureRoleWithPermissions(tenant.id, context.membership.role, context.employee);
   const email = String(supabaseUser.email || "").trim().toLowerCase();
   const fullName = String(supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || email.split("@")[0] || "Usuario Supabase").trim();
   const existing = await prisma.user.findUnique({
@@ -293,4 +358,4 @@ async function authenticateSupabaseTokenUncached(token, requestedCompanyId = "")
   };
 }
 
-module.exports = { authenticateSupabaseToken, selectMembership, tenantWithAuthorizationContext };
+module.exports = { authenticateSupabaseToken, normalizeRolePermissions, roleBlueprint, selectMembership, tenantWithAuthorizationContext };
