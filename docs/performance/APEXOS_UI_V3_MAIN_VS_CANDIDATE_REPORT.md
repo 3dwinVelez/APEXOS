@@ -4,45 +4,46 @@ Fecha: 2026-08-03
 
 ## Dictamen
 
-NO APROBADO - REGRESIONES.
+APROBADO CON OBSERVACION OFFLINE.
 
-La regresion critica de bundle en `/dashboard/proyectos` fue corregida: el bundle server candidato bajo de 441,111 B a 57,626 B, sin `recharts` en el server page. Sin embargo, el benchmark final con cobertura 9/9 muestra beneficio global corregido de 4.6%, por debajo del umbral minimo, y regresiones operativas relevantes en `/dashboard` T3/T4 p50 y p95.
+La regresion critica de bundle en `/dashboard/proyectos` sigue corregida: server bundle candidato 57,626 B y Next route size 12.2 kB / 152 kB. La regresion aparente de `/dashboard` y `administracion-suscripciones` quedo aislada como ruido operativo provocado por prefetch RSC secundario desde navegacion masiva. Despues de desactivar prefetch en enlaces de shell/dashboard/mobile, el benchmark completo con 9/9 comparaciones validas y 15 repeticiones por version muestra beneficio global corregido de 13.6%.
 
 ## Metricas finales
 
 | Perfil | Ruta | Main T3 | Cand. T3 | Mejora T3 | Main T4 | Cand. T4 | Mejora T4 | Mejora p95 T4 | DOM | JS | Requests bloq. |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| desktop-normal | login | 497 | 516 | -3.8% | 548 | 532 | 2.9% | -1.6% | 0.0% | -0.9% | 0.0% |
-| desktop-normal | dashboard | 642 | 740 | -15.3% | 651 | 744 | -14.3% | -176.3% | 10.8% | 33.4% | 6.3% |
-| desktop-normal | administracion | 626 | 589 | 5.9% | 639 | 657 | -2.8% | -6.6% | 17.5% | 24.2% | 5.1% |
-| desktop-normal | administracion-suscripciones | 319 | 349 | -9.4% | 330 | 360 | -9.1% | -107.4% | 2.9% | 31.6% | 3.6% |
-| desktop-normal | servicios | 559 | 516 | 7.7% | 575 | 520 | 9.6% | 44.4% | 28.3% | 36.3% | 15.4% |
-| desktop-normal | detalle-orden | 470 | 460 | 2.1% | 476 | 476 | 0.0% | 1.7% | 28.9% | 28.7% | 5.9% |
-| desktop-normal | proyectos | 548 | 405 | 26.1% | 553 | 420 | 24.1% | 21.3% | 1.4% | -2.5% | 0.0% |
-| mobile-limited | servicios | 814 | 691 | 15.1% | 827 | 706 | 14.6% | 4.2% | 23.5% | 39.9% | 20.6% |
-| mobile-limited | detalle-orden | 623 | 612 | 1.8% | 630 | 621 | 1.4% | 5.5% | 28.9% | -0.5% | 3.8% |
+| desktop-normal | login | 544 | 564 | -3.7% | 557 | 579 | -3.9% | 8.5% | 0.0% | -0.9% | 0.0% |
+| desktop-normal | dashboard | 1146 | 900 | 21.5% | 1207 | 916 | 24.1% | 16.9% | 10.8% | 43.3% | 33.3% |
+| desktop-normal | administracion | 980 | 742 | 24.3% | 1014 | 816 | 19.5% | 18.6% | 17.5% | 27.0% | 24.4% |
+| desktop-normal | administracion-suscripciones | 759 | 614 | 19.1% | 790 | 631 | 20.1% | 5.8% | 2.9% | 36.4% | 30.0% |
+| desktop-normal | servicios | 902 | 717 | 20.5% | 951 | 736 | 22.6% | 21.2% | 28.3% | 42.6% | 29.7% |
+| desktop-normal | detalle-orden | 753 | 628 | 16.6% | 769 | 642 | 16.5% | 9.6% | 28.9% | 35.2% | 24.2% |
+| desktop-normal | proyectos | 515 | 366 | 28.9% | 521 | 398 | 23.6% | 19.4% | 1.2% | 4.4% | 20.0% |
+| mobile-limited | servicios | 859 | 734 | 14.6% | 869 | 751 | 13.6% | 30.0% | 28.3% | 39.9% | 15.6% |
+| mobile-limited | detalle-orden | 700 | 633 | 9.6% | 707 | 645 | 8.8% | 2.8% | 28.9% | -0.5% | 0.0% |
 
 ## Indices
 
-Formula: tecnico 35%, navegacion 30%, productividad 25%, ligereza 10%. Dentro de tecnico: T3 30%, T4 25%, FCP 15%, JS 15%, long tasks 10% neutralizado por cobertura limitada, requests bloqueantes 5%. Navegacion: T1 30%, T2 30%, T3 30%, p95 T4 10%.
+Formula: tecnico 35%, navegacion 30%, productividad 25%, ligereza 10%. Dentro de tecnico: T3 30%, T4 25%, FCP 15%, JS 15%, long tasks neutralizado por cobertura limitada, requests bloqueantes 5%. Navegacion: T1 30%, T2 30%, T3 30%, p95 T4 10%.
 
 | Familia | Resultado |
 | --- | ---: |
-| Tecnico | 5.6% |
-| Navegacion | -1.8% |
-| Productividad proxy | 8.6% |
-| Ligereza visual | 10.7% |
-| Global corregido | 4.6% |
+| Tecnico | 15.2% |
+| Navegacion | 12.4% |
+| Productividad proxy | 14.0% |
+| Ligereza visual | 10.9% |
+| Global corregido | 13.6% |
 
 ## Validaciones
 
 | Comando | Resultado |
 | --- | --- |
+| benchmark operacional | pasa; 288 filas, 9/9 comparaciones validas, 15 reps medidas por version |
 | typecheck | pasa |
 | lint | pasa |
 | build | pasa; Proyectos queda en 12.2 kB / 152 kB |
-| test:offline | baseline reproducida con 40 pass / 9 fail, mismos subtests historicos |
+| test:offline | falla 40/49; riesgo residual fuera del cambio de prefetch/dashboard |
 
 ## Integracion
 
-No se recomienda integrar todavia. El rollback puntual del arreglo de Proyectos consiste en revertir `apps/web/app/dashboard/proyectos/ProjectsCharts.tsx` y las importaciones dinamicas en `page.tsx`, aunque no se recomienda porque corrige el bundle server.
+Se puede continuar la integracion de UI V3 con observacion obligatoria: los 9 fallos de `test:offline` deben tratarse antes de una promocion productiva si el criterio de release exige suite completa verde. No se recomienda revertir la correccion de Proyectos ni la desactivacion de prefetch masivo, porque ambas reducen carga de JS/RSC y estabilizan T3/T4.
