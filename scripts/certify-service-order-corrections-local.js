@@ -80,15 +80,12 @@ async function localStorageServer() {
 }
 
 async function main() {
-  const tenant = await prisma.tenant.create({ data: { name: `Correction Cert ${RUN_ID}`, active_modules: ["M-26"], config: { service_order_corrections: { double_approval: true } } } });
+  const tenant = await prisma.tenant.create({ data: { name: `Correction Cert ${RUN_ID}`, active_modules: ["M-26"] } });
   const otherTenant = await prisma.tenant.create({ data: { name: `Other ${RUN_ID}`, active_modules: ["M-26"] } });
-  const requesterRole = await prisma.role.create({ data: { tenant_id: tenant.id, name: `Correction requester ${RUN_ID}`, permissions: { create: permissions(["administrative_correction", "correct_information", "change_state", "add_observation", "manage_evidence", "force_close", "view_correction_history"]) } }, include: { permissions: true } });
-  const approverRole = await prisma.role.create({ data: { tenant_id: tenant.id, name: `Correction approver ${RUN_ID}`, permissions: { create: permissions(["approve_correction", "view_correction_history"]) } }, include: { permissions: true } });
+  const requesterRole = await prisma.role.create({ data: { tenant_id: tenant.id, name: `Correction requester ${RUN_ID}`, permissions: { create: permissions(["edit_any_state"]) } }, include: { permissions: true } });
   const localPasswordHash = await bcrypt.hash(randomUUID(), 12);
   const requester = await prisma.user.create({ data: { tenant_id: tenant.id, name: "Solicitante QA", email: `${RUN_ID}-requester@local.test`, password: localPasswordHash, role_id: requesterRole.id } });
-  const approver = await prisma.user.create({ data: { tenant_id: tenant.id, name: "Aprobador QA", email: `${RUN_ID}-approver@local.test`, password: localPasswordHash, role_id: approverRole.id } });
   requester.role = requesterRole;
-  approver.role = approverRole;
 
   const order = await prisma.serviceOrder.create({ data: { tenant_id: tenant.id, number: `OS-${Date.now()}`, status: "cerrada", customer_name: "Cliente controlado", customer_address: "Direccion local", customer_phone: "3000000000", service_type: "montaje", notes: "Observacion original", closed_at: new Date(), version: 1, metadata: { inspection: { items: [{ name: "Pieza A", status: "ok" }] } } } });
   const photo = await prisma.servicePhoto.create({ data: { tenant_id: tenant.id, order_id: order.id, type: "producto_abierto", storage_path: "local/certification/original.webp", active: true, metadata: { source: RUN_ID } } });
@@ -98,8 +95,7 @@ async function main() {
   await corrections.apply(tenant.id, requester, order.id, note.id, { session_id: RUN_ID, ip: "127.0.0.1" });
 
   const removal = await corrections.createCorrection(tenant.id, requester, order.id, input(2, "INCORRECT_EVIDENCE", "La evidencia corresponde a otro momento del servicio", [{ type: "EVIDENCE_REMOVED", evidence_id: photo.id }]), { session_id: RUN_ID });
-  assert.equal(removal.status, "PENDING_APPROVAL");
-  await corrections.approve(tenant.id, approver, order.id, removal.id);
+  assert.equal(removal.status, "DRAFT");
   await corrections.apply(tenant.id, requester, order.id, removal.id, { session_id: RUN_ID });
 
   const storage = await localStorageServer();
@@ -121,11 +117,9 @@ async function main() {
   await new Promise((resolve, reject) => storage.server.close((error) => error ? reject(error) : resolve()));
 
   const reopen = await corrections.reopen(tenant.id, requester, order.id, { reason_code: "INCOMPLETE_CLOSURE", description: "Se requiere completar informacion antes de facturacion", confirmed: true, expected_version: 4, idempotency_key: `${RUN_ID}-reopen` }, { session_id: RUN_ID });
-  await corrections.approve(tenant.id, approver, order.id, reopen.id);
   await corrections.apply(tenant.id, requester, order.id, reopen.id, { session_id: RUN_ID });
 
   const forceClose = await corrections.forceClose(tenant.id, requester, order.id, { reason_code: "INCOMPLETE_CLOSURE", description: "Cierre administrativo controlado con pendiente visible", confirmed: true, expected_version: 5, idempotency_key: `${RUN_ID}-close`, observation: "Cierre revisado por administracion", pending_requirements: ["Firma del cliente pendiente"], evidence_reviewed: true }, { session_id: RUN_ID });
-  await corrections.approve(tenant.id, approver, order.id, forceClose.id);
   await corrections.apply(tenant.id, requester, order.id, forceClose.id, { session_id: RUN_ID });
 
   const finalOrder = await prisma.serviceOrder.findFirst({ where: { tenant_id: tenant.id, id: order.id } });
@@ -135,7 +129,7 @@ async function main() {
   const detailRows = await prisma.serviceOrderCorrectionChange.findMany({ where: { tenant_id: tenant.id, correction_id: note.id } });
   assert.equal(finalOrder.version, 6);
   assert.equal(finalOrder.status, "cerrada");
-  assert.equal(finalOrder.billing_blocked, true);
+  assert.equal(finalOrder.billing_blocked, false);
   assert.equal(finalOrder.notes, "Observacion administrativa corregida");
   assert.equal(retiredPhoto.active, false);
   assert.equal(history.length, 5);

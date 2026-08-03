@@ -1,17 +1,19 @@
 "use client";
 
-import { PhotoCapture, type CapturedFile } from "@/components/operations/PhotoCapture";
-import { SignatureCapture } from "@/components/operations/SignatureCapture";
-import { AdministrativeCorrectionPanel } from "@/components/services/AdministrativeCorrectionPanel";
+import type { CapturedFile } from "@/components/operations/PhotoCapture";
 import { api } from "@/lib/api";
 import { API_BASE_URL } from "@/lib/apiBaseUrl";
-import { buildServiceReportPdfBlob } from "@/lib/serviceReportPdf";
 import { uploadAuthorizedServiceImageData, uploadServiceImageData, getServiceImageUrl } from "@/lib/supabaseStorage";
 import { ArrowLeft, BookOpen, Camera, CheckCircle2, Circle, Download, FileSignature, PackageSearch, Play, Star, Wrench, X, XCircle, ZoomIn } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+
+const PhotoCapture = dynamic(() => import("@/components/operations/PhotoCapture").then((module) => module.PhotoCapture), { ssr: false });
+const SignatureCapture = dynamic(() => import("@/components/operations/SignatureCapture").then((module) => module.SignatureCapture), { ssr: false });
+const AdministrativeCorrectionPanel = dynamic(() => import("@/components/services/AdministrativeCorrectionPanel").then((module) => module.AdministrativeCorrectionPanel), { ssr: false });
 
 type ServiceReferencePart = { id: number | string; name: string; quantity: number; unit: string };
 type ReferenceManual = { title: string; file_name?: string; mime_type?: string; file_url?: string; base64_data?: string; notes?: string };
@@ -66,7 +68,11 @@ const statusLabel: Record<string, string> = {
   inspeccion: "Inspeccion",
   ejecucion: "Ejecucion",
   cerrada: "Cerrada",
-  no_ejecutada: "No ejecutada"
+  no_ejecutada: "No ejecutada",
+  cancelada: "Cancelada",
+  revision: "Revision",
+  reabierta: "Reabierta",
+  lista_facturacion: "Lista para facturacion"
 };
 const executionPhotoTypes = ["producto_abierto", "producto_cerrado"];
 const closePhotoTypes = ["producto_abierto", "producto_cerrado", "firma_cliente"];
@@ -179,14 +185,9 @@ export default function ServiceOperationPage() {
         setMessage("Esta solicitud externa aun no esta disponible como orden operativa local. Vuelve al monitor y completala antes de ejecutar el servicio.");
         return;
       }
-      const [data, questions] = await Promise.all([
-        api<ServiceOrder>(`/api/v1/services/orders/${params.id}`),
-        api<SatisfactionQuestion[]>("/api/v1/services/satisfaction-questions").catch(() => fallbackSatisfactionQuestions())
-      ]);
+      const data = await api<ServiceOrder>(`/api/v1/services/orders/${params.id}`);
       if (!data?.id) throw new Error("No se encontro el servicio solicitado o no tienes permisos para verlo.");
-      const activeQuestions = questions.filter((question) => question.active !== false && question.id && question.label);
       setOrder((current) => mergeOrderState(current, data));
-      setSurveyQuestions(activeQuestions.length ? activeQuestions : fallbackSatisfactionQuestions());
       setActivePanel((current) => current === "inicio" && data.status !== "pendiente" ? panelForStatus(data.status) : current);
     } catch (error) {
       setOrder(null);
@@ -199,6 +200,16 @@ export default function ServiceOperationPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (order?.status !== "ejecucion") return;
+    void api<SatisfactionQuestion[]>("/api/v1/services/satisfaction-questions")
+      .then((questions) => {
+        const activeQuestions = questions.filter((question) => question.active !== false && question.id && question.label);
+        setSurveyQuestions(activeQuestions.length ? activeQuestions : fallbackSatisfactionQuestions());
+      })
+      .catch(() => setSurveyQuestions(fallbackSatisfactionQuestions()));
+  }, [order?.status]);
 
   useEffect(() => {
     if (!order) return;
@@ -509,6 +520,7 @@ export default function ServiceOperationPage() {
     setDownloadingPdf(true);
     setMessage("");
     try {
+      const { buildServiceReportPdfBlob } = await import("@/lib/serviceReportPdf");
       savePdfBlob(await buildServiceReportPdfBlob(order));
       setMessage("PDF generado con evidencias fotograficas desde los datos cargados del servicio.");
       return;
@@ -545,7 +557,7 @@ export default function ServiceOperationPage() {
   const inspectionOkCount = inspectedItems.length - inspectionIssues.length;
 
   return (
-    <div className="mx-auto max-w-xl space-y-4 pb-32 md:pb-8">
+    <div className="mx-auto max-w-[1440px] space-y-4 pb-32 md:pb-8">
       <header className="sticky top-0 z-20 -mx-3 border-b border-line bg-paper/95 px-3 py-3 backdrop-blur sm:-mx-4 sm:px-4 md:static md:mx-0 md:border-0 md:bg-transparent md:px-0">
         <Link className="mb-3 inline-flex h-11 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-medium text-neutral-600 hover:text-apex md:border-0 md:bg-transparent md:px-0" href="/dashboard/servicios"><ArrowLeft size={18} /> Monitor</Link>
         <div className="grid gap-3 sm:flex sm:items-start sm:justify-between">
@@ -560,9 +572,9 @@ export default function ServiceOperationPage() {
 
       {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-900">{message}</div> : null}
 
-      <AdministrativeCorrectionPanel order={order} onApplied={load} />
-
-      <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(300px,0.8fr)]">
+        <AdministrativeCorrectionPanel order={order} onApplied={load} />
+        <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
         <p className="text-sm font-semibold">{order.reference?.code} · {order.reference?.name}</p>
         <p className="mt-1 text-xs text-neutral-500">
           {order.reference?.parts.length || 0} pieza(s) · {order.service_type} · {[order.customer_phone, order.metadata?.customer_phone_secondary].filter(Boolean).join(" / ") || "Sin telefono"}
@@ -571,7 +583,8 @@ export default function ServiceOperationPage() {
           <span className="rounded-md bg-paper px-3 py-2">{order.photos.length} evidencias</span>
           <span className="rounded-md bg-paper px-3 py-2">{order.incidents.length} novedades</span>
         </div>
-      </section>
+        </section>
+      </div>
 
       <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
         <div className="flex items-start justify-between gap-3">
@@ -635,7 +648,7 @@ export default function ServiceOperationPage() {
               </div>
             </div>
           ) : null}
-          <div className="grid gap-3">
+          <div className="grid gap-3 lg:grid-cols-3">
             <button className={`min-h-20 rounded-md border p-4 text-left shadow-sm transition active:scale-[0.99] ${inspectionMode === "pieces" ? "border-apex bg-apex/10" : "border-line bg-paper hover:border-apex"}`} onClick={() => setInspectionMode("pieces")} type="button">
               <span className="flex items-center gap-3">
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-apex text-white"><PackageSearch size={23} /></span>
@@ -726,7 +739,7 @@ export default function ServiceOperationPage() {
           {!closureMode ? (
             <>
               <h2 className="mb-3 text-base font-semibold">Ejecucion</h2>
-              <div className="grid gap-2">
+              <div className="grid gap-2 lg:grid-cols-2">
                 <PhotoCapture label="Foto 1: Producto abierto" required locked={hasPersistedPhoto("producto_abierto")} loading={uploading.producto_abierto} progress={uploadProgress.producto_abierto} status={uploadStatus.producto_abierto} value={captures.producto_abierto || null} onChange={(file) => uploadPhoto("producto_abierto", file)} />
                 <PhotoCapture label="Foto 2: Producto cerrado" required locked={hasPersistedPhoto("producto_cerrado")} loading={uploading.producto_cerrado} progress={uploadProgress.producto_cerrado} status={uploadStatus.producto_cerrado} value={captures.producto_cerrado || null} onChange={(file) => uploadPhoto("producto_cerrado", file)} />
               </div>
@@ -848,7 +861,7 @@ export default function ServiceOperationPage() {
               </div>
             </div>
           ) : null}
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
             {order.photos.map((photo) => {
               const src = photoSrc(photo);
               return (

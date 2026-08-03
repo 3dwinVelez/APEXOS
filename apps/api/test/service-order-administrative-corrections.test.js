@@ -10,7 +10,7 @@ const {
   inspectChanges,
   transitionAllowed
 } = require("../src/modules/services/administrativeCorrections");
-const { requirePermission } = require("../src/middleware/rbac");
+const { requireExplicitPermission } = require("../src/middleware/rbac");
 
 const tenantId = "tenant-a";
 const admin = { id: 10, role: { name: "Administrador de empresa", permissions: [] } };
@@ -18,15 +18,7 @@ const requester = {
   id: 11,
   role: {
     name: "Supervisor",
-    permissions: [
-      { module: "services.orders", action: "administrative_correction" },
-      { module: "services.orders", action: "correct_information" },
-      { module: "services.orders", action: "add_observation" },
-      { module: "services.orders", action: "change_state" },
-      { module: "services.orders", action: "manage_evidence" },
-      { module: "services.orders", action: "force_close" },
-      { module: "services.orders", action: "view_correction_history" }
-    ]
+    permissions: [{ module: "services.orders", action: "edit_any_state" }]
   }
 };
 const approver = { id: 12, role: { name: "Auditor", permissions: [{ module: "services.orders", action: "approve_correction" }] } };
@@ -105,21 +97,22 @@ function createDb({ currentOrder = order(), currentCorrection = correction() } =
   return { db, calls };
 }
 
-test("los permisos de correccion son independientes y no se heredan de services:write", () => {
-  assert.equal(hasPermission(requester, "correct_information"), true);
-  assert.equal(hasPermission({ role: { name: "Operador", permissions: [{ module: "services", action: "write" }] } }, "correct_information"), false);
-  assert.equal(hasPermission(admin, "force_close"), true);
+test("la edicion especial usa un unico permiso explicito y no se hereda por nombre de rol", () => {
+  assert.equal(hasPermission(requester), true);
+  assert.equal(hasPermission({ role: { name: "Operador", permissions: [{ module: "services", action: "write" }] } }), false);
+  assert.equal(hasPermission(admin), false);
+  assert.equal(hasPermission({ role: { name: "APEX_ADMIN", permissions: [{ module: "*", action: "*" }] } }), true);
 });
 
-test("el middleware backend responde 403 sin permiso granular", async () => {
+test("el middleware explicito responde 403 incluso para un rol administrativo sin el permiso", async () => {
   let response;
   const reply = { code(status) { response = { status }; return this; }, send(body) { response.body = body; return body; } };
-  await requirePermission("services.orders", "administrative_correction")({
-    user: { role: { name: "Tecnico", permissions: [{ module: "services", action: "write" }] } },
+  await requireExplicitPermission("services.orders", "edit_any_state")({
+    user: admin,
     tenant: { active_modules: ["M-26"] }, params: {}, query: {}, body: {}
   }, reply);
   assert.equal(response.status, 403);
-  assert.equal(response.body.details.action, "administrative_correction");
+  assert.equal(response.body.details.action, "edit_any_state");
 });
 
 test("motivo, descripcion, confirmacion y version son obligatorios", () => {
@@ -128,22 +121,26 @@ test("motivo, descripcion, confirmacion y version son obligatorios", () => {
   assert.equal(validateReason({ reason_code: "DATA_ENTRY_ERROR", description: "Descripcion correcta", confirmed: true, expected_version: 3 }).expectedVersion, 3);
 });
 
-test("la matriz rechaza transiciones arbitrarias", () => {
+test("permite cualquier destino reconocido y rechaza estados inexistentes", () => {
   assert.equal(transitionAllowed("cerrada", "reabierta"), true);
-  assert.equal(transitionAllowed("cerrada", "pendiente"), false);
-  assert.throws(() => inspectChanges(order(), [{ type: "STATUS_CHANGED", value: "pendiente" }], requester), (error) => error.code === "SERVICE_ORDER_TRANSITION_INVALID");
+  assert.equal(transitionAllowed("cerrada", "pendiente"), true);
+  assert.equal(transitionAllowed("cerrada", "cerrada"), false);
+  assert.equal(transitionAllowed("cerrada", "estado_inexistente"), false);
+  assert.doesNotThrow(() => inspectChanges(order(), [{ type: "STATUS_CHANGED", value: "pendiente" }], requester));
+  assert.throws(() => inspectChanges(order(), [{ type: "STATUS_CHANGED", value: "estado_inexistente" }], requester), (error) => error.code === "SERVICE_ORDER_TRANSITION_INVALID");
 });
 
-test("una orden facturada bloquea cambios financieros y de soportes", () => {
+test("una orden facturada permite informacion y soportes con el permiso especial", () => {
   const invoiced = order({ invoice_number: "FV-100", billing_status: "INVOICED" });
-  assert.throws(() => inspectChanges(invoiced, [{ type: "FIELD_UPDATED", field: "invoice_number", value: "FV-101" }], requester), (error) => error.code === "SERVICE_ORDER_INVOICED_LOCKED");
-  assert.throws(() => inspectChanges(invoiced, [{ type: "EVIDENCE_REMOVED", evidence_id: 1 }], requester), (error) => error.code === "SERVICE_ORDER_INVOICED_LOCKED");
+  assert.doesNotThrow(() => inspectChanges(invoiced, [{ type: "FIELD_UPDATED", field: "invoice_number", value: "FV-101" }], requester));
+  assert.doesNotThrow(() => inspectChanges(invoiced, [{ type: "EVIDENCE_REMOVED", evidence_id: 1 }], requester));
 });
 
-test("una orden pagada solo admite notas u observaciones no financieras", () => {
+test("una orden pagada permite editar, reabrir y anexar novedades", () => {
   const paid = order({ billing_status: "PAID", metadata: { payment_status: "PAID" } });
   assert.doesNotThrow(() => inspectChanges(paid, [{ type: "OBSERVATION_ADDED", value: "Aclaracion posterior" }], requester));
-  assert.throws(() => inspectChanges(paid, [{ type: "ORDER_REOPENED" }], requester), (error) => error.code === "SERVICE_ORDER_PAID_LOCKED");
+  assert.doesNotThrow(() => inspectChanges(paid, [{ type: "ORDER_REOPENED" }], requester));
+  assert.doesNotThrow(() => inspectChanges(paid, [{ type: "FIELD_UPDATED", field: "customer_phone", value: "3001234567" }], requester));
 });
 
 test("crear correccion aplica aislamiento por tenant, version e idempotencia", async () => {
@@ -186,26 +183,7 @@ test("retirar evidencia es baja logica y conserva el registro", async () => {
   assert.equal(calls.changes[0].change_type, "EVIDENCE_REMOVED");
 });
 
-test("doble aprobacion impide autoaprobacion y permite aprobador independiente", async () => {
-  const pending = correction({ status: "PENDING_APPROVAL", sensitive: true });
-  const first = createService(createDb({ currentCorrection: pending }).db);
-  await assert.rejects(() => first.approve(tenantId, { ...approver, id: requester.id }, 7, pending.id), (error) => error.code === "SERVICE_CORRECTION_SELF_APPROVAL_FORBIDDEN");
-  const approved = await first.approve(tenantId, approver, 7, pending.id);
-  assert.equal(approved.status, "APPROVED");
-  assert.equal(approved.approved_by, approver.id);
-});
-
-test("aprobacion concurrente no sobrescribe una decision previa", async () => {
-  const pending = correction({ status: "PENDING_APPROVAL", sensitive: true });
-  const { db } = createDb({ currentCorrection: pending });
-  db.serviceOrderCorrection.updateMany = async () => ({ count: 0 });
-  await assert.rejects(
-    () => createService(db).approve(tenantId, approver, 7, pending.id),
-    (error) => error.statusCode === 409 && error.code === "SERVICE_CORRECTION_APPROVAL_CONFLICT"
-  );
-});
-
-test("el aprobador sin permiso operativo no puede aplicar la correccion", async () => {
+test("un usuario sin el permiso unico no puede aplicar la correccion", async () => {
   const approved = correction({ status: "APPROVED", sensitive: true });
   const { db, calls } = createDb({ currentCorrection: approved });
   await assert.rejects(
@@ -215,16 +193,16 @@ test("el aprobador sin permiso operativo no puede aplicar la correccion", async 
   assert.equal(calls.updateMany.length, 0);
 });
 
-test("una correccion material devuelve la orden lista para facturar a revision", async () => {
+test("una correccion no cambia estado ni banderas financieras implicitamente", async () => {
   const ready = order({ status: "lista_facturacion", billing_status: "READY_FOR_BILLING" });
   const material = correction({
     metadata: { proposed_changes: [{ type: "FIELD_UPDATED", field: "notes", value: "Revisar soporte antes de facturar" }] }
   });
   const { db, calls } = createDb({ currentOrder: ready, currentCorrection: material });
   await createService(db).apply(tenantId, requester, 7, material.id);
-  assert.equal(calls.updateMany[0].data.status, "revision");
-  assert.equal(calls.updateMany[0].data.billing_status, "IN_REVIEW");
-  assert.equal(calls.updateMany[0].data.billing_blocked, true);
+  assert.equal(calls.updateMany[0].data.status, undefined);
+  assert.equal(calls.updateMany[0].data.billing_status, undefined);
+  assert.equal(calls.updateMany[0].data.billing_blocked, undefined);
 });
 
 test("la migracion conserva archivos e impide mutar el detalle historico", () => {

@@ -22,29 +22,39 @@ const CHANGE_TYPES = new Set([
   "OBSERVATION_ADDED"
 ]);
 
+const SERVICE_ORDER_OVERRIDE_PERMISSION = "edit_any_state";
+const ADMINISTRATIVE_STATUSES = Object.freeze([
+  "agendado",
+  "pendiente",
+  "en_curso",
+  "inspeccion",
+  "ejecucion",
+  "cerrada",
+  "no_ejecutada",
+  "cancelada",
+  "revision",
+  "reabierta",
+  "lista_facturacion"
+]);
+const ADMINISTRATIVE_STATUS_SET = new Set(ADMINISTRATIVE_STATUSES);
+
 const CORRECTABLE_FIELDS = new Map([
-  ["notes", { permission: "correct_information" }],
-  ["customer_name", { permission: "correct_information" }],
-  ["customer_address", { permission: "correct_information" }],
-  ["customer_phone", { permission: "correct_information" }],
-  ["service_type", { permission: "correct_information" }],
-  ["reference_id", { permission: "correct_information", numeric: true }],
-  ["technician_id", { permission: "correct_information", numeric: true }],
-  ["scheduled_date", { permission: "correct_information", date: true, sensitive: true }],
-  ["invoice_number", { permission: "correct_information", sensitive: true, financial: true }],
-  ["metadata.inspection", { permission: "correct_information", sensitive: true }],
-  ["metadata.customer_document", { permission: "correct_information" }]
+  ["notes", {}],
+  ["customer_name", {}],
+  ["customer_address", {}],
+  ["customer_phone", {}],
+  ["service_type", {}],
+  ["reference_id", { numeric: true }],
+  ["technician_id", { numeric: true }],
+  ["scheduled_date", { date: true, sensitive: true }],
+  ["invoice_number", { sensitive: true, financial: true }],
+  ["metadata.inspection", { sensitive: true }],
+  ["metadata.customer_document", {}]
 ]);
 
-const ADMINISTRATIVE_TRANSITIONS = Object.freeze({
-  ejecucion: ["cerrada"],
-  cerrada: ["revision", "reabierta"],
-  no_ejecutada: ["reabierta"],
-  revision: ["cerrada", "lista_facturacion"],
-  reabierta: ["cerrada", "revision"],
-  correccion_administrativa: ["revision"],
-  lista_facturacion: ["revision"]
-});
+const ADMINISTRATIVE_TRANSITIONS = Object.freeze(Object.fromEntries(
+  ADMINISTRATIVE_STATUSES.map((from) => [from, ADMINISTRATIVE_STATUSES.filter((to) => to !== from)])
+));
 
 function appError(statusCode, code, message, details) {
   const error = new Error(message);
@@ -54,23 +64,17 @@ function appError(statusCode, code, message, details) {
   return error;
 }
 
-function isAdmin(user) {
-  const role = String(user?.role?.name || "").trim().toLowerCase();
-  return ["apex_admin", "administrador de empresa", "admin", "owner", "superadmin"].includes(role);
-}
-
-function hasPermission(user, action) {
-  if (isAdmin(user)) return true;
+function hasPermission(user) {
   return (user?.role?.permissions || []).some((permission) => {
     const moduleAllowed = permission.module === "*" || permission.module === "services.orders";
-    const actionAllowed = permission.action === "*" || permission.action === action;
+    const actionAllowed = permission.action === "*" || permission.action === SERVICE_ORDER_OVERRIDE_PERMISSION;
     return moduleAllowed && actionAllowed;
   });
 }
 
-function assertPermission(user, action) {
-  if (!hasPermission(user, action)) {
-    throw appError(403, "SERVICE_CORRECTION_PERMISSION_DENIED", "No tienes permiso para esta operacion administrativa", { permission: `services.orders.${action}` });
+function assertPermission(user) {
+  if (!hasPermission(user)) {
+    throw appError(403, "SERVICE_CORRECTION_PERMISSION_DENIED", "No tienes permiso para editar ordenes en cualquier estado", { permission: `services.orders.${SERVICE_ORDER_OVERRIDE_PERMISSION}` });
   }
 }
 
@@ -124,10 +128,13 @@ function financialStage(order) {
 }
 
 function transitionAllowed(from, to) {
-  return (ADMINISTRATIVE_TRANSITIONS[String(from || "").toLowerCase()] || []).includes(String(to || "").toLowerCase());
+  const current = String(from || "").toLowerCase();
+  const next = String(to || "").toLowerCase();
+  return Boolean(current) && current !== next && ADMINISTRATIVE_STATUS_SET.has(next);
 }
 
 function inspectChanges(order, changes, user) {
+  assertPermission(user);
   let sensitive = false;
   let financialImpact = false;
   for (const change of changes) {
@@ -135,39 +142,22 @@ function inspectChanges(order, changes, user) {
       const field = String(change.field || "");
       const policy = CORRECTABLE_FIELDS.get(field);
       if (!policy) throw appError(400, "SERVICE_CORRECTION_FIELD_INVALID", `El campo ${field || "vacio"} no admite correccion administrativa`);
-      assertPermission(user, policy.permission);
       sensitive ||= Boolean(policy.sensitive);
       financialImpact ||= Boolean(policy.financial);
     } else if (change.type === "OBSERVATION_ADDED") {
-      assertPermission(user, "add_observation");
       if (String(change.value || "").trim().length < 4) throw appError(400, "SERVICE_CORRECTION_OBSERVATION_REQUIRED", "La novedad no puede estar vacia");
     } else if (["STATUS_CHANGED", "ORDER_REOPENED"].includes(change.type)) {
-      assertPermission(user, "change_state");
       sensitive = true;
-      if (change.type === "ORDER_REOPENED" && !["cerrada", "no_ejecutada"].includes(order.status)) {
-        throw appError(409, "SERVICE_ORDER_REOPEN_INVALID", "Solo se puede reabrir una orden finalizada");
-      }
       const nextStatus = change.type === "ORDER_REOPENED" ? "reabierta" : String(change.value || "").toLowerCase();
       if (!transitionAllowed(order.status, nextStatus)) throw appError(409, "SERVICE_ORDER_TRANSITION_INVALID", `Transicion administrativa no permitida: ${order.status} -> ${nextStatus}`);
     } else if (change.type === "ORDER_FORCE_CLOSED") {
-      assertPermission(user, "force_close");
       sensitive = true;
-      if (!["en_curso", "inspeccion", "ejecucion", "reabierta", "revision"].includes(order.status)) {
-        throw appError(409, "SERVICE_ORDER_FORCE_CLOSE_INVALID", `No se permite cierre administrativo desde el estado ${order.status}`);
-      }
+      if (!transitionAllowed(order.status, "cerrada")) throw appError(409, "SERVICE_ORDER_FORCE_CLOSE_INVALID", "La orden ya se encuentra cerrada");
     } else if (["EVIDENCE_ADDED", "EVIDENCE_REMOVED"].includes(change.type)) {
-      assertPermission(user, "manage_evidence");
       sensitive ||= change.type === "EVIDENCE_REMOVED";
     }
   }
   const stage = financialStage(order);
-  if (stage === "PAID") {
-    const invalid = changes.some((change) => change.type !== "OBSERVATION_ADDED" && !(change.type === "FIELD_UPDATED" && change.field === "notes"));
-    if (invalid) throw appError(409, "SERVICE_ORDER_PAID_LOCKED", "Una orden pagada solo admite anotaciones no financieras");
-  }
-  if (stage === "INVOICED" && (financialImpact || changes.some((change) => ["EVIDENCE_ADDED", "EVIDENCE_REMOVED"].includes(change.type)))) {
-    throw appError(409, "SERVICE_ORDER_INVOICED_LOCKED", "La orden facturada requiere un flujo financiero formal de ajuste");
-  }
   return { sensitive, financialImpact, stage };
 }
 
@@ -211,7 +201,7 @@ function createService(db = prisma) {
       return db.serviceOrderCorrection.create({
         data: {
           order_id: order.id,
-          status: assessment.sensitive ? "PENDING_APPROVAL" : "DRAFT",
+          status: "DRAFT",
           reason_code: reasonCode,
           description,
           expected_version: expectedVersion,
@@ -298,18 +288,14 @@ function createService(db = prisma) {
         detail.push({ change_type: change.type, field_name: "status", old_value: jsonValue(status), new_value: jsonValue(nextStatus), old_status: status, new_status: nextStatus });
         if (change.type === "ORDER_REOPENED") {
           metadata.previous_closure = { status, closed_at: order.closed_at, reopened_by: user.id, reopened_at: new Date().toISOString(), correction_id: correction.id };
-          data.billing_blocked = true;
+          data.closed_at = null;
         }
         if (change.type === "ORDER_FORCE_CLOSED") {
           data.closed_at = new Date();
-          data.billing_blocked = true;
           metadata.administrative_close = { pending_requirements: change.pending_requirements || [], observation: String(change.observation || ""), closed_by: user.id, correction_id: correction.id };
         }
-        if (nextStatus === "revision") data.billing_status = "IN_REVIEW";
-        if (nextStatus === "lista_facturacion") {
-          data.billing_status = "READY_FOR_BILLING";
-          data.billing_blocked = false;
-        }
+        if (["cerrada", "no_ejecutada"].includes(nextStatus) && !data.closed_at) data.closed_at = order.closed_at || new Date();
+        if (!["cerrada", "no_ejecutada"].includes(nextStatus) && !["ORDER_FORCE_CLOSED"].includes(change.type)) data.closed_at = null;
         data.status = nextStatus;
         status = nextStatus;
       } else if (change.type === "EVIDENCE_REMOVED") {
@@ -317,11 +303,6 @@ function createService(db = prisma) {
       }
     }
     if (Object.keys(metadata).length) data.metadata = metadata;
-    if (financialStage(order) === "READY_FOR_BILLING" && changes.some((change) => change.type !== "OBSERVATION_ADDED")) {
-      data.status = "revision";
-      data.billing_status = "IN_REVIEW";
-      data.billing_blocked = true;
-    }
     return { data, detail };
   }
 
@@ -331,8 +312,7 @@ function createService(db = prisma) {
       const correction = await tx.serviceOrderCorrection.findFirst({ where: { id: correctionId, tenant_id: tenantId, order_id: Number(orderId) } });
       if (!correction) throw appError(404, "SERVICE_CORRECTION_NOT_FOUND", "Correccion no encontrada");
       if (correction.status === "APPLIED") return tx.serviceOrderCorrection.findFirst({ where: { id: correction.id }, include: includeCorrection() });
-      if (correction.sensitive && correction.status !== "APPROVED") throw appError(409, "SERVICE_CORRECTION_APPROVAL_REQUIRED", "La correccion sensible requiere aprobacion independiente");
-      if (!correction.sensitive && correction.status !== "DRAFT") throw appError(409, "SERVICE_CORRECTION_NOT_APPLICABLE", "La correccion no esta disponible para aplicar");
+      if (!["DRAFT", "APPROVED"].includes(correction.status)) throw appError(409, "SERVICE_CORRECTION_NOT_APPLICABLE", "La correccion no esta disponible para aplicar");
       const order = await orderForTenant(tx, tenantId, orderId);
       if (order.version !== correction.expected_version) throw appError(409, "SERVICE_ORDER_VERSION_CONFLICT", "La orden fue modificada por otro usuario; recarga y compara la version vigente", { expected_version: correction.expected_version, current_version: order.version });
       const changes = normalizedChanges({ changes: correction.metadata?.proposed_changes || [] });
@@ -416,5 +396,7 @@ module.exports = {
   financialStage,
   transitionAllowed,
   ADMINISTRATIVE_TRANSITIONS,
+  ADMINISTRATIVE_STATUSES,
+  SERVICE_ORDER_OVERRIDE_PERMISSION,
   REASON_CODES
 };

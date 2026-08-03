@@ -50,24 +50,17 @@ const reasons = [
 ] as const;
 
 const fields = [
-  ["notes", "Observaciones", "correct_information"],
-  ["customer_name", "Nombre del cliente", "correct_information"],
-  ["customer_address", "Direccion", "correct_information"],
-  ["customer_phone", "Telefono", "correct_information"],
-  ["service_type", "Tipo de servicio", "correct_information"],
-  ["scheduled_date", "Fecha programada", "correct_information"],
-  ["invoice_number", "Numero de factura", "correct_information"]
+  ["notes", "Observaciones"],
+  ["customer_name", "Nombre del cliente"],
+  ["customer_address", "Direccion"],
+  ["customer_phone", "Telefono"],
+  ["service_type", "Tipo de servicio"],
+  ["scheduled_date", "Fecha programada"],
+  ["invoice_number", "Numero de factura"]
 ] as const;
 
-const transitions: Record<string, string[]> = {
-  ejecucion: ["cerrada"],
-  cerrada: ["revision", "reabierta"],
-  no_ejecutada: ["reabierta"],
-  revision: ["cerrada", "lista_facturacion"],
-  reabierta: ["cerrada", "revision"],
-  correccion_administrativa: ["revision"],
-  lista_facturacion: ["revision"]
-};
+const administrativeStatuses = ["agendado", "pendiente", "en_curso", "inspeccion", "ejecucion", "cerrada", "no_ejecutada", "cancelada", "revision", "reabierta", "lista_facturacion"];
+const SPECIAL_EDIT_PERMISSION = "edit_any_state";
 
 function storedAccess() {
   if (typeof window === "undefined") return { role: "", permissions: [] as Permission[] };
@@ -76,10 +69,9 @@ function storedAccess() {
   return { role: String(localStorage.getItem("role_name") || "").toLowerCase(), permissions };
 }
 
-function allowed(action: string) {
+function allowed() {
   const access = storedAccess();
-  if (["apex_admin", "administrador de empresa", "admin", "owner", "superadmin"].includes(access.role)) return true;
-  return access.permissions.some((permission) => (permission.module === "*" || permission.module === "services.orders") && (permission.action === "*" || permission.action === action));
+  return access.permissions.some((permission) => (permission.module === "*" || permission.module === "services.orders") && (permission.action === "*" || permission.action === SPECIAL_EDIT_PERMISSION));
 }
 
 function displayValue(value: unknown) {
@@ -98,14 +90,14 @@ function fileBase64(file: File) {
 }
 
 export function AdministrativeCorrectionPanel({ order, onApplied }: { order: Order; onApplied: () => Promise<void> | void }) {
-  const canCorrect = allowed("administrative_correction");
-  const canHistory = allowed("view_correction_history");
-  const canApprove = allowed("approve_correction");
-  const canInfo = allowed("correct_information");
-  const canObservation = allowed("add_observation");
-  const canState = allowed("change_state");
-  const canEvidence = allowed("manage_evidence");
-  const canForceClose = allowed("force_close");
+  const canCorrect = allowed();
+  const canHistory = canCorrect;
+  const canApprove = false;
+  const canInfo = canCorrect;
+  const canObservation = canCorrect;
+  const canState = canCorrect;
+  const canEvidence = canCorrect;
+  const canForceClose = canCorrect;
   const [open, setOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [history, setHistory] = useState<Correction[]>([]);
@@ -133,7 +125,7 @@ export function AdministrativeCorrectionPanel({ order, onApplied }: { order: Ord
   useEffect(() => { if (historyOpen) void loadHistory().catch(() => setMessage("No fue posible consultar el historial de correcciones.")); }, [historyOpen, loadHistory]);
 
   const beforeValue = useMemo(() => displayValue(field.includes(".") ? "Dato estructurado" : order[field as keyof Order]), [field, order]);
-  const nextStates = transitions[order.status] || [];
+  const nextStates = administrativeStatuses.filter((status) => status !== order.status);
 
   function resetForm() {
     setDescription("");
@@ -180,13 +172,9 @@ export function AdministrativeCorrectionPanel({ order, onApplied }: { order: Ord
                 : [{ type: "EVIDENCE_ADDED", value: evidenceType }];
         correction = await api<Correction>(`/api/v1/services/orders/${order.id}/corrections`, { method: "POST", body: JSON.stringify({ ...base, changes }) });
       }
-      if (correction.status === "PENDING_APPROVAL") {
-        setMessage("Correccion registrada y pendiente de aprobacion independiente.");
-      } else {
-        await applyDraft(correction);
-        setMessage("Correccion aplicada y auditada correctamente.");
-        await onApplied();
-      }
+      await applyDraft(correction);
+      setMessage("Correccion aplicada y auditada correctamente.");
+      await onApplied();
       resetForm();
       await loadHistory();
     } catch (error) {
@@ -247,12 +235,12 @@ export function AdministrativeCorrectionPanel({ order, onApplied }: { order: Ord
 
       {open ? (
         <div className="mt-4 space-y-4 border-t border-line pt-4">
-          <div className="flex gap-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950"><AlertTriangle className="mt-0.5 shrink-0" size={18} /><p>Todos los cambios quedaran auditados y pueden devolver la orden a revision, bloquear facturacion o requerir una segunda aprobacion.</p></div>
-          <label className="block text-sm font-semibold">Tipo de correccion<select className="mt-1 h-11 w-full rounded-md border border-line bg-white px-3" value={mode} onChange={(event) => { const next = event.target.value as Mode; setMode(next); if (next === "status") setValue(nextStates[0] || ""); }}>{canInfo ? <option value="field">Corregir informacion</option> : null}{canObservation ? <option value="observation">Anexar novedad</option> : null}{canState && nextStates.length ? <option value="status">Cambiar estado permitido</option> : null}{canEvidence ? <><option value="add-evidence">Agregar evidencia</option><option value="remove-evidence">Retirar evidencia</option></> : null}{canState && ["cerrada", "no_ejecutada"].includes(order.status) ? <option value="reopen">Reabrir para correccion</option> : null}{canForceClose ? <option value="force-close">Cerrar administrativamente</option> : null}</select></label>
+          <div className="flex gap-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950"><AlertTriangle className="mt-0.5 shrink-0" size={18} /><p>Todos los cambios quedan auditados. El estado de pago no bloquea esta edicion y los registros contables no se modifican.</p></div>
+          <label className="block text-sm font-semibold">Tipo de correccion<select className="mt-1 h-11 w-full rounded-md border border-line bg-white px-3" value={mode} onChange={(event) => { const next = event.target.value as Mode; setMode(next); if (next === "status") setValue(nextStates[0] || ""); }}>{canInfo ? <option value="field">Corregir informacion</option> : null}{canObservation ? <option value="observation">Anexar novedad</option> : null}{canState && nextStates.length ? <option value="status">Cambiar estado</option> : null}{canEvidence ? <><option value="add-evidence">Agregar evidencia</option><option value="remove-evidence">Retirar evidencia</option></> : null}{canState && ["cerrada", "no_ejecutada"].includes(order.status) ? <option value="reopen">Reabrir para correccion</option> : null}{canForceClose ? <option value="force-close">Cerrar administrativamente</option> : null}</select></label>
 
           {mode === "field" ? <div className="grid gap-3 sm:grid-cols-2"><label className="text-sm font-semibold">Campo<select className="mt-1 h-11 w-full rounded-md border border-line bg-white px-3" value={field} onChange={(event) => { setField(event.target.value); setValue(displayValue(order[event.target.value as keyof Order]) === "Sin dato" ? "" : displayValue(order[event.target.value as keyof Order])); }}>{fields.map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label><label className="text-sm font-semibold">Nuevo valor<input className="mt-1 h-11 w-full rounded-md border border-line px-3" value={value} onChange={(event) => setValue(event.target.value)} /></label><div className="rounded-md bg-neutral-50 p-3 text-sm"><span className="text-xs font-semibold text-neutral-500">Anterior</span><p className="break-words">{beforeValue}</p></div><div className="rounded-md bg-teal-50 p-3 text-sm"><span className="text-xs font-semibold text-teal-700">Nuevo</span><p className="break-words">{value || "Sin dato"}</p></div></div> : null}
           {mode === "observation" ? <label className="block text-sm font-semibold">Nueva observacion<textarea className="mt-1 min-h-24 w-full rounded-md border border-line p-3" value={observation} onChange={(event) => setObservation(event.target.value)} /></label> : null}
-          {mode === "status" ? <label className="block text-sm font-semibold">Estado permitido<select className="mt-1 h-11 w-full rounded-md border border-line bg-white px-3" value={value} onChange={(event) => setValue(event.target.value)}>{nextStates.map((state) => <option key={state} value={state}>{state.replaceAll("_", " ")}</option>)}</select></label> : null}
+          {mode === "status" ? <label className="block text-sm font-semibold">Nuevo estado<select className="mt-1 h-11 w-full rounded-md border border-line bg-white px-3" value={value} onChange={(event) => setValue(event.target.value)}>{nextStates.map((state) => <option key={state} value={state}>{state.replaceAll("_", " ")}</option>)}</select></label> : null}
           {mode === "remove-evidence" ? <label className="block text-sm font-semibold">Evidencia a retirar<select className="mt-1 h-11 w-full rounded-md border border-line bg-white px-3" value={evidenceId} onChange={(event) => setEvidenceId(event.target.value)}><option value="">Selecciona evidencia</option>{order.photos.map((photo) => <option key={photo.id} value={photo.id}>{photo.type} - #{photo.id}</option>)}</select></label> : null}
           {mode === "add-evidence" ? <div className="grid gap-3 sm:grid-cols-2"><label className="text-sm font-semibold">Tipo<input className="mt-1 h-11 w-full rounded-md border border-line px-3" pattern="[a-z0-9_-]+" value={evidenceType} onChange={(event) => setEvidenceType(event.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))} /></label><label className="text-sm font-semibold">Archivo validado<input accept="image/png,image/jpeg,image/webp" className="mt-1 block h-11 w-full rounded-md border border-line bg-white p-2 text-sm" type="file" onChange={(event) => setFile(event.target.files?.[0] || null)} /></label></div> : null}
           {mode === "force-close" ? <div className="grid gap-3"><label className="text-sm font-semibold">Observacion de cierre<textarea className="mt-1 min-h-20 w-full rounded-md border border-line p-3" value={observation} onChange={(event) => setObservation(event.target.value)} /></label><label className="text-sm font-semibold">Requisitos pendientes, uno por linea<textarea className="mt-1 min-h-20 w-full rounded-md border border-line p-3" value={pendingRequirements} onChange={(event) => setPendingRequirements(event.target.value)} /></label><p className="flex items-center gap-2 text-xs font-medium text-neutral-600"><Check size={15} /> Al confirmar declaras que revisaste las evidencias minimas y que los pendientes seguiran visibles.</p></div> : null}

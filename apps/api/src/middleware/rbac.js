@@ -83,7 +83,7 @@ function isAdministrativeRole(role) {
     || value === "administrador de empresa");
 }
 
-function requirePermission(module, action) {
+function permissionMiddleware(module, action, allowAdministrativeBypass) {
   return async function rbacMiddleware(request, reply) {
     return measurePhase("authorization", async () => {
     const role = request.user.role;
@@ -95,7 +95,7 @@ function requirePermission(module, action) {
         details: { module }
       });
     }
-    if (role.name === "APEX_ADMIN" || isAdministrativeRole(role)) return;
+    if (allowAdministrativeBypass && (role.name === "APEX_ADMIN" || isAdministrativeRole(role))) return;
 
     const permissions = role.permissions || [];
     const allowed = permissions.some((permission) => {
@@ -132,6 +132,14 @@ function requirePermission(module, action) {
   };
 }
 
+function requirePermission(module, action) {
+  return permissionMiddleware(module, action, true);
+}
+
+function requireExplicitPermission(module, action) {
+  return permissionMiddleware(module, action, false);
+}
+
 async function checkSoD(tenantId, userId, newRoleName) {
   return prisma.runWithTenant(tenantId, async () => {
     const user = await prisma.user.findUnique({ where: { id: userId }, include: { role: true } });
@@ -150,4 +158,4 @@ async function checkSoD(tenantId, userId, newRoleName) {
   });
 }
 
-module.exports = { requirePermission, checkSoD, tenantHasModule };
+module.exports = { requirePermission, requireExplicitPermission, checkSoD, tenantHasModule };
