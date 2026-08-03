@@ -25,6 +25,11 @@ test("el panel administrativo exige permiso explicito y no usa bypass por nombre
   assert.match(permissionSource, /servicios_correcciones: "services\.orders"/);
   assert.doesNotMatch(panelSource, /administrador de empresa.*return true/);
   assert.match(panelSource, /El estado de pago no bloquea esta edicion/);
+  assert.match(panelSource, /Nueva novedad/);
+  assert.match(panelSource, /Pieza faltante/);
+  assert.match(panelSource, /Foto o soporte/);
+  assert.match(panelSource, /PIECE_ISSUE_ADDED/);
+  assert.match(panelSource, /Foto de soporte/);
 });
 
 test("el monitor expone la correccion especial y abre el panel directamente", () => {
