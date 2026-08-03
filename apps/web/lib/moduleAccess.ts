@@ -3,6 +3,7 @@ import { isAdministrativeRole, mergePlatformAdminModuleAccess } from "./moduleAc
 import { CompanyModuleStatus, listActivePlatformAdmins, listCompanyModuleStatus, listUserCompanies } from "./supabaseQa";
 import { supabaseFetch } from "./supabaseClient";
 import { API_BASE_URL } from "./apiBaseUrl";
+import { flattenRolePermissions } from "./rolePermissions";
 
 const API_URL = API_BASE_URL;
 const HAS_CONFIGURED_API_URL = true;
@@ -152,25 +153,6 @@ function getStoredRolePermissions(): StoredRolePermission[] | null {
     localStorage.removeItem("role_permissions");
     return null;
   }
-}
-
-function flattenRolePermissions(value: unknown): StoredRolePermission[] {
-  if (Array.isArray(value)) {
-    return value.flatMap((permission) => {
-      const row = permission && typeof permission === "object" ? permission as Record<string, unknown> : {};
-      const permissionModule = String(row.module || row.key || "").trim();
-      const actions = Array.isArray(row.actions)
-        ? row.actions
-        : [row.action, ...Object.entries(row).filter(([, allowed]) => allowed === true).map(([action]) => action)];
-      return actions.map((action) => ({ module: permissionModule, action: String(action || "").trim() })).filter((item) => item.module && item.action);
-    });
-  }
-  if (value && typeof value === "object") {
-    return Object.entries(value as Record<string, Record<string, boolean>>).flatMap(([key, actions]) => (
-      Object.entries(actions || {}).filter(([, allowed]) => allowed === true).map(([action]) => ({ module: key, action }))
-    ));
-  }
-  return [];
 }
 
 function serviceTechnicianEmployee(employee: { user_type?: string; metadata?: Record<string, unknown> } | null | undefined) {
