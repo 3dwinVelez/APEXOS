@@ -1,8 +1,18 @@
 const tenancy = require("../../middleware/tenancy");
-const { requirePermission } = require("../../middleware/rbac");
+const { requirePermission, requireExplicitPermission } = require("../../middleware/rbac");
 const schemas = require("./schema");
 const service = require("./service");
 const evidenceUploads = require("./evidenceUploads");
+const corrections = require("./administrativeCorrections");
+
+function requestContext(request) {
+  return {
+    session_id: request.user?.sid || null,
+    ip: request.ip,
+    user_agent: request.headers["user-agent"] || null,
+    request_id: request.id
+  };
+}
 
 async function servicesRoutes(fastify) {
   fastify.addHook("preHandler", fastify.authenticate);
@@ -46,6 +56,29 @@ async function servicesRoutes(fastify) {
     evidenceUploads.confirm(request.user?.tenant_id, request.user, request.params.id));
   fastify.get("/services/evidence-upload-authorizations/:id", { preHandler: requirePermission("services", "read") }, (request) =>
     evidenceUploads.status(request.user?.tenant_id, request.user, request.params.id));
+
+  fastify.post("/services/orders/:id/corrections", { schema: schemas.correctionSchema, preHandler: requireExplicitPermission("services.orders", "edit_any_state") }, (request) =>
+    corrections.createCorrection(request.user?.tenant_id, request.user, request.params.id, request.body, requestContext(request)));
+  fastify.get("/services/orders/:id/corrections", { preHandler: requireExplicitPermission("services.orders", "edit_any_state") }, (request) =>
+    corrections.listHistory(request.user?.tenant_id, request.user, request.params.id));
+  fastify.get("/services/orders/:id/corrections/:correctionId", { preHandler: requireExplicitPermission("services.orders", "edit_any_state") }, (request) =>
+    corrections.getCorrection(request.user?.tenant_id, request.user, request.params.id, request.params.correctionId));
+  fastify.post("/services/orders/:id/corrections/:correctionId/apply", { preHandler: requireExplicitPermission("services.orders", "edit_any_state") }, (request) =>
+    corrections.apply(request.user?.tenant_id, request.user, request.params.id, request.params.correctionId, requestContext(request)));
+  fastify.post("/services/orders/:id/corrections/:correctionId/approve", { preHandler: requireExplicitPermission("services.orders", "edit_any_state") }, (request) =>
+    corrections.approve(request.user?.tenant_id, request.user, request.params.id, request.params.correctionId));
+  fastify.post("/services/orders/:id/corrections/:correctionId/reject", { schema: schemas.correctionRejectSchema, preHandler: requireExplicitPermission("services.orders", "edit_any_state") }, (request) =>
+    corrections.reject(request.user?.tenant_id, request.user, request.params.id, request.params.correctionId, request.body));
+  fastify.post("/services/orders/:id/corrections/:correctionId/evidence", { schema: schemas.correctionEvidenceSchema, preHandler: requireExplicitPermission("services.orders", "edit_any_state") }, (request) =>
+    corrections.addEvidence(request.user?.tenant_id, request.user, request.params.id, request.params.correctionId, request.body, requestContext(request)));
+  fastify.post("/services/orders/:id/corrections/evidence-upload-authorizations", { schema: schemas.evidenceAuthorizationSchema, preHandler: requireExplicitPermission("services.orders", "edit_any_state") }, (request) =>
+    evidenceUploads.authorize(request.user?.tenant_id, request.user, request.params.id, request.body));
+  fastify.post("/services/corrections/evidence-upload-authorizations/:id/confirm", { preHandler: requireExplicitPermission("services.orders", "edit_any_state") }, (request) =>
+    evidenceUploads.confirm(request.user?.tenant_id, request.user, request.params.id));
+  fastify.post("/services/orders/:id/reopen", { schema: schemas.correctionActionSchema, preHandler: requireExplicitPermission("services.orders", "edit_any_state") }, (request) =>
+    corrections.reopen(request.user?.tenant_id, request.user, request.params.id, request.body, requestContext(request)));
+  fastify.post("/services/orders/:id/force-close", { schema: schemas.forceCloseSchema, preHandler: requireExplicitPermission("services.orders", "edit_any_state") }, (request) =>
+    corrections.forceClose(request.user?.tenant_id, request.user, request.params.id, request.body, requestContext(request)));
 }
 
 module.exports = servicesRoutes;

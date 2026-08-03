@@ -24,20 +24,20 @@ async function nextNumber() {
 }
 
 function orderInclude() {
-  return { reference: { include: { parts: true } }, incidents: true, photos: true };
+  return { reference: { include: { parts: true } }, incidents: true, photos: { where: { active: true } } };
 }
 
 function orderListInclude() {
   return {
     reference: { include: { parts: true } },
     incidents: true,
-    photos: { select: { id: true, type: true, created_at: true, metadata: true } }
+    photos: { where: { active: true }, select: { id: true, type: true, created_at: true, metadata: true } }
   };
 }
 
 /** Include mínimo para transiciones de estado — solo lo que cambia */
 function orderTransitionInclude() {
-  return { reference: { select: { id: true, code: true, name: true } }, incidents: { select: { id: true } }, photos: { select: { id: true, type: true } } };
+  return { reference: { select: { id: true, code: true, name: true } }, incidents: { select: { id: true } }, photos: { where: { active: true }, select: { id: true, type: true } } };
 }
 
 function photoLabel(type) {
@@ -61,7 +61,7 @@ function inspectionStatusMeta(status) {
 }
 
 async function requireEvidence(orderId, requiredTypes) {
-  const photos = await prisma.servicePhoto.findMany({ where: { order_id: Number(orderId) }, select: { type: true } });
+  const photos = await prisma.servicePhoto.findMany({ where: { order_id: Number(orderId), active: true }, select: { type: true } });
   const available = new Set(photos.map((photo) => photo.type));
   const missing = requiredTypes.filter((type) => !available.has(type));
   if (missing.length) {
@@ -1229,7 +1229,7 @@ async function addPhoto(tenantId, user, orderId, input) {
     }
     const partId = input.metadata?.part_id == null ? "" : String(input.metadata.part_id);
     const existing = await prisma.servicePhoto.findMany({
-      where: { order_id: order.id, type: input.type },
+      where: { order_id: order.id, type: input.type, active: true },
       select: { id: true, metadata: true }
     });
     const duplicate = input.type === "pieza_averiada"
@@ -1261,7 +1261,7 @@ async function listPhotos(tenantId, user, orderId) {
   return prisma.runWithTenant(tenantId, async () => {
     const order = await accessibleOrder(tenantId, user, orderId);
     return prisma.servicePhoto.findMany({
-    where: { order_id: order.id },
+    where: { order_id: order.id, active: true },
     orderBy: { created_at: "asc" }
     });
   });

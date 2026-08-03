@@ -227,11 +227,12 @@ const actionLabels: Record<string, string> = {
   reports: "Reportes",
   sensitive: "Sensible",
   manage_users: "Gestionar usuarios",
-  manage_roles: "Gestionar roles"
+  manage_roles: "Gestionar roles",
+  edit_any_state: "Edicion especial"
 };
 
-const roleActions = ["access", "view", "create", "edit", "delete", "delete_physical_records", "approve", "reject", "void", "export", "import", "attach", "download", "configure", "administer", "execute", "reports", "sensitive", "manage_users", "manage_roles"];
-const compactRoleActions = ["access", "view", "create", "edit", "approve", "export", "configure", "sensitive", "manage_users", "manage_roles"];
+const roleActions = ["access", "view", "create", "edit", "edit_any_state", "delete", "delete_physical_records", "approve", "reject", "void", "export", "import", "attach", "download", "configure", "administer", "execute", "reports", "sensitive", "manage_users", "manage_roles"];
+const compactRoleActions = ["access", "view", "create", "edit", "edit_any_state", "approve", "export", "configure", "sensitive", "manage_users", "manage_roles"];
 const defaultRoleScopes: RoleScopes = { locations: [], areas: [], cost_centers: [], processes: [] };
 
 const emptyUser: UserForm = {
