@@ -7,6 +7,8 @@ fs.mkdirSync(outDir, { recursive: true });
 
 const chrome = "C:/Program Files/Google/Chrome/Application/chrome.exe";
 const repetitions = Number(process.env.BENCH_REPS || 5);
+const routeFilter = new Set((process.env.BENCH_ROUTES || "").split(",").map((item) => item.trim()).filter(Boolean));
+const profileFilter = new Set((process.env.BENCH_PROFILES || "").split(",").map((item) => item.trim()).filter(Boolean));
 const versions = [
   { id: "main", label: "main", baseUrl: "http://127.0.0.1:3101", commit: "e14a8443616683eea3e468a95e59a0386efd4f33" },
   { id: "candidate", label: "codex/operational-ui-v3-local", baseUrl: "http://127.0.0.1:3102", commit: "dbdf90fd144dc1ff9a3c5b95eacc25ff7a3513d8" }
@@ -213,23 +215,35 @@ function classifyRequest(url, type) {
 async function measureRoute(page, version, profile, route, repetition, phase) {
   const requests = [];
   const failed = [];
+  const requestStarts = new Map();
+  const routeT0 = { value: 0 };
+  const onRequest = (request) => {
+    requestStarts.set(request, Date.now());
+  };
   const onFinished = async (request) => {
     const response = request.response();
     const headers = response?.headers() || {};
     const info = classifyRequest(request.url(), request.resourceType());
+    const startedAt = requestStarts.get(request) || Date.now();
+    const endedAt = Date.now();
     requests.push({
       url: request.url(),
       type: request.resourceType(),
       status: response?.status() || 0,
       bytes: Number(headers["content-length"] || 0),
+      startMs: routeT0.value ? startedAt - routeT0.value : null,
+      durationMs: endedAt - startedAt,
       ...info
     });
   };
   const onFailed = (request) => {
     const info = classifyRequest(request.url(), request.resourceType());
-    failed.push({ url: request.url(), type: request.resourceType(), error: request.failure()?.errorText || "failed", ...info });
+    const startedAt = requestStarts.get(request) || Date.now();
+    const endedAt = Date.now();
+    failed.push({ url: request.url(), type: request.resourceType(), error: request.failure()?.errorText || "failed", startMs: routeT0.value ? startedAt - routeT0.value : null, durationMs: endedAt - startedAt, ...info });
   };
 
+  page.on("request", onRequest);
   page.on("requestfinished", onFinished);
   page.on("requestfailed", onFailed);
   await page.evaluateOnNewDocument(() => {
@@ -240,6 +254,7 @@ async function measureRoute(page, version, profile, route, repetition, phase) {
   }).catch(() => null);
 
   const t0 = Date.now();
+  routeT0.value = t0;
   let response = null;
   let navError = "";
   try {
@@ -308,6 +323,7 @@ async function measureRoute(page, version, profile, route, repetition, phase) {
 
   page.off("requestfinished", onFinished);
   page.off("requestfailed", onFailed);
+  page.off("request", onRequest);
 
   const status = response?.status() || 0;
   const blockingRequests = requests.filter((request) => request.blocksContent || request.blocksInteraction).length;
@@ -380,6 +396,8 @@ async function measureRoute(page, version, profile, route, repetition, phase) {
 
 const results = [];
 const authPayload = await getAuthPayload();
+const selectedProfiles = profileFilter.size ? profiles.filter((profile) => profileFilter.has(profile.id)) : profiles;
+const selectedRoutes = routeFilter.size ? routeSpecs.filter((route) => routeFilter.has(route.id)) : routeSpecs;
 const browser = await puppeteer.launch({
   executablePath: chrome,
   headless: "new",
@@ -387,7 +405,7 @@ const browser = await puppeteer.launch({
 });
 
 try {
-  for (const profile of profiles) {
+  for (const profile of selectedProfiles) {
     const contexts = {};
     const pages = {};
     for (const version of versions) {
@@ -398,8 +416,8 @@ try {
       await login(pages[version.id], version);
     }
     const profileRoutes = profile.id === "desktop-normal"
-      ? routeSpecs
-      : routeSpecs.filter((route) => ["servicios", "detalle-orden"].includes(route.id));
+      ? selectedRoutes
+      : selectedRoutes.filter((route) => ["servicios", "detalle-orden"].includes(route.id));
     for (const route of profileRoutes) {
       for (let repetition = 0; repetition <= repetitions; repetition += 1) {
         const order = repetition % 2 === 0 ? versions : [...versions].reverse();
@@ -520,8 +538,8 @@ const payload = {
     note: "Network-idle no se usa para finalizar la pantalla operativa; las solicitudes se clasifican como bloqueo inicial, datos principales, secundarios, sesion o carga diferida."
   },
   versions,
-  profiles,
-  routeSpecs,
+  profiles: selectedProfiles,
+  routeSpecs: selectedRoutes,
   repetitions,
   results,
   summaries,
