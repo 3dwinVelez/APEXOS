@@ -19,7 +19,8 @@ const CHANGE_TYPES = new Set([
   "STATUS_CHANGED",
   "ORDER_REOPENED",
   "ORDER_FORCE_CLOSED",
-  "OBSERVATION_ADDED"
+  "OBSERVATION_ADDED",
+  "PIECE_ISSUE_ADDED"
 ]);
 
 const SERVICE_ORDER_OVERRIDE_PERMISSION = "edit_any_state";
@@ -133,6 +134,31 @@ function transitionAllowed(from, to) {
   return Boolean(current) && current !== next && ADMINISTRATIVE_STATUS_SET.has(next);
 }
 
+function normalizedPieceIssue(change = {}) {
+  const source = change.value && typeof change.value === "object" ? change.value : {};
+  const partId = Number(source.part_id);
+  const name = String(source.name || "").trim();
+  const quantity = Number(source.quantity || 1);
+  const unit = String(source.unit || "und").trim() || "und";
+  const status = String(source.status || "faltante").trim().toLowerCase();
+  const comment = String(source.comment || "").trim();
+  if (!Number.isInteger(partId)) throw appError(400, "SERVICE_CORRECTION_PIECE_ID_REQUIRED", "Selecciona o identifica la pieza afectada");
+  if (name.length < 2) throw appError(400, "SERVICE_CORRECTION_PIECE_NAME_REQUIRED", "Registra el nombre de la pieza afectada");
+  if (!Number.isFinite(quantity) || quantity <= 0) throw appError(400, "SERVICE_CORRECTION_PIECE_QUANTITY_INVALID", "La cantidad de la pieza debe ser mayor que cero");
+  if (!["faltante", "averiada"].includes(status)) throw appError(400, "SERVICE_CORRECTION_PIECE_STATUS_INVALID", "La novedad de pieza debe ser faltante o averiada");
+  if (comment.length < 4) throw appError(400, "SERVICE_CORRECTION_PIECE_COMMENT_REQUIRED", "Describe la novedad de la pieza");
+  return {
+    part_id: partId,
+    name,
+    quantity,
+    unit,
+    status,
+    comment,
+    action: String(source.action || "cotizar_repuesto").trim() || "cotizar_repuesto",
+    supplier_name: String(source.supplier_name || "").trim()
+  };
+}
+
 function inspectChanges(order, changes, user) {
   assertPermission(user);
   let sensitive = false;
@@ -146,6 +172,8 @@ function inspectChanges(order, changes, user) {
       financialImpact ||= Boolean(policy.financial);
     } else if (change.type === "OBSERVATION_ADDED") {
       if (String(change.value || "").trim().length < 4) throw appError(400, "SERVICE_CORRECTION_OBSERVATION_REQUIRED", "La novedad no puede estar vacia");
+    } else if (change.type === "PIECE_ISSUE_ADDED") {
+      normalizedPieceIssue(change);
     } else if (["STATUS_CHANGED", "ORDER_REOPENED"].includes(change.type)) {
       sensitive = true;
       const nextStatus = change.type === "ORDER_REOPENED" ? "reabierta" : String(change.value || "").toLowerCase();
@@ -283,6 +311,18 @@ function createService(db = prisma) {
         detail.push({ change_type: "FIELD_UPDATED", field_name: change.field, old_value: jsonValue(previous), new_value: jsonValue(next) });
       } else if (change.type === "OBSERVATION_ADDED") {
         detail.push({ change_type: "OBSERVATION_ADDED", field_name: "observation", old_value: null, new_value: jsonValue(String(change.value).trim()) });
+      } else if (change.type === "PIECE_ISSUE_ADDED") {
+        const piece = normalizedPieceIssue(change);
+        const inspection = metadata.inspection && typeof metadata.inspection === "object" ? { ...metadata.inspection } : {};
+        const items = Array.isArray(inspection.items) ? [...inspection.items] : [];
+        const index = items.findIndex((item) => String(item?.part_id) === String(piece.part_id));
+        const previous = index >= 0 ? items[index] : null;
+        if (index >= 0) items[index] = { ...items[index], ...piece };
+        else items.push(piece);
+        inspection.items = items;
+        inspection.problem_count = items.filter((item) => ["faltante", "averiada"].includes(String(item?.status))).length;
+        metadata.inspection = inspection;
+        detail.push({ change_type: "PIECE_ISSUE_ADDED", field_name: "metadata.inspection.items", old_value: jsonValue(previous), new_value: jsonValue(piece) });
       } else if (["STATUS_CHANGED", "ORDER_REOPENED", "ORDER_FORCE_CLOSED"].includes(change.type)) {
         const nextStatus = change.type === "ORDER_REOPENED" ? "reabierta" : change.type === "ORDER_FORCE_CLOSED" ? "cerrada" : String(change.value).toLowerCase();
         detail.push({ change_type: change.type, field_name: "status", old_value: jsonValue(status), new_value: jsonValue(nextStatus), old_status: status, new_status: nextStatus });
@@ -327,6 +367,10 @@ function createService(db = prisma) {
       for (const change of changes.filter((item) => item.type === "OBSERVATION_ADDED")) {
         await tx.serviceIncident.create({ data: { order_id: order.id, type: "administrative_observation", description: String(change.value).trim(), action: "administrative_correction", metadata: { correction_id: correction.id, reason_code: correction.reason_code, added_by: user.id } } });
       }
+      for (const change of changes.filter((item) => item.type === "PIECE_ISSUE_ADDED")) {
+        const piece = normalizedPieceIssue(change);
+        await tx.serviceIncident.create({ data: { order_id: order.id, type: `pieza_${piece.status}`, description: `${piece.name}: ${piece.comment}`, action: piece.action, metadata: { correction_id: correction.id, reason_code: correction.reason_code, added_by: user.id, part_id: piece.part_id, part_name: piece.name, quantity: piece.quantity, unit: piece.unit } } });
+      }
 
       const updated = await tx.serviceOrder.updateMany({ where: { id: order.id, tenant_id: tenantId, version: correction.expected_version }, data });
       if (updated.count !== 1) throw appError(409, "SERVICE_ORDER_VERSION_CONFLICT", "La orden cambio durante la aplicacion de la correccion");
@@ -352,15 +396,31 @@ function createService(db = prisma) {
       if (!["DRAFT", "APPROVED"].includes(correction.status)) throw appError(409, "SERVICE_CORRECTION_NOT_APPLICABLE", "La correccion no esta disponible para agregar evidencia");
       const proposed = normalizedChanges({ changes: correction.metadata?.proposed_changes || [] });
       if (!proposed.some((change) => change.type === "EVIDENCE_ADDED")) throw appError(409, "SERVICE_EVIDENCE_CHANGE_NOT_DECLARED", "La correccion no declaro un alta de evidencia");
+      if (proposed.some((change) => !["EVIDENCE_ADDED", "PIECE_ISSUE_ADDED", "OBSERVATION_ADDED"].includes(change.type))) {
+        throw appError(409, "SERVICE_EVIDENCE_CHANGE_COMBINATION_INVALID", "La evidencia solo puede combinarse con novedades u observaciones de pieza");
+      }
       const order = await orderForTenant(tx, tenantId, orderId);
       if (order.version !== correction.expected_version) throw appError(409, "SERVICE_ORDER_VERSION_CONFLICT", "La orden cambio antes de agregar la evidencia", { expected_version: correction.expected_version, current_version: order.version });
+      inspectChanges(order, proposed, user);
+      const { data, detail } = prepareMutation(order, proposed, correction, user);
       const authorization = await tx.evidenceUploadAuthorization.findFirst({ where: { id: authorizationId, tenant_id: tenantId, order_key: String(order.id), user_id: user.id, status: "validated" } });
       if (!authorization?.final_path || !authorization.checksum_sha256) throw appError(409, "SERVICE_EVIDENCE_NOT_VALIDATED", "La evidencia no supero cuarentena y validacion binaria");
       const duplicate = await tx.servicePhoto.findFirst({ where: { tenant_id: tenantId, order_id: order.id, active: true, metadata: { path: ["checksum_sha256"], equals: authorization.checksum_sha256 } } });
       if (duplicate) throw appError(409, "SERVICE_EVIDENCE_DUPLICATE", "La misma evidencia ya esta activa en la orden");
-      const photo = await tx.servicePhoto.create({ data: { order_id: order.id, type, storage_path: `service-images/${authorization.final_path}`, size_bytes: authorization.detected_size_bytes, active: true, administratively_added: true, added_by_correction_id: correction.id, metadata: { mime_type: authorization.detected_mime_type, checksum_sha256: authorization.checksum_sha256, authorization_id: authorization.id, administrative_reason: correction.description, added_by: user.id } } });
-      const updated = await tx.serviceOrder.updateMany({ where: { id: order.id, tenant_id: tenantId, version: correction.expected_version }, data: { version: { increment: 1 }, administratively_modified: true } });
+      const evidenceMetadata = {};
+      if (Number.isInteger(Number(input.metadata?.part_id))) evidenceMetadata.part_id = Number(input.metadata.part_id);
+      if (String(input.metadata?.part_name || "").trim()) evidenceMetadata.part_name = String(input.metadata.part_name).trim().slice(0, 240);
+      const photo = await tx.servicePhoto.create({ data: { order_id: order.id, type, storage_path: `service-images/${authorization.final_path}`, size_bytes: authorization.detected_size_bytes, active: true, administratively_added: true, added_by_correction_id: correction.id, metadata: { ...evidenceMetadata, mime_type: authorization.detected_mime_type, checksum_sha256: authorization.checksum_sha256, authorization_id: authorization.id, administrative_reason: correction.description, added_by: user.id } } });
+      const updated = await tx.serviceOrder.updateMany({ where: { id: order.id, tenant_id: tenantId, version: correction.expected_version }, data });
       if (updated.count !== 1) throw appError(409, "SERVICE_ORDER_VERSION_CONFLICT", "La orden cambio durante el alta de evidencia");
+      for (const change of proposed.filter((item) => item.type === "OBSERVATION_ADDED")) {
+        await tx.serviceIncident.create({ data: { order_id: order.id, type: "administrative_observation", description: String(change.value).trim(), action: "administrative_correction", metadata: { correction_id: correction.id, reason_code: correction.reason_code, added_by: user.id } } });
+      }
+      for (const change of proposed.filter((item) => item.type === "PIECE_ISSUE_ADDED")) {
+        const piece = normalizedPieceIssue(change);
+        await tx.serviceIncident.create({ data: { order_id: order.id, type: `pieza_${piece.status}`, description: `${piece.name}: ${piece.comment}`, action: piece.action, photo_url: `service-images/${authorization.final_path}`, metadata: { correction_id: correction.id, reason_code: correction.reason_code, added_by: user.id, part_id: piece.part_id, part_name: piece.name, quantity: piece.quantity, unit: piece.unit } } });
+      }
+      if (detail.length) await tx.serviceOrderCorrectionChange.createMany({ data: detail.map((item) => ({ ...item, correction_id: correction.id })) });
       await tx.serviceOrderCorrectionChange.create({ data: { correction_id: correction.id, change_type: "EVIDENCE_ADDED", field_name: "evidence", old_value: null, new_value: { type, authorization_id: authorization.id }, evidence_id: photo.id } });
       await tx.auditLog.create({ data: { user_id: user.id, session_id: context.session_id || null, action: "service_order.administrative_evidence.added", module: "services", entity: "ServiceOrder", entity_id: String(order.id), old_value: { version: order.version }, new_value: { version: order.version + 1, correction_id: correction.id, evidence_id: photo.id }, ip: context.ip || null, user_agent: context.user_agent || null } });
       await tx.serviceOrderCorrection.update({ where: { id: correction.id }, data: { status: "APPLIED", applied_by: user.id, applied_at: new Date() } });
