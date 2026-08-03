@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { API_BASE_URL } from "@/lib/apiBaseUrl";
+import { flattenRolePermissions } from "@/lib/rolePermissions";
 import { touchSession } from "@/lib/sessionSecurity";
 import { getSupabaseConfigStatus, supabaseAuth, supabaseFetch } from "@/lib/supabaseClient";
 import { ArrowRight, Check, LockKeyhole, Mail, ShieldCheck, Sparkles, UserRound } from "lucide-react";
@@ -32,25 +33,6 @@ function friendlyLoginError(error: unknown) {
   }
 
   return "No fue posible iniciar sesion. Verifica tus credenciales e intenta nuevamente.";
-}
-
-function flattenRolePermissions(value: unknown) {
-  if (Array.isArray(value)) {
-    return value.flatMap((permission) => {
-      const row = permission && typeof permission === "object" ? permission as AnyRow : {};
-      const permissionModule = String(row.module || row.key || "").trim();
-      const actions = Array.isArray(row.actions)
-        ? row.actions
-        : [row.action, ...Object.entries(row).filter(([, allowed]) => allowed === true).map(([action]) => action)];
-      return actions.map((action) => ({ module: permissionModule, action: String(action || "").trim() })).filter((item) => item.module && item.action);
-    });
-  }
-  if (value && typeof value === "object") {
-    return Object.entries(value as Record<string, Record<string, boolean>>).flatMap(([key, actions]) => (
-      Object.entries(actions || {}).filter(([, allowed]) => allowed === true).map(([action]) => ({ module: key, action }))
-    ));
-  }
-  return [];
 }
 
 function serviceTechnicianEmployee(employee: { user_type?: string; metadata?: AnyRow } | null | undefined) {

@@ -127,6 +127,50 @@ function rolePayload(role: AnyRow, catalogId: string, companyId: string, { delet
   };
 }
 
+function sameRole(metadata: AnyRow, role: AnyRow) {
+  const access = metadata.access && typeof metadata.access === "object" ? metadata.access as AnyRow : {};
+  const expectedId = String(role.id || "").trim();
+  const assignedIds = [metadata.role_id, metadata.role_numeric_id, access.role_id].map((value) => String(value || "").trim());
+  if (expectedId && assignedIds.includes(expectedId)) return true;
+  const expectedName = String(role.name || role.nombre || "").trim().toLowerCase();
+  return Boolean(expectedName && [metadata.role_name, access.role_name].some((value) => String(value || "").trim().toLowerCase() === expectedName));
+}
+
+async function propagateRolePermissions(companyId: string, role: AnyRow) {
+  const employees = await supabaseRequest(`/rest/v1/employees?select=id,metadata&company_id=eq.${encodeURIComponent(companyId)}&limit=1000`, {
+    method: "GET",
+    service: true
+  }) as Array<{ id?: string; metadata?: AnyRow }>;
+  const assigned = employees.filter((employee) => employee.id && sameRole(employee.metadata || {}, role));
+  await Promise.all(assigned.map((employee) => {
+    const metadata = employee.metadata || {};
+    const access = metadata.access && typeof metadata.access === "object" ? metadata.access as AnyRow : {};
+    const permissions = role.permissions || {};
+    return supabaseRequest(`/rest/v1/employees?id=eq.${encodeURIComponent(String(employee.id))}`, {
+      method: "PATCH",
+      service: true,
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({
+        metadata: {
+          ...metadata,
+          role_name: clean(role.name) || metadata.role_name,
+          role_type: clean(role.role_type) || metadata.role_type,
+          role_scope: clean(role.scope) || metadata.role_scope,
+          permissions,
+          access: {
+            ...access,
+            role_name: clean(role.name) || access.role_name,
+            role_type: clean(role.role_type) || access.role_type,
+            role_scope: clean(role.scope) || access.role_scope,
+            permissions
+          }
+        }
+      })
+    });
+  }));
+  return assigned.length;
+}
+
 export async function POST(request: NextRequest) {
   try {
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE_KEY) {
@@ -144,7 +188,8 @@ export async function POST(request: NextRequest) {
       headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
       body: JSON.stringify(rolePayload(role, catalogId, companyId))
     });
-    return NextResponse.json({ ok: true, role: { ...role, code: roleCatalogCode(role) } });
+    const synchronizedUsers = await propagateRolePermissions(companyId, role);
+    return NextResponse.json({ ok: true, synchronized_users: synchronizedUsers, role: { ...role, code: roleCatalogCode(role) } });
   } catch (error) {
     const status = (error as HttpError)?.status || 500;
     return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible guardar el rol." }, { status });

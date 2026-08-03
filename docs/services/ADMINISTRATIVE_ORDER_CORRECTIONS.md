@@ -12,6 +12,10 @@ services.orders.edit_any_state
 
 El permiso aparece en Administracion > Roles y permisos como `Edicion especial de ordenes`.
 
+La administracion persiste esta opcion como `servicios_correcciones.edit_any_state`. El cliente
+y el API la normalizan a `services.orders.edit_any_state`, y al guardar un rol sus permisos se
+propagan a los usuarios que ya lo tienen asignado.
+
 - No se hereda de `services:write`.
 - No se concede por llamarse `admin`, `owner` o `Administrador de empresa`.
 - Un permiso comodin real `*:*` continua siendo valido.
@@ -98,6 +102,10 @@ Las rutas de aprobacion y rechazo permanecen temporalmente para compatibilidad c
 ## Interfaz
 
 La vista de detalle usa una superficie operativa de hasta 1440 px en escritorio y mantiene el flujo adaptable en movil.
+
+El monitor de Servicios muestra la accion `Corregir` en cualquier estado cuando el usuario tiene
+el permiso especial. La accion abre directamente el control administrativo del detalle para
+corregir informacion o estado y anexar novedades o evidencias.
 
 - El control administrativo queda junto al resumen principal de la orden.
 - Las decisiones de inspeccion se distribuyen en tres columnas en escritorio.

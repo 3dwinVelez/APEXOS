@@ -33,6 +33,9 @@ test("active module view is queried with the authenticated user identity", async
     if (String(url).includes("/v_company_module_status?")) {
       return { ok: true, json: async () => [{ module_code: "compras", enabled: true }] };
     }
+    if (String(url).includes("/employees?")) {
+      return { ok: true, json: async () => [] };
+    }
     throw new Error(`Unexpected request: ${url}`);
   };
   require.cache[prismaPath] = {
@@ -47,6 +50,14 @@ test("active module view is queried with the authenticated user identity", async
           email: "admin@example.test",
           role: { id: 1, name: "APEX_ADMIN", permissions: [] }
         }]
+      },
+      role: {
+        findUnique: async () => ({ id: 1, name: "APEX_ADMIN", permissions: [] }),
+        create: async ({ data }) => ({ id: 1, ...data, permissions: [] })
+      },
+      permission: {
+        createMany: async () => ({ count: 0 }),
+        deleteMany: async () => ({ count: 0 })
       },
       tenant: {
         findUnique: async () => ({

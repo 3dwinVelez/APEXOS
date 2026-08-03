@@ -2,6 +2,7 @@
 
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { api, isServiceTechnicianSession } from "@/lib/api";
+import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { downloadExcelWorkbook } from "@/lib/reportExports";
 import {
   ArrowLeft,
@@ -16,6 +17,7 @@ import {
   Save,
   Search,
   Settings2,
+  ShieldCheck,
   SlidersHorizontal,
   Sparkles,
   Wrench
@@ -388,6 +390,10 @@ function serviceOrderHref(order: ServiceOrder) {
   return `/dashboard/servicios?externa=${encodeURIComponent(externalKey)}`;
 }
 
+function correctionHref(order: ServiceOrder) {
+  return `${serviceOrderHref(order)}?corregir=1`;
+}
+
 function orderKey(order: ServiceOrder) {
   return String(order.id || order.number || "").trim();
 }
@@ -451,6 +457,7 @@ export default function ServicesPage() {
   const [sortBy, setSortBy] = useState("newest");
   const [message, setMessage] = useState("");
   const [technicianMode, setTechnicianMode] = useState(false);
+  const [canCorrectAnyState, setCanCorrectAnyState] = useState(false);
   const [editingOrder, setEditingOrder] = useState<ServiceOrder | null>(null);
   const [editForm, setEditForm] = useState<OrderEditForm>(emptyEditForm);
   const [savingEdit, setSavingEdit] = useState(false);
@@ -520,6 +527,7 @@ export default function ServicesPage() {
   useEffect(() => {
     const isTechnician = isServiceTechnicianSession();
     setTechnicianMode(isTechnician);
+    setCanCorrectAnyState(!isTechnician && hasStoredRolePermission("services.orders", "edit_any_state"));
     load();
     if (!isTechnician) loadMasters();
   }, []);
@@ -976,6 +984,11 @@ export default function ServicesPage() {
                   <Pencil size={15} /> Editar o reasignar
                 </button>
               ) : null}
+              {canCorrectAnyState && isOperableOrderId(order.id) ? (
+                <Link className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-teal-700 text-sm font-semibold text-white" href={correctionHref(order)}>
+                  <ShieldCheck size={15} /> Corregir y anexar
+                </Link>
+              ) : null}
               </div>
             ))}
             {!filtered.length ? (
@@ -1050,6 +1063,11 @@ export default function ServicesPage() {
                         </div>
                       </td>
                       <td className="text-right align-middle">
+                        {canCorrectAnyState && isOperableOrderId(order.id) ? (
+                          <Link className="mb-1.5 inline-flex h-8 items-center gap-1.5 rounded-md bg-teal-700 px-2 text-xs font-semibold text-white shadow-sm transition hover:bg-teal-800" href={correctionHref(order)}>
+                            <ShieldCheck size={14} /> Corregir
+                          </Link>
+                        ) : null}
                         {editAllowed(order) ? (
                           <button className="mb-1.5 inline-flex h-8 items-center gap-1.5 rounded-md border border-line bg-white px-2 text-xs font-semibold text-neutral-700 shadow-sm transition hover:border-apex hover:text-apex" onClick={() => openEdit(order)} type="button">
                             <Pencil size={14} /> Editar
