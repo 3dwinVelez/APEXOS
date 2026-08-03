@@ -274,7 +274,7 @@ const evidenceAuthorizationSchema = {
 };
 
 const correctionChangeProperties = {
-  type: { type: "string", enum: ["FIELD_UPDATED", "EVIDENCE_ADDED", "EVIDENCE_REMOVED", "STATUS_CHANGED", "ORDER_REOPENED", "ORDER_FORCE_CLOSED", "OBSERVATION_ADDED"] },
+  type: { type: "string", enum: ["FIELD_UPDATED", "EVIDENCE_ADDED", "EVIDENCE_REMOVED", "STATUS_CHANGED", "ORDER_REOPENED", "ORDER_FORCE_CLOSED", "OBSERVATION_ADDED", "PIECE_ISSUE_ADDED"] },
   field: { type: "string", maxLength: 64 },
   value: {},
   evidence_id: { type: "integer" },
@@ -341,7 +341,15 @@ const correctionEvidenceSchema = {
     required: ["authorization_id", "type"],
     properties: {
       authorization_id: { type: "string", minLength: 8, maxLength: 128 },
-      type: { type: "string", minLength: 1, maxLength: 64, pattern: "^[a-z0-9_-]+$" }
+      type: { type: "string", minLength: 1, maxLength: 64, pattern: "^[a-z0-9_-]+$" },
+      metadata: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          part_id: { type: "integer" },
+          part_name: { type: "string", minLength: 2, maxLength: 240 }
+        }
+      }
     }
   }
 };

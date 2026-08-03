@@ -3,10 +3,12 @@
 import { api } from "@/lib/api";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { uploadAuthorizedServiceImageData } from "@/lib/supabaseStorage";
-import { AlertTriangle, Check, FileClock, History, LockKeyhole, RefreshCw, ShieldCheck, X } from "lucide-react";
+import { AlertTriangle, Camera, Check, FileClock, History, LockKeyhole, MessageSquarePlus, PackageSearch, Pencil, RefreshCw, ShieldCheck, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 type Evidence = { id: number | string; type: string; created_at?: string };
+type ReferencePart = { id: number | string; name: string; quantity: number; unit: string };
+type InspectionItem = { part_id: number | string; name: string; quantity: number; unit: string; status: string; comment?: string; action?: string; supplier_name?: string };
 type Order = {
   id: number | string;
   version?: number;
@@ -22,6 +24,8 @@ type Order = {
   billing_status?: string;
   billing_blocked?: boolean;
   photos: Evidence[];
+  reference?: { parts?: ReferencePart[] };
+  metadata?: { inspection?: { items?: InspectionItem[] } };
 };
 type Change = { id: string; change_type: string; field_name?: string; old_value?: unknown; new_value?: unknown; evidence_id?: number; created_at: string };
 type Correction = {
@@ -35,7 +39,7 @@ type Correction = {
   approved_at?: string;
   changes: Change[];
 };
-type Mode = "field" | "observation" | "status" | "add-evidence" | "remove-evidence" | "reopen" | "force-close";
+type Mode = "field" | "observation" | "piece-issue" | "status" | "add-evidence" | "remove-evidence" | "reopen" | "force-close";
 
 const reasons = [
   ["INCOMPLETE_INFORMATION", "Informacion incompleta"],
@@ -60,6 +64,16 @@ const fields = [
 ] as const;
 
 const administrativeStatuses = ["agendado", "pendiente", "en_curso", "inspeccion", "ejecucion", "cerrada", "no_ejecutada", "cancelada", "revision", "reabierta", "lista_facturacion"];
+const evidenceTypes = [
+  ["administrative_support", "Soporte administrativo"],
+  ["novedad", "Novedad"],
+  ["pieza_averiada", "Pieza faltante o averiada"],
+  ["fachada", "Fachada"],
+  ["producto_abierto", "Producto abierto"],
+  ["producto_cerrado", "Producto cerrado"],
+  ["cliente", "Cliente"],
+  ["firma_cliente", "Firma del cliente"]
+] as const;
 const SPECIAL_EDIT_PERMISSION = "edit_any_state";
 
 function allowed() {
@@ -103,6 +117,14 @@ export function AdministrativeCorrectionPanel({ order, onApplied, initiallyOpen 
   const [evidenceId, setEvidenceId] = useState("");
   const [evidenceType, setEvidenceType] = useState("administrative_support");
   const [file, setFile] = useState<File | null>(null);
+  const [pieceSelection, setPieceSelection] = useState("");
+  const [pieceName, setPieceName] = useState("");
+  const [pieceQuantity, setPieceQuantity] = useState(1);
+  const [pieceUnit, setPieceUnit] = useState("und");
+  const [pieceStatus, setPieceStatus] = useState<"faltante" | "averiada">("faltante");
+  const [pieceComment, setPieceComment] = useState("");
+  const [pieceAction, setPieceAction] = useState("cotizar_repuesto");
+  const [pieceSupplier, setPieceSupplier] = useState("");
   const [pendingRequirements, setPendingRequirements] = useState("");
   const [rejections, setRejections] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -126,10 +148,45 @@ export function AdministrativeCorrectionPanel({ order, onApplied, initiallyOpen 
     setPendingRequirements("");
     setEvidenceId("");
     setFile(null);
+    setPieceSelection("");
+    setPieceName("");
+    setPieceQuantity(1);
+    setPieceUnit("und");
+    setPieceStatus("faltante");
+    setPieceComment("");
+    setPieceAction("cotizar_repuesto");
+    setPieceSupplier("");
   }
 
-  async function applyDraft(correction: Correction) {
-    if (mode === "add-evidence") {
+  function choosePiece(selection: string) {
+    setPieceSelection(selection);
+    if (selection === "manual") {
+      setPieceName("");
+      setPieceQuantity(1);
+      setPieceUnit("und");
+      return;
+    }
+    const selected = order.reference?.parts?.find((part) => String(part.id) === selection);
+    if (selected) {
+      setPieceName(selected.name);
+      setPieceQuantity(Number(selected.quantity || 1));
+      setPieceUnit(selected.unit || "und");
+    }
+  }
+
+  function selectMode(next: Mode) {
+    if (next !== mode) setFile(null);
+    setMode(next);
+    if (next === "status") setValue(nextStates[0] || "");
+    if (next === "piece-issue") {
+      setEvidenceType("pieza_averiada");
+      setReason("MISSING_EVIDENCE");
+    }
+    if (next === "add-evidence") setReason("MISSING_EVIDENCE");
+  }
+
+  async function applyDraft(correction: Correction, pieceId?: number) {
+    if (mode === "add-evidence" || (mode === "piece-issue" && file)) {
       if (!file) throw new Error("Selecciona la evidencia que deseas agregar.");
       const base64 = await fileBase64(file);
       const clientUploadId = `admin:${order.id}:${correction.id}:${file.name}:${file.size}`;
@@ -140,7 +197,9 @@ export function AdministrativeCorrectionPanel({ order, onApplied, initiallyOpen 
       await uploadAuthorizedServiceImageData(authorization, { base64, name: file.name, type: file.type });
       const confirmation = await api<{ status: string }>(`/api/v1/services/corrections/evidence-upload-authorizations/${authorization.authorization_id}/confirm`, { method: "POST" });
       if (confirmation.status !== "validated") throw new Error("La evidencia no supero la validacion autoritativa.");
-      await api(`/api/v1/services/orders/${order.id}/corrections/${correction.id}/evidence`, { method: "POST", body: JSON.stringify({ authorization_id: authorization.authorization_id, type: evidenceType }) });
+      if (mode === "piece-issue" && !Number.isInteger(pieceId)) throw new Error("No fue posible identificar la pieza para asociar la foto.");
+      const metadata = mode === "piece-issue" ? { part_id: pieceId, part_name: pieceName.trim() } : undefined;
+      await api(`/api/v1/services/orders/${order.id}/corrections/${correction.id}/evidence`, { method: "POST", body: JSON.stringify({ authorization_id: authorization.authorization_id, type: evidenceType, metadata }) });
       return;
     }
     await api(`/api/v1/services/orders/${order.id}/corrections/${correction.id}/apply`, { method: "POST" });
@@ -152,19 +211,24 @@ export function AdministrativeCorrectionPanel({ order, onApplied, initiallyOpen 
     try {
       const base = { reason_code: reason, description, confirmed, expected_version: order.version || 1, idempotency_key: crypto.randomUUID() };
       let correction: Correction;
+      let submittedPieceId: number | undefined;
       if (mode === "reopen") {
         correction = await api<Correction>(`/api/v1/services/orders/${order.id}/reopen`, { method: "POST", body: JSON.stringify(base) });
       } else if (mode === "force-close") {
         correction = await api<Correction>(`/api/v1/services/orders/${order.id}/force-close`, { method: "POST", body: JSON.stringify({ ...base, observation, pending_requirements: pendingRequirements.split("\n").map((item) => item.trim()).filter(Boolean), evidence_reviewed: true }) });
       } else {
+        const partId = Number(pieceSelection === "manual" || !Number.isInteger(Number(pieceSelection)) ? -Date.now() : pieceSelection);
+        if (mode === "piece-issue") submittedPieceId = partId;
+        const pieceChange = { type: "PIECE_ISSUE_ADDED", value: { part_id: partId, name: pieceName.trim(), quantity: pieceQuantity, unit: pieceUnit.trim(), status: pieceStatus, comment: pieceComment.trim(), action: pieceAction, supplier_name: pieceSupplier.trim() } };
         const changes = mode === "field" ? [{ type: "FIELD_UPDATED", field, value }]
           : mode === "observation" ? [{ type: "OBSERVATION_ADDED", value: observation }]
+            : mode === "piece-issue" ? [pieceChange, ...(file ? [{ type: "EVIDENCE_ADDED", value: "pieza_averiada" }] : [])]
             : mode === "status" ? [{ type: "STATUS_CHANGED", value }]
               : mode === "remove-evidence" ? [{ type: "EVIDENCE_REMOVED", evidence_id: Number(evidenceId) }]
                 : [{ type: "EVIDENCE_ADDED", value: evidenceType }];
         correction = await api<Correction>(`/api/v1/services/orders/${order.id}/corrections`, { method: "POST", body: JSON.stringify({ ...base, changes }) });
       }
-      await applyDraft(correction);
+      await applyDraft(correction, submittedPieceId);
       setMessage("Correccion aplicada y auditada correctamente.");
       await onApplied();
       resetForm();
@@ -228,19 +292,38 @@ export function AdministrativeCorrectionPanel({ order, onApplied, initiallyOpen 
       {open ? (
         <div className="mt-4 space-y-4 border-t border-line pt-4">
           <div className="flex gap-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950"><AlertTriangle className="mt-0.5 shrink-0" size={18} /><p>Todos los cambios quedan auditados. El estado de pago no bloquea esta edicion y los registros contables no se modifican.</p></div>
-          <label className="block text-sm font-semibold">Tipo de correccion<select className="mt-1 h-11 w-full rounded-md border border-line bg-white px-3" value={mode} onChange={(event) => { const next = event.target.value as Mode; setMode(next); if (next === "status") setValue(nextStates[0] || ""); }}>{canInfo ? <option value="field">Corregir informacion</option> : null}{canObservation ? <option value="observation">Anexar novedad</option> : null}{canState && nextStates.length ? <option value="status">Cambiar estado</option> : null}{canEvidence ? <><option value="add-evidence">Agregar evidencia</option><option value="remove-evidence">Retirar evidencia</option></> : null}{canState && ["cerrada", "no_ejecutada"].includes(order.status) ? <option value="reopen">Reabrir para correccion</option> : null}{canForceClose ? <option value="force-close">Cerrar administrativamente</option> : null}</select></label>
+          <div>
+            <p className="mb-2 text-sm font-semibold">Accion a realizar</p>
+            <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+              {canInfo ? <button className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-md border px-3 text-sm font-semibold ${mode === "field" ? "border-teal-700 bg-teal-50 text-teal-900" : "border-line bg-white hover:bg-neutral-50"}`} onClick={() => selectMode("field")} type="button"><Pencil size={17} /> Editar datos</button> : null}
+              {canObservation ? <button className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-md border px-3 text-sm font-semibold ${mode === "observation" ? "border-teal-700 bg-teal-50 text-teal-900" : "border-line bg-white hover:bg-neutral-50"}`} onClick={() => selectMode("observation")} type="button"><MessageSquarePlus size={17} /> Nueva novedad</button> : null}
+              {canCorrect ? <button className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-md border px-3 text-sm font-semibold ${mode === "piece-issue" ? "border-teal-700 bg-teal-50 text-teal-900" : "border-line bg-white hover:bg-neutral-50"}`} onClick={() => selectMode("piece-issue")} type="button"><PackageSearch size={17} /> Pieza faltante</button> : null}
+              {canEvidence ? <button className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-md border px-3 text-sm font-semibold ${mode === "add-evidence" ? "border-teal-700 bg-teal-50 text-teal-900" : "border-line bg-white hover:bg-neutral-50"}`} onClick={() => selectMode("add-evidence")} type="button"><Camera size={17} /> Foto o soporte</button> : null}
+            </div>
+          </div>
+          <label className="block text-sm font-semibold">Otras acciones administrativas<select className="mt-1 h-11 w-full rounded-md border border-line bg-white px-3" value={["status", "remove-evidence", "reopen", "force-close"].includes(mode) ? mode : ""} onChange={(event) => { if (event.target.value) selectMode(event.target.value as Mode); }}><option value="">Selecciona solo cuando sea necesario</option>{canState && nextStates.length ? <option value="status">Cambiar estado</option> : null}{canEvidence ? <option value="remove-evidence">Retirar evidencia</option> : null}{canState && ["cerrada", "no_ejecutada"].includes(order.status) ? <option value="reopen">Reabrir para correccion</option> : null}{canForceClose ? <option value="force-close">Cerrar administrativamente</option> : null}</select></label>
 
           {mode === "field" ? <div className="grid gap-3 sm:grid-cols-2"><label className="text-sm font-semibold">Campo<select className="mt-1 h-11 w-full rounded-md border border-line bg-white px-3" value={field} onChange={(event) => { setField(event.target.value); setValue(displayValue(order[event.target.value as keyof Order]) === "Sin dato" ? "" : displayValue(order[event.target.value as keyof Order])); }}>{fields.map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label><label className="text-sm font-semibold">Nuevo valor<input className="mt-1 h-11 w-full rounded-md border border-line px-3" value={value} onChange={(event) => setValue(event.target.value)} /></label><div className="rounded-md bg-neutral-50 p-3 text-sm"><span className="text-xs font-semibold text-neutral-500">Anterior</span><p className="break-words">{beforeValue}</p></div><div className="rounded-md bg-teal-50 p-3 text-sm"><span className="text-xs font-semibold text-teal-700">Nuevo</span><p className="break-words">{value || "Sin dato"}</p></div></div> : null}
           {mode === "observation" ? <label className="block text-sm font-semibold">Nueva observacion<textarea className="mt-1 min-h-24 w-full rounded-md border border-line p-3" value={observation} onChange={(event) => setObservation(event.target.value)} /></label> : null}
+          {mode === "piece-issue" ? <div className="grid gap-3 sm:grid-cols-2">
+            <label className="text-sm font-semibold">Pieza de la referencia<select className="mt-1 h-11 w-full rounded-md border border-line bg-white px-3" value={pieceSelection} onChange={(event) => choosePiece(event.target.value)}><option value="">Selecciona una pieza</option>{order.reference?.parts?.map((part) => <option key={part.id} value={String(part.id)}>{part.name}</option>)}<option value="manual">Otra pieza</option></select></label>
+            <label className="text-sm font-semibold">Condicion<select className="mt-1 h-11 w-full rounded-md border border-line bg-white px-3" value={pieceStatus} onChange={(event) => setPieceStatus(event.target.value as "faltante" | "averiada")}><option value="faltante">Faltante</option><option value="averiada">Averiada</option></select></label>
+            <label className="text-sm font-semibold">Nombre de la pieza<input className="mt-1 h-11 w-full rounded-md border border-line px-3" disabled={pieceSelection !== "manual"} value={pieceName} onChange={(event) => setPieceName(event.target.value)} /></label>
+            <div className="grid grid-cols-[1fr_1fr] gap-2"><label className="text-sm font-semibold">Cantidad<input className="mt-1 h-11 w-full rounded-md border border-line px-3" min="0.01" step="0.01" type="number" value={pieceQuantity} onChange={(event) => setPieceQuantity(Number(event.target.value))} /></label><label className="text-sm font-semibold">Unidad<input className="mt-1 h-11 w-full rounded-md border border-line px-3" value={pieceUnit} onChange={(event) => setPieceUnit(event.target.value)} /></label></div>
+            <label className="text-sm font-semibold sm:col-span-2">Detalle de la novedad<textarea className="mt-1 min-h-20 w-full rounded-md border border-line p-3" placeholder="Indica que falta o que dano presenta" value={pieceComment} onChange={(event) => setPieceComment(event.target.value)} /></label>
+            <label className="text-sm font-semibold">Accion requerida<select className="mt-1 h-11 w-full rounded-md border border-line bg-white px-3" value={pieceAction} onChange={(event) => setPieceAction(event.target.value)}><option value="cotizar_repuesto">Cotizar repuesto</option><option value="solicitar_repuesto">Solicitar repuesto</option><option value="reemplazar">Reemplazar</option><option value="revisar">Revisar</option></select></label>
+            <label className="text-sm font-semibold">Proveedor sugerido<input className="mt-1 h-11 w-full rounded-md border border-line px-3" placeholder="Opcional" value={pieceSupplier} onChange={(event) => setPieceSupplier(event.target.value)} /></label>
+            <label className="text-sm font-semibold sm:col-span-2">Foto de soporte <span className="font-normal text-neutral-500">(opcional)</span><input accept="image/png,image/jpeg,image/webp" className="mt-1 block h-11 w-full rounded-md border border-line bg-white p-2 text-sm" type="file" onChange={(event) => setFile(event.target.files?.[0] || null)} /></label>
+          </div> : null}
           {mode === "status" ? <label className="block text-sm font-semibold">Nuevo estado<select className="mt-1 h-11 w-full rounded-md border border-line bg-white px-3" value={value} onChange={(event) => setValue(event.target.value)}>{nextStates.map((state) => <option key={state} value={state}>{state.replaceAll("_", " ")}</option>)}</select></label> : null}
           {mode === "remove-evidence" ? <label className="block text-sm font-semibold">Evidencia a retirar<select className="mt-1 h-11 w-full rounded-md border border-line bg-white px-3" value={evidenceId} onChange={(event) => setEvidenceId(event.target.value)}><option value="">Selecciona evidencia</option>{order.photos.map((photo) => <option key={photo.id} value={photo.id}>{photo.type} - #{photo.id}</option>)}</select></label> : null}
-          {mode === "add-evidence" ? <div className="grid gap-3 sm:grid-cols-2"><label className="text-sm font-semibold">Tipo<input className="mt-1 h-11 w-full rounded-md border border-line px-3" pattern="[a-z0-9_-]+" value={evidenceType} onChange={(event) => setEvidenceType(event.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))} /></label><label className="text-sm font-semibold">Archivo validado<input accept="image/png,image/jpeg,image/webp" className="mt-1 block h-11 w-full rounded-md border border-line bg-white p-2 text-sm" type="file" onChange={(event) => setFile(event.target.files?.[0] || null)} /></label></div> : null}
+          {mode === "add-evidence" ? <div className="grid gap-3 sm:grid-cols-2"><label className="text-sm font-semibold">Tipo de soporte<select className="mt-1 h-11 w-full rounded-md border border-line bg-white px-3" value={evidenceType} onChange={(event) => setEvidenceType(event.target.value)}>{evidenceTypes.map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label><label className="text-sm font-semibold">Foto o archivo validado<input accept="image/png,image/jpeg,image/webp" className="mt-1 block h-11 w-full rounded-md border border-line bg-white p-2 text-sm" type="file" onChange={(event) => setFile(event.target.files?.[0] || null)} /></label></div> : null}
           {mode === "force-close" ? <div className="grid gap-3"><label className="text-sm font-semibold">Observacion de cierre<textarea className="mt-1 min-h-20 w-full rounded-md border border-line p-3" value={observation} onChange={(event) => setObservation(event.target.value)} /></label><label className="text-sm font-semibold">Requisitos pendientes, uno por linea<textarea className="mt-1 min-h-20 w-full rounded-md border border-line p-3" value={pendingRequirements} onChange={(event) => setPendingRequirements(event.target.value)} /></label><p className="flex items-center gap-2 text-xs font-medium text-neutral-600"><Check size={15} /> Al confirmar declaras que revisaste las evidencias minimas y que los pendientes seguiran visibles.</p></div> : null}
 
           <div className="grid gap-3 sm:grid-cols-2"><label className="text-sm font-semibold">Motivo<select className="mt-1 h-11 w-full rounded-md border border-line bg-white px-3" value={reason} onChange={(event) => setReason(event.target.value)}>{reasons.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></label><label className="text-sm font-semibold">Version esperada<input className="mt-1 h-11 w-full rounded-md border border-line bg-neutral-50 px-3" readOnly value={order.version || 1} /></label></div>
           <label className="block text-sm font-semibold">Descripcion detallada<textarea className="mt-1 min-h-24 w-full rounded-md border border-line p-3" value={description} onChange={(event) => setDescription(event.target.value)} /></label>
           <label className="flex items-start gap-3 rounded-md border border-line p-3 text-sm"><input className="mt-1 h-4 w-4 accent-teal-700" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} type="checkbox" /><span>Confirmo que revise el antes y despues y que esta operacion quedara registrada en auditoria.</span></label>
-          <button className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md bg-teal-700 font-semibold text-white disabled:opacity-50" disabled={busy || !confirmed || description.trim().length < 12 || (mode === "field" && !canInfo) || (mode === "observation" && !canObservation) || (mode === "status" && !canState) || (mode === "add-evidence" && (!canEvidence || !file)) || (mode === "remove-evidence" && (!canEvidence || !evidenceId)) || (mode === "reopen" && !canState) || (mode === "force-close" && !canForceClose)} onClick={submit} type="button">{busy ? <RefreshCw className="animate-spin" size={17} /> : <LockKeyhole size={17} />} Registrar correccion controlada</button>
+          <button className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md bg-teal-700 font-semibold text-white disabled:opacity-50" disabled={busy || !confirmed || description.trim().length < 12 || (mode === "field" && !canInfo) || (mode === "observation" && (!canObservation || observation.trim().length < 4)) || (mode === "piece-issue" && (!pieceSelection || pieceName.trim().length < 2 || pieceComment.trim().length < 4 || pieceQuantity <= 0 || !pieceUnit.trim())) || (mode === "status" && !canState) || (mode === "add-evidence" && (!canEvidence || !file)) || (mode === "remove-evidence" && (!canEvidence || !evidenceId)) || (mode === "reopen" && !canState) || (mode === "force-close" && !canForceClose)} onClick={submit} type="button">{busy ? <RefreshCw className="animate-spin" size={17} /> : <LockKeyhole size={17} />} Registrar correccion controlada</button>
         </div>
       ) : null}
 

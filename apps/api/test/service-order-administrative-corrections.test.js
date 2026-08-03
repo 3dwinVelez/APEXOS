@@ -55,8 +55,8 @@ function correction(overrides = {}) {
   };
 }
 
-function createDb({ currentOrder = order(), currentCorrection = correction() } = {}) {
-  const calls = { tenant: [], updateMany: [], changes: [], audits: [], photos: [], incidents: [] };
+function createDb({ currentOrder = order(), currentCorrection = correction(), authorization = null } = {}) {
+  const calls = { tenant: [], updateMany: [], changes: [], audits: [], photos: [], createdPhotos: [], incidents: [] };
   const tx = {
     serviceOrder: {
       findFirst: async ({ where }) => where.tenant_id === tenantId && Number(where.id) === currentOrder.id ? currentOrder : null,
@@ -83,10 +83,10 @@ function createDb({ currentOrder = order(), currentCorrection = correction() } =
     servicePhoto: {
       findFirst: async ({ where }) => currentOrder.photos.find((photo) => photo.id === where.id && photo.active !== false) || null,
       update: async ({ where, data }) => { calls.photos.push({ where, data }); return { id: where.id, ...data }; },
-      create: async ({ data }) => ({ id: 99, ...data })
+      create: async ({ data }) => { calls.createdPhotos.push(data); return { id: 99, ...data }; }
     },
     serviceIncident: { create: async ({ data }) => { calls.incidents.push(data); return data; } },
-    evidenceUploadAuthorization: { findFirst: async () => null },
+    evidenceUploadAuthorization: { findFirst: async () => authorization },
     auditLog: { create: async ({ data }) => { calls.audits.push(data); return data; } }
   };
   const db = {
@@ -143,6 +143,13 @@ test("una orden pagada permite editar, reabrir y anexar novedades", () => {
   assert.doesNotThrow(() => inspectChanges(paid, [{ type: "FIELD_UPDATED", field: "customer_phone", value: "3001234567" }], requester));
 });
 
+test("valida la pieza faltante como una novedad estructurada", () => {
+  const piece = { type: "PIECE_ISSUE_ADDED", value: { part_id: 21, name: "Bisagra izquierda", quantity: 2, unit: "und", status: "faltante", comment: "No fue entregada", action: "solicitar_repuesto" } };
+  assert.doesNotThrow(() => inspectChanges(order(), [piece], requester));
+  assert.throws(() => inspectChanges(order(), [{ ...piece, value: { ...piece.value, comment: "" } }], requester), (error) => error.code === "SERVICE_CORRECTION_PIECE_COMMENT_REQUIRED");
+  assert.throws(() => inspectChanges(order(), [{ ...piece, value: { ...piece.value, status: "ok" } }], requester), (error) => error.code === "SERVICE_CORRECTION_PIECE_STATUS_INVALID");
+});
+
 test("crear correccion aplica aislamiento por tenant, version e idempotencia", async () => {
   const { db, calls } = createDb();
   const service = createService(db);
@@ -165,6 +172,35 @@ test("aplicar registra antes/despues, auditoria y version en una sola transaccio
   assert.equal(calls.changes[0].old_value, "Original");
   assert.equal(calls.changes[0].new_value, "Corregida");
   assert.equal(calls.audits[0].session_id, "session-1");
+});
+
+test("aplicar una pieza faltante actualiza inspeccion, reporte e incidente sin cambiar el estado", async () => {
+  const pieceCorrection = correction({
+    metadata: { proposed_changes: [{ type: "PIECE_ISSUE_ADDED", value: { part_id: 21, name: "Bisagra izquierda", quantity: 2, unit: "und", status: "faltante", comment: "No fue entregada", action: "solicitar_repuesto" } }] }
+  });
+  const { db, calls } = createDb({ currentCorrection: pieceCorrection });
+  await createService(db).apply(tenantId, requester, 7, pieceCorrection.id);
+  const inspection = calls.updateMany[0].data.metadata.inspection;
+  assert.equal(inspection.items[0].name, "Bisagra izquierda");
+  assert.equal(inspection.items[0].status, "faltante");
+  assert.equal(inspection.problem_count, 1);
+  assert.equal(calls.updateMany[0].data.status, undefined);
+  assert.equal(calls.incidents[0].type, "pieza_faltante");
+  assert.equal(calls.changes[0].change_type, "PIECE_ISSUE_ADDED");
+});
+
+test("pieza y foto se guardan atomicamente con una sola actualizacion de version", async () => {
+  const piece = { type: "PIECE_ISSUE_ADDED", value: { part_id: 21, name: "Bisagra izquierda", quantity: 2, unit: "und", status: "faltante", comment: "No fue entregada", action: "solicitar_repuesto" } };
+  const evidenceCorrection = correction({ metadata: { proposed_changes: [piece, { type: "EVIDENCE_ADDED", value: "pieza_averiada" }] } });
+  const authorization = { id: "authorization-1", final_path: "tenant/order/piece.webp", checksum_sha256: "checksum-1", detected_size_bytes: 1024, detected_mime_type: "image/webp" };
+  const { db, calls } = createDb({ currentCorrection: evidenceCorrection, authorization });
+  await createService(db).addEvidence(tenantId, requester, 7, evidenceCorrection.id, { authorization_id: authorization.id, type: "pieza_averiada", metadata: { part_id: 21, part_name: "Bisagra izquierda" } });
+  assert.equal(calls.updateMany.length, 1);
+  assert.deepEqual(calls.updateMany[0].data.version, { increment: 1 });
+  assert.equal(calls.updateMany[0].data.metadata.inspection.items[0].status, "faltante");
+  assert.equal(calls.createdPhotos[0].metadata.part_id, 21);
+  assert.equal(calls.incidents[0].photo_url, "service-images/tenant/order/piece.webp");
+  assert.deepEqual(calls.changes.map((item) => item.change_type), ["PIECE_ISSUE_ADDED", "EVIDENCE_ADDED"]);
 });
 
 test("un conflicto optimista responde 409 y no sobrescribe", async () => {

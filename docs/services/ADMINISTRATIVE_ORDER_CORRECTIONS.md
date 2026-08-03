@@ -29,6 +29,7 @@ El permiso habilita una unica superficie administrativa para:
 - Corregir observaciones, cliente, direccion, telefono, tipo de servicio, fecha programada y numero de factura registrado en la orden.
 - Cambiar desde cualquier estado actual hacia cualquier estado reconocido diferente.
 - Anexar una novedad administrativa.
+- Registrar una pieza faltante o averiada dentro de la inspeccion, con cantidad, accion requerida, proveedor sugerido y foto opcional.
 - Agregar una fotografia o soporte mediante carga autorizada y validacion binaria.
 - Retirar evidencia mediante baja logica, conservando el archivo y la auditoria.
 - Reabrir o cerrar administrativamente la orden.
@@ -107,6 +108,15 @@ El monitor de Servicios muestra la accion `Corregir` en cualquier estado cuando 
 el permiso especial. La accion abre directamente el control administrativo del detalle para
 corregir informacion o estado y anexar novedades o evidencias.
 
+El panel presenta cuatro acciones directas y visibles: `Editar datos`, `Nueva novedad`,
+`Pieza faltante` y `Foto o soporte`. Las operaciones menos frecuentes de estado, reapertura,
+cierre y retiro de evidencia permanecen agrupadas como acciones administrativas.
+
+Una pieza faltante o averiada se agrega o actualiza en `metadata.inspection.items`, genera una
+novedad de servicio y alimenta el reporte de piezas requeridas. Cuando incluye una foto, la pieza,
+la novedad, la evidencia y el historial se guardan dentro de la misma transaccion y con una sola
+actualizacion de version.
+
 - El control administrativo queda junto al resumen principal de la orden.
 - Las decisiones de inspeccion se distribuyen en tres columnas en escritorio.
 - Las evidencias usan una galeria de hasta cuatro columnas.
@@ -134,7 +144,7 @@ Antes de cada promocion deben aprobarse:
 
 1. Rol sin permiso: API `403` y control oculto.
 2. Rol administrativo por nombre, sin permiso: API `403` y control oculto.
-3. Rol con permiso: informacion, estado, novedad, alta y retiro de evidencia.
+3. Rol con permiso: informacion, estado, novedad, pieza faltante o averiada, alta y retiro de evidencia.
 4. Orden pagada y facturada: mismas operaciones, sin efectos contables laterales.
 5. Todos los estados origen y todos los destinos reconocidos.
 6. Estado desconocido o igual al actual: rechazo controlado.
