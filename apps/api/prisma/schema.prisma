@@ -41,6 +41,7 @@ model User {
   created_at  DateTime  @default(now())
   updated_at  DateTime  @updatedAt
   employee    Employee?
+  evidence_upload_authorizations EvidenceUploadAuthorization[]
 
   @@unique([tenant_id, email])
   @@index([tenant_id])
@@ -1433,10 +1434,15 @@ model ServiceOrder {
   no_execution_reason String?
   created_by         Int?
   metadata           Json              @default("{}")
+  version            Int               @default(1)
+  billing_status     String            @default("UNBILLED")
+  billing_blocked    Boolean           @default(false)
+  administratively_modified Boolean    @default(false)
   created_at         DateTime          @default(now())
   updated_at         DateTime          @updatedAt
   incidents          ServiceIncident[]
   photos             ServicePhoto[]
+  corrections        ServiceOrderCorrection[]
 
   @@unique([tenant_id, number])
   @@index([tenant_id, status])
@@ -1511,10 +1517,103 @@ model ServicePhoto {
   storage_path String?
   size_bytes   Int?
   metadata     Json         @default("{}")
+  active       Boolean      @default(true)
+  administratively_added Boolean @default(false)
+  added_by_correction_id String? @db.Uuid
+  added_by_correction ServiceOrderCorrection? @relation("CorrectionEvidenceAdded", fields: [added_by_correction_id], references: [id])
+  withdrawn_at DateTime?
+  withdrawn_by Int?
+  withdrawal_reason String?
+  withdrawn_by_correction_id String? @db.Uuid
+  withdrawn_by_correction ServiceOrderCorrection? @relation("CorrectionEvidenceWithdrawn", fields: [withdrawn_by_correction_id], references: [id])
   created_at   DateTime     @default(now())
 
   @@index([tenant_id, order_id])
+  @@index([tenant_id, order_id, active], map: "ServicePhoto_tenant_order_active_idx")
   @@index([tenant_id, type])
+}
+
+model ServiceOrderCorrection {
+  id                  String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id           String
+  order_id            Int
+  order               ServiceOrder                   @relation(fields: [order_id], references: [id], onDelete: Restrict)
+  status              String                         @default("DRAFT")
+  reason_code         String
+  description         String
+  expected_version    Int
+  sensitive           Boolean                        @default(false)
+  financial_impact    Boolean                        @default(false)
+  idempotency_key     String?
+  requested_by        Int
+  requested_at        DateTime                       @default(now())
+  applied_by          Int?
+  applied_at          DateTime?
+  approved_by         Int?
+  approved_at         DateTime?
+  rejected_by         Int?
+  rejected_at         DateTime?
+  rejection_reason    String?
+  metadata            Json                           @default("{}")
+  created_at          DateTime                       @default(now())
+  updated_at          DateTime                       @default(now()) @updatedAt
+  changes             ServiceOrderCorrectionChange[]
+  added_evidence      ServicePhoto[]                 @relation("CorrectionEvidenceAdded")
+  withdrawn_evidence  ServicePhoto[]                 @relation("CorrectionEvidenceWithdrawn")
+
+  @@unique([tenant_id, order_id, idempotency_key], map: "ServiceOrderCorrection_tenant_order_idempotency_key")
+  @@index([tenant_id, order_id, created_at(sort: Desc)], map: "ServiceOrderCorrection_tenant_order_created_idx")
+  @@index([tenant_id, status, created_at(sort: Desc)], map: "ServiceOrderCorrection_tenant_status_created_idx")
+}
+
+model ServiceOrderCorrectionChange {
+  id             String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id      String
+  correction_id  String                 @db.Uuid
+  correction     ServiceOrderCorrection @relation(fields: [correction_id], references: [id], onDelete: Restrict)
+  change_type    String
+  field_name     String?
+  old_value      Json?
+  new_value      Json?
+  old_status     String?
+  new_status     String?
+  evidence_id    Int?
+  created_at     DateTime               @default(now())
+
+  @@index([tenant_id, correction_id, created_at], map: "ServiceOrderCorrectionChange_tenant_correction_created_idx")
+  @@index([tenant_id, evidence_id], map: "ServiceOrderCorrectionChange_tenant_evidence_idx")
+}
+
+model EvidenceUploadAuthorization {
+  id                    String   @id @default(uuid())
+  tenant_id             String
+  company_id            String?
+  order_key             String
+  user_id               Int
+  supabase_user_id      String?
+  purpose               String
+  expected_mime_type    String
+  expected_size_bytes   Int
+  client_upload_id      String
+  quarantine_path       String   @unique
+  final_path            String?
+  status                String   @default("authorized")
+  rejection_reason      String?
+  detected_mime_type    String?
+  detected_size_bytes   Int?
+  detected_width        Int?
+  detected_height       Int?
+  checksum_sha256       String?
+  expires_at            DateTime
+  confirmed_at          DateTime?
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+  user                  User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([tenant_id, user_id, client_upload_id])
+  @@index([tenant_id, order_key, status])
+  @@index([status, expires_at])
+  @@map("evidence_upload_authorizations")
 }
 
 model Payroll {

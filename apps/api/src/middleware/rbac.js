@@ -9,13 +9,14 @@ const MODULE_CODES = {
   inventory: ["M-01", "inventario"],
   invoicing: ["M-04", "facturacion"],
   payroll: ["M-17", "nomina", "payroll"],
-  purchases: ["M-02", "compras"],
-  projects: ["M-19", "proyectos"],
-  sales: ["M-03", "ventas"],
-  "sales-invoice": ["M-03", "ventas", "facturacion-ventas"],
-  "accounts-receivable": ["M-07", "contabilidad", "cxc"],
-  services: ["M-26", "servicios"],
-  transport: ["M-14", "transporte"]
+  purchases: ["M-02", "compras", "purchases"],
+  projects: ["M-19", "proyectos", "projects"],
+  sales: ["M-03", "ventas", "sales"],
+  "sales-invoice": ["M-03", "ventas", "sales", "facturacion-ventas", "sales-invoice"],
+  "accounts-receivable": ["M-07", "contabilidad", "accounting", "cxc", "accounts-receivable"],
+  services: ["M-26", "servicios", "services"],
+  "services.orders": ["M-26", "servicios", "services"],
+  transport: ["M-14", "transporte", "transport"]
 };
 
 function tenantHasModule(tenant, module) {
@@ -80,7 +81,7 @@ function isAdministrativeRole(role) {
     || value === "administrador de empresa");
 }
 
-function requirePermission(module, action) {
+function permissionMiddleware(module, action, allowAdministrativeBypass) {
   return async function rbacMiddleware(request, reply) {
     return measurePhase("authorization", async () => {
     const role = request.user.role;
@@ -92,7 +93,7 @@ function requirePermission(module, action) {
         details: { module }
       });
     }
-    if (role.name === "APEX_ADMIN" || isAdministrativeRole(role)) return;
+    if (allowAdministrativeBypass && (role.name === "APEX_ADMIN" || isAdministrativeRole(role))) return;
 
     const permissions = role.permissions || [];
     const allowed = permissions.some((permission) => {
@@ -129,6 +130,14 @@ function requirePermission(module, action) {
   };
 }
 
+function requirePermission(module, action) {
+  return permissionMiddleware(module, action, true);
+}
+
+function requireExplicitPermission(module, action) {
+  return permissionMiddleware(module, action, false);
+}
+
 async function checkSoD(tenantId, userId, newRoleName) {
   return prisma.runWithTenant(tenantId, async () => {
     const user = await prisma.user.findUnique({ where: { id: userId }, include: { role: true } });
@@ -147,4 +156,4 @@ async function checkSoD(tenantId, userId, newRoleName) {
   });
 }
 
-module.exports = { requirePermission, checkSoD, tenantHasModule };
+module.exports = { requirePermission, requireExplicitPermission, checkSoD, tenantHasModule };

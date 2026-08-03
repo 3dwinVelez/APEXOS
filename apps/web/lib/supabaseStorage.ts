@@ -18,6 +18,11 @@ type EncodedImage = {
   type: string;
 };
 
+type AuthorizedUpload = {
+  signed_upload_url: string;
+  path: string;
+};
+
 const USER_DOCUMENT_MAX_BYTES = 10 * 1024 * 1024;
 const USER_DOCUMENT_MIME_TYPES = ["application/pdf", "image/png", "image/jpeg", "image/webp"] as const;
 
@@ -147,6 +152,28 @@ export function uploadServiceImageData(companyId: string, serviceId: string, ima
   const bytes = Uint8Array.from(atob(match[2]), (character) => character.charCodeAt(0));
   const file = new File([bytes], image.name || "evidencia.jpg", { type: image.type || match[1] });
   return uploadServiceImage(companyId, serviceId, file);
+}
+
+export async function uploadAuthorizedServiceImageData(authorization: AuthorizedUpload, image: EncodedImage) {
+  const match = image.base64.match(/^data:([^;,]+);base64,(.+)$/);
+  if (!match) throw new Error("La evidencia no contiene una imagen base64 valida.");
+  const bytes = Uint8Array.from(atob(match[2]), (character) => character.charCodeAt(0));
+  const file = new File([bytes], image.name || "evidencia.jpg", { type: image.type || match[1] });
+  validateImage(file);
+  const signedPath = authorization.signed_upload_url.startsWith("/object/")
+    ? `/storage/v1${authorization.signed_upload_url}`
+    : authorization.signed_upload_url;
+  const uploadUrl = signedPath.startsWith("http") ? signedPath : supabaseUrl(signedPath);
+  const response = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: { "Content-Type": file.type, "x-upsert": "false" },
+    body: file
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(body.message || "Storage rechazo la carga preautorizada.");
+  }
+  return { bucket: "service-images" as const, path: authorization.path, storagePath: storagePath("service-images", authorization.path) };
 }
 
 export function getServiceImageUrl(storageValue: string, expiresIn = 3600) {

@@ -109,6 +109,7 @@ const tenantModuleCodesByPermissionModule: Record<string, string[]> = {
   projects: ["M-19", "proyectos", "projects"],
   sales: ["M-03", "ventas", "sales"],
   services: ["M-26", "servicios", "services"],
+  "services.orders": ["M-26", "servicios", "services"],
   transport: ["M-14", "transporte", "transport"]
 };
 
@@ -340,7 +341,8 @@ function protectPhysicalDeleteDefaults(actions: string[]) {
   return Object.fromEntries(actions.map((action) => [action, action === PHYSICAL_DELETE_PERMISSION ? false : true]));
 }
 
-function withPhysicalDeletePermission<T extends { actions: string[] }>(item: T): T {
+function withPhysicalDeletePermission<T extends { actions: string[]; allowPhysicalDelete?: boolean }>(item: T): T {
+  if (item.allowPhysicalDelete === false) return item;
   return item.actions.includes(PHYSICAL_DELETE_PERMISSION) ? item : { ...item, actions: [...item.actions, PHYSICAL_DELETE_PERMISSION] };
 }
 
@@ -360,6 +362,7 @@ const adminPermissionCatalog = [
   { key: "ultima_milla", label: "Ultima milla", group: "operacion", module: "transport", submodule: "last_mile", actions: ["access", "view", "create", "edit", "approve", "execute", "reports"] },
   { key: "importaciones", label: "Importaciones", group: "operacion", module: "purchases", submodule: "imports", actions: ["access", "view", "create", "edit", "approve", "reject", "void", "export", "import", "attach", "download"] },
   { key: "servicios", label: "Servicios", group: "operacion", module: "services", submodule: "orders", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import", "attach", "download", "execute", "reports"] },
+  { key: "servicios_correcciones", label: "Edicion especial de ordenes", group: "operacion", module: "services.orders", submodule: "order-corrections", actions: ["edit_any_state"], allowPhysicalDelete: false },
   { key: "talento_humano", label: "Talento humano", group: "administracion", module: "hr", submodule: "hr", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "export", "import", "sensitive", "reports"] },
   { key: "marcaciones", label: "Marcaciones y jornadas", group: "operacion", module: "hr", submodule: "time", actions: ["access", "view", "create", "edit", "approve", "reject", "export", "reports"] },
   { key: "proyectos", label: "Proyectos", group: "gestion", module: "projects", submodule: "projects", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "export", "attach", "download", "reports"] },

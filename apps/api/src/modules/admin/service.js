@@ -20,6 +20,7 @@ function normalizeRoleNameKey(value) {
 }
 
 const PHYSICAL_DELETE_PERMISSION = "delete_physical_records";
+const SERVICE_ORDER_OVERRIDE_PERMISSION = "edit_any_state";
 const ROLE_ACTIONS = ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import", "attach", "download", "configure", "administer", "execute", "reports", "sensitive", "manage_users", "manage_roles"];
 const READ_ACTIONS = new Set(["access", "view", "download", "reports"]);
 const WRITE_ACTIONS = new Set(["create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "reject", "void", "import", "attach", "configure", "administer", "execute", "sensitive", "manage_users", "manage_roles"]);
@@ -52,6 +53,7 @@ function grants(module, actions = ROLE_ACTIONS) {
 }
 
 function withPhysicalDeletePermission(item) {
+  if (item.allowPhysicalDelete === false) return item;
   const actions = item.actions.includes(PHYSICAL_DELETE_PERMISSION) ? item.actions : [...item.actions, PHYSICAL_DELETE_PERMISSION];
   return { ...item, actions, grants: grants(item.module, actions) };
 }
@@ -86,6 +88,7 @@ const PERMISSION_CATALOG = [
   { key: "ultima_milla", label: "Ultima milla", group: "operacion", module: "transport", submodule: "last_mile", actions: ["access", "view", "create", "edit", "approve", "execute", "reports"], grants: grants("transport", ["access", "view", "create", "edit", "approve", "execute", "reports"]) },
   { key: "importaciones", label: "Importaciones", group: "operacion", module: "purchases", submodule: "imports", actions: ["access", "view", "create", "edit", "approve", "reject", "void", "export", "import", "attach", "download"], grants: grants("purchases", ["access", "view", "create", "edit", "approve", "reject", "void", "export", "import", "attach", "download"]) },
   { key: "servicios", label: "Servicios", group: "operacion", module: "services", submodule: "orders", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import", "attach", "download", "execute", "reports"], grants: grants("services", ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import", "attach", "download", "execute", "reports"]) },
+  { key: "servicios_correcciones", label: "Edicion especial de ordenes", group: "operacion", module: "services", submodule: "order-corrections", actions: [SERVICE_ORDER_OVERRIDE_PERMISSION], grants: { [SERVICE_ORDER_OVERRIDE_PERMISSION]: [["services.orders", SERVICE_ORDER_OVERRIDE_PERMISSION]] }, allowPhysicalDelete: false },
   { key: "talento_humano", label: "Talento humano", group: "administracion", module: "hr", submodule: "hr", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "export", "import", "sensitive", "reports"], grants: grants("hr", ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "export", "import", "sensitive", "reports"]) },
   { key: "marcaciones", label: "Marcaciones y jornadas", group: "operacion", module: "hr", submodule: "time", actions: ["access", "view", "create", "edit", "approve", "reject", "export", "reports"], grants: grants("hr", ["access", "view", "create", "edit", "approve", "reject", "export", "reports"]) },
   { key: "proyectos", label: "Proyectos", group: "gestion", module: "projects", submodule: "projects", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "export", "attach", "download", "reports"], grants: grants("projects", ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "export", "attach", "download", "reports"]) },
