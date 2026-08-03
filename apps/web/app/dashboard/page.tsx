@@ -297,32 +297,25 @@ export default function DashboardPage() {
 
   return (
     <div className="apex-workspace-shell space-y-6">
-      <section className="rounded-md border border-line bg-white">
-        <div className="grid gap-4 p-4 sm:p-5 xl:grid-cols-[240px_1fr] xl:items-center">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase text-apex">Modulos activos</p>
-            <h1 className="mt-2 text-2xl font-semibold">Elige donde trabajar</h1>
-            <p className="mt-1 text-sm text-neutral-600">{activeModules.length} modulo(s) disponibles.</p>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+      <section className="border-b border-line pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-[22px] font-semibold">Dashboard</h1>
+          <span className="text-xs font-semibold text-neutral-500">{activeModules.length} modulo(s)</span>
+        </div>
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
             {activeModules.slice(0, 8).map((module, index) => {
               const Icon = module.icon;
               return (
-                <Link className={`group flex min-w-0 items-center gap-3 rounded-md border p-3 transition hover:bg-paper ${index === 0 ? "border-apex bg-apex/10" : "border-line"}`} href={`/dashboard/${module.slug}`} key={module.slug}>
-                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${index === 0 ? "bg-apex text-white" : "bg-paper text-apex"}`}><Icon size={17} /></span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold">{module.name}</span>
-                    <span className="mt-0.5 block truncate text-xs text-neutral-500">{module.area}</span>
-                  </span>
-                  <ArrowRight className="shrink-0 text-neutral-400 transition group-hover:translate-x-0.5 group-hover:text-neutral-700" size={16} />
+                <Link className={`group flex h-10 shrink-0 items-center gap-2 rounded-md border px-3 text-sm font-semibold transition-colors hover:bg-paper ${index === 0 ? "border-apex text-apex" : "border-line text-neutral-700"}`} href={`/dashboard/${module.slug}`} key={module.slug} prefetch={false}>
+                  <Icon size={16} />
+                  <span>{module.name}</span>
                 </Link>
               );
             })}
             {!activeModules.length ? (
-              <div className="rounded-md border border-line bg-paper p-4 text-sm text-neutral-600">No hay modulos activos para esta empresa.</div>
+              <div className="rounded-md border border-line bg-paper px-3 py-2 text-sm text-neutral-600">No hay modulos activos para esta empresa.</div>
             ) : null}
           </div>
-        </div>
       </section>
 
       <section className="apex-dashboard-grid">
@@ -354,7 +347,7 @@ export default function DashboardPage() {
                 return (
                   <div className="flex items-center gap-3 border-t border-line px-5 py-4 first:border-t-0 md:border-l md:border-t-0 md:first:border-l-0" key={item.label}>
                     <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-paper text-apex"><Icon size={17} /></span>
-                    <div><p className="text-2xl font-semibold leading-tight">{item.value}</p><p className="text-xs text-neutral-500">{item.label}</p></div>
+                    <div><p className="text-lg font-semibold leading-tight">{item.value}</p><p className="text-xs text-neutral-500">{item.label}</p></div>
                   </div>
                 );
               })}
@@ -398,11 +391,11 @@ export default function DashboardPage() {
           {headlineMetrics.map((item) => {
             const Icon = item.icon;
             return (
-              <Link className="group flex items-center gap-3 border-b border-line px-4 py-3 transition hover:bg-paper md:border-r xl:[&:nth-child(3n)]:border-r-0" href={`/dashboard/${item.module}`} key={item.label}>
+              <Link className="group flex items-center gap-3 border-b border-line px-4 py-3 transition hover:bg-paper md:border-r xl:[&:nth-child(3n)]:border-r-0" href={`/dashboard/${item.module}`} key={item.label} prefetch={false}>
                 <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-paper" style={{ color: item.color }}><Icon size={16} /></span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline gap-2">
-                    <p className="text-xl font-semibold leading-none">{item.value}</p>
+                    <p className="text-base font-semibold leading-none">{item.value}</p>
                     <h3 className="truncate text-xs font-semibold">{item.label}</h3>
                   </div>
                   <p className="mt-1 truncate text-xs text-neutral-500">{item.context}</p>
@@ -419,7 +412,7 @@ export default function DashboardPage() {
         <section className="rounded-md border border-line bg-white p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-base font-semibold">Estado de servicios</h2>
-            <Link className="inline-flex items-center gap-2 text-sm font-semibold text-apex" href="/dashboard/servicios">Abrir Servicios <ArrowRight size={15} /></Link>
+            <Link className="inline-flex items-center gap-2 text-sm font-semibold text-apex" href="/dashboard/servicios" prefetch={false}>Abrir Servicios <ArrowRight size={15} /></Link>
           </div>
           <div className="mt-4">
             <MetricBars items={serviceData} />
@@ -433,7 +426,7 @@ export default function DashboardPage() {
           <div className="mt-4 divide-y divide-line">
             {moduleRows.length ? moduleRows.map((item) => (
               enabled(item.module) ? (
-                <Link className="grid gap-3 py-4 transition hover:bg-paper md:grid-cols-[160px_1fr_130px_20px]" href={`/dashboard/${item.module}`} key={item.module}>
+                <Link className="grid gap-3 py-4 transition hover:bg-paper md:grid-cols-[160px_1fr_130px_20px]" href={`/dashboard/${item.module}`} key={item.module} prefetch={false}>
                   <p className="text-sm font-semibold">{item.name}</p>
                   <p className="text-sm text-neutral-600">{item.description}</p>
                   <p className="text-right text-sm font-semibold">{item.value}</p>
@@ -472,7 +465,7 @@ export default function DashboardPage() {
                 );
               }
               return (
-                <Link className="group flex items-center gap-3 rounded-md border border-line p-3 transition hover:border-neutral-300 hover:bg-paper" href={`/dashboard/${module.slug}`} key={module.slug}>
+                <Link className="group flex items-center gap-3 rounded-md border border-line p-3 transition hover:border-neutral-300 hover:bg-paper" href={`/dashboard/${module.slug}`} key={module.slug} prefetch={false}>
                   <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-paper text-apex"><Icon size={17} /></span>
                   <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{module.name}</p><p className="truncate text-xs text-neutral-500">{module.area}</p></div>
                   <ArrowRight className="text-neutral-300 transition group-hover:translate-x-0.5 group-hover:text-neutral-700" size={16} />
