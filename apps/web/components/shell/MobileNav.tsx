@@ -27,7 +27,7 @@ export function MobileNav() {
           const Icon = item.icon;
           const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(`${item.href}/`));
           return (
-            <Link className={`flex h-14 flex-col items-center justify-center gap-1 rounded-md px-1 text-[11px] font-semibold ${active ? "bg-apex text-white" : "text-neutral-600 active:bg-paper"}`} href={item.href} key={item.href}>
+            <Link className={`flex h-14 flex-col items-center justify-center gap-1 rounded-md px-1 text-[11px] font-semibold ${active ? "bg-apex text-white" : "text-neutral-600 active:bg-paper"}`} href={item.href} key={item.href} prefetch={false}>
               <Icon size={18} />
               <span className="max-w-full truncate">{item.label}</span>
             </Link>
