@@ -19,10 +19,10 @@ import {
   X
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 type ApexStatus = "pendiente" | "activo" | "bloqueado" | "validacion" | "finalizado";
 type WorkType = "tarea" | "compromiso" | "entregable" | "bloqueo" | "riesgo";
@@ -123,8 +123,17 @@ const typeTone: Record<WorkType, string> = {
   riesgo: "bg-amber-50 text-amber-800"
 };
 
-const barColors = ["#059669", "#0284c7", "#f59e0b", "#dc2626"];
 const emptyDraft = { title: "", description: "", responsible_name: "", target_date: "", priority: "media", kind: "riesgo", role: "", participant_type: "externo", load_level: "50", availability: "disponible", contact_email: "", phone: "", organization: "", status: "activo", progress: "0", next_action: "", next_date: "" };
+
+const ProjectHealthChart = dynamic(() => import("./ProjectsCharts").then((module) => module.ProjectHealthChart), {
+  ssr: false,
+  loading: () => <ChartSkeleton tone="dark" />
+});
+
+const ProjectFlowChart = dynamic(() => import("./ProjectsCharts").then((module) => module.ProjectFlowChart), {
+  ssr: false,
+  loading: () => <ChartSkeleton />
+});
 
 function shortDate(value?: string) {
   return value ? new Date(value).toLocaleDateString("es-CO", { month: "short", day: "numeric" }) : "Sin fecha";
@@ -384,21 +393,7 @@ export default function ProjectsPage() {
 
           <div className="min-w-0 grid gap-4">
             <div className="min-h-56 min-w-0 overflow-hidden">
-              <ResponsiveContainer width="100%" height={230}>
-                <AreaChart data={executionData}>
-                  <defs>
-                    <linearGradient id="projectHealth" x1="0" x2="0" y1="0" y2="1">
-                      <stop offset="0%" stopColor="#34d399" stopOpacity={0.5} />
-                      <stop offset="100%" stopColor="#34d399" stopOpacity={0.04} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.62)", fontSize: 12 }} />
-                  <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 12 }} />
-                  <Tooltip contentStyle={{ borderRadius: 8, borderColor: "#e5e7eb", color: "#111827" }} />
-                  <Area type="monotone" dataKey="value" stroke="#34d399" strokeWidth={3} fill="url(#projectHealth)" />
-                </AreaChart>
-              </ResponsiveContainer>
+              <ProjectHealthChart data={executionData} />
             </div>
             <div className="grid min-w-0 gap-2 md:grid-cols-2">
               <Signal label="Avance real" value={`${project.progress}%`} detail="Trabajo ejecutado frente a lo planeado." />
@@ -508,18 +503,7 @@ export default function ProjectsPage() {
       <section className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_360px]">
         <Panel title="Flujo de ejecucion" subtitle="Volumen abierto frente a elementos finalizados.">
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={flowData}>
-                <CartesianGrid stroke="#eef2f7" vertical={false} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
-                <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
-                <Tooltip contentStyle={{ borderRadius: 8, borderColor: "#e5e7eb" }} />
-                <Bar dataKey="abiertos" radius={[6, 6, 0, 0]}>
-                  {flowData.map((_, index) => <Cell fill={barColors[index % barColors.length]} key={index} />)}
-                </Bar>
-                <Bar dataKey="cerrados" fill="#10b981" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <ProjectFlowChart data={flowData} />
           </div>
         </Panel>
         <Panel title="Mensajes inteligentes" subtitle="Lectura operacional del sistema.">
@@ -620,6 +604,18 @@ function ResourceCard({ item }: { item: ResourceItem }) {
 
 function MiniCount({ label, value }: { label: string; value: number }) {
   return <div className="rounded-md bg-paper p-2"><p className="font-semibold">{value}</p><p className="text-neutral-500">{label}</p></div>;
+}
+
+function ChartSkeleton({ tone = "light" }: { tone?: "light" | "dark" }) {
+  const line = tone === "dark" ? "bg-white/12" : "bg-neutral-100";
+  return (
+    <div className="flex h-full min-h-56 flex-col justify-end gap-3 rounded-md p-2" aria-hidden="true">
+      <div className={`h-24 rounded-md ${line}`} />
+      <div className="grid grid-cols-4 gap-2">
+        {[0, 1, 2, 3].map((item) => <span className={`h-2 rounded ${line}`} key={item} />)}
+      </div>
+    </div>
+  );
 }
 
 function LogRow({ item }: { item: LogItem }) {

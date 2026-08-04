@@ -51,13 +51,8 @@ export function Sidebar() {
     });
 
   function linkClass(active: boolean, enabled = true) {
-    if (!enabled) return "flex h-10 w-full items-center gap-3 rounded-md px-3 text-left text-sm text-neutral-400 opacity-75";
-    return `flex h-10 items-center gap-3 rounded-md px-3 text-sm transition ${active ? "bg-apex text-white shadow-sm" : "text-neutral-700 hover:bg-paper"}`;
-  }
-
-  function sectionLabel(label: string) {
-    if (collapsed) return null;
-    return <p className="px-3 pt-3 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">{label}</p>;
+    if (!enabled) return "flex h-9 w-full items-center gap-2 rounded-md px-2 text-left text-sm text-neutral-400 opacity-75";
+    return `flex h-9 items-center gap-2 rounded-md px-2 text-sm transition-colors ${active ? "bg-apex text-white" : "text-neutral-700 hover:bg-paper"}`;
   }
 
   function renderItem(item: (typeof items)[number]) {
@@ -84,6 +79,7 @@ export function Sidebar() {
         className={linkClass(active, item.enabled)}
         href={item.href}
         key={item.href}
+        prefetch={false}
         title={item.label}
       >
         <Icon size={18} />
@@ -93,50 +89,48 @@ export function Sidebar() {
   }
 
   return (
-    <aside className={`sticky top-0 hidden h-dvh shrink-0 border-r border-line bg-white py-4 transition-[width,padding] duration-200 md:flex md:flex-col ${collapsed ? "w-16 px-2" : "w-72 px-4"}`}>
-      <div className="mb-4 flex shrink-0 items-center justify-between">
+    <aside className={`sticky top-0 hidden h-dvh shrink-0 border-r border-line bg-white py-2 transition-[width,padding] duration-150 md:flex md:flex-col ${collapsed ? "w-14 px-2" : "w-56 px-2"}`}>
+      <div className="mb-2 flex shrink-0 items-center justify-between">
         <div className={collapsed ? "hidden" : "block"}>
-          <p className="text-lg font-semibold tracking-normal">APEX OS</p>
-          <p className="text-sm text-neutral-500">Sistema Operativo Empresarial</p>
+          <p className="text-sm font-semibold tracking-normal">APEX OS</p>
         </div>
         <button
           aria-label={collapsed ? "Expandir menú" : "Ocultar menú"}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-line hover:bg-paper"
+          className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-line hover:bg-paper"
           onClick={toggle}
           type="button"
         >
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
       </div>
-      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
+      <nav className="min-h-0 flex-1 space-y-0.5 overflow-y-auto pr-1">
         {!collapsed ? (
-          <label className="relative mb-3 block">
+          <label className="relative mb-2 block">
             <span className="sr-only">Buscar modulos</span>
             <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
             <input
-              className="h-10 w-full rounded-md border border-line bg-paper pl-9 pr-9 text-sm text-neutral-800 outline-none transition placeholder:text-neutral-400 focus:border-apex focus:bg-white"
+                className="h-9 w-full rounded-md border border-line bg-paper pl-9 pr-9 text-sm text-neutral-800 outline-none transition placeholder:text-neutral-400 focus:border-apex focus:bg-white"
               onChange={(event) => setModuleQuery(event.target.value)}
               placeholder="Buscar modulo"
               type="search"
               value={moduleQuery}
             />
-            {moduleQuery ? <button aria-label="Limpiar busqueda" className="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-neutral-400 hover:bg-white hover:text-neutral-700" onClick={() => setModuleQuery("")} type="button"><X size={15} /></button> : null}
+            {moduleQuery ? <button aria-label="Limpiar busqueda" className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-neutral-400 hover:bg-white hover:text-neutral-700" onClick={() => setModuleQuery("")} type="button"><X size={15} /></button> : null}
           </label>
         ) : null}
-        {!technicianMode ? <Link className={linkClass(pathname === "/dashboard")} href="/dashboard" title="Inicio">
+        {!technicianMode ? <Link className={linkClass(pathname === "/dashboard")} href="/dashboard" prefetch={false} title="Inicio">
           <Home size={18} />
           {!collapsed ? "Inicio" : null}
         </Link> : null}
-        {sectionLabel("Activos")}
         {orderedItems.map(renderItem)}
         {!collapsed && normalizedQuery && orderedItems.length === 0 ? <p className="px-3 py-4 text-sm text-neutral-500">No hay modulos disponibles para esta busqueda.</p> : null}
       </nav>
       {!collapsed ? (
-        <div className="mt-3 shrink-0">
+        <div className="mt-2 shrink-0">
           <UserSessionBadge />
         </div>
       ) : (
-        <div className="mt-3 shrink-0">
+        <div className="mt-2 shrink-0">
           <UserSessionBadge compact />
         </div>
       )}
