@@ -42,3 +42,39 @@ Crear una rama limpia desde `origin/desarrollo` y aplicar cherry-pick controlado
 ## Rollback
 
 Revertir en orden inverso los commits aplicados en la rama de integracion. Para Proyectos, verificar que no se restaure el import directo de `recharts` en `apps/web/app/dashboard/proyectos/page.tsx`.
+
+## Promocion a desarrollo
+
+- Origen publicado: `origin/integration/ui-v3-validated`
+- Commit origen: `e99acf79184e6b00d29da3a3cb814e707dcd4846`
+- Destino: `desarrollo`
+- Commit base de desarrollo: `82037c272f265598424c22a998a86877466b2650`
+- Commit de merge local: `fb1cb39`
+- Estrategia: `git merge --no-ff origin/integration/ui-v3-validated`
+- Conflictos: ninguno durante el merge a `desarrollo`
+
+## Evidencia posterior al merge
+
+| Validacion | Resultado |
+| --- | --- |
+| `git diff --check origin/desarrollo..HEAD` | aprobado |
+| Guardia `assert-projects-no-server-recharts.js` | aprobado |
+| `typecheck` | aprobado |
+| `lint` | aprobado |
+| `build` | aprobado |
+| `test:offline` | 49/49 |
+| unitarias web adicionales | 11/11 |
+| smoke HTTP | aprobado |
+| secret scan | aprobado |
+
+## Benchmark smoke de confirmacion
+
+| Ruta | Status | DOMContentLoaded | T3 | T4 | Requests | DOM |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `/dashboard` | 200 | 784 ms | 1234 ms | 1542 ms | 17 | 289 |
+| `/dashboard/proyectos` | 200 | 310 ms | 919 ms | 1063 ms | 18 | 302 |
+| `/dashboard/administracion/suscripciones` | 200 | 412 ms | 974 ms | 1146 ms | 18 | 306 |
+| `/dashboard/servicios` | 200 | 350 ms | 893 ms | 1060 ms | 17 | 279 |
+| `/dashboard/servicios/1` mobile | 200 | 771 ms | 1371 ms | 1454 ms | 20 | 271 |
+
+El build productivo confirma `/dashboard/proyectos` en `12.2 kB` y First Load JS `152 kB`, sin import directo de `recharts` en `page.tsx`.
