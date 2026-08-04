@@ -93,6 +93,18 @@ La promocion hacia `develop` no debe retomarse hasta reconstruir
 mismo proyecto, y hasta que pasen `env:doctor:qa` y la inspeccion RLS/Storage
 read-only contra QA.
 
+## Actualizacion operativa
+
+Fecha: 2026-08-04.
+
+La ausencia de `config/qa.env` impide las inspecciones administrativas locales,
+pero no bloquea la promocion controlada hacia Railway QA cuando dicho entorno
+ya posee sus variables configuradas y se valida despues del despliegue.
+
+Esta actualizacion no incorpora secretos ni valores de variables. La fuente
+autoritativa para la ejecucion QA promovida es el entorno Railway QA existente,
+sin modificar variables, secretos, feature flags ni configuracion de Supabase.
+
 ## Condicion para desbloqueo
 
 Para emitir `APTO PARA RETOMAR PROMOCION A DEVELOP`, se debe completar:
