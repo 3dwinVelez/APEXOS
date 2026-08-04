@@ -19,7 +19,6 @@ import {
   Settings2,
   ShieldCheck,
   SlidersHorizontal,
-  Sparkles,
   Wrench
 } from "lucide-react";
 import Link from "next/link";
@@ -774,7 +773,7 @@ export default function ServicesPage() {
 
   return (
     <div className="apex-workspace-shell space-y-5 pb-28 md:pb-8">
-      <header className="sticky top-0 z-20 -mx-3 border-b border-line bg-paper/95 px-3 py-3 backdrop-blur sm:-mx-4 sm:px-4 md:static md:mx-0 md:border-0 md:bg-transparent md:px-0">
+      <header className="sticky top-0 z-20 -mx-3 border-b border-line bg-paper px-3 py-3 sm:-mx-4 sm:px-4 md:static md:mx-0 md:border-0 md:bg-transparent md:px-0">
         <div className="flex items-center gap-3">
           <Link className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-line bg-white md:hidden" href="/dashboard" aria-label="Volver al inicio">
             <ArrowLeft size={18} />
@@ -782,43 +781,35 @@ export default function ServicesPage() {
           <div className="min-w-0">
             <p className="text-sm font-semibold text-apex">{technicianMode ? "Perfil tecnico operativo" : "M-26 · Operacion de campo"}</p>
             <h1 className="truncate text-2xl font-semibold md:text-3xl">{technicianMode ? "Mis servicios activos" : "Servicios"}</h1>
-            <p className="mt-1 hidden text-sm text-neutral-600 sm:block">{technicianMode ? "Aqui encuentras unicamente las ordenes asignadas que puedes atender." : "Monitor operativo para crear, ejecutar y controlar servicios tecnicos con evidencia."}</p>
+            <p className="mt-1 hidden text-sm text-neutral-600 sm:block">{mainMessage}</p>
           </div>
         </div>
       </header>
 
       {technicianMode && OFFLINE_DISCOVERY_ENABLED ? <OfflineTechnicianPanel /> : null}
 
-      <section className="apex-context-hero">
-        <div className="relative z-10 flex flex-col gap-5 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+      <section className="rounded-md border border-line bg-white">
+        <div className="flex flex-col gap-4 p-3 sm:p-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
-            <div className="apex-eyebrow mb-3">
-              <Sparkles size={14} />
-              Centro operativo de servicios
-            </div>
-            <h2 className="max-w-3xl text-2xl font-semibold leading-tight sm:text-3xl">{technicianMode ? "Tu siguiente servicio esta aqui" : "Ordenes listas para gestionar"}</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/65">{mainMessage} {technicianMode ? "Selecciona una orden para iniciar o continuar el trabajo." : "Usa los filtros para encontrar rapidamente el siguiente servicio."}</p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <span className="apex-guide-chip">1. Revisa prioridad</span>
-              <span className="apex-guide-chip">2. Filtra si necesitas</span>
-              <span className="apex-guide-chip">3. Abre y ejecuta</span>
-            </div>
+            <p className="text-xs font-semibold uppercase text-apex">Centro operativo de servicios</p>
+            <h2 className="mt-1 text-xl font-semibold">{technicianMode ? "Siguiente servicio" : "Ordenes listas para gestionar"}</h2>
+            <p className="mt-1 max-w-3xl text-sm text-neutral-600">{technicianMode ? "Selecciona una orden para iniciar o continuar el trabajo." : "Filtra, abre y ejecuta sin salir del monitor."}</p>
           </div>
           {!technicianMode ? <div className="grid shrink-0 gap-2 sm:flex sm:flex-wrap">
-            <Link className="apex-hero-action inline-flex min-w-0 items-center justify-center gap-2 px-5 text-sm font-semibold" href="/dashboard/servicios/nuevo">
+            <Link className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white" href="/dashboard/servicios/nuevo">
               <Plus className="shrink-0" size={17} />
               <span className="truncate">Nueva orden</span>
             </Link>
-            <Link className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href={externalRequestHref} target="_blank">
-              <Sparkles className="shrink-0" size={17} />
+            <Link className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href={externalRequestHref} target="_blank">
+              <SlidersHorizontal className="shrink-0" size={16} />
               <span className="truncate">Solicitudes de servicios externas</span>
             </Link>
-            <Link className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/dashboard/servicios/referencias">
-              <Settings2 className="shrink-0" size={17} />
+            <Link className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href="/dashboard/servicios/referencias">
+              <Settings2 className="shrink-0" size={16} />
               <span className="truncate">Referencias</span>
             </Link>
-            <Link className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/dashboard/servicios/reportes">
-              <BarChart3 className="shrink-0" size={17} />
+            <Link className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href="/dashboard/servicios/reportes">
+              <BarChart3 className="shrink-0" size={16} />
               <span className="truncate">Reportes</span>
             </Link>
           </div> : null}
@@ -871,7 +862,7 @@ export default function ServicesPage() {
               </div>
               <div className="flex flex-wrap items-center justify-end gap-2">
                 {lastRefreshAt ? <span className="hidden text-xs font-semibold text-neutral-500 md:inline">Actualizado {lastRefreshAt.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}</span> : null}
-                <button className="inline-flex h-10 items-center gap-2 rounded-md border border-emerald-300 bg-emerald-600 px-3 text-sm font-semibold text-white shadow-sm shadow-emerald-900/10 transition hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-70" disabled={refreshingOrders} onClick={refreshOrders} type="button">
+                <button className="inline-flex h-10 items-center gap-2 rounded-md border border-emerald-300 bg-emerald-600 px-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-70" disabled={refreshingOrders} onClick={refreshOrders} type="button">
                   <RotateCcw className={refreshingOrders ? "animate-spin" : ""} size={15} />
                   {refreshingOrders ? "Actualizando..." : "Actualizar datos"}
                 </button>
@@ -947,7 +938,7 @@ export default function ServicesPage() {
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2">
               <p className="hidden text-xs font-medium text-neutral-500 md:block">Selecciona una orden para consultar o continuar el servicio.</p>
-              <button className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold text-apex shadow-sm transition hover:border-apex disabled:cursor-not-allowed disabled:opacity-50" disabled={!filtered.length} onClick={downloadOrdersExcel} type="button">
+              <button className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold text-apex transition-colors hover:border-apex disabled:cursor-not-allowed disabled:opacity-50" disabled={!filtered.length} onClick={downloadOrdersExcel} type="button">
                 <Download className="shrink-0" size={16} />
                 <span className="truncate">Descargar Excel</span>
               </button>
@@ -981,7 +972,7 @@ export default function ServicesPage() {
                     <div className="mt-4 grid min-w-0 gap-2 sm:flex sm:items-center sm:justify-between sm:gap-3">
                       <span className="text-xs font-medium text-neutral-500">{formatDate(order.scheduled_date)}</span>
                       <span className="text-[11px] font-medium text-neutral-400">{formatDateTime(order.created_at)}</span>
-                      <span className="inline-flex h-9 min-w-0 items-center justify-center gap-2 rounded-md bg-white px-3 text-xs font-semibold text-apex shadow-sm ring-1 ring-line sm:w-auto">
+                      <span className="inline-flex h-9 min-w-0 items-center justify-center gap-2 rounded-md border border-line bg-white px-3 text-xs font-semibold text-apex sm:w-auto">
                         <span className="truncate">{serviceAction(order)}</span>
                         <ChevronRight className="shrink-0" size={14} />
                       </span>
@@ -1023,7 +1014,7 @@ export default function ServicesPage() {
                   <col className="w-[9%]" />
                   <col className="w-[11%]" />
                 </colgroup>
-                <thead className="bg-paper text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
+                <thead className="sticky top-0 z-10 bg-paper text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
                   <tr>
                     <th>Orden y estado</th>
                     <th>Cliente y ubicacion</th>
@@ -1079,11 +1070,11 @@ export default function ServicesPage() {
                           </Link>
                         ) : null}
                         {editAllowed(order) ? (
-                          <button className="mb-1.5 inline-flex h-8 items-center gap-1.5 rounded-md border border-line bg-white px-2 text-xs font-semibold text-neutral-700 shadow-sm transition hover:border-apex hover:text-apex" onClick={() => openEdit(order)} type="button">
+                          <button className="mb-1.5 inline-flex h-8 items-center gap-1.5 rounded-md border border-line bg-white px-2 text-xs font-semibold text-neutral-700 transition-colors hover:border-apex hover:text-apex" onClick={() => openEdit(order)} type="button">
                             <Pencil size={14} /> Editar
                           </button>
                         ) : null}
-                        <Link className="inline-flex h-8 items-center gap-1.5 rounded-md border border-line bg-white px-2 text-xs font-semibold text-apex shadow-sm transition group-hover:border-apex" href={serviceOrderHref(order)}>
+                        <Link className="inline-flex h-8 items-center gap-1.5 rounded-md border border-line bg-white px-2 text-xs font-semibold text-apex transition-colors group-hover:border-apex" href={serviceOrderHref(order)}>
                           {serviceAction(order)}
                           <ChevronRight size={14} />
                         </Link>
@@ -1218,8 +1209,8 @@ export default function ServicesPage() {
         </ModalFrame>
       ) : null}
 
-      {!technicianMode ? <div className="fixed inset-x-0 bottom-0 z-50 grid grid-cols-[1fr_56px_56px] gap-2 border-t border-line bg-white/95 p-3 pb-[calc(env(safe-area-inset-bottom)+12px)] backdrop-blur md:hidden">
-        <Link className="inline-flex h-14 min-w-0 items-center justify-center gap-2 rounded-md bg-apex px-3 text-base font-semibold text-white shadow-sm" href="/dashboard/servicios/nuevo">
+      {!technicianMode ? <div className="fixed inset-x-0 bottom-0 z-50 grid grid-cols-[1fr_56px_56px] gap-2 border-t border-line bg-white p-3 pb-[calc(env(safe-area-inset-bottom)+12px)] md:hidden">
+        <Link className="inline-flex h-14 min-w-0 items-center justify-center gap-2 rounded-md bg-apex px-3 text-base font-semibold text-white" href="/dashboard/servicios/nuevo">
           <Plus className="shrink-0" size={18} /> <span className="truncate">Nueva orden</span>
         </Link>
         <Link className="inline-flex h-14 w-14 items-center justify-center rounded-md border border-line bg-white" href="/dashboard/servicios/referencias" aria-label="Referencias">

@@ -2059,7 +2059,7 @@ export default function AdministracionPage() {
     return (
       <div className="space-y-3">
         {message ? <p className="mb-2 rounded-md border border-line bg-white px-4 py-3 text-sm text-neutral-700">{message}</p> : null}
-        <section className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper p-2">
+        <section className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-white p-2">
           <div className="flex min-w-0 flex-1 flex-col gap-2 lg:flex-row lg:items-center">
             <label className="relative min-w-[220px] flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
@@ -2070,29 +2070,28 @@ export default function AdministracionPage() {
                 <option value="all">Todos los estados</option><option value="active">Activos</option><option value="inactive">Inactivos / suspendidos</option>
               </select>
               <span className="whitespace-nowrap rounded-md border border-line bg-white px-3 py-2 text-xs font-semibold text-neutral-600">{filteredUsers.length}/{users.length} usuarios</span>
-              <span className="whitespace-nowrap rounded-md bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">{metrics.active} activos</span>
-              {metrics.withoutRole ? <span className="whitespace-nowrap rounded-md bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">{metrics.withoutRole} sin rol</span> : null}
+              <span className="whitespace-nowrap rounded-md border border-line px-3 py-2 text-xs font-semibold text-neutral-600">{metrics.active} activos</span>
+              {metrics.withoutRole ? <span className="whitespace-nowrap rounded-md border border-amber-200 px-3 py-2 text-xs font-semibold text-amber-700">{metrics.withoutRole} sin rol</span> : null}
             </div>
           </div>
           <Button onClick={newUser} type="button"><UserPlus size={16} /> Crear usuario</Button>
         </section>
         <div className="max-h-[68vh] overflow-auto rounded-md border border-line bg-white">
-          <table className="w-full min-w-[900px] text-sm">
-            <thead className="sticky top-0 z-10 bg-paper"><tr className="border-b border-line text-left text-xs font-semibold uppercase text-neutral-500"><th className="px-3 py-3">Usuario</th><th className="px-3 py-3">Rol y cargo</th><th className="px-3 py-3">Organizacion</th><th className="px-3 py-3">Estado</th><th className="px-3 py-3 text-right">Acciones</th></tr></thead>
+          <table className="w-full min-w-[760px] text-sm">
+            <thead className="sticky top-0 z-10 bg-paper"><tr className="border-b border-line text-left text-xs font-semibold uppercase text-neutral-500"><th className="px-3 py-2.5">Usuario</th><th className="px-3 py-2.5">Acceso operativo</th><th className="px-3 py-2.5">Estado</th><th className="px-3 py-2.5 text-right">Acciones</th></tr></thead>
             <tbody>
               {filteredUsers.map((user) => (
                 <tr className="border-b border-line/70 hover:bg-paper/60" key={user.id}>
-                  <td className="px-3 py-3"><p className="font-semibold">{user.name}</p><p className="mt-1 text-xs text-neutral-500">{user.email || "Sin correo"} - {user.code || "Sin codigo"}</p></td>
-                  <td className="px-3 py-3"><p className="font-medium">{user.role_name || "Sin rol"}</p><p className="mt-1 text-xs text-neutral-500">{user.position || "Sin cargo"}</p></td>
-                  <td className="px-3 py-3"><p>{user.company || "Sin empresa"}</p><p className="mt-1 text-xs text-neutral-500">{user.department || "Sin area"}</p></td>
-                  <td className="px-3 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${user.active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>{user.active ? "Activo" : "Inactivo"}</span></td>
-                  <td className="px-3 py-3"><div className="flex justify-end gap-2">
-                    <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-xs font-semibold hover:bg-white" onClick={() => selectUser(user)} type="button"><Edit3 size={14} /> Editar</button>
-                    {user.active ? <><button className="h-9 rounded-md border border-amber-200 px-3 text-xs font-semibold text-amber-800 hover:bg-amber-50" onClick={() => suspendUserDirect(user)} type="button">Suspender</button><button className="h-9 rounded-md border border-rose-200 px-3 text-xs font-semibold text-rose-700 hover:bg-rose-50" onClick={() => setUserStatusDirect(user, false)} type="button">Inactivar</button></> : <button className="h-9 rounded-md bg-apex px-3 text-xs font-semibold text-white" onClick={() => setUserStatusDirect(user, true)} type="button">Activar</button>}
+                  <td className="px-3 py-2.5"><p className="font-semibold">{user.name}</p><p className="mt-1 text-xs text-neutral-500">{user.email || "Sin correo"} - {user.code || "Sin codigo"}</p></td>
+                  <td className="px-3 py-2.5"><p className="font-medium">{user.role_name || "Sin rol"}</p><p className="mt-1 text-xs text-neutral-500">{user.position || "Sin cargo"} - {user.department || "Sin area"}</p></td>
+                  <td className="px-3 py-2.5"><span className={`rounded-md border px-2 py-1 text-xs font-semibold ${user.active ? "border-emerald-200 text-emerald-700" : "border-line text-neutral-600"}`}>{user.active ? "Activo" : "Inactivo"}</span></td>
+                  <td className="px-3 py-2.5"><div className="flex justify-end gap-1.5">
+                    <button className="inline-flex h-8 items-center gap-1.5 rounded-md border border-line px-2.5 text-xs font-semibold hover:bg-paper" onClick={() => selectUser(user)} type="button"><Edit3 size={14} /> Editar</button>
+                    {user.active ? <><button className="h-8 rounded-md border border-amber-200 px-2.5 text-xs font-semibold text-amber-800 hover:bg-amber-50" onClick={() => suspendUserDirect(user)} type="button">Suspender</button><button className="h-8 rounded-md border border-rose-200 px-2.5 text-xs font-semibold text-rose-700 hover:bg-rose-50" onClick={() => setUserStatusDirect(user, false)} type="button">Inactivar</button></> : <button className="h-8 rounded-md bg-apex px-2.5 text-xs font-semibold text-white" onClick={() => setUserStatusDirect(user, true)} type="button">Activar</button>}
                   </div></td>
                 </tr>
               ))}
-              {!filteredUsers.length ? <tr><td className="px-4 py-10 text-center text-sm text-neutral-500" colSpan={5}>No hay usuarios que coincidan con los filtros.</td></tr> : null}
+              {!filteredUsers.length ? <tr><td className="px-4 py-10 text-center text-sm text-neutral-500" colSpan={4}>No hay usuarios que coincidan con los filtros.</td></tr> : null}
             </tbody>
           </table>
         </div>
@@ -2126,12 +2125,12 @@ export default function AdministracionPage() {
 
       {message ? <p className="rounded-md border border-line bg-white px-4 py-3 text-sm text-neutral-700">{message}</p> : null}
 
-      <section className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        <button className="group flex items-center gap-3 rounded-md border border-line bg-white p-3 text-left hover:border-apex hover:bg-paper" onClick={() => setActiveModal("users")} type="button"><span className="flex h-10 w-10 items-center justify-center rounded-md bg-paper text-apex group-hover:bg-white"><Users size={18} /></span><span><span className="block text-sm font-semibold">Usuarios</span><span className="text-xs text-neutral-500">Accesos y fichas maestras</span></span></button>
-        <button className="group flex items-center gap-3 rounded-md border border-line bg-white p-3 text-left hover:border-apex hover:bg-paper" onClick={() => setActiveModal("roles")} type="button"><span className="flex h-10 w-10 items-center justify-center rounded-md bg-paper text-apex group-hover:bg-white"><Shield size={18} /></span><span><span className="block text-sm font-semibold">Roles y permisos</span><span className="text-xs text-neutral-500">Gobierno de acceso</span></span></button>
-        {platformAdmin ? <Link className="group flex items-center gap-3 rounded-md border border-line bg-white p-3 hover:border-apex hover:bg-paper" href="/dashboard/administracion/suscripciones"><span className="flex h-10 w-10 items-center justify-center rounded-md bg-paper text-apex group-hover:bg-white"><Building2 size={18} /></span><span><span className="block text-sm font-semibold">Empresas y modulos</span><span className="text-xs text-neutral-500">Suscripciones y habilitaciones</span></span></Link> : null}
-        <button className="group flex items-center gap-3 rounded-md border border-line bg-white p-3 text-left hover:border-apex hover:bg-paper" onClick={() => setActiveModal("masters")} type="button"><span className="flex h-10 w-10 items-center justify-center rounded-md bg-paper text-apex group-hover:bg-white"><Database size={18} /></span><span><span className="block text-sm font-semibold">Maestros</span><span className="text-xs text-neutral-500">Catalogos transversales</span></span></button>
-        <button className="group flex items-center gap-3 rounded-md border border-line bg-white p-3 text-left hover:border-apex hover:bg-paper" onClick={() => setActiveModal("logs")} type="button"><span className="flex h-10 w-10 items-center justify-center rounded-md bg-paper text-apex group-hover:bg-white"><AlertTriangle size={18} /></span><span><span className="block text-sm font-semibold">Logs tecnicos</span><span className="text-xs text-neutral-500">API, backend y frontend</span></span></button>
+      <section className="flex flex-wrap gap-2 rounded-md border border-line bg-white p-2">
+        <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:border-apex hover:bg-paper" onClick={() => setActiveModal("users")} type="button"><Users size={16} /> Usuarios</button>
+        <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:border-apex hover:bg-paper" onClick={() => setActiveModal("roles")} type="button"><Shield size={16} /> Roles y permisos</button>
+        {platformAdmin ? <Link className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:border-apex hover:bg-paper" href="/dashboard/administracion/suscripciones"><Building2 size={16} /> Empresas y modulos</Link> : null}
+        <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:border-apex hover:bg-paper" onClick={() => setActiveModal("masters")} type="button"><Database size={16} /> Maestros</button>
+        <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:border-apex hover:bg-paper" onClick={() => setActiveModal("logs")} type="button"><AlertTriangle size={16} /> Logs tecnicos</button>
       </section>
 
       <section className="overflow-hidden rounded-md border border-line bg-white">
@@ -2209,7 +2208,7 @@ export default function AdministracionPage() {
                 {roles.map((role) => {
                   const assignedCount = users.filter((user) => Number(user.role_id) === role.id).length;
                   return (
-                    <button className={`w-full rounded-md border px-2.5 py-2 text-left text-xs transition ${selectedRoleId === role.id ? "border-apex bg-paper shadow-sm" : "border-line bg-white hover:border-apex/40 hover:bg-paper"}`} key={role.id} onClick={() => selectRole(role)} type="button">
+                    <button className={`w-full rounded-md border px-2.5 py-2 text-left text-xs transition-colors ${selectedRoleId === role.id ? "border-apex bg-paper" : "border-line bg-white hover:border-apex/40 hover:bg-paper"}`} key={role.id} onClick={() => selectRole(role)} type="button">
                       <span className="flex items-center justify-between gap-2">
                         <span className="truncate font-semibold">{role.name}</span>
                         <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${role.active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>{role.active ? "Activo" : "Inactivo"}</span>
@@ -2299,7 +2298,7 @@ export default function AdministracionPage() {
                         {visibleRoleActions.map((action) => (
                           <td className="px-1 py-1.5 text-center" key={action}>
                             {item.actions.includes(action) ? (
-                              <button className={`inline-flex h-7 w-7 items-center justify-center rounded-md border transition ${roleForm.permissions[item.key]?.[action] ? "border-apex bg-apex text-white shadow-sm" : "border-line bg-white hover:border-apex/40 hover:bg-paper"}`} disabled={selectedRoleLocked} onClick={() => togglePermission(item.key, action)} title={`${item.label}: ${actionLabels[action]}`} type="button">
+                              <button className={`inline-flex h-7 w-7 items-center justify-center rounded-md border transition-colors ${roleForm.permissions[item.key]?.[action] ? "border-apex bg-apex text-white" : "border-line bg-white hover:border-apex/40 hover:bg-paper"}`} disabled={selectedRoleLocked} onClick={() => togglePermission(item.key, action)} title={`${item.label}: ${actionLabels[action]}`} type="button">
                                 {roleForm.permissions[item.key]?.[action] ? <Check size={13} /> : null}
                               </button>
                             ) : <span className="text-neutral-300">-</span>}
