@@ -10,6 +10,15 @@ const permissionModuleAliases: Record<string, string> = {
   servicios_correcciones: "services.orders"
 };
 
+const privilegedRoleNames = new Set([
+  "admin",
+  "administrador",
+  "administrador de empresa",
+  "apex_admin",
+  "owner",
+  "superadmin"
+]);
+
 function normalizedModule(value: unknown) {
   const moduleName = String(value || "").trim().toLowerCase();
   return permissionModuleAliases[moduleName] || moduleName;
@@ -50,11 +59,33 @@ export function hasRolePermission(value: unknown, module: string, action: string
   ));
 }
 
+function isPrivilegedStoredRole() {
+  if (typeof window === "undefined") return false;
+  return [
+    localStorage.getItem("role_name"),
+    localStorage.getItem("apexos_company_role")
+  ].some((role) => privilegedRoleNames.has(String(role || "").trim().toLowerCase()));
+}
+
+function storedRoleMetadataAllows(module: string, action: string) {
+  if (typeof window === "undefined") return false;
+  try {
+    const metadata = JSON.parse(localStorage.getItem("role_metadata") || "null");
+    return hasRolePermission(metadata?.legacy_permissions || metadata?.permissions, module, action);
+  } catch {
+    return false;
+  }
+}
+
 export function hasStoredRolePermission(module: string, action: string) {
   if (typeof window === "undefined") return false;
   try {
-    return hasRolePermission(JSON.parse(localStorage.getItem("role_permissions") || "[]"), module, action);
+    return (
+      hasRolePermission(JSON.parse(localStorage.getItem("role_permissions") || "[]"), module, action)
+      || storedRoleMetadataAllows(module, action)
+      || isPrivilegedStoredRole()
+    );
   } catch {
-    return false;
+    return storedRoleMetadataAllows(module, action) || isPrivilegedStoredRole();
   }
 }
