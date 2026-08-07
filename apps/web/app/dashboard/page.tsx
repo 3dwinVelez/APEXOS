@@ -8,7 +8,6 @@ import { Activity, AlertTriangle, ArrowRight, Boxes, CheckCircle2, ClipboardChec
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 type ServicesSummary = {
   data: Array<{ status: string; scheduled_date?: string; photos?: unknown[]; incidents?: unknown[] }>;
@@ -65,12 +64,17 @@ const emptySummary: DashboardSummary = {
   preopFindings: 0
 };
 
-const statusColors = ["#f59e0b", "#0284c7", "#059669", "#dc2626"];
 const moduleColors: Record<string, string> = {
   servicios: "#0f766e",
   "talento-humano": "#2563eb",
   transporte: "#7c3aed"
 };
+const statusTones = [
+  "bg-amber-500",
+  "bg-sky-600",
+  "bg-emerald-600",
+  "bg-rose-600"
+];
 
 function buildServiceTrend(orders: ServicesSummary["data"]) {
   const formatter = new Intl.DateTimeFormat("es-CO", { weekday: "short" });
@@ -85,6 +89,51 @@ function buildServiceTrend(orders: ServicesSummary["data"]) {
       programados: orders.filter((order) => order.scheduled_date?.slice(0, 10) === key).length
     };
   });
+}
+
+function MetricBars({ items }: { items: Array<{ name: string; value: number; tone?: string }> }) {
+  const max = Math.max(1, ...items.map((item) => item.value));
+  return (
+    <div className="grid gap-3">
+      {items.map((item, index) => (
+        <div className="grid gap-1.5" key={item.name}>
+          <div className="flex items-center justify-between gap-3 text-xs">
+            <span className="font-medium text-neutral-700">{item.name}</span>
+            <span className="font-semibold text-neutral-900">{item.value}</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-sm bg-paper" aria-hidden="true">
+            <div
+              className={`h-full ${item.tone || statusTones[index % statusTones.length]}`}
+              style={{ width: `${Math.max(4, Math.round((item.value / max) * 100))}%` }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TrendStrip({ items }: { items: Array<{ name: string; programados: number }> }) {
+  const max = Math.max(1, ...items.map((item) => item.programados));
+  return (
+    <div className="grid h-44 grid-cols-7 items-end gap-2" aria-label="Servicios programados ultimos 7 dias">
+      {items.map((item) => (
+        <div className="flex h-full flex-col justify-end gap-2" key={item.name}>
+          <div className="flex flex-1 items-end">
+            <div
+              className="w-full rounded-sm bg-emerald-500"
+              style={{ height: `${Math.max(6, Math.round((item.programados / max) * 100))}%` }}
+              title={`${item.programados} programados`}
+            />
+          </div>
+          <div className="text-center">
+            <p className="text-xs font-semibold text-neutral-900">{item.programados}</p>
+            <p className="text-[11px] text-neutral-500">{item.name}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function DashboardPage() {
@@ -248,68 +297,43 @@ export default function DashboardPage() {
 
   return (
     <div className="apex-workspace-shell space-y-6">
-      <section className="apex-context-hero">
-        <div className="relative z-10 grid gap-4 p-4 sm:p-5 xl:grid-cols-[260px_1fr] xl:items-center">
-          <div className="min-w-0">
-            <p className="apex-eyebrow">Modulos activos</p>
-            <h1 className="mt-3 text-2xl font-semibold sm:text-3xl">Elige donde trabajar</h1>
-            <p className="mt-2 text-sm leading-6 text-white/70">{activeModules.length} modulo(s) disponibles para esta empresa.</p>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+      <section className="border-b border-line pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-[22px] font-semibold">Dashboard</h1>
+          <span className="text-xs font-semibold text-neutral-500">{activeModules.length} modulo(s)</span>
+        </div>
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
             {activeModules.slice(0, 8).map((module, index) => {
               const Icon = module.icon;
               return (
-                <Link className={`group flex min-w-0 items-center gap-3 rounded-xl border border-white/12 p-3 text-white transition hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/10 ${index === 0 ? "bg-white text-[#071411] shadow-lg hover:bg-teal-50" : "bg-white/7"}`} href={`/dashboard/${module.slug}`} key={module.slug}>
-                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${index === 0 ? "bg-apex text-white" : "bg-white/10 text-teal-200"}`}><Icon size={18} /></span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold">{module.name}</span>
-                    <span className={`mt-0.5 block truncate text-xs ${index === 0 ? "text-neutral-600" : "text-white/65"}`}>{module.area}</span>
-                  </span>
-                  <ArrowRight className={`shrink-0 transition group-hover:translate-x-0.5 ${index === 0 ? "text-apex" : "text-white/45"}`} size={16} />
+                <Link className={`group flex h-10 shrink-0 items-center gap-2 rounded-md border px-3 text-sm font-semibold transition-colors hover:bg-paper ${index === 0 ? "border-apex text-apex" : "border-line text-neutral-700"}`} href={`/dashboard/${module.slug}`} key={module.slug} prefetch={false}>
+                  <Icon size={16} />
+                  <span>{module.name}</span>
                 </Link>
               );
             })}
             {!activeModules.length ? (
-              <div className="rounded-xl border border-white/12 bg-white/7 p-4 text-sm text-white/70">No hay modulos activos para esta empresa.</div>
+              <div className="rounded-md border border-line bg-paper px-3 py-2 text-sm text-neutral-600">No hay modulos activos para esta empresa.</div>
             ) : null}
           </div>
-        </div>
       </section>
 
       <section className="apex-dashboard-grid">
-        <div className="overflow-hidden rounded-md bg-neutral-950 text-white">
+        <div className="overflow-hidden rounded-md border border-line bg-white">
           <div className="p-5">
             <div className="min-h-48 min-w-0">
               <div className="mb-2 flex items-center justify-between gap-3">
                 <p className="text-sm font-semibold">{enabled("servicios") ? "Servicios programados · últimos 7 días" : "Actividad registrada"}</p>
-                <span className="text-xs text-white/50">
+                <span className="text-xs text-neutral-500">
                   {enabled("servicios") ? `${summary.servicesToday} hoy` : `${supportedModules.length} módulos`}
                 </span>
               </div>
               {enabled("servicios") ? (
-                <ResponsiveContainer width="100%" height={180}>
-                  <LineChart data={serviceTrend}>
-                    <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.58)", fontSize: 11 }} />
-                    <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.42)", fontSize: 11 }} />
-                    <Tooltip contentStyle={{ borderRadius: 8, borderColor: "#e5e7eb", color: "#111827" }} />
-                    <Line type="monotone" dataKey="programados" name="Programados" stroke="#34d399" strokeWidth={3} dot={{ fill: "#34d399", r: 3 }} activeDot={{ r: 5 }} />
-                  </LineChart>
-                </ResponsiveContainer>
+                <TrendStrip items={serviceTrend} />
               ) : moduleActivityData.length ? (
-                <ResponsiveContainer width="100%" height={180}>
-                  <BarChart data={moduleActivityData}>
-                    <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.58)", fontSize: 11 }} />
-                    <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: "rgba(255,255,255,0.42)", fontSize: 11 }} />
-                    <Tooltip cursor={{ fill: "rgba(255,255,255,0.06)" }} contentStyle={{ borderRadius: 8, borderColor: "#e5e7eb", color: "#111827" }} />
-                    <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                      {moduleActivityData.map((item) => <Cell key={item.name} fill={moduleColors[item.module]} />)}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                <MetricBars items={moduleActivityData.map((item) => ({ ...item, tone: "bg-apex" }))} />
               ) : (
-                <div className="flex h-44 items-center justify-center text-center text-sm text-white/55">
+                <div className="flex h-44 items-center justify-center text-center text-sm text-neutral-500">
                   Los módulos activos aparecerán aquí cuando cuenten con actividad registrada.
                 </div>
               )}
@@ -317,13 +341,13 @@ export default function DashboardPage() {
           </div>
 
           {concreteSignals.length > 0 && (
-            <div className="grid border-t border-white/10 md:grid-cols-4">
+            <div className="grid border-t border-line md:grid-cols-4">
               {concreteSignals.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <div className="flex items-center gap-3 border-t border-white/10 px-5 py-4 first:border-t-0 md:border-l md:border-t-0 md:first:border-l-0" key={item.label}>
-                    <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white/10 text-emerald-200"><Icon size={17} /></span>
-                    <div><p className="text-2xl font-semibold leading-tight">{item.value}</p><p className="text-xs text-white/55">{item.label}</p></div>
+                  <div className="flex items-center gap-3 border-t border-line px-5 py-4 first:border-t-0 md:border-l md:border-t-0 md:first:border-l-0" key={item.label}>
+                    <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-paper text-apex"><Icon size={17} /></span>
+                    <div><p className="text-lg font-semibold leading-tight">{item.value}</p><p className="text-xs text-neutral-500">{item.label}</p></div>
                   </div>
                 );
               })}
@@ -367,11 +391,11 @@ export default function DashboardPage() {
           {headlineMetrics.map((item) => {
             const Icon = item.icon;
             return (
-              <Link className="group flex items-center gap-3 border-b border-line px-4 py-3 transition hover:bg-paper md:border-r xl:[&:nth-child(3n)]:border-r-0" href={`/dashboard/${item.module}`} key={item.label}>
+              <Link className="group flex items-center gap-3 border-b border-line px-4 py-3 transition hover:bg-paper md:border-r xl:[&:nth-child(3n)]:border-r-0" href={`/dashboard/${item.module}`} key={item.label} prefetch={false}>
                 <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-paper" style={{ color: item.color }}><Icon size={16} /></span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline gap-2">
-                    <p className="text-xl font-semibold leading-none">{item.value}</p>
+                    <p className="text-base font-semibold leading-none">{item.value}</p>
                     <h3 className="truncate text-xs font-semibold">{item.label}</h3>
                   </div>
                   <p className="mt-1 truncate text-xs text-neutral-500">{item.context}</p>
@@ -388,18 +412,10 @@ export default function DashboardPage() {
         <section className="rounded-md border border-line bg-white p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-base font-semibold">Estado de servicios</h2>
-            <Link className="inline-flex items-center gap-2 text-sm font-semibold text-apex" href="/dashboard/servicios">Abrir Servicios <ArrowRight size={15} /></Link>
+            <Link className="inline-flex items-center gap-2 text-sm font-semibold text-apex" href="/dashboard/servicios" prefetch={false}>Abrir Servicios <ArrowRight size={15} /></Link>
           </div>
-          <div className="mt-4 h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={serviceData} layout="vertical" margin={{ left: 16, right: 20 }}>
-                <CartesianGrid stroke="#ece7df" horizontal={false} />
-                <XAxis type="number" allowDecimals={false} axisLine={false} tickLine={false} />
-                <YAxis type="category" dataKey="name" width={105} axisLine={false} tickLine={false} />
-                <Tooltip />
-                <Bar dataKey="value" radius={[0, 6, 6, 0]}>{serviceData.map((entry, index) => <Cell key={entry.name} fill={statusColors[index]} />)}</Bar>
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="mt-4">
+            <MetricBars items={serviceData} />
           </div>
         </section>
       )}
@@ -410,7 +426,7 @@ export default function DashboardPage() {
           <div className="mt-4 divide-y divide-line">
             {moduleRows.length ? moduleRows.map((item) => (
               enabled(item.module) ? (
-                <Link className="grid gap-3 py-4 transition hover:bg-paper md:grid-cols-[160px_1fr_130px_20px]" href={`/dashboard/${item.module}`} key={item.module}>
+                <Link className="grid gap-3 py-4 transition hover:bg-paper md:grid-cols-[160px_1fr_130px_20px]" href={`/dashboard/${item.module}`} key={item.module} prefetch={false}>
                   <p className="text-sm font-semibold">{item.name}</p>
                   <p className="text-sm text-neutral-600">{item.description}</p>
                   <p className="text-right text-sm font-semibold">{item.value}</p>
@@ -449,7 +465,7 @@ export default function DashboardPage() {
                 );
               }
               return (
-                <Link className="group flex items-center gap-3 rounded-md border border-line p-3 transition hover:border-neutral-300 hover:bg-paper" href={`/dashboard/${module.slug}`} key={module.slug}>
+                <Link className="group flex items-center gap-3 rounded-md border border-line p-3 transition hover:border-neutral-300 hover:bg-paper" href={`/dashboard/${module.slug}`} key={module.slug} prefetch={false}>
                   <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-paper text-apex"><Icon size={17} /></span>
                   <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{module.name}</p><p className="truncate text-xs text-neutral-500">{module.area}</p></div>
                   <ArrowRight className="text-neutral-300 transition group-hover:translate-x-0.5 group-hover:text-neutral-700" size={16} />

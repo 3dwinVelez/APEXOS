@@ -11,7 +11,7 @@ require.cache[prismaPath] = {
   exports: {}
 };
 
-const { selectMembership, tenantWithAuthorizationContext } = require("../src/security/supabaseAuth");
+const { normalizeRolePermissions, roleBlueprint, selectMembership, tenantWithAuthorizationContext } = require("../src/security/supabaseAuth");
 
 const memberships = [
   { company_id: "company-a", role: "admin" },
@@ -47,6 +47,28 @@ test("RBAC usa los modulos autoritativos de la autenticacion aunque el cache del
 test("sesiones locales conservan los modulos del tenant cacheado", () => {
   const cachedTenant = { id: 7, active: true, active_modules: ["M-03"] };
   assert.equal(tenantWithAuthorizationContext(cachedTenant, {}), cachedTenant);
+});
+
+test("el permiso de catalogo para corregir servicios se traduce al permiso RBAC", () => {
+  assert.deepEqual(
+    normalizeRolePermissions({ servicios_correcciones: { edit_any_state: true } }),
+    [{ module: "services.orders", action: "edit_any_state" }]
+  );
+});
+
+test("un rol especial recibe solo el permiso explicito y no un comodin administrativo", () => {
+  const blueprint = roleBlueprint("member", {
+    metadata: {
+      role_id: 42,
+      role_name: "Coordinador de servicios",
+      permissions: { servicios_correcciones: { edit_any_state: true } }
+    }
+  });
+
+  assert.equal(blueprint.name, "Supabase Role 42");
+  assert.equal(blueprint.managed, true);
+  assert.ok(blueprint.permissions.some((permission) => permission.module === "services.orders" && permission.action === "edit_any_state"));
+  assert.ok(!blueprint.permissions.some((permission) => permission.module === "*" && permission.action === "*"));
 });
 
 test("la vista de modulos se consulta con el JWT del usuario para conservar auth.uid()", () => {
