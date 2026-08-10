@@ -3665,11 +3665,14 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
 
 export async function api<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
   const method = String(options.method || "GET").toUpperCase();
+  const bypassReadCache = options.cache === "no-store";
+  const companyScope = typeof window !== "undefined" ? localStorage.getItem("apexos_company_id") || "" : "";
   if (method !== "GET") {
     const scope = writeCacheScope(path);
     clearApiReadCaches(scope);
   }
-  const cacheKey = method === "GET" && !retried ? `${isSupabaseSession() ? "supabase" : "api"}:${path}` : "";
+  const requestKey = method === "GET" && !retried ? `${isSupabaseSession() ? "supabase" : "api"}:${companyScope}:${path}` : "";
+  const cacheKey = requestKey && !bypassReadCache ? requestKey : "";
   if (cacheKey) {
     const completed = completedGetRequests.get(cacheKey);
     if (completed) {
@@ -3690,17 +3693,21 @@ export async function api<T>(path: string, options: RequestInit = {}, retried = 
       }
     }
   }
-  if (cacheKey && inFlightGetRequests.has(cacheKey)) return inFlightGetRequests.get(cacheKey) as Promise<T>;
+  if (requestKey && inFlightGetRequests.has(requestKey)) return inFlightGetRequests.get(requestKey) as Promise<T>;
   const request = apiInternal<T>(path, options, retried);
-  if (!cacheKey) return request;
-  inFlightGetRequests.set(cacheKey, request);
+  if (!requestKey) return request;
+  inFlightGetRequests.set(requestKey, request);
   void request
     .then((value) => {
-      completedGetRequests.set(cacheKey, { at: Date.now(), value });
-      pruneApiReadCaches();
+      if (cacheKey) {
+        completedGetRequests.set(cacheKey, { at: Date.now(), value });
+        pruneApiReadCaches();
+      }
     })
-    .catch(() => completedGetRequests.delete(cacheKey))
-    .finally(() => inFlightGetRequests.delete(cacheKey));
+    .catch(() => {
+      if (cacheKey) completedGetRequests.delete(cacheKey);
+    })
+    .finally(() => inFlightGetRequests.delete(requestKey));
   return request;
 }
 
