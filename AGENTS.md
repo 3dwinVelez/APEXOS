@@ -26,6 +26,7 @@ Rules for Codex and any automated agent:
 - Treat absence of authorization as prohibition.
 - Do not skip validations to finish a delivery.
 - Every change must include tests and evidence.
+- Every promotion to `main` must pass `docs/CHANGE_APPROVAL_QA_POLICY.md` and `npm run qa:approval:evidence -- <manifest>` with explicit functional QA approval. Automated checks alone never authorize `main`.
 - Preserve traceability. Do not squash or rewrite shared history without explicit authorization.
 - Keep generated files, local logs, secrets, and environment-specific artifacts out of commits.
 - Emergency production fixes require explicit authorization and must be retrointegrated to `develop` and `desarrollo`.
