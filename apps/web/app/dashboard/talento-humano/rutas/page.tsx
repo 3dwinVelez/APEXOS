@@ -3,6 +3,7 @@
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { localCalendarDate, scheduleGpsRequired, scheduleMonitorDate, scheduleTrackingMode } from "@/lib/hrScheduleMonitor";
+import { subscribeHrMonitorRefresh } from "@/lib/hrMonitorRefresh";
 import { AlertTriangle, ArrowLeft, Building2, CalendarDays, Camera, CheckSquare2, Clock, Copy, Edit3, Filter, HelpCircle, Navigation, Plus, RefreshCw, RotateCcw, Save, Search, Square, Truck, UserPlus, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -14,8 +15,9 @@ type TimeRoute = { id: number | string; code?: string; display_id?: number | str
 type MasterOption = { code: string; name: string; active?: boolean; sort_order?: number };
 type UserMasterData = { locations?: MasterOption[] };
 type OperatorPoint = { key: string; user_name: string; name: string; route_id: number | string; online?: boolean; last_punch_type?: string; last_activity_type?: string; last_activity_time?: string };
-type PunchPoint = { id: number | string; user_name: string; type: string; time?: string; punched_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; extra_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: { base64_data?: string; file_name?: string; file_url?: string } };
-type ActivityPoint = { id: number | string; user_name: string; type: string; time?: string; occurred_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; observation?: string; evidence?: Array<{ base64_data?: string; file_name?: string; file_url?: string }> };
+type MonitorEvidence = { base64_data?: string; file_name?: string; file_url?: string; has_base64_data?: boolean };
+type PunchPoint = { id: number | string; user_name: string; type: string; time?: string; punched_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; extra_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: MonitorEvidence };
+type ActivityPoint = { id: number | string; user_name: string; type: string; time?: string; occurred_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; observation?: string; evidence?: MonitorEvidence[] };
 type RouteMonitor = TimeRoute & { placa?: string; assigned_count?: number; online_count?: number; with_gps_count?: number; punch_points?: PunchPoint[]; activity_points?: ActivityPoint[] };
 type OperationsMap = { date: string; generated_at: string; people: OperatorPoint[]; routes: RouteMonitor[]; totals: { routes: number; planned_people: number; online: number; without_gps: number; offline: number } };
 
@@ -270,13 +272,19 @@ export default function RoutesPlanningPage() {
     const refreshVisible = () => {
       if (!document.hidden) load(monitorDate);
     };
-    const timer = window.setInterval(refreshVisible, 30000);
+    const timer = window.setInterval(refreshVisible, 10000);
     document.addEventListener("visibilitychange", refreshVisible);
     return () => {
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", refreshVisible);
     };
   }, [load, monitorDate]);
+
+  useEffect(() => subscribeHrMonitorRefresh((detail) => {
+    if (document.hidden) return;
+    const targetDate = detail.date || monitorDate;
+    load(targetDate);
+  }), [load, monitorDate]);
 
   function resetForm() {
     const today = localCalendarDate();
@@ -720,7 +728,7 @@ export default function RoutesPlanningPage() {
                         {event.latitude != null && event.longitude != null ? <p className="mt-2 text-xs text-neutral-500">GPS {Number(event.latitude).toFixed(5)}, {Number(event.longitude).toFixed(5)} - {Math.round(Number(event.accuracy_meters || 0))}m</p> : null}
                       </div>
                       <div>
-                        {event.evidence?.[0]?.base64_data ? <Image alt="Evidencia" className="h-32 w-full rounded-md object-cover" height={320} src={event.evidence[0].base64_data} unoptimized width={640} /> : event.evidence?.[0]?.file_url ? <a className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href={event.evidence[0].file_url} target="_blank" rel="noreferrer"><Camera size={16} /> Ver evidencia</a> : <p className="rounded-md bg-paper p-3 text-xs font-semibold text-neutral-500">Sin evidencia fotografica</p>}
+                        {event.evidence?.[0]?.base64_data ? <Image alt="Evidencia" className="h-32 w-full rounded-md object-cover" height={320} src={event.evidence[0].base64_data} unoptimized width={640} /> : event.evidence?.[0]?.file_url ? <a className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href={event.evidence[0].file_url} target="_blank" rel="noreferrer"><Camera size={16} /> Ver evidencia</a> : event.evidence?.[0]?.has_base64_data ? <p className="rounded-md bg-emerald-50 p-3 text-xs font-semibold text-emerald-700"><Camera className="mr-1 inline" size={14} /> Evidencia fotografica registrada</p> : <p className="rounded-md bg-paper p-3 text-xs font-semibold text-neutral-500">Sin evidencia fotografica</p>}
                       </div>
                     </article>
                   ))}

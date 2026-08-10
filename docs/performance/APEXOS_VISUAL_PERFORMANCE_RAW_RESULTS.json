@@ -1,0 +1,140 @@
+{
+  "initiative": "APEXOS Visual Performance Implementation v3.0",
+  "branch": "codex/operational-ui-v3-local",
+  "baseCommit": "26b1331 merge: promote desarrollo into develop",
+  "environment": {
+    "scope": "local repository only",
+    "remoteActions": false,
+    "productionResources": false
+  },
+  "buildMetrics": {
+    "before": {
+      "command": "npm --workspace apps/web run build",
+      "compiledInSeconds": 74,
+      "routes": {
+        "/dashboard": {
+          "sizeKb": 11.6,
+          "firstLoadJsKb": 264
+        },
+        "/dashboard/servicios": {
+          "sizeKb": 16.8,
+          "firstLoadJsKb": 157
+        },
+        "/dashboard/administracion": {
+          "sizeKb": 23.1,
+          "firstLoadJsKb": 181
+        },
+        "/dashboard/proyectos": {
+          "sizeKb": 15.2,
+          "firstLoadJsKb": 256
+        }
+      },
+      "sharedFirstLoadJsKb": 103
+    },
+    "afterDashboardPhase": {
+      "command": "npm --workspace apps/web run build",
+      "compiledInSeconds": 56,
+      "routes": {
+        "/dashboard": {
+          "sizeKb": 7.13,
+          "firstLoadJsKb": 158
+        },
+        "/dashboard/servicios": {
+          "sizeKb": 16.8,
+          "firstLoadJsKb": 157
+        },
+        "/dashboard/administracion": {
+          "sizeKb": 23.0,
+          "firstLoadJsKb": 181
+        },
+        "/dashboard/proyectos": {
+          "sizeKb": 115,
+          "firstLoadJsKb": 255,
+          "note": "Recharts remains on this non-prioritized route; chunk attribution moved after removing it from /dashboard. First Load JS did not increase."
+        }
+      },
+      "sharedFirstLoadJsKb": 103
+    },
+    "afterContinuation": {
+      "command": "npm --workspace apps/web run build",
+      "compiledInSeconds": 71,
+      "routes": {
+        "/dashboard": {
+          "sizeKb": 7.13,
+          "firstLoadJsKb": 158
+        },
+        "/dashboard/administracion": {
+          "sizeKb": 22.9,
+          "firstLoadJsKb": 181
+        },
+        "/dashboard/servicios": {
+          "sizeKb": 16.4,
+          "firstLoadJsKb": 156
+        },
+        "/dashboard/servicios/[id]": {
+          "sizeKb": 14.9,
+          "firstLoadJsKb": 165
+        },
+        "/dashboard/proyectos": {
+          "sizeKb": 115,
+          "firstLoadJsKb": 255
+        }
+      },
+      "sharedFirstLoadJsKb": 103
+    },
+    "delta": {
+      "/dashboard": {
+        "sizeKb": -4.47,
+        "firstLoadJsKb": -106,
+        "firstLoadJsPercent": -40.2
+      },
+      "/dashboard/administracion": {
+        "sizeKb": -0.2,
+        "firstLoadJsKb": 0
+      },
+      "/dashboard/servicios": {
+        "sizeKb": -0.4,
+        "firstLoadJsKb": -1
+      },
+      "/dashboard/servicios/[id]": {
+        "sizeKb": 0,
+        "firstLoadJsKb": 0
+      },
+      "sharedFirstLoadJsKb": 0
+    }
+  },
+  "sourceInventory": {
+    "pageTsxCount": 58,
+    "rechartsConsumersBefore": [
+      "apps/web/app/dashboard/page.tsx",
+      "apps/web/app/dashboard/proyectos/page.tsx"
+    ],
+    "rechartsConsumersAfter": [
+      "apps/web/app/dashboard/proyectos/page.tsx"
+    ]
+  },
+  "validations": [
+    {
+      "command": "npm --workspace apps/web run typecheck",
+      "status": "passed"
+    },
+    {
+      "command": "npm --workspace apps/web run lint",
+      "status": "passed"
+    },
+    {
+      "command": "npm --workspace apps/web run build",
+      "status": "passed"
+    },
+    {
+      "command": "npm --workspace apps/web run test:offline",
+      "status": "failed",
+      "summary": "40 passed, 9 failed. Same result on develop detached at 26b1331, classified as preexisting."
+    },
+    {
+      "command": "npm --workspace apps/web run test:offline on develop detached 26b1331",
+      "status": "failed",
+      "summary": "40 passed, 9 failed. Same offline-storage.test.mjs failures."
+    }
+  ]
+}

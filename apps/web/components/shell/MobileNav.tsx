@@ -21,13 +21,13 @@ export function MobileNav() {
   if (operationalFlow) return null;
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 px-2 pb-[calc(env(safe-area-inset-bottom)+8px)] pt-2 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur md:hidden" aria-label="Navegacion movil">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white px-2 pb-[calc(env(safe-area-inset-bottom)+8px)] pt-2 md:hidden" aria-label="Navegacion movil">
       <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
         {items.map((item) => {
           const Icon = item.icon;
           const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(`${item.href}/`));
           return (
-            <Link className={`flex h-14 flex-col items-center justify-center gap-1 rounded-md px-1 text-[11px] font-semibold ${active ? "bg-apex text-white" : "text-neutral-600 active:bg-paper"}`} href={item.href} key={item.href}>
+            <Link className={`flex h-14 flex-col items-center justify-center gap-1 rounded-md px-1 text-[11px] font-semibold ${active ? "bg-apex text-white" : "text-neutral-600 active:bg-paper"}`} href={item.href} key={item.href} prefetch={false}>
               <Icon size={18} />
               <span className="max-w-full truncate">{item.label}</span>
             </Link>
