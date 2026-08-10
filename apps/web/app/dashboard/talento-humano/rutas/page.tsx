@@ -18,7 +18,9 @@ type OperatorPoint = { key: string; user_name: string; name: string; route_id: n
 type MonitorEvidence = { base64_data?: string; file_name?: string; file_url?: string; has_base64_data?: boolean };
 type PunchPoint = { id: number | string; user_name: string; type: string; time?: string; punched_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; extra_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: MonitorEvidence };
 type ActivityPoint = { id: number | string; user_name: string; type: string; time?: string; occurred_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; observation?: string; evidence?: MonitorEvidence[] };
-type RouteMonitor = TimeRoute & { placa?: string; assigned_count?: number; online_count?: number; with_gps_count?: number; punch_points?: PunchPoint[]; activity_points?: ActivityPoint[] };
+type RouteEventSummary = { route_id: number | string; punch_count: number; activity_count: number; evidence_count: number; closed_count: number; event_count: number; last_event_at?: string | null };
+type RouteEventSummaryResponse = { generated_at: string; routes: RouteEventSummary[] };
+type RouteMonitor = TimeRoute & RouteEventSummary & { placa?: string; assigned_count?: number; online_count?: number; with_gps_count?: number; punch_points?: PunchPoint[]; activity_points?: ActivityPoint[] };
 type OperationsMap = { date: string; generated_at: string; people: OperatorPoint[]; routes: RouteMonitor[]; totals: { routes: number; planned_people: number; online: number; without_gps: number; offline: number } };
 
 const punchNames: Record<string, string> = { entrada: "Entrada", inicio_almuerzo: "Almuerzo", fin_almuerzo: "Retorno", salida: "Cierre" };
@@ -70,6 +72,8 @@ function routeDerivedStatus(route: RouteMonitor | TimeRoute) {
   const rawStatus = String(route.status || "active").toLowerCase();
   if (["closed", "cerrada", "completed"].includes(rawStatus)) return "closed";
   const assignedCount = Number((route as RouteMonitor).assigned_count ?? routeEmployeeValues(route).length ?? 0);
+  const closedCount = Number((route as RouteMonitor).closed_count || 0);
+  if (assignedCount > 0 && closedCount >= assignedCount) return "closed";
   const punchPoints = ((route as RouteMonitor).punch_points || []) as PunchPoint[];
   if (assignedCount > 0) {
     const closedUsers = new Set(punchPoints.filter((punch) => punch.type === "salida").map((punch) => String(punch.user_name || "").trim().toLowerCase()).filter(Boolean));
@@ -78,8 +82,14 @@ function routeDerivedStatus(route: RouteMonitor | TimeRoute) {
   return rawStatus || "active";
 }
 
+function routeEventCount(route: RouteMonitor | TimeRoute) {
+  const summaryCount = Number((route as RouteMonitor).event_count);
+  if (Number.isFinite(summaryCount)) return summaryCount;
+  return (((route as RouteMonitor).punch_points?.length || 0) + ((route as RouteMonitor).activity_points?.length || 0));
+}
+
 function routeDisplayState(route: RouteMonitor | TimeRoute) {
-  const events = (((route as RouteMonitor).punch_points?.length || 0) + ((route as RouteMonitor).activity_points?.length || 0));
+  const events = routeEventCount(route);
   const status = routeDerivedStatus(route);
   if (status === "closed") return { status, label: "Cerrado", className: "bg-neutral-100 text-neutral-700" };
   if (status === "cancelled") return { status, label: "Cancelado", className: "bg-rose-50 text-rose-700" };
@@ -229,6 +239,7 @@ export default function RoutesPlanningPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [administrativeSites, setAdministrativeSites] = useState<MasterOption[]>([]);
   const [routes, setRoutes] = useState<TimeRoute[]>([]);
+  const [eventSummaries, setEventSummaries] = useState<RouteEventSummary[]>([]);
   const [operations, setOperations] = useState<OperationsMap | null>(null);
   const [monitorDate, setMonitorDate] = useState(initialDate);
   const [selectedRouteId, setSelectedRouteId] = useState("");
@@ -275,28 +286,40 @@ export default function RoutesPlanningPage() {
     }
   }, [monitorDate]);
 
-  useEffect(() => {
-    loadReferenceData();
-  }, [loadReferenceData]);
+  const loadEventSummaries = useCallback(async () => {
+    try {
+      const data = await api<RouteEventSummaryResponse>("/api/v1/hr/routes/event-summaries", { cache: "no-store" });
+      setEventSummaries(data.routes || []);
+    } catch {
+      // Preserve the latest valid counters until the next short refresh.
+    }
+  }, []);
 
   useEffect(() => {
-    loadMonitor(monitorDate);
+    loadReferenceData();
+    loadEventSummaries();
+  }, [loadEventSummaries, loadReferenceData]);
+
+  useEffect(() => {
     const refreshVisible = () => {
-      if (!document.hidden) loadMonitor(monitorDate);
+      if (document.hidden) return;
+      loadEventSummaries();
+      if (selectedRouteId) loadMonitor(monitorDate);
     };
-    const timer = window.setInterval(refreshVisible, 10000);
+    const timer = window.setInterval(refreshVisible, 5000);
     document.addEventListener("visibilitychange", refreshVisible);
     return () => {
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", refreshVisible);
     };
-  }, [loadMonitor, monitorDate]);
+  }, [loadEventSummaries, loadMonitor, monitorDate, selectedRouteId]);
 
   useEffect(() => subscribeHrMonitorRefresh((detail) => {
     if (document.hidden) return;
-    const targetDate = detail.date || monitorDate;
-    loadMonitor(targetDate);
-  }), [loadMonitor, monitorDate]);
+    loadEventSummaries();
+    if (!selectedRouteId || (detail.route_id && String(detail.route_id) !== selectedRouteId)) return;
+    loadMonitor(detail.date || monitorDate);
+  }), [loadEventSummaries, loadMonitor, monitorDate, selectedRouteId]);
 
   function resetForm() {
     const today = localCalendarDate();
@@ -309,8 +332,10 @@ export default function RoutesPlanningPage() {
   }
 
   function openRouteMonitor(route: RouteMonitor) {
+    const targetDate = scheduleMonitorDate(route.date);
     setSelectedRouteId(String(route.id));
-    setMonitorDate(scheduleMonitorDate(route.date));
+    setMonitorDate(targetDate);
+    loadMonitor(targetDate);
   }
 
   async function openCreateModal(route?: RouteMonitor) {
@@ -407,7 +432,7 @@ export default function RoutesPlanningPage() {
       setMonitorDate(savedMonitorDate);
       resetForm();
       setModal(null);
-      await Promise.all([loadReferenceData(), loadMonitor(savedMonitorDate)]);
+      await Promise.all([loadReferenceData(), loadEventSummaries(), loadMonitor(savedMonitorDate)]);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No fue posible guardar el horario.");
     } finally {
@@ -421,14 +446,15 @@ export default function RoutesPlanningPage() {
   const monitorRoutes: RouteMonitor[] = useMemo(() => {
     if (!routes.length) return operations?.routes || [];
     return routes.map((route) => {
+      const summary = eventSummaries.find((item) => String(item.route_id) === String(route.id));
       const routeKeys = routeMergeKeys(route);
       const operation = (operations?.routes || []).find((item) => {
         const operationKeys = routeMergeKeys(item);
         return Array.from(routeKeys).some((key) => operationKeys.has(key));
       });
-      return { ...route, ...operation, employee_ids: operation?.employee_ids || route.employee_ids, employee_names: operation?.employee_names || route.employee_names, punch_points: operation?.punch_points || [], activity_points: operation?.activity_points || [] };
+      return { ...route, ...summary, ...operation, route_id: summary?.route_id || route.id, punch_count: summary?.punch_count || 0, activity_count: summary?.activity_count || 0, evidence_count: summary?.evidence_count || 0, closed_count: summary?.closed_count || 0, event_count: summary?.event_count || 0, employee_ids: operation?.employee_ids || route.employee_ids, employee_names: operation?.employee_names || route.employee_names, punch_points: operation?.punch_points || [], activity_points: operation?.activity_points || [] };
     });
-  }, [operations, routes]);
+  }, [eventSummaries, operations, routes]);
   const activeRoutes = useMemo(() => monitorRoutes.filter((route) => routeDerivedStatus(route) !== "closed" && routeDerivedStatus(route) !== "cancelled"), [monitorRoutes]);
   const selectedRoute = useMemo(() => monitorRoutes.find((route) => String(route.id) === selectedRouteId) || null, [monitorRoutes, selectedRouteId]);
   const selectedPeople = useMemo(() => selectedRoute && operations ? operations.people.filter((person) => String(person.route_id) === String(selectedRoute.id)) : [], [operations, selectedRoute]);
@@ -439,7 +465,7 @@ export default function RoutesPlanningPage() {
       ...(selectedRoute.activity_points || []).map((event) => ({ kind: "actividad" as const, id: `activity-${event.id}`, user_name: event.user_name, title: event.type, at: event.occurred_at, time: event.time || event.occurred_at, latitude: event.latitude, longitude: event.longitude, accuracy_meters: event.accuracy_meters, observation: event.observation || "", evidence: event.evidence || [] }))
     ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
   }, [selectedRoute]);
-  const routeCoverage = monitorRoutes.length ? Math.round((monitorRoutes.filter((route) => (route.punch_points?.length || 0) > 0).length / monitorRoutes.length) * 100) : 0;
+  const routeCoverage = monitorRoutes.length ? Math.round((monitorRoutes.filter((route) => routeEventCount(route) > 0).length / monitorRoutes.length) * 100) : 0;
   const administrativeRoutes = monitorRoutes.filter((route) => !route.vehicle_plate && !route.placa).length;
   const operationalRoutes = monitorRoutes.length - administrativeRoutes;
   const routesWithoutPeople = monitorRoutes.filter((route) => !(route.assigned_count ?? routeEmployeeValues(route).length ?? 0)).length;
@@ -490,7 +516,7 @@ export default function RoutesPlanningPage() {
               <span className="rounded-md bg-paper px-3 py-1.5">{totalAssigned} personas</span>
               <span className="rounded-md bg-paper px-3 py-1.5">{administrativeRoutes}/{operationalRoutes} adm/op</span>
               <span className={`rounded-md px-3 py-1.5 ${routesWithoutPeople ? "bg-amber-50 text-amber-800" : "bg-paper text-neutral-600"}`}>{routeCoverage}% seguimiento</span>
-              <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => loadMonitor()} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={16} /> Actualizar</button>
+              <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => { loadEventSummaries(); if (selectedRouteId) loadMonitor(); }} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={16} /> Actualizar</button>
             </div>
           </div>
           <div className="mt-4 grid gap-2 lg:grid-cols-[minmax(240px,1fr)_180px_180px_170px]">
@@ -504,7 +530,7 @@ export default function RoutesPlanningPage() {
 
         <div className="grid gap-3 p-3 md:hidden">
           {filteredRoutes.map((route) => {
-            const events = (route.punch_points?.length || 0) + (route.activity_points?.length || 0);
+            const events = routeEventCount(route);
             const displayState = routeDisplayState(route);
             return (
               <article className="rounded-md border border-line p-4 text-left transition hover:border-apex hover:bg-paper" key={String(route.id)}>
@@ -521,7 +547,7 @@ export default function RoutesPlanningPage() {
                   <span className="rounded-md bg-white px-2 py-1">{route.assigned_count ?? routeEmployeeValues(route).length ?? 0} persona(s)</span>
                   <span className="rounded-md bg-white px-2 py-1">{events} evento(s)</span>
                   <span className="rounded-md bg-white px-2 py-1">{scheduleGpsRequired(route) ? "GPS" : "Sin GPS"}</span>
-                  <span className="rounded-md bg-white px-2 py-1">{route.activity_points?.length || 0} evidencia(s)</span>
+                  <span className="rounded-md bg-white px-2 py-1">{route.evidence_count || 0} evidencia(s)</span>
                 </div>
                 <div className="mt-4 grid gap-2 sm:grid-cols-3">
                   <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold hover:bg-paper" onClick={() => openRouteMonitor(route)} type="button"><Navigation size={15} /> Abrir</button>
@@ -538,7 +564,7 @@ export default function RoutesPlanningPage() {
             <thead className="bg-paper text-xs uppercase tracking-wide text-neutral-500"><tr><th className="px-4 py-3">ID horario</th><th className="px-4 py-3">Fecha y jornada</th><th className="px-4 py-3">Tipo y ubicacion</th><th className="px-4 py-3">Personas</th><th className="px-4 py-3">Estado</th><th className="px-4 py-3 text-right">Acciones</th></tr></thead>
             <tbody className="divide-y divide-line">
               {filteredRoutes.map((route) => {
-                const events = (route.punch_points?.length || 0) + (route.activity_points?.length || 0);
+                const events = routeEventCount(route);
                 const operational = Boolean(route.vehicle_plate || route.placa);
                 const displayState = routeDisplayState(route);
                 return <tr className="hover:bg-paper/70" key={String(route.id)}>

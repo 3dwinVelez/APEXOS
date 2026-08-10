@@ -1,6 +1,7 @@
 const prisma = require("../../core/prisma");
 const { getTenantConfig, invalidateTenantCache } = require("../../core/tenantCache");
 const { MAX_EVIDENCE_BYTES, assertSafeFile, normalizeFileName, secureStoragePath } = require("../../security/policy");
+const { buildRouteEventSummaries } = require("./routeEventSummaries");
 const { normalizePunchType, processWorkday } = require("./timeLogic");
 
 const DEFAULT_PARAMS = {
@@ -457,6 +458,47 @@ async function listRoutes(tenantId, query = {}) {
       tracking_mode: routeTrackingMode(route),
       metadata: { gps_required: routeGpsRequired(route), tracking_mode: routeTrackingMode(route) }
     }));
+  });
+}
+
+async function listRouteEventSummaries(tenantId) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const routes = await prisma.timeRoute.findMany({
+      select: { id: true },
+      orderBy: { date: "desc" },
+      take: 100
+    });
+    const routeIds = routes.map((route) => route.id);
+    if (!routeIds.length) return { generated_at: new Date().toISOString(), routes: [] };
+
+    const [punchGroups, activityGroups, closedGroups, evidenceRows] = await Promise.all([
+      prisma.timePunch.groupBy({
+        by: ["route_id"],
+        where: { route_id: { in: routeIds } },
+        _count: { _all: true },
+        _max: { punched_at: true }
+      }),
+      prisma.workActivity.groupBy({
+        by: ["route_id"],
+        where: { route_id: { in: routeIds } },
+        _count: { _all: true },
+        _max: { occurred_at: true }
+      }),
+      prisma.timePunch.groupBy({
+        by: ["route_id"],
+        where: { route_id: { in: routeIds }, type: "salida" },
+        _count: { _all: true }
+      }),
+      prisma.activityEvidence.findMany({
+        where: { activity: { route_id: { in: routeIds } } },
+        select: { activity: { select: { route_id: true } } }
+      })
+    ]);
+
+    return {
+      generated_at: new Date().toISOString(),
+      routes: buildRouteEventSummaries({ routeIds, punchGroups, activityGroups, closedGroups, evidenceRows })
+    };
   });
 }
 
@@ -2104,6 +2146,7 @@ module.exports = {
   getCurrentEmployee,
   createEmployee,
   listRoutes,
+  listRouteEventSummaries,
   createRoute,
   updateRoute,
   createRoutesBulk,
