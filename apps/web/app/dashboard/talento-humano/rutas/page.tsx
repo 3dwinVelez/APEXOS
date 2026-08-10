@@ -248,29 +248,41 @@ export default function RoutesPlanningPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
 
-  const load = useCallback(async (targetDate = monitorDate) => {
-    setLoadingMonitor(true);
-    const [employeeData, vehicleData, routeData, operationsData, masterData] = await Promise.all([
+  const loadReferenceData = useCallback(async () => {
+    const [employeeData, vehicleData, routeData, masterData] = await Promise.all([
       api<Employee[]>("/api/v1/hr/employees?active=true").catch(() => []),
       api<Vehicle[]>("/api/v1/transport/vehicles").catch(() => []),
-      api<TimeRoute[]>("/api/v1/hr/routes").catch(() => []),
-      api<OperationsMap>(`/api/v1/hr/operations-map?date=${encodeURIComponent(targetDate)}&minutes=30&footprint_days=30`).catch(() => null),
+      api<TimeRoute[]>("/api/v1/hr/routes", { cache: "no-store" }).catch(() => []),
       api<UserMasterData>("/api/v1/admin/user-master-data").catch(() => ({ locations: [] }))
     ]);
     setEmployees(employeeData);
     setVehicles(vehicleData);
     setRoutes(routeData);
-    setOperations(operationsData);
     const activeSites = (masterData.locations || []).filter((site) => site.active !== false).sort((a, b) => (a.sort_order || 100) - (b.sort_order || 100));
     setAdministrativeSites(activeSites);
     setAdministrativeSite((current) => activeSites.some((site) => site.code === current) ? current : activeSites[0]?.code || "");
-    setLoadingMonitor(false);
+  }, []);
+
+  const loadMonitor = useCallback(async (targetDate = monitorDate) => {
+    setLoadingMonitor(true);
+    try {
+      const operationsData = await api<OperationsMap>(`/api/v1/hr/operations-map?date=${encodeURIComponent(targetDate)}&minutes=30&footprint_days=30`, { cache: "no-store" });
+      setOperations(operationsData);
+    } catch {
+      // Keep the last valid snapshot visible while the next refresh retries.
+    } finally {
+      setLoadingMonitor(false);
+    }
   }, [monitorDate]);
 
   useEffect(() => {
-    load(monitorDate);
+    loadReferenceData();
+  }, [loadReferenceData]);
+
+  useEffect(() => {
+    loadMonitor(monitorDate);
     const refreshVisible = () => {
-      if (!document.hidden) load(monitorDate);
+      if (!document.hidden) loadMonitor(monitorDate);
     };
     const timer = window.setInterval(refreshVisible, 10000);
     document.addEventListener("visibilitychange", refreshVisible);
@@ -278,13 +290,13 @@ export default function RoutesPlanningPage() {
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", refreshVisible);
     };
-  }, [load, monitorDate]);
+  }, [loadMonitor, monitorDate]);
 
   useEffect(() => subscribeHrMonitorRefresh((detail) => {
     if (document.hidden) return;
     const targetDate = detail.date || monitorDate;
-    load(targetDate);
-  }), [load, monitorDate]);
+    loadMonitor(targetDate);
+  }), [loadMonitor, monitorDate]);
 
   function resetForm() {
     const today = localCalendarDate();
@@ -302,7 +314,7 @@ export default function RoutesPlanningPage() {
   }
 
   async function openCreateModal(route?: RouteMonitor) {
-    load();
+    loadReferenceData();
     setSelectedRouteId("");
     resetForm();
     if (route) {
@@ -395,7 +407,7 @@ export default function RoutesPlanningPage() {
       setMonitorDate(savedMonitorDate);
       resetForm();
       setModal(null);
-      await load(savedMonitorDate);
+      await Promise.all([loadReferenceData(), loadMonitor(savedMonitorDate)]);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No fue posible guardar el horario.");
     } finally {
@@ -423,7 +435,7 @@ export default function RoutesPlanningPage() {
   const selectedTimeline = useMemo(() => {
     if (!selectedRoute) return [];
     return [
-      ...(selectedRoute.punch_points || []).map((event) => ({ kind: "marca" as const, id: `punch-${event.id}`, user_name: event.user_name, title: punchNames[event.type] || event.type, at: event.punched_at, time: event.time || event.punched_at, latitude: event.latitude, longitude: event.longitude, accuracy_meters: event.accuracy_meters, observation: event.extra_minutes ? `${event.extra_minutes} minuto(s) extra · ${event.extra_reason || "extension"}${event.extra_detail ? ` · ${event.extra_detail}` : ""}` : "", evidence: event.extra_evidence?.base64_data || event.extra_evidence?.file_url ? [event.extra_evidence] : [] })),
+      ...(selectedRoute.punch_points || []).map((event) => ({ kind: "marca" as const, id: `punch-${event.id}`, user_name: event.user_name, title: punchNames[event.type] || event.type, at: event.punched_at, time: event.time || event.punched_at, latitude: event.latitude, longitude: event.longitude, accuracy_meters: event.accuracy_meters, observation: event.extra_minutes ? `${event.extra_minutes} minuto(s) extra · ${event.extra_reason || "extension"}${event.extra_detail ? ` · ${event.extra_detail}` : ""}` : "", evidence: event.extra_evidence?.base64_data || event.extra_evidence?.file_url || event.extra_evidence?.has_base64_data ? [event.extra_evidence] : [] })),
       ...(selectedRoute.activity_points || []).map((event) => ({ kind: "actividad" as const, id: `activity-${event.id}`, user_name: event.user_name, title: event.type, at: event.occurred_at, time: event.time || event.occurred_at, latitude: event.latitude, longitude: event.longitude, accuracy_meters: event.accuracy_meters, observation: event.observation || "", evidence: event.evidence || [] }))
     ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
   }, [selectedRoute]);
@@ -478,7 +490,7 @@ export default function RoutesPlanningPage() {
               <span className="rounded-md bg-paper px-3 py-1.5">{totalAssigned} personas</span>
               <span className="rounded-md bg-paper px-3 py-1.5">{administrativeRoutes}/{operationalRoutes} adm/op</span>
               <span className={`rounded-md px-3 py-1.5 ${routesWithoutPeople ? "bg-amber-50 text-amber-800" : "bg-paper text-neutral-600"}`}>{routeCoverage}% seguimiento</span>
-              <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => load()} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={16} /> Actualizar</button>
+              <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => loadMonitor()} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={16} /> Actualizar</button>
             </div>
           </div>
           <div className="mt-4 grid gap-2 lg:grid-cols-[minmax(240px,1fr)_180px_180px_170px]">
