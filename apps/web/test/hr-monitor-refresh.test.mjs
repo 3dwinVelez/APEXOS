@@ -17,3 +17,13 @@ test("el monitor de horarios escucha refresh local y no espera 30 segundos", () 
   assert.match(source, /subscribeHrMonitorRefresh/);
   assert.match(source, /window\.setInterval\(refreshVisible, 10000\)/);
 });
+
+test("el monitor solicita estado operativo fresco y conserva evidencia resumida", () => {
+  const monitorSource = read("app/dashboard/talento-humano/rutas/page.tsx");
+  const apiSource = read("lib/api.ts");
+  assert.match(monitorSource, /operations-map[^\n]+\{ cache: "no-store" \}/);
+  assert.match(monitorSource, /extra_evidence\?\.has_base64_data/);
+  assert.match(apiSource, /options\.cache === "no-store"/);
+  assert.match(apiSource, /!bypassReadCache/);
+  assert.match(apiSource, /inFlightGetRequests\.has\(requestKey\)/);
+});
