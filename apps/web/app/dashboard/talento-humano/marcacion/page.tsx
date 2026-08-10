@@ -3,6 +3,7 @@
 import { api } from "@/lib/api";
 import { getGpsFix, type GpsFix } from "@/lib/gps";
 import { scheduleGpsRequired } from "@/lib/hrScheduleMonitor";
+import { publishHrMonitorRefresh } from "@/lib/hrMonitorRefresh";
 import { SignatureCapture } from "@/components/operations/SignatureCapture";
 import { PhotoCapture, type CapturedFile } from "@/components/operations/PhotoCapture";
 import { AlertTriangle, ArrowLeft, CheckCircle2, ExternalLink, MapPin, Navigation, Plus, RefreshCw, Truck, X } from "lucide-react";
@@ -87,6 +88,7 @@ async function flushPendingSync(onUpdate?: (items: PendingSyncItem[], message?: 
         queue = queue.slice(1);
         writePendingSync(queue);
         changed = true;
+        publishHrMonitorRefresh({ source: "mobile-sync" });
         onUpdate?.(queue, queue.length ? `${item.label} sincronizado. Quedan ${queue.length} registro(s) por confirmar.` : `${item.label} sincronizado. El monitor ya puede actualizarse.`);
       } catch {
         const next = { ...item, attempts: item.attempts + 1 };
@@ -479,7 +481,10 @@ export default function MobilePunchPage() {
         setPendingSync(items);
         if (syncMessage) setMessage(syncMessage);
       }).then((changed) => {
-        if (changed) window.setTimeout(() => load().catch(() => undefined), 600);
+        if (changed) {
+          publishHrMonitorRefresh({ source: "mobile-punch", route_id: route?.id || null, date: todayBogota() });
+          window.setTimeout(() => load().catch(() => undefined), 600);
+        }
       }).catch((error) => {
         setMessage(error instanceof Error ? `Marcacion pendiente de confirmar: ${error.message}` : "Marcacion pendiente de confirmar.");
       });
@@ -580,7 +585,10 @@ export default function MobilePunchPage() {
       setPendingSync(items);
       if (syncMessage) setMessage(syncMessage);
     }).then((changed) => {
-      if (changed) window.setTimeout(() => load().catch(() => undefined), 600);
+      if (changed) {
+        publishHrMonitorRefresh({ source: "mobile-activity", route_id: route?.id || null, date: todayBogota() });
+        window.setTimeout(() => load().catch(() => undefined), 600);
+      }
     });
   }
 

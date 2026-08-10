@@ -103,6 +103,33 @@ function normalizeExtraEvidence(value) {
   };
 }
 
+const monitorEvidenceSelect = {
+  id: true,
+  evidence_type: true,
+  file_name: true,
+  mime_type: true,
+  file_size: true,
+  storage_path: true,
+  metadata: true
+};
+
+function monitorEvidenceSummary(evidence = {}) {
+  const base64 = evidence.base64_data || evidence.base64 || "";
+  const fileUrl = evidence.file_url || evidence.url || evidence.metadata?.file_url || "";
+  const fileName = evidence.file_name || evidence.name || "";
+  if (!base64 && !fileUrl && !fileName && !evidence.storage_path && !evidence.id) return {};
+  return {
+    ...(evidence.id ? { id: evidence.id } : {}),
+    ...(evidence.evidence_type ? { evidence_type: evidence.evidence_type } : {}),
+    ...(fileName ? { file_name: fileName } : {}),
+    ...(fileUrl ? { file_url: fileUrl } : {}),
+    ...(evidence.mime_type || evidence.type ? { mime_type: evidence.mime_type || evidence.type } : {}),
+    ...(evidence.file_size || evidence.size ? { file_size: evidence.file_size || evidence.size } : {}),
+    ...(evidence.storage_path ? { storage_path: evidence.storage_path } : {}),
+    has_base64_data: Boolean(base64)
+  };
+}
+
 function employeeDisplayName(employee) {
   const metadataName = String(employee?.metadata?.name || "").trim();
   const genericMetadata = isGenericEmployeeAlias(metadataName);
@@ -1641,7 +1668,7 @@ async function getOperationsMap(tenantId, query = {}) {
       }),
       prisma.workActivity.findMany({
         where: { occurred_at: { gte: day, lt: endOfDay(day) } },
-        include: { activity_type: true, evidence: true },
+        include: { activity_type: true, evidence: { select: monitorEvidenceSelect } },
         orderBy: { occurred_at: "desc" },
         take: activityLimit
       })
@@ -1790,7 +1817,7 @@ async function getOperationsMap(tenantId, query = {}) {
           extra_minutes: punch.extra_minutes,
           extra_reason: punch.extra_reason,
           extra_detail: punch.extra_detail,
-          extra_evidence: punch.extra_evidence || {},
+          extra_evidence: monitorEvidenceSummary(punch.extra_evidence || {}),
           metadata: punch.metadata || {}
         });
       }
@@ -1831,7 +1858,7 @@ async function getOperationsMap(tenantId, query = {}) {
           extra_minutes: punch.extra_minutes,
           extra_reason: punch.extra_reason,
           extra_detail: punch.extra_detail,
-          extra_evidence: punch.extra_evidence || {},
+          extra_evidence: monitorEvidenceSummary(punch.extra_evidence || {}),
           metadata: punch.metadata || {}
         })),
         activity_points: routeActivities.map((activity) => ({
@@ -1846,7 +1873,7 @@ async function getOperationsMap(tenantId, query = {}) {
           vehicle_plate: activity.vehicle_plate,
           route_id: activity.route_id,
           observation: activity.observation,
-          evidence: activity.evidence || [],
+          evidence: (activity.evidence || []).map(monitorEvidenceSummary),
           metadata: activity.metadata || {}
         })),
         marks_by_user: Array.from(marksByUser.entries()).map(([user_name, marks]) => ({ user_name, marks }))
