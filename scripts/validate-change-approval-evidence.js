@@ -31,6 +31,15 @@ for (const name of requiredChecks) {
     if (!fs.existsSync(evidencePath)) errors.push(`evidencia inexistente: ${evidencePath}`);
   }
 }
+if (manifest.certification?.status !== "passed") errors.push("certification.status debe ser passed");
+const certificationScript = path.resolve(path.dirname(absoluteManifest), String(manifest.certification?.script || ""));
+if (!manifest.certification?.script || !fs.existsSync(certificationScript)) errors.push("certification.script debe apuntar a un script versionado existente");
+const certificationEvidence = Array.isArray(manifest.certification?.evidence) ? manifest.certification.evidence : [];
+if (!certificationEvidence.length) errors.push("certification.evidence debe contener el resultado del script");
+for (const item of certificationEvidence) {
+  const evidencePath = path.resolve(path.dirname(absoluteManifest), item);
+  if (!fs.existsSync(evidencePath)) errors.push(`evidencia de certificacion inexistente: ${evidencePath}`);
+}
 if (manifest.target_branch !== "main" || manifest.source_branch !== "develop") {
   errors.push("el manifiesto debe certificar develop -> main");
 }

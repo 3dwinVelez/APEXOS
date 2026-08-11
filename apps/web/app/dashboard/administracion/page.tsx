@@ -694,8 +694,8 @@ function quickUserPayload(form: UserForm, roles: Role[], includePassword: boolea
     name: form.name || `${form.first_names} ${form.last_names}`.trim(),
     first_names: form.first_names || names.first_names,
     last_names: form.last_names || names.last_names,
-    email: form.email,
-    access_email: form.email,
+    email: form.access_email || form.email,
+    access_email: form.access_email || form.email,
     document: form.document,
     document_type: form.document_type || "CC",
     company: form.company,
@@ -1983,7 +1983,7 @@ export default function AdministracionPage() {
           <Field label="Lugar de expedicion" value={userForm.document_issue_place} onChange={(value) => setUserField("document_issue_place", value)} />
           <Field label="Fecha de nacimiento" type="date" value={userForm.birth_date} onChange={(value) => setUserField("birth_date", value)} />
           <SelectField label="Genero" value={userForm.gender} onChange={(value) => setUserField("gender", value)} options={[["", "No especificado"], ["femenino", "Femenino"], ["masculino", "Masculino"], ["otro", "Otro"]]} />
-          <Field label="Correo principal" value={userForm.email} onChange={(value) => setUserField("email", value)} />
+          <Field label="Correo principal" value={userForm.email} onChange={(value) => { setUserField("email", value); setUserField("access_email", value); }} />
           <Field label="Telefono" value={userForm.phone} onChange={(value) => setUserField("phone", value)} />
           <SelectField label="Estado" value={userForm.user_status} onChange={(value) => setUserField("user_status", value)} options={optionPairs(masterData.user_statuses)} />
           <Field label="Direccion" value={userForm.address} onChange={(value) => setUserField("address", value)} />
@@ -1996,7 +1996,7 @@ export default function AdministracionPage() {
     if (userTab === "acceso") {
       return (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          <Field label="Correo de acceso" value={userForm.access_email} onChange={(value) => setUserField("access_email", value)} />
+          <Field label="Correo de acceso" value={userForm.access_email} onChange={(value) => { setUserField("access_email", value); setUserField("email", value); }} />
           <Field label={selectedUserId ? "Nueva clave opcional" : "Clave inicial"} type="password" value={userForm.password} onChange={(value) => setUserField("password", value)} />
           <SelectField label="Rol principal" value={userForm.role_id} onChange={(value) => setUserField("role_id", value)} options={[["", "Seleccionar rol"], ...roles.filter((role) => role.active).map((role) => [String(role.id), role.name] as [string, string])]} />
           <SelectField label="Perfil operativo" value={userForm.operational_profile || userForm.operational_classification} onChange={(value) => { setUserField("operational_profile", value); setUserField("operational_classification", value); }} options={optionPairs(masterData.user_types, "Seleccionar perfil")} />

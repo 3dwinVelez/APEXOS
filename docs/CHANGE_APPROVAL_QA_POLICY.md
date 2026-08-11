@@ -12,6 +12,8 @@ Antes de aprobar `develop -> main` debe existir un manifiesto JSON versionado co
 4. Prueba de regresion sobre los flujos adyacentes afectados.
 5. Evidencias fechadas: capturas, resultados estructurados o logs sanitizados, sin secretos ni datos sensibles.
 6. Aprobacion explicita con responsable, fecha, commit evaluado y decision `approved`.
+7. Un script versionado de certificacion extremo a extremo que ejecute la peticion completa en el ambiente objetivo, verifique el estado final y falle con codigo distinto de cero ante cualquier resultado parcial.
+8. Evidencia generada por ese script con el commit desplegado, sin contrasenas, tokens ni secretos.
 
 ## Regla de bloqueo
 
@@ -22,6 +24,8 @@ npm run qa:approval:evidence -- <ruta-manifest.json>
 ```
 
 No se aceptan afirmaciones de funcionamiento basadas solo en revision de codigo, pruebas unitarias, entorno local o compilacion. La evidencia QA debe demostrar el comportamiento visible y los datos esperados.
+
+Ningun agente esta autorizado a publicar o promover un cambio como completo cuando el script de certificacion no fue ejecutado, termino con error, cubre solo una parte de la solicitud o usa un commit diferente al desplegado. Una respuesta HTTP exitosa no certifica por si sola el resultado funcional.
 
 ## Contenido minimo del manifiesto
 
@@ -37,6 +41,11 @@ No se aceptan afirmaciones de funcionamiento basadas solo en revision de codigo,
     "error": { "status": "passed", "evidence": ["error.md"] },
     "support_scripts": { "status": "passed", "evidence": ["scripts.md"] },
     "regression": { "status": "passed", "evidence": ["regression.md"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/example.js",
+    "evidence": ["certification.json"]
   },
   "approval": {
     "status": "approved",
