@@ -12,10 +12,12 @@ test("la marcacion movil emite refresh inmediato para monitores abiertos", () =>
   assert.match(source, /publishHrMonitorRefresh\(\{ source: "mobile-activity"/);
 });
 
-test("el monitor de horarios escucha refresh local y no espera 30 segundos", () => {
+test("el monitor de horarios escucha refresh local y actualiza resúmenes cada 5 segundos", () => {
   const source = read("app/dashboard/talento-humano/rutas/page.tsx");
   assert.match(source, /subscribeHrMonitorRefresh/);
-  assert.match(source, /window\.setInterval\(refreshVisible, 10000\)/);
+  assert.match(source, /window\.setInterval\(refreshVisible, 5000\)/);
+  assert.match(source, /hr\/routes\/event-summaries/);
+  assert.match(source, /routeEventCount\(route\)/);
 });
 
 test("el monitor solicita estado operativo fresco y conserva evidencia resumida", () => {

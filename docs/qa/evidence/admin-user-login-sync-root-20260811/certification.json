@@ -1,0 +1,19 @@
+{
+  "certification": "admin-user-login-sync",
+  "status": "passed",
+  "commit": "4d5d5799816e",
+  "environment": "QA",
+  "company": "SCJ",
+  "api_update": "passed",
+  "credential_provider": "supabase",
+  "email_confirmation": "passed",
+  "new_login": "passed",
+  "old_credentials_rejected": "passed",
+  "authenticated_role": "Supabase Member",
+  "cleanup": {
+    "auth_users_removed": 4,
+    "prisma_mirrors_deactivated": 4,
+    "status": "passed"
+  },
+  "certified_at": "2026-08-11T18:59:04.868Z"
+}

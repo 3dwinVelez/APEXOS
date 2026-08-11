@@ -1,6 +1,7 @@
 const prisma = require("../../core/prisma");
 const { getTenantConfig, invalidateTenantCache } = require("../../core/tenantCache");
 const { MAX_EVIDENCE_BYTES, assertSafeFile, normalizeFileName, secureStoragePath } = require("../../security/policy");
+const { buildRouteEventSummaries } = require("./routeEventSummaries");
 const { normalizePunchType, processWorkday } = require("./timeLogic");
 
 const DEFAULT_PARAMS = {
@@ -457,6 +458,79 @@ async function listRoutes(tenantId, query = {}) {
       tracking_mode: routeTrackingMode(route),
       metadata: { gps_required: routeGpsRequired(route), tracking_mode: routeTrackingMode(route) }
     }));
+  });
+}
+
+async function listRouteEventSummaries(tenantId) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const [routes, employees] = await Promise.all([
+      prisma.timeRoute.findMany({
+        select: { id: true, date: true, employees: true },
+        orderBy: { date: "desc" },
+        take: 100
+      }),
+      prisma.employee.findMany({ where: { active: true }, include: { user: { select: safeUserSelect } }, take: 500 })
+    ]);
+    const routeIds = routes.map((route) => route.id);
+    if (!routeIds.length) return { generated_at: new Date().toISOString(), routes: [] };
+
+    const employeeByAlias = new Map();
+    for (const employee of employees) {
+      for (const alias of aliasesForEmployee(employee)) employeeByAlias.set(normalizeKey(alias), employee);
+    }
+    const routeContexts = routes.map((route) => ({
+      route_id: route.id,
+      date: route.date,
+      assigned_aliases: Array.from(new Set((Array.isArray(route.employees) ? route.employees : []).flatMap((value) => {
+        const employee = employeeByAlias.get(normalizeKey(value));
+        return [value, ...(employee ? aliasesForEmployee(employee) : [])];
+      }).map(normalizeKey).filter(Boolean)))
+    }));
+    const dateWindows = Array.from(new Set(routes.map((route) => startOfDay(route.date).toISOString()))).map((value) => {
+      const from = new Date(value);
+      return { gte: from, lt: endOfDay(from) };
+    });
+
+    const [punchGroups, activityGroups, closedGroups, evidenceRows, unlinkedPunches, unlinkedActivities] = await Promise.all([
+      prisma.timePunch.groupBy({
+        by: ["route_id"],
+        where: { route_id: { in: routeIds } },
+        _count: { _all: true },
+        _max: { punched_at: true }
+      }),
+      prisma.workActivity.groupBy({
+        by: ["route_id"],
+        where: { route_id: { in: routeIds } },
+        _count: { _all: true },
+        _max: { occurred_at: true }
+      }),
+      prisma.timePunch.groupBy({
+        by: ["route_id"],
+        where: { route_id: { in: routeIds }, type: "salida" },
+        _count: { _all: true }
+      }),
+      prisma.activityEvidence.findMany({
+        where: { activity: { route_id: { in: routeIds } } },
+        select: { activity: { select: { route_id: true } } }
+      }),
+      prisma.timePunch.findMany({
+        where: { route_id: null, OR: dateWindows.map((date) => ({ date })) },
+        select: { employee_id: true, user_name: true, type: true, punched_at: true, date: true, metadata: true },
+        orderBy: { punched_at: "desc" },
+        take: 2000
+      }),
+      prisma.workActivity.findMany({
+        where: { route_id: null, OR: dateWindows.map((occurred_at) => ({ occurred_at })) },
+        select: { employee_id: true, user_name: true, occurred_at: true, metadata: true, _count: { select: { evidence: true } } },
+        orderBy: { occurred_at: "desc" },
+        take: 2000
+      })
+    ]);
+
+    return {
+      generated_at: new Date().toISOString(),
+      routes: buildRouteEventSummaries({ routeContexts, punchGroups, activityGroups, closedGroups, evidenceRows, unlinkedPunches, unlinkedActivities })
+    };
   });
 }
 
@@ -2104,6 +2178,7 @@ module.exports = {
   getCurrentEmployee,
   createEmployee,
   listRoutes,
+  listRouteEventSummaries,
   createRoute,
   updateRoute,
   createRoutesBulk,

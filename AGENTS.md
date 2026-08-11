@@ -26,6 +26,10 @@ Rules for Codex and any automated agent:
 - Treat absence of authorization as prohibition.
 - Do not skip validations to finish a delivery.
 - Every change must include tests and evidence.
+- An agent is not authorized to push or promote a change presented as complete unless a versioned certification script exercises the full requested flow and its manifest passes `npm run qa:approval:evidence -- <manifest>`.
+- Unit tests, lint, type checks, builds, API success responses, or code review alone never constitute complete certification.
+- A failed, pending, partial, simulated-only, or unexecuted end-to-end certification blocks publication and promotion. The agent must state the block explicitly and may not claim the incident is resolved.
+- Every promotion to `main` must pass `docs/CHANGE_APPROVAL_QA_POLICY.md` and `npm run qa:approval:evidence -- <manifest>` with explicit functional QA approval. Automated checks alone never authorize `main`.
 - Preserve traceability. Do not squash or rewrite shared history without explicit authorization.
 - Keep generated files, local logs, secrets, and environment-specific artifacts out of commits.
 - Emergency production fixes require explicit authorization and must be retrointegrated to `develop` and `desarrollo`.

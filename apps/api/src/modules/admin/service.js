@@ -1,4 +1,5 @@
 const bcrypt = require("bcrypt");
+const { syncSupabaseCredentials } = require("../../security/supabaseAdminCredentials");
 const prisma = require("../../core/prisma");
 const platformLogs = require("../../fabric/platformLogs");
 const { assertPasswordPolicy } = require("../../security/policy");
@@ -1153,6 +1154,12 @@ async function updateUser(tenantId, id, input, actorId = null) {
     const role = await prisma.role.findFirst({ where: { id: roleId } });
     if (!role) throw badRequest("Debe seleccionar un rol valido para el usuario.");
     if (role?.metadata?.active === false) throw badRequest("El rol seleccionado esta inactivo");
+    const credentialSync = await syncSupabaseCredentials({
+      userId: current.preferences?.supabase_user_id,
+      currentEmail: current.email,
+      nextEmail: email,
+      password: input.password || input.pas
+    });
     const nameParts = fullName.split(/\s+/).filter(Boolean);
     const firstNames = cleanText(input.first_names) || (nameParts.length > 1 ? nameParts.slice(0, -1).join(" ") : nameParts[0] || "");
     const lastNames = cleanText(input.last_names) || (nameParts.length > 1 ? nameParts.slice(-1).join(" ") : "");
@@ -1221,7 +1228,7 @@ async function updateUser(tenantId, id, input, actorId = null) {
         new_value: userAuditSnapshot(user, user.employee)
       }
     });
-    return userDto(user);
+    return { ...userDto(user), credential_sync: credentialSync };
   });
 }
 
@@ -1278,6 +1285,12 @@ async function updateUserAccess(tenantId, id, input, actorId = null) {
     const access = metadata.access || {};
     const nextSessionStatus = input.session_status || (input.blocked ? "bloqueada" : access.session_status || "sin_sesion");
     if (input.password) assertPasswordPolicy(input.password);
+    const credentialSync = await syncSupabaseCredentials({
+      userId: current.preferences?.supabase_user_id,
+      currentEmail: current.email,
+      nextEmail: current.email,
+      password: input.password
+    });
     await prisma.user.update({
       where: { id: current.id },
       data: {
@@ -1317,7 +1330,7 @@ async function updateUserAccess(tenantId, id, input, actorId = null) {
         new_value: userAuditSnapshot(user, user.employee)
       }
     });
-    return userDto(user);
+    return { ...userDto(user), credential_sync: credentialSync };
   });
 }
 
