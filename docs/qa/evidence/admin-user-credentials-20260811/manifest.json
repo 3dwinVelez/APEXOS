@@ -1,0 +1,18 @@
+{
+  "change_id": "admin-user-credentials-20260811",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "pending",
+  "checks": {
+    "functional": { "status": "pending", "evidence": ["functional.md"] },
+    "error": { "status": "passed", "evidence": ["error.md"] },
+    "support_scripts": { "status": "passed", "evidence": ["support-scripts.md"] },
+    "regression": { "status": "passed", "evidence": ["regression.md"] }
+  },
+  "approval": {
+    "status": "pending",
+    "approved_by": "",
+    "approved_at": ""
+  }
+}
