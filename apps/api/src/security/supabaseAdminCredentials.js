@@ -58,22 +58,35 @@ async function findUserByEmail(email) {
   return null;
 }
 
+async function findUserById(userId) {
+  const id = clean(userId);
+  if (!id) return null;
+  try {
+    const body = await request(`/auth/v1/admin/users/${encodeURIComponent(id)}`);
+    return body?.user || body;
+  } catch (error) {
+    if (error?.statusCode === 404) return null;
+    throw error;
+  }
+}
+
 async function syncSupabaseCredentials(input) {
-  const patch = credentialPatch(input);
-  if (!patch.changed) return { changed: false, provider: null };
-  const authUser = await findUserByEmail(input.currentEmail);
+  const requested = credentialPatch(input);
+  if (!requested.changed) return { changed: false, provider: null };
+  const authUser = await findUserById(input.userId) || await findUserByEmail(input.currentEmail);
   if (!authUser?.id) {
     const error = new Error("El usuario no tiene identidad en Supabase Auth. No se aplicaron cambios de correo o clave.");
     error.statusCode = 409;
     throw error;
   }
+  const desiredEmail = normalizeEmail(input.nextEmail || input.currentEmail);
+  const patch = credentialPatch({ currentEmail: authUser.email, nextEmail: desiredEmail, password: input.password });
   const updated = await request(`/auth/v1/admin/users/${encodeURIComponent(authUser.id)}`, {
     method: "PUT",
     body: JSON.stringify(patch.payload)
   });
   const confirmedEmail = normalizeEmail(updated?.user?.email || updated?.email);
-  const expectedEmail = normalizeEmail(input.nextEmail || input.currentEmail);
-  if (confirmedEmail !== expectedEmail) {
+  if (confirmedEmail !== desiredEmail) {
     const error = new Error("Supabase Auth no confirmo el correo de acceso. No se aplicaron cambios administrativos.");
     error.statusCode = 502;
     throw error;

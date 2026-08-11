@@ -48,3 +48,29 @@ test("finds the Auth identity and confirms the updated credentials", { concurren
   });
   assert.deepEqual(result, { changed: true, provider: "supabase", userId: "auth-1", email: "new@apexos.com" });
 });
+
+test("repairs a historical email mismatch using the persisted Auth user id", { concurrency: false }, async (t) => {
+  const previousUrl = process.env.SUPABASE_URL;
+  const previousKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  process.env.SUPABASE_URL = "https://qa.example.test";
+  process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-key";
+  t.after(() => {
+    if (previousUrl === undefined) delete process.env.SUPABASE_URL; else process.env.SUPABASE_URL = previousUrl;
+    if (previousKey === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY; else process.env.SUPABASE_SERVICE_ROLE_KEY = previousKey;
+  });
+  t.mock.method(global, "fetch", async (url, options = {}) => {
+    if (!options.method) {
+      assert.match(String(url), /\/admin\/users\/auth-legacy$/);
+      return new Response(JSON.stringify({ id: "auth-legacy", email: "legacy@apexos.com" }), { status: 200 });
+    }
+    assert.deepEqual(JSON.parse(options.body), { email: "edwin@apexos.com", email_confirm: true, password: "Temporal123" });
+    return new Response(JSON.stringify({ id: "auth-legacy", email: "edwin@apexos.com" }), { status: 200 });
+  });
+  const result = await syncSupabaseCredentials({
+    userId: "auth-legacy",
+    currentEmail: "edwin@apexos.com",
+    nextEmail: "edwin@apexos.com",
+    password: "Temporal123"
+  });
+  assert.equal(result.email, "edwin@apexos.com");
+});

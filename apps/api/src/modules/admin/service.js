@@ -1158,6 +1158,7 @@ async function updateUser(tenantId, id, input, actorId = null) {
     if (!role) throw badRequest("Debe seleccionar un rol valido para el usuario.");
     if (role?.metadata?.active === false) throw badRequest("El rol seleccionado esta inactivo");
     const credentialSync = await syncSupabaseCredentials({
+      userId: current.preferences?.supabase_user_id,
       currentEmail: current.email,
       nextEmail: email,
       password: input.password || input.pas
@@ -1289,7 +1290,12 @@ async function updateUserAccess(tenantId, id, input, actorId = null) {
     const access = metadata.access || {};
     const nextSessionStatus = input.session_status || (input.blocked ? "bloqueada" : access.session_status || "sin_sesion");
     if (input.password) assertPasswordPolicy(input.password);
-    const credentialSync = await syncSupabaseCredentials({ currentEmail: current.email, nextEmail: current.email, password: input.password });
+    const credentialSync = await syncSupabaseCredentials({
+      userId: current.preferences?.supabase_user_id,
+      currentEmail: current.email,
+      nextEmail: current.email,
+      password: input.password
+    });
     await prisma.user.update({
       where: { id: current.id },
       data: {
