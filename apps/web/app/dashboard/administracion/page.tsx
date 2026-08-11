@@ -748,6 +748,7 @@ export default function AdministracionPage() {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [userTab, setUserTab] = useState<UserTab>("basicos");
   const [userEditorOpen, setUserEditorOpen] = useState(false);
+  const [userSaveConfirmation, setUserSaveConfirmation] = useState(false);
   const [userSearch, setUserSearch] = useState("");
   const [userStatusFilter, setUserStatusFilter] = useState("all");
   const [documentDraft, setDocumentDraft] = useState({ document_type: "identity", file_name: "", file_url: "", storage_path: "", mime_type: "", file_size: "", observations: "" });
@@ -1145,6 +1146,7 @@ export default function AdministracionPage() {
     setUserForm(userToForm(user));
     setUserTab("basicos");
     setUserEditorOpen(true);
+    setUserSaveConfirmation(false);
   }
 
   function newUser() {
@@ -1154,6 +1156,7 @@ export default function AdministracionPage() {
     setUserTab("basicos");
     setSelectedDocumentFile(null);
     setUserEditorOpen(true);
+    setUserSaveConfirmation(false);
   }
 
   function validateUser() {
@@ -1186,7 +1189,14 @@ export default function AdministracionPage() {
       }
       if (selectedUserId) await api(`/api/v1/admin/users/${selectedUserApiId()}`, { method: "PUT", body: JSON.stringify(payload) });
       else await api("/api/v1/admin/users", { method: "POST", body: JSON.stringify(payload) });
-      setMessage("Usuario guardado.");
+      const emailChanged = Boolean(selectedUser && selectedUser.email.trim().toLowerCase() !== userForm.email.trim().toLowerCase());
+      const passwordChanged = Boolean(userForm.password);
+      const confirmation = selectedUserId
+        ? `Usuario actualizado.${emailChanged ? " Correo de acceso sincronizado con autenticacion." : ""}${passwordChanged ? " Clave temporal actualizada." : ""}`
+        : "Usuario creado con identidad de acceso y membresia sincronizadas.";
+      setMessage(confirmation);
+      notify(selectedUserId ? "Cambios confirmados" : "Usuario creado", confirmation);
+      setUserSaveConfirmation(false);
       setSelectedUserId(null);
       setUserForm(emptyUser);
       setUserTab("basicos");
@@ -1197,6 +1207,43 @@ export default function AdministracionPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  function requestUserSaveConfirmation() {
+    const validation = validateUser();
+    if (validation) {
+      setMessage(validation);
+      notify("Revisa el formulario", validation, "warning");
+      return;
+    }
+    setUserSaveConfirmation(true);
+  }
+
+  function renderUserSaveConfirmation() {
+    if (!userSaveConfirmation) return null;
+    const roleName = roles.find((role) => role.id === Number(userForm.role_id))?.name || "Sin rol";
+    const emailChanged = Boolean(selectedUser && selectedUser.email.trim().toLowerCase() !== userForm.email.trim().toLowerCase());
+    return (
+      <section className="rounded-md border border-amber-300 bg-amber-50 p-4" aria-live="polite">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="mt-0.5 shrink-0 text-amber-700" size={18} />
+          <div className="min-w-0 flex-1">
+            <h3 className="font-semibold text-amber-950">{selectedUserId ? "Confirmar cambios del usuario" : "Confirmar creacion del usuario"}</h3>
+            <p className="mt-1 text-sm text-amber-900">Verifica los datos antes de guardar. El correo y la clave se sincronizaran con el proveedor de autenticacion.</p>
+            <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+              <div><dt className="text-xs font-semibold text-amber-800">Usuario</dt><dd className="font-medium text-amber-950">{userForm.name || `${userForm.first_names} ${userForm.last_names}`.trim()}</dd></div>
+              <div><dt className="text-xs font-semibold text-amber-800">Correo de acceso</dt><dd className="break-all font-medium text-amber-950">{emailChanged ? `${selectedUser?.email} -> ${userForm.email}` : userForm.email}</dd></div>
+              <div><dt className="text-xs font-semibold text-amber-800">Rol principal</dt><dd className="font-medium text-amber-950">{roleName}</dd></div>
+              <div><dt className="text-xs font-semibold text-amber-800">Clave</dt><dd className="font-medium text-amber-950">{userForm.password ? "Se actualizara la clave temporal" : selectedUserId ? "Sin cambios" : "Clave inicial configurada"}</dd></div>
+            </dl>
+            <div className="mt-4 flex flex-wrap justify-end gap-2">
+              <button className="h-10 rounded-md border border-amber-300 bg-white px-3 text-sm font-semibold text-amber-950" onClick={() => setUserSaveConfirmation(false)} type="button">Volver al formulario</button>
+              <Button onClick={saveUser} disabled={saving} type="button"><Save size={16} /> {saving ? "Sincronizando..." : "Confirmar y guardar"}</Button>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
   }
 
   function userApiId(user: AdminUser) {
@@ -1871,9 +1918,10 @@ export default function AdministracionPage() {
           </div>
         </section>
 
+        {renderUserSaveConfirmation()}
         <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-4">
           <button className="h-10 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => setUserEditorOpen(false)} type="button">Cancelar</button>
-          <Button onClick={saveUser} disabled={saving} type="button"><Save size={16} /> {saving ? "Guardando..." : "Crear usuario rapido"}</Button>
+          <Button onClick={requestUserSaveConfirmation} disabled={saving || userSaveConfirmation} type="button"><Save size={16} /> Revisar y crear</Button>
         </div>
       </div>
     );
@@ -1913,9 +1961,10 @@ export default function AdministracionPage() {
           <p className="mt-3 rounded-md bg-paper px-3 py-2 text-xs font-medium text-neutral-600">Para cambiar clave sin correo, escribe una clave temporal y usa Cambiar clave. El usuario debera cambiarla en el proximo ingreso.</p>
         </section>
 
+        {renderUserSaveConfirmation()}
         <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-4">
           <button className="h-10 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => setUserEditorOpen(false)} type="button">Cancelar</button>
-          <Button onClick={saveUser} disabled={saving || userAccessSaving} type="button"><Save size={16} /> {saving ? "Guardando..." : "Guardar cambios"}</Button>
+          <Button onClick={requestUserSaveConfirmation} disabled={saving || userAccessSaving || userSaveConfirmation} type="button"><Save size={16} /> Revisar cambios</Button>
         </div>
       </div>
     );
