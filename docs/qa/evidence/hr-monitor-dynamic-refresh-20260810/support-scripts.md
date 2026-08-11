@@ -8,3 +8,4 @@ Ejecutados en `desarrollo`:
 - Prisma validate: aprobado.
 - Build Next.js de produccion: aprobado.
 - Gobierno Git de implementacion: aprobado.
+- Pruebas de eventos huerfanos, fecha operativa y ruta en metadata: aprobadas.
