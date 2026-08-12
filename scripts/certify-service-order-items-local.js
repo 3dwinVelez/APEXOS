@@ -1,4 +1,5 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
 const { performance } = require("node:perf_hooks");
 require("./load-env")();
 process.env.NODE_ENV = "test";
@@ -10,7 +11,7 @@ if (!["localhost", "127.0.0.1"].includes(databaseUrl.hostname)) {
 
 const prisma = require("../apps/api/src/core/prisma");
 const service = require("../apps/api/src/modules/services/service");
-const CERTIFICATION_VERSION = "service-order-items-local-v2";
+const CERTIFICATION_VERSION = "service-order-items-local-v3";
 const RUN_ID = `multi-item-${Date.now()}`;
 let tenantId;
 let otherTenantId;
@@ -62,6 +63,11 @@ async function cleanup() {
 }
 
 async function main() {
+  const operationPage = fs.readFileSync(require.resolve("../apps/web/app/dashboard/servicios/[id]/page.tsx"), "utf8");
+  assert.match(operationPage, /disabled=\{working \|\| !executionPhotosReady\(\)\}/);
+  assert.match(operationPage, /data\.items\.find\(\(item\) => !itemIsFinished\(item\.status\)\)/);
+  assert.match(operationPage, /selectedItem\?\.metadata\?\.inspection\?\.items/);
+  assert.match(operationPage, /if \(order\.item_progress\?\.all_completed\) setClosureMode\(true\)/);
   console.error("[cert] preparando datos locales");
   const { admin, technician, employee, references } = await setup();
   console.error("[cert] creando orden con tres solicitudes");
@@ -109,6 +115,11 @@ async function main() {
     const inspectedItem = inspection.items.find((candidate) => candidate.id === item.id);
     assert.equal(inspectedItem.metadata.inspection.items.length, 1);
     await service.moveToExecution(tenantId, technician, created.id, { item_id: item.id });
+    const beforeEvidence = await service.getOrder(tenantId, technician, created.id);
+    await assert.rejects(
+      () => service.transitionOrderItem(tenantId, technician, created.id, item.id, { status: "completada", expected_version: beforeEvidence.items.find((candidate) => candidate.id === item.id).version }),
+      (error) => error.statusCode === 422 && error.code === "SERVICE_ITEM_EVIDENCE_REQUIRED"
+    );
     await service.addPhoto(tenantId, technician, created.id, photo(item.id, "producto_abierto"));
     await service.addPhoto(tenantId, technician, created.id, photo(item.id, "producto_cerrado"));
     const refreshed = await service.getOrder(tenantId, technician, created.id);
@@ -124,7 +135,7 @@ async function main() {
 
   const elapsedMs = Number((performance.now() - started).toFixed(2));
   assert.ok(elapsedMs < 5000, `El flujo local excedio 5 s: ${elapsedMs} ms`);
-  console.log(JSON.stringify({ certification_version: CERTIFICATION_VERSION, ok: true, run_id: RUN_ID, order_id: created.id, requests: 3, administrative_edit_save: true, evidence: 6, tenant_isolation: true, optimistic_concurrency: true, elapsed_ms: elapsedMs }, null, 2));
+  console.log(JSON.stringify({ certification_version: CERTIFICATION_VERSION, ok: true, run_id: RUN_ID, order_id: created.id, requests: 3, administrative_edit_save: true, technician_multi_item_flow: true, evidence_required_error: true, evidence: 6, tenant_isolation: true, optimistic_concurrency: true, elapsed_ms: elapsedMs }, null, 2));
 }
 
 main().catch((error) => {

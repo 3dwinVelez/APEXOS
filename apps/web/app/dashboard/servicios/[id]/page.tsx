@@ -4,7 +4,7 @@ import type { CapturedFile } from "@/components/operations/PhotoCapture";
 import { api } from "@/lib/api";
 import { API_BASE_URL } from "@/lib/apiBaseUrl";
 import { uploadAuthorizedServiceImageData, uploadServiceImageData, getServiceImageUrl } from "@/lib/supabaseStorage";
-import { ArrowLeft, BookOpen, Camera, CheckCircle2, Circle, Download, FileSignature, PackageSearch, Play, Star, Wrench, X, XCircle, ZoomIn } from "lucide-react";
+import { ArrowLeft, BookOpen, CheckCircle2, Circle, Download, FileSignature, PackageSearch, Play, Star, Wrench, X, XCircle, ZoomIn } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
@@ -21,7 +21,7 @@ type ServiceReference = { code: string; name: string; parts: ServiceReferencePar
 type InspectionStatus = "ok" | "averiada" | "faltante";
 type InspectionItem = { part_id: number | string; name: string; quantity: number; unit: string; status: InspectionStatus; comment: string; action: string; supplier_name?: string };
 type ServicePhoto = { id: number | string; item_id?: number | string | null; type: string; file_url?: string; base64_data?: string; storage_path?: string; metadata?: { mime_type?: string; file_name?: string; part_id?: number | string; part_name?: string; [key: string]: unknown }; created_at?: string };
-type ServiceOrderItem = { id: number | string; legacy?: boolean; reference_id: number | string; reference: ServiceReference; service_type: string; quantity: number; description?: string; observation?: string; status: string; version: number; photos?: ServicePhoto[]; incidents?: ServiceOrder["incidents"] };
+type ServiceOrderItem = { id: number | string; legacy?: boolean; reference_id: number | string; reference: ServiceReference; service_type: string; quantity: number; description?: string; observation?: string; status: string; version: number; metadata?: { inspection?: { items?: InspectionItem[]; decision?: string; problem_count?: number } }; photos?: ServicePhoto[]; incidents?: ServiceOrder["incidents"] };
 type SatisfactionQuestion = { id: string; label: string; active?: boolean };
 type ServiceOrder = {
   id: number | string;
@@ -115,6 +115,10 @@ function panelForStatus(status: string): Panel {
   return "historial";
 }
 
+function itemIsFinished(status: string) {
+  return ["completada", "no_ejecutada"].includes(status);
+}
+
 function workflowStep(status: string) {
   if (status === "pendiente") return 0;
   if (["en_curso", "inspeccion"].includes(status)) return 1;
@@ -194,8 +198,15 @@ export default function ServiceOperationPage() {
       const data = await api<ServiceOrder>(`/api/v1/services/orders/${params.id}`);
       if (!data?.id) throw new Error("No se encontro el servicio solicitado o no tienes permisos para verlo.");
       setOrder((current) => mergeOrderState(current, data));
-      setSelectedItemId((current) => current && data.items.some((item) => String(item.id) === current) ? current : String(data.items.find((item) => !["completada", "no_ejecutada"].includes(item.status))?.id || data.items[0]?.id || ""));
-      setActivePanel((current) => current === "inicio" && data.status !== "pendiente" ? panelForStatus(data.status) : current);
+      setSelectedItemId((current) => {
+        const currentItem = data.items.find((item) => String(item.id) === current);
+        const nextItem = currentItem && !itemIsFinished(currentItem.status)
+          ? currentItem
+          : data.items.find((item) => !itemIsFinished(item.status)) || currentItem || data.items[0];
+        setActivePanel(data.item_progress?.all_completed ? "ejecucion" : panelForStatus(nextItem?.status || data.status));
+        setClosureMode(Boolean(data.item_progress?.all_completed));
+        return String(nextItem?.id || "");
+      });
     } catch (error) {
       setOrder(null);
       setMessage(error instanceof Error ? error.message : "No fue posible cargar el servicio.");
@@ -226,8 +237,8 @@ export default function ServiceOperationPage() {
         setNoExecutionReason(problems.map((item) => `${inspectionStatusLabel[item.status]}: ${item.name}${item.comment ? ` - ${item.comment}` : ""}`).join("\n"));
       }
     }
-    if (executionPhotoTypes.every((type) => order.photos.some((photo) => photo.type === type))) setClosureMode(true);
-    const saved = order.metadata?.inspection?.items;
+    if (order.item_progress?.all_completed) setClosureMode(true);
+    const saved = selectedItem?.metadata?.inspection?.items || (selectedItem?.legacy ? order.metadata?.inspection?.items : undefined);
     if (saved?.length) {
       setInspection(saved.map((item) => ({ ...item, part_id: item.part_id, quantity: Number(item.quantity || 1), unit: item.unit || "und", status: (["ok", "averiada", "faltante"].includes(item.status) ? item.status : "ok") as InspectionStatus, action: item.action || "ninguna" })));
       return;
@@ -241,12 +252,18 @@ export default function ServiceOperationPage() {
     setWorking(true);
     setMessage("");
     try {
+      if (status === "en_curso" && order?.status === "pendiente") {
+        await api(`/api/v1/services/orders/${params.id}/start`, {
+          method: "PATCH",
+          body: JSON.stringify({ metadata: { start_without_gps: true, start_method: "technician_manual_confirmation" } })
+        });
+      }
       await api(`/api/v1/services/orders/${params.id}/items/${selectedItem.id}/status`, {
         method: "PATCH",
         body: JSON.stringify({ status, expected_version: selectedItem.version })
       });
       await load();
-      setMessage(status === "completada" ? "Solicitud finalizada y evidencia asociada correctamente." : "Estado de la solicitud actualizado.");
+      setMessage(status === "completada" ? "Solicitud finalizada. Continua con la siguiente solicitud de la orden." : "Estado de la solicitud actualizado.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No fue posible actualizar la solicitud.");
     } finally {
@@ -453,6 +470,19 @@ export default function ServiceOperationPage() {
     setActivePanel("novedad");
   }
 
+  function selectOrderItem(item: ServiceOrderItem) {
+    if (working || inFlightUploads.current.size) return;
+    setSelectedItemId(String(item.id));
+    const orderReadyToClose = Boolean(order?.item_progress?.all_completed);
+    setActivePanel(orderReadyToClose ? "ejecucion" : panelForStatus(item.status));
+    setClosureMode(orderReadyToClose);
+    setInspectionMode("decision");
+    setCaptures({});
+    setUploadStatus({});
+    setUploadProgress({});
+    setMessage("");
+  }
+
   function validateInspection() {
     const problems = inspection.filter((item) => item.status !== "ok");
     const missing = problems.filter((item) => !item.comment.trim() || !hasProblemEvidence(item.part_id));
@@ -583,9 +613,10 @@ export default function ServiceOperationPage() {
   const activeReference = selectedItem?.reference || order.reference;
   const referenceManuals = activeReference?.manuals?.length ? activeReference.manuals : activeReference?.metadata?.manuals || [];
   const orderCompleted = ["cerrada", "no_ejecutada"].includes(order.status);
-  const inspectedItems = order.metadata?.inspection?.items || [];
+  const inspectedItems = selectedItem?.metadata?.inspection?.items || (selectedItem?.legacy ? order.metadata?.inspection?.items : []) || [];
   const inspectionIssues = inspectedItems.filter((item) => item.status !== "ok");
   const inspectionOkCount = inspectedItems.length - inspectionIssues.length;
+  const messageIsError = /^Error\s+\d+|^No (?:fue|se puede)|requiere|debes|pendiente:/i.test(message);
 
   return (
     <div className="mx-auto max-w-[1440px] space-y-4 pb-32 md:pb-8">
@@ -601,7 +632,7 @@ export default function ServiceOperationPage() {
         </div>
       </header>
 
-      {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-900">{message}</div> : null}
+      {message ? <div className={`rounded-md border p-4 text-sm font-medium ${messageIsError ? "border-red-200 bg-red-50 text-red-900" : "border-emerald-200 bg-emerald-50 text-emerald-900"}`}>{message}</div> : null}
 
       {order.items?.length ? <section className="rounded-md border border-line bg-white p-3 sm:p-4">
         <div className="mb-3 flex items-center justify-between gap-3"><div><h2 className="text-base font-semibold">Solicitudes</h2><p className="text-xs text-neutral-500">{order.item_progress?.completed || 0} de {order.items.length} terminadas</p></div><span className="rounded-md bg-paper px-2 py-1 text-xs font-semibold">{order.items.length}</span></div>
@@ -609,16 +640,16 @@ export default function ServiceOperationPage() {
           {order.items.map((item, index) => {
             const selected = String(item.id) === String(selectedItem?.id);
             const completed = ["completada", "no_ejecutada"].includes(item.status);
-            return <button className={`min-h-20 rounded-md border p-3 text-left ${selected ? "border-apex bg-apex/5" : "border-line bg-white"}`} key={item.id} onClick={() => setSelectedItemId(String(item.id))} type="button">
+            return <button className={`min-h-20 rounded-md border p-3 text-left ${selected ? "border-apex bg-apex/5" : "border-line bg-white"}`} disabled={working} key={item.id} onClick={() => selectOrderItem(item)} type="button">
               <span className="flex items-center justify-between gap-2 text-xs"><span className="font-semibold">Solicitud {index + 1}</span><span className={completed ? "text-emerald-700" : item.status === "pendiente" ? "text-neutral-500" : "text-apex"}>{completed ? "Completada" : statusLabel[item.status] || item.status}</span></span>
               <span className="mt-1 block truncate text-sm font-semibold">{item.reference?.code} · {item.service_type}</span>
-              <span className="mt-1 block text-xs text-neutral-500">Cantidad {item.quantity}</span>
+              <span className="mt-1 block text-xs text-neutral-500">{item.observation || "Sin observacion adicional"}</span>
             </button>;
           })}
         </div>
         {selectedItem && !selectedItem.legacy && !["completada", "no_ejecutada"].includes(selectedItem.status) ? <div className="mt-3 flex flex-wrap gap-2 border-t border-line pt-3">
           {selectedItem.status === "pendiente" ? <button className="inline-flex h-11 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white" disabled={working} onClick={() => transitionItem("en_curso")} type="button"><Play size={16} /> Iniciar solicitud</button> : null}
-          {selectedItem.status !== "pendiente" ? <button className="inline-flex h-11 items-center gap-2 rounded-md bg-emerald-600 px-4 text-sm font-semibold text-white" disabled={working} onClick={() => transitionItem("completada")} type="button"><CheckCircle2 size={16} /> Finalizar solicitud</button> : null}
+          {selectedItem.status === "ejecucion" ? <span className="inline-flex min-h-11 items-center rounded-md bg-emerald-50 px-3 text-sm font-semibold text-emerald-800">Captura ambas evidencias para finalizar</span> : null}
           <button className="inline-flex h-11 items-center gap-2 rounded-md border border-amber-300 px-4 text-sm font-semibold text-amber-900" disabled={working} onClick={() => transitionItem("bloqueada")} type="button"><FileSignature size={16} /> Bloquear</button>
         </div> : null}
       </section> : null}
@@ -626,9 +657,9 @@ export default function ServiceOperationPage() {
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(300px,0.8fr)]">
         <AdministrativeCorrectionPanel initiallyOpen={searchParams.get("corregir") === "1"} order={order} onApplied={load} />
         <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
-        <p className="text-sm font-semibold">{order.reference?.code} · {order.reference?.name}</p>
+        <p className="text-sm font-semibold">{activeReference?.code} · {activeReference?.name}</p>
         <p className="mt-1 text-xs text-neutral-500">
-          {order.reference?.parts.length || 0} pieza(s) · {order.service_type} · {[order.customer_phone, order.metadata?.customer_phone_secondary].filter(Boolean).join(" / ") || "Sin telefono"}
+          {activeReference?.parts.length || 0} pieza(s) · {selectedItem?.service_type || order.service_type} · {[order.customer_phone, order.metadata?.customer_phone_secondary].filter(Boolean).join(" / ") || "Sin telefono"}
         </p>
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-neutral-600">
           <span className="rounded-md bg-paper px-3 py-2">{order.photos.length} evidencias</span>
@@ -641,7 +672,7 @@ export default function ServiceOperationPage() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-apex">Avance de la orden</p>
-            <p className="mt-1 text-sm text-neutral-600">Paso {workflowStep(order.status) + 1} de {workflowSteps.length}: <span className="font-semibold text-neutral-900">{workflowSteps[workflowStep(order.status)].label}</span></p>
+            <p className="mt-1 text-sm text-neutral-600">Paso {workflowStep(selectedItem?.status || order.status) + 1} de {workflowSteps.length}: <span className="font-semibold text-neutral-900">{workflowSteps[workflowStep(selectedItem?.status || order.status)].label}</span></p>
           </div>
           {!["cerrada", "no_ejecutada"].includes(order.status) ? (
             <button className="hidden min-h-11 shrink-0 items-center justify-center gap-2 rounded-md border border-red-200 px-3 text-sm font-semibold text-red-700 hover:bg-red-50 md:inline-flex" onClick={openIncidentReport} type="button">
@@ -651,8 +682,9 @@ export default function ServiceOperationPage() {
         </div>
         <div className="mt-4 grid grid-cols-4 gap-1">
           {workflowSteps.map((step, index) => {
-            const current = index === workflowStep(order.status);
-            const completed = index < workflowStep(order.status) || ["cerrada", "no_ejecutada"].includes(order.status);
+            const selectedStatus = selectedItem?.status || order.status;
+            const current = index === workflowStep(selectedStatus);
+            const completed = index < workflowStep(selectedStatus) || itemIsFinished(selectedStatus) || ["cerrada", "no_ejecutada"].includes(order.status);
             return (
               <div className="min-w-0" key={step.id}>
                 <div className={`h-1.5 rounded-full ${completed || current ? "bg-apex" : "bg-line"}`} />
@@ -667,17 +699,17 @@ export default function ServiceOperationPage() {
         {order.status === "no_ejecutada" ? <p className="mt-3 rounded-md bg-amber-50 p-2 text-xs font-semibold text-amber-900">La orden finalizó mediante una novedad soportada.</p> : null}
       </section>
 
-      {activePanel === "inicio" && order.status === "pendiente" ? (
+      {activePanel === "inicio" && selectedItem?.status === "pendiente" ? (
         <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
           <h2 className="mb-3 text-base font-semibold">Inicio del servicio</h2>
           <div className="rounded-md border border-line bg-paper p-3">
             <p className="font-semibold">Confirma el inicio para continuar con la inspección.</p>
           </div>
-          <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white disabled:opacity-50" disabled={working} onClick={() => update("start")} type="button"><Play size={18} /> Iniciar servicio</button>
+          <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white disabled:opacity-50" disabled={working} onClick={() => transitionItem("en_curso")} type="button"><Play size={18} /> Iniciar solicitud</button>
         </section>
       ) : null}
 
-      {activePanel === "inspeccion" && ["en_curso", "inspeccion"].includes(order.status) ? (
+      {activePanel === "inspeccion" && selectedItem && ["en_curso", "inspeccion"].includes(selectedItem.status) ? (
         <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
           <h2 className="mb-3 text-base font-semibold">Inspección</h2>
           {referenceManuals.length ? (
@@ -785,7 +817,7 @@ export default function ServiceOperationPage() {
         </section>
       ) : null}
 
-      {activePanel === "ejecucion" && order.status === "ejecucion" ? (
+      {activePanel === "ejecucion" && (selectedItem?.status === "ejecucion" || Boolean(order.item_progress?.all_completed)) ? (
         <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
           {!closureMode ? (
             <>
@@ -794,7 +826,7 @@ export default function ServiceOperationPage() {
                 <PhotoCapture label="Foto 1: Producto abierto" required locked={hasPersistedPhoto("producto_abierto")} loading={uploading.producto_abierto} progress={uploadProgress.producto_abierto} status={uploadStatus.producto_abierto} value={captures.producto_abierto || null} onChange={(file) => uploadPhoto("producto_abierto", file)} />
                 <PhotoCapture label="Foto 2: Producto cerrado" required locked={hasPersistedPhoto("producto_cerrado")} loading={uploading.producto_cerrado} progress={uploadProgress.producto_cerrado} status={uploadStatus.producto_cerrado} value={captures.producto_cerrado || null} onChange={(file) => uploadPhoto("producto_cerrado", file)} />
               </div>
-              <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white disabled:opacity-50" disabled={!executionPhotosReady()} onClick={() => setClosureMode(true)} type="button"><Camera size={18} /> {uploadsPending(executionPhotoTypes) ? "Guardando evidencias..." : "Continuar al cierre"}</button>
+              <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white disabled:opacity-50" disabled={working || !executionPhotosReady()} onClick={() => transitionItem("completada")} type="button"><CheckCircle2 size={18} /> {uploadsPending(executionPhotoTypes) ? "Guardando evidencias..." : "Finalizar solicitud"}</button>
             </>
           ) : (
             <>

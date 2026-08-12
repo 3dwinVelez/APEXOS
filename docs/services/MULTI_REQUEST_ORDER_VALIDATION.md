@@ -34,14 +34,16 @@ Resultado certificado:
 
 ```json
 {
-  "certification_version": "service-order-items-local-v2",
+  "certification_version": "service-order-items-local-v3",
   "ok": true,
   "requests": 3,
   "administrative_edit_save": true,
+  "technician_multi_item_flow": true,
+  "evidence_required_error": true,
   "evidence": 6,
   "tenant_isolation": true,
   "optimistic_concurrency": true,
-  "elapsed_ms": 1318.41
+  "elapsed_ms": 1677.39
 }
 ```
 
@@ -86,7 +88,7 @@ No crear commit, no hacer push y no proponer promocion mientras el build complet
 
 La certificacion reproducible de esta intervencion es
 `npm run certify:service-order-items:local`. Su salida identifica la version
-`service-order-items-local-v2`, falla con un codigo distinto de cero ante una
+`service-order-items-local-v3`, falla con un codigo distinto de cero ante una
 ejecucion parcial y elimina los datos temporales al finalizar.
 
 Esta certificacion local no reemplaza la aprobacion funcional en QA ni autoriza
@@ -115,3 +117,29 @@ Correccion certificada:
 La orden `SOL-2026-00011` pertenece a `SCJ` y, por aislamiento, solo puede ser
 gestionada con una sesion administrativa de `SCJ`. No se traslado ni modifico
 esa orden desde la sesion de `Demo APEX`.
+
+## Incidente del flujo tecnico multi-solicitud
+
+Hallazgo del 2026-08-12 en la orden local `SOL-2026-00003`: el panel seguia el
+estado global de la orden y no el estado de la solicitud seleccionada. Cuando
+una referencia llegaba a ejecucion, las demas dejaban de mostrar su inspeccion.
+Adicionalmente, la accion de finalizar estaba disponible antes de capturar las
+dos evidencias y producia un 422 evitable.
+
+Correccion y evidencia:
+
+- Cada solicitud abre su propio paso de inicio, inspeccion o ejecucion.
+- La inspeccion y sus piezas se leen desde los metadatos de la referencia
+  seleccionada, sin reutilizar el resultado de otra solicitud.
+- `Finalizar solicitud` solo se habilita cuando producto abierto y producto
+  cerrado estan persistidos para esa solicitud.
+- Al finalizar, se selecciona automaticamente la siguiente solicitud sin
+  terminar; el cierre general aparece unicamente al completar todas.
+- Los errores se muestran con estado visual de error y no como confirmaciones.
+- Prueba funcional real: la solicitud 1 de la orden `54` avanzo de `en_curso` a
+  `ejecucion`, mostro sus controles de captura y mantuvo la finalizacion
+  deshabilitada sin evidencias.
+- Certificacion aislada `service-order-items-local-v3`: tres solicitudes,
+  guardado administrativo, inspeccion, ejecucion, rechazo 422 esperado sin
+  evidencia, seis fotos, cierre individual, aislamiento y concurrencia; aprobada
+  en 1677,39 ms.
