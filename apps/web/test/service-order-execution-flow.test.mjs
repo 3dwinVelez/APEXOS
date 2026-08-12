@@ -23,6 +23,16 @@ test("al terminar una solicitud se selecciona la siguiente pendiente", () => {
   assert.match(source, /setClosureMode\(Boolean\(data\.item_progress\?\.all_completed\)\)/);
   assert.match(source, /if \(order\.item_progress\?\.all_completed\) setClosureMode\(true\)/);
   assert.doesNotMatch(source, /executionPhotoTypes\.every\(\(type\) => order\.photos/);
+  assert.match(source, /status === "completada" \|\| status === "no_ejecutada"/);
+  assert.match(source, /setCaptures\(\{\}\);\s+setUploading\(\{\}\);\s+setUploadStatus\(\{\}\);/);
+});
+
+test("la evidencia visible y el contador pertenecen a la solicitud seleccionada", () => {
+  assert.match(source, /selectedItem\?\.photos\?\.length \|\| 0/);
+  assert.match(source, /String\(photo\.item_id \|\| ""\) === selectedItemId/);
+  assert.match(source, /const targetItemId = selectedItem && !selectedItem\.legacy/);
+  assert.match(source, /\$\{params\.id\}:\$\{targetItemId \|\| "legacy"\}:\$\{captureKey\}/);
+  assert.match(source, /items: targetItemId \? current\.items\.map/);
 });
 
 test("el inicio de la primera solicitud tambien inicia la orden", () => {

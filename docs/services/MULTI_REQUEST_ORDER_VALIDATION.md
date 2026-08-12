@@ -43,7 +43,7 @@ Resultado certificado:
   "evidence": 6,
   "tenant_isolation": true,
   "optimistic_concurrency": true,
-  "elapsed_ms": 1677.39
+  "elapsed_ms": 1011.8
 }
 ```
 
@@ -136,10 +136,18 @@ Correccion y evidencia:
 - Al finalizar, se selecciona automaticamente la siguiente solicitud sin
   terminar; el cierre general aparece unicamente al completar todas.
 - Los errores se muestran con estado visual de error y no como confirmaciones.
+- Cada carga fija el `item_id` antes de iniciar, lo incorpora a la clave
+  idempotente y actualiza en memoria tanto la evidencia de la orden como la de
+  la solicitud seleccionada.
+- Al cambiar manual o automaticamente de solicitud se limpian las capturas
+  temporales; una foto persistida en una referencia no se muestra en otra.
 - Prueba funcional real: la solicitud 1 de la orden `54` avanzo de `en_curso` a
   `ejecucion`, mostro sus controles de captura y mantuvo la finalizacion
   deshabilitada sin evidencias.
+- Validacion de persistencia sobre la orden `54`: las evidencias `190` y `191`
+  quedaron asociadas exclusivamente al `item_id 52`; el `item_id 53` con cero
+  evidencias se presento vacio despues de corregir el estado temporal.
 - Certificacion aislada `service-order-items-local-v3`: tres solicitudes,
   guardado administrativo, inspeccion, ejecucion, rechazo 422 esperado sin
   evidencia, seis fotos, cierre individual, aislamiento y concurrencia; aprobada
-  en 1677,39 ms.
+  en 1011,8 ms.

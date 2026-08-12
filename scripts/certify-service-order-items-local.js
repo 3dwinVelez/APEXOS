@@ -68,6 +68,8 @@ async function main() {
   assert.match(operationPage, /data\.items\.find\(\(item\) => !itemIsFinished\(item\.status\)\)/);
   assert.match(operationPage, /selectedItem\?\.metadata\?\.inspection\?\.items/);
   assert.match(operationPage, /if \(order\.item_progress\?\.all_completed\) setClosureMode\(true\)/);
+  assert.match(operationPage, /setCaptures\(\{\}\);\s+setUploading\(\{\}\);\s+setUploadStatus\(\{\}\);/);
+  assert.match(operationPage, /items: targetItemId \? current\.items\.map/);
   console.error("[cert] preparando datos locales");
   const { admin, technician, employee, references } = await setup();
   console.error("[cert] creando orden con tres solicitudes");

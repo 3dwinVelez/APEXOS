@@ -262,6 +262,12 @@ export default function ServiceOperationPage() {
         method: "PATCH",
         body: JSON.stringify({ status, expected_version: selectedItem.version })
       });
+      if (status === "completada" || status === "no_ejecutada") {
+        setCaptures({});
+        setUploading({});
+        setUploadStatus({});
+        setUploadProgress({});
+      }
       await load();
       setMessage(status === "completada" ? "Solicitud finalizada. Continua con la siguiente solicitud de la orden." : "Estado de la solicitud actualizado.");
     } catch (error) {
@@ -272,6 +278,7 @@ export default function ServiceOperationPage() {
   }
 
   async function uploadPhoto(type: string, file: CapturedFile | null, metadata: Record<string, unknown> = {}, captureKey = type) {
+    const targetItemId = selectedItem && !selectedItem.legacy ? String(selectedItem.id) : "";
     if (file && (type === "pieza_averiada" ? hasPersistedProblemEvidence(metadata.part_id as number | string) : hasPersistedPhoto(type))) {
       setMessage(`La evidencia ${photoLabels[type] || type} ya fue registrada y no puede repetirse.`);
       return false;
@@ -291,7 +298,7 @@ export default function ServiceOperationPage() {
       const companyId = typeof window !== "undefined" ? localStorage.getItem("apexos_company_id") || "" : "";
       const serviceId = String(params.id);
       let storagePath = "";
-      const clientUploadId = `${params.id}:${captureKey}:${file.name}:${file.size}:${file.processedAt || Date.now()}`;
+      const clientUploadId = `${params.id}:${targetItemId || "legacy"}:${captureKey}:${file.name}:${file.size}:${file.processedAt || Date.now()}`;
       if (file.base64 && (companyId || AUTHORIZED_UPLOADS_ENABLED)) {
         try {
           const imageData = { base64: file.base64, name: file.name, type: file.type };
@@ -321,7 +328,7 @@ export default function ServiceOperationPage() {
         method: "POST",
         body: JSON.stringify({
           type,
-          ...(selectedItemId && !selectedItemId.startsWith("legacy-") ? { item_id: Number(selectedItemId) } : {}),
+          ...(targetItemId ? { item_id: Number(targetItemId) } : {}),
           ...(storagePath ? { storage_path: storagePath } : { base64_data: file.base64 }),
           size_bytes: file.size,
           mime_type: file.type,
@@ -341,7 +348,13 @@ export default function ServiceOperationPage() {
         ...current,
         photos: current.photos.some((photo) => photo.id === savedPhoto.id)
           ? current.photos.map((photo) => photo.id === savedPhoto.id ? savedPhoto : photo)
-          : [...current.photos, savedPhoto]
+          : [...current.photos, savedPhoto],
+        items: targetItemId ? current.items.map((item) => String(item.id) === targetItemId ? {
+          ...item,
+          photos: (item.photos || []).some((photo) => photo.id === savedPhoto.id)
+            ? (item.photos || []).map((photo) => photo.id === savedPhoto.id ? savedPhoto : photo)
+            : [...(item.photos || []), savedPhoto]
+        } : item) : current.items
       } : current);
       setUploadStatus((current) => ({ ...current, [captureKey]: "uploaded" }));
       setUploadProgress((current) => ({ ...current, [captureKey]: 100 }));
@@ -478,6 +491,7 @@ export default function ServiceOperationPage() {
     setClosureMode(orderReadyToClose);
     setInspectionMode("decision");
     setCaptures({});
+    setUploading({});
     setUploadStatus({});
     setUploadProgress({});
     setMessage("");
@@ -662,7 +676,7 @@ export default function ServiceOperationPage() {
           {activeReference?.parts.length || 0} pieza(s) · {selectedItem?.service_type || order.service_type} · {[order.customer_phone, order.metadata?.customer_phone_secondary].filter(Boolean).join(" / ") || "Sin telefono"}
         </p>
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-neutral-600">
-          <span className="rounded-md bg-paper px-3 py-2">{order.photos.length} evidencias</span>
+          <span className="rounded-md bg-paper px-3 py-2">{selectedItem?.photos?.length || 0} evidencias de esta solicitud</span>
           <span className="rounded-md bg-paper px-3 py-2">{order.incidents.length} novedades</span>
         </div>
         </section>
