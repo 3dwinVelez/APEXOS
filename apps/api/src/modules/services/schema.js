@@ -17,7 +17,24 @@ const orderSchema = {
       scheduled_date: { type: "string" },
       cedi_delivery_date: { type: "string" },
       notes: { type: "string" },
-      metadata: { type: "object" }
+      metadata: { type: "object" },
+      items: {
+        type: "array",
+        minItems: 1,
+        maxItems: 20,
+        items: {
+          type: "object",
+          required: ["reference_id", "service_type", "quantity"],
+          properties: {
+            reference_id: { type: "integer" },
+            service_type: { type: "string" },
+            quantity: { type: "number", exclusiveMinimum: 0 },
+            description: { type: "string" },
+            observation: { type: "string" },
+            idempotency_key: { type: "string" }
+          }
+        }
+      }
     }
   }
 };
@@ -38,6 +55,7 @@ const referenceSchema = {
       name: { type: "string" },
       category: { type: "string" },
       description: { type: "string" },
+      item_id: { type: "integer" },
       estimated_minutes: { type: "integer" },
       brand: { type: "string" },
       model: { type: "string" },
@@ -190,9 +208,10 @@ const startSchema = {
 };
 
 const inspectionSchema = {
-  body: {
-    type: "object",
-    properties: {
+    body: {
+      type: "object",
+      properties: {
+        item_id: { type: "integer" },
       decision: { type: "string" },
       items: {
         type: "array",
@@ -236,6 +255,7 @@ const incidentSchema = {
     properties: {
       description: { type: "string" },
       type: { type: "string" },
+      item_id: { type: "integer" },
       action: { type: "string" },
       photo_url: { type: "string" },
       metadata: { type: "object" }
@@ -249,6 +269,7 @@ const photoSchema = {
     required: ["type"],
     properties: {
       type: { type: "string" },
+      item_id: { type: "integer" },
       file_url: { type: "string" },
       base64_data: { type: "string" },
       size_bytes: { type: "integer" },
@@ -269,6 +290,24 @@ const evidenceAuthorizationSchema = {
       size_bytes: { type: "integer", minimum: 1, maximum: 2097152 },
       purpose: { type: "string", minLength: 1, maxLength: 64, pattern: "^[a-z0-9_-]+$" },
       client_upload_id: { type: "string", minLength: 1, maxLength: 128 }
+    }
+  }
+};
+
+const orderItemUpdateSchema = {
+  body: {
+    type: "object",
+    properties: orderSchema.body.properties.items.items.properties
+  }
+};
+
+const orderItemStatusSchema = {
+  body: {
+    type: "object",
+    required: ["status", "expected_version"],
+    properties: {
+      status: { type: "string", enum: ["pendiente", "en_curso", "inspeccion", "ejecucion", "completada", "no_ejecutada", "bloqueada"] },
+      expected_version: { type: "integer" }
     }
   }
 };
@@ -354,4 +393,13 @@ const correctionEvidenceSchema = {
   }
 };
 
-module.exports = { orderSchema, orderUpdateSchema, referenceSchema, referenceBulkImportSchema, serviceTypesSchema, serviceStoresSchema, satisfactionQuestionsSchema, startSchema, inspectionSchema, closeSchema, incidentSchema, photoSchema, evidenceAuthorizationSchema, correctionSchema, correctionActionSchema, forceCloseSchema, correctionRejectSchema, correctionEvidenceSchema };
+const executionSchema = {
+  schema: {
+    body: {
+      type: "object",
+      properties: { item_id: { type: "integer" } }
+    }
+  }
+};
+
+module.exports = { orderSchema, orderUpdateSchema, orderItemUpdateSchema, orderItemStatusSchema, referenceSchema, referenceBulkImportSchema, serviceTypesSchema, serviceStoresSchema, satisfactionQuestionsSchema, startSchema, inspectionSchema, executionSchema, closeSchema, incidentSchema, photoSchema, evidenceAuthorizationSchema, correctionSchema, correctionActionSchema, forceCloseSchema, correctionRejectSchema, correctionEvidenceSchema };

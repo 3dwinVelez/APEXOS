@@ -20,7 +20,8 @@ type ReferenceManual = { title: string; file_name?: string; mime_type?: string; 
 type ServiceReference = { code: string; name: string; parts: ServiceReferencePart[]; manuals?: ReferenceManual[]; metadata?: { manuals?: ReferenceManual[] } };
 type InspectionStatus = "ok" | "averiada" | "faltante";
 type InspectionItem = { part_id: number | string; name: string; quantity: number; unit: string; status: InspectionStatus; comment: string; action: string; supplier_name?: string };
-type ServicePhoto = { id: number | string; type: string; file_url?: string; base64_data?: string; storage_path?: string; metadata?: { mime_type?: string; file_name?: string; part_id?: number | string; part_name?: string; [key: string]: unknown }; created_at?: string };
+type ServicePhoto = { id: number | string; item_id?: number | string | null; type: string; file_url?: string; base64_data?: string; storage_path?: string; metadata?: { mime_type?: string; file_name?: string; part_id?: number | string; part_name?: string; [key: string]: unknown }; created_at?: string };
+type ServiceOrderItem = { id: number | string; legacy?: boolean; reference_id: number | string; reference: ServiceReference; service_type: string; quantity: number; description?: string; observation?: string; status: string; version: number; photos?: ServicePhoto[]; incidents?: ServiceOrder["incidents"] };
 type SatisfactionQuestion = { id: string; label: string; active?: boolean };
 type ServiceOrder = {
   id: number | string;
@@ -47,6 +48,8 @@ type ServiceOrder = {
   no_execution_reason?: string;
   incidents: Array<{ id: number | string; description: string; type: string; created_at?: string }>;
   photos: ServicePhoto[];
+  items: ServiceOrderItem[];
+  item_progress?: { total: number; pending: number; active: number; completed: number; blocked: number; all_completed: boolean; partial: boolean };
   metadata?: {
     customer_phone_secondary?: string;
     inspection?: { items?: InspectionItem[]; decision?: string; problem_count?: number };
@@ -175,7 +178,9 @@ export default function ServiceOperationPage() {
   const [activePanel, setActivePanel] = useState<Panel>("inicio");
   const [inspectionMode, setInspectionMode] = useState<InspectionMode>("decision");
   const [zoomedPhoto, setZoomedPhoto] = useState<ServicePhoto | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string>("");
   const inFlightUploads = useRef(new Set<string>());
+  const selectedItem = order?.items?.find((item) => String(item.id) === selectedItemId) || order?.items?.[0];
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -189,6 +194,7 @@ export default function ServiceOperationPage() {
       const data = await api<ServiceOrder>(`/api/v1/services/orders/${params.id}`);
       if (!data?.id) throw new Error("No se encontro el servicio solicitado o no tienes permisos para verlo.");
       setOrder((current) => mergeOrderState(current, data));
+      setSelectedItemId((current) => current && data.items.some((item) => String(item.id) === current) ? current : String(data.items.find((item) => !["completada", "no_ejecutada"].includes(item.status))?.id || data.items[0]?.id || ""));
       setActivePanel((current) => current === "inicio" && data.status !== "pendiente" ? panelForStatus(data.status) : current);
     } catch (error) {
       setOrder(null);
@@ -226,9 +232,27 @@ export default function ServiceOperationPage() {
       setInspection(saved.map((item) => ({ ...item, part_id: item.part_id, quantity: Number(item.quantity || 1), unit: item.unit || "und", status: (["ok", "averiada", "faltante"].includes(item.status) ? item.status : "ok") as InspectionStatus, action: item.action || "ninguna" })));
       return;
     }
-    const parts = order.reference?.parts || [];
+    const parts = selectedItem?.reference?.parts || order.reference?.parts || [];
     setInspection(parts.map((part) => ({ part_id: part.id, name: part.name, quantity: Number(part.quantity || 1), unit: part.unit || "und", status: "ok", comment: "", action: "ninguna" })));
-  }, [order, noExecutionReason]);
+  }, [order, noExecutionReason, selectedItem]);
+
+  async function transitionItem(status: string) {
+    if (!selectedItem || selectedItem.legacy) return;
+    setWorking(true);
+    setMessage("");
+    try {
+      await api(`/api/v1/services/orders/${params.id}/items/${selectedItem.id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status, expected_version: selectedItem.version })
+      });
+      await load();
+      setMessage(status === "completada" ? "Solicitud finalizada y evidencia asociada correctamente." : "Estado de la solicitud actualizado.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No fue posible actualizar la solicitud.");
+    } finally {
+      setWorking(false);
+    }
+  }
 
   async function uploadPhoto(type: string, file: CapturedFile | null, metadata: Record<string, unknown> = {}, captureKey = type) {
     if (file && (type === "pieza_averiada" ? hasPersistedProblemEvidence(metadata.part_id as number | string) : hasPersistedPhoto(type))) {
@@ -280,6 +304,7 @@ export default function ServiceOperationPage() {
         method: "POST",
         body: JSON.stringify({
           type,
+          ...(selectedItemId && !selectedItemId.startsWith("legacy-") ? { item_id: Number(selectedItemId) } : {}),
           ...(storagePath ? { storage_path: storagePath } : { base64_data: file.base64 }),
           size_bytes: file.size,
           mime_type: file.type,
@@ -381,15 +406,15 @@ export default function ServiceOperationPage() {
   }
 
   function hasProblemEvidence(partId: number | string) {
-    return Boolean(captures[`pieza_${partId}`]) || Boolean(order?.photos.some((photo) => photo.type === "pieza_averiada" && String(photo.metadata?.part_id) === String(partId)));
+    return Boolean(captures[`pieza_${partId}`]) || Boolean(order?.photos.some((photo) => String(photo.item_id || "") === selectedItemId && photo.type === "pieza_averiada" && String(photo.metadata?.part_id) === String(partId)));
   }
 
   function hasPersistedProblemEvidence(partId: number | string) {
-    return Boolean(order?.photos.some((photo) => photo.type === "pieza_averiada" && String(photo.metadata?.part_id) === String(partId)));
+    return Boolean(order?.photos.some((photo) => String(photo.item_id || "") === selectedItemId && photo.type === "pieza_averiada" && String(photo.metadata?.part_id) === String(partId)));
   }
 
   function hasPersistedPhoto(type: string) {
-    return Boolean(order?.photos.some((photo) => photo.type === type));
+    return Boolean(order?.photos.some((photo) => photo.type === type && (!selectedItemId.startsWith("legacy-") ? String(photo.item_id || "") === selectedItemId : true)));
   }
 
   function uploadsPending(types: string[]) {
@@ -459,6 +484,7 @@ export default function ServiceOperationPage() {
     return api<ServiceOrder>(`/api/v1/services/orders/${params.id}/inspection`, {
       method: "PATCH",
       body: JSON.stringify({
+        ...(selectedItemId && !selectedItemId.startsWith("legacy-") ? { item_id: Number(selectedItemId) } : {}),
         decision,
         items: inspection,
         metadata: {
@@ -477,7 +503,10 @@ export default function ServiceOperationPage() {
     try {
       const inspected = await saveInspection("armable");
       if (!inspected) return;
-      const updated = await api<ServiceOrder>(`/api/v1/services/orders/${params.id}/execution`, { method: "PATCH", body: JSON.stringify({}) });
+      const updated = await api<ServiceOrder>(`/api/v1/services/orders/${params.id}/execution`, {
+        method: "PATCH",
+        body: JSON.stringify(selectedItemId && !selectedItemId.startsWith("legacy-") ? { item_id: Number(selectedItemId) } : {})
+      });
       setOrder((current) => mergeOrderState(current, updated));
       setClosureMode(false);
       setActivePanel("ejecucion");
@@ -551,7 +580,8 @@ export default function ServiceOperationPage() {
       </div>
     );
   }
-  const referenceManuals = order.reference?.manuals?.length ? order.reference.manuals : order.reference?.metadata?.manuals || [];
+  const activeReference = selectedItem?.reference || order.reference;
+  const referenceManuals = activeReference?.manuals?.length ? activeReference.manuals : activeReference?.metadata?.manuals || [];
   const orderCompleted = ["cerrada", "no_ejecutada"].includes(order.status);
   const inspectedItems = order.metadata?.inspection?.items || [];
   const inspectionIssues = inspectedItems.filter((item) => item.status !== "ok");
@@ -572,6 +602,26 @@ export default function ServiceOperationPage() {
       </header>
 
       {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-900">{message}</div> : null}
+
+      {order.items?.length ? <section className="rounded-md border border-line bg-white p-3 sm:p-4">
+        <div className="mb-3 flex items-center justify-between gap-3"><div><h2 className="text-base font-semibold">Solicitudes</h2><p className="text-xs text-neutral-500">{order.item_progress?.completed || 0} de {order.items.length} terminadas</p></div><span className="rounded-md bg-paper px-2 py-1 text-xs font-semibold">{order.items.length}</span></div>
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          {order.items.map((item, index) => {
+            const selected = String(item.id) === String(selectedItem?.id);
+            const completed = ["completada", "no_ejecutada"].includes(item.status);
+            return <button className={`min-h-20 rounded-md border p-3 text-left ${selected ? "border-apex bg-apex/5" : "border-line bg-white"}`} key={item.id} onClick={() => setSelectedItemId(String(item.id))} type="button">
+              <span className="flex items-center justify-between gap-2 text-xs"><span className="font-semibold">Solicitud {index + 1}</span><span className={completed ? "text-emerald-700" : item.status === "pendiente" ? "text-neutral-500" : "text-apex"}>{completed ? "Completada" : statusLabel[item.status] || item.status}</span></span>
+              <span className="mt-1 block truncate text-sm font-semibold">{item.reference?.code} · {item.service_type}</span>
+              <span className="mt-1 block text-xs text-neutral-500">Cantidad {item.quantity}</span>
+            </button>;
+          })}
+        </div>
+        {selectedItem && !selectedItem.legacy && !["completada", "no_ejecutada"].includes(selectedItem.status) ? <div className="mt-3 flex flex-wrap gap-2 border-t border-line pt-3">
+          {selectedItem.status === "pendiente" ? <button className="inline-flex h-11 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white" disabled={working} onClick={() => transitionItem("en_curso")} type="button"><Play size={16} /> Iniciar solicitud</button> : null}
+          {selectedItem.status !== "pendiente" ? <button className="inline-flex h-11 items-center gap-2 rounded-md bg-emerald-600 px-4 text-sm font-semibold text-white" disabled={working} onClick={() => transitionItem("completada")} type="button"><CheckCircle2 size={16} /> Finalizar solicitud</button> : null}
+          <button className="inline-flex h-11 items-center gap-2 rounded-md border border-amber-300 px-4 text-sm font-semibold text-amber-900" disabled={working} onClick={() => transitionItem("bloqueada")} type="button"><FileSignature size={16} /> Bloquear</button>
+        </div> : null}
+      </section> : null}
 
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(300px,0.8fr)]">
         <AdministrativeCorrectionPanel initiallyOpen={searchParams.get("corregir") === "1"} order={order} onApplied={load} />

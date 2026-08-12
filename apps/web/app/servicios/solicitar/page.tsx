@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, CheckCircle2, Home, MapPin, PackageSearch, Send, ShieldCheck, UserRound } from "lucide-react";
+import { ArrowRight, CheckCircle2, Home, MapPin, PackageSearch, Plus, Send, ShieldCheck, Trash2, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -30,6 +30,7 @@ type PublicServiceReference = {
 };
 type PublicServiceType = { code: string; label: string; active?: boolean };
 type PublicServiceStore = { code: string; label: string; active?: boolean };
+type RequestItem = { reference_id: string; service_type: string; quantity: number; observation: string };
 
 const initialForm: FormState = {
   customer_name: "",
@@ -64,7 +65,7 @@ function buildAddress(form: FormState) {
 function requiredForStep(step: number): Array<keyof FormState> {
   if (step === 0) return ["customer_name", "customer_document", "customer_phone", "customer_phone_secondary"];
   if (step === 1) return ["customer_address", "customer_neighborhood", "service_store"];
-  if (step === 2) return ["service_type", "reference_id"];
+  if (step === 2) return [];
   return [];
 }
 
@@ -88,8 +89,8 @@ function PublicServiceRequestContent() {
   const [serviceTypes, setServiceTypes] = useState<PublicServiceType[]>([]);
   const [serviceStores, setServiceStores] = useState<PublicServiceStore[]>([]);
   const [loadingReferences, setLoadingReferences] = useState(true);
+  const [requestItems, setRequestItems] = useState<RequestItem[]>([{ reference_id: "", service_type: "montaje", quantity: 1, observation: "" }]);
   const addressPreview = useMemo(() => buildAddress(form), [form]);
-  const selectedReference = useMemo(() => references.find((item) => item.id === form.reference_id), [form.reference_id, references]);
   const progress = Math.round(((step + 1) / steps.length) * 100);
   const currentStep = steps[step];
 
@@ -112,6 +113,10 @@ function PublicServiceRequestContent() {
           service_type: nextTypes.length && !nextTypes.some((item: PublicServiceType) => item.code === current.service_type) ? nextTypes[0].code : current.service_type,
           service_store: nextStores.length && !nextStores.some((item: PublicServiceStore) => item.code === current.service_store) ? nextStores[0].code : current.service_store
         }));
+        setRequestItems((current) => current.map((item) => ({
+          ...item,
+          service_type: nextTypes.length && !nextTypes.some((type: PublicServiceType) => type.code === item.service_type) ? nextTypes[0].code : item.service_type
+        })));
       })
       .catch(() => {
         if (active) {
@@ -154,6 +159,10 @@ function PublicServiceRequestContent() {
       setMessage("Los dos telefonos de contacto deben ser diferentes.");
       return false;
     }
+    if (currentStep === 2 && requestItems.some((item) => !item.reference_id || !item.service_type || item.quantity <= 0)) {
+      setMessage("Completa referencia, tipo de servicio y cantidad en todas las solicitudes.");
+      return false;
+    }
     setMessage("");
     return true;
   }
@@ -182,12 +191,13 @@ function PublicServiceRequestContent() {
           invoice_number: form.invoice_number,
           service_type: form.service_type,
           reference_id: form.reference_id,
-          product_reference: selectedReference?.code || "",
-          product_description: selectedReference ? `${selectedReference.code} - ${selectedReference.name}` : "",
+          product_reference: references.find((item) => item.id === requestItems[0]?.reference_id)?.code || "",
+          product_description: references.find((item) => item.id === requestItems[0]?.reference_id)?.name || "",
           customer_address: addressPreview,
           customer_neighborhood: form.customer_neighborhood,
           service_store: form.service_store,
-          notes: form.notes
+          notes: form.notes,
+          items: requestItems
         })
       });
       const body = await response.json().catch(() => ({}));
@@ -216,7 +226,7 @@ function PublicServiceRequestContent() {
               </p>
             </div>
             <div className="grid gap-4 px-5 py-6 text-center sm:px-10 sm:py-8">
-              <button className="mx-auto inline-flex h-14 w-full max-w-sm items-center justify-center gap-2 rounded-xl bg-apex px-6 text-base font-bold text-white shadow-lg shadow-teal-900/20" onClick={() => { setCreated(null); setForm(initialForm); setStep(0); }} type="button">
+              <button className="mx-auto inline-flex h-14 w-full max-w-sm items-center justify-center gap-2 rounded-xl bg-apex px-6 text-base font-bold text-white shadow-lg shadow-teal-900/20" onClick={() => { setCreated(null); setForm(initialForm); setRequestItems([{ reference_id: "", service_type: "montaje", quantity: 1, observation: "" }]); setStep(0); }} type="button">
                 Realizar otra solicitud
               </button>
               <p className="text-sm text-neutral-500">Puedes cerrar esta ventana si no necesitas registrar otro servicio.</p>
@@ -333,19 +343,21 @@ function PublicServiceRequestContent() {
                   <h2 className="mt-1 text-2xl font-bold">Ahora el producto y el servicio</h2>
                   <p className="mt-2 text-sm leading-6 text-neutral-600">Si tienes la factura a mano, úsala para escoger la referencia correcta.</p>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Numero de factura o pedido" hint="Opcional, pero ayuda mucho."><input className="apex-public-input" placeholder="Ej. FAC-12345" value={form.invoice_number} onChange={(event) => setField("invoice_number", event.target.value)} /></Field>
-                  <Field label="Que necesitas hacer *" hint="Escoge una opcion."><select className="apex-public-input" disabled={loadingReferences} value={form.service_type} onChange={(event) => setField("service_type", event.target.value)}>
-                    {(serviceTypes.length ? serviceTypes : [{ code: "montaje", label: "Montaje" }, { code: "desmontaje", label: "Desmontaje" }, { code: "ambos", label: "Montaje y desmontaje" }]).map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}
-                  </select></Field>
-                  <Field label="Producto que compraste *" hint="Busca el codigo o nombre en tu factura.">
-                    <select className="apex-public-input" disabled={loadingReferences} value={form.reference_id} onChange={(event) => setField("reference_id", event.target.value)}>
-                      <option value="">{loadingReferences ? "Cargando referencias..." : "Selecciona una referencia"}</option>
-                      {references.map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}
-                    </select>
-                  </Field>
-                  <Field label="Algo que debamos saber" hint="Opcional: horario, indicaciones o detalles del producto."><textarea className="apex-public-input min-h-28 py-3" placeholder="Ej. Solo hay porteria hasta las 5 pm." value={form.notes} onChange={(event) => setField("notes", event.target.value)} /></Field>
+                <Field label="Numero de factura o pedido" hint="Opcional, pero ayuda mucho."><input className="apex-public-input" placeholder="Ej. FAC-12345" value={form.invoice_number} onChange={(event) => setField("invoice_number", event.target.value)} /></Field>
+                <div className="space-y-3">
+                  {requestItems.map((requestItem, index) => (
+                    <div className="rounded-xl border border-line bg-paper p-3" key={index}>
+                      <div className="mb-3 flex items-center justify-between gap-3"><p className="font-bold">Solicitud {index + 1}</p>{requestItems.length > 1 ? <button aria-label={`Eliminar solicitud ${index + 1}`} className="flex h-10 w-10 items-center justify-center rounded-md border border-red-200 bg-white text-red-700" onClick={() => setRequestItems((current) => current.filter((_, itemIndex) => itemIndex !== index))} type="button"><Trash2 size={17} /></button> : null}</div>
+                      <div className="grid gap-3 sm:grid-cols-[1fr_1fr_120px]">
+                        <Field label="Producto *"><select className="apex-public-input" disabled={loadingReferences} value={requestItem.reference_id} onChange={(event) => setRequestItems((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, reference_id: event.target.value } : item))}><option value="">Selecciona una referencia</option>{references.map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}</select></Field>
+                        <Field label="Servicio *"><select className="apex-public-input" value={requestItem.service_type} onChange={(event) => setRequestItems((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, service_type: event.target.value } : item))}>{(serviceTypes.length ? serviceTypes : [{ code: "montaje", label: "Montaje" }, { code: "desmontaje", label: "Desmontaje" }, { code: "ambos", label: "Montaje y desmontaje" }]).map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}</select></Field>
+                        <Field label="Cantidad *"><input className="apex-public-input" min={1} type="number" value={requestItem.quantity} onChange={(event) => setRequestItems((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, quantity: Math.max(Number(event.target.value), 1) } : item))} /></Field>
+                      </div>
+                    </div>
+                  ))}
+                  <button className="inline-flex h-11 items-center gap-2 rounded-md border border-apex px-4 text-sm font-bold text-apex disabled:opacity-40" disabled={requestItems.length >= 20 || !references.length} onClick={() => setRequestItems((current) => [...current, { reference_id: "", service_type: serviceTypes[0]?.code || "montaje", quantity: 1, observation: "" }])} type="button"><Plus size={17} /> Agregar otro producto</button>
                 </div>
+                <Field label="Algo que debamos saber" hint="Opcional: horario, indicaciones o detalles del producto."><textarea className="apex-public-input min-h-28 py-3" placeholder="Ej. Solo hay porteria hasta las 5 pm." value={form.notes} onChange={(event) => setField("notes", event.target.value)} /></Field>
                 {!loadingReferences && !references.length ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">No encontramos referencias activas para esta empresa. Activa el maestro de referencias antes de recibir solicitudes externas.</div> : null}
               </div>
             ) : null}
@@ -362,7 +374,7 @@ function PublicServiceRequestContent() {
                   <Summary label="Contactos" value={`${form.customer_phone} / ${form.customer_phone_secondary}${form.customer_email ? ` / ${form.customer_email}` : ""}`} />
                   <Summary label="Direccion" value={addressPreview} />
                   <Summary label="Almacen" value={(serviceStores.find((item) => item.code === form.service_store)?.label || form.service_store || "Sin seleccionar")} />
-                  <Summary label="Servicio" value={`${form.service_type} - ${selectedReference ? `${selectedReference.code} ${selectedReference.name}` : "Sin referencia"}`} />
+                  <Summary label="Solicitudes" value={requestItems.map((item) => { const reference = references.find((candidate) => candidate.id === item.reference_id); return `${item.quantity} x ${reference?.code || "Sin referencia"} - ${item.service_type}`; }).join(" | ")} />
                   <Summary label="Factura / pedido" value={form.invoice_number || "Sin registrar por ahora"} />
                 </div>
               </div>

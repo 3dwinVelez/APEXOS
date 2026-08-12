@@ -1,6 +1,7 @@
 const prisma = require("../../core/prisma");
 const { getTenantConfig, invalidateTenantCache } = require("../../core/tenantCache");
 const { MAX_DOCUMENT_BYTES, MAX_EVIDENCE_BYTES, assertSafeFile, normalizeFileName, secureStoragePath } = require("../../security/policy");
+const { ITEM_STATUSES, FINAL_ITEM_STATUSES, normalizeItem, validateItems, aggregateItemProgress, legacyItem } = require("./orderItems");
 
 function appError(statusCode, code, message) {
   const error = new Error(message);
@@ -24,12 +25,13 @@ async function nextNumber() {
 }
 
 function orderInclude() {
-  return { reference: { include: { parts: true } }, incidents: true, photos: { where: { active: true } } };
+  return { reference: { include: { parts: true } }, items: { include: { reference: { include: { parts: true } }, incidents: true, photos: { where: { active: true } } }, orderBy: { display_order: "asc" } }, incidents: true, photos: { where: { active: true } } };
 }
 
 function orderListInclude() {
   return {
     reference: { include: { parts: true } },
+    items: { include: { reference: true }, orderBy: { display_order: "asc" } },
     incidents: true,
     photos: { where: { active: true }, select: { id: true, type: true, created_at: true, metadata: true } }
   };
@@ -776,7 +778,11 @@ async function listOrders(tenantId, user, query = {}) {
 }
 
 async function getOrder(tenantId, user, id) {
-  return prisma.runWithTenant(tenantId, async () => accessibleOrder(tenantId, user, id));
+  return prisma.runWithTenant(tenantId, async () => {
+    const order = await accessibleOrder(tenantId, user, id);
+    const items = order.items?.length ? order.items : legacyItem(order);
+    return { ...order, items, item_progress: aggregateItemProgress(items) };
+  });
 }
 
 async function getOrderReport(tenantId, user, id) {
@@ -793,8 +799,12 @@ async function getOrderReportPdf(tenantId, user, id) {
 
 async function createOrder(tenantId, user, input) {
   assertAdministrativeServiceUser(user);
+  const requestedItems = Array.isArray(input.items) && input.items.length
+    ? input.items
+    : [{ reference_id: input.reference_id, service_type: input.service_type, quantity: 1, description: input.notes }];
+  const itemError = validateItems(requestedItems);
+  if (itemError) throw appError(400, "INVALID_SERVICE_ORDER_ITEMS", itemError);
   const requiredFields = [
-    ["reference_id", "referencia"],
     ["technician_id", "tecnico asignado"],
     ["service_type", "tipo de servicio"],
     ["customer_name", "nombre del cliente"],
@@ -814,7 +824,13 @@ async function createOrder(tenantId, user, input) {
   }
 
   return prisma.runWithTenant(tenantId, async () => {
-    const serviceType = await assertValidServiceType(tenantId, input.service_type || "montaje");
+    const normalizedItems = requestedItems.map(normalizeItem);
+    const referenceIds = [...new Set(normalizedItems.map((item) => item.reference_id))];
+    const references = await prisma.serviceReference.findMany({ where: { id: { in: referenceIds }, active: true }, select: { id: true } });
+    if (references.length !== referenceIds.length) throw appError(400, "INVALID_SERVICE_REFERENCE", "Todas las solicitudes deben usar referencias activas de la empresa.");
+    for (const item of normalizedItems) item.service_type = await assertValidServiceType(tenantId, item.service_type);
+    const firstItem = normalizedItems[0];
+    const serviceType = firstItem.service_type;
     const requestedNumber = String(input.number || "").trim();
     if (requestedNumber) {
       const existing = await prisma.serviceOrder.findFirst({ where: { tenant_id: tenantId, number: requestedNumber }, select: { id: true } });
@@ -829,7 +845,7 @@ async function createOrder(tenantId, user, input) {
     data: {
       number: requestedNumber || await nextNumber(),
       reference_item_id: input.reference_item_id,
-      reference_id: input.reference_id,
+      reference_id: firstItem.reference_id,
       technician_id: technician.id,
       service_type: serviceType,
       customer_name: input.customer_name,
@@ -842,10 +858,84 @@ async function createOrder(tenantId, user, input) {
       metadata: {
         ...(input.metadata || {}),
         customer_document: input.customer_document
-      }
+      },
+      items: { create: normalizedItems.map((item) => ({ ...item, tenant_id: tenantId })) }
     },
     include: orderInclude()
     });
+  });
+}
+
+async function orderItem(tenantId, user, orderId, itemId) {
+  const order = await accessibleOrder(tenantId, user, orderId, { items: true });
+  const item = await prisma.serviceOrderItem.findFirst({ where: { id: Number(itemId), tenant_id: tenantId, order_id: order.id }, include: { reference: { include: { parts: true } }, photos: { where: { active: true } }, incidents: true } });
+  if (!item) throw appError(404, "SERVICE_ORDER_ITEM_NOT_AVAILABLE", "La solicitud no pertenece a esta orden o empresa.");
+  return { order, item };
+}
+
+async function syncOrderProgress(orderId) {
+  const items = await prisma.serviceOrderItem.findMany({ where: { order_id: Number(orderId) }, select: { status: true } });
+  const progress = aggregateItemProgress(items);
+  if (!progress.all_completed) await prisma.serviceOrder.update({ where: { id: Number(orderId) }, data: { status: progress.order_status, version: { increment: 1 } } });
+  return progress;
+}
+
+async function updateOrderItem(tenantId, user, orderId, itemId, input = {}) {
+  assertAdministrativeServiceUser(user);
+  return prisma.runWithTenant(tenantId, async () => {
+    const { order, item } = await orderItem(tenantId, user, orderId, itemId);
+    if (item.status !== "pendiente") throw appError(409, "SERVICE_ORDER_ITEM_ALREADY_STARTED", "La solicitud iniciada no puede editarse.");
+    const data = {};
+    if (input.reference_id != null) {
+      const reference = await prisma.serviceReference.findFirst({ where: { id: Number(input.reference_id), active: true }, select: { id: true } });
+      if (!reference) throw appError(400, "INVALID_SERVICE_REFERENCE", "Selecciona una referencia activa.");
+      data.reference_id = reference.id;
+    }
+    if (input.service_type != null) data.service_type = await assertValidServiceType(tenantId, input.service_type);
+    if (input.quantity != null) {
+      const quantity = Number(input.quantity);
+      if (!Number.isFinite(quantity) || quantity <= 0) throw appError(400, "INVALID_SERVICE_ITEM_QUANTITY", "La cantidad debe ser mayor que cero.");
+      data.quantity = quantity;
+    }
+    if (input.description != null) data.description = String(input.description).trim();
+    if (input.observation != null) data.observation = String(input.observation).trim();
+    const updated = await prisma.serviceOrderItem.update({ where: { id: item.id }, data: { ...data, version: { increment: 1 } }, include: { reference: true } });
+    if (order.items[0]?.id === item.id) await prisma.serviceOrder.update({ where: { id: order.id }, data: { reference_id: updated.reference_id, service_type: updated.service_type } });
+    await prisma.auditLog.create({ data: { user_id: user.id, action: "service_order.item.updated", module: "services", entity: "ServiceOrderItem", entity_id: String(item.id), old_value: item, new_value: updated } });
+    return updated;
+  });
+}
+
+async function deleteOrderItem(tenantId, user, orderId, itemId) {
+  assertAdministrativeServiceUser(user);
+  return prisma.runWithTenant(tenantId, async () => {
+    const { order, item } = await orderItem(tenantId, user, orderId, itemId);
+    if (order.items.length <= 1) throw appError(409, "SERVICE_ORDER_LAST_ITEM", "La orden debe conservar al menos una solicitud.");
+    if (item.status !== "pendiente" || item.photos.length || item.incidents.length) throw appError(409, "SERVICE_ORDER_ITEM_ALREADY_STARTED", "No se puede eliminar una solicitud con ejecucion o trazabilidad.");
+    await prisma.serviceOrderItem.delete({ where: { id: item.id } });
+    await prisma.auditLog.create({ data: { user_id: user.id, action: "service_order.item.deleted", module: "services", entity: "ServiceOrderItem", entity_id: String(item.id), old_value: item, new_value: null } });
+    return { ok: true };
+  });
+}
+
+async function transitionOrderItem(tenantId, user, orderId, itemId, input = {}) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const { item } = await orderItem(tenantId, user, orderId, itemId);
+    const status = String(input.status || "").trim();
+    if (!ITEM_STATUSES.has(status)) throw appError(400, "INVALID_SERVICE_ITEM_STATUS", "Estado de solicitud invalido.");
+    const expectedVersion = Number(input.expected_version);
+    if (!Number.isInteger(expectedVersion)) throw appError(400, "SERVICE_ITEM_VERSION_REQUIRED", "La version esperada es obligatoria.");
+    if (status === "completada") {
+      const evidence = await prisma.servicePhoto.findMany({ where: { tenant_id: tenantId, order_id: Number(orderId), item_id: item.id, active: true, type: { in: ["producto_abierto", "producto_cerrado"] } }, select: { type: true } });
+      const types = new Set(evidence.map((photo) => photo.type));
+      if (!types.has("producto_abierto") || !types.has("producto_cerrado")) throw appError(422, "SERVICE_ITEM_EVIDENCE_REQUIRED", "La solicitud requiere evidencia de producto abierto y cerrado.");
+    }
+    const result = await prisma.serviceOrderItem.updateMany({ where: { id: item.id, tenant_id: tenantId, order_id: Number(orderId), version: expectedVersion }, data: { status, version: { increment: 1 }, ...(status === "en_curso" && !item.started_at ? { started_at: new Date() } : {}), ...(FINAL_ITEM_STATUSES.has(status) ? { completed_at: new Date() } : {}) } });
+    if (result.count !== 1) throw appError(409, "SERVICE_ITEM_VERSION_CONFLICT", "La solicitud fue modificada por otro usuario. Actualiza la orden.");
+    const updated = await prisma.serviceOrderItem.findUnique({ where: { id: item.id }, include: { reference: true } });
+    const progress = await syncOrderProgress(orderId);
+    await prisma.auditLog.create({ data: { user_id: user.id, action: "service_order.item.status_changed", module: "services", entity: "ServiceOrderItem", entity_id: String(item.id), old_value: { status: item.status, version: item.version }, new_value: { status: updated.status, version: updated.version } } });
+    return { item: updated, item_progress: progress };
   });
 }
 
@@ -860,6 +950,26 @@ async function updateOrder(tenantId, user, id, input = {}) {
     const metadata = order.metadata || {};
     const data = {};
     const nextMetadata = { ...metadata, ...(input.metadata || {}) };
+
+    if (Array.isArray(input.items)) {
+      const itemError = validateItems(input.items);
+      if (itemError) throw appError(400, "INVALID_SERVICE_ORDER_ITEMS", itemError);
+      if (order.items.some((item) => item.status !== "pendiente" || item.photos.length || item.incidents.length)) {
+        throw appError(409, "SERVICE_ORDER_ITEMS_ALREADY_STARTED", "Las solicitudes solo pueden reemplazarse antes de iniciar su ejecucion.");
+      }
+      const normalizedItems = input.items.map(normalizeItem);
+      const referenceIds = [...new Set(normalizedItems.map((item) => item.reference_id))];
+      const references = await prisma.serviceReference.findMany({ where: { id: { in: referenceIds }, active: true }, select: { id: true } });
+      if (references.length !== referenceIds.length) throw appError(400, "INVALID_SERVICE_REFERENCE", "Todas las solicitudes deben usar referencias activas de la empresa.");
+      for (const item of normalizedItems) item.service_type = await assertValidServiceType(tenantId, item.service_type);
+      data.reference_id = normalizedItems[0].reference_id;
+      data.service_type = normalizedItems[0].service_type;
+      data.items = {
+        deleteMany: {},
+        create: normalizedItems.map((item) => ({ ...item, tenant_id: tenantId }))
+      };
+      nextMetadata.request_count = normalizedItems.length;
+    }
 
     if (input.reference_id != null && String(input.reference_id).trim() !== "") {
       const reference = await prisma.serviceReference.findFirst({ where: { id: Number(input.reference_id), active: true }, select: { id: true } });
@@ -1099,19 +1209,33 @@ async function moveToInspection(tenantId, user, id, input = {}) {
       supplier_name: item.supplier_name || ""
     }));
     const problems = items.filter((item) => item.status !== "ok");
+    const inspection = {
+      items,
+      decision: input.decision || "pendiente",
+      problem_count: problems.length,
+      inspected_at: new Date().toISOString(),
+      ...(input.metadata || {})
+    };
+    if (input.item_id != null) {
+      const { item } = await orderItem(tenantId, user, order.id, input.item_id);
+      await prisma.serviceOrderItem.update({
+        where: { id: item.id },
+        data: {
+          status: "inspeccion",
+          version: { increment: 1 },
+          metadata: { ...(item.metadata || {}), inspection }
+        }
+      });
+      await syncOrderProgress(order.id);
+      return getOrder(tenantId, user, order.id);
+    }
     return prisma.serviceOrder.update({
       where: { id: Number(id) },
       data: {
         status: "inspeccion",
         metadata: {
           ...(order.metadata || {}),
-          inspection: {
-            items,
-            decision: input.decision || "pendiente",
-            problem_count: problems.length,
-            inspected_at: new Date().toISOString(),
-            ...(input.metadata || {})
-          }
+          inspection
         }
       },
       select: { id: true, status: true, metadata: { select: { inspection: true } } }
@@ -1119,9 +1243,26 @@ async function moveToInspection(tenantId, user, id, input = {}) {
   });
 }
 
-async function moveToExecution(tenantId, user, id) {
+async function moveToExecution(tenantId, user, id, input = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const order = await accessibleOrder(tenantId, user, id);
+    if (input.item_id != null) {
+      const { item } = await orderItem(tenantId, user, order.id, input.item_id);
+      const inspection = (item.metadata || {}).inspection || {};
+      await prisma.serviceOrderItem.update({
+        where: { id: item.id },
+        data: {
+          status: "ejecucion",
+          version: { increment: 1 },
+          metadata: {
+            ...(item.metadata || {}),
+            inspection: { ...inspection, decision: "armable", moved_to_execution_at: new Date().toISOString() }
+          }
+        }
+      });
+      await syncOrderProgress(order.id);
+      return getOrder(tenantId, user, order.id);
+    }
     return prisma.serviceOrder.update({
       where: { id: Number(id) },
       data: {
@@ -1143,6 +1284,10 @@ async function moveToExecution(tenantId, user, id) {
 async function closeOrder(tenantId, user, id, input = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const order = await accessibleOrder(tenantId, user, id);
+    if (order.items?.length) {
+      const progress = aggregateItemProgress(order.items);
+      if (!progress.all_completed) throw appError(409, "SERVICE_ORDER_ITEMS_PENDING", "Finaliza todas las solicitudes antes de cerrar la orden.");
+    }
     await requireSatisfactionSurvey(tenantId, input, order.metadata);
     await requireEvidence(id, ["producto_abierto", "producto_cerrado", "firma_cliente"]);
     const now = new Date();
@@ -1198,9 +1343,12 @@ async function closeNotExecuted(tenantId, user, id, input = {}) {
 async function addIncident(tenantId, user, orderId, input) {
   return prisma.runWithTenant(tenantId, async () => {
     const order = await accessibleOrder(tenantId, user, orderId);
+    const itemId = input.item_id == null ? null : Number(input.item_id);
+    if (itemId != null) await orderItem(tenantId, user, order.id, itemId);
     return prisma.serviceIncident.create({
     data: {
       order_id: order.id,
+      item_id: itemId,
       description: input.description,
       type: input.type || "averia",
       action: input.action || "",
@@ -1217,11 +1365,14 @@ async function addPhoto(tenantId, user, orderId, input) {
   const storagePath = input.storage_path || secureStoragePath({ tenantId, module: "services", entity: "orders", entityId: orderId, fileName });
   return prisma.runWithTenant(tenantId, async () => {
     const order = await accessibleOrder(tenantId, user, orderId);
+    const itemId = input.item_id == null ? null : Number(input.item_id);
+    if (itemId != null) await orderItem(tenantId, user, order.id, itemId);
     const clientUploadId = input.metadata?.client_upload_id ? String(input.metadata.client_upload_id) : "";
     if (clientUploadId) {
       const retryMatch = await prisma.servicePhoto.findFirst({
         where: {
           order_id: order.id,
+          item_id: itemId,
           metadata: { path: ["client_upload_id"], equals: clientUploadId }
         }
       });
@@ -1229,7 +1380,7 @@ async function addPhoto(tenantId, user, orderId, input) {
     }
     const partId = input.metadata?.part_id == null ? "" : String(input.metadata.part_id);
     const existing = await prisma.servicePhoto.findMany({
-      where: { order_id: order.id, type: input.type, active: true },
+      where: { order_id: order.id, item_id: itemId, type: input.type, active: true },
       select: { id: true, metadata: true }
     });
     const duplicate = input.type === "pieza_averiada"
@@ -1241,6 +1392,7 @@ async function addPhoto(tenantId, user, orderId, input) {
     return prisma.servicePhoto.create({
     data: {
       order_id: order.id,
+      item_id: itemId,
       type: input.type,
       file_url: input.file_url || "",
       base64_data: input.base64_data || "",
@@ -1281,6 +1433,9 @@ module.exports = {
   getOrderReportPdf,
   createOrder,
   updateOrder,
+  updateOrderItem,
+  deleteOrderItem,
+  transitionOrderItem,
   listReferences,
   getReference,
   createReference,
