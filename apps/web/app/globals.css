@@ -661,6 +661,63 @@ html.dark option {
 }
 
 /* Public service requests keep a stable, high-contrast palette regardless of the dashboard theme. */
+.apex-service-request {
+  --request-ink: #17201e;
+  --request-body: #3f4d49;
+  --request-muted: #5d6b67;
+  --request-apex: #08796c;
+  --request-apex-dark: #075e54;
+  --request-soft: #edf5f3;
+  --request-line: #aebbb7;
+  color-scheme: light;
+}
+
+.apex-service-request .text-apex {
+  color: var(--request-apex-dark) !important;
+}
+
+.apex-service-request .bg-apex {
+  background-color: var(--request-apex) !important;
+}
+
+.apex-service-request .bg-apex\/10 {
+  background-color: #dff1ed !important;
+}
+
+.apex-service-request .bg-apex\/5 {
+  background-color: #edf7f4 !important;
+}
+
+.apex-service-request .border-apex,
+.apex-service-request .border-apex\/20 {
+  border-color: #4f9489 !important;
+}
+
+.apex-service-request .text-neutral-600,
+.apex-service-request .text-neutral-500 {
+  color: var(--request-muted) !important;
+}
+
+.apex-service-request .apex-public-input {
+  border-color: var(--request-line);
+  background-color: #ffffff;
+  color: var(--request-ink);
+}
+
+.apex-service-request .apex-public-input::placeholder {
+  color: #697671;
+  opacity: 1;
+}
+
+.apex-service-request .apex-public-input:focus {
+  border-color: var(--request-apex);
+  box-shadow: 0 0 0 3px rgb(8 121 108 / 0.18);
+}
+
+.apex-service-request button:disabled {
+  color: #66736f;
+}
+
 html.dark .apex-service-request {
   background-color: #f4f6f5 !important;
   color: #17201e !important;
@@ -689,14 +746,14 @@ html.dark .apex-service-request .text-neutral-500 {
 html.dark .apex-service-request input,
 html.dark .apex-service-request select,
 html.dark .apex-service-request textarea {
-  border-color: #cbd5d1 !important;
+  border-color: #aebbb7 !important;
   background-color: #ffffff !important;
   color: #17201e !important;
 }
 
 html.dark .apex-service-request input::placeholder,
 html.dark .apex-service-request textarea::placeholder {
-  color: #7b8783 !important;
+  color: #697671 !important;
 }
 
 html.dark .bg-amber-50,
