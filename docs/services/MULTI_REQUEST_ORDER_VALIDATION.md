@@ -8,7 +8,8 @@ Estado: implementacion y certificacion local aprobadas; promocion pendiente de Q
 
 - Una orden admite entre 1 y 20 solicitudes independientes.
 - El editor administrativo permite agregar, modificar o retirar solicitudes mientras ninguna haya iniciado ni tenga trazabilidad.
-- Cada solicitud conserva referencia, tipo de servicio, cantidad, observacion, estado, version, inspeccion, incidentes y evidencias.
+- Cada articulo agregado representa una solicitud independiente; la cantidad operativa se fija en `1` para evitar ambiguedad en la interfaz.
+- Cada solicitud conserva referencia, tipo de servicio, observacion, estado, version, inspeccion, incidentes y evidencias.
 - Las ordenes antiguas se leen como una solicitud sintetica sin migracion destructiva.
 - El encabezado mantiene referencia y tipo de la primera solicitud para clientes antiguos.
 - No se modificaron `develop`, `main`, Railway, QA ni produccion.
@@ -33,13 +34,14 @@ Resultado certificado:
 
 ```json
 {
-  "certification_version": "service-order-items-local-v1",
+  "certification_version": "service-order-items-local-v2",
   "ok": true,
   "requests": 3,
+  "administrative_edit_save": true,
   "evidence": 6,
   "tenant_isolation": true,
   "optimistic_concurrency": true,
-  "elapsed_ms": 1655.23
+  "elapsed_ms": 1318.41
 }
 ```
 
@@ -54,6 +56,7 @@ Filtros aprobados:
 - Servicios y regresion administrativa: 31/31.
 - Offline y seguridad del almacenamiento local: 49/49.
 - Flujo real local de tres solicitudes: aprobado.
+- Guardado administrativo real de una orden con tres solicitudes: aprobado.
 - Edicion real local de una preorden de dos a tres solicitudes: aprobada; encabezado sincronizado y datos temporales eliminados.
 - Aislamiento entre tenants: aprobado.
 - Conflicto de version: aprobado con 409.
@@ -67,7 +70,7 @@ Filtros aprobados:
 3. Aplicar la migracion solo en local.
 4. Ejecutar `npm run certify:service-order-items:local` y exigir `ok: true`.
 5. Iniciar APEXOS local con `npm run start:desarrollo:windows`.
-6. Entrar como administrador a Servicios y crear una orden con tres solicitudes usando referencias, tipos y cantidades diferentes.
+6. Entrar como administrador a Servicios y crear una orden con tres solicitudes usando referencias y tipos diferentes.
 7. Confirmar que el monitor muestra una orden y el contador `0/3`.
 8. Entrar como el tecnico asignado, seleccionar cada solicitud y comprobar que cambian referencia, piezas y evidencia visible.
 9. Completar inspeccion y cargar producto abierto/cerrado para la primera solicitud. Confirmar que las otras dos siguen pendientes y no muestran esas fotos.
@@ -83,8 +86,32 @@ No crear commit, no hacer push y no proponer promocion mientras el build complet
 
 La certificacion reproducible de esta intervencion es
 `npm run certify:service-order-items:local`. Su salida identifica la version
-`service-order-items-local-v1`, falla con un codigo distinto de cero ante una
+`service-order-items-local-v2`, falla con un codigo distinto de cero ante una
 ejecucion parcial y elimina los datos temporales al finalizar.
 
 Esta certificacion local no reemplaza la aprobacion funcional en QA ni autoriza
 por si sola la promocion `desarrollo -> develop -> main`.
+
+## Incidente de guardado por tenant
+
+Hallazgo del 2026-08-12: una sesion local de `Demo APEX` combinaba sus ordenes
+con solicitudes publicas de `SCJ`. La orden ajena aparecia editable, pero el
+`PUT /api/v1/services/orders/:id` la rechazaba con 404 al aplicar correctamente
+el aislamiento del backend.
+
+Correccion certificada:
+
+- Las sesiones locales consumen exclusivamente la API autenticada del tenant.
+- El monitor auxiliar solo consulta PostgreSQL local cuando valida una identidad
+  Supabase y una membresia activa para la empresa solicitada.
+- El enlace de solicitud externa obtiene el nombre de empresa desde
+  `GET /api/v1/auth/me`; no reutiliza un nombre obsoleto de otra sesion.
+- Los errores de acceso permanecen en el formulario y no se presentan como una
+  ventana secundaria de campos faltantes.
+- Prueba funcional en navegador: el enlace cambio de `SCJ` a `Demo APEX`, el
+  monitor mostro solo 3 ordenes del tenant autenticado y el guardado real de
+  `SOL-2026-00003` finalizo sin 404.
+
+La orden `SOL-2026-00011` pertenece a `SCJ` y, por aislamiento, solo puede ser
+gestionada con una sesion administrativa de `SCJ`. No se traslado ni modifico
+esa orden desde la sesion de `Demo APEX`.

@@ -10,7 +10,7 @@ if (!["localhost", "127.0.0.1"].includes(databaseUrl.hostname)) {
 
 const prisma = require("../apps/api/src/core/prisma");
 const service = require("../apps/api/src/modules/services/service");
-const CERTIFICATION_VERSION = "service-order-items-local-v1";
+const CERTIFICATION_VERSION = "service-order-items-local-v2";
 const RUN_ID = `multi-item-${Date.now()}`;
 let tenantId;
 let otherTenantId;
@@ -76,16 +76,33 @@ async function main() {
     customer_phone: "3000000000",
     scheduled_date: new Date().toISOString(),
     notes: "Certificacion funcional de tres solicitudes",
-    items: references.map((reference, index) => ({ reference_id: reference.id, service_type: ["montaje", "desmontaje", "ambos"][index], quantity: index + 1, observation: `Solicitud ${index + 1}`, idempotency_key: `${RUN_ID}-${index + 1}` }))
+    items: references.map((reference, index) => ({ reference_id: reference.id, service_type: ["montaje", "desmontaje", "ambos"][index], quantity: 1, observation: `Solicitud ${index + 1}`, idempotency_key: `${RUN_ID}-${index + 1}` }))
   });
   assert.equal(created.items.length, 3);
-  assert.deepEqual(created.items.map((item) => item.quantity), [1, 2, 3]);
+  assert.deepEqual(created.items.map((item) => item.quantity), [1, 1, 1]);
+
+  console.error("[cert] guardando edicion administrativa multi-solicitud");
+  const edited = await service.updateOrder(tenantId, admin, created.id, {
+    customer_name: "Cliente prueba local editado",
+    items: created.items.map((item) => ({
+      reference_id: item.reference_id,
+      service_type: item.service_type,
+      quantity: 1,
+      observation: `${item.observation} editada`,
+      idempotency_key: item.idempotency_key
+    })),
+    metadata: { certification_version: CERTIFICATION_VERSION }
+  });
+  assert.equal(edited.customer_name, "Cliente prueba local editado");
+  assert.equal(edited.items.length, 3);
+  assert.equal(edited.items.every((item) => item.observation.endsWith(" editada")), true);
+  assert.equal(edited.metadata.certification_version, CERTIFICATION_VERSION);
 
   const listed = await service.listOrders(tenantId, technician, { limit: 10 });
-  assert.equal(listed.data.some((order) => order.id === created.id && order.items.length === 3), true);
+  assert.equal(listed.data.some((order) => order.id === edited.id && order.items.length === 3), true);
   await assert.rejects(() => service.getOrder(otherTenantId, { ...admin, tenant_id: otherTenantId }, created.id), (error) => error.statusCode === 404);
 
-  for (const item of created.items) {
+  for (const item of edited.items) {
     console.error(`[cert] ejecutando solicitud ${item.display_order + 1}`);
     let current = await service.transitionOrderItem(tenantId, technician, created.id, item.id, { status: "en_curso", expected_version: item.version });
     const inspection = await service.moveToInspection(tenantId, technician, created.id, { item_id: item.id, decision: "armable", items: [{ part_id: item.reference.parts[0].id, name: item.reference.parts[0].name, quantity: item.reference.parts[0].quantity, status: "ok" }] });
@@ -107,7 +124,7 @@ async function main() {
 
   const elapsedMs = Number((performance.now() - started).toFixed(2));
   assert.ok(elapsedMs < 5000, `El flujo local excedio 5 s: ${elapsedMs} ms`);
-  console.log(JSON.stringify({ certification_version: CERTIFICATION_VERSION, ok: true, run_id: RUN_ID, order_id: created.id, requests: 3, evidence: 6, tenant_isolation: true, optimistic_concurrency: true, elapsed_ms: elapsedMs }, null, 2));
+  console.log(JSON.stringify({ certification_version: CERTIFICATION_VERSION, ok: true, run_id: RUN_ID, order_id: created.id, requests: 3, administrative_edit_save: true, evidence: 6, tenant_isolation: true, optimistic_concurrency: true, elapsed_ms: elapsedMs }, null, 2));
 }
 
 main().catch((error) => {

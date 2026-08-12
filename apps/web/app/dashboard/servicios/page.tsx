@@ -77,6 +77,7 @@ type ServiceOrder = {
   items?: ServiceOrderItem[];
 };
 type OrdersResponse = { data: ServiceOrder[] };
+type AuthContext = { tenant?: { name?: string } };
 type ServiceOrderExcelRow = {
   orden: string;
   estado: string;
@@ -436,6 +437,7 @@ function mergeOrders(orders: ServiceOrder[]) {
 
 async function loadSupabaseMonitorOrders() {
   if (typeof window === "undefined") return [];
+  if (localStorage.getItem("auth_provider") !== "supabase") return [];
   const token = localStorage.getItem("token") || "";
   if (!token) return [];
   const companyName = localStorage.getItem("apexos_company_name") || localStorage.getItem("company_name") || "SCJ";
@@ -480,6 +482,22 @@ export default function ServicesPage() {
   const [lastRefreshAt, setLastRefreshAt] = useState<Date | null>(null);
   const [validationIssues, setValidationIssues] = useState<string[]>([]);
   const [handledExternalKey, setHandledExternalKey] = useState("");
+  const [externalRequestCompany, setExternalRequestCompany] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    api<AuthContext>("/api/v1/auth/me", { cache: "no-store" })
+      .then((context) => {
+        const companyName = String(context.tenant?.name || "").trim();
+        if (!active || !companyName) return;
+        localStorage.setItem("apexos_company_name", companyName);
+        setExternalRequestCompany(companyName);
+      })
+      .catch(() => {
+        if (active) setExternalRequestCompany("");
+      });
+    return () => { active = false; };
+  }, []);
 
   async function load() {
     try {
@@ -605,8 +623,9 @@ export default function ServicesPage() {
     return acc;
   }, {}), [orders]);
   const activeFilters = [status, dateScope, evidenceScope, requestScope, serviceType, technicianFilter].filter(Boolean).length + (query.trim() ? 1 : 0);
-  const externalRequestCompany = typeof window !== "undefined" ? localStorage.getItem("apexos_company_name") || "SCJ" : "SCJ";
-  const externalRequestHref = `/servicios/solicitar?empresa=${encodeURIComponent(externalRequestCompany)}`;
+  const externalRequestHref = externalRequestCompany
+    ? `/servicios/solicitar?empresa=${encodeURIComponent(externalRequestCompany)}`
+    : "#";
 
   function clearFilters() {
     setQuery("");
@@ -789,7 +808,7 @@ export default function ServicesPage() {
       const match = detail.match(/Completa los campos obligatorios:\s*([^.]*)/i);
       if (match?.[1]) {
         setValidationIssues(match[1].split(",").map((item) => item.trim()).filter(Boolean));
-      } else if (/referencia|tecnico|t[eé]cnico|fecha|cedula|c[eé]dula|tipo de servicio|estado/i.test(detail)) {
+      } else if (/^(Completa|Selecciona|Asigna)\b/i.test(detail)) {
         setValidationIssues([detail.replace(/\.$/, "")]);
       }
       setMessage(detail);
@@ -838,7 +857,7 @@ export default function ServicesPage() {
               <Plus className="shrink-0" size={17} />
               <span className="truncate">Nueva orden</span>
             </Link>
-            <Link className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href={externalRequestHref} target="_blank">
+            <Link aria-disabled={!externalRequestCompany} className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper aria-disabled:pointer-events-none aria-disabled:opacity-50" href={externalRequestHref} target="_blank">
               <SlidersHorizontal className="shrink-0" size={16} />
               <span className="truncate">Solicitudes de servicios externas</span>
             </Link>

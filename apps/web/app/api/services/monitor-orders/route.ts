@@ -77,8 +77,7 @@ function localPrisma() {
   return localPrismaClient;
 }
 
-async function localMonitorOrders(request: NextRequest) {
-  const companyName = request.nextUrl.searchParams.get("empresa")?.trim() || "SCJ";
+async function localMonitorOrders(request: NextRequest, companyName: string) {
   const limit = Math.min(Math.max(Number(request.nextUrl.searchParams.get("limit") || 200), 1), 300);
   const prisma = localPrisma();
   const tenant = await prisma.tenant.findFirst({
@@ -280,7 +279,20 @@ export async function GET(request: NextRequest) {
       return jsonError("Sesion requerida para consultar el monitor de servicios.", 401);
     }
     if (localDatabase()) {
-      const orders = await localMonitorOrders(request);
+      const userId = await currentAuthUserId(request);
+      if (!userId) return jsonError("La sesion local no corresponde a una identidad Supabase valida.", 401);
+      const memberships = await userCompaniesForUser(userId);
+      const requestedCompanyId = request.nextUrl.searchParams.get("company_id")?.trim() || "";
+      const membership = memberships.find((item) => item.company_id === requestedCompanyId)
+        || memberships.find((item) => isAdminCompanyRole(item.role))
+        || memberships[0];
+      if (!membership?.company_id) return jsonError("El usuario no tiene acceso a la empresa solicitada.", 403);
+      const companies = await supabaseRequest<Array<{ name?: string }>>(
+        `/rest/v1/companies?select=name&id=eq.${encodeURIComponent(membership.company_id)}&limit=1`
+      );
+      const companyName = String(companies[0]?.name || "").trim();
+      if (!companyName) return jsonError("No se encontro la empresa autorizada para consultar ordenes.", 404);
+      const orders = await localMonitorOrders(request, companyName);
       const mapped = orders.map((order) => ({
         ...order,
         status: effectiveServiceOrderStatus({
