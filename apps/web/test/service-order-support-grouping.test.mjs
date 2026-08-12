@@ -14,6 +14,9 @@ test("la vista agrupa soportes, novedades e inspeccion por solicitud", () => {
   assert.match(pageSource, /Validacion de piezas/);
   assert.match(pageSource, /Validacion completada · referencia sin piezas configuradas/);
   assert.match(pageSource, /Novedades de la solicitud/);
+  assert.match(pageSource, /<details className="mt-3 border-t border-line pt-2">/);
+  assert.match(pageSource, /Ver detalle de las \{itemInspection\.length\} piezas/);
+  assert.match(pageSource, /issues\.map\(\(piece\)/);
 });
 
 test("los soportes sin item se conservan como generales", () => {
@@ -31,6 +34,7 @@ test("el reporte PDF usa los mismos grupos por referencia", () => {
   assert.match(serviceSource, /request_groups: requestGroups/);
   assert.match(serviceSource, /Solicitudes, piezas y soportes por referencia/);
   assert.match(serviceSource, /group\.inspection_items/);
+  assert.match(serviceSource, /inspectionGrid\(group\.inspection_items\)/);
   assert.match(serviceSource, /group\.evidence/);
   assert.match(serviceSource, /group\.incidents\.slice/);
   assert.match(serviceSource, /report\.general_evidence/);

@@ -196,6 +196,9 @@ Ampliacion del 2026-08-12:
 - Para cada pieza se presentan estado, comentario y accion registrada. Las
   piezas en estado `averiada` o `faltante` permanecen dentro de la referencia
   inspeccionada junto con su soporte fotografico.
+- Cada solicitud recupera el menu desplegable `Ver detalle de las N piezas`.
+  Las alertas se muestran antes del menu y el desplegable conserva el listado
+  completo de piezas revisadas sin mezclar inspecciones de otras referencias.
 - Las novedades operativas se vinculan mediante `item_id` y se presentan en una
   subseccion propia de cada solicitud. Las novedades sin `item_id` permanecen
   como generales y no se mezclan con referencias.
@@ -210,4 +213,4 @@ Certificacion reproducible:
 - Pruebas de dominio, seguridad, presentacion y reporte: 21/21 aprobadas.
 - `npm run certify:service-order-items:local`: `ok: true`, tres inspecciones,
   tres novedades independientes, seis evidencias y los detalles de las tres
-  novedades presentes en el PDF; ultima ejecucion en 1226,37 ms.
+  novedades presentes en el PDF; ultima ejecucion en 1488,78 ms.
