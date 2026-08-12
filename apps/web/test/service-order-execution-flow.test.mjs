@@ -30,7 +30,7 @@ test("al terminar una solicitud se selecciona la siguiente pendiente", () => {
 test("la evidencia visible y el contador pertenecen a la solicitud seleccionada", () => {
   assert.match(source, /selectedItem\?\.photos\?\.length \|\| 0/);
   assert.match(source, /String\(photo\.item_id \|\| ""\) === selectedItemId/);
-  assert.match(source, /const targetItemId = selectedItem && !selectedItem\.legacy/);
+  assert.match(source, /const targetItemId = !orderLevelEvidence && selectedItem && !selectedItem\.legacy/);
   assert.match(source, /\$\{params\.id\}:\$\{targetItemId \|\| "legacy"\}:\$\{captureKey\}/);
   assert.match(source, /items: targetItemId \? current\.items\.map/);
 });
