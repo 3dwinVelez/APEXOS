@@ -211,7 +211,7 @@ function PublicServiceRequestContent() {
 
   if (created) {
     return (
-      <main className="min-h-screen bg-[radial-gradient(circle_at_top_right,rgba(54,211,186,0.28),transparent_34%),linear-gradient(135deg,#f7f5ee,#ffffff)] px-4 py-6 text-neutral-900">
+      <main className="apex-service-request min-h-screen bg-[radial-gradient(circle_at_top_right,rgba(54,211,186,0.28),transparent_34%),linear-gradient(135deg,#f7f5ee,#ffffff)] px-4 py-6 text-neutral-900">
         <section className="mx-auto flex min-h-[calc(100vh-48px)] max-w-5xl items-center justify-center">
           <div className="w-full overflow-hidden rounded-[2rem] border border-emerald-200 bg-white shadow-2xl shadow-teal-950/15">
             <div className="bg-[linear-gradient(135deg,#05231f,#0d4a40)] px-5 py-10 text-center text-white sm:px-10 sm:py-14">
@@ -237,7 +237,7 @@ function PublicServiceRequestContent() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f4f6f5] px-3 py-3 text-neutral-900 sm:px-5 sm:py-5">
+    <main className="apex-service-request min-h-screen bg-[#f4f6f5] px-3 py-3 text-neutral-900 sm:px-5 sm:py-5">
       <div className="mx-auto max-w-4xl">
         <header className="mb-3 overflow-hidden rounded-lg bg-[#083c35] text-white shadow-sm">
           <div className="grid gap-3 p-4 sm:p-5 md:grid-cols-[1fr_220px] md:items-center">
@@ -337,7 +337,7 @@ function PublicServiceRequestContent() {
                 <Field label="Numero de factura o pedido" hint="Opcional, pero ayuda mucho."><input className="apex-public-input" placeholder="Ej. FAC-12345" value={form.invoice_number} onChange={(event) => setField("invoice_number", event.target.value)} /></Field>
                 <div className="space-y-3">
                   {requestItems.map((requestItem, index) => (
-                    <div className="rounded-lg border border-line bg-[#f8faf9] p-4" key={index}>
+                    <div className="rounded-lg border border-line bg-paper p-4" key={index}>
                       <div className="mb-4 flex items-center justify-between gap-3">
                         <div><p className="font-bold">Producto {index + 1}</p><p className="text-xs text-neutral-500">Referencia, trabajo y cantidad</p></div>
                         {requestItems.length > 1 ? <button aria-label={`Eliminar producto ${index + 1}`} className="flex h-10 w-10 items-center justify-center rounded-md border border-red-200 bg-white text-red-700" title="Eliminar producto" onClick={() => setRequestItems((current) => current.filter((_, itemIndex) => itemIndex !== index))} type="button"><Trash2 size={17} /></button> : null}
@@ -397,7 +397,7 @@ function PublicServiceRequestContent() {
 
 function PublicServiceRequestFallback() {
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_right,rgba(54,211,186,0.20),transparent_32%),linear-gradient(135deg,#f7f5ee,#ffffff)] px-4 py-5 text-neutral-900 sm:py-8">
+    <main className="apex-service-request min-h-screen bg-[radial-gradient(circle_at_top_right,rgba(54,211,186,0.20),transparent_32%),linear-gradient(135deg,#f7f5ee,#ffffff)] px-4 py-5 text-neutral-900 sm:py-8">
       <section className="mx-auto flex min-h-[calc(100vh-40px)] max-w-5xl items-center justify-center">
         <div className="w-full rounded-3xl bg-[linear-gradient(135deg,#061d19,#123d35)] p-8 text-center text-white shadow-xl shadow-teal-950/15">
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-white/10 text-teal-100">

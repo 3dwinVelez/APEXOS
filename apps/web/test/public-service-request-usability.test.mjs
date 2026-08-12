@@ -3,6 +3,7 @@ import fs from "node:fs";
 import test from "node:test";
 
 const source = fs.readFileSync(new URL("../app/servicios/solicitar/page.tsx", import.meta.url), "utf8");
+const styles = fs.readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
 
 test("el formulario presenta un progreso compacto y accesible", () => {
   assert.match(source, /aria-label="Progreso de la solicitud"/);
@@ -24,4 +25,11 @@ test("la estructura móvil evita anchos fijos para campos y acciones", () => {
   assert.match(source, /grid-cols-4/);
   assert.match(source, /w-full.*sm:w-auto/);
   assert.doesNotMatch(source, /lg:grid-cols-\[300px_minmax\(0,1fr\)\]/);
+});
+
+test("la solicitud publica conserva contraste aunque el panel use tema oscuro", () => {
+  assert.match(source, /apex-service-request/);
+  assert.doesNotMatch(source, /bg-\[\#f8faf9\]/);
+  assert.match(styles, /html\.dark \.apex-service-request \.bg-white/);
+  assert.match(styles, /html\.dark \.apex-service-request input/);
 });
