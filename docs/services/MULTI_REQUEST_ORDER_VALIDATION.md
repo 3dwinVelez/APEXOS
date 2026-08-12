@@ -249,6 +249,8 @@ El reporte sigue la misma secuencia de productos del contenedor:
   consecutivos sin perder contraste ni identidad visual.
 - Las fotografias validas se incrustan en el PDF con tipo, nombre de archivo y
   fecha para conservar trazabilidad visual.
+- El encabezado de evidencias y cada tarjeta fotografica repiten explicitamente
+  el numero de producto para impedir asociaciones ambiguas entre referencias.
 - La ultima seccion comienza en una pagina independiente y contiene solamente
   novedades generales, encuesta y soportes del contenedor, incluida la firma.
 - Todas las paginas repiten orden, contexto y numero de pagina para evitar que

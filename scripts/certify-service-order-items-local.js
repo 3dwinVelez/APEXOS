@@ -150,6 +150,8 @@ async function main() {
   const pdfText = pdf.buffer.toString("latin1");
   assert.match(pdfText, /Producto 1 de 3/);
   assert.match(pdfText, /Producto 2 de 3/);
+  assert.match(pdfText, /Evidencias del Producto 1/);
+  assert.match(pdfText, /Producto 1 \| Producto abierto/);
   assert.ok(pdfText.indexOf("Producto 1 de 3") < pdfText.indexOf("Producto 2 de 3"));
   assert.match(pdfText, /\/Subtype \/Image/);
   assert.doesNotMatch(pdfText, /Indice de servicios/);

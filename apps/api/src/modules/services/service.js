@@ -406,9 +406,9 @@ async function buildReportPdf(report) {
           ? `Validacion de piezas completada: referencia sin piezas configuradas. Decision: ${group.inspection_decision}.`
           : "Validacion de piezas: sin inspeccion registrada.");
       }
-      title("Evidencias del servicio");
+      sectionBand(`Evidencias del Producto ${index + 1}`, referenceLabel, accent);
       if (group.evidence.length) {
-        await evidenceGallery(group.evidence, accent);
+        await evidenceGallery(group.evidence, accent, index + 1);
       } else {
         paragraph("Sin soportes fotograficos para esta referencia.");
       }
@@ -460,7 +460,7 @@ async function buildReportPdf(report) {
     return prepared;
   }
 
-  async function evidenceGallery(items, accent) {
+  async function evidenceGallery(items, accent, productNumber) {
     const prepared = await prepareEvidence(items);
     if (!prepared.length) return;
     const gap = 12;
@@ -479,7 +479,7 @@ async function buildReportPdf(report) {
         const width = entry.width * scale;
         const height = entry.height * scale;
         image(entry, x + 8 + (maxWidth - width) / 2, y - 8 - height, width, height);
-        text(entry.item.label, x + 9, y - 137, { size: 8, bold: true, fill: accent.text });
+        text(`Producto ${productNumber} | ${entry.item.label}`, x + 9, y - 137, { size: 8, bold: true, fill: accent.text });
         text(entry.item.file_name || "Captura almacenada", x + 9, y - 149, { size: 7, fill: [0.28, 0.32, 0.34] });
         text(formatReportDate(entry.item.created_at), x + 9, y - 161, { size: 7, fill: [0.38, 0.41, 0.42] });
       }

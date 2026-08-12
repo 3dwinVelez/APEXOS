@@ -37,7 +37,9 @@ test("las ordenes heredadas no duplican sus soportes generales", () => {
 test("el reporte PDF usa los mismos grupos por referencia", () => {
   assert.match(serviceSource, /request_groups: requestGroups/);
   assert.match(serviceSource, /Producto \$\{index \+ 1\} de/);
-  assert.match(serviceSource, /await evidenceGallery\(group\.evidence, accent\)/);
+  assert.match(serviceSource, /Evidencias del Producto \$\{index \+ 1\}/);
+  assert.match(serviceSource, /await evidenceGallery\(group\.evidence, accent, index \+ 1\)/);
+  assert.match(serviceSource, /Producto \$\{productNumber\} \| \$\{entry\.item\.label\}/);
   assert.match(serviceSource, /\/Subtype \/Image/);
   assert.match(serviceSource, /index % 2 === 0/);
   assert.match(serviceSource, /group\.inspection_items/);
