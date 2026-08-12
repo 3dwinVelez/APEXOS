@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, Check, CheckCircle2, Home, MapPin, Minus, PackageSearch, Plus, Send, ShieldCheck, Trash2, UserRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, CheckCircle2, Home, MapPin, PackageSearch, Plus, Send, ShieldCheck, Trash2, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -30,7 +30,7 @@ type PublicServiceReference = {
 };
 type PublicServiceType = { code: string; label: string; active?: boolean };
 type PublicServiceStore = { code: string; label: string; active?: boolean };
-type RequestItem = { reference_id: string; service_type: string; quantity: number; observation: string };
+type RequestItem = { reference_id: string; service_type: string; observation: string };
 
 const initialForm: FormState = {
   customer_name: "",
@@ -89,7 +89,7 @@ function PublicServiceRequestContent() {
   const [serviceTypes, setServiceTypes] = useState<PublicServiceType[]>([]);
   const [serviceStores, setServiceStores] = useState<PublicServiceStore[]>([]);
   const [loadingReferences, setLoadingReferences] = useState(true);
-  const [requestItems, setRequestItems] = useState<RequestItem[]>([{ reference_id: "", service_type: "montaje", quantity: 1, observation: "" }]);
+  const [requestItems, setRequestItems] = useState<RequestItem[]>([{ reference_id: "", service_type: "montaje", observation: "" }]);
   const addressPreview = useMemo(() => buildAddress(form), [form]);
   const progress = Math.round(((step + 1) / steps.length) * 100);
 
@@ -158,8 +158,8 @@ function PublicServiceRequestContent() {
       setMessage("Los dos telefonos de contacto deben ser diferentes.");
       return false;
     }
-    if (currentStep === 2 && requestItems.some((item) => !item.reference_id || !item.service_type || item.quantity <= 0)) {
-      setMessage("Completa referencia, tipo de servicio y cantidad en todas las solicitudes.");
+    if (currentStep === 2 && requestItems.some((item) => !item.reference_id || !item.service_type)) {
+      setMessage("Completa la referencia y el tipo de servicio de cada producto.");
       return false;
     }
     setMessage("");
@@ -196,7 +196,7 @@ function PublicServiceRequestContent() {
           customer_neighborhood: form.customer_neighborhood,
           service_store: form.service_store,
           notes: form.notes,
-          items: requestItems
+          items: requestItems.map((item) => ({ ...item, quantity: 1 }))
         })
       });
       const body = await response.json().catch(() => ({}));
@@ -225,7 +225,7 @@ function PublicServiceRequestContent() {
               </p>
             </div>
             <div className="grid gap-4 px-5 py-6 text-center sm:px-10 sm:py-8">
-              <button className="mx-auto inline-flex h-14 w-full max-w-sm items-center justify-center gap-2 rounded-xl bg-apex px-6 text-base font-bold text-white shadow-lg shadow-teal-900/20" onClick={() => { setCreated(null); setForm(initialForm); setRequestItems([{ reference_id: "", service_type: "montaje", quantity: 1, observation: "" }]); setStep(0); }} type="button">
+              <button className="mx-auto inline-flex h-14 w-full max-w-sm items-center justify-center gap-2 rounded-xl bg-apex px-6 text-base font-bold text-white shadow-lg shadow-teal-900/20" onClick={() => { setCreated(null); setForm(initialForm); setRequestItems([{ reference_id: "", service_type: "montaje", observation: "" }]); setStep(0); }} type="button">
                 Realizar otra solicitud
               </button>
               <p className="text-sm text-neutral-500">Puedes cerrar esta ventana si no necesitas registrar otro servicio.</p>
@@ -339,18 +339,17 @@ function PublicServiceRequestContent() {
                   {requestItems.map((requestItem, index) => (
                     <div className="rounded-lg border border-line bg-paper p-4" key={index}>
                       <div className="mb-4 flex items-center justify-between gap-3">
-                        <div><p className="font-bold">Producto {index + 1}</p><p className="text-xs text-neutral-500">Referencia, trabajo y cantidad</p></div>
+                        <div><p className="font-bold">Producto {index + 1}</p><p className="text-xs text-neutral-500">Cada producto corresponde a un servicio independiente.</p></div>
                         {requestItems.length > 1 ? <button aria-label={`Eliminar producto ${index + 1}`} className="flex h-10 w-10 items-center justify-center rounded-md border border-red-200 bg-white text-red-700" title="Eliminar producto" onClick={() => setRequestItems((current) => current.filter((_, itemIndex) => itemIndex !== index))} type="button"><Trash2 size={17} /></button> : null}
                       </div>
                       <div className="grid gap-3 sm:grid-cols-2">
                         <Field label="Referencia del producto *" hint="Busca el codigo o nombre que aparece en tu factura."><select className="apex-public-input" disabled={loadingReferences} value={requestItem.reference_id} onChange={(event) => setRequestItems((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, reference_id: event.target.value } : item))}><option value="">Selecciona una referencia</option>{references.map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}</select></Field>
                         <Field label="Servicio *"><select className="apex-public-input" value={requestItem.service_type} onChange={(event) => setRequestItems((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, service_type: event.target.value } : item))}>{(serviceTypes.length ? serviceTypes : [{ code: "montaje", label: "Montaje" }, { code: "desmontaje", label: "Desmontaje" }, { code: "ambos", label: "Montaje y desmontaje" }]).map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}</select></Field>
-                        <Field label="Cantidad *" hint="Numero de unidades iguales."><div className="grid h-12 grid-cols-[44px_1fr_44px] overflow-hidden rounded-md border border-line bg-white"><button aria-label={`Reducir cantidad del producto ${index + 1}`} className="grid place-items-center border-r border-line text-neutral-700 disabled:opacity-35" disabled={requestItem.quantity <= 1} onClick={() => setRequestItems((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, quantity: Math.max(item.quantity - 1, 1) } : item))} type="button"><Minus size={17} /></button><input aria-label={`Cantidad del producto ${index + 1}`} className="min-w-0 text-center font-bold outline-none" min={1} type="number" value={requestItem.quantity} onChange={(event) => setRequestItems((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, quantity: Math.max(Number(event.target.value), 1) } : item))} /><button aria-label={`Aumentar cantidad del producto ${index + 1}`} className="grid place-items-center border-l border-line text-apex" onClick={() => setRequestItems((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, quantity: item.quantity + 1 } : item))} type="button"><Plus size={17} /></button></div></Field>
                         <Field label="Detalle de este producto" hint="Opcional. Ejemplo: cama de 1,40 m."><input className="apex-public-input" placeholder="Escribe un detalle util" value={requestItem.observation} onChange={(event) => setRequestItems((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, observation: event.target.value } : item))} /></Field>
                       </div>
                     </div>
                   ))}
-                  <button className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md border border-dashed border-apex bg-apex/5 px-4 text-sm font-bold text-apex disabled:opacity-40 sm:w-auto" disabled={requestItems.length >= 20 || !references.length} onClick={() => setRequestItems((current) => [...current, { reference_id: "", service_type: serviceTypes[0]?.code || "montaje", quantity: 1, observation: "" }])} type="button"><Plus size={17} /> Añadir otro producto</button>
+                  <button className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md border border-dashed border-apex bg-apex/5 px-4 text-sm font-bold text-apex disabled:opacity-40 sm:w-auto" disabled={requestItems.length >= 20 || !references.length} onClick={() => setRequestItems((current) => [...current, { reference_id: "", service_type: serviceTypes[0]?.code || "montaje", observation: "" }])} type="button"><Plus size={17} /> Añadir otro producto</button>
                 </div>
                 <Field label="Algo que debamos saber" hint="Opcional: horario, indicaciones o detalles del producto."><textarea className="apex-public-input min-h-28 py-3" placeholder="Ej. Solo hay porteria hasta las 5 pm." value={form.notes} onChange={(event) => setField("notes", event.target.value)} /></Field>
                 {!loadingReferences && !references.length ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">No encontramos referencias activas para esta empresa. Activa el maestro de referencias antes de recibir solicitudes externas.</div> : null}
@@ -369,7 +368,7 @@ function PublicServiceRequestContent() {
                   <Summary label="Contactos" value={`${form.customer_phone} / ${form.customer_phone_secondary}${form.customer_email ? ` / ${form.customer_email}` : ""}`} />
                   <Summary label="Direccion" value={addressPreview} />
                   <Summary label="Almacen" value={(serviceStores.find((item) => item.code === form.service_store)?.label || form.service_store || "Sin seleccionar")} />
-                  <Summary label="Solicitudes" value={requestItems.map((item) => { const reference = references.find((candidate) => candidate.id === item.reference_id); return `${item.quantity} x ${reference?.code || "Sin referencia"} - ${item.service_type}`; }).join(" | ")} />
+                  <Summary label="Solicitudes" value={requestItems.map((item, index) => { const reference = references.find((candidate) => candidate.id === item.reference_id); return `${index + 1}. ${reference?.code || "Sin referencia"} - ${item.service_type}`; }).join(" | ")} />
                   <Summary label="Factura / pedido" value={form.invoice_number || "Sin registrar por ahora"} />
                 </div>
               </div>

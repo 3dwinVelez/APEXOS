@@ -14,11 +14,11 @@ test("el formulario presenta un progreso compacto y accesible", () => {
 
 test("cada producto conserva controles claros e independientes", () => {
   assert.match(source, /Referencia del producto \*/);
-  assert.match(source, /Reducir cantidad del producto/);
-  assert.match(source, /Aumentar cantidad del producto/);
   assert.match(source, /value=\{requestItem\.observation\}/);
   assert.match(source, /Añadir otro producto/);
   assert.match(source, /Eliminar producto/);
+  assert.doesNotMatch(source, /Cantidad \*/);
+  assert.match(source, /items: requestItems\.map\(\(item\) => \(\{ \.\.\.item, quantity: 1 \}\)\)/);
 });
 
 test("la estructura móvil evita anchos fijos para campos y acciones", () => {

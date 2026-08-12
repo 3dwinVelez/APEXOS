@@ -706,7 +706,7 @@ export default function ServicesPage() {
   async function saveEdit() {
     if (!editingOrder || savingEdit) return;
     const missing = missingEditRequirements(editForm, editingOrder);
-    const invalidItem = editItems.findIndex((item) => !item.reference_id || !item.service_type || !Number.isFinite(item.quantity) || item.quantity <= 0);
+    const invalidItem = editItems.findIndex((item) => !item.reference_id || !item.service_type);
     if (!editItems.length || invalidItem >= 0) {
       const issue = !editItems.length ? "al menos una solicitud" : `datos de la solicitud ${invalidItem + 1}`;
       setMessage(`Completa ${issue} antes de guardar.`);
@@ -1179,16 +1179,15 @@ export default function ServicesPage() {
             <section className="border-y border-line py-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div><h3 className="text-sm font-semibold text-neutral-900">Solicitudes del servicio</h3><p className="mt-1 text-xs text-neutral-500">{editItems.length} solicitud(es) dentro de esta orden.</p></div>
-                <button className="inline-flex h-10 items-center gap-2 rounded-md border border-apex bg-white px-3 text-sm font-semibold text-apex disabled:opacity-40" disabled={editItems.length >= 20} onClick={() => setEditItems((current) => [...current, { reference_id: "", service_type: editableServiceTypes[0]?.code || "montaje", quantity: 1, observation: "" }])} type="button"><Plus size={16} /> Agregar solicitud</button>
+                <button className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-apex bg-white px-3 text-sm font-semibold text-apex disabled:opacity-40 sm:w-auto" disabled={editItems.length >= 20} onClick={() => setEditItems((current) => [...current, { reference_id: "", service_type: editableServiceTypes[0]?.code || "montaje", quantity: 1, observation: "" }])} type="button"><Plus size={16} /> Agregar solicitud</button>
               </div>
               <div className="mt-3 grid gap-3">
                 {editItems.map((item, index) => (
                   <div className="rounded-md border border-line bg-paper p-3" key={`${index}-${item.reference_id}`}>
                     <div className="mb-3 flex items-center justify-between gap-3"><p className="text-sm font-semibold">Solicitud {index + 1}</p>{editItems.length > 1 ? <button aria-label={`Eliminar solicitud ${index + 1}`} className="flex h-9 w-9 items-center justify-center rounded-md border border-red-200 bg-white text-red-700" onClick={() => setEditItems((current) => current.filter((_, itemIndex) => itemIndex !== index))} type="button"><Trash2 size={16} /></button> : null}</div>
-                    <div className="grid gap-3 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_110px]">
+                    <div className="grid min-w-0 gap-3 md:grid-cols-2">
                       <label className="grid gap-1.5 text-sm font-medium text-neutral-700">Referencia *<select className="h-10 min-w-0 rounded-md border border-line bg-white px-3 text-sm" value={item.reference_id} onChange={(event) => setEditItems((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, reference_id: event.target.value } : row))}><option value="">Selecciona una referencia</option>{references.map((reference) => <option key={reference.id} value={reference.id}>{reference.code} - {reference.name}</option>)}</select></label>
                       <label className="grid gap-1.5 text-sm font-medium text-neutral-700">Tipo de servicio *<select className="h-10 min-w-0 rounded-md border border-line bg-white px-3 text-sm" value={item.service_type} onChange={(event) => setEditItems((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, service_type: event.target.value } : row))}>{editableServiceTypes.map((type) => <option key={type.code} value={type.code}>{type.label}</option>)}</select></label>
-                      <label className="grid gap-1.5 text-sm font-medium text-neutral-700">Cantidad *<input className="h-10 rounded-md border border-line bg-white px-3 text-sm" min={1} type="number" value={item.quantity} onChange={(event) => setEditItems((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, quantity: Math.max(Number(event.target.value), 1) } : row))} /></label>
                     </div>
                     <label className="mt-3 grid gap-1.5 text-sm font-medium text-neutral-700">Observacion de esta solicitud<input className="h-10 rounded-md border border-line bg-white px-3 text-sm" placeholder="Detalle particular del producto o servicio" value={item.observation} onChange={(event) => setEditItems((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, observation: event.target.value } : row))} /></label>
                   </div>
