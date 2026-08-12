@@ -484,23 +484,16 @@ export default function ServicesPage() {
   async function load() {
     try {
       setMessage("");
-      const supabaseSession = localStorage.getItem("auth_provider") === "supabase";
-      if (supabaseSession) {
-        try {
-          const supabaseOrders = await loadSupabaseMonitorOrders();
-          setOrders(mergeOrders(supabaseOrders).map(effectiveOrder));
-          setLastRefreshAt(new Date());
-          return true;
-        } catch (error) {
-          const response = await api<OrdersResponse>("/api/v1/services/orders?limit=200");
-          setOrders(mergeOrders(response.data || []).map(effectiveOrder));
-          if (!response.data?.length) throw error;
-          setLastRefreshAt(new Date());
-          return true;
-        }
+      const [monitorResult, apiResult] = await Promise.allSettled([
+        loadSupabaseMonitorOrders(),
+        api<OrdersResponse>("/api/v1/services/orders?limit=200")
+      ]);
+      const monitorOrders = monitorResult.status === "fulfilled" ? monitorResult.value : [];
+      const apiOrders = apiResult.status === "fulfilled" ? apiResult.value.data || [] : [];
+      if (monitorResult.status === "rejected" && apiResult.status === "rejected") {
+        throw apiResult.reason || monitorResult.reason;
       }
-      const response = await api<OrdersResponse>("/api/v1/services/orders?limit=200");
-      setOrders(mergeOrders(response.data || []).map(effectiveOrder));
+      setOrders(mergeOrders([...monitorOrders, ...apiOrders]).map(effectiveOrder));
       setLastRefreshAt(new Date());
       return true;
     } catch (error) {
@@ -545,6 +538,15 @@ export default function ServicesPage() {
     setCanCorrectAnyState(!isTechnician && hasStoredRolePermission("services.orders", "edit_any_state"));
     load();
     if (!isTechnician) loadMasters();
+    const refreshTimer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void load();
+    }, 5_000);
+    const refreshOnFocus = () => { void load(); };
+    window.addEventListener("focus", refreshOnFocus);
+    return () => {
+      window.clearInterval(refreshTimer);
+      window.removeEventListener("focus", refreshOnFocus);
+    };
   }, []);
 
   const filtered = useMemo(() => {
