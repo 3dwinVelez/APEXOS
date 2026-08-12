@@ -1,7 +1,5 @@
 # Branching Workflow
 
-Documento normativo: `docs/governance/GIT_BRANCHING_AND_RELEASE_POLICY.md`.
-
 APEXOS trabaja con 3 ramas activas:
 
 - `main`: produccion estable. Todo lo que llegue aqui se considera candidato directo a despliegue.
@@ -27,7 +25,6 @@ Comandos recomendados:
 
 Reglas operativas:
 
-- La ausencia de autorizacion explicita se interpreta como prohibicion para crear ramas, hacer push, hacer merge en ramas compartidas, desplegar, ejecutar migraciones remotas, eliminar ramas o modificar infraestructura.
 - No trabajar directamente sobre `main`.
 - No trabajar directamente sobre `develop` salvo tareas de integracion controlada.
 - Ningun agente, desarrollador, administrador o automatizacion puede saltarse el flujo `desarrollo -> develop -> main`.

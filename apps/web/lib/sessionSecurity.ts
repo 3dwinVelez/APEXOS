@@ -1,9 +1,8 @@
-import { API_BASE_URL } from "./apiBaseUrl";
 import { refreshSupabaseSession } from "./supabaseClient";
 
 const LAST_ACTIVITY_KEY = "apex_last_activity";
 const SESSION_TIMEOUT_MINUTES = Number(process.env.NEXT_PUBLIC_SESSION_TIMEOUT_MINUTES || 45);
-const HAS_CONFIGURED_API_URL = true;
+const HAS_CONFIGURED_API_URL = Boolean(process.env.NEXT_PUBLIC_API_URL);
 const PASSWORD_CHANGE_REQUIRED_KEY = "apex_password_change_required";
 const APP_ALERT_EVENT = "apex:alert";
 
@@ -38,11 +37,6 @@ function shouldRefreshLocalToken(token: string | null) {
 }
 
 export function clearSession(reason = "expired") {
-  if (localStorage.getItem("apex_offline_authorized_context_v1")) {
-    import("./offline/session.ts")
-      .then(({ clearOfflineDataOnLogout }) => clearOfflineDataOnLogout())
-      .catch(() => undefined);
-  }
   localStorage.removeItem("token");
   localStorage.removeItem("refresh");
   localStorage.removeItem("auth_provider");
@@ -110,7 +104,7 @@ export async function keepSessionAlive() {
     return;
   }
   if (!refreshPromise) {
-    refreshPromise = fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
+    refreshPromise = fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/refresh`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refresh })

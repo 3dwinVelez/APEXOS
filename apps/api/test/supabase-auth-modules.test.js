@@ -44,24 +44,6 @@ test("active module view is queried with the authenticated user identity", async
     loaded: true,
     exports: {
       user: {
-        findUnique: async () => ({
-          id: 9,
-          tenant_id: "tenant-1",
-          email: "admin@example.test",
-          name: "Admin",
-          active: true,
-          role_id: 1,
-          role: { id: 1, name: "APEX_ADMIN", permissions: [] }
-        }),
-        update: async ({ data }) => ({
-          id: 9,
-          tenant_id: "tenant-1",
-          email: "admin@example.test",
-          name: data.name || "Admin",
-          active: data.active ?? true,
-          role_id: data.role_id || 1,
-          role: { id: data.role_id || 1, name: "APEX_ADMIN", permissions: [] }
-        }),
         findMany: async () => [{
           id: 9,
           tenant_id: "tenant-1",
@@ -78,12 +60,6 @@ test("active module view is queried with the authenticated user identity", async
         deleteMany: async () => ({ count: 0 })
       },
       tenant: {
-        findFirst: async () => ({
-          id: "tenant-1",
-          name: "Empresa Uno",
-          active_modules: ["compras"],
-          config: { source: "supabase_auth_sync", company_id: "company-1" }
-        }),
         findUnique: async () => ({
           id: "tenant-1",
           name: "Empresa Uno",

@@ -2,8 +2,7 @@
 
 import type { CapturedFile } from "@/components/operations/PhotoCapture";
 import { api } from "@/lib/api";
-import { API_BASE_URL } from "@/lib/apiBaseUrl";
-import { uploadAuthorizedServiceImageData, uploadServiceImageData, getServiceImageUrl } from "@/lib/supabaseStorage";
+import { uploadServiceImageData, getServiceImageUrl } from "@/lib/supabaseStorage";
 import { ArrowLeft, BookOpen, Camera, CheckCircle2, Circle, Download, FileSignature, PackageSearch, Play, Star, Wrench, X, XCircle, ZoomIn } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -55,12 +54,9 @@ type ServiceOrder = {
 };
 type Panel = "inicio" | "inspeccion" | "ejecucion" | "novedad" | "historial";
 type UploadStatus = "idle" | "pending" | "uploading" | "uploaded" | "failed";
-type EvidenceAuthorization = { authorization_id: string; signed_upload_url: string; path: string };
-type EvidenceConfirmation = { status: string; storage_path?: string | null };
-const AUTHORIZED_UPLOADS_ENABLED = process.env.NEXT_PUBLIC_AUTHORIZED_EVIDENCE_UPLOADS_ENABLED === "true";
 
-const API_URL = API_BASE_URL;
-const HAS_CONFIGURED_API_URL = true;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+const HAS_CONFIGURED_API_URL = Boolean(process.env.NEXT_PUBLIC_API_URL);
 const statusLabel: Record<string, string> = {
   agendado: "Agendado",
   pendiente: "Pendiente",
@@ -250,32 +246,21 @@ export default function ServiceOperationPage() {
       const companyId = typeof window !== "undefined" ? localStorage.getItem("apexos_company_id") || "" : "";
       const serviceId = String(params.id);
       let storagePath = "";
-      const clientUploadId = `${params.id}:${captureKey}:${file.name}:${file.size}:${file.processedAt || Date.now()}`;
-      if (file.base64 && (companyId || AUTHORIZED_UPLOADS_ENABLED)) {
+      if (file.base64 && companyId) {
         try {
-          const imageData = { base64: file.base64, name: file.name, type: file.type };
-          if (AUTHORIZED_UPLOADS_ENABLED) {
-            const authorization = await api<EvidenceAuthorization>(`/api/v1/services/orders/${params.id}/evidence-upload-authorizations`, {
-              method: "POST",
-              body: JSON.stringify({ mime_type: file.type, size_bytes: file.size, purpose: type, client_upload_id: clientUploadId })
-            });
-            await uploadAuthorizedServiceImageData(authorization, imageData);
-            const confirmation = await api<EvidenceConfirmation>(`/api/v1/services/evidence-upload-authorizations/${authorization.authorization_id}/confirm`, {
-              method: "POST"
-            });
-            if (confirmation.status !== "validated" || !confirmation.storage_path) throw new Error("La evidencia no supero la validacion autoritativa.");
-            storagePath = confirmation.storage_path;
-          } else {
-            const uploaded = await uploadServiceImageData(companyId, serviceId, imageData);
-            storagePath = uploaded.storagePath;
-          }
+          const uploaded = await uploadServiceImageData(companyId, serviceId, {
+            base64: file.base64,
+            name: file.name,
+            type: file.type
+          });
+          storagePath = uploaded.storagePath;
           setUploadProgress((current) => ({ ...current, [captureKey]: 50 }));
         } catch (storageError) {
-          if (AUTHORIZED_UPLOADS_ENABLED) throw storageError;
-          // Compatibilidad temporal mientras el feature flag esta deshabilitado.
+          // Si falla Storage, continuamos con base64 como fallback
           console.warn("Storage upload failed, falling back to base64:", storageError);
         }
       }
+      const clientUploadId = `${params.id}:${captureKey}:${file.name}:${file.size}:${file.processedAt || Date.now()}`;
       const savedPhoto = await api<ServicePhoto>(`/api/v1/services/orders/${params.id}/photos`, {
         method: "POST",
         body: JSON.stringify({

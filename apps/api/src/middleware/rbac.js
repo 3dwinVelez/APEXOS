@@ -2,12 +2,12 @@ const prisma = require("../core/prisma");
 const { measurePhase } = require("../core/performanceContext");
 
 const MODULE_CODES = {
-  accounting: ["M-07", "contabilidad", "finance", "accounting"],
-  admin: ["M-22", "administracion", "administracion_apex", "admin"],
-  brain: ["AI-CORE", "apex-ai", "apex_ai", "brain"],
-  hr: ["M-17", "talento-humano", "talento_humano", "hr"],
-  inventory: ["M-01", "inventario", "inventory"],
-  invoicing: ["M-04", "facturacion", "invoicing"],
+  accounting: ["M-07", "contabilidad", "finance"],
+  admin: ["M-22", "administracion", "administracion_apex"],
+  brain: ["AI-CORE", "apex-ai", "apex_ai"],
+  hr: ["M-17", "talento-humano", "talento_humano"],
+  inventory: ["M-01", "inventario"],
+  invoicing: ["M-04", "facturacion"],
   payroll: ["M-17", "nomina", "payroll"],
   purchases: ["M-02", "compras", "purchases"],
   projects: ["M-19", "proyectos", "projects"],
@@ -22,9 +22,7 @@ const MODULE_CODES = {
 function tenantHasModule(tenant, module) {
   if (module === "auth" || module === "dashboard") return true;
   if (!tenant) return false;
-  const active = Array.isArray(tenant.active_modules)
-    ? tenant.active_modules.map((item) => String(item).trim().toLowerCase()).filter(Boolean)
-    : [];
+  const active = Array.isArray(tenant.active_modules) ? tenant.active_modules.map((item) => String(item).toLowerCase()) : [];
   if (!active.length) return false;
   const allowedCodes = (MODULE_CODES[module] || [module]).map((item) => String(item).toLowerCase());
   return allowedCodes.some((code) => active.includes(code));
