@@ -148,8 +148,11 @@ async function main() {
   assert.equal(report.general_evidence.length, 0);
   const pdf = await service.getOrderReportPdf(tenantId, admin, created.id);
   const pdfText = pdf.buffer.toString("latin1");
-  assert.match(pdfText, /Contenedor de la orden/);
-  assert.match(pdfText, /Servicios prestados en el contenedor/);
+  assert.match(pdfText, /Producto 1 de 3/);
+  assert.match(pdfText, /Producto 2 de 3/);
+  assert.ok(pdfText.indexOf("Producto 1 de 3") < pdfText.indexOf("Producto 2 de 3"));
+  assert.match(pdfText, /\/Subtype \/Image/);
+  assert.doesNotMatch(pdfText, /Indice de servicios/);
   assert.match(pdfText, /Cierre del contenedor/);
   for (const [index, reference] of references.entries()) {
     assert.match(pdfText, new RegExp(reference.code));

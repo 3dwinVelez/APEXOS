@@ -122,7 +122,7 @@ function orderTimeline(order) {
   return events.sort((a, b) => new Date(a.at) - new Date(b.at));
 }
 
-function reportForOrder(order) {
+function reportForOrder(order, options = {}) {
   const inspection = order.metadata?.inspection || {};
   const satisfaction = order.metadata?.satisfaction_survey || {};
   const hasPersistedItems = Boolean(order.items?.length);
@@ -136,7 +136,8 @@ function reportForOrder(order) {
     mime_type: photo.metadata?.mime_type || "",
     file_name: photo.metadata?.file_name || "",
     metadata: photo.metadata || {},
-    created_at: photo.created_at
+    created_at: photo.created_at,
+    ...(options.includeBinary && photo.base64_data ? { image_data: photo.base64_data } : {})
   });
   const isGeneralEvidence = (photo) => photo.item_id == null || photo.type === "firma_cliente";
   const requestGroups = (hasPersistedItems ? order.items : legacyItem(order)).map((item, index) => {
@@ -243,12 +244,14 @@ function wrapReportText(value, maxChars = 78) {
   return lines.length ? lines : [""];
 }
 
-function buildReportPdf(report) {
+async function buildReportPdf(report) {
+  const sharp = require("sharp");
   const pageWidth = 612;
   const pageHeight = 792;
   const margin = 42;
   const streams = [];
   let commands = [];
+  let pageImages = [];
   let y = pageHeight - margin;
   let pageNumber = 1;
   let currentPageSection = "Resumen de la orden";
@@ -274,10 +277,11 @@ function buildReportPdf(report) {
   function addPage(section = currentPageSection) {
     if (commands.length) {
       pageFooter();
-      streams.push(commands.join("\n"));
+      streams.push({ stream: commands.join("\n"), images: pageImages });
       pageNumber += 1;
     }
     commands = [];
+    pageImages = [];
     currentPageSection = section;
     compactHeader(section);
   }
@@ -382,69 +386,15 @@ function buildReportPdf(report) {
     if (items.length > 80) paragraph(`Se muestran 80 de ${items.length} piezas inspeccionadas.`);
   }
 
-  function header() {
-    rect(0, pageHeight - 108, pageWidth, 108, [0.03, 0.18, 0.16]);
-    rect(0, pageHeight - 112, pageWidth, 4, [0.05, 0.55, 0.47]);
-    text("APEXOS", margin, pageHeight - 48, { bold: true, size: 22, fill: [1, 1, 1] });
-    text("Reporte empresarial de servicio", margin, pageHeight - 70, { size: 11, fill: [0.78, 0.9, 0.86] });
-    text(`Orden ${report.order.number || report.order.id}`, pageWidth - 214, pageHeight - 48, { bold: true, size: 15, fill: [1, 1, 1] });
-    text(statusReportLabel(report.order.status), pageWidth - 214, pageHeight - 70, { size: 10, fill: [0.78, 0.9, 0.86] });
-    y = pageHeight - 136;
-  }
-
   const order = report.order;
-  header();
-
-  title("Contenedor de la orden");
-  keyValue("Cliente", order.customer_name, margin, y, 176);
-  keyValue("Telefono", order.customer_phone || "N/A", margin + 188, y, 118);
-  keyValue("Factura / pedido", order.invoice_number || "N/A", margin + 318, y, 126);
-  keyValue("Estado", statusReportLabel(order.status), margin + 456, y, 72);
-  y -= 64;
-  keyValue("Direccion", order.customer_address, margin, y, 250);
-  keyValue("Referencia", `${order.reference?.code || ""} ${order.reference?.name || ""}`.trim(), margin + 262, y, 184);
-  keyValue("Tipo", order.service_type || "N/A", margin + 458, y, 70);
-  y -= 64;
-
-  title("Control operativo");
-  keyValue("Inicio", formatReportDate(order.started_at), margin, y, 166);
-  keyValue("Cierre", formatReportDate(order.closed_at), margin + 178, y, 166);
-  keyValue("Duracion", order.duration_minutes == null ? "N/A" : `${order.duration_minutes} min`, margin + 356, y, 84);
-  keyValue("Evidencias", String(report.totals.evidence), margin + 452, y, 76);
-  y -= 64;
-  if (order.no_execution_reason) paragraph(`Motivo no ejecucion: ${order.no_execution_reason}`);
-
-  title("Linea de tiempo");
-  if (report.timeline.length) {
-    tableHeader([{ label: "Evento", x: 10 }, { label: "Fecha", x: 250 }]);
-    report.timeline.forEach((event) => tableRow([
-      { key: "event", x: 10, chars: 42, bold: true },
-      { key: "date", x: 250, chars: 38 }
-    ], { event: event.label, date: formatReportDate(event.at) }, 28));
-  } else {
-    paragraph("Sin eventos registrados.");
-  }
-
-  addPage(`Contenedor ${report.order.number || report.order.id} | Indice de servicios`);
-  title("Servicios prestados en el contenedor");
-  paragraph(`Esta orden agrupa ${report.request_groups.length} servicio(s). El detalle operativo de cada solicitud se conserva por separado dentro del mismo contenedor.`);
   if (report.request_groups.length) {
-    tableHeader([{ label: "Servicio", x: 10 }, { label: "Referencia", x: 92 }, { label: "Tipo", x: 330 }, { label: "Estado", x: 430 }]);
-    report.request_groups.forEach((group, index) => tableRow([
-      { key: "service", x: 10, chars: 12, bold: true },
-      { key: "reference", x: 92, chars: 38, lines: 2 },
-      { key: "type", x: 330, chars: 16 },
-      { key: "status", x: 430, chars: 16 }
-    ], {
-      service: `Solicitud ${index + 1}`,
-      reference: `${group.reference?.code || "Sin codigo"} - ${group.reference?.name || "Referencia"}`,
-      type: group.service_type || "N/A",
-      status: statusReportLabel(group.status)
-    }, 38));
-    report.request_groups.forEach((group, index) => {
-      addPage(`Contenedor ${report.order.number || report.order.id} | Servicio ${index + 1} de ${report.request_groups.length}`);
+    for (const [index, group] of report.request_groups.entries()) {
+      const accent = index % 2 === 0
+        ? { fill: [0.9, 0.97, 0.95], stroke: [0.15, 0.58, 0.5], text: [0.03, 0.35, 0.3] }
+        : { fill: [0.94, 0.96, 1], stroke: [0.3, 0.48, 0.72], text: [0.12, 0.28, 0.5] };
+      addPage(`Producto ${index + 1} de ${report.request_groups.length} | Orden ${report.order.number || report.order.id}`);
       const referenceLabel = `${group.reference?.code || "Sin codigo"} - ${group.reference?.name || "Referencia"}`;
-      sectionBand(`Solicitud ${index + 1}: ${referenceLabel}`, `Servicio: ${group.service_type || "N/A"} | Estado: ${statusReportLabel(group.status)}`);
+      sectionBand(`Producto ${index + 1}: ${referenceLabel}`, `Servicio: ${group.service_type || "N/A"} | Estado: ${statusReportLabel(group.status)}`, accent);
       if (group.observation) paragraph(`Observacion: ${group.observation}`);
       title("Validacion de piezas del servicio");
       if (group.inspection_items.length) {
@@ -458,16 +408,7 @@ function buildReportPdf(report) {
       }
       title("Evidencias del servicio");
       if (group.evidence.length) {
-        tableHeader([{ label: "Soporte", x: 10 }, { label: "Archivo / detalle", x: 160 }, { label: "Fecha", x: 410 }]);
-        group.evidence.slice(0, 30).forEach((item) => tableRow([
-          { key: "type", x: 10, chars: 24, bold: true },
-          { key: "file", x: 160, chars: 46, lines: 2 },
-          { key: "date", x: 410, chars: 22 }
-        ], {
-          type: item.label,
-          file: item.file_name || item.metadata?.part_name || (item.has_base64 ? "Captura almacenada" : "Soporte adjunto"),
-          date: formatReportDate(item.created_at)
-        }, 36));
+        await evidenceGallery(group.evidence, accent);
       } else {
         paragraph("Sin soportes fotograficos para esta referencia.");
       }
@@ -488,17 +429,70 @@ function buildReportPdf(report) {
         paragraph("Sin novedades asociadas a esta solicitud.");
       }
       y -= 8;
-    });
+    }
   } else {
     paragraph("Sin solicitudes registradas.");
   }
 
-  function sectionBand(label, detail = "") {
+  function image(asset, x, yValue, width, height) {
+    const name = `Im${pageImages.length + 1}`;
+    pageImages.push({ ...asset, name });
+    commands.push(`q ${width} 0 0 ${height} ${x} ${yValue} cm /${name} Do Q`);
+  }
+
+  async function prepareEvidence(items) {
+    const prepared = [];
+    for (const item of items) {
+      if (!item.image_data) continue;
+      try {
+        const encoded = String(item.image_data).replace(/^data:[^;]+;base64,/, "");
+        const output = await sharp(Buffer.from(encoded, "base64"))
+          .rotate()
+          .resize({ width: 720, height: 520, fit: "inside", withoutEnlargement: true })
+          .flatten({ background: "#ffffff" })
+          .jpeg({ quality: 78 })
+          .toBuffer({ resolveWithObject: true });
+        prepared.push({ item, data: output.data, width: output.info.width, height: output.info.height });
+      } catch (_) {
+        // Una captura corrupta no debe impedir generar el resto del reporte.
+      }
+    }
+    return prepared;
+  }
+
+  async function evidenceGallery(items, accent) {
+    const prepared = await prepareEvidence(items);
+    if (!prepared.length) return;
+    const gap = 12;
+    const cardWidth = (pageWidth - margin * 2 - gap) / 2;
+    const cardHeight = 174;
+    for (let index = 0; index < prepared.length; index += 2) {
+      ensureSpace(cardHeight + 12);
+      for (let column = 0; column < 2; column += 1) {
+        const entry = prepared[index + column];
+        if (!entry) continue;
+        const x = margin + column * (cardWidth + gap);
+        rect(x, y - cardHeight + 6, cardWidth, cardHeight, [0.99, 0.99, 0.98], accent.stroke);
+        const maxWidth = cardWidth - 16;
+        const maxHeight = 118;
+        const scale = Math.min(maxWidth / entry.width, maxHeight / entry.height);
+        const width = entry.width * scale;
+        const height = entry.height * scale;
+        image(entry, x + 8 + (maxWidth - width) / 2, y - 8 - height, width, height);
+        text(entry.item.label, x + 9, y - 137, { size: 8, bold: true, fill: accent.text });
+        text(entry.item.file_name || "Captura almacenada", x + 9, y - 149, { size: 7, fill: [0.28, 0.32, 0.34] });
+        text(formatReportDate(entry.item.created_at), x + 9, y - 161, { size: 7, fill: [0.38, 0.41, 0.42] });
+      }
+      y -= cardHeight + 8;
+    }
+  }
+
+  function sectionBand(label, detail = "", accent = { fill: [0.92, 0.97, 0.95], stroke: [0.56, 0.72, 0.66], text: [0.03, 0.29, 0.25] }) {
     const labelLines = wrapReportText(label, 72).slice(0, 2);
     const bandHeight = labelLines.length > 1 ? 58 : 46;
     ensureSpace(bandHeight + 10);
-    rect(margin, y - bandHeight + 8, pageWidth - margin * 2, bandHeight, [0.92, 0.97, 0.95], [0.56, 0.72, 0.66]);
-    labelLines.forEach((line, index) => text(line, margin + 12, y - 10 - index * 13, { bold: true, size: 11, fill: [0.03, 0.29, 0.25] }));
+    rect(margin, y - bandHeight + 8, pageWidth - margin * 2, bandHeight, accent.fill, accent.stroke);
+    labelLines.forEach((line, index) => text(line, margin + 12, y - 10 - index * 13, { bold: true, size: 11, fill: accent.text }));
     if (detail) text(detail, margin + 12, y - 27 - (labelLines.length - 1) * 13, { size: 8.5, fill: [0.3, 0.38, 0.35] });
     y -= bandHeight + 10;
   }
@@ -551,33 +545,45 @@ function buildReportPdf(report) {
 
   if (commands.length) {
     pageFooter();
-    streams.push(commands.join("\n"));
+    streams.push({ stream: commands.join("\n"), images: pageImages });
   }
-  const pages = streams.map((stream, index) => ({ stream, pageObj: 5 + index * 2, contentObj: 6 + index * 2 }));
-  const objects = [
-    `<< /Type /Catalog /Pages 2 0 R >>`,
-    `<< /Type /Pages /Kids [${pages.map((page) => `${page.pageObj} 0 R`).join(" ")}] /Count ${pages.length} >>`,
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>"
-  ];
+  let nextObject = 5;
+  const pages = streams.map((page) => ({
+    ...page,
+    pageObj: nextObject++,
+    contentObj: nextObject++,
+    imageObjects: page.images.map((asset) => ({ ...asset, objectId: nextObject++ }))
+  }));
+  const objects = new Array(nextObject - 1);
+  objects[0] = Buffer.from("<< /Type /Catalog /Pages 2 0 R >>");
+  objects[1] = Buffer.from(`<< /Type /Pages /Kids [${pages.map((page) => `${page.pageObj} 0 R`).join(" ")}] /Count ${pages.length} >>`);
+  objects[2] = Buffer.from("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+  objects[3] = Buffer.from("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
   pages.forEach((page) => {
-    objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${page.contentObj} 0 R >>`);
-    objects.push(`<< /Length ${Buffer.byteLength(page.stream)} >>\nstream\n${page.stream}\nendstream`);
+    const xObjects = page.imageObjects.map((asset) => `/${asset.name} ${asset.objectId} 0 R`).join(" ");
+    objects[page.pageObj - 1] = Buffer.from(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >>${xObjects ? ` /XObject << ${xObjects} >>` : ""} >> /Contents ${page.contentObj} 0 R >>`);
+    objects[page.contentObj - 1] = Buffer.from(`<< /Length ${Buffer.byteLength(page.stream)} >>\nstream\n${page.stream}\nendstream`);
+    page.imageObjects.forEach((asset) => {
+      objects[asset.objectId - 1] = Buffer.concat([
+        Buffer.from(`<< /Type /XObject /Subtype /Image /Width ${asset.width} /Height ${asset.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${asset.data.length} >>\nstream\n`),
+        asset.data,
+        Buffer.from("\nendstream")
+      ]);
+    });
   });
 
-  let pdf = "%PDF-1.4\n";
+  const parts = [Buffer.from("%PDF-1.4\n")];
   const offsets = [0];
   objects.forEach((object, index) => {
-    offsets.push(Buffer.byteLength(pdf));
-    pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+    offsets.push(parts.reduce((total, part) => total + part.length, 0));
+    parts.push(Buffer.from(`${index + 1} 0 obj\n`), object, Buffer.from("\nendobj\n"));
   });
-  const xrefOffset = Buffer.byteLength(pdf);
-  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-  offsets.slice(1).forEach((offset) => {
-    pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
-  });
-  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
-  return Buffer.from(pdf);
+  const xrefOffset = parts.reduce((total, part) => total + part.length, 0);
+  const xref = [`xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`];
+  offsets.slice(1).forEach((offset) => xref.push(`${String(offset).padStart(10, "0")} 00000 n \n`));
+  xref.push(`trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`);
+  parts.push(Buffer.from(xref.join("")));
+  return Buffer.concat(parts);
 }
 
 function referenceInclude() {
@@ -931,9 +937,10 @@ async function getOrderReport(tenantId, user, id) {
 }
 
 async function getOrderReportPdf(tenantId, user, id) {
-  const report = await getOrderReport(tenantId, user, id);
-  const order = report.order;
-  return { fileName: `${order.number || `servicio-${id}`}.pdf`, buffer: buildReportPdf(report) };
+  assertAdministrativeServiceUser(user);
+  const order = await getOrder(tenantId, user, id);
+  const report = reportForOrder(order, { includeBinary: true });
+  return { fileName: `${order.number || `servicio-${id}`}.pdf`, buffer: await buildReportPdf(report) };
 }
 
 async function createOrder(tenantId, user, input) {

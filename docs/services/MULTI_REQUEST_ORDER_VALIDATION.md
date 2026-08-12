@@ -237,18 +237,18 @@ El modelo funcional queda definido de forma explicita:
   validacion de producto/piezas, novedades y evidencias; encuesta y firma quedan
   una sola vez en el nivel de la orden.
 
-## Estructura visual del PDF por contenedor
+## Estructura visual secuencial del PDF
 
-El reporte sigue una paginacion determinista para facilitar lectura y auditoria:
+El reporte sigue la misma secuencia de productos del contenedor:
 
-- La orden es el contenedor principal y conserva una sola identificacion,
-  control operativo, linea de tiempo, encuesta, soportes generales y firma.
-- La primera pagina identifica el contenedor y resume su control operativo. El
-  indice comienza en una pagina propia y presenta juntos todos los servicios
-  agrupados, con referencia, tipo y estado.
-- Cada servicio comienza en una pagina propia cuyo encabezado conserva el numero
-  del contenedor. Dentro se presentan, en orden, referencia, estado, observacion,
-  validacion de piezas, evidencias y novedades de esa solicitud.
+- El documento comienza directamente con Producto 1, sin portada ni indice.
+- Cada producto comienza en una pagina propia. Dentro se presentan referencia,
+  servicio, estado, observacion, validacion de piezas, galeria fotografica,
+  relacion de evidencias y novedades.
+- Los bloques alternan verde APEXOS y azul operativo para distinguir productos
+  consecutivos sin perder contraste ni identidad visual.
+- Las fotografias validas se incrustan en el PDF con tipo, nombre de archivo y
+  fecha para conservar trazabilidad visual.
 - La ultima seccion comienza en una pagina independiente y contiene solamente
   novedades generales, encuesta y soportes del contenedor, incluida la firma.
 - Todas las paginas repiten orden, contexto y numero de pagina para evitar que

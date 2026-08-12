@@ -36,9 +36,10 @@ test("las ordenes heredadas no duplican sus soportes generales", () => {
 
 test("el reporte PDF usa los mismos grupos por referencia", () => {
   assert.match(serviceSource, /request_groups: requestGroups/);
-  assert.match(serviceSource, /Contenedor de la orden/);
-  assert.match(serviceSource, /Servicios prestados en el contenedor/);
-  assert.match(serviceSource, /Indice de servicios/);
+  assert.match(serviceSource, /Producto \$\{index \+ 1\} de/);
+  assert.match(serviceSource, /await evidenceGallery\(group\.evidence, accent\)/);
+  assert.match(serviceSource, /\/Subtype \/Image/);
+  assert.match(serviceSource, /index % 2 === 0/);
   assert.match(serviceSource, /group\.inspection_items/);
   assert.match(serviceSource, /inspectionGrid\(group\.inspection_items\)/);
   assert.match(serviceSource, /requireEvidence\(id, \["firma_cliente"\]\)/);
@@ -46,8 +47,7 @@ test("el reporte PDF usa los mismos grupos por referencia", () => {
   assert.match(serviceSource, /group\.evidence/);
   assert.match(serviceSource, /group\.incidents\.slice/);
   assert.match(serviceSource, /report\.general_evidence/);
-  assert.match(serviceSource, /Contenedor \$\{report\.order\.number \|\| report\.order\.id\} \| Servicio/);
-  assert.match(serviceSource, /Solicitud \$\{index \+ 1\}/);
+  assert.doesNotMatch(serviceSource, /Indice de servicios/);
   assert.match(serviceSource, /Cierre del contenedor/);
   assert.match(serviceSource, /function pageFooter\(\)/);
   assert.match(serviceSource, /Pagina \$\{pageNumber\}/);
