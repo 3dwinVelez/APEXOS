@@ -151,3 +151,37 @@ Correccion y evidencia:
   guardado administrativo, inspeccion, ejecucion, rechazo 422 esperado sin
   evidencia, seis fotos, cierre individual, aislamiento y concurrencia; aprobada
   en 1011,8 ms.
+
+## Agrupacion de soportes y piezas por referencia
+
+Hallazgo del 2026-08-12: el historial y el PDF recorrian las evidencias de la
+orden como una sola coleccion. En una orden con varias solicitudes esto mezclaba
+fotografias, novedades y la validacion de piezas de referencias diferentes.
+
+Correccion aplicada:
+
+- El historial presenta una seccion independiente por solicitud y referencia.
+- Al ingresar a una orden cerrada o no ejecutada se abre directamente el
+  historial; no se conserva erroneamente el panel de ejecucion.
+- Cada seccion usa exclusivamente fotos y novedades cuyo `item_id` pertenece a
+  esa solicitud, junto con la inspeccion almacenada en sus propios metadatos.
+- Los soportes administrativos sin `item_id` permanecen en una seccion general
+  y no se atribuyen artificialmente a una referencia.
+- La firma del cliente se clasifica siempre como soporte general de cierre,
+  incluso si un registro historico conserva el `item_id` de la ultima solicitud.
+- Las ordenes heredadas, que no tienen solicitudes persistidas, conservan todas
+  sus evidencias dentro de su unica referencia sintetica sin duplicarlas.
+- El PDF reproduce el mismo orden: referencia, tipo, estado, validacion de
+  piezas, soportes y novedades de cada solicitud; al final incorpora solo los
+  soportes generales.
+
+Evidencia automatizada:
+
+- `node --test apps/web/test/service-order-support-grouping.test.mjs`: aprobado.
+- Pruebas de dominio, seguridad y agrupacion: 20/20 aprobadas.
+- `npm run certify:service-order-items:local`: `ok: true`, tres referencias,
+  una validacion de piezas por referencia, dos fotos por referencia y PDF con
+  los tres codigos; ultima ejecucion en 1250,79 ms.
+
+La aprobacion local certifica el comportamiento reproducible, pero no sustituye
+la validacion funcional en QA ni autoriza por si sola una promocion.

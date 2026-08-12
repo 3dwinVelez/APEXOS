@@ -46,7 +46,7 @@ type ServiceOrder = {
   close_longitude?: number;
   duration_minutes?: number;
   no_execution_reason?: string;
-  incidents: Array<{ id: number | string; description: string; type: string; created_at?: string }>;
+  incidents: Array<{ id: number | string; item_id?: number | string | null; description: string; type: string; created_at?: string }>;
   photos: ServicePhoto[];
   items: ServiceOrderItem[];
   item_progress?: { total: number; pending: number; active: number; completed: number; blocked: number; all_completed: boolean; partial: boolean };
@@ -203,7 +203,9 @@ export default function ServiceOperationPage() {
         const nextItem = currentItem && !itemIsFinished(currentItem.status)
           ? currentItem
           : data.items.find((item) => !itemIsFinished(item.status)) || currentItem || data.items[0];
-        setActivePanel(data.item_progress?.all_completed ? "ejecucion" : panelForStatus(nextItem?.status || data.status));
+        setActivePanel(["cerrada", "no_ejecutada"].includes(data.status)
+          ? "historial"
+          : data.item_progress?.all_completed ? "ejecucion" : panelForStatus(nextItem?.status || data.status));
         setClosureMode(Boolean(data.item_progress?.all_completed));
         return String(nextItem?.id || "");
       });
@@ -627,10 +629,20 @@ export default function ServiceOperationPage() {
   const activeReference = selectedItem?.reference || order.reference;
   const referenceManuals = activeReference?.manuals?.length ? activeReference.manuals : activeReference?.metadata?.manuals || [];
   const orderCompleted = ["cerrada", "no_ejecutada"].includes(order.status);
-  const inspectedItems = selectedItem?.metadata?.inspection?.items || (selectedItem?.legacy ? order.metadata?.inspection?.items : []) || [];
-  const inspectionIssues = inspectedItems.filter((item) => item.status !== "ok");
-  const inspectionOkCount = inspectedItems.length - inspectionIssues.length;
   const messageIsError = /^Error\s+\d+|^No (?:fue|se puede)|requiere|debes|pendiente:/i.test(message);
+  const supportGroups = order.items.map((item, index) => {
+    const itemInspection = item.metadata?.inspection?.items || (item.legacy ? order.metadata?.inspection?.items : []) || [];
+    return {
+      item,
+      index,
+      photos: item.legacy ? order.photos : order.photos.filter((photo) => photo.type !== "firma_cliente" && String(photo.item_id || "") === String(item.id)),
+      incidents: item.legacy ? order.incidents : order.incidents.filter((incident) => String(incident.item_id || "") === String(item.id)),
+      inspection: itemInspection
+    };
+  });
+  const hasLegacyItem = order.items.some((item) => item.legacy);
+  const generalPhotos = hasLegacyItem ? [] : order.photos.filter((photo) => photo.item_id == null || photo.type === "firma_cliente");
+  const generalIncidents = hasLegacyItem ? [] : order.incidents.filter((incident) => incident.item_id == null);
 
   return (
     <div className="mx-auto max-w-[1440px] space-y-4 pb-32 md:pb-8">
@@ -958,39 +970,18 @@ export default function ServiceOperationPage() {
               </div>
             </div>
           ) : null}
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
-            {order.photos.map((photo) => {
-              const src = photoSrc(photo);
-              return (
-                <div className="rounded-md border border-line bg-paper p-2" key={photo.id}>
-                  {src ? <button className="group relative block w-full overflow-hidden rounded-md" onClick={() => setZoomedPhoto(photo)} type="button"><Image className="aspect-square w-full object-cover" height={480} src={src} alt={photoLabels[photo.type] || photo.type} unoptimized width={480} /><span className="absolute inset-0 flex items-center justify-center bg-black/0 text-white opacity-0 transition group-hover:bg-black/35 group-hover:opacity-100"><ZoomIn size={28} /></span></button> : <div className="flex aspect-square items-center justify-center rounded-md bg-white text-xs text-neutral-500">Sin preview</div>}
-                  <p className="mt-2 text-xs font-semibold">{photoLabels[photo.type] || photo.type}</p>
-                  {photo.metadata?.part_name ? <p className="text-[11px] text-neutral-500">{String(photo.metadata.part_name)}</p> : null}
-                </div>
-              );
+          <div className="space-y-3">
+            {supportGroups.map(({ item, index, photos, incidents, inspection: itemInspection }) => {
+              const issues = itemInspection.filter((piece) => piece.status !== "ok");
+              const okCount = itemInspection.length - issues.length;
+              return <article className="rounded-md border border-line bg-paper p-3" key={item.id}>
+                <div className="flex flex-wrap items-start justify-between gap-2 border-b border-line pb-3"><div><p className="text-xs font-semibold text-apex">Solicitud {index + 1}</p><h3 className="text-sm font-semibold">{item.reference?.code} · {item.reference?.name}</h3><p className="mt-1 text-xs text-neutral-500">{item.service_type} · {statusLabel[item.status] || item.status}</p></div><span className="rounded-md bg-white px-2 py-1 text-xs font-semibold">{photos.length} soporte(s)</span></div>
+                <div className="mt-3 rounded-md border border-line bg-white p-3"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-sm font-semibold">Validacion de piezas</p><p className="mt-0.5 text-xs text-neutral-500">{itemInspection.length ? `${itemInspection.length} revisadas · ${okCount} OK · ${issues.length} con novedad` : "Sin inspeccion registrada"}</p></div>{itemInspection.length ? <span className={`rounded-md px-2 py-1 text-xs font-semibold ${issues.length ? "bg-amber-100 text-amber-900" : "bg-emerald-100 text-emerald-900"}`}>{issues.length ? `${issues.length} novedad(es)` : "Todo OK"}</span> : null}</div>{itemInspection.length ? <div className="mt-2 grid gap-1 sm:grid-cols-2">{itemInspection.map((piece) => <p className="flex min-w-0 items-center justify-between gap-2 rounded-md bg-paper px-2 py-1.5 text-xs" key={piece.part_id}><span className="truncate">{piece.name}</span><span className={`shrink-0 font-semibold ${piece.status === "ok" ? "text-emerald-700" : "text-amber-800"}`}>{inspectionStatusLabel[piece.status]}</span></p>)}</div> : null}</div>
+                {photos.length ? <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">{photos.map((photo) => { const src = photoSrc(photo); return <div className="rounded-md border border-line bg-white p-2" key={photo.id}>{src ? <button className="group relative block w-full overflow-hidden rounded-md" onClick={() => setZoomedPhoto(photo)} type="button"><Image className="aspect-square w-full object-cover" height={480} src={src} alt={photoLabels[photo.type] || photo.type} unoptimized width={480} /><span className="absolute inset-0 flex items-center justify-center bg-black/0 text-white opacity-0 transition group-hover:bg-black/35 group-hover:opacity-100"><ZoomIn size={28} /></span></button> : <div className="flex aspect-square items-center justify-center rounded-md bg-paper text-xs text-neutral-500">Sin preview</div>}<p className="mt-2 text-xs font-semibold">{photoLabels[photo.type] || photo.type}</p>{photo.metadata?.part_name ? <p className="text-[11px] text-neutral-500">{String(photo.metadata.part_name)}</p> : null}</div>; })}</div> : <p className="mt-3 text-sm text-neutral-500">Sin soportes para esta referencia.</p>}
+                {incidents.length ? <div className="mt-3 grid gap-2">{incidents.map((incident) => <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-900" key={incident.id}>{incident.type}: {incident.description}</p>)}</div> : null}
+              </article>;
             })}
-          </div>
-          <div className="space-y-2">
-            {inspectedItems.length ? (
-              <div className="rounded-md border border-line bg-paper p-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-semibold">Inspeccion de piezas</p>
-                    <p className="mt-0.5 text-xs text-neutral-500">{inspectedItems.length} revisadas · {inspectionOkCount} OK · {inspectionIssues.length} con novedad</p>
-                  </div>
-                  <span className={`rounded-md px-2 py-1 text-xs font-semibold ${inspectionIssues.length ? "bg-amber-100 text-amber-900" : "bg-emerald-100 text-emerald-900"}`}>{inspectionIssues.length ? `${inspectionIssues.length} novedad(es)` : "Todo OK"}</span>
-                </div>
-                {inspectionIssues.length ? <div className="mt-3 grid gap-2">{inspectionIssues.map((item) => <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950" key={item.part_id}><span className="font-semibold">{item.name}: {inspectionStatusLabel[item.status]}</span>{item.comment ? ` · ${item.comment}` : ""}</p>)}</div> : null}
-                <details className="mt-3 border-t border-line pt-2">
-                  <summary className="cursor-pointer text-xs font-semibold text-apex">Ver detalle de todas las piezas</summary>
-                  <div className="mt-2 grid gap-1 sm:grid-cols-2">
-                    {inspectedItems.map((item) => <p className="flex min-w-0 items-center justify-between gap-2 rounded-md bg-white px-2 py-1.5 text-xs" key={item.part_id}><span className="truncate">{item.name}</span><span className={`shrink-0 font-semibold ${item.status === "ok" ? "text-emerald-700" : "text-amber-800"}`}>{inspectionStatusLabel[item.status]}</span></p>)}
-                  </div>
-                </details>
-              </div>
-            ) : null}
-            {order.incidents.map((item) => <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-900" key={item.id}>{item.type}: {item.description}</p>)}
-            {!order.photos.length && !order.incidents.length ? <p className="text-sm text-neutral-500">Sin evidencia registrada.</p> : null}
+            {generalPhotos.length || generalIncidents.length ? <article className="rounded-md border border-line bg-white p-3"><h3 className="text-sm font-semibold">Soportes generales de la orden</h3><div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">{generalPhotos.map((photo) => { const src = photoSrc(photo); return <div className="rounded-md border border-line bg-paper p-2" key={photo.id}>{src ? <button className="block w-full overflow-hidden rounded-md" onClick={() => setZoomedPhoto(photo)} type="button"><Image className="aspect-square w-full object-cover" height={480} src={src} alt={photoLabels[photo.type] || photo.type} unoptimized width={480} /></button> : null}<p className="mt-2 text-xs font-semibold">{photoLabels[photo.type] || photo.type}</p></div>; })}</div>{generalIncidents.map((incident) => <p className="mt-2 rounded-md bg-amber-50 p-3 text-sm text-amber-900" key={incident.id}>{incident.type}: {incident.description}</p>)}</article> : null}
           </div>
         </section>
       ) : null}

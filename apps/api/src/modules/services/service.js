@@ -125,28 +125,52 @@ function orderTimeline(order) {
 function reportForOrder(order) {
   const inspection = order.metadata?.inspection || {};
   const satisfaction = order.metadata?.satisfaction_survey || {};
+  const hasPersistedItems = Boolean(order.items?.length);
+  const evidenceDto = (photo) => ({
+    id: photo.id,
+    item_id: photo.item_id,
+    type: photo.type,
+    label: photoLabel(photo.type),
+    file_url: photo.file_url,
+    has_base64: Boolean(photo.base64_data),
+    mime_type: photo.metadata?.mime_type || "",
+    file_name: photo.metadata?.file_name || "",
+    metadata: photo.metadata || {},
+    created_at: photo.created_at
+  });
+  const isGeneralEvidence = (photo) => photo.item_id == null || photo.type === "firma_cliente";
+  const requestGroups = (hasPersistedItems ? order.items : legacyItem(order)).map((item, index) => {
+    const itemInspection = item.metadata?.inspection || (item.legacy ? inspection : {});
+    return {
+      item_id: item.id,
+      display_order: item.display_order ?? index,
+      status: item.status,
+      service_type: item.service_type,
+      observation: item.observation || item.description || "",
+      reference: item.reference || order.reference || {},
+      inspection_items: itemInspection.items || [],
+      inspection_decision: itemInspection.decision || "",
+      evidence: (item.photos || order.photos.filter((photo) => String(photo.item_id || "") === String(item.id))).filter((photo) => !isGeneralEvidence(photo)).map(evidenceDto),
+      incidents: item.incidents || order.incidents.filter((incident) => String(incident.item_id || "") === String(item.id))
+    };
+  });
+  const generalEvidence = hasPersistedItems ? order.photos.filter(isGeneralEvidence).map(evidenceDto) : [];
+  const generalIncidents = hasPersistedItems ? order.incidents.filter((incident) => incident.item_id == null) : [];
   return {
     order,
     timeline: orderTimeline(order),
+    request_groups: requestGroups,
+    general_evidence: generalEvidence,
+    general_incidents: generalIncidents,
     inspection_items: inspection.items || [],
     inspection_decision: inspection.decision || "",
     satisfaction_survey: satisfaction,
-    evidence: order.photos.map((photo) => ({
-      id: photo.id,
-      type: photo.type,
-      label: photoLabel(photo.type),
-      file_url: photo.file_url,
-      has_base64: Boolean(photo.base64_data),
-      mime_type: photo.metadata?.mime_type || "",
-      file_name: photo.metadata?.file_name || "",
-      metadata: photo.metadata || {},
-      created_at: photo.created_at
-    })),
+    evidence: order.photos.map(evidenceDto),
     incidents: order.incidents,
     totals: {
       evidence: order.photos.length,
       incidents: order.incidents.length,
-      inspection_items: (inspection.items || []).length
+      inspection_items: requestGroups.reduce((total, group) => total + group.inspection_items.length, 0) || (inspection.items || []).length
     }
   };
 }
@@ -360,19 +384,46 @@ function buildReportPdf(report) {
     paragraph("Sin eventos registrados.");
   }
 
-  title("Inspeccion de referencia");
-  if (report.inspection_items.length) {
-    const issueCount = report.inspection_items.filter((item) => String(item.status || "").toLowerCase() !== "ok").length;
-    paragraph(`${report.inspection_items.length} pieza(s) inspeccionada(s). ${issueCount ? `${issueCount} con alerta.` : "Todas sin novedad."}`);
-    inspectionGrid(report.inspection_items);
+  title("Solicitudes, piezas y soportes por referencia");
+  if (report.request_groups.length) {
+    report.request_groups.forEach((group, index) => {
+      ensureSpace(70);
+      const referenceLabel = `${group.reference?.code || "Sin codigo"} - ${group.reference?.name || "Referencia"}`;
+      text(`Solicitud ${index + 1}: ${referenceLabel}`, margin, y, { bold: true, size: 11, fill: [0.03, 0.29, 0.25] });
+      y -= 16;
+      paragraph(`Tipo: ${group.service_type || "N/A"}. Estado: ${statusReportLabel(group.status)}.${group.observation ? ` Observacion: ${group.observation}` : ""}`);
+      if (group.inspection_items.length) {
+        const issueCount = group.inspection_items.filter((item) => String(item.status || "").toLowerCase() !== "ok").length;
+        paragraph(`Validacion de piezas: ${group.inspection_items.length} revisada(s). ${issueCount ? `${issueCount} con alerta.` : "Todas sin novedad."}`);
+        inspectionGrid(group.inspection_items);
+      } else {
+        paragraph("Validacion de piezas: sin inspeccion registrada.");
+      }
+      if (group.evidence.length) {
+        tableHeader([{ label: "Soporte", x: 10 }, { label: "Archivo / detalle", x: 160 }, { label: "Fecha", x: 410 }]);
+        group.evidence.slice(0, 30).forEach((item) => tableRow([
+          { key: "type", x: 10, chars: 24, bold: true },
+          { key: "file", x: 160, chars: 46, lines: 2 },
+          { key: "date", x: 410, chars: 22 }
+        ], {
+          type: item.label,
+          file: item.file_name || item.metadata?.part_name || (item.has_base64 ? "Captura almacenada" : "Soporte adjunto"),
+          date: formatReportDate(item.created_at)
+        }, 36));
+      } else {
+        paragraph("Sin soportes fotograficos para esta referencia.");
+      }
+      if (group.incidents.length) paragraph(`Novedades de la solicitud: ${group.incidents.length}.`);
+      y -= 8;
+    });
   } else {
-    paragraph("Sin inspeccion registrada.");
+    paragraph("Sin solicitudes registradas.");
   }
 
-  title("Novedades");
-  if (report.incidents.length) {
+  title("Novedades generales");
+  if (report.general_incidents.length) {
     tableHeader([{ label: "Tipo", x: 10 }, { label: "Descripcion", x: 130 }, { label: "Fecha", x: 410 }]);
-    report.incidents.slice(0, 30).forEach((incident) => tableRow([
+    report.general_incidents.slice(0, 30).forEach((incident) => tableRow([
       { key: "type", x: 10, chars: 18, bold: true },
       { key: "description", x: 130, chars: 48, lines: 3 },
       { key: "date", x: 410, chars: 22 }
@@ -393,10 +444,10 @@ function buildReportPdf(report) {
     paragraph("Sin encuesta de satisfaccion registrada.");
   }
 
-  title("Evidencias fotograficas y soportes");
-  if (report.evidence.length) {
+  title("Soportes generales de la orden");
+  if (report.general_evidence.length) {
     tableHeader([{ label: "Tipo", x: 10 }, { label: "Archivo / detalle", x: 160 }, { label: "Fecha", x: 410 }]);
-    report.evidence.slice(0, 50).forEach((item) => tableRow([
+    report.general_evidence.slice(0, 50).forEach((item) => tableRow([
       { key: "type", x: 10, chars: 24, bold: true },
       { key: "file", x: 160, chars: 46, lines: 2 },
       { key: "date", x: 410, chars: 22 }
@@ -406,7 +457,7 @@ function buildReportPdf(report) {
       date: formatReportDate(item.created_at)
     }, 36));
   } else {
-    paragraph("Sin evidencias cargadas.");
+    paragraph("Sin soportes generales; las evidencias operativas estan agrupadas por referencia.");
   }
 
   ensureSpace(38);

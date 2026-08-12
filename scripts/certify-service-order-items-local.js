@@ -133,11 +133,20 @@ async function main() {
   assert.equal(final.item_progress.completed, 3);
   assert.equal(final.item_progress.all_completed, true);
   assert.equal(final.items.every((item) => item.photos.length === 2), true);
+  const report = await service.getOrderReport(tenantId, admin, created.id);
+  assert.equal(report.request_groups.length, 3);
+  assert.deepEqual(report.request_groups.map((group) => group.evidence.length), [2, 2, 2]);
+  assert.equal(report.request_groups.every((group) => group.inspection_items.length === 1), true);
+  assert.equal(report.general_evidence.length, 0);
+  const pdf = await service.getOrderReportPdf(tenantId, admin, created.id);
+  const pdfText = pdf.buffer.toString("latin1");
+  assert.match(pdfText, /Solicitudes, piezas y soportes por referencia/);
+  for (const reference of references) assert.match(pdfText, new RegExp(reference.code));
   await assert.rejects(() => service.transitionOrderItem(tenantId, technician, created.id, final.items[0].id, { status: "bloqueada", expected_version: 1 }), (error) => error.statusCode === 409);
 
   const elapsedMs = Number((performance.now() - started).toFixed(2));
   assert.ok(elapsedMs < 5000, `El flujo local excedio 5 s: ${elapsedMs} ms`);
-  console.log(JSON.stringify({ certification_version: CERTIFICATION_VERSION, ok: true, run_id: RUN_ID, order_id: created.id, requests: 3, administrative_edit_save: true, technician_multi_item_flow: true, evidence_required_error: true, evidence: 6, tenant_isolation: true, optimistic_concurrency: true, elapsed_ms: elapsedMs }, null, 2));
+  console.log(JSON.stringify({ certification_version: CERTIFICATION_VERSION, ok: true, run_id: RUN_ID, order_id: created.id, requests: 3, administrative_edit_save: true, technician_multi_item_flow: true, grouped_supports_and_piece_validation: true, pdf_grouped_by_reference: true, evidence_required_error: true, evidence: 6, tenant_isolation: true, optimistic_concurrency: true, elapsed_ms: elapsedMs }, null, 2));
 }
 
 main().catch((error) => {
