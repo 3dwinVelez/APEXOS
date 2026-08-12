@@ -64,6 +64,7 @@
     "test:performance": "node --test apps/api/test/performance-context.test.js apps/api/test/transversal-operations.test.js",
     "test:service-corrections": "node --test apps/api/test/service-order-administrative-corrections.test.js",
     "certify:service-corrections:local": "node scripts/certify-service-order-corrections-local.js",
+    "certify:service-order-items:local": "node scripts/certify-service-order-items-local.js",
     "qa:migrate-service-evidence-storage": "node scripts/migrate-qa-service-evidence-storage.js",
     "qa:validate-service-storage": "node scripts/validate-qa-service-storage.js",
     "workflow:status": "node scripts/branch-workflow.js status",

@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const { decodeBase64Prefix, detectFileMime } = require("./fileSignature");
 
 const SENSITIVE_KEYS = new Set([
   "password",
@@ -76,8 +77,14 @@ function normalizeFileName(fileName = "archivo") {
 function assertSafeFile(input = {}, options = {}) {
   const mimeType = String(input.mime_type || input.type || "").toLowerCase();
   const fileSize = Number(input.file_size || input.size_bytes || input.size || 0);
+  const base64 = input.base64_data || input.base64;
   const maxBytes = options.maxBytes || MAX_EVIDENCE_BYTES;
 
+  if (fileSize < 0 || (base64 && !fileSize)) {
+    const error = new Error("El archivo esta vacio o su tamano es invalido.");
+    error.statusCode = 400;
+    throw error;
+  }
   if (mimeType && !ALLOWED_FILE_MIME_TYPES.has(mimeType)) {
     const error = new Error("Tipo de archivo no permitido.");
     error.statusCode = 400;
@@ -87,6 +94,14 @@ function assertSafeFile(input = {}, options = {}) {
     const error = new Error("El archivo supera el tamano maximo permitido.");
     error.statusCode = 400;
     throw error;
+  }
+  if (base64) {
+    const detectedMime = detectFileMime(decodeBase64Prefix(base64));
+    if (!detectedMime || detectedMime !== mimeType) {
+      const error = new Error("El contenido del archivo no coincide con el formato declarado.");
+      error.statusCode = 400;
+      throw error;
+    }
   }
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { api } from "@/lib/api";
-import { ArrowLeft, ClipboardCheck } from "lucide-react";
+import { ArrowLeft, ClipboardCheck, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -12,9 +12,7 @@ type ServiceOrderCreateResponse = ServiceOrder | { order?: ServiceOrder; data?: 
 type Technician = { id: number | string; code?: string; user?: { name?: string; email?: string } };
 type ServiceType = { code: string; label: string; active?: boolean };
 type OrderForm = {
-  reference_id: string;
   technician_id: string;
-  service_type: string;
   scheduled_date: string;
   customer_name: string;
   customer_document: string;
@@ -23,6 +21,8 @@ type OrderForm = {
   invoice_number: string;
   notes: string;
 };
+type ServiceItemForm = { reference_id: string; service_type: string; quantity: string; description: string; observation: string };
+const emptyItem = (serviceType = "montaje"): ServiceItemForm => ({ reference_id: "", service_type: serviceType, quantity: "1", description: "", observation: "" });
 
 function createdOrderId(response: ServiceOrderCreateResponse | null | undefined) {
   if (!response) return null;
@@ -39,7 +39,8 @@ export default function NewServiceOrderPage() {
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<OrderForm>({ reference_id: "", technician_id: "", service_type: "montaje", scheduled_date: "", customer_name: "", customer_document: "", customer_phone: "", customer_address: "", invoice_number: "", notes: "" });
+  const [form, setForm] = useState<OrderForm>({ technician_id: "", scheduled_date: "", customer_name: "", customer_document: "", customer_phone: "", customer_address: "", invoice_number: "", notes: "" });
+  const [items, setItems] = useState<ServiceItemForm[]>([emptyItem()]);
 
   useEffect(() => {
     if (localStorage.getItem("role_name")?.toLowerCase() === "tecnico") {
@@ -56,7 +57,7 @@ export default function NewServiceOrderPage() {
       const activeTypes = typeRows.filter((item) => item.active !== false);
       setServiceTypes(activeTypes);
       if (activeTypes.length) {
-        setForm((prev) => activeTypes.some((item) => item.code === prev.service_type) ? prev : { ...prev, service_type: activeTypes[0].code });
+        setItems((current) => current.map((item) => activeTypes.some((type) => type.code === item.service_type) ? item : { ...item, service_type: activeTypes[0].code }));
       }
     }).catch((error) => {
       setReferences([]);
@@ -68,9 +69,7 @@ export default function NewServiceOrderPage() {
   async function createOrder() {
     if (saving) return;
     const requiredFields: Array<[keyof OrderForm, string]> = [
-      ["reference_id", "referencia"],
       ["technician_id", "tecnico asignado"],
-      ["service_type", "tipo de servicio"],
       ["scheduled_date", "fecha programada del servicio"],
       ["customer_name", "nombre del cliente"],
       ["customer_document", "cedula del cliente"],
@@ -83,6 +82,11 @@ export default function NewServiceOrderPage() {
       setMessage(`Completa los campos obligatorios: ${missing.join(", ")}.`);
       return;
     }
+    const invalidItem = items.findIndex((item) => !item.reference_id || !item.service_type || Number(item.quantity) <= 0);
+    if (invalidItem >= 0) {
+      setMessage(`Completa referencia, tipo de servicio y cantidad de la solicitud ${invalidItem + 1}.`);
+      return;
+    }
     setSaving(true);
     setMessage("");
     try {
@@ -90,8 +94,10 @@ export default function NewServiceOrderPage() {
         method: "POST",
         body: JSON.stringify({
           ...form,
-          reference_id: form.reference_id,
           technician_id: form.technician_id,
+          reference_id: Number(items[0].reference_id),
+          service_type: items[0].service_type,
+          items: items.map((item, index) => ({ ...item, reference_id: Number(item.reference_id), quantity: Number(item.quantity), idempotency_key: `item-${index + 1}` })),
           metadata: {
             assignment: "selected_technician",
             customer_document: form.customer_document.trim()
@@ -108,8 +114,10 @@ export default function NewServiceOrderPage() {
     }
   }
 
-  const ref = references.find((item) => String(item.id) === form.reference_id);
   const selectableServiceTypes = serviceTypes.length ? serviceTypes : [{ code: "montaje", label: "Montaje" }, { code: "desmontaje", label: "Desmontaje" }, { code: "ambos", label: "Montaje y desmontaje" }];
+  function setItem(index: number, patch: Partial<ServiceItemForm>) {
+    setItems((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item));
+  }
 
   return (
     <div className="mx-auto max-w-3xl space-y-4 pb-32 md:pb-6">
@@ -125,23 +133,25 @@ export default function NewServiceOrderPage() {
 
       <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-base font-semibold">Referencia y programacion</h2>
-          <span className="text-xs font-medium text-neutral-500">Factura o pedido es opcional</span>
+          <div><h2 className="text-base font-semibold">Solicitudes de la orden</h2><p className="text-xs text-neutral-500">{items.length} solicitud(es), una sola OS</p></div>
+          <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold disabled:opacity-50" disabled={items.length >= 20} onClick={() => setItems((current) => [...current, emptyItem(selectableServiceTypes[0]?.code)])} type="button"><Plus size={16} /> Agregar</button>
         </div>
-        <div className="grid gap-3 md:grid-cols-2">
-          <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
-            Referencia del producto *
-            <select className="h-12 w-full min-w-0 rounded-md border border-line bg-white px-3 text-base md:h-10 md:text-sm" required value={form.reference_id} onChange={(event) => setForm((prev) => ({ ...prev, reference_id: event.target.value }))}>
-              <option value="">Selecciona una referencia</option>
-              {references.map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}
-            </select>
-          </label>
-          <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
-            Tipo de servicio *
-            <select className="h-12 w-full min-w-0 rounded-md border border-line bg-white px-3 text-base md:h-10 md:text-sm" required value={form.service_type} onChange={(event) => setForm((prev) => ({ ...prev, service_type: event.target.value }))}>
-              {selectableServiceTypes.map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}
-            </select>
-          </label>
+        <div className="space-y-3">
+          {items.map((item, index) => {
+            const reference = references.find((row) => String(row.id) === item.reference_id);
+            return <div className="rounded-md border border-line p-3" key={index}>
+              <div className="mb-3 flex items-center justify-between"><span className="text-sm font-semibold">Solicitud {index + 1}</span>{items.length > 1 ? <button aria-label={`Eliminar solicitud ${index + 1}`} className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-line text-rose-700" onClick={() => setItems((current) => current.filter((_, itemIndex) => itemIndex !== index))} type="button"><Trash2 size={16} /></button> : null}</div>
+              <div className="grid gap-3 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_100px]">
+                <label className="grid gap-1.5 text-sm font-medium text-neutral-700">Referencia *<select className="h-12 min-w-0 rounded-md border border-line bg-white px-3 text-base md:h-10 md:text-sm" value={item.reference_id} onChange={(event) => setItem(index, { reference_id: event.target.value })}><option value="">Selecciona</option>{references.map((row) => <option key={row.id} value={row.id}>{row.code} - {row.name}</option>)}</select></label>
+                <label className="grid gap-1.5 text-sm font-medium text-neutral-700">Servicio *<select className="h-12 min-w-0 rounded-md border border-line bg-white px-3 text-base md:h-10 md:text-sm" value={item.service_type} onChange={(event) => setItem(index, { service_type: event.target.value })}>{selectableServiceTypes.map((row) => <option key={row.code} value={row.code}>{row.label}</option>)}</select></label>
+                <label className="grid gap-1.5 text-sm font-medium text-neutral-700">Cantidad *<input className="h-12 min-w-0 rounded-md border border-line px-3 text-base md:h-10 md:text-sm" min="0.01" step="0.01" type="number" value={item.quantity} onChange={(event) => setItem(index, { quantity: event.target.value })} /></label>
+                <label className="grid gap-1.5 text-sm font-medium text-neutral-700 md:col-span-3">Observacion especifica<input className="h-12 min-w-0 rounded-md border border-line px-3 text-base md:h-10 md:text-sm" value={item.observation} onChange={(event) => setItem(index, { observation: event.target.value })} /></label>
+              </div>
+              {reference ? <p className="mt-2 text-xs text-neutral-500">{reference.code} · {reference.parts.length} pieza(s) · {reference.estimated_minutes} min</p> : null}
+            </div>;
+          })}
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
           <label className="grid gap-1.5 text-sm font-medium text-neutral-700 md:col-span-2">
             Tecnico responsable *
             <select className="h-12 w-full min-w-0 rounded-md border border-line bg-white px-3 text-base md:h-10 md:text-sm" required value={form.technician_id} onChange={(event) => setForm((prev) => ({ ...prev, technician_id: event.target.value }))}>
@@ -154,11 +164,6 @@ export default function NewServiceOrderPage() {
             <input className="h-12 w-full min-w-0 rounded-md border border-line px-3 text-base md:h-10 md:text-sm" required type="date" value={form.scheduled_date} onChange={(event) => setForm((prev) => ({ ...prev, scheduled_date: event.target.value }))} />
           </label>
         </div>
-        {ref ? (
-          <div className="mt-3 rounded-md border border-line bg-paper p-3 text-sm text-neutral-700">
-            {ref.parts.length} pieza(s) - {ref.estimated_minutes} min - {[ref.brand, ref.model].filter(Boolean).join(" / ") || ref.category}
-          </div>
-        ) : null}
       </section>
 
       <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
