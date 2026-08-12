@@ -157,6 +157,16 @@ function Test-HttpOk {
   }
 }
 
+function Wait-HttpOk {
+  param([string]$Url, [int]$TimeoutSeconds = 90)
+  $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+  while ((Get-Date) -lt $deadline) {
+    if (Test-HttpOk $Url) { return $true }
+    Start-Sleep -Seconds 2
+  }
+  return $false
+}
+
 function Ensure-Dependencies {
   param([string]$RepoRoot)
   if ($NoInstall) { return }
@@ -291,6 +301,15 @@ if (-not $CheckOnly -and -not $NoStart -and -not ($apiAlreadyRunning -and $webAl
   Start-LocalInfrastructure $repoRoot
   Start-Terminal "APEXOS API - desarrollo" "npm run dev:api" $repoRoot
   Start-Terminal "APEXOS WEB - desarrollo" "npm run dev:web" $repoRoot
+  Write-Host "Esperando que API y Web respondan..." -ForegroundColor Cyan
+  $apiReady = Wait-HttpOk "http://localhost:3000/health"
+  $webReady = Wait-HttpOk "http://localhost:3001/login"
+  if (-not ($apiReady -and $webReady)) {
+    $details = @()
+    if (-not $apiReady) { $details += "API no respondio en http://localhost:3000/health." }
+    if (-not $webReady) { $details += "Web no respondio en http://localhost:3001/login." }
+    Stop-Blocked "Los procesos locales no alcanzaron un estado saludable." $details
+  }
   if (-not $NoCode -and (Get-Command code -ErrorAction SilentlyContinue)) {
     Start-Process code -ArgumentList "`"$repoRoot`""
   }
