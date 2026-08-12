@@ -21,6 +21,7 @@ model Tenant {
   tax_id         String?
   country        String        @default("CO")
   active         Boolean       @default(true)
+  authorization_version Int    @default(1)
   created_at     DateTime      @default(now())
   updated_at     DateTime      @updatedAt
   subscription   Subscription?
@@ -36,12 +37,14 @@ model User {
   role        Role?     @relation(fields: [role_id], references: [id])
   avatar      String?
   active      Boolean   @default(true)
+  authorization_version Int @default(1)
   last_login  DateTime?
   preferences Json      @default("{}")
   created_at  DateTime  @default(now())
   updated_at  DateTime  @updatedAt
   employee    Employee?
   evidence_upload_authorizations EvidenceUploadAuthorization[]
+  authorization_sessions AuthorizationSession[]
 
   @@unique([tenant_id, email])
   @@index([tenant_id])
@@ -1582,6 +1585,23 @@ model ServiceOrderCorrectionChange {
 
   @@index([tenant_id, correction_id, created_at], map: "ServiceOrderCorrectionChange_tenant_correction_created_idx")
   @@index([tenant_id, evidence_id], map: "ServiceOrderCorrectionChange_tenant_evidence_idx")
+}
+
+model AuthorizationSession {
+  id                     String    @id @default(uuid())
+  user_id                Int
+  tenant_id              String
+  user_version           Int
+  tenant_version         Int
+  revoked_at             DateTime?
+  revoke_reason          String?
+  last_seen_at           DateTime  @default(now())
+  expires_at             DateTime
+  created_at             DateTime  @default(now())
+  user                   User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, revoked_at])
+  @@index([tenant_id, revoked_at])
 }
 
 model EvidenceUploadAuthorization {

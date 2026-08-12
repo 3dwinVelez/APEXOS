@@ -45,7 +45,12 @@ async function assertOrderAccess(tenantId, user, orderKey) {
   const current = await prisma.user.findUnique({ where: { id: user.id }, select: { preferences: true } });
   const company = companyId(user) || String(current?.preferences?.company_id || "").trim();
   if (!company) throw Object.assign(new Error("La sesion no tiene empresa operativa asociada."), { statusCode: 403 });
-  const query = new URLSearchParams({ select: "id", id: `eq.${orderKey}`, company_id: `eq.${company}`, limit: "1" });
+  const query = new URLSearchParams({
+    select: "id",
+    id: `eq.${orderKey}`,
+    company_id: `eq.${company}`,
+    limit: "1"
+  });
   const response = await storageRequest(`/rest/v1/service_orders?${query.toString()}`);
   const orders = await response.json();
   if (!Array.isArray(orders) || orders.length !== 1) {
@@ -59,7 +64,10 @@ function dimensions(bytes, mime) {
     return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
   }
   if (mime === "image/webp" && bytes.length >= 30 && bytes.toString("ascii", 12, 16) === "VP8X") {
-    return { width: 1 + bytes.readUIntLE(24, 3), height: 1 + bytes.readUIntLE(27, 3) };
+    return {
+      width: 1 + bytes.readUIntLE(24, 3),
+      height: 1 + bytes.readUIntLE(27, 3)
+    };
   }
   if (mime === "image/jpeg") {
     let offset = 2;
@@ -97,21 +105,6 @@ async function storageRequest(path, options = {}) {
   return response;
 }
 
-async function signedResponse(authorization) {
-  const response = await storageRequest(`/storage/v1/object/upload/sign/${BUCKET}/${authorization.quarantine_path}`, {
-    method: "POST",
-    body: JSON.stringify({ upsert: false })
-  });
-  const signed = await response.json();
-  return {
-    authorization_id: authorization.id,
-    bucket: BUCKET,
-    path: authorization.quarantine_path,
-    signed_upload_url: signed.url || signed.signedURL || signed.signedUrl,
-    expires_at: authorization.expires_at
-  };
-}
-
 async function authorize(tenantId, user, orderKey, input) {
   if (!enabled()) throw Object.assign(new Error("Carga autoritativa deshabilitada."), { statusCode: 404 });
   const mime = String(input.mime_type || "").toLowerCase();
@@ -129,7 +122,9 @@ async function authorize(tenantId, user, orderKey, input) {
       where: { tenant_id_user_id_client_upload_id: { tenant_id: tenantId, user_id: user.id, client_upload_id: clientUploadId } }
     });
     if (existing && existing.expires_at > new Date() && existing.status === "authorized") return signedResponse(existing);
+
     const authorizedCompanyId = await assertOrderAccess(tenantId, user, orderKey);
+
     const id = crypto.randomUUID();
     const quarantinePath = `_quarantine/${tenantId}/${user.id}/${id}.${extension(mime)}`;
     const authorization = await prisma.evidenceUploadAuthorization.create({
@@ -152,8 +147,26 @@ async function authorize(tenantId, user, orderKey, input) {
   });
 }
 
+async function signedResponse(authorization) {
+  const response = await storageRequest(`/storage/v1/object/upload/sign/${BUCKET}/${authorization.quarantine_path}`, {
+    method: "POST",
+    body: JSON.stringify({ upsert: false })
+  });
+  const signed = await response.json();
+  return {
+    authorization_id: authorization.id,
+    bucket: BUCKET,
+    path: authorization.quarantine_path,
+    signed_upload_url: signed.url || signed.signedURL || signed.signedUrl,
+    expires_at: authorization.expires_at
+  };
+}
+
 async function reject(authorization, reason) {
-  await prisma.evidenceUploadAuthorization.update({ where: { id: authorization.id }, data: { status: "rejected", rejection_reason: reason } });
+  await prisma.evidenceUploadAuthorization.update({
+    where: { id: authorization.id },
+    data: { status: "rejected", rejection_reason: reason }
+  });
   await storageRequest(`/storage/v1/object/${BUCKET}/${authorization.quarantine_path}`, { method: "DELETE" }).catch(() => undefined);
   throw Object.assign(new Error(reason), { statusCode: 422 });
 }
@@ -161,12 +174,15 @@ async function reject(authorization, reason) {
 async function confirm(tenantId, user, authorizationId) {
   if (!enabled()) throw Object.assign(new Error("Carga autoritativa deshabilitada."), { statusCode: 404 });
   return prisma.runWithTenant(tenantId, async () => {
-    const authorization = await prisma.evidenceUploadAuthorization.findFirst({ where: { id: authorizationId, user_id: user.id } });
+    const authorization = await prisma.evidenceUploadAuthorization.findFirst({
+      where: { id: authorizationId, user_id: user.id }
+    });
     if (!authorization) throw Object.assign(new Error("Autorizacion no encontrada."), { statusCode: 404 });
     if (authorization.status === "validated") return authorization;
     if (authorization.status !== "authorized" || authorization.expires_at <= new Date()) {
       throw Object.assign(new Error("Autorizacion expirada o consumida."), { statusCode: 409 });
     }
+
     const object = await storageRequest(`/storage/v1/object/${BUCKET}/${authorization.quarantine_path}`);
     const bytes = Buffer.from(await object.arrayBuffer());
     const mime = detectedMime(bytes);
@@ -175,6 +191,7 @@ async function confirm(tenantId, user, authorizationId) {
     if (!mime || mime !== authorization.expected_mime_type) return reject(authorization, "La firma binaria no coincide con el MIME autorizado.");
     if (!imageDimensions || imageDimensions.width < 1 || imageDimensions.height < 1) return reject(authorization, "La imagen esta truncada o no es decodificable.");
     if (imageDimensions.width > MAX_DIMENSION || imageDimensions.height > MAX_DIMENSION) return reject(authorization, "Las dimensiones de la imagen exceden el limite.");
+
     const tenantSegment = authorization.company_id || tenantId;
     const finalPath = `${tenantSegment}/${authorization.order_key}/${authorization.id}.${extension(mime)}`;
     await storageRequest("/storage/v1/object/copy", {

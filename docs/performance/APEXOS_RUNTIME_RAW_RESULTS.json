@@ -1,0 +1,75 @@
+{
+  "generatedAt": "2026-07-30T12:30:00-05:00",
+  "branch": "codex/perf-runtime-root-cause",
+  "commits": {
+    "main": "4594572ad2c476cdccf23bfb6c661566274ab3a8",
+    "develop_base": "55f9318abcc84b761244ff50c7abd814e3220226",
+    "visual_remediation_reference": "fd0705827947d201edd80ccd78cd4e58e57c5960"
+  },
+  "environment": {
+    "os": "Windows",
+    "nodeObserved": "24.14.0",
+    "nodeRequired": "22.x",
+    "next": "15.5.22",
+    "limitation": "No authenticated QA credentials or browser trace were available in the audit environment."
+  },
+  "validation": {
+    "typescript": {"status": "pass"},
+    "eslint": {"status": "pass"},
+    "productionBuild": {"status": "pass", "compileSeconds": 41},
+    "performanceTests": {"status": "pass", "passed": 1, "failed": 0},
+    "offlineTests": {"status": "baseline_failure", "passed": 40, "failed": 9, "total": 49}
+  },
+  "assets": {
+    "javascriptFiles": 103,
+    "javascriptRawBytes": 2796833,
+    "cssFiles": 1,
+    "cssRawBytes": 87114,
+    "sharedFirstLoadKb": 103
+  },
+  "routes": {
+    "/dashboard": {"routeKb": 11.6, "firstLoadKb": 262},
+    "/dashboard/administracion": {"routeKb": 23.0, "firstLoadKb": 179},
+    "/dashboard/servicios": {"routeKb": 16.8, "firstLoadKb": 155},
+    "/dashboard/servicios/[id]": {"routeKb": 14.9, "firstLoadKb": 163},
+    "/dashboard/inventario/wms": {"routeKb": 21.0, "firstLoadKb": 127},
+    "/login": {"routeKb": 7.22, "firstLoadKb": 117}
+  },
+  "clientBoundaries": {
+    "total": 77,
+    "dashboard": 46,
+    "components": 24,
+    "otherRoutes": 7
+  },
+  "permissionPreparation": {
+    "callers": ["Sidebar", "RouteAccessGuard"],
+    "deduplication": "same-token in-flight promise and sessionStorage TTL",
+    "coldRemoteCallsMaximum": 5,
+    "waves": [
+      ["platform_admins", "user_companies"],
+      ["role_context_api", "employee_role_context"],
+      ["company_module_status"]
+    ]
+  },
+  "qaHistoricalBenchmark": {
+    "source": "reports/performance/qa-root-cause-2026-07-27T03-20-52-381Z.json",
+    "conditions": {"concurrency": 10, "requestsPerTarget": 10, "apiUrlConfigured": false},
+    "frontendDocumentAverageMs": {
+      "dashboard": 110.45,
+      "users_roles": 115.07,
+      "services": 122.14,
+      "punches": 111.17,
+      "vehicles": 125.76
+    },
+    "supabaseRestAverageMs": {
+      "service_orders": 308.97,
+      "service_evidence_metadata": 200.18,
+      "employees": 176.56,
+      "vehicles": 154.79,
+      "punches": 167.90,
+      "gps": 151.59
+    }
+  },
+  "pilots": [],
+  "verdict": "CAUSA RAÍZ PARCIALMENTE IDENTIFICADA"
+}

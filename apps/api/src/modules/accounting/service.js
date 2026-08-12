@@ -1173,7 +1173,7 @@ async function simulatePayableDocument(tenantId, data) {
   });
 }
 
-async function createPayableDocumentInTransaction(tx, tenantId, userId, data) {
+async function createPayableDocumentTx(tx, tenantId, userId, data) {
   const preview = await preparePayableDocument(tx, tenantId, data, { reserveNumber: true });
     const cxp = await tx.cxpCabdoc.create({
       data: {
@@ -1310,10 +1310,12 @@ async function createPayableDocumentInTransaction(tx, tenantId, userId, data) {
 
 async function createPayableDocument(tenantId, userId, data) {
   return prisma.runWithTenant(tenantId, () => prisma.$transaction(
-    (tx) => createPayableDocumentInTransaction(tx, tenantId, userId, data),
+    (tx) => createPayableDocumentTx(tx, tenantId, userId, data),
     COMPLEX_TRANSACTION_OPTIONS
   ));
 }
+
+const createPayableDocumentInTransaction = createPayableDocumentTx;
 
 async function applyPayableCreditNote(tenantId, userId, data) {
   return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
@@ -1770,6 +1772,7 @@ module.exports = {
   listSupplierPayableDocuments,
   simulatePayableDocument,
   createPayableDocument,
+  createPayableDocumentTx,
   createPayableDocumentInTransaction,
   applyPayableCreditNote,
   listThirdParties,

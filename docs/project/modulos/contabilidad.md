@@ -93,3 +93,4 @@ No se implementa integracion DIAN completa. Los metadatos quedan listos para rec
 - Confirmar que un correo con formato invalido sea rechazado antes de guardar.
 - Consultar balance, resultados, balance de prueba, impuestos, auxiliar, cuentas por cobrar y cuentas por pagar.
 - Cerrar un periodo y confirmar que nuevos asientos/pagos del periodo cerrado sean bloqueados.
+- Las rutas contables deben reconocer `M-07`, `contabilidad`, `finance` y `accounting` como identificadores equivalentes del modulo habilitado para el tenant.
