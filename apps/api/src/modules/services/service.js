@@ -395,7 +395,7 @@ function buildReportPdf(report) {
   const order = report.order;
   header();
 
-  title("Resumen del servicio");
+  title("Contenedor de la orden");
   keyValue("Cliente", order.customer_name, margin, y, 176);
   keyValue("Telefono", order.customer_phone || "N/A", margin + 188, y, 118);
   keyValue("Factura / pedido", order.invoice_number || "N/A", margin + 318, y, 126);
@@ -425,15 +425,28 @@ function buildReportPdf(report) {
     paragraph("Sin eventos registrados.");
   }
 
-  title("Contenido de la orden");
-  paragraph(`${report.request_groups.length} producto(s) o solicitud(es). Cada bloque conserva su validacion, evidencias y novedades de forma independiente.`);
+  addPage(`Contenedor ${report.order.number || report.order.id} | Indice de servicios`);
+  title("Servicios prestados en el contenedor");
+  paragraph(`Esta orden agrupa ${report.request_groups.length} servicio(s). El detalle operativo de cada solicitud se conserva por separado dentro del mismo contenedor.`);
   if (report.request_groups.length) {
+    tableHeader([{ label: "Servicio", x: 10 }, { label: "Referencia", x: 92 }, { label: "Tipo", x: 330 }, { label: "Estado", x: 430 }]);
+    report.request_groups.forEach((group, index) => tableRow([
+      { key: "service", x: 10, chars: 12, bold: true },
+      { key: "reference", x: 92, chars: 38, lines: 2 },
+      { key: "type", x: 330, chars: 16 },
+      { key: "status", x: 430, chars: 16 }
+    ], {
+      service: `Solicitud ${index + 1}`,
+      reference: `${group.reference?.code || "Sin codigo"} - ${group.reference?.name || "Referencia"}`,
+      type: group.service_type || "N/A",
+      status: statusReportLabel(group.status)
+    }, 38));
     report.request_groups.forEach((group, index) => {
-      addPage(`Producto ${index + 1} de ${report.request_groups.length}`);
+      addPage(`Contenedor ${report.order.number || report.order.id} | Servicio ${index + 1} de ${report.request_groups.length}`);
       const referenceLabel = `${group.reference?.code || "Sin codigo"} - ${group.reference?.name || "Referencia"}`;
-      sectionBand(`Producto ${index + 1}: ${referenceLabel}`, `${group.service_type || "N/A"} | ${statusReportLabel(group.status)}`);
+      sectionBand(`Solicitud ${index + 1}: ${referenceLabel}`, `Servicio: ${group.service_type || "N/A"} | Estado: ${statusReportLabel(group.status)}`);
       if (group.observation) paragraph(`Observacion: ${group.observation}`);
-      title("Validacion de producto y piezas");
+      title("Validacion de piezas del servicio");
       if (group.inspection_items.length) {
         const issueCount = group.inspection_items.filter((item) => String(item.status || "").toLowerCase() !== "ok").length;
         paragraph(`Validacion de piezas: ${group.inspection_items.length} revisada(s). ${issueCount ? `${issueCount} con alerta.` : "Todas sin novedad."}`);
@@ -443,7 +456,7 @@ function buildReportPdf(report) {
           ? `Validacion de piezas completada: referencia sin piezas configuradas. Decision: ${group.inspection_decision}.`
           : "Validacion de piezas: sin inspeccion registrada.");
       }
-      title("Evidencias del producto");
+      title("Evidencias del servicio");
       if (group.evidence.length) {
         tableHeader([{ label: "Soporte", x: 10 }, { label: "Archivo / detalle", x: 160 }, { label: "Fecha", x: 410 }]);
         group.evidence.slice(0, 30).forEach((item) => tableRow([
@@ -458,7 +471,7 @@ function buildReportPdf(report) {
       } else {
         paragraph("Sin soportes fotograficos para esta referencia.");
       }
-      title("Novedades del producto");
+      title("Novedades del servicio");
       if (group.incidents.length) {
         paragraph(`${group.incidents.length} novedad(es) registrada(s).`);
         tableHeader([{ label: "Tipo", x: 10 }, { label: "Descripcion / accion", x: 130 }, { label: "Fecha", x: 410 }]);
@@ -490,8 +503,8 @@ function buildReportPdf(report) {
     y -= bandHeight + 10;
   }
 
-  addPage("Cierre general de la orden");
-  sectionBand("Cierre general", "Encuesta, novedades generales y soportes del contenedor");
+  addPage(`Contenedor ${report.order.number || report.order.id} | Cierre general`);
+  sectionBand("Cierre del contenedor", "Novedades generales, encuesta, soportes globales y firma unica de la orden");
   title("Novedades generales");
   if (report.general_incidents.length) {
     tableHeader([{ label: "Tipo", x: 10 }, { label: "Descripcion", x: 130 }, { label: "Fecha", x: 410 }]);
