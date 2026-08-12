@@ -56,6 +56,11 @@ test("item inspection and execution synchronize the owning order", () => {
   assert.match(service, /syncOrderProgress\(order\.id\)/);
 });
 
+test("the order closes with one global signature after every request completed", () => {
+  assert.match(service, /if \(!progress\.all_completed\)[\s\S]*requireEvidence\(id, \["firma_cliente"\]\)/);
+  assert.doesNotMatch(service, /requireEvidence\(id, \["producto_abierto", "producto_cerrado", "firma_cliente"\]\)/);
+});
+
 test("administrative editing replaces only requests that have not started", () => {
   assert.match(service, /Array\.isArray\(input\.items\)/);
   assert.match(service, /SERVICE_ORDER_ITEMS_ALREADY_STARTED/);

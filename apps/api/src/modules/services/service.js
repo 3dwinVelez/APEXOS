@@ -141,6 +141,15 @@ function reportForOrder(order) {
   const isGeneralEvidence = (photo) => photo.item_id == null || photo.type === "firma_cliente";
   const requestGroups = (hasPersistedItems ? order.items : legacyItem(order)).map((item, index) => {
     const itemInspection = item.metadata?.inspection || (item.legacy ? inspection : {});
+    const inspectionItems = itemInspection.items?.length || !itemInspection.decision ? itemInspection.items || [] : [{
+      part_id: -Number(item.reference_id),
+      name: item.reference?.name || "Producto completo",
+      quantity: 1,
+      unit: "producto",
+      status: "ok",
+      comment: "Validacion general del producto",
+      action: "ninguna"
+    }];
     return {
       item_id: item.id,
       display_order: item.display_order ?? index,
@@ -148,14 +157,20 @@ function reportForOrder(order) {
       service_type: item.service_type,
       observation: item.observation || item.description || "",
       reference: item.reference || order.reference || {},
-      inspection_items: itemInspection.items || [],
+      inspection_items: inspectionItems,
       inspection_decision: itemInspection.decision || "",
       inspected_at: itemInspection.inspected_at || "",
       evidence: (item.photos || order.photos.filter((photo) => String(photo.item_id || "") === String(item.id))).filter((photo) => !isGeneralEvidence(photo)).map(evidenceDto),
       incidents: item.incidents || order.incidents.filter((incident) => String(incident.item_id || "") === String(item.id))
     };
   });
-  const generalEvidence = hasPersistedItems ? order.photos.filter(isGeneralEvidence).map(evidenceDto) : [];
+  const generalPhotos = order.photos.filter(isGeneralEvidence);
+  const signatures = generalPhotos.filter((photo) => photo.type === "firma_cliente");
+  const canonicalGeneralPhotos = [
+    ...generalPhotos.filter((photo) => photo.type !== "firma_cliente"),
+    ...(signatures.length ? [signatures[signatures.length - 1]] : [])
+  ];
+  const generalEvidence = hasPersistedItems ? canonicalGeneralPhotos.map(evidenceDto) : [];
   const generalIncidents = hasPersistedItems ? order.incidents.filter((incident) => incident.item_id == null) : [];
   return {
     order,
@@ -1357,7 +1372,7 @@ async function closeOrder(tenantId, user, id, input = {}) {
       if (!progress.all_completed) throw appError(409, "SERVICE_ORDER_ITEMS_PENDING", "Finaliza todas las solicitudes antes de cerrar la orden.");
     }
     await requireSatisfactionSurvey(tenantId, input, order.metadata);
-    await requireEvidence(id, ["producto_abierto", "producto_cerrado", "firma_cliente"]);
+    await requireEvidence(id, ["firma_cliente"]);
     const now = new Date();
     const duration = order.started_at ? Math.max(Math.round((now - order.started_at) / 60000), 0) : null;
     return prisma.serviceOrder.update({

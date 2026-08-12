@@ -213,4 +213,26 @@ Certificacion reproducible:
 - Pruebas de dominio, seguridad, presentacion y reporte: 21/21 aprobadas.
 - `npm run certify:service-order-items:local`: `ok: true`, tres inspecciones,
   tres novedades independientes, seis evidencias y los detalles de las tres
-  novedades presentes en el PDF; ultima ejecucion en 1488,78 ms.
+  novedades presentes en el PDF; ultima ejecucion en 1416,15 ms.
+
+## Contrato contenedor, productos y cierre
+
+El modelo funcional queda definido de forma explicita:
+
+- La orden es el contenedor unico. Conserva cliente, tecnico, encuesta, firma y
+  cierre general.
+- Cada solicitud representa un producto o servicio independiente. Conserva su
+  referencia, inspeccion, piezas, novedades y evidencias de producto abierto y
+  cerrado.
+- Cada solicitud debe finalizar con sus propias evidencias antes de habilitar el
+  cierre del contenedor. Al final se solicita una sola encuesta y una sola firma.
+- La firma se almacena sin `item_id` como soporte general y nunca se atribuye a
+  la ultima referencia seleccionada.
+- Si una orden historica contiene firmas duplicadas, la plataforma y el PDF
+  presentan una sola firma canonica, seleccionando el registro mas reciente.
+- Cuando una referencia no tiene despiece configurado, el producto completo se
+  usa como unidad minima de inspeccion. Esto permite registrar y recuperar la
+  validacion sin fabricar un catalogo de componentes inexistente.
+- La plataforma y el PDF reproducen esta jerarquia: orden, solicitudes,
+  validacion de producto/piezas, novedades y evidencias; encuesta y firma quedan
+  una sola vez en el nivel de la orden.

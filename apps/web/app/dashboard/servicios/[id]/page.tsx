@@ -78,7 +78,7 @@ const statusLabel: Record<string, string> = {
   lista_facturacion: "Lista para facturacion"
 };
 const executionPhotoTypes = ["producto_abierto", "producto_cerrado"];
-const closePhotoTypes = ["producto_abierto", "producto_cerrado", "firma_cliente"];
+const closePhotoTypes = ["firma_cliente"];
 const satisfactionQuestions = [
   { id: "service_quality", label: "¿Cómo calificas la calidad del servicio realizado?" },
   { id: "technician_attention", label: "¿Cómo calificas la atención y claridad del técnico?" },
@@ -245,7 +245,13 @@ export default function ServiceOperationPage() {
       setInspection(saved.map((item) => ({ ...item, part_id: item.part_id, quantity: Number(item.quantity || 1), unit: item.unit || "und", status: (["ok", "averiada", "faltante"].includes(item.status) ? item.status : "ok") as InspectionStatus, action: item.action || "ninguna" })));
       return;
     }
-    const parts = selectedItem?.reference?.parts || order.reference?.parts || [];
+    const configuredParts = selectedItem?.reference?.parts || order.reference?.parts || [];
+    const parts = configuredParts.length ? configuredParts : selectedItem ? [{
+      id: -Number(selectedItem.reference_id),
+      name: selectedItem.reference?.name || "Producto completo",
+      quantity: 1,
+      unit: "producto"
+    }] : [];
     setInspection(parts.map((part) => ({ part_id: part.id, name: part.name, quantity: Number(part.quantity || 1), unit: part.unit || "und", status: "ok", comment: "", action: "ninguna" })));
   }, [order, noExecutionReason, selectedItem]);
 
@@ -280,7 +286,8 @@ export default function ServiceOperationPage() {
   }
 
   async function uploadPhoto(type: string, file: CapturedFile | null, metadata: Record<string, unknown> = {}, captureKey = type) {
-    const targetItemId = selectedItem && !selectedItem.legacy ? String(selectedItem.id) : "";
+    const orderLevelEvidence = type === "firma_cliente";
+    const targetItemId = !orderLevelEvidence && selectedItem && !selectedItem.legacy ? String(selectedItem.id) : "";
     if (file && (type === "pieza_averiada" ? hasPersistedProblemEvidence(metadata.part_id as number | string) : hasPersistedPhoto(type))) {
       setMessage(`La evidencia ${photoLabels[type] || type} ya fue registrada y no puede repetirse.`);
       return false;
@@ -449,7 +456,7 @@ export default function ServiceOperationPage() {
   }
 
   function hasPersistedPhoto(type: string) {
-    return Boolean(order?.photos.some((photo) => photo.type === type && (!selectedItemId.startsWith("legacy-") ? String(photo.item_id || "") === selectedItemId : true)));
+    return Boolean(order?.photos.some((photo) => photo.type === type && (type === "firma_cliente" || selectedItemId.startsWith("legacy-") || String(photo.item_id || "") === selectedItemId)));
   }
 
   function uploadsPending(types: string[]) {
@@ -634,7 +641,17 @@ export default function ServiceOperationPage() {
   const orderCompleted = ["cerrada", "no_ejecutada"].includes(order.status);
   const messageIsError = /^Error\s+\d+|^No (?:fue|se puede)|requiere|debes|pendiente:/i.test(message);
   const supportGroups = order.items.map((item, index) => {
-    const itemInspection = item.metadata?.inspection?.items || (item.legacy ? order.metadata?.inspection?.items : []) || [];
+    const storedInspection = item.metadata?.inspection?.items || (item.legacy ? order.metadata?.inspection?.items : []) || [];
+    const inspectionDecision = item.metadata?.inspection?.decision || (item.legacy ? order.metadata?.inspection?.decision : "");
+    const itemInspection = storedInspection.length || !inspectionDecision ? storedInspection : [{
+      part_id: -Number(item.reference_id),
+      name: item.reference?.name || "Producto completo",
+      quantity: 1,
+      unit: "producto",
+      status: "ok" as InspectionStatus,
+      comment: "Validacion general del producto",
+      action: "ninguna"
+    }];
     return {
       item,
       index,
@@ -644,7 +661,12 @@ export default function ServiceOperationPage() {
     };
   });
   const hasLegacyItem = order.items.some((item) => item.legacy);
-  const generalPhotos = hasLegacyItem ? [] : order.photos.filter((photo) => photo.item_id == null || photo.type === "firma_cliente");
+  const orderLevelPhotos = order.photos.filter((photo) => photo.item_id == null || photo.type === "firma_cliente");
+  const signaturePhotos = orderLevelPhotos.filter((photo) => photo.type === "firma_cliente");
+  const generalPhotos = hasLegacyItem ? [] : [
+    ...orderLevelPhotos.filter((photo) => photo.type !== "firma_cliente"),
+    ...(signaturePhotos.length ? [signaturePhotos[signaturePhotos.length - 1]] : [])
+  ];
   const generalIncidents = hasLegacyItem ? [] : order.incidents.filter((incident) => incident.item_id == null);
 
   return (
