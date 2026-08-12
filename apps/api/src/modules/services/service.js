@@ -199,8 +199,7 @@ function sanitizePdfLine(value) {
   return String(value ?? "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^\x20-\x7E]/g, "")
-    .slice(0, 96);
+    .replace(/[^\x20-\x7E]/g, "");
 }
 
 function formatReportDate(value) {
@@ -224,7 +223,12 @@ function statusReportLabel(value) {
 }
 
 function wrapReportText(value, maxChars = 78) {
-  const words = sanitizePdfLine(value || "").split(/\s+/).filter(Boolean);
+  const words = sanitizePdfLine(value || "").split(/\s+/).filter(Boolean).flatMap((word) => {
+    if (word.length <= maxChars) return [word];
+    const chunks = [];
+    for (let index = 0; index < word.length; index += maxChars) chunks.push(word.slice(index, index + maxChars));
+    return chunks;
+  });
   const lines = [];
   let current = "";
   for (const word of words) {
@@ -246,15 +250,36 @@ function buildReportPdf(report) {
   const streams = [];
   let commands = [];
   let y = pageHeight - margin;
+  let pageNumber = 1;
+  let currentPageSection = "Resumen de la orden";
 
   function color(rgb) {
     return `${rgb[0]} ${rgb[1]} ${rgb[2]}`;
   }
 
-  function addPage() {
-    if (commands.length) streams.push(commands.join("\n"));
+  function pageFooter() {
+    rect(margin, 28, pageWidth - margin * 2, 1, [0.82, 0.87, 0.85]);
+    text("APEXOS | Reporte de servicio", margin, 16, { size: 7.5, fill: [0.38, 0.44, 0.42] });
+    text(`Pagina ${pageNumber}`, pageWidth - margin - 48, 16, { size: 7.5, fill: [0.38, 0.44, 0.42] });
+  }
+
+  function compactHeader(section = "Reporte de servicio") {
+    rect(0, pageHeight - 62, pageWidth, 62, [0.03, 0.18, 0.16]);
+    text("APEXOS", margin, pageHeight - 34, { bold: true, size: 15, fill: [1, 1, 1] });
+    text(section, margin + 92, pageHeight - 34, { size: 9, fill: [0.8, 0.91, 0.88] });
+    text(String(report.order.number || report.order.id), pageWidth - margin - 120, pageHeight - 34, { bold: true, size: 10, fill: [1, 1, 1] });
+    y = pageHeight - 86;
+  }
+
+  function addPage(section = currentPageSection) {
+    if (commands.length) {
+      pageFooter();
+      streams.push(commands.join("\n"));
+      pageNumber += 1;
+    }
     commands = [];
-    y = pageHeight - margin;
+    currentPageSection = section;
+    compactHeader(section);
   }
 
   function ensureSpace(height) {
@@ -400,14 +425,15 @@ function buildReportPdf(report) {
     paragraph("Sin eventos registrados.");
   }
 
-  title("Solicitudes, piezas y soportes por referencia");
+  title("Contenido de la orden");
+  paragraph(`${report.request_groups.length} producto(s) o solicitud(es). Cada bloque conserva su validacion, evidencias y novedades de forma independiente.`);
   if (report.request_groups.length) {
     report.request_groups.forEach((group, index) => {
-      ensureSpace(70);
+      addPage(`Producto ${index + 1} de ${report.request_groups.length}`);
       const referenceLabel = `${group.reference?.code || "Sin codigo"} - ${group.reference?.name || "Referencia"}`;
-      text(`Solicitud ${index + 1}: ${referenceLabel}`, margin, y, { bold: true, size: 11, fill: [0.03, 0.29, 0.25] });
-      y -= 16;
-      paragraph(`Tipo: ${group.service_type || "N/A"}. Estado: ${statusReportLabel(group.status)}.${group.observation ? ` Observacion: ${group.observation}` : ""}`);
+      sectionBand(`Producto ${index + 1}: ${referenceLabel}`, `${group.service_type || "N/A"} | ${statusReportLabel(group.status)}`);
+      if (group.observation) paragraph(`Observacion: ${group.observation}`);
+      title("Validacion de producto y piezas");
       if (group.inspection_items.length) {
         const issueCount = group.inspection_items.filter((item) => String(item.status || "").toLowerCase() !== "ok").length;
         paragraph(`Validacion de piezas: ${group.inspection_items.length} revisada(s). ${issueCount ? `${issueCount} con alerta.` : "Todas sin novedad."}`);
@@ -417,6 +443,7 @@ function buildReportPdf(report) {
           ? `Validacion de piezas completada: referencia sin piezas configuradas. Decision: ${group.inspection_decision}.`
           : "Validacion de piezas: sin inspeccion registrada.");
       }
+      title("Evidencias del producto");
       if (group.evidence.length) {
         tableHeader([{ label: "Soporte", x: 10 }, { label: "Archivo / detalle", x: 160 }, { label: "Fecha", x: 410 }]);
         group.evidence.slice(0, 30).forEach((item) => tableRow([
@@ -431,8 +458,9 @@ function buildReportPdf(report) {
       } else {
         paragraph("Sin soportes fotograficos para esta referencia.");
       }
+      title("Novedades del producto");
       if (group.incidents.length) {
-        paragraph(`Novedades de la solicitud: ${group.incidents.length}.`);
+        paragraph(`${group.incidents.length} novedad(es) registrada(s).`);
         tableHeader([{ label: "Tipo", x: 10 }, { label: "Descripcion / accion", x: 130 }, { label: "Fecha", x: 410 }]);
         group.incidents.slice(0, 30).forEach((incident) => tableRow([
           { key: "type", x: 10, chars: 18, bold: true },
@@ -452,6 +480,18 @@ function buildReportPdf(report) {
     paragraph("Sin solicitudes registradas.");
   }
 
+  function sectionBand(label, detail = "") {
+    const labelLines = wrapReportText(label, 72).slice(0, 2);
+    const bandHeight = labelLines.length > 1 ? 58 : 46;
+    ensureSpace(bandHeight + 10);
+    rect(margin, y - bandHeight + 8, pageWidth - margin * 2, bandHeight, [0.92, 0.97, 0.95], [0.56, 0.72, 0.66]);
+    labelLines.forEach((line, index) => text(line, margin + 12, y - 10 - index * 13, { bold: true, size: 11, fill: [0.03, 0.29, 0.25] }));
+    if (detail) text(detail, margin + 12, y - 27 - (labelLines.length - 1) * 13, { size: 8.5, fill: [0.3, 0.38, 0.35] });
+    y -= bandHeight + 10;
+  }
+
+  addPage("Cierre general de la orden");
+  sectionBand("Cierre general", "Encuesta, novedades generales y soportes del contenedor");
   title("Novedades generales");
   if (report.general_incidents.length) {
     tableHeader([{ label: "Tipo", x: 10 }, { label: "Descripcion", x: 130 }, { label: "Fecha", x: 410 }]);
@@ -496,7 +536,10 @@ function buildReportPdf(report) {
   rect(margin, y - 18, pageWidth - margin * 2, 28, [0.95, 0.98, 0.97], [0.78, 0.86, 0.82]);
   text("Documento generado por APEXOS. Validar evidencias originales en la plataforma.", margin + 10, y - 7, { size: 8.5, fill: [0.22, 0.34, 0.3] });
 
-  if (commands.length) streams.push(commands.join("\n"));
+  if (commands.length) {
+    pageFooter();
+    streams.push(commands.join("\n"));
+  }
   const pages = streams.map((stream, index) => ({ stream, pageObj: 5 + index * 2, contentObj: 6 + index * 2 }));
   const objects = [
     `<< /Type /Catalog /Pages 2 0 R >>`,

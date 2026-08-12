@@ -148,7 +148,7 @@ async function main() {
   assert.equal(report.general_evidence.length, 0);
   const pdf = await service.getOrderReportPdf(tenantId, admin, created.id);
   const pdfText = pdf.buffer.toString("latin1");
-  assert.match(pdfText, /Solicitudes, piezas y soportes por referencia/);
+  assert.match(pdfText, /Contenido de la orden/);
   for (const [index, reference] of references.entries()) {
     assert.match(pdfText, new RegExp(reference.code));
     assert.match(pdfText, new RegExp(`Novedad certificada solicitud ${index + 1}`));

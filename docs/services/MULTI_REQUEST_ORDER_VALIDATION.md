@@ -236,3 +236,17 @@ El modelo funcional queda definido de forma explicita:
 - La plataforma y el PDF reproducen esta jerarquia: orden, solicitudes,
   validacion de producto/piezas, novedades y evidencias; encuesta y firma quedan
   una sola vez en el nivel de la orden.
+
+## Estructura visual del PDF
+
+El reporte sigue una paginacion determinista para facilitar lectura y auditoria:
+
+- La primera pagina contiene identificacion de la orden, datos del cliente,
+  control operativo, linea de tiempo y cantidad total de productos.
+- Cada producto comienza en una pagina propia con encabezado contextual. Dentro
+  de esa pagina se presentan, en orden, validacion de piezas, evidencias y
+  novedades de la referencia.
+- La ultima seccion comienza en una pagina independiente y contiene solamente
+  novedades generales, encuesta y soportes del contenedor, incluida la firma.
+- Todas las paginas repiten orden, contexto y numero de pagina para evitar que
+  una tabla separada por salto de pagina pierda su referencia.

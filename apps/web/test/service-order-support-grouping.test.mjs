@@ -36,7 +36,7 @@ test("las ordenes heredadas no duplican sus soportes generales", () => {
 
 test("el reporte PDF usa los mismos grupos por referencia", () => {
   assert.match(serviceSource, /request_groups: requestGroups/);
-  assert.match(serviceSource, /Solicitudes, piezas y soportes por referencia/);
+  assert.match(serviceSource, /Contenido de la orden/);
   assert.match(serviceSource, /group\.inspection_items/);
   assert.match(serviceSource, /inspectionGrid\(group\.inspection_items\)/);
   assert.match(serviceSource, /requireEvidence\(id, \["firma_cliente"\]\)/);
@@ -44,4 +44,10 @@ test("el reporte PDF usa los mismos grupos por referencia", () => {
   assert.match(serviceSource, /group\.evidence/);
   assert.match(serviceSource, /group\.incidents\.slice/);
   assert.match(serviceSource, /report\.general_evidence/);
+  assert.match(serviceSource, /addPage\(`Producto \$\{index \+ 1\} de \$\{report\.request_groups\.length\}`\)/);
+  assert.match(serviceSource, /addPage\("Cierre general de la orden"\)/);
+  assert.match(serviceSource, /function pageFooter\(\)/);
+  assert.match(serviceSource, /Pagina \$\{pageNumber\}/);
+  assert.match(serviceSource, /word\.length <= maxChars/);
+  assert.doesNotMatch(serviceSource, /\.slice\(0, 96\)/);
 });
