@@ -317,7 +317,7 @@ async function build() {
     const prisma = require("./src/core/prisma");
     await prisma.$queryRaw`SELECT 1`;
     const commit = String(process.env.RAILWAY_GIT_COMMIT_SHA || process.env.GIT_COMMIT_SHA || "unknown").slice(0, 12);
-    return { status: "OK", version: "2.0", modules: MODULES.length, commit };
+    return { status: "OK", version: "2.0", modules: MODULES.length, commit, service_certification: "products-v1" };
   });
 
   fastify.get("/metrics", {

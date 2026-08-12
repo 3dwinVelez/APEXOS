@@ -22,7 +22,9 @@ async function request(path, options = {}) {
 
 async function main() {
   const health = await request("/health");
-  assert.equal(health.json().commit, expectedCommit.slice(0, 12));
+  const healthResult = health.json();
+  assert.equal(healthResult.commit, expectedCommit.slice(0, 12));
+  assert.equal(healthResult.service_certification, "products-v1");
   const login = await request("/api/v1/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
   const session = login.json();
   token = session.token || session.access_token;
