@@ -49,7 +49,7 @@ async function main() {
         reference_id: references[0].id,
         service_type: "montaje",
         customer_name: "Certificacion QA APEXOS",
-        customer_document: runId,
+        customer_document: String(Date.now()),
         customer_address: "Direccion controlada QA",
         customer_phone: "3000000000",
         scheduled_date: new Date().toISOString(),
