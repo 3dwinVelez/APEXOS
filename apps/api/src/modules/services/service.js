@@ -62,8 +62,8 @@ function inspectionStatusMeta(status) {
   return { badge: "X", label: "Dano/faltante", fill: [1, 0.92, 0.92], stroke: [0.9, 0.42, 0.42], text: [0.72, 0.08, 0.08] };
 }
 
-async function requireEvidence(orderId, requiredTypes) {
-  const photos = await prisma.servicePhoto.findMany({ where: { order_id: Number(orderId), active: true }, select: { type: true } });
+async function requireEvidence(orderId, requiredTypes, itemId = null) {
+  const photos = await prisma.servicePhoto.findMany({ where: { order_id: Number(orderId), active: true, ...(itemId == null ? {} : { item_id: Number(itemId) }) }, select: { type: true } });
   const available = new Set(photos.map((photo) => photo.type));
   const missing = requiredTypes.filter((type) => !available.has(type));
   if (missing.length) {
@@ -150,6 +150,7 @@ function reportForOrder(order) {
       reference: item.reference || order.reference || {},
       inspection_items: itemInspection.items || [],
       inspection_decision: itemInspection.decision || "",
+      inspected_at: itemInspection.inspected_at || "",
       evidence: (item.photos || order.photos.filter((photo) => String(photo.item_id || "") === String(item.id))).filter((photo) => !isGeneralEvidence(photo)).map(evidenceDto),
       incidents: item.incidents || order.incidents.filter((incident) => String(incident.item_id || "") === String(item.id))
     };
@@ -397,7 +398,9 @@ function buildReportPdf(report) {
         paragraph(`Validacion de piezas: ${group.inspection_items.length} revisada(s). ${issueCount ? `${issueCount} con alerta.` : "Todas sin novedad."}`);
         inspectionGrid(group.inspection_items);
       } else {
-        paragraph("Validacion de piezas: sin inspeccion registrada.");
+        paragraph(group.inspection_decision
+          ? `Validacion de piezas completada: referencia sin piezas configuradas. Decision: ${group.inspection_decision}.`
+          : "Validacion de piezas: sin inspeccion registrada.");
       }
       if (group.evidence.length) {
         tableHeader([{ label: "Soporte", x: 10 }, { label: "Archivo / detalle", x: 160 }, { label: "Fecha", x: 410 }]);
@@ -413,7 +416,21 @@ function buildReportPdf(report) {
       } else {
         paragraph("Sin soportes fotograficos para esta referencia.");
       }
-      if (group.incidents.length) paragraph(`Novedades de la solicitud: ${group.incidents.length}.`);
+      if (group.incidents.length) {
+        paragraph(`Novedades de la solicitud: ${group.incidents.length}.`);
+        tableHeader([{ label: "Tipo", x: 10 }, { label: "Descripcion / accion", x: 130 }, { label: "Fecha", x: 410 }]);
+        group.incidents.slice(0, 30).forEach((incident) => tableRow([
+          { key: "type", x: 10, chars: 18, bold: true },
+          { key: "description", x: 130, chars: 48, lines: 3 },
+          { key: "date", x: 410, chars: 22 }
+        ], {
+          type: incident.type,
+          description: `${incident.description}${incident.action ? ` | Accion: ${incident.action}` : ""}`,
+          date: formatReportDate(incident.created_at)
+        }, 48));
+      } else {
+        paragraph("Sin novedades asociadas a esta solicitud.");
+      }
       y -= 8;
     });
   } else {
@@ -1361,15 +1378,19 @@ async function closeOrder(tenantId, user, id, input = {}) {
 async function closeNotExecuted(tenantId, user, id, input = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const order = await accessibleOrder(tenantId, user, id);
+    const itemId = input.item_id == null ? null : Number(input.item_id);
+    if (itemId != null) await orderItem(tenantId, user, order.id, itemId);
     if (!String(input.no_execution_reason || "").trim()) {
       throw appError(400, "NO_EXECUTION_REASON_REQUIRED", "El motivo de no ejecucion es obligatorio");
     }
-    await requireEvidence(id, ["no_ejecutada", "firma_cliente"]);
+    await requireEvidence(id, ["no_ejecutada"], itemId);
+    await requireEvidence(id, ["firma_cliente"]);
     const now = new Date();
     const reason = input.no_execution_reason || "No ejecutada";
     await prisma.serviceIncident.create({
       data: {
         order_id: Number(id),
+        item_id: itemId,
         type: "no_ejecutada",
         description: reason,
         action: "cierre_no_ejecutado",

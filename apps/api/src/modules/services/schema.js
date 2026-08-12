@@ -243,6 +243,7 @@ const closeSchema = {
       longitude: { type: "number" },
       accuracy_meters: { type: "number" },
       no_execution_reason: { type: "string" },
+      item_id: { type: "integer" },
       metadata: { type: "object" }
     }
   }

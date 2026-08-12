@@ -6,6 +6,7 @@ const path = require("node:path");
 const service = fs.readFileSync(path.join(__dirname, "../src/modules/services/service.js"), "utf8");
 const routes = fs.readFileSync(path.join(__dirname, "../src/modules/services/routes.js"), "utf8");
 const schema = fs.readFileSync(path.join(__dirname, "../prisma/schema.prisma"), "utf8");
+const serviceSchema = fs.readFileSync(path.join(__dirname, "../src/modules/services/schema.js"), "utf8");
 const prismaCore = fs.readFileSync(path.join(__dirname, "../src/core/prisma.js"), "utf8");
 
 test("item lookup binds tenant, order and item to prevent manipulated ids", () => {
@@ -17,6 +18,13 @@ test("photos and incidents validate item membership before persistence", () => {
   assert.match(service, /if \(itemId != null\) await orderItem\(tenantId, user, order\.id, itemId\)/);
   assert.match(service, /item_id: itemId/);
   assert.match(service, /order_id: order\.id, item_id: itemId, type: input\.type, active: true/);
+});
+
+test("a non-executed closure keeps its incident on the selected request", () => {
+  assert.match(service, /const itemId = input\.item_id == null \? null : Number\(input\.item_id\);/);
+  assert.match(service, /type: "no_ejecutada",[\s\S]*item_id: itemId/);
+  assert.match(serviceSchema, /no_execution_reason: \{ type: "string" \},[\s\S]*item_id: \{ type: "integer" \}/);
+  assert.match(service, /requireEvidence\(id, \["no_ejecutada"\], itemId\)/);
 });
 
 test("concurrent and replayed status changes are protected", () => {

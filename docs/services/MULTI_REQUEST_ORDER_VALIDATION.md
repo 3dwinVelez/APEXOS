@@ -185,3 +185,29 @@ Evidencia automatizada:
 
 La aprobacion local certifica el comportamiento reproducible, pero no sustituye
 la validacion funcional en QA ni autoriza por si sola una promocion.
+
+## Validacion y novedades independientes por solicitud
+
+Ampliacion del 2026-08-12:
+
+- La decision de inspeccion se conserva y se muestra por solicitud aun cuando la
+  referencia no tenga piezas configuradas; este caso ya no aparece como una
+  inspeccion inexistente.
+- Para cada pieza se presentan estado, comentario y accion registrada. Las
+  piezas en estado `averiada` o `faltante` permanecen dentro de la referencia
+  inspeccionada junto con su soporte fotografico.
+- Las novedades operativas se vinculan mediante `item_id` y se presentan en una
+  subseccion propia de cada solicitud. Las novedades sin `item_id` permanecen
+  como generales y no se mezclan con referencias.
+- Un cierre no ejecutado transmite y valida la solicitud seleccionada. Su motivo
+  queda asociado a esa solicitud y la evidencia `no_ejecutada` debe pertenecer
+  al mismo `item_id`; la firma sigue siendo un soporte general de la orden.
+- El PDF imprime por referencia la decision y validacion de piezas, sus soportes
+  y una tabla con tipo, descripcion, accion y fecha de cada novedad.
+
+Certificacion reproducible:
+
+- Pruebas de dominio, seguridad, presentacion y reporte: 21/21 aprobadas.
+- `npm run certify:service-order-items:local`: `ok: true`, tres inspecciones,
+  tres novedades independientes, seis evidencias y los detalles de las tres
+  novedades presentes en el PDF; ultima ejecucion en 1226,37 ms.
