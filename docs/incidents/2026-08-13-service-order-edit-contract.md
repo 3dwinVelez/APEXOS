@@ -16,3 +16,9 @@ El monitor asumía que referencias, tecnicos, tipos de servicio y almacenes siem
 - Convertir colecciones ausentes de ordenes historicas en arreglos vacios.
 - Certificar en QA apertura, modificacion, guardado y reapertura de una orden real.
 - Validar que monitor, ejecucion, evidencias y reporte sigan operativos antes de promover a `main`.
+
+## Reincidencia critica
+
+La primera intervencion cubrio el monitor y su modal, pero la pantalla de detalle conservaba accesos directos a `data.items.find`. Una orden historica sin `items` podia seguir derribando el recorrido al abrirla. La correccion de reincidencia normaliza el contrato completo en la frontera de la pantalla operativa, incluidas colecciones anidadas y preguntas de encuesta.
+
+La certificacion visual deja de limitarse a llamadas API: debe abrir el monitor, editar una orden y navegar al detalle usando tambien una respuesta sin colecciones opcionales. Si aparece el limite global de errores o un error de consola no controlado, la promocion queda bloqueada.
