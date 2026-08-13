@@ -154,6 +154,15 @@ Antes de cada promocion deben aprobarse:
 10. Migracion sobre PostgreSQL temporal y verificacion de inmutabilidad.
 11. Lint, TypeScript, build, pruebas API y pruebas web completas.
 12. Validacion visual en escritorio y movil.
+13. Empresa modelo Nyvora: flujo completo de alta de evidencia por UUID externo, persistencia tras recarga, rol limitado bloqueado y aislamiento de otro tenant.
+
+El fixture versionado `scripts/certifications/fixtures/nyvora-service-correction.js` requiere `CONFIRM_NYVORA_FIXTURE=true`. Crea perfiles, tecnico y referencia visibles e idempotentes; las claves temporales se generan en memoria y nunca forman parte de logs o evidencias.
+
+## Incidente de evidencia por identidad externa
+
+La orden mostrada por el monitor puede usar un UUID externo mientras PostgreSQL conserva un ID local numerico. La autorizacion de carga debe resolver primero el UUID dentro del tenant y persistir siempre el ID local canonico en `EvidenceUploadAuthorization.order_key`. El alta final busca esa misma clave; guardar el UUID en una etapa y el ID local en otra deja el archivo validado pero imposible de anexar.
+
+Las ordenes historicas pueden omitir `photos` y los historiales antiguos pueden omitir `changes`. La interfaz normaliza ambas colecciones a arreglos vacios para mantener operativa la correccion sin ocultar errores de API. Cada reintento de carga genera un `client_upload_id` nuevo, evitando colisiones con autorizaciones consumidas o expiradas.
 
 ## Promocion
 

@@ -23,7 +23,7 @@ type Order = {
   administratively_modified?: boolean;
   billing_status?: string;
   billing_blocked?: boolean;
-  photos: Evidence[];
+  photos?: Evidence[];
   reference?: { parts?: ReferencePart[] };
   metadata?: { inspection?: { items?: InspectionItem[] } };
 };
@@ -37,7 +37,7 @@ type Correction = {
   requested_at: string;
   applied_at?: string;
   approved_at?: string;
-  changes: Change[];
+  changes?: Change[];
 };
 type Mode = "field" | "observation" | "piece-issue" | "status" | "add-evidence" | "remove-evidence" | "reopen" | "force-close";
 
@@ -140,6 +140,7 @@ export function AdministrativeCorrectionPanel({ order, onApplied, initiallyOpen 
 
   const beforeValue = useMemo(() => displayValue(field.includes(".") ? "Dato estructurado" : order[field as keyof Order]), [field, order]);
   const nextStates = administrativeStatuses.filter((status) => status !== order.status);
+  const activePhotos = Array.isArray(order.photos) ? order.photos : [];
 
   function resetForm() {
     setDescription("");
@@ -189,7 +190,7 @@ export function AdministrativeCorrectionPanel({ order, onApplied, initiallyOpen 
     if (mode === "add-evidence" || (mode === "piece-issue" && file)) {
       if (!file) throw new Error("Selecciona la evidencia que deseas agregar.");
       const base64 = await fileBase64(file);
-      const clientUploadId = `admin:${order.id}:${correction.id}:${file.name}:${file.size}`;
+      const clientUploadId = `admin:${order.id}:${correction.id}:${crypto.randomUUID()}`;
       const authorization = await api<{ authorization_id: string; signed_upload_url: string; path: string }>(`/api/v1/services/orders/${order.id}/corrections/evidence-upload-authorizations`, {
         method: "POST",
         body: JSON.stringify({ mime_type: file.type, size_bytes: file.size, purpose: evidenceType, client_upload_id: clientUploadId })
@@ -316,7 +317,7 @@ export function AdministrativeCorrectionPanel({ order, onApplied, initiallyOpen 
             <label className="text-sm font-semibold sm:col-span-2">Foto de soporte <span className="font-normal text-neutral-500">(opcional)</span><input accept="image/png,image/jpeg,image/webp" className="mt-1 block h-11 w-full rounded-md border border-line bg-white p-2 text-sm" type="file" onChange={(event) => setFile(event.target.files?.[0] || null)} /></label>
           </div> : null}
           {mode === "status" ? <label className="block text-sm font-semibold">Nuevo estado<select className="mt-1 h-11 w-full rounded-md border border-line bg-white px-3" value={value} onChange={(event) => setValue(event.target.value)}>{nextStates.map((state) => <option key={state} value={state}>{state.replaceAll("_", " ")}</option>)}</select></label> : null}
-          {mode === "remove-evidence" ? <label className="block text-sm font-semibold">Evidencia a retirar<select className="mt-1 h-11 w-full rounded-md border border-line bg-white px-3" value={evidenceId} onChange={(event) => setEvidenceId(event.target.value)}><option value="">Selecciona evidencia</option>{order.photos.map((photo) => <option key={photo.id} value={photo.id}>{photo.type} - #{photo.id}</option>)}</select></label> : null}
+          {mode === "remove-evidence" ? <label className="block text-sm font-semibold">Evidencia a retirar<select className="mt-1 h-11 w-full rounded-md border border-line bg-white px-3" value={evidenceId} onChange={(event) => setEvidenceId(event.target.value)}><option value="">Selecciona evidencia</option>{activePhotos.map((photo) => <option key={photo.id} value={photo.id}>{photo.type} - #{photo.id}</option>)}</select></label> : null}
           {mode === "add-evidence" ? <div className="grid gap-3 sm:grid-cols-2"><label className="text-sm font-semibold">Tipo de soporte<select className="mt-1 h-11 w-full rounded-md border border-line bg-white px-3" value={evidenceType} onChange={(event) => setEvidenceType(event.target.value)}>{evidenceTypes.map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label><label className="text-sm font-semibold">Foto o archivo validado<input accept="image/png,image/jpeg,image/webp" className="mt-1 block h-11 w-full rounded-md border border-line bg-white p-2 text-sm" type="file" onChange={(event) => setFile(event.target.files?.[0] || null)} /></label></div> : null}
           {mode === "force-close" ? <div className="grid gap-3"><label className="text-sm font-semibold">Observacion de cierre<textarea className="mt-1 min-h-20 w-full rounded-md border border-line p-3" value={observation} onChange={(event) => setObservation(event.target.value)} /></label><label className="text-sm font-semibold">Requisitos pendientes, uno por linea<textarea className="mt-1 min-h-20 w-full rounded-md border border-line p-3" value={pendingRequirements} onChange={(event) => setPendingRequirements(event.target.value)} /></label><p className="flex items-center gap-2 text-xs font-medium text-neutral-600"><Check size={15} /> Al confirmar declaras que revisaste las evidencias minimas y que los pendientes seguiran visibles.</p></div> : null}
 
@@ -327,7 +328,7 @@ export function AdministrativeCorrectionPanel({ order, onApplied, initiallyOpen 
         </div>
       ) : null}
 
-      {historyOpen ? <div className="mt-4 space-y-3 border-t border-line pt-4">{history.length ? history.map((correction) => <article className="rounded-md border border-line p-3" key={correction.id}><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-sm font-semibold">{reasons.find(([code]) => code === correction.reason_code)?.[1] || correction.reason_code}</p><p className="mt-1 text-xs text-neutral-500">{new Date(correction.requested_at).toLocaleString()} - usuario #{correction.requested_by}</p></div><span className={`rounded-md px-2 py-1 text-xs font-semibold ${correction.status === "APPLIED" ? "bg-emerald-100 text-emerald-800" : correction.status === "REJECTED" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-900"}`}>{correction.status}</span></div><p className="mt-2 text-sm text-neutral-700">{correction.description}</p>{correction.changes.map((change) => <div className="mt-2 grid gap-2 rounded-md bg-neutral-50 p-2 text-xs sm:grid-cols-2" key={change.id}><span><strong>Anterior:</strong> {displayValue(change.old_value)}</span><span><strong>Nuevo:</strong> {displayValue(change.new_value)}</span></div>)}{correction.status === "PENDING_APPROVAL" && canApprove ? <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto_auto]"><input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Motivo para rechazar" value={rejections[correction.id] || ""} onChange={(event) => setRejections((current) => ({ ...current, [correction.id]: event.target.value }))} /><button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-emerald-700 px-3 text-sm font-semibold text-white" disabled={busy} onClick={() => approveCorrection(correction)} type="button"><Check size={16} /> Aprobar</button><button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-red-200 px-3 text-sm font-semibold text-red-700 disabled:opacity-50" disabled={busy || String(rejections[correction.id] || "").trim().length < 8} onClick={() => rejectCorrection(correction)} type="button"><X size={16} /> Rechazar</button></div> : null}{correction.status === "APPROVED" && canCorrect ? <button className="mt-3 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-teal-700 px-3 text-sm font-semibold text-white" disabled={busy} onClick={() => applyApproved(correction)} type="button"><LockKeyhole size={16} /> Aplicar aprobada</button> : null}</article>) : <p className="rounded-md bg-neutral-50 p-3 text-sm text-neutral-600">No hay correcciones administrativas registradas.</p>}</div> : null}
+      {historyOpen ? <div className="mt-4 space-y-3 border-t border-line pt-4">{history.length ? history.map((correction) => <article className="rounded-md border border-line p-3" key={correction.id}><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-sm font-semibold">{reasons.find(([code]) => code === correction.reason_code)?.[1] || correction.reason_code}</p><p className="mt-1 text-xs text-neutral-500">{new Date(correction.requested_at).toLocaleString()} - usuario #{correction.requested_by}</p></div><span className={`rounded-md px-2 py-1 text-xs font-semibold ${correction.status === "APPLIED" ? "bg-emerald-100 text-emerald-800" : correction.status === "REJECTED" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-900"}`}>{correction.status}</span></div><p className="mt-2 text-sm text-neutral-700">{correction.description}</p>{(Array.isArray(correction.changes) ? correction.changes : []).map((change) => <div className="mt-2 grid gap-2 rounded-md bg-neutral-50 p-2 text-xs sm:grid-cols-2" key={change.id}><span><strong>Anterior:</strong> {displayValue(change.old_value)}</span><span><strong>Nuevo:</strong> {displayValue(change.new_value)}</span></div>)}{correction.status === "PENDING_APPROVAL" && canApprove ? <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto_auto]"><input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Motivo para rechazar" value={rejections[correction.id] || ""} onChange={(event) => setRejections((current) => ({ ...current, [correction.id]: event.target.value }))} /><button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-emerald-700 px-3 text-sm font-semibold text-white" disabled={busy} onClick={() => approveCorrection(correction)} type="button"><Check size={16} /> Aprobar</button><button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-red-200 px-3 text-sm font-semibold text-red-700 disabled:opacity-50" disabled={busy || String(rejections[correction.id] || "").trim().length < 8} onClick={() => rejectCorrection(correction)} type="button"><X size={16} /> Rechazar</button></div> : null}{correction.status === "APPROVED" && canCorrect ? <button className="mt-3 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-teal-700 px-3 text-sm font-semibold text-white" disabled={busy} onClick={() => applyApproved(correction)} type="button"><LockKeyhole size={16} /> Aplicar aprobada</button> : null}</article>) : <p className="rounded-md bg-neutral-50 p-3 text-sm text-neutral-600">No hay correcciones administrativas registradas.</p>}</div> : null}
     </section>
   );
 }
