@@ -5,6 +5,7 @@ const { bootstrapNyvoraFixture } = require("./fixtures/nyvora-service-correction
 const apiUrl = String(process.env.QA_API_URL || "https://apexos-api-qa-production.up.railway.app").replace(/\/$/, "");
 const supabaseUrl = String(process.env.QA_SUPABASE_URL || "").replace(/\/$/, "");
 const expectedCommit = process.env.QA_EXPECTED_COMMIT;
+const environment = String(process.env.CERTIFICATION_ENVIRONMENT || "QA").toUpperCase();
 let credentials = {
   authorized: [process.env.QA_LOGIN_EMAIL, process.env.QA_LOGIN_PASSWORD],
   limited: [process.env.QA_LIMITED_LOGIN_EMAIL, process.env.QA_LIMITED_LOGIN_PASSWORD],
@@ -55,7 +56,7 @@ async function main() {
     throw new Error("Credenciales authorized/limited/other-tenant son obligatorias cuando no se habilita el fixture Nyvora");
   }
   const health = await json("/health");
-  assert.equal(health.commit, expectedCommit.slice(0, 12), "QA no ejecuta el commit certificado");
+  assert.equal(health.commit, expectedCommit.slice(0, 12), `${environment} no ejecuta el commit certificado`);
 
   const authorizedToken = await login(credentials.authorized);
   const limitedToken = await login(credentials.limited);
@@ -134,7 +135,7 @@ async function main() {
 
   console.log(JSON.stringify({
     ok: true,
-    environment: "QA",
+    environment,
     model_company: "NYVORA",
     commit: health.commit,
     run_id: runId,
