@@ -51,6 +51,7 @@
     "qa:approval:evidence": "node scripts/validate-change-approval-evidence.js",
     "certify:auth-session": "node scripts/certifications/auth-session-readiness.js",
     "certify:service-order-edit:qa": "node scripts/certifications/service-order-edit-qa.js",
+    "certify:service-correction-external-id:qa": "node scripts/certifications/service-correction-external-id-qa.js",
     "certify:platform-regression:qa": "node scripts/certifications/platform-regression-qa.js",
     "qa:hr-services-stress": "node scripts/qa-hr-services-linear-stress.js",
     "qa:performance": "node scripts/performance/qa-latency-benchmark.js",
