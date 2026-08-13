@@ -33,7 +33,15 @@ async function main() {
   for (const [name, value] of Object.entries({ references, technicians, types, stores })) {
     assert.ok(Array.isArray(value), `${name} debe conservar el contrato de arreglo`);
   }
-  assert.ok(references.length > 0 && technicians.length > 0, "QA requiere referencia y tecnico activos");
+  assert.ok(technicians.length > 0, "QA requiere al menos un tecnico activo");
+  let certificationReference = null;
+  if (!references.length) {
+    certificationReference = await request("/api/v1/services/references", {
+      method: "POST",
+      body: JSON.stringify({ code: runId, name: "Referencia temporal certificacion edicion", category: "CERTIFICACION", active: true })
+    });
+    references.push(certificationReference);
+  }
 
   const created = await request("/api/v1/services/orders", {
     method: "POST",
@@ -73,6 +81,12 @@ async function main() {
   assert.equal(reopened.notes, `${runId}-updated`);
   assert.equal(reopened.status, originalStatus, "La edicion no debe cambiar el estado operativo");
   assert.equal(reopened.items.length, originalItems, "La edicion no debe perder solicitudes");
+  if (certificationReference) {
+    await request(`/api/v1/services/references/${certificationReference.id}`, {
+      method: "PUT",
+      body: JSON.stringify({ code: certificationReference.code, name: certificationReference.name, category: "CERTIFICACION", active: false })
+    });
+  }
   console.log(JSON.stringify({ ok: true, environment: "QA", commit: health.commit, run_id: runId, order_id: created.id, open: "passed", edit: "passed", reopen: "passed", status_preserved: true, items_preserved: true }, null, 2));
 }
 
