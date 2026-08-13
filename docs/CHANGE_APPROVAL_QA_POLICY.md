@@ -25,6 +25,18 @@ npm run qa:approval:evidence -- <ruta-manifest.json>
 
 No se aceptan afirmaciones de funcionamiento basadas solo en revision de codigo, pruebas unitarias, entorno local o compilacion. La evidencia QA debe demostrar el comportamiento visible y los datos esperados.
 
+## Riesgos obligatorios de compatibilidad productiva
+
+Toda actualizacion que modifique contratos API, consultas, serializacion o modelos debe documentar y probar explicitamente:
+
+1. Respuestas actuales, respuestas historicas y contenedores alternos como arreglo directo o `{ data: [...] }`.
+2. Registros anteriores con relaciones o colecciones opcionales ausentes.
+3. Apertura, edicion, guardado y reapertura del registro afectado con datos reales en QA.
+4. Regresion de las funciones adyacentes que consumen el mismo contrato.
+5. Comportamiento visible ante datos incompletos, sin pantallas bloqueadas ni cierres de sesion.
+
+Un error de renderizado, una coleccion `undefined`, un contrato no certificado o una pantalla protegida solo por un error boundary bloquean la promocion a produccion.
+
 Ningun agente esta autorizado a publicar o promover un cambio como completo cuando el script de certificacion no fue ejecutado, termino con error, cubre solo una parte de la solicitud o usa un commit diferente al desplegado. Una respuesta HTTP exitosa no certifica por si sola el resultado funcional.
 
 ## Contenido minimo del manifiesto

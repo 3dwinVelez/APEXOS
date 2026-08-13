@@ -17,3 +17,13 @@ test("el modal limita su ancho al viewport y bloquea el desbordamiento horizonta
   assert.match(modal, /overflow-x-hidden/);
   assert.match(modal, /min-w-0 p-3 sm:p-4/);
 });
+
+test("la edicion tolera maestros envueltos y ordenes historicas sin colecciones", () => {
+  assert.match(monitor, /function collectionFromResponse<T>\(value: unknown\)/);
+  assert.match(monitor, /Array\.isArray\(data\)/);
+  assert.match(monitor, /function normalizeServiceOrder\(order: ServiceOrder\)/);
+  assert.match(monitor, /incidents: Array\.isArray\(order\.incidents\) \? order\.incidents : \[\]/);
+  assert.match(monitor, /photos: Array\.isArray\(order\.photos\) \? order\.photos : \[\]/);
+  assert.match(monitor, /availableReferences\.find/);
+  assert.match(monitor, /Array\.isArray\(serviceStores\)/);
+});
