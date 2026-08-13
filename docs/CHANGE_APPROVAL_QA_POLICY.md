@@ -14,6 +14,8 @@ Antes de aprobar `develop -> main` debe existir un manifiesto JSON versionado co
 6. Aprobacion explicita con responsable, fecha, commit evaluado y decision `approved`.
 7. Un script versionado de certificacion extremo a extremo que ejecute la peticion completa en el ambiente objetivo, verifique el estado final y falle con codigo distinto de cero ante cualquier resultado parcial.
 8. Evidencia generada por ese script con el commit desplegado, sin contrasenas, tokens ni secretos.
+9. Certificacion funcional con datos controlados de la empresa modelo `NYVORA`, incluyendo un rol autorizado, un rol sin el permiso especial y un usuario de otro tenant.
+10. Plan de reversa preparado contra el ultimo commit estable de `main`, con disparador objetivo y estrategia `controlled_revert`.
 
 ## Regla de bloqueo
 
@@ -41,6 +43,14 @@ Antes de iniciar cualquier promocion hacia produccion debe ejecutarse un certifi
 
 Ningun agente esta autorizado a publicar o promover un cambio como completo cuando el script de certificacion no fue ejecutado, termino con error, cubre solo una parte de la solicitud o usa un commit diferente al desplegado. Una respuesta HTTP exitosa no certifica por si sola el resultado funcional.
 
+## Compuerta Nyvora y verificacion productiva
+
+Toda funcion candidata a `main` debe ejecutar en QA el mismo flujo que usara el usuario, con el commit exacto de `develop` y datos controlados de `NYVORA`. Para cambios de ordenes de servicio, la certificacion debe crear o recuperar una orden Nyvora, intervenirla, validar binariamente sus archivos, comprobar persistencia tras recarga y ejecutar negativas de permiso y aislamiento entre tenants.
+
+Despues del despliegue de `main` se repite el certificado sobre el tenant modelo Nyvora y se ejecuta el certificado transversal. No se usan clientes reales para esta verificacion. Si cualquier comprobacion falla, la version queda rechazada: se detienen nuevas publicaciones, se alerta el incidente y se ejecuta la reversa controlada al `previous_main_commit` declarado. La reversa conserva la trazabilidad mediante commit; quedan prohibidos `reset --hard`, force push y reescritura de ramas compartidas.
+
+Una falla productiva no autoriza al agente a saltar `desarrollo -> develop -> main`. La correccion y, si aplica, la reversa deben seguir el flujo y las autorizaciones independientes definidas en `AGENTS.md`.
+
 ## Contenido minimo del manifiesto
 
 ```json
@@ -60,6 +70,24 @@ Ningun agente esta autorizado a publicar o promover un cambio como completo cuan
     "status": "passed",
     "script": "../../../../scripts/certifications/example.js",
     "evidence": ["certification.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/platform-regression-qa.js",
+    "evidence": ["platform-regression.json"]
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../../scripts/certifications/example-nyvora.js",
+    "evidence": ["nyvora-certification.json"]
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "sha-estable-en-main",
+    "trigger": "cualquier falla funcional o regresion posterior al despliegue"
   },
   "approval": {
     "status": "approved",
