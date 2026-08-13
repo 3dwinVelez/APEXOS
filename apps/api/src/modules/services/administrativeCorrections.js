@@ -24,7 +24,7 @@ const CHANGE_TYPES = new Set([
 ]);
 
 const SERVICE_ORDER_OVERRIDE_PERMISSION = "edit_any_state";
-const EXTERNAL_ORDER_CORRECTION_CONTRACT = "external-order-id-v1";
+const EXTERNAL_ORDER_CORRECTION_CONTRACT = "external-order-id-v2";
 const ADMINISTRATIVE_STATUSES = Object.freeze([
   "agendado",
   "pendiente",
