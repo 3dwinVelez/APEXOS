@@ -9,7 +9,6 @@ config/*.env
 !config/qa.env.example
 .next/
 .next-dev/
-.next-cert/
 apps/web/.next-dev-*/
 dist/
 coverage/

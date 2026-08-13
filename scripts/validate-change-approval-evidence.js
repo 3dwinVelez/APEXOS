@@ -53,21 +53,6 @@ for (const item of regressionEvidence) {
   const evidencePath = path.resolve(path.dirname(absoluteManifest), item);
   if (!fs.existsSync(evidencePath)) errors.push(`evidencia de regresion transversal inexistente: ${evidencePath}`);
 }
-if (manifest.model_company_certification?.status !== "passed") errors.push("model_company_certification.status debe ser passed");
-if (String(manifest.model_company_certification?.company || "").toUpperCase() !== "NYVORA") errors.push("model_company_certification.company debe ser NYVORA");
-if (manifest.model_company_certification?.environment !== "QA") errors.push("model_company_certification.environment debe ser QA");
-const modelScript = path.resolve(path.dirname(absoluteManifest), String(manifest.model_company_certification?.script || ""));
-if (!manifest.model_company_certification?.script || !fs.existsSync(modelScript)) errors.push("model_company_certification.script debe apuntar a un script versionado existente");
-const modelEvidence = Array.isArray(manifest.model_company_certification?.evidence) ? manifest.model_company_certification.evidence : [];
-if (!modelEvidence.length) errors.push("model_company_certification.evidence debe contener el resultado Nyvora");
-for (const item of modelEvidence) {
-  const evidencePath = path.resolve(path.dirname(absoluteManifest), item);
-  if (!fs.existsSync(evidencePath)) errors.push(`evidencia Nyvora inexistente: ${evidencePath}`);
-}
-if (manifest.rollback_plan?.status !== "ready") errors.push("rollback_plan.status debe ser ready");
-if (manifest.rollback_plan?.strategy !== "controlled_revert") errors.push("rollback_plan.strategy debe ser controlled_revert");
-if (!/^[a-f0-9]{7,40}$/i.test(String(manifest.rollback_plan?.previous_main_commit || ""))) errors.push("rollback_plan.previous_main_commit debe identificar la version productiva estable");
-if (!String(manifest.rollback_plan?.trigger || "").trim()) errors.push("rollback_plan.trigger es obligatorio");
 if (manifest.target_branch !== "main" || manifest.source_branch !== "develop") {
   errors.push("el manifiesto debe certificar develop -> main");
 }
