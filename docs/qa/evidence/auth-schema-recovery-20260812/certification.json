@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "environment": "QA",
+  "commit": "60a732830809",
+  "health": "OK",
+  "login": "passed",
+  "session": "passed",
+  "authenticated_query": "passed"
+}
