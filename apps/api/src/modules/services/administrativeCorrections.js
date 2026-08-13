@@ -24,6 +24,7 @@ const CHANGE_TYPES = new Set([
 ]);
 
 const SERVICE_ORDER_OVERRIDE_PERMISSION = "edit_any_state";
+const EXTERNAL_ORDER_CORRECTION_CONTRACT = "external-order-id-v2";
 const ADMINISTRATIVE_STATUSES = Object.freeze([
   "agendado",
   "pendiente",
@@ -202,13 +203,35 @@ function includeCorrection() {
   return { changes: { orderBy: { created_at: "asc" } }, added_evidence: true, withdrawn_evidence: true };
 }
 
+function numericOrderId(value) {
+  const id = Number(value);
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
+
+function externalOrderWhere(value) {
+  const externalId = String(value || "").trim();
+  if (!externalId) return null;
+  return {
+    OR: [
+      { metadata: { path: ["external_order_id"], equals: externalId } },
+      { metadata: { path: ["external_order_number"], equals: externalId } }
+    ]
+  };
+}
+
 function createService(db = prisma) {
   async function withinTenant(tenantId, callback) {
     return typeof db.runWithTenant === "function" ? db.runWithTenant(tenantId, callback) : callback();
   }
 
   async function orderForTenant(client, tenantId, orderId) {
-    const order = await client.serviceOrder.findFirst({ where: { id: Number(orderId), tenant_id: tenantId }, include: { photos: true, incidents: true } });
+    const localId = numericOrderId(orderId);
+    const externalWhere = localId == null ? externalOrderWhere(orderId) : null;
+    if (localId == null && !externalWhere) throw appError(400, "SERVICE_ORDER_ID_INVALID", "La orden indicada no tiene un identificador valido");
+    const order = await client.serviceOrder.findFirst({
+      where: { tenant_id: tenantId, ...(localId != null ? { id: localId } : externalWhere) },
+      include: { photos: true, incidents: true }
+    });
     if (!order) throw appError(404, "SERVICE_ORDER_NOT_AVAILABLE", "La orden no existe en esta empresa");
     return order;
   }
@@ -247,15 +270,16 @@ function createService(db = prisma) {
   async function listHistory(tenantId, user, orderId) {
     assertPermission(user, "view_correction_history");
     return withinTenant(tenantId, async () => {
-      await orderForTenant(db, tenantId, orderId);
-      return db.serviceOrderCorrection.findMany({ where: { tenant_id: tenantId, order_id: Number(orderId) }, include: includeCorrection(), orderBy: { created_at: "desc" }, take: 100 });
+      const order = await orderForTenant(db, tenantId, orderId);
+      return db.serviceOrderCorrection.findMany({ where: { tenant_id: tenantId, order_id: order.id }, include: includeCorrection(), orderBy: { created_at: "desc" }, take: 100 });
     });
   }
 
   async function getCorrection(tenantId, user, orderId, correctionId) {
     assertPermission(user, "view_correction_history");
     return withinTenant(tenantId, async () => {
-      const correction = await db.serviceOrderCorrection.findFirst({ where: { id: correctionId, tenant_id: tenantId, order_id: Number(orderId) }, include: includeCorrection() });
+      const order = await orderForTenant(db, tenantId, orderId);
+      const correction = await db.serviceOrderCorrection.findFirst({ where: { id: correctionId, tenant_id: tenantId, order_id: order.id }, include: includeCorrection() });
       if (!correction) throw appError(404, "SERVICE_CORRECTION_NOT_FOUND", "Correccion no encontrada");
       return correction;
     });
@@ -264,16 +288,17 @@ function createService(db = prisma) {
   async function approve(tenantId, user, orderId, correctionId) {
     assertPermission(user, "approve_correction");
     return withinTenant(tenantId, async () => {
-      const correction = await db.serviceOrderCorrection.findFirst({ where: { id: correctionId, tenant_id: tenantId, order_id: Number(orderId) } });
+      const order = await orderForTenant(db, tenantId, orderId);
+      const correction = await db.serviceOrderCorrection.findFirst({ where: { id: correctionId, tenant_id: tenantId, order_id: order.id } });
       if (!correction) throw appError(404, "SERVICE_CORRECTION_NOT_FOUND", "Correccion no encontrada");
       if (correction.status !== "PENDING_APPROVAL") throw appError(409, "SERVICE_CORRECTION_NOT_PENDING", "La correccion no esta pendiente de aprobacion");
       if (Number(correction.requested_by) === Number(user.id)) throw appError(403, "SERVICE_CORRECTION_SELF_APPROVAL_FORBIDDEN", "El solicitante no puede aprobar su propia correccion sensible");
       const approved = await db.serviceOrderCorrection.updateMany({
-        where: { id: correction.id, tenant_id: tenantId, order_id: Number(orderId), status: "PENDING_APPROVAL" },
+        where: { id: correction.id, tenant_id: tenantId, order_id: order.id, status: "PENDING_APPROVAL" },
         data: { status: "APPROVED", approved_by: user.id, approved_at: new Date() }
       });
       if (approved.count !== 1) throw appError(409, "SERVICE_CORRECTION_APPROVAL_CONFLICT", "La correccion ya fue procesada por otro usuario");
-      return db.serviceOrderCorrection.findFirst({ where: { id: correction.id, tenant_id: tenantId, order_id: Number(orderId) }, include: includeCorrection() });
+      return db.serviceOrderCorrection.findFirst({ where: { id: correction.id, tenant_id: tenantId, order_id: order.id }, include: includeCorrection() });
     });
   }
 
@@ -282,15 +307,16 @@ function createService(db = prisma) {
     const reason = String(input.rejection_reason || "").trim();
     if (reason.length < 8) throw appError(400, "SERVICE_CORRECTION_REJECTION_REASON_REQUIRED", "Explica el rechazo con al menos 8 caracteres");
     return withinTenant(tenantId, async () => {
-      const correction = await db.serviceOrderCorrection.findFirst({ where: { id: correctionId, tenant_id: tenantId, order_id: Number(orderId) } });
+      const order = await orderForTenant(db, tenantId, orderId);
+      const correction = await db.serviceOrderCorrection.findFirst({ where: { id: correctionId, tenant_id: tenantId, order_id: order.id } });
       if (!correction) throw appError(404, "SERVICE_CORRECTION_NOT_FOUND", "Correccion no encontrada");
       if (correction.status !== "PENDING_APPROVAL") throw appError(409, "SERVICE_CORRECTION_NOT_PENDING", "La correccion no esta pendiente de aprobacion");
       const rejected = await db.serviceOrderCorrection.updateMany({
-        where: { id: correction.id, tenant_id: tenantId, order_id: Number(orderId), status: "PENDING_APPROVAL" },
+        where: { id: correction.id, tenant_id: tenantId, order_id: order.id, status: "PENDING_APPROVAL" },
         data: { status: "REJECTED", rejected_by: user.id, rejected_at: new Date(), rejection_reason: reason }
       });
       if (rejected.count !== 1) throw appError(409, "SERVICE_CORRECTION_REJECTION_CONFLICT", "La correccion ya fue procesada por otro usuario");
-      return db.serviceOrderCorrection.findFirst({ where: { id: correction.id, tenant_id: tenantId, order_id: Number(orderId) }, include: includeCorrection() });
+      return db.serviceOrderCorrection.findFirst({ where: { id: correction.id, tenant_id: tenantId, order_id: order.id }, include: includeCorrection() });
     });
   }
 
@@ -349,11 +375,11 @@ function createService(db = prisma) {
   async function apply(tenantId, user, orderId, correctionId, context = {}) {
     assertPermission(user, "administrative_correction");
     return withinTenant(tenantId, async () => db.$transaction(async (tx) => {
-      const correction = await tx.serviceOrderCorrection.findFirst({ where: { id: correctionId, tenant_id: tenantId, order_id: Number(orderId) } });
+      const order = await orderForTenant(tx, tenantId, orderId);
+      const correction = await tx.serviceOrderCorrection.findFirst({ where: { id: correctionId, tenant_id: tenantId, order_id: order.id } });
       if (!correction) throw appError(404, "SERVICE_CORRECTION_NOT_FOUND", "Correccion no encontrada");
       if (correction.status === "APPLIED") return tx.serviceOrderCorrection.findFirst({ where: { id: correction.id }, include: includeCorrection() });
       if (!["DRAFT", "APPROVED"].includes(correction.status)) throw appError(409, "SERVICE_CORRECTION_NOT_APPLICABLE", "La correccion no esta disponible para aplicar");
-      const order = await orderForTenant(tx, tenantId, orderId);
       if (order.version !== correction.expected_version) throw appError(409, "SERVICE_ORDER_VERSION_CONFLICT", "La orden fue modificada por otro usuario; recarga y compara la version vigente", { expected_version: correction.expected_version, current_version: order.version });
       const changes = normalizedChanges({ changes: correction.metadata?.proposed_changes || [] });
       inspectChanges(order, changes, user);
@@ -391,7 +417,8 @@ function createService(db = prisma) {
     const type = String(input.type || "").trim();
     if (!authorizationId || !type) throw appError(400, "SERVICE_EVIDENCE_AUTHORIZATION_REQUIRED", "La autorizacion validada y el tipo de evidencia son obligatorios");
     return withinTenant(tenantId, async () => db.$transaction(async (tx) => {
-      const correction = await tx.serviceOrderCorrection.findFirst({ where: { id: correctionId, tenant_id: tenantId, order_id: Number(orderId) } });
+      const order = await orderForTenant(tx, tenantId, orderId);
+      const correction = await tx.serviceOrderCorrection.findFirst({ where: { id: correctionId, tenant_id: tenantId, order_id: order.id } });
       if (!correction) throw appError(404, "SERVICE_CORRECTION_NOT_FOUND", "Correccion no encontrada");
       if (!["DRAFT", "APPROVED"].includes(correction.status)) throw appError(409, "SERVICE_CORRECTION_NOT_APPLICABLE", "La correccion no esta disponible para agregar evidencia");
       const proposed = normalizedChanges({ changes: correction.metadata?.proposed_changes || [] });
@@ -399,7 +426,6 @@ function createService(db = prisma) {
       if (proposed.some((change) => !["EVIDENCE_ADDED", "PIECE_ISSUE_ADDED", "OBSERVATION_ADDED"].includes(change.type))) {
         throw appError(409, "SERVICE_EVIDENCE_CHANGE_COMBINATION_INVALID", "La evidencia solo puede combinarse con novedades u observaciones de pieza");
       }
-      const order = await orderForTenant(tx, tenantId, orderId);
       if (order.version !== correction.expected_version) throw appError(409, "SERVICE_ORDER_VERSION_CONFLICT", "La orden cambio antes de agregar la evidencia", { expected_version: correction.expected_version, current_version: order.version });
       inspectChanges(order, proposed, user);
       const { data, detail } = prepareMutation(order, proposed, correction, user);
@@ -458,5 +484,8 @@ module.exports = {
   ADMINISTRATIVE_TRANSITIONS,
   ADMINISTRATIVE_STATUSES,
   SERVICE_ORDER_OVERRIDE_PERMISSION,
-  REASON_CODES
+  EXTERNAL_ORDER_CORRECTION_CONTRACT,
+  REASON_CODES,
+  numericOrderId,
+  externalOrderWhere
 };
