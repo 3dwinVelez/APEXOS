@@ -31,7 +31,15 @@ async function main() {
   const references = await request("/api/v1/services/references?active=true");
   const technicians = await request("/api/v1/services/technicians");
   const types = await request("/api/v1/services/service-types");
-  assert.ok(references.length && technicians.length, "QA requiere referencia y tecnico activos");
+  assert.ok(technicians.length, "QA requiere al menos un tecnico activo");
+  let certificationReference = null;
+  if (!references.length) {
+    certificationReference = await request("/api/v1/services/references", {
+      method: "POST",
+      body: JSON.stringify({ code: runId, name: "Referencia temporal correccion UUID", category: "CERTIFICACION", active: true })
+    });
+    references.push(certificationReference);
+  }
 
   const created = await request("/api/v1/services/orders", {
     method: "POST",
@@ -73,6 +81,12 @@ async function main() {
   token = "";
   await request(`/api/v1/services/orders/${externalOrderId}/corrections`, { method: "GET" }, 401);
   token = authenticatedToken;
+  if (certificationReference) {
+    await request(`/api/v1/services/references/${certificationReference.id}`, {
+      method: "PUT",
+      body: JSON.stringify({ code: certificationReference.code, name: certificationReference.name, category: "CERTIFICACION", active: false })
+    });
+  }
 
   console.log(JSON.stringify({
     ok: true,
