@@ -12,9 +12,10 @@ const runId = `qa-external-correction-${Date.now()}`;
 const externalOrderId = crypto.randomUUID();
 
 async function request(path, options = {}, expectedStatus = 200) {
+  const hasBody = options.body !== undefined && options.body !== null;
   const response = await fetch(`${apiUrl}${path}`, {
     ...options,
-    headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}), ...(options.headers || {}) }
+    headers: { ...(hasBody ? { "content-type": "application/json" } : {}), ...(token ? { authorization: `Bearer ${token}` } : {}), ...(options.headers || {}) }
   });
   const text = await response.text();
   assert.equal(response.status, expectedStatus, `${options.method || "GET"} ${path}: ${response.status} ${text.slice(0, 300)}`);
