@@ -119,6 +119,35 @@ function itemIsFinished(status: string) {
   return ["completada", "no_ejecutada"].includes(status);
 }
 
+function asCollection<T>(value: unknown): T[] {
+  if (Array.isArray(value)) return value as T[];
+  if (value && typeof value === "object" && Array.isArray((value as { data?: unknown }).data)) {
+    return (value as { data: T[] }).data;
+  }
+  return [];
+}
+
+function normalizeOrder(order: ServiceOrder): ServiceOrder {
+  const reference = order.reference && typeof order.reference === "object"
+    ? { ...order.reference, parts: asCollection<ServiceReferencePart>(order.reference.parts) }
+    : { code: "", name: "Referencia no disponible", parts: [] };
+  const items = asCollection<ServiceOrderItem>(order.items).map((item) => ({
+    ...item,
+    reference: item.reference && typeof item.reference === "object"
+      ? { ...item.reference, parts: asCollection<ServiceReferencePart>(item.reference.parts) }
+      : reference,
+    photos: asCollection<ServicePhoto>(item.photos),
+    incidents: asCollection<ServiceOrder["incidents"][number]>(item.incidents)
+  }));
+  return {
+    ...order,
+    reference,
+    incidents: asCollection<ServiceOrder["incidents"][number]>(order.incidents),
+    photos: asCollection<ServicePhoto>(order.photos),
+    items
+  };
+}
+
 function workflowStep(status: string) {
   if (status === "pendiente") return 0;
   if (["en_curso", "inspeccion"].includes(status)) return 1;
@@ -144,15 +173,17 @@ function photoSrc(photo: ServicePhoto) {
 
 function mergeOrderState(current: ServiceOrder | null, incoming: ServiceOrder | null | undefined) {
   if (!incoming?.id) return current;
-  if (!current?.id) return incoming;
+  const safeIncoming = normalizeOrder(incoming);
+  if (!current?.id) return safeIncoming;
+  const safeCurrent = normalizeOrder(current);
   const photosById = new Map<string, ServicePhoto>();
-  for (const photo of current.photos || []) photosById.set(String(photo.id), photo);
-  for (const photo of incoming.photos || []) photosById.set(String(photo.id), photo);
+  for (const photo of safeCurrent.photos) photosById.set(String(photo.id), photo);
+  for (const photo of safeIncoming.photos) photosById.set(String(photo.id), photo);
   return {
-    ...current,
-    ...incoming,
-    reference: incoming.reference || current.reference,
-    incidents: incoming.incidents?.length ? incoming.incidents : current.incidents,
+    ...safeCurrent,
+    ...safeIncoming,
+    reference: safeIncoming.reference || safeCurrent.reference,
+    incidents: safeIncoming.incidents.length ? safeIncoming.incidents : safeCurrent.incidents,
     photos: Array.from(photosById.values())
   };
 }
@@ -195,8 +226,9 @@ export default function ServiceOperationPage() {
         setMessage("Esta solicitud externa aun no esta disponible como orden operativa local. Vuelve al monitor y completala antes de ejecutar el servicio.");
         return;
       }
-      const data = await api<ServiceOrder>(`/api/v1/services/orders/${params.id}`);
-      if (!data?.id) throw new Error("No se encontro el servicio solicitado o no tienes permisos para verlo.");
+      const response = await api<ServiceOrder>(`/api/v1/services/orders/${params.id}`);
+      if (!response?.id) throw new Error("No se encontro el servicio solicitado o no tienes permisos para verlo.");
+      const data = normalizeOrder(response);
       setOrder((current) => mergeOrderState(current, data));
       setSelectedItemId((current) => {
         const currentItem = data.items.find((item) => String(item.id) === current);
@@ -223,8 +255,9 @@ export default function ServiceOperationPage() {
 
   useEffect(() => {
     if (order?.status !== "ejecucion") return;
-    void api<SatisfactionQuestion[]>("/api/v1/services/satisfaction-questions")
-      .then((questions) => {
+    void api<unknown>("/api/v1/services/satisfaction-questions")
+      .then((response) => {
+        const questions = asCollection<SatisfactionQuestion>(response);
         const activeQuestions = questions.filter((question) => question.active !== false && question.id && question.label);
         setSurveyQuestions(activeQuestions.length ? activeQuestions : fallbackSatisfactionQuestions());
       })
