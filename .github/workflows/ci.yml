@@ -62,6 +62,11 @@ jobs:
         run: node --check apps/api/server.js
       - name: Docker build API
         run: docker build -t apex-api -f apps/api/Dockerfile apps/api
+      - name: Verify certification scripts in API artifact
+        run: |
+          docker run --rm --entrypoint node apex-api --check scripts/certifications/service-correction-evidence-nyvora.js
+          docker run --rm --entrypoint node apex-api --check scripts/certifications/platform-regression-qa.js
+          docker run --rm --entrypoint node apex-api --check scripts/certifications/fixtures/nyvora-service-correction.js
 
   build-web:
     name: Build Web
