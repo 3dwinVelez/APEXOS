@@ -10,7 +10,7 @@ function password() {
 
 async function ensureTenant(name, domain) {
   const current = await prisma.tenant.findFirst({ where: { OR: [{ name: { equals: name, mode: "insensitive" } }, { domain }] } });
-  const modules = ["dashboard", "services", "servicios", "admin", "usuarios", "roles"];
+  const modules = ["dashboard", "services", "servicios", "hr", "inventory", "accounting", "admin", "usuarios", "roles"];
   if (current) {
     return prisma.tenant.update({
       where: { id: current.id },
@@ -48,7 +48,14 @@ async function bootstrapNyvoraFixture() {
   }
   const nyvora = await ensureTenant("NYVORA", "nyvora.certification.internal");
   const isolation = await ensureTenant("NYVORA QA ISOLATION CONTROL", "nyvora-isolation.certification.internal");
-  const authorizedPermissions = [["services", "read"], ["services", "write"], ["services.orders", "edit_any_state"]];
+  const authorizedPermissions = [
+    ["services", "read"],
+    ["services", "write"],
+    ["services.orders", "edit_any_state"],
+    ["hr", "read"],
+    ["inventory", "read"],
+    ["accounting", "read"]
+  ];
   const limitedPermissions = [["services", "read"], ["services", "write"]];
   const authorizedRole = await ensureRole(nyvora.id, "NYVORA QA Correcciones Autorizado", authorizedPermissions);
   const limitedRole = await ensureRole(nyvora.id, "NYVORA QA Correcciones Limitado", limitedPermissions);
