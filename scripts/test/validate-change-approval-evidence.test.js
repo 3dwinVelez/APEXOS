@@ -10,7 +10,7 @@ const validator = path.resolve(__dirname, "../validate-change-approval-evidence.
 function fixture(status = "approved") {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "apexos-qa-approval-"));
   const checks = {};
-  for (const name of ["functional", "error", "support_scripts", "regression"]) {
+  for (const name of ["functional", "error", "support_scripts", "regression", "platform_regression"]) {
     const file = `${name}.md`;
     fs.writeFileSync(path.join(directory, file), `${name} passed\n`);
     checks[name] = { status: "passed", evidence: [file] };
@@ -25,6 +25,11 @@ function fixture(status = "approved") {
     commit: "abc1234",
     checks,
     certification: {
+      status: "passed",
+      script: "certification.js",
+      evidence: ["certification.json"]
+    },
+    regression_certification: {
       status: "passed",
       script: "certification.js",
       evidence: ["certification.json"]
@@ -52,6 +57,20 @@ test("bloquea una promocion sin aprobacion QA", () => {
     const result = spawnSync(process.execPath, [validator, manifestPath], { encoding: "utf8" });
     assert.equal(result.status, 1);
     assert.match(result.stderr, /APROBACION QA BLOQUEADA/);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("bloquea una promocion sin certificacion transversal", () => {
+  const { directory, manifestPath } = fixture();
+  try {
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    delete manifest.regression_certification;
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest));
+    const result = spawnSync(process.execPath, [validator, manifestPath], { encoding: "utf8" });
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /regression_certification/);
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
   }

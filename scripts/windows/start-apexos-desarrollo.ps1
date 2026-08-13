@@ -136,6 +136,12 @@ function Import-LocalEnvironment {
   foreach ($key in $envMap.Keys) {
     [Environment]::SetEnvironmentVariable($key, [string]$envMap[$key], "Process")
   }
+  $databaseUrl = [Environment]::GetEnvironmentVariable("DATABASE_URL", "Process")
+  if ($databaseUrl -match "(localhost|127\.0\.0\.1):54320/apexos(?:\?|$)") {
+    $databaseUrl = $databaseUrl -replace ":54320/apexos", ":55432/apexos"
+    [Environment]::SetEnvironmentVariable("DATABASE_URL", $databaseUrl, "Process")
+    Write-Host "DATABASE_URL local alineado con PostgreSQL Docker en 55432." -ForegroundColor Yellow
+  }
   if (-not [Environment]::GetEnvironmentVariable("OFFLINE_CERT_DB_PASSWORD", "Process")) {
     [Environment]::SetEnvironmentVariable("OFFLINE_CERT_DB_PASSWORD", "apex_offline_cert_local_password", "Process")
   }

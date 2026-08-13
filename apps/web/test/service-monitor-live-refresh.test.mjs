@@ -7,7 +7,7 @@ const routeSource = fs.readFileSync(new URL("../app/api/services/monitor-orders/
 
 test("el monitor combina la fuente Supabase solo para sesiones Supabase", () => {
   assert.match(source, /Promise\.allSettled\(\[/);
-  assert.match(source, /mergeOrders\(\[\.\.\.monitorOrders, \.\.\.apiOrders\]\)/);
+  assert.match(source, /mergeOrders\(\[\.\.\.monitorOrders, \.\.\.apiOrders\]\.map\(normalizeServiceOrder\)\)/);
   assert.match(source, /monitorResult\.status === "rejected" && apiResult\.status === "rejected"/);
   assert.match(source, /localStorage\.getItem\("auth_provider"\) !== "supabase"/);
 });
