@@ -1,0 +1,29 @@
+{
+  "change_id": "service-order-edit-recovery-20260813",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "2b61281452d1a01342c2537cd4f97a300ece4e08",
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["functional.md"] },
+    "error": { "status": "passed", "evidence": ["error.md"] },
+    "support_scripts": { "status": "passed", "evidence": ["support-scripts.md"] },
+    "regression": { "status": "passed", "evidence": ["regression.md"] },
+    "platform_regression": { "status": "passed", "evidence": ["platform-regression.json"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/service-order-edit-qa.js",
+    "evidence": ["certification.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/platform-regression-qa.js",
+    "evidence": ["platform-regression.json"]
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "mq1 - autorizacion expresa de correccion, certificacion transversal y promocion controlada",
+    "approved_at": "2026-08-13T12:00:00-05:00"
+  }
+}
