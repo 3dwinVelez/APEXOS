@@ -26,6 +26,7 @@ const MODULES = [
   "invoicing",
   "hr",
   "services",
+  "offline",
   "transport",
   "sales-invoice",
   "accounts-receivable"
@@ -114,10 +115,19 @@ async function build() {
       request.user = require("./src/security/jwt").verify(token);
     } catch {
       try {
-        request.user = await require("./src/security/supabaseAuth").authenticateSupabaseToken(token);
+        request.user = await require("./src/security/supabaseAuth").authenticateSupabaseToken(
+          token,
+          request.headers["x-company-id"]
+        );
       } catch {
         return reply.code(401).send({ error: "Token invalido", code: "TOKEN_INVALIDO" });
       }
+    }
+
+    try {
+      request.user = await require("./src/security/authorizationState").validateAuthorization(request.user);
+    } catch (error) {
+      return reply.code(error.statusCode || 401).send({ error: error.message, code: error.code || "SESION_REVOCADA" });
     }
 
     try {
@@ -128,7 +138,7 @@ async function build() {
         if (!tenant || !tenant.active) {
           return reply.code(403).send({ error: "Cuenta suspendida o no encontrada", code: "EMPRESA_INACTIVA" });
         }
-        request.tenant = tenant;
+        request.tenant = require("./src/security/supabaseAuth").tenantWithAuthorizationContext(tenant, request.user);
       }
     } catch {
       return reply.code(401).send({ error: "Token invalido", code: "TOKEN_INVALIDO" });
@@ -257,6 +267,7 @@ async function build() {
   registerRoutes("invoicing", require("./src/modules/invoicing/routes"), { prefix: "/api/v1" });
   registerRoutes("hr", require("./src/modules/hr/routes"), { prefix: "/api/v1" });
   registerRoutes("services", require("./src/modules/services/routes"), { prefix: "/api/v1" });
+  registerRoutes("offline", require("./src/modules/offline/routes"), { prefix: "/api/v1" });
   registerRoutes("transport", require("./src/modules/transport/routes"), { prefix: "/api/v1" });
   registerRoutes("sales-invoice", require("./src/modules/sales-invoice/routes"), { prefix: "/api/v1" });
   registerRoutes("accounts-receivable", require("./src/modules/accounts-receivable/routes"), { prefix: "/api/v1" });
@@ -302,13 +313,27 @@ async function build() {
   bootLog("Finished background workers");
 
   bootLog("Registering health route");
-  fastify.get("/health", async () => {
+  fastify.get("/health", async (_request, reply) => {
     const prisma = require("./src/core/prisma");
-    await prisma.$queryRaw`SELECT 1`;
-    return { status: "OK", version: "2.0", modules: MODULES.length };
+    const { inspectRuntimeSchema } = require("./src/core/runtimeSchema");
+    const schema = await inspectRuntimeSchema(prisma);
+    const commit = String(process.env.RAILWAY_GIT_COMMIT_SHA || process.env.GIT_COMMIT_SHA || "unknown").slice(0, 12);
+    if (!schema.ready) {
+      return reply.code(503).send({
+        status: "NOT_READY",
+        code: "SCHEMA_INCOMPATIBLE",
+        missing: schema.missing,
+        version: "2.0",
+        commit
+      });
+    }
+    return { status: "OK", version: "2.0", modules: MODULES.length, commit, service_certification: "products-v2" };
   });
 
-  fastify.get("/metrics", async (request, reply) => {
+  fastify.get("/metrics", {
+    preHandler: require("./src/security/metricsAuth").requireMetricsToken,
+    config: { rateLimit: { max: 30, timeWindow: "1 minute" } }
+  }, async (request, reply) => {
     const { metricsEndpoint } = require("./src/fabric/metrics");
     const { auditQueue, brainQueue, stockQueue, emailQueue } = require("./src/fabric/queues");
     reply.header("Content-Type", "text/plain; charset=utf-8");

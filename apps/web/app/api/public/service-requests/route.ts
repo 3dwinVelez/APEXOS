@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "node:fs";
 import path from "node:path";
+import { PrismaClient } from "@prisma/client";
 
 let rootEnvCache: Record<string, string> | null = null;
 
@@ -21,6 +22,7 @@ type PublicServiceRequest = {
   customer_neighborhood?: string;
   service_store?: string;
   notes?: string;
+  items?: Array<{ reference_id?: string; service_type?: string; quantity?: number; observation?: string }>;
 };
 type PublicReferenceRow = { id: string; company_id?: string; code: string; name: string; category?: string; brand?: string; model?: string };
 type SupabaseUser = { id?: string; email?: string };
@@ -36,6 +38,13 @@ const DEFAULT_SERVICE_STORES = [
   { code: "hogar_y_moda_2", label: "Hogar y Moda 2", active: true }
 ];
 const SERVICE_TYPES_REFERENCE_CODE = "__SERVICE_TYPES__";
+let localPrismaClient: PrismaClient | null = null;
+
+function localPrisma() {
+  if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL local no fue cargada.");
+  localPrismaClient ||= new PrismaClient();
+  return localPrismaClient;
+}
 
 function jsonError(message: string, status = 400) {
   return NextResponse.json({ message }, { status });
@@ -88,6 +97,57 @@ function localApiUrl() {
   const value = envValue("NEXT_PUBLIC_API_URL", "API_URL");
   if (!value) throw new Error("API_URL no configurada para service-requests.");
   return value;
+}
+
+function localDatabase() {
+  try {
+    const value = envValue("DATABASE_URL");
+    const url = new URL(value);
+    const local = ["localhost", "127.0.0.1"].includes(url.hostname);
+    if (local && !process.env.DATABASE_URL) process.env.DATABASE_URL = value;
+    return local;
+  } catch {
+    return false;
+  }
+}
+
+async function localTenant(request: NextRequest, companyId = "", companyName = "") {
+  const prisma = localPrisma();
+  if (companyId && isUuid(companyId)) {
+    const tenant = await prisma.tenant.findFirst({ where: { id: companyId, active: true } });
+    if (tenant) return tenant;
+  }
+  const requestedName = clean(companyName) || clean(request.nextUrl.searchParams.get("empresa"));
+  if (requestedName) {
+    const tenant = await prisma.tenant.findFirst({ where: { active: true, name: { contains: requestedName, mode: "insensitive" } }, orderBy: { created_at: "asc" } });
+    if (tenant) return tenant;
+  }
+  const reference = await prisma.serviceReference.findFirst({ where: { active: true }, select: { tenant_id: true }, orderBy: { code: "asc" } });
+  return reference ? prisma.tenant.findFirst({ where: { id: reference.tenant_id, active: true } }) : null;
+}
+
+function localCatalog(config: unknown, key: "service_types" | "service_stores") {
+  const root = config && typeof config === "object" ? config as Record<string, unknown> : {};
+  const services = root.services && typeof root.services === "object" ? root.services as Record<string, unknown> : {};
+  return services[key];
+}
+
+async function localPublicCatalog(request: NextRequest) {
+  const prisma = localPrisma();
+  const tenant = await localTenant(request);
+  if (!tenant) return null;
+  const references = await prisma.serviceReference.findMany({
+    where: { tenant_id: tenant.id, active: true },
+    select: { id: true, code: true, name: true, category: true, brand: true, model: true },
+    orderBy: { code: "asc" },
+    take: 500
+  });
+  return {
+    tenant,
+    references: references.map((item) => ({ ...item, id: String(item.id), company_id: tenant.id })),
+    serviceTypes: normalizeServiceTypes(localCatalog(tenant.config, "service_types")).filter((item) => item.active),
+    serviceStores: normalizeServiceStores(localCatalog(tenant.config, "service_stores")).filter((item) => item.active)
+  };
 }
 
 function supabaseConfig() {
@@ -423,6 +483,11 @@ async function serviceStoresForCompany(companyId: string) {
 
 export async function GET(request: NextRequest) {
   try {
+    if (localDatabase()) {
+      const local = await localPublicCatalog(request);
+      if (!local?.references.length) return jsonError("No se encontro una empresa local con referencias activas para el formulario.", 404);
+      return NextResponse.json({ ok: true, company_id: local.tenant.id, references: local.references, service_types: local.serviceTypes, service_stores: local.serviceStores });
+    }
     const companyIds = await resolveCompanyCandidates({}, request);
     let companyId = companyIds[0] || "";
     let references: Awaited<ReturnType<typeof activeReferencesForCompany>> = [];
@@ -452,16 +517,23 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as PublicServiceRequest;
+    const requestedItems = Array.isArray(body.items) && body.items.length
+      ? body.items
+      : [{ reference_id: body.reference_id, service_type: body.service_type, quantity: 1, observation: body.notes }];
+    if (requestedItems.length > 20) return jsonError("Una orden admite maximo 20 solicitudes.");
+    const invalidItem = requestedItems.findIndex((item) => !clean(item.reference_id) || !clean(item.service_type) || !Number.isFinite(Number(item.quantity)) || Number(item.quantity) <= 0);
+    if (invalidItem >= 0) return jsonError(`Completa referencia, servicio y cantidad de la solicitud ${invalidItem + 1}.`);
+    const firstItem = requestedItems[0];
+    body.reference_id = clean(firstItem.reference_id);
+    body.service_type = clean(firstItem.service_type);
     const required = [
       ["customer_name", "nombre completo"],
       ["customer_document", "cedula"],
       ["customer_phone", "telefono"],
       ["customer_phone_secondary", "telefono alterno"],
-      ["service_type", "tipo de servicio"],
       ["customer_address", "direccion"],
       ["customer_neighborhood", "barrio"],
       ["service_store", "almacen"],
-      ["reference_id", "referencia del producto"]
     ] as const;
     const missing = required.filter(([key]) => !clean(body[key])).map(([, label]) => label);
     if (missing.length) return jsonError(`Completa los campos obligatorios: ${missing.join(", ")}.`);
@@ -470,6 +542,46 @@ export async function POST(request: NextRequest) {
     if (!/^[0-9+()\-\s]{7,20}$/.test(clean(body.customer_phone_secondary))) return jsonError("Registra un telefono alterno valido para confirmar la visita.");
     if (clean(body.customer_phone).replace(/\D/g, "") === clean(body.customer_phone_secondary).replace(/\D/g, "")) {
       return jsonError("Los dos telefonos de contacto deben ser diferentes.");
+    }
+
+    if (localDatabase()) {
+      const prisma = localPrisma();
+      const tenant = await localTenant(request, clean(body.company_id), clean(body.company_name));
+      if (!tenant) return jsonError("No se encontro una empresa local activa para registrar la solicitud.", 404);
+      const referenceIds = [...new Set(requestedItems.map((item) => Number(item.reference_id)))];
+      if (referenceIds.some((id) => !Number.isInteger(id) || id <= 0)) return jsonError("Selecciona referencias locales validas.");
+      const references = await prisma.serviceReference.findMany({ where: { tenant_id: tenant.id, id: { in: referenceIds }, active: true }, select: { id: true } });
+      if (references.length !== referenceIds.length) return jsonError("Una o mas referencias no estan activas para esta empresa.");
+      const serviceTypes = normalizeServiceTypes(localCatalog(tenant.config, "service_types")).filter((item) => item.active);
+      const normalizedItems = requestedItems.map((item, index) => ({
+        tenant_id: tenant.id,
+        reference_id: Number(item.reference_id),
+        service_type: serviceTypeCode(item.service_type),
+        quantity: Number(item.quantity),
+        observation: clean(item.observation),
+        display_order: index,
+        idempotency_key: `public-${Date.now()}-${index}`
+      }));
+      if (normalizedItems.some((item) => !serviceTypes.some((type) => type.code === item.service_type))) return jsonError("Selecciona tipos de servicio activos para esta empresa.");
+      const count = await prisma.serviceOrder.count({ where: { tenant_id: tenant.id } });
+      const order = await prisma.serviceOrder.create({
+        data: {
+          tenant_id: tenant.id,
+          number: `SOL-${new Date().getFullYear()}-${String(count + 1).padStart(5, "0")}`,
+          reference_id: normalizedItems[0].reference_id,
+          service_type: normalizedItems[0].service_type,
+          status: "agendado",
+          customer_name: clean(body.customer_name),
+          customer_address: clean(body.customer_address),
+          customer_phone: clean(body.customer_phone),
+          invoice_number: clean(body.invoice_number),
+          notes: clean(body.notes) || "Solicitud creada por formulario publico local.",
+          metadata: { created_from: "public_service_request", public_request: true, requires_admin_completion: true, customer_document: clean(body.customer_document), customer_phone_secondary: clean(body.customer_phone_secondary), customer_email: clean(body.customer_email), customer_neighborhood: clean(body.customer_neighborhood), service_store: clean(body.service_store), request_count: normalizedItems.length },
+          items: { create: normalizedItems }
+        },
+        select: { id: true, number: true }
+      });
+      return NextResponse.json({ ok: true, order });
     }
 
     let companyId = await resolveCompanyId(body, request);
@@ -500,7 +612,8 @@ export async function POST(request: NextRequest) {
       service_store_label: store.label,
       product_reference: clean(body.product_reference),
       product_description: clean(body.product_description),
-      received_at: new Date().toISOString()
+      received_at: new Date().toISOString(),
+      items: requestedItems.map((item) => ({ reference_id: clean(item.reference_id), service_type: serviceTypeCode(item.service_type), quantity: Number(item.quantity), observation: clean(item.observation) }))
     };
     const inserted = await supabaseRpc<Array<{ id: string; number: string }>>("create_public_service_order", {
       p_reference_id: referenceId,

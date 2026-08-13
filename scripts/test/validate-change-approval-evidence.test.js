@@ -15,6 +15,8 @@ function fixture(status = "approved") {
     fs.writeFileSync(path.join(directory, file), `${name} passed\n`);
     checks[name] = { status: "passed", evidence: [file] };
   }
+  fs.writeFileSync(path.join(directory, "certification.js"), "process.exit(0);\n");
+  fs.writeFileSync(path.join(directory, "certification.json"), '{"ok":true}\n');
   const manifest = {
     change_id: "test-change",
     environment: "QA",
@@ -22,6 +24,11 @@ function fixture(status = "approved") {
     target_branch: "main",
     commit: "abc1234",
     checks,
+    certification: {
+      status: "passed",
+      script: "certification.js",
+      evidence: ["certification.json"]
+    },
     approval: { status, approved_by: "QA", approved_at: "2026-08-10T12:00:00Z" }
   };
   const manifestPath = path.join(directory, "manifest.json");

@@ -13,8 +13,9 @@ const TENANT_MODELS = new Set([
   "RoutePreoperationalChecklistEvidence", "RoutePreoperationalFinding",
   "RouteStartAuthorization", "RouteBlockEvent",
   "ProcessedWorkday", "GpsPing", "WorkSession", "ActivityType", "WorkActivity", "ActivityEvidence",
-  "Vehicle", "ServiceOrder", "ServiceOrderCorrection", "ServiceOrderCorrectionChange", "ServiceReference",
+  "Vehicle", "ServiceOrder", "ServiceOrderItem", "ServiceOrderCorrection", "ServiceOrderCorrectionChange", "ServiceReference",
   "VehicleDocument", "VehicleMasterAuditLog", "ServiceReferencePart", "ServiceIncident", "ServicePhoto",
+  "EvidenceUploadAuthorization", "AuthorizationSession",
   "Project", "ProjectCommitment", "ProjectDeliverable", "ProjectRisk", "ProjectResourceAssignment",
   "ProjectComment", "ProjectEvidence", "ProjectAlert", "ProjectLog",
   "Payroll", "Account", "LedgerEntry", "CntCabdoc", "CntCuedoc", "CxpCabdoc", "CxpCuedoc", "CxpApplication", "PurchaseOrderInvoiceLine", "InventoryFamily", "InventoryFamilyAccounting", "ProductCost", "Payment",
@@ -37,8 +38,8 @@ const SOFT_DELETE = new Set([
 // Modelos que pueden ser borrados físicamente (no tienen campo `active` o es intencional)
 const PHYSICAL_DELETE_ALLOWED = new Set([
   "Role", "Permission", "SoDRule", "AuditLog", "Movement",
-  "GpsPing", "TimePunch", "ProcessedWorkday", "WorkSession",
-  "WorkActivity", "ActivityEvidence", "ServicePhoto", "ServiceIncident",
+  "GpsPing", "TimePunch", "ProcessedWorkday", "WorkSession", "ServiceOrderItem",
+  "WorkActivity", "ActivityEvidence", "ServicePhoto", "ServiceIncident", "EvidenceUploadAuthorization", "AuthorizationSession",
   "SensorReading", "BrainEvent", "BrainMetric",
   "RoutePreoperationalChecklistAnswer", "RoutePreoperationalChecklistEvidence",
   "RoutePreoperationalFinding", "RouteStartAuthorization", "RouteBlockEvent",

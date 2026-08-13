@@ -145,6 +145,26 @@ services:
           cpus: "0.5"
           memory: 256M
 
+  offline-cert-postgres:
+    image: postgres:16-alpine
+    profiles: ["offline-cert"]
+    restart: "no"
+    environment:
+      POSTGRES_USER: apex_offline_cert
+      POSTGRES_PASSWORD: ${OFFLINE_CERT_DB_PASSWORD:?OFFLINE_CERT_DB_PASSWORD is required}
+      POSTGRES_DB: apexos_offline_cert_local
+    volumes:
+      - offlinecertpgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:54320:5432"
+    labels:
+      com.apexos.purpose: offline-readonly-local-certification
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U apex_offline_cert -d apexos_offline_cert_local"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
   pgbouncer:
     image: bitnami/pgbouncer:latest
     restart: unless-stopped
@@ -282,3 +302,4 @@ volumes:
   redisdata:
   miniodata:
   grafanadata:
+  offlinecertpgdata:

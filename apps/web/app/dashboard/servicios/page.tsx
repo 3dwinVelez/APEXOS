@@ -19,6 +19,7 @@ import {
   Settings2,
   ShieldCheck,
   SlidersHorizontal,
+  Trash2,
   Wrench
 } from "lucide-react";
 import Link from "next/link";
@@ -37,6 +38,7 @@ type ServiceReference = { id: number | string; code: string; name: string };
 type Technician = { id: number | string; code?: string; user?: { name?: string; email?: string } };
 type ServiceType = { code: string; label: string; active?: boolean };
 type ServiceStore = { code: string; label: string; active?: boolean };
+type ServiceOrderItem = { id?: number | string; reference_id: number | string; reference?: ServiceReference | null; service_type: string; quantity: number; observation?: string; status?: string; version?: number; legacy?: boolean };
 type ServiceOrder = {
   id: number | string;
   number: string;
@@ -72,8 +74,10 @@ type ServiceOrder = {
   };
   incidents: Array<{ id: number }>;
   photos: Array<{ id: number }>;
+  items?: ServiceOrderItem[];
 };
 type OrdersResponse = { data: ServiceOrder[] };
+type AuthContext = { tenant?: { name?: string } };
 type ServiceOrderExcelRow = {
   orden: string;
   estado: string;
@@ -115,6 +119,7 @@ type OrderEditForm = {
   invoice_number: string;
   notes: string;
 };
+type OrderEditItem = { reference_id: string; service_type: string; quantity: number; observation: string };
 
 const emptyEditForm: OrderEditForm = {
   status: "pendiente",
@@ -134,7 +139,6 @@ const emptyEditForm: OrderEditForm = {
 
 const baseEditRequiredFields: Array<[keyof OrderEditForm, string]> = [
   ["status", "estado"],
-  ["service_type", "tipo de servicio"],
   ["customer_name", "nombre del cliente"],
   ["customer_document", "cedula del cliente"],
   ["customer_phone", "telefono"],
@@ -143,7 +147,6 @@ const baseEditRequiredFields: Array<[keyof OrderEditForm, string]> = [
 ];
 
 const pendingEditRequiredFields: Array<[keyof OrderEditForm, string]> = [
-  ["reference_id", "referencia"],
   ["technician_id", "tecnico asignado"],
   ["scheduled_date", "fecha programada del servicio"]
 ];
@@ -302,6 +305,10 @@ function normalizeKey(value: unknown) {
   return String(value || "").trim().toLowerCase();
 }
 
+function serviceEntityId(value: string) {
+  return /^\d+$/.test(value) ? Number(value) : value;
+}
+
 function localReferenceForOrder(order: ServiceOrder, references: ServiceReference[]) {
   const directId = String(order.reference_id || "");
   const externalCode = normalizeKey(order.reference?.code || order.metadata?.external_reference_code || order.metadata?.product_reference);
@@ -430,6 +437,7 @@ function mergeOrders(orders: ServiceOrder[]) {
 
 async function loadSupabaseMonitorOrders() {
   if (typeof window === "undefined") return [];
+  if (localStorage.getItem("auth_provider") !== "supabase") return [];
   const token = localStorage.getItem("token") || "";
   if (!token) return [];
   const companyName = localStorage.getItem("apexos_company_name") || localStorage.getItem("company_name") || "SCJ";
@@ -467,32 +475,43 @@ export default function ServicesPage() {
   const [canCorrectAnyState, setCanCorrectAnyState] = useState(false);
   const [editingOrder, setEditingOrder] = useState<ServiceOrder | null>(null);
   const [editForm, setEditForm] = useState<OrderEditForm>(emptyEditForm);
+  const [editItems, setEditItems] = useState<OrderEditItem[]>([]);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [editError, setEditError] = useState("");
   const [refreshingOrders, setRefreshingOrders] = useState(false);
   const [lastRefreshAt, setLastRefreshAt] = useState<Date | null>(null);
   const [validationIssues, setValidationIssues] = useState<string[]>([]);
   const [handledExternalKey, setHandledExternalKey] = useState("");
+  const [externalRequestCompany, setExternalRequestCompany] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    api<AuthContext>("/api/v1/auth/me", { cache: "no-store" })
+      .then((context) => {
+        const companyName = String(context.tenant?.name || "").trim();
+        if (!active || !companyName) return;
+        localStorage.setItem("apexos_company_name", companyName);
+        setExternalRequestCompany(companyName);
+      })
+      .catch(() => {
+        if (active) setExternalRequestCompany("");
+      });
+    return () => { active = false; };
+  }, []);
 
   async function load() {
     try {
       setMessage("");
-      const supabaseSession = localStorage.getItem("auth_provider") === "supabase";
-      if (supabaseSession) {
-        try {
-          const supabaseOrders = await loadSupabaseMonitorOrders();
-          setOrders(mergeOrders(supabaseOrders).map(effectiveOrder));
-          setLastRefreshAt(new Date());
-          return true;
-        } catch (error) {
-          const response = await api<OrdersResponse>("/api/v1/services/orders?limit=200");
-          setOrders(mergeOrders(response.data || []).map(effectiveOrder));
-          if (!response.data?.length) throw error;
-          setLastRefreshAt(new Date());
-          return true;
-        }
+      const [monitorResult, apiResult] = await Promise.allSettled([
+        loadSupabaseMonitorOrders(),
+        api<OrdersResponse>("/api/v1/services/orders?limit=200")
+      ]);
+      const monitorOrders = monitorResult.status === "fulfilled" ? monitorResult.value : [];
+      const apiOrders = apiResult.status === "fulfilled" ? apiResult.value.data || [] : [];
+      if (monitorResult.status === "rejected" && apiResult.status === "rejected") {
+        throw apiResult.reason || monitorResult.reason;
       }
-      const response = await api<OrdersResponse>("/api/v1/services/orders?limit=200");
-      setOrders(mergeOrders(response.data || []).map(effectiveOrder));
+      setOrders(mergeOrders([...monitorOrders, ...apiOrders]).map(effectiveOrder));
       setLastRefreshAt(new Date());
       return true;
     } catch (error) {
@@ -537,6 +556,15 @@ export default function ServicesPage() {
     setCanCorrectAnyState(!isTechnician && hasStoredRolePermission("services.orders", "edit_any_state"));
     load();
     if (!isTechnician) loadMasters();
+    const refreshTimer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void load();
+    }, 5_000);
+    const refreshOnFocus = () => { void load(); };
+    window.addEventListener("focus", refreshOnFocus);
+    return () => {
+      window.clearInterval(refreshTimer);
+      window.removeEventListener("focus", refreshOnFocus);
+    };
   }, []);
 
   const filtered = useMemo(() => {
@@ -595,8 +623,9 @@ export default function ServicesPage() {
     return acc;
   }, {}), [orders]);
   const activeFilters = [status, dateScope, evidenceScope, requestScope, serviceType, technicianFilter].filter(Boolean).length + (query.trim() ? 1 : 0);
-  const externalRequestCompany = typeof window !== "undefined" ? localStorage.getItem("apexos_company_name") || "SCJ" : "SCJ";
-  const externalRequestHref = `/servicios/solicitar?empresa=${encodeURIComponent(externalRequestCompany)}`;
+  const externalRequestHref = externalRequestCompany
+    ? `/servicios/solicitar?empresa=${encodeURIComponent(externalRequestCompany)}`
+    : "#";
 
   function clearFilters() {
     setQuery("");
@@ -654,6 +683,16 @@ export default function ServicesPage() {
     const localReference = localReferenceForOrder(order, references);
     setEditingOrder(order);
     setValidationIssues([]);
+    setEditError("");
+    const sourceItems = order.items?.length
+      ? order.items
+      : Array.isArray(order.metadata?.items) ? order.metadata.items as ServiceOrderItem[] : [];
+    setEditItems((sourceItems.length ? sourceItems : [{ reference_id: localReference?.id || order.reference_id || "", service_type: order.service_type || "montaje", quantity: 1, observation: "" }]).map((item) => ({
+      reference_id: String(item.reference_id || ""),
+      service_type: item.service_type || "montaje",
+      quantity: Math.max(Number(item.quantity || 1), 1),
+      observation: String(item.observation || "")
+    })));
     setEditForm({
       status: order.status || "pendiente",
       reference_id: localReference ? String(localReference.id) : "",
@@ -686,18 +725,29 @@ export default function ServicesPage() {
   async function saveEdit() {
     if (!editingOrder || savingEdit) return;
     const missing = missingEditRequirements(editForm, editingOrder);
+    const invalidItem = editItems.findIndex((item) => !item.reference_id || !item.service_type);
+    if (!editItems.length || invalidItem >= 0) {
+      const issue = !editItems.length ? "al menos una solicitud" : `datos de la solicitud ${invalidItem + 1}`;
+      setMessage(`Completa ${issue} antes de guardar.`);
+      setValidationIssues([issue]);
+      setEditError(`Completa ${issue} antes de guardar.`);
+      return;
+    }
     if (missing.length) {
       setMessage(`Completa los campos obligatorios: ${missing.join(", ")}.`);
       setValidationIssues(missing);
+      setEditError(`Completa los campos obligatorios: ${missing.join(", ")}.`);
       return;
     }
     setSavingEdit(true);
     setMessage("");
+    setEditError("");
     setValidationIssues([]);
     try {
-      const payload: Partial<OrderEditForm> = {
+      const payload: Record<string, unknown> = {
         status: editForm.status,
-        service_type: editForm.service_type
+        service_type: editItems[0].service_type,
+        reference_id: serviceEntityId(editItems[0].reference_id)
       };
       const includeWhenPresent = (key: keyof OrderEditForm) => {
         const value = editForm[key].trim();
@@ -708,7 +758,6 @@ export default function ServicesPage() {
         const original = String((editingOrder as unknown as Record<string, unknown>)[key] || "");
         if (value.trim() || value !== original) payload[key] = value.trim();
       };
-      includeWhenPresent("reference_id");
       includeWhenPresent("technician_id");
       includeWhenPresent("scheduled_date");
       includeWhenPresent("customer_document");
@@ -727,6 +776,7 @@ export default function ServicesPage() {
         external_order_id: !isLocalOrder(editingOrder) ? String(editingOrder.id) : String(editingOrder.metadata?.external_order_id || ""),
         external_order_number: !isLocalOrder(editingOrder) ? editingOrder.number : String(editingOrder.metadata?.external_order_number || "")
       };
+      metadata.items = editItems;
       if (editForm.customer_document.trim()) metadata.customer_document = editForm.customer_document.trim();
       if (!editableOrderStatuses.has(editForm.status)) delete payload.status;
       if (!isLocalOrder(editingOrder)) {
@@ -735,7 +785,12 @@ export default function ServicesPage() {
       }
       const updated = await api<ServiceOrder>(`/api/v1/services/orders/${editingOrder.id}`, {
         method: "PUT",
-        body: JSON.stringify({ ...payload, metadata })
+        body: JSON.stringify({
+          ...payload,
+          ...(editForm.technician_id ? { technician_id: serviceEntityId(editForm.technician_id) } : {}),
+          items: editItems.map((item) => ({ ...item, reference_id: serviceEntityId(item.reference_id) })),
+          metadata
+        })
       });
       if (editForm.status === "pendiente" && !orderIsReadyForOperation({
         ...updated,
@@ -746,16 +801,18 @@ export default function ServicesPage() {
       }
       setMessage(editForm.status === "pendiente" ? "Orden enviada a pendiente correctamente." : "Orden actualizada correctamente.");
       setEditingOrder(null);
+      setEditError("");
       await load();
     } catch (error) {
       const detail = error instanceof Error ? error.message : "No fue posible actualizar la orden.";
       const match = detail.match(/Completa los campos obligatorios:\s*([^.]*)/i);
       if (match?.[1]) {
         setValidationIssues(match[1].split(",").map((item) => item.trim()).filter(Boolean));
-      } else if (/referencia|tecnico|t[eé]cnico|fecha|cedula|c[eé]dula|tipo de servicio|estado/i.test(detail)) {
+      } else if (/^(Completa|Selecciona|Asigna)\b/i.test(detail)) {
         setValidationIssues([detail.replace(/\.$/, "")]);
       }
       setMessage(detail);
+      setEditError(detail);
     } finally {
       setSavingEdit(false);
     }
@@ -800,7 +857,7 @@ export default function ServicesPage() {
               <Plus className="shrink-0" size={17} />
               <span className="truncate">Nueva orden</span>
             </Link>
-            <Link className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href={externalRequestHref} target="_blank">
+            <Link aria-disabled={!externalRequestCompany} className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper aria-disabled:pointer-events-none aria-disabled:opacity-50" href={externalRequestHref} target="_blank">
               <SlidersHorizontal className="shrink-0" size={16} />
               <span className="truncate">Solicitudes de servicios externas</span>
             </Link>
@@ -1097,11 +1154,14 @@ export default function ServicesPage() {
       </section>
 
       {editingOrder ? (
-        <ModalFrame title={`Editar ${editingOrder.number}`} onClose={() => { setEditingOrder(null); setValidationIssues([]); }} maxWidth="max-w-3xl">
-          <div className="space-y-4">
-            <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-              Edita solo lo necesario. Las ordenes finalizadas se bloquean para proteger la trazabilidad del servicio.
+        <ModalFrame title={`Editar ${editingOrder.number}`} onClose={() => { setEditingOrder(null); setValidationIssues([]); setEditError(""); }} maxWidth="max-w-5xl">
+          <div className="space-y-5">
+            <div className="flex gap-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+              <ShieldCheck className="mt-0.5 shrink-0" size={18} />
+              <div><p className="font-semibold">Edicion administrativa controlada</p><p className="mt-1 text-amber-900">Las solicitudes pueden ajustarse mientras ninguna haya iniciado. La primera mantiene compatible el encabezado de la orden.</p></div>
             </div>
+            {editError ? <div role="alert" className="flex gap-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-900"><AlertTriangle className="mt-0.5 shrink-0" size={18} /><div><p className="font-semibold">No fue posible guardar la orden</p><p className="mt-1">{editError}</p></div></div> : null}
+            <div><h3 className="text-sm font-semibold text-neutral-900">Programacion</h3><p className="mt-1 text-xs text-neutral-500">Define cuando y quien atendera toda la orden.</p></div>
             <section className="grid gap-3 md:grid-cols-2">
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
                 Estado *
@@ -1113,26 +1173,10 @@ export default function ServicesPage() {
                 </select>
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
-                Referencia {editForm.status === "pendiente" ? "*" : "(opcional hasta pasar a pendiente)"}
-                <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={editForm.reference_id} onChange={(event) => setEditForm((prev) => ({ ...prev, reference_id: event.target.value }))}>
-                  <option value="">Selecciona una referencia</option>
-                  {references.map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}
-                </select>
-                {externalReferenceText(editingOrder) ? (
-                  <span className="text-xs font-medium text-neutral-500">Producto solicitado: {externalReferenceText(editingOrder)}</span>
-                ) : null}
-              </label>
-              <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
                 Tecnico responsable {editForm.status === "pendiente" ? "*" : "(opcional en agendado)"}
                 <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={editForm.technician_id} onChange={(event) => setEditForm((prev) => ({ ...prev, technician_id: event.target.value }))}>
                   <option value="">Selecciona un tecnico</option>
                   {technicians.map((technician) => <option key={technician.id} value={technician.id}>{technician.code || "TEC"} - {technician.user?.name || technician.user?.email || "Tecnico"}</option>)}
-                </select>
-              </label>
-              <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
-                Tipo de servicio *
-                <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={editForm.service_type} onChange={(event) => setEditForm((prev) => ({ ...prev, service_type: event.target.value }))}>
-                  {editableServiceTypes.map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}
                 </select>
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
@@ -1151,6 +1195,25 @@ export default function ServicesPage() {
                 </select>
               </label>
             </section>
+            <section className="border-y border-line py-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div><h3 className="text-sm font-semibold text-neutral-900">Solicitudes del servicio</h3><p className="mt-1 text-xs text-neutral-500">{editItems.length} solicitud(es) dentro de esta orden.</p></div>
+                <button className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-apex bg-white px-3 text-sm font-semibold text-apex disabled:opacity-40 sm:w-auto" disabled={editItems.length >= 20} onClick={() => setEditItems((current) => [...current, { reference_id: "", service_type: editableServiceTypes[0]?.code || "montaje", quantity: 1, observation: "" }])} type="button"><Plus size={16} /> Agregar solicitud</button>
+              </div>
+              <div className="mt-3 grid gap-3">
+                {editItems.map((item, index) => (
+                  <div className="rounded-md border border-line bg-paper p-3" key={`${index}-${item.reference_id}`}>
+                    <div className="mb-3 flex items-center justify-between gap-3"><p className="text-sm font-semibold">Solicitud {index + 1}</p>{editItems.length > 1 ? <button aria-label={`Eliminar solicitud ${index + 1}`} className="flex h-9 w-9 items-center justify-center rounded-md border border-red-200 bg-white text-red-700" onClick={() => setEditItems((current) => current.filter((_, itemIndex) => itemIndex !== index))} type="button"><Trash2 size={16} /></button> : null}</div>
+                    <div className="grid min-w-0 gap-3 md:grid-cols-2">
+                      <label className="grid gap-1.5 text-sm font-medium text-neutral-700">Referencia *<select className="h-10 min-w-0 rounded-md border border-line bg-white px-3 text-sm" value={item.reference_id} onChange={(event) => setEditItems((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, reference_id: event.target.value } : row))}><option value="">Selecciona una referencia</option>{references.map((reference) => <option key={reference.id} value={reference.id}>{reference.code} - {reference.name}</option>)}</select></label>
+                      <label className="grid gap-1.5 text-sm font-medium text-neutral-700">Tipo de servicio *<select className="h-10 min-w-0 rounded-md border border-line bg-white px-3 text-sm" value={item.service_type} onChange={(event) => setEditItems((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, service_type: event.target.value } : row))}>{editableServiceTypes.map((type) => <option key={type.code} value={type.code}>{type.label}</option>)}</select></label>
+                    </div>
+                    <label className="mt-3 grid gap-1.5 text-sm font-medium text-neutral-700">Observacion de esta solicitud<input className="h-10 rounded-md border border-line bg-white px-3 text-sm" placeholder="Detalle particular del producto o servicio" value={item.observation} onChange={(event) => setEditItems((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, observation: event.target.value } : row))} /></label>
+                  </div>
+                ))}
+              </div>
+            </section>
+            <div><h3 className="text-sm font-semibold text-neutral-900">Datos del cliente</h3><p className="mt-1 text-xs text-neutral-500">Informacion comun para todas las solicitudes de la orden.</p></div>
             <section className="grid gap-3 md:grid-cols-2">
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
                 Cliente *
@@ -1178,7 +1241,7 @@ export default function ServicesPage() {
               </label>
             </section>
             <div className="grid gap-2 border-t border-line pt-3 sm:flex sm:justify-end">
-              <button className="h-10 rounded-md border border-line px-4 text-sm font-semibold" onClick={() => { setEditingOrder(null); setValidationIssues([]); }} type="button">Cancelar</button>
+              <button className="h-10 rounded-md border border-line px-4 text-sm font-semibold" onClick={() => { setEditingOrder(null); setValidationIssues([]); setEditError(""); }} type="button">Cancelar</button>
               <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-60" disabled={savingEdit} onClick={saveEdit} type="button">
                 <Save size={16} /> {savingEdit ? "Guardando..." : "Guardar cambios"}
               </button>

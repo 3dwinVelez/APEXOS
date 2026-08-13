@@ -23,3 +23,4 @@ test("rechaza esquemas y credenciales peligrosos", () => {
   assert.equal(configuredConnectOrigin("ftp://example.test/file"), "");
   assert.equal(configuredConnectOrigin("https://user:pass@example.test"), "");
 });
+
