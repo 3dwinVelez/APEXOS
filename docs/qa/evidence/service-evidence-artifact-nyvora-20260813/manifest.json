@@ -1,0 +1,42 @@
+{
+  "change_id": "service-evidence-artifact-nyvora-20260813",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "320fb064fda0a7b63ae224923527a3244e389c94",
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["functional.md", "certification.json"] },
+    "error": { "status": "passed", "evidence": ["error.md"] },
+    "support_scripts": { "status": "passed", "evidence": ["support.md"] },
+    "regression": { "status": "passed", "evidence": ["regression.md"] },
+    "platform_regression": { "status": "passed", "evidence": ["platform-regression.json"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../apps/api/scripts/certifications/service-correction-evidence-nyvora.js",
+    "evidence": ["certification.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../apps/api/scripts/certifications/platform-regression-qa.js",
+    "evidence": ["platform-regression.json"]
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../../apps/api/scripts/certifications/service-correction-evidence-nyvora.js",
+    "evidence": ["certification.json"]
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "268d900c0dc17f8f51552c1f8b68fd820a30c1c4",
+    "trigger": "any production certificate, permission, persistence, commit identity or transversal regression failure"
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "mq1 - explicit authorization in Codex task",
+    "approved_at": "2026-08-13T17:30:00-05:00"
+  }
+}
