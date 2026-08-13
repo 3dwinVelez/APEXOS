@@ -18,9 +18,13 @@ function storageConfig() {
   return { url, key };
 }
 
-function serviceHeaders(contentType = "application/json") {
+function serviceHeaders(contentType) {
   const { key } = storageConfig();
-  return { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": contentType };
+  return {
+    apikey: key,
+    Authorization: `Bearer ${key}`,
+    ...(contentType ? { "Content-Type": contentType } : {})
+  };
 }
 
 function extension(mime) {
@@ -90,9 +94,10 @@ function detectedMime(bytes) {
 
 async function storageRequest(path, options = {}) {
   const { url } = storageConfig();
+  const contentType = options.contentType || (options.body === undefined ? undefined : "application/json");
   const response = await fetch(`${url}${path}`, {
     ...options,
-    headers: { ...serviceHeaders(options.contentType), ...(options.headers || {}) }
+    headers: { ...serviceHeaders(contentType), ...(options.headers || {}) }
   });
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
@@ -228,4 +233,4 @@ async function status(tenantId, user, authorizationId) {
   });
 }
 
-module.exports = { authorize, confirm, status, detectedMime, dimensions, localOrderWhere, assertOrderAccess, MAX_BYTES, MAX_DIMENSION };
+module.exports = { authorize, confirm, status, detectedMime, dimensions, localOrderWhere, assertOrderAccess, serviceHeaders, MAX_BYTES, MAX_DIMENSION };
