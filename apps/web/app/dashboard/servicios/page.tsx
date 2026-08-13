@@ -309,13 +309,35 @@ function serviceEntityId(value: string) {
   return /^\d+$/.test(value) ? Number(value) : value;
 }
 
+function collectionFromResponse<T>(value: unknown): T[] {
+  if (Array.isArray(value)) return value as T[];
+  if (value && typeof value === "object") {
+    const data = (value as { data?: unknown }).data;
+    if (Array.isArray(data)) return data as T[];
+  }
+  return [];
+}
+
+function normalizeServiceOrder(order: ServiceOrder): ServiceOrder {
+  const metadataItems = Array.isArray(order.metadata?.items)
+    ? order.metadata.items as ServiceOrderItem[]
+    : [];
+  return {
+    ...order,
+    incidents: Array.isArray(order.incidents) ? order.incidents : [],
+    photos: Array.isArray(order.photos) ? order.photos : [],
+    items: Array.isArray(order.items) ? order.items : metadataItems
+  };
+}
+
 function localReferenceForOrder(order: ServiceOrder, references: ServiceReference[]) {
+  const availableReferences = Array.isArray(references) ? references : [];
   const directId = String(order.reference_id || "");
   const externalCode = normalizeKey(order.reference?.code || order.metadata?.external_reference_code || order.metadata?.product_reference);
   const externalName = normalizeKey(order.reference?.name || order.metadata?.external_reference_name);
-  return references.find((item) => String(item.id) === directId)
-    || references.find((item) => externalCode && normalizeKey(item.code) === externalCode)
-    || references.find((item) => externalName && normalizeKey(item.name) === externalName)
+  return availableReferences.find((item) => String(item.id) === directId)
+    || availableReferences.find((item) => externalCode && normalizeKey(item.code) === externalCode)
+    || availableReferences.find((item) => externalName && normalizeKey(item.name) === externalName)
     || null;
 }
 
@@ -511,7 +533,7 @@ export default function ServicesPage() {
       if (monitorResult.status === "rejected" && apiResult.status === "rejected") {
         throw apiResult.reason || monitorResult.reason;
       }
-      setOrders(mergeOrders([...monitorOrders, ...apiOrders]).map(effectiveOrder));
+      setOrders(mergeOrders([...monitorOrders, ...apiOrders].map(normalizeServiceOrder)).map(effectiveOrder));
       setLastRefreshAt(new Date());
       return true;
     } catch (error) {
@@ -531,12 +553,16 @@ export default function ServicesPage() {
 
   async function loadMasters() {
     try {
-      const [referenceRows, technicianRows, typeRows, storeRows] = await Promise.all([
-        api<ServiceReference[]>("/api/v1/services/references?active=true"),
-        api<Technician[]>("/api/v1/services/technicians"),
-        api<ServiceType[]>("/api/v1/services/service-types"),
-        api<ServiceStore[]>("/api/v1/services/service-stores")
+      const [referenceResponse, technicianResponse, typeResponse, storeResponse] = await Promise.all([
+        api<unknown>("/api/v1/services/references?active=true"),
+        api<unknown>("/api/v1/services/technicians"),
+        api<unknown>("/api/v1/services/service-types"),
+        api<unknown>("/api/v1/services/service-stores")
       ]);
+      const referenceRows = collectionFromResponse<ServiceReference>(referenceResponse);
+      const technicianRows = collectionFromResponse<Technician>(technicianResponse);
+      const typeRows = collectionFromResponse<ServiceType>(typeResponse);
+      const storeRows = collectionFromResponse<ServiceStore>(storeResponse);
       setReferences(referenceRows);
       setTechnicians(technicianRows);
       setServiceTypesCatalog(typeRows.filter((item) => item.active !== false));
@@ -766,7 +792,7 @@ export default function ServicesPage() {
       includeEditableText("customer_address");
       includeEditableText("invoice_number");
       includeEditableText("notes");
-      const selectedStore = serviceStores.find((item) => item.code === editForm.service_store);
+      const selectedStore = (Array.isArray(serviceStores) ? serviceStores : []).find((item) => item.code === editForm.service_store);
       const metadata: NonNullable<ServiceOrder["metadata"]> = {
         ...(editingOrder.metadata || {}),
         customer_neighborhood: editForm.customer_neighborhood.trim(),
