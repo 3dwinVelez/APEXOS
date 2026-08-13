@@ -3,7 +3,10 @@ const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 
-const source = fs.readFileSync(path.resolve(__dirname, "../certifications/fixtures/nyvora-service-correction.js"), "utf8");
+const source = fs.readFileSync(
+  path.resolve(__dirname, "../../apps/api/scripts/certifications/fixtures/nyvora-service-correction.js"),
+  "utf8"
+);
 
 test("el fixture Nyvora exige confirmacion explicita y no imprime claves", () => {
   assert.match(source, /CONFIRM_NYVORA_FIXTURE/);
