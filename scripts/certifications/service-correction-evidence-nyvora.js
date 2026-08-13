@@ -1,17 +1,16 @@
 const assert = require("node:assert/strict");
 const crypto = require("node:crypto");
+const { bootstrapNyvoraFixture } = require("./fixtures/nyvora-service-correction");
 
 const apiUrl = String(process.env.QA_API_URL || "https://apexos-api-qa-production.up.railway.app").replace(/\/$/, "");
 const supabaseUrl = String(process.env.QA_SUPABASE_URL || "").replace(/\/$/, "");
 const expectedCommit = process.env.QA_EXPECTED_COMMIT;
-const credentials = {
+let credentials = {
   authorized: [process.env.QA_LOGIN_EMAIL, process.env.QA_LOGIN_PASSWORD],
   limited: [process.env.QA_LIMITED_LOGIN_EMAIL, process.env.QA_LIMITED_LOGIN_PASSWORD],
   otherTenant: [process.env.QA_OTHER_TENANT_LOGIN_EMAIL, process.env.QA_OTHER_TENANT_LOGIN_PASSWORD]
 };
-if (!expectedCommit || !supabaseUrl || Object.values(credentials).some(([email, password]) => !email || !password)) {
-  throw new Error("QA_EXPECTED_COMMIT, QA_SUPABASE_URL y credenciales authorized/limited/other-tenant son obligatorios");
-}
+if (!expectedCommit || !supabaseUrl) throw new Error("QA_EXPECTED_COMMIT y QA_SUPABASE_URL son obligatorios");
 
 const runId = `nyvora-correction-evidence-${Date.now()}`;
 const externalOrderId = crypto.randomUUID();
@@ -47,6 +46,14 @@ function auth(token, body) {
 }
 
 async function main() {
+  let fixture = null;
+  if (String(process.env.CONFIRM_NYVORA_FIXTURE || "").toLowerCase() === "true") {
+    fixture = await bootstrapNyvoraFixture();
+    credentials = fixture.credentials;
+  }
+  if (Object.values(credentials).some(([email, secret]) => !email || !secret)) {
+    throw new Error("Credenciales authorized/limited/other-tenant son obligatorias cuando no se habilita el fixture Nyvora");
+  }
   const health = await json("/health");
   assert.equal(health.commit, expectedCommit.slice(0, 12), "QA no ejecuta el commit certificado");
 
@@ -135,6 +142,7 @@ async function main() {
     external_order_id: externalOrderId,
     correction_id: correction.id,
     authorization_id: authorization.authorization_id,
+    fixture: fixture ? { tenant: fixture.tenant, isolation_tenant: fixture.isolationTenant, reference: fixture.reference, users: fixture.visibleUsers } : null,
     checks: {
       authorized_role_full_flow: "passed",
       limited_role_blocked: "passed",
