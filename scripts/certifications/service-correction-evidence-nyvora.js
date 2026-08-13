@@ -46,6 +46,10 @@ function auth(token, body) {
   };
 }
 
+function tenantId(session) {
+  return session?.tenant_id || session?.user?.tenant_id || session?.tenant?.id || null;
+}
+
 async function main() {
   let fixture = null;
   if (String(process.env.CONFIRM_NYVORA_FIXTURE || "").toLowerCase() === "true") {
@@ -64,9 +68,10 @@ async function main() {
   const session = await json("/api/v1/auth/me", auth(authorizedToken));
   const limitedSession = await json("/api/v1/auth/me", auth(limitedToken));
   const otherTenantSession = await json("/api/v1/auth/me", auth(otherTenantToken));
-  assert.match(JSON.stringify(session), /nyvora/i, "La sesion autorizada no pertenece a la empresa modelo Nyvora");
-  assert.match(JSON.stringify(limitedSession), /nyvora/i, "El rol limitado no pertenece a Nyvora");
-  assert.doesNotMatch(JSON.stringify(otherTenantSession), /nyvora/i, "El usuario de aislamiento debe pertenecer a otro tenant");
+  assert.ok(tenantId(session), "La sesion autorizada no informa tenant");
+  assert.equal(tenantId(limitedSession), tenantId(session), "El rol limitado no pertenece al tenant Nyvora certificado");
+  assert.notEqual(tenantId(otherTenantSession), tenantId(session), "El usuario de aislamiento debe pertenecer a otro tenant");
+  if (fixture) assert.equal(tenantId(session), fixture.tenant.id, "La sesion autorizada no pertenece a la empresa modelo Nyvora");
 
   const references = await json("/api/v1/services/references?active=true", auth(authorizedToken));
   const technicians = await json("/api/v1/services/technicians", auth(authorizedToken));
