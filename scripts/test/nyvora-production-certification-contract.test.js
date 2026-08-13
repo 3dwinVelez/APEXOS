@@ -22,4 +22,6 @@ test("los certificados identifican QA o produccion y validan el commit", () => {
   assert.match(regression, /expectedCommit\.slice\(0, 12\)/);
   assert.match(correction, /assert\.notEqual\(tenantId\(otherTenantSession\), tenantId\(session\)/);
   assert.doesNotMatch(correction, /doesNotMatch\(JSON\.stringify\(otherTenantSession\)/);
+  assert.match(correction, /attached\.correction\?\.status/);
+  assert.match(correction, /attached\.evidence\?\.metadata\?\.authorization_id/);
 });

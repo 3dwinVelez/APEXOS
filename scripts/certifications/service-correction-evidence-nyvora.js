@@ -131,8 +131,8 @@ async function main() {
     method: "POST",
     ...auth(authorizedToken, { authorization_id: authorization.authorization_id, type: "administrative_support" })
   });
-  assert.equal(attached.status, "APPLIED");
-  assert.ok(Array.isArray(attached.added_evidence) && attached.added_evidence.length === 1);
+  assert.equal(attached.correction?.status, "APPLIED");
+  assert.equal(attached.evidence?.metadata?.authorization_id, authorization.authorization_id);
 
   const persisted = await json(`/api/v1/services/orders/${created.id}`, auth(authorizedToken));
   const photos = Array.isArray(persisted.photos) ? persisted.photos : [];
