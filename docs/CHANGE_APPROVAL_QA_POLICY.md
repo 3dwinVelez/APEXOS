@@ -37,6 +37,8 @@ Toda actualizacion que modifique contratos API, consultas, serializacion o model
 
 Un error de renderizado, una coleccion `undefined`, un contrato no certificado o una pantalla protegida solo por un error boundary bloquean la promocion a produccion.
 
+Antes de iniciar cualquier promocion hacia produccion debe ejecutarse un certificado transversal versionado, independiente del certificado funcional especifico del cambio. Este debe comprobar con datos reales que autenticacion, sesion, navegacion y los modulos adyacentes previamente operativos continúan respondiendo correctamente. El manifiesto debe incluir `checks.platform_regression` y `regression_certification`; su ausencia, ejecucion parcial o resultado fallido bloquea automaticamente `develop -> main` y obliga a alertar, corregir y repetir QA.
+
 Ningun agente esta autorizado a publicar o promover un cambio como completo cuando el script de certificacion no fue ejecutado, termino con error, cubre solo una parte de la solicitud o usa un commit diferente al desplegado. Una respuesta HTTP exitosa no certifica por si sola el resultado funcional.
 
 ## Contenido minimo del manifiesto

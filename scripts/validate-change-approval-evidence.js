@@ -14,7 +14,7 @@ if (!fs.existsSync(absoluteManifest)) {
 }
 
 const manifest = JSON.parse(fs.readFileSync(absoluteManifest, "utf8"));
-const requiredChecks = ["functional", "error", "support_scripts", "regression"];
+const requiredChecks = ["functional", "error", "support_scripts", "regression", "platform_regression"];
 const errors = [];
 if (!manifest.change_id) errors.push("change_id es obligatorio");
 if (!/^[a-f0-9]{7,40}$/i.test(String(manifest.commit || ""))) errors.push("commit debe contener el SHA evaluado");
@@ -39,6 +39,19 @@ if (!certificationEvidence.length) errors.push("certification.evidence debe cont
 for (const item of certificationEvidence) {
   const evidencePath = path.resolve(path.dirname(absoluteManifest), item);
   if (!fs.existsSync(evidencePath)) errors.push(`evidencia de certificacion inexistente: ${evidencePath}`);
+}
+if (manifest.regression_certification?.status !== "passed") errors.push("regression_certification.status debe ser passed");
+const regressionScript = path.resolve(path.dirname(absoluteManifest), String(manifest.regression_certification?.script || ""));
+if (!manifest.regression_certification?.script || !fs.existsSync(regressionScript)) {
+  errors.push("regression_certification.script debe apuntar a un script versionado existente");
+}
+const regressionEvidence = Array.isArray(manifest.regression_certification?.evidence)
+  ? manifest.regression_certification.evidence
+  : [];
+if (!regressionEvidence.length) errors.push("regression_certification.evidence debe contener el resultado transversal");
+for (const item of regressionEvidence) {
+  const evidencePath = path.resolve(path.dirname(absoluteManifest), item);
+  if (!fs.existsSync(evidencePath)) errors.push(`evidencia de regresion transversal inexistente: ${evidencePath}`);
 }
 if (manifest.target_branch !== "main" || manifest.source_branch !== "develop") {
   errors.push("el manifiesto debe certificar develop -> main");
