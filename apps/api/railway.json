@@ -3,6 +3,9 @@
   "build": {
     "watchPatterns": [
       "/apps/api/**",
+      "/scripts/certifications/**",
+      "/scripts/validate-change-approval-evidence.js",
+      "/docs/CHANGE_APPROVAL_QA_POLICY.md",
       "/package.json",
       "/package-lock.json"
     ]
