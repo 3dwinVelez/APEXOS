@@ -1,0 +1,17 @@
+{
+  "change_id": "service-detail-critical-recovery-20260813",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "0a1d713",
+  "checks": {
+    "functional": {"status":"passed","evidence":["functional.md"]},
+    "error": {"status":"passed","evidence":["error.md"]},
+    "support_scripts": {"status":"passed","evidence":["support-scripts.md"]},
+    "regression": {"status":"passed","evidence":["regression.md"]},
+    "platform_regression": {"status":"passed","evidence":["platform-regression.json"]}
+  },
+  "certification": {"status":"passed","script":"../../../../scripts/certifications/service-order-edit-qa.js","evidence":["certification.json","functional.md"]},
+  "regression_certification": {"status":"passed","script":"../../../../scripts/certifications/platform-regression-qa.js","evidence":["platform-regression.json"]},
+  "approval": {"status":"approved","approved_by":"mq1 - incidente critico autorizado hasta resolucion efectiva","approved_at":"2026-08-13T13:25:00-05:00"}
+}
