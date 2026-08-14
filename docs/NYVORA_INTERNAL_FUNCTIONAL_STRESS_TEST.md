@@ -1,6 +1,6 @@
 # NYVORA Internal Functional Stress Test
 
-- Fecha: 2026-07-03T03:37:42.736Z
+- Fecha: 2026-08-14T00:15:58.565Z
 - Empresa usada: NYVORA
 - Ambiente: PROD
 - QA: no tocado
@@ -12,14 +12,14 @@ NYVORA INTERNAL VALIDADA FUNCIONALMENTE Y PLATAFORMA LISTA PARA OPERACION CONTRO
 
 ## Datos creados/validados
 
-- Usuarios Prisma internos: 22
-- Roles: 5
-- Empleados: 20
-- Vehiculos: 10
-- Referencias de servicio: 10
-- Ordenes de servicio: 20
-- Marcaciones: 30
-- GPS/logs operativos: 30
+- Usuarios Prisma internos: 102
+- Roles: 68
+- Empleados: 99
+- Vehiculos: 19
+- Referencias de servicio: 21
+- Ordenes de servicio: 42
+- Marcaciones: 144
+- GPS/logs operativos: 512
 
 ## Modulos probados
 
@@ -41,7 +41,7 @@ NYVORA INTERNAL VALIDADA FUNCIONALMENTE Y PLATAFORMA LISTA PARA OPERACION CONTRO
 ## Permisos validados
 
 - OK: admin_can_list_services
-- OK: technician_only_assigned_services ({"visible":2,"expected":2})
+- OK: technician_only_assigned_services ({"visible":1,"expected":1})
 - OK: technician_cannot_create_service ("TECHNICIAN_OPERATION_FORBIDDEN")
 - OK: technician_cannot_list_technicians_master ("TECHNICIAN_OPERATION_FORBIDDEN")
 - OK: duplicate_service_number_rejected ("SERVICE_ORDER_NUMBER_EXISTS")
