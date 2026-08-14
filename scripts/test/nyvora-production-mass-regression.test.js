@@ -26,6 +26,8 @@ test("the temporary certification administrator is always deactivated", () => {
   assert.match(deployedSource, /jbirkghkekuifgfsgquq/);
   assert.match(deployedSource, /jzbwzmkidfthknsohhnr/);
   assert.match(deployedSource, /result\.commit !== expectedCommit\.slice\(0, 12\)/);
+  assert.match(deployedSource, /target === "qa"[\s\S]*CONFIRM_NYVORA_FIXTURE[\s\S]*name: "APEX_ADMIN"/);
+  assert.match(deployedSource, /if \(!role\) throw new Error\("Rol APEX_ADMIN de Nyvora no encontrado\."\)/);
 });
 
 test("required-parameter contracts are certified as explicit negative cases", () => {
