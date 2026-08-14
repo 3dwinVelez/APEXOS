@@ -24,6 +24,10 @@ const runId = String(process.env.CERTIFICATION_RUN_ID || new Date().toISOString(
 const outputPath = path.resolve(process.env.CERTIFICATION_OUTPUT || `/tmp/nyvora-mass-regression-${target || "invalid"}-${runId}.json`);
 const email = `nyvora.mass.cert.${target}.${runId.toLowerCase()}@internal.apexos.local`;
 const password = `Nyvora-Mass-${crypto.randomBytes(12).toString("base64url")}#26`;
+const qaCertificationModules = [
+  "dashboard", "admin", "inventory", "purchases", "sales", "invoicing", "accounting",
+  "projects", "services", "hr", "transport", "brain"
+];
 
 function assertTarget() {
   if (!targetConfig) throw new Error("CERTIFICATION_TARGET debe ser qa o production.");
@@ -70,10 +74,17 @@ async function request(endpoint, token) {
 
 async function main() {
   assertTarget();
-  const tenant = await prisma.tenant.findFirst({ where: { name: { contains: "NYVORA", mode: "insensitive" }, active: true } });
+  let tenant = await prisma.tenant.findFirst({ where: { name: { contains: "NYVORA", mode: "insensitive" }, active: true } });
   if (!tenant) throw new Error("Tenant Nyvora no encontrado.");
+  const fixtureConfirmed = target === "qa" && String(process.env.CONFIRM_NYVORA_FIXTURE || "").toLowerCase() === "true";
+  if (fixtureConfirmed) {
+    tenant = await prisma.tenant.update({
+      where: { id: tenant.id },
+      data: { active_modules: Array.from(new Set([...(Array.isArray(tenant.active_modules) ? tenant.active_modules : []), ...qaCertificationModules])) }
+    });
+  }
   let role = await prisma.role.findUnique({ where: { tenant_id_name: { tenant_id: tenant.id, name: "APEX_ADMIN" } } });
-  if (!role && target === "qa" && String(process.env.CONFIRM_NYVORA_FIXTURE || "").toLowerCase() === "true") {
+  if (!role && fixtureConfirmed) {
     role = await prisma.role.create({
       data: {
         tenant_id: tenant.id,
