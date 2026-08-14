@@ -72,7 +72,17 @@ async function main() {
   assertTarget();
   const tenant = await prisma.tenant.findFirst({ where: { name: { contains: "NYVORA", mode: "insensitive" }, active: true } });
   if (!tenant) throw new Error("Tenant Nyvora no encontrado.");
-  const role = await prisma.role.findUnique({ where: { tenant_id_name: { tenant_id: tenant.id, name: "APEX_ADMIN" } } });
+  let role = await prisma.role.findUnique({ where: { tenant_id_name: { tenant_id: tenant.id, name: "APEX_ADMIN" } } });
+  if (!role && target === "qa" && String(process.env.CONFIRM_NYVORA_FIXTURE || "").toLowerCase() === "true") {
+    role = await prisma.role.create({
+      data: {
+        tenant_id: tenant.id,
+        name: "APEX_ADMIN",
+        description: "Administrador modelo Nyvora para certificacion transversal en QA",
+        metadata: { source: "nyvora_mass_regression", environment: "qa" }
+      }
+    });
+  }
   if (!role) throw new Error("Rol APEX_ADMIN de Nyvora no encontrado.");
 
   const user = await prisma.user.upsert({
