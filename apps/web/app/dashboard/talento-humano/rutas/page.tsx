@@ -283,11 +283,10 @@ export default function RoutesPlanningPage() {
     ]);
     setEmployees(employeeData);
     setVehicles(vehicleData);
-    await loadRoutes();
     const activeSites = (masterData.locations || []).filter((site) => site.active !== false).sort((a, b) => (a.sort_order || 100) - (b.sort_order || 100));
     setAdministrativeSites(activeSites);
     setAdministrativeSite((current) => activeSites.some((site) => site.code === current) ? current : activeSites[0]?.code || "");
-  }, [loadRoutes]);
+  }, []);
 
   const loadMonitor = useCallback(async (targetDate = monitorDate) => {
     setLoadingMonitor(true);
@@ -311,9 +310,10 @@ export default function RoutesPlanningPage() {
   }, []);
 
   useEffect(() => {
-    loadReferenceData();
-    loadEventSummaries();
-  }, [loadEventSummaries, loadReferenceData]);
+    void loadRoutes();
+    void loadReferenceData();
+    void loadEventSummaries();
+  }, [loadEventSummaries, loadReferenceData, loadRoutes]);
 
   useEffect(() => {
     const refreshVisible = () => {
@@ -449,7 +449,7 @@ export default function RoutesPlanningPage() {
       setMonitorDate(savedMonitorDate);
       resetForm();
       setModal(null);
-      await Promise.all([loadReferenceData(), loadEventSummaries(), loadMonitor(savedMonitorDate)]);
+      await Promise.all([loadRoutes(), loadReferenceData(), loadEventSummaries(), loadMonitor(savedMonitorDate)]);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No fue posible guardar el horario.");
     } finally {
@@ -533,7 +533,7 @@ export default function RoutesPlanningPage() {
               <span className="rounded-md bg-paper px-3 py-1.5">{totalAssigned} personas</span>
               <span className="rounded-md bg-paper px-3 py-1.5">{administrativeRoutes}/{operationalRoutes} adm/op</span>
               <span className={`rounded-md px-3 py-1.5 ${routesWithoutPeople ? "bg-amber-50 text-amber-800" : "bg-paper text-neutral-600"}`}>{routeCoverage}% seguimiento</span>
-              <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => { loadEventSummaries(); if (selectedRouteId) loadMonitor(); }} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={16} /> Actualizar</button>
+              <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => { loadRoutes(); loadEventSummaries(); if (selectedRouteId) loadMonitor(); }} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={16} /> Actualizar</button>
             </div>
           </div>
           <div className="mt-4 grid gap-2 lg:grid-cols-[minmax(240px,1fr)_180px_180px_170px]">
