@@ -6,6 +6,7 @@ const assert = require("node:assert/strict");
 const source = fs.readFileSync(path.resolve(__dirname, "..", "certifications", "nyvora-production-mass-regression.js"), "utf8");
 const deployedSource = fs.readFileSync(path.resolve(__dirname, "..", "..", "apps", "api", "scripts", "certifications", "nyvora-mass-regression.js"), "utf8");
 const catalogSource = fs.readFileSync(path.resolve(__dirname, "..", "..", "apps", "api", "scripts", "certifications", "nyvora-mass-endpoints.js"), "utf8");
+const monitorSource = fs.readFileSync(path.resolve(__dirname, "..", "..", "apps", "api", "scripts", "certifications", "nyvora-hr-monitor-dynamic.js"), "utf8");
 
 test("the Nyvora mass certificate covers every operational API family", () => {
   const endpointCount = (catalogSource.match(/"\/api\/v1\//g) || []).length;
@@ -15,6 +16,17 @@ test("the Nyvora mass certificate covers every operational API family", () => {
   }
   assert.match(source, /nyvora-mass-endpoints/);
   assert.match(deployedSource, /nyvora-mass-endpoints/);
+});
+
+test("the dynamic monitor certificate creates tangible route events and photographic evidence", () => {
+  assert.match(monitorSource, /listRouteEventSummaries/);
+  assert.match(monitorSource, /event_count/);
+  assert.match(monitorSource, /evidence_count/);
+  assert.match(monitorSource, /createPunch/);
+  assert.match(monitorSource, /createWorkActivity/);
+  assert.match(monitorSource, /photo:/);
+  assert.match(monitorSource, /certification_user_deactivated = true/);
+  assert.match(monitorSource, /CERTIFICATION_EXPECTED_COMMIT es obligatorio/);
 });
 
 test("the temporary certification administrator is always deactivated", () => {
