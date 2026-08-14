@@ -11,6 +11,7 @@
     "start": "node server.js",
     "certify:service-correction-evidence:nyvora": "node scripts/certifications/service-correction-evidence-nyvora.js",
     "certify:platform-regression": "node scripts/certifications/platform-regression-qa.js",
+    "certify:mass-regression:nyvora": "node scripts/certifications/nyvora-mass-regression.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init_apex_os_2",
     "prisma:validate": "prisma validate"

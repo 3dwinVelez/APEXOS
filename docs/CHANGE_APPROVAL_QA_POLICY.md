@@ -63,6 +63,8 @@ Antes de aprobar una migracion que incluya modelos Prisma, consultas nuevas o mo
 6. El barrido visual debe recorrer todas las rutas habilitadas y comprobar que no existan cierres de sesion, pantallas vacias, errores recuperables ni desbordamientos bloqueantes.
 7. Un fallback que presente datos vacios mientras la API primaria responde `4xx` o `5xx` se considera una falla bloqueante. La ausencia de alertas visibles no convierte el flujo en funcional.
 8. Los monitores dinamicos deben reintentar fallos transitorios, conservar el ultimo estado valido y refrescar tanto la coleccion principal como sus contadores.
+9. QA y produccion deben ejecutar el mismo catalogo versionado de endpoints. No se admite una lista reducida, una copia divergente ni un certificado que no compruebe el commit exacto desplegado.
+10. El certificado masivo debe viajar dentro del artefacto de la API para ejecutarse con las variables del ambiente objetivo, guardar una salida JSON sanitizada y terminar con codigo distinto de cero ante una sola falla.
 
 La migracion debe probarse primero sobre una base aislada o QA, registrar el nombre exacto aplicado y verificar nuevamente la alineacion. Queda prohibido ejecutar en bloque migraciones historicas pendientes para corregir una diferencia puntual.
 
