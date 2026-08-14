@@ -97,7 +97,7 @@ export default function LoginPage() {
     return response.json() as Promise<{
       token: string;
       refresh: string;
-      tenant?: { active_modules?: string[] };
+      tenant?: { id?: string; company_id?: string | null; name?: string; active_modules?: string[] };
       user?: { role?: string; role_permissions?: unknown[]; role_metadata?: Record<string, unknown> };
     }>;
   }
@@ -120,6 +120,8 @@ export default function LoginPage() {
       localStorage.removeItem("role_name");
       localStorage.removeItem("profile_kind");
       localStorage.removeItem("apexos_company_role");
+      localStorage.removeItem("apexos_company_id");
+      localStorage.removeItem("apexos_company_name");
       localStorage.removeItem("apexos_role_context_fetched_at");
       sessionStorage.removeItem("apexos_module_access_cache_v2");
       let authenticatedWithSupabase = false;
@@ -150,7 +152,11 @@ export default function LoginPage() {
         localStorage.setItem("auth_provider", "local");
         localStorage.setItem("user_email", loginEmail);
         if (data.tenant?.active_modules) localStorage.setItem("tenant_active_modules", JSON.stringify(data.tenant.active_modules));
+        const companyId = data.tenant?.company_id || data.tenant?.id;
+        if (companyId) localStorage.setItem("apexos_company_id", companyId);
+        if (data.tenant?.name) localStorage.setItem("apexos_company_name", data.tenant.name);
         if (data.user?.role) localStorage.setItem("role_name", data.user.role);
+        if (data.user?.role) localStorage.setItem("apexos_company_role", data.user.role);
         if (Array.isArray(data.user?.role_permissions)) localStorage.setItem("role_permissions", JSON.stringify(data.user.role_permissions));
         if (data.user?.role_metadata) localStorage.setItem("role_metadata", JSON.stringify(data.user.role_metadata));
         if (Array.isArray(data.user?.role_permissions) || data.user?.role_metadata) localStorage.setItem("apexos_role_context_fetched_at", String(Date.now()));
