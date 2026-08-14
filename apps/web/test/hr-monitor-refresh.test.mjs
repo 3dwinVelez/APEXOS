@@ -29,6 +29,13 @@ test("la carga de horarios reintenta respuestas vacias transitorias y conserva e
   assert.doesNotMatch(source, /api<TimeRoute\[]>\("\/api\/v1\/hr\/routes"[^\n]+catch\(\(\) => \[\]\)/);
 });
 
+test("el listado de horarios carga al montar sin esperar catalogos secundarios", () => {
+  const source = read("app/dashboard/talento-humano/rutas/page.tsx");
+  assert.match(source, /useEffect\(\(\) => \{\s*void loadRoutes\(\);\s*void loadReferenceData\(\);\s*void loadEventSummaries\(\);/);
+  assert.doesNotMatch(source, /setVehicles\(vehicleData\);\s*await loadRoutes\(\);/);
+  assert.match(source, /onClick=\{\(\) => \{ loadRoutes\(\); loadEventSummaries\(\);/);
+});
+
 test("el monitor solicita estado operativo fresco y conserva evidencia resumida", () => {
   const monitorSource = read("app/dashboard/talento-humano/rutas/page.tsx");
   const apiSource = read("lib/api.ts");
