@@ -259,20 +259,35 @@ export default function RoutesPlanningPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
 
+  const loadRoutes = useCallback(async () => {
+    let latest: TimeRoute[] | null = null;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const data = await api<TimeRoute[]>("/api/v1/hr/routes", { cache: "no-store" }).catch(() => null);
+      if (Array.isArray(data)) {
+        latest = data;
+        if (data.length) {
+          setRoutes(data);
+          return;
+        }
+      }
+      if (attempt < 2) await new Promise((resolve) => window.setTimeout(resolve, 500));
+    }
+    if (latest) setRoutes(latest);
+  }, []);
+
   const loadReferenceData = useCallback(async () => {
-    const [employeeData, vehicleData, routeData, masterData] = await Promise.all([
+    const [employeeData, vehicleData, masterData] = await Promise.all([
       api<Employee[]>("/api/v1/hr/employees?active=true").catch(() => []),
       api<Vehicle[]>("/api/v1/transport/vehicles").catch(() => []),
-      api<TimeRoute[]>("/api/v1/hr/routes", { cache: "no-store" }).catch(() => []),
       api<UserMasterData>("/api/v1/admin/user-master-data").catch(() => ({ locations: [] }))
     ]);
     setEmployees(employeeData);
     setVehicles(vehicleData);
-    setRoutes(routeData);
+    await loadRoutes();
     const activeSites = (masterData.locations || []).filter((site) => site.active !== false).sort((a, b) => (a.sort_order || 100) - (b.sort_order || 100));
     setAdministrativeSites(activeSites);
     setAdministrativeSite((current) => activeSites.some((site) => site.code === current) ? current : activeSites[0]?.code || "");
-  }, []);
+  }, [loadRoutes]);
 
   const loadMonitor = useCallback(async (targetDate = monitorDate) => {
     setLoadingMonitor(true);
@@ -303,6 +318,7 @@ export default function RoutesPlanningPage() {
   useEffect(() => {
     const refreshVisible = () => {
       if (document.hidden) return;
+      loadRoutes();
       loadEventSummaries();
       if (selectedRouteId) loadMonitor(monitorDate);
     };
@@ -312,14 +328,15 @@ export default function RoutesPlanningPage() {
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", refreshVisible);
     };
-  }, [loadEventSummaries, loadMonitor, monitorDate, selectedRouteId]);
+  }, [loadEventSummaries, loadMonitor, loadRoutes, monitorDate, selectedRouteId]);
 
   useEffect(() => subscribeHrMonitorRefresh((detail) => {
     if (document.hidden) return;
+    loadRoutes();
     loadEventSummaries();
     if (!selectedRouteId || (detail.route_id && String(detail.route_id) !== selectedRouteId)) return;
     loadMonitor(detail.date || monitorDate);
-  }), [loadEventSummaries, loadMonitor, monitorDate, selectedRouteId]);
+  }), [loadEventSummaries, loadMonitor, loadRoutes, monitorDate, selectedRouteId]);
 
   function resetForm() {
     const today = localCalendarDate();

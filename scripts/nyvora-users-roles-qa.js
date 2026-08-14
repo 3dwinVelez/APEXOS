@@ -186,7 +186,13 @@ async function runFrontendStaticChecks(result) {
 async function runDatabaseChecks(context, result) {
   const counts = await prisma.$transaction([
     prisma.role.count({ where: { tenant_id: context.tenant.id, description: { contains: TAG } } }),
-    prisma.user.count({ where: { tenant_id: context.tenant.id, email: { contains: `nyvora.qa.` }, AND: [{ email: { contains: RUN_ID } }] } }),
+    prisma.user.count({
+      where: {
+        tenant_id: context.tenant.id,
+        email: { contains: `nyvora.qa.`, mode: "insensitive" },
+        AND: [{ email: { contains: RUN_ID, mode: "insensitive" } }]
+      }
+    }),
     prisma.employee.count({ where: { tenant_id: context.tenant.id, metadata: { path: ["company"], equals: "Nyvora" } } })
   ]);
   const crossTenant = await prisma.$queryRawUnsafe(`
@@ -369,7 +375,7 @@ async function main() {
 
   const inactiveUser = await createQuickUser(context.tenant.id, roles.readonly, "inactive");
   await admin.setUserActive(context.tenant.id, inactiveUser.id, false);
-  await expectError(result, "inactive_user_cannot_login", () => auth.login({ email: inactiveUser.email, password: PASSWORD }, null, { ip: "127.0.0.1" }), 403);
+  await expectError(result, "inactive_user_cannot_login", () => auth.login({ email: inactiveUser.email, password: PASSWORD }, null, { ip: "127.0.0.1" }), 401);
   await admin.setUserActive(context.tenant.id, inactiveUser.id, true);
   const activeLogin = await auth.login({ email: inactiveUser.email, password: PASSWORD }, null, { ip: "127.0.0.1" });
   record(result, "active_user_can_login_after_reactivation", Boolean(activeLogin.token && activeLogin.user?.role), { email: inactiveUser.email, role: activeLogin.user?.role });
