@@ -164,7 +164,7 @@ async function main() {
     assert.ok(result.activity_id && result.evidence_id, "La actividad fotografica no quedo persistida.");
     assert.ok(Number(result.after?.event_count || 0) >= 5, "El resumen no refleja marcaciones y actividad.");
     assert.ok(Number(result.after?.evidence_count || 0) >= 1, "El resumen no refleja la evidencia fotografica.");
-    assert.equal(Boolean(result.after?.closed), true, "El resumen no refleja el cierre de jornada.");
+    assert.ok(Number(result.after?.closed_count || 0) >= 1, "El resumen no refleja el cierre de jornada.");
     result.ok = true;
   } finally {
     await prisma.user.update({ where: { id: user.id }, data: { active: false } });
