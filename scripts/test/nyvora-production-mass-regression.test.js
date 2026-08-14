@@ -30,6 +30,9 @@ test("the temporary certification administrator is always deactivated", () => {
   for (const module of ["purchases", "sales", "invoicing", "projects", "transport", "brain"]) {
     assert.match(deployedSource, new RegExp(`qaCertificationModules[\\s\\S]*"${module}"`));
   }
+  for (const moduleCode of ["M-01", "M-02", "M-03", "M-04", "M-06", "M-07", "M-14", "M-17", "M-19", "M-22", "M-26", "AI-CORE"]) {
+    assert.match(deployedSource, new RegExp(`qaCertificationModules[\\s\\S]*"${moduleCode}"`));
+  }
   assert.match(deployedSource, /fixtureConfirmed[\s\S]*tenant\.update[\s\S]*active_modules/);
   assert.match(deployedSource, /if \(!role\) throw new Error\("Rol APEX_ADMIN de Nyvora no encontrado\."\)/);
 });

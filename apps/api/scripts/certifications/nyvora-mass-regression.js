@@ -25,8 +25,19 @@ const outputPath = path.resolve(process.env.CERTIFICATION_OUTPUT || `/tmp/nyvora
 const email = `nyvora.mass.cert.${target}.${runId.toLowerCase()}@internal.apexos.local`;
 const password = `Nyvora-Mass-${crypto.randomBytes(12).toString("base64url")}#26`;
 const qaCertificationModules = [
-  "dashboard", "admin", "inventory", "purchases", "sales", "invoicing", "accounting",
-  "projects", "services", "hr", "transport", "brain"
+  "dashboard",
+  "M-01", "inventory",
+  "M-02", "purchases",
+  "M-03", "sales",
+  "M-04", "invoicing",
+  "M-06", "accounts-receivable",
+  "M-07", "accounting",
+  "M-14", "transport",
+  "M-17", "hr",
+  "M-19", "projects",
+  "M-22", "admin",
+  "M-26", "services",
+  "AI-CORE", "brain"
 ];
 
 function assertTarget() {
