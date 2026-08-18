@@ -1389,18 +1389,20 @@ async function getPreoperationalMetrics(tenantId, query = {}) {
 }
 
 async function createPunch(tenantId, input, user) {
-  return prisma.runWithTenant(tenantId, async () => {
+  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
     const punchedAt = input.punched_at ? new Date(input.punched_at) : new Date();
-    const currentEmployee = user?.id ? await prisma.employee.findFirst({
+    const currentEmployee = user?.id ? await tx.employee.findFirst({
       where: { OR: [{ user_id: user.id }, { user: { email: user.email || "" } }] },
       include: { user: { select: { name: true, email: true } } }
     }) : null;
     const employee = currentEmployee || await resolveEmployeeForPunch(tenantId, input);
+    // Serializa marcaciones del mismo empleado para evitar carreras de secuencia.
+    if (employee?.id) await tx.$queryRaw`SELECT id FROM "Employee" WHERE id = ${Number(employee.id)} FOR UPDATE`;
     const type = normalizePunchType(input.type || input.tipo_marca);
     const inputRouteId = operationalRouteNumericId(input);
-    const route = inputRouteId ? await prisma.timeRoute.findFirst({ where: { id: inputRouteId } }) : null;
+    const route = inputRouteId ? await tx.timeRoute.findFirst({ where: { id: inputRouteId } }) : null;
     const preopApproved = isDriver(employee) && route?.vehicle_plate && type === "entrada"
-      ? await prisma.routePreoperationalChecklist.findFirst({
+      ? await tx.routePreoperationalChecklist.findFirst({
         where: {
           route_id: route.id,
           driver_id: employee.id,
@@ -1423,7 +1425,13 @@ async function createPunch(tenantId, input, user) {
     const explicitUserName = String(input.user_name || "").trim();
     const resolvedUserName = (!isGenericEmployeeAlias(explicitUserName) && explicitUserName) || employeeUserName(employee, explicitUserName);
     const identityAliases = Array.from(new Set([...aliasesForEmployee(employee), ...requestAliases, resolvedUserName].filter(Boolean)));
-    const punchesToday = await latestPunchesForEmployee(employee, resolvedUserName, punchedAt, route?.id || inputRouteId, identityAliases);
+    const punchesToday = await tx.timePunch.findMany({
+      where: {
+        ...operationalIdentityRouteWhere(employee, resolvedUserName, route?.id || inputRouteId, identityAliases),
+        date: { gte: startOfDay(punchedAt), lt: endOfDay(punchedAt) }
+      },
+      orderBy: { punched_at: "asc" }
+    });
     const expectedType = nextPunchType(punchesToday);
     if (!expectedType) {
       throw validationError("La jornada ya esta completa para hoy.", 409, "JORNADA_COMPLETA");
@@ -1462,7 +1470,7 @@ async function createPunch(tenantId, input, user) {
         file_size: extraEvidence.size
       }, { maxBytes: MAX_EVIDENCE_BYTES });
     }
-    const punch = await prisma.timePunch.create({
+    const punch = await tx.timePunch.create({
       data: {
         employee_id: employee.id,
         user_name: resolvedUserName,
@@ -1502,7 +1510,7 @@ async function createPunch(tenantId, input, user) {
       }
     });
     if (input.latitude != null && input.longitude != null) {
-      await prisma.gpsPing.create({
+      await tx.gpsPing.create({
         data: {
           employee_id: employee.id,
           user_name: resolvedUserName,
@@ -1542,7 +1550,7 @@ async function createPunch(tenantId, input, user) {
       }
     };
     if (type === "entrada") {
-      const approvedChecklist = await prisma.routePreoperationalChecklist.findFirst({
+      const approvedChecklist = await tx.routePreoperationalChecklist.findFirst({
         where: {
           route_id: route?.id || inputRouteId || undefined,
           driver_id: employee.id,
@@ -1550,22 +1558,22 @@ async function createPunch(tenantId, input, user) {
         },
         orderBy: { completed_at: "desc" }
       }).catch(() => null);
-      const existing = await prisma.workSession.findFirst({
+      const existing = await tx.workSession.findFirst({
         where: { ...operationalIdentityRouteWhere(employee, resolvedUserName, route?.id || inputRouteId, identityAliases), date: { gte: startOfDay(punchedAt), lt: endOfDay(punchedAt) }, status: "activa" },
         orderBy: { started_at: "desc" }
       });
       if (existing) {
-        await prisma.workSession.update({
+        await tx.workSession.update({
           where: { id: existing.id },
           data: { entry_punch_id: punch.id, started_at: punchedAt, route_id: route?.id || inputRouteId, vehicle_plate: input.vehicle_plate || existing.vehicle_plate, preop_checklist_id: approvedChecklist?.id || existing.preop_checklist_id }
         });
       } else {
-        await prisma.workSession.create({
+        await tx.workSession.create({
           data: { ...sessionData, status: "activa", started_at: punchedAt, entry_punch_id: punch.id, preop_checklist_id: approvedChecklist?.id || null }
         });
       }
     } else {
-      const session = await prisma.workSession.findFirst({
+      const session = await tx.workSession.findFirst({
         where: { ...operationalIdentityRouteWhere(employee, resolvedUserName, route?.id || inputRouteId, identityAliases), date: { gte: startOfDay(punchedAt), lt: endOfDay(punchedAt) }, status: "activa" },
         orderBy: { started_at: "desc" }
       });
@@ -1577,7 +1585,7 @@ async function createPunch(tenantId, input, user) {
             : type === "salida"
               ? { closed_at: punchedAt, exit_punch_id: punch.id, status: "cerrada" }
               : {};
-        if (Object.keys(data).length) await prisma.workSession.update({ where: { id: session.id }, data });
+        if (Object.keys(data).length) await tx.workSession.update({ where: { id: session.id }, data });
       }
     }
     const preop = await ensurePreoperationalChecklist({ tenantId, user, employee, route, punch, input });
@@ -1593,7 +1601,7 @@ async function createPunch(tenantId, input, user) {
       preoperational_checklist: preop ? { ...preop, id: Number(preop.id) } : null,
       route_authorized: preop ? ["aprobado", "aprobado_con_novedad"].includes(preop.checklist_status) : true
     };
-  });
+  }));
 }
 
 async function createGpsPing(tenantId, input) {
