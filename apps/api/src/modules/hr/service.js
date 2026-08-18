@@ -1389,15 +1389,13 @@ async function getPreoperationalMetrics(tenantId, query = {}) {
 }
 
 async function createPunch(tenantId, input, user) {
-  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
+  const attemptPunch = async (tx) => {
     const punchedAt = input.punched_at ? new Date(input.punched_at) : new Date();
     const currentEmployee = user?.id ? await tx.employee.findFirst({
       where: { OR: [{ user_id: user.id }, { user: { email: user.email || "" } }] },
       include: { user: { select: { name: true, email: true } } }
     }) : null;
     const employee = currentEmployee || await resolveEmployeeForPunch(tenantId, input);
-    // Serializa marcaciones del mismo empleado para evitar carreras de secuencia.
-    if (employee?.id) await tx.$queryRaw`SELECT id FROM "Employee" WHERE id = ${Number(employee.id)} FOR UPDATE`;
     const type = normalizePunchType(input.type || input.tipo_marca);
     const inputRouteId = operationalRouteNumericId(input);
     const route = inputRouteId ? await tx.timeRoute.findFirst({ where: { id: inputRouteId } }) : null;
@@ -1601,7 +1599,21 @@ async function createPunch(tenantId, input, user) {
       preoperational_checklist: preop ? { ...preop, id: Number(preop.id) } : null,
       route_authorized: preop ? ["aprobado", "aprobado_con_novedad"].includes(preop.checklist_status) : true
     };
-  }));
+  };
+
+  // Reintenta la transacción ante carreras de secuencia concurrentes.
+  let lastError = null;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    try {
+      return await prisma.runWithTenant(tenantId, () => prisma.$transaction((tx) => attemptPunch(tx), { timeout: 20000 }));
+    } catch (error) {
+      const raceCodes = new Set(["MARCACION_FUERA_DE_SECUENCIA", "JORNADA_COMPLETA", "P2034"]);
+      if (!raceCodes.has(error.code || error.name)) throw error;
+      lastError = error;
+      if (attempt < 4) await new Promise((resolve) => setTimeout(resolve, 120 * (attempt + 1)));
+    }
+  }
+  throw lastError;
 }
 
 async function createGpsPing(tenantId, input) {
