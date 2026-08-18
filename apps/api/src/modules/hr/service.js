@@ -1392,16 +1392,17 @@ async function createPunch(tenantId, input, user) {
   const attemptPunch = async (tx) => {
     const punchedAt = input.punched_at ? new Date(input.punched_at) : new Date();
     const currentEmployee = user?.id ? await tx.employee.findFirst({
-      where: { OR: [{ user_id: user.id }, { user: { email: user.email || "" } }] },
+      where: { tenant_id: tenantId, OR: [{ user_id: user.id }, { user: { email: user.email || "" } }] },
       include: { user: { select: { name: true, email: true } } }
     }) : null;
     const employee = currentEmployee || await resolveEmployeeForPunch(tenantId, input);
     const type = normalizePunchType(input.type || input.tipo_marca);
     const inputRouteId = operationalRouteNumericId(input);
-    const route = inputRouteId ? await tx.timeRoute.findFirst({ where: { id: inputRouteId } }) : null;
+    const route = inputRouteId ? await tx.timeRoute.findFirst({ where: { tenant_id: tenantId, id: inputRouteId } }) : null;
     const preopApproved = isDriver(employee) && route?.vehicle_plate && type === "entrada"
       ? await tx.routePreoperationalChecklist.findFirst({
         where: {
+          tenant_id: tenantId,
           route_id: route.id,
           driver_id: employee.id,
           checklist_status: { in: ["aprobado", "aprobado_con_novedad"] }
@@ -1425,6 +1426,7 @@ async function createPunch(tenantId, input, user) {
     const identityAliases = Array.from(new Set([...aliasesForEmployee(employee), ...requestAliases, resolvedUserName].filter(Boolean)));
     const punchesToday = await tx.timePunch.findMany({
       where: {
+        tenant_id: tenantId,
         ...operationalIdentityRouteWhere(employee, resolvedUserName, route?.id || inputRouteId, identityAliases),
         date: { gte: startOfDay(punchedAt), lt: endOfDay(punchedAt) }
       },
@@ -1470,6 +1472,7 @@ async function createPunch(tenantId, input, user) {
     }
     const punch = await tx.timePunch.create({
       data: {
+        tenant_id: tenantId,
         employee_id: employee.id,
         user_name: resolvedUserName,
         type,
@@ -1510,6 +1513,7 @@ async function createPunch(tenantId, input, user) {
     if (input.latitude != null && input.longitude != null) {
       await tx.gpsPing.create({
         data: {
+          tenant_id: tenantId,
           employee_id: employee.id,
           user_name: resolvedUserName,
           vehicle_plate: input.vehicle_plate || "",
@@ -1550,6 +1554,7 @@ async function createPunch(tenantId, input, user) {
     if (type === "entrada") {
       const approvedChecklist = await tx.routePreoperationalChecklist.findFirst({
         where: {
+          tenant_id: tenantId,
           route_id: route?.id || inputRouteId || undefined,
           driver_id: employee.id,
           checklist_status: { in: ["aprobado", "aprobado_con_novedad"] }
@@ -1557,7 +1562,7 @@ async function createPunch(tenantId, input, user) {
         orderBy: { completed_at: "desc" }
       }).catch(() => null);
       const existing = await tx.workSession.findFirst({
-        where: { ...operationalIdentityRouteWhere(employee, resolvedUserName, route?.id || inputRouteId, identityAliases), date: { gte: startOfDay(punchedAt), lt: endOfDay(punchedAt) }, status: "activa" },
+        where: { tenant_id: tenantId, ...operationalIdentityRouteWhere(employee, resolvedUserName, route?.id || inputRouteId, identityAliases), date: { gte: startOfDay(punchedAt), lt: endOfDay(punchedAt) }, status: "activa" },
         orderBy: { started_at: "desc" }
       });
       if (existing) {
@@ -1567,12 +1572,12 @@ async function createPunch(tenantId, input, user) {
         });
       } else {
         await tx.workSession.create({
-          data: { ...sessionData, status: "activa", started_at: punchedAt, entry_punch_id: punch.id, preop_checklist_id: approvedChecklist?.id || null }
+          data: { tenant_id: tenantId, ...sessionData, status: "activa", started_at: punchedAt, entry_punch_id: punch.id, preop_checklist_id: approvedChecklist?.id || null }
         });
       }
     } else {
       const session = await tx.workSession.findFirst({
-        where: { ...operationalIdentityRouteWhere(employee, resolvedUserName, route?.id || inputRouteId, identityAliases), date: { gte: startOfDay(punchedAt), lt: endOfDay(punchedAt) }, status: "activa" },
+        where: { tenant_id: tenantId, ...operationalIdentityRouteWhere(employee, resolvedUserName, route?.id || inputRouteId, identityAliases), date: { gte: startOfDay(punchedAt), lt: endOfDay(punchedAt) }, status: "activa" },
         orderBy: { started_at: "desc" }
       });
       if (session) {
