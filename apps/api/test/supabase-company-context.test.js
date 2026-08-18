@@ -71,6 +71,24 @@ test("un rol especial recibe solo el permiso explicito y no un comodin administr
   assert.ok(!blueprint.permissions.some((permission) => permission.module === "*" && permission.action === "*"));
 });
 
+test("un rol viewer sincronizado no recibe lectura administrativa comodin", () => {
+  const blueprint = roleBlueprint("viewer", {});
+  const modules = new Set(blueprint.permissions.map((permission) => permission.module));
+  assert.ok(!modules.has("*"));
+  assert.ok(!modules.has("admin"));
+  assert.ok(modules.has("dashboard"));
+  assert.ok(modules.has("services"));
+});
+
+test("un rol member sincronizado no recibe lectura administrativa comodin", () => {
+  const blueprint = roleBlueprint("member", {});
+  const modules = new Set(blueprint.permissions.map((permission) => permission.module));
+  assert.ok(!modules.has("*"));
+  assert.ok(!modules.has("admin"));
+  assert.ok(modules.has("hr"));
+  assert.ok(modules.has("transport"));
+});
+
 test("la vista de modulos se consulta con el JWT del usuario para conservar auth.uid()", () => {
   const source = fs.readFileSync(require.resolve("../src/security/supabaseAuth"), "utf8");
   assert.match(

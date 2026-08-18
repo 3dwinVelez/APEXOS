@@ -51,6 +51,23 @@ Despues del despliegue de `main` se repite el certificado sobre el tenant modelo
 
 Una falla productiva no autoriza al agente a saltar `desarrollo -> develop -> main`. La correccion y, si aplica, la reversa deben seguir el flujo y las autorizaciones independientes definidas en `AGENTS.md`.
 
+## Compuerta de esquema y barrido masivo
+
+Antes de aprobar una migracion que incluya modelos Prisma, consultas nuevas o modulos transversales se deben ejecutar y adjuntar estos controles:
+
+1. `npm run audit:qa:schema -- --env-file <qa.env>` debe comprobar todas las tablas y columnas del cliente publicado contra QA sin diferencias.
+2. Despues del despliegue productivo, `npm run audit:production:schema -- --env-file <production.env>` debe repetir la comparacion contra produccion. Una tabla o columna ausente rechaza la version.
+3. El certificado masivo autenticado debe recorrer las familias `admin`, `inventory`, `purchases`, `sales`, `invoicing`, `accounts-receivable`, `accounting`, `projects`, `services`, `hr`, `transport` y `brain` con la empresa modelo Nyvora.
+4. Las lecturas positivas deben responder correctamente con parametros validos. Los casos negativos solo aprueban cuando el codigo HTTP y el codigo funcional coinciden explicitamente con el contrato esperado.
+5. El certificado debe desactivar su cuenta administrativa temporal incluso cuando una peticion falle.
+6. El barrido visual debe recorrer todas las rutas habilitadas y comprobar que no existan cierres de sesion, pantallas vacias, errores recuperables ni desbordamientos bloqueantes.
+7. Un fallback que presente datos vacios mientras la API primaria responde `4xx` o `5xx` se considera una falla bloqueante. La ausencia de alertas visibles no convierte el flujo en funcional.
+8. Los monitores dinamicos deben reintentar fallos transitorios, conservar el ultimo estado valido y refrescar tanto la coleccion principal como sus contadores.
+9. QA y produccion deben ejecutar el mismo catalogo versionado de endpoints. No se admite una lista reducida, una copia divergente ni un certificado que no compruebe el commit exacto desplegado.
+10. El certificado masivo debe viajar dentro del artefacto de la API para ejecutarse con las variables del ambiente objetivo, guardar una salida JSON sanitizada y terminar con codigo distinto de cero ante una sola falla.
+
+La migracion debe probarse primero sobre una base aislada o QA, registrar el nombre exacto aplicado y verificar nuevamente la alineacion. Queda prohibido ejecutar en bloque migraciones historicas pendientes para corregir una diferencia puntual.
+
 ## Contenido minimo del manifiesto
 
 ```json

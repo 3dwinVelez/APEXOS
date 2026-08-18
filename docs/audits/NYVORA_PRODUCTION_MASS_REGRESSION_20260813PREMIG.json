@@ -1,0 +1,1130 @@
+{
+  "ok": false,
+  "environment": "production",
+  "company": "NYVORA",
+  "run_id": "20260813PREMIG",
+  "commit": "a4ae2d12937b",
+  "checks": [
+    {
+      "endpoint": "/api/v1/auth/me",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1410,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "tenant",
+          "user"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/admin/roles",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 2717,
+      "shape": {
+        "type": "array",
+        "count": 77
+      }
+    },
+    {
+      "endpoint": "/api/v1/admin/users",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 2273,
+      "shape": {
+        "type": "array",
+        "count": 100
+      }
+    },
+    {
+      "endpoint": "/api/v1/admin/user-master-data",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1548,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "document_types",
+          "user_statuses",
+          "user_types",
+          "contract_types",
+          "engagement_types",
+          "session_statuses",
+          "document_statuses",
+          "user_document_types",
+          "areas",
+          "positions",
+          "locations",
+          "cost_centers"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/inventory/items",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 934,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "data",
+          "total",
+          "page",
+          "pages"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/inventory/families",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1224,
+      "shape": {
+        "type": "array",
+        "count": 1
+      }
+    },
+    {
+      "endpoint": "/api/v1/inventory/warehouses",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 2041,
+      "shape": {
+        "type": "array",
+        "count": 1
+      }
+    },
+    {
+      "endpoint": "/api/v1/inventory/locations",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1656,
+      "shape": {
+        "type": "array",
+        "count": 1
+      }
+    },
+    {
+      "endpoint": "/api/v1/inventory/costs",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 2640,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "data",
+          "total",
+          "page",
+          "pages",
+          "totals"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/purchases/suppliers",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1944,
+      "shape": {
+        "type": "array",
+        "count": 2
+      }
+    },
+    {
+      "endpoint": "/api/v1/purchases/orders",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1637,
+      "shape": {
+        "type": "array",
+        "count": 1
+      }
+    },
+    {
+      "endpoint": "/api/v1/purchases/orders/open",
+      "status": 400,
+      "ok": false,
+      "latency_ms": 1131,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Seleccione un proveedor para buscar ordenes abiertas\",\"code\":\"REQUIRED_SUPPLIER\",\"request_id\":\"req-g7\"}"
+    },
+    {
+      "endpoint": "/api/v1/purchases/vmi-alerts",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1099,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "endpoint": "/api/v1/sales/customers",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1139,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "endpoint": "/api/v1/sales/orders",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1035,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "endpoint": "/api/v1/sales/invoices",
+      "status": 500,
+      "ok": false,
+      "latency_ms": 1055,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-gd\"}"
+    },
+    {
+      "endpoint": "/api/v1/sales/reports/by-customer?date_from=2026-01-01&date_to=2026-12-31",
+      "status": 500,
+      "ok": false,
+      "latency_ms": 1196,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-gg\"}"
+    },
+    {
+      "endpoint": "/api/v1/sales/reports/by-item?date_from=2026-01-01&date_to=2026-12-31",
+      "status": 500,
+      "ok": false,
+      "latency_ms": 1160,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-gh\"}"
+    },
+    {
+      "endpoint": "/api/v1/sales/reports/by-date?date_from=2026-01-01&date_to=2026-12-31",
+      "status": 500,
+      "ok": false,
+      "latency_ms": 1111,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-gi\"}"
+    },
+    {
+      "endpoint": "/api/v1/sales/reports/detail?date_from=2026-01-01&date_to=2026-12-31",
+      "status": 500,
+      "ok": false,
+      "latency_ms": 1014,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-gj\"}"
+    },
+    {
+      "endpoint": "/api/v1/invoicing/invoices",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1228,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounts-receivable/documents",
+      "status": 500,
+      "ok": false,
+      "latency_ms": 1228,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-gn\"}"
+    },
+    {
+      "endpoint": "/api/v1/accounts-receivable/reports/aging",
+      "status": 500,
+      "ok": false,
+      "latency_ms": 929,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-go\"}"
+    },
+    {
+      "endpoint": "/api/v1/accounts-receivable/retentions",
+      "status": 500,
+      "ok": false,
+      "latency_ms": 925,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-gp\"}"
+    },
+    {
+      "endpoint": "/api/v1/accounting/accounts",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 937,
+      "shape": {
+        "type": "array",
+        "count": 28
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/balance-sheet",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1307,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "period",
+          "assets",
+          "liabilities",
+          "equity",
+          "balanced"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/reports/balance-sheet",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1416,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "period",
+          "assets",
+          "liabilities",
+          "equity",
+          "balanced"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/income-statement",
+      "status": 400,
+      "ok": false,
+      "latency_ms": 1041,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"El periodo YYYY-MM es obligatorio\",\"code\":\"REQUIRED_PERIOD\",\"request_id\":\"req-gv\"}"
+    },
+    {
+      "endpoint": "/api/v1/accounting/reports/income-statement",
+      "status": 400,
+      "ok": false,
+      "latency_ms": 1015,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"El periodo YYYY-MM es obligatorio\",\"code\":\"REQUIRED_PERIOD\",\"request_id\":\"req-gw\"}"
+    },
+    {
+      "endpoint": "/api/v1/accounting/reports/trial-balance",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1279,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "period",
+          "rows",
+          "totals",
+          "balanced"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/reports/taxes",
+      "status": 400,
+      "ok": false,
+      "latency_ms": 1218,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"El periodo YYYY-MM es obligatorio\",\"code\":\"REQUIRED_PERIOD\",\"request_id\":\"req-h0\"}"
+    },
+    {
+      "endpoint": "/api/v1/accounting/reports/receivables",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 993,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "kind",
+          "documents",
+          "buckets",
+          "total"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/reports/payables",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1228,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "kind",
+          "documents",
+          "buckets",
+          "total"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/periods",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 835,
+      "shape": {
+        "type": "object",
+        "keys": []
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/organization-tree",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 751,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "societies",
+          "branches",
+          "cost_centers"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/document-masters",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 775,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "document_types",
+          "numbering"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/vat-masters",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 835,
+      "shape": {
+        "type": "array",
+        "count": 6
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/payable-accounts",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1099,
+      "shape": {
+        "type": "array",
+        "count": 3
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/documents",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1387,
+      "shape": {
+        "type": "array",
+        "count": 1
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/payables/documents",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 2094,
+      "shape": {
+        "type": "array",
+        "count": 1
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/payables/open-invoices",
+      "status": 400,
+      "ok": false,
+      "latency_ms": 819,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Seleccione un proveedor para consultar facturas abiertas\",\"code\":\"REQUIRED_SUPPLIER\",\"request_id\":\"req-he\"}"
+    },
+    {
+      "endpoint": "/api/v1/projects",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 955,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "endpoint": "/api/v1/projects/operational-center",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 888,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "projects",
+          "portfolio",
+          "next_actions"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/services/orders?limit=200",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 4385,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "data",
+          "kpis"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/services/technicians",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1473,
+      "shape": {
+        "type": "array",
+        "count": 21
+      }
+    },
+    {
+      "endpoint": "/api/v1/services/service-types",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 900,
+      "shape": {
+        "type": "array",
+        "count": 3
+      }
+    },
+    {
+      "endpoint": "/api/v1/services/service-stores",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 722,
+      "shape": {
+        "type": "array",
+        "count": 2
+      }
+    },
+    {
+      "endpoint": "/api/v1/services/satisfaction-questions",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 701,
+      "shape": {
+        "type": "array",
+        "count": 3
+      }
+    },
+    {
+      "endpoint": "/api/v1/services/references",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1248,
+      "shape": {
+        "type": "array",
+        "count": 21
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/schedules",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 957,
+      "shape": {
+        "type": "array",
+        "count": 8
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/employees?active=true",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1491,
+      "shape": {
+        "type": "array",
+        "count": 109
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/routes",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1563,
+      "shape": {
+        "type": "array",
+        "count": 30
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/routes/event-summaries",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1614,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "generated_at",
+          "routes"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/routes/preop/template",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 829,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "sections",
+          "items"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/routes/preop/metrics",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1321,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "checklists_today",
+          "checklists_pending",
+          "routes_blocked",
+          "critical_vehicle_findings",
+          "drivers_without_route",
+          "average_completion_minutes",
+          "compliance_rate",
+          "approved_with_findings",
+          "findings_by_type",
+          "findings_by_plate",
+          "findings_by_driver"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/operations-map?date=2026-08-13&minutes=30&footprint_days=30",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1715,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "date",
+          "generated_at",
+          "active_window_minutes",
+          "footprint_window_days",
+          "people",
+          "routes",
+          "totals"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/gps/active",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1006,
+      "shape": {
+        "type": "array",
+        "count": 11
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/gps/history",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1098,
+      "shape": {
+        "type": "array",
+        "count": 54
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/activity-types",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1324,
+      "shape": {
+        "type": "array",
+        "count": 12
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/attendance?date=2026-08-13",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1287,
+      "shape": {
+        "type": "array",
+        "count": 17
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/workdays?date=2026-08-13",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1687,
+      "shape": {
+        "type": "array",
+        "count": 25
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/payroll/config",
+      "status": 403,
+      "ok": false,
+      "latency_ms": 733,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "details"
+        ]
+      },
+      "detail": "{\"error\":\"Modulo no habilitado para esta empresa\",\"code\":\"MODULO_NO_HABILITADO\",\"details\":{\"module\":\"payroll\"}}"
+    },
+    {
+      "endpoint": "/api/v1/hr/payroll",
+      "status": 403,
+      "ok": false,
+      "latency_ms": 815,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "details"
+        ]
+      },
+      "detail": "{\"error\":\"Modulo no habilitado para esta empresa\",\"code\":\"MODULO_NO_HABILITADO\",\"details\":{\"module\":\"payroll\"}}"
+    },
+    {
+      "endpoint": "/api/v1/transport/vehicles",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 2135,
+      "shape": {
+        "type": "array",
+        "count": 20
+      }
+    },
+    {
+      "endpoint": "/api/v1/transport/vehicles/metrics/dashboard",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1273,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "total",
+          "active",
+          "blocked",
+          "pending_validation",
+          "expiring",
+          "reliable_records",
+          "average_score",
+          "by_site",
+          "by_ownership",
+          "vehicles"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/brain/events",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1159,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "data",
+          "total",
+          "page",
+          "pages"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/brain/ecosystem",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 2081,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "snapshot",
+          "health_score",
+          "insight_count",
+          "critical_count",
+          "generated_at"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/brain/insights",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1854,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "data",
+          "health_score",
+          "snapshot_summary",
+          "generated_at"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/brain/mentor",
+      "status": 200,
+      "ok": true,
+      "latency_ms": 1905,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "module",
+          "title",
+          "message",
+          "steps",
+          "priority_insights"
+        ]
+      }
+    }
+  ],
+  "failures": [
+    {
+      "endpoint": "/api/v1/purchases/orders/open",
+      "status": 400,
+      "ok": false,
+      "latency_ms": 1131,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Seleccione un proveedor para buscar ordenes abiertas\",\"code\":\"REQUIRED_SUPPLIER\",\"request_id\":\"req-g7\"}"
+    },
+    {
+      "endpoint": "/api/v1/sales/invoices",
+      "status": 500,
+      "ok": false,
+      "latency_ms": 1055,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-gd\"}"
+    },
+    {
+      "endpoint": "/api/v1/sales/reports/by-customer?date_from=2026-01-01&date_to=2026-12-31",
+      "status": 500,
+      "ok": false,
+      "latency_ms": 1196,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-gg\"}"
+    },
+    {
+      "endpoint": "/api/v1/sales/reports/by-item?date_from=2026-01-01&date_to=2026-12-31",
+      "status": 500,
+      "ok": false,
+      "latency_ms": 1160,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-gh\"}"
+    },
+    {
+      "endpoint": "/api/v1/sales/reports/by-date?date_from=2026-01-01&date_to=2026-12-31",
+      "status": 500,
+      "ok": false,
+      "latency_ms": 1111,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-gi\"}"
+    },
+    {
+      "endpoint": "/api/v1/sales/reports/detail?date_from=2026-01-01&date_to=2026-12-31",
+      "status": 500,
+      "ok": false,
+      "latency_ms": 1014,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-gj\"}"
+    },
+    {
+      "endpoint": "/api/v1/accounts-receivable/documents",
+      "status": 500,
+      "ok": false,
+      "latency_ms": 1228,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-gn\"}"
+    },
+    {
+      "endpoint": "/api/v1/accounts-receivable/reports/aging",
+      "status": 500,
+      "ok": false,
+      "latency_ms": 929,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-go\"}"
+    },
+    {
+      "endpoint": "/api/v1/accounts-receivable/retentions",
+      "status": 500,
+      "ok": false,
+      "latency_ms": 925,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-gp\"}"
+    },
+    {
+      "endpoint": "/api/v1/accounting/income-statement",
+      "status": 400,
+      "ok": false,
+      "latency_ms": 1041,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"El periodo YYYY-MM es obligatorio\",\"code\":\"REQUIRED_PERIOD\",\"request_id\":\"req-gv\"}"
+    },
+    {
+      "endpoint": "/api/v1/accounting/reports/income-statement",
+      "status": 400,
+      "ok": false,
+      "latency_ms": 1015,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"El periodo YYYY-MM es obligatorio\",\"code\":\"REQUIRED_PERIOD\",\"request_id\":\"req-gw\"}"
+    },
+    {
+      "endpoint": "/api/v1/accounting/reports/taxes",
+      "status": 400,
+      "ok": false,
+      "latency_ms": 1218,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"El periodo YYYY-MM es obligatorio\",\"code\":\"REQUIRED_PERIOD\",\"request_id\":\"req-h0\"}"
+    },
+    {
+      "endpoint": "/api/v1/accounting/payables/open-invoices",
+      "status": 400,
+      "ok": false,
+      "latency_ms": 819,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Seleccione un proveedor para consultar facturas abiertas\",\"code\":\"REQUIRED_SUPPLIER\",\"request_id\":\"req-he\"}"
+    },
+    {
+      "endpoint": "/api/v1/hr/payroll/config",
+      "status": 403,
+      "ok": false,
+      "latency_ms": 733,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "details"
+        ]
+      },
+      "detail": "{\"error\":\"Modulo no habilitado para esta empresa\",\"code\":\"MODULO_NO_HABILITADO\",\"details\":{\"module\":\"payroll\"}}"
+    },
+    {
+      "endpoint": "/api/v1/hr/payroll",
+      "status": 403,
+      "ok": false,
+      "latency_ms": 815,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "details"
+        ]
+      },
+      "detail": "{\"error\":\"Modulo no habilitado para esta empresa\",\"code\":\"MODULO_NO_HABILITADO\",\"details\":{\"module\":\"payroll\"}}"
+    }
+  ],
+  "certification_user_id": 160,
+  "certification_user_deactivated": true
+}

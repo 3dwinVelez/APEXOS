@@ -1515,8 +1515,9 @@ async function addPhoto(tenantId, user, orderId, input) {
   const storagePath = input.storage_path || secureStoragePath({ tenantId, module: "services", entity: "orders", entityId: orderId, fileName });
   return prisma.runWithTenant(tenantId, async () => {
     const order = await accessibleOrder(tenantId, user, orderId);
-    const itemId = input.item_id == null ? null : Number(input.item_id);
-    if (itemId != null) await orderItem(tenantId, user, order.id, itemId);
+    const rawItemId = input.item_id == null ? null : Number(input.item_id);
+    const itemId = rawItemId && rawItemId > 0 ? rawItemId : null;
+    if (itemId) await orderItem(tenantId, user, order.id, itemId);
     const clientUploadId = input.metadata?.client_upload_id ? String(input.metadata.client_upload_id) : "";
     if (clientUploadId) {
       const retryMatch = await prisma.servicePhoto.findFirst({

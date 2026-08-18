@@ -259,16 +259,30 @@ export default function RoutesPlanningPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
 
+  const loadRoutes = useCallback(async () => {
+    let latest: TimeRoute[] | null = null;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const data = await api<TimeRoute[]>("/api/v1/hr/routes", { cache: "no-store" }).catch(() => null);
+      if (Array.isArray(data)) {
+        latest = data;
+        if (data.length) {
+          setRoutes(data);
+          return;
+        }
+      }
+      if (attempt < 2) await new Promise((resolve) => window.setTimeout(resolve, 500));
+    }
+    if (latest) setRoutes(latest);
+  }, []);
+
   const loadReferenceData = useCallback(async () => {
-    const [employeeData, vehicleData, routeData, masterData] = await Promise.all([
+    const [employeeData, vehicleData, masterData] = await Promise.all([
       api<Employee[]>("/api/v1/hr/employees?active=true").catch(() => []),
       api<Vehicle[]>("/api/v1/transport/vehicles").catch(() => []),
-      api<TimeRoute[]>("/api/v1/hr/routes", { cache: "no-store" }).catch(() => []),
       api<UserMasterData>("/api/v1/admin/user-master-data").catch(() => ({ locations: [] }))
     ]);
     setEmployees(employeeData);
     setVehicles(vehicleData);
-    setRoutes(routeData);
     const activeSites = (masterData.locations || []).filter((site) => site.active !== false).sort((a, b) => (a.sort_order || 100) - (b.sort_order || 100));
     setAdministrativeSites(activeSites);
     setAdministrativeSite((current) => activeSites.some((site) => site.code === current) ? current : activeSites[0]?.code || "");
@@ -296,13 +310,15 @@ export default function RoutesPlanningPage() {
   }, []);
 
   useEffect(() => {
-    loadReferenceData();
-    loadEventSummaries();
-  }, [loadEventSummaries, loadReferenceData]);
+    void loadRoutes();
+    void loadReferenceData();
+    void loadEventSummaries();
+  }, [loadEventSummaries, loadReferenceData, loadRoutes]);
 
   useEffect(() => {
     const refreshVisible = () => {
       if (document.hidden) return;
+      loadRoutes();
       loadEventSummaries();
       if (selectedRouteId) loadMonitor(monitorDate);
     };
@@ -312,14 +328,15 @@ export default function RoutesPlanningPage() {
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", refreshVisible);
     };
-  }, [loadEventSummaries, loadMonitor, monitorDate, selectedRouteId]);
+  }, [loadEventSummaries, loadMonitor, loadRoutes, monitorDate, selectedRouteId]);
 
   useEffect(() => subscribeHrMonitorRefresh((detail) => {
     if (document.hidden) return;
+    loadRoutes();
     loadEventSummaries();
     if (!selectedRouteId || (detail.route_id && String(detail.route_id) !== selectedRouteId)) return;
     loadMonitor(detail.date || monitorDate);
-  }), [loadEventSummaries, loadMonitor, monitorDate, selectedRouteId]);
+  }), [loadEventSummaries, loadMonitor, loadRoutes, monitorDate, selectedRouteId]);
 
   function resetForm() {
     const today = localCalendarDate();
@@ -432,7 +449,7 @@ export default function RoutesPlanningPage() {
       setMonitorDate(savedMonitorDate);
       resetForm();
       setModal(null);
-      await Promise.all([loadReferenceData(), loadEventSummaries(), loadMonitor(savedMonitorDate)]);
+      await Promise.all([loadRoutes(), loadReferenceData(), loadEventSummaries(), loadMonitor(savedMonitorDate)]);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No fue posible guardar el horario.");
     } finally {
@@ -516,7 +533,7 @@ export default function RoutesPlanningPage() {
               <span className="rounded-md bg-paper px-3 py-1.5">{totalAssigned} personas</span>
               <span className="rounded-md bg-paper px-3 py-1.5">{administrativeRoutes}/{operationalRoutes} adm/op</span>
               <span className={`rounded-md px-3 py-1.5 ${routesWithoutPeople ? "bg-amber-50 text-amber-800" : "bg-paper text-neutral-600"}`}>{routeCoverage}% seguimiento</span>
-              <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => { loadEventSummaries(); if (selectedRouteId) loadMonitor(); }} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={16} /> Actualizar</button>
+              <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => { loadRoutes(); loadEventSummaries(); if (selectedRouteId) loadMonitor(); }} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={16} /> Actualizar</button>
             </div>
           </div>
           <div className="mt-4 grid gap-2 lg:grid-cols-[minmax(240px,1fr)_180px_180px_170px]">
