@@ -1588,7 +1588,7 @@ async function createPunch(tenantId, input, user) {
       minutos_extra: extraMinutes,
       alerta: extraMinutes > 0,
       punch,
-      next: nextPunchType(await latestPunchesForEmployee(employee, resolvedUserName, punchedAt, route?.id || inputRouteId, identityAliases)),
+      next: nextPunchType([...punchesToday, punch]),
       preoperational_required: Boolean(preop),
       preoperational_checklist: preop ? { ...preop, id: Number(preop.id) } : null,
       route_authorized: preop ? ["aprobado", "aprobado_con_novedad"].includes(preop.checklist_status) : true
@@ -2087,14 +2087,33 @@ async function processPayrollRange(tenantId, input = {}) {
   const endExclusive = endOfDay(end);
   return prisma.runWithTenant(tenantId, async () => {
     const employees = await prisma.employee.findMany({ where: { active: true }, include: { user: { select: safeUserSelect } } });
-    const payrolls = [];
-    for (const employee of employees) {
-      const workdays = await prisma.processedWorkday.findMany({
-        where: { employee_id: employee.id, date: { gte: start, lt: endExclusive } },
-        orderBy: { date: "asc" }
-      });
-      const daysWorked = workdays.length;
-      const overtimeMinutes = workdays.reduce((sum, day) => sum +
+    const workdays = await prisma.processedWorkday.findMany({
+      where: { employee_id: { in: employees.map((employee) => employee.id) }, date: { gte: start, lt: endExclusive } },
+      select: {
+        employee_id: true,
+        overtime_day_minutes: true,
+        overtime_night_minutes: true,
+        overtime_sunday_holiday_day_minutes: true,
+        overtime_sunday_holiday_night_minutes: true
+      }
+    });
+    const workdaysByEmployee = new Map();
+    for (const day of workdays) {
+      const list = workdaysByEmployee.get(day.employee_id) || [];
+      list.push(day);
+      workdaysByEmployee.set(day.employee_id, list);
+    }
+
+    const existing = await prisma.payroll.findMany({
+      where: { period: key, employee_id: { in: employees.map((employee) => employee.id) } },
+      select: { employee_id: true }
+    });
+    const existingIds = new Set(existing.map((row) => row.employee_id));
+
+    const rows = employees.map((employee) => {
+      const days = workdaysByEmployee.get(employee.id) || [];
+      const daysWorked = days.length;
+      const overtimeMinutes = days.reduce((sum, day) => sum +
         day.overtime_day_minutes +
         day.overtime_night_minutes +
         day.overtime_sunday_holiday_day_minutes +
@@ -2113,34 +2132,41 @@ async function processPayrollRange(tenantId, input = {}) {
         horas_extra: overtime,
         alertas: daysWorked === 0 ? ["sin_jornadas"] : []
       };
-      const payroll = await prisma.payroll.upsert({
-        where: { employee_id_period: { employee_id: employee.id, period: key } },
-        update: {
-          days_worked: daysWorked,
-          overtime_hrs: Math.round((overtimeMinutes / 60) * 100) / 100,
-          gross,
-          deductions,
-          net: gross - deductions,
-          employer_cost: gross,
-          detail
-        },
-        create: {
-          tenant_id: tenantId,
-          employee_id: employee.id,
-          period: key,
-          days_worked: daysWorked,
-          overtime_hrs: Math.round((overtimeMinutes / 60) * 100) / 100,
-          absences: 0,
-          gross,
-          deductions,
-          net: gross - deductions,
-          employer_cost: gross,
-          detail
+      return {
+        tenant_id: tenantId,
+        employee_id: employee.id,
+        period: key,
+        days_worked: daysWorked,
+        overtime_hrs: Math.round((overtimeMinutes / 60) * 100) / 100,
+        absences: 0,
+        gross,
+        deductions,
+        net: gross - deductions,
+        employer_cost: gross,
+        detail
+      };
+    });
+
+    const toCreate = rows.filter((row) => !existingIds.has(row.employee_id));
+    const toUpdate = rows.filter((row) => existingIds.has(row.employee_id));
+
+    if (toCreate.length) await prisma.payroll.createMany({ data: toCreate });
+    for (const row of toUpdate) {
+      await prisma.payroll.updateMany({
+        where: { employee_id: row.employee_id, period: key },
+        data: {
+          days_worked: row.days_worked,
+          overtime_hrs: row.overtime_hrs,
+          gross: row.gross,
+          deductions: row.deductions,
+          net: row.net,
+          employer_cost: row.employer_cost,
+          detail: row.detail
         }
       });
-      payrolls.push(payroll);
     }
-    return { ok: true, fecha_inicio: start.toISOString().slice(0, 10), fecha_fin: end.toISOString().slice(0, 10), liquidaciones: payrolls };
+
+    return { ok: true, fecha_inicio: start.toISOString().slice(0, 10), fecha_fin: end.toISOString().slice(0, 10), liquidaciones: rows.length };
   });
 }
 
