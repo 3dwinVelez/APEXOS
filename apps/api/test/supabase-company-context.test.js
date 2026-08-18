@@ -78,6 +78,7 @@ test("un rol viewer sincronizado no recibe lectura administrativa comodin", () =
   assert.ok(!modules.has("admin"));
   assert.ok(modules.has("dashboard"));
   assert.ok(modules.has("services"));
+  assert.equal(blueprint.managed, true);
 });
 
 test("un rol member sincronizado no recibe lectura administrativa comodin", () => {
@@ -87,6 +88,7 @@ test("un rol member sincronizado no recibe lectura administrativa comodin", () =
   assert.ok(!modules.has("admin"));
   assert.ok(modules.has("hr"));
   assert.ok(modules.has("transport"));
+  assert.equal(blueprint.managed, true);
 });
 
 test("la vista de modulos se consulta con el JWT del usuario para conservar auth.uid()", () => {
