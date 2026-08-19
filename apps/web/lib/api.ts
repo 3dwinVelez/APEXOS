@@ -3769,7 +3769,7 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
     response = await fetchWithTimeout(`${API_URL}${path}`, {
       ...options,
       headers: {
-        ...(options.body ? { "Content-Type": "application/json" } : {}),
+        ...(options.body && !(typeof FormData !== "undefined" && options.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(supabaseSession && companyId ? { "x-company-id": companyId } : {}),
         ...options.headers

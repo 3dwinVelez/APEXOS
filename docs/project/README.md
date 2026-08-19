@@ -23,11 +23,19 @@ Esta carpeta centraliza la documentacion viva del proyecto APEXOS.
 - [Compras](./modulos/compras.md)
 - [Inventario](./modulos/inventario.md)
 - [Contabilidad](./modulos/contabilidad.md)
+- [Tesorería](./modulos/tesoreria.md)
 - [APEX AI](./modulos/apex-ai.md)
 
 ## Regla de mantenimiento
 
 Todo cambio funcional, visual o de flujo debe documentarse aqui. Los archivos historicos fuera de esta carpeta pueden existir como soporte, pero la referencia principal del proyecto queda en `docs/project`.
+
+## Consulta transversal de documentos
+
+- Los numeros de documentos operativos y contables se presentan como acciones de clic simple.
+- El detalle muestra la cabecera, estado, fechas, usuario responsable, posiciones y documento contable relacionado cuando exista.
+- Las posiciones muestran la informacion propia del origen: SKU, cantidades y bodegas para inventario/compras/ventas; cuentas, tercero, debitos y creditos para contabilidad.
+- La consulta documental es de solo lectura y conserva el aislamiento por empresa y los permisos del modulo de origen.
 
 La documentacion operativa, de QA, despliegue y legacy se organiza desde [el indice general de documentacion](../README.md).
 

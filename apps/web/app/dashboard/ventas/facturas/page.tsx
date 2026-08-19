@@ -62,7 +62,7 @@ export default function FacturasPage() {
           <tbody>
             {invoices.map((inv) => (
               <tr key={inv.id} className="border-b border-line hover:bg-paper">
-                <td className="py-2 pr-4 font-mono">{inv.number}</td>
+                <td className="py-2 pr-4 font-mono"><Link href={`/dashboard/ventas/facturas/${inv.id}`} className="text-apex underline-offset-2 hover:underline" title="Ver detalle del documento">{inv.number}</Link></td>
                 <td className="py-2 pr-4">{inv.customer?.name || `#${inv.customer?.id}`}</td>
                 <td className="py-2 pr-4">{new Date(inv.date).toLocaleDateString()}</td>
                 <td className="py-2 pr-4">${inv.total.toLocaleString()}</td>

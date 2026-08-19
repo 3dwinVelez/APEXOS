@@ -97,6 +97,7 @@ const purchaseInvoiceSchema = {
       branch_code: { type: "string", minLength: 1 },
       cost_center_code: { type: "string", minLength: 1 },
       associated_account_code: { type: "string", minLength: 1 },
+      retentions: { type: "array", items: { type: "object", required: ["code"], properties: { code: { type: "string", minLength: 1 }, base: { type: "number", minimum: 0 }, amount: { type: "number", minimum: 0 } } } },
       lines: {
         type: "array",
         minItems: 1,
@@ -117,5 +118,66 @@ const purchaseInvoiceSchema = {
   }
 };
 
-module.exports = { supplierSchema, updateSupplierSchema, purchaseOrderSchema, purchaseInvoiceSchema };
+const purchaseReceiptSchema = {
+  body: {
+    type: "object",
+    required: ["received_lines"],
+    properties: {
+      notes: { type: "string" },
+      received_lines: {
+        type: "array",
+        minItems: 1,
+        items: {
+          type: "object",
+          required: ["line_id", "qty_received"],
+          properties: {
+            line_id: { type: "integer" },
+            qty_received: { type: "number", exclusiveMinimum: 0 },
+            location_id: { type: "integer" },
+            lot: { type: "string" },
+            expiry: { type: "string" }
+          }
+        }
+      }
+    }
+  }
+};
+
+const purchaseReturnSchema = {
+  body: {
+    type: "object",
+    required: ["returned_lines"],
+    properties: {
+      reason: { type: "string" },
+      returned_lines: {
+        type: "array",
+        minItems: 1,
+        items: {
+          type: "object",
+          required: ["line_id", "qty_returned", "location_id"],
+          properties: {
+            line_id: { type: "integer" },
+            qty_returned: { type: "number", exclusiveMinimum: 0 },
+            location_id: { type: "integer" }
+          }
+        }
+      }
+    }
+  }
+};
+const annulInvoiceSchema = { body: { type: "object", properties: { reason: { type: "string" } } } };
+const closePurchaseOrderSchema = {
+  body: {
+    type: "object",
+    required: ["reason"],
+    properties: { reason: { type: "string", minLength: 3, maxLength: 500 } }
+  }
+};
+
+const purchaseImportSchema = { body: { type: "object", required: ["purchase_order_id"], properties: { purchase_order_id: { type: "integer" } } } };
+const importCostSchema = { body: { type: "object", required: ["concept", "supplier_id", "classification", "estimated_amount", "account_code", "clearing_account_code"], properties: { concept: { type: "string", minLength: 1 }, supplier_id: { type: "integer" }, classification: { type: "string", enum: ["capitalizable", "recoverable_tax", "expense"] }, estimated_amount: { type: "number", minimum: 0 }, actual_amount: { type: "number", minimum: 0 }, account_code: { type: "string", minLength: 1 }, clearing_account_code: { type: "string", minLength: 1 } } } };
+const linkImportCostInvoiceSchema = { body: { type: "object", required: ["cxp_cabdoc_id", "actual_amount"], properties: { cxp_cabdoc_id: { type: "integer" }, actual_amount: { type: "number", minimum: 0 } } } };
+const adjustImportCostSchema = { body: { type: "object", required: ["posting_date"], properties: { posting_date: { type: "string", minLength: 10 } } } };
+
+module.exports = { supplierSchema, updateSupplierSchema, purchaseOrderSchema, purchaseInvoiceSchema, purchaseReceiptSchema, purchaseReturnSchema, annulInvoiceSchema, closePurchaseOrderSchema, purchaseImportSchema, importCostSchema, linkImportCostInvoiceSchema, adjustImportCostSchema };
 
