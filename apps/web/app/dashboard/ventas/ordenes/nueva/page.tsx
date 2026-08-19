@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { VentasNav } from "@/components/ventas-nav";
+import { ZeroFriendlyNumberInput } from "@/components/ui/ZeroFriendlyNumberInput";
 
 type Customer = { id: number; name: string };
 type Item = { id: number; code: string; name: string; unit_price: number };
@@ -62,8 +63,8 @@ export default function NuevaOVPage() {
           <option value={0}>Producto/servicio</option>
           {items.map((i) => <option key={i.id} value={i.id}>{i.code} · {i.name}</option>)}
         </select>
-        <input className="h-10 rounded-md border border-line px-3 text-sm" type="number" min={0.01} step="0.01" placeholder="Cantidad" value={form.qty} onChange={(e) => setForm((p) => ({ ...p, qty: Number(e.target.value) }))} />
-        <input className="h-10 rounded-md border border-line px-3 text-sm" type="number" min={0} step="0.01" placeholder="Precio unitario" value={form.unit_price} onChange={(e) => setForm((p) => ({ ...p, unit_price: Number(e.target.value) }))} />
+        <ZeroFriendlyNumberInput className="h-10 rounded-md border border-line px-3 text-sm" min={0.01} step="0.01" placeholder="Cantidad" value={form.qty} onValueChange={(value) => setForm((p) => ({ ...p, qty: value }))} />
+        <ZeroFriendlyNumberInput className="h-10 rounded-md border border-line px-3 text-sm" min={0} step="0.01" placeholder="Precio unitario" value={form.unit_price} onValueChange={(value) => setForm((p) => ({ ...p, unit_price: value }))} />
         <input className="h-10 rounded-md border border-line px-3 text-sm md:col-span-2" placeholder="Notas/condiciones comerciales (opcional)" value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} />
         <button className="h-10 rounded-md bg-apex px-4 text-sm text-white md:col-span-2" type="submit">Crear orden</button>
       </form>

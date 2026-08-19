@@ -12,6 +12,20 @@ Conservar el contexto funcional y técnico confirmado durante el desarrollo de l
 
 ## Decisiones confirmadas
 
+- Las OC aprobadas o parcialmente recibidas que conserven saldo se pueden cerrar porque el proveedor no despachara lo pendiente. El cierre exige motivo, conserva auditoria y no revierte ni modifica inventario, costo o contabilidad ya registrados.
+- La OC se puede descargar en PDF. El documento identifica expresamente la empresa compradora con nombre real del tenant, NIT, pais y sociedad; tambien muestra proveedor, usuario creador, fechas, bodega de entrega con direccion y ciudad, posiciones, SKU, cantidades, costos, saldos y totales. La sucursal se excluye del documento.
+
+- Las ordenes de compra en borrador permiten edicion desde una accion visible y mediante doble clic en el listado. El guardado conserva el numero de OC y el backend bloquea la edicion cuando ya no esta en borrador.
+
+- Los campos numéricos de Compras permiten borrar temporalmente el cero y lo restauran como `0` al perder el foco si quedan vacíos.
+
+- La creación de OC presenta inicialmente diez líneas vacías. El SKU se puede escribir o buscar y el detalle no captura IVA; solo se envían posiciones válidas con cantidad y costo.
+- En las posiciones de OC, Enter con SKU vacío abre el buscador. Un código inexistente muestra el mensaje correspondiente y permite elegir un SKU del maestro para completar la misma línea.
+
+- Para captura consecutiva, OC permite aprobar y crear otra conservando proveedor/bodega; facturas limpian el documento terminado; recepcion permite confirmar y abrir la siguiente OC pendiente.
+
+- Los maestros de IVA y retenciones de compras se administran en Contabilidad y tienen alcance exclusivo de compras; no pueden consumir parametros creados para ventas.
+
 - La recepcion de una orden de compra admite entregas parciales por posicion. El usuario debe ver lo pedido e ingresar manualmente las unidades efectivamente recibidas en cada linea.
 
 ## Reglas de negocio
@@ -21,6 +35,14 @@ Conservar el contexto funcional y técnico confirmado durante el desarrollo de l
 - Una factura de proveedor debe contabilizar IVA y retenciones aplicables, mantener trazabilidad con la OC/recepción y crear un documento contable balanceado.
 
 ## Correcciones solicitadas
+
+- Se restauro `POST /api/v1/purchases/orders/:id/return`, cuya ausencia provocaba 404 al devolver mercancia. La confirmacion deja de usar `window.prompt` y se realiza en un modal integrado.
+- Las devoluciones generan documento contable EM de reversion con las cuentas parametrizadas de inventario y EM/RF. Los documentos de entrada y devolucion, junto con sus asientos, solo muestran detalle al hacer doble clic sobre su numero.
+- La devolucion permite seleccionar posiciones e ingresar cantidades parciales. El maximo de cada posicion es lo recibido neto de devoluciones previas; la salida actualiza stock, ubicacion, valoracion y kardex, y no admite devolver una cantidad superior.
+
+- Se corrigio el error 500 al guardar y aprobar una OC editada: la sustitucion de posiciones ahora se ejecuta como escritura anidada de la misma transaccion, evitando el borrado fisico directo bloqueado por la capa de seguridad de Prisma.
+
+- Se corrigió la simulación CXP que ignoraba el arreglo `retentions`: ahora valida el maestro activo de compras, muestra las líneas de retención, calcula el neto del proveedor y conserva base, tasa e importe en CXP y contabilidad.
 
 - Se corrigio el error 500 de recepcion causado por la deserializacion del retorno `void` de `pg_advisory_xact_lock`; el bloqueo conserva su funcion transaccional y retorna texto compatible con Prisma.
 - La pantalla de recepcion deja de confirmar automaticamente todo el pendiente y muestra pedido, recibido, saldo e ingreso manual por posicion.
@@ -100,6 +122,13 @@ Conservar el contexto funcional y técnico confirmado durante el desarrollo de l
 - La recepcion incluye la opcion `Recibir todo lo pendiente`, que completa el saldo de todas las posiciones; al desmarcarla vuelve al ingreso manual.
 - El diligenciamiento de la recepcion se abre en una ventana modal para mostrar exclusivamente la OC seleccionada y evitar mezclar posiciones de otros pedidos.
 
+### 2026-08-06 - Contrato API de retenciones por proveedor
+
+- Se corrigio la regresion que eliminaba las rutas `GET/PUT /api/v1/accounting/suppliers/:supplier_id/retentions`.
+- El maestro expuesto por `Contabilidad > Retenciones` usa alcance de compras y conserva separados los maestros de retenciones de ventas/CxC.
+- La respuesta de consulta incluye `retention_codes` y el detalle `retentions`, para que Contabilidad y Facturas de compra consuman el mismo contrato.
+- La prueba contractual de rutas contables debe incluir el maestro de retenciones y la consulta/asignacion por proveedor para impedir nuevos errores 404.
+
 ### 2026-07-21 - Decisiones de costo e inventario
 
 - Se mantiene el tipo `Float` existente; el usuario descartó expresamente la migración a `Decimal`.
@@ -107,3 +136,13 @@ Conservar el contexto funcional y técnico confirmado durante el desarrollo de l
 - La recepción actualiza el promedio ponderado en la valoración por SKU y sociedad.
 - En ventas, el costo reconocido no se toma de la orden de venta: se consulta la valoración vigente del SKU y la sociedad.
 - Los traslados entre bodegas deben usar tránsito obligatorio y no pueden ejecutarse como un movimiento directo.
+
+### 2026-08-07 - Importaciones y costo puesto en bodega
+
+- Una importación se crea sobre una OC sin recepciones y conserva expediente propio.
+- Los costos indirectos admiten terceros diferentes y se clasifican como capitalizables, impuestos recuperables o gasto.
+- Los capitalizables se distribuyen por valor de posición; impuestos recuperables y gastos no aumentan inventario.
+- La hoja de costos debe confirmarse antes de recibir y la recepción es completa, sin parciales.
+- Cada proveedor solo consulta y factura los conceptos que tiene asignados.
+- Cuando el valor real difiere del estimado, la diferencia capitalizable se ajusta contra inventario y cuenta puente; se bloquea si el SKU ya no conserva existencias.
+- Se corrigio la creacion del expediente y de sus costos para persistir explicitamente `tenant_id`; omitirlo provocaba error 500 de Prisma y rollback al crear una importacion.

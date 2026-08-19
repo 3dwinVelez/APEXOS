@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { CxcNav } from "@/components/cxc-nav";
+import { ZeroFriendlyNumberInput } from "@/components/ui/ZeroFriendlyNumberInput";
 
 type Retention = { id: number; code: string; description: string; account_code: string; percent: number; concept?: string; retention_type: string; minimum_base: number; base_type: string; active: boolean };
 
@@ -78,8 +79,8 @@ export default function RetencionesPage() {
               <option value="reteiva">ReteIVA</option>
               <option value="reteica">ReteICA</option>
             </select>
-            <input className="h-10 rounded-md border border-line px-3 text-sm" type="number" step="0.01" placeholder="Porcentaje *" value={form.percent} onChange={(e) => setForm((p) => ({ ...p, percent: Number(e.target.value) }))} required />
-            <input className="h-10 rounded-md border border-line px-3 text-sm" type="number" min={0} step="0.01" placeholder="Base minima" value={form.minimum_base} onChange={(e) => setForm((p) => ({ ...p, minimum_base: Number(e.target.value) }))} />
+            <ZeroFriendlyNumberInput className="h-10 rounded-md border border-line px-3 text-sm" step="0.01" placeholder="Porcentaje *" value={form.percent} onValueChange={(value) => setForm((p) => ({ ...p, percent: value }))} required />
+            <ZeroFriendlyNumberInput className="h-10 rounded-md border border-line px-3 text-sm" min={0} step="0.01" placeholder="Base minima" value={form.minimum_base} onValueChange={(value) => setForm((p) => ({ ...p, minimum_base: value }))} />
             <select className="h-10 rounded-md border border-line px-3 text-sm" value={form.base_type} onChange={(e) => setForm((p) => ({ ...p, base_type: e.target.value }))}>
               <option value="subtotal">Base subtotal</option>
               <option value="iva">Base IVA</option>

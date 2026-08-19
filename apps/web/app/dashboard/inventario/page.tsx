@@ -1,11 +1,13 @@
 import Link from "next/link";
-import { ArrowRight, BarChart3, Boxes, ClipboardList, PackagePlus, Radio, ScanLine, Warehouse } from "lucide-react";
+import { ArrowRight, ArrowRightLeft, BarChart3, Boxes, ClipboardList, FileUp, PackagePlus, Radio, ScanLine, Warehouse } from "lucide-react";
 import { InventoryNav } from "@/components/inventory-nav";
 
 const workspaces = [
   { href: "/dashboard/inventario/productos/nuevo", title: "Productos", detail: "Maestro transversal para comprar, vender, producir, costear y mover.", icon: PackagePlus, action: "Crear o gestionar" },
   { href: "/dashboard/inventario/wms", title: "WMS", detail: "Layout 2D, ubicaciones, tareas, recepcion, picking y putaway.", icon: Warehouse, action: "Abrir WMS" },
   { href: "/dashboard/inventario/stock", title: "Stock", detail: "Movimientos, ajustes, saldos y confiabilidad operativa.", icon: Boxes, action: "Ver stock" },
+  { href: "/dashboard/inventario/cargue-inicial", title: "Cargue inicial", detail: "Carga existencias y costos iniciales desde una plantilla Excel con contabilizacion.", icon: FileUp, action: "Abrir cargue" },
+  { href: "/dashboard/inventario/traslados", title: "Traslados", detail: "Despacha entre bodegas, controla el tránsito y descarga en destino.", icon: ArrowRightLeft, action: "Ver traslados" },
   { href: "/dashboard/inventario/reportes", title: "Analitica", detail: "Rotacion, ABC, alertas, criticidad y decisiones de reposicion.", icon: BarChart3, action: "Ver reportes" }
 ];
 
@@ -52,7 +54,7 @@ export default function InventarioHomePage() {
               <h2 className="text-base font-semibold">Workspaces de inventario</h2>
               <p className="text-sm text-neutral-500">Cada entrada representa una responsabilidad operativa clara, sin repetir la navegacion superior.</p>
             </div>
-            <div className="grid gap-3 p-4 lg:grid-cols-4">
+            <div className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
               {workspaces.map((card) => {
                 const Icon = card.icon;
                 return (

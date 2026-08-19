@@ -1,4 +1,5 @@
 const prisma = require("../../core/prisma");
+const { partyRoleWhere } = require("../parties/roles");
 const inventoryService = require("../inventory/service");
 const accountingService = require("../accounting/service");
 const { randomUUID } = require("node:crypto");
@@ -12,6 +13,19 @@ function appError(statusCode, code, message) {
 
 function round(value) {
   return Math.round((Number(value) || 0) * 100) / 100;
+}
+
+function retentionCodesFromCustomer(customer) {
+  const configured = customer?.metadata?.customer_retentions || customer?.metadata?.withholding_rates || [];
+  return [...new Set(configured.map((row) => String(row?.code || row || "").trim().toUpperCase()).filter(Boolean))];
+}
+
+function assertCustomerRetentionAssignment(customer, requested) {
+  const assigned = retentionCodesFromCustomer(customer);
+  const requestedCodes = (requested || []).map((row) => String(row?.code || row || "").trim().toUpperCase()).filter(Boolean);
+  const invalid = requestedCodes.find((code) => !assigned.includes(code));
+  if (invalid) throw appError(422, "CUSTOMER_RETENTION_NOT_ASSIGNED", `La retencion ${invalid} no esta asignada al cliente en Contabilidad`);
+  return assigned;
 }
 
 function calculateSalesLine(lineData, item) {
@@ -36,7 +50,7 @@ async function getNextInvoiceNumber(tx, tenantId) {
 
 async function createSalesInvoiceTx(tx, tenantId, userId, data) {
     // 1. Validar cliente activo
-    const customer = await tx.party.findFirst({ where: { id: Number(data.customer_id), type: "customer", active: true } });
+    const customer = await tx.party.findFirst({ where: { id: Number(data.customer_id), active: true, AND: [partyRoleWhere("customer")] } });
     if (!customer) throw appError(404, "CUSTOMER_NOT_FOUND", "Cliente no encontrado o inactivo");
     let salesOrder = null;
     if (data.sales_order_id) {
@@ -63,6 +77,7 @@ async function createSalesInvoiceTx(tx, tenantId, userId, data) {
     let taxTotal = 0;
     let discountTotal = 0;
     let totalCostValue = 0;
+    const salesVatMasters = data._vat_masters || await accountingService.getVatMasters(tenantId, "sales");
 
     for (const [index, lineData] of data.lines.entries()) {
       const item = await tx.item.findFirst({ where: { id: Number(lineData.item_id), active: true } });
@@ -113,6 +128,8 @@ async function createSalesInvoiceTx(tx, tenantId, userId, data) {
 
       const calculated = calculateSalesLine(lineData, item);
       const { qty, unitPrice, discount, taxRate } = calculated;
+      const vatMaster = salesVatMasters.find((row) => row.active !== false && Number(row.percent) === taxRate);
+      if (!vatMaster) throw appError(422, "VAT_MASTER_NOT_FOUND", `El IVA ${taxRate}% de la linea ${index + 1} no esta activo en el maestro de ventas`);
       const lineDiscount = calculated.discountAmount;
       const netAmount = calculated.subtotal;
       const lineTax = calculated.taxAmount;
@@ -158,7 +175,8 @@ async function createSalesInvoiceTx(tx, tenantId, userId, data) {
     const retentionCodes = data.retention_codes || [];
 
     // Obtener retenciones del cliente (desde metadata.withholding_rates)
-    const customerRetentions = customer.metadata?.withholding_rates || [];
+    const customerRetentions = customer.metadata?.customer_retentions || customer.metadata?.withholding_rates || [];
+    if (retentionCodes.length > 0) assertCustomerRetentionAssignment(customer, retentionCodes);
     const allRetentions = retentionCodes.length > 0 ? retentionCodes : customerRetentions;
 
     for (const ret of allRetentions) {
@@ -294,16 +312,18 @@ async function createSalesInvoiceTx(tx, tenantId, userId, data) {
 
     // Crédito a IVA por pagar (2408)
     if (taxTotal > 0) {
-      const taxAccount = await tx.account.findFirst({ where: { code: "2408", active: true } });
-      if (!taxAccount) throw appError(404, "VAT_ACCOUNT_NOT_FOUND", "Cuenta de IVA generado 2408 no encontrada");
       const vatByRate = new Map();
       for (const line of invoiceLines.filter((row) => row.tax_amount > 0)) {
-        const current = vatByRate.get(line.tax_rate) || { base: 0, amount: 0 };
+        const master = salesVatMasters.find((row) => row.active !== false && Number(row.percent) === Number(line.tax_rate));
+        const current = vatByRate.get(line.tax_rate) || { base: 0, amount: 0, master };
         current.base = round(current.base + line.subtotal);
         current.amount = round(current.amount + line.tax_amount);
         vatByRate.set(line.tax_rate, current);
       }
-      for (const [rate, vat] of vatByRate) ledgerLines.push({
+      for (const [rate, vat] of vatByRate) {
+        const taxAccount = await tx.account.findFirst({ where: { code: vat.master.account_code, active: true, allows_tx: true } });
+        if (!taxAccount) throw appError(404, "VAT_ACCOUNT_NOT_FOUND", `Cuenta de IVA ${vat.master.account_code} no encontrada o inactiva`);
+        ledgerLines.push({
         account_id: taxAccount.id,
         account_code: taxAccount.code,
         account_name: taxAccount.name,
@@ -311,11 +331,12 @@ async function createSalesInvoiceTx(tx, tenantId, userId, data) {
         credit: vat.amount,
         description: `IVA generado ${rate}% ${number}`,
         tax_type: "iva",
-        tax_code: `IVA-${rate}`,
+        tax_code: vat.master.code,
         tax_base: vat.base,
         tax_rate: rate,
         tax_amount: vat.amount
-      });
+        });
+      }
     }
 
     // Débito a retenciones
@@ -455,13 +476,14 @@ async function createSalesInvoiceTx(tx, tenantId, userId, data) {
 
 async function simulateSalesInvoice(tenantId, data) {
   return prisma.runWithTenant(tenantId, async () => {
-    const customer = await prisma.party.findFirst({ where: { id: Number(data.customer_id), type: "customer", active: true } });
+    const customer = await prisma.party.findFirst({ where: { id: Number(data.customer_id), active: true, AND: [partyRoleWhere("customer")] } });
     if (!customer) throw appError(404, "CUSTOMER_NOT_FOUND", "Cliente no encontrado");
 
     // Simulate line calculations
     let subtotal = 0;
     let taxTotal = 0;
     const simulatedLines = [];
+    const salesVatMasters = await accountingService.getVatMasters(tenantId, "sales");
 
     for (const [index, lineData] of data.lines.entries()) {
       const item = await prisma.item.findFirst({ where: { id: Number(lineData.item_id), active: true } });
@@ -472,6 +494,9 @@ async function simulateSalesInvoice(tenantId, data) {
         : Number(lineData.unit_price);
       const discount = Number(lineData.discount) || 0;
       const taxRate = Number(lineData.tax_rate) >= 0 ? Number(lineData.tax_rate) : Number(item.tax_rate || 0);
+      if (!salesVatMasters.some((row) => row.active !== false && Number(row.percent) === taxRate)) {
+        throw appError(422, "VAT_MASTER_NOT_FOUND", `El IVA ${taxRate}% de la linea ${index + 1} no esta activo en el maestro de ventas`);
+      }
       const lineSubtotal = round(qty * unitPrice);
       const lineDiscount = round(lineSubtotal * (discount / 100));
       const netAmount = round(lineSubtotal - lineDiscount);
@@ -501,7 +526,8 @@ async function simulateSalesInvoice(tenantId, data) {
     const costValue = simulatedLines.reduce((s, l) => s + round(l.qty * 0), 0); // simplified
 
     // Get retention masters for simulation preview
-    const customerRetentions = customer.metadata?.withholding_rates || [];
+    const customerRetentions = customer.metadata?.customer_retentions || customer.metadata?.withholding_rates || [];
+    if ((data.retention_codes || []).length > 0) assertCustomerRetentionAssignment(customer, data.retention_codes);
     const retCodes = data.retention_codes || customerRetentions;
     const retLines = [];
     let retTotal = 0;
@@ -579,13 +605,26 @@ async function getSalesInvoice(tenantId, id) {
     const invoice = await prisma.salesInvoice.findFirst({
       where: { id: Number(id), tenant_id: tenantId },
       include: {
-        customer: { select: { id: true, name: true, legal_name: true, tax_id: true, email: true, phone: true, balance: true, credit_limit: true, metadata: true } },
+        customer: { select: { id: true, name: true, legal_name: true, tax_id: true, email: true, phone: true, receivable_balance: true, credit_limit: true, metadata: true } },
         lines: { orderBy: { line_no: "asc" }, include: { item: { select: { id: true, code: true, name: true, unit: true } }, place: { select: { id: true, code: true, name: true } } } },
         cxc: { include: { lines: { orderBy: { line_no: "asc" } } } }
       }
     });
     if (!invoice) throw appError(404, "INVOICE_NOT_FOUND", "Factura de venta no encontrada");
-    return invoice;
+    const accountingId = invoice.cxc?.accounting_document_id || invoice.accounting_document_id;
+    const [users, accountingDocument] = await Promise.all([
+      invoice.created_by ? prisma.user.findMany({ where: { id: { in: [invoice.created_by, invoice.posted_by, invoice.cancelled_by].filter(Boolean) } }, select: { id: true, name: true, email: true } }) : [],
+      accountingId ? prisma.cntCabdoc.findFirst({ where: { id: accountingId }, include: { lines: { orderBy: { line_no: "asc" } } } }) : null
+    ]);
+    const userById = new Map(users.map((user) => [user.id, user]));
+    return {
+      ...invoice,
+      customer: invoice.customer ? { ...invoice.customer, balance: invoice.customer.receivable_balance } : null,
+      created_by_user: invoice.created_by ? userById.get(invoice.created_by) || null : null,
+      posted_by_user: invoice.posted_by ? userById.get(invoice.posted_by) || null : null,
+      cancelled_by_user: invoice.cancelled_by ? userById.get(invoice.cancelled_by) || null : null,
+      accounting_document: accountingDocument
+    };
   });
 }
 
@@ -806,7 +845,7 @@ async function importSalesInvoices(tenantId, userId, workbookBuffer) {
     const created = [];
     for (const [group, groupRows] of groups) {
       const first = groupRows[0];
-      const customer = await tx.party.findFirst({ where: { type: "customer", tax_id: String(first.cliente_nit).trim(), active: true } });
+      const customer = await tx.party.findFirst({ where: { tax_id: String(first.cliente_nit).trim(), active: true, AND: [partyRoleWhere("customer")] } });
       if (!customer) throw appError(404, "IMPORT_CUSTOMER_NOT_FOUND", `Grupo ${group}: cliente NIT ${first.cliente_nit} no encontrado`);
       const lines = [];
       for (const row of groupRows) {
@@ -845,8 +884,9 @@ async function importSalesInvoices(tenantId, userId, workbookBuffer) {
 }
 
 async function createSalesInvoice(tenantId, userId, data) {
+  const vatMasters = await accountingService.getVatMasters(tenantId, "sales");
   return prisma.runWithTenant(tenantId, () => prisma.$transaction(
-    (tx) => createSalesInvoiceTx(tx, tenantId, userId, data)
+    (tx) => createSalesInvoiceTx(tx, tenantId, userId, { ...data, _vat_masters: vatMasters })
   ));
 }
 
@@ -1007,5 +1047,7 @@ module.exports = {
   getSalesByDate,
   getSalesDetail,
   calculateSalesLine,
-  normalizeImportRow
+  normalizeImportRow,
+  retentionCodesFromCustomer,
+  assertCustomerRetentionAssignment
 };

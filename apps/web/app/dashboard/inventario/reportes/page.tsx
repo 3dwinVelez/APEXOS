@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Search, X } from "lucide-react";
+import { Download, Search, X } from "lucide-react";
 import { InventoryNav } from "@/components/inventory-nav";
 import { api } from "@/lib/api";
+import { downloadExcelWorkbook } from "@/lib/reportExports";
 
 type Item = {
   id: number;
@@ -79,6 +80,8 @@ type TransferDetail = {
   destination?: { name?: string };
   lines?: Array<{ id: number; qty: number; item?: { code?: string; name?: string } }>;
 };
+type Warehouse = { id: number; code: string; name: string };
+type AccountingDetail = { full_number?: string; document_type?: string; posting_date?: string; reference?: string; header_text?: string; created_by_name?: string; lines?: Array<{ id: number; account_code: string; description?: string; debit: number; credit: number; party_tax_id?: string }> };
 
 function money(value: number) {
   return new Intl.NumberFormat("es-CO", {
@@ -133,14 +136,19 @@ export default function ReportesInventarioPage() {
   const [stockDetail, setStockDetail] = useState<CostRow | null>(null);
   const [movementDetail, setMovementDetail] = useState<KardexRow | null>(null);
   const [transferDetail, setTransferDetail] = useState<TransferDetail | null>(null);
+  const [accountingDetail, setAccountingDetail] = useState<AccountingDetail | null>(null);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [warehouseId, setWarehouseId] = useState("");
 
   async function loadBase() {
-    const [itemRows, costRows] = await Promise.all([
-      api<{ data: Item[] }>("/api/v1/inventory/items?limit=200&sort_by=code"),
-      api<CostsResponse>("/api/v1/inventory/costs?limit=200"),
+    const [itemRows, costRows, warehouseRows] = await Promise.all([
+      api<{ data: Item[] }>("/api/v1/inventory/items?all=true&sort_by=code"),
+      api<CostsResponse>("/api/v1/inventory/costs?all=true"),
+      api<Warehouse[]>("/api/v1/inventory/warehouses"),
     ]);
     setItems(itemRows.data || []);
     setCosts(costRows);
+    setWarehouses(warehouseRows || []);
     const firstItem = itemRows.data?.[0];
     if (firstItem)
       setSelectedItemId((current) => current || String(firstItem.id));
@@ -155,6 +163,7 @@ export default function ReportesInventarioPage() {
         const params = new URLSearchParams({ limit: "300" });
         if (fromDate) params.set("from_date", fromDate);
         if (toDate) params.set("to_date", toDate);
+        if (warehouseId) params.set("warehouse_id", warehouseId);
         setKardex(
           await api<KardexResponse>(
             `/api/v1/inventory/kardex/${itemId}?${params.toString()}`,
@@ -168,7 +177,7 @@ export default function ReportesInventarioPage() {
         setLoading(false);
       }
     },
-    [fromDate, toDate],
+    [fromDate, toDate, warehouseId],
   );
 
   useEffect(() => {
@@ -182,6 +191,12 @@ export default function ReportesInventarioPage() {
   useEffect(() => {
     if (selectedItemId) void loadKardex(selectedItemId);
   }, [loadKardex, selectedItemId]);
+
+  useEffect(() => {
+    const params = new URLSearchParams({ all: "true" });
+    if (warehouseId) params.set("warehouse_id", warehouseId);
+    api<CostsResponse>(`/api/v1/inventory/costs?${params}`).then(setCosts).catch((err) => setError(err instanceof Error ? err.message : "No se pudo filtrar por bodega"));
+  }, [warehouseId]);
 
   const filteredCosts = useMemo(() => {
     const text = query.trim().toLowerCase();
@@ -201,6 +216,7 @@ export default function ReportesInventarioPage() {
   async function openMovement(row: KardexRow) {
     setMovementDetail(row);
     setTransferDetail(null);
+    setAccountingDetail(null);
     if (row.document_type === "warehouse_transfer" && row.document_id) {
       try {
         setTransferDetail(
@@ -212,6 +228,26 @@ export default function ReportesInventarioPage() {
         );
       }
     }
+    if (row.accounting_document_id) {
+      try {
+        setAccountingDetail(await api<AccountingDetail>(`/api/v1/accounting/documents/${row.accounting_document_id}`));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "No se pudo cargar el asiento contable");
+      }
+    }
+  }
+
+  function exportKardex() {
+    downloadExcelWorkbook(`kardex-${kardex?.item.code || "producto"}.xls`, [{ name: "Kardex", columns: [
+      { key: "fecha", label: "Fecha" }, { key: "tipo", label: "Tipo" }, { key: "documento", label: "Documento" }, { key: "contabilidad", label: "Documento contable" }, { key: "sku", label: "SKU" }, { key: "producto", label: "Producto" }, { key: "bodega", label: "Bodega" }, { key: "entrada", label: "Entrada" }, { key: "salida", label: "Salida" }, { key: "saldo", label: "Saldo" }, { key: "costo", label: "Costo" }, { key: "valor", label: "Valor" }
+    ], rows: (kardex?.data || []).map((row) => ({ fecha: dateTime(row.created_at), tipo: movementLabel(row.type), documento: row.document_number, contabilidad: row.accounting_document_number, sku: row.item_code, producto: row.item_name, bodega: row.warehouse, entrada: row.in_qty, salida: row.out_qty, saldo: row.balance, costo: row.unit_cost, valor: row.value })) }]);
+  }
+
+  function exportCosts() {
+    const rows = filteredCosts.flatMap((item) => (item.warehouse_rows.length ? item.warehouse_rows : [{ warehouse_code: "--", warehouse_name: "Sin bodega", location_code: "", type: "warehouse", qty: 0 }]).map((warehouse) => ({ sku: item.code, producto: item.name, familia: item.family_name, sociedad: item.society_code, bodega: warehouse.type === "transit" ? "Transito" : `${warehouse.warehouse_code} - ${warehouse.warehouse_name}`, ubicacion: warehouse.location_code, cantidad: warehouse.qty, costo_promedio: item.average_cost, ultimo_costo: item.last_unit_cost, valor: warehouse.qty * item.average_cost })));
+    downloadExcelWorkbook("inventario-costos.xls", [{ name: "Costos por bodega", columns: [
+      { key: "sku", label: "SKU" }, { key: "producto", label: "Producto" }, { key: "familia", label: "Familia" }, { key: "sociedad", label: "Sociedad" }, { key: "bodega", label: "Bodega" }, { key: "ubicacion", label: "Ubicacion" }, { key: "cantidad", label: "Cantidad" }, { key: "costo_promedio", label: "Costo promedio" }, { key: "ultimo_costo", label: "Ultimo costo" }, { key: "valor", label: "Valor" }
+    ], rows }]);
   }
 
   return (
@@ -232,7 +268,7 @@ export default function ReportesInventarioPage() {
       ) : null}
 
       <section className="rounded-md border border-line bg-white p-4">
-        <div className="grid gap-3 lg:grid-cols-[1fr_160px_160px_auto]">
+        <div className="grid gap-3 lg:grid-cols-[1fr_220px_160px_160px_auto]">
           <label className="text-sm">
             Producto
             <select
@@ -248,6 +284,7 @@ export default function ReportesInventarioPage() {
               ))}
             </select>
           </label>
+          <label className="text-sm">Bodega<select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={warehouseId} onChange={(event) => setWarehouseId(event.target.value)}><option value="">Todas las bodegas</option>{warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.code} - {warehouse.name}</option>)}</select></label>
           <label className="text-sm">
             Desde
             <input
@@ -301,11 +338,14 @@ export default function ReportesInventarioPage() {
       </section>
 
       <section className="rounded-md border border-line bg-white">
-        <div className="border-b border-line p-4">
+        <div className="flex items-center justify-between border-b border-line p-4">
+          <div>
           <h2 className="text-base font-semibold">Kardex del producto</h2>
           <p className="text-sm text-neutral-500">
             Entradas suman, salidas restan y el saldo queda acumulado por fecha.
           </p>
+          </div>
+          <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-sm" onClick={exportKardex} type="button"><Download size={15} /> Excel</button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1180px] border-collapse text-sm">
@@ -334,8 +374,8 @@ export default function ReportesInventarioPage() {
                   <td className="px-3 py-2">
                     <button
                       className="font-mono text-xs text-apex hover:underline"
-                      onDoubleClick={() => void openMovement(row)}
-                      title="Doble clic para ver el documento"
+                      onClick={() => void openMovement(row)}
+                      title="Ver detalle del documento"
                       type="button"
                     >
                       {row.document_number ||
@@ -348,13 +388,13 @@ export default function ReportesInventarioPage() {
                   <td className="px-3 py-2">
                     <button
                       className="text-left hover:text-apex hover:underline"
-                      onDoubleClick={() => {
+                      onClick={() => {
                         const cost = costs?.data.find(
                           (item) => item.code === row.item_code,
                         );
                         if (cost) setStockDetail(cost);
                       }}
-                      title="Doble clic para ver existencias por bodega"
+                      title="Ver existencias por bodega"
                       type="button"
                     >
                       <span className="font-mono text-xs">{row.item_code}</span>{" "}
@@ -402,12 +442,12 @@ export default function ReportesInventarioPage() {
               Costo promedio actual, último costo y valor de inventario por SKU.
             </p>
           </div>
-          <input
+          <div className="flex gap-2"><input
             className="h-10 rounded-md border border-line px-3 text-sm md:w-80"
             placeholder="Buscar SKU, familia o producto"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-          />
+          /><button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm" onClick={exportCosts} type="button"><Download size={15} /> Excel</button></div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[980px] border-collapse text-sm">
@@ -448,8 +488,8 @@ export default function ReportesInventarioPage() {
                     <td className="px-3 py-2">
                       <button
                         className="font-mono text-xs text-apex hover:underline"
-                        onDoubleClick={() => setStockDetail(row)}
-                        title="Doble clic para ver existencias por bodega"
+                        onClick={() => setStockDetail(row)}
+                        title="Ver existencias por bodega"
                         type="button"
                       >
                         {row.code}
@@ -620,6 +660,19 @@ export default function ReportesInventarioPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            ) : null}
+            {accountingDetail ? (
+              <div className="border-t border-line p-4">
+                <h3 className="mb-2 font-semibold">Asiento contable {accountingDetail.full_number}</h3>
+                <div className="mb-3 grid gap-2 text-sm md:grid-cols-2">
+                  <p><strong>Clase:</strong> {accountingDetail.document_type || "--"}</p>
+                  <p><strong>Fecha:</strong> {dateTime(accountingDetail.posting_date)}</p>
+                  <p><strong>Referencia:</strong> {accountingDetail.reference || "--"}</p>
+                  <p><strong>Usuario:</strong> {accountingDetail.created_by_name || "--"}</p>
+                  <p className="md:col-span-2"><strong>Texto:</strong> {accountingDetail.header_text || "--"}</p>
+                </div>
+                <table className="w-full text-sm"><thead><tr className="border-b border-line bg-paper text-left"><th className="px-3 py-2">Cuenta</th><th className="px-3 py-2">Descripcion</th><th className="px-3 py-2">NIT</th><th className="px-3 py-2 text-right">Debito</th><th className="px-3 py-2 text-right">Credito</th></tr></thead><tbody>{accountingDetail.lines?.map((line) => <tr className="border-b border-line/70" key={line.id}><td className="px-3 py-2 font-mono">{line.account_code}</td><td className="px-3 py-2">{line.description}</td><td className="px-3 py-2">{line.party_tax_id || "--"}</td><td className="px-3 py-2 text-right">{money(line.debit)}</td><td className="px-3 py-2 text-right">{money(line.credit)}</td></tr>)}</tbody></table>
               </div>
             ) : null}
           </section>

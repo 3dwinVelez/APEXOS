@@ -130,3 +130,18 @@ test("migracion incluye factura, CxC, impuestos, reversion y costo por sociedad"
     "society_code"
   ]) assert.match(migration, new RegExp(token));
 });
+
+test("captura de factura usa maestros, buscadores e impuestos controlados", () => {
+  const page = fs.readFileSync(path.join(__dirname, "../../web/app/dashboard/ventas/facturas/nueva/page.tsx"), "utf8");
+  for (const token of [
+    "Clase de documento",
+    "Codigo, nombre o NIT; Enter para buscar",
+    "/api/v1/accounting/organization-tree",
+    "Cuenta asociada deudores",
+    "SKU; Enter para buscar",
+    "IVA {rate}%",
+    'setActiveTab("retentions")',
+    "Precio IVA incl."
+  ]) assert.ok(page.includes(token), `Falta contrato de UI: ${token}`);
+  assert.ok(!page.includes('className="h-10 rounded-md border border-line px-3 text-sm" value={header.place_id}'), "La cabecera no debe mostrar bodega");
+});

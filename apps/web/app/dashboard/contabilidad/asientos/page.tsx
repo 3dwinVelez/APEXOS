@@ -304,7 +304,7 @@ export default function AsientosContablesPage() {
             {documents.map((doc) => (
               <tr className="border-b border-line/70 last:border-0" key={doc.id}>
                 <td className="px-4 py-3 font-mono text-xs">
-                  <button className="font-mono text-xs text-apex underline-offset-2 hover:underline" onDoubleClick={() => setSelectedDocument(doc)} type="button" title="Doble click para ver el registro contable">{doc.full_number}</button>
+                  <button className="font-mono text-xs text-apex underline-offset-2 hover:underline" onClick={() => setSelectedDocument(doc)} type="button" title="Ver registro contable">{doc.full_number}</button>
                 </td>
                 <td className="px-4 py-3">{new Date(doc.posting_date).toLocaleDateString("es-CO")}</td>
                 <td className="px-4 py-3">{doc.society_code}</td>

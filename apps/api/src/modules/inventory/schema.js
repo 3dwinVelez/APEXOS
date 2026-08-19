@@ -111,4 +111,31 @@ const adjustStockSchema = {
   }
 };
 
-module.exports = { createItemSchema, moveStockSchema, updateItemSchema, adjustStockSchema, familySchema, warehouseSchema };
+const warehouseTransferSchema = {
+  body: {
+    type: "object",
+    required: ["origin_place_id", "destination_place_id", "lines"],
+    properties: {
+      origin_place_id: { type: "integer" },
+      destination_place_id: { type: "integer" },
+      reason: { type: "string" },
+      correlation_id: { type: "string" },
+      idempotency_key: { type: "string" },
+      lines: {
+        type: "array",
+        minItems: 1,
+        items: {
+          type: "object",
+          required: ["item_id", "qty"],
+          properties: {
+            item_id: { type: "integer" },
+            qty: { type: "number", exclusiveMinimum: 0 },
+            lot: { type: "string" }
+          }
+        }
+      }
+    }
+  }
+};
+
+module.exports = { createItemSchema, moveStockSchema, updateItemSchema, adjustStockSchema, familySchema, warehouseSchema, warehouseTransferSchema };

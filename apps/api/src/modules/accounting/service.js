@@ -1,5 +1,12 @@
 const prisma = require("../../core/prisma");
 const { getTenantConfig, invalidateTenantCache } = require("../../core/tenantCache");
+const {
+  OPERATIONAL_PARTY_ROLES,
+  normalizePartyRoles,
+  partyRoleWhere,
+  withPartyRoles,
+  primaryPartyType
+} = require("../parties/roles");
 
 const COMPLEX_TRANSACTION_OPTIONS = { maxWait: 5_000, timeout: 20_000 };
 
@@ -85,13 +92,22 @@ const DEFAULT_ACCOUNTING_DOCUMENT_TYPES = [
   { code: "NCV", description: "Nota credito venta" }
 ].map((row) => ({ ...row, active: true, source: "Sistema" }));
 const DEFAULT_VAT_MASTERS = [
-  { code: "COMPRAS-0", concept: "Compras", percent: 0, account_code: "2408" },
-  { code: "COMPRAS-5", concept: "Compras", percent: 5, account_code: "2408" },
-  { code: "COMPRAS-19", concept: "Compras", percent: 19, account_code: "2408" },
-  { code: "DEVOLUCIONES-0", concept: "Devoluciones", percent: 0, account_code: "2408" },
-  { code: "DEVOLUCIONES-5", concept: "Devoluciones", percent: 5, account_code: "2408" },
-  { code: "DEVOLUCIONES-19", concept: "Devoluciones", percent: 19, account_code: "2408" }
+  { code: "COMPRAS-0", concept: "Compras", percent: 0, account_code: "2408", scope: "purchases" },
+  { code: "COMPRAS-5", concept: "Compras", percent: 5, account_code: "2408", scope: "purchases" },
+  { code: "COMPRAS-19", concept: "Compras", percent: 19, account_code: "2408", scope: "purchases" },
+  { code: "DEVOLUCIONES-0", concept: "Devoluciones", percent: 0, account_code: "2408", scope: "purchases" },
+  { code: "DEVOLUCIONES-5", concept: "Devoluciones", percent: 5, account_code: "2408", scope: "purchases" },
+  { code: "DEVOLUCIONES-19", concept: "Devoluciones", percent: 19, account_code: "2408", scope: "purchases" },
+  { code: "VENTAS-0", concept: "Ventas", percent: 0, account_code: "2408", scope: "sales" },
+  { code: "VENTAS-5", concept: "Ventas", percent: 5, account_code: "2408", scope: "sales" },
+  { code: "VENTAS-19", concept: "Ventas", percent: 19, account_code: "2408", scope: "sales" }
 ].map((row) => ({ ...row, active: true, source: "Sistema" }));
+const RETENTION_TYPES = ["retefuente", "reteiva", "reteica"];
+const DEFAULT_PURCHASE_RETENTIONS = [
+  { code: "RETEFUENTE-COMPRAS", retention_type: "retefuente", concept: "Retencion en la fuente por compras", percent: 2.5, minimum_base: 0, account_code: "2365" },
+  { code: "RETEIVA-COMPRAS", retention_type: "reteiva", concept: "Retencion de IVA en compras", percent: 15, minimum_base: 0, account_code: "2367" },
+  { code: "RETEICA-COMPRAS", retention_type: "reteica", concept: "Retencion de ICA en compras", percent: 0.966, minimum_base: 0, account_code: "2368" }
+].map((row) => ({ ...row, description: row.concept, scope: "purchases", base_type: row.retention_type === "reteiva" ? "iva" : "subtotal", active: true, source: "Sistema" }));
 
 function round(value) {
   return Math.round((Number(value) || 0) * 100) / 100;
@@ -396,9 +412,11 @@ async function saveAccountingNumbering(tenantId, data) {
   return getAccountingDocumentMasters(tenantId);
 }
 
-async function getVatMasters(tenantId) {
+async function getVatMasters(tenantId, scope = "purchases") {
   const accounting = await getAccountingConfig(tenantId);
+  const normalizedScope = scope === "sales" ? "sales" : "purchases";
   return mergeByCode(DEFAULT_VAT_MASTERS, accounting.vat_masters, "code")
+    .filter((row) => (row.scope || "purchases") === normalizedScope)
     .map((row) => ({ ...row, code: normalizeCode(row.code).toUpperCase(), percent: Number(row.percent) || 0, account_code: normalizeCode(row.account_code || "2408") }));
 }
 
@@ -407,6 +425,7 @@ async function saveVatMaster(tenantId, data) {
   const concept = String(data.concept || "").trim();
   const percent = Number(data.percent);
   const accountCode = normalizeCode(data.account_code);
+  const scope = data.scope === "sales" ? "sales" : "purchases";
   if (!code || !concept || Number.isNaN(percent) || percent < 0 || !accountCode) throw appError(400, "INVALID_VAT_MASTER", "Codigo, concepto, porcentaje y cuenta contable de IVA son obligatorios");
   await prisma.runWithTenant(tenantId, async () => {
     const account = await prisma.account.findFirst({ where: { code: accountCode, active: true, allows_tx: true } });
@@ -419,27 +438,43 @@ async function saveVatMaster(tenantId, data) {
     concept,
     percent,
     account_code: accountCode,
+    scope,
     active: data.active !== false,
     source: "Empresa"
   }];
   await updateAccountingConfig(tenantId, { vat_masters: nextRows });
-  return getVatMasters(tenantId);
+  return getVatMasters(tenantId, scope);
 }
 
-async function deleteVatMaster(tenantId, codeInput) {
+async function deleteVatMaster(tenantId, codeInput, scopeInput = "purchases") {
   const code = normalizeCode(codeInput).toUpperCase();
+  const scope = scopeInput === "sales" ? "sales" : "purchases";
   if (!code) throw appError(400, "INVALID_VAT_MASTER", "Codigo de IVA obligatorio");
-  const references = await prisma.runWithTenant(tenantId, () => prisma.cxpCuedoc.count({ where: { vat_code: code } }));
-  if (references > 0) throw appError(409, "VAT_MASTER_HAS_RECORDS", "No se puede borrar el IVA porque ya tiene documentos CXP asociados");
+  const references = await prisma.runWithTenant(tenantId, async () => {
+    const [purchaseDocuments, salesDocuments] = await Promise.all([
+      prisma.cxpCuedoc.count({ where: { vat_code: code } }),
+      prisma.cxcCuedoc.count({ where: { tax_code: code } })
+    ]);
+    return purchaseDocuments + salesDocuments;
+  });
   const accounting = await getAccountingConfig(tenantId);
   const existing = Array.isArray(accounting.vat_masters) ? accounting.vat_masters : [];
-  const nextRows = existing.filter((item) => normalizeCode(item.code).toUpperCase() !== code);
-  if (nextRows.length === existing.length && DEFAULT_VAT_MASTERS.some((item) => item.code === code)) {
-    await updateAccountingConfig(tenantId, { vat_masters: [...existing, { code, active: false }] });
+  const configured = existing.find((item) => normalizeCode(item.code).toUpperCase() === code && (item.scope || "purchases") === scope);
+  const defaultMaster = DEFAULT_VAT_MASTERS.find((item) => item.code === code && (item.scope || "purchases") === scope);
+  if (!configured && !defaultMaster) throw appError(404, "VAT_MASTER_NOT_FOUND", "Codigo de IVA no encontrado");
+  if (references > 0) {
+    const base = configured || defaultMaster;
+    const nextRows = [...existing.filter((item) => !(normalizeCode(item.code).toUpperCase() === code && (item.scope || "purchases") === scope)), { ...base, code, scope, active: false, source: "Empresa" }];
+    await updateAccountingConfig(tenantId, { vat_masters: nextRows });
+    return getVatMasters(tenantId, scope);
+  }
+  const nextRows = existing.filter((item) => !(normalizeCode(item.code).toUpperCase() === code && (item.scope || "purchases") === scope));
+  if (defaultMaster) {
+    await updateAccountingConfig(tenantId, { vat_masters: [...nextRows, { ...defaultMaster, code, scope, active: false, source: "Empresa" }] });
   } else {
     await updateAccountingConfig(tenantId, { vat_masters: nextRows });
   }
-  return getVatMasters(tenantId);
+  return getVatMasters(tenantId, scope);
 }
 
 async function listPayableAccounts(tenantId, query = {}) {
@@ -747,6 +782,17 @@ async function listAccountingDocuments(tenantId, query = {}) {
   });
 }
 
+async function getAccountingDocument(tenantId, documentId) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const row = await prisma.cntCabdoc.findFirst({
+      where: { id: Number(documentId) },
+      include: { lines: { orderBy: { line_no: "asc" } } }
+    });
+    if (!row) throw appError(404, "ACCOUNTING_DOCUMENT_NOT_FOUND", "Documento contable no encontrado");
+    return (await enrichAccountingDocuments([row]))[0];
+  });
+}
+
 async function enrichAccountingDocuments(rows) {
   const userIds = [...new Set(rows.map((row) => row.created_by).filter(Boolean))];
   const users = userIds.length ? await prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true, email: true } }) : [];
@@ -1038,10 +1084,11 @@ async function preparePayableDocument(tx, tenantId, data, options = {}) {
 
   await assertPeriodOpen(tenantId, postingDate);
   const tree = await getOrganizationTree(tenantId);
-  const vatMasters = activeRows(await getVatMasters(tenantId));
+  const vatMasters = activeRows(await getVatMasters(tenantId, "purchases"));
+  const retentionMasters = activeRows(await getRetentionMasters(tenantId, "purchases"));
   const period = periodFromDate(postingDate);
 
-  const supplier = await tx.party.findFirst({ where: { id: Number(data.supplier_id), type: "supplier", active: true } });
+  const supplier = await tx.party.findFirst({ where: { id: Number(data.supplier_id), active: true, AND: [partyRoleWhere("supplier")] } });
   if (!supplier) throw appError(404, "SUPPLIER_NOT_FOUND", "Proveedor no encontrado o inactivo");
   const duplicate = await tx.cxpCabdoc.findFirst({
     where: {
@@ -1092,6 +1139,11 @@ async function preparePayableDocument(tx, tenantId, data, options = {}) {
       vat_account_code: taxAccountCode || null,
       vat_percent: Number(vat.percent),
       vat_amount: vatAmount,
+      tax_type: "iva",
+      tax_code: vat.code,
+      tax_base: amount,
+      tax_rate: Number(vat.percent),
+      tax_amount: vatAmount,
       description,
       amount,
       total: round(amount + vatAmount)
@@ -1111,12 +1163,62 @@ async function preparePayableDocument(tx, tenantId, data, options = {}) {
         account_name: taxAccount.name,
         debit: movement === "debit" ? vatAmount : 0,
         credit: movement === "credit" ? vatAmount : 0,
-        description: `IVA ${vat.percent}% ${vat.concept}`
+        description: `IVA ${vat.percent}% ${vat.concept}`,
+        tax_type: "iva",
+        tax_code: vat.code,
+        tax_base: amount,
+        tax_rate: Number(vat.percent),
+        tax_amount: vatAmount
       });
     }
   }
 
-  const total = round(subtotal + taxTotal);
+  const retentionRows = normalizePayableRetentions(data.retentions, retentionMasters, subtotal, taxTotal);
+  for (const retention of retentionRows) {
+    const account = await tx.account.findFirst({ where: { code: retention.account_code, active: true, allows_tx: true } });
+    if (!account) throw appError(404, "RETENTION_ACCOUNT_NOT_FOUND", `Cuenta de retencion ${retention.account_code} no encontrada o inactiva`);
+    const movement = documentKind === "credit_note" ? "debit" : "credit";
+    const line = {
+      account_id: account.id,
+      account_code: account.code,
+      account_name: account.name,
+      debit: movement === "debit" ? retention.amount : 0,
+      credit: movement === "credit" ? retention.amount : 0,
+      description: `${retention.concept} (${retention.code})`,
+      tax_type: retention.type,
+      tax_code: retention.code,
+      tax_base: retention.base,
+      tax_rate: retention.percent,
+      tax_amount: retention.amount
+    };
+    ledgerLines.push(line);
+    preparedLines.push({
+      line_no: preparedLines.length + 1,
+      account_id: account.id,
+      account_code: account.code,
+      branch_code: preparedLines[0].branch_code,
+      cost_center_code: preparedLines[0].cost_center_code,
+      movement,
+      vat_code: null,
+      vat_concept: null,
+      vat_account_code: null,
+      vat_percent: 0,
+      vat_amount: 0,
+      tax_type: retention.type,
+      tax_code: retention.code,
+      tax_base: retention.base,
+      tax_rate: retention.percent,
+      tax_amount: retention.amount,
+      description: line.description,
+      amount: retention.base,
+      total: retention.amount
+    });
+  }
+
+  const grossTotal = round(subtotal + taxTotal);
+  const retentionTotal = round(retentionRows.reduce((sum, row) => sum + row.amount, 0));
+  const total = round(grossTotal - retentionTotal);
+  if (total < 0) throw appError(422, "RETENTION_EXCEEDS_DOCUMENT", "Las retenciones no pueden superar el total bruto del documento");
   const debitBeforeAssociated = round(ledgerLines.reduce((sum, line) => sum + line.debit, 0));
   const creditBeforeAssociated = round(ledgerLines.reduce((sum, line) => sum + line.credit, 0));
   const difference = round(debitBeforeAssociated - creditBeforeAssociated);
@@ -1146,10 +1248,25 @@ async function preparePayableDocument(tx, tenantId, data, options = {}) {
     documentNumber = Number(numbering.next_number) || 1;
     const prefix = normalizeCode(numbering.prefix || documentClass);
     number = `${prefix}-${String(documentNumber).padStart(6, "0")}`;
-    return { config, accounting, numbering, documentNumber, documentClass, documentKind, number, supplierReference, referencedInvoice, postingDate, dueTerm, dueDate, headerText, societyCode, supplier, associatedAccount, preparedLines, ledgerLines, subtotal, taxTotal, total, totalDebit, totalCredit, period };
+    return { config, accounting, numbering, documentNumber, documentClass, documentKind, number, supplierReference, referencedInvoice, postingDate, dueTerm, dueDate, headerText, societyCode, supplier, associatedAccount, preparedLines, ledgerLines, subtotal, taxTotal, grossTotal, retentionTotal, retentionRows, total, totalDebit, totalCredit, period };
   }
 
-  return { documentClass, documentKind, number, supplierReference, referencedInvoice, postingDate, dueTerm, dueDate, headerText, societyCode, supplier, associatedAccount, preparedLines, ledgerLines, subtotal, taxTotal, total, totalDebit, totalCredit, period };
+  return { documentClass, documentKind, number, supplierReference, referencedInvoice, postingDate, dueTerm, dueDate, headerText, societyCode, supplier, associatedAccount, preparedLines, ledgerLines, subtotal, taxTotal, grossTotal, retentionTotal, retentionRows, total, totalDebit, totalCredit, period };
+}
+
+function normalizePayableRetentions(input, masters, subtotal, taxTotal) {
+  if (!Array.isArray(input)) return [];
+  return input.map((row) => {
+    const code = normalizeCode(row.code).toUpperCase();
+    const master = masters.find((item) => item.code === code && item.active !== false);
+    if (!master) throw appError(400, "RETENTION_MASTER_NOT_FOUND", `La retencion ${code} no existe o esta inactiva en el maestro de compras`);
+    const defaultBase = master.type === "reteiva" ? taxTotal : subtotal;
+    const base = round(row.base === undefined ? defaultBase : Number(row.base));
+    const calculated = base >= Number(master.minimum_base || 0) ? round(base * Number(master.percent || 0) / 100) : 0;
+    const amount = round(row.amount === undefined ? calculated : Number(row.amount));
+    if (base < 0 || amount < 0) throw appError(400, "INVALID_RETENTION_VALUE", `Base e importe de ${code} deben ser mayores o iguales a cero`);
+    return { code, type: master.type, concept: master.concept || master.description, account_code: master.account_code, percent: Number(master.percent), minimum_base: Number(master.minimum_base || 0), base, amount };
+  }).filter((row) => row.amount > 0);
 }
 
 async function simulatePayableDocument(tenantId, data) {
@@ -1168,6 +1285,8 @@ async function simulatePayableDocument(tenantId, data) {
       associated_account_code: preview.associatedAccount.code,
       subtotal: preview.subtotal,
       tax_total: preview.taxTotal,
+      gross_total: preview.grossTotal,
+      retention_total: preview.retentionTotal,
       total: preview.total,
       referenced_invoice: preview.referencedInvoice ? {
         id: preview.referencedInvoice.id,
@@ -1203,6 +1322,8 @@ async function createPayableDocumentTx(tx, tenantId, userId, data) {
         associated_account_code: preview.associatedAccount.code,
         subtotal: preview.subtotal,
         tax_total: preview.taxTotal,
+        gross_total: preview.grossTotal,
+        retention_total: preview.retentionTotal,
         total: preview.total,
         balance: preview.total,
         applied_total: 0,
@@ -1257,6 +1378,11 @@ async function createPayableDocumentTx(tx, tenantId, userId, data) {
           debit: line.debit,
           credit: line.credit,
           description: line.description,
+          tax_type: line.tax_type || null,
+          tax_code: line.tax_code || null,
+          tax_base: line.tax_base || 0,
+          tax_rate: line.tax_rate || 0,
+          tax_amount: line.tax_amount || 0,
           ledger_entry_id: ledgerEntry.id
         }
       });
@@ -1301,7 +1427,7 @@ async function createPayableDocumentTx(tx, tenantId, userId, data) {
         status: cxpBalance <= 0.01 ? "cleared" : "open"
       }
     });
-    await tx.party.update({ where: { id: preview.supplier.id }, data: { balance: { increment: preview.documentKind === "credit_note" ? -preview.total : preview.total } } });
+    await tx.party.update({ where: { id: preview.supplier.id }, data: { payable_balance: { increment: preview.documentKind === "credit_note" ? -preview.total : preview.total } } });
     const customNumbering = Array.isArray(preview.accounting.accounting_numbering) ? preview.accounting.accounting_numbering : [];
     const nextNumbering = [...customNumbering.filter((item) => normalizeAccountingDocumentType(item.document_type) !== preview.documentClass), {
       ...preview.numbering,
@@ -1619,18 +1745,60 @@ async function updatePeriod(tenantId, userId, period, data) {
 
 async function listThirdParties(tenantId, query = {}) {
   return prisma.runWithTenant(tenantId, async () => {
-    const where = {};
-    if (query.type) where.type = query.type;
-    if (query.active !== undefined) where.active = String(query.active) !== "false";
+    const filters = [];
+    if (query.type) filters.push(partyRoleWhere(query.type));
     if (query.search) {
-      where.OR = [
+      filters.push({ OR: [
         { name: { contains: String(query.search), mode: "insensitive" } },
         { legal_name: { contains: String(query.search), mode: "insensitive" } },
         { tax_id: { contains: String(query.search), mode: "insensitive" } }
-      ];
+      ] });
     }
-    return prisma.party.findMany({ where, orderBy: { updated_at: "desc" }, take: Number(query.limit) || 100 });
+    const where = {
+      ...(query.active !== undefined ? { active: String(query.active) !== "false" } : {}),
+      ...(filters.length ? { AND: filters } : {})
+    };
+    const parties = await prisma.party.findMany({ where, orderBy: { updated_at: "desc" }, take: Number(query.limit) || 100 });
+    return parties.map((party) => ({ ...party, roles: normalizePartyRoles(party) }));
   });
+}
+
+function normalizeRetentionCodes(values) {
+  return [...new Set((Array.isArray(values) ? values : [])
+    .map((value) => normalizeCode(typeof value === "object" ? value?.code : value).toUpperCase())
+    .filter(Boolean))];
+}
+
+function assertRetentionCodesInMaster(codes, masters, label) {
+  const available = new Set(activeRows(masters).map((row) => normalizeCode(row.code).toUpperCase()));
+  const invalid = codes.find((code) => !available.has(code));
+  if (invalid) throw appError(400, "RETENTION_MASTER_NOT_FOUND", `La retencion ${invalid} no existe o esta inactiva en el maestro de ${label}`);
+}
+
+async function validateThirdPartyAccountingSelections(tenantId, roles, data) {
+  const receivableAccountCode = normalizeCode(data.receivable_account_code || data.metadata?.receivable_account_code || "");
+  const payableAccountCode = normalizeCode(data.payable_account_code || data.metadata?.payable_account_code || "");
+  const salesRetentionCodes = normalizeRetentionCodes(data.withholding_rates || data.customer_retentions || data.metadata?.customer_retentions || data.metadata?.withholding_rates);
+  const purchaseRetentionCodes = normalizeRetentionCodes(data.supplier_retention_codes || data.metadata?.supplier_retention_codes || data.metadata?.retention_codes);
+  const [salesRetentions, purchaseRetentions] = await Promise.all([
+    getRetentionMasters(tenantId, "sales"),
+    getRetentionMasters(tenantId, "purchases")
+  ]);
+
+  await prisma.runWithTenant(tenantId, async () => {
+    if (roles.includes("customer")) {
+      const account = await prisma.account.findFirst({ where: { code: receivableAccountCode, active: true, allows_tx: true } });
+      if (!account || !isReceivableAccount(account)) throw appError(400, "INVALID_CXC_ACCOUNT", "La cuenta asociada CxC debe existir, estar activa y corresponder a deudores en el PUCC");
+      assertRetentionCodesInMaster(salesRetentionCodes, salesRetentions, "retenciones de venta");
+    }
+    if (roles.includes("supplier")) {
+      const account = await prisma.account.findFirst({ where: { code: payableAccountCode, active: true, allows_tx: true } });
+      if (!account || !isPayableAccount(account)) throw appError(400, "INVALID_CXP_ACCOUNT", "La cuenta asociada CxP debe existir, estar activa y corresponder a proveedores en el PUCC");
+      assertRetentionCodesInMaster(purchaseRetentionCodes, purchaseRetentions, "retenciones de compra");
+    }
+  });
+
+  return { receivableAccountCode, payableAccountCode, salesRetentionCodes, purchaseRetentionCodes };
 }
 
 async function saveThirdParty(tenantId, data, id = null) {
@@ -1638,12 +1806,15 @@ async function saveThirdParty(tenantId, data, id = null) {
   const naturalName = personType === "natural" ? fullNaturalName(data) : "";
   const name = String(naturalName || data.name || data.legal_name || "").trim();
   if (!name) throw appError(400, "REQUIRED_NAME", "Nombre o razon social es obligatorio");
-  if (!["customer", "supplier", "employee"].includes(data.type || "customer")) {
+  const requestedRoles = [...new Set((Array.isArray(data.roles) ? data.roles : [data.type || "customer"])
+    .map((role) => String(role).trim().toLowerCase()).filter(Boolean))];
+  if (!requestedRoles.length || requestedRoles.some((role) => !OPERATIONAL_PARTY_ROLES.includes(role))) {
     throw appError(400, "INVALID_THIRD_PARTY_TYPE", "Tipo de tercero invalido. Usa cliente, proveedor o empleado");
   }
   if (!isValidEmail(data.email)) throw appError(400, "INVALID_EMAIL", "El correo ingresado no tiene un formato valido");
   const taxId = data.tax_id ? String(data.tax_id).replace(/\s/g, "") : null;
   const masterMatch = await validateThirdPartyMasters(tenantId, data);
+  const accountingSelections = await validateThirdPartyAccountingSelections(tenantId, requestedRoles, data);
   const verificationDigit = taxId ? calculateVerificationDigit(taxId) : null;
   const metadata = {
     ...(data.metadata || {}),
@@ -1657,9 +1828,12 @@ async function saveThirdParty(tenantId, data, id = null) {
     tax_responsibilities: data.tax_responsibilities || data.metadata?.tax_responsibilities || [],
     dane_code: masterMatch.location?.dane_code || data.dane_code || data.metadata?.dane_code || null,
     department: masterMatch.location?.department || data.department || data.metadata?.department || null,
-    receivable_account_code: normalizeCode(data.receivable_account_code || data.metadata?.receivable_account_code || ""),
-    withholding_rates: Array.isArray(data.withholding_rates) ? data.withholding_rates : (data.metadata?.withholding_rates || []),
-    role_flags: data.role_flags || data.metadata?.role_flags || {},
+    receivable_account_code: accountingSelections.receivableAccountCode,
+    withholding_rates: accountingSelections.salesRetentionCodes.map((code) => ({ code })),
+    customer_retentions: accountingSelections.salesRetentionCodes.map((code) => ({ code })),
+    role_flags: withPartyRoles(data.metadata, requestedRoles, { replace: true }).role_flags,
+    payable_account_code: accountingSelections.payableAccountCode,
+    supplier_retention_codes: accountingSelections.purchaseRetentionCodes,
     dian: {
       cufe: null,
       cune: null,
@@ -1672,7 +1846,7 @@ async function saveThirdParty(tenantId, data, id = null) {
     }
   };
   const payload = {
-    type: data.type || "customer",
+    type: primaryPartyType(requestedRoles, data.type || "customer"),
     name,
     legal_name: personType === "natural" ? naturalName : data.legal_name || name,
     tax_id: taxId,
@@ -1702,51 +1876,6 @@ async function saveThirdParty(tenantId, data, id = null) {
   });
 }
 
-async function registerPayment(tenantId, userId, data) {
-  const { transaction_id = null, party_id = null, type, method, amount, date = new Date(), reference = null, notes = null } = data;
-  if (!amount || amount <= 0) throw appError(400, "INVALID_AMOUNT", "El monto debe ser mayor a 0");
-  if (!["income", "expense"].includes(type)) throw appError(400, "INVALID_TYPE", "type debe ser income o expense");
-  const validMethods = ["cash", "transfer", "card", "check", "other"];
-  if (!validMethods.includes(method)) throw appError(400, "INVALID_METHOD", `Metodo invalido. Validos: ${validMethods.join(", ")}`);
-
-  await assertPeriodOpen(tenantId, date);
-  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
-    if (transaction_id) {
-      const transaction = await tx.transaction.findFirst({ where: { id: transaction_id } });
-      if (!transaction) throw appError(404, "TRANSACTION_NOT_FOUND", "Documento no encontrado");
-      if (amount > transaction.balance) {
-        throw appError(422, "EXCEEDS_BALANCE", `El pago supera el saldo pendiente (saldo: ${transaction.balance})`);
-      }
-      const newBalance = Math.round((transaction.balance - amount) * 100) / 100;
-      await tx.transaction.update({
-        where: { id: transaction.id },
-        data: { paid: { increment: amount }, balance: newBalance, status: newBalance <= 0.01 ? "paid" : transaction.status }
-      });
-    }
-
-    if (party_id) {
-      const party = await tx.party.findFirst({ where: { id: party_id, active: true } });
-      if (!party) throw appError(404, "PARTY_NOT_FOUND", "Tercero no encontrado");
-      await tx.party.update({ where: { id: party_id }, data: { balance: { decrement: amount } } });
-    }
-
-    const payment = await tx.payment.create({
-      data: { transaction_id, party_id, type, method, amount, date: new Date(date), reference, notes, created_by: userId }
-    });
-
-    await journalEntryTx(tx, {
-      description: `Pago ${payment.id}`,
-      date,
-      transaction_id: transaction_id || null,
-      entries: type === "income"
-        ? [{ account: "1110", debit: amount, credit: 0 }, { account: "1305", debit: 0, credit: amount }]
-        : [{ account: "2205", debit: amount, credit: 0 }, { account: "1110", debit: 0, credit: amount }]
-    });
-
-    return payment;
-  }));
-}
-
 async function createGoodsReceiptDocumentTx(tx, tenantId, userId, data) {
   const postingDate = data.posting_date instanceof Date ? data.posting_date : new Date(data.posting_date || Date.now());
   const tenant = await tx.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
@@ -1766,12 +1895,16 @@ async function createGoodsReceiptDocumentTx(tx, tenantId, userId, data) {
     document_type: documentType, document_number: documentNumber, full_number: fullNumber,
     posting_date: postingDate, reference: String(data.reference || "").trim() || null,
     header_text: String(data.header_text || "Entrada de mercancia"), society_code: normalizeCode(data.society_code),
-    total_debit: total, total_credit: total, created_by: userId || null
+    total_debit: total, total_credit: total, created_by: userId || null,
+    is_reversal: data.is_reversal === true,
+    referenced_document_id: data.referenced_document_id || null
   } });
   let lineNo = 1;
   for (const source of lines) {
     for (const movement of ["debit", "credit"]) {
-      const accountCode = normalizeCode(movement === "debit" ? source.inventory_account_code : source.gr_ir_account_code);
+      const debitAccount = data.is_reversal === true ? source.gr_ir_account_code : source.inventory_account_code;
+      const creditAccount = data.is_reversal === true ? source.inventory_account_code : source.gr_ir_account_code;
+      const accountCode = normalizeCode(movement === "debit" ? debitAccount : creditAccount);
       const account = await tx.account.findFirst({ where: { code: accountCode, active: true, allows_tx: true } });
       if (!account) throw appError(422, "RECEIPT_ACCOUNT_NOT_FOUND", `La cuenta ${accountCode} no existe, esta inactiva o no permite movimientos`);
       const amount = round(source.amount);
@@ -1788,6 +1921,56 @@ async function createGoodsReceiptDocumentTx(tx, tenantId, userId, data) {
         description: String(source.description || data.header_text), ledger_entry_id: ledger.id
       } });
     }
+  }
+  const customNumbering = Array.isArray(accounting.accounting_numbering) ? accounting.accounting_numbering : [];
+  const nextNumbering = [...customNumbering.filter((row) => normalizeAccountingDocumentType(row.document_type) !== documentType), { ...numbering, document_type: documentType, prefix, next_number: documentNumber + 1, active: true, source: numbering.source || "Sistema" }];
+  await tx.tenant.update({ where: { id: tenantId }, data: { config: { ...config, accounting: { ...accounting, accounting_numbering: nextNumbering } } } });
+  return tx.cntCabdoc.findUnique({ where: { id: cabdoc.id }, include: { lines: { orderBy: { line_no: "asc" } } } });
+}
+
+async function createInitialInventoryDocumentTx(tx, tenantId, userId, data) {
+  const postingDate = data.posting_date instanceof Date ? data.posting_date : new Date(data.posting_date);
+  const documentType = "AJ";
+  const bridgeCode = "99999999";
+  const tenant = await tx.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
+  const config = tenant?.config && typeof tenant.config === "object" ? tenant.config : {};
+  const accounting = config.accounting && typeof config.accounting === "object" ? config.accounting : {};
+  const documentTypes = mergeByCode(DEFAULT_ACCOUNTING_DOCUMENT_TYPES, accounting.accounting_document_types, "code").map((row) => ({ ...row, code: normalizeAccountingDocumentType(row.code) }));
+  const numbering = mergeNumbering(documentTypes, accounting.accounting_numbering).find((row) => row.document_type === documentType && row.active !== false);
+  if (!numbering) throw appError(400, "INITIAL_LOAD_NUMBERING_REQUIRED", "La clase AJ no tiene numeracion contable activa");
+  let bridgeAccount = await tx.account.findFirst({ where: { code: bridgeCode, __includeInactive: true } });
+  if (!bridgeAccount) bridgeAccount = await tx.account.create({ data: { code: bridgeCode, name: "Cuenta puente cargue inicial inventario", type: "equity", allows_tx: true, active: true } });
+  if (!bridgeAccount.active || !bridgeAccount.allows_tx) throw appError(422, "INITIAL_LOAD_BRIDGE_ACCOUNT_INACTIVE", `La cuenta puente ${bridgeCode} debe estar activa y permitir movimientos`);
+  let internalParty = await tx.party.findFirst({ where: { type: "internal", metadata: { path: ["system_code"], equals: "INVENTORY_INITIAL_LOAD" }, __includeInactive: true } });
+  if (!internalParty) internalParty = await tx.party.create({ data: { type: "internal", name: "Cargue inicial de inventario", active: true, metadata: { system_code: "INVENTORY_INITIAL_LOAD", hidden_from_operational_masters: true } } });
+  const grouped = new Map();
+  for (const line of data.lines || []) {
+    const code = normalizeCode(line.inventory_account_code);
+    const amount = round(line.amount);
+    if (!code || amount <= 0) throw appError(422, "INVALID_INITIAL_LOAD_ACCOUNTING_LINE", "Cada posicion requiere cuenta de inventario y valor positivo");
+    const branchCode = normalizeCode(line.branch_code);
+    const costCenterCode = normalizeCode(line.cost_center_code);
+    const groupKey = `${code}:${branchCode}:${costCenterCode}`;
+    const current = grouped.get(groupKey) || { account_code: code, branch_code: branchCode, cost_center_code: costCenterCode, amount: 0, descriptions: [] };
+    current.amount = round(current.amount + amount);
+    current.descriptions.push(line.description);
+    grouped.set(groupKey, current);
+  }
+  const total = round([...grouped.values()].reduce((sum, row) => sum + row.amount, 0));
+  if (total <= 0) throw appError(422, "EMPTY_INITIAL_LOAD_ACCOUNTING", "El cargue inicial no tiene valor para contabilizar");
+  const documentNumber = Number(numbering.next_number) || 1;
+  const prefix = normalizeCode(numbering.prefix || documentType);
+  const fullNumber = `${prefix}-${String(documentNumber).padStart(6, "0")}`;
+  const cabdoc = await tx.cntCabdoc.create({ data: { document_type: documentType, document_number: documentNumber, full_number: fullNumber, posting_date: postingDate, reference: data.reference, header_text: "Cargue inicial de inventario", society_code: normalizeCode(data.society_code), total_debit: total, total_credit: total, created_by: userId || null } });
+  let lineNo = 1;
+  for (const row of grouped.values()) {
+    const account = await tx.account.findFirst({ where: { code: row.account_code, active: true, allows_tx: true } });
+    if (!account) throw appError(422, "INITIAL_LOAD_INVENTORY_ACCOUNT_NOT_FOUND", `La cuenta de inventario ${row.account_code} no existe, esta inactiva o no permite movimientos`);
+    const description = row.descriptions.slice(0, 3).join(" / ");
+    const ledger = await tx.ledgerEntry.create({ data: { account_id: account.id, date: postingDate, debit: row.amount, credit: 0, balance: 0, description, period: periodFromDate(postingDate) } });
+    await tx.cntCuedoc.create({ data: { cabdoc_id: cabdoc.id, line_no: lineNo++, account_id: account.id, account_code: account.code, branch_code: row.branch_code, cost_center_code: row.cost_center_code, party_id: internalParty.id, movement: "debit", debit: row.amount, credit: 0, description, ledger_entry_id: ledger.id } });
+    const bridgeLedger = await tx.ledgerEntry.create({ data: { account_id: bridgeAccount.id, date: postingDate, debit: 0, credit: row.amount, balance: 0, description: `Contrapartida cargue inicial ${fullNumber}`, period: periodFromDate(postingDate) } });
+    await tx.cntCuedoc.create({ data: { cabdoc_id: cabdoc.id, line_no: lineNo++, account_id: bridgeAccount.id, account_code: bridgeAccount.code, branch_code: row.branch_code, cost_center_code: row.cost_center_code, party_id: internalParty.id, movement: "credit", debit: 0, credit: row.amount, description: `Contrapartida cargue inicial ${fullNumber}`, ledger_entry_id: bridgeLedger.id } });
   }
   const customNumbering = Array.isArray(accounting.accounting_numbering) ? accounting.accounting_numbering : [];
   const nextNumbering = [...customNumbering.filter((row) => normalizeAccountingDocumentType(row.document_type) !== documentType), { ...numbering, document_type: documentType, prefix, next_number: documentNumber + 1, active: true, source: numbering.source || "Sistema" }];
@@ -1826,8 +2009,10 @@ module.exports = {
   deleteVatMaster,
   listPayableAccounts,
   listAccountingDocuments,
+  getAccountingDocument,
   createAccountingDocument,
   createGoodsReceiptDocumentTx,
+  createInitialInventoryDocumentTx,
   listPayableDocuments,
   listOpenPayableInvoices,
   listSupplierPayableDocuments,
@@ -1838,12 +2023,16 @@ module.exports = {
   applyPayableCreditNote,
   listThirdParties,
   saveThirdParty,
-  registerPayment,
   // Pure helpers (exported for unit tests)
   round,
   assertPaymentWithinBalance,
   periodBounds,
   periodFromDate,
+  isPayableAccount,
+  isReceivableAccount,
+  normalizeRetentionCodes,
+  normalizePayableRetentions,
+  assertRetentionCodesInMaster,
   // CxC (Cuentas por Cobrar)
   prepareReceivableDocument,
   simulateReceivableDocument,
@@ -1857,7 +2046,10 @@ module.exports = {
   getAgingReceivablesReport,
   initializeRetentionMasters,
   getRetentionMasters,
-  saveRetentionMaster
+  saveRetentionMaster,
+  deleteRetentionMaster,
+  getSupplierRetentions,
+  saveSupplierRetentions
 };
 
 // ============================================================
@@ -1888,7 +2080,7 @@ async function prepareReceivableDocument(tx, tenantId, data, options = {}) {
   const tree = await getOrganizationTree(tenantId);
   const period = periodFromDate(postingDate);
 
-  const customer = await tx.party.findFirst({ where: { id: Number(data.customer_id), type: "customer", active: true } });
+  const customer = await tx.party.findFirst({ where: { id: Number(data.customer_id), active: true, AND: [partyRoleWhere("customer")] } });
   if (!customer) throw appError(404, "CUSTOMER_NOT_FOUND", "Cliente no encontrado o inactivo");
 
   const associatedAccount = await tx.account.findFirst({ where: { code: associatedAccountCode, active: true, allows_tx: true } });
@@ -2131,7 +2323,7 @@ async function createReceivableDocumentTx(tx, tenantId, userId, data) {
 
     // Update customer balance
     const balanceDelta = preview.documentKind === "credit_note" ? -preview.total : preview.total;
-    await tx.party.update({ where: { id: preview.customer.id }, data: { balance: { increment: balanceDelta } } });
+    await tx.party.update({ where: { id: preview.customer.id }, data: { receivable_balance: { increment: balanceDelta } } });
 
     // Update numbering sequence
     const customNumbering = Array.isArray(preview.accounting.accounting_numbering) ? preview.accounting.accounting_numbering : [];
@@ -2170,11 +2362,35 @@ async function listReceivableDocuments(tenantId, query = {}) {
     if (String(query.open_only) === "true") where.balance = { gt: 0.01 };
     const rows = await prisma.cxcCabdoc.findMany({
       where,
-      include: { lines: { orderBy: { line_no: "asc" } } },
+      include: {
+        lines: { orderBy: { line_no: "asc" } },
+        salesInvoice: {
+          include: {
+            customer: { select: { id: true, name: true, legal_name: true, tax_id: true } },
+            lines: {
+              orderBy: { line_no: "asc" },
+              include: {
+                item: { select: { id: true, code: true, name: true, unit: true } },
+                place: { select: { id: true, code: true, name: true } }
+              }
+            }
+          }
+        }
+      },
       orderBy: [{ posting_date: "desc" }, { id: "desc" }],
       take: Number(query.limit) || 100
     });
-    return rows;
+    const accountingIds = [...new Set(rows.map((row) => row.accounting_document_id).filter(Boolean))];
+    const accountingRows = accountingIds.length ? await prisma.cntCabdoc.findMany({
+      where: { id: { in: accountingIds } },
+      include: { lines: { orderBy: { line_no: "asc" } } }
+    }) : [];
+    const enrichedAccounting = await enrichAccountingDocuments(accountingRows);
+    const accountingById = new Map(enrichedAccounting.map((row) => [row.id, row]));
+    return rows.map((row) => ({
+      ...row,
+      accounting_document: row.accounting_document_id ? accountingById.get(row.accounting_document_id) || null : null
+    }));
   });
 }
 
@@ -2200,7 +2416,7 @@ async function getCustomerStatement(tenantId, customerId) {
   return prisma.runWithTenant(tenantId, async () => {
     const id = Number(customerId);
     if (!id) throw appError(400, "REQUIRED_CUSTOMER", "Seleccione un cliente");
-    const customer = await prisma.party.findFirst({ where: { id, type: "customer" } });
+    const customer = await prisma.party.findFirst({ where: { id, AND: [partyRoleWhere("customer")] } });
     if (!customer) throw appError(404, "CUSTOMER_NOT_FOUND", "Cliente no encontrado");
 
     const documents = await prisma.cxcCabdoc.findMany({
@@ -2257,7 +2473,7 @@ async function getCustomerStatement(tenantId, customerId) {
 
     return {
       customer: { id: customer.id, name: customer.legal_name || customer.name, tax_id: customer.tax_id },
-      total_balance: customer.balance,
+      total_balance: customer.receivable_balance,
       credit_limit: customer.credit_limit,
       credit_days: customer.credit_days,
       statement
@@ -2434,7 +2650,7 @@ async function registerPaymentReceivable(tenantId, userId, data) {
     });
 
     // Update customer balance
-    await tx.party.update({ where: { id: Number(customer_id) }, data: { balance: { decrement: actualPaid } } });
+    await tx.party.update({ where: { id: Number(customer_id) }, data: { receivable_balance: { decrement: actualPaid } } });
 
     await tx.cxcPayment.updateMany({
       where: { group_id: groupId },
@@ -2556,7 +2772,7 @@ async function cancelPaymentReceivable(tenantId, userId, groupId) {
       where: { group_id: String(groupId), status: "posted" },
       data: { status: "cancelled", cancelled_by: userId || null, cancelled_at: new Date() }
     });
-    await tx.party.update({ where: { id: payments[0].customer_id }, data: { balance: { increment: total } } });
+    await tx.party.update({ where: { id: payments[0].customer_id }, data: { receivable_balance: { increment: total } } });
     await tx.cntCabdoc.update({
       where: { id: original.id },
       data: { status: "cancelled", is_cancelled: true, cancelled_by: userId || null, cancelled_at: new Date() }
@@ -2651,12 +2867,29 @@ async function initializeRetentionMasters(tenantId) {
   });
 }
 
-async function getRetentionMasters(tenantId) {
+function retentionDto(row) {
+  return {
+    ...row,
+    code: normalizeCode(row.code).toUpperCase(),
+    type: normalizeCode(row.retention_type || row.type).toLowerCase(),
+    retention_type: normalizeCode(row.retention_type || row.type).toLowerCase(),
+    concept: row.concept || row.description,
+    description: row.description || row.concept,
+    percent: Number(row.percent) || 0,
+    minimum_base: Number(row.minimum_base) || 0,
+    account_code: normalizeCode(row.account_code)
+  };
+}
+
+async function getRetentionMasters(tenantId, scope = "sales") {
   return prisma.runWithTenant(tenantId, async () => {
-    return prisma.retentionMaster.findMany({
-      where: { tenant_id: tenantId, scope: "sales" },
+    const normalizedScope = scope === "purchases" ? "purchases" : "sales";
+    const stored = await prisma.retentionMaster.findMany({
+      where: { tenant_id: tenantId, scope: normalizedScope },
       orderBy: { code: "asc" }
     });
+    const defaults = normalizedScope === "purchases" ? DEFAULT_PURCHASE_RETENTIONS : [];
+    return mergeByCode(defaults, stored, "code").map(retentionDto);
   });
 }
 
@@ -2664,20 +2897,25 @@ async function saveRetentionMaster(tenantId, data, id = null) {
   return prisma.runWithTenant(tenantId, async () => {
     const code = normalizeCode(data.code);
     const account_code = normalizeCode(data.account_code);
-    if (!code || !data.description || !account_code || !data.percent) {
+    const description = String(data.description || data.concept || "").trim();
+    const percent = Number(data.percent);
+    if (!code || !description || !account_code || !Number.isFinite(percent) || percent < 0 || percent > 100) {
       throw appError(400, "REQUIRED_RETENTION_FIELDS", "Codigo, descripcion, cuenta contable y porcentaje son obligatorios");
     }
     const scope = data.scope === "purchases" ? "purchases" : "sales";
-    const retentionType = ["retefuente", "reteiva", "reteica"].includes(data.retention_type) ? data.retention_type : "retefuente";
+    const account = await prisma.account.findFirst({ where: { code: account_code, active: true, allows_tx: true } });
+    if (!account) throw appError(404, "RETENTION_ACCOUNT_NOT_FOUND", `La cuenta ${account_code} no existe, esta inactiva o no permite movimientos`);
+    const requestedType = data.retention_type || data.type;
+    const retentionType = RETENTION_TYPES.includes(requestedType) ? requestedType : "retefuente";
     const existing = await prisma.retentionMaster.findFirst({ where: { tenant_id: tenantId, scope, code, ...(id ? { id: { not: Number(id) } } : {}) } });
     if (existing) throw appError(409, "DUPLICATE_RETENTION_CODE", `Ya existe una retencion con codigo ${code}`);
 
     const payload = {
       code,
-      description: String(data.description).trim(),
+      description,
       account_code,
-      percent: Number(data.percent),
-      concept: data.concept || null,
+      percent,
+      concept: data.concept || description,
       scope,
       retention_type: retentionType,
       minimum_base: Math.max(0, Number(data.minimum_base) || 0),
@@ -2688,8 +2926,67 @@ async function saveRetentionMaster(tenantId, data, id = null) {
     if (id) {
       const current = await prisma.retentionMaster.findFirst({ where: { id: Number(id), tenant_id: tenantId } });
       if (!current) throw appError(404, "RETENTION_NOT_FOUND", "Retencion no encontrada");
-      return prisma.retentionMaster.update({ where: { id: current.id }, data: payload });
+      return retentionDto(await prisma.retentionMaster.update({ where: { id: current.id }, data: payload }));
     }
-    return prisma.retentionMaster.create({ data: { tenant_id: tenantId, ...payload } });
+    return retentionDto(await prisma.retentionMaster.create({ data: { tenant_id: tenantId, ...payload } }));
+  });
+}
+
+async function deleteRetentionMaster(tenantId, codeInput, scopeInput = "sales") {
+  const code = normalizeCode(codeInput).toUpperCase();
+  const scope = scopeInput === "purchases" ? "purchases" : "sales";
+  if (!code) throw appError(400, "INVALID_RETENTION_MASTER", "Codigo de retencion obligatorio");
+  return prisma.runWithTenant(tenantId, async () => {
+    const stored = await prisma.retentionMaster.findFirst({ where: { tenant_id: tenantId, scope, code } });
+    const defaultMaster = scope === "purchases" ? DEFAULT_PURCHASE_RETENTIONS.find((row) => row.code === code) : null;
+    if (!stored && !defaultMaster) throw appError(404, "RETENTION_NOT_FOUND", "Retencion no encontrada");
+    const references = await prisma.cxcCuedoc.count({
+      where: { OR: [{ retention_code: code }, { tax_code: code }] }
+    });
+    if (references > 0) {
+      if (stored) await prisma.retentionMaster.update({ where: { id: stored.id }, data: { active: false } });
+      else await prisma.retentionMaster.create({ data: { tenant_id: tenantId, ...defaultMaster, scope, active: false } });
+      return getRetentionMasters(tenantId, scope);
+    }
+    if (stored) await prisma.retentionMaster.delete({ where: { id: stored.id } });
+    if (defaultMaster) await prisma.retentionMaster.create({ data: { tenant_id: tenantId, ...defaultMaster, scope, active: false } });
+    return getRetentionMasters(tenantId, scope);
+  });
+}
+
+async function getSupplierRetentions(tenantId, supplierId) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const supplier = await prisma.party.findFirst({
+      where: { id: Number(supplierId), active: true, AND: [partyRoleWhere("supplier")] }
+    });
+    if (!supplier) throw appError(404, "SUPPLIER_NOT_FOUND", "Proveedor no encontrado o inactivo");
+    const configuredCodes = supplier.metadata?.supplier_retention_codes || supplier.metadata?.retention_codes;
+    const codes = Array.isArray(configuredCodes)
+      ? configuredCodes.map((code) => normalizeCode(code).toUpperCase())
+      : [];
+    const masters = await getRetentionMasters(tenantId, "purchases");
+    return {
+      supplier_id: supplier.id,
+      retention_codes: codes,
+      retentions: masters.filter((row) => codes.includes(row.code) && row.active !== false)
+    };
+  });
+}
+
+async function saveSupplierRetentions(tenantId, supplierId, data) {
+  const codes = [...new Set((data.retention_codes || []).map((code) => normalizeCode(code).toUpperCase()))];
+  const masters = activeRows(await getRetentionMasters(tenantId, "purchases"));
+  const invalid = codes.find((code) => !masters.some((row) => row.code === code));
+  if (invalid) throw appError(400, "RETENTION_MASTER_NOT_FOUND", `La retencion ${invalid} no existe o esta inactiva`);
+  return prisma.runWithTenant(tenantId, async () => {
+    const supplier = await prisma.party.findFirst({
+      where: { id: Number(supplierId), active: true, AND: [partyRoleWhere("supplier")] }
+    });
+    if (!supplier) throw appError(404, "SUPPLIER_NOT_FOUND", "Proveedor no encontrado o inactivo");
+    await prisma.party.update({
+      where: { id: supplier.id },
+      data: { metadata: { ...(supplier.metadata || {}), supplier_retention_codes: codes, retention_codes: codes } }
+    });
+    return getSupplierRetentions(tenantId, supplier.id);
   });
 }

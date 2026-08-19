@@ -1,6 +1,7 @@
 const prisma = require("../../core/prisma");
 const { brainQueue } = require("../../fabric/queues");
 const accountingService = require("../accounting/service");
+const { createHash } = require("node:crypto");
 
 function appError(statusCode, code, message) {
   const error = new Error(message);
@@ -222,11 +223,11 @@ async function listItems(tenantId, filters = {}) {
     const {
       search, type, category_id, abc_class,
       low_stock = false, active = true,
-      page = 1, limit = 20, sort_by = "name", sort_dir = "asc"
+      page = 1, limit = 20, all = false, sort_by = "name", sort_dir = "asc"
     } = filters;
 
     const safePage = Math.max(1, Number(page));
-    const safeLimit = Math.min(100, Math.max(1, Number(limit)));
+    const safeLimit = String(all) === "true" ? 5000 : Math.min(100, Math.max(1, Number(limit)));
     const where = { active: active !== false };
     if (search) {
       where.OR = [
@@ -542,11 +543,21 @@ async function getWarehouseTransfer(tenantId, transferId) {
   return prisma.runWithTenant(tenantId, async () => {
     const row = await prisma.warehouseTransfer.findFirst({ where: { id: Number(transferId) }, include: { lines: { include: { item: true } } } });
     if (!row) throw appError(404, "TRANSFER_NOT_FOUND", "Traslado no encontrado");
-    const [origin, destination] = await Promise.all([
+    const userIds = [...new Set([row.created_by, row.dispatched_by, row.received_by].filter(Boolean))];
+    const [origin, destination, users] = await Promise.all([
       prisma.place.findFirst({ where: { id: row.origin_place_id } }),
-      prisma.place.findFirst({ where: { id: row.destination_place_id } })
+      prisma.place.findFirst({ where: { id: row.destination_place_id } }),
+      userIds.length ? prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true, email: true } }) : []
     ]);
-    return { ...row, origin, destination };
+    const userById = new Map(users.map((user) => [user.id, user]));
+    return {
+      ...row,
+      origin,
+      destination,
+      created_by_user: row.created_by ? userById.get(row.created_by) || null : null,
+      dispatched_by_user: row.dispatched_by ? userById.get(row.dispatched_by) || null : null,
+      received_by_user: row.received_by ? userById.get(row.received_by) || null : null
+    };
   });
 }
 
@@ -782,7 +793,7 @@ async function getKardex(tenantId, itemId, filters = {}) {
     const item = await prisma.item.findFirst({ where: { id: itemId }, select: { id: true, code: true, name: true, unit: true, stock_current: true, unit_cost: true } });
     if (!item) throw appError(404, "ITEM_NOT_FOUND", "Item no encontrado");
 
-    const { from_date, to_date, type, location_id, page = 1, limit = 50 } = filters;
+    const { from_date, to_date, type, location_id, warehouse_id, page = 1, limit = 50 } = filters;
     const safePage = Math.max(1, Number(page));
     const safeLimit = Math.min(500, Math.max(1, Number(limit)));
     const where = { item_id: itemId };
@@ -790,7 +801,11 @@ async function getKardex(tenantId, itemId, filters = {}) {
     if (from_date || to_date) where.created_at = {};
     if (from_date) where.created_at.gte = new Date(from_date);
     if (to_date) where.created_at.lte = new Date(to_date);
-    if (location_id) where.OR = [{ from_location: Number(location_id) }, { to_location: Number(location_id) }];
+    if (warehouse_id) {
+      const warehouseLocations = await prisma.location.findMany({ where: { place_id: Number(warehouse_id) }, select: { id: true } });
+      const locationIds = warehouseLocations.map((row) => row.id);
+      where.OR = [{ from_location: { in: locationIds } }, { to_location: { in: locationIds } }];
+    } else if (location_id) where.OR = [{ from_location: Number(location_id) }, { to_location: Number(location_id) }];
 
     const [allMovements, total] = await Promise.all([
       prisma.movement.findMany({ where, orderBy: { created_at: "asc" }, include: { transaction: true } }),
@@ -798,12 +813,15 @@ async function getKardex(tenantId, itemId, filters = {}) {
     ]);
     const locationIds = [...new Set(allMovements.flatMap((movement) => [movement.from_location, movement.to_location]).filter(Boolean))];
     const transferIds = [...new Set(allMovements.filter((movement) => movement.source_type === "warehouse_transfer" && movement.source_id).map((movement) => movement.source_id))];
+    const initialLoadDocumentIds = [...new Set(allMovements.filter((movement) => movement.source_type === "inventory_initial_load" && movement.source_id).map((movement) => movement.source_id))];
     const transfers = transferIds.length ? await prisma.warehouseTransfer.findMany({ where: { id: { in: transferIds } }, select: { id: true, number: true } }) : [];
     const transferById = new Map(transfers.map((transfer) => [transfer.id, transfer]));
     const purchaseNumbers = [...new Set(allMovements.filter((movement) => movement.source_type === "purchase_order_receipt" && movement.transaction?.number).map((movement) => movement.transaction.number))];
     const receiptDocuments = purchaseNumbers.length ? await prisma.cntCabdoc.findMany({ where: { document_type: "EM", reference: { in: purchaseNumbers } }, orderBy: { posting_date: "desc" } }) : [];
     const receiptDocumentByReference = new Map();
     for (const document of receiptDocuments) if (!receiptDocumentByReference.has(document.reference)) receiptDocumentByReference.set(document.reference, document);
+    const initialLoadDocuments = initialLoadDocumentIds.length ? await prisma.cntCabdoc.findMany({ where: { id: { in: initialLoadDocumentIds } } }) : [];
+    const initialLoadDocumentById = new Map(initialLoadDocuments.map((document) => [document.id, document]));
     const locations = locationIds.length ? await prisma.location.findMany({ where: { id: { in: locationIds } }, include: { place: true } }) : [];
     const locationById = new Map(locations.map((location) => [location.id, location]));
 
@@ -841,9 +859,9 @@ async function getKardex(tenantId, itemId, filters = {}) {
         value: Math.round(Number(movement.qty || 0) * Number(movement.cost || 0) * 100) / 100,
         document_type: movement.source_type || movement.transaction?.type || movement.type,
         document_id: movement.source_id || movement.transaction_id || null,
-        document_number: movement.transaction?.number || transferById.get(movement.source_id)?.number || "",
-        accounting_document_id: receiptDocumentByReference.get(movement.transaction?.number)?.id || null,
-        accounting_document_number: receiptDocumentByReference.get(movement.transaction?.number)?.full_number || "",
+        document_number: movement.transaction?.number || transferById.get(movement.source_id)?.number || initialLoadDocumentById.get(movement.source_id)?.full_number || "",
+        accounting_document_id: initialLoadDocumentById.get(movement.source_id)?.id || receiptDocumentByReference.get(movement.transaction?.number)?.id || null,
+        accounting_document_number: initialLoadDocumentById.get(movement.source_id)?.full_number || receiptDocumentByReference.get(movement.transaction?.number)?.full_number || "",
         reason: movement.reason || "",
         from_location_id: movement.from_location,
         to_location_id: movement.to_location,
@@ -860,9 +878,9 @@ async function getKardex(tenantId, itemId, filters = {}) {
 
 async function getInventoryCosts(tenantId, filters = {}) {
   return prisma.runWithTenant(tenantId, async () => {
-    const { search, family_code, society_code, page = 1, limit = 100 } = filters;
+    const { search, family_code, society_code, warehouse_id, page = 1, limit = 100, all = false } = filters;
     const safePage = Math.max(1, Number(page));
-    const safeLimit = Math.min(200, Math.max(1, Number(limit)));
+    const safeLimit = String(all) === "true" ? 5000 : Math.min(200, Math.max(1, Number(limit)));
     const where = { active: true };
     if (search) {
       where.OR = [
@@ -902,6 +920,7 @@ async function getInventoryCosts(tenantId, filters = {}) {
         .map((row) => `${row.location?.place?.code || ""} ${row.location?.place?.name || ""} / ${row.location?.code || ""}`.trim()))];
       const warehouseRows = (item.locations || [])
         .filter((row) => Number(row.qty || 0) !== 0 && (!valuation || row.location?.place?.society_code === valuation.society_code))
+        .filter((row) => !warehouse_id || row.location?.place_id === Number(warehouse_id))
         .map((row) => ({
           location_id: row.location_id,
           warehouse_id: row.location?.place_id,
@@ -983,6 +1002,97 @@ async function reserve() {
   return { reserved: true };
 }
 
+function normalizeInitialLoadHeader(value) {
+  return String(value || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_");
+}
+
+async function parseInitialInventoryWorkbook(buffer) {
+  const ExcelJS = require("exceljs");
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer);
+  const sheet = workbook.worksheets.find((row) => normalizeInitialLoadHeader(row.name) === "cargue_inicial") || workbook.worksheets[0];
+  if (!sheet || sheet.rowCount < 2) throw appError(400, "EMPTY_INITIAL_LOAD", "La plantilla no contiene posiciones");
+  const headers = sheet.getRow(4).values.slice(1).map(normalizeInitialLoadHeader);
+  const required = ["fecha_contabilizacion", "sku", "bodega", "cantidad", "costo_unitario"];
+  const missingHeaders = required.filter((header) => !headers.includes(header));
+  if (missingHeaders.length) throw appError(422, "INVALID_INITIAL_LOAD_TEMPLATE", `Faltan columnas: ${missingHeaders.join(", ")}`);
+  const rows = [];
+  sheet.eachRow((row, rowNumber) => {
+    if (rowNumber <= 4) return;
+    const data = {};
+    headers.forEach((header, index) => { data[header] = row.getCell(index + 1).value; });
+    if (Object.values(data).some((value) => value !== null && value !== undefined && String(value).trim())) rows.push({ ...data, excel_row: rowNumber });
+  });
+  if (!rows.length) throw appError(400, "EMPTY_INITIAL_LOAD", "La plantilla no contiene posiciones");
+  return rows;
+}
+
+function excelDate(value) {
+  if (value instanceof Date) return value;
+  const parsed = new Date(String(value || ""));
+  if (Number.isNaN(parsed.getTime())) throw appError(422, "INVALID_INITIAL_LOAD_DATE", `Fecha de contabilizacion invalida: ${value || "vacia"}`);
+  return parsed;
+}
+
+async function prepareInitialInventoryRows(tx, rows) {
+  const prepared = [];
+  const duplicates = new Set();
+  for (const row of rows) {
+    const sku = normalizeCode(row.sku).toUpperCase();
+    const warehouseCode = normalizeCode(row.bodega).toUpperCase();
+    const locationCode = normalizeCode(row.ubicacion).toUpperCase();
+    const qty = Number(row.cantidad);
+    const unitCost = Number(row.costo_unitario);
+    if (!sku || !warehouseCode || !(qty > 0) || !(unitCost > 0) || !Number.isFinite(unitCost)) throw appError(422, "INVALID_INITIAL_LOAD_ROW", `Fila ${row.excel_row}: SKU, bodega, cantidad y costo positivos son obligatorios`);
+    const item = await tx.item.findFirst({ where: { code: sku, active: true }, include: { family: { include: { accounting: true } } } });
+    if (!item) throw appError(404, "INITIAL_LOAD_ITEM_NOT_FOUND", `Fila ${row.excel_row}: SKU ${sku} no existe o esta inactivo`);
+    const warehouse = await tx.place.findFirst({ where: { code: warehouseCode, type: "warehouse", active: true } });
+    if (!warehouse) throw appError(404, "INITIAL_LOAD_WAREHOUSE_NOT_FOUND", `Fila ${row.excel_row}: bodega ${warehouseCode} no existe o esta inactiva`);
+    if (!warehouse.society_code || item.society_code !== warehouse.society_code) throw appError(422, "INITIAL_LOAD_SOCIETY_MISMATCH", `Fila ${row.excel_row}: el SKU y la bodega deben pertenecer a la misma sociedad`);
+    const location = await tx.location.findFirst({ where: { place_id: warehouse.id, active: true, ...(locationCode ? { code: locationCode } : {}) }, orderBy: { id: "asc" } });
+    if (!location) throw appError(404, "INITIAL_LOAD_LOCATION_NOT_FOUND", `Fila ${row.excel_row}: la bodega no tiene la ubicacion ${locationCode || "activa"}`);
+    const inventoryAccount = item.family?.accounting?.goods_receipt_account_code;
+    if (!inventoryAccount) throw appError(422, "INITIAL_LOAD_INVENTORY_ACCOUNT_REQUIRED", `Fila ${row.excel_row}: el SKU ${sku} no tiene cuenta de inventario de alta en su familia`);
+    const duplicateKey = `${item.id}:${location.id}:${normalizeCode(row.lote)}`;
+    if (duplicates.has(duplicateKey)) throw appError(422, "DUPLICATE_INITIAL_LOAD_ROW", `Fila ${row.excel_row}: SKU, ubicacion y lote repetidos en el archivo`);
+    duplicates.add(duplicateKey);
+    prepared.push({ excel_row: row.excel_row, posting_date: excelDate(row.fecha_contabilizacion), item, warehouse, location, qty, unit_cost: unitCost, lot: normalizeCode(row.lote) || null, notes: normalizeCode(row.observaciones), inventory_account_code: inventoryAccount });
+  }
+  const societies = new Set(prepared.map((row) => row.warehouse.society_code));
+  const dates = new Set(prepared.map((row) => row.posting_date.toISOString().slice(0, 10)));
+  if (societies.size !== 1) throw appError(422, "INITIAL_LOAD_SINGLE_SOCIETY", "Cada archivo de cargue inicial debe contener una sola sociedad");
+  if (dates.size !== 1) throw appError(422, "INITIAL_LOAD_SINGLE_DATE", "Todas las posiciones deben usar la misma fecha de contabilizacion");
+  return prepared;
+}
+
+async function validateInitialInventoryWorkbook(tenantId, buffer) {
+  const rows = await parseInitialInventoryWorkbook(buffer);
+  if (rows.length > 5000) throw appError(413, "INITIAL_LOAD_TOO_LARGE", "La plantilla admite maximo 5.000 posiciones por cargue");
+  const prepared = await prisma.runWithTenant(tenantId, () => prepareInitialInventoryRows(prisma, rows));
+  await accountingService.assertPeriodOpen(tenantId, prepared[0].posting_date);
+  const totalValue = prepared.reduce((sum, row) => sum + row.qty * row.unit_cost, 0);
+  return { valid: true, file_hash: createHash("sha256").update(buffer).digest("hex"), society_code: prepared[0].warehouse.society_code, posting_date: prepared[0].posting_date, bridge_account_code: "99999999", positions: prepared.map((row) => ({ excel_row: row.excel_row, sku: row.item.code, description: row.item.name, warehouse: `${row.warehouse.code} - ${row.warehouse.name}`, location: row.location.code, qty: row.qty, unit: row.item.unit, unit_cost: row.unit_cost, total: Math.round(row.qty * row.unit_cost * 100) / 100, inventory_account_code: row.inventory_account_code })), totals: { lines: prepared.length, units: prepared.reduce((sum, row) => sum + row.qty, 0), value: Math.round(totalValue * 100) / 100 } };
+}
+
+async function postInitialInventoryWorkbook(tenantId, userId, buffer) {
+  const rows = await parseInitialInventoryWorkbook(buffer);
+  if (rows.length > 5000) throw appError(413, "INITIAL_LOAD_TOO_LARGE", "La plantilla admite maximo 5.000 posiciones por cargue");
+  const fileHash = createHash("sha256").update(buffer).digest("hex");
+  const reference = `CINI-${fileHash.slice(0, 16).toUpperCase()}`;
+  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
+    const duplicate = await tx.cntCabdoc.findFirst({ where: { reference } });
+    if (duplicate) throw appError(409, "INITIAL_LOAD_ALREADY_POSTED", `Esta plantilla ya fue contabilizada como ${duplicate.full_number}`);
+    const prepared = await prepareInitialInventoryRows(tx, rows);
+    await accountingService.assertPeriodOpen(tenantId, prepared[0].posting_date);
+    const accountingDocument = await accountingService.createInitialInventoryDocumentTx(tx, tenantId, userId, {
+      posting_date: prepared[0].posting_date, reference, society_code: prepared[0].warehouse.society_code,
+      lines: prepared.map((row) => ({ inventory_account_code: row.inventory_account_code, branch_code: row.warehouse.branch_code || row.item.branch_code, cost_center_code: row.warehouse.cost_center_code || row.warehouse.society_code, amount: row.qty * row.unit_cost, description: `Cargue inicial ${row.item.code} ${row.warehouse.code}` }))
+    });
+    for (const row of prepared) await stockMoveTx(tx, tenantId, userId, { item_id: row.item.id, type: "in", qty: row.qty, to_location_id: row.location.id, cost: row.unit_cost, lot: row.lot, society_code: row.warehouse.society_code, source_type: "inventory_initial_load", source_id: accountingDocument.id, idempotency_key: `initial-load:${fileHash}:${row.excel_row}`, reason: row.notes || `Cargue inicial ${accountingDocument.full_number}` });
+    return { valid: true, reference, accounting_document: accountingDocument, positions: prepared.length, units: prepared.reduce((sum, row) => sum + row.qty, 0), total_value: Math.round(prepared.reduce((sum, row) => sum + row.qty * row.unit_cost, 0) * 100) / 100 };
+  }, { maxWait: 5000, timeout: 30000 }));
+}
+
 module.exports = {
   createItem,
   updateItem,
@@ -1009,5 +1119,7 @@ module.exports = {
   getKardex,
   getInventoryCosts,
   runSlotting,
+  validateInitialInventoryWorkbook,
+  postInitialInventoryWorkbook,
   reserve
 };

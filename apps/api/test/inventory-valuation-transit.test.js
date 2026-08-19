@@ -2,6 +2,8 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 process.env.REDIS_DISABLED = "true";
 const { calculateSocietyValuation } = require("../src/modules/inventory/service");
+const fs = require("node:fs");
+const path = require("node:path");
 
 test("compra usa costo de la linea y recalcula promedio por sociedad", () => {
   const result = calculateSocietyValuation({ quantityBalance: 10, valueBalance: 1000, averageCost: 100, qty: 5, unitCost: 160, direction: "in" });
@@ -36,4 +38,12 @@ test("descarga de traslado no acepta cantidades parciales en su contrato", () =>
   const receiveContract = { transfer_id: 15 };
   assert.equal("lines" in receiveContract, false);
   assert.equal("qty" in receiveContract, false);
+});
+
+test("reportes de inventario conservan filtro por bodega, todos los SKU, Excel y asiento", () => {
+  const service = fs.readFileSync(path.join(__dirname, "../src/modules/inventory/service.js"), "utf8");
+  const page = fs.readFileSync(path.join(__dirname, "../../web/app/dashboard/inventario/reportes/page.tsx"), "utf8");
+  assert.ok(service.includes("warehouse_id"));
+  assert.ok(service.includes('String(all) === "true" ? 5000'));
+  for (const token of ["Todas las bodegas", "downloadExcelWorkbook", "accounting/documents/", "Asiento contable"]) assert.ok(page.includes(token));
 });

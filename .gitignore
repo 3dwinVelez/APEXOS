@@ -10,6 +10,9 @@ config/*.env
 .next/
 .next-dev/
 apps/web/.next-dev-*/
+apps/web/.next-agent-*/
+.tools/
+outputs/
 dist/
 coverage/
 *.log

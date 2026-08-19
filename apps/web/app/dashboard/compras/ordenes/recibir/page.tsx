@@ -24,8 +24,10 @@ type PurchaseOrder = {
   party?: { id?: number; name?: string };
   metadata?: { warehouse_id?: number; warehouse_name?: string; expected_at?: string };
   lines: PurchaseOrderLine[];
-  receipt_accounting_documents?: Array<{ id: number; full_number: string; posting_date: string; total_debit: number }>;
+  receipt_accounting_documents?: AccountingDocument[];
 };
+
+type AccountingDocument = { id: number; full_number: string; operation_type?: "receipt" | "return"; is_reversal?: boolean; posting_date: string; total_debit: number; total_credit?: number; header_text?: string; created_at?: string; created_by_user?: { name: string; email: string } | null; operational_lines?: Array<{ movement_id: number; purchase_order_line_id?: number; sku: string; description: string; qty: number; unit: string; cost: number }>; lines?: Array<{ id: number; account_code: string; description: string; debit: number; credit: number }> };
 
 type Location = { id: number; place_id: number; label: string };
 
@@ -39,6 +41,11 @@ export default function RecibirOCPage() {
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
+  const [returnOrder, setReturnOrder] = useState<PurchaseOrder | null>(null);
+  const [returnReason, setReturnReason] = useState("Devolución a proveedor");
+  const [returnQuantities, setReturnQuantities] = useState<Record<number, string>>({});
+  const [selectedAccountingDocument, setSelectedAccountingDocument] = useState<AccountingDocument | null>(null);
   const [quantities, setQuantities] = useState<Record<number, string>>({});
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
@@ -64,8 +71,10 @@ export default function RecibirOCPage() {
       api<PurchaseOrder[]>("/api/v1/purchases/orders"),
       api<Location[]>("/api/v1/inventory/locations")
     ]);
-    setOrders((data || []).filter((order) => ["confirmed", "partial", "received"].includes(order.status)));
+    const activeOrders = (data || []).filter((order) => ["confirmed", "partial", "received"].includes(order.status));
+    setOrders(activeOrders);
     setLocations(locationRows || []);
+    return activeOrders;
   }
 
   useEffect(() => {
@@ -92,7 +101,7 @@ export default function RecibirOCPage() {
     });
   }
 
-  async function receivePartial(order: PurchaseOrder) {
+  async function receivePartial(order: PurchaseOrder, continueNext = false) {
     setError("");
     setOk("");
     const receivedLines = order.lines.flatMap((line) => {
@@ -121,7 +130,12 @@ export default function RecibirOCPage() {
       setQuantities({});
       setNotes("");
       setExpandedOrderId(null);
-      await load();
+      const refreshed = await load();
+      if (continueNext) {
+        const next = refreshed.find((candidate) => candidate.id !== order.id && ["confirmed", "partial"].includes(candidate.status));
+        if (next) openReceipt(next);
+        else setOk((current) => `${current} No quedan otras OC pendientes.`);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo registrar la recepción");
     } finally {
@@ -129,25 +143,44 @@ export default function RecibirOCPage() {
     }
   }
 
-  async function returnAll(order: PurchaseOrder) {
+  function openReturn(order: PurchaseOrder) {
+    setError("");
+    setOk("");
+    setReturnReason("Devolución a proveedor");
+    setReturnQuantities({});
+    setReturnOrder(order);
+  }
+
+  async function returnMerchandise() {
+    const order = returnOrder;
+    if (!order) return;
     const location = locations.find((row) => row.place_id === order.metadata?.warehouse_id);
     if (!location) return setError("La OC no tiene una ubicación activa en su bodega");
-    const reason = window.prompt("Motivo de la devolución", "Devolución a proveedor");
-    if (reason === null) return;
+    const reason = returnReason.trim();
+    if (reason.length < 3) return setError("Escribe el motivo de la devolución");
+    const returnedLines = order.lines.flatMap((line) => {
+      const quantity = Number(returnQuantities[line.id] || 0);
+      return quantity > 0 ? [{ line_id: line.id, qty_returned: quantity, location_id: location.id }] : [];
+    });
+    if (!returnedLines.length) return setError("Ingresa al menos una cantidad a devolver mayor a cero.");
+    const invalidLine = order.lines.find((line) => Number(returnQuantities[line.id] || 0) > Number(line.received_quantity || 0) + 0.0001);
+    if (invalidLine) return setError(`La devolución de ${invalidLine.description} supera lo recibido pendiente de devolver.`);
+    setSaving(true);
     try {
-      await api(`/api/v1/purchases/orders/${order.id}/return`, {
+      const result = await api<{ accounting_document?: { full_number?: string } }>(`/api/v1/purchases/orders/${order.id}/return`, {
         method: "POST",
         body: JSON.stringify({
           reason,
-          returned_lines: order.lines
-            .filter((line) => Number(line.received_quantity || 0) > 0)
-            .map((line) => ({ line_id: line.id, qty_returned: Number(line.received_quantity), location_id: location.id }))
+          returned_lines: returnedLines
         })
       });
-      setOk(`Devolución de ${order.number} registrada correctamente.`);
+      setOk(`Devolución de ${order.number} registrada correctamente${result.accounting_document?.full_number ? ` y contabilizada como ${result.accounting_document.full_number}` : ""}.`);
+      setReturnOrder(null);
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo devolver la mercancía");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -187,13 +220,13 @@ export default function RecibirOCPage() {
               <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="font-semibold">{order.number}</h2>
+                    <button className="font-semibold text-apex underline-offset-2 hover:underline" onDoubleClick={() => setSelectedOrder(order)} title="Doble clic para ver el detalle de la orden" type="button">{order.number}</button>
                     <span className="rounded-full bg-paper px-2 py-1 text-xs font-medium">{statusLabels[order.status] || order.status}</span>
                   </div>
                   <p className="mt-1 text-sm text-neutral-600">
                     {order.party?.name || "Proveedor"} · {order.metadata?.warehouse_name || "Bodega destino"} · ${Number(order.total || 0).toLocaleString("es-CO")}
                   </p>
-                  {order.receipt_accounting_documents?.length ? <p className="mt-1 text-xs text-apex">Contabilidad: {order.receipt_accounting_documents.map((row) => row.full_number).join(", ")}</p> : null}
+                  {order.receipt_accounting_documents?.length ? <div className="mt-2 flex flex-wrap items-center gap-2 text-xs"><span className="text-neutral-500">Documentos:</span>{order.receipt_accounting_documents.map((row) => <button className={`rounded border px-2 py-1 font-mono ${row.operation_type === "return" || row.is_reversal ? "border-rose-200 text-rose-700" : "border-emerald-200 text-emerald-700"}`} key={row.id} onDoubleClick={() => setSelectedAccountingDocument(row)} title="Doble clic para ver documento y contabilización" type="button">{row.operation_type === "return" || row.is_reversal ? "Devolución" : "Entrada"} {row.full_number}</button>)}</div> : null}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {order.status !== "received" ? (
@@ -201,7 +234,7 @@ export default function RecibirOCPage() {
                       Registrar recepción
                     </button>
                   ) : null}
-                  <button className="rounded-md border border-rose-200 px-3 py-2 text-sm text-rose-700 hover:bg-rose-50" disabled={!order.lines.some((line) => Number(line.received_quantity || 0) > 0)} onClick={() => returnAll(order)} type="button">
+                  <button className="rounded-md border border-rose-200 px-3 py-2 text-sm text-rose-700 hover:bg-rose-50" disabled={!order.lines.some((line) => Number(line.received_quantity || 0) > 0)} onClick={() => openReturn(order)} type="button">
                     Devolver mercancía
                   </button>
                 </div>
@@ -254,6 +287,8 @@ export default function RecibirOCPage() {
                                   max={pending}
                                   min="0"
                                   onChange={(event) => setQuantities((current) => ({ ...current, [line.id]: event.target.value }))}
+                                  onFocus={(event) => { if (Number(event.currentTarget.value) === 0) event.currentTarget.select(); }}
+                                  onBlur={(event) => { if (event.currentTarget.value.trim() === "") setQuantities((current) => ({ ...current, [line.id]: "0" })); }}
                                   placeholder="0"
                                   step="any"
                                   type="number"
@@ -271,6 +306,7 @@ export default function RecibirOCPage() {
                       Observaciones de la recepción
                       <input className="mt-1 h-10 w-full rounded-md border border-line px-3 font-normal" onChange={(event) => setNotes(event.target.value)} placeholder="Opcional" value={notes} />
                     </label>
+                    <button className="h-10 rounded-md border border-apex px-4 text-sm font-semibold text-apex disabled:opacity-50" disabled={saving || pendingLines.length === 0} onClick={() => receivePartial(order, true)} type="button">Confirmar y siguiente OC</button>
                     <button className="h-10 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-50" disabled={saving || pendingLines.length === 0} onClick={() => receivePartial(order)} type="button">
                       {saving ? "Registrando..." : "Confirmar cantidades"}
                     </button>
@@ -282,6 +318,41 @@ export default function RecibirOCPage() {
         })}
         {filteredOrders.length === 0 ? <p className="rounded-md border border-line bg-white p-4 text-neutral-600">No hay órdenes que coincidan con los filtros.</p> : null}
       </section>
+      {selectedOrder ? (
+        <ModalFrame title={`Orden de compra ${selectedOrder.number}`} onClose={() => setSelectedOrder(null)} maxWidth="md:max-w-6xl">
+          <div className="space-y-4">
+            <section className="grid gap-3 rounded-md border border-line bg-paper p-3 text-sm md:grid-cols-4">
+              <p><span className="block text-xs text-neutral-500">Proveedor</span>{selectedOrder.party?.name || "--"}</p>
+              <p><span className="block text-xs text-neutral-500">Fecha</span>{new Date(selectedOrder.date).toLocaleString("es-CO")}</p>
+              <p><span className="block text-xs text-neutral-500">Bodega destino</span>{selectedOrder.metadata?.warehouse_name || "--"}</p>
+              <p><span className="block text-xs text-neutral-500">Estado</span>{statusLabels[selectedOrder.status] || selectedOrder.status}</p>
+            </section>
+            <section className="overflow-x-auto rounded-md border border-line"><table className="w-full min-w-[720px] text-sm"><thead><tr className="border-b border-line bg-paper text-left"><th className="px-3 py-2">Pos.</th><th className="px-3 py-2">SKU / producto</th><th className="px-3 py-2 text-right">Pedido</th><th className="px-3 py-2 text-right">Recibido</th><th className="px-3 py-2 text-right">Pendiente</th></tr></thead><tbody>{selectedOrder.lines.map((line, index) => <tr className="border-b border-line/70" key={line.id}><td className="px-3 py-2">{index + 1}</td><td className="px-3 py-2"><span className="font-mono">{line.item_id || "--"}</span> · {line.description}</td><td className="px-3 py-2 text-right">{line.qty} {line.unit || "UND"}</td><td className="px-3 py-2 text-right">{line.received_quantity || 0}</td><td className="px-3 py-2 text-right">{line.pending_quantity ?? line.qty}</td></tr>)}</tbody></table></section>
+            {selectedOrder.receipt_accounting_documents?.length ? <section className="rounded-md border border-line p-3"><p className="mb-2 text-sm font-medium">Documentos de mercancía</p><div className="flex flex-wrap gap-2">{selectedOrder.receipt_accounting_documents.map((document) => <button className={`rounded-md border px-3 py-2 text-sm font-mono ${document.operation_type === "return" || document.is_reversal ? "border-rose-200 text-rose-700" : "border-emerald-200 text-emerald-700"}`} key={document.id} onDoubleClick={() => setSelectedAccountingDocument(document)} title="Doble clic para abrir el documento y su contabilización" type="button">{document.operation_type === "return" || document.is_reversal ? "Devolución" : "Entrada"} {document.full_number}</button>)}</div><p className="mt-2 text-xs text-neutral-500">Haz doble clic en el número para consultar su detalle.</p></section> : null}
+          </div>
+        </ModalFrame>
+      ) : null}
+      {returnOrder ? (
+        <ModalFrame title={`Devolver mercancía - ${returnOrder.number}`} onClose={() => !saving && setReturnOrder(null)} maxWidth="md:max-w-4xl">
+          <div className="space-y-4">
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Puedes devolver una o varias posiciones de forma parcial. Cada cantidad disminuirá el stock y quedará registrada en el kardex junto con su documento contable inverso.</div>
+            <div className="overflow-x-auto rounded-md border border-line"><table className="w-full min-w-[700px] text-sm"><thead><tr className="border-b border-line bg-paper text-left"><th className="px-3 py-2">Pos.</th><th className="px-3 py-2">Producto</th><th className="px-3 py-2 text-right">Disponible para devolver</th><th className="px-3 py-2 text-right">Devolver ahora</th></tr></thead><tbody>{returnOrder.lines.filter((line) => Number(line.received_quantity || 0) > 0).map((line, index) => <tr className="border-b border-line/70" key={line.id}><td className="px-3 py-2">{index + 1}</td><td className="px-3 py-2">{line.description}</td><td className="px-3 py-2 text-right font-medium">{Number(line.received_quantity || 0).toLocaleString("es-CO")} {line.unit || "UND"}</td><td className="px-3 py-2"><input aria-label={`Cantidad a devolver de ${line.description}`} className="ml-auto block h-10 w-32 rounded-md border border-line px-3 text-right" inputMode="decimal" max={Number(line.received_quantity || 0)} min="0" onBlur={(event) => { if (event.target.value === "") setReturnQuantities((current) => ({ ...current, [line.id]: "0" })); }} onChange={(event) => setReturnQuantities((current) => ({ ...current, [line.id]: event.target.value }))} step="any" type="number" value={returnQuantities[line.id] ?? ""} /></td></tr>)}</tbody></table></div>
+            <label className="block text-sm font-medium">Motivo de la devolución<textarea autoFocus className="mt-1 min-h-24 w-full rounded-md border border-line p-3 font-normal" maxLength={500} onChange={(event) => setReturnReason(event.target.value)} value={returnReason} /></label>
+            <div className="flex justify-end gap-2"><button className="h-10 rounded-md border border-line px-4 text-sm" disabled={saving} onClick={() => setReturnOrder(null)} type="button">Cancelar</button><button className="h-10 rounded-md bg-rose-700 px-4 text-sm font-semibold text-white disabled:opacity-50" disabled={saving || returnReason.trim().length < 3} onClick={returnMerchandise} type="button">{saving ? "Registrando..." : "Confirmar devolución"}</button></div>
+          </div>
+        </ModalFrame>
+      ) : null}
+      {selectedAccountingDocument ? (
+        <ModalFrame title={`${selectedAccountingDocument.operation_type === "return" || selectedAccountingDocument.is_reversal ? "Devolución" : "Entrada"} ${selectedAccountingDocument.full_number}`} onClose={() => setSelectedAccountingDocument(null)} maxWidth="md:max-w-5xl">
+          <div className="space-y-4">
+            <section className="grid gap-3 rounded-md border border-line bg-paper p-3 text-sm md:grid-cols-4"><p><span className="block text-xs text-neutral-500">Documento</span><strong>{selectedAccountingDocument.full_number}</strong></p><p><span className="block text-xs text-neutral-500">Tipo</span>{selectedAccountingDocument.operation_type === "return" || selectedAccountingDocument.is_reversal ? "Devolución de mercancía" : "Entrada de mercancía"}</p><p><span className="block text-xs text-neutral-500">Contabilización</span>{new Date(selectedAccountingDocument.posting_date).toLocaleString("es-CO")}</p><p><span className="block text-xs text-neutral-500">Usuario</span>{selectedAccountingDocument.created_by_user?.name || selectedAccountingDocument.created_by_user?.email || "--"}</p></section>
+            <p className="text-sm"><span className="font-medium">Concepto:</span> {selectedAccountingDocument.header_text || "--"}</p>
+            <section><h3 className="mb-2 text-sm font-semibold">Posiciones de mercancía</h3><div className="overflow-x-auto rounded-md border border-line"><table className="w-full min-w-[650px] text-sm"><thead><tr className="border-b border-line bg-paper text-left"><th className="px-3 py-2">SKU</th><th className="px-3 py-2">Producto</th><th className="px-3 py-2 text-right">Cantidad</th><th className="px-3 py-2 text-right">Costo unitario</th></tr></thead><tbody>{selectedAccountingDocument.operational_lines?.map((line) => <tr className="border-b border-line/70" key={line.movement_id}><td className="px-3 py-2 font-mono">{line.sku}</td><td className="px-3 py-2">{line.description}</td><td className="px-3 py-2 text-right">{Number(line.qty).toLocaleString("es-CO")} {line.unit}</td><td className="px-3 py-2 text-right">{Number(line.cost).toLocaleString("es-CO")}</td></tr>)}</tbody></table>{!selectedAccountingDocument.operational_lines?.length ? <p className="p-3 text-sm text-neutral-500">Este documento histórico no tiene movimientos físicos enlazados.</p> : null}</div></section>
+            <section className="overflow-x-auto rounded-md border border-line"><table className="w-full min-w-[650px] text-sm"><thead><tr className="border-b border-line bg-paper text-left"><th className="px-3 py-2">Cuenta</th><th className="px-3 py-2">Descripción</th><th className="px-3 py-2 text-right">Débito</th><th className="px-3 py-2 text-right">Crédito</th></tr></thead><tbody>{selectedAccountingDocument.lines?.map((line) => <tr className="border-b border-line/70" key={line.id}><td className="px-3 py-2 font-mono">{line.account_code}</td><td className="px-3 py-2">{line.description}</td><td className="px-3 py-2 text-right">{Number(line.debit || 0).toLocaleString("es-CO")}</td><td className="px-3 py-2 text-right">{Number(line.credit || 0).toLocaleString("es-CO")}</td></tr>)}</tbody></table></section>
+            <div className="flex justify-end text-sm font-semibold"><span>Débitos {Number(selectedAccountingDocument.total_debit || 0).toLocaleString("es-CO")} · Créditos {Number(selectedAccountingDocument.total_credit || 0).toLocaleString("es-CO")}</span></div>
+          </div>
+        </ModalFrame>
+      ) : null}
     </div>
   );
 }

@@ -4,6 +4,10 @@ Leer este archivo antes de cambiar costos, movimientos, reportes o traslados de 
 
 ## Decisiones confirmadas
 
+- La captura consecutiva de traslados permite buscar SKU por codigo/nombre, consultar disponibilidad en origen y crear otro documento conservando las bodegas. No se agrega soporte de escaner.
+- El documento de traslado se puede exportar como remision PDF. Identifica origen, destino y tipo de cada bodega, muestra SKU y cantidades, y reserva espacios para observaciones fisicas y firma del receptor.
+- El cargue inicial se realiza desde una plantilla Excel validada antes de confirmar. Cada archivo usa una sociedad y fecha, actualiza stock, ubicacion, kardex y valoracion, y contabiliza debito a inventario de alta por familia contra credito a la cuenta puente `99999999` en un comprobante `AJ` atomico e irrepetible.
+
 - Mantener los campos monetarios y de cantidades en `Float`; no migrarlos a `Decimal`.
 - La valoración y el costo promedio son por combinación de SKU y sociedad.
 - Las entradas de compras usan el costo de la línea de la orden de compra.
@@ -32,6 +36,18 @@ Leer este archivo antes de cambiar costos, movimientos, reportes o traslados de 
 - `npm run qa:purchases:tax-reversal`: regresión del flujo de compras, impuestos, devoluciones y anulaciones.
 
 ## Historial
+
+### 2026-08-06 - Reportes por bodega y exportacion
+
+- Kardex y costos deben incluir todos los SKU y admitir filtro transversal por bodega.
+- Los reportes visibles se descargan en Excel respetando los filtros activos.
+- El documento contable enlazado al movimiento abre cabecera, usuario, fechas, referencia y lineas del asiento dentro del detalle del Kardex.
+
+### 2026-08-02 - Consulta documental transversal
+
+- El numero de traslado abre el detalle con un clic simple, no requiere doble clic.
+- El detalle identifica usuarios y fechas de creacion, despacho y descarga, ademas de sociedad, origen, destino, SKU, cantidades y costos.
+- Los documentos del kardex y el SKU del reporte de stock tambien usan clic simple para sus respectivos drill-down.
 
 ### 2026-07-21
 

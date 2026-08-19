@@ -1,6 +1,7 @@
 const prisma = require("../../core/prisma");
 const inventoryService = require("../inventory/service");
 const accountingService = require("../accounting/service");
+const { hasPartyRole, partyRoleWhere, withPartyRoles, presentPartyForRole } = require("../parties/roles");
 
 function appError(statusCode, code, message) {
   const error = new Error(message);
@@ -21,10 +22,19 @@ async function createSupplier(tenantId, userId, data) {
 
   return prisma.runWithTenant(tenantId, async () => {
     if (tax_id) {
-      const existing = await prisma.party.findFirst({ where: { tax_id, type: "supplier" } });
-      if (existing) throw appError(409, "DUPLICATE_TAX_ID", `Ya existe un proveedor con el ID fiscal ${tax_id}`);
+      const existing = await prisma.party.findFirst({ where: { tax_id } });
+      if (existing) {
+        if (hasPartyRole(existing, "supplier")) throw appError(409, "DUPLICATE_TAX_ID", `Ya existe un proveedor con el ID fiscal ${tax_id}`);
+        const promoted = await prisma.party.update({
+          where: { id: existing.id },
+          data: {
+            metadata: withPartyRoles({ ...(existing.metadata || {}), ...(metadata || {}), supplier_credit_limit: credit_limit, supplier_credit_days: credit_days }, ["supplier"])
+          }
+        });
+        return presentPartyForRole(promoted, "supplier");
+      }
     }
-    return prisma.party.create({
+    const created = await prisma.party.create({
       data: {
         type: "supplier",
         name: name.trim(),
@@ -39,9 +49,10 @@ async function createSupplier(tenantId, userId, data) {
         credit_days,
         balance: 0,
         active: true,
-        metadata
+        metadata: withPartyRoles({ ...metadata, supplier_credit_limit: credit_limit, supplier_credit_days: credit_days }, ["supplier"])
       }
     });
+    return enrichSupplier(presentPartyForRole(created, "supplier"));
   });
 }
 
@@ -62,7 +73,7 @@ async function createPurchaseOrder(tenantId, userId, data) {
   if (!Array.isArray(lines) || lines.length === 0) throw appError(400, "NO_LINES", "La orden debe tener al menos una linea");
 
   return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
-    const supplier = await tx.party.findFirst({ where: { id: supplier_id, type: "supplier", active: true } });
+    const supplier = await tx.party.findFirst({ where: { id: supplier_id, active: true, AND: [partyRoleWhere("supplier")] } });
     if (!supplier) throw appError(404, "SUPPLIER_NOT_FOUND", "Proveedor no encontrado");
     const warehouse = await tx.place.findFirst({ where: { id: Number(warehouse_id), type: "warehouse", active: true } });
     if (!warehouse) throw appError(404, "WAREHOUSE_NOT_FOUND", "Selecciona una bodega destino activa");
@@ -160,7 +171,7 @@ async function getPurchaseOrder(tenantId, poId) {
 async function getSupplier(tenantId, supplierId) {
   return prisma.runWithTenant(tenantId, async () => {
     const supplier = await prisma.party.findFirst({
-      where: { id: supplierId, type: "supplier" }
+      where: { id: supplierId, AND: [partyRoleWhere("supplier")] }
     });
     if (!supplier) throw appError(404, "SUPPLIER_NOT_FOUND", "Proveedor no encontrado");
     const orders = await prisma.transaction.findMany({
@@ -168,26 +179,26 @@ async function getSupplier(tenantId, supplierId) {
       orderBy: { created_at: "desc" },
       include: { lines: true, movements: true }
     });
-    return enrichSupplier(supplier, await Promise.all(orders.map(enrichPurchaseOrder)));
+    return enrichSupplier(presentPartyForRole(supplier, "supplier"), await Promise.all(orders.map(enrichPurchaseOrder)));
   });
 }
 
 async function updateSupplier(tenantId, supplierId, data) {
   return prisma.runWithTenant(tenantId, async () => {
-    const supplier = await prisma.party.findFirst({ where: { id: supplierId, type: "supplier" } });
+    const supplier = await prisma.party.findFirst({ where: { id: supplierId, AND: [partyRoleWhere("supplier")] } });
     if (!supplier) throw appError(404, "SUPPLIER_NOT_FOUND", "Proveedor no encontrado");
     if (data.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(data.email)) throw appError(400, "INVALID_EMAIL", "Formato de email invalido");
     if (data.credit_limit !== undefined && data.credit_limit < 0) throw appError(400, "INVALID_LIMIT", "El limite de credito no puede ser negativo");
     if (data.credit_days !== undefined && (data.credit_days < 0 || data.credit_days > 365)) throw appError(400, "INVALID_DAYS", "Los dias de credito deben estar entre 0 y 365");
     if (data.tax_id && data.tax_id !== supplier.tax_id) {
-      const existing = await prisma.party.findFirst({ where: { tax_id: data.tax_id, type: "supplier", id: { not: supplier.id } } });
+      const existing = await prisma.party.findFirst({ where: { tax_id: data.tax_id, id: { not: supplier.id } } });
       if (existing) throw appError(409, "DUPLICATE_TAX_ID", `Ya existe un proveedor con el ID fiscal ${data.tax_id}`);
     }
 
-    return prisma.party.update({
+    const updated = await prisma.party.update({
       where: { id: supplier.id },
       data: {
-        name: data.name.trim() || supplier.name,
+        name: data.name?.trim() || supplier.name,
         tax_id: data.tax_id ?? supplier.tax_id,
         tax_type: data.tax_type ?? supplier.tax_type,
         email: data.email ?? supplier.email,
@@ -195,12 +206,16 @@ async function updateSupplier(tenantId, supplierId, data) {
         address: data.address ?? supplier.address,
         city: data.city ?? supplier.city,
         country: data.country ?? supplier.country,
-        credit_limit: data.credit_limit ?? supplier.credit_limit,
-        credit_days: data.credit_days ?? supplier.credit_days,
         active: data.active ?? supplier.active,
-        metadata: data.metadata ? { ...(supplier.metadata || {}), ...data.metadata } : supplier.metadata
+        metadata: withPartyRoles({
+          ...(supplier.metadata || {}),
+          ...(data.metadata || {}),
+          ...(data.credit_limit !== undefined ? { supplier_credit_limit: data.credit_limit } : {}),
+          ...(data.credit_days !== undefined ? { supplier_credit_days: data.credit_days } : {})
+        }, ["supplier"])
       }
     });
+    return presentPartyForRole(updated, "supplier");
   });
 }
 
@@ -294,6 +309,19 @@ async function receivePurchaseOrder(tenantId, userId, poId, data) {
     if (duplicatedLine) throw appError(400, "DUPLICATE_RECEIPT_LINE", "Cada posicion de la OC debe enviarse una sola vez por recepcion");
 
     const accountingLines = [];
+    const purchaseImport = await tx.purchaseImport.findFirst({ where: { purchase_order_id: po.id }, include: { costs: true } });
+    let importAllocation = new Map();
+    if (purchaseImport) {
+      if (purchaseImport.status !== "cost_confirmed") throw appError(422, "IMPORT_COSTS_NOT_CONFIRMED", "Confirma todos los costos de importacion antes de recibir la mercancia");
+      const pendingRows = [];
+      for (const line of po.lines) {
+        const moves = await tx.movement.findMany({ where: { transaction_id: po.id, purchase_order_line_id: line.id } });
+        const already = moves.reduce((sum, move) => sum + (move.type === "in" ? 1 : -1) * Number(move.qty), 0);
+        pendingRows.push({ id: line.id, pending: Math.max(0, Number(line.qty) - already) });
+      }
+      if (received_lines.length !== pendingRows.filter((row) => row.pending > 0).length || received_lines.some((row) => Math.abs(Number(row.qty_received) - (pendingRows.find((entry) => entry.id === Number(row.line_id))?.pending || 0)) > 0.0001)) throw appError(422, "IMPORT_FULL_RECEIPT_REQUIRED", "La importacion debe recibirse completa; no se permiten recepciones parciales");
+      importAllocation = allocateImportCosts(po.lines, purchaseImport.costs);
+    }
     for (const row of received_lines) {
       const line = po.lines.find((entry) => entry.id === Number(row.line_id));
       if (!line) throw appError(404, "LINE_NOT_FOUND", `Linea ${row.line_id} no encontrada`);
@@ -302,6 +330,7 @@ async function receivePurchaseOrder(tenantId, userId, poId, data) {
       const destinationLocationId = Number(row.location_id || defaultLocationId);
       const destinationLocation = await tx.location.findFirst({ where: { id: destinationLocationId, active: true, place_id: warehouseId } });
       if (!destinationLocation) throw appError(422, "LOCATION_WAREHOUSE_MISMATCH", "La ubicacion de recepcion debe pertenecer a la bodega de la OC");
+      const landedUnitCost = Number(line.unit_cost) + Number(importAllocation.get(line.id) || 0) / Number(line.qty);
       await inventoryService.stockMoveTx(tx, tenantId, userId, {
         item_id: line.item_id,
         type: "in",
@@ -312,7 +341,7 @@ async function receivePurchaseOrder(tenantId, userId, poId, data) {
         source_type: "purchase_order_receipt",
         source_id: po.id,
         idempotency_key: `purchase-receipt:${po.id}:${line.id}:${already}:${quantity}`,
-        cost: line.unit_cost,
+        cost: landedUnitCost,
         lot: row.lot || null,
         expiry: row.expiry || null,
         reason: `Recepcion ${po.number}`
@@ -324,7 +353,7 @@ async function receivePurchaseOrder(tenantId, userId, poId, data) {
       accountingLines.push({
         inventory_account_code: family.accounting.goods_receipt_account_code,
         gr_ir_account_code: family.accounting.gr_ir_account_code,
-        amount: quantity * Number(line.unit_cost),
+        amount: quantity * landedUnitCost,
         description: `Recepcion ${po.number} - ${family.item.code}`
       });
     }
@@ -353,8 +382,217 @@ async function receivePurchaseOrder(tenantId, userId, poId, data) {
       data: { status: newStatus, notes: notes || po.notes },
       include: { lines: true, party: true }
     });
+    if (purchaseImport) await tx.purchaseImport.update({ where: { id: purchaseImport.id }, data: { status: "received", received_at: new Date() } });
 
     return { ...updated, accounting_document: accountingDocument };
+  }));
+}
+
+async function getPurchaseOrderPrintData(tenantId, poId) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const po = await prisma.transaction.findFirst({
+      where: { id: poId, type: "purchase" },
+      include: { party: true, lines: true, movements: true }
+    });
+    if (!po) throw appError(404, "NOT_FOUND", "OC no encontrada");
+    const enriched = await enrichPurchaseOrder(po);
+    const itemIds = [...new Set(po.lines.map((line) => line.item_id).filter(Boolean))];
+    const [tenant, warehouse, creator, organization, items] = await Promise.all([
+      prisma.tenant.findUnique({ where: { id: tenantId }, select: { id: true, name: true, tax_id: true, currency: true, country: true } }),
+      po.metadata?.warehouse_id ? prisma.place.findFirst({ where: { id: Number(po.metadata.warehouse_id), type: "warehouse", __includeInactive: true } }) : null,
+      po.created_by ? prisma.user.findFirst({ where: { id: po.created_by }, select: { id: true, name: true, email: true } }) : null,
+      accountingService.getOrganizationTree(tenantId),
+      itemIds.length ? prisma.item.findMany({ where: { id: { in: itemIds }, __includeInactive: true }, select: { id: true, code: true, name: true } }) : []
+    ]);
+    const society = organization.societies.find((row) => row.code === (warehouse?.society_code || po.metadata?.society_code));
+    const itemById = new Map(items.map((item) => [item.id, item]));
+    return {
+      ...enriched,
+      company: {
+        name: tenant?.name || "Empresa sin nombre configurado",
+        tax_id: tenant?.tax_id || null,
+        country: tenant?.country || warehouse?.country || null,
+        society_code: society?.code || warehouse?.society_code || po.metadata?.society_code || null,
+        society_name: society?.name || null
+      },
+      warehouse: warehouse ? {
+        id: warehouse.id,
+        code: warehouse.code,
+        name: warehouse.name,
+        address: warehouse.address,
+        city: warehouse.city,
+        country: warehouse.country,
+        society_code: warehouse.society_code,
+        branch_code: warehouse.branch_code,
+        cost_center_code: warehouse.cost_center_code
+      } : null,
+      created_by_user: creator,
+      lines: enriched.lines.map((line, index) => ({
+        ...line,
+        position: index + 1,
+        sku: itemById.get(line.item_id)?.code || String(line.item_id || ""),
+        description: line.description || itemById.get(line.item_id)?.name || ""
+      }))
+    };
+  });
+}
+
+async function updatePurchaseOrder(tenantId, userId, poId, data) {
+  const {
+    supplier_id,
+    lines,
+    expected_at = null,
+    notes = null,
+    warehouse_id = null,
+    priority = "normal",
+    currency = "USD",
+    payment_terms = null,
+    tags = [],
+    freight = 0,
+    other_costs = 0
+  } = data;
+  if (!Array.isArray(lines) || lines.length === 0) throw appError(400, "NO_LINES", "La orden debe tener al menos una linea");
+
+  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
+    const current = await tx.transaction.findFirst({ where: { id: poId, type: "purchase" }, include: { lines: true } });
+    if (!current) throw appError(404, "NOT_FOUND", "OC no encontrada");
+    if (current.status !== "draft") throw appError(409, "ORDER_NOT_DRAFT", "Solo se pueden editar ordenes de compra en borrador");
+
+    const supplier = await tx.party.findFirst({ where: { id: supplier_id, active: true, AND: [partyRoleWhere("supplier")] } });
+    if (!supplier) throw appError(404, "SUPPLIER_NOT_FOUND", "Proveedor no encontrado");
+    const warehouse = await tx.place.findFirst({ where: { id: Number(warehouse_id), type: "warehouse", active: true } });
+    if (!warehouse) throw appError(404, "WAREHOUSE_NOT_FOUND", "Selecciona una bodega destino activa");
+
+    const processedLines = [];
+    for (const line of lines) {
+      if (!line.qty || line.qty <= 0) throw appError(400, "INVALID_QTY", "La cantidad debe ser mayor a 0");
+      if (line.unit_cost === undefined || line.unit_cost < 0) throw appError(400, "INVALID_COST", "El costo unitario debe ser >= 0");
+      const item = await tx.item.findFirst({ where: { id: line.item_id, active: true } });
+      if (!item) throw appError(404, "ITEM_NOT_FOUND", `Item ${line.item_id} no encontrado`);
+      const gross = Number(line.qty) * Number(line.unit_cost);
+      const discount = Number(line.discount || 0);
+      const taxRate = Number(line.tax_rate || 0);
+      const subtotal = Math.max(0, gross - discount);
+      const taxAmount = subtotal * (taxRate / 100);
+      processedLines.push({
+        item_id: item.id,
+        description: item.name,
+        qty: Number(line.qty),
+        unit: line.unit || item.unit,
+        unit_cost: Number(line.unit_cost),
+        unit_price: Number(line.unit_cost),
+        discount,
+        tax_rate: taxRate,
+        tax_amount: taxAmount,
+        subtotal,
+        total: subtotal + taxAmount,
+        metadata: {
+          notes: line.notes || null,
+          expected_at: line.expected_at || expected_at,
+          stock_current: item.stock_current,
+          stock_min: item.stock_min,
+          stock_max: item.stock_max,
+          abc_class: item.abc_class
+        }
+      });
+    }
+
+    const subtotal = processedLines.reduce((sum, line) => sum + line.subtotal, 0);
+    const taxes = processedLines.reduce((sum, line) => sum + line.tax_amount, 0);
+    const total = subtotal + taxes + Number(freight || 0) + Number(other_costs || 0);
+    return tx.transaction.update({
+      where: { id: current.id },
+      data: {
+        party_id: supplier.id,
+        due_date: expected_at ? new Date(expected_at) : null,
+        subtotal,
+        tax_total: taxes,
+        total,
+        balance: total,
+        currency,
+        notes,
+        metadata: {
+          ...(current.metadata || {}),
+          expected_at,
+          warehouse_id: warehouse.id,
+          warehouse_code: warehouse.code,
+          warehouse_name: warehouse.name,
+          society_code: warehouse.society_code,
+          branch_code: warehouse.branch_code,
+          cost_center_code: warehouse.cost_center_code,
+          priority,
+          payment_terms,
+          tags,
+          freight: Number(freight || 0),
+          other_costs: Number(other_costs || 0),
+          last_edited_by: userId,
+          last_edited_at: new Date().toISOString()
+        },
+        lines: { deleteMany: {}, create: processedLines }
+      },
+      include: { lines: true, party: true }
+    });
+  }));
+}
+
+function round(value) { return Math.round((Number(value) + Number.EPSILON) * 100) / 100; }
+function normalizeCode(value) { return String(value || "").trim().toUpperCase(); }
+function allocateImportCosts(lines, costs) {
+  const baseTotal = lines.reduce((sum, line) => sum + Number(line.qty) * Number(line.unit_cost), 0);
+  const capitalizable = costs.filter((cost) => cost.classification === "capitalizable").reduce((sum, cost) => sum + Number(cost.estimated_amount), 0);
+  return new Map(lines.map((line) => { const base = Number(line.qty) * Number(line.unit_cost); return [line.id, baseTotal > 0 ? capitalizable * base / baseTotal : 0]; }));
+}
+
+async function listPurchaseImports(tenantId, query = {}) { return prisma.runWithTenant(tenantId, () => prisma.purchaseImport.findMany({ where: query.status ? { status: String(query.status) } : {}, include: { costs: true }, orderBy: { id: "desc" } })); }
+async function getPurchaseImport(tenantId, id) { return prisma.runWithTenant(tenantId, async () => { const row = await prisma.purchaseImport.findFirst({ where: { id: Number(id) }, include: { costs: { orderBy: { id: "asc" } } } }); if (!row) throw appError(404, "IMPORT_NOT_FOUND", "Importacion no encontrada"); const order = await prisma.transaction.findFirst({ where: { id: row.purchase_order_id, type: "purchase" }, include: { lines: true, party: true } }); return { ...row, order }; }); }
+async function createPurchaseImport(tenantId, userId, data) { return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => { const order = await tx.transaction.findFirst({ where: { id: Number(data.purchase_order_id), type: "purchase", status: { in: ["draft", "confirmed"] } } }); if (!order) throw appError(422, "IMPORT_ORDER_INVALID", "La OC no existe o ya inicio su recepcion"); const existing = await tx.purchaseImport.findFirst({ where: { purchase_order_id: order.id } }); if (existing) throw appError(409, "IMPORT_EXISTS", "La OC ya tiene una importacion"); const number = `IMP-${String(order.id).padStart(6, "0")}`; const created = await tx.purchaseImport.create({ data: { tenant_id: tenantId, purchase_order_id: order.id, number, created_by: userId || null } }); await tx.transaction.update({ where: { id: order.id }, data: { metadata: { ...(order.metadata || {}), is_import: true, import_number: number } } }); return created; })); }
+async function addPurchaseImportCost(tenantId, userId, id, data) { return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => { const imp = await tx.purchaseImport.findFirst({ where: { id: Number(id), status: "draft" } }); if (!imp) throw appError(422, "IMPORT_NOT_EDITABLE", "La importacion no existe o sus costos ya fueron confirmados"); const [supplier, account, clearing] = await Promise.all([tx.party.findFirst({ where: { id: Number(data.supplier_id), active: true, AND: [partyRoleWhere("supplier")] } }), tx.account.findFirst({ where: { code: normalizeCode(data.account_code), active: true, allows_tx: true } }), tx.account.findFirst({ where: { code: normalizeCode(data.clearing_account_code), active: true, allows_tx: true } })]); if (!supplier || !account || !clearing) throw appError(422, "IMPORT_MASTER_INVALID", "Proveedor o cuentas contables de costo no validos"); const cost = await tx.purchaseImportCost.create({ data: { tenant_id: tenantId, import_id: imp.id, concept: String(data.concept).trim(), supplier_id: supplier.id, classification: data.classification, estimated_amount: round(data.estimated_amount), actual_amount: data.actual_amount == null ? null : round(data.actual_amount), account_code: account.code, clearing_account_code: clearing.code, created_by: userId || null } }); const aggregate = await tx.purchaseImportCost.aggregate({ where: { import_id: imp.id }, _sum: { estimated_amount: true, actual_amount: true } }); await tx.purchaseImport.update({ where: { id: imp.id }, data: { estimated_total: round(aggregate._sum.estimated_amount || 0), actual_total: round(aggregate._sum.actual_amount || 0) } }); return cost; })); }
+async function confirmPurchaseImportCosts(tenantId, userId, id) { return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => { const imp = await tx.purchaseImport.findFirst({ where: { id: Number(id), status: "draft" }, include: { costs: true } }); if (!imp || !imp.costs.length) throw appError(422, "IMPORT_COSTS_REQUIRED", "Registra al menos un costo antes de confirmar"); return tx.purchaseImport.update({ where: { id: imp.id }, data: { status: "cost_confirmed", costs_confirmed_at: new Date(), costs_confirmed_by: userId || null } }); })); }
+async function listImportInvoiceableCosts(tenantId, id, query = {}) { return prisma.runWithTenant(tenantId, () => prisma.purchaseImportCost.findMany({ where: { import_id: Number(id), ...(query.supplier_id ? { supplier_id: Number(query.supplier_id) } : {}), cxp_cabdoc_id: null }, orderBy: { id: "asc" } })); }
+async function linkImportCostInvoice(tenantId, userId, costId, data) { return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
+  const cost = await tx.purchaseImportCost.findFirst({ where: { id: Number(costId), cxp_cabdoc_id: null }, include: { import: true } });
+  if (!cost) throw appError(404, "IMPORT_COST_NOT_FOUND", "Costo no encontrado o ya facturado");
+  const invoice = await tx.cxpCabdoc.findFirst({ where: { id: Number(data.cxp_cabdoc_id), supplier_id: cost.supplier_id, document_kind: "invoice" } });
+  if (!invoice) throw appError(422, "IMPORT_INVOICE_SUPPLIER_MISMATCH", "La factura no pertenece al proveedor asignado al costo");
+  const actual = round(data.actual_amount);
+  const updated = await tx.purchaseImportCost.update({ where: { id: cost.id }, data: { cxp_cabdoc_id: invoice.id, actual_amount: actual, status: actual === round(cost.estimated_amount) ? "invoiced" : "variance_pending" } });
+  const aggregate = await tx.purchaseImportCost.aggregate({ where: { import_id: cost.import_id }, _sum: { actual_amount: true } });
+  await tx.purchaseImport.update({ where: { id: cost.import_id }, data: { actual_total: round(aggregate._sum.actual_amount || 0) } });
+  return updated;
+})); }
+
+async function adjustImportCostVariance(tenantId, userId, costId, data) {
+  const postingDate = new Date(data.posting_date);
+  if (Number.isNaN(postingDate.getTime())) throw appError(400, "INVALID_POSTING_DATE", "Fecha de ajuste invalida");
+  await accountingService.assertPeriodOpen(tenantId, postingDate);
+  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
+    const cost = await tx.purchaseImportCost.findFirst({ where: { id: Number(costId), status: "variance_pending", classification: "capitalizable" }, include: { import: true } });
+    if (!cost || cost.import.status !== "received") throw appError(422, "IMPORT_VARIANCE_NOT_ADJUSTABLE", "La diferencia no existe, no es capitalizable o la importacion no ha sido recibida");
+    const order = await tx.transaction.findFirst({ where: { id: cost.import.purchase_order_id, type: "purchase" }, include: { lines: true, party: true } });
+    if (!order) throw appError(404, "IMPORT_ORDER_NOT_FOUND", "Orden de importacion no encontrada");
+    const delta = round(Number(cost.actual_amount) - Number(cost.estimated_amount));
+    if (Math.abs(delta) <= 0.01) return tx.purchaseImportCost.update({ where: { id: cost.id }, data: { status: "invoiced" } });
+    const allocations = allocateImportCosts(order.lines, [{ classification: "capitalizable", estimated_amount: Math.abs(delta) }]);
+    const accountingLines = [];
+    for (const line of order.lines) {
+      const amount = round(allocations.get(line.id) || 0); if (amount <= 0) continue;
+      const family = await inventoryService.getFamilyAccountingByItem(tx, line.item_id);
+      const inventoryCode = family?.accounting?.goods_receipt_account_code;
+      if (!inventoryCode) throw appError(422, "IMPORT_INVENTORY_ACCOUNT_REQUIRED", `El SKU ${family?.item?.code || line.item_id} no tiene cuenta de inventario`);
+      const valuation = await tx.skuValuation.findFirst({ where: { society_code: normalizeCode(order.metadata?.society_code), item_id: line.item_id } });
+      if (!valuation || Number(valuation.quantity_balance) <= 0) throw appError(422, "IMPORT_VARIANCE_WITHOUT_STOCK", `No se puede cargar la diferencia al SKU ${family?.item?.code || line.item_id} porque no conserva existencias`);
+      const signedAmount = delta > 0 ? amount : -amount;
+      const nextValue = round(Number(valuation.value_balance) + signedAmount);
+      if (nextValue < -0.01) throw appError(422, "IMPORT_VARIANCE_EXCEEDS_VALUE", "La diferencia negativa supera el valor disponible del inventario");
+      const average = Math.round((nextValue / Number(valuation.quantity_balance)) * 10000) / 10000;
+      await tx.skuValuation.update({ where: { id: valuation.id }, data: { value_balance: nextValue, average_cost: average, version: { increment: 1 } } });
+      await tx.productCost.create({ data: { item_id: line.item_id, society_code: normalizeCode(order.metadata?.society_code), costing_method: "weighted_average", quantity_balance: valuation.quantity_balance, value_balance: nextValue, average_cost: average, last_unit_cost: average, source_type: "import_cost_adjustment", source_id: cost.id, created_by: userId || null } });
+      accountingLines.push({ inventory_account_code: delta > 0 ? inventoryCode : cost.clearing_account_code, gr_ir_account_code: delta > 0 ? cost.clearing_account_code : inventoryCode, amount, description: `Ajuste ${cost.import.number} - ${cost.concept} - ${family.item.code}` });
+    }
+    const costSupplier = await tx.party.findFirst({ where: { id: cost.supplier_id } });
+    const document = await accountingService.createGoodsReceiptDocumentTx(tx, tenantId, userId, { posting_date: postingDate, reference: cost.import.number, header_text: `Ajuste costo real ${cost.import.number}`, society_code: order.metadata?.society_code, branch_code: order.metadata?.branch_code, cost_center_code: order.metadata?.cost_center_code, party_id: cost.supplier_id, party_tax_id: costSupplier?.tax_id || null, transaction_id: order.id, lines: accountingLines });
+    const updated = await tx.purchaseImportCost.update({ where: { id: cost.id }, data: { status: "adjusted" } });
+    return { cost: updated, accounting_document: document, variance: delta };
   }));
 }
 
@@ -363,21 +601,33 @@ async function returnPurchaseOrder(tenantId, userId, poId, data) {
   if (!rows.length) throw appError(400, "NO_RETURN_LINES", "Debes enviar al menos una linea a devolver");
   await accountingService.assertPeriodOpen(tenantId, new Date());
   return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
-    const po = await tx.transaction.findFirst({ where: { id: poId, type: "purchase" }, include: { lines: true } });
+    const po = await tx.transaction.findFirst({ where: { id: poId, type: "purchase" }, include: { lines: true, party: true } });
     if (!po) throw appError(404, "NOT_FOUND", "PO no encontrada");
-    let value = 0;
+    const accountingLines = [];
     for (const row of rows) {
       const line = po.lines.find((item) => item.id === Number(row.line_id));
       if (!line || Number(row.qty_returned) <= 0) throw appError(400, "INVALID_RETURN_LINE", "Linea o cantidad de devolucion invalida");
-      const moves = await tx.movement.findMany({ where: { transaction_id: po.id, purchase_order_line_id: line.id } });
+      let moves = await tx.movement.findMany({ where: { transaction_id: po.id, purchase_order_line_id: line.id } });
+      if (!moves.length) moves = await tx.movement.findMany({ where: { transaction_id: po.id, item_id: line.item_id } });
       const available = moves.reduce((sum, move) => sum + (move.type === "in" ? 1 : -1) * Number(move.qty), 0);
       if (Number(row.qty_returned) > available + 0.0001) throw appError(422, "EXCEEDS_RECEIVED", `La devolucion supera lo recibido (${available})`);
+      const item = await tx.item.findFirst({ where: { id: line.item_id, active: true }, include: { family: { include: { accounting: true } } } });
+      const familyAccounting = item?.family?.accounting;
+      if (!familyAccounting?.goods_receipt_account_code || !familyAccounting?.gr_ir_account_code) {
+        throw appError(422, "FAMILY_ACCOUNTING_REQUIRED", `El SKU ${item?.code || line.item_id} no tiene cuentas de inventario y EM/RF configuradas`);
+      }
       await inventoryService.stockMoveTx(tx, tenantId, userId, { item_id: line.item_id, type: "out", qty: Number(row.qty_returned), from_location_id: Number(row.location_id), transaction_id: po.id, purchase_order_line_id: line.id, cost: line.unit_cost, source_type: "purchase_return", source_id: po.id, reason: `Devolucion ${po.number}: ${data.reason || "mercancia"}` });
-      value += Number(row.qty_returned) * Number(line.unit_cost);
+      accountingLines.push({ inventory_account_code: familyAccounting.goods_receipt_account_code, gr_ir_account_code: familyAccounting.gr_ir_account_code, amount: Number(row.qty_returned) * Number(line.unit_cost), description: `Devolucion ${po.number} - ${item.code} ${line.description}` });
     }
-    if (value > 0) await accountingService.journalEntryTx(tx, { description: `Devolucion de mercancia ${po.number}`, transaction_id: po.id, entries: [{ account: "2610", debit: value, credit: 0 }, { account: "1435", debit: 0, credit: value }] });
+    const originalReceipt = await tx.cntCabdoc.findFirst({ where: { reference: po.number, document_type: "EM", is_reversal: false }, orderBy: { posting_date: "desc" } });
+    const accountingDocument = await accountingService.createGoodsReceiptDocumentTx(tx, tenantId, userId, {
+      posting_date: new Date(), reference: po.number, header_text: `Devolucion de mercancia ${po.number}`,
+      society_code: po.metadata?.society_code, branch_code: po.metadata?.branch_code, cost_center_code: po.metadata?.cost_center_code,
+      party_id: po.party_id, party_tax_id: po.party?.tax_id, transaction_id: po.id, lines: accountingLines,
+      is_reversal: true, referenced_document_id: originalReceipt?.id || null
+    });
     await tx.transaction.update({ where: { id: po.id }, data: { status: "partial" } });
-    return { purchase_order_id: po.id, returned_value: value, returned_lines: rows.length };
+    return { purchase_order_id: po.id, returned_value: accountingLines.reduce((sum, line) => sum + line.amount, 0), returned_lines: rows.length, accounting_document: accountingDocument };
   }));
 }
 
@@ -448,6 +698,51 @@ async function approvePurchaseOrder(tenantId, userId, poId) {
 
 async function cancelPurchaseOrder(tenantId, userId, poId) {
   return updatePOStatus(tenantId, userId, poId, "cancelled");
+}
+
+function purchaseOrderClosureState(lines, movements) {
+  const orderedQuantity = lines.reduce((sum, line) => sum + Number(line.qty), 0);
+  const receivedQuantity = Math.max(0, movements.reduce((sum, move) => sum + (move.type === "in" ? 1 : move.type === "out" ? -1 : 0) * Number(move.qty), 0));
+  return { orderedQuantity, receivedQuantity, pendingQuantity: Math.max(0, orderedQuantity - receivedQuantity) };
+}
+
+async function closePurchaseOrder(tenantId, userId, poId, data) {
+  const reason = String(data?.reason || "").trim();
+  if (reason.length < 3) throw appError(400, "CLOSE_REASON_REQUIRED", "Indica el motivo del cierre de la orden");
+  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
+    const po = await tx.transaction.findFirst({
+      where: { id: poId, type: "purchase" },
+      include: { lines: true, movements: true, party: true }
+    });
+    if (!po) throw appError(404, "NOT_FOUND", "OC no encontrada");
+    if (!["confirmed", "partial"].includes(po.status)) {
+      throw appError(422, "ORDER_NOT_CLOSABLE", "Solo se pueden cerrar ordenes aprobadas o parcialmente recibidas");
+    }
+    const { orderedQuantity, receivedQuantity, pendingQuantity } = purchaseOrderClosureState(po.lines, po.movements);
+    if (pendingQuantity <= 0) {
+      throw appError(422, "ORDER_FULLY_RECEIVED", "La orden ya fue recibida en su totalidad y no requiere cierre manual");
+    }
+    const now = new Date().toISOString();
+    return tx.transaction.update({
+      where: { id: po.id },
+      data: {
+        status: "closed",
+        metadata: {
+          ...(po.metadata || {}),
+          manual_closure: {
+            reason,
+            closed_by: userId || null,
+            closed_at: now,
+            previous_status: po.status,
+            ordered_quantity: orderedQuantity,
+            received_quantity: receivedQuantity,
+            unreceived_quantity: pendingQuantity
+          }
+        }
+      },
+      include: { lines: true, party: true, movements: true }
+    });
+  }));
 }
 
 async function duplicatePurchaseOrder(tenantId, userId, poId) {
@@ -571,7 +866,7 @@ async function checkVMIAlerts(tenantId) {
 async function listSuppliers(tenantId, query = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const suppliers = await prisma.party.findMany({
-      where: { type: "supplier", active: true },
+      where: { active: true, AND: [partyRoleWhere("supplier")] },
       orderBy: { name: "asc" },
       skip: Math.max(Number(query.offset || 0), 0),
       take: Math.min(Number(query.limit || 100), 200)
@@ -588,7 +883,7 @@ async function listSuppliers(tenantId, query = {}) {
       list.push(order);
       ordersBySupplier.set(order.party_id, list);
     }
-    return suppliers.map((supplier) => enrichSupplier(supplier, ordersBySupplier.get(supplier.id) || []));
+    return suppliers.map((supplier) => enrichSupplier(presentPartyForRole(supplier, "supplier"), ordersBySupplier.get(supplier.id) || []));
   });
 }
 
@@ -620,20 +915,52 @@ async function listPurchaseOrders(tenantId, query = {}) {
       orderBy: { created_at: "desc" },
       skip: Math.max(Number(query.offset || 0), 0),
       take: Math.min(Number(query.limit || 100), 200),
-      include: { party: true, lines: true, movements: true }
+      include: { party: true, lines: true, movements: { include: { item: true } } }
     });
     const documents = orders.length ? await prisma.cntCabdoc.findMany({
       where: { document_type: "EM", reference: { in: orders.map((order) => order.number) } },
+      include: { lines: { orderBy: { line_no: "asc" } } },
       orderBy: { posting_date: "desc" }
     }) : [];
+    const userIds = [...new Set(documents.map((document) => document.created_by).filter(Boolean))];
+    const users = userIds.length ? await prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true, email: true } }) : [];
+    const userById = new Map(users.map((user) => [user.id, user]));
     const documentsByOrder = new Map();
     for (const document of documents) {
       const current = documentsByOrder.get(document.reference) || [];
-      current.push(document);
+      current.push({ ...document, operation_type: document.is_reversal ? "return" : "receipt", created_by_user: document.created_by ? userById.get(document.created_by) || null : null });
       documentsByOrder.set(document.reference, current);
     }
     const enriched = await Promise.all(orders.map(enrichPurchaseOrder));
-    return enriched.map((order) => ({ ...order, receipt_accounting_documents: documentsByOrder.get(order.number) || [] }));
+    return enriched.map((order) => {
+      const receiptDocuments = documentsByOrder.get(order.number) || [];
+      const orderedDocuments = [...receiptDocuments].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      const previousByOperation = { receipt: 0, return: 0 };
+      for (const document of orderedDocuments) {
+        const operation = document.operation_type;
+        const upperBound = new Date(document.created_at).getTime() + 1000;
+        const lowerBound = previousByOperation[operation];
+        document.operational_lines = (order.movements || [])
+          .filter((movement) => {
+            const movementTime = new Date(movement.created_at).getTime();
+            const isOperation = operation === "return"
+              ? movement.type === "out" && (movement.source_type === "purchase_return" || !movement.source_type)
+              : movement.type === "in" && (movement.source_type === "purchase_order_receipt" || !movement.source_type);
+            return isOperation && movementTime > lowerBound && movementTime <= upperBound;
+          })
+          .map((movement) => ({
+            movement_id: movement.id,
+            purchase_order_line_id: movement.purchase_order_line_id,
+            sku: movement.item?.code || String(movement.item_id),
+            description: movement.item?.name || "Producto",
+            qty: Number(movement.qty),
+            unit: movement.item?.unit || "UND",
+            cost: Number(movement.cost || 0)
+          }));
+        previousByOperation[operation] = upperBound;
+      }
+      return { ...order, receipt_accounting_documents: receiptDocuments };
+    });
   });
 }
 
@@ -663,7 +990,7 @@ async function listOpenPurchaseOrders(tenantId, query = {}) {
 async function preparePurchaseInvoiceAccounting(tx, data) {
   const documentKind = data.document_kind === "credit_note" ? "credit_note" : "invoice";
   const isCreditNote = documentKind === "credit_note";
-  const supplier = await tx.party.findFirst({ where: { id: Number(data.supplier_id), type: "supplier", active: true } });
+  const supplier = await tx.party.findFirst({ where: { id: Number(data.supplier_id), active: true, AND: [partyRoleWhere("supplier")] } });
   if (!supplier) throw appError(404, "SUPPLIER_NOT_FOUND", "Proveedor no encontrado");
   const location = data.with_purchase_order ? null : await tx.location.findFirst({ where: { id: Number(data.location_id), active: true }, include: { place: true } });
   if (!data.with_purchase_order && !location) throw appError(404, "LOCATION_NOT_FOUND", "Seleccione una bodega/ubicacion activa para afectar inventario");
@@ -823,19 +1150,32 @@ module.exports = {
   listPurchaseOrders,
   listOpenPurchaseOrders,
   getPurchaseOrder,
+  getPurchaseOrderPrintData,
   createSupplier,
   createPurchaseOrder,
+  updatePurchaseOrder,
   simulatePurchaseInvoice,
   createPurchaseInvoice,
   annulPurchaseInvoice,
   purchaseReceiptLineState,
+  allocateImportCosts,
   receivePurchaseOrder,
   returnPurchaseOrder,
   updatePOStatus,
   approvePurchaseOrder,
   cancelPurchaseOrder,
+  closePurchaseOrder,
+  purchaseOrderClosureState,
   duplicatePurchaseOrder,
   createReceiptFromPurchaseOrder,
   listPurchaseOrderReceipts,
+  listPurchaseImports,
+  getPurchaseImport,
+  createPurchaseImport,
+  addPurchaseImportCost,
+  confirmPurchaseImportCosts,
+  listImportInvoiceableCosts,
+  linkImportCostInvoice,
+  adjustImportCostVariance,
   checkVMIAlerts
 };

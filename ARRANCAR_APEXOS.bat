@@ -48,6 +48,16 @@ if not exist ".env" (
   if errorlevel 1 goto :error
 )
 
+rem Docker Compose valida tambien las variables de perfiles inactivos.
+rem Este valor existe solo durante el arranque local normal; la certificacion
+rem offline genera y usa su propia credencial desde config/offline-cert-local.env.
+if not defined OFFLINE_CERT_DB_PASSWORD set "OFFLINE_CERT_DB_PASSWORD=apex_offline_cert_local_password"
+
+rem El arranque normal usa PostgreSQL de Docker publicado en el puerto 55432.
+rem Sobrescribe una posible configuracion temporal de certificacion offline (54320).
+set "DATABASE_URL=postgresql://apex:apex_dev_password@127.0.0.1:55432/apexos"
+set "DIRECT_URL=postgresql://apex:apex_dev_password@127.0.0.1:55432/apexos"
+
 if not exist "node_modules\" (
   echo Primera ejecucion: instalando y configurando APEX OS...
   call npm run setup:local
@@ -78,6 +88,10 @@ echo API: http://localhost:3000/health
 echo.
 echo Para detener la aplicacion, presiona Ctrl+C.
 echo.
+echo Sincronizando cliente y esquema de la base local...
+call npm run prisma:generate
+if errorlevel 1 goto :error
+
 call npm run start:local
 if errorlevel 1 goto :error
 

@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Calculator, Plus, Save, Search, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { ComprasNav } from "@/components/compras-nav";
+import { ZeroFriendlyNumberInput } from "@/components/ui/ZeroFriendlyNumberInput";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 
 type Supplier = { id: number; name: string; tax_id?: string | null; credit_days?: number };
@@ -68,10 +69,6 @@ function money(value: number) {
   return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(value || 0);
 }
 
-function numberInputValue(value: number) {
-  return value === 0 ? "" : String(value);
-}
-
 function dueDateFromTerm(postingDate: string, dueTerm: string) {
   const days = Number(String(dueTerm || "AP0").replace(/\D/g, "")) || 0;
   const date = new Date(`${postingDate || today()}T00:00:00`);
@@ -117,12 +114,14 @@ export default function PurchaseInvoicesPage() {
   });
   const [lines, setLines] = useState<InvoiceLine[]>([]);
   const [retentions, setRetentions] = useState<Retention[]>([]);
+  const [retentionRevision, setRetentionRevision] = useState(0);
   const [activeSection, setActiveSection] = useState<"factura" | "retenciones">("factura");
 
   async function loadSupplierRetentions(supplierId: string) {
     if (!supplierId) { setRetentions([]); return; }
     const result = await api<{ retentions: Omit<Retention, "base" | "amount">[] }>(`/api/v1/accounting/suppliers/${supplierId}/retentions`);
     setRetentions(result.retentions.map((row) => ({ ...row, base: 0, amount: 0 })));
+    setRetentionRevision((current) => current + 1);
   }
 
   async function load() {
@@ -171,7 +170,7 @@ export default function PurchaseInvoicesPage() {
       const base = row.type === "reteiva" ? totals.tax : totals.subtotal;
       return { ...row, base, amount: base >= row.minimum_base ? Math.round(base * row.percent) / 100 : 0 };
     }));
-  }, [totals.subtotal, totals.tax]);
+  }, [totals.subtotal, totals.tax, retentionRevision]);
   const missingRequiredHeader = !header.supplier_reference.trim()
     || !header.header_text.trim()
     || !header.supplier_id
@@ -469,8 +468,8 @@ export default function PurchaseInvoicesPage() {
               <div className="md:col-span-2"><p className="text-sm font-medium">{row.concept}</p><p className="text-xs text-neutral-500">{row.type.toUpperCase()} · {row.code} · cuenta {row.account_code}</p></div>
               <label className="text-xs">Porcentaje<input className="mt-1 h-9 w-full rounded-md border border-line bg-white px-2" disabled value={`${row.percent}%`} /></label>
               <label className="text-xs">Base minima<input className="mt-1 h-9 w-full rounded-md border border-line bg-white px-2" disabled value={money(row.minimum_base)} /></label>
-              <label className="text-xs">Base<input className="mt-1 h-9 w-full rounded-md border border-line bg-white px-2" min="0" step="0.01" type="number" value={row.base} onChange={(event) => setRetentions((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, base: Number(event.target.value) } : item))} /></label>
-              <label className="text-xs">Importe<input className="mt-1 h-9 w-full rounded-md border border-line bg-white px-2" min="0" step="0.01" type="number" value={row.amount} onChange={(event) => setRetentions((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, amount: Number(event.target.value) } : item))} /></label>
+              <label className="text-xs">Base<ZeroFriendlyNumberInput className="mt-1 h-9 w-full rounded-md border border-line bg-white px-2" min="0" step="0.01" value={row.base} onValueChange={(value) => setRetentions((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, base: value } : item))} /></label>
+              <label className="text-xs">Importe<ZeroFriendlyNumberInput className="mt-1 h-9 w-full rounded-md border border-line bg-white px-2" min="0" step="0.01" value={row.amount} onValueChange={(value) => setRetentions((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, amount: value } : item))} /></label>
             </div>)}
             {!retentions.length ? <p className="text-sm text-neutral-500">El proveedor no tiene retenciones asignadas desde Contabilidad.</p> : null}
           </div>
@@ -494,8 +493,8 @@ export default function PurchaseInvoicesPage() {
                   <tr className="border-b border-line/70 last:border-0" key={line.localId}>
                     <td className="px-3 py-2 font-mono text-xs">{line.item_code} <span className="font-sans text-neutral-600">{line.item_name}</span></td>
                     <td className="px-3 py-2 font-mono text-xs">{line.purchase_order_number || "--"}</td>
-                    <td className="px-3 py-2"><input className="h-9 w-28 rounded-md border border-line px-2 text-sm" min="0.01" step="0.01" type="number" value={numberInputValue(line.qty)} onChange={(event) => updateLine(line.localId, { qty: event.target.value === "" ? 0 : Number(event.target.value) })} /></td>
-                    <td className="px-3 py-2"><input className="h-9 w-32 rounded-md border border-line px-2 text-sm" min="0" step="0.01" type="number" value={numberInputValue(line.unit_cost)} onChange={(event) => updateLine(line.localId, { unit_cost: event.target.value === "" ? 0 : Number(event.target.value) })} /></td>
+                    <td className="px-3 py-2"><ZeroFriendlyNumberInput className="h-9 w-28 rounded-md border border-line px-2 text-sm" min="0.01" step="0.01" value={line.qty} onValueChange={(value) => updateLine(line.localId, { qty: value })} /></td>
+                    <td className="px-3 py-2"><ZeroFriendlyNumberInput className="h-9 w-32 rounded-md border border-line px-2 text-sm" min="0" step="0.01" value={line.unit_cost} onValueChange={(value) => updateLine(line.localId, { unit_cost: value })} /></td>
                     <td className="px-3 py-2"><select className="h-9 rounded-md border border-line px-2 text-sm" value={line.vat_code} onChange={(event) => updateLine(line.localId, { vat_code: event.target.value })}>{activeVats.map((item) => <option key={item.code} value={item.code}>{item.concept} {item.percent}%</option>)}</select></td>
                     <td className="px-3 py-2"><input className="h-9 w-full rounded-md border border-line px-2 text-sm" value={line.description} onChange={(event) => updateLine(line.localId, { description: event.target.value })} /></td>
                     <td className="px-3 py-2 text-right">{money(line.qty * line.unit_cost)}</td>
@@ -521,7 +520,7 @@ export default function PurchaseInvoicesPage() {
             <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-apex px-4 text-sm font-medium text-apex disabled:opacity-60" disabled={simulating || !canProcessInvoice} onClick={simulateAccounting} type="button">
               <Calculator size={16} /> {simulating ? "Simulando..." : "Simular contabilizacion"}
             </button>
-            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white disabled:opacity-60" disabled={saving || !canProcessInvoice} type="submit"><Save size={16} /> Registrar factura</button>
+            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white disabled:opacity-60" disabled={saving || !canProcessInvoice} type="submit"><Save size={16} /> Registrar y nueva</button>
           </div>
         </section>
 
