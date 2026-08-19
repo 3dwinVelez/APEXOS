@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "environment": "QA",
+  "commit": "b0d2e550b174a79c3a6c86099b81a390fb174dc5",
+  "run_id": "qa-products-1786564324457",
+  "order_id": 39,
+  "products": 2,
+  "evidence_by_product": [1, 1],
+  "pdf_images_embedded": true,
+  "unauthorized_pdf_blocked": true
+}

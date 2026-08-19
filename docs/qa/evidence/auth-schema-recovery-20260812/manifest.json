@@ -1,0 +1,23 @@
+{
+  "change_id": "auth-schema-recovery-20260812",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "60a732830809406103c1b0ab13053a3bb95f9f80",
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["functional.md"] },
+    "error": { "status": "passed", "evidence": ["error.md"] },
+    "support_scripts": { "status": "passed", "evidence": ["support-scripts.md"] },
+    "regression": { "status": "passed", "evidence": ["regression.md"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/auth-session-readiness.js",
+    "evidence": ["certification.json"]
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "mq1 - autorizacion expresa de correccion y promocion controlada",
+    "approved_at": "2026-08-12T22:45:00-05:00"
+  }
+}

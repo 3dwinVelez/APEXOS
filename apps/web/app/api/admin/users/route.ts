@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { authCredentialPatch } from "@/lib/adminUserCredentialSync";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
@@ -34,6 +35,23 @@ async function updateSupabaseAuthUser(userId: string, payload: AnyRow) {
     service: true,
     body: JSON.stringify(payload)
   });
+}
+
+async function findSupabaseAuthUserIdByEmail(email: unknown) {
+  const target = normalizeUsernameEmail(email);
+  if (!target) return "";
+  for (let page = 1; page <= 10; page += 1) {
+    const body = await supabaseRequest(`/auth/v1/admin/users?per_page=200&page=${page}`, { method: "GET", service: true }) as { users?: Array<{ id?: string; email?: string }> };
+    const users = Array.isArray(body?.users) ? body.users : [];
+    const match = users.find((user) => normalizeUsernameEmail(user.email) === target);
+    if (match?.id) return String(match.id);
+    if (users.length < 200) break;
+  }
+  return "";
+}
+
+async function resolveSupabaseAuthUserId(current: AnyRow) {
+  return String(clean(current.user_id) || await findSupabaseAuthUserIdByEmail(current.email) || "");
 }
 
 function clean(value: unknown) {
@@ -324,14 +342,10 @@ export async function PATCH(request: NextRequest) {
       const nextPassword = clean(body.password);
       if (nextPassword) {
         assertPasswordPolicy(nextPassword);
-        if (!current.user_id) throw httpError("El usuario no esta vinculado a Supabase Auth para cambiar la clave.", 409);
-        await updateSupabaseAuthUser(String(current.user_id), {
-          password: nextPassword,
-          user_metadata: {
-            password_reset_by_admin: true,
-            password_reset_at: new Date().toISOString()
-          }
-        });
+        const authUserId = await resolveSupabaseAuthUserId(current);
+        if (!authUserId) throw httpError("No existe una identidad de acceso en Supabase Auth para este usuario. Vincula o recrea su acceso antes de cambiar la clave.", 409);
+        await updateSupabaseAuthUser(authUserId, { password: nextPassword });
+        current.user_id = authUserId;
       }
       nextMetadata = {
         ...metadata,
@@ -343,7 +357,7 @@ export async function PATCH(request: NextRequest) {
         },
         user_audit_trail: [...(Array.isArray(metadata.user_audit_trail) ? metadata.user_audit_trail : []).slice(-9), { at: new Date().toISOString(), action: nextPassword ? "password_reset" : "access_updated", source: "next-api" }]
       };
-      patch = { metadata: nextMetadata, ...(body.active === false ? { status: "inactive" } : {}) };
+      patch = { metadata: nextMetadata, ...(current.user_id ? { user_id: current.user_id } : {}), ...(body.active === false ? { status: "inactive" } : {}) };
       await syncSupabaseUserState({
         userId: current.user_id,
         companyId: current.company_id,
@@ -399,16 +413,17 @@ export async function PATCH(request: NextRequest) {
       const documentNumber = clean(body.document) || clean(current.document_number) || clean(metadata.document);
       if (!documentNumber) throw httpError("Documento requerido.", 400);
       const nextPassword = clean(body.password);
-      if (nextPassword) {
-        assertPasswordPolicy(nextPassword);
-        if (!current.user_id) throw httpError("El usuario no esta vinculado a Supabase Auth para cambiar la clave.", 409);
-        await updateSupabaseAuthUser(String(current.user_id), {
-          password: nextPassword,
-          user_metadata: {
-            password_reset_by_admin: true,
-            password_reset_at: new Date().toISOString()
-          }
-        });
+      if (nextPassword) assertPasswordPolicy(nextPassword);
+      const credentials = authCredentialPatch({ currentEmail: current.email, nextEmail: email, nextPassword });
+      if (credentials.changed) {
+        const authUserId = await resolveSupabaseAuthUserId(current);
+        if (!authUserId) throw httpError("El usuario no tiene una identidad vinculada en Supabase Auth. El correo y la clave no fueron modificados.", 409);
+        const updatedAuth = await updateSupabaseAuthUser(authUserId, credentials.payload) as AnyRow;
+        const confirmedEmail = normalizeUsernameEmail((updatedAuth.user as AnyRow | undefined)?.email || updatedAuth.email);
+        if (credentials.emailChanged && confirmedEmail !== email) {
+          throw httpError("Supabase Auth no confirmo el nuevo correo. No se actualizaron los datos administrativos.", 502);
+        }
+        current.user_id = authUserId;
       }
       const nextStatus = userStatusToEmployeeStatus(body.user_status || metadata.user_status || current.status);
       const rolePermissions = rolePermissionsFromBody(body, metadata.permissions);
@@ -442,6 +457,7 @@ export async function PATCH(request: NextRequest) {
         first_name: clean(body.first_names) || splitName.firstName || current.first_name,
         last_name: clean(body.last_names) || splitName.lastName || current.last_name,
         email,
+        ...(current.user_id ? { user_id: current.user_id } : {}),
         document_type: clean(body.document_type) || current.document_type,
         document_number: documentNumber,
         status: nextStatus,
@@ -466,7 +482,7 @@ export async function PATCH(request: NextRequest) {
       body: JSON.stringify(patch)
     });
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, auth_user_id: current.user_id || null });
   } catch (error) {
     const status = (error as HttpError)?.status || 500;
     return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible actualizar usuario." }, { status });

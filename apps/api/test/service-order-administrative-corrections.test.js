@@ -8,7 +8,9 @@ const {
   hasPermission,
   validateReason,
   inspectChanges,
-  transitionAllowed
+  transitionAllowed,
+  numericOrderId,
+  externalOrderWhere
 } = require("../src/modules/services/administrativeCorrections");
 const { requireExplicitPermission } = require("../src/middleware/rbac");
 
@@ -56,10 +58,17 @@ function correction(overrides = {}) {
 }
 
 function createDb({ currentOrder = order(), currentCorrection = correction(), authorization = null } = {}) {
-  const calls = { tenant: [], updateMany: [], changes: [], audits: [], photos: [], createdPhotos: [], incidents: [] };
+  const calls = { tenant: [], orderQueries: [], updateMany: [], changes: [], audits: [], photos: [], createdPhotos: [], incidents: [] };
   const tx = {
     serviceOrder: {
-      findFirst: async ({ where }) => where.tenant_id === tenantId && Number(where.id) === currentOrder.id ? currentOrder : null,
+      findFirst: async ({ where }) => {
+        calls.orderQueries.push(where);
+        if (where.tenant_id !== currentOrder.tenant_id) return null;
+        if (Number(where.id) === currentOrder.id) return currentOrder;
+        const externalValues = (where.OR || []).map((condition) => condition.metadata?.equals);
+        return externalValues.includes(currentOrder.metadata?.external_order_id)
+          || externalValues.includes(currentOrder.metadata?.external_order_number) ? currentOrder : null;
+      },
       updateMany: async ({ where, data }) => {
         calls.updateMany.push({ where, data });
         return { count: where.version === currentOrder.version ? 1 : 0 };
@@ -160,6 +169,32 @@ test("crear correccion aplica aislamiento por tenant, version e idempotencia", a
   assert.equal(result.status, "DRAFT");
   assert.deepEqual(calls.tenant, [tenantId]);
   await assert.rejects(() => service.createCorrection("tenant-b", requester, 7, { reason_code: "DATA_ENTRY_ERROR", description: "Se corrige la observacion registrada", confirmed: true, expected_version: 3, changes: [{ type: "FIELD_UPDATED", field: "notes", value: "X" }] }), (error) => error.statusCode === 404);
+});
+
+test("resuelve una orden UUID por su identidad externa sin convertirla a NaN", async () => {
+  const externalId = "59c29060-b581-405d-a4b0-ed9ae910da24";
+  const currentOrder = order({ metadata: { external_order_id: externalId } });
+  const { db, calls } = createDb({ currentOrder });
+  const result = await createService(db).createCorrection(tenantId, requester, externalId, {
+    reason_code: "MISSING_EVIDENCE",
+    description: "Se registra la evidencia faltante del producto",
+    confirmed: true,
+    expected_version: 3,
+    changes: [{ type: "OBSERVATION_ADDED", value: "Evidencia validada" }]
+  });
+  assert.equal(result.order_id, currentOrder.id);
+  assert.equal(calls.orderQueries[0].id, undefined);
+  assert.deepEqual(calls.orderQueries[0].OR, externalOrderWhere(externalId).OR);
+  assert.equal(numericOrderId(externalId), null);
+});
+
+test("rechaza identificadores vacios sin consultar Prisma", async () => {
+  const { db, calls } = createDb();
+  await assert.rejects(
+    () => createService(db).listHistory(tenantId, requester, ""),
+    (error) => error.statusCode === 400 && error.code === "SERVICE_ORDER_ID_INVALID"
+  );
+  assert.equal(calls.orderQueries.length, 0);
 });
 
 test("aplicar registra antes/despues, auditoria y version en una sola transaccion", async () => {

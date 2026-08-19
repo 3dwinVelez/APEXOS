@@ -585,8 +585,7 @@ async function listSalesInvoices(tenantId, query = {}) {
     }
     const includeObj = {
       customer: { select: { id: true, name: true, legal_name: true, tax_id: true } },
-      lines: { orderBy: { line_no: "asc" } },
-      cxc: { select: { id: true, number: true, balance: true, status: true } }
+      lines: { orderBy: { line_no: "asc" } }
     };
     const rows = await prisma.salesInvoice.findMany({
       where,

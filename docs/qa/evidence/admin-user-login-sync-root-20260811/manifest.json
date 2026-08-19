@@ -1,0 +1,23 @@
+{
+  "change_id": "admin-user-login-sync-root-20260811",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "4d5d5799816e",
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["functional.md", "certification.json"] },
+    "error": { "status": "passed", "evidence": ["error.md"] },
+    "support_scripts": { "status": "passed", "evidence": ["support-scripts.md"] },
+    "regression": { "status": "passed", "evidence": ["regression.md"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/admin-user-login-sync.js",
+    "evidence": ["certification.json"]
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "Codex E2E QA agent",
+    "approved_at": "2026-08-11T19:00:00.000Z"
+  }
+}

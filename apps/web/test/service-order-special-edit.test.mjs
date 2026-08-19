@@ -30,6 +30,9 @@ test("el panel administrativo exige permiso explicito y no usa bypass por nombre
   assert.match(panelSource, /Foto o soporte/);
   assert.match(panelSource, /PIECE_ISSUE_ADDED/);
   assert.match(panelSource, /Foto de soporte/);
+  assert.match(panelSource, /Array\.isArray\(order\.photos\)/);
+  assert.match(panelSource, /Array\.isArray\(correction\.changes\)/);
+  assert.match(panelSource, /clientUploadId = `admin:\$\{order\.id\}:\$\{correction\.id\}:\$\{crypto\.randomUUID\(\)\}`/);
 });
 
 test("el monitor expone la correccion especial y abre el panel directamente", () => {

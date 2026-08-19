@@ -15,6 +15,7 @@ async function hrRoutes(fastify) {
   fastify.post("/hr/employees", { schema: schemas.employeeSchema, preHandler: requirePermission("hr", "write") }, (request) => service.createEmployee(request.user?.tenant_id, request.body));
 
   fastify.get("/hr/routes", { preHandler: requirePermission("hr", "read") }, (request) => service.listRoutes(request.user?.tenant_id, request.query));
+  fastify.get("/hr/routes/event-summaries", { preHandler: requirePermission("hr", "read") }, (request) => service.listRouteEventSummaries(request.user?.tenant_id));
   fastify.post("/hr/routes", { schema: schemas.routeSchema, preHandler: requirePermission("hr", "write") }, (request) => service.createRoute(request.user?.tenant_id, request.body));
   fastify.post("/hr/routes/bulk", { schema: schemas.routeBulkSchema, preHandler: requirePermission("hr", "write") }, (request) => service.createRoutesBulk(request.user?.tenant_id, request.body));
   fastify.patch("/hr/routes/:id", { schema: schemas.routeSchema, preHandler: requirePermission("hr", "write") }, (request) => service.updateRoute(request.user?.tenant_id, request.params.id, request.body));

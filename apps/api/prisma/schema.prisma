@@ -1539,6 +1539,7 @@ model ServiceOrder {
   updated_at         DateTime          @updatedAt
   incidents          ServiceIncident[]
   photos             ServicePhoto[]
+  items              ServiceOrderItem[]
   corrections        ServiceOrderCorrection[]
 
   @@unique([tenant_id, number])
@@ -1547,6 +1548,35 @@ model ServiceOrder {
   @@index([tenant_id, created_at])
   @@index([tenant_id, status, created_at])
   @@index([tenant_id, technician_id, status, created_at])
+}
+
+model ServiceOrderItem {
+  id              Int               @id @default(autoincrement())
+  tenant_id       String
+  order_id        Int
+  order           ServiceOrder      @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  reference_id    Int
+  reference       ServiceReference  @relation(fields: [reference_id], references: [id], onDelete: Restrict)
+  service_type    String
+  quantity        Float             @default(1)
+  description     String?
+  observation     String?
+  status          String            @default("pendiente")
+  display_order   Int               @default(0)
+  version         Int               @default(1)
+  idempotency_key String?
+  started_at      DateTime?
+  completed_at    DateTime?
+  metadata        Json              @default("{}")
+  created_at      DateTime          @default(now())
+  updated_at      DateTime          @updatedAt
+  photos          ServicePhoto[]
+  incidents       ServiceIncident[]
+
+  @@unique([tenant_id, order_id, idempotency_key], map: "ServiceOrderItem_tenant_order_idempotency_key")
+  @@index([tenant_id, order_id, display_order], map: "ServiceOrderItem_tenant_order_display_idx")
+  @@index([tenant_id, order_id, status], map: "ServiceOrderItem_tenant_order_status_idx")
+  @@index([tenant_id, reference_id], map: "ServiceOrderItem_tenant_reference_idx")
 }
 
 model ServiceReference {
@@ -1565,6 +1595,7 @@ model ServiceReference {
   updated_at          DateTime        @updatedAt
   parts               ServiceReferencePart[]
   orders              ServiceOrder[]
+  order_items         ServiceOrderItem[]
 
   @@unique([tenant_id, code])
   @@index([tenant_id, category])
@@ -1593,6 +1624,8 @@ model ServiceIncident {
   tenant_id   String
   order_id    Int
   order       ServiceOrder @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  item_id     Int?
+  item        ServiceOrderItem? @relation(fields: [item_id], references: [id], onDelete: Restrict)
   description String
   type        String       @default("averia")
   action      String?
@@ -1601,6 +1634,7 @@ model ServiceIncident {
   created_at  DateTime     @default(now())
 
   @@index([tenant_id, order_id])
+  @@index([tenant_id, order_id, item_id], map: "ServiceIncident_tenant_order_item_idx")
 }
 
 model ServicePhoto {
@@ -1608,6 +1642,8 @@ model ServicePhoto {
   tenant_id    String
   order_id     Int
   order        ServiceOrder @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  item_id      Int?
+  item         ServiceOrderItem? @relation(fields: [item_id], references: [id], onDelete: Restrict)
   type         String
   file_url     String?
   base64_data  String?
@@ -1627,6 +1663,7 @@ model ServicePhoto {
 
   @@index([tenant_id, order_id])
   @@index([tenant_id, order_id, active], map: "ServicePhoto_tenant_order_active_idx")
+  @@index([tenant_id, order_id, item_id, active], map: "ServicePhoto_tenant_order_item_active_idx")
   @@index([tenant_id, type])
 }
 

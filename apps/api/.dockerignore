@@ -3,7 +3,6 @@ node_modules
 .gitignore
 docs
 logs
-scripts
 test
 tests
 *.md

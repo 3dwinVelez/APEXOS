@@ -1,0 +1,1 @@
+{"ok":true,"environment":"QA","commit":"0d16741fd1ac","checks":["session","services_orders","services_references","hr_employees","inventory_items","accounting_accounts"],"unauthorized_blocked":true}

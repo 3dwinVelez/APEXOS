@@ -4,7 +4,7 @@ import type { CapturedFile } from "@/components/operations/PhotoCapture";
 import { api } from "@/lib/api";
 import { API_BASE_URL } from "@/lib/apiBaseUrl";
 import { uploadAuthorizedServiceImageData, uploadServiceImageData, getServiceImageUrl } from "@/lib/supabaseStorage";
-import { ArrowLeft, BookOpen, Camera, CheckCircle2, Circle, Download, FileSignature, PackageSearch, Play, Star, Wrench, X, XCircle, ZoomIn } from "lucide-react";
+import { ArrowLeft, BookOpen, CheckCircle2, Circle, Download, FileSignature, PackageSearch, Play, Star, Wrench, X, XCircle, ZoomIn } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
@@ -20,7 +20,8 @@ type ReferenceManual = { title: string; file_name?: string; mime_type?: string; 
 type ServiceReference = { code: string; name: string; parts: ServiceReferencePart[]; manuals?: ReferenceManual[]; metadata?: { manuals?: ReferenceManual[] } };
 type InspectionStatus = "ok" | "averiada" | "faltante";
 type InspectionItem = { part_id: number | string; name: string; quantity: number; unit: string; status: InspectionStatus; comment: string; action: string; supplier_name?: string };
-type ServicePhoto = { id: number | string; type: string; file_url?: string; base64_data?: string; storage_path?: string; metadata?: { mime_type?: string; file_name?: string; part_id?: number | string; part_name?: string; [key: string]: unknown }; created_at?: string };
+type ServicePhoto = { id: number | string; item_id?: number | string | null; type: string; file_url?: string; base64_data?: string; storage_path?: string; metadata?: { mime_type?: string; file_name?: string; part_id?: number | string; part_name?: string; [key: string]: unknown }; created_at?: string };
+type ServiceOrderItem = { id: number | string; legacy?: boolean; reference_id: number | string; reference: ServiceReference; service_type: string; quantity: number; description?: string; observation?: string; status: string; version: number; metadata?: { inspection?: { items?: InspectionItem[]; decision?: string; problem_count?: number; inspected_at?: string } }; photos?: ServicePhoto[]; incidents?: ServiceOrder["incidents"] };
 type SatisfactionQuestion = { id: string; label: string; active?: boolean };
 type ServiceOrder = {
   id: number | string;
@@ -45,8 +46,10 @@ type ServiceOrder = {
   close_longitude?: number;
   duration_minutes?: number;
   no_execution_reason?: string;
-  incidents: Array<{ id: number | string; description: string; type: string; created_at?: string }>;
+  incidents: Array<{ id: number | string; item_id?: number | string | null; description: string; type: string; created_at?: string }>;
   photos: ServicePhoto[];
+  items: ServiceOrderItem[];
+  item_progress?: { total: number; pending: number; active: number; completed: number; blocked: number; all_completed: boolean; partial: boolean };
   metadata?: {
     customer_phone_secondary?: string;
     inspection?: { items?: InspectionItem[]; decision?: string; problem_count?: number };
@@ -75,7 +78,7 @@ const statusLabel: Record<string, string> = {
   lista_facturacion: "Lista para facturacion"
 };
 const executionPhotoTypes = ["producto_abierto", "producto_cerrado"];
-const closePhotoTypes = ["producto_abierto", "producto_cerrado", "firma_cliente"];
+const closePhotoTypes = ["firma_cliente"];
 const satisfactionQuestions = [
   { id: "service_quality", label: "¿Cómo calificas la calidad del servicio realizado?" },
   { id: "technician_attention", label: "¿Cómo calificas la atención y claridad del técnico?" },
@@ -112,6 +115,39 @@ function panelForStatus(status: string): Panel {
   return "historial";
 }
 
+function itemIsFinished(status: string) {
+  return ["completada", "no_ejecutada"].includes(status);
+}
+
+function asCollection<T>(value: unknown): T[] {
+  if (Array.isArray(value)) return value as T[];
+  if (value && typeof value === "object" && Array.isArray((value as { data?: unknown }).data)) {
+    return (value as { data: T[] }).data;
+  }
+  return [];
+}
+
+function normalizeOrder(order: ServiceOrder): ServiceOrder {
+  const reference = order.reference && typeof order.reference === "object"
+    ? { ...order.reference, parts: asCollection<ServiceReferencePart>(order.reference.parts) }
+    : { code: "", name: "Referencia no disponible", parts: [] };
+  const items = asCollection<ServiceOrderItem>(order.items).map((item) => ({
+    ...item,
+    reference: item.reference && typeof item.reference === "object"
+      ? { ...item.reference, parts: asCollection<ServiceReferencePart>(item.reference.parts) }
+      : reference,
+    photos: asCollection<ServicePhoto>(item.photos),
+    incidents: asCollection<ServiceOrder["incidents"][number]>(item.incidents)
+  }));
+  return {
+    ...order,
+    reference,
+    incidents: asCollection<ServiceOrder["incidents"][number]>(order.incidents),
+    photos: asCollection<ServicePhoto>(order.photos),
+    items
+  };
+}
+
 function workflowStep(status: string) {
   if (status === "pendiente") return 0;
   if (["en_curso", "inspeccion"].includes(status)) return 1;
@@ -137,15 +173,17 @@ function photoSrc(photo: ServicePhoto) {
 
 function mergeOrderState(current: ServiceOrder | null, incoming: ServiceOrder | null | undefined) {
   if (!incoming?.id) return current;
-  if (!current?.id) return incoming;
+  const safeIncoming = normalizeOrder(incoming);
+  if (!current?.id) return safeIncoming;
+  const safeCurrent = normalizeOrder(current);
   const photosById = new Map<string, ServicePhoto>();
-  for (const photo of current.photos || []) photosById.set(String(photo.id), photo);
-  for (const photo of incoming.photos || []) photosById.set(String(photo.id), photo);
+  for (const photo of safeCurrent.photos) photosById.set(String(photo.id), photo);
+  for (const photo of safeIncoming.photos) photosById.set(String(photo.id), photo);
   return {
-    ...current,
-    ...incoming,
-    reference: incoming.reference || current.reference,
-    incidents: incoming.incidents?.length ? incoming.incidents : current.incidents,
+    ...safeCurrent,
+    ...safeIncoming,
+    reference: safeIncoming.reference || safeCurrent.reference,
+    incidents: safeIncoming.incidents.length ? safeIncoming.incidents : safeCurrent.incidents,
     photos: Array.from(photosById.values())
   };
 }
@@ -175,7 +213,9 @@ export default function ServiceOperationPage() {
   const [activePanel, setActivePanel] = useState<Panel>("inicio");
   const [inspectionMode, setInspectionMode] = useState<InspectionMode>("decision");
   const [zoomedPhoto, setZoomedPhoto] = useState<ServicePhoto | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string>("");
   const inFlightUploads = useRef(new Set<string>());
+  const selectedItem = order?.items?.find((item) => String(item.id) === selectedItemId) || order?.items?.[0];
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -186,10 +226,21 @@ export default function ServiceOperationPage() {
         setMessage("Esta solicitud externa aun no esta disponible como orden operativa local. Vuelve al monitor y completala antes de ejecutar el servicio.");
         return;
       }
-      const data = await api<ServiceOrder>(`/api/v1/services/orders/${params.id}`);
-      if (!data?.id) throw new Error("No se encontro el servicio solicitado o no tienes permisos para verlo.");
+      const response = await api<ServiceOrder>(`/api/v1/services/orders/${params.id}`);
+      if (!response?.id) throw new Error("No se encontro el servicio solicitado o no tienes permisos para verlo.");
+      const data = normalizeOrder(response);
       setOrder((current) => mergeOrderState(current, data));
-      setActivePanel((current) => current === "inicio" && data.status !== "pendiente" ? panelForStatus(data.status) : current);
+      setSelectedItemId((current) => {
+        const currentItem = data.items.find((item) => String(item.id) === current);
+        const nextItem = currentItem && !itemIsFinished(currentItem.status)
+          ? currentItem
+          : data.items.find((item) => !itemIsFinished(item.status)) || currentItem || data.items[0];
+        setActivePanel(["cerrada", "no_ejecutada"].includes(data.status)
+          ? "historial"
+          : data.item_progress?.all_completed ? "ejecucion" : panelForStatus(nextItem?.status || data.status));
+        setClosureMode(Boolean(data.item_progress?.all_completed));
+        return String(nextItem?.id || "");
+      });
     } catch (error) {
       setOrder(null);
       setMessage(error instanceof Error ? error.message : "No fue posible cargar el servicio.");
@@ -204,8 +255,9 @@ export default function ServiceOperationPage() {
 
   useEffect(() => {
     if (order?.status !== "ejecucion") return;
-    void api<SatisfactionQuestion[]>("/api/v1/services/satisfaction-questions")
-      .then((questions) => {
+    void api<unknown>("/api/v1/services/satisfaction-questions")
+      .then((response) => {
+        const questions = asCollection<SatisfactionQuestion>(response);
         const activeQuestions = questions.filter((question) => question.active !== false && question.id && question.label);
         setSurveyQuestions(activeQuestions.length ? activeQuestions : fallbackSatisfactionQuestions());
       })
@@ -220,17 +272,55 @@ export default function ServiceOperationPage() {
         setNoExecutionReason(problems.map((item) => `${inspectionStatusLabel[item.status]}: ${item.name}${item.comment ? ` - ${item.comment}` : ""}`).join("\n"));
       }
     }
-    if (executionPhotoTypes.every((type) => order.photos.some((photo) => photo.type === type))) setClosureMode(true);
-    const saved = order.metadata?.inspection?.items;
+    if (order.item_progress?.all_completed) setClosureMode(true);
+    const saved = selectedItem?.metadata?.inspection?.items || (selectedItem?.legacy ? order.metadata?.inspection?.items : undefined);
     if (saved?.length) {
       setInspection(saved.map((item) => ({ ...item, part_id: item.part_id, quantity: Number(item.quantity || 1), unit: item.unit || "und", status: (["ok", "averiada", "faltante"].includes(item.status) ? item.status : "ok") as InspectionStatus, action: item.action || "ninguna" })));
       return;
     }
-    const parts = order.reference?.parts || [];
+    const configuredParts = selectedItem?.reference?.parts || order.reference?.parts || [];
+    const parts = configuredParts.length ? configuredParts : selectedItem ? [{
+      id: -Number(selectedItem.reference_id),
+      name: selectedItem.reference?.name || "Producto completo",
+      quantity: 1,
+      unit: "producto"
+    }] : [];
     setInspection(parts.map((part) => ({ part_id: part.id, name: part.name, quantity: Number(part.quantity || 1), unit: part.unit || "und", status: "ok", comment: "", action: "ninguna" })));
-  }, [order, noExecutionReason]);
+  }, [order, noExecutionReason, selectedItem]);
+
+  async function transitionItem(status: string) {
+    if (!selectedItem || selectedItem.legacy) return;
+    setWorking(true);
+    setMessage("");
+    try {
+      if (status === "en_curso" && order?.status === "pendiente") {
+        await api(`/api/v1/services/orders/${params.id}/start`, {
+          method: "PATCH",
+          body: JSON.stringify({ metadata: { start_without_gps: true, start_method: "technician_manual_confirmation" } })
+        });
+      }
+      await api(`/api/v1/services/orders/${params.id}/items/${selectedItem.id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status, expected_version: selectedItem.version })
+      });
+      if (status === "completada" || status === "no_ejecutada") {
+        setCaptures({});
+        setUploading({});
+        setUploadStatus({});
+        setUploadProgress({});
+      }
+      await load();
+      setMessage(status === "completada" ? "Solicitud finalizada. Continua con la siguiente solicitud de la orden." : "Estado de la solicitud actualizado.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No fue posible actualizar la solicitud.");
+    } finally {
+      setWorking(false);
+    }
+  }
 
   async function uploadPhoto(type: string, file: CapturedFile | null, metadata: Record<string, unknown> = {}, captureKey = type) {
+    const orderLevelEvidence = type === "firma_cliente";
+    const targetItemId = !orderLevelEvidence && selectedItem && !selectedItem.legacy ? String(selectedItem.id) : "";
     if (file && (type === "pieza_averiada" ? hasPersistedProblemEvidence(metadata.part_id as number | string) : hasPersistedPhoto(type))) {
       setMessage(`La evidencia ${photoLabels[type] || type} ya fue registrada y no puede repetirse.`);
       return false;
@@ -250,7 +340,7 @@ export default function ServiceOperationPage() {
       const companyId = typeof window !== "undefined" ? localStorage.getItem("apexos_company_id") || "" : "";
       const serviceId = String(params.id);
       let storagePath = "";
-      const clientUploadId = `${params.id}:${captureKey}:${file.name}:${file.size}:${file.processedAt || Date.now()}`;
+      const clientUploadId = `${params.id}:${targetItemId || "legacy"}:${captureKey}:${file.name}:${file.size}:${file.processedAt || Date.now()}`;
       if (file.base64 && (companyId || AUTHORIZED_UPLOADS_ENABLED)) {
         try {
           const imageData = { base64: file.base64, name: file.name, type: file.type };
@@ -280,6 +370,7 @@ export default function ServiceOperationPage() {
         method: "POST",
         body: JSON.stringify({
           type,
+          ...(targetItemId ? { item_id: Number(targetItemId) } : {}),
           ...(storagePath ? { storage_path: storagePath } : { base64_data: file.base64 }),
           size_bytes: file.size,
           mime_type: file.type,
@@ -299,7 +390,13 @@ export default function ServiceOperationPage() {
         ...current,
         photos: current.photos.some((photo) => photo.id === savedPhoto.id)
           ? current.photos.map((photo) => photo.id === savedPhoto.id ? savedPhoto : photo)
-          : [...current.photos, savedPhoto]
+          : [...current.photos, savedPhoto],
+        items: targetItemId ? current.items.map((item) => String(item.id) === targetItemId ? {
+          ...item,
+          photos: (item.photos || []).some((photo) => photo.id === savedPhoto.id)
+            ? (item.photos || []).map((photo) => photo.id === savedPhoto.id ? savedPhoto : photo)
+            : [...(item.photos || []), savedPhoto]
+        } : item) : current.items
       } : current);
       setUploadStatus((current) => ({ ...current, [captureKey]: "uploaded" }));
       setUploadProgress((current) => ({ ...current, [captureKey]: 100 }));
@@ -351,7 +448,10 @@ export default function ServiceOperationPage() {
         average: surveyQuestions.reduce((total, question) => total + (satisfactionRatings[question.id] || 0), 0) / surveyQuestions.length,
         completed_at: new Date().toISOString()
       } : undefined;
-      const body = action === "close-not-executed" ? { no_execution_reason: noExecutionReason || "Cliente no disponible / evidencia pendiente" } : {};
+      const body = action === "close-not-executed" ? {
+        no_execution_reason: noExecutionReason || "Cliente no disponible / evidencia pendiente",
+        ...(selectedItem && !selectedItem.legacy ? { item_id: Number(selectedItem.id) } : {})
+      } : {};
       const updated = await api<ServiceOrder>(`/api/v1/services/orders/${params.id}/${action}`, {
         method: "PATCH",
         body: JSON.stringify({
@@ -381,15 +481,15 @@ export default function ServiceOperationPage() {
   }
 
   function hasProblemEvidence(partId: number | string) {
-    return Boolean(captures[`pieza_${partId}`]) || Boolean(order?.photos.some((photo) => photo.type === "pieza_averiada" && String(photo.metadata?.part_id) === String(partId)));
+    return Boolean(captures[`pieza_${partId}`]) || Boolean(order?.photos.some((photo) => String(photo.item_id || "") === selectedItemId && photo.type === "pieza_averiada" && String(photo.metadata?.part_id) === String(partId)));
   }
 
   function hasPersistedProblemEvidence(partId: number | string) {
-    return Boolean(order?.photos.some((photo) => photo.type === "pieza_averiada" && String(photo.metadata?.part_id) === String(partId)));
+    return Boolean(order?.photos.some((photo) => String(photo.item_id || "") === selectedItemId && photo.type === "pieza_averiada" && String(photo.metadata?.part_id) === String(partId)));
   }
 
   function hasPersistedPhoto(type: string) {
-    return Boolean(order?.photos.some((photo) => photo.type === type));
+    return Boolean(order?.photos.some((photo) => photo.type === type && (type === "firma_cliente" || selectedItemId.startsWith("legacy-") || String(photo.item_id || "") === selectedItemId)));
   }
 
   function uploadsPending(types: string[]) {
@@ -428,6 +528,20 @@ export default function ServiceOperationPage() {
     setActivePanel("novedad");
   }
 
+  function selectOrderItem(item: ServiceOrderItem) {
+    if (working || inFlightUploads.current.size) return;
+    setSelectedItemId(String(item.id));
+    const orderReadyToClose = Boolean(order?.item_progress?.all_completed);
+    setActivePanel(orderReadyToClose ? "ejecucion" : panelForStatus(item.status));
+    setClosureMode(orderReadyToClose);
+    setInspectionMode("decision");
+    setCaptures({});
+    setUploading({});
+    setUploadStatus({});
+    setUploadProgress({});
+    setMessage("");
+  }
+
   function validateInspection() {
     const problems = inspection.filter((item) => item.status !== "ok");
     const missing = problems.filter((item) => !item.comment.trim() || !hasProblemEvidence(item.part_id));
@@ -459,6 +573,7 @@ export default function ServiceOperationPage() {
     return api<ServiceOrder>(`/api/v1/services/orders/${params.id}/inspection`, {
       method: "PATCH",
       body: JSON.stringify({
+        ...(selectedItemId && !selectedItemId.startsWith("legacy-") ? { item_id: Number(selectedItemId) } : {}),
         decision,
         items: inspection,
         metadata: {
@@ -477,7 +592,10 @@ export default function ServiceOperationPage() {
     try {
       const inspected = await saveInspection("armable");
       if (!inspected) return;
-      const updated = await api<ServiceOrder>(`/api/v1/services/orders/${params.id}/execution`, { method: "PATCH", body: JSON.stringify({}) });
+      const updated = await api<ServiceOrder>(`/api/v1/services/orders/${params.id}/execution`, {
+        method: "PATCH",
+        body: JSON.stringify(selectedItemId && !selectedItemId.startsWith("legacy-") ? { item_id: Number(selectedItemId) } : {})
+      });
       setOrder((current) => mergeOrderState(current, updated));
       setClosureMode(false);
       setActivePanel("ejecucion");
@@ -551,11 +669,38 @@ export default function ServiceOperationPage() {
       </div>
     );
   }
-  const referenceManuals = order.reference?.manuals?.length ? order.reference.manuals : order.reference?.metadata?.manuals || [];
+  const activeReference = selectedItem?.reference || order.reference;
+  const referenceManuals = activeReference?.manuals?.length ? activeReference.manuals : activeReference?.metadata?.manuals || [];
   const orderCompleted = ["cerrada", "no_ejecutada"].includes(order.status);
-  const inspectedItems = order.metadata?.inspection?.items || [];
-  const inspectionIssues = inspectedItems.filter((item) => item.status !== "ok");
-  const inspectionOkCount = inspectedItems.length - inspectionIssues.length;
+  const messageIsError = /^Error\s+\d+|^No (?:fue|se puede)|requiere|debes|pendiente:/i.test(message);
+  const supportGroups = order.items.map((item, index) => {
+    const storedInspection = item.metadata?.inspection?.items || (item.legacy ? order.metadata?.inspection?.items : []) || [];
+    const inspectionDecision = item.metadata?.inspection?.decision || (item.legacy ? order.metadata?.inspection?.decision : "");
+    const itemInspection = storedInspection.length || !inspectionDecision ? storedInspection : [{
+      part_id: -Number(item.reference_id),
+      name: item.reference?.name || "Producto completo",
+      quantity: 1,
+      unit: "producto",
+      status: "ok" as InspectionStatus,
+      comment: "Validacion general del producto",
+      action: "ninguna"
+    }];
+    return {
+      item,
+      index,
+      photos: item.legacy ? order.photos : order.photos.filter((photo) => photo.type !== "firma_cliente" && String(photo.item_id || "") === String(item.id)),
+      incidents: item.legacy ? order.incidents : order.incidents.filter((incident) => String(incident.item_id || "") === String(item.id)),
+      inspection: itemInspection
+    };
+  });
+  const hasLegacyItem = order.items.some((item) => item.legacy);
+  const orderLevelPhotos = order.photos.filter((photo) => photo.item_id == null || photo.type === "firma_cliente");
+  const signaturePhotos = orderLevelPhotos.filter((photo) => photo.type === "firma_cliente");
+  const generalPhotos = hasLegacyItem ? [] : [
+    ...orderLevelPhotos.filter((photo) => photo.type !== "firma_cliente"),
+    ...(signaturePhotos.length ? [signaturePhotos[signaturePhotos.length - 1]] : [])
+  ];
+  const generalIncidents = hasLegacyItem ? [] : order.incidents.filter((incident) => incident.item_id == null);
 
   return (
     <div className="mx-auto max-w-[1440px] space-y-4 pb-32 md:pb-8">
@@ -571,17 +716,37 @@ export default function ServiceOperationPage() {
         </div>
       </header>
 
-      {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-900">{message}</div> : null}
+      {message ? <div className={`rounded-md border p-4 text-sm font-medium ${messageIsError ? "border-red-200 bg-red-50 text-red-900" : "border-emerald-200 bg-emerald-50 text-emerald-900"}`}>{message}</div> : null}
+
+      {order.items?.length ? <section className="rounded-md border border-line bg-white p-3 sm:p-4">
+        <div className="mb-3 flex items-center justify-between gap-3"><div><h2 className="text-base font-semibold">Solicitudes</h2><p className="text-xs text-neutral-500">{order.item_progress?.completed || 0} de {order.items.length} terminadas</p></div><span className="rounded-md bg-paper px-2 py-1 text-xs font-semibold">{order.items.length}</span></div>
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          {order.items.map((item, index) => {
+            const selected = String(item.id) === String(selectedItem?.id);
+            const completed = ["completada", "no_ejecutada"].includes(item.status);
+            return <button className={`min-h-20 rounded-md border p-3 text-left ${selected ? "border-apex bg-apex/5" : "border-line bg-white"}`} disabled={working} key={item.id} onClick={() => selectOrderItem(item)} type="button">
+              <span className="flex items-center justify-between gap-2 text-xs"><span className="font-semibold">Solicitud {index + 1}</span><span className={completed ? "text-emerald-700" : item.status === "pendiente" ? "text-neutral-500" : "text-apex"}>{completed ? "Completada" : statusLabel[item.status] || item.status}</span></span>
+              <span className="mt-1 block truncate text-sm font-semibold">{item.reference?.code} · {item.service_type}</span>
+              <span className="mt-1 block text-xs text-neutral-500">{item.observation || "Sin observacion adicional"}</span>
+            </button>;
+          })}
+        </div>
+        {selectedItem && !selectedItem.legacy && !["completada", "no_ejecutada"].includes(selectedItem.status) ? <div className="mt-3 flex flex-wrap gap-2 border-t border-line pt-3">
+          {selectedItem.status === "pendiente" ? <button className="inline-flex h-11 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white" disabled={working} onClick={() => transitionItem("en_curso")} type="button"><Play size={16} /> Iniciar solicitud</button> : null}
+          {selectedItem.status === "ejecucion" ? <span className="inline-flex min-h-11 items-center rounded-md bg-emerald-50 px-3 text-sm font-semibold text-emerald-800">Captura ambas evidencias para finalizar</span> : null}
+          <button className="inline-flex h-11 items-center gap-2 rounded-md border border-amber-300 px-4 text-sm font-semibold text-amber-900" disabled={working} onClick={() => transitionItem("bloqueada")} type="button"><FileSignature size={16} /> Bloquear</button>
+        </div> : null}
+      </section> : null}
 
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(300px,0.8fr)]">
         <AdministrativeCorrectionPanel initiallyOpen={searchParams.get("corregir") === "1"} order={order} onApplied={load} />
         <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
-        <p className="text-sm font-semibold">{order.reference?.code} · {order.reference?.name}</p>
+        <p className="text-sm font-semibold">{activeReference?.code} · {activeReference?.name}</p>
         <p className="mt-1 text-xs text-neutral-500">
-          {order.reference?.parts.length || 0} pieza(s) · {order.service_type} · {[order.customer_phone, order.metadata?.customer_phone_secondary].filter(Boolean).join(" / ") || "Sin telefono"}
+          {activeReference?.parts.length || 0} pieza(s) · {selectedItem?.service_type || order.service_type} · {[order.customer_phone, order.metadata?.customer_phone_secondary].filter(Boolean).join(" / ") || "Sin telefono"}
         </p>
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-neutral-600">
-          <span className="rounded-md bg-paper px-3 py-2">{order.photos.length} evidencias</span>
+          <span className="rounded-md bg-paper px-3 py-2">{selectedItem?.photos?.length || 0} evidencias de esta solicitud</span>
           <span className="rounded-md bg-paper px-3 py-2">{order.incidents.length} novedades</span>
         </div>
         </section>
@@ -591,7 +756,7 @@ export default function ServiceOperationPage() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-apex">Avance de la orden</p>
-            <p className="mt-1 text-sm text-neutral-600">Paso {workflowStep(order.status) + 1} de {workflowSteps.length}: <span className="font-semibold text-neutral-900">{workflowSteps[workflowStep(order.status)].label}</span></p>
+            <p className="mt-1 text-sm text-neutral-600">Paso {workflowStep(selectedItem?.status || order.status) + 1} de {workflowSteps.length}: <span className="font-semibold text-neutral-900">{workflowSteps[workflowStep(selectedItem?.status || order.status)].label}</span></p>
           </div>
           {!["cerrada", "no_ejecutada"].includes(order.status) ? (
             <button className="hidden min-h-11 shrink-0 items-center justify-center gap-2 rounded-md border border-red-200 px-3 text-sm font-semibold text-red-700 hover:bg-red-50 md:inline-flex" onClick={openIncidentReport} type="button">
@@ -601,8 +766,9 @@ export default function ServiceOperationPage() {
         </div>
         <div className="mt-4 grid grid-cols-4 gap-1">
           {workflowSteps.map((step, index) => {
-            const current = index === workflowStep(order.status);
-            const completed = index < workflowStep(order.status) || ["cerrada", "no_ejecutada"].includes(order.status);
+            const selectedStatus = selectedItem?.status || order.status;
+            const current = index === workflowStep(selectedStatus);
+            const completed = index < workflowStep(selectedStatus) || itemIsFinished(selectedStatus) || ["cerrada", "no_ejecutada"].includes(order.status);
             return (
               <div className="min-w-0" key={step.id}>
                 <div className={`h-1.5 rounded-full ${completed || current ? "bg-apex" : "bg-line"}`} />
@@ -617,17 +783,17 @@ export default function ServiceOperationPage() {
         {order.status === "no_ejecutada" ? <p className="mt-3 rounded-md bg-amber-50 p-2 text-xs font-semibold text-amber-900">La orden finalizó mediante una novedad soportada.</p> : null}
       </section>
 
-      {activePanel === "inicio" && order.status === "pendiente" ? (
+      {activePanel === "inicio" && selectedItem?.status === "pendiente" ? (
         <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
           <h2 className="mb-3 text-base font-semibold">Inicio del servicio</h2>
           <div className="rounded-md border border-line bg-paper p-3">
             <p className="font-semibold">Confirma el inicio para continuar con la inspección.</p>
           </div>
-          <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white disabled:opacity-50" disabled={working} onClick={() => update("start")} type="button"><Play size={18} /> Iniciar servicio</button>
+          <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white disabled:opacity-50" disabled={working} onClick={() => transitionItem("en_curso")} type="button"><Play size={18} /> Iniciar solicitud</button>
         </section>
       ) : null}
 
-      {activePanel === "inspeccion" && ["en_curso", "inspeccion"].includes(order.status) ? (
+      {activePanel === "inspeccion" && selectedItem && ["en_curso", "inspeccion"].includes(selectedItem.status) ? (
         <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
           <h2 className="mb-3 text-base font-semibold">Inspección</h2>
           {referenceManuals.length ? (
@@ -735,7 +901,7 @@ export default function ServiceOperationPage() {
         </section>
       ) : null}
 
-      {activePanel === "ejecucion" && order.status === "ejecucion" ? (
+      {activePanel === "ejecucion" && (selectedItem?.status === "ejecucion" || Boolean(order.item_progress?.all_completed)) ? (
         <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
           {!closureMode ? (
             <>
@@ -744,7 +910,7 @@ export default function ServiceOperationPage() {
                 <PhotoCapture label="Foto 1: Producto abierto" required locked={hasPersistedPhoto("producto_abierto")} loading={uploading.producto_abierto} progress={uploadProgress.producto_abierto} status={uploadStatus.producto_abierto} value={captures.producto_abierto || null} onChange={(file) => uploadPhoto("producto_abierto", file)} />
                 <PhotoCapture label="Foto 2: Producto cerrado" required locked={hasPersistedPhoto("producto_cerrado")} loading={uploading.producto_cerrado} progress={uploadProgress.producto_cerrado} status={uploadStatus.producto_cerrado} value={captures.producto_cerrado || null} onChange={(file) => uploadPhoto("producto_cerrado", file)} />
               </div>
-              <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white disabled:opacity-50" disabled={!executionPhotosReady()} onClick={() => setClosureMode(true)} type="button"><Camera size={18} /> {uploadsPending(executionPhotoTypes) ? "Guardando evidencias..." : "Continuar al cierre"}</button>
+              <button className="mt-3 inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-apex text-base font-semibold text-white disabled:opacity-50" disabled={working || !executionPhotosReady()} onClick={() => transitionItem("completada")} type="button"><CheckCircle2 size={18} /> {uploadsPending(executionPhotoTypes) ? "Guardando evidencias..." : "Finalizar solicitud"}</button>
             </>
           ) : (
             <>
@@ -862,39 +1028,23 @@ export default function ServiceOperationPage() {
               </div>
             </div>
           ) : null}
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
-            {order.photos.map((photo) => {
-              const src = photoSrc(photo);
-              return (
-                <div className="rounded-md border border-line bg-paper p-2" key={photo.id}>
-                  {src ? <button className="group relative block w-full overflow-hidden rounded-md" onClick={() => setZoomedPhoto(photo)} type="button"><Image className="aspect-square w-full object-cover" height={480} src={src} alt={photoLabels[photo.type] || photo.type} unoptimized width={480} /><span className="absolute inset-0 flex items-center justify-center bg-black/0 text-white opacity-0 transition group-hover:bg-black/35 group-hover:opacity-100"><ZoomIn size={28} /></span></button> : <div className="flex aspect-square items-center justify-center rounded-md bg-white text-xs text-neutral-500">Sin preview</div>}
-                  <p className="mt-2 text-xs font-semibold">{photoLabels[photo.type] || photo.type}</p>
-                  {photo.metadata?.part_name ? <p className="text-[11px] text-neutral-500">{String(photo.metadata.part_name)}</p> : null}
+          <div className="space-y-3">
+            {supportGroups.map(({ item, index, photos, incidents, inspection: itemInspection }) => {
+              const issues = itemInspection.filter((piece) => piece.status !== "ok");
+              const okCount = itemInspection.length - issues.length;
+              const inspectionDecision = item.metadata?.inspection?.decision || (item.legacy ? order.metadata?.inspection?.decision : "");
+              return <article className="rounded-md border border-line bg-paper p-3" key={item.id}>
+                <div className="flex flex-wrap items-start justify-between gap-2 border-b border-line pb-3"><div><p className="text-xs font-semibold text-apex">Solicitud {index + 1}</p><h3 className="text-sm font-semibold">{item.reference?.code} · {item.reference?.name}</h3><p className="mt-1 text-xs text-neutral-500">{item.service_type} · {statusLabel[item.status] || item.status}</p></div><span className="rounded-md bg-white px-2 py-1 text-xs font-semibold">{photos.length} soporte(s)</span></div>
+                <div className="mt-3 rounded-md border border-line bg-white p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-sm font-semibold">Validacion de piezas</p><p className="mt-0.5 text-xs text-neutral-500">{itemInspection.length ? `${itemInspection.length} revisadas · ${okCount} OK · ${issues.length} con novedad` : inspectionDecision ? "Validacion completada · referencia sin piezas configuradas" : "Sin inspeccion registrada"}</p></div>{inspectionDecision ? <span className={`rounded-md px-2 py-1 text-xs font-semibold ${issues.length ? "bg-amber-100 text-amber-900" : "bg-emerald-100 text-emerald-900"}`}>{issues.length ? `${issues.length} novedad(es)` : inspectionDecision === "armable" ? "Armable" : "No armable"}</span> : null}</div>
+                  {issues.length ? <div className="mt-3 grid gap-2">{issues.map((piece) => <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950" key={piece.part_id}><p className="font-semibold">{piece.name}: {inspectionStatusLabel[piece.status]}</p>{piece.comment ? <p className="mt-1 text-xs">{piece.comment}</p> : null}{piece.action && piece.action !== "ninguna" ? <p className="mt-1 text-xs font-semibold">Accion: {piece.action}</p> : null}</div>)}</div> : null}
+                  {itemInspection.length ? <details className="mt-3 border-t border-line pt-2"><summary className="cursor-pointer py-1 text-xs font-semibold text-apex">Ver detalle de las {itemInspection.length} piezas</summary><div className="mt-2 grid gap-1 sm:grid-cols-2">{itemInspection.map((piece) => <div className="min-w-0 rounded-md bg-paper px-2 py-1.5 text-xs" key={piece.part_id}><p className="flex items-center justify-between gap-2"><span className="truncate font-medium">{piece.name}</span><span className={`shrink-0 font-semibold ${piece.status === "ok" ? "text-emerald-700" : "text-amber-800"}`}>{inspectionStatusLabel[piece.status]}</span></p>{piece.comment ? <p className="mt-1 text-neutral-600">{piece.comment}</p> : null}{piece.action && piece.action !== "ninguna" ? <p className="mt-1 font-medium text-apex">Accion: {piece.action}</p> : null}</div>)}</div></details> : null}
                 </div>
-              );
+                {photos.length ? <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">{photos.map((photo) => { const src = photoSrc(photo); return <div className="rounded-md border border-line bg-white p-2" key={photo.id}>{src ? <button className="group relative block w-full overflow-hidden rounded-md" onClick={() => setZoomedPhoto(photo)} type="button"><Image className="aspect-square w-full object-cover" height={480} src={src} alt={photoLabels[photo.type] || photo.type} unoptimized width={480} /><span className="absolute inset-0 flex items-center justify-center bg-black/0 text-white opacity-0 transition group-hover:bg-black/35 group-hover:opacity-100"><ZoomIn size={28} /></span></button> : <div className="flex aspect-square items-center justify-center rounded-md bg-paper text-xs text-neutral-500">Sin preview</div>}<p className="mt-2 text-xs font-semibold">{photoLabels[photo.type] || photo.type}</p>{photo.metadata?.part_name ? <p className="text-[11px] text-neutral-500">{String(photo.metadata.part_name)}</p> : null}</div>; })}</div> : <p className="mt-3 text-sm text-neutral-500">Sin soportes para esta referencia.</p>}
+                <div className="mt-3"><p className="text-xs font-semibold uppercase text-neutral-500">Novedades de la solicitud</p>{incidents.length ? <div className="mt-2 grid gap-2">{incidents.map((incident) => <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900" key={incident.id}><p className="font-semibold">{incident.type}</p><p className="mt-1">{incident.description}</p></div>)}</div> : <p className="mt-1 text-sm text-neutral-500">Sin novedades asociadas.</p>}</div>
+              </article>;
             })}
-          </div>
-          <div className="space-y-2">
-            {inspectedItems.length ? (
-              <div className="rounded-md border border-line bg-paper p-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-semibold">Inspeccion de piezas</p>
-                    <p className="mt-0.5 text-xs text-neutral-500">{inspectedItems.length} revisadas · {inspectionOkCount} OK · {inspectionIssues.length} con novedad</p>
-                  </div>
-                  <span className={`rounded-md px-2 py-1 text-xs font-semibold ${inspectionIssues.length ? "bg-amber-100 text-amber-900" : "bg-emerald-100 text-emerald-900"}`}>{inspectionIssues.length ? `${inspectionIssues.length} novedad(es)` : "Todo OK"}</span>
-                </div>
-                {inspectionIssues.length ? <div className="mt-3 grid gap-2">{inspectionIssues.map((item) => <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950" key={item.part_id}><span className="font-semibold">{item.name}: {inspectionStatusLabel[item.status]}</span>{item.comment ? ` · ${item.comment}` : ""}</p>)}</div> : null}
-                <details className="mt-3 border-t border-line pt-2">
-                  <summary className="cursor-pointer text-xs font-semibold text-apex">Ver detalle de todas las piezas</summary>
-                  <div className="mt-2 grid gap-1 sm:grid-cols-2">
-                    {inspectedItems.map((item) => <p className="flex min-w-0 items-center justify-between gap-2 rounded-md bg-white px-2 py-1.5 text-xs" key={item.part_id}><span className="truncate">{item.name}</span><span className={`shrink-0 font-semibold ${item.status === "ok" ? "text-emerald-700" : "text-amber-800"}`}>{inspectionStatusLabel[item.status]}</span></p>)}
-                  </div>
-                </details>
-              </div>
-            ) : null}
-            {order.incidents.map((item) => <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-900" key={item.id}>{item.type}: {item.description}</p>)}
-            {!order.photos.length && !order.incidents.length ? <p className="text-sm text-neutral-500">Sin evidencia registrada.</p> : null}
+            {generalPhotos.length || generalIncidents.length ? <article className="rounded-md border border-line bg-white p-3"><h3 className="text-sm font-semibold">Soportes generales de la orden</h3><div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">{generalPhotos.map((photo) => { const src = photoSrc(photo); return <div className="rounded-md border border-line bg-paper p-2" key={photo.id}>{src ? <button className="block w-full overflow-hidden rounded-md" onClick={() => setZoomedPhoto(photo)} type="button"><Image className="aspect-square w-full object-cover" height={480} src={src} alt={photoLabels[photo.type] || photo.type} unoptimized width={480} /></button> : null}<p className="mt-2 text-xs font-semibold">{photoLabels[photo.type] || photo.type}</p></div>; })}</div>{generalIncidents.map((incident) => <p className="mt-2 rounded-md bg-amber-50 p-3 text-sm text-amber-900" key={incident.id}>{incident.type}: {incident.description}</p>)}</article> : null}
           </div>
         </section>
       ) : null}

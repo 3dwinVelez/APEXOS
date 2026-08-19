@@ -1,6 +1,7 @@
 const prisma = require("../../core/prisma");
 const { getTenantConfig, invalidateTenantCache } = require("../../core/tenantCache");
 const { MAX_DOCUMENT_BYTES, MAX_EVIDENCE_BYTES, assertSafeFile, normalizeFileName, secureStoragePath } = require("../../security/policy");
+const { ITEM_STATUSES, FINAL_ITEM_STATUSES, normalizeItem, validateItems, aggregateItemProgress, legacyItem } = require("./orderItems");
 
 function appError(statusCode, code, message) {
   const error = new Error(message);
@@ -24,12 +25,13 @@ async function nextNumber() {
 }
 
 function orderInclude() {
-  return { reference: { include: { parts: true } }, incidents: true, photos: { where: { active: true } } };
+  return { reference: { include: { parts: true } }, items: { include: { reference: { include: { parts: true } }, incidents: true, photos: { where: { active: true } } }, orderBy: { display_order: "asc" } }, incidents: true, photos: { where: { active: true } } };
 }
 
 function orderListInclude() {
   return {
     reference: { include: { parts: true } },
+    items: { include: { reference: true }, orderBy: { display_order: "asc" } },
     incidents: true,
     photos: { where: { active: true }, select: { id: true, type: true, created_at: true, metadata: true } }
   };
@@ -60,8 +62,8 @@ function inspectionStatusMeta(status) {
   return { badge: "X", label: "Dano/faltante", fill: [1, 0.92, 0.92], stroke: [0.9, 0.42, 0.42], text: [0.72, 0.08, 0.08] };
 }
 
-async function requireEvidence(orderId, requiredTypes) {
-  const photos = await prisma.servicePhoto.findMany({ where: { order_id: Number(orderId), active: true }, select: { type: true } });
+async function requireEvidence(orderId, requiredTypes, itemId = null) {
+  const photos = await prisma.servicePhoto.findMany({ where: { order_id: Number(orderId), active: true, ...(itemId == null ? {} : { item_id: Number(itemId) }) }, select: { type: true } });
   const available = new Set(photos.map((photo) => photo.type));
   const missing = requiredTypes.filter((type) => !available.has(type));
   if (missing.length) {
@@ -120,31 +122,72 @@ function orderTimeline(order) {
   return events.sort((a, b) => new Date(a.at) - new Date(b.at));
 }
 
-function reportForOrder(order) {
+function reportForOrder(order, options = {}) {
   const inspection = order.metadata?.inspection || {};
   const satisfaction = order.metadata?.satisfaction_survey || {};
+  const hasPersistedItems = Boolean(order.items?.length);
+  const evidenceDto = (photo) => ({
+    id: photo.id,
+    item_id: photo.item_id,
+    type: photo.type,
+    label: photoLabel(photo.type),
+    file_url: photo.file_url,
+    has_base64: Boolean(photo.base64_data),
+    mime_type: photo.metadata?.mime_type || "",
+    file_name: photo.metadata?.file_name || "",
+    metadata: photo.metadata || {},
+    created_at: photo.created_at,
+    ...(options.includeBinary && photo.base64_data ? { image_data: photo.base64_data } : {})
+  });
+  const isGeneralEvidence = (photo) => photo.item_id == null || photo.type === "firma_cliente";
+  const requestGroups = (hasPersistedItems ? order.items : legacyItem(order)).map((item, index) => {
+    const itemInspection = item.metadata?.inspection || (item.legacy ? inspection : {});
+    const inspectionItems = itemInspection.items?.length || !itemInspection.decision ? itemInspection.items || [] : [{
+      part_id: -Number(item.reference_id),
+      name: item.reference?.name || "Producto completo",
+      quantity: 1,
+      unit: "producto",
+      status: "ok",
+      comment: "Validacion general del producto",
+      action: "ninguna"
+    }];
+    return {
+      item_id: item.id,
+      display_order: item.display_order ?? index,
+      status: item.status,
+      service_type: item.service_type,
+      observation: item.observation || item.description || "",
+      reference: item.reference || order.reference || {},
+      inspection_items: inspectionItems,
+      inspection_decision: itemInspection.decision || "",
+      inspected_at: itemInspection.inspected_at || "",
+      evidence: (item.photos || order.photos.filter((photo) => String(photo.item_id || "") === String(item.id))).filter((photo) => !isGeneralEvidence(photo)).map(evidenceDto),
+      incidents: item.incidents || order.incidents.filter((incident) => String(incident.item_id || "") === String(item.id))
+    };
+  });
+  const generalPhotos = order.photos.filter(isGeneralEvidence);
+  const signatures = generalPhotos.filter((photo) => photo.type === "firma_cliente");
+  const canonicalGeneralPhotos = [
+    ...generalPhotos.filter((photo) => photo.type !== "firma_cliente"),
+    ...(signatures.length ? [signatures[signatures.length - 1]] : [])
+  ];
+  const generalEvidence = hasPersistedItems ? canonicalGeneralPhotos.map(evidenceDto) : [];
+  const generalIncidents = hasPersistedItems ? order.incidents.filter((incident) => incident.item_id == null) : [];
   return {
     order,
     timeline: orderTimeline(order),
+    request_groups: requestGroups,
+    general_evidence: generalEvidence,
+    general_incidents: generalIncidents,
     inspection_items: inspection.items || [],
     inspection_decision: inspection.decision || "",
     satisfaction_survey: satisfaction,
-    evidence: order.photos.map((photo) => ({
-      id: photo.id,
-      type: photo.type,
-      label: photoLabel(photo.type),
-      file_url: photo.file_url,
-      has_base64: Boolean(photo.base64_data),
-      mime_type: photo.metadata?.mime_type || "",
-      file_name: photo.metadata?.file_name || "",
-      metadata: photo.metadata || {},
-      created_at: photo.created_at
-    })),
+    evidence: order.photos.map(evidenceDto),
     incidents: order.incidents,
     totals: {
       evidence: order.photos.length,
       incidents: order.incidents.length,
-      inspection_items: (inspection.items || []).length
+      inspection_items: requestGroups.reduce((total, group) => total + group.inspection_items.length, 0) || (inspection.items || []).length
     }
   };
 }
@@ -157,8 +200,7 @@ function sanitizePdfLine(value) {
   return String(value ?? "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^\x20-\x7E]/g, "")
-    .slice(0, 96);
+    .replace(/[^\x20-\x7E]/g, "");
 }
 
 function formatReportDate(value) {
@@ -182,7 +224,12 @@ function statusReportLabel(value) {
 }
 
 function wrapReportText(value, maxChars = 78) {
-  const words = sanitizePdfLine(value || "").split(/\s+/).filter(Boolean);
+  const words = sanitizePdfLine(value || "").split(/\s+/).filter(Boolean).flatMap((word) => {
+    if (word.length <= maxChars) return [word];
+    const chunks = [];
+    for (let index = 0; index < word.length; index += maxChars) chunks.push(word.slice(index, index + maxChars));
+    return chunks;
+  });
   const lines = [];
   let current = "";
   for (const word of words) {
@@ -197,22 +244,46 @@ function wrapReportText(value, maxChars = 78) {
   return lines.length ? lines : [""];
 }
 
-function buildReportPdf(report) {
+async function buildReportPdf(report) {
+  const sharp = require("sharp");
   const pageWidth = 612;
   const pageHeight = 792;
   const margin = 42;
   const streams = [];
   let commands = [];
+  let pageImages = [];
   let y = pageHeight - margin;
+  let pageNumber = 1;
+  let currentPageSection = "Resumen de la orden";
 
   function color(rgb) {
     return `${rgb[0]} ${rgb[1]} ${rgb[2]}`;
   }
 
-  function addPage() {
-    if (commands.length) streams.push(commands.join("\n"));
+  function pageFooter() {
+    rect(margin, 28, pageWidth - margin * 2, 1, [0.82, 0.87, 0.85]);
+    text("APEXOS | Reporte de servicio", margin, 16, { size: 7.5, fill: [0.38, 0.44, 0.42] });
+    text(`Pagina ${pageNumber}`, pageWidth - margin - 48, 16, { size: 7.5, fill: [0.38, 0.44, 0.42] });
+  }
+
+  function compactHeader(section = "Reporte de servicio") {
+    rect(0, pageHeight - 62, pageWidth, 62, [0.03, 0.18, 0.16]);
+    text("APEXOS", margin, pageHeight - 34, { bold: true, size: 15, fill: [1, 1, 1] });
+    text(section, margin + 92, pageHeight - 34, { size: 9, fill: [0.8, 0.91, 0.88] });
+    text(String(report.order.number || report.order.id), pageWidth - margin - 120, pageHeight - 34, { bold: true, size: 10, fill: [1, 1, 1] });
+    y = pageHeight - 86;
+  }
+
+  function addPage(section = currentPageSection) {
+    if (commands.length) {
+      pageFooter();
+      streams.push({ stream: commands.join("\n"), images: pageImages });
+      pageNumber += 1;
+    }
     commands = [];
-    y = pageHeight - margin;
+    pageImages = [];
+    currentPageSection = section;
+    compactHeader(section);
   }
 
   function ensureSpace(height) {
@@ -315,62 +386,123 @@ function buildReportPdf(report) {
     if (items.length > 80) paragraph(`Se muestran 80 de ${items.length} piezas inspeccionadas.`);
   }
 
-  function header() {
-    rect(0, pageHeight - 108, pageWidth, 108, [0.03, 0.18, 0.16]);
-    rect(0, pageHeight - 112, pageWidth, 4, [0.05, 0.55, 0.47]);
-    text("APEXOS", margin, pageHeight - 48, { bold: true, size: 22, fill: [1, 1, 1] });
-    text("Reporte empresarial de servicio", margin, pageHeight - 70, { size: 11, fill: [0.78, 0.9, 0.86] });
-    text(`Orden ${report.order.number || report.order.id}`, pageWidth - 214, pageHeight - 48, { bold: true, size: 15, fill: [1, 1, 1] });
-    text(statusReportLabel(report.order.status), pageWidth - 214, pageHeight - 70, { size: 10, fill: [0.78, 0.9, 0.86] });
-    y = pageHeight - 136;
-  }
-
   const order = report.order;
-  header();
-
-  title("Resumen del servicio");
-  keyValue("Cliente", order.customer_name, margin, y, 176);
-  keyValue("Telefono", order.customer_phone || "N/A", margin + 188, y, 118);
-  keyValue("Factura / pedido", order.invoice_number || "N/A", margin + 318, y, 126);
-  keyValue("Estado", statusReportLabel(order.status), margin + 456, y, 72);
-  y -= 64;
-  keyValue("Direccion", order.customer_address, margin, y, 250);
-  keyValue("Referencia", `${order.reference?.code || ""} ${order.reference?.name || ""}`.trim(), margin + 262, y, 184);
-  keyValue("Tipo", order.service_type || "N/A", margin + 458, y, 70);
-  y -= 64;
-
-  title("Control operativo");
-  keyValue("Inicio", formatReportDate(order.started_at), margin, y, 166);
-  keyValue("Cierre", formatReportDate(order.closed_at), margin + 178, y, 166);
-  keyValue("Duracion", order.duration_minutes == null ? "N/A" : `${order.duration_minutes} min`, margin + 356, y, 84);
-  keyValue("Evidencias", String(report.totals.evidence), margin + 452, y, 76);
-  y -= 64;
-  if (order.no_execution_reason) paragraph(`Motivo no ejecucion: ${order.no_execution_reason}`);
-
-  title("Linea de tiempo");
-  if (report.timeline.length) {
-    tableHeader([{ label: "Evento", x: 10 }, { label: "Fecha", x: 250 }]);
-    report.timeline.forEach((event) => tableRow([
-      { key: "event", x: 10, chars: 42, bold: true },
-      { key: "date", x: 250, chars: 38 }
-    ], { event: event.label, date: formatReportDate(event.at) }, 28));
+  if (report.request_groups.length) {
+    for (const [index, group] of report.request_groups.entries()) {
+      const accent = index % 2 === 0
+        ? { fill: [0.9, 0.97, 0.95], stroke: [0.15, 0.58, 0.5], text: [0.03, 0.35, 0.3] }
+        : { fill: [0.94, 0.96, 1], stroke: [0.3, 0.48, 0.72], text: [0.12, 0.28, 0.5] };
+      addPage(`Producto ${index + 1} de ${report.request_groups.length} | Orden ${report.order.number || report.order.id}`);
+      const referenceLabel = `${group.reference?.code || "Sin codigo"} - ${group.reference?.name || "Referencia"}`;
+      sectionBand(`Producto ${index + 1}: ${referenceLabel}`, `Servicio: ${group.service_type || "N/A"} | Estado: ${statusReportLabel(group.status)}`, accent);
+      if (group.observation) paragraph(`Observacion: ${group.observation}`);
+      title("Validacion de piezas del servicio");
+      if (group.inspection_items.length) {
+        const issueCount = group.inspection_items.filter((item) => String(item.status || "").toLowerCase() !== "ok").length;
+        paragraph(`Validacion de piezas: ${group.inspection_items.length} revisada(s). ${issueCount ? `${issueCount} con alerta.` : "Todas sin novedad."}`);
+        inspectionGrid(group.inspection_items);
+      } else {
+        paragraph(group.inspection_decision
+          ? `Validacion de piezas completada: referencia sin piezas configuradas. Decision: ${group.inspection_decision}.`
+          : "Validacion de piezas: sin inspeccion registrada.");
+      }
+      sectionBand(`Evidencias del Producto ${index + 1}`, referenceLabel, accent);
+      if (group.evidence.length) {
+        await evidenceGallery(group.evidence, accent, index + 1);
+      } else {
+        paragraph("Sin soportes fotograficos para esta referencia.");
+      }
+      title("Novedades del servicio");
+      if (group.incidents.length) {
+        paragraph(`${group.incidents.length} novedad(es) registrada(s).`);
+        tableHeader([{ label: "Tipo", x: 10 }, { label: "Descripcion / accion", x: 130 }, { label: "Fecha", x: 410 }]);
+        group.incidents.slice(0, 30).forEach((incident) => tableRow([
+          { key: "type", x: 10, chars: 18, bold: true },
+          { key: "description", x: 130, chars: 48, lines: 3 },
+          { key: "date", x: 410, chars: 22 }
+        ], {
+          type: incident.type,
+          description: `${incident.description}${incident.action ? ` | Accion: ${incident.action}` : ""}`,
+          date: formatReportDate(incident.created_at)
+        }, 48));
+      } else {
+        paragraph("Sin novedades asociadas a esta solicitud.");
+      }
+      y -= 8;
+    }
   } else {
-    paragraph("Sin eventos registrados.");
+    paragraph("Sin solicitudes registradas.");
   }
 
-  title("Inspeccion de referencia");
-  if (report.inspection_items.length) {
-    const issueCount = report.inspection_items.filter((item) => String(item.status || "").toLowerCase() !== "ok").length;
-    paragraph(`${report.inspection_items.length} pieza(s) inspeccionada(s). ${issueCount ? `${issueCount} con alerta.` : "Todas sin novedad."}`);
-    inspectionGrid(report.inspection_items);
-  } else {
-    paragraph("Sin inspeccion registrada.");
+  function image(asset, x, yValue, width, height) {
+    const name = `Im${pageImages.length + 1}`;
+    pageImages.push({ ...asset, name });
+    commands.push(`q ${width} 0 0 ${height} ${x} ${yValue} cm /${name} Do Q`);
   }
 
-  title("Novedades");
-  if (report.incidents.length) {
+  async function prepareEvidence(items) {
+    const prepared = [];
+    for (const item of items) {
+      if (!item.image_data) continue;
+      try {
+        const encoded = String(item.image_data).replace(/^data:[^;]+;base64,/, "");
+        const output = await sharp(Buffer.from(encoded, "base64"))
+          .rotate()
+          .resize({ width: 720, height: 520, fit: "inside", withoutEnlargement: true })
+          .flatten({ background: "#ffffff" })
+          .jpeg({ quality: 78 })
+          .toBuffer({ resolveWithObject: true });
+        prepared.push({ item, data: output.data, width: output.info.width, height: output.info.height });
+      } catch (_) {
+        // Una captura corrupta no debe impedir generar el resto del reporte.
+      }
+    }
+    return prepared;
+  }
+
+  async function evidenceGallery(items, accent, productNumber) {
+    const prepared = await prepareEvidence(items);
+    if (!prepared.length) return;
+    const gap = 12;
+    const cardWidth = (pageWidth - margin * 2 - gap) / 2;
+    const cardHeight = 174;
+    for (let index = 0; index < prepared.length; index += 2) {
+      ensureSpace(cardHeight + 12);
+      for (let column = 0; column < 2; column += 1) {
+        const entry = prepared[index + column];
+        if (!entry) continue;
+        const x = margin + column * (cardWidth + gap);
+        rect(x, y - cardHeight + 6, cardWidth, cardHeight, [0.99, 0.99, 0.98], accent.stroke);
+        const maxWidth = cardWidth - 16;
+        const maxHeight = 118;
+        const scale = Math.min(maxWidth / entry.width, maxHeight / entry.height);
+        const width = entry.width * scale;
+        const height = entry.height * scale;
+        image(entry, x + 8 + (maxWidth - width) / 2, y - 8 - height, width, height);
+        text(`Producto ${productNumber} | ${entry.item.label}`, x + 9, y - 137, { size: 8, bold: true, fill: accent.text });
+        text(entry.item.file_name || "Captura almacenada", x + 9, y - 149, { size: 7, fill: [0.28, 0.32, 0.34] });
+        text(formatReportDate(entry.item.created_at), x + 9, y - 161, { size: 7, fill: [0.38, 0.41, 0.42] });
+      }
+      y -= cardHeight + 8;
+    }
+  }
+
+  function sectionBand(label, detail = "", accent = { fill: [0.92, 0.97, 0.95], stroke: [0.56, 0.72, 0.66], text: [0.03, 0.29, 0.25] }) {
+    const labelLines = wrapReportText(label, 72).slice(0, 2);
+    const bandHeight = labelLines.length > 1 ? 58 : 46;
+    ensureSpace(bandHeight + 10);
+    rect(margin, y - bandHeight + 8, pageWidth - margin * 2, bandHeight, accent.fill, accent.stroke);
+    labelLines.forEach((line, index) => text(line, margin + 12, y - 10 - index * 13, { bold: true, size: 11, fill: accent.text }));
+    if (detail) text(detail, margin + 12, y - 27 - (labelLines.length - 1) * 13, { size: 8.5, fill: [0.3, 0.38, 0.35] });
+    y -= bandHeight + 10;
+  }
+
+  addPage(`Contenedor ${report.order.number || report.order.id} | Cierre general`);
+  sectionBand("Cierre del contenedor", "Novedades generales, encuesta, soportes globales y firma unica de la orden");
+  title("Novedades generales");
+  if (report.general_incidents.length) {
     tableHeader([{ label: "Tipo", x: 10 }, { label: "Descripcion", x: 130 }, { label: "Fecha", x: 410 }]);
-    report.incidents.slice(0, 30).forEach((incident) => tableRow([
+    report.general_incidents.slice(0, 30).forEach((incident) => tableRow([
       { key: "type", x: 10, chars: 18, bold: true },
       { key: "description", x: 130, chars: 48, lines: 3 },
       { key: "date", x: 410, chars: 22 }
@@ -391,10 +523,10 @@ function buildReportPdf(report) {
     paragraph("Sin encuesta de satisfaccion registrada.");
   }
 
-  title("Evidencias fotograficas y soportes");
-  if (report.evidence.length) {
+  title("Soportes generales de la orden");
+  if (report.general_evidence.length) {
     tableHeader([{ label: "Tipo", x: 10 }, { label: "Archivo / detalle", x: 160 }, { label: "Fecha", x: 410 }]);
-    report.evidence.slice(0, 50).forEach((item) => tableRow([
+    report.general_evidence.slice(0, 50).forEach((item) => tableRow([
       { key: "type", x: 10, chars: 24, bold: true },
       { key: "file", x: 160, chars: 46, lines: 2 },
       { key: "date", x: 410, chars: 22 }
@@ -404,39 +536,54 @@ function buildReportPdf(report) {
       date: formatReportDate(item.created_at)
     }, 36));
   } else {
-    paragraph("Sin evidencias cargadas.");
+    paragraph("Sin soportes generales; las evidencias operativas estan agrupadas por referencia.");
   }
 
   ensureSpace(38);
   rect(margin, y - 18, pageWidth - margin * 2, 28, [0.95, 0.98, 0.97], [0.78, 0.86, 0.82]);
   text("Documento generado por APEXOS. Validar evidencias originales en la plataforma.", margin + 10, y - 7, { size: 8.5, fill: [0.22, 0.34, 0.3] });
 
-  if (commands.length) streams.push(commands.join("\n"));
-  const pages = streams.map((stream, index) => ({ stream, pageObj: 5 + index * 2, contentObj: 6 + index * 2 }));
-  const objects = [
-    `<< /Type /Catalog /Pages 2 0 R >>`,
-    `<< /Type /Pages /Kids [${pages.map((page) => `${page.pageObj} 0 R`).join(" ")}] /Count ${pages.length} >>`,
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>"
-  ];
+  if (commands.length) {
+    pageFooter();
+    streams.push({ stream: commands.join("\n"), images: pageImages });
+  }
+  let nextObject = 5;
+  const pages = streams.map((page) => ({
+    ...page,
+    pageObj: nextObject++,
+    contentObj: nextObject++,
+    imageObjects: page.images.map((asset) => ({ ...asset, objectId: nextObject++ }))
+  }));
+  const objects = new Array(nextObject - 1);
+  objects[0] = Buffer.from("<< /Type /Catalog /Pages 2 0 R >>");
+  objects[1] = Buffer.from(`<< /Type /Pages /Kids [${pages.map((page) => `${page.pageObj} 0 R`).join(" ")}] /Count ${pages.length} >>`);
+  objects[2] = Buffer.from("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+  objects[3] = Buffer.from("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
   pages.forEach((page) => {
-    objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${page.contentObj} 0 R >>`);
-    objects.push(`<< /Length ${Buffer.byteLength(page.stream)} >>\nstream\n${page.stream}\nendstream`);
+    const xObjects = page.imageObjects.map((asset) => `/${asset.name} ${asset.objectId} 0 R`).join(" ");
+    objects[page.pageObj - 1] = Buffer.from(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >>${xObjects ? ` /XObject << ${xObjects} >>` : ""} >> /Contents ${page.contentObj} 0 R >>`);
+    objects[page.contentObj - 1] = Buffer.from(`<< /Length ${Buffer.byteLength(page.stream)} >>\nstream\n${page.stream}\nendstream`);
+    page.imageObjects.forEach((asset) => {
+      objects[asset.objectId - 1] = Buffer.concat([
+        Buffer.from(`<< /Type /XObject /Subtype /Image /Width ${asset.width} /Height ${asset.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${asset.data.length} >>\nstream\n`),
+        asset.data,
+        Buffer.from("\nendstream")
+      ]);
+    });
   });
 
-  let pdf = "%PDF-1.4\n";
+  const parts = [Buffer.from("%PDF-1.4\n")];
   const offsets = [0];
   objects.forEach((object, index) => {
-    offsets.push(Buffer.byteLength(pdf));
-    pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+    offsets.push(parts.reduce((total, part) => total + part.length, 0));
+    parts.push(Buffer.from(`${index + 1} 0 obj\n`), object, Buffer.from("\nendobj\n"));
   });
-  const xrefOffset = Buffer.byteLength(pdf);
-  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-  offsets.slice(1).forEach((offset) => {
-    pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
-  });
-  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
-  return Buffer.from(pdf);
+  const xrefOffset = parts.reduce((total, part) => total + part.length, 0);
+  const xref = [`xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`];
+  offsets.slice(1).forEach((offset) => xref.push(`${String(offset).padStart(10, "0")} 00000 n \n`));
+  xref.push(`trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`);
+  parts.push(Buffer.from(xref.join("")));
+  return Buffer.concat(parts);
 }
 
 function referenceInclude() {
@@ -776,7 +923,11 @@ async function listOrders(tenantId, user, query = {}) {
 }
 
 async function getOrder(tenantId, user, id) {
-  return prisma.runWithTenant(tenantId, async () => accessibleOrder(tenantId, user, id));
+  return prisma.runWithTenant(tenantId, async () => {
+    const order = await accessibleOrder(tenantId, user, id);
+    const items = order.items?.length ? order.items : legacyItem(order);
+    return { ...order, items, item_progress: aggregateItemProgress(items) };
+  });
 }
 
 async function getOrderReport(tenantId, user, id) {
@@ -786,15 +937,20 @@ async function getOrderReport(tenantId, user, id) {
 }
 
 async function getOrderReportPdf(tenantId, user, id) {
-  const report = await getOrderReport(tenantId, user, id);
-  const order = report.order;
-  return { fileName: `${order.number || `servicio-${id}`}.pdf`, buffer: buildReportPdf(report) };
+  assertAdministrativeServiceUser(user);
+  const order = await getOrder(tenantId, user, id);
+  const report = reportForOrder(order, { includeBinary: true });
+  return { fileName: `${order.number || `servicio-${id}`}.pdf`, buffer: await buildReportPdf(report) };
 }
 
 async function createOrder(tenantId, user, input) {
   assertAdministrativeServiceUser(user);
+  const requestedItems = Array.isArray(input.items) && input.items.length
+    ? input.items
+    : [{ reference_id: input.reference_id, service_type: input.service_type, quantity: 1, description: input.notes }];
+  const itemError = validateItems(requestedItems);
+  if (itemError) throw appError(400, "INVALID_SERVICE_ORDER_ITEMS", itemError);
   const requiredFields = [
-    ["reference_id", "referencia"],
     ["technician_id", "tecnico asignado"],
     ["service_type", "tipo de servicio"],
     ["customer_name", "nombre del cliente"],
@@ -814,7 +970,13 @@ async function createOrder(tenantId, user, input) {
   }
 
   return prisma.runWithTenant(tenantId, async () => {
-    const serviceType = await assertValidServiceType(tenantId, input.service_type || "montaje");
+    const normalizedItems = requestedItems.map(normalizeItem);
+    const referenceIds = [...new Set(normalizedItems.map((item) => item.reference_id))];
+    const references = await prisma.serviceReference.findMany({ where: { id: { in: referenceIds }, active: true }, select: { id: true } });
+    if (references.length !== referenceIds.length) throw appError(400, "INVALID_SERVICE_REFERENCE", "Todas las solicitudes deben usar referencias activas de la empresa.");
+    for (const item of normalizedItems) item.service_type = await assertValidServiceType(tenantId, item.service_type);
+    const firstItem = normalizedItems[0];
+    const serviceType = firstItem.service_type;
     const requestedNumber = String(input.number || "").trim();
     if (requestedNumber) {
       const existing = await prisma.serviceOrder.findFirst({ where: { tenant_id: tenantId, number: requestedNumber }, select: { id: true } });
@@ -829,7 +991,7 @@ async function createOrder(tenantId, user, input) {
     data: {
       number: requestedNumber || await nextNumber(),
       reference_item_id: input.reference_item_id,
-      reference_id: input.reference_id,
+      reference_id: firstItem.reference_id,
       technician_id: technician.id,
       service_type: serviceType,
       customer_name: input.customer_name,
@@ -842,10 +1004,84 @@ async function createOrder(tenantId, user, input) {
       metadata: {
         ...(input.metadata || {}),
         customer_document: input.customer_document
-      }
+      },
+      items: { create: normalizedItems.map((item) => ({ ...item, tenant_id: tenantId })) }
     },
     include: orderInclude()
     });
+  });
+}
+
+async function orderItem(tenantId, user, orderId, itemId) {
+  const order = await accessibleOrder(tenantId, user, orderId, { items: true });
+  const item = await prisma.serviceOrderItem.findFirst({ where: { id: Number(itemId), tenant_id: tenantId, order_id: order.id }, include: { reference: { include: { parts: true } }, photos: { where: { active: true } }, incidents: true } });
+  if (!item) throw appError(404, "SERVICE_ORDER_ITEM_NOT_AVAILABLE", "La solicitud no pertenece a esta orden o empresa.");
+  return { order, item };
+}
+
+async function syncOrderProgress(orderId) {
+  const items = await prisma.serviceOrderItem.findMany({ where: { order_id: Number(orderId) }, select: { status: true } });
+  const progress = aggregateItemProgress(items);
+  if (!progress.all_completed) await prisma.serviceOrder.update({ where: { id: Number(orderId) }, data: { status: progress.order_status, version: { increment: 1 } } });
+  return progress;
+}
+
+async function updateOrderItem(tenantId, user, orderId, itemId, input = {}) {
+  assertAdministrativeServiceUser(user);
+  return prisma.runWithTenant(tenantId, async () => {
+    const { order, item } = await orderItem(tenantId, user, orderId, itemId);
+    if (item.status !== "pendiente") throw appError(409, "SERVICE_ORDER_ITEM_ALREADY_STARTED", "La solicitud iniciada no puede editarse.");
+    const data = {};
+    if (input.reference_id != null) {
+      const reference = await prisma.serviceReference.findFirst({ where: { id: Number(input.reference_id), active: true }, select: { id: true } });
+      if (!reference) throw appError(400, "INVALID_SERVICE_REFERENCE", "Selecciona una referencia activa.");
+      data.reference_id = reference.id;
+    }
+    if (input.service_type != null) data.service_type = await assertValidServiceType(tenantId, input.service_type);
+    if (input.quantity != null) {
+      const quantity = Number(input.quantity);
+      if (!Number.isFinite(quantity) || quantity <= 0) throw appError(400, "INVALID_SERVICE_ITEM_QUANTITY", "La cantidad debe ser mayor que cero.");
+      data.quantity = quantity;
+    }
+    if (input.description != null) data.description = String(input.description).trim();
+    if (input.observation != null) data.observation = String(input.observation).trim();
+    const updated = await prisma.serviceOrderItem.update({ where: { id: item.id }, data: { ...data, version: { increment: 1 } }, include: { reference: true } });
+    if (order.items[0]?.id === item.id) await prisma.serviceOrder.update({ where: { id: order.id }, data: { reference_id: updated.reference_id, service_type: updated.service_type } });
+    await prisma.auditLog.create({ data: { user_id: user.id, action: "service_order.item.updated", module: "services", entity: "ServiceOrderItem", entity_id: String(item.id), old_value: item, new_value: updated } });
+    return updated;
+  });
+}
+
+async function deleteOrderItem(tenantId, user, orderId, itemId) {
+  assertAdministrativeServiceUser(user);
+  return prisma.runWithTenant(tenantId, async () => {
+    const { order, item } = await orderItem(tenantId, user, orderId, itemId);
+    if (order.items.length <= 1) throw appError(409, "SERVICE_ORDER_LAST_ITEM", "La orden debe conservar al menos una solicitud.");
+    if (item.status !== "pendiente" || item.photos.length || item.incidents.length) throw appError(409, "SERVICE_ORDER_ITEM_ALREADY_STARTED", "No se puede eliminar una solicitud con ejecucion o trazabilidad.");
+    await prisma.serviceOrderItem.delete({ where: { id: item.id } });
+    await prisma.auditLog.create({ data: { user_id: user.id, action: "service_order.item.deleted", module: "services", entity: "ServiceOrderItem", entity_id: String(item.id), old_value: item, new_value: null } });
+    return { ok: true };
+  });
+}
+
+async function transitionOrderItem(tenantId, user, orderId, itemId, input = {}) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const { item } = await orderItem(tenantId, user, orderId, itemId);
+    const status = String(input.status || "").trim();
+    if (!ITEM_STATUSES.has(status)) throw appError(400, "INVALID_SERVICE_ITEM_STATUS", "Estado de solicitud invalido.");
+    const expectedVersion = Number(input.expected_version);
+    if (!Number.isInteger(expectedVersion)) throw appError(400, "SERVICE_ITEM_VERSION_REQUIRED", "La version esperada es obligatoria.");
+    if (status === "completada") {
+      const evidence = await prisma.servicePhoto.findMany({ where: { tenant_id: tenantId, order_id: Number(orderId), item_id: item.id, active: true, type: { in: ["producto_abierto", "producto_cerrado"] } }, select: { type: true } });
+      const types = new Set(evidence.map((photo) => photo.type));
+      if (!types.has("producto_abierto") || !types.has("producto_cerrado")) throw appError(422, "SERVICE_ITEM_EVIDENCE_REQUIRED", "La solicitud requiere evidencia de producto abierto y cerrado.");
+    }
+    const result = await prisma.serviceOrderItem.updateMany({ where: { id: item.id, tenant_id: tenantId, order_id: Number(orderId), version: expectedVersion }, data: { status, version: { increment: 1 }, ...(status === "en_curso" && !item.started_at ? { started_at: new Date() } : {}), ...(FINAL_ITEM_STATUSES.has(status) ? { completed_at: new Date() } : {}) } });
+    if (result.count !== 1) throw appError(409, "SERVICE_ITEM_VERSION_CONFLICT", "La solicitud fue modificada por otro usuario. Actualiza la orden.");
+    const updated = await prisma.serviceOrderItem.findUnique({ where: { id: item.id }, include: { reference: true } });
+    const progress = await syncOrderProgress(orderId);
+    await prisma.auditLog.create({ data: { user_id: user.id, action: "service_order.item.status_changed", module: "services", entity: "ServiceOrderItem", entity_id: String(item.id), old_value: { status: item.status, version: item.version }, new_value: { status: updated.status, version: updated.version } } });
+    return { item: updated, item_progress: progress };
   });
 }
 
@@ -860,6 +1096,26 @@ async function updateOrder(tenantId, user, id, input = {}) {
     const metadata = order.metadata || {};
     const data = {};
     const nextMetadata = { ...metadata, ...(input.metadata || {}) };
+
+    if (Array.isArray(input.items)) {
+      const itemError = validateItems(input.items);
+      if (itemError) throw appError(400, "INVALID_SERVICE_ORDER_ITEMS", itemError);
+      if (order.items.some((item) => item.status !== "pendiente" || item.photos.length || item.incidents.length)) {
+        throw appError(409, "SERVICE_ORDER_ITEMS_ALREADY_STARTED", "Las solicitudes solo pueden reemplazarse antes de iniciar su ejecucion.");
+      }
+      const normalizedItems = input.items.map(normalizeItem);
+      const referenceIds = [...new Set(normalizedItems.map((item) => item.reference_id))];
+      const references = await prisma.serviceReference.findMany({ where: { id: { in: referenceIds }, active: true }, select: { id: true } });
+      if (references.length !== referenceIds.length) throw appError(400, "INVALID_SERVICE_REFERENCE", "Todas las solicitudes deben usar referencias activas de la empresa.");
+      for (const item of normalizedItems) item.service_type = await assertValidServiceType(tenantId, item.service_type);
+      data.reference_id = normalizedItems[0].reference_id;
+      data.service_type = normalizedItems[0].service_type;
+      data.items = {
+        deleteMany: {},
+        create: normalizedItems.map((item) => ({ ...item, tenant_id: tenantId }))
+      };
+      nextMetadata.request_count = normalizedItems.length;
+    }
 
     if (input.reference_id != null && String(input.reference_id).trim() !== "") {
       const reference = await prisma.serviceReference.findFirst({ where: { id: Number(input.reference_id), active: true }, select: { id: true } });
@@ -1099,19 +1355,33 @@ async function moveToInspection(tenantId, user, id, input = {}) {
       supplier_name: item.supplier_name || ""
     }));
     const problems = items.filter((item) => item.status !== "ok");
+    const inspection = {
+      items,
+      decision: input.decision || "pendiente",
+      problem_count: problems.length,
+      inspected_at: new Date().toISOString(),
+      ...(input.metadata || {})
+    };
+    if (input.item_id != null) {
+      const { item } = await orderItem(tenantId, user, order.id, input.item_id);
+      await prisma.serviceOrderItem.update({
+        where: { id: item.id },
+        data: {
+          status: "inspeccion",
+          version: { increment: 1 },
+          metadata: { ...(item.metadata || {}), inspection }
+        }
+      });
+      await syncOrderProgress(order.id);
+      return getOrder(tenantId, user, order.id);
+    }
     return prisma.serviceOrder.update({
       where: { id: Number(id) },
       data: {
         status: "inspeccion",
         metadata: {
           ...(order.metadata || {}),
-          inspection: {
-            items,
-            decision: input.decision || "pendiente",
-            problem_count: problems.length,
-            inspected_at: new Date().toISOString(),
-            ...(input.metadata || {})
-          }
+          inspection
         }
       },
       select: { id: true, status: true, metadata: { select: { inspection: true } } }
@@ -1119,9 +1389,26 @@ async function moveToInspection(tenantId, user, id, input = {}) {
   });
 }
 
-async function moveToExecution(tenantId, user, id) {
+async function moveToExecution(tenantId, user, id, input = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const order = await accessibleOrder(tenantId, user, id);
+    if (input.item_id != null) {
+      const { item } = await orderItem(tenantId, user, order.id, input.item_id);
+      const inspection = (item.metadata || {}).inspection || {};
+      await prisma.serviceOrderItem.update({
+        where: { id: item.id },
+        data: {
+          status: "ejecucion",
+          version: { increment: 1 },
+          metadata: {
+            ...(item.metadata || {}),
+            inspection: { ...inspection, decision: "armable", moved_to_execution_at: new Date().toISOString() }
+          }
+        }
+      });
+      await syncOrderProgress(order.id);
+      return getOrder(tenantId, user, order.id);
+    }
     return prisma.serviceOrder.update({
       where: { id: Number(id) },
       data: {
@@ -1143,8 +1430,12 @@ async function moveToExecution(tenantId, user, id) {
 async function closeOrder(tenantId, user, id, input = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const order = await accessibleOrder(tenantId, user, id);
+    if (order.items?.length) {
+      const progress = aggregateItemProgress(order.items);
+      if (!progress.all_completed) throw appError(409, "SERVICE_ORDER_ITEMS_PENDING", "Finaliza todas las solicitudes antes de cerrar la orden.");
+    }
     await requireSatisfactionSurvey(tenantId, input, order.metadata);
-    await requireEvidence(id, ["producto_abierto", "producto_cerrado", "firma_cliente"]);
+    await requireEvidence(id, ["firma_cliente"]);
     const now = new Date();
     const duration = order.started_at ? Math.max(Math.round((now - order.started_at) / 60000), 0) : null;
     return prisma.serviceOrder.update({
@@ -1165,15 +1456,19 @@ async function closeOrder(tenantId, user, id, input = {}) {
 async function closeNotExecuted(tenantId, user, id, input = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const order = await accessibleOrder(tenantId, user, id);
+    const itemId = input.item_id == null ? null : Number(input.item_id);
+    if (itemId != null) await orderItem(tenantId, user, order.id, itemId);
     if (!String(input.no_execution_reason || "").trim()) {
       throw appError(400, "NO_EXECUTION_REASON_REQUIRED", "El motivo de no ejecucion es obligatorio");
     }
-    await requireEvidence(id, ["no_ejecutada", "firma_cliente"]);
+    await requireEvidence(id, ["no_ejecutada"], itemId);
+    await requireEvidence(id, ["firma_cliente"]);
     const now = new Date();
     const reason = input.no_execution_reason || "No ejecutada";
     await prisma.serviceIncident.create({
       data: {
         order_id: Number(id),
+        item_id: itemId,
         type: "no_ejecutada",
         description: reason,
         action: "cierre_no_ejecutado",
@@ -1198,9 +1493,12 @@ async function closeNotExecuted(tenantId, user, id, input = {}) {
 async function addIncident(tenantId, user, orderId, input) {
   return prisma.runWithTenant(tenantId, async () => {
     const order = await accessibleOrder(tenantId, user, orderId);
+    const itemId = input.item_id == null ? null : Number(input.item_id);
+    if (itemId != null) await orderItem(tenantId, user, order.id, itemId);
     return prisma.serviceIncident.create({
     data: {
       order_id: order.id,
+      item_id: itemId,
       description: input.description,
       type: input.type || "averia",
       action: input.action || "",
@@ -1217,11 +1515,15 @@ async function addPhoto(tenantId, user, orderId, input) {
   const storagePath = input.storage_path || secureStoragePath({ tenantId, module: "services", entity: "orders", entityId: orderId, fileName });
   return prisma.runWithTenant(tenantId, async () => {
     const order = await accessibleOrder(tenantId, user, orderId);
+    const rawItemId = input.item_id == null ? null : Number(input.item_id);
+    const itemId = rawItemId && rawItemId > 0 ? rawItemId : null;
+    if (itemId) await orderItem(tenantId, user, order.id, itemId);
     const clientUploadId = input.metadata?.client_upload_id ? String(input.metadata.client_upload_id) : "";
     if (clientUploadId) {
       const retryMatch = await prisma.servicePhoto.findFirst({
         where: {
           order_id: order.id,
+          item_id: itemId,
           metadata: { path: ["client_upload_id"], equals: clientUploadId }
         }
       });
@@ -1229,7 +1531,7 @@ async function addPhoto(tenantId, user, orderId, input) {
     }
     const partId = input.metadata?.part_id == null ? "" : String(input.metadata.part_id);
     const existing = await prisma.servicePhoto.findMany({
-      where: { order_id: order.id, type: input.type, active: true },
+      where: { order_id: order.id, item_id: itemId, type: input.type, active: true },
       select: { id: true, metadata: true }
     });
     const duplicate = input.type === "pieza_averiada"
@@ -1241,6 +1543,7 @@ async function addPhoto(tenantId, user, orderId, input) {
     return prisma.servicePhoto.create({
     data: {
       order_id: order.id,
+      item_id: itemId,
       type: input.type,
       file_url: input.file_url || "",
       base64_data: input.base64_data || "",
@@ -1281,6 +1584,9 @@ module.exports = {
   getOrderReportPdf,
   createOrder,
   updateOrder,
+  updateOrderItem,
+  deleteOrderItem,
+  transitionOrderItem,
   listReferences,
   getReference,
   createReference,

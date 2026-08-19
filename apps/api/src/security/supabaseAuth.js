@@ -95,14 +95,26 @@ function roleBlueprint(companyRole, employee) {
     return {
       name: "Supabase Viewer",
       description: "Consulta sincronizada desde Supabase.",
-      permissions: [{ module: "*", action: "read" }]
+      managed: true,
+      permissions: [
+        { module: "dashboard", action: "read" },
+        { module: "hr", action: "read" },
+        { module: "services", action: "read" },
+        { module: "transport", action: "read" },
+        { module: "projects", action: "read" }
+      ]
     };
   }
   const base = {
     name: "Supabase Member",
     description: "Usuario operativo sincronizado desde Supabase.",
+    managed: true,
     permissions: [
-      { module: "*", action: "read" },
+      { module: "dashboard", action: "read" },
+      { module: "hr", action: "read" },
+      { module: "services", action: "read" },
+      { module: "transport", action: "read" },
+      { module: "projects", action: "read" },
       { module: "hr", action: "write" },
       { module: "services", action: "write" },
       { module: "transport", action: "write" },

@@ -2909,7 +2909,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       invoice_number: body.invoice_number || "",
       scheduled_date: body.scheduled_date || localDate(),
       notes: body.notes || "",
-      metadata: { ...metadata, created_from: "apexos_web_supabase", created_by_user_id: userId || null }
+      metadata: { ...metadata, ...(Array.isArray(body.items) ? { items: body.items } : {}), created_from: "apexos_web_supabase", created_by_user_id: userId || null }
     };
     const inserted = await supabaseFetch<Array<{
       id: string;
@@ -3229,7 +3229,10 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     if (serviceOrderDetailMatch && !orders[0]) return null as T;
     const orderIds = orders.map((order) => order.id);
     const orderFilter = orderIds.length ? `&order_id=in.(${orderIds.join(",")})` : "&order_id=is.null";
-    const referenceIds = Array.from(new Set(orders.map((order) => order.reference_id).filter(Boolean) as string[]));
+    const metadataReferenceIds = orders.flatMap((order) => Array.isArray(order.metadata?.items)
+      ? order.metadata.items.map((item: AnyRow) => String(item.reference_id || "")).filter(Boolean)
+      : []);
+    const referenceIds = Array.from(new Set([...(orders.map((order) => order.reference_id).filter(Boolean) as string[]), ...metadataReferenceIds]));
     const referenceFilter = referenceIds.length ? `&id=in.(${referenceIds.join(",")})` : "&id=is.null";
     const referencePartFilter = referenceIds.length ? `&reference_id=in.(${referenceIds.join(",")})` : "&reference_id=is.null";
     const technicianIds = Array.from(new Set(orders.map((order) => order.technician_employee_id).filter(Boolean) as string[]));
@@ -3295,6 +3298,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       const technician = order.technician_employee_id ? techniciansById.get(order.technician_employee_id) : undefined;
       const orderEvidence = evidenceByOrder.get(order.id) || [];
       const effectiveStatus = effectiveServiceOrderStatus(order);
+      const publicItems = Array.isArray(order.metadata?.items) ? order.metadata.items as AnyRow[] : [];
       return {
         ...order,
         technician: technician ? {
@@ -3313,6 +3317,20 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         incidents: incidentsByOrder.get(order.id) || [],
         photos: orderEvidence.map((item) => ({ ...item, type: String(item.metadata?.original_type || item.evidence_type || "") })),
         evidence: orderEvidence.map((item) => ({ ...item, type: String(item.metadata?.original_type || item.evidence_type || "") })),
+        items: publicItems.length ? publicItems.map((item, index) => {
+          const itemReference = refsById.get(String(item.reference_id || ""));
+          return {
+            id: `public-${order.id}-${index}`,
+            reference_id: String(item.reference_id || ""),
+            reference: itemReference ? { ...itemReference, parts: partsByReference.get(itemReference.id) || [] } : null,
+            service_type: String(item.service_type || order.service_type || "montaje"),
+            quantity: Number(item.quantity || 1),
+            observation: String(item.observation || ""),
+            status: "pendiente",
+            version: 1,
+            legacy: true
+          };
+        }) : undefined,
         inspection_items: referenceWithParts?.parts?.map((part) => ({ part_id: part.id, name: part.name, status: "pendiente" })) || []
       };
     });
@@ -3666,12 +3684,14 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
 
 export async function api<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
   const method = String(options.method || "GET").toUpperCase();
+  const bypassReadCache = options.cache === "no-store";
   const companyScope = typeof window !== "undefined" ? localStorage.getItem("apexos_company_id") || "" : "";
   if (method !== "GET") {
     const scope = writeCacheScope(path);
     clearApiReadCaches(scope);
   }
-  const cacheKey = method === "GET" && !retried ? `${isSupabaseSession() ? "supabase" : "api"}:${companyScope}:${path}` : "";
+  const requestKey = method === "GET" && !retried ? `${isSupabaseSession() ? "supabase" : "api"}:${companyScope}:${path}` : "";
+  const cacheKey = requestKey && !bypassReadCache ? requestKey : "";
   if (cacheKey) {
     const completed = completedGetRequests.get(cacheKey);
     if (completed) {
@@ -3692,17 +3712,21 @@ export async function api<T>(path: string, options: RequestInit = {}, retried = 
       }
     }
   }
-  if (cacheKey && inFlightGetRequests.has(cacheKey)) return inFlightGetRequests.get(cacheKey) as Promise<T>;
+  if (requestKey && inFlightGetRequests.has(requestKey)) return inFlightGetRequests.get(requestKey) as Promise<T>;
   const request = apiInternal<T>(path, options, retried);
-  if (!cacheKey) return request;
-  inFlightGetRequests.set(cacheKey, request);
+  if (!requestKey) return request;
+  inFlightGetRequests.set(requestKey, request);
   void request
     .then((value) => {
-      completedGetRequests.set(cacheKey, { at: Date.now(), value });
-      pruneApiReadCaches();
+      if (cacheKey) {
+        completedGetRequests.set(cacheKey, { at: Date.now(), value });
+        pruneApiReadCaches();
+      }
     })
-    .catch(() => completedGetRequests.delete(cacheKey))
-    .finally(() => inFlightGetRequests.delete(cacheKey));
+    .catch(() => {
+      if (cacheKey) completedGetRequests.delete(cacheKey);
+    })
+    .finally(() => inFlightGetRequests.delete(requestKey));
   return request;
 }
 

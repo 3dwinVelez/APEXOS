@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { PrismaClient } from "@prisma/client";
 
 let rootEnvCache: Record<string, string> | null = null;
 const AUTH_CONTEXT_TTL_MS = 30_000;
 const authUserCache = new Map<string, { expiresAt: number; userId: string }>();
 const membershipCache = new Map<string, { expiresAt: number; rows: UserCompany[] }>();
+let localPrismaClient: PrismaClient | null = null;
 
 type AnyRow = Record<string, unknown>;
 type UserCompany = { company_id: string; role?: string };
@@ -58,6 +60,42 @@ function envValue(...keys: string[]) {
     if (value) return value;
   }
   return "";
+}
+
+function localDatabase() {
+  try {
+    const databaseUrl = new URL(envValue("DATABASE_URL"));
+    return ["localhost", "127.0.0.1"].includes(databaseUrl.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function localPrisma() {
+  if (!process.env.DATABASE_URL) process.env.DATABASE_URL = envValue("DATABASE_URL");
+  localPrismaClient ||= new PrismaClient();
+  return localPrismaClient;
+}
+
+async function localMonitorOrders(request: NextRequest, companyName: string) {
+  const limit = Math.min(Math.max(Number(request.nextUrl.searchParams.get("limit") || 200), 1), 300);
+  const prisma = localPrisma();
+  const tenant = await prisma.tenant.findFirst({
+    where: { name: { equals: companyName, mode: "insensitive" }, active: true },
+    select: { id: true }
+  });
+  if (!tenant) return [];
+  return prisma.serviceOrder.findMany({
+    where: { tenant_id: tenant.id },
+    include: {
+      reference: { include: { parts: true } },
+      items: { include: { reference: { include: { parts: true } }, photos: true, incidents: true }, orderBy: { display_order: "asc" } },
+      photos: true,
+      incidents: true
+    },
+    orderBy: { created_at: "desc" },
+    take: limit
+  });
 }
 
 function supabaseConfig() {
@@ -239,6 +277,32 @@ export async function GET(request: NextRequest) {
   try {
     if (!request.headers.get("authorization")) {
       return jsonError("Sesion requerida para consultar el monitor de servicios.", 401);
+    }
+    if (localDatabase()) {
+      const userId = await currentAuthUserId(request);
+      if (!userId) return jsonError("La sesion local no corresponde a una identidad Supabase valida.", 401);
+      const memberships = await userCompaniesForUser(userId);
+      const requestedCompanyId = request.nextUrl.searchParams.get("company_id")?.trim() || "";
+      const membership = memberships.find((item) => item.company_id === requestedCompanyId)
+        || memberships.find((item) => isAdminCompanyRole(item.role))
+        || memberships[0];
+      if (!membership?.company_id) return jsonError("El usuario no tiene acceso a la empresa solicitada.", 403);
+      const companies = await supabaseRequest<Array<{ name?: string }>>(
+        `/rest/v1/companies?select=name&id=eq.${encodeURIComponent(membership.company_id)}&limit=1`
+      );
+      const companyName = String(companies[0]?.name || "").trim();
+      if (!companyName) return jsonError("No se encontro la empresa autorizada para consultar ordenes.", 404);
+      const orders = await localMonitorOrders(request, companyName);
+      const mapped = orders.map((order) => ({
+        ...order,
+        status: effectiveServiceOrderStatus({
+          status: order.status,
+          metadata: order.metadata && typeof order.metadata === "object" && !Array.isArray(order.metadata)
+            ? order.metadata as AnyRow
+            : {}
+        })
+      }));
+      return NextResponse.json({ data: mapped, kpis: kpisForOrders(mapped) });
     }
     const userId = await currentAuthUserId(request);
     const memberships = await userCompaniesForUser(userId);

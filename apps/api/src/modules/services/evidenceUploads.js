@@ -18,9 +18,13 @@ function storageConfig() {
   return { url, key };
 }
 
-function serviceHeaders(contentType = "application/json") {
+function serviceHeaders(contentType) {
   const { key } = storageConfig();
-  return { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": contentType };
+  return {
+    apikey: key,
+    Authorization: `Bearer ${key}`,
+    ...(contentType ? { "Content-Type": contentType } : {})
+  };
 }
 
 function extension(mime) {
@@ -33,30 +37,26 @@ function companyId(user) {
   return String(user?.company_id || "").trim() || null;
 }
 
-async function assertOrderAccess(tenantId, user, orderKey) {
+function localOrderWhere(tenantId, orderKey) {
   if (/^\d+$/.test(String(orderKey))) {
-    const order = await prisma.serviceOrder.findFirst({ where: { id: Number(orderKey) }, select: { id: true } });
-    if (!order) throw Object.assign(new Error("Orden no encontrada en la empresa."), { statusCode: 404 });
-    return companyId(user);
+    return { tenant_id: tenantId, id: Number(orderKey) };
   }
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(orderKey))) {
     throw Object.assign(new Error("Identificador de orden invalido."), { statusCode: 400 });
   }
-  const current = await prisma.user.findUnique({ where: { id: user.id }, select: { preferences: true } });
-  const company = companyId(user) || String(current?.preferences?.company_id || "").trim();
-  if (!company) throw Object.assign(new Error("La sesion no tiene empresa operativa asociada."), { statusCode: 403 });
-  const query = new URLSearchParams({
-    select: "id",
-    id: `eq.${orderKey}`,
-    company_id: `eq.${company}`,
-    limit: "1"
-  });
-  const response = await storageRequest(`/rest/v1/service_orders?${query.toString()}`);
-  const orders = await response.json();
-  if (!Array.isArray(orders) || orders.length !== 1) {
-    throw Object.assign(new Error("Orden no encontrada en la empresa."), { statusCode: 404 });
-  }
-  return company;
+  return {
+    tenant_id: tenantId,
+    OR: [
+      { metadata: { path: ["external_order_id"], equals: String(orderKey) } },
+      { metadata: { path: ["external_order_number"], equals: String(orderKey) } }
+    ]
+  };
+}
+
+async function assertOrderAccess(tenantId, user, orderKey, db = prisma) {
+  const localOrder = await db.serviceOrder.findFirst({ where: localOrderWhere(tenantId, orderKey), select: { id: true } });
+  if (!localOrder) throw Object.assign(new Error("Orden no encontrada en la empresa."), { statusCode: 404 });
+  return { companyId: companyId(user), localOrderId: localOrder.id };
 }
 
 function dimensions(bytes, mime) {
@@ -94,9 +94,10 @@ function detectedMime(bytes) {
 
 async function storageRequest(path, options = {}) {
   const { url } = storageConfig();
+  const contentType = options.contentType || (options.body === undefined ? undefined : "application/json");
   const response = await fetch(`${url}${path}`, {
     ...options,
-    headers: { ...serviceHeaders(options.contentType), ...(options.headers || {}) }
+    headers: { ...serviceHeaders(contentType), ...(options.headers || {}) }
   });
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
@@ -118,12 +119,14 @@ async function authorize(tenantId, user, orderKey, input) {
   }
 
   return prisma.runWithTenant(tenantId, async () => {
+    const resolvedOrder = await assertOrderAccess(tenantId, user, orderKey);
     const existing = await prisma.evidenceUploadAuthorization.findUnique({
       where: { tenant_id_user_id_client_upload_id: { tenant_id: tenantId, user_id: user.id, client_upload_id: clientUploadId } }
     });
+    if (existing && existing.order_key !== String(resolvedOrder.localOrderId)) {
+      throw Object.assign(new Error("El identificador de carga ya pertenece a otra orden."), { statusCode: 409 });
+    }
     if (existing && existing.expires_at > new Date() && existing.status === "authorized") return signedResponse(existing);
-
-    const authorizedCompanyId = await assertOrderAccess(tenantId, user, orderKey);
 
     const id = crypto.randomUUID();
     const quarantinePath = `_quarantine/${tenantId}/${user.id}/${id}.${extension(mime)}`;
@@ -131,8 +134,8 @@ async function authorize(tenantId, user, orderKey, input) {
       data: {
         id,
         tenant_id: tenantId,
-        company_id: authorizedCompanyId,
-        order_key: String(orderKey),
+        company_id: resolvedOrder.companyId,
+        order_key: String(resolvedOrder.localOrderId),
         user_id: user.id,
         supabase_user_id: user.supabase_user_id || null,
         purpose,
@@ -230,4 +233,4 @@ async function status(tenantId, user, authorizationId) {
   });
 }
 
-module.exports = { authorize, confirm, status, detectedMime, dimensions, MAX_BYTES, MAX_DIMENSION };
+module.exports = { authorize, confirm, status, detectedMime, dimensions, localOrderWhere, assertOrderAccess, serviceHeaders, MAX_BYTES, MAX_DIMENSION };

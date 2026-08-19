@@ -315,11 +315,21 @@ async function build() {
   bootLog("Finished background workers");
 
   bootLog("Registering health route");
-  fastify.get("/health", async () => {
+  fastify.get("/health", async (_request, reply) => {
     const prisma = require("./src/core/prisma");
-    await prisma.$queryRaw`SELECT 1`;
+    const { inspectRuntimeSchema } = require("./src/core/runtimeSchema");
+    const schema = await inspectRuntimeSchema(prisma);
     const commit = String(process.env.RAILWAY_GIT_COMMIT_SHA || process.env.GIT_COMMIT_SHA || "unknown").slice(0, 12);
-    return { status: "OK", version: "2.0", modules: MODULES.length, commit };
+    if (!schema.ready) {
+      return reply.code(503).send({
+        status: "NOT_READY",
+        code: "SCHEMA_INCOMPATIBLE",
+        missing: schema.missing,
+        version: "2.0",
+        commit
+      });
+    }
+    return { status: "OK", version: "2.0", modules: MODULES.length, commit, service_certification: "products-v2" };
   });
 
   fastify.get("/metrics", {
