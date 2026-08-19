@@ -1,0 +1,110 @@
+name: Requerimiento ERP para agentes
+description: Preparar un cambio de APEX OS con alcance, reglas y validación verificables.
+title: "[ERP] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        No incluir contraseñas, tokens, datos personales sensibles ni información productiva.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema u oportunidad
+      description: Describir qué ocurre, quién se afecta y por qué debe cambiar.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: Módulo principal
+      options:
+        - Administración y configuración
+        - APEX AI
+        - Autenticación y onboarding
+        - Compras
+        - Contabilidad
+        - Facturación
+        - Inventario
+        - Proyectos
+        - Servicios
+        - Talento Humano y nómina
+        - Transporte
+        - Ventas
+        - Transversal o infraestructura
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Resultado esperado
+      description: Expresar el comportamiento observable, no una solución técnica obligatoria.
+    validations:
+      required: true
+
+  - type: textarea
+    id: rules
+    attributes:
+      label: Reglas de negocio confirmadas
+      description: Indicar fuente o responsable de cada regla. Escribir "ninguna" si no aplica.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Criterios de aceptación
+      description: Enumerar escenarios verificables, incluidos errores y permisos.
+      placeholder: |
+        1. Dado ..., cuando ..., entonces ...
+        2. ...
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: sensitive
+    attributes:
+      label: Dominios sensibles posiblemente afectados
+      options:
+        - label: Contabilidad o doble partida
+        - label: Impuestos o documentos tributarios
+        - label: Inventario, valoración o costos
+        - label: Nómina o pagos
+        - label: Autenticación, tenancy, RBAC o RLS
+        - label: Esquema o migraciones de base de datos
+
+  - type: textarea
+    id: data
+    attributes:
+      label: Datos y entorno de prueba
+      description: Indicar datos sintéticos o locales disponibles. No pegar credenciales.
+    validations:
+      required: true
+
+  - type: textarea
+    id: exclusions
+    attributes:
+      label: Fuera de alcance
+      description: Enumerar módulos, reglas o refactorizaciones que no deben tocarse.
+    validations:
+      required: true
+
+  - type: textarea
+    id: risks
+    attributes:
+      label: Riesgos, supuestos y preguntas abiertas
+      description: Todo supuesto que cambie el resultado debe resolverse antes de implementar.
+
+  - type: checkboxes
+    id: authorization
+    attributes:
+      label: Confirmaciones
+      options:
+        - label: El requerimiento no autoriza acceso a producción.
+          required: true
+        - label: El requerimiento no autoriza merge o despliegue automático.
+          required: true
+        - label: No se incluyeron secretos ni datos personales sensibles.
+          required: true

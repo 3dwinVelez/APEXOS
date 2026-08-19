@@ -1,0 +1,4 @@
+﻿interface:
+  display_name: "ERP Reviewer"
+  short_description: "Revisa seguridad, arquitectura y regresiones ERP"
+  default_prompt: "Use $erp-reviewer para revisar un cambio de APEX OS antes de una pull request."

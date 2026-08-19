@@ -16,4 +16,19 @@ Inventario debe separar maestro, bodega, stock y analitica. La vista principal d
 - Consultar WMS.
 - Revisar stock.
 - Abrir reportes de inventario.
+- Abrir Traslados desde la navegacion y el resumen de Inventario; la funcionalidad conserva sus pantallas independientes de reporte y creacion.
+- Los numeros de traslado y documentos del kardex abren su detalle con un clic; muestran fechas, usuarios, origen, destino, SKU, cantidades y costos.
 - Las rutas de Inventario deben aceptar los identificadores de modulo `M-01`, `inventario` e `inventory` sincronizados para el tenant.
+- Kardex y costos cargan todos los SKU, permiten filtrar por bodega y descargar el resultado visible en Excel.
+- Cuando un movimiento tiene documento contable, su detalle muestra cabecera, usuario, referencia y lineas debito/credito sin salir del Kardex.
+- Traslados busca SKU por codigo o nombre, muestra la existencia disponible en origen, impide excederla y ofrece `Crear y nuevo` conservando las bodegas. No incluye soporte de escaner.
+- Cada traslado permite descargar una remision PDF con sociedad, fechas, motivo, bodegas de origen y destino, tipo, direccion y ciudad, detalle de SKU y cantidades, espacio para novedades fisicas y campos de firma de quien entrega y quien recibe.
+- La recepción de importaciones actualiza el promedio por SKU/sociedad con mercancía más indirectos capitalizables distribuidos por valor; impuestos recuperables y gastos no se capitalizan.
+
+## Cargue inicial
+
+- `Inventario > Cargue inicial` permite descargar una plantilla `.xlsx`, validar el archivo sin afectar saldos y confirmar posteriormente la contabilizacion.
+- Cada archivo corresponde a una sociedad y fecha; exige SKU, bodega, cantidad y costo unitario positivos. Ubicacion, lote y observaciones son opcionales.
+- La confirmacion es atomica: incrementa stock global y por ubicacion, registra kardex `inventory_initial_load`, actualiza costo promedio y valoracion por SKU/sociedad y crea un comprobante `AJ`.
+- El asiento debita la cuenta de inventario de alta configurada en la familia de cada SKU y acredita la cuenta puente transaccional `99999999`. El documento queda disponible en Contabilidad y enlazado desde Kardex.
+- Se bloquean filas duplicadas, sociedades o fechas mezcladas, periodos cerrados y el reprocesamiento del mismo archivo.

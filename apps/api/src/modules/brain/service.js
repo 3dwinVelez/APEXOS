@@ -1,4 +1,5 @@
 const prisma = require("../../core/prisma");
+const { partyRoleWhere } = require("../parties/roles");
 
 const MODULE_LABELS = {
   ecosystem: "Ecosistema",
@@ -85,8 +86,8 @@ async function buildSnapshot(tenantId, user) {
     ] = await Promise.all([
       prisma.tenant.findUnique({ where: { id: tenantId }, select: { id: true, name: true, country: true, timezone: true, currency: true, plan: true } }),
       prisma.item.findMany({ select: { id: true, code: true, name: true, type: true, unit_cost: true, unit_price: true, stock_current: true, stock_min: true, stock_max: true, abc_class: true, metadata: true, active: true } }),
-      prisma.party.findMany({ where: { type: "supplier" }, select: { id: true, name: true, tax_id: true, tax_type: true, email: true, country: true, rating: true, metadata: true } }),
-      prisma.party.count({ where: { type: "customer" } }),
+      prisma.party.findMany({ where: partyRoleWhere("supplier"), select: { id: true, name: true, tax_id: true, tax_type: true, email: true, country: true, rating: true, metadata: true } }),
+      prisma.party.count({ where: partyRoleWhere("customer") }),
       prisma.transaction.findMany({ where: { type: "purchase" }, include: { party: true, lines: true, movements: true }, orderBy: { created_at: "desc" }, take: 120 }),
       prisma.transaction.findMany({ where: { type: "sale" }, include: { lines: true }, orderBy: { created_at: "desc" }, take: 120 }),
       prisma.transaction.findMany({ where: { type: "invoice" }, select: { id: true, number: true, status: true, due_date: true, total: true, balance: true, currency: true }, orderBy: { created_at: "desc" }, take: 120 }),
