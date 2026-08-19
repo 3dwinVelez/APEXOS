@@ -48,7 +48,7 @@
     "verify:web-assets:dev": "set NEXT_DIST_DIR=.next-dev&& node scripts/ensure-web-css.js --url http://localhost:3001/dashboard",
     "qa:full-validation": "node scripts/qa-full-system-validation.js",
     "qa:purchases:tax-reversal": "node --env-file=.env scripts/qa-purchase-tax-reversal-validation.js",
-    "test:inventory:unit": "node --env-file=.env --test apps/api/test/inventory-valuation-transit.test.js",
+    "test:inventory:unit": "node --env-file-if-exists=.env --test apps/api/test/inventory-valuation-transit.test.js",
     "qa:inventory:transit": "node --env-file=.env scripts/qa-inventory-society-transit-validation.js",
     "qa:users:audit": "node scripts/audit-user-profiles.js",
     "qa:users:functional": "node scripts/qa-user-creation-functional.js",
