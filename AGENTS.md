@@ -111,4 +111,3 @@ Los gates mínimos y las excepciones están en `docs/agents/quality-gates.md`. L
 - Al crear una memoria de módulo, agregar su ruta y propósito a `MEMORY.md`.
 - Todo aprendizaje del agente de automejora debe convertirse en una propuesta revisable dentro de una pull request.
 - El agente de automejora no puede aprobar su propia propuesta ni aumentar sus permisos.
-
