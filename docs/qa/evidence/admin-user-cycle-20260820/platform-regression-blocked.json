@@ -1,0 +1,11 @@
+{
+  "certification": "platform-regression-qa",
+  "environment": "QA",
+  "status": "blocked",
+  "expected_commit": "5eed5811972a96ecf0ce79afd6ad2b374de93451",
+  "deployed_api_commit": "b66f4348f987",
+  "reason": "apexos-api-qa no corresponde al commit exacto de develop",
+  "promotion_authorized": false,
+  "contains_secrets": false,
+  "observed_at": "2026-08-20T13:01:41.0627624-05:00"
+}
