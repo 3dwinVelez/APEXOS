@@ -24,6 +24,10 @@ test("no modifica Auth cuando las credenciales no cambian", () => {
   });
 });
 
+test("conserva espacios significativos de la clave", () => {
+  assert.equal(authCredentialPatch({ nextPassword: " Clave123 " }).payload.password, " Clave123 ");
+});
+
 test("el formulario exige confirmacion explicita y el endpoint repara vinculos Auth", () => {
   const page = fs.readFileSync(path.join(root, "app/dashboard/administracion/page.tsx"), "utf8");
   const route = fs.readFileSync(path.join(root, "app/api/admin/users/route.ts"), "utf8");
@@ -34,6 +38,10 @@ test("el formulario exige confirmacion explicita y el endpoint repara vinculos A
   assert.match(route, /authCredentialPatch/);
   assert.match(route, /Supabase Auth no confirmo el nuevo correo/);
   assert.match(route, /credential_sync: credentialSync/);
+  assert.match(route, /typeof body\.password === "string" \? body\.password : ""/);
+  assert.match(route, /Supabase Auth no confirmo el cambio de clave/);
+  assert.doesNotMatch(page, /const nextPassword = userForm\.password\.trim\(\)/);
+  assert.match(page, /result\.credential_sync\?\.provider !== "supabase"/);
   assert.match(route, /ban_duration: status === "active" \? "none" : "876000h"/);
   assert.match(route, /if \(input\.syncAuthStatus\)/);
 });

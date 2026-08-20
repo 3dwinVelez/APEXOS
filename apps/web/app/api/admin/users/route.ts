@@ -348,13 +348,21 @@ export async function PATCH(request: NextRequest) {
 
     if (action === "access") {
       const nextStatus = body.active === false ? "inactive" : activeStatus(current.status);
-      const nextPassword = clean(body.password);
+      const nextPassword = typeof body.password === "string" ? body.password : "";
       if (nextPassword) {
         assertPasswordPolicy(nextPassword);
         const authUserId = await resolveSupabaseAuthUserId(current);
         if (!authUserId) throw httpError("No existe una identidad de acceso en Supabase Auth para este usuario. Vincula o recrea su acceso antes de cambiar la clave.", 409);
-        await updateSupabaseAuthUser(authUserId, { password: nextPassword });
+        const updatedAuth = await updateSupabaseAuthUser(authUserId, { password: nextPassword }) as AnyRow;
+        const confirmedAuthUserId = clean((updatedAuth.user as AnyRow | undefined)?.id || updatedAuth.id);
+        if (confirmedAuthUserId !== authUserId) throw httpError("Supabase Auth no confirmo el cambio de clave.", 502);
         current.user_id = authUserId;
+        credentialSync = {
+          provider: "supabase",
+          email: normalizeUsernameEmail(((metadata.access as AnyRow | undefined)?.email as string | undefined) || current.email) || "",
+          email_changed: false,
+          password_changed: true
+        };
       }
       nextMetadata = {
         ...metadata,
@@ -423,7 +431,7 @@ export async function PATCH(request: NextRequest) {
       if (!roleId && !roleName) throw httpError("Rol principal requerido.", 400);
       const documentNumber = clean(body.document) || clean(current.document_number) || clean(metadata.document);
       if (!documentNumber) throw httpError("Documento requerido.", 400);
-      const nextPassword = clean(body.password);
+      const nextPassword = typeof body.password === "string" ? body.password : "";
       if (nextPassword) assertPasswordPolicy(nextPassword);
       const credentials = authCredentialPatch({ currentEmail: current.email, nextEmail: email, nextPassword });
       if (credentials.changed) {

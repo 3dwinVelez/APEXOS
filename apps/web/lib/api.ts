@@ -3541,19 +3541,11 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   const adminUserAccessMatch = pathname.match(/^\/api\/v1\/admin\/users\/([^/]+)\/access$/);
   if (adminUserAccessMatch) {
     const body = JSON.parse(String(options.body || "{}"));
-    let accessError = "";
-    const nextApiOk = await nextAdminUsersRequest({
+    const result = await nextAdminUsersRequest({
       method: "PATCH",
       body: JSON.stringify({ employee_id: adminUserAccessMatch[1], action: "access", ...body })
-    }).then(() => true).catch((error) => {
-      safeDevLog("No fue posible actualizar acceso via Next API.", error);
-      accessError = error instanceof Error ? error.message : String(error || "");
-      return false;
     });
-    if (!nextApiOk) {
-      throw new Error(accessError || "No fue posible sincronizar el acceso del usuario con la membresia de empresa.");
-    }
-    return supabaseApiFallback(`/api/v1/admin/users`) as T;
+    return result as T;
   }
 
   if (pathname === "/api/v1/admin/users") {
@@ -3689,7 +3681,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const employeeId = adminUserMatch[1];
     const roles = await loadSupabaseAdminRoles().catch(() => storedAdminRoles());
     const role = roles.find((item) => item.id === Number(body.role_id));
-    const nextApiOk = await nextAdminUsersRequest({
+    const result = await nextAdminUsersRequest({
       method: "PATCH",
       body: JSON.stringify({
         employee_id: employeeId,
@@ -3697,14 +3689,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         ...body,
         ...(role ? { role_name: role.name, role_permissions: role.permissions, role_type: role.role_type, role_scope: role.scope } : {})
       })
-    }).then(() => true).catch((error) => {
-      safeDevLog("No fue posible actualizar usuario via Next API.", error);
-      return false;
     });
-    if (!nextApiOk) {
-      throw new Error("No fue posible sincronizar el usuario con roles, permisos y membresia de empresa.");
-    }
-    return supabaseApiFallback(`/api/v1/admin/users`) as T;
+    return result as T;
   }
 
   return null;

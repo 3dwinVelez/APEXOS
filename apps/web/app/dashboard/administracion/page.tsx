@@ -1236,10 +1236,18 @@ export default function AdministracionPage() {
         payload.password = userForm.password;
         payload.require_password_change = true;
       }
-      if (selectedUserId) await api(`/api/v1/admin/users/${selectedUserApiId()}`, { method: "PUT", body: JSON.stringify(payload) });
-      else await api("/api/v1/admin/users", { method: "POST", body: JSON.stringify(payload) });
+      const result = selectedUserId
+        ? await api<{ credential_sync?: { provider?: string; email_changed?: boolean; password_changed?: boolean } | null }>(`/api/v1/admin/users/${selectedUserApiId()}`, { method: "PUT", body: JSON.stringify(payload) })
+        : await api("/api/v1/admin/users", { method: "POST", body: JSON.stringify(payload) });
       const emailChanged = Boolean(selectedUser && selectedUser.email.trim().toLowerCase() !== userForm.email.trim().toLowerCase());
       const passwordChanged = Boolean(userForm.password);
+      if (selectedUserId && (emailChanged || passwordChanged)) {
+        const sync = (result as { credential_sync?: { provider?: string; email_changed?: boolean; password_changed?: boolean } | null }).credential_sync;
+        const confirmed = sync?.provider === "supabase"
+          && (!emailChanged || sync.email_changed === true)
+          && (!passwordChanged || sync.password_changed === true);
+        if (!confirmed) throw new Error("Supabase Auth no confirmo la actualizacion de las credenciales. No se mostrara el cambio como exitoso.");
+      }
       const confirmation = selectedUserId
         ? `Usuario actualizado.${emailChanged ? " Correo de acceso sincronizado con autenticacion." : ""}${passwordChanged ? " Clave temporal actualizada." : ""}`
         : "Usuario creado con identidad de acceso y membresia sincronizadas.";
@@ -1367,7 +1375,7 @@ export default function AdministracionPage() {
   async function requestPasswordReset() {
     const targetId = selectedUserApiId();
     if (!targetId) return;
-    const nextPassword = userForm.password.trim();
+    const nextPassword = userForm.password;
     if (!nextPassword) {
       setMessage("Escribe una nueva clave temporal antes de cambiar el acceso.");
       notify("Clave temporal requerida", "Debes escribir la clave temporal que se entregara al usuario.", "warning");
@@ -1382,7 +1390,10 @@ export default function AdministracionPage() {
     if (userAccessSaving) return;
     setUserAccessSaving(true);
     try {
-      await api(`/api/v1/admin/users/${targetId}/access`, { method: "PATCH", body: JSON.stringify({ password: nextPassword, require_password_change: true, session_status: "sin_sesion" }) });
+      const result = await api<{ credential_sync?: { provider?: string; password_changed?: boolean } | null }>(`/api/v1/admin/users/${targetId}/access`, { method: "PATCH", body: JSON.stringify({ password: nextPassword, require_password_change: true, session_status: "sin_sesion" }) });
+      if (result.credential_sync?.provider !== "supabase" || result.credential_sync.password_changed !== true) {
+        throw new Error("Supabase Auth no confirmo el cambio de clave. La operacion no se mostrara como exitosa.");
+      }
       setMessage("Clave temporal actualizada. El usuario debera cambiarla en el proximo ingreso.");
       notify("Clave actualizada", `La clave temporal de ${selectedUser?.name || "usuario"} quedo guardada correctamente.`);
       setUserField("password", "");

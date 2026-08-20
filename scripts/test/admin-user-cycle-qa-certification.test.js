@@ -19,11 +19,16 @@ test("el guard permite el hostname QA oficial aunque Railway incluya production"
 });
 
 test("el certificado cubre ciclo, negativas, persistencia y limpieza", () => {
-  for (const check of ["authentication_required", "cross_tenant_rejected", "user_created", "duplicate_email_rejected", "user_updated_and_credentials_synced", "persistence_after_refresh", "old_password_rejected", "new_password_accepted", "user_inactivated", "inactive_user_login_rejected"]) {
+  for (const check of ["authentication_required", "cross_tenant_rejected", "user_created", "duplicate_email_rejected", "user_updated_and_credentials_synced", "persistence_after_refresh", "old_password_rejected", "new_password_accepted", "access_password_reset_confirmed", "access_previous_password_rejected", "access_exact_password_accepted", "user_inactivated", "inactive_user_login_rejected"]) {
     assert.match(source, new RegExp(`"${check}"`), `falta ${check}`);
   }
   assert.match(source, /temporary_user_inactivated_in_finally/);
   assert.match(source, /QA_EXPECTED_COMMIT/);
+});
+
+test("el certificado valida la clave exacta sin recortar espacios", () => {
+  assert.match(source, /const accessPassword = ` QaCycle-\$\{runId\}#3 `/);
+  assert.doesNotMatch(source, /accessPassword\.trim\(\)/);
 });
 
 test("la evidencia no serializa credenciales", () => {
