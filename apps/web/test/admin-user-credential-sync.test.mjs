@@ -37,6 +37,15 @@ test("repara una divergencia entre el correo administrativo y Supabase Auth", ()
   });
 });
 
+test("repara el correo vinculado sin exigir otro cambio de clave", () => {
+  assert.deepEqual(authCredentialPatch({ currentEmail: "legacy@example.com", nextEmail: "user@example.com" }), {
+    changed: true,
+    emailChanged: true,
+    passwordChanged: false,
+    payload: { email: "user@example.com", email_confirm: true }
+  });
+});
+
 test("el formulario exige confirmacion explicita y el endpoint repara vinculos Auth", () => {
   const page = fs.readFileSync(path.join(root, "app/dashboard/administracion/page.tsx"), "utf8");
   const route = fs.readFileSync(path.join(root, "app/api/admin/users/route.ts"), "utf8");
@@ -48,7 +57,7 @@ test("el formulario exige confirmacion explicita y el endpoint repara vinculos A
   assert.match(route, /Supabase Auth no confirmo el nuevo correo/);
   assert.match(route, /credential_sync: credentialSync/);
   assert.match(route, /typeof body\.password === "string" \? body\.password : ""/);
-  assert.match(route, /Supabase Auth no confirmo el cambio de clave/);
+  assert.match(route, /Supabase Auth no confirmo la actualizacion de las credenciales/);
   assert.match(route, /getSupabaseAuthUser/);
   assert.match(route, /currentEmail: linkedAuth\.email/);
   assert.match(route, /Supabase Auth no confirmo la reparacion del correo de acceso/);

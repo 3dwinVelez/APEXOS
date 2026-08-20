@@ -357,24 +357,26 @@ export async function PATCH(request: NextRequest) {
     if (action === "access") {
       const nextStatus = body.active === false ? "inactive" : activeStatus(current.status);
       const nextPassword = typeof body.password === "string" ? body.password : "";
-      if (nextPassword) {
-        assertPasswordPolicy(nextPassword);
-        const authUserId = await resolveSupabaseAuthUserId(current);
-        if (!authUserId) throw httpError("No existe una identidad de acceso en Supabase Auth para este usuario. Vincula o recrea su acceso antes de cambiar la clave.", 409);
+      if (nextPassword) assertPasswordPolicy(nextPassword);
+      const authUserId = await resolveSupabaseAuthUserId(current);
+      if (!authUserId && nextPassword) throw httpError("No existe una identidad de acceso en Supabase Auth para este usuario. Vincula o recrea su acceso antes de cambiar la clave.", 409);
+      if (authUserId) {
         const linkedAuth = await getSupabaseAuthUser(authUserId);
         const accessEmail = normalizeUsernameEmail(((metadata.access as AnyRow | undefined)?.email as string | undefined) || current.email);
         const credentials = authCredentialPatch({ currentEmail: linkedAuth.email, nextEmail: accessEmail, nextPassword });
-        const updatedAuth = await updateSupabaseAuthUser(authUserId, credentials.payload) as AnyRow;
-        const confirmedAuthUserId = clean((updatedAuth.user as AnyRow | undefined)?.id || updatedAuth.id);
-        if (confirmedAuthUserId !== authUserId) throw httpError("Supabase Auth no confirmo el cambio de clave.", 502);
-        const confirmedEmail = normalizeUsernameEmail((updatedAuth.user as AnyRow | undefined)?.email || updatedAuth.email);
-        if (credentials.emailChanged && confirmedEmail !== accessEmail) throw httpError("Supabase Auth no confirmo la reparacion del correo de acceso.", 502);
+        if (credentials.changed) {
+          const updatedAuth = await updateSupabaseAuthUser(authUserId, credentials.payload) as AnyRow;
+          const confirmedAuthUserId = clean((updatedAuth.user as AnyRow | undefined)?.id || updatedAuth.id);
+          if (confirmedAuthUserId !== authUserId) throw httpError("Supabase Auth no confirmo la actualizacion de las credenciales.", 502);
+          const confirmedEmail = normalizeUsernameEmail((updatedAuth.user as AnyRow | undefined)?.email || updatedAuth.email);
+          if (credentials.emailChanged && confirmedEmail !== accessEmail) throw httpError("Supabase Auth no confirmo la reparacion del correo de acceso.", 502);
+        }
         current.user_id = authUserId;
         credentialSync = {
           provider: "supabase",
           email: accessEmail || "",
           email_changed: credentials.emailChanged,
-          password_changed: true
+          password_changed: credentials.passwordChanged
         };
       }
       nextMetadata = {
