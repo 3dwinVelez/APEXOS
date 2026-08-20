@@ -228,7 +228,8 @@ test("aplicar una pieza faltante actualiza inspeccion, reporte e incidente sin c
   assert.equal(inspection.problem_count, 1);
   assert.equal(calls.updateMany[0].data.status, undefined);
   assert.equal(calls.incidents[0].type, "pieza_faltante");
-  assert.equal(calls.changes[0].change_type, "PIECE_ISSUE_ADDED");
+  assert.equal(calls.changes[0].change_type, "FIELD_UPDATED");
+  assert.equal(calls.changes[0].field_name, "metadata.inspection.items");
 });
 
 test("pieza y foto se guardan atomicamente con una sola actualizacion de version", async () => {
@@ -242,7 +243,7 @@ test("pieza y foto se guardan atomicamente con una sola actualizacion de version
   assert.equal(calls.updateMany[0].data.metadata.inspection.items[0].status, "faltante");
   assert.equal(calls.createdPhotos[0].metadata.part_id, 21);
   assert.equal(calls.incidents[0].photo_url, "service-images/tenant/order/piece.webp");
-  assert.deepEqual(calls.changes.map((item) => item.change_type), ["PIECE_ISSUE_ADDED", "EVIDENCE_ADDED"]);
+  assert.deepEqual(calls.changes.map((item) => item.change_type), ["FIELD_UPDATED", "EVIDENCE_ADDED"]);
 });
 
 test("un conflicto optimista responde 409 y no sobrescribe", async () => {
