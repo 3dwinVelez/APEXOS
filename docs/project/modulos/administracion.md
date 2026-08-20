@@ -2,6 +2,7 @@
 
 ## Cambios aplicados
 
+- 2026-08-20: La ficha administrativa de usuarios envia y persiste todos los campos editables relevantes, rehidrata telefono/cargo/departamento y extensiones laborales/operativas despues de recargar, confirma la sincronizacion de credenciales sin exponer secretos y mantiene los mensajes de proceso, exito y error por encima del modal. La creacion compensa identidades y empleados parciales cuando falla un paso posterior, y el certificado QA versionado bloquea destinos productivos, valida commit, tenant, rol, contraseña, estado, persistencia y desactiva la cuenta temporal.
 - 2026-06-14: La entrada de Administracion APEX se alineo con el lenguaje visual de Transporte y Talento Humano mediante encabezado compacto, accion primaria para crear usuario y cuatro indicadores esenciales.
 - 2026-06-14: Usuarios, Roles y permisos, Empresas y modulos, y Maestros quedaron como accesos administrativos prioritarios, reconocibles por icono y descripcion breve.
 - 2026-06-14: Las categorias extensas de configuracion se reemplazaron en la portada por un catalogo profesional en tabla para escritorio y tarjetas tactiles en movil.
