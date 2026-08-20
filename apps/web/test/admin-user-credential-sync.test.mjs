@@ -33,4 +33,7 @@ test("el formulario exige confirmacion explicita y el endpoint repara vinculos A
   assert.match(route, /findSupabaseAuthUserIdByEmail/);
   assert.match(route, /authCredentialPatch/);
   assert.match(route, /Supabase Auth no confirmo el nuevo correo/);
+  assert.match(route, /credential_sync: credentialSync/);
+  assert.match(route, /ban_duration: status === "active" \? "none" : "876000h"/);
+  assert.match(route, /if \(input\.syncAuthStatus\)/);
 });
