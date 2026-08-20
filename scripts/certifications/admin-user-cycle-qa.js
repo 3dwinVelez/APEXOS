@@ -64,6 +64,7 @@ async function main() {
   const email = `qa-user-cert-${runId}@internal.apexos.local`;
   const firstPassword = `QaCycle-${runId}#1`;
   const secondPassword = `QaCycle-${runId}#2`;
+  const accessPassword = ` QaCycle-${runId}#3 `;
   const outputPath = path.resolve(String(args.output || `admin-user-cycle-qa-${runId}.json`));
   const evidence = { certification: "admin-user-cycle-qa", environment: "QA", expected_commit: expectedCommit, checks: [], cleanup: "not_required", certified_at: new Date().toISOString() };
   let token = "";
@@ -129,9 +130,20 @@ async function main() {
     const newLogin = await login(supabaseUrl, anonKey, email, secondPassword);
     check("new_password_accepted", newLogin.ok && Boolean(newLogin.body.access_token), { status: newLogin.status });
 
+    const accessReset = await request(`${webUrl}/api/admin/users`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ employee_id: employeeId, action: "access", password: accessPassword, require_password_change: true, session_status: "sin_sesion" })
+    });
+    check("access_password_reset_confirmed", accessReset.ok && accessReset.body.credential_sync?.provider === "supabase" && accessReset.body.credential_sync?.password_changed === true, { status: accessReset.status, credential_provider: accessReset.body.credential_sync?.provider || "missing" });
+    const previousLogin = await login(supabaseUrl, anonKey, email, secondPassword);
+    check("access_previous_password_rejected", [400, 401].includes(previousLogin.status), { status: previousLogin.status });
+    const exactAccessLogin = await login(supabaseUrl, anonKey, email, accessPassword);
+    check("access_exact_password_accepted", exactAccessLogin.ok && Boolean(exactAccessLogin.body.access_token), { status: exactAccessLogin.status });
+
     const inactive = await request(`${webUrl}/api/admin/users`, { method: "PATCH", headers, body: JSON.stringify({ employee_id: employeeId, action: "status", active: false }) });
     check("user_inactivated", inactive.ok, { status: inactive.status });
-    const inactiveLogin = await login(supabaseUrl, anonKey, email, secondPassword);
+    const inactiveLogin = await login(supabaseUrl, anonKey, email, accessPassword);
     check("inactive_user_login_rejected", [400, 401, 403].includes(inactiveLogin.status), { status: inactiveLogin.status });
     evidence.cleanup = "temporary_user_inactivated";
   } finally {
