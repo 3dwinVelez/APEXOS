@@ -1,0 +1,107 @@
+{
+  "certification": "admin-user-cycle-qa",
+  "environment": "QA",
+  "expected_commit": "5eed5811972a96ecf0ce79afd6ad2b374de93451",
+  "checks": [
+    {
+      "name": "admin_login",
+      "status": "passed",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "deployed_commit",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "commit": "5eed5811972a96ecf0ce79afd6ad2b374de93451"
+      }
+    },
+    {
+      "name": "role_fixtures_available",
+      "status": "passed",
+      "detail": {
+        "roles_found": 2
+      }
+    },
+    {
+      "name": "authentication_required",
+      "status": "passed",
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "cross_tenant_rejected",
+      "status": "passed",
+      "detail": {
+        "status": 403
+      }
+    },
+    {
+      "name": "user_created",
+      "status": "passed",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "duplicate_email_rejected",
+      "status": "passed",
+      "detail": {
+        "status": 422
+      }
+    },
+    {
+      "name": "user_updated_and_credentials_synced",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "credential_provider": "supabase"
+      }
+    },
+    {
+      "name": "persistence_after_refresh",
+      "status": "passed",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "old_password_rejected",
+      "status": "passed",
+      "detail": {
+        "status": 400
+      }
+    },
+    {
+      "name": "new_password_accepted",
+      "status": "passed",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "user_inactivated",
+      "status": "passed",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "inactive_user_login_rejected",
+      "status": "passed",
+      "detail": {
+        "status": 400
+      }
+    }
+  ],
+  "cleanup": "temporary_user_inactivated",
+  "certified_at": "2026-08-20T17:58:52.403Z",
+  "status": "passed",
+  "user": {
+    "email_hint": "qa***1758@internal.apexos.local",
+    "employee_created": true
+  }
+}
