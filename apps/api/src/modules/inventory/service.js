@@ -228,7 +228,8 @@ async function listItems(tenantId, filters = {}) {
 
     const safePage = Math.max(1, Number(page));
     const safeLimit = String(all) === "true" ? 5000 : Math.min(100, Math.max(1, Number(limit)));
-    const where = { active: active !== false };
+    const where = {};
+    if (String(active).toLowerCase() !== "all") where.active = ![false, "false", "0"].includes(active);
     if (search) {
       where.OR = [
         { code: { contains: search, mode: "insensitive" } },

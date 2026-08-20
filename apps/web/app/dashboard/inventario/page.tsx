@@ -3,7 +3,7 @@ import { ArrowRight, ArrowRightLeft, BarChart3, Boxes, ClipboardList, FileUp, Pa
 import { InventoryNav } from "@/components/inventory-nav";
 
 const workspaces = [
-  { href: "/dashboard/inventario/productos/nuevo", title: "Productos", detail: "Maestro transversal para comprar, vender, producir, costear y mover.", icon: PackagePlus, action: "Crear o gestionar" },
+  { href: "/dashboard/inventario/productos", title: "Productos", detail: "Consulta el maestro transversal y accede a la creación de nuevos SKU.", icon: PackagePlus, action: "Ver lista" },
   { href: "/dashboard/inventario/wms", title: "WMS", detail: "Layout 2D, ubicaciones, tareas, recepcion, picking y putaway.", icon: Warehouse, action: "Abrir WMS" },
   { href: "/dashboard/inventario/stock", title: "Stock", detail: "Movimientos, ajustes, saldos y confiabilidad operativa.", icon: Boxes, action: "Ver stock" },
   { href: "/dashboard/inventario/cargue-inicial", title: "Cargue inicial", detail: "Carga existencias y costos iniciales desde una plantilla Excel con contabilizacion.", icon: FileUp, action: "Abrir cargue" },
