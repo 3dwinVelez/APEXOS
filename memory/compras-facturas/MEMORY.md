@@ -12,6 +12,8 @@ Conservar el contexto funcional y técnico confirmado durante el desarrollo de l
 
 ## Decisiones confirmadas
 
+- Compras incluye un reporte por posición de OC con cantidades y costos pedidos, recibidos y pendientes, proveedor, bodega, fechas y estado; admite filtros y exportación a Excel.
+
 - Las OC aprobadas o parcialmente recibidas que conserven saldo se pueden cerrar porque el proveedor no despachara lo pendiente. El cierre exige motivo, conserva auditoria y no revierte ni modifica inventario, costo o contabilidad ya registrados.
 - La OC se puede descargar en PDF. El documento identifica expresamente la empresa compradora con nombre real del tenant, NIT, pais y sociedad; tambien muestra proveedor, usuario creador, fechas, bodega de entrega con direccion y ciudad, posiciones, SKU, cantidades, costos, saldos y totales. La sucursal se excluye del documento.
 

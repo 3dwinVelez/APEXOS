@@ -5,6 +5,9 @@ Leer este archivo antes de cambiar costos, movimientos, reportes o traslados de 
 ## Decisiones confirmadas
 
 - La captura consecutiva de traslados permite buscar SKU por codigo/nombre, consultar disponibilidad en origen y crear otro documento conservando las bodegas. No se agrega soporte de escaner.
+- El grid de creación de traslados separa código y nombre: valida el código contra el maestro, completa el nombre automáticamente y ofrece un buscador funcional por código o nombre.
+- Inventario incluye una lista de productos filtrable por texto, familia y estado, con exportación a Excel de las filas visibles.
+- En Kardex, el producto se ingresa como código SKU libre; Enter vacío abre el selector de todos los SKU y un código inexistente muestra error.
 - El documento de traslado se puede exportar como remision PDF. Identifica origen, destino y tipo de cada bodega, muestra SKU y cantidades, y reserva espacios para observaciones fisicas y firma del receptor.
 - El cargue inicial se realiza desde una plantilla Excel validada antes de confirmar. Cada archivo usa una sociedad y fecha, actualiza stock, ubicacion, kardex y valoracion, y contabiliza debito a inventario de alta por familia contra credito a la cuenta puente `99999999` en un comprobante `AJ` atomico e irrepetible.
 

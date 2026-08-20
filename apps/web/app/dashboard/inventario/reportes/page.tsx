@@ -5,6 +5,7 @@ import { Download, Search, X } from "lucide-react";
 import { InventoryNav } from "@/components/inventory-nav";
 import { api } from "@/lib/api";
 import { downloadExcelWorkbook } from "@/lib/reportExports";
+import { ModalFrame } from "@/components/ui/ModalFrame";
 
 type Item = {
   id: number;
@@ -126,6 +127,10 @@ function documentLabel(type: string) {
 export default function ReportesInventarioPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [selectedItemId, setSelectedItemId] = useState("");
+  const [selectedSku, setSelectedSku] = useState("");
+  const [skuError, setSkuError] = useState("");
+  const [skuPickerOpen, setSkuPickerOpen] = useState(false);
+  const [skuPickerSearch, setSkuPickerSearch] = useState("");
   const [query, setQuery] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -149,9 +154,6 @@ export default function ReportesInventarioPage() {
     setItems(itemRows.data || []);
     setCosts(costRows);
     setWarehouses(warehouseRows || []);
-    const firstItem = itemRows.data?.[0];
-    if (firstItem)
-      setSelectedItemId((current) => current || String(firstItem.id));
   }
 
   const loadKardex = useCallback(
@@ -208,10 +210,40 @@ export default function ReportesInventarioPage() {
         ),
     );
   }, [costs, query]);
+  const skuPickerResults = useMemo(() => {
+    const needle = skuPickerSearch.trim().toLowerCase();
+    return items.filter((item) => !needle || item.code.toLowerCase().includes(needle) || item.name.toLowerCase().includes(needle)).slice(0, 100);
+  }, [items, skuPickerSearch]);
 
   const selectedCost =
     filteredCosts.find((item) => String(item.id) === selectedItemId) ||
     costs?.data.find((item) => String(item.id) === selectedItemId);
+
+  function selectSku(item: Item) {
+    setSelectedItemId(String(item.id));
+    setSelectedSku(item.code);
+    setSkuError("");
+    setSkuPickerOpen(false);
+    setSkuPickerSearch("");
+  }
+
+  function validateSku() {
+    const code = selectedSku.trim().toUpperCase();
+    if (!code) {
+      setSelectedItemId("");
+      setSkuError("");
+      setSkuPickerSearch("");
+      setSkuPickerOpen(true);
+      return;
+    }
+    const item = items.find((row) => row.code.toUpperCase() === code);
+    if (!item) {
+      setSelectedItemId("");
+      setSkuError(`El SKU ${code} no existe o está inactivo.`);
+      return;
+    }
+    selectSku(item);
+  }
 
   async function openMovement(row: KardexRow) {
     setMovementDetail(row);
@@ -271,18 +303,8 @@ export default function ReportesInventarioPage() {
         <div className="grid gap-3 lg:grid-cols-[1fr_220px_160px_160px_auto]">
           <label className="text-sm">
             Producto
-            <select
-              className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm"
-              value={selectedItemId}
-              onChange={(event) => setSelectedItemId(event.target.value)}
-            >
-              <option value="">Seleccionar SKU</option>
-              {items.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.code} - {item.name}
-                </option>
-              ))}
-            </select>
+            <div className="mt-1 flex"><input className={`h-10 min-w-0 flex-1 rounded-l-md border px-3 font-mono text-sm ${skuError ? "border-red-400" : "border-line"}`} placeholder="Escribe el SKU" value={selectedSku} onBlur={validateSku} onChange={(event) => { setSelectedSku(event.target.value.toUpperCase()); setSelectedItemId(""); setSkuError(""); }} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); validateSku(); } }} /><button aria-label="Buscar producto" className="h-10 w-10 rounded-r-md border border-l-0 border-line text-apex hover:bg-paper" onClick={() => { setSkuPickerSearch(selectedSku); setSkuPickerOpen(true); }} type="button"><Search className="mx-auto" size={16} /></button></div>
+            {skuError ? <span className="mt-1 block text-xs text-red-600">{skuError}</span> : null}
           </label>
           <label className="text-sm">Bodega<select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={warehouseId} onChange={(event) => setWarehouseId(event.target.value)}><option value="">Todas las bodegas</option>{warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.code} - {warehouse.name}</option>)}</select></label>
           <label className="text-sm">
@@ -313,6 +335,10 @@ export default function ReportesInventarioPage() {
           </button>
         </div>
       </section>
+
+      {skuPickerOpen ? <ModalFrame maxWidth="md:max-w-3xl" onClose={() => { setSkuPickerOpen(false); setSkuPickerSearch(""); }} title="Seleccionar producto">
+        <div className="space-y-4"><label className="relative block"><Search className="absolute left-3 top-3 text-neutral-400" size={16} /><input autoFocus className="h-10 w-full rounded-md border border-line pl-10 pr-3 text-sm" placeholder="Buscar todos los SKU por código o nombre" value={skuPickerSearch} onChange={(event) => setSkuPickerSearch(event.target.value)} /></label><div className="max-h-[55vh] divide-y divide-line overflow-y-auto rounded-md border border-line">{skuPickerResults.map((item) => <button className="flex w-full items-center justify-between gap-4 p-3 text-left text-sm hover:bg-paper" key={item.id} onClick={() => selectSku(item)} type="button"><span><strong className="font-mono">{item.code}</strong><span className="ml-2">{item.name}</span></span><span className="text-xs text-neutral-500">{item.unit || "UND"}</span></button>)}{!skuPickerResults.length ? <p className="p-6 text-center text-sm text-neutral-500">No hay SKU que coincidan con la búsqueda.</p> : null}</div></div>
+      </ModalFrame> : null}
 
       <section className="grid gap-3 md:grid-cols-4">
         <Metric
