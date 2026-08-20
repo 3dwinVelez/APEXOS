@@ -1,0 +1,26 @@
+{
+  "certification": "service-master-correction-qa",
+  "environment": "QA",
+  "commit": "ceae9585cd6b",
+  "run_id": "service-master-correction-1787266820508",
+  "order_id": 54,
+  "external_order_id": "a43628ca-c93d-4823-91cf-71ed4e251554",
+  "final_version": 8,
+  "final_status": "cancelada",
+  "applied_corrections": 7,
+  "status": "passed",
+  "checks": {
+    "deployed_commit": "passed",
+    "authorized_field_edit_and_reload": "passed",
+    "observation_and_reload": "passed",
+    "piece_issue_and_reload": "passed",
+    "status_and_reload": "passed",
+    "evidence_add_validate_reload": "passed",
+    "evidence_soft_remove_reload": "passed",
+    "no_op_rejected": "passed",
+    "limited_role_blocked": "passed",
+    "other_tenant_blocked": "passed",
+    "audit_history_before_after": "passed"
+  },
+  "certified_at": "2026-08-20T23:09:54.606Z"
+}
