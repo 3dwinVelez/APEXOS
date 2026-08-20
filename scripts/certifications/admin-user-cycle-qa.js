@@ -26,7 +26,10 @@ function assertQaUrl(name, value) {
   const parsed = new URL(value);
   if (process.env.TARGET_ENV !== "qa") throw new Error("TARGET_ENV debe ser qa.");
   if (!/^https:$/.test(parsed.protocol)) throw new Error(`${name} debe usar HTTPS.`);
-  if (/prod|production|jzbwzmkidfthknsohhnr/i.test(value)) throw new Error(`${name} parece productiva; certificacion cancelada.`);
+  const explicitlyQaHost = /(^|[.-])qa([.-]|$)/i.test(parsed.hostname);
+  if (/jzbwzmkidfthknsohhnr/i.test(value) || (/prod|production/i.test(value) && !explicitlyQaHost)) {
+    throw new Error(`${name} parece productiva; certificacion cancelada.`);
+  }
   return value.replace(/\/$/, "");
 }
 

@@ -7,8 +7,15 @@ const source = fs.readFileSync(path.resolve(__dirname, "../certifications/admin-
 
 test("el certificado de usuarios solo acepta QA y rechaza produccion", () => {
   assert.match(source, /TARGET_ENV !== "qa"/);
-  assert.match(source, /prod\|production\|jzbwzmkidfthknsohhnr/);
+  assert.match(source, /explicitlyQaHost/);
+  assert.match(source, /jzbwzmkidfthknsohhnr/);
+  assert.match(source, /prod\|production/);
   assert.doesNotMatch(source, /config\/production\.env/);
+});
+
+test("el guard permite el hostname QA oficial aunque Railway incluya production", () => {
+  assert.match(source, /\(\^\|\[\.\-\]\)qa\(\[\.\-\]\|\$\)/);
+  assert.match(source, /&& !explicitlyQaHost/);
 });
 
 test("el certificado cubre ciclo, negativas, persistencia y limpieza", () => {
