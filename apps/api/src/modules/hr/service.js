@@ -131,6 +131,12 @@ function monitorEvidenceSummary(evidence = {}) {
   };
 }
 
+function evidenceDataUrl(value, mimeType = "image/jpeg") {
+  const content = String(value || "").trim();
+  if (!content || content.startsWith("data:")) return content;
+  return `data:${mimeType || "image/jpeg"};base64,${content}`;
+}
+
 function employeeDisplayName(employee) {
   const metadataName = String(employee?.metadata?.name || "").trim();
   const genericMetadata = isGenericEmployeeAlias(metadataName);
@@ -1244,6 +1250,48 @@ async function listWorkActivities(tenantId, query = {}) {
   }));
 }
 
+async function getWorkActivityEvidence(tenantId, activityId, evidenceId) {
+  const normalizedActivityId = numericId(activityId);
+  const normalizedEvidenceId = numericId(evidenceId);
+  if (!normalizedActivityId || !normalizedEvidenceId) {
+    throw validationError("Identificador de evidencia invalido.", 400, "INVALID_ACTIVITY_EVIDENCE_ID");
+  }
+  return prisma.runWithTenant(tenantId, async () => {
+    const evidence = await prisma.activityEvidence.findFirst({
+      where: {
+        id: normalizedEvidenceId,
+        activity_id: normalizedActivityId,
+        activity: { tenant_id: tenantId }
+      },
+      select: {
+        id: true,
+        activity_id: true,
+        evidence_type: true,
+        file_name: true,
+        mime_type: true,
+        file_size: true,
+        file_url: true,
+        base64_data: true
+      }
+    });
+    if (!evidence) throw validationError("Evidencia de actividad no encontrada.", 404, "ACTIVITY_EVIDENCE_NOT_FOUND");
+    const base64Data = evidenceDataUrl(evidence.base64_data, evidence.mime_type);
+    if (!base64Data && !evidence.file_url) {
+      throw validationError("La evidencia no tiene contenido disponible.", 404, "ACTIVITY_EVIDENCE_CONTENT_MISSING");
+    }
+    return {
+      id: evidence.id,
+      activity_id: evidence.activity_id,
+      evidence_type: evidence.evidence_type,
+      file_name: evidence.file_name,
+      mime_type: evidence.mime_type,
+      file_size: evidence.file_size,
+      ...(evidence.file_url ? { file_url: evidence.file_url } : {}),
+      ...(base64Data ? { base64_data: base64Data } : {})
+    };
+  });
+}
+
 async function createWorkActivity(tenantId, user, input) {
   return prisma.runWithTenant(tenantId, async () => {
     const gpsSkipped = input.gps_required === false || input.gps_skipped === true || input.latitude == null || input.longitude == null;
@@ -2246,6 +2294,7 @@ module.exports = {
   updateActivityType,
   getCurrentWorkSession,
   listWorkActivities,
+  getWorkActivityEvidence,
   createWorkActivity,
   listActiveGps,
   listGpsHistory,

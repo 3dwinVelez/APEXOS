@@ -56,6 +56,7 @@
     "qa:approval:evidence": "node scripts/validate-change-approval-evidence.js",
     "certify:auth-session": "node scripts/certifications/auth-session-readiness.js",
     "certify:admin-user-cycle:qa": "node scripts/certifications/admin-user-cycle-qa.js",
+    "certify:hr-monitor-evidence:qa": "node scripts/certifications/hr-monitor-evidence-qa.js",
     "certify:service-order-edit:qa": "node scripts/certifications/service-order-edit-qa.js",
     "certify:service-correction-external-id:qa": "node scripts/certifications/service-correction-external-id-qa.js",
     "certify:service-correction-evidence:nyvora": "node scripts/certifications/service-correction-evidence-nyvora.js",
