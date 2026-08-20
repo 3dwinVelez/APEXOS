@@ -108,9 +108,23 @@ El monitor de Servicios muestra la accion `Corregir` en cualquier estado cuando 
 el permiso especial. La accion abre directamente el control administrativo del detalle para
 corregir informacion o estado y anexar novedades o evidencias.
 
-El panel presenta cuatro acciones directas y visibles: `Editar datos`, `Nueva novedad`,
-`Pieza faltante` y `Foto o soporte`. Las operaciones menos frecuentes de estado, reapertura,
+El panel organiza la correccion en tres pasos visibles: seleccionar la accion, definir el cambio y
+justificar/revisar/guardar. Presenta cuatro acciones directas: `Editar informacion`, `Agregar novedad`,
+`Reportar pieza` y `Anexar soporte`. Las operaciones menos frecuentes de estado, reapertura,
 cierre y retiro de evidencia permanecen agrupadas como acciones administrativas.
+
+El boton de guardado permanece accionable mientras el formulario esta incompleto para que, al
+usarlo, muestre la lista exacta de requisitos pendientes. La interfaz tambien muestra en tiempo
+real el comparativo antes/despues, el minimo de caracteres, la confirmacion de auditoria y la
+etapa que se esta ejecutando. Si el registro se crea pero su aplicacion falla, informa el
+identificador y permite reintentar desde el historial cuando no hay que volver a seleccionar un archivo.
+
+El API rechaza con `409 SERVICE_CORRECTION_NO_CHANGES` cualquier actualizacion de campo cuyo
+valor normalizado sea igual al vigente. Esto evita auditorias vacias y versiones incrementadas sin efecto.
+
+El monitor solo ofrece `Corregir` para ordenes que tienen una identidad operable en el API y no
+requieren primero completar la sincronizacion administrativa. Cuando la URL ya contiene parametros,
+el modo de correccion se agrega con `&corregir=1` para conservar la identidad externa.
 
 Una pieza faltante o averiada se agrega o actualiza en `metadata.inspection.items`, genera una
 novedad de servicio y alimenta el reporte de piezas requeridas. Cuando incluye una foto, la pieza,
@@ -155,6 +169,10 @@ Antes de cada promocion deben aprobarse:
 11. Lint, TypeScript, build, pruebas API y pruebas web completas.
 12. Validacion visual en escritorio y movil.
 13. Empresa modelo Nyvora: flujo completo de alta de evidencia por UUID externo, persistencia tras recarga, rol limitado bloqueado y aislamiento de otro tenant.
+14. Correccion maestra: edicion de campo, novedad, estado, alta y retiro de evidencia con recarga entre cada etapa, rechazo de cambio sin efecto e historial antes/despues.
+
+El certificador versionado `npm run certify:service-master-correction:qa` comprueba el commit exacto
+desplegado y ejecuta la matriz 14 contra una orden QA identificada, que deja finalmente cancelada.
 
 El fixture versionado `scripts/certifications/fixtures/nyvora-service-correction.js` requiere `CONFIRM_NYVORA_FIXTURE=true`. Crea perfiles, tecnico y referencia visibles e idempotentes; las claves temporales se generan en memoria y nunca forman parte de logs o evidencias.
 
