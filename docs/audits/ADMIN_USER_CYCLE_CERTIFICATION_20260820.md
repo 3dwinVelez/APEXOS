@@ -2,7 +2,7 @@
 
 ## Estado
 
-**CERTIFICACION ESPECIFICA QA APROBADA; PROMOCION A MAIN BLOQUEADA.** El ciclo autenticado de usuarios aprobo 13/13 controles sobre el commit exacto de `develop` `5eed5811972a96ecf0ce79afd6ad2b374de93451`. La compuerta global sigue bloqueada porque `apexos-api-qa` reporta `b66f4348f987`, por lo que no puede ejecutarse honestamente el certificado transversal contra el mismo commit. No hubo migraciones ni operaciones productivas.
+**CERTIFICACIONES QA APROBADAS; APROBACION FUNCIONAL PENDIENTE.** El ciclo autenticado de usuarios aprobo 13/13 controles y la regresion transversal NYVORA aprobo sesion, aislamiento y seis flujos adyacentes sobre `f050131d34bbd13918aaa7532381f651196c748b`. La promocion a `main` permanece bloqueada exclusivamente hasta registrar un aprobador funcional independiente y validar el manifiesto. No hubo migraciones ni operaciones productivas.
 
 ## Resumen ejecutivo
 
@@ -35,7 +35,7 @@ La edicion administrativa informaba exito aunque el frontend omitiera campos edi
 - La creacion solo acepta una empresa solicitada cuando el actor tiene membresia administrativa en ella.
 - No se debilitaron RLS, RBAC ni validaciones de contrasena.
 - Certificado en QA: autenticacion obligatoria, rechazo cross-tenant, cambio de rol, rotacion de contraseña, rechazo de la contraseña anterior, aceptacion de la nueva, inactivacion y rechazo del login posterior.
-- Pendiente antes de `main`: certificado transversal del mismo commit, barrido visual autenticado y aprobacion funcional independiente identificada.
+- Pendiente antes de `main`: aprobacion funcional independiente identificada y validacion final del manifiesto.
 - Riesgo residual: una actualizacion simultanea de contraseña y perfil cruza Supabase Auth y tablas administrativas; la compensacion de creacion esta implementada, pero el comportamiento de una falla intermedia de actualizacion debe demostrarse en QA.
 
 ## Testing automatizado local
@@ -75,7 +75,7 @@ El certificado versionado `scripts/certifications/admin-user-cycle-qa.js` se eje
 
 El usuario funcional temporal quedo inactivado por el propio certificado. El actor administrativo efimero se elimino en `finally`: membresia `204`, perfil `204`, identidad Auth `200`. Evidencia sanitizada: `docs/qa/evidence/admin-user-cycle-20260820/certification.json`.
 
-Bloqueo transversal: `apexos-api-qa` responde salud correctamente, pero reporta `b66f4348f987`, distinto de `develop` `5eed5811972a96ecf0ce79afd6ad2b374de93451`. La politica prohibe ejecutar/aprobar `platform-regression-qa.js` con commits distintos.
+La regresion transversal se ejecuto usando las variables del servicio Railway QA y fixture controlado NYVORA. `apexos-api-qa` reporto `f050131d34bb`; aprobaron sesion, ordenes y referencias de servicios, empleados, inventario, contabilidad, rechazo no autenticado y tenant de aislamiento.
 
 ## Produccion Nyvora
 
@@ -92,8 +92,9 @@ El guard versionado aprobo 17 objetivos sin fallos. La correccion agrega campos 
 - Ajuste del guard QA en `desarrollo`: `09530c8499a9bf2a61fc9a06bfbed214ad790e55`.
 - PR `desarrollo -> develop` #19: 13 checks aprobados; merge `5eed5811972a96ecf0ce79afd6ad2b374de93451`.
 - `origin/main` permanece en `22f83300301077f5dc211aee17f01fc52ecc324e`.
-- Railway web QA desplego y reporto exactamente `5eed5811972a96ecf0ce79afd6ad2b374de93451`.
-- Railway API QA permanece en `b66f4348f987`; este desfase bloquea `develop -> main`.
+- PR de evidencia #20: merge `f050131d34bbd13918aaa7532381f651196c748b`.
+- Railway web QA desplego el merge #20.
+- Railway API QA fue redesplegado de forma autorizada desde el merge #20 y reporto `f050131d34bb`.
 - El worktree original de `main` tenia archivos no rastreados y no fue modificado.
 - No se creo rama auxiliar, no hubo push directo a ramas protegidas y no se modifico infraestructura.
 
@@ -103,4 +104,4 @@ El guard versionado aprobo 17 objetivos sin fallos. La correccion agrega campos 
 
 ## Dictamen
 
-La causa observable fue corregida y el ciclo API autenticado quedo certificado en QA. El cambio **todavia no puede promoverse a `main`** hasta desplegar el commit exacto de `develop` en `apexos-api-qa`, ejecutar `platform-regression-qa.js`, completar el barrido visual/modelo NYVORA, obtener aprobacion funcional independiente identificada y aprobar el manifiesto mediante `npm run qa:approval:evidence -- <manifest>`.
+La causa observable fue corregida y las certificaciones especifica y transversal quedaron aprobadas en QA sobre el mismo commit. El cambio **todavia no puede promoverse a `main`** hasta obtener aprobacion funcional independiente identificada y aprobar el manifiesto mediante `npm run qa:approval:evidence -- docs/qa/evidence/admin-user-cycle-20260820/manifest.json`.
