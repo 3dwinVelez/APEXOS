@@ -914,7 +914,7 @@ async function listPurchaseOrders(tenantId, query = {}) {
       where: { type: "purchase" },
       orderBy: { created_at: "desc" },
       skip: Math.max(Number(query.offset || 0), 0),
-      take: Math.min(Number(query.limit || 100), 200),
+      take: String(query.all) === "true" ? 5000 : Math.min(Number(query.limit || 100), 200),
       include: { party: true, lines: true, movements: { include: { item: true } } }
     });
     const documents = orders.length ? await prisma.cntCabdoc.findMany({
@@ -931,6 +931,9 @@ async function listPurchaseOrders(tenantId, query = {}) {
       current.push({ ...document, operation_type: document.is_reversal ? "return" : "receipt", created_by_user: document.created_by ? userById.get(document.created_by) || null : null });
       documentsByOrder.set(document.reference, current);
     }
+    const itemIds = [...new Set(orders.flatMap((order) => order.lines || []).map((line) => line.item_id).filter(Boolean))];
+    const orderItems = itemIds.length ? await prisma.item.findMany({ where: { id: { in: itemIds } }, select: { id: true, code: true, name: true, unit: true } }) : [];
+    const itemById = new Map(orderItems.map((item) => [item.id, item]));
     const enriched = await Promise.all(orders.map(enrichPurchaseOrder));
     return enriched.map((order) => {
       const receiptDocuments = documentsByOrder.get(order.number) || [];
@@ -959,7 +962,7 @@ async function listPurchaseOrders(tenantId, query = {}) {
           }));
         previousByOperation[operation] = upperBound;
       }
-      return { ...order, receipt_accounting_documents: receiptDocuments };
+      return { ...order, lines: order.lines.map((line) => ({ ...line, item: line.item_id ? itemById.get(line.item_id) || null : null })), receipt_accounting_documents: receiptDocuments };
     });
   });
 }

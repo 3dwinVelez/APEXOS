@@ -20,6 +20,7 @@ Inventario debe separar maestro, bodega, stock y analitica. La vista principal d
 - Los numeros de traslado y documentos del kardex abren su detalle con un clic; muestran fechas, usuarios, origen, destino, SKU, cantidades y costos.
 - Las rutas de Inventario deben aceptar los identificadores de modulo `M-01`, `inventario` e `inventory` sincronizados para el tenant.
 - Kardex y costos cargan todos los SKU, permiten filtrar por bodega y descargar el resultado visible en Excel.
+- El producto del Kardex se captura como código SKU libre. Enter vacío o el botón de búsqueda abre un modal con todos los SKU; un código inexistente muestra error y no consulta el reporte.
 - Cuando un movimiento tiene documento contable, su detalle muestra cabecera, usuario, referencia y lineas debito/credito sin salir del Kardex.
 - Traslados busca SKU por codigo o nombre, muestra la existencia disponible en origen, impide excederla y ofrece `Crear y nuevo` conservando las bodegas. No incluye soporte de escaner.
 - En la creación de traslados, cada línea separa código SKU y nombre. El código se valida al salir del campo o presionar Enter, el nombre se completa desde el maestro y un botón abre la búsqueda por código o nombre.
