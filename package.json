@@ -55,6 +55,7 @@
     "certify:service-order-edit:qa": "node scripts/certifications/service-order-edit-qa.js",
     "certify:service-correction-external-id:qa": "node scripts/certifications/service-correction-external-id-qa.js",
     "certify:service-correction-evidence:nyvora": "node scripts/certifications/service-correction-evidence-nyvora.js",
+    "certify:service-master-correction:qa": "node scripts/certifications/service-master-correction-qa.js",
     "certify:platform-regression:qa": "node scripts/certifications/platform-regression-qa.js",
     "certify:production:mass:nyvora": "node scripts/certifications/nyvora-production-mass-regression.js",
     "qa:hr-services-stress": "node scripts/qa-hr-services-linear-stress.js",

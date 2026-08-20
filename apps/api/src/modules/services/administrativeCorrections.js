@@ -169,6 +169,12 @@ function inspectChanges(order, changes, user) {
       const field = String(change.field || "");
       const policy = CORRECTABLE_FIELDS.get(field);
       if (!policy) throw appError(400, "SERVICE_CORRECTION_FIELD_INVALID", `El campo ${field || "vacio"} no admite correccion administrativa`);
+      const previous = getPath(order, field);
+      const previousComparable = policy.date ? new Date(previous).getTime() : policy.numeric ? Number(previous) : JSON.stringify(jsonValue(previous));
+      const nextComparable = policy.date ? new Date(change.value).getTime() : policy.numeric ? Number(change.value) : JSON.stringify(jsonValue(change.value));
+      if (previousComparable === nextComparable) {
+        throw appError(409, "SERVICE_CORRECTION_NO_CHANGES", `El campo ${field} conserva el mismo valor; registra un cambio real antes de guardar`);
+      }
       sensitive ||= Boolean(policy.sensitive);
       financialImpact ||= Boolean(policy.financial);
     } else if (change.type === "OBSERVATION_ADDED") {
