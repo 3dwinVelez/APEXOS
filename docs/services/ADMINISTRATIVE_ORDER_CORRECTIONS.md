@@ -131,6 +131,10 @@ novedad de servicio y alimenta el reporte de piezas requeridas. Cuando incluye u
 la novedad, la evidencia y el historial se guardan dentro de la misma transaccion y con una sola
 actualizacion de version.
 
+Para conservar compatibilidad con la restriccion inmutable del historial ya desplegado, el detalle
+de una pieza se persiste como `FIELD_UPDATED` sobre `metadata.inspection.items`; la intencion
+`PIECE_ISSUE_ADDED` permanece en la metadata de la correccion. No se requiere una migracion remota.
+
 - El control administrativo queda junto al resumen principal de la orden.
 - Las decisiones de inspeccion se distribuyen en tres columnas en escritorio.
 - Las evidencias usan una galeria de hasta cuatro columnas.

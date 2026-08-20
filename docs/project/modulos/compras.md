@@ -24,6 +24,8 @@ Compras debe guiar el flujo necesidad, orden, aprobacion, recepcion e impacto fi
 
 ## Validaciones esperadas
 
+- `Compras > Reporte de OC` presenta una fila por posición con pedido, SKU, proveedor, bodega, fechas, estado, cantidades y costos pedidos, recibidos y pendientes. Filtra por SKU, proveedor, fechas, bodega y estado, y exporta las filas visibles a Excel.
+
 - Abrir nueva orden de compra desde el panel.
 - Ir a recepcion WMS.
 - Gestionar proveedores desde su pantalla dedicada.
