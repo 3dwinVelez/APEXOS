@@ -38,6 +38,14 @@ async function updateSupabaseAuthUser(userId: string, payload: AnyRow) {
   });
 }
 
+async function getSupabaseAuthUser(userId: string) {
+  const body = await supabaseRequest(`/auth/v1/admin/users/${encodeURIComponent(userId)}`, {
+    method: "GET",
+    service: true
+  }) as AnyRow;
+  return ((body.user && typeof body.user === "object" ? body.user : body) || {}) as AnyRow;
+}
+
 async function findSupabaseAuthUserIdByEmail(email: unknown) {
   const target = normalizeUsernameEmail(email);
   if (!target) return "";
@@ -353,14 +361,19 @@ export async function PATCH(request: NextRequest) {
         assertPasswordPolicy(nextPassword);
         const authUserId = await resolveSupabaseAuthUserId(current);
         if (!authUserId) throw httpError("No existe una identidad de acceso en Supabase Auth para este usuario. Vincula o recrea su acceso antes de cambiar la clave.", 409);
-        const updatedAuth = await updateSupabaseAuthUser(authUserId, { password: nextPassword }) as AnyRow;
+        const linkedAuth = await getSupabaseAuthUser(authUserId);
+        const accessEmail = normalizeUsernameEmail(((metadata.access as AnyRow | undefined)?.email as string | undefined) || current.email);
+        const credentials = authCredentialPatch({ currentEmail: linkedAuth.email, nextEmail: accessEmail, nextPassword });
+        const updatedAuth = await updateSupabaseAuthUser(authUserId, credentials.payload) as AnyRow;
         const confirmedAuthUserId = clean((updatedAuth.user as AnyRow | undefined)?.id || updatedAuth.id);
         if (confirmedAuthUserId !== authUserId) throw httpError("Supabase Auth no confirmo el cambio de clave.", 502);
+        const confirmedEmail = normalizeUsernameEmail((updatedAuth.user as AnyRow | undefined)?.email || updatedAuth.email);
+        if (credentials.emailChanged && confirmedEmail !== accessEmail) throw httpError("Supabase Auth no confirmo la reparacion del correo de acceso.", 502);
         current.user_id = authUserId;
         credentialSync = {
           provider: "supabase",
-          email: normalizeUsernameEmail(((metadata.access as AnyRow | undefined)?.email as string | undefined) || current.email) || "",
-          email_changed: false,
+          email: accessEmail || "",
+          email_changed: credentials.emailChanged,
           password_changed: true
         };
       }
@@ -433,9 +446,10 @@ export async function PATCH(request: NextRequest) {
       if (!documentNumber) throw httpError("Documento requerido.", 400);
       const nextPassword = typeof body.password === "string" ? body.password : "";
       if (nextPassword) assertPasswordPolicy(nextPassword);
-      const credentials = authCredentialPatch({ currentEmail: current.email, nextEmail: email, nextPassword });
+      const authUserId = await resolveSupabaseAuthUserId(current);
+      const linkedAuth = authUserId ? await getSupabaseAuthUser(authUserId) : null;
+      const credentials = authCredentialPatch({ currentEmail: linkedAuth?.email || current.email, nextEmail: email, nextPassword });
       if (credentials.changed) {
-        const authUserId = await resolveSupabaseAuthUserId(current);
         if (!authUserId) throw httpError("El usuario no tiene una identidad vinculada en Supabase Auth. El correo y la clave no fueron modificados.", 409);
         const updatedAuth = await updateSupabaseAuthUser(authUserId, credentials.payload) as AnyRow;
         const confirmedEmail = normalizeUsernameEmail((updatedAuth.user as AnyRow | undefined)?.email || updatedAuth.email);
