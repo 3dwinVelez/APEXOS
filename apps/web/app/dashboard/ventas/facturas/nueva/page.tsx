@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { asCollection, asRecord } from "@/lib/api-collections";
 import { VentasNav } from "@/components/ventas-nav";
 import { ZeroFriendlyNumberInput } from "@/components/ui/ZeroFriendlyNumberInput";
+import { createEmptySalesInvoiceLine, enteredSalesInvoiceLines, padSalesInvoiceLines, type SalesInvoiceDraftLine } from "@/lib/salesInvoiceLines";
 
 type CustomerRetention = { code: string; base_amount?: number };
 type Customer = { id: number; name: string; legal_name?: string; tax_id?: string; balance: number; credit_limit: number; metadata?: { withholding_rates?: CustomerRetention[]; customer_retentions?: CustomerRetention[] } };
@@ -14,7 +15,7 @@ type Item = { id: number; code: string; name: string; unit: string; unit_price: 
 type Warehouse = { id: number; code: string; name: string; warehouse_type: string };
 type SaleOrderLine = { id: number; item_id: number; qty: number; unit: string; unit_price: number; discount: number; tax_rate: number; description: string };
 type SaleOrder = { id: number; number: string; status: string; party_id: number; lines: SaleOrderLine[] };
-type Line = { item_id: number; item_code: string; item_name: string; qty: number; unit: string; unit_price: number; discount: number; tax_rate: number; place_id: number | null; place_name: string; customer_invoice_number: string; source_order_line_id?: number };
+type Line = SalesInvoiceDraftLine;
 type SimulationLine = { line_no: number; item_code: string; item_name: string; qty: number; net_amount?: number; tax_amount?: number; total?: number; revenue_account?: string };
 type SimulationRetention = { description: string; amount: number; percent: number };
 type InvoiceSimulation = {
@@ -62,7 +63,7 @@ export default function NuevaFacturaPage() {
     cost_center_code: "SOC-01", associated_account_code: "1305", notes: ""
   });
 
-  const [lines, setLines] = useState<Line[]>([]);
+  const [lines, setLines] = useState<Line[]>(() => padSalesInvoiceLines([]));
 
   useEffect(() => {
     Promise.all([
@@ -108,7 +109,7 @@ export default function NuevaFacturaPage() {
   const customerRetentions = retentions.filter((row) => assignedRetentionCodes.has(row.code));
 
   function addLine() {
-    setLines((prev) => [...prev, { item_id: 0, item_code: "", item_name: "", qty: 1, unit: "UND", unit_price: 0, discount: 0, tax_rate: 0, place_id: header.place_id || null, place_name: "", customer_invoice_number: "" }]);
+    setLines((prev) => [...prev, createEmptySalesInvoiceLine(header.place_id || null)]);
   }
 
   function chooseCustomer(customer: Customer) {
@@ -132,7 +133,7 @@ export default function NuevaFacturaPage() {
     if (orderCustomer) setCustomerText(`${orderCustomer.tax_id ? `${orderCustomer.tax_id} - ` : ""}${orderCustomer.name}`);
     if (orderCustomer) applyCustomerRetentions(orderCustomer);
     if (!order) return;
-    setLines(asCollection<SaleOrderLine>(order.lines, ["lines"]).map((orderLine) => {
+    setLines(padSalesInvoiceLines(asCollection<SaleOrderLine>(order.lines, ["lines"]).map((orderLine) => {
       const item = items.find((row) => row.id === orderLine.item_id);
       return {
         item_id: orderLine.item_id,
@@ -148,7 +149,7 @@ export default function NuevaFacturaPage() {
         customer_invoice_number: "",
         source_order_line_id: orderLine.id
       };
-    }));
+    }), 10, header.place_id || null));
   }
 
   function updateLine<K extends keyof Line>(index: number, field: K, value: Line[K]) {
@@ -205,8 +206,9 @@ export default function NuevaFacturaPage() {
 
   async function handleSimulate() {
     setError(""); setSimulation(null);
+    const enteredLines = enteredSalesInvoiceLines(lines);
     if (!header.customer_id) { setError("Seleccione un cliente"); return; }
-    if (!lines.length || lines.some((l) => !l.item_id || !l.place_id)) { setError("Cada linea debe tener producto y bodega de origen"); return; }
+    if (!enteredLines.length || enteredLines.some((l) => !l.item_id || !l.place_id || l.qty <= 0)) { setError("Ingrese al menos una linea completa con producto, cantidad y bodega de origen"); return; }
     try {
       const res = await api<unknown>("/api/v1/sales/invoices/simulate", {
         method: "POST",
@@ -221,7 +223,7 @@ export default function NuevaFacturaPage() {
           cost_center_code: header.cost_center_code,
           associated_account_code: header.associated_account_code,
           retention_codes: selectedRetentions,
-          lines: lines.map((l) => ({
+          lines: enteredLines.map((l) => ({
             item_id: l.item_id, qty: l.qty, unit_price: l.unit_price, discount: l.discount, tax_rate: l.tax_rate,
             place_id: l.place_id || undefined, customer_invoice_number: l.customer_invoice_number || undefined,
             source_order_line_id: l.source_order_line_id
@@ -242,8 +244,9 @@ export default function NuevaFacturaPage() {
 
   async function handleSubmit(createAnother = false) {
     setError(""); setOk("");
+    const enteredLines = enteredSalesInvoiceLines(lines);
     if (!header.customer_id) { setError("Seleccione un cliente"); return; }
-    if (!lines.length || lines.some((l) => !l.item_id || !l.place_id)) { setError("Cada linea debe tener producto y bodega de origen"); return; }
+    if (!enteredLines.length || enteredLines.some((l) => !l.item_id || !l.place_id || l.qty <= 0)) { setError("Ingrese al menos una linea completa con producto, cantidad y bodega de origen"); return; }
     setSaving(true);
     try {
       const res = await api<{ invoice: CreatedInvoice }>("/api/v1/sales/invoices", {
@@ -261,7 +264,7 @@ export default function NuevaFacturaPage() {
           associated_account_code: header.associated_account_code,
           notes: header.notes || undefined,
           retention_codes: selectedRetentions,
-          lines: lines.map((l) => ({
+          lines: enteredLines.map((l) => ({
             item_id: l.item_id, qty: l.qty, unit_price: l.unit_price,
             discount: l.discount, tax_rate: l.tax_rate,
             place_id: l.place_id || undefined,
@@ -272,7 +275,7 @@ export default function NuevaFacturaPage() {
       });
       setOk(`Factura ${res.invoice?.number} creada exitosamente`);
       if (createAnother) {
-        setLines([]); setSelectedRetentions([]); setCustomerText(""); setSimulation(null); setShowSim(false);
+        setLines(padSalesInvoiceLines([])); setSelectedRetentions([]); setCustomerText(""); setSimulation(null); setShowSim(false);
         setHeader((current) => ({ ...current, customer_id: 0, sales_order_id: 0, place_id: 0, header_text: "", notes: "" }));
         setActiveTab("detail");
       } else setTimeout(() => router.push("/dashboard/ventas/facturas"), 1500);
@@ -456,8 +459,8 @@ export default function NuevaFacturaPage() {
       {/* Acciones */}
       <div className="flex gap-3">
         <button className="h-10 rounded-md border border-line px-4 text-sm" onClick={handleSimulate} disabled={saving || documentKind !== "invoice"}>Simular contabilidad</button>
-        <button className="h-10 rounded-md border border-apex px-4 text-sm text-apex disabled:opacity-50" onClick={() => void handleSubmit(true)} disabled={saving || !lines.length || documentKind !== "invoice"}>Emitir y nueva</button>
-        <button className="h-10 rounded-md bg-apex px-4 text-sm text-white disabled:opacity-50" onClick={() => void handleSubmit(false)} disabled={saving || !lines.length || documentKind !== "invoice"}>
+        <button className="h-10 rounded-md border border-apex px-4 text-sm text-apex disabled:opacity-50" onClick={() => void handleSubmit(true)} disabled={saving || !enteredSalesInvoiceLines(lines).length || documentKind !== "invoice"}>Emitir y nueva</button>
+        <button className="h-10 rounded-md bg-apex px-4 text-sm text-white disabled:opacity-50" onClick={() => void handleSubmit(false)} disabled={saving || !enteredSalesInvoiceLines(lines).length || documentKind !== "invoice"}>
           {saving ? "Creando..." : "Emitir factura"}
         </button>
       </div>

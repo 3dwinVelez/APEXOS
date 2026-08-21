@@ -1,6 +1,7 @@
 const prisma = require("../../core/prisma");
 const { brainQueue } = require("../../fabric/queues");
 const accountingService = require("../accounting/service");
+const { partyRoleWhere } = require("../parties/roles");
 const { createHash } = require("node:crypto");
 
 function appError(statusCode, code, message) {
@@ -98,6 +99,7 @@ function normalizeCode(value) {
 function warehouseDto(place) {
   const locations = place.locations || [];
   const stockTotal = locations.reduce((sum, location) => sum + (location.items || []).reduce((inner, item) => inner + Number(item.qty || 0), 0), 0);
+  const consignmentCustomerId = Number(place.metadata?.consignment_customer_id || 0) || null;
   return {
     id: place.id,
     code: place.code,
@@ -105,6 +107,8 @@ function warehouseDto(place) {
     type: place.type,
     warehouse_type: place.warehouse_type || "owned",
     warehouse_type_label: place.warehouse_type === "consignment" ? "Consignacion" : "Propia",
+    consignment_customer_id: consignmentCustomerId,
+    consignment_customer_name: place.consignment_customer?.legal_name || place.consignment_customer?.name || "",
     address: place.address || "",
     city: place.city || "",
     country: place.country || "CO",
@@ -642,7 +646,15 @@ async function listWarehouses(tenantId, query = {}) {
       include: { locations: { include: { items: true } } },
       orderBy: { code: "asc" }
     });
-    return warehouses.map(warehouseDto);
+    const customerIds = [...new Set(warehouses.map((warehouse) => Number(warehouse.metadata?.consignment_customer_id || 0)).filter(Boolean))];
+    const customers = customerIds.length
+      ? await prisma.party.findMany({ where: { id: { in: customerIds }, active: true, AND: [partyRoleWhere("customer")] } })
+      : [];
+    const customerById = new Map(customers.map((customer) => [customer.id, customer]));
+    return warehouses.map((warehouse) => warehouseDto({
+      ...warehouse,
+      consignment_customer: customerById.get(Number(warehouse.metadata?.consignment_customer_id || 0)) || null
+    }));
   });
 }
 
@@ -658,6 +670,14 @@ async function saveWarehouse(tenantId, data, placeId = null) {
   await assertWarehouseOrganization(tenantId, societyCode, branchCode, costCenterCode);
 
   return prisma.runWithTenant(tenantId, async () => {
+    const consignmentCustomerId = warehouseType === "consignment" ? Number(data.consignment_customer_id || 0) : 0;
+    if (warehouseType === "consignment" && !consignmentCustomerId) {
+      throw appError(400, "CONSIGNMENT_CUSTOMER_REQUIRED", "La bodega de consignacion debe tener un cliente propietario");
+    }
+    if (consignmentCustomerId) {
+      const customer = await prisma.party.findFirst({ where: { id: consignmentCustomerId, active: true, AND: [partyRoleWhere("customer")] } });
+      if (!customer) throw appError(422, "CONSIGNMENT_CUSTOMER_INVALID", "El cliente de consignacion no existe o no esta activo");
+    }
     const duplicated = await prisma.place.findFirst({
       where: { code, __includeInactive: true, ...(placeId ? { id: { not: Number(placeId) } } : {}) }
     });
@@ -680,7 +700,8 @@ async function saveWarehouse(tenantId, data, placeId = null) {
         society_code: societyCode,
         branch_code: branchCode,
         cost_center_code: costCenterCode,
-        warehouse_type: warehouseType
+        warehouse_type: warehouseType,
+        consignment_customer_id: consignmentCustomerId || null
       }
     };
 
