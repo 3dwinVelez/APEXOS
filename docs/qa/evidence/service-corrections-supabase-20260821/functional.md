@@ -94,12 +94,57 @@ una correccion.
 Se corrigio en `apps/web/lib/api.ts`: el mapeo del detalle Supabase ahora
 expone `version: Number(metadata.version || 1)`. Con este ajuste, tras aplicar
 una correccion y recargar, la UI muestra la version vigente y el retiro de
-evidencia puede aplicarse.
+evidencia puede aplicarse. **Re-certificado en vivo: PASS** (evidencia
+`live-qa-evidence-withdrawn.png`).
+
+## Hallazgo fijado durante la certificacion: estados no permitidos en Supabase
+
+Al certificar **Reabrir orden** (cambio a `reabierta`) en vivo, Supabase
+rechazo con `400 violates check constraint service_orders_status_check`. El
+check constraint de Supabase solo permitia
+`agendado, pendiente, en_curso, inspeccion, ejecucion, cerrada, no_ejecutada, cancelada`
+mientras el backend Prisma soporta `reabierta`, `revision` y `lista_facturacion`.
+
+Se creo la migracion `supabase/migrations/20260821120000_service_orders_administrative_statuses.sql`
+y se aplico en el proyecto Supabase QA (verificado con `pg_get_constraintdef`).
+**Re-certificado en vivo: PASS** (evidencia `live-qa-reopen-applied.png`).
+
+## Hallazgo fijado durante la certificacion: force-close creaba APPLIED
+
+Al certificar **Cerrar administrativamente** en vivo, la correccion se
+registraba pero no se aplicaba con `La correccion no esta disponible para
+aplicar`. El fallback Supabase de `/reopen` y `/force-close` creaba la
+correccion con estado `APPLIED` y aplicaba el cambio directamente, pero el
+panel luego llama a `/apply` que rechaza estados no `DRAFT`/`APPROVED`.
+
+Se corrigio en `apps/web/lib/api.ts`: `/reopen` y `/force-close` ahora crean
+la correccion como `DRAFT` (sin aplicar) para que el `/apply` posterior
+aplique el cambio, alineandose con el backend local. **Re-certificado en
+vivo: PASS** (evidencia `live-qa-force-close-applied.png`).
+
+## Certificacion de los modos restantes (QA desplegado) — PASO
+
+Ademas de los 4 modos anteriores, se certificaron:
+
+5. **Retirar evidencia** (SCJ-OS-007 `6c808f62-...`): se retiro la evidencia
+   `administrative_support` con motivo `Evidencia incorrecta`. El historial
+   registro el retiro como **APPLIED** y el archivo se conserva para
+   auditoria. Evidencia: `live-qa-evidence-withdrawn.png`.
+6. **Reabrir orden** (SCJ-OS-006 `ff64256b-...`, no ejecutada): se reabrio la
+   orden a `reabierta` con motivo `Estado incorrecto`. La orden quedo
+   `Reabierta` y el historial registro la correccion como **APPLIED**.
+   Evidencia: `live-qa-reopen-applied.png`.
+7. **Cerrar administrativamente** (SCJ-OS-001 `983441c4-...`, pendiente): se
+   cerro la orden a `cerrada` con observacion, requisitos pendientes y
+   confirmacion. La orden quedo `Cerrada` y el historial registro la
+   correccion como **APPLIED**. Evidencia: `live-qa-force-close-applied.png`.
 
 ## Estado
 
-- Certificacion navegador en QA desplegado: PASS (5 evidencias capturadas).
-- Hallazgo de version optimista: FIJADO (typecheck y build en verde).
+- Certificacion navegador en QA desplegado: PASS (8 evidencias capturadas).
+- Hallazgo de version optimista: FIJADO y re-certificado.
+- Hallazgo de constraint de estados: FIJADO con migracion aplicada en QA y re-certificado.
+- Hallazgo de force-close DRAFT: FIJADO y re-certificado.
 - Pruebas automatizadas del modulo: 20/20 PASS.
 - Typecheck web: PASS.
 - Build web: PASS.

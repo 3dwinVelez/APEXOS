@@ -3,7 +3,7 @@
   "environment": "QA",
   "source_branch": "desarrollo",
   "target_branch": "develop",
-  "commit": "d9972d2",
+  "commit": "a23e455",
   "checks": {
     "functional": { "status": "passed", "evidence": ["functional.md"] },
     "error": { "status": "passed", "evidence": ["error.md"] },
@@ -20,7 +20,10 @@
       "live-qa-status-change-applied.png",
       "live-qa-observation-applied.png",
       "live-qa-piece-issue-applied.png",
-      "live-qa-evidence-applied.png"
+      "live-qa-evidence-applied.png",
+      "live-qa-evidence-withdrawn.png",
+      "live-qa-reopen-applied.png",
+      "live-qa-force-close-applied.png"
     ]
   },
   "live_browser_certification": {
@@ -31,9 +34,16 @@
       "live-qa-observation-applied.png",
       "live-qa-piece-issue-applied.png",
       "live-qa-evidence-applied.png",
+      "live-qa-evidence-withdrawn.png",
+      "live-qa-reopen-applied.png",
+      "live-qa-force-close-applied.png",
       "functional.md"
     ],
-    "detail": "Se ejecuto el flujo Corregir y anexar desde el navegador sobre la plataforma QA desplegada (apexos-web-qa-production.up.railway.app) con la cuenta scj@apexos.qa. Modos certificados: edicion de informacion (OS-00014 f63f355e), cambio de estado cerrada->pendiente (SCJ-OS-001 983441c4), agregar novedad (SCJ-OS-005 1f88e836), reportar pieza faltante (MED-SER-003), anexar soporte administrativo con foto (SCJ-OS-007 6c808f62). Todos aplicaron con mensaje de exito y registro APPLIED en historial. Hallazgo fijado: la version optimista no se sincronizaba en la UI tras aplicar una correccion (retiro de evidencia fallaba con conflicto de version); se corrigio exponiendo version desde metadata.version en el detalle Supabase."
+    "detail": "Se ejecuto el flujo Corregir y anexar desde el navegador sobre la plataforma QA desplegada (apexos-web-qa-production.up.railway.app) con la cuenta scj@apexos.qa. Modos certificados (todos APPLIED en historial): edicion de informacion (OS-00014 f63f355e), cambio de estado cerrada->pendiente (SCJ-OS-001 983441c4), agregar novedad (SCJ-OS-005 1f88e836), reportar pieza faltante (MED-SER-003), anexar soporte con foto (SCJ-OS-007 6c808f62), retirar evidencia (SCJ-OS-007), reabrir orden no_ejecutada->reabierta (SCJ-OS-006 ff64256b), cierre administrativo pendiente->cerrada (SCJ-OS-001)."
+  },
+  "migrations": {
+    "status": "applied",
+    "detail": "Se aplico en el proyecto Supabase QA la migracion 20260821120000_service_orders_administrative_statuses.sql que amplia service_orders_status_check con reabierta, revision y lista_facturacion. Verificado: pg_get_constraintdef muestra el constraint ampliado."
   },
   "approval": {
     "status": "pending",
