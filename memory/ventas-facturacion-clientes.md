@@ -54,3 +54,7 @@ Encabezados opcionales: `fecha`, `plazo`, `precio`, `descuento`, `iva`, `referen
 - Sociedad, sucursal, centro de costos y cuenta asociada de deudores son listas dependientes de los maestros contables.
 - El precio visible de venta incluye IVA; internamente se preservan base e impuesto separados para contabilizacion.
 - El IVA se elige desde el maestro parametrizado y las retenciones viven en una pestana separada.
+
+## Experiencia de reportes confirmada 2026-08-21
+
+- Los filtros de Cliente y Producto son campos de texto asistidos en todas las vistas de reportes de ventas. Enter vacio abre el maestro completo; con texto selecciona una coincidencia exacta o abre el buscador prefiltrado. Producto admite SKU vigente, codigo anterior, nombre y familia; Cliente admite codigo, NIT y nombre.

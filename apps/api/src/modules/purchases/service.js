@@ -402,7 +402,7 @@ async function getPurchaseOrderPrintData(tenantId, poId) {
       po.metadata?.warehouse_id ? prisma.place.findFirst({ where: { id: Number(po.metadata.warehouse_id), type: "warehouse", __includeInactive: true } }) : null,
       po.created_by ? prisma.user.findFirst({ where: { id: po.created_by }, select: { id: true, name: true, email: true } }) : null,
       accountingService.getOrganizationTree(tenantId),
-      itemIds.length ? prisma.item.findMany({ where: { id: { in: itemIds }, __includeInactive: true }, select: { id: true, code: true, name: true } }) : []
+      itemIds.length ? prisma.item.findMany({ where: { id: { in: itemIds }, __includeInactive: true }, select: { id: true, code: true, legacy_code: true, name: true } }) : []
     ]);
     const society = organization.societies.find((row) => row.code === (warehouse?.society_code || po.metadata?.society_code));
     const itemById = new Map(items.map((item) => [item.id, item]));
@@ -932,7 +932,7 @@ async function listPurchaseOrders(tenantId, query = {}) {
       documentsByOrder.set(document.reference, current);
     }
     const itemIds = [...new Set(orders.flatMap((order) => order.lines || []).map((line) => line.item_id).filter(Boolean))];
-    const orderItems = itemIds.length ? await prisma.item.findMany({ where: { id: { in: itemIds } }, select: { id: true, code: true, name: true, unit: true } }) : [];
+    const orderItems = itemIds.length ? await prisma.item.findMany({ where: { id: { in: itemIds } }, select: { id: true, code: true, legacy_code: true, name: true, unit: true } }) : [];
     const itemById = new Map(orderItems.map((item) => [item.id, item]));
     const enriched = await Promise.all(orders.map(enrichPurchaseOrder));
     return enriched.map((order) => {

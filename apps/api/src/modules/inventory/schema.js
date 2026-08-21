@@ -4,6 +4,7 @@ const createItemSchema = {
     required: ["name", "type", "unit", "family_code", "society_code", "branch_code", "unit_cost", "unit_price"],
     properties: {
       code: { type: "string", minLength: 1 },
+      legacy_code: { type: "string" },
       name: { type: "string", minLength: 1 },
       type: { type: "string" },
       unit: { type: "string" },

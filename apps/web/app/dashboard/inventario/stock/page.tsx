@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { InventoryNav } from "@/components/inventory-nav";
 import { api } from "@/lib/api";
 
-type Item = { id: number; code: string; name: string; stock_current: number; stock_min: number; stock_max: number; unit: string; abc_class: string };
+type Item = { id: number; code: string; legacy_code?: string | null; name: string; stock_current: number; stock_min: number; stock_max: number; unit: string; abc_class: string };
 type StockStatus = "todos" | "critico" | "ok" | "agotado";
 
 export default function StockPage() {
@@ -25,7 +25,7 @@ export default function StockPage() {
     return items
       .filter((item) => {
         const itemStatus = item.stock_current <= 0 ? "agotado" : item.stock_current <= item.stock_min ? "critico" : "ok";
-        const matchQuery = [item.code, item.name, item.unit || ""].some((value) => value.toLowerCase().includes(query.trim().toLowerCase()));
+        const matchQuery = [item.code, item.legacy_code || "", item.name, item.unit || ""].some((value) => value.toLowerCase().includes(query.trim().toLowerCase()));
         const matchStatus = status === "todos" || itemStatus === status;
         const matchAbc = abc === "todos" || (item.abc_class || "C") === abc;
         return matchQuery && matchStatus && matchAbc;
@@ -54,7 +54,7 @@ export default function StockPage() {
         <div className="mb-4 grid gap-3 lg:grid-cols-[1fr_auto_auto_auto]">
           <input
             className="h-10 rounded-md border border-line px-3 text-sm"
-            placeholder="Buscar SKU, producto o unidad..."
+            placeholder="Buscar SKU, código anterior, producto o unidad..."
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
@@ -100,7 +100,7 @@ export default function StockPage() {
                 const coverage = item.stock_max ? Math.round((item.stock_current / item.stock_max) * 100) : null;
                 return (
                   <tr className="border-b border-line/60 hover:bg-paper/70" key={item.id}>
-                    <td className="py-2 pr-3 font-medium">{item.code}</td>
+                    <td className="py-2 pr-3 font-medium"><span className="font-mono">{item.code}</span>{item.legacy_code ? <span className="block text-xs font-normal text-neutral-500">Anterior: {item.legacy_code}</span> : null}</td>
                     <td className="py-2 pr-3">{item.name}</td>
                     <td className="py-2 pr-3">{item.abc_class || "C"}</td>
                     <td className="py-2 pr-3">{item.stock_current}</td>

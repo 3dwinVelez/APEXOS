@@ -27,6 +27,7 @@ Inventario debe separar maestro, bodega, stock y analitica. La vista principal d
 - Los traslados y sus posiciones conservan obligatoriamente el `tenant_id`; su creación no puede escapar del aislamiento de empresa.
 - Una bodega de consignación exige un cliente activo, conserva el vínculo en sus metadatos y lo muestra en el maestro de bodegas.
 - `Inventario > Lista de productos` consulta SKU activos e inactivos, filtra por texto, familia y estado, y exporta el resultado visible a Excel.
+- Cada producto admite un código de artículo anterior opcional. Se muestra junto al SKU y participa en búsquedas de inventario, compras, ventas y traslados sin reemplazar el código vigente.
 - Cada traslado permite descargar una remision PDF con sociedad, fechas, motivo, bodegas de origen y destino, tipo, direccion y ciudad, detalle de SKU y cantidades, espacio para novedades fisicas y campos de firma de quien entrega y quien recibe.
 - La recepción de importaciones actualiza el promedio por SKU/sociedad con mercancía más indirectos capitalizables distribuidos por valor; impuestos recuperables y gastos no se capitalizan.
 

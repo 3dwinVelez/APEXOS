@@ -38,6 +38,7 @@ type Supplier = { id: number; name: string; tax_id: string; email: string; city:
 type Item = {
   id: number;
   code: string;
+  legacy_code?: string | null;
   name: string;
   unit: string;
   unit_cost: number;
@@ -167,7 +168,7 @@ export default function NuevaOCPage() {
   const supplier = suppliers.find((entry) => entry.id === Number(form.supplier_id));
   const filteredItems = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    const source = needle ? items.filter((item) => [item.code, item.name, item.abc_class || ""].some((value) => value.toLowerCase().includes(needle))) : items;
+    const source = needle ? items.filter((item) => [item.code, item.legacy_code || "", item.name, item.abc_class || ""].some((value) => value.toLowerCase().includes(needle))) : items;
     return source.slice(0, 8);
   }, [items, query]);
 
@@ -180,7 +181,7 @@ export default function NuevaOCPage() {
 
   const skuSearchResults = useMemo(() => {
     const needle = skuSearch.trim().toLowerCase();
-    return items.filter((item) => !needle || [item.code, item.name, item.abc_class || ""].some((value) => value.toLowerCase().includes(needle))).slice(0, 50);
+    return items.filter((item) => !needle || [item.code, item.legacy_code || "", item.name, item.abc_class || ""].some((value) => value.toLowerCase().includes(needle))).slice(0, 50);
   }, [items, skuSearch]);
 
   const visibleOrders = useMemo(() => {
@@ -231,7 +232,7 @@ export default function NuevaOCPage() {
 
   function updateSku(id: string, sku: string) {
     const normalized = sku.trim().toUpperCase();
-    const item = items.find((entry) => entry.code.toUpperCase() === normalized);
+    const item = items.find((entry) => entry.code.toUpperCase() === normalized || (entry.legacy_code || "").toUpperCase() === normalized);
     if (!item) return updateLine(id, { item_id: 0, sku: sku.toUpperCase(), description: "", qty: 0, unit_cost: 0, tax_rate: 0 });
     updateLine(id, { item_id: item.id, sku: item.code, description: item.name, unit: item.unit || "UND", qty: 1, unit_cost: Number(item.unit_cost || 0), tax_rate: 0, stock_current: Number(item.stock_current || 0), stock_min: Number(item.stock_min || 0), stock_max: Number(item.stock_max || 0), abc_class: item.abc_class || "C" });
   }
@@ -245,7 +246,7 @@ export default function NuevaOCPage() {
   function handleSkuEnter(line: PoLine) {
     const code = line.sku.trim().toUpperCase();
     if (!code) return openSkuSearch(line.localId);
-    const item = items.find((entry) => entry.code.toUpperCase() === code);
+    const item = items.find((entry) => entry.code.toUpperCase() === code || (entry.legacy_code || "").toUpperCase() === code);
     if (item) return assignItemToLine(line.localId, item);
     const message = `El SKU ${code} no existe. Busca y selecciona un producto del maestro.`;
     setError(message);
@@ -559,7 +560,7 @@ export default function NuevaOCPage() {
                     {(query ? filteredItems : smartItems).map((item) => (
                       <button className="rounded-md border border-line bg-paper p-3 text-left text-sm hover:border-apex hover:bg-white" key={item.id} onClick={() => addItem(item)} type="button">
                         <span className="flex items-center justify-between gap-2">
-                          <span className="font-semibold">{item.code}</span>
+                          <span className="font-semibold">{item.code}</span>{item.legacy_code ? <span className="block text-xs text-neutral-500">Anterior: {item.legacy_code}</span> : null}
                           <Plus size={15} className="text-apex" />
                         </span>
                         <span className="mt-1 block truncate text-neutral-600">{item.name}</span>
@@ -732,7 +733,7 @@ export default function NuevaOCPage() {
           {skuSearchMessage ? <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{skuSearchMessage}</p> : null}
           <label className="relative block"><Search className="absolute left-3 top-3 text-neutral-400" size={16} /><input autoFocus className="h-10 w-full rounded-md border border-line pl-10 pr-3 text-sm" placeholder="Buscar por código, nombre o clasificación ABC" value={skuSearch} onChange={(event) => setSkuSearch(event.target.value)} /></label>
           <div className="max-h-[55vh] divide-y divide-line overflow-y-auto rounded-md border border-line">
-            {skuSearchResults.map((item) => <button className="flex w-full items-center justify-between gap-4 p-3 text-left text-sm hover:bg-paper" key={item.id} onClick={() => assignItemToLine(skuSearchLineId, item)} type="button"><span><strong className="font-mono">{item.code}</strong><span className="ml-2">{item.name}</span><span className="mt-1 block text-xs text-neutral-500">Unidad {item.unit || "UND"} · ABC {item.abc_class || "C"}</span></span><span className="shrink-0 text-right"><strong>{money(Number(item.unit_cost || 0), form.currency)}</strong><span className="block text-xs text-neutral-500">Stock {item.stock_current}</span></span></button>)}
+            {skuSearchResults.map((item) => <button className="flex w-full items-center justify-between gap-4 p-3 text-left text-sm hover:bg-paper" key={item.id} onClick={() => assignItemToLine(skuSearchLineId, item)} type="button"><span><strong className="font-mono">{item.code}</strong>{item.legacy_code ? <span className="ml-2 font-mono text-neutral-500">Anterior: {item.legacy_code}</span> : null}<span className="ml-2">{item.name}</span><span className="mt-1 block text-xs text-neutral-500">Unidad {item.unit || "UND"} · ABC {item.abc_class || "C"}</span></span><span className="shrink-0 text-right"><strong>{money(Number(item.unit_cost || 0), form.currency)}</strong><span className="block text-xs text-neutral-500">Stock {item.stock_current}</span></span></button>)}
             {!skuSearchResults.length ? <p className="p-6 text-center text-sm text-neutral-500">No hay SKU que coincidan con la búsqueda.</p> : null}
           </div>
         </div>

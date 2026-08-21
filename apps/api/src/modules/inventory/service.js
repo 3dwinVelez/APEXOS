@@ -13,7 +13,7 @@ function appError(statusCode, code, message) {
 
 async function createItem(tenantId, userId, data) {
   const {
-    code = null, name, type, unit, category_id, family_code = null, society_code = null, branch_code = null, costing_method = "weighted_average",
+    code = null, legacy_code = null, name, type, unit, category_id, family_code = null, society_code = null, branch_code = null, costing_method = "weighted_average",
     unit_cost, unit_price, tax_rate = 0,
     stock_min = 0, stock_max = null,
     weight_kg = 0, volume_m3 = 0, metadata = {}
@@ -67,6 +67,7 @@ async function createItem(tenantId, userId, data) {
     data: {
       tenant_id: tenantId,
       code: finalCode,
+      legacy_code: String(legacy_code || "").trim() || null,
       name: name.trim(),
       type,
       unit,
@@ -182,6 +183,7 @@ async function updateItem(tenantId, itemId, data) {
     if (!item.active) throw appError(422, "INACTIVE", "No se puede editar un item inactivo");
 
     const { code, type, stock_current, tenant_id, family_code, costing_method, society_code, branch_code, ...safeData } = data;
+    if (safeData.legacy_code !== undefined) safeData.legacy_code = String(safeData.legacy_code || "").trim() || null;
     if (costing_method && costing_method !== "weighted_average") throw appError(400, "INVALID_COSTING_METHOD", "Por ahora solo esta disponible promedio ponderado");
     const nextSocietyCode = society_code !== undefined ? normalizeCode(society_code) : item.society_code;
     const nextBranchCode = branch_code !== undefined ? normalizeCode(branch_code) : item.branch_code;
@@ -237,6 +239,7 @@ async function listItems(tenantId, filters = {}) {
     if (search) {
       where.OR = [
         { code: { contains: search, mode: "insensitive" } },
+        { legacy_code: { contains: search, mode: "insensitive" } },
         { name: { contains: search, mode: "insensitive" } }
       ];
     }
@@ -812,7 +815,7 @@ async function adjustStock(tenantId, userId, data) {
 
 async function getKardex(tenantId, itemId, filters = {}) {
   return prisma.runWithTenant(tenantId, async () => {
-    const item = await prisma.item.findFirst({ where: { id: itemId }, select: { id: true, code: true, name: true, unit: true, stock_current: true, unit_cost: true } });
+    const item = await prisma.item.findFirst({ where: { id: itemId }, select: { id: true, code: true, legacy_code: true, name: true, unit: true, stock_current: true, unit_cost: true } });
     if (!item) throw appError(404, "ITEM_NOT_FOUND", "Item no encontrado");
 
     const { from_date, to_date, type, location_id, warehouse_id, page = 1, limit = 50 } = filters;
@@ -872,6 +875,7 @@ async function getKardex(tenantId, itemId, filters = {}) {
         direction: signedQty >= 0 ? "in" : "out",
         item_id: item.id,
         item_code: item.code,
+        item_legacy_code: item.legacy_code || "",
         item_name: item.name,
         qty: Number(movement.qty || 0),
         in_qty: signedQty > 0 || movement.type === "transfer_receive" ? Number(movement.qty || 0) : 0,
@@ -907,6 +911,7 @@ async function getInventoryCosts(tenantId, filters = {}) {
     if (search) {
       where.OR = [
         { code: { contains: search, mode: "insensitive" } },
+        { legacy_code: { contains: search, mode: "insensitive" } },
         { name: { contains: search, mode: "insensitive" } }
       ];
     }
@@ -957,6 +962,7 @@ async function getInventoryCosts(tenantId, filters = {}) {
       return {
         id: item.id,
         code: item.code,
+        legacy_code: item.legacy_code || "",
         name: item.name,
         family_code: item.family_code || item.family?.code || "",
         family_name: item.family?.name || "",

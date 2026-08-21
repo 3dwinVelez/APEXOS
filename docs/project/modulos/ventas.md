@@ -22,6 +22,8 @@ La importación `.xlsx` agrupa facturas por `grupo_factura`; un error invalida e
 
 Ventas debe priorizar flujo comercial y consulta rapida. La captura de datos no debe competir con el listado principal salvo en pantallas dedicadas.
 
+- Los reportes usan campos de texto asistidos para Cliente y Producto en lugar de listas desplegables. Enter selecciona una coincidencia exacta o abre el buscador —tambien cuando el campo esta vacio— por codigo, NIT, nombre, SKU, codigo anterior o familia.
+
 ## Validaciones esperadas
 
 - Crear cliente.

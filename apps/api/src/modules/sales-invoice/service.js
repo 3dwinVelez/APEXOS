@@ -605,7 +605,7 @@ async function getSalesInvoice(tenantId, id) {
       where: { id: Number(id), tenant_id: tenantId },
       include: {
         customer: { select: { id: true, name: true, legal_name: true, tax_id: true, email: true, phone: true, receivable_balance: true, credit_limit: true, metadata: true } },
-        lines: { orderBy: { line_no: "asc" }, include: { item: { select: { id: true, code: true, name: true, unit: true } }, place: { select: { id: true, code: true, name: true } } } },
+        lines: { orderBy: { line_no: "asc" }, include: { item: { select: { id: true, code: true, legacy_code: true, name: true, unit: true } }, place: { select: { id: true, code: true, name: true } } } },
         cxc: { include: { lines: { orderBy: { line_no: "asc" } } } }
       }
     });
@@ -902,7 +902,8 @@ async function getSalesByCustomer(tenantId, query = {}) {
         tenant_id: tenantId,
         status: "issued",
         date: { gte: dateFrom, lte: dateTo },
-        ...(query.customer_id ? { customer_id: Number(query.customer_id) } : {})
+        ...(query.customer_id ? { customer_id: Number(query.customer_id) } : {}),
+        ...(query.item_id ? { lines: { some: { item_id: Number(query.item_id) } } } : {})
       },
       include: { customer: { select: { id: true, name: true, legal_name: true, tax_id: true } } },
       orderBy: { date: "asc" }
@@ -934,16 +935,21 @@ async function getSalesByItem(tenantId, query = {}) {
     const rows = await prisma.salesInvoiceLine.findMany({
       where: {
         tenant_id: tenantId,
-        invoice: { status: "issued", date: { gte: dateFrom, lte: dateTo } }
+        ...(query.item_id ? { item_id: Number(query.item_id) } : {}),
+        invoice: {
+          status: "issued",
+          date: { gte: dateFrom, lte: dateTo },
+          ...(query.customer_id ? { customer_id: Number(query.customer_id) } : {})
+        }
       },
-      include: { item: { select: { id: true, code: true, name: true, unit: true } }, invoice: { select: { number: true, date: true } } },
+      include: { item: { select: { id: true, code: true, legacy_code: true, name: true, unit: true } }, invoice: { select: { number: true, date: true } } },
       orderBy: { created_at: "desc" }
     });
     const byItem = new Map();
     for (const row of rows) {
       const key = row.item_id || 0;
       const i = byItem.get(key) || {
-        item: row.item ? { id: row.item.id, code: row.item.code, name: row.item.name, unit: row.item.unit } : { id: null, code: "N/A", name: row.description },
+        item: row.item ? { id: row.item.id, code: row.item.code, legacy_code: row.item.legacy_code, name: row.item.name, unit: row.item.unit } : { id: null, code: "N/A", legacy_code: null, name: row.description },
         qty: 0, subtotal: 0, total: 0, count: 0
       };
       i.qty = round(i.qty + row.qty);
@@ -967,7 +973,13 @@ async function getSalesByDate(tenantId, query = {}) {
     const dateTo = query.date_to ? new Date(query.date_to) : new Date();
     const groupBy = query.group_by || "day";
     const rows = await prisma.salesInvoice.findMany({
-      where: { tenant_id: tenantId, status: "issued", date: { gte: dateFrom, lte: dateTo } },
+      where: {
+        tenant_id: tenantId,
+        status: "issued",
+        date: { gte: dateFrom, lte: dateTo },
+        ...(query.customer_id ? { customer_id: Number(query.customer_id) } : {}),
+        ...(query.item_id ? { lines: { some: { item_id: Number(query.item_id) } } } : {})
+      },
       orderBy: { date: "asc" }
     });
     const byDate = new Map();
@@ -1006,6 +1018,7 @@ async function getSalesDetail(tenantId, query = {}) {
     const dateTo = query.date_to ? new Date(query.date_to) : new Date();
     const where = { tenant_id: tenantId, date: { gte: dateFrom, lte: dateTo } };
     if (query.customer_id) where.customer_id = Number(query.customer_id);
+    if (query.item_id) where.lines = { some: { item_id: Number(query.item_id) } };
     if (query.status) where.status = String(query.status);
     if (query.search) {
       const s = String(query.search).trim();
@@ -1018,7 +1031,7 @@ async function getSalesDetail(tenantId, query = {}) {
       where,
       include: {
         customer: { select: { id: true, name: true, legal_name: true, tax_id: true } },
-        lines: { orderBy: { line_no: "asc" }, include: { item: { select: { id: true, code: true, name: true, unit: true } } } },
+        lines: { orderBy: { line_no: "asc" }, include: { item: { select: { id: true, code: true, legacy_code: true, name: true, unit: true } } } },
         cxc: { select: { id: true, number: true, balance: true, status: true } }
       },
       orderBy: { date: "desc" },
