@@ -11,7 +11,7 @@ import { createEmptySalesInvoiceLine, enteredSalesInvoiceLines, padSalesInvoiceL
 
 type CustomerRetention = { code: string; base_amount?: number };
 type Customer = { id: number; name: string; legal_name?: string; tax_id?: string; balance: number; credit_limit: number; metadata?: { withholding_rates?: CustomerRetention[]; customer_retentions?: CustomerRetention[] } };
-type Item = { id: number; code: string; name: string; unit: string; unit_price: number; tax_rate: number };
+type Item = { id: number; code: string; legacy_code?: string | null; name: string; unit: string; unit_price: number; tax_rate: number };
 type Warehouse = { id: number; code: string; name: string; warehouse_type: string };
 type SaleOrderLine = { id: number; item_id: number; qty: number; unit: string; unit_price: number; discount: number; tax_rate: number; description: string };
 type SaleOrder = { id: number; number: string; status: string; party_id: number; lines: SaleOrderLine[] };
@@ -101,7 +101,7 @@ export default function NuevaFacturaPage() {
 
   const selectedCustomer = customers.find((c) => c.id === header.customer_id);
   const filteredCustomers = useMemo(() => customers.filter((customer) => [String(customer.id), customer.name, customer.legal_name || "", customer.tax_id || ""].some((value) => value.toLowerCase().includes(customerSearch.toLowerCase()))), [customers, customerSearch]);
-  const filteredItems = useMemo(() => items.filter((item) => [item.code, item.name, (item as Item & { family_code?: string }).family_code || ""].some((value) => value.toLowerCase().includes(itemSearch.toLowerCase()))), [items, itemSearch]);
+  const filteredItems = useMemo(() => items.filter((item) => [item.code, item.legacy_code || "", item.name, (item as Item & { family_code?: string }).family_code || ""].some((value) => value.toLowerCase().includes(itemSearch.toLowerCase()))), [items, itemSearch]);
   const branches = organization.branches.filter((row) => row.active !== false && row.society_code === header.society_code);
   const costCenters = organization.cost_centers.filter((row) => row.active !== false && row.society_code === header.society_code && row.branch_code === header.branch_code);
   const vatRates = [...new Set(vatMasters.filter((row) => row.active !== false).map((row) => Number(row.percent)))].sort((a, b) => a - b);

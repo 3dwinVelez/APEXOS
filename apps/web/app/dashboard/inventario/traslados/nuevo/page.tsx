@@ -9,7 +9,7 @@ import { InventoryNav } from "@/components/inventory-nav";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 
 type Warehouse = { id: number; code: string; name: string; society_code: string };
-type Item = { id: number; code: string; name: string; unit: string; warehouse_rows: Array<{ warehouse_id: number; qty: number }> };
+type Item = { id: number; code: string; legacy_code?: string | null; name: string; unit: string; warehouse_rows: Array<{ warehouse_id: number; qty: number }> };
 type Line = { key: string; item_id: string; item_code: string; item_name: string; item_error: string; qty: number };
 const emptyLine = (): Line => ({ key: crypto.randomUUID(), item_id: "", item_code: "", item_name: "", item_error: "", qty: 1 });
 
@@ -39,7 +39,7 @@ export default function NuevoTrasladoPage() {
   }, [lines]);
   const skuSearchResults = useMemo(() => {
     const needle = skuSearch.trim().toLowerCase();
-    return items.filter((item) => !needle || item.code.toLowerCase().includes(needle) || item.name.toLowerCase().includes(needle)).slice(0, 50);
+    return items.filter((item) => !needle || item.code.toLowerCase().includes(needle) || (item.legacy_code || "").toLowerCase().includes(needle) || item.name.toLowerCase().includes(needle)).slice(0, 50);
   }, [items, skuSearch]);
 
   function updateLine(key: string, changes: Partial<Line>) { setLines((current) => current.map((line) => line.key === key ? { ...line, ...changes } : line)); }
@@ -60,7 +60,7 @@ export default function NuevoTrasladoPage() {
       updateLine(key, { item_id: "", item_name: "", item_error: "Ingresa un código SKU o usa el buscador." });
       return;
     }
-    const item = items.find((row) => row.code.toUpperCase() === code);
+    const item = items.find((row) => row.code.toUpperCase() === code || (row.legacy_code || "").toUpperCase() === code);
     if (!item) {
       updateLine(key, { item_id: "", item_name: "", item_error: `El SKU ${code} no existe o está inactivo.` });
       return;
@@ -118,7 +118,7 @@ export default function NuevoTrasladoPage() {
       <div className="space-y-4">
         <label className="relative block"><span className="sr-only">Código o nombre</span><Search className="absolute left-3 top-3 text-neutral-400" size={16} /><input autoFocus className="h-10 w-full rounded-md border border-line pl-10 pr-3 text-sm" placeholder="Buscar por código o nombre del producto" value={skuSearch} onChange={(event) => setSkuSearch(event.target.value)} /></label>
         <div className="max-h-[55vh] divide-y divide-line overflow-y-auto rounded-md border border-line">
-          {skuSearchResults.map((item) => <button className="flex w-full items-center justify-between gap-4 p-3 text-left text-sm hover:bg-paper" key={item.id} onClick={() => assignItem(skuSearchLineKey, item)} type="button"><span><strong className="font-mono">{item.code}</strong><span className="ml-2">{item.name}</span></span><span className="shrink-0 text-xs text-neutral-500">Unidad {item.unit || "UND"}</span></button>)}
+          {skuSearchResults.map((item) => <button className="flex w-full items-center justify-between gap-4 p-3 text-left text-sm hover:bg-paper" key={item.id} onClick={() => assignItem(skuSearchLineKey, item)} type="button"><span><strong className="font-mono">{item.code}</strong>{item.legacy_code ? <span className="ml-2 font-mono text-neutral-500">Anterior: {item.legacy_code}</span> : null}<span className="ml-2">{item.name}</span></span><span className="shrink-0 text-xs text-neutral-500">Unidad {item.unit || "UND"}</span></button>)}
           {!skuSearchResults.length ? <p className="p-6 text-center text-sm text-neutral-500">No hay SKU que coincidan con la búsqueda.</p> : null}
         </div>
       </div>

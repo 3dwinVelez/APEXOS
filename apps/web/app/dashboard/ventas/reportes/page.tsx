@@ -1,24 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Search, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { asCollection, asRecord } from "@/lib/api-collections";
 import { VentasNav } from "@/components/ventas-nav";
+import { ModalFrame } from "@/components/ui/ModalFrame";
 
 type Tab = "customer" | "item" | "date" | "detail";
 
 type CustomerRow = { customer_id: number; customer?: { name: string }; count: number; subtotal: number; tax_total: number; total: number };
-type ItemRow = { item?: { code: string; name: string }; qty: number; subtotal: number; total: number; count: number };
+type ItemRow = { item?: { code: string; legacy_code?: string | null; name: string }; qty: number; subtotal: number; total: number; count: number };
 type DateRow = { period: string; count: number; subtotal: number; tax_total: number; total: number };
 type DetailInvoice = { id: number; number: string; customer?: { name: string }; total: number; date: string; header_text: string; lines: DetailLine[]; cxc?: { number: string; balance: number } };
-type DetailLine = { item?: { code: string }; description: string; qty: number; unit_price: number; total: number; cost_value: number };
+type DetailLine = { item?: { code: string; legacy_code?: string | null }; description: string; qty: number; unit_price: number; total: number; cost_value: number };
 type ReportData = { grand_total?: number; rows?: Array<CustomerRow | ItemRow | DateRow>; count?: number; invoices?: DetailInvoice[] };
+type Customer = { id: number; name: string; legal_name?: string | null; tax_id?: string | null };
+type Item = { id: number; code: string; legacy_code?: string | null; name: string; family_code?: string | null };
+type Lookup = "customer" | "item";
 
 export default function ReportesPage() {
   const [tab, setTab] = useState<Tab>("customer");
   const [data, setData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [items, setItems] = useState<Item[]>([]);
+  const [customerText, setCustomerText] = useState("");
+  const [itemText, setItemText] = useState("");
+  const [lookup, setLookup] = useState<Lookup | null>(null);
+  const [lookupSearch, setLookupSearch] = useState("");
   const [filters, setFilters] = useState({
     date_from: new Date(new Date().getFullYear(), 0, 1).toISOString().split("T")[0],
     date_to: new Date().toISOString().split("T")[0],
@@ -28,14 +39,63 @@ export default function ReportesPage() {
     group_by: "day"
   });
 
+  useEffect(() => {
+    Promise.all([
+      api<unknown>("/api/v1/sales/customers"),
+      api<unknown>("/api/v1/inventory/items?all=true&sort_by=code")
+    ]).then(([customerRows, itemRows]) => {
+      setCustomers(asCollection<Customer>(customerRows, ["customers", "parties"]));
+      setItems(asCollection<Item>(itemRows, ["items"]));
+    }).catch((err) => setError(err instanceof Error ? err.message : "No fue posible cargar los maestros de búsqueda"));
+  }, []);
+
+  const visibleCustomers = useMemo(() => {
+    const needle = lookupSearch.trim().toLowerCase();
+    return customers.filter((row) => !needle || [String(row.id), row.tax_id || "", row.name, row.legal_name || ""].some((value) => value.toLowerCase().includes(needle))).slice(0, 100);
+  }, [customers, lookupSearch]);
+  const visibleItems = useMemo(() => {
+    const needle = lookupSearch.trim().toLowerCase();
+    return items.filter((row) => !needle || [row.code, row.legacy_code || "", row.name, row.family_code || ""].some((value) => value.toLowerCase().includes(needle))).slice(0, 100);
+  }, [items, lookupSearch]);
+
+  function selectCustomer(customer: Customer) {
+    setFilters((current) => ({ ...current, customer_id: String(customer.id) }));
+    setCustomerText(`${customer.tax_id ? `${customer.tax_id} - ` : ""}${customer.name}`);
+    setLookup(null);
+    setLookupSearch("");
+  }
+
+  function selectItem(item: Item) {
+    setFilters((current) => ({ ...current, item_id: String(item.id) }));
+    setItemText(`${item.code}${item.legacy_code ? ` · Anterior: ${item.legacy_code}` : ""} - ${item.name}`);
+    setLookup(null);
+    setLookupSearch("");
+  }
+
+  function handleLookupEnter(kind: Lookup) {
+    const text = (kind === "customer" ? customerText : itemText).trim().toLowerCase();
+    if (text) {
+      if (kind === "customer") {
+        const match = customers.find((row) => [String(row.id), row.tax_id || "", row.name, row.legal_name || ""].some((value) => value.toLowerCase() === text));
+        if (match) return selectCustomer(match);
+      } else {
+        const match = items.find((row) => [row.code, row.legacy_code || "", row.name].some((value) => value.toLowerCase() === text));
+        if (match) return selectItem(match);
+      }
+    }
+    setLookup(kind);
+    setLookupSearch(text);
+  }
+
   function loadReport() {
     setLoading(true);
     setError("");
     const params = new URLSearchParams({ date_from: filters.date_from, date_to: filters.date_to });
+    if (filters.customer_id) params.set("customer_id", filters.customer_id);
+    if (filters.item_id) params.set("item_id", filters.item_id);
     let url = "";
     switch (tab) {
       case "customer":
-        if (filters.customer_id) params.set("customer_id", filters.customer_id);
         url = `/api/v1/sales/reports/by-customer?${params.toString()}`;
         break;
       case "item":
@@ -46,7 +106,6 @@ export default function ReportesPage() {
         url = `/api/v1/sales/reports/by-date?${params.toString()}`;
         break;
       case "detail":
-        if (filters.customer_id) params.set("customer_id", filters.customer_id);
         if (filters.search) params.set("search", filters.search);
         url = `/api/v1/sales/reports/detail?${params.toString()}`;
         break;
@@ -105,12 +164,14 @@ export default function ReportesPage() {
           <label className="block text-xs text-neutral-500">Hasta</label>
           <input className="h-9 rounded-md border border-line px-3 text-sm" type="date" value={filters.date_to} onChange={(e) => setFilters((p) => ({ ...p, date_to: e.target.value }))} />
         </div>
-        {tab === "customer" || tab === "detail" ? (
-          <div>
-            <label className="block text-xs text-neutral-500">Cliente ID</label>
-            <input className="h-9 rounded-md border border-line px-3 text-sm w-24" type="number" placeholder="ID" value={filters.customer_id} onChange={(e) => setFilters((p) => ({ ...p, customer_id: e.target.value }))} />
-          </div>
-        ) : null}
+        <div>
+          <label className="block text-xs text-neutral-500">Cliente</label>
+          <div className="flex"><input className="h-9 w-64 rounded-l-md border border-line px-3 text-sm" placeholder="Código, NIT o nombre; Enter para buscar" value={customerText} onChange={(event) => { setCustomerText(event.target.value); setFilters((current) => ({ ...current, customer_id: "" })); }} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); handleLookupEnter("customer"); } }} /><button aria-label="Buscar cliente" className="h-9 w-9 rounded-r-md border border-l-0 border-line text-apex" onClick={() => handleLookupEnter("customer")} type="button"><Search className="mx-auto" size={16} /></button></div>
+        </div>
+        <div>
+          <label className="block text-xs text-neutral-500">Producto</label>
+          <div className="flex"><input className="h-9 w-64 rounded-l-md border border-line px-3 text-sm" placeholder="SKU, código anterior o nombre; Enter para buscar" value={itemText} onChange={(event) => { setItemText(event.target.value); setFilters((current) => ({ ...current, item_id: "" })); }} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); handleLookupEnter("item"); } }} /><button aria-label="Buscar producto" className="h-9 w-9 rounded-r-md border border-l-0 border-line text-apex" onClick={() => handleLookupEnter("item")} type="button"><Search className="mx-auto" size={16} /></button></div>
+        </div>
         {tab === "detail" ? (
           <div>
             <label className="block text-xs text-neutral-500">Buscar</label>
@@ -171,7 +232,7 @@ export default function ReportesPage() {
                 <tbody>
                   {(data.rows as ItemRow[]).map((r, i) => (
                     <tr key={i} className="border-b border-line">
-                      <td className="py-2 pr-4">{r.item?.code || ""} · {r.item?.name || ""}</td>
+                      <td className="py-2 pr-4"><span className="font-mono">{r.item?.code || ""}</span>{r.item?.legacy_code ? <span className="ml-2 font-mono text-xs text-neutral-500">Anterior: {r.item.legacy_code}</span> : null} · {r.item?.name || ""}</td>
                       <td className="py-2 pr-4">{r.qty}</td>
                       <td className="py-2 pr-4 font-mono">${r.subtotal.toLocaleString()}</td>
                       <td className="py-2 pr-4 font-mono">${r.total.toLocaleString()}</td>
@@ -229,7 +290,7 @@ export default function ReportesPage() {
                       <tbody>
                         {inv.lines.map((line, li: number) => (
                           <tr key={li} className="border-b border-line">
-                            <td className="py-1 pr-2 font-mono">{line.item?.code || ""}</td>
+                            <td className="py-1 pr-2 font-mono">{line.item?.code || ""}{line.item?.legacy_code ? <span className="block text-neutral-500">Anterior: {line.item.legacy_code}</span> : null}</td>
                             <td className="py-1 pr-2">{line.description}</td>
                             <td className="py-1 pr-2">{line.qty}</td>
                             <td className="py-1 pr-2">${line.unit_price.toFixed(2)}</td>
@@ -247,6 +308,11 @@ export default function ReportesPage() {
           )}
         </section>
       )}
+      {lookup ? <ModalFrame maxWidth="md:max-w-3xl" onClose={() => { setLookup(null); setLookupSearch(""); }} title={lookup === "customer" ? "Buscar cliente" : "Buscar producto"}>
+        <div className="space-y-3"><label className="relative block"><Search className="absolute left-3 top-3 text-neutral-400" size={16} /><input autoFocus className="h-10 w-full rounded-md border border-line pl-10 pr-10 text-sm" placeholder={lookup === "customer" ? "Buscar por código, NIT o nombre" : "Buscar por SKU, código anterior, nombre o familia"} value={lookupSearch} onChange={(event) => setLookupSearch(event.target.value)} /><button aria-label="Limpiar búsqueda" className="absolute right-3 top-3 text-neutral-400" onClick={() => setLookupSearch("")} type="button"><X size={16} /></button></label>
+          <div className="max-h-[55vh] divide-y divide-line overflow-y-auto rounded-md border border-line">{lookup === "customer" ? visibleCustomers.map((customer) => <button className="flex w-full items-center justify-between gap-3 p-3 text-left text-sm hover:bg-paper" key={customer.id} onClick={() => selectCustomer(customer)} type="button"><span><strong>{customer.name}</strong>{customer.legal_name && customer.legal_name !== customer.name ? <span className="block text-xs text-neutral-500">{customer.legal_name}</span> : null}</span><span className="font-mono text-xs text-neutral-500">{customer.tax_id || `#${customer.id}`}</span></button>) : visibleItems.map((item) => <button className="flex w-full items-center justify-between gap-3 p-3 text-left text-sm hover:bg-paper" key={item.id} onClick={() => selectItem(item)} type="button"><span><strong className="font-mono">{item.code}</strong>{item.legacy_code ? <span className="ml-2 font-mono text-neutral-500">Anterior: {item.legacy_code}</span> : null}<span className="ml-2">{item.name}</span></span><span className="text-xs text-neutral-500">{item.family_code || "Sin familia"}</span></button>)}
+            {lookup === "customer" && !visibleCustomers.length ? <p className="p-6 text-center text-sm text-neutral-500">No hay clientes que coincidan con la búsqueda.</p> : null}{lookup === "item" && !visibleItems.length ? <p className="p-6 text-center text-sm text-neutral-500">No hay productos que coincidan con la búsqueda.</p> : null}</div></div>
+      </ModalFrame> : null}
     </div>
   );
 }

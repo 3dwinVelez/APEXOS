@@ -153,6 +153,7 @@ model Item {
   tenant_id     String
   type          String
   code          String
+  legacy_code   String?
   name          String
   description   String?
   category_id   Int?
@@ -186,6 +187,7 @@ model Item {
     salesInvoiceLines SalesInvoiceLine[]
 
   @@unique([tenant_id, code])
+  @@index([tenant_id, legacy_code])
   @@index([tenant_id, type])
   @@index([tenant_id, family_code])
   @@index([tenant_id, society_code, branch_code])

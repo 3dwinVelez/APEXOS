@@ -10,6 +10,7 @@ import { ModalFrame } from "@/components/ui/ModalFrame";
 type Item = {
   id: number;
   code: string;
+  legacy_code?: string | null;
   name: string;
   unit: string;
   stock_current: number;
@@ -46,6 +47,7 @@ type KardexResponse = {
 type CostRow = {
   id: number;
   code: string;
+  legacy_code?: string | null;
   name: string;
   family_code: string;
   family_name: string;
@@ -205,14 +207,14 @@ export default function ReportesInventarioPage() {
     return (costs?.data || []).filter(
       (item) =>
         !text ||
-        [item.code, item.name, item.family_code, item.family_name].some(
+        [item.code, item.legacy_code || "", item.name, item.family_code, item.family_name].some(
           (value) => value.toLowerCase().includes(text),
         ),
     );
   }, [costs, query]);
   const skuPickerResults = useMemo(() => {
     const needle = skuPickerSearch.trim().toLowerCase();
-    return items.filter((item) => !needle || item.code.toLowerCase().includes(needle) || item.name.toLowerCase().includes(needle)).slice(0, 100);
+    return items.filter((item) => !needle || item.code.toLowerCase().includes(needle) || (item.legacy_code || "").toLowerCase().includes(needle) || item.name.toLowerCase().includes(needle)).slice(0, 100);
   }, [items, skuPickerSearch]);
 
   const selectedCost =
@@ -236,7 +238,7 @@ export default function ReportesInventarioPage() {
       setSkuPickerOpen(true);
       return;
     }
-    const item = items.find((row) => row.code.toUpperCase() === code);
+    const item = items.find((row) => row.code.toUpperCase() === code || (row.legacy_code || "").toUpperCase() === code);
     if (!item) {
       setSelectedItemId("");
       setSkuError(`El SKU ${code} no existe o está inactivo.`);
@@ -271,14 +273,14 @@ export default function ReportesInventarioPage() {
 
   function exportKardex() {
     downloadExcelWorkbook(`kardex-${kardex?.item.code || "producto"}.xls`, [{ name: "Kardex", columns: [
-      { key: "fecha", label: "Fecha" }, { key: "tipo", label: "Tipo" }, { key: "documento", label: "Documento" }, { key: "contabilidad", label: "Documento contable" }, { key: "sku", label: "SKU" }, { key: "producto", label: "Producto" }, { key: "bodega", label: "Bodega" }, { key: "entrada", label: "Entrada" }, { key: "salida", label: "Salida" }, { key: "saldo", label: "Saldo" }, { key: "costo", label: "Costo" }, { key: "valor", label: "Valor" }
-    ], rows: (kardex?.data || []).map((row) => ({ fecha: dateTime(row.created_at), tipo: movementLabel(row.type), documento: row.document_number, contabilidad: row.accounting_document_number, sku: row.item_code, producto: row.item_name, bodega: row.warehouse, entrada: row.in_qty, salida: row.out_qty, saldo: row.balance, costo: row.unit_cost, valor: row.value })) }]);
+      { key: "fecha", label: "Fecha" }, { key: "tipo", label: "Tipo" }, { key: "documento", label: "Documento" }, { key: "contabilidad", label: "Documento contable" }, { key: "sku", label: "SKU" }, { key: "codigo_anterior", label: "Código anterior" }, { key: "producto", label: "Producto" }, { key: "bodega", label: "Bodega" }, { key: "entrada", label: "Entrada" }, { key: "salida", label: "Salida" }, { key: "saldo", label: "Saldo" }, { key: "costo", label: "Costo" }, { key: "valor", label: "Valor" }
+    ], rows: (kardex?.data || []).map((row) => ({ fecha: dateTime(row.created_at), tipo: movementLabel(row.type), documento: row.document_number, contabilidad: row.accounting_document_number, sku: row.item_code, codigo_anterior: kardex?.item.legacy_code || "", producto: row.item_name, bodega: row.warehouse, entrada: row.in_qty, salida: row.out_qty, saldo: row.balance, costo: row.unit_cost, valor: row.value })) }]);
   }
 
   function exportCosts() {
-    const rows = filteredCosts.flatMap((item) => (item.warehouse_rows.length ? item.warehouse_rows : [{ warehouse_code: "--", warehouse_name: "Sin bodega", location_code: "", type: "warehouse", qty: 0 }]).map((warehouse) => ({ sku: item.code, producto: item.name, familia: item.family_name, sociedad: item.society_code, bodega: warehouse.type === "transit" ? "Transito" : `${warehouse.warehouse_code} - ${warehouse.warehouse_name}`, ubicacion: warehouse.location_code, cantidad: warehouse.qty, costo_promedio: item.average_cost, ultimo_costo: item.last_unit_cost, valor: warehouse.qty * item.average_cost })));
+    const rows = filteredCosts.flatMap((item) => (item.warehouse_rows.length ? item.warehouse_rows : [{ warehouse_code: "--", warehouse_name: "Sin bodega", location_code: "", type: "warehouse", qty: 0 }]).map((warehouse) => ({ sku: item.code, codigo_anterior: item.legacy_code || "", producto: item.name, familia: item.family_name, sociedad: item.society_code, bodega: warehouse.type === "transit" ? "Transito" : `${warehouse.warehouse_code} - ${warehouse.warehouse_name}`, ubicacion: warehouse.location_code, cantidad: warehouse.qty, costo_promedio: item.average_cost, ultimo_costo: item.last_unit_cost, valor: warehouse.qty * item.average_cost })));
     downloadExcelWorkbook("inventario-costos.xls", [{ name: "Costos por bodega", columns: [
-      { key: "sku", label: "SKU" }, { key: "producto", label: "Producto" }, { key: "familia", label: "Familia" }, { key: "sociedad", label: "Sociedad" }, { key: "bodega", label: "Bodega" }, { key: "ubicacion", label: "Ubicacion" }, { key: "cantidad", label: "Cantidad" }, { key: "costo_promedio", label: "Costo promedio" }, { key: "ultimo_costo", label: "Ultimo costo" }, { key: "valor", label: "Valor" }
+      { key: "sku", label: "SKU" }, { key: "codigo_anterior", label: "Código anterior" }, { key: "producto", label: "Producto" }, { key: "familia", label: "Familia" }, { key: "sociedad", label: "Sociedad" }, { key: "bodega", label: "Bodega" }, { key: "ubicacion", label: "Ubicacion" }, { key: "cantidad", label: "Cantidad" }, { key: "costo_promedio", label: "Costo promedio" }, { key: "ultimo_costo", label: "Ultimo costo" }, { key: "valor", label: "Valor" }
     ], rows }]);
   }
 
@@ -337,7 +339,7 @@ export default function ReportesInventarioPage() {
       </section>
 
       {skuPickerOpen ? <ModalFrame maxWidth="md:max-w-3xl" onClose={() => { setSkuPickerOpen(false); setSkuPickerSearch(""); }} title="Seleccionar producto">
-        <div className="space-y-4"><label className="relative block"><Search className="absolute left-3 top-3 text-neutral-400" size={16} /><input autoFocus className="h-10 w-full rounded-md border border-line pl-10 pr-3 text-sm" placeholder="Buscar todos los SKU por código o nombre" value={skuPickerSearch} onChange={(event) => setSkuPickerSearch(event.target.value)} /></label><div className="max-h-[55vh] divide-y divide-line overflow-y-auto rounded-md border border-line">{skuPickerResults.map((item) => <button className="flex w-full items-center justify-between gap-4 p-3 text-left text-sm hover:bg-paper" key={item.id} onClick={() => selectSku(item)} type="button"><span><strong className="font-mono">{item.code}</strong><span className="ml-2">{item.name}</span></span><span className="text-xs text-neutral-500">{item.unit || "UND"}</span></button>)}{!skuPickerResults.length ? <p className="p-6 text-center text-sm text-neutral-500">No hay SKU que coincidan con la búsqueda.</p> : null}</div></div>
+        <div className="space-y-4"><label className="relative block"><Search className="absolute left-3 top-3 text-neutral-400" size={16} /><input autoFocus className="h-10 w-full rounded-md border border-line pl-10 pr-3 text-sm" placeholder="Buscar por SKU, código anterior o nombre" value={skuPickerSearch} onChange={(event) => setSkuPickerSearch(event.target.value)} /></label><div className="max-h-[55vh] divide-y divide-line overflow-y-auto rounded-md border border-line">{skuPickerResults.map((item) => <button className="flex w-full items-center justify-between gap-4 p-3 text-left text-sm hover:bg-paper" key={item.id} onClick={() => selectSku(item)} type="button"><span><strong className="font-mono">{item.code}</strong>{item.legacy_code ? <span className="ml-2 font-mono text-neutral-500">Anterior: {item.legacy_code}</span> : null}<span className="ml-2">{item.name}</span></span><span className="text-xs text-neutral-500">{item.unit || "UND"}</span></button>)}{!skuPickerResults.length ? <p className="p-6 text-center text-sm text-neutral-500">No hay SKU que coincidan con la búsqueda.</p> : null}</div></div>
       </ModalFrame> : null}
 
       <section className="grid gap-3 md:grid-cols-4">
