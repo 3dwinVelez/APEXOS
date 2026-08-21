@@ -1,0 +1,30 @@
+{
+  "change_id": "service-corrections-supabase-20260821",
+  "environment": "QA",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "351431a",
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["functional.md"] },
+    "error": { "status": "passed", "evidence": ["error.md"] },
+    "support_scripts": { "status": "passed", "evidence": ["support-scripts.md"] },
+    "regression": { "status": "passed", "evidence": ["regression.md"] },
+    "typecheck": { "status": "passed", "evidence": ["typecheck.md"] },
+    "build": { "status": "passed", "evidence": ["build.md"] }
+  },
+  "certification": {
+    "status": "blocked",
+    "script": "../../../../scripts/certifications/service-master-correction-qa.js",
+    "blocked_reason": "Docker Desktop no esta activo en la maquina local; el certificador QA requiere la base local 54320 (offline-cert-postgres) para el fixture Nyvora controlado. Pendiente de ejecucion con el ambiente levantado y autorizacion del commit desplegado en QA (ceae958)."
+  },
+  "live_browser_certification": {
+    "status": "pending",
+    "requirement": "Ejecutar el flujo Corregir y anexar desde el navegador sobre la plataforma en QA desplegado, con el commit exacto evaluado, comprobando persistencia, negativos de permiso y aislamiento.",
+    "policy": "docs/CHANGE_APPROVAL_QA_POLICY.md"
+  },
+  "approval": {
+    "status": "pending",
+    "approved_by": "",
+    "approved_at": ""
+  }
+}
