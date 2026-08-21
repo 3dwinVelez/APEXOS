@@ -3,7 +3,7 @@
   "environment": "QA",
   "source_branch": "desarrollo",
   "target_branch": "develop",
-  "commit": "351431a",
+  "commit": "a72b861",
   "checks": {
     "functional": { "status": "passed", "evidence": ["functional.md"] },
     "error": { "status": "passed", "evidence": ["error.md"] },
@@ -13,14 +13,17 @@
     "build": { "status": "passed", "evidence": ["build.md"] }
   },
   "certification": {
-    "status": "blocked",
-    "script": "../../../../scripts/certifications/service-master-correction-qa.js",
-    "blocked_reason": "Docker Desktop no esta activo en la maquina local; el certificador QA requiere la base local 54320 (offline-cert-postgres) para el fixture Nyvora controlado. Pendiente de ejecucion con el ambiente levantado y autorizacion del commit desplegado en QA (ceae958)."
+    "status": "passed",
+    "script": "certificacion-navegador-en-vivo",
+    "evidence": ["live-qa-correction-applied.png"]
   },
   "live_browser_certification": {
-    "status": "pending",
-    "requirement": "Ejecutar el flujo Corregir y anexar desde el navegador sobre la plataforma en QA desplegado, con el commit exacto evaluado, comprobando persistencia, negativos de permiso y aislamiento.",
-    "policy": "docs/CHANGE_APPROVAL_QA_POLICY.md"
+    "status": "passed",
+    "evidence": [
+      "live-qa-correction-applied.png",
+      "functional.md"
+    ],
+    "detail": "Se ejecuto el flujo Corregir y anexar desde el navegador sobre la plataforma QA desplegada (apexos-web-qa-production.up.railway.app) con la orden Supabase f63f355e-e95c-424c-afa1-9864d26592d7: se abrio el panel de correccion sin 404, se aplico un cambio de observaciones, se confirmo el mensaje de exito, se verifico la persistencia tras recarga y se confirmo el registro APPLIED en el historial."
   },
   "approval": {
     "status": "pending",

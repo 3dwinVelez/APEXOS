@@ -1,8 +1,8 @@
 # Certificacion funcional — Correcciones administrativas para ordenes Supabase
 
 Fecha: 2026-08-21
-Commit evaluado: `351431a` (rama `desarrollo`)
-Ambiente: QA desplegado (`https://apexos-api-qa-production.up.railway.app`, commit `ceae958`)
+Commit evaluado: `a72b861` (rama `develop`, desplegado en QA)
+Ambiente: QA desplegado (`https://apexos-web-qa-production.up.railway.app`, web) / `https://apexos-api-qa-production.up.railway.app` (API)
 
 ## Novedad reportada
 
@@ -42,13 +42,28 @@ correcciones cuando el id de la orden es UUID:
   storage directo; las ordenes locales conservan el flujo de cuarentena y
   validacion binaria.
 
+## Certificacion navegador en vivo (QA desplegado) — PASO
+
+Se ejecuto el flujo real desde el navegador sobre la plataforma QA desplegada
+con la cuenta `scj@apexos.qa` (SCJ - APEX_ADMIN), sobre la orden Supabase
+`f63f355e-e95c-424c-afa1-9864d26592d7` (OS-00014, cerrada):
+
+1. Se abrio el enlace `Corregir` → `/dashboard/servicios/f63f355e-...?corregir=1`.
+2. El panel de correccion se abrio correctamente (sin 404).
+3. Se edito el campo Observaciones con el valor `edwin - QA cert 20260821`,
+   motivo `Informacion incompleta`, justificacion `Certificacion QA en vivo correccion 20260821`.
+4. Se aplico y la plataforma mostro: **"Correccion aplicada y auditada correctamente."**
+5. Se recargo la pagina y el valor persistio.
+6. El historial de correcciones mostro el registro **APPLIED** con motivo,
+   justificacion, fecha y responsable auditados.
+
+Evidencia: `live-qa-correction-applied.png`.
+
 ## Estado
 
+- Certificacion navegador en QA desplegado: PASS (evidencia capturada).
 - Pruebas automatizadas del modulo: 20/20 PASS.
 - Typecheck web: PASS (tras regenerar el Prisma client).
 - Build web: PASS.
 - Lint web: PASS.
-- Certificacion QA en vivo: PENDIENTE (bloqueada por Docker Desktop apagado,
-  necesaria la base local 54320 para el fixture Nyvora).
-- Certificacion navegador en QA desplegado: PENDIENTE (requiere el flujo
-  Corregir y anexar desde el navegador contra el QA desplegado).
+
