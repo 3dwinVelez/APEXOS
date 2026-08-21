@@ -2863,6 +2863,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   }
 
   const serviceOrderActionMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)\/(start|inspection|execution|close|close-not-executed)$/);
+  const serviceOrderItemStatusMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)\/items\/([^/]+)\/status$/);
   const serviceOrderIncidentsMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)\/incidents$/);
   const serviceOrderPhotosMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)\/photos$/);
   const serviceOrderCorrectionsMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)\/corrections$/);
@@ -2904,6 +2905,56 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       const body = JSON.parse(String(options.body || "{}")) as { questions?: unknown };
       return await saveSupabaseSatisfactionQuestions(body.questions) as T;
     }
+  }
+  if (serviceOrderItemStatusMatch && method === "PATCH") {
+    const [, orderId, itemKey] = serviceOrderItemStatusMatch;
+    const body = JSON.parse(String(options.body || "{}")) as { status?: string; expected_version?: number };
+    const current = await accessibleSupabaseServiceOrder(orderId);
+    const metadata = current.metadata && typeof current.metadata === "object" ? { ...(current.metadata as AnyRow) } : {};
+    const items = Array.isArray(metadata.items) ? (metadata.items as AnyRow[]).map((item) => ({ ...item })) : [];
+    const prefix = `public-${orderId}-`;
+    const itemIndex = itemKey.startsWith(prefix) ? Number(itemKey.slice(prefix.length)) : -1;
+    if (!Number.isInteger(itemIndex) || itemIndex < 0 || itemIndex >= items.length) throw new Error("La solicitud externa indicada no existe en la orden.");
+    const item = items[itemIndex];
+    const status = String(body.status || "").trim();
+    const allowedStatuses = new Set(["pendiente", "en_curso", "inspeccion", "ejecucion", "completada", "no_ejecutada", "bloqueada"]);
+    if (!allowedStatuses.has(status)) throw new Error("Estado de solicitud invalido.");
+    const currentVersion = Number(item.version || 1);
+    if (!Number.isInteger(Number(body.expected_version)) || Number(body.expected_version) !== currentVersion) {
+      throw new Error("La solicitud fue modificada por otro usuario. Actualiza la orden.");
+    }
+    if (status === "completada") {
+      const evidence = await supabaseFetch<ServiceEvidenceRow[]>(
+        `/rest/v1/service_evidence?select=id,evidence_type,metadata&order_id=eq.${encodeURIComponent(orderId)}&limit=100`
+      );
+      const types = new Set(evidence
+        .filter((photo) => String(photo.metadata?.service_item_key || "") === itemKey)
+        .map((photo) => String(photo.metadata?.original_type || photo.evidence_type || "")));
+      if (!types.has("producto_abierto") || !types.has("producto_cerrado")) {
+        throw new Error("La solicitud requiere evidencia de producto abierto y cerrado.");
+      }
+    }
+    const now = new Date().toISOString();
+    items[itemIndex] = {
+      ...item,
+      status,
+      version: currentVersion + 1,
+      ...(status === "en_curso" && !item.started_at ? { started_at: now } : {}),
+      ...(["completada", "no_ejecutada"].includes(status) ? { completed_at: now } : {})
+    };
+    const pending = items.filter((candidate) => String(candidate.status || "pendiente") === "pendiente").length;
+    const finished = items.filter((candidate) => ["completada", "no_ejecutada"].includes(String(candidate.status || "pendiente"))).length;
+    const blocked = items.filter((candidate) => String(candidate.status || "pendiente") === "bloqueada").length;
+    const active = items.length - pending - finished - blocked;
+    metadata.items = items;
+    metadata.request_count = items.length;
+    const patchStatus = finished === items.length ? "ejecucion" : active || finished || blocked ? "ejecucion" : "en_curso";
+    await supabaseFetch<void>(`/rest/v1/service_orders?id=eq.${encodeURIComponent(orderId)}`, {
+      method: "PATCH",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ status: patchStatus, metadata })
+    });
+    return await supabaseApiFallback<T>(`/api/v1/services/orders/${orderId}`);
   }
   if (pathname === "/api/v1/services/orders" && method === "POST") {
     const body = JSON.parse(String(options.body || "{}"));
@@ -3053,6 +3104,23 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const now = new Date().toISOString();
     const metadata = current.metadata && typeof current.metadata === "object" ? current.metadata : {};
     const patch: AnyRow = { metadata: { ...metadata, ...(body.metadata || {}) } };
+    const publicItemKey = String(body.item_key || "");
+    const updatePublicItem = (status: string, itemMetadata: AnyRow = {}) => {
+      if (!publicItemKey) return false;
+      const orderItems = Array.isArray(metadata.items) ? (metadata.items as AnyRow[]).map((item) => ({ ...item })) : [];
+      const prefix = `public-${orderId}-`;
+      const itemIndex = publicItemKey.startsWith(prefix) ? Number(publicItemKey.slice(prefix.length)) : -1;
+      if (!Number.isInteger(itemIndex) || itemIndex < 0 || itemIndex >= orderItems.length) throw new Error("La solicitud externa indicada no existe en la orden.");
+      const item = orderItems[itemIndex];
+      orderItems[itemIndex] = {
+        ...item,
+        status,
+        version: Number(item.version || 1) + 1,
+        metadata: { ...((item.metadata as AnyRow | undefined) || {}), ...itemMetadata }
+      };
+      patch.metadata = { ...metadata, ...((patch.metadata as AnyRow | undefined) || {}), items: orderItems };
+      return true;
+    };
 
     if (action === "start") {
       patch.status = "en_curso";
@@ -3072,28 +3140,29 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         action: item.action || "ninguna",
         supplier_name: item.supplier_name || ""
       })) : [];
-      patch.status = "inspeccion";
-      patch.metadata = {
-        ...metadata,
-        inspection: {
-          items,
-          decision: body.decision || "pendiente",
-          problem_count: items.filter((item: AnyRow) => item.status !== "ok").length,
-          inspected_at: now,
-          ...(body.metadata || {})
-        }
+      const inspection = {
+        items,
+        decision: body.decision || "pendiente",
+        problem_count: items.filter((item: AnyRow) => item.status !== "ok").length,
+        inspected_at: now,
+        ...(body.metadata || {})
       };
+      patch.status = "inspeccion";
+      if (!updatePublicItem("inspeccion", { inspection })) patch.metadata = { ...metadata, inspection };
     }
     if (action === "execution") {
       patch.status = "ejecucion";
-      patch.metadata = {
-        ...metadata,
-        inspection: {
-          ...((metadata.inspection as AnyRow) || {}),
-          decision: "armable",
-          moved_to_execution_at: now
-        }
-      };
+      if (publicItemKey) {
+        const orderItems = Array.isArray(metadata.items) ? metadata.items as AnyRow[] : [];
+        const prefix = `public-${orderId}-`;
+        const itemIndex = publicItemKey.startsWith(prefix) ? Number(publicItemKey.slice(prefix.length)) : -1;
+        const itemInspection = itemIndex >= 0 && itemIndex < orderItems.length && orderItems[itemIndex]?.metadata && typeof orderItems[itemIndex].metadata === "object"
+          ? ((orderItems[itemIndex].metadata as AnyRow).inspection as AnyRow | undefined) || {}
+          : {};
+        updatePublicItem("ejecucion", { inspection: { ...itemInspection, decision: "armable", moved_to_execution_at: now } });
+      } else {
+        patch.metadata = { ...metadata, inspection: { ...((metadata.inspection as AnyRow) || {}), decision: "armable", moved_to_execution_at: now } };
+      }
     }
     if (action === "close" || action === "close-not-executed") {
       const evidence = await supabaseFetch<Array<{ evidence_type?: string; metadata?: AnyRow }>>(
@@ -3121,7 +3190,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       patch.close_latitude = body.latitude ?? null;
       patch.close_longitude = body.longitude ?? null;
       patch.no_execution_reason = action === "close-not-executed" ? body.no_execution_reason : null;
-      patch.metadata = { ...metadata, ...(body.metadata || {}), close_accuracy_meters: body.accuracy_meters ?? null };
+      patch.metadata = { ...((patch.metadata as AnyRow) || metadata), ...(body.metadata || {}), close_accuracy_meters: body.accuracy_meters ?? null };
+      if (action === "close-not-executed" && publicItemKey) updatePublicItem("no_ejecutada", { no_execution_reason: body.no_execution_reason, completed_at: now });
       if (action === "close-not-executed") {
         await supabaseFetch<void>("/rest/v1/service_incidents", {
           method: "POST",
@@ -3132,7 +3202,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
             type: "no_ejecutada",
             description: body.no_execution_reason,
             action: "cierre_no_ejecutado",
-            metadata: body.metadata || {}
+            metadata: { ...(body.metadata || {}), ...(publicItemKey ? { service_item_key: publicItemKey } : {}) }
           })
         });
       }
@@ -3192,12 +3262,18 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         if (retryMatch[0]?.id) return await resolveServiceEvidencePhoto({ ...retryMatch[0], metadata: { ...(retryMatch[0].metadata || {}), original_type: originalType } }) as T;
       }
       const partId = body.metadata?.part_id == null ? "" : String(body.metadata.part_id);
+      const serviceItemKey = String(body.metadata?.service_item_key || "");
       const existing = await supabaseFetch<Array<{ id: string; metadata?: AnyRow }>>(
         `/rest/v1/service_evidence?select=id,metadata&order_id=eq.${encodeURIComponent(orderId)}&metadata->>original_type=eq.${encodeURIComponent(originalType)}&limit=20`
       );
-      const duplicate = originalType === "pieza_averiada"
-        ? existing.some((item) => String(item.metadata?.part_id ?? "") === partId)
-        : existing.length > 0;
+      const sameEvidenceScope = (item: { metadata?: AnyRow }) => serviceItemKey
+        ? String(item.metadata?.service_item_key || "") === serviceItemKey
+        : !item.metadata?.service_item_key;
+      const duplicate = originalType === "firma_cliente"
+        ? existing.length > 0
+        : originalType === "pieza_averiada"
+          ? existing.some((item) => sameEvidenceScope(item) && String(item.metadata?.part_id ?? "") === partId)
+          : existing.some(sameEvidenceScope);
       if (duplicate) throw new Error("Esta evidencia ya fue registrada y no puede repetirse.");
       const uploaded = body.base64_data && !body.storage_path
         ? await uploadServiceImageData(current.company_id, orderId, {
@@ -3524,7 +3600,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         safeDevLog("No fue posible consultar partes de referencias Supabase.", error);
         return [];
       }),
-      supabaseFetch<Array<{ id: string; order_id: string; type?: string; description?: string; action?: string }>>(`/rest/v1/service_incidents?select=id,order_id,type,description,action${orderFilter}&limit=500`).catch((error) => {
+      supabaseFetch<Array<{ id: string; order_id: string; type?: string; description?: string; action?: string; metadata?: AnyRow }>>(`/rest/v1/service_incidents?select=id,order_id,type,description,action,metadata${orderFilter}&limit=500`).catch((error) => {
         safeDevLog("No fue posible consultar novedades de servicios Supabase.", error);
         return [];
       }),
@@ -3574,6 +3650,35 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       const orderEvidence = evidenceByOrder.get(order.id) || [];
       const effectiveStatus = effectiveServiceOrderStatus(order);
       const publicItems = Array.isArray(order.metadata?.items) ? order.metadata.items as AnyRow[] : [];
+      const mappedPublicItems = publicItems.map((item, index) => {
+        const itemKey = `public-${order.id}-${index}`;
+        const itemReference = refsById.get(String(item.reference_id || ""));
+        return {
+          id: itemKey,
+          reference_id: String(item.reference_id || ""),
+          reference: itemReference ? { ...itemReference, parts: partsByReference.get(itemReference.id) || [] } : null,
+          service_type: String(item.service_type || order.service_type || "montaje"),
+          quantity: Number(item.quantity || 1),
+          observation: String(item.observation || ""),
+          status: String(item.status || "pendiente"),
+          version: Number(item.version || 1),
+          metadata: item.metadata && typeof item.metadata === "object" ? item.metadata : {},
+          photos: orderEvidence
+            .filter((photo) => String(photo.metadata?.service_item_key || "") === itemKey)
+            .map((photo) => ({ ...photo, type: String(photo.metadata?.original_type || photo.evidence_type || "") })),
+          incidents: (incidentsByOrder.get(order.id) || []).filter((incident) => String(incident.metadata?.service_item_key || "") === itemKey),
+          legacy: true
+        };
+      });
+      const itemProgress = mappedPublicItems.length ? {
+        total: mappedPublicItems.length,
+        pending: mappedPublicItems.filter((item) => item.status === "pendiente").length,
+        active: mappedPublicItems.filter((item) => !["pendiente", "completada", "no_ejecutada", "bloqueada"].includes(item.status)).length,
+        completed: mappedPublicItems.filter((item) => ["completada", "no_ejecutada"].includes(item.status)).length,
+        blocked: mappedPublicItems.filter((item) => item.status === "bloqueada").length,
+        all_completed: mappedPublicItems.every((item) => ["completada", "no_ejecutada"].includes(item.status)),
+        partial: mappedPublicItems.some((item) => ["completada", "no_ejecutada"].includes(item.status)) && !mappedPublicItems.every((item) => ["completada", "no_ejecutada"].includes(item.status))
+      } : undefined;
       return {
         ...order,
         version: Number((order.metadata && typeof order.metadata === "object" ? order.metadata as AnyRow : {}).version || 1),
@@ -3593,20 +3698,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         incidents: incidentsByOrder.get(order.id) || [],
         photos: orderEvidence.map((item) => ({ ...item, type: String(item.metadata?.original_type || item.evidence_type || "") })),
         evidence: orderEvidence.map((item) => ({ ...item, type: String(item.metadata?.original_type || item.evidence_type || "") })),
-        items: publicItems.length ? publicItems.map((item, index) => {
-          const itemReference = refsById.get(String(item.reference_id || ""));
-          return {
-            id: `public-${order.id}-${index}`,
-            reference_id: String(item.reference_id || ""),
-            reference: itemReference ? { ...itemReference, parts: partsByReference.get(itemReference.id) || [] } : null,
-            service_type: String(item.service_type || order.service_type || "montaje"),
-            quantity: Number(item.quantity || 1),
-            observation: String(item.observation || ""),
-            status: "pendiente",
-            version: 1,
-            legacy: true
-          };
-        }) : undefined,
+        items: mappedPublicItems.length ? mappedPublicItems : undefined,
+        item_progress: itemProgress,
         inspection_items: referenceWithParts?.parts?.map((part) => ({ part_id: part.id, name: part.name, status: "pendiente" })) || []
       };
     });
