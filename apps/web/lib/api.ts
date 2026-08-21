@@ -3683,6 +3683,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       } : undefined;
       return {
         ...order,
+        version: Number((order.metadata && typeof order.metadata === "object" ? order.metadata as AnyRow : {}).version || 1),
         technician: technician ? {
           id: technician.id,
           user: {
