@@ -17,6 +17,18 @@ Antes de aprobar `develop -> main` debe existir un manifiesto JSON versionado co
 9. Certificacion funcional con datos controlados de la empresa modelo `NYVORA`, incluyendo un rol autorizado, un rol sin el permiso especial y un usuario de otro tenant.
 10. Plan de reversa preparado contra el ultimo commit estable de `main`, con disparador objetivo y estrategia `controlled_revert`.
 
+## Certificacion navegador / plataforma en vivo (obligatoria para todo cambio funcional)
+
+La certificacion extremo a extremo no se limita a scripts HTTP. Todo cambio funcional, especialmente correcciones de flujos operativos (servicios, tenancy, estados), debe validarse ejecutando el flujo real desde el navegador sobre la plataforma en el ambiente objetivo (QA) con el commit exacto evaluado:
+
+1. Reproducir la novedad reportada desde la interfaz real antes de declarar el caso resuelto.
+2. Ejecutar el flujo completo de la funcionalidad afectada tal como la usaria el usuario: abrir, editar, guardar, reabrir y recargar.
+3. Comprobar persistencia de los datos tras recarga de pantalla o de sesion.
+4. Ejecutar los escenarios negativos visibles: permisos insuficientes, datos faltantes, registros de otros tenants y rutas no sincronizadas.
+5. Adjuntar al manifiesto la evidencia fechada de la sesion navegador (captura o resultado estructurado).
+
+Un `404`, `403`, pantalla vacia o falla de persistencia detectado al usar la plataforma en vivo despues de una certificacion previa indica que esa certificacion no ejecuto el flujo navegador real y bloquea la promocion hasta repetir el ciclo completo.
+
 ## Regla de bloqueo
 
 La promocion a `main` queda prohibida si falta una evidencia, si una prueba esta pendiente o fallida, si QA no usa el commit exacto de `develop`, o si el aprobador no esta identificado. Se valida con:

@@ -3,7 +3,7 @@
 import { api } from "@/lib/api";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { correctionDescriptionMinimum, serviceCorrectionModeLabels, serviceCorrectionValidationIssues, type ServiceCorrectionMode } from "@/lib/serviceCorrectionForm";
-import { uploadAuthorizedServiceImageData } from "@/lib/supabaseStorage";
+import { uploadAuthorizedServiceImageData, uploadServiceImageData } from "@/lib/supabaseStorage";
 import { AlertTriangle, Camera, Check, FileClock, History, LockKeyhole, MessageSquarePlus, PackageSearch, Pencil, RefreshCw, ShieldCheck, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -100,6 +100,10 @@ function fileBase64(file: File) {
     reader.onload = () => resolve(String(reader.result || ""));
     reader.readAsDataURL(file);
   });
+}
+
+function isUuidOrder(order: Order) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(order.id || ""));
 }
 
 export function AdministrativeCorrectionPanel({ order, onApplied, initiallyOpen = false }: { order: Order; onApplied: () => Promise<void> | void; initiallyOpen?: boolean }) {
@@ -224,6 +228,14 @@ export function AdministrativeCorrectionPanel({ order, onApplied, initiallyOpen 
     if (mode === "add-evidence" || (mode === "piece-issue" && file)) {
       if (!file) throw new Error("Selecciona la evidencia que deseas agregar.");
       const base64 = await fileBase64(file);
+      if (isUuidOrder(order)) {
+        const companyId = String(typeof window !== "undefined" ? localStorage.getItem("apexos_company_id") || "" : "").trim();
+        if (!companyId) throw new Error("No se encontro la empresa activa para anexar la evidencia.");
+        const uploaded = await uploadServiceImageData(companyId, String(order.id), { base64, name: file.name, type: file.type });
+        const metadata = mode === "piece-issue" ? { part_id: pieceId, part_name: pieceName.trim() } : undefined;
+        await api(`/api/v1/services/orders/${order.id}/corrections/${correction.id}/evidence`, { method: "POST", body: JSON.stringify({ type: evidenceType, storage_path: uploaded.storagePath, storage_bucket: uploaded.bucket, metadata }) });
+        return;
+      }
       const clientUploadId = `admin:${order.id}:${correction.id}:${crypto.randomUUID()}`;
       const authorization = await api<{ authorization_id: string; signed_upload_url: string; path: string }>(`/api/v1/services/orders/${order.id}/corrections/evidence-upload-authorizations`, {
         method: "POST",

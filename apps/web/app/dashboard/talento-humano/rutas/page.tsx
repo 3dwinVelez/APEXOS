@@ -116,8 +116,8 @@ function inputDate(value?: string | null) {
 }
 
 function addDays(value: string, days: number) {
-  const date = new Date(`${value}T00:00:00`);
-  date.setDate(date.getDate() + days);
+  const date = new Date(`${value}T12:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
 }
 
