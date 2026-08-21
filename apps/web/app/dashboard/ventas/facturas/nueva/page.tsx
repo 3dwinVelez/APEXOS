@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
 import { api } from "@/lib/api";
+import { asCollection, asRecord } from "@/lib/api-collections";
 import { VentasNav } from "@/components/ventas-nav";
 import { ZeroFriendlyNumberInput } from "@/components/ui/ZeroFriendlyNumberInput";
 
@@ -65,27 +66,34 @@ export default function NuevaFacturaPage() {
 
   useEffect(() => {
     Promise.all([
-      api<Customer[]>("/api/v1/sales/customers"),
-      api<{ data: Item[] }>("/api/v1/inventory/items?all=true&sort_by=code"),
-      api<Warehouse[]>("/api/v1/inventory/warehouses"),
-      api<Retention[]>("/api/v1/accounts-receivable/retentions"),
-      api<SaleOrder[]>("/api/v1/sales/orders"),
-      api<OrganizationTree>("/api/v1/accounting/organization-tree"),
-      api<Account[]>("/api/v1/accounting/accounts?active=true&limit=1000&type=asset"),
-      api<VatMaster[]>("/api/v1/accounting/vat-masters?scope=sales")
+      api<unknown>("/api/v1/sales/customers"),
+      api<unknown>("/api/v1/inventory/items?all=true&sort_by=code"),
+      api<unknown>("/api/v1/inventory/warehouses"),
+      api<unknown>("/api/v1/accounts-receivable/retentions"),
+      api<unknown>("/api/v1/sales/orders"),
+      api<unknown>("/api/v1/accounting/organization-tree"),
+      api<unknown>("/api/v1/accounting/accounts?active=true&limit=1000&type=asset"),
+      api<unknown>("/api/v1/accounting/vat-masters?scope=sales")
     ]).then(([c, i, w, r, o, org, accountRows, vats]) => {
-      setCustomers(c || []);
-      setItems(i?.data || []);
-      setWarehouses(w || []);
-      setRetentions(r || []);
-      setOrders(o || []);
-      setOrganization(org);
-      setAccounts((accountRows || []).filter((account) => account.allows_tx && ["1305", "1330"].some((prefix) => account.code.startsWith(prefix))));
-      setVatMasters(vats || []);
-      const society = org.societies.find((row) => row.active !== false);
-      const branch = org.branches.find((row) => row.active !== false && row.society_code === society?.code);
-      const center = org.cost_centers.find((row) => row.active !== false && row.society_code === society?.code && row.branch_code === branch?.code);
-      const account = (accountRows || []).find((row) => row.active && row.allows_tx && ["1305", "1330"].some((prefix) => row.code.startsWith(prefix)));
+      const normalizedAccounts = asCollection<Account>(accountRows, ["accounts"]);
+      const organizationRecord = asRecord<OrganizationTree>(org, ["organization"]);
+      const normalizedOrganization: OrganizationTree = {
+        societies: asCollection(organizationRecord.societies, ["societies"]),
+        branches: asCollection(organizationRecord.branches, ["branches"]),
+        cost_centers: asCollection(organizationRecord.cost_centers, ["cost_centers"])
+      };
+      setCustomers(asCollection<Customer>(c, ["customers"]));
+      setItems(asCollection<Item>(i, ["items"]));
+      setWarehouses(asCollection<Warehouse>(w, ["warehouses"]));
+      setRetentions(asCollection<Retention>(r, ["retentions"]));
+      setOrders(asCollection<SaleOrder>(o, ["orders"]));
+      setOrganization(normalizedOrganization);
+      setAccounts(normalizedAccounts.filter((account) => account.allows_tx && ["1305", "1330"].some((prefix) => account.code.startsWith(prefix))));
+      setVatMasters(asCollection<VatMaster>(vats, ["vat_masters", "vatMasters"]));
+      const society = normalizedOrganization.societies.find((row) => row.active !== false);
+      const branch = normalizedOrganization.branches.find((row) => row.active !== false && row.society_code === society?.code);
+      const center = normalizedOrganization.cost_centers.find((row) => row.active !== false && row.society_code === society?.code && row.branch_code === branch?.code);
+      const account = normalizedAccounts.find((row) => row.active && row.allows_tx && ["1305", "1330"].some((prefix) => row.code.startsWith(prefix)));
       setHeader((current) => ({ ...current, society_code: society?.code || "", branch_code: branch?.code || "", cost_center_code: center?.code || "", associated_account_code: account?.code || "" }));
     }).catch((err) => setError(err instanceof Error ? err.message : "Error cargando datos"));
   }, []);
@@ -96,7 +104,7 @@ export default function NuevaFacturaPage() {
   const branches = organization.branches.filter((row) => row.active !== false && row.society_code === header.society_code);
   const costCenters = organization.cost_centers.filter((row) => row.active !== false && row.society_code === header.society_code && row.branch_code === header.branch_code);
   const vatRates = [...new Set(vatMasters.filter((row) => row.active !== false).map((row) => Number(row.percent)))].sort((a, b) => a - b);
-  const assignedRetentionCodes = new Set((selectedCustomer?.metadata?.customer_retentions || selectedCustomer?.metadata?.withholding_rates || []).map((row) => row.code));
+  const assignedRetentionCodes = new Set(asCollection<CustomerRetention>(selectedCustomer?.metadata?.customer_retentions || selectedCustomer?.metadata?.withholding_rates).map((row) => row.code));
   const customerRetentions = retentions.filter((row) => assignedRetentionCodes.has(row.code));
 
   function addLine() {
@@ -124,7 +132,7 @@ export default function NuevaFacturaPage() {
     if (orderCustomer) setCustomerText(`${orderCustomer.tax_id ? `${orderCustomer.tax_id} - ` : ""}${orderCustomer.name}`);
     if (orderCustomer) applyCustomerRetentions(orderCustomer);
     if (!order) return;
-    setLines(order.lines.map((orderLine) => {
+    setLines(asCollection<SaleOrderLine>(order.lines, ["lines"]).map((orderLine) => {
       const item = items.find((row) => row.id === orderLine.item_id);
       return {
         item_id: orderLine.item_id,
@@ -186,7 +194,7 @@ export default function NuevaFacturaPage() {
   }, { subtotal: 0, tax_total: 0, discount_total: 0, total: 0 });
 
   function applyCustomerRetentions(customer: Customer) {
-    const configured = customer.metadata?.customer_retentions || customer.metadata?.withholding_rates || [];
+    const configured = asCollection<CustomerRetention>(customer.metadata?.customer_retentions || customer.metadata?.withholding_rates);
     setSelectedRetentions(configured.map((assignment) => {
       const master = retentions.find((row) => row.code === assignment.code);
       if (!master) return null;
@@ -200,7 +208,7 @@ export default function NuevaFacturaPage() {
     if (!header.customer_id) { setError("Seleccione un cliente"); return; }
     if (!lines.length || lines.some((l) => !l.item_id || !l.place_id)) { setError("Cada linea debe tener producto y bodega de origen"); return; }
     try {
-      const res = await api<InvoiceSimulation>("/api/v1/sales/invoices/simulate", {
+      const res = await api<unknown>("/api/v1/sales/invoices/simulate", {
         method: "POST",
         body: JSON.stringify({
           customer_id: header.customer_id,
@@ -220,7 +228,12 @@ export default function NuevaFacturaPage() {
           }))
         })
       });
-      setSimulation(res);
+      const simulationRecord = asRecord<InvoiceSimulation>(res, ["simulation"]);
+      setSimulation({
+        ...simulationRecord,
+        lines: asCollection<SimulationLine>(simulationRecord.lines, ["lines"]),
+        retentions: asCollection<SimulationRetention>(simulationRecord.retentions, ["retentions"])
+      });
       setShowSim(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error en simulacion");

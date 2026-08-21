@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
+import { asCollection, asRecord } from "@/lib/api-collections";
 import { VentasNav } from "@/components/ventas-nav";
 
 type InvoiceDetail = {
@@ -27,8 +28,22 @@ export default function FacturaDetailPage() {
 
   const load = useCallback(() => {
     setLoading(true);
-    api<InvoiceDetail>(`/api/v1/sales/invoices/${id}`)
-      .then(setInvoice)
+    api<unknown>(`/api/v1/sales/invoices/${id}`)
+      .then((response) => {
+        const record = asRecord<InvoiceDetail>(response, ["invoice"]);
+        if (!record.id) {
+          setInvoice(null);
+          return;
+        }
+        const cxc = record.cxc
+          ? { ...record.cxc, lines: asCollection<InvoiceDetail["cxc"]["lines"][number]>(record.cxc.lines, ["lines"]) }
+          : null;
+        setInvoice({
+          ...record,
+          lines: asCollection<InvoiceDetail["lines"][number]>(record.lines, ["lines"]),
+          cxc
+        } as InvoiceDetail);
+      })
       .catch((err) => setError(err instanceof Error ? err.message : "Error"))
       .finally(() => setLoading(false));
   }, [id]);
