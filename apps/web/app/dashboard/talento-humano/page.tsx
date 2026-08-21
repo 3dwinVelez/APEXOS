@@ -38,7 +38,7 @@ export default function TalentPage() {
         </div>
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(19rem,1fr)]">
-          <article className="overflow-hidden rounded-xl border border-apex/40 bg-gradient-to-br from-apex/10 via-white to-white shadow-sm">
+          <article className="overflow-hidden rounded-xl border border-apex/40 bg-white shadow-sm">
             <div className="flex flex-col gap-4 border-b border-apex/15 p-5 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex min-w-0 gap-3">
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-apex text-white shadow-sm"><Clock3 size={23} /></span>

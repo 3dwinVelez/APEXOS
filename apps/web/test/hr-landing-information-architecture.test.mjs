@@ -18,3 +18,7 @@ test("la portada no mezcla vehiculos ni depende de consultas operativas", () => 
   assert.doesNotMatch(source, /transport\/vehicles|Gestionar vehículos|\/dashboard\/transporte/);
   assert.doesNotMatch(source, /useEffect|Promise\.all|api</);
 });
+
+test("los paneles respetan el fondo tematico sin degradados blancos forzados", () => {
+  assert.doesNotMatch(source, /bg-gradient[^\n]*via-white|from-apex\/10[^\n]*to-white/);
+});
