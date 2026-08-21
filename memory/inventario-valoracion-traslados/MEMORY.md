@@ -4,6 +4,8 @@ Leer este archivo antes de cambiar costos, movimientos, reportes o traslados de 
 
 ## Decisiones confirmadas
 
+- Cada producto puede guardar un código de artículo anterior de texto libre. Es opcional, no sustituye el SKU vigente y debe mostrarse y buscarse en las vistas que trabajen con productos.
+
 - Las bodegas de consignación deben persistir y mostrar el cliente activo al que pertenecen. Los traslados y sus líneas están sujetos al aislamiento automático por `tenant_id`.
 
 - La captura consecutiva de traslados permite buscar SKU por codigo/nombre, consultar disponibilidad en origen y crear otro documento conservando las bodegas. No se agrega soporte de escaner.

@@ -10,6 +10,7 @@ import { downloadExcelWorkbook } from "@/lib/reportExports";
 type Product = {
   id: number;
   code: string;
+  legacy_code?: string | null;
   name: string;
   type: string;
   unit: string;
@@ -48,7 +49,7 @@ export default function ProductListPage() {
   const visibleItems = useMemo(() => {
     const needle = search.trim().toLowerCase();
     return items.filter((item) => {
-      const matchesSearch = !needle || [item.code, item.name, item.category?.name || "", item.society_code || ""].some((value) => value.toLowerCase().includes(needle));
+      const matchesSearch = !needle || [item.code, item.legacy_code || "", item.name, item.category?.name || "", item.society_code || ""].some((value) => value.toLowerCase().includes(needle));
       const matchesFamily = !family || (item.category?.name || "Sin familia") === family;
       const matchesStatus = status === "all" || (status === "active" ? item.active : !item.active);
       return matchesSearch && matchesFamily && matchesStatus;
@@ -59,13 +60,13 @@ export default function ProductListPage() {
     downloadExcelWorkbook("lista-productos.xls", [{
       name: "Productos",
       columns: [
-        { key: "sku", label: "SKU" }, { key: "nombre", label: "Nombre", width: 220 }, { key: "familia", label: "Familia" },
+        { key: "sku", label: "SKU" }, { key: "codigo_anterior", label: "Código anterior" }, { key: "nombre", label: "Nombre", width: 220 }, { key: "familia", label: "Familia" },
         { key: "tipo", label: "Tipo" }, { key: "unidad", label: "Unidad" }, { key: "sociedad", label: "Sociedad" },
         { key: "estado", label: "Estado" }, { key: "stock", label: "Stock actual" }, { key: "stock_min", label: "Stock mínimo" },
         { key: "stock_max", label: "Stock máximo" }, { key: "costo", label: "Costo unitario" }, { key: "precio", label: "Precio venta" },
         { key: "iva", label: "IVA %" }, { key: "abc", label: "ABC" }
       ],
-      rows: visibleItems.map((item) => ({ sku: item.code, nombre: item.name, familia: item.category?.name || "Sin familia", tipo: TYPE_LABELS[item.type] || item.type, unidad: item.unit, sociedad: item.society_code || "--", estado: item.active ? "Activo" : "Inactivo", stock: Number(item.stock_current || 0), stock_min: Number(item.stock_min || 0), stock_max: item.stock_max == null ? "" : Number(item.stock_max), costo: Number(item.unit_cost || 0), precio: Number(item.unit_price || 0), iva: Number(item.tax_rate || 0), abc: item.abc_class || "--" }))
+      rows: visibleItems.map((item) => ({ sku: item.code, codigo_anterior: item.legacy_code || "", nombre: item.name, familia: item.category?.name || "Sin familia", tipo: TYPE_LABELS[item.type] || item.type, unidad: item.unit, sociedad: item.society_code || "--", estado: item.active ? "Activo" : "Inactivo", stock: Number(item.stock_current || 0), stock_min: Number(item.stock_min || 0), stock_max: item.stock_max == null ? "" : Number(item.stock_max), costo: Number(item.unit_cost || 0), precio: Number(item.unit_price || 0), iva: Number(item.tax_rate || 0), abc: item.abc_class || "--" }))
     }]);
   }
 
@@ -75,13 +76,13 @@ export default function ProductListPage() {
     {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
     <section className="rounded-md border border-line bg-white">
       <div className="grid gap-3 border-b border-line p-4 md:grid-cols-[minmax(240px,1fr)_220px_180px_auto] md:items-end">
-        <label className="text-sm">Buscar<div className="relative mt-1"><Search className="absolute left-3 top-3 text-neutral-400" size={16} /><input className="h-10 w-full rounded-md border border-line pl-10 pr-3" placeholder="SKU, nombre, familia o sociedad" value={search} onChange={(event) => setSearch(event.target.value)} /></div></label>
+        <label className="text-sm">Buscar<div className="relative mt-1"><Search className="absolute left-3 top-3 text-neutral-400" size={16} /><input className="h-10 w-full rounded-md border border-line pl-10 pr-3" placeholder="SKU, código anterior, nombre, familia o sociedad" value={search} onChange={(event) => setSearch(event.target.value)} /></div></label>
         <label className="text-sm">Familia<select className="mt-1 h-10 w-full rounded-md border border-line px-2" value={family} onChange={(event) => setFamily(event.target.value)}><option value="">Todas</option>{families.map((name) => <option key={name} value={name}>{name}</option>)}</select></label>
         <label className="text-sm">Estado<select className="mt-1 h-10 w-full rounded-md border border-line px-2" value={status} onChange={(event) => setStatus(event.target.value)}><option value="all">Todos</option><option value="active">Activos</option><option value="inactive">Inactivos</option></select></label>
         <span className="pb-2 text-sm text-neutral-500">{visibleItems.length} productos</span>
       </div>
       <div className="overflow-x-auto"><table className="w-full min-w-[1200px] text-sm"><thead><tr className="border-b border-line bg-paper text-left"><th className="px-3 py-2">SKU</th><th className="px-3 py-2">Nombre</th><th className="px-3 py-2">Familia</th><th className="px-3 py-2">Tipo</th><th className="px-3 py-2">Unidad</th><th className="px-3 py-2">Sociedad</th><th className="px-3 py-2">Estado</th><th className="px-3 py-2 text-right">Stock</th><th className="px-3 py-2 text-right">Costo</th><th className="px-3 py-2 text-right">Precio</th><th className="px-3 py-2 text-right">IVA</th></tr></thead><tbody>
-        {visibleItems.map((item) => <tr className="border-b border-line/70" key={item.id}><td className="px-3 py-2 font-mono font-medium">{item.code}</td><td className="px-3 py-2">{item.name}</td><td className="px-3 py-2">{item.category?.name || "Sin familia"}</td><td className="px-3 py-2">{TYPE_LABELS[item.type] || item.type}</td><td className="px-3 py-2">{item.unit}</td><td className="px-3 py-2">{item.society_code || "--"}</td><td className="px-3 py-2"><span className={`rounded-full px-2 py-1 text-xs ${item.active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>{item.active ? "Activo" : "Inactivo"}</span></td><td className="px-3 py-2 text-right">{Number(item.stock_current || 0).toLocaleString("es-CO")}</td><td className="px-3 py-2 text-right">${Number(item.unit_cost || 0).toLocaleString("es-CO")}</td><td className="px-3 py-2 text-right">${Number(item.unit_price || 0).toLocaleString("es-CO")}</td><td className="px-3 py-2 text-right">{Number(item.tax_rate || 0)}%</td></tr>)}
+        {visibleItems.map((item) => <tr className="border-b border-line/70" key={item.id}><td className="px-3 py-2 font-mono font-medium"><span>{item.code}</span>{item.legacy_code ? <span className="block text-xs font-normal text-neutral-500">Anterior: {item.legacy_code}</span> : null}</td><td className="px-3 py-2">{item.name}</td><td className="px-3 py-2">{item.category?.name || "Sin familia"}</td><td className="px-3 py-2">{TYPE_LABELS[item.type] || item.type}</td><td className="px-3 py-2">{item.unit}</td><td className="px-3 py-2">{item.society_code || "--"}</td><td className="px-3 py-2"><span className={`rounded-full px-2 py-1 text-xs ${item.active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>{item.active ? "Activo" : "Inactivo"}</span></td><td className="px-3 py-2 text-right">{Number(item.stock_current || 0).toLocaleString("es-CO")}</td><td className="px-3 py-2 text-right">${Number(item.unit_cost || 0).toLocaleString("es-CO")}</td><td className="px-3 py-2 text-right">${Number(item.unit_price || 0).toLocaleString("es-CO")}</td><td className="px-3 py-2 text-right">{Number(item.tax_rate || 0)}%</td></tr>)}
         {!loading && !visibleItems.length ? <tr><td className="px-4 py-8 text-center text-neutral-500" colSpan={11}>No hay productos que coincidan con los filtros.</td></tr> : null}
         {loading ? <tr><td className="px-4 py-8 text-center text-neutral-500" colSpan={11}>Cargando productos...</td></tr> : null}
       </tbody></table></div>
