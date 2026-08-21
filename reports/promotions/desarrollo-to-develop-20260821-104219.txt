@@ -1,0 +1,10 @@
+Promotion dry-run: desarrollo -> develop
+Date: 2026-08-21T10:42:19.6550070-05:00
+Branch: desarrollo
+
+Commits:
+d45da9e Merge remote-tracking branch 'origin/desarrollo' into desarrollo
+b3c5860 feat(sales): seed consignment invoices and expand entry grid
+
+Files:
+ 9 files changed, 376 insertions(+), 14 deletions(-)
