@@ -1,0 +1,17 @@
+{
+  "certification": "platform-regression-qa",
+  "environment": "QA",
+  "model_company": "NYVORA",
+  "commit": "ceae9585cd6b",
+  "status": "passed",
+  "checks": [
+    "session",
+    "services_orders",
+    "services_references",
+    "hr_employees",
+    "inventory_items",
+    "accounting_accounts",
+    "unauthorized_blocked"
+  ],
+  "certified_at": "2026-08-20T23:09:54.606Z"
+}
