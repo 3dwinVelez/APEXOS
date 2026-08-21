@@ -1,9 +1,10 @@
 # Memoria: facturación a clientes y cuentas por cobrar
 
-Última actualización: 2026-07-29.
+Última actualización: 2026-08-21.
 
 ## Decisiones confirmadas
 
+- La captura manual de facturas de venta inicia con un minimo de diez filas vacias; solo las filas iniciadas se validan y envian, y `Emitir y nueva` vuelve a presentar diez filas.
 - Los campos numéricos de Ventas permiten reemplazar el cero directamente, permanecer vacíos durante la edición y normalizarse a `0` al salir.
 
 - `Emitir y nueva` conserva la estructura contable habitual y limpia cliente, orden, posiciones, referencias y retenciones para evitar contaminar la siguiente factura.

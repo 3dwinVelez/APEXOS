@@ -22,6 +22,7 @@
     "prisma:generate": "npm --workspace apps/api run prisma:generate",
     "db:push": "npx prisma db push --schema apps/api/prisma/schema.prisma --skip-generate",
     "seed:demo": "node scripts/seed-admin.js",
+    "seed:demo:consignment-sales": "node scripts/seed-consignment-sales-demo.js",
     "seed:ops": "node scripts/seed-scj-puebla-ops.js",
     "seed:supabase:ops": "node scripts/seed-supabase-ops.js",
     "seed:supabase:active-demo": "node scripts/seed-supabase-active-demo.js",

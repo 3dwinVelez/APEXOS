@@ -10,6 +10,8 @@ La importación `.xlsx` agrupa facturas por `grupo_factura`; un error invalida e
 
 ## Cambios aplicados
 
+- La factura nueva presenta diez filas vacias de captura. Las filas que permanezcan totalmente vacias no se envian a simulacion ni contabilizacion, y `Emitir y nueva` restablece el mismo grid de diez filas.
+- El script `npm run seed:demo:consignment-sales -- --tenant <id-o-dominio>` prepara en modo de vista previa un cliente, una bodega de consignacion, un traslado con stock y facturas de demostracion para los reportes. Requiere `--apply` para escribir y bloquea produccion.
 - Facturacion ofrece `Emitir y nueva`: conserva sociedad, sucursal, centro de costo y cuenta asociada, pero limpia cliente, orden, posiciones, referencias y retenciones del documento emitido.
 
 - La creacion de clientes se movio a ventana flotante.
