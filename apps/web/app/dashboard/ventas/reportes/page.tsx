@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search, X } from "lucide-react";
 import { api } from "@/lib/api";
+import { asCollection, asRecord } from "@/lib/api-collections";
 import { VentasNav } from "@/components/ventas-nav";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 
@@ -13,7 +14,7 @@ type ItemRow = { item?: { code: string; legacy_code?: string | null; name: strin
 type DateRow = { period: string; count: number; subtotal: number; tax_total: number; total: number };
 type DetailInvoice = { id: number; number: string; customer?: { name: string }; total: number; date: string; header_text: string; lines: DetailLine[]; cxc?: { number: string; balance: number } };
 type DetailLine = { item?: { code: string; legacy_code?: string | null }; description: string; qty: number; unit_price: number; total: number; cost_value: number };
-type ReportData = { grand_total?: number; rows?: CustomerRow[] | ItemRow[] | DateRow[]; count?: number; invoices?: DetailInvoice[] };
+type ReportData = { grand_total?: number; rows?: Array<CustomerRow | ItemRow | DateRow>; count?: number; invoices?: DetailInvoice[] };
 type Customer = { id: number; name: string; legal_name?: string | null; tax_id?: string | null };
 type Item = { id: number; code: string; legacy_code?: string | null; name: string; family_code?: string | null };
 type Lookup = "customer" | "item";
@@ -40,11 +41,11 @@ export default function ReportesPage() {
 
   useEffect(() => {
     Promise.all([
-      api<Customer[]>("/api/v1/sales/customers"),
-      api<{ data: Item[] }>("/api/v1/inventory/items?all=true&sort_by=code")
+      api<unknown>("/api/v1/sales/customers"),
+      api<unknown>("/api/v1/inventory/items?all=true&sort_by=code")
     ]).then(([customerRows, itemRows]) => {
-      setCustomers(customerRows);
-      setItems(itemRows.data || []);
+      setCustomers(asCollection<Customer>(customerRows, ["customers", "parties"]));
+      setItems(asCollection<Item>(itemRows, ["items"]));
     }).catch((err) => setError(err instanceof Error ? err.message : "No fue posible cargar los maestros de búsqueda"));
   }, []);
 
@@ -109,8 +110,19 @@ export default function ReportesPage() {
         url = `/api/v1/sales/reports/detail?${params.toString()}`;
         break;
     }
-    api(url)
-      .then((res) => setData(res))
+    api<unknown>(url)
+      .then((response) => {
+        const report = asRecord<ReportData>(response, ["report"]);
+        const invoices = asCollection<DetailInvoice>(report.invoices, ["invoices"]).map((invoice) => ({
+          ...invoice,
+          lines: asCollection<DetailLine>(invoice.lines, ["lines"])
+        }));
+        setData({
+          ...report,
+          rows: asCollection<CustomerRow | ItemRow | DateRow>(report.rows, ["rows"]),
+          invoices
+        });
+      })
       .catch((err) => setError(err instanceof Error ? err.message : "Error al cargar reporte"))
       .finally(() => setLoading(false));
   }
@@ -193,7 +205,7 @@ export default function ReportesPage() {
                   <th className="py-2 pr-4 font-medium">Total</th>
                 </tr></thead>
                 <tbody>
-                  {(data.rows as CustomerRow[] || []).map((r, i) => (
+                  {(data.rows as CustomerRow[]).map((r, i) => (
                     <tr key={i} className="border-b border-line">
                       <td className="py-2 pr-4">{r.customer?.name || `#${r.customer_id}`}</td>
                       <td className="py-2 pr-4">{r.count}</td>
@@ -218,7 +230,7 @@ export default function ReportesPage() {
                   <th className="py-2 pr-4 font-medium">Ventas</th>
                 </tr></thead>
                 <tbody>
-                  {(data.rows as ItemRow[] || []).map((r, i) => (
+                  {(data.rows as ItemRow[]).map((r, i) => (
                     <tr key={i} className="border-b border-line">
                       <td className="py-2 pr-4"><span className="font-mono">{r.item?.code || ""}</span>{r.item?.legacy_code ? <span className="ml-2 font-mono text-xs text-neutral-500">Anterior: {r.item.legacy_code}</span> : null} · {r.item?.name || ""}</td>
                       <td className="py-2 pr-4">{r.qty}</td>
@@ -243,7 +255,7 @@ export default function ReportesPage() {
                   <th className="py-2 pr-4 font-medium">Total</th>
                 </tr></thead>
                 <tbody>
-                  {(data.rows as DateRow[] || []).map((r, i) => (
+                  {(data.rows as DateRow[]).map((r, i) => (
                     <tr key={i} className="border-b border-line">
                       <td className="py-2 pr-4 font-mono">{r.period}</td>
                       <td className="py-2 pr-4">{r.count}</td>
@@ -259,7 +271,7 @@ export default function ReportesPage() {
           {tab === "detail" && (
             <>
               <p className="mb-2 text-sm text-neutral-500">{data.count || 0} facturas encontradas</p>
-              {(data.invoices || []).map((inv: DetailInvoice) => (
+              {data.invoices?.map((inv: DetailInvoice) => (
                 <details key={inv.id} className="mb-2 rounded border border-line">
                   <summary className="cursor-pointer px-3 py-2 text-sm font-medium hover:bg-paper">
                     {inv.number} · {inv.customer?.name} · ${inv.total.toLocaleString()} · {new Date(inv.date).toLocaleDateString()}
@@ -276,7 +288,7 @@ export default function ReportesPage() {
                         <th className="py-1 pr-2">Costo</th>
                       </tr></thead>
                       <tbody>
-                        {(inv.lines || []).map((line, li: number) => (
+                        {inv.lines.map((line, li: number) => (
                           <tr key={li} className="border-b border-line">
                             <td className="py-1 pr-2 font-mono">{line.item?.code || ""}{line.item?.legacy_code ? <span className="block text-neutral-500">Anterior: {line.item.legacy_code}</span> : null}</td>
                             <td className="py-1 pr-2">{line.description}</td>

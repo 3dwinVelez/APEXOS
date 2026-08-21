@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { asCollection } from "@/lib/api-collections";
 import { VentasNav } from "@/components/ventas-nav";
 
 type Invoice = {
@@ -22,8 +23,8 @@ export default function FacturasPage() {
     const params = new URLSearchParams();
     if (filters.status) params.set("status", filters.status);
     if (filters.search) params.set("search", filters.search);
-    api<Invoice[]>(`/api/v1/sales/invoices?${params.toString()}`)
-      .then((res) => setInvoices(res || []))
+    api<unknown>(`/api/v1/sales/invoices?${params.toString()}`)
+      .then((response) => setInvoices(asCollection<Invoice>(response, ["invoices"])))
       .catch(() => setInvoices([]))
       .finally(() => setLoading(false));
   }, [filters.search, filters.status]);

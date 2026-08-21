@@ -12,6 +12,8 @@
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
     "test:offline": "node --experimental-strip-types --test test/offline-storage.test.mjs test/offline-operation-queue.test.mjs test/offline-csp.test.mjs test/offline-panel.test.mjs",
+    "test:sales-contracts": "node --experimental-strip-types --test test/sales-collection-contracts.test.mjs",
+    "test:hr-landing": "node --test test/hr-landing-information-architecture.test.mjs",
     "test:sales-invoice-lines": "node --experimental-strip-types --test test/sales-invoice-lines.test.mjs"
   },
   "dependencies": {
