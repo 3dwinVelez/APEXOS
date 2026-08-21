@@ -11,7 +11,8 @@
     "start": "next start -p 3001",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
-    "test:offline": "node --experimental-strip-types --test test/offline-storage.test.mjs test/offline-operation-queue.test.mjs test/offline-csp.test.mjs test/offline-panel.test.mjs"
+    "test:offline": "node --experimental-strip-types --test test/offline-storage.test.mjs test/offline-operation-queue.test.mjs test/offline-csp.test.mjs test/offline-panel.test.mjs",
+    "test:sales-invoice-lines": "node --experimental-strip-types --test test/sales-invoice-lines.test.mjs"
   },
   "dependencies": {
     "@apex-os/types": "2.0.0",
