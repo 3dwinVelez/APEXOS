@@ -4,6 +4,8 @@ Leer este archivo antes de cambiar costos, movimientos, reportes o traslados de 
 
 ## Decisiones confirmadas
 
+- Las bodegas de consignación deben persistir y mostrar el cliente activo al que pertenecen. Los traslados y sus líneas están sujetos al aislamiento automático por `tenant_id`.
+
 - La captura consecutiva de traslados permite buscar SKU por codigo/nombre, consultar disponibilidad en origen y crear otro documento conservando las bodegas. No se agrega soporte de escaner.
 - El grid de creación de traslados separa código y nombre: valida el código contra el maestro, completa el nombre automáticamente y ofrece un buscador funcional por código o nombre.
 - Inventario incluye una lista de productos filtrable por texto, familia y estado, con exportación a Excel de las filas visibles.
