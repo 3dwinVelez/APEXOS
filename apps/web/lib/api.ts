@@ -3579,6 +3579,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       const publicItems = Array.isArray(order.metadata?.items) ? order.metadata.items as AnyRow[] : [];
       return {
         ...order,
+        version: Number((order.metadata && typeof order.metadata === "object" ? order.metadata as AnyRow : {}).version || 1),
         technician: technician ? {
           id: technician.id,
           user: {

@@ -3,7 +3,7 @@
   "environment": "QA",
   "source_branch": "desarrollo",
   "target_branch": "develop",
-  "commit": "a72b861",
+  "commit": "d9972d2",
   "checks": {
     "functional": { "status": "passed", "evidence": ["functional.md"] },
     "error": { "status": "passed", "evidence": ["error.md"] },
@@ -15,15 +15,25 @@
   "certification": {
     "status": "passed",
     "script": "certificacion-navegador-en-vivo",
-    "evidence": ["live-qa-correction-applied.png"]
+    "evidence": [
+      "live-qa-correction-applied.png",
+      "live-qa-status-change-applied.png",
+      "live-qa-observation-applied.png",
+      "live-qa-piece-issue-applied.png",
+      "live-qa-evidence-applied.png"
+    ]
   },
   "live_browser_certification": {
     "status": "passed",
     "evidence": [
       "live-qa-correction-applied.png",
+      "live-qa-status-change-applied.png",
+      "live-qa-observation-applied.png",
+      "live-qa-piece-issue-applied.png",
+      "live-qa-evidence-applied.png",
       "functional.md"
     ],
-    "detail": "Se ejecuto el flujo Corregir y anexar desde el navegador sobre la plataforma QA desplegada (apexos-web-qa-production.up.railway.app) con la orden Supabase f63f355e-e95c-424c-afa1-9864d26592d7: se abrio el panel de correccion sin 404, se aplico un cambio de observaciones, se confirmo el mensaje de exito, se verifico la persistencia tras recarga y se confirmo el registro APPLIED en el historial."
+    "detail": "Se ejecuto el flujo Corregir y anexar desde el navegador sobre la plataforma QA desplegada (apexos-web-qa-production.up.railway.app) con la cuenta scj@apexos.qa. Modos certificados: edicion de informacion (OS-00014 f63f355e), cambio de estado cerrada->pendiente (SCJ-OS-001 983441c4), agregar novedad (SCJ-OS-005 1f88e836), reportar pieza faltante (MED-SER-003), anexar soporte administrativo con foto (SCJ-OS-007 6c808f62). Todos aplicaron con mensaje de exito y registro APPLIED en historial. Hallazgo fijado: la version optimista no se sincronizaba en la UI tras aplicar una correccion (retiro de evidencia fallaba con conflicto de version); se corrigio exponiendo version desde metadata.version en el detalle Supabase."
   },
   "approval": {
     "status": "pending",

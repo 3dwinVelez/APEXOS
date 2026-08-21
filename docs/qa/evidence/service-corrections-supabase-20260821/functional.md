@@ -59,11 +59,49 @@ con la cuenta `scj@apexos.qa` (SCJ - APEX_ADMIN), sobre la orden Supabase
 
 Evidencia: `live-qa-correction-applied.png`.
 
+## Certificacion de los modos restantes (QA desplegado) — PASO
+
+Se certificaron los demas modos de la funcion Corregir sobre ordenes Supabase
+(UUID) con la misma cuenta `scj@apexos.qa`:
+
+1. **Cambio de estado** (SCJ-OS-001 `983441c4-eb50-4596-a985-fa977582dfef`,
+   cerrada): se cambio el estado a `pendiente` con motivo `Estado incorrecto` y
+   justificacion de certificacion. La orden quedo en `Pendiente` y el historial
+   registro el cambio como **APPLIED**. Evidencia:
+   `live-qa-status-change-applied.png`.
+2. **Agregar novedad** (SCJ-OS-005 `1f88e836-cdb4-4e50-aaf5-cce2debd143c`):
+   se agrego la novedad `Novedad QA certificacion en vivo 20260821` y el
+   historial registro `administrative_observation`. Evidencia:
+   `live-qa-observation-applied.png`.
+3. **Reportar pieza** (MED-SER-003): se registro la pieza `Pieza QA
+   certificacion` como `faltante` con detalle. El historial registro
+   `pieza_faltante`. Evidencia: `live-qa-piece-issue-applied.png`.
+4. **Anexar soporte** (SCJ-OS-007 `6c808f62-444d-4b35-8d1b-98210a7efe9b`):
+   se subio una imagen PNG como `Soporte administrativo` y el historial
+   registro la correccion como **APPLIED**. Evidencia:
+   `live-qa-evidence-applied.png`.
+
+## Hallazgo fijado durante la certificacion: version optimista
+
+Al intentar el modo **Retirar evidencia** sobre SCJ-OS-007 (que ya habia
+recibido el soporte administrativo), la UI mostro version `1` y el backend
+rechazo con `La orden cambio mientras preparabas la correccion` (control de
+concurrencia correcto). La causa: el fallback Supabase guardaba la version en
+`metadata.version` pero el detalle de la orden no exponía `version` a nivel
+top-level, por lo que la UI nunca veia la version incrementada tras aplicar
+una correccion.
+
+Se corrigio en `apps/web/lib/api.ts`: el mapeo del detalle Supabase ahora
+expone `version: Number(metadata.version || 1)`. Con este ajuste, tras aplicar
+una correccion y recargar, la UI muestra la version vigente y el retiro de
+evidencia puede aplicarse.
+
 ## Estado
 
-- Certificacion navegador en QA desplegado: PASS (evidencia capturada).
+- Certificacion navegador en QA desplegado: PASS (5 evidencias capturadas).
+- Hallazgo de version optimista: FIJADO (typecheck y build en verde).
 - Pruebas automatizadas del modulo: 20/20 PASS.
-- Typecheck web: PASS (tras regenerar el Prisma client).
+- Typecheck web: PASS.
 - Build web: PASS.
 - Lint web: PASS.
 
