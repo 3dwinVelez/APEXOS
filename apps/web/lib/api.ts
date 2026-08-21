@@ -3447,21 +3447,18 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const now = new Date().toISOString();
     const correction: CorrectionRecord = {
       id: crypto.randomUUID(),
-      status: "APPLIED",
+      status: "DRAFT",
       reason_code: isReopen ? "INCORRECT_STATUS" : "INCOMPLETE_CLOSURE",
       description: isReopen ? "Reapertura administrativa de la orden" : "Cierre administrativo controlado",
       expected_version: Number(metadata.version || 1),
       requested_by: currentSupabaseUserId() || "",
       requested_at: now,
-      applied_at: now,
       metadata: {
         proposed_changes: [{ type: isReopen ? "ORDER_REOPENED" : "ORDER_FORCE_CLOSED", value: nextStatus, observation: String(body.observation || ""), pending_requirements: Array.isArray(body.pending_requirements) ? body.pending_requirements : [] }]
       }
     };
     const corrections = Array.isArray(metadata.corrections) ? metadata.corrections as CorrectionRecord[] : [];
-    const patch: AnyRow = { status: nextStatus, metadata: { ...metadata, version: Number(metadata.version || 1) + 1, corrections: [...corrections, correction] } };
-    if (isReopen) patch.closed_at = null;
-    else patch.closed_at = now;
+    const patch: AnyRow = { metadata: { ...metadata, version: Number(metadata.version || 1) + 1, corrections: [...corrections, correction] } };
     await supabaseFetch<void>(`/rest/v1/service_orders?id=eq.${encodeURIComponent(orderId)}`, {
       method: "PATCH",
       headers: { Prefer: "return=minimal" },
