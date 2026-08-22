@@ -26,7 +26,7 @@ function changedFiles(base, candidate) {
 }
 
 function validateManifest(manifest, manifestDir, changes) {
-  if (!manifest.change_id || !manifest.base_commit || !manifest.certified_commit) fail("faltan change_id, base_commit o certified_commit");
+  if (!manifest.change_id || (!manifest.base_commit && !manifest.base_commits) || !manifest.certified_commit) fail("faltan change_id, base_commit/base_commits o certified_commit");
   if (!Array.isArray(manifest.allowed_paths) || !manifest.allowed_paths.length) fail("allowed_paths debe declarar rutas puntuales");
   if (!Array.isArray(manifest.allowed_deletions)) fail("allowed_deletions debe existir, incluso cuando este vacio");
   const unexpected = changes.filter(({ file }) => !matchesAllowed(file, manifest.allowed_paths));
@@ -54,7 +54,10 @@ function main() {
   const candidate = git(["rev-parse", candidateRef]);
   const target = git(["rev-parse", targetRef]);
   const certified = git(["rev-parse", manifest.certified_commit]);
-  if (target !== git(["rev-parse", manifest.base_commit])) fail(`el destino ${targetRef} cambio desde el baseline aprobado`);
+  const targetName = targetRef.split("/").pop();
+  const declaredBase = manifest.base_commits?.[targetName] || manifest.base_commit;
+  if (!declaredBase) fail(`el manifiesto no declara baseline para ${targetName}`);
+  if (target !== git(["rev-parse", declaredBase])) fail(`el destino ${targetRef} cambio desde el baseline aprobado`);
   const commonBase = git(["merge-base", target, candidate]);
   if (!commonBase) fail("el candidato y el destino no comparten un historial controlado");
   try { git(["merge-base", "--is-ancestor", certified, candidate]); } catch { fail("el candidato no contiene el commit funcional certificado"); }

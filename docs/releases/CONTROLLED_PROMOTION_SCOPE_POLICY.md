@@ -39,4 +39,4 @@ Como mínimo se prueban juntas:
 
 ## Manifiesto
 
-El manifiesto JSON incluye `change_id`, `base_commit`, `certified_commit`, `allowed_paths`, `allowed_deletions` y `protected_capabilities`. Cada capacidad protegida debe tener `status: "passed"` y al menos un archivo de evidencia existente junto al manifiesto.
+El manifiesto JSON incluye `change_id`, `base_commits` para `develop` y `main`, `certified_commit`, `allowed_paths`, `allowed_deletions` y `protected_capabilities`. Cada capacidad protegida debe tener `status: "passed"` y al menos un archivo de evidencia existente junto al manifiesto.

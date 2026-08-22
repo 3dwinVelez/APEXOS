@@ -1,6 +1,10 @@
 {
   "change_id": "service-correction-recovery-20260822",
   "base_commit": "aa1bf70a251fdf0b33d379ce42ad3e1beb46b4c5",
+  "base_commits": {
+    "develop": "32307ac918cdaa6f87f9aeedbb125f8def8c71df",
+    "main": "aa1bf70a251fdf0b33d379ce42ad3e1beb46b4c5"
+  },
   "certified_commit": "24022de",
   "allowed_paths": [
     "AGENTS.md",
