@@ -169,6 +169,12 @@ function inspectChanges(order, changes, user) {
       const field = String(change.field || "");
       const policy = CORRECTABLE_FIELDS.get(field);
       if (!policy) throw appError(400, "SERVICE_CORRECTION_FIELD_INVALID", `El campo ${field || "vacio"} no admite correccion administrativa`);
+      const previous = getPath(order, field);
+      const previousComparable = policy.date ? new Date(previous).getTime() : policy.numeric ? Number(previous) : JSON.stringify(jsonValue(previous));
+      const nextComparable = policy.date ? new Date(change.value).getTime() : policy.numeric ? Number(change.value) : JSON.stringify(jsonValue(change.value));
+      if (previousComparable === nextComparable) {
+        throw appError(409, "SERVICE_CORRECTION_NO_CHANGES", `El campo ${field} conserva el mismo valor; registra un cambio real antes de guardar`);
+      }
       sensitive ||= Boolean(policy.sensitive);
       financialImpact ||= Boolean(policy.financial);
     } else if (change.type === "OBSERVATION_ADDED") {
@@ -348,7 +354,11 @@ function createService(db = prisma) {
         inspection.items = items;
         inspection.problem_count = items.filter((item) => ["faltante", "averiada"].includes(String(item?.status))).length;
         metadata.inspection = inspection;
-        detail.push({ change_type: "PIECE_ISSUE_ADDED", field_name: "metadata.inspection.items", old_value: jsonValue(previous), new_value: jsonValue(piece) });
+        // The immutable history table predates piece incidents and only accepts
+        // the original correction types. Persist the structured piece mutation
+        // as the field update it performs; the proposed change keeps its
+        // PIECE_ISSUE_ADDED semantic in correction metadata.
+        detail.push({ change_type: "FIELD_UPDATED", field_name: "metadata.inspection.items", old_value: jsonValue(previous), new_value: jsonValue(piece) });
       } else if (["STATUS_CHANGED", "ORDER_REOPENED", "ORDER_FORCE_CLOSED"].includes(change.type)) {
         const nextStatus = change.type === "ORDER_REOPENED" ? "reabierta" : change.type === "ORDER_FORCE_CLOSED" ? "cerrada" : String(change.value).toLowerCase();
         detail.push({ change_type: change.type, field_name: "status", old_value: jsonValue(status), new_value: jsonValue(nextStatus), old_status: status, new_status: nextStatus });

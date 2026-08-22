@@ -25,6 +25,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { LATAM_COUNTRIES, currencyForCountry, money, taxIdLabel } from "@/lib/latam";
 import { ComprasNav } from "@/components/compras-nav";
+import { ZeroFriendlyNumberInput } from "@/components/ui/ZeroFriendlyNumberInput";
 
 type SupplierMetrics = {
   orders_count: number;
@@ -317,7 +318,7 @@ export default function ProveedoresPage() {
 
                 <div className="grid gap-3 lg:grid-cols-[160px_1fr_1fr]">
                   <Field label="Dias credito">
-                    <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} max={365} type="number" value={form.credit_days} onChange={(e) => setForm((p) => ({ ...p, credit_days: Number(e.target.value) }))} />
+                    <ZeroFriendlyNumberInput className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} max={365} value={form.credit_days} onValueChange={(value) => setForm((p) => ({ ...p, credit_days: value }))} />
                   </Field>
                   <Field label="Responsable">
                     <input className="h-10 w-full rounded-md border border-line px-3 text-sm" value={form.owner} onChange={(e) => setForm((p) => ({ ...p, owner: e.target.value }))} />
@@ -505,7 +506,7 @@ function SupplierProfile({ supplier, onPatch, saving }: { supplier: Supplier | n
             <input className="h-10 w-full rounded-md border border-line px-3 text-sm" value={draft.city} onChange={(e) => setDraft((p) => ({ ...p, city: e.target.value }))} />
           </Field>
           <Field label="Dias credito">
-            <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} max={365} type="number" value={draft.credit_days} onChange={(e) => setDraft((p) => ({ ...p, credit_days: Number(e.target.value) }))} />
+            <ZeroFriendlyNumberInput className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} max={365} value={draft.credit_days} onValueChange={(value) => setDraft((p) => ({ ...p, credit_days: value }))} />
           </Field>
           <div className="lg:col-span-2">
             <Field label="Notas">

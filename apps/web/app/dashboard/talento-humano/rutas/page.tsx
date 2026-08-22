@@ -15,7 +15,7 @@ type TimeRoute = { id: number | string; code?: string; display_id?: number | str
 type MasterOption = { code: string; name: string; active?: boolean; sort_order?: number };
 type UserMasterData = { locations?: MasterOption[] };
 type OperatorPoint = { key: string; user_name: string; name: string; route_id: number | string; online?: boolean; last_punch_type?: string; last_activity_type?: string; last_activity_time?: string };
-type MonitorEvidence = { base64_data?: string; file_name?: string; file_url?: string; has_base64_data?: boolean };
+type MonitorEvidence = { id?: number | string; activity_id?: number | string; base64_data?: string; file_name?: string; file_url?: string; mime_type?: string; has_base64_data?: boolean };
 type PunchPoint = { id: number | string; user_name: string; type: string; time?: string; punched_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; extra_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: MonitorEvidence };
 type ActivityPoint = { id: number | string; user_name: string; type: string; time?: string; occurred_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; observation?: string; evidence?: MonitorEvidence[] };
 type RouteEventSummary = { route_id: number | string; punch_count: number; activity_count: number; evidence_count: number; closed_count: number; event_count: number; last_event_at?: string | null };
@@ -116,8 +116,8 @@ function inputDate(value?: string | null) {
 }
 
 function addDays(value: string, days: number) {
-  const date = new Date(`${value}T00:00:00`);
-  date.setDate(date.getDate() + days);
+  const date = new Date(`${value}T12:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
 }
 
@@ -247,6 +247,9 @@ export default function RoutesPlanningPage() {
   const [modal, setModal] = useState<"route" | "edit" | null>(null);
   const [editingRoute, setEditingRoute] = useState<RouteMonitor | null>(null);
   const [loadingMonitor, setLoadingMonitor] = useState(false);
+  const [loadedEvidence, setLoadedEvidence] = useState<Record<string, MonitorEvidence>>({});
+  const [loadingEvidenceKey, setLoadingEvidenceKey] = useState("");
+  const [evidenceErrors, setEvidenceErrors] = useState<Record<string, string>>({});
   const [savingRoute, setSavingRoute] = useState(false);
   const [validationIssues, setValidationIssues] = useState<string[]>([]);
   const [form, setForm] = useState({ date: initialDate, vehicle_plate: "", employees: [] as string[], start_time: "08:00", end_time: "17:00", tolerance_minutes: 15, notes: "", gps_required: true });
@@ -353,6 +356,21 @@ export default function RoutesPlanningPage() {
     setSelectedRouteId(String(route.id));
     setMonitorDate(targetDate);
     loadMonitor(targetDate);
+  }
+
+  async function loadActivityEvidence(activityId: number | string, evidence: MonitorEvidence) {
+    if (!evidence.id) return;
+    const key = `${activityId}-${evidence.id}`;
+    setLoadingEvidenceKey(key);
+    setEvidenceErrors((current) => ({ ...current, [key]: "" }));
+    try {
+      const detail = await api<MonitorEvidence>(`/api/v1/hr/work-activities/${encodeURIComponent(String(activityId))}/evidence/${encodeURIComponent(String(evidence.id))}`, { cache: "no-store" });
+      setLoadedEvidence((current) => ({ ...current, [key]: detail }));
+    } catch (error) {
+      setEvidenceErrors((current) => ({ ...current, [key]: error instanceof Error ? error.message : "No fue posible cargar la evidencia." }));
+    } finally {
+      setLoadingEvidenceKey((current) => current === key ? "" : current);
+    }
   }
 
   async function openCreateModal(route?: RouteMonitor) {
@@ -479,7 +497,7 @@ export default function RoutesPlanningPage() {
     if (!selectedRoute) return [];
     return [
       ...(selectedRoute.punch_points || []).map((event) => ({ kind: "marca" as const, id: `punch-${event.id}`, user_name: event.user_name, title: punchNames[event.type] || event.type, at: event.punched_at, time: event.time || event.punched_at, latitude: event.latitude, longitude: event.longitude, accuracy_meters: event.accuracy_meters, observation: event.extra_minutes ? `${event.extra_minutes} minuto(s) extra · ${event.extra_reason || "extension"}${event.extra_detail ? ` · ${event.extra_detail}` : ""}` : "", evidence: event.extra_evidence?.base64_data || event.extra_evidence?.file_url || event.extra_evidence?.has_base64_data ? [event.extra_evidence] : [] })),
-      ...(selectedRoute.activity_points || []).map((event) => ({ kind: "actividad" as const, id: `activity-${event.id}`, user_name: event.user_name, title: event.type, at: event.occurred_at, time: event.time || event.occurred_at, latitude: event.latitude, longitude: event.longitude, accuracy_meters: event.accuracy_meters, observation: event.observation || "", evidence: event.evidence || [] }))
+      ...(selectedRoute.activity_points || []).map((event) => ({ kind: "actividad" as const, id: `activity-${event.id}`, activity_id: event.id, user_name: event.user_name, title: event.type, at: event.occurred_at, time: event.time || event.occurred_at, latitude: event.latitude, longitude: event.longitude, accuracy_meters: event.accuracy_meters, observation: event.observation || "", evidence: event.evidence || [] }))
     ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
   }, [selectedRoute]);
   const routeCoverage = monitorRoutes.length ? Math.round((monitorRoutes.filter((route) => routeEventCount(route) > 0).length / monitorRoutes.length) * 100) : 0;
@@ -770,7 +788,12 @@ export default function RoutesPlanningPage() {
                   <Link className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href="/dashboard/talento-humano/mapa"><Navigation size={16} /> Mapa</Link>
                 </div>
                 <div className="space-y-3">
-                  {selectedTimeline.map((event, index) => (
+                  {selectedTimeline.map((event, index) => {
+                    const evidence = event.evidence?.[0];
+                    const evidenceKey = event.kind === "actividad" && event.activity_id != null && evidence?.id ? `${event.activity_id}-${evidence.id}` : "";
+                    const visibleEvidence = evidenceKey && loadedEvidence[evidenceKey] ? loadedEvidence[evidenceKey] : evidence;
+                    const evidenceError = evidenceKey ? evidenceErrors[evidenceKey] : "";
+                    return (
                     <article className="grid gap-3 rounded-md border border-line p-3 md:grid-cols-[44px_1fr_180px]" key={event.id}>
                       <span className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white ${event.kind === "marca" ? "bg-apex" : "bg-emerald-600"}`}>{index + 1}</span>
                       <div className="min-w-0">
@@ -783,10 +806,11 @@ export default function RoutesPlanningPage() {
                         {event.latitude != null && event.longitude != null ? <p className="mt-2 text-xs text-neutral-500">GPS {Number(event.latitude).toFixed(5)}, {Number(event.longitude).toFixed(5)} - {Math.round(Number(event.accuracy_meters || 0))}m</p> : null}
                       </div>
                       <div>
-                        {event.evidence?.[0]?.base64_data ? <Image alt="Evidencia" className="h-32 w-full rounded-md object-cover" height={320} src={event.evidence[0].base64_data} unoptimized width={640} /> : event.evidence?.[0]?.file_url ? <a className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href={event.evidence[0].file_url} target="_blank" rel="noreferrer"><Camera size={16} /> Ver evidencia</a> : event.evidence?.[0]?.has_base64_data ? <p className="rounded-md bg-emerald-50 p-3 text-xs font-semibold text-emerald-700"><Camera className="mr-1 inline" size={14} /> Evidencia fotografica registrada</p> : <p className="rounded-md bg-paper p-3 text-xs font-semibold text-neutral-500">Sin evidencia fotografica</p>}
+                        {visibleEvidence?.base64_data ? <Image alt={`Evidencia de ${event.title}`} className="h-32 w-full rounded-md object-cover" height={320} src={visibleEvidence.base64_data} unoptimized width={640} /> : visibleEvidence?.file_url ? <a className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href={visibleEvidence.file_url} target="_blank" rel="noreferrer"><Camera size={16} /> Ver evidencia</a> : evidenceKey && event.kind === "actividad" ? <div className="space-y-2"><button className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-60" disabled={loadingEvidenceKey === evidenceKey} onClick={() => loadActivityEvidence(event.activity_id, evidence)} type="button"><Camera size={16} /> {loadingEvidenceKey === evidenceKey ? "Cargando..." : "Ver evidencia"}</button>{evidenceError ? <p className="text-xs font-medium text-rose-700">{evidenceError}</p> : null}</div> : visibleEvidence?.has_base64_data ? <p className="rounded-md bg-emerald-50 p-3 text-xs font-semibold text-emerald-700"><Camera className="mr-1 inline" size={14} /> Evidencia fotografica registrada</p> : <p className="rounded-md bg-paper p-3 text-xs font-semibold text-neutral-500">Sin evidencia fotografica</p>}
                       </div>
                     </article>
-                  ))}
+                    );
+                  })}
                   {!selectedTimeline.length ? <p className="rounded-md bg-paper p-4 text-sm text-neutral-500">Este horario aun no tiene marcaciones ni actividades.</p> : null}
                 </div>
               </section>

@@ -688,23 +688,72 @@ function splitFullName(value: string) {
 }
 
 function quickUserPayload(form: UserForm, roles: Role[], includePassword: boolean) {
-  const names = splitFullName(form.name || `${form.first_names} ${form.last_names}`.trim());
+  const explicitName = `${form.first_names} ${form.last_names}`.trim();
+  const fullName = explicitName || form.name;
+  const names = splitFullName(fullName);
   const role = roles.find((item) => item.id === Number(form.role_id));
   const payload: Record<string, unknown> = {
-    name: form.name || `${form.first_names} ${form.last_names}`.trim(),
+    name: fullName,
     first_names: form.first_names || names.first_names,
     last_names: form.last_names || names.last_names,
     email: form.access_email || form.email,
     access_email: form.access_email || form.email,
-    document: form.document,
-    document_type: form.document_type || "CC",
-    company: form.company,
-    site: form.site,
-    base_site: form.site || form.base_site,
-    role_id: form.role_id ? String(form.role_id) : undefined,
-    role_name: role?.name,
-    user_status: form.user_status,
-    require_password_change: form.require_password_change
+      document: form.document,
+      document_type: form.document_type || "CC",
+      document_issue_date: form.document_issue_date,
+      document_issue_place: form.document_issue_place,
+      birth_date: form.birth_date,
+      gender: form.gender,
+      phone: form.phone,
+      address: form.address,
+      city: form.city,
+      state_region: form.state_region,
+      country: form.country,
+      company: form.company,
+      site: form.site,
+      base_site: form.site || form.base_site,
+      area: form.area,
+      position: form.position,
+      department: form.department,
+      manager: form.manager,
+      role_id: form.role_id ? String(form.role_id) : undefined,
+      role_name: role?.name,
+      user_status: form.user_status,
+      additional_roles: form.additional_roles,
+      operational_profile: form.operational_profile,
+      special_permissions: form.special_permissions,
+      require_password_change: form.require_password_change,
+      mfa_status: form.mfa_status,
+      session_status: form.session_status,
+      engagement_type: form.engagement_type,
+      hire_date: form.hire_date,
+      end_date: form.end_date,
+      contract_type: form.contract_type,
+      cost_center: form.cost_center,
+      workday: form.workday,
+      base_shift: form.base_shift,
+      salary_base: form.salary_base,
+      transport_allowance: form.transport_allowance,
+      arl_risk: form.arl_risk,
+      eps: form.eps,
+      pension_fund: form.pension_fund,
+      compensation_fund: form.compensation_fund,
+      bank: form.bank,
+      bank_account_type: form.bank_account_type,
+      bank_account_number: form.bank_account_number,
+      labor_notes: form.labor_notes,
+      operational_classification: form.operational_classification,
+      can_punch_time: form.can_punch_time,
+      can_receive_services: form.can_receive_services,
+      can_be_assigned_routes: form.can_be_assigned_routes,
+      can_manage_inventory: form.can_manage_inventory,
+      can_approve_documents: form.can_approve_documents,
+      can_authorize_exceptions: form.can_authorize_exceptions,
+      driver_license: form.driver_license,
+      license_category: form.license_category,
+      license_expires_at: form.license_expires_at,
+      operational_restrictions: form.operational_restrictions,
+      operation_zone: form.operation_zone
   };
   if (includePassword) payload.password = form.password;
   return payload;
@@ -1187,10 +1236,18 @@ export default function AdministracionPage() {
         payload.password = userForm.password;
         payload.require_password_change = true;
       }
-      if (selectedUserId) await api(`/api/v1/admin/users/${selectedUserApiId()}`, { method: "PUT", body: JSON.stringify(payload) });
-      else await api("/api/v1/admin/users", { method: "POST", body: JSON.stringify(payload) });
+      const result = selectedUserId
+        ? await api<{ credential_sync?: { provider?: string; email_changed?: boolean; password_changed?: boolean } | null }>(`/api/v1/admin/users/${selectedUserApiId()}`, { method: "PUT", body: JSON.stringify(payload) })
+        : await api("/api/v1/admin/users", { method: "POST", body: JSON.stringify(payload) });
       const emailChanged = Boolean(selectedUser && selectedUser.email.trim().toLowerCase() !== userForm.email.trim().toLowerCase());
       const passwordChanged = Boolean(userForm.password);
+      if (selectedUserId && (emailChanged || passwordChanged)) {
+        const sync = (result as { credential_sync?: { provider?: string; email_changed?: boolean; password_changed?: boolean } | null }).credential_sync;
+        const confirmed = sync?.provider === "supabase"
+          && (!emailChanged || sync.email_changed === true)
+          && (!passwordChanged || sync.password_changed === true);
+        if (!confirmed) throw new Error("Supabase Auth no confirmo la actualizacion de las credenciales. No se mostrara el cambio como exitoso.");
+      }
       const confirmation = selectedUserId
         ? `Usuario actualizado.${emailChanged ? " Correo de acceso sincronizado con autenticacion." : ""}${passwordChanged ? " Clave temporal actualizada." : ""}`
         : "Usuario creado con identidad de acceso y membresia sincronizadas.";
@@ -1203,7 +1260,9 @@ export default function AdministracionPage() {
       setUserEditorOpen(false);
       setTimeout(() => load(), 0);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Error al guardar el usuario. Revisa los datos e intenta de nuevo.");
+      const errorMessage = error instanceof Error ? error.message : "Error al guardar el usuario. Revisa los datos e intenta de nuevo.";
+      setMessage(errorMessage);
+      notify("No se pudo guardar el usuario", errorMessage, "error");
     } finally {
       setSaving(false);
     }
@@ -1231,7 +1290,7 @@ export default function AdministracionPage() {
             <h3 className="font-semibold text-amber-950">{selectedUserId ? "Confirmar cambios del usuario" : "Confirmar creacion del usuario"}</h3>
             <p className="mt-1 text-sm text-amber-900">Verifica los datos antes de guardar. El correo y la clave se sincronizaran con el proveedor de autenticacion.</p>
             <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
-              <div><dt className="text-xs font-semibold text-amber-800">Usuario</dt><dd className="font-medium text-amber-950">{userForm.name || `${userForm.first_names} ${userForm.last_names}`.trim()}</dd></div>
+              <div><dt className="text-xs font-semibold text-amber-800">Usuario</dt><dd className="font-medium text-amber-950">{`${userForm.first_names} ${userForm.last_names}`.trim() || userForm.name}</dd></div>
               <div><dt className="text-xs font-semibold text-amber-800">Correo de acceso</dt><dd className="break-all font-medium text-amber-950">{emailChanged ? `${selectedUser?.email} -> ${userForm.email}` : userForm.email}</dd></div>
               <div><dt className="text-xs font-semibold text-amber-800">Rol principal</dt><dd className="font-medium text-amber-950">{roleName}</dd></div>
               <div><dt className="text-xs font-semibold text-amber-800">Clave</dt><dd className="font-medium text-amber-950">{userForm.password ? "Se actualizara la clave temporal" : selectedUserId ? "Sin cambios" : "Clave inicial configurada"}</dd></div>
@@ -1255,9 +1314,12 @@ export default function AdministracionPage() {
     try {
       await api(`/api/v1/admin/users/${userApiId(user)}/status`, { method: "PATCH", body: JSON.stringify({ active }) });
       setMessage(active ? `${user.name} fue activado.` : `${user.name} fue inactivado.`);
+      notify(active ? "Usuario activado" : "Usuario inactivado", `${user.name} se actualizo correctamente.`);
       await load();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Error al cambiar estado del usuario.");
+      const errorMessage = error instanceof Error ? error.message : "Error al cambiar estado del usuario.";
+      setMessage(errorMessage);
+      notify("No se pudo cambiar el estado", errorMessage, "error");
     }
   }
 
@@ -1266,9 +1328,12 @@ export default function AdministracionPage() {
     try {
       await api(`/api/v1/admin/users/${userApiId(user)}/access`, { method: "PATCH", body: JSON.stringify({ session_status: "bloqueada", active: false }) });
       setMessage(`Acceso suspendido para ${user.name}.`);
+      notify("Acceso suspendido", `${user.name} ya no puede iniciar sesion.`);
       await load();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Error al suspender acceso del usuario.");
+      const errorMessage = error instanceof Error ? error.message : "Error al suspender acceso del usuario.";
+      setMessage(errorMessage);
+      notify("No se pudo suspender el acceso", errorMessage, "error");
     }
   }
 
@@ -1279,9 +1344,12 @@ export default function AdministracionPage() {
     try {
       await api(`/api/v1/admin/users/${targetId}/status`, { method: "PATCH", body: JSON.stringify({ active }) });
       setMessage(active ? "Usuario activado." : "Usuario desactivado.");
+      notify(active ? "Usuario activado" : "Usuario desactivado", "El estado fue guardado correctamente.");
       await load();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Error al cambiar estado del usuario.");
+      const errorMessage = error instanceof Error ? error.message : "Error al cambiar estado del usuario.";
+      setMessage(errorMessage);
+      notify("No se pudo cambiar el estado", errorMessage, "error");
     }
   }
 
@@ -1295,16 +1363,19 @@ export default function AdministracionPage() {
     try {
       await api(`/api/v1/admin/users/${targetId}/access`, { method: "PATCH", body: JSON.stringify({ session_status: "bloqueada", active: false }) });
       setMessage("Acceso de usuario bloqueado.");
+      notify("Acceso bloqueado", "El usuario ya no puede iniciar sesion.");
       await load();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Error al bloquear acceso del usuario.");
+      const errorMessage = error instanceof Error ? error.message : "Error al bloquear acceso del usuario.";
+      setMessage(errorMessage);
+      notify("No se pudo bloquear el acceso", errorMessage, "error");
     }
   }
 
   async function requestPasswordReset() {
     const targetId = selectedUserApiId();
     if (!targetId) return;
-    const nextPassword = userForm.password.trim();
+    const nextPassword = userForm.password;
     if (!nextPassword) {
       setMessage("Escribe una nueva clave temporal antes de cambiar el acceso.");
       notify("Clave temporal requerida", "Debes escribir la clave temporal que se entregara al usuario.", "warning");
@@ -1319,7 +1390,10 @@ export default function AdministracionPage() {
     if (userAccessSaving) return;
     setUserAccessSaving(true);
     try {
-      await api(`/api/v1/admin/users/${targetId}/access`, { method: "PATCH", body: JSON.stringify({ password: nextPassword, require_password_change: true, session_status: "sin_sesion" }) });
+      const result = await api<{ credential_sync?: { provider?: string; password_changed?: boolean } | null }>(`/api/v1/admin/users/${targetId}/access`, { method: "PATCH", body: JSON.stringify({ password: nextPassword, require_password_change: true, session_status: "sin_sesion" }) });
+      if (result.credential_sync?.provider !== "supabase" || result.credential_sync.password_changed !== true) {
+        throw new Error("Supabase Auth no confirmo el cambio de clave. La operacion no se mostrara como exitosa.");
+      }
       setMessage("Clave temporal actualizada. El usuario debera cambiarla en el proximo ingreso.");
       notify("Clave actualizada", `La clave temporal de ${selectedUser?.name || "usuario"} quedo guardada correctamente.`);
       setUserField("password", "");
@@ -2440,7 +2514,7 @@ export default function AdministracionPage() {
         </ModalFrame>
       ) : null}
       {toast ? (
-        <div className={`fixed bottom-4 right-4 z-[80] w-[min(360px,calc(100vw-2rem))] rounded-md border bg-white p-4 shadow-xl ${toast.tone === "success" ? "border-emerald-200" : toast.tone === "warning" ? "border-amber-200" : toast.tone === "error" ? "border-rose-200" : "border-line"}`} role="status">
+        <div className={`fixed bottom-4 right-4 z-[110] w-[min(360px,calc(100vw-2rem))] rounded-md border bg-white p-4 shadow-xl ${toast.tone === "success" ? "border-emerald-200" : toast.tone === "warning" ? "border-amber-200" : toast.tone === "error" ? "border-rose-200" : "border-line"}`} role="status" aria-live="polite">
           <div className="flex items-start gap-3">
             <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${toast.tone === "success" ? "bg-emerald-50 text-emerald-700" : toast.tone === "warning" ? "bg-amber-50 text-amber-700" : toast.tone === "error" ? "bg-rose-50 text-rose-700" : "bg-paper text-neutral-700"}`}>
               {toast.tone === "success" ? <Check size={16} /> : toast.tone === "error" || toast.tone === "warning" ? <AlertTriangle size={16} /> : <Bell size={16} />}

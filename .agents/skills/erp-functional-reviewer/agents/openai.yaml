@@ -1,0 +1,4 @@
+﻿interface:
+  display_name: "ERP Functional Reviewer"
+  short_description: "Valida requerimientos y reglas funcionales ERP"
+  default_prompt: "Use $erp-functional-reviewer para comprobar reglas y criterios de aceptación de un cambio ERP."

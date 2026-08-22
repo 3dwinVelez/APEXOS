@@ -6,7 +6,9 @@ const workspaces = [
   { href: "/dashboard/compras/ordenes/nueva", title: "Orden de compra", detail: "Crea, aprueba y dispara WMS desde un solo workspace.", icon: ClipboardCheck, action: "Abrir workspace" },
   { href: "/dashboard/compras/ordenes/recibir", title: "Recepcion", detail: "Controla parciales, diferencias y entrada a inventario.", icon: PackageCheck, action: "Recibir" },
   { href: "/dashboard/compras/proveedores", title: "Proveedores", detail: "Gestiona datos comerciales minimos y condiciones.", icon: Users, action: "Gestionar" },
-  { href: "/dashboard/compras/facturas", title: "Factura proveedor", detail: "Registra factura con o sin OC y afecta CXP, contabilidad e inventario.", icon: Receipt, action: "Registrar" }
+  { href: "/dashboard/compras/facturas", title: "Factura proveedor", detail: "Registra factura con o sin OC y afecta CXP, contabilidad e inventario.", icon: Receipt, action: "Registrar" },
+  { href: "/dashboard/compras/importaciones", title: "Importaciones", detail: "OC internacional, costos indirectos y costo puesto en bodega.", icon: Truck, action: "Gestionar" },
+  { href: "/dashboard/compras/reportes/ordenes", title: "Reporte de órdenes", detail: "Analiza posiciones pedidas, recibidas y pendientes con sus costos.", icon: BarChart3, action: "Ver reporte" }
 ];
 
 const flow = [
