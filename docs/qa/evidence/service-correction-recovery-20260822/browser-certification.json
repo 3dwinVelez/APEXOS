@@ -1,0 +1,22 @@
+{
+  "ok": true,
+  "environment": "QA",
+  "model_company": "NYVORA",
+  "web_commit": "90170406560876eb69258ef778755d0c674b2924",
+  "executed_at": "2026-08-22T09:19:00-05:00",
+  "order_id": 60,
+  "order_number": "OS-00016",
+  "correction_value": "browser-qa-correction-1787408300000",
+  "checks": {
+    "updated_three_step_form_visible": "passed",
+    "requirements_explained_before_submit": "passed",
+    "submit_enabled_only_when_complete": "passed",
+    "field_correction_applied": "passed",
+    "version_increment_8_to_9": "passed",
+    "persistence_after_reload": "passed",
+    "history_before_after_and_reason": "passed",
+    "limited_role_panel_hidden": "passed",
+    "limited_role_button_hidden": "passed",
+    "order_start_control_preserved": "passed"
+  }
+}
