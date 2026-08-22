@@ -1,0 +1,27 @@
+{
+  "ok": true,
+  "environment": "QA",
+  "company": "NYVORA",
+  "web_commit": "61c25566d771984641b44eef8b44367a594d6031",
+  "api_commit": "cbc00df6bebb",
+  "executed_at": "2026-08-21T20:10:00-05:00",
+  "order": {
+    "id": "404d5467-e07d-45d4-bd81-83c0783bcbf4",
+    "number": "OS-00002",
+    "origin": "external_request",
+    "items": 2
+  },
+  "checks": {
+    "external_form_created_order": "passed",
+    "technician_role_access": "passed",
+    "legacy_item_start": "passed",
+    "order_transition_to_execution": "passed",
+    "first_item_transition_to_in_progress": "passed",
+    "second_item_remains_pending": "passed",
+    "persistence_after_reload": "passed",
+    "block_item": "passed",
+    "resume_item": "passed",
+    "inspection_restored": "passed"
+  },
+  "observed_transition_seconds": 7.0
+}
