@@ -908,6 +908,12 @@ function localDate(value = new Date()) {
   return `${parts.year}-${parts.month}-${parts.day}`;
 }
 
+function adjacentLocalDate(value: string, days: number) {
+  const date = new Date(`${value}T12:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
 function safeDevLog(message: string, error: unknown) {
   if (process.env.NODE_ENV !== "production") {
     console.warn(`[apexos] ${message}`, error instanceof Error ? error.message : String(error));
@@ -925,6 +931,24 @@ type ServiceEvidenceRow = {
   size_bytes?: number;
   metadata?: AnyRow;
   created_at?: string;
+};
+
+type CorrectionRecord = {
+  id: string;
+  status: "DRAFT" | "APPLIED" | "PENDING_APPROVAL" | "APPROVED" | "REJECTED" | "REVERTED";
+  reason_code: string;
+  description: string;
+  expected_version: number;
+  requested_by: string | number;
+  requested_at: string;
+  applied_at?: string;
+  approved_at?: string;
+  rejected_at?: string;
+  rejection_reason?: string;
+  idempotency_key?: string;
+  confirmed?: boolean;
+  changes?: unknown[];
+  metadata?: { proposed_changes?: Array<{ type?: string; field?: string; value?: unknown; evidence_id?: number | string; observation?: string; pending_requirements?: unknown }> };
 };
 
 async function resolveServiceEvidencePhoto(photo: ServiceEvidenceRow) {
@@ -2181,16 +2205,20 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   if (pathname === "/api/v1/hr/operations-map") {
     const companyId = await currentSupabaseCompanyId();
     const day = search.get("date") || localDate();
-    const [routes, employees, assignments, pings, punches] = await Promise.all([
+    const [routes, employees, assignments] = await Promise.all([
       supabaseFetch<Array<{ id: string; code?: string; route_date: string; vehicle_plate?: string; start_time?: string; end_time?: string; status?: string; metadata?: AnyRow }>>(`/rest/v1/operational_routes?select=id,code,route_date,vehicle_plate,start_time,end_time,status,metadata&company_id=eq.${encodeURIComponent(companyId)}&route_date=eq.${encodeURIComponent(day)}&order=start_time.asc&limit=120`),
       supabaseFetch<Array<{ id: string; user_id?: string; first_name?: string; last_name?: string; email?: string; document_number?: string; user_type?: string; position?: string; metadata?: AnyRow }>>(`/rest/v1/employees?select=id,user_id,first_name,last_name,email,document_number,user_type,position,metadata&company_id=eq.${encodeURIComponent(companyId)}&status=eq.active&limit=250`),
-      supabaseFetch<Array<{ route_id: string; employee_id: string; role?: string }>>(`/rest/v1/route_assignments?select=route_id,employee_id,role&company_id=eq.${encodeURIComponent(companyId)}&limit=500`),
-      supabaseFetch<Array<{ id: string; employee_id?: string; user_id?: string; user_name: string; route_id?: string; vehicle_id?: string; latitude: number; longitude: number; accuracy_meters?: number; source?: string; captured_at: string; metadata?: AnyRow }>>(`/rest/v1/gps_pings?select=id,employee_id,user_id,user_name,route_id,vehicle_id,latitude,longitude,accuracy_meters,source,captured_at,metadata&company_id=eq.${encodeURIComponent(companyId)}&captured_at=gte.${encodeURIComponent(`${day}T00:00:00-05:00`)}&captured_at=lt.${encodeURIComponent(`${day}T23:59:59-05:00`)}&order=captured_at.desc&limit=500`),
-      supabaseFetch<Array<{ id: string; employee_id?: string; user_id?: string; user_name: string; punch_type: string; punch_time?: string; punched_at: string; route_id?: string; vehicle_id?: string; vehicle_plate?: string; latitude?: number; longitude?: number; accuracy_meters?: number; extra_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: AnyRow; metadata?: AnyRow }>>(`/rest/v1/time_punches?select=id,employee_id,user_id,user_name,punch_type,punch_time,punched_at,route_id,vehicle_id,vehicle_plate,latitude,longitude,accuracy_meters,extra_minutes,extra_reason,extra_detail,extra_evidence,metadata&company_id=eq.${encodeURIComponent(companyId)}&punch_date=eq.${encodeURIComponent(day)}&order=punched_at.desc&limit=500`)
+      supabaseFetch<Array<{ route_id: string; employee_id: string; role?: string }>>(`/rest/v1/route_assignments?select=route_id,employee_id,role&company_id=eq.${encodeURIComponent(companyId)}&limit=500`)
     ]);
 
     const routeIds = new Set(routes.map((route) => route.id));
     const dayAssignments = assignments.filter((assignment) => routeIds.has(assignment.route_id));
+    const previousDay = adjacentLocalDate(day, -1);
+    const nextDay = adjacentLocalDate(day, 1);
+    const [pings, punches] = await Promise.all([
+      supabaseFetch<Array<{ id: string; employee_id?: string; user_id?: string; user_name: string; route_id?: string; vehicle_id?: string; latitude: number; longitude: number; accuracy_meters?: number; source?: string; captured_at: string; metadata?: AnyRow }>>(`/rest/v1/gps_pings?select=id,employee_id,user_id,user_name,route_id,vehicle_id,latitude,longitude,accuracy_meters,source,captured_at,metadata&company_id=eq.${encodeURIComponent(companyId)}&captured_at=gte.${encodeURIComponent(`${previousDay}T00:00:00-05:00`)}&captured_at=lt.${encodeURIComponent(`${nextDay}T23:59:59-05:00`)}&order=captured_at.desc&limit=1000`),
+      supabaseFetch<Array<{ id: string; employee_id?: string; user_id?: string; user_name: string; punch_type: string; punch_time?: string; punched_at: string; route_id?: string; vehicle_id?: string; vehicle_plate?: string; latitude?: number; longitude?: number; accuracy_meters?: number; extra_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: AnyRow; metadata?: AnyRow }>>(`/rest/v1/time_punches?select=id,employee_id,user_id,user_name,punch_type,punch_time,punched_at,route_id,vehicle_id,vehicle_plate,latitude,longitude,accuracy_meters,extra_minutes,extra_reason,extra_detail,extra_evidence,metadata&company_id=eq.${encodeURIComponent(companyId)}&punch_date=in.(${previousDay},${day},${nextDay})&order=punched_at.desc&limit=1000`)
+    ]);
     const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
     const locationPings = pings.filter((ping) => ping.metadata?.gps_skipped !== true);
     const latestPingByEmployee = new Map<string, (typeof pings)[number]>();
@@ -2264,7 +2292,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         return identityKeys({ ...(employee || {}), employee_id: assignment.employee_id, user_name: fullName(employee || {}) });
       });
       const matchesRouteAssignment = (row: { route_id?: string; employee_id?: string; user_id?: string; user_name?: string; metadata?: AnyRow }) => {
-        if (routeKeys.has(operationalRouteKey(row))) return true;
+        const rowRouteKey = operationalRouteKey(row);
+        if (rowRouteKey && rowRouteKey !== "sin_horario") return routeKeys.has(rowRouteKey);
         const rowAliases = identityKeys(row);
         return assignmentAliases.some((aliases) => identityOverlaps(rowAliases, aliases));
       };
@@ -2331,7 +2360,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     });
 
     return {
-      date: search.get("date") || new Date().toISOString().slice(0, 10),
+      date: day,
       generated_at: new Date().toISOString(),
       active_window_minutes: Number(search.get("minutes") || 30),
       people,
@@ -2836,6 +2865,11 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   const serviceOrderItemStatusMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)\/items\/([^/]+)\/status$/);
   const serviceOrderIncidentsMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)\/incidents$/);
   const serviceOrderPhotosMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)\/photos$/);
+  const serviceOrderCorrectionsMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)\/corrections$/);
+  const serviceOrderCorrectionActionMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)\/corrections\/([^/]+)\/(apply|approve|reject|evidence)$/);
+  const serviceOrderCorrectionEvidenceAuthorizationMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)\/corrections\/evidence-upload-authorizations$/);
+  const serviceOrderReopenMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)\/reopen$/);
+  const serviceOrderForceCloseMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)\/force-close$/);
   const serviceOrderDetailMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)$/);
   if (pathname === "/api/v1/services/technicians" && method === "GET") {
     if (technicianSession()) throw new Error("El tecnico no puede consultar el directorio operativo.");
@@ -3268,6 +3302,246 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     }
   }
 
+  if (serviceOrderCorrectionsMatch && uuidOrNull(serviceOrderCorrectionsMatch[1])) {
+    const orderId = serviceOrderCorrectionsMatch[1];
+    if (method === "GET") {
+      const current = await accessibleSupabaseServiceOrder(orderId);
+      const corrections = Array.isArray((current.metadata as AnyRow)?.corrections) ? (current.metadata as AnyRow).corrections as CorrectionRecord[] : [];
+      return corrections as T;
+    }
+    if (method === "POST") {
+      const body = JSON.parse(String(options.body || "{}")) as CorrectionRecord & { changes?: unknown[] };
+      const current = await accessibleSupabaseServiceOrder(orderId);
+      const reasonCode = String(body.reason_code || "").trim().toUpperCase();
+      const description = String(body.description || "").trim();
+      if (!["INCOMPLETE_INFORMATION", "DATA_ENTRY_ERROR", "MISSING_EVIDENCE", "INCORRECT_EVIDENCE", "INCORRECT_STATUS", "INCOMPLETE_CLOSURE", "CUSTOMER_REQUEST", "BILLING_CORRECTION", "OTHER"].includes(reasonCode)) {
+        throw new Error("Selecciona un motivo de correccion valido.");
+      }
+      if (description.length < 12) throw new Error("Describe la correccion con al menos 12 caracteres.");
+      if (reasonCode === "OTHER" && description.length < 24) throw new Error("El motivo Otro requiere una descripcion explicita de al menos 24 caracteres.");
+      if (body.confirmed !== true) throw new Error("Confirma que la correccion quedara auditada.");
+      const expectedVersion = Number(body.expected_version);
+      if (!Number.isInteger(expectedVersion) || expectedVersion < 1) throw new Error("La version esperada de la orden es obligatoria.");
+      const currentVersion = Number((current.metadata as AnyRow | undefined)?.version || 1);
+      if (currentVersion !== expectedVersion) throw new Error("La orden cambio mientras preparabas la correccion. Recarga y compara la version vigente.");
+      const changes = Array.isArray(body.changes) ? body.changes : [];
+      if (!changes.length) throw new Error("Registra al menos un cambio controlado.");
+      const metadata = (current.metadata && typeof current.metadata === "object" ? current.metadata : {}) as AnyRow;
+      const corrections = Array.isArray(metadata.corrections) ? metadata.corrections as CorrectionRecord[] : [];
+      const idempotencyKey = String(body.idempotency_key || "").trim();
+      const existing = idempotencyKey ? corrections.find((item) => item.idempotency_key === idempotencyKey) : null;
+      if (existing) return existing as T;
+      const record: CorrectionRecord = {
+        id: crypto.randomUUID(),
+        status: "DRAFT",
+        reason_code: reasonCode,
+        description,
+        expected_version: expectedVersion,
+        requested_by: currentSupabaseUserId() || "",
+        requested_at: new Date().toISOString(),
+        idempotency_key: idempotencyKey,
+        metadata: { proposed_changes: changes }
+      };
+      metadata.corrections = [...corrections, record];
+      metadata.version = (currentVersion + 1);
+      await supabaseFetch<void>(`/rest/v1/service_orders?id=eq.${encodeURIComponent(orderId)}`, {
+        method: "PATCH",
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify({ metadata })
+      });
+      return record as T;
+    }
+  }
+
+  if (serviceOrderCorrectionActionMatch && uuidOrNull(serviceOrderCorrectionActionMatch[1])) {
+    const [, orderId, correctionId, action] = serviceOrderCorrectionActionMatch;
+    const current = await accessibleSupabaseServiceOrder(orderId);
+    const metadata = (current.metadata && typeof current.metadata === "object" ? current.metadata : {}) as AnyRow;
+    const corrections = Array.isArray(metadata.corrections) ? metadata.corrections as CorrectionRecord[] : [];
+    const correction = corrections.find((item) => item.id === correctionId);
+    if (!correction) throw new Error("Correccion no encontrada en la orden.");
+    if (action === "apply") {
+      if (!["DRAFT", "APPROVED"].includes(correction.status)) throw new Error("La correccion no esta disponible para aplicar.");
+      const changes = Array.isArray(correction.metadata?.proposed_changes) ? correction.metadata.proposed_changes : [];
+      if (!changes.length) throw new Error("La correccion no declaro cambios controlados.");
+      const patch: AnyRow = { metadata: { ...metadata, version: Number(metadata.version || 1) + 1 } };
+      const nextMetadata = patch.metadata as AnyRow;
+      const incidents: Array<AnyRow> = [];
+      const now = new Date().toISOString();
+      for (const change of changes) {
+        const type = String(change.type || "").toUpperCase();
+        if (type === "FIELD_UPDATED") {
+          const field = String(change.field || "");
+          if (!["notes", "customer_name", "customer_address", "customer_phone", "service_type", "invoice_number", "scheduled_date"].includes(field)) {
+            throw new Error(`El campo ${field} no admite correccion administrativa.`);
+          }
+          patch[field] = change.value ?? null;
+        } else if (type === "OBSERVATION_ADDED") {
+          incidents.push({ type: "administrative_observation", description: String(change.value || "").trim(), action: "administrative_correction", metadata: { correction_id: correction.id } });
+        } else if (type === "PIECE_ISSUE_ADDED") {
+          const piece = change.value && typeof change.value === "object" ? change.value as AnyRow : {};
+          const inspection = nextMetadata.inspection && typeof nextMetadata.inspection === "object" ? { ...(nextMetadata.inspection as AnyRow) } : {};
+          const items = Array.isArray(inspection.items) ? [...(inspection.items as AnyRow[])] : [];
+          const index = items.findIndex((item) => String(item?.part_id) === String(piece.part_id));
+          if (index >= 0) items[index] = { ...items[index], ...piece };
+          else items.push(piece);
+          inspection.items = items;
+          inspection.problem_count = items.filter((item) => ["faltante", "averiada"].includes(String(item?.status))).length;
+          nextMetadata.inspection = inspection;
+          incidents.push({ type: `pieza_${String(piece.status || "faltante")}`, description: `${String(piece.name || "")}: ${String(piece.comment || "")}`, action: String(piece.action || "cotizar_repuesto"), metadata: { correction_id: correction.id, part_id: piece.part_id, part_name: piece.name, quantity: piece.quantity, unit: piece.unit } });
+        } else if (type === "STATUS_CHANGED" || type === "ORDER_REOPENED" || type === "ORDER_FORCE_CLOSED") {
+          const nextStatus = type === "ORDER_REOPENED" ? "reabierta" : type === "ORDER_FORCE_CLOSED" ? "cerrada" : String(change.value || "").toLowerCase();
+          const allowed = ["agendado", "pendiente", "en_curso", "inspeccion", "ejecucion", "cerrada", "no_ejecutada", "cancelada", "revision", "reabierta", "lista_facturacion"];
+          if (!allowed.includes(nextStatus) || nextStatus === String(current.status || "")) throw new Error(`Transicion administrativa no permitida: ${current.status} -> ${nextStatus}`);
+          patch.status = nextStatus;
+          if (["cerrada", "no_ejecutada"].includes(nextStatus)) patch.closed_at = now;
+          if (nextStatus === "reabierta") patch.closed_at = null;
+        } else if (type === "EVIDENCE_REMOVED") {
+          const evidenceId = String(change.evidence_id || "");
+          if (evidenceId) {
+            await supabaseFetch<void>(`/rest/v1/service_evidence?id=eq.${encodeURIComponent(evidenceId)}&order_id=eq.${encodeURIComponent(orderId)}`, {
+              method: "DELETE",
+              headers: { Prefer: "return=minimal" }
+            });
+          }
+        }
+      }
+      await supabaseFetch<void>(`/rest/v1/service_orders?id=eq.${encodeURIComponent(orderId)}`, {
+        method: "PATCH",
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify(patch)
+      });
+      for (const incident of incidents) {
+        await supabaseFetch<void>("/rest/v1/service_incidents", {
+          method: "POST",
+          headers: { Prefer: "return=minimal" },
+          body: JSON.stringify({ company_id: current.company_id, order_id: orderId, ...(incident as AnyRow), metadata: { ...((incident.metadata as AnyRow | undefined) || {}), applied_at: now } })
+        });
+      }
+      const afterApply = await accessibleSupabaseServiceOrder(orderId);
+      const afterMetadata = (afterApply.metadata && typeof afterApply.metadata === "object" ? afterApply.metadata : {}) as AnyRow;
+      const afterCorrections = Array.isArray(afterMetadata.corrections) ? afterMetadata.corrections as CorrectionRecord[] : [];
+      const appliedIndex = afterCorrections.findIndex((item) => item.id === correctionId);
+      if (appliedIndex >= 0) {
+        afterCorrections[appliedIndex] = { ...afterCorrections[appliedIndex], status: "APPLIED", applied_at: now };
+      } else {
+        afterCorrections.push({ ...correction, status: "APPLIED", applied_at: now });
+      }
+      afterMetadata.corrections = afterCorrections;
+      await supabaseFetch<void>(`/rest/v1/service_orders?id=eq.${encodeURIComponent(orderId)}`, {
+        method: "PATCH",
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify({ metadata: afterMetadata })
+      });
+      const updated = afterCorrections.find((item) => item.id === correctionId) || { ...correction, status: "APPLIED", applied_at: now };
+      return updated as T;
+    }
+    if (action === "approve") {
+      if (correction.status !== "PENDING_APPROVAL") throw new Error("La correccion no esta pendiente de aprobacion.");
+      correction.status = "APPROVED";
+      correction.approved_at = new Date().toISOString();
+      metadata.corrections = corrections;
+      await supabaseFetch<void>(`/rest/v1/service_orders?id=eq.${encodeURIComponent(orderId)}`, {
+        method: "PATCH",
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify({ metadata })
+      });
+      return correction as T;
+    }
+    if (action === "reject") {
+      const body = JSON.parse(String(options.body || "{}")) as { rejection_reason?: string };
+      const reason = String(body.rejection_reason || "").trim();
+      if (reason.length < 8) throw new Error("Explica el rechazo con al menos 8 caracteres.");
+      if (correction.status !== "PENDING_APPROVAL") throw new Error("La correccion no esta pendiente de aprobacion.");
+      correction.status = "REJECTED";
+      correction.rejected_at = new Date().toISOString();
+      correction.rejection_reason = reason;
+      metadata.corrections = corrections;
+      await supabaseFetch<void>(`/rest/v1/service_orders?id=eq.${encodeURIComponent(orderId)}`, {
+        method: "PATCH",
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify({ metadata })
+      });
+      return correction as T;
+    }
+    if (action === "evidence") {
+      const body = JSON.parse(String(options.body || "{}")) as { authorization_id?: string; type?: string; storage_path?: string; storage_bucket?: string; metadata?: AnyRow };
+      const type = String(body.type || "administrative_support").trim();
+      if (!type) throw new Error("El tipo de evidencia es obligatorio.");
+      const storagePath = String(body.storage_path || "").trim();
+      const allowedEvidenceTypes = ["fachada", "producto_abierto", "producto_cerrado", "cliente", "firma_cliente", "no_ejecutada", "novedad"];
+      const evidenceType = allowedEvidenceTypes.includes(type) ? type : "novedad";
+      const inserted = await supabaseFetch<ServiceEvidenceRow[]>("/rest/v1/service_evidence?select=id,order_id,evidence_type,file_url,storage_bucket,storage_path,mime_type,size_bytes,metadata,created_at", {
+        method: "POST",
+        headers: { Prefer: "return=representation" },
+        body: JSON.stringify({
+          company_id: current.company_id,
+          order_id: orderId,
+          evidence_type: evidenceType,
+          storage_bucket: String(body.storage_bucket || "service-images").trim(),
+          storage_path: storagePath,
+          file_url: "",
+          mime_type: "",
+          size_bytes: 0,
+          metadata: { ...(body.metadata || {}), correction_id: correction.id, original_type: type }
+        })
+      });
+      const photo = inserted[0];
+      if (!photo?.id) throw new Error("La evidencia se envio, pero no fue posible leer el registro creado.");
+      correction.status = "APPLIED";
+      correction.applied_at = new Date().toISOString();
+      metadata.corrections = corrections;
+      await supabaseFetch<void>(`/rest/v1/service_orders?id=eq.${encodeURIComponent(orderId)}`, {
+        method: "PATCH",
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify({ metadata })
+      });
+      return { correction, evidence: photo } as T;
+    }
+  }
+
+  if (serviceOrderCorrectionEvidenceAuthorizationMatch && method === "POST" && uuidOrNull(serviceOrderCorrectionEvidenceAuthorizationMatch[1])) {
+    const orderId = serviceOrderCorrectionEvidenceAuthorizationMatch[1];
+    await accessibleSupabaseServiceOrder(orderId);
+    return {
+      authorization_id: crypto.randomUUID(),
+      signed_upload_url: "",
+      path: "",
+      expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString()
+    } as T;
+  }
+
+  if ((serviceOrderReopenMatch || serviceOrderForceCloseMatch) && method === "POST" && uuidOrNull((serviceOrderReopenMatch || serviceOrderForceCloseMatch)[1])) {
+    const orderId = (serviceOrderReopenMatch || serviceOrderForceCloseMatch)[1];
+    const current = await accessibleSupabaseServiceOrder(orderId);
+    const metadata = (current.metadata && typeof current.metadata === "object" ? current.metadata : {}) as AnyRow;
+    const isReopen = Boolean(serviceOrderReopenMatch);
+    const nextStatus = isReopen ? "reabierta" : "cerrada";
+    const body = JSON.parse(String(options.body || "{}")) as { evidence_reviewed?: boolean; observation?: string; pending_requirements?: unknown };
+    if (!isReopen && body.evidence_reviewed !== true) throw new Error("Confirma la revision de evidencias antes del cierre administrativo.");
+    const now = new Date().toISOString();
+    const correction: CorrectionRecord = {
+      id: crypto.randomUUID(),
+      status: "DRAFT",
+      reason_code: isReopen ? "INCORRECT_STATUS" : "INCOMPLETE_CLOSURE",
+      description: isReopen ? "Reapertura administrativa de la orden" : "Cierre administrativo controlado",
+      expected_version: Number(metadata.version || 1),
+      requested_by: currentSupabaseUserId() || "",
+      requested_at: now,
+      metadata: {
+        proposed_changes: [{ type: isReopen ? "ORDER_REOPENED" : "ORDER_FORCE_CLOSED", value: nextStatus, observation: String(body.observation || ""), pending_requirements: Array.isArray(body.pending_requirements) ? body.pending_requirements : [] }]
+      }
+    };
+    const corrections = Array.isArray(metadata.corrections) ? metadata.corrections as CorrectionRecord[] : [];
+    const patch: AnyRow = { metadata: { ...metadata, version: Number(metadata.version || 1) + 1, corrections: [...corrections, correction] } };
+    await supabaseFetch<void>(`/rest/v1/service_orders?id=eq.${encodeURIComponent(orderId)}`, {
+      method: "PATCH",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify(patch)
+    });
+    return correction as T;
+  }
+
   if (pathname === "/api/v1/services/orders" || serviceOrderDetailMatch) {
     const status = search.get("status");
     const orderLimit = serviceOrderDetailMatch
@@ -3406,6 +3680,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       } : undefined;
       return {
         ...order,
+        version: Number((order.metadata && typeof order.metadata === "object" ? order.metadata as AnyRow : {}).version || 1),
         technician: technician ? {
           id: technician.id,
           user: {

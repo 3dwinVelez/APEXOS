@@ -1,0 +1,43 @@
+{
+  "change_id": "service-correction-recovery-20260822",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "90170406560876eb69258ef778755d0c674b2924",
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["functional.md", "browser-certification.json"] },
+    "error": { "status": "passed", "evidence": ["error.md", "master-certification.json"] },
+    "support_scripts": { "status": "passed", "evidence": ["support-scripts.md"] },
+    "regression": { "status": "passed", "evidence": ["regression.md"] },
+    "platform_regression": { "status": "passed", "evidence": ["platform-regression.json"] },
+    "promotion_scope": { "status": "passed", "evidence": ["scope-manifest.json"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/service-master-correction-qa.js",
+    "evidence": ["master-certification.json", "browser-certification.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/platform-regression-qa.js",
+    "evidence": ["platform-regression.json"]
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../../scripts/certifications/service-master-correction-qa.js",
+    "evidence": ["master-certification.json", "browser-certification.json"]
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "aa1bf70a251fdf0b33d379ce42ad3e1beb46b4c5",
+    "trigger": "cualquier falla de correccion, inicio, persistencia, permisos, aislamiento o alcance posterior al despliegue"
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "Solicitante autorizado de APEXOS en tarea Codex",
+    "approved_at": "2026-08-22T09:20:13-05:00"
+  }
+}

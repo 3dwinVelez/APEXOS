@@ -145,6 +145,13 @@ test("una orden facturada permite informacion y soportes con el permiso especial
   assert.doesNotThrow(() => inspectChanges(invoiced, [{ type: "EVIDENCE_REMOVED", evidence_id: 1 }], requester));
 });
 
+test("rechaza una correccion de campo que no cambia el valor actual", () => {
+  assert.throws(
+    () => inspectChanges(order(), [{ type: "FIELD_UPDATED", field: "notes", value: "Original" }], requester),
+    (error) => error.statusCode === 409 && error.code === "SERVICE_CORRECTION_NO_CHANGES"
+  );
+});
+
 test("una orden pagada permite editar, reabrir y anexar novedades", () => {
   const paid = order({ billing_status: "PAID", metadata: { payment_status: "PAID" } });
   assert.doesNotThrow(() => inspectChanges(paid, [{ type: "OBSERVATION_ADDED", value: "Aclaracion posterior" }], requester));
@@ -221,7 +228,8 @@ test("aplicar una pieza faltante actualiza inspeccion, reporte e incidente sin c
   assert.equal(inspection.problem_count, 1);
   assert.equal(calls.updateMany[0].data.status, undefined);
   assert.equal(calls.incidents[0].type, "pieza_faltante");
-  assert.equal(calls.changes[0].change_type, "PIECE_ISSUE_ADDED");
+  assert.equal(calls.changes[0].change_type, "FIELD_UPDATED");
+  assert.equal(calls.changes[0].field_name, "metadata.inspection.items");
 });
 
 test("pieza y foto se guardan atomicamente con una sola actualizacion de version", async () => {
@@ -235,7 +243,7 @@ test("pieza y foto se guardan atomicamente con una sola actualizacion de version
   assert.equal(calls.updateMany[0].data.metadata.inspection.items[0].status, "faltante");
   assert.equal(calls.createdPhotos[0].metadata.part_id, 21);
   assert.equal(calls.incidents[0].photo_url, "service-images/tenant/order/piece.webp");
-  assert.deepEqual(calls.changes.map((item) => item.change_type), ["PIECE_ISSUE_ADDED", "EVIDENCE_ADDED"]);
+  assert.deepEqual(calls.changes.map((item) => item.change_type), ["FIELD_UPDATED", "EVIDENCE_ADDED"]);
 });
 
 test("un conflicto optimista responde 409 y no sobrescribe", async () => {
@@ -281,4 +289,16 @@ test("la migracion conserva archivos e impide mutar el detalle historico", () =>
   assert.match(migration, /ServiceOrderCorrectionChange_immutable/);
   assert.match(migration, /ADD COLUMN IF NOT EXISTS "active" BOOLEAN NOT NULL DEFAULT true/);
   assert.doesNotMatch(migration, /DELETE FROM "ServicePhoto"/);
+});
+
+test("el certificador QA versionado cubre el flujo maestro y sus negativas", () => {
+  const certificate = fs.readFileSync(path.join(__dirname, "../scripts/certifications/service-master-correction-qa.js"), "utf8");
+  for (const operation of ["FIELD_UPDATED", "OBSERVATION_ADDED", "PIECE_ISSUE_ADDED", "STATUS_CHANGED", "EVIDENCE_ADDED", "EVIDENCE_REMOVED"]) {
+    assert.match(certificate, new RegExp(operation));
+  }
+  assert.match(certificate, /SERVICE_CORRECTION_NO_CHANGES/);
+  assert.match(certificate, /limited_role_blocked/);
+  assert.match(certificate, /other_tenant_blocked/);
+  assert.match(certificate, /health\.commit/);
+  assert.doesNotMatch(certificate, /console\.log\([^\n]*(password|token|png)/i);
 });

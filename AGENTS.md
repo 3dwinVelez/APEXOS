@@ -30,6 +30,11 @@ Rules for Codex and any automated agent:
 - Unit tests, lint, type checks, builds, API success responses, or code review alone never constitute complete certification.
 - A failed, pending, partial, simulated-only, or unexecuted end-to-end certification blocks publication and promotion. The agent must state the block explicitly and may not claim the incident is resolved.
 - Every promotion to `main` must pass `docs/CHANGE_APPROVAL_QA_POLICY.md` and `npm run qa:approval:evidence -- <manifest>` with explicit functional QA approval. Automated checks alone never authorize `main`.
+- Every promotion must be scoped against the current target commit. Before `develop` or `main`, a versioned scope manifest must pass `npm run qa:promotion:scope -- <scope-manifest> <candidate-ref> <target-ref>`.
+- Branch-wide merges are forbidden when their net diff contains files, modules, migrations, deletions, or generated evidence outside the approved scope manifest. An agent must isolate or reconstruct the punctual commits first.
+- A fix for one function must certify both that function and every protected capability named in the scope manifest. For Services, starting orders, administrative correction, RBAC and tenant isolation are protected together.
+- A rollback or recovery may never use an old tree snapshot as the new branch baseline. Recover only the reviewed commits or file hunks on top of the current target baseline so later fixes remain present.
+- Any deletion requires an explicit `allowed_deletions` entry in the scope manifest. Empty or implicit deletion authorization is prohibited.
 - Preserve traceability. Do not squash or rewrite shared history without explicit authorization.
 - Keep generated files, local logs, secrets, and environment-specific artifacts out of commits.
 - Emergency production fixes require explicit authorization and must be retrointegrated to `develop` and `desarrollo`.

@@ -17,6 +17,18 @@ Antes de aprobar `develop -> main` debe existir un manifiesto JSON versionado co
 9. Certificacion funcional con datos controlados de la empresa modelo `NYVORA`, incluyendo un rol autorizado, un rol sin el permiso especial y un usuario de otro tenant.
 10. Plan de reversa preparado contra el ultimo commit estable de `main`, con disparador objetivo y estrategia `controlled_revert`.
 
+## Certificacion navegador / plataforma en vivo (obligatoria para todo cambio funcional)
+
+La certificacion extremo a extremo no se limita a scripts HTTP. Todo cambio funcional, especialmente correcciones de flujos operativos (servicios, tenancy, estados), debe validarse ejecutando el flujo real desde el navegador sobre la plataforma en el ambiente objetivo (QA) con el commit exacto evaluado:
+
+1. Reproducir la novedad reportada desde la interfaz real antes de declarar el caso resuelto.
+2. Ejecutar el flujo completo de la funcionalidad afectada tal como la usaria el usuario: abrir, editar, guardar, reabrir y recargar.
+3. Comprobar persistencia de los datos tras recarga de pantalla o de sesion.
+4. Ejecutar los escenarios negativos visibles: permisos insuficientes, datos faltantes, registros de otros tenants y rutas no sincronizadas.
+5. Adjuntar al manifiesto la evidencia fechada de la sesion navegador (captura o resultado estructurado).
+
+Un `404`, `403`, pantalla vacia o falla de persistencia detectado al usar la plataforma en vivo despues de una certificacion previa indica que esa certificacion no ejecuto el flujo navegador real y bloquea la promocion hasta repetir el ciclo completo.
+
 ## Regla de bloqueo
 
 La promocion a `main` queda prohibida si falta una evidencia, si una prueba esta pendiente o fallida, si QA no usa el commit exacto de `develop`, o si el aprobador no esta identificado. Se valida con:
@@ -67,6 +79,21 @@ Antes de aprobar una migracion que incluya modelos Prisma, consultas nuevas o mo
 10. El certificado masivo debe viajar dentro del artefacto de la API para ejecutarse con las variables del ambiente objetivo, guardar una salida JSON sanitizada y terminar con codigo distinto de cero ante una sola falla.
 
 La migracion debe probarse primero sobre una base aislada o QA, registrar el nombre exacto aplicado y verificar nuevamente la alineacion. Queda prohibido ejecutar en bloque migraciones historicas pendientes para corregir una diferencia puntual.
+
+## Compuerta obligatoria de alcance y preservacion
+
+Antes de integrar una correccion se compara el estado actual del destino contra el candidato completo. No se aprueba una rama por el nombre de sus commits ni por haber aprobado pruebas en otra maquina: se aprueba exclusivamente su diferencia neta.
+
+1. El manifiesto de alcance debe declarar el commit base exacto del destino, el commit funcional certificado, las rutas permitidas y todas las eliminaciones autorizadas.
+2. `npm run qa:promotion:scope -- <manifiesto> <candidato> <destino>` debe terminar correctamente antes de cada promocion.
+3. Un archivo fuera de `allowed_paths` bloquea la promocion aunque pertenezca a otro arreglo valido, haya sido creado por otra maquina o ya exista en una rama intermedia.
+4. Ninguna correccion puntual puede promover migraciones, artefactos, modulos o refactorizaciones no indispensables para su objetivo.
+5. Recuperar una funcion desde el historial se hace aplicando commits o hunks revisados sobre el `main` vigente. Copiar un arbol antiguo, reemplazar el branch completo o revertir un tren masivo sin inventario de capacidades queda prohibido.
+6. El manifiesto debe enumerar capacidades protegidas y su evidencia. La funcion intervenida y las funciones previamente corregidas del mismo dominio se prueban juntas.
+7. Toda eliminacion requiere una coincidencia exacta en `allowed_deletions`; los prefijos o comodines no autorizan borrados.
+8. Si varias maquinas trabajan simultaneamente, cada entrega debe sincronizarse primero con el destino, recalcular el diff y repetir la compuerta. Una certificacion sobre un diff anterior queda invalidada.
+
+La guia operativa completa se encuentra en `docs/releases/CONTROLLED_PROMOTION_SCOPE_POLICY.md`.
 
 ## Contenido minimo del manifiesto
 

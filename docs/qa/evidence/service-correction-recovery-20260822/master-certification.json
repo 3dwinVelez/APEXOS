@@ -1,0 +1,25 @@
+{
+  "ok": true,
+  "environment": "QA",
+  "model_company": "NYVORA",
+  "commit": "901704065608",
+  "run_id": "service-master-correction-1787408021100",
+  "order_id": 60,
+  "external_order_id": "127bc336-0d83-423c-9cbb-b7c99c53290d",
+  "final_version": 8,
+  "final_status": "cancelada",
+  "applied_corrections": 7,
+  "checks": {
+    "deployed_commit": "passed",
+    "authorized_field_edit_and_reload": "passed",
+    "observation_and_reload": "passed",
+    "piece_issue_and_reload": "passed",
+    "status_and_reload": "passed",
+    "evidence_add_validate_reload": "passed",
+    "evidence_soft_remove_reload": "passed",
+    "no_op_rejected": "passed",
+    "limited_role_blocked": "passed",
+    "other_tenant_blocked": "passed",
+    "audit_history_before_after": "passed"
+  }
+}
