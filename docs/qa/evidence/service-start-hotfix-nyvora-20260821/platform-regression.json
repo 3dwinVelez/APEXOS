@@ -2,7 +2,7 @@
   "ok": true,
   "environment": "QA",
   "model_company": "NYVORA",
-  "commit": "cbc00df6bebb",
+  "commit": "042f88684b94",
   "checks": [
     "session",
     "services_orders",

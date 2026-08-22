@@ -3,7 +3,7 @@
   "environment": "QA",
   "source_branch": "develop",
   "target_branch": "main",
-  "commit": "61c25566d771984641b44eef8b44367a594d6031",
+  "commit": "042f88684b94a6a9fa4358458d6325d11b812839",
   "checks": {
     "functional": { "status": "passed", "evidence": ["functional.md", "browser-certification.json"] },
     "error": { "status": "passed", "evidence": ["error.md", "nyvora-certification.json"] },
@@ -31,7 +31,7 @@
   "rollback_plan": {
     "status": "ready",
     "strategy": "controlled_revert",
-    "previous_main_commit": "4c13a9375a568856e7f46b85f6d0f0170d234d7f",
+    "previous_main_commit": "b3ab7bc653602931ce11785835aa1207ecc3198a",
     "trigger": "cualquier falla de inicio, persistencia, permisos, aislamiento o regresion despues del despliegue"
   },
   "approval": {
