@@ -1,4 +1,0 @@
-﻿interface:
-  display_name: "ERP Programmer"
-  short_description: "Implementa cambios seguros y mínimos en APEX OS"
-  default_prompt: "Use $erp-programmer para implementar un cambio ERP aprobado en una rama segura."

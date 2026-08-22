@@ -26,11 +26,8 @@ test("el panel administrativo exige permiso explicito y no usa bypass por nombre
   assert.doesNotMatch(panelSource, /administrador de empresa.*return true/);
   assert.match(panelSource, /El estado de pago no bloquea esta edicion/);
   assert.match(panelSource, /Nueva novedad/);
-  assert.match(panelSource, /Reportar pieza/);
-  assert.match(panelSource, /Anexar soporte/);
-  assert.match(panelSource, /Guardar y aplicar corrección/);
-  assert.match(panelSource, /Falta completar/);
-  assert.match(panelSource, /Reintentar aplicación/);
+  assert.match(panelSource, /Pieza faltante/);
+  assert.match(panelSource, /Foto o soporte/);
   assert.match(panelSource, /PIECE_ISSUE_ADDED/);
   assert.match(panelSource, /Foto de soporte/);
   assert.match(panelSource, /Array\.isArray\(order\.photos\)/);
@@ -45,9 +42,7 @@ test("el monitor expone la correccion especial y abre el panel directamente", ()
   assert.match(monitorSource, /hasStoredRolePermission\("services\.orders", "edit_any_state"\)/);
   assert.match(monitorSource, /Corregir y anexar/);
   assert.match(monitorSource, /ShieldCheck size=\{14\} \/> Corregir/);
-  assert.match(monitorSource, /corregir=1/);
-  assert.match(monitorSource, /href\.includes\("\?"\) \? "&" : "\?"/);
-  assert.match(monitorSource, /correctionAvailable\(order\)/);
+  assert.match(monitorSource, /\?corregir=1/);
   assert.match(detailSource, /initiallyOpen=\{searchParams\.get\("corregir"\) === "1"\}/);
 });
 

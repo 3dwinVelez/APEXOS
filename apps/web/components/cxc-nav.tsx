@@ -6,9 +6,7 @@ import { usePathname } from "next/navigation";
 const ITEMS = [
   { href: "/dashboard/cxc/documentos", label: "Documentos" },
   { href: "/dashboard/cxc/reportes/cartera", label: "Cartera" },
-  { href: "/dashboard/cxc/retenciones", label: "Retenciones" },
-  { href: "/dashboard/tesoreria?direction=receipt&tab=report", label: "Recaudos" },
-  { href: "/dashboard/tesoreria/anticipos?direction=customer", label: "Anticipos" }
+  { href: "/dashboard/cxc/retenciones", label: "Retenciones" }
 ];
 
 export function CxcNav() {

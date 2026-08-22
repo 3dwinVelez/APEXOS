@@ -12,10 +12,6 @@ Se reviso `C:\Users\mq1\Documents\prototipo\apexos\APEXOS-main` solo en superfic
 
 ## Implementacion actual en APEX-OS
 
-- `Contabilidad > Impuestos y retenciones` centraliza los maestros fiscales. Retenciones e IVA se parametrizan por alcance exclusivo `Compras` o `Ventas`; cada registro define codigo, nombre/concepto, porcentaje, base minima cuando aplica, cuenta contable PUCC y estado.
-- Las cuentas de IVA y retenciones se seleccionan entre cuentas activas y transaccionales del PUCC; la API vuelve a validar la cuenta antes de guardar.
-- Compras solo consume maestros fiscales de compras y Ventas solo consume maestros fiscales de ventas. En Ventas, el codigo, porcentaje y cuenta del IVA activo son los usados para construir la linea contable.
-
 - Se conserva la arquitectura actual de APEX-OS y el motor existente de `LedgerEntry`.
 - Se usan `Account`, `Party`, `Transaction`, `Payment`, `LedgerEntry` y `Tenant.config`; para comprobantes contables se agregan las tablas `cnt_cabdoc` y `cnt_cuedoc`, y para cuentas por pagar `cxp_cabdoc` y `cxp_cuedoc`.
 - El plan de cuentas ahora se puede listar, filtrar, crear, editar, activar e inactivar.
@@ -37,10 +33,6 @@ Se reviso `C:\Users\mq1\Documents\prototipo\apexos\APEXOS-main` solo en superfic
 
 - Plan de cuentas PUCC base Colombia.
 - Terceros: cliente, proveedor, empleado, transportador, acreedor, deudor y entidad financiera.
-- Contabilidad > Terceros es el maestro canónico compartido con Ventas y Compras. Un NIT puede tener varios roles operativos sobre el mismo registro; las vistas de clientes y proveedores filtran esos roles sin crear maestros paralelos.
-- CxC y CxP mantienen saldos independientes (`receivable_balance` y `payable_balance`) para que un tercero cliente/proveedor no mezcle cartera con obligaciones.
-- En el maestro de terceros, las cuentas asociadas CxC y CxP se seleccionan desde cuentas activas, transaccionales y compatibles del PUCC; la API rechaza códigos libres o cuentas de naturaleza incorrecta.
-- Las retenciones del tercero viven en una pestaña independiente: ventas usa exclusivamente el maestro activo de retenciones de venta y compras usa exclusivamente el maestro activo de retenciones de compra.
 - Maestros de terceros: tipos de documento DIAN y ciudades/departamentos con codigo DANE para seleccion controlada al crear o editar terceros.
 - Estructura organizacional contable: sociedades, sucursales enlazadas a sociedad y centros de costo enlazados a sociedad/sucursal.
 - Asientos contables: fecha de contabilizacion, referencia, texto de cabecera, sociedad, tipo de documento, cuenta, sucursal, centro de costo, tercero, debito/credito, descripcion y valor.
@@ -53,7 +45,6 @@ Se reviso `C:\Users\mq1\Documents\prototipo\apexos\APEXOS-main` solo en superfic
 - Estado de resultados.
 - Reporte de impuestos por cuentas de IVA y retenciones.
 - Cuentas por cobrar y cuentas por pagar con edades.
-- Tesorería centraliza bancos, recaudos `CI`, pagos a proveedores `CE`, aplicaciones parciales y reversiones contables.
 - Control de periodos: abierto, en revision y cerrado.
 
 ## Preparacion Colombia
@@ -67,7 +58,6 @@ No se implementa integracion DIAN completa. Los metadatos quedan listos para rec
 - Las rutas contables usan permisos existentes `finance:read` y `finance:write`.
 - Un periodo cerrado impide nuevos asientos y pagos.
 - Un comprobante contable no se registra si debitos y creditos no son iguales.
-- El cargue inicial de inventario genera un comprobante `AJ` balanceado: debito a las cuentas de inventario de alta por familia y credito a la cuenta puente `99999999`. Sus lineas alimentan libro mayor, balance de prueba y saldos contables.
 - Un comprobante contable no se registra si la fecha, sociedad, sucursal, centro de costo, cuenta o tercero no existen en sus maestros activos.
 - Un documento de cuentas por pagar solo acepta proveedores activos y cuenta asociada de proveedores/cuentas por pagar del PUCC.
 - El asiento de cuentas por pagar se genera automaticamente con base, IVA y contrapartida a la cuenta asociada.
@@ -82,8 +72,6 @@ No se implementa integracion DIAN completa. Los metadatos quedan listos para rec
 - Crear o editar una cuenta contable.
 - Crear o editar maestros de tipo de documento y ciudad DANE.
 - Crear o editar un tercero contable seleccionando tipo de documento, tipo de tercero y ubicacion desde maestros.
-- Asignar simultáneamente los roles cliente y proveedor y confirmar que el mismo tercero aparezca en Ventas y Compras sin duplicar el NIT.
-- Confirmar que CxC/CxP solo permitan seleccionar cuentas compatibles del PUCC y que las retenciones solo permitan marcar registros activos de su maestro y alcance correspondiente.
 - Crear una sociedad, enlazarle sucursales y crear centros de costo asociados a una sucursal de esa sociedad.
 - Confirmar que no se pueda crear una sucursal sin sociedad activa ni un centro de costo sin sucursal valida.
 - Editar sociedades, sucursales y centros de costo desde ventana modal.
@@ -104,13 +92,5 @@ No se implementa integracion DIAN completa. Los metadatos quedan listos para rec
 - Confirmar que el digito de verificacion se calcule automaticamente y no sea editable.
 - Confirmar que un correo con formato invalido sea rechazado antes de guardar.
 - Consultar balance, resultados, balance de prueba, impuestos, auxiliar, cuentas por cobrar y cuentas por pagar.
-- Pulsar el numero de un comprobante, CXP o CxC y consultar cabecera, usuario, fechas, tercero, documento origen y todas las lineas debito/credito.
 - Cerrar un periodo y confirmar que nuevos asientos/pagos del periodo cerrado sean bloqueados.
 - Las rutas contables deben reconocer `M-07`, `contabilidad`, `finance` y `accounting` como identificadores equivalentes del modulo habilitado para el tenant.
-# Mantenimiento de maestros fiscales
-
-- Los maestros de IVA y retenciones se administran por separado para compras y ventas.
-- El código fiscal no cambia durante una edición; nombre, porcentaje, base mínima, cuenta y estado sí son editables.
-- Un código sin movimientos puede eliminarse. Si ya fue usado en documentos, la operación lo desactiva para impedir usos nuevos sin romper el historial contable.
-- La asignación a proveedores no se realiza dentro del maestro fiscal.
-- La creación y edición de IVA y retenciones se realiza en ventanas modales; los listados quedan dedicados a consulta y acciones.

@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { Edit3, FilePlus2, ListPlus, Percent, Plus, Save, Search, Settings2, Trash2, WalletCards } from "lucide-react";
 import { api } from "@/lib/api";
 import { ContabilidadNav } from "@/components/contabilidad-nav";
@@ -86,7 +85,6 @@ type PayableSimulation = {
   totals: { debit: number; credit: number };
   lines: Array<{ line_no: number; account_code: string; account_name: string; debit: number; credit: number; description: string }>;
 };
-type ImportCost = { id: number; concept: string; account_code: string; estimated_amount: number; classification: string };
 
 const EMPTY_TREE: OrganizationTree = { societies: [], branches: [], cost_centers: [] };
 const EMPTY_LINE: PayableLine = { account_code: "", branch_code: "", cost_center_code: "", movement: "debit", vat_code: "COMPRAS-19", description: "", amount: "" };
@@ -142,8 +140,6 @@ export default function CuentasPorPagarPage() {
   const [lines, setLines] = useState<PayableLine[]>([{ ...EMPTY_LINE }]);
   const [vatDraft, setVatDraft] = useState({ code: "", concept: "Compras", percent: 19, account_code: "2408" });
   const [editingVat, setEditingVat] = useState<string | null>(null);
-  const [importCosts, setImportCosts] = useState<ImportCost[]>([]);
-  const [importPrefilled, setImportPrefilled] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -185,26 +181,6 @@ export default function CuentasPorPagarPage() {
   const activeSocieties = tree.societies.filter((item) => item.active !== false);
   const branches = tree.branches.filter((item) => item.active !== false && item.society_code === header.society_code);
   const activeVats = vatMasters.filter((item) => item.active !== false);
-
-  useEffect(() => {
-    if (loading || importPrefilled) return;
-    const params = new URLSearchParams(window.location.search);
-    const importId = Number(params.get("import_id"));
-    const supplierId = Number(params.get("supplier_id"));
-    if (!importId || !supplierId) { setImportPrefilled(true); return; }
-    setImportPrefilled(true);
-    api<ImportCost[]>(`/api/v1/purchases/imports/${importId}/invoiceable-costs?supplier_id=${supplierId}`).then((costs) => {
-      if (!costs.length) throw new Error("Este proveedor no tiene costos pendientes en la importación");
-      const society = tree.societies.find((item) => item.active !== false)?.code || "";
-      const branch = tree.branches.find((item) => item.active !== false && item.society_code === society)?.code || "";
-      const center = tree.cost_centers.find((item) => item.active !== false && item.society_code === society && item.branch_code === branch)?.code || "";
-      const zeroVat = vatMasters.find((item) => item.active !== false && Number(item.percent) === 0)?.code || activeVats[0]?.code || "COMPRAS-19";
-      setHeader((current) => ({ ...current, document_kind: "invoice", supplier_id: String(supplierId), society_code: society, header_text: `Costos importación #${importId}` }));
-      setLines(costs.map((cost) => ({ account_code: cost.account_code, branch_code: branch, cost_center_code: center, movement: "debit", vat_code: zeroVat, description: cost.concept, amount: String(cost.estimated_amount) })));
-      setImportCosts(costs); setModalOpen(true);
-    }).catch((err) => setError(err instanceof Error ? err.message : "No se pudieron cargar costos de importación"));
-  }, [activeVats, importPrefilled, loading, tree, vatMasters]);
-
   const totals = useMemo(() => {
     const subtotal = lines.reduce((sum, line) => sum + (Number(line.amount) || 0), 0);
     const tax = lines.reduce((sum, line) => {
@@ -341,10 +317,6 @@ export default function CuentasPorPagarPage() {
         method: "POST",
         body: JSON.stringify(payload())
       });
-      if (importCosts.length) {
-        await Promise.all(importCosts.map((cost, index) => api(`/api/v1/purchases/imports/costs/${cost.id}/link-invoice`, { method: "POST", body: JSON.stringify({ cxp_cabdoc_id: created.id, actual_amount: Number(lines[index]?.amount || 0) }) })));
-        setImportCosts([]);
-      }
       setDocuments((current) => [created, ...current]);
       setModalOpen(false);
       setOk(`${created.number} contabilizado`);
@@ -405,9 +377,6 @@ export default function CuentasPorPagarPage() {
           <p className="mt-1 text-sm text-neutral-600">Facturas y notas credito de proveedor con vencimiento, IVA parametrizable y cuenta asociada.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link className="inline-flex h-10 items-center justify-center rounded-md border border-line bg-white px-4 text-sm" href="/dashboard/tesoreria?direction=disbursement">Pagar proveedor</Link>
-          <Link className="inline-flex h-10 items-center justify-center rounded-md border border-line bg-white px-4 text-sm" href="/dashboard/tesoreria?direction=disbursement&tab=report">Reporte de pagos</Link>
-          <Link className="inline-flex h-10 items-center justify-center rounded-md border border-line bg-white px-4 text-sm" href="/dashboard/tesoreria/anticipos?direction=supplier">Anticipos a proveedores</Link>
           <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line bg-white px-4 text-sm" onClick={() => setMastersOpen(true)} type="button">
             <Settings2 size={16} /> IVA
           </button>
@@ -453,7 +422,7 @@ export default function CuentasPorPagarPage() {
             {documents.map((doc) => (
               <tr className="border-b border-line/70 last:border-0" key={doc.id}>
                 <td className="px-4 py-3 font-mono text-xs">
-                  <button className="font-mono text-xs text-apex underline-offset-2 hover:underline disabled:text-neutral-500 disabled:no-underline" disabled={!doc.accounting_document} onClick={() => doc.accounting_document ? setSelectedAccountingDocument(doc.accounting_document) : undefined} type="button" title="Ver documento y registro contable">{doc.number}</button>
+                  <button className="font-mono text-xs text-apex underline-offset-2 hover:underline disabled:text-neutral-500 disabled:no-underline" disabled={!doc.accounting_document} onDoubleClick={() => doc.accounting_document ? setSelectedAccountingDocument(doc.accounting_document) : undefined} type="button" title="Doble click para ver el registro contable">{doc.number}</button>
                 </td>
                 <td className="px-4 py-3">{doc.document_kind === "credit_note" ? "Nota credito" : "Factura"}</td>
                 <td className="px-4 py-3 font-mono text-xs">{doc.document_class}</td>
@@ -514,7 +483,7 @@ export default function CuentasPorPagarPage() {
                 {supplierDocuments.map((doc) => (
                   <tr className="border-b border-line/70 align-top last:border-0" key={doc.id}>
                     <td className="px-3 py-2 font-mono text-xs">
-                      <button className="font-mono text-xs text-apex underline-offset-2 hover:underline disabled:text-neutral-500 disabled:no-underline" disabled={!doc.accounting_document} onClick={() => doc.accounting_document ? setSelectedAccountingDocument(doc.accounting_document) : undefined} type="button" title="Ver documento y registro contable">{doc.number}</button>
+                      <button className="font-mono text-xs text-apex underline-offset-2 hover:underline disabled:text-neutral-500 disabled:no-underline" disabled={!doc.accounting_document} onDoubleClick={() => doc.accounting_document ? setSelectedAccountingDocument(doc.accounting_document) : undefined} type="button" title="Doble click para ver el registro contable">{doc.number}</button>
                     </td>
                     <td className="px-3 py-2">{doc.document_kind === "credit_note" ? "Nota credito" : "Factura"}</td>
                     <td className="px-3 py-2 font-mono text-xs">{doc.supplier_reference}</td>

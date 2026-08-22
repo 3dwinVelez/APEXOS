@@ -121,8 +121,6 @@ model Party {
   credit_limit Float         @default(0)
   credit_days  Int           @default(0)
   balance      Float         @default(0)
-  receivable_balance Float    @default(0)
-  payable_balance    Float    @default(0)
   rating       Float         @default(0)
   active       Boolean       @default(true)
   metadata     Json          @default("{}")
@@ -153,7 +151,6 @@ model Item {
   tenant_id     String
   type          String
   code          String
-  legacy_code   String?
   name          String
   description   String?
   category_id   Int?
@@ -180,14 +177,11 @@ model Item {
   updated_at    DateTime          @updatedAt
   locations     ItemLocation[]
   bom_lines     BOMLine[]
-    movements     Movement[]
-    costs         ProductCost[]
-    valuations    SkuValuation[]
-    transfer_lines WarehouseTransferLine[]
-    salesInvoiceLines SalesInvoiceLine[]
+  movements     Movement[]
+  costs         ProductCost[]
+  salesInvoiceLines SalesInvoiceLine[]
 
   @@unique([tenant_id, code])
-  @@index([tenant_id, legacy_code])
   @@index([tenant_id, type])
   @@index([tenant_id, family_code])
   @@index([tenant_id, society_code, branch_code])
@@ -240,8 +234,7 @@ model ProductCost {
   id               Int      @id @default(autoincrement())
   tenant_id        String
   item_id          Int
-    item             Item     @relation(fields: [item_id], references: [id])
-    society_code     String?
+  item             Item     @relation(fields: [item_id], references: [id])
   costing_method   String   @default("weighted_average")
   quantity_balance Float    @default(0)
   value_balance    Float    @default(0)
@@ -331,68 +324,6 @@ model ItemLocation {
   @@index([tenant_id])
 }
 
-model SkuValuation {
-    id               Int      @id @default(autoincrement())
-    tenant_id        String
-    society_code     String
-    item_id          Int
-    item             Item     @relation(fields: [item_id], references: [id])
-    quantity_balance Float    @default(0)
-    value_balance    Float    @default(0)
-    average_cost     Float    @default(0)
-    version          Int      @default(0)
-    updated_at       DateTime @updatedAt
-    created_at       DateTime @default(now())
-
-  @@map("inv_sku_valuations")
-  @@unique([tenant_id, society_code, item_id])
-    @@index([tenant_id, society_code, item_id])
-  }
-
-model WarehouseTransfer {
-    id                   Int       @id @default(autoincrement())
-    tenant_id            String
-    number               String
-    society_code         String
-    origin_place_id      Int
-    destination_place_id Int
-    transit_location_id  Int?
-    status               String    @default("draft")
-    reason               String?
-    correlation_id       String?
-    idempotency_key      String?
-    created_by           Int?
-    dispatched_by        Int?
-    received_by          Int?
-    dispatched_at        DateTime?
-    received_at          DateTime?
-    created_at           DateTime  @default(now())
-    updated_at           DateTime  @updatedAt
-    lines                WarehouseTransferLine[]
-
-    @@map("inv_warehouse_transfers")
-    @@unique([tenant_id, number])
-    @@unique([tenant_id, idempotency_key])
-    @@index([tenant_id, society_code, status])
-  }
-
-model WarehouseTransferLine {
-    id          Int               @id @default(autoincrement())
-    tenant_id   String
-    transfer_id Int
-    transfer    WarehouseTransfer @relation(fields: [transfer_id], references: [id], onDelete: Cascade)
-    item_id     Int
-    item        Item              @relation(fields: [item_id], references: [id])
-    qty         Float
-    unit_cost   Float             @default(0)
-    lot         String?
-    created_at  DateTime          @default(now())
-
-    @@map("inv_warehouse_transfer_lines")
-    @@index([tenant_id, transfer_id])
-    @@index([tenant_id, item_id])
-  }
-
 model Transaction {
   id            Int               @id @default(autoincrement())
   tenant_id     String
@@ -456,15 +387,7 @@ model Movement {
   item           Item?        @relation(fields: [item_id], references: [id])
   from_location  Int?
   to_location    Int?
-    transaction_id Int?
-    purchase_order_line_id Int?
-    society_code   String?
-    source_type    String?
-    source_id      Int?
-    status         String       @default("posted")
-    correlation_id String?
-    idempotency_key String?
-    effective_at   DateTime     @default(now())
+  transaction_id Int?
   transaction    Transaction? @relation(fields: [transaction_id], references: [id])
   qty            Float
   cost           Float        @default(0)
@@ -474,10 +397,8 @@ model Movement {
   created_at     DateTime     @default(now())
 
   @@index([tenant_id, item_id, created_at])
-    @@index([tenant_id, type, created_at])
-    @@unique([tenant_id, idempotency_key])
-    @@index([tenant_id, society_code, item_id, effective_at])
-  }
+  @@index([tenant_id, type, created_at])
+}
 
 model Resource {
   id          Int         @id @default(autoincrement())
@@ -636,11 +557,6 @@ model CntCabdoc {
   header_text     String
   society_code    String
   status          String      @default("posted")
-  referenced_document_id Int?
-  is_reversal     Boolean     @default(false)
-  is_cancelled    Boolean     @default(false)
-  cancelled_by    Int?
-  cancelled_at    DateTime?
   total_debit     Float       @default(0)
   total_credit    Float       @default(0)
   created_by      Int?
@@ -671,11 +587,6 @@ model CntCuedoc {
   debit             Float     @default(0)
   credit            Float     @default(0)
   description       String
-  tax_type          String?
-  tax_code          String?
-  tax_base          Float     @default(0)
-  tax_rate          Float     @default(0)
-  tax_amount        Float     @default(0)
   ledger_entry_id   Int?
   created_at        DateTime  @default(now())
 
@@ -705,8 +616,6 @@ model CxpCabdoc {
   associated_account_code String
   subtotal                Float       @default(0)
   tax_total               Float       @default(0)
-  gross_total             Float       @default(0)
-  retention_total         Float       @default(0)
   total                   Float       @default(0)
   applied_total           Float       @default(0)
   balance                 Float       @default(0)
@@ -761,11 +670,6 @@ model CxpCuedoc {
   vat_account_code  String?
   vat_percent       Float     @default(0)
   vat_amount        Float     @default(0)
-  tax_type          String?
-  tax_code          String?
-  tax_base          Float     @default(0)
-  tax_rate          Float     @default(0)
-  tax_amount        Float     @default(0)
   description       String
   amount            Float     @default(0)
   total             Float     @default(0)
@@ -1811,19 +1715,6 @@ model SalesInvoice {
   total             Float              @default(0)
   balance           Float              @default(0)
   status            String             @default("draft")
-  document_kind     String             @default("invoice")
-  document_class    String             @default("FV")
-  source_order_id   Int?
-  referenced_invoice_id Int?
-  accounting_document_id Int?
-  import_batch_id   String?
-  retentions        Json               @default("[]")
-  is_reversal       Boolean            @default(false)
-  is_cancelled      Boolean            @default(false)
-  posted_by         Int?
-  posted_at         DateTime?
-  cancelled_by      Int?
-  cancelled_at      DateTime?
   header_text       String             @default("")
   society_code      String             @default("")
   branch_code       String             @default("")
@@ -1840,9 +1731,6 @@ model SalesInvoice {
   @@index([tenant_id, customer_id])
   @@index([tenant_id, date])
   @@index([tenant_id, status])
-  @@index([tenant_id, source_order_id])
-  @@index([tenant_id, referenced_invoice_id])
-  @@index([tenant_id, import_batch_id])
 }
 
 model SalesInvoiceLine {
@@ -1866,8 +1754,6 @@ model SalesInvoiceLine {
   place                   Place?       @relation(fields: [place_id], references: [id])
   customer_invoice_number String?
   cost_value              Float        @default(0)
-  movement_id             Int?
-  source_order_line_id    Int?
   created_at              DateTime     @default(now())
 
   @@map("sales_invoice_lines")
@@ -1902,11 +1788,6 @@ model CxcCabdoc {
   balance                 Float       @default(0)
   status                  String      @default("open")
   accounting_document_id  Int?
-  referenced_document_id  Int?
-  is_reversal             Boolean      @default(false)
-  is_cancelled            Boolean      @default(false)
-  cancelled_by            Int?
-  cancelled_at            DateTime?
   created_by              Int?
   created_at              DateTime    @default(now())
   updated_at              DateTime    @updatedAt
@@ -1920,7 +1801,6 @@ model CxcCabdoc {
   @@index([tenant_id, posting_date])
   @@index([tenant_id, due_date])
   @@index([tenant_id, document_class])
-  @@index([tenant_id, referenced_document_id])
 }
 
 model CxcCuedoc {
@@ -1940,11 +1820,6 @@ model CxcCuedoc {
   retention_code    String?
   retention_percent Float     @default(0)
   retention_amount  Float     @default(0)
-  tax_type           String?
-  tax_code           String?
-  tax_base           Float     @default(0)
-  tax_rate           Float     @default(0)
-  tax_amount         Float     @default(0)
   created_at        DateTime  @default(now())
 
   @@map("cxc_cuedoc")
@@ -1964,12 +1839,6 @@ model CxcPayment {
   date          DateTime  @default(now())
   reference     String?
   account_id    Int?
-  group_id      String?
-  accounting_document_id Int?
-  status        String     @default("posted")
-  reversed_payment_id Int?
-  cancelled_by  Int?
-  cancelled_at  DateTime?
   notes         String?
   created_by    Int?
   created_at    DateTime  @default(now())
@@ -1977,7 +1846,6 @@ model CxcPayment {
   @@map("cxc_payments")
   @@index([tenant_id, cabdoc_id])
   @@index([tenant_id, customer_id, date])
-  @@index([tenant_id, group_id])
 }
 
 // === MAESTRO DE RETENCIONES ===
@@ -1989,16 +1857,12 @@ model RetentionMaster {
   account_code String
   percent      Float
   concept      String?
-  scope        String   @default("sales")
-  retention_type String @default("retefuente")
-  minimum_base Float    @default(0)
-  base_type    String   @default("subtotal")
   active       Boolean  @default(true)
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
 
   @@map("retention_masters")
-  @@unique([tenant_id, scope, code])
+  @@unique([tenant_id, code])
   @@index([tenant_id, active])
 }
 
@@ -2033,190 +1897,6 @@ model Payment {
   created_at     DateTime     @default(now())
 
   @@index([tenant_id, type, date])
-}
-
-model TreasuryBank {
-  id           Int      @id @default(autoincrement())
-  tenant_id    String
-  code         String
-  name         String
-  account_id   Int
-  account_code String
-  active       Boolean  @default(true)
-  created_by   Int?
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
-  payments     TreasuryPayment[]
-  advances     TreasuryAdvance[]
-
-  @@map("treasury_banks")
-  @@unique([tenant_id, code])
-  @@index([tenant_id, active, name])
-}
-
-model TreasuryAdvance {
-  id                              Int      @id @default(autoincrement())
-  tenant_id                       String
-  direction                       String
-  document_type                   String
-  document_number                 Int
-  number                          String
-  posting_date                    DateTime
-  party_id                        Int
-  party_tax_id                    String?
-  bank_id                         Int
-  bank                            TreasuryBank @relation(fields: [bank_id], references: [id])
-  society_code                    String
-  account_id                      Int
-  account_code                    String
-  original_amount                 Float
-  applied_amount                  Float    @default(0)
-  balance                         Float
-  reference                       String?
-  notes                           String?
-  status                          String   @default("open")
-  accounting_document_id          Int
-  reversal_accounting_document_id Int?
-  cancelled_by                    Int?
-  cancelled_at                    DateTime?
-  created_by                      Int?
-  created_at                      DateTime @default(now())
-  applications                    TreasuryAdvanceApplication[]
-
-  @@map("treasury_advances")
-  @@unique([tenant_id, document_type, document_number])
-  @@unique([tenant_id, number])
-  @@index([tenant_id, direction, party_id, status])
-  @@index([tenant_id, posting_date])
-}
-
-model TreasuryAdvanceApplication {
-  id                     Int      @id @default(autoincrement())
-  tenant_id              String
-  advance_id             Int
-  advance                TreasuryAdvance @relation(fields: [advance_id], references: [id])
-  source_type            String
-  source_id              Int
-  source_number          String
-  document_type          String
-  document_number        Int
-  number                 String
-  posting_date           DateTime
-  amount                 Float
-  advance_balance_before Float
-  advance_balance_after  Float
-  source_balance_before  Float
-  source_balance_after   Float
-  status                 String   @default("posted")
-  accounting_document_id Int
-  reversal_document_id   Int?
-  cancelled_by           Int?
-  cancelled_at           DateTime?
-  created_by             Int?
-  created_at             DateTime @default(now())
-
-  @@map("treasury_advance_applications")
-  @@unique([tenant_id, number])
-  @@index([tenant_id, advance_id, status])
-  @@index([tenant_id, source_type, source_id])
-}
-
-model TreasuryPayment {
-  id                              Int      @id @default(autoincrement())
-  tenant_id                       String
-  direction                       String
-  document_type                   String
-  document_number                 Int
-  number                          String
-  posting_date                    DateTime
-  party_id                        Int
-  party_tax_id                    String?
-  bank_id                         Int
-  bank                            TreasuryBank @relation(fields: [bank_id], references: [id])
-  society_code                    String
-  amount                          Float
-  reference                       String?
-  notes                           String?
-  status                          String   @default("posted")
-  accounting_document_id          Int
-  reversal_accounting_document_id Int?
-  cancelled_by                    Int?
-  cancelled_at                    DateTime?
-  created_by                      Int?
-  created_at                      DateTime @default(now())
-  applications                    TreasuryPaymentApplication[]
-
-  @@map("treasury_payments")
-  @@unique([tenant_id, document_type, document_number])
-  @@unique([tenant_id, number])
-  @@index([tenant_id, direction, posting_date])
-  @@index([tenant_id, party_id, posting_date])
-  @@index([tenant_id, bank_id, posting_date])
-  @@index([tenant_id, status])
-}
-
-model TreasuryPaymentApplication {
-  id             Int      @id @default(autoincrement())
-  tenant_id      String
-  payment_id     Int
-  payment        TreasuryPayment @relation(fields: [payment_id], references: [id], onDelete: Cascade)
-  source_type    String
-  source_id      Int
-  source_number  String
-  amount         Float
-  balance_before Float
-  balance_after  Float
-  created_at     DateTime @default(now())
-
-  @@map("treasury_payment_applications")
-  @@unique([tenant_id, payment_id, source_type, source_id])
-  @@index([tenant_id, source_type, source_id])
-}
-
-model PurchaseImport {
-  id                Int      @id @default(autoincrement())
-  tenant_id         String
-  purchase_order_id Int
-  number            String
-  status            String   @default("draft")
-  allocation_method String   @default("value")
-  estimated_total   Float    @default(0)
-  actual_total      Float    @default(0)
-  costs_confirmed_at DateTime?
-  costs_confirmed_by Int?
-  received_at       DateTime?
-  created_by        Int?
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
-  costs             PurchaseImportCost[]
-
-  @@map("pur_imports")
-  @@unique([tenant_id, purchase_order_id])
-  @@unique([tenant_id, number])
-  @@index([tenant_id, status, created_at])
-}
-
-model PurchaseImportCost {
-  id                   Int      @id @default(autoincrement())
-  tenant_id            String
-  import_id             Int
-  import                PurchaseImport @relation(fields: [import_id], references: [id], onDelete: Cascade)
-  concept               String
-  supplier_id           Int
-  classification        String
-  estimated_amount      Float
-  actual_amount         Float?
-  account_code          String
-  clearing_account_code String
-  cxp_cabdoc_id         Int?
-  status                String   @default("estimated")
-  created_by            Int?
-  created_at            DateTime @default(now())
-  updated_at            DateTime @updatedAt
-
-  @@map("pur_import_costs")
-  @@index([tenant_id, import_id, supplier_id])
-  @@index([tenant_id, cxp_cabdoc_id])
 }
 
 model Subscription {

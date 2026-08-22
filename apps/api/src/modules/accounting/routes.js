@@ -108,7 +108,7 @@ async function accountingRoutes(fastify) {
 
   fastify.get("/accounting/vat-masters", {
     preHandler: requirePermission("accounting", "read")
-  }, async (request) => service.getVatMasters(request.user?.tenant_id, request.query?.scope));
+  }, async (request) => service.getVatMasters(request.user?.tenant_id));
 
   fastify.post("/accounting/vat-masters", {
     schema: schema.vatMasterSchema,
@@ -117,41 +117,7 @@ async function accountingRoutes(fastify) {
 
   fastify.delete("/accounting/vat-masters/:code", {
     preHandler: requirePermission("accounting", "write")
-  }, async (request) => service.deleteVatMaster(request.user?.tenant_id, request.params.code, request.query?.scope));
-
-  fastify.get("/accounting/retention-masters", {
-    preHandler: requirePermission("accounting", "read")
-  }, async (request) => service.getRetentionMasters(request.user?.tenant_id, request.query?.scope));
-
-  fastify.post("/accounting/retention-masters", {
-    schema: schema.retentionMasterSchema,
-    preHandler: requirePermission("accounting", "write")
-  }, async (request, reply) => reply.code(201).send(await service.saveRetentionMaster(
-    request.user?.tenant_id,
-    request.body
-  )));
-
-  fastify.put("/accounting/retention-masters/:id", {
-    schema: schema.retentionMasterSchema,
-    preHandler: requirePermission("accounting", "write")
-  }, async (request) => service.saveRetentionMaster(request.user?.tenant_id, request.body, request.params.id));
-
-  fastify.delete("/accounting/retention-masters/:code", {
-    preHandler: requirePermission("accounting", "write")
-  }, async (request) => service.deleteRetentionMaster(request.user?.tenant_id, request.params.code, request.query?.scope));
-
-  fastify.get("/accounting/suppliers/:supplier_id/retentions", {
-    preHandler: requirePermission("accounting", "read")
-  }, async (request) => service.getSupplierRetentions(request.user?.tenant_id, request.params.supplier_id));
-
-  fastify.put("/accounting/suppliers/:supplier_id/retentions", {
-    schema: schema.supplierRetentionsSchema,
-    preHandler: requirePermission("accounting", "write")
-  }, async (request) => service.saveSupplierRetentions(
-    request.user?.tenant_id,
-    request.params.supplier_id,
-    request.body
-  ));
+  }, async (request) => service.deleteVatMaster(request.user?.tenant_id, request.params.code));
 
   fastify.get("/accounting/payable-accounts", {
     preHandler: requirePermission("accounting", "read")
@@ -160,10 +126,6 @@ async function accountingRoutes(fastify) {
   fastify.get("/accounting/documents", {
     preHandler: requirePermission("accounting", "read")
   }, async (request) => service.listAccountingDocuments(request.user?.tenant_id, request.query));
-
-  fastify.get("/accounting/documents/:id", {
-    preHandler: requirePermission("accounting", "read")
-  }, async (request) => service.getAccountingDocument(request.user?.tenant_id, request.params.id));
 
   fastify.post("/accounting/documents", {
     schema: schema.accountingDocumentSchema,
@@ -225,6 +187,10 @@ async function accountingRoutes(fastify) {
     preHandler: requirePermission("accounting", "write")
   }, async (request) => service.saveThirdParty(request.user?.tenant_id, request.body, request.params.id));
 
+  fastify.post("/accounting/payments", {
+    schema: schema.paymentSchema,
+    preHandler: requirePermission("accounting", "write")
+  }, async (request, reply) => reply.code(201).send(await service.registerPayment(request.user?.tenant_id, request.user.id, request.body)));
 }
 
 module.exports = accountingRoutes;

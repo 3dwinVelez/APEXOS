@@ -1,56 +1,54 @@
-## Objetivo
+## Flow Gate
 
-<!-- Explicar el problema y el resultado esperado. -->
+Target branch:
 
-## Alcance
+- [ ] `develop`, from `desarrollo`
+- [ ] `main`, from `develop`
 
-- Módulos:
-- Archivos o capas principales:
-- Fuera de alcance:
+This PR does not bypass the mandatory flow:
 
-## Reglas funcionales
+```text
+desarrollo -> develop -> main
+```
 
-- Reglas confirmadas:
-- Supuestos:
-- Preguntas pendientes:
+## Authorization
 
-## Riesgo ERP
+- [ ] This promotion/change has explicit authorization.
+- [ ] This PR does not include direct implementation work on `develop` or `main`.
+- [ ] This PR does not include unrelated functional changes.
+- [ ] No force push, history rewrite, remote migration, Railway/Supabase change, secret change, or deployment is included unless explicitly authorized and documented below.
 
-- [ ] No modifica contabilidad, impuestos, inventario, costos ni nómina.
-- [ ] Si modifica un dominio sensible, existe aprobación funcional explícita.
-- [ ] No incluye migraciones destructivas.
-- [ ] No cambia tenancy, RBAC o RLS sin revisión de seguridad.
+Authorization evidence:
 
-## Seguridad y autonomía
+```text
+Add approver, date, scope, and exact authorization text.
+```
 
-- [ ] El trabajo se realizó en una rama no protegida.
-- [ ] No se usaron bases de datos productivas.
-- [ ] No se agregaron secretos, tokens ni credenciales.
-- [ ] El agente no hizo merge, despliegue ni amplió permisos.
-- [ ] La pull request requiere aprobación humana.
+## Validation Evidence
 
-## Validación
+Commands executed:
 
-| Comando o prueba | Resultado | Evidencia u observación |
-| --- | --- | --- |
-| `npm run agent:test -- --profile safe` |  |  |
+```text
+npm run governance:ci
+npm run prisma:validate
+npm --workspace apps/web run typecheck
+npm run qa:deterministic-validation
+```
 
-Pruebas omitidas y motivo:
+Results:
 
-## Archivos y decisiones
+```text
+Add result summary and links/files for evidence.
+```
 
-- Archivos principales:
-- Decisiones de arquitectura:
-- Documentación o memoria actualizada:
+## QA Verdict
 
-## Riesgos pendientes y rollback
+- [ ] Approved for QA integration (`desarrollo` -> `develop`)
+- [ ] Approved for production release (`develop` -> `main`)
+- [ ] Not approved
 
-- Riesgos residuales:
-- Estrategia de reversión:
+Verdict:
 
-## Revisiones
-
-- [ ] Revisión técnica independiente.
-- [ ] Revisión funcional cuando aplica.
-- [ ] QA proporcional al riesgo.
-- [ ] Aprobación humana pendiente.
+```text
+Add QA owner, date, scope validated, residual risks, and rollback plan when targeting main.
+```

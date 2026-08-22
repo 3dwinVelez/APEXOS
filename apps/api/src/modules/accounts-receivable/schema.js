@@ -25,10 +25,6 @@ const retentionSchema = {
       account_code: { type: "string", minLength: 1 },
       percent: { type: "number", exclusiveMinimum: 0 },
       concept: { type: "string" },
-      scope: { type: "string", enum: ["sales"] },
-      retention_type: { type: "string", enum: ["retefuente", "reteiva", "reteica"] },
-      minimum_base: { type: "number", minimum: 0 },
-      base_type: { type: "string", enum: ["subtotal", "iva"] },
       active: { type: "boolean" }
     }
   }

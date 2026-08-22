@@ -39,7 +39,7 @@ type AccountingDocument = {
   society_code: string;
   total_debit: number;
   total_credit: number;
-  lines: Array<{ id: number; line_no: number; account_code: string; branch_code: string; cost_center_code: string; party_tax_id?: string | null; debit: number; credit: number; description: string }>;
+  lines: Array<{ id: number; line_no: number; account_code: string; branch_code: string; cost_center_code: string; debit: number; credit: number; description: string }>;
 };
 
 const EMPTY_TREE: OrganizationTree = { societies: [], branches: [], cost_centers: [] };
@@ -304,7 +304,7 @@ export default function AsientosContablesPage() {
             {documents.map((doc) => (
               <tr className="border-b border-line/70 last:border-0" key={doc.id}>
                 <td className="px-4 py-3 font-mono text-xs">
-                  <button className="font-mono text-xs text-apex underline-offset-2 hover:underline" onClick={() => setSelectedDocument(doc)} type="button" title="Ver registro contable">{doc.full_number}</button>
+                  <button className="font-mono text-xs text-apex underline-offset-2 hover:underline" onDoubleClick={() => setSelectedDocument(doc)} type="button" title="Doble click para ver el registro contable">{doc.full_number}</button>
                 </td>
                 <td className="px-4 py-3">{new Date(doc.posting_date).toLocaleDateString("es-CO")}</td>
                 <td className="px-4 py-3">{doc.society_code}</td>
@@ -591,7 +591,6 @@ function AccountingDocumentModal({ document, onClose }: { document: AccountingDo
       <div className="space-y-4">
         <section className="grid gap-3 rounded-md border border-line bg-paper p-3 text-sm md:grid-cols-4">
           <p><span className="block text-xs text-neutral-500">Fecha contabilizacion</span>{new Date(document.posting_date).toLocaleDateString("es-CO")}</p>
-          <p><span className="block text-xs text-neutral-500">Clase / numero</span>{document.document_type} / {document.full_number}</p>
           <p><span className="block text-xs text-neutral-500">Creado</span>{dateTime(document.created_at)}</p>
           <p><span className="block text-xs text-neutral-500">Usuario</span>{document.created_by_name || document.created_by_user?.email || "--"}</p>
           <p><span className="block text-xs text-neutral-500">Sociedad</span>{document.society_code}</p>
@@ -606,7 +605,6 @@ function AccountingDocumentModal({ document, onClose }: { document: AccountingDo
                 <th className="px-3 py-2">Cuenta</th>
                 <th className="px-3 py-2">Sucursal</th>
                 <th className="px-3 py-2">Centro costo</th>
-                <th className="px-3 py-2">NIT tercero</th>
                 <th className="px-3 py-2">Descripcion</th>
                 <th className="px-3 py-2 text-right">Debito</th>
                 <th className="px-3 py-2 text-right">Credito</th>
@@ -619,7 +617,6 @@ function AccountingDocumentModal({ document, onClose }: { document: AccountingDo
                   <td className="px-3 py-2 font-mono text-xs">{line.account_code}</td>
                   <td className="px-3 py-2 font-mono text-xs">{line.branch_code}</td>
                   <td className="px-3 py-2 font-mono text-xs">{line.cost_center_code}</td>
-                  <td className="px-3 py-2 font-mono text-xs">{line.party_tax_id || "--"}</td>
                   <td className="px-3 py-2">{line.description}</td>
                   <td className="px-3 py-2 text-right">{money(line.debit)}</td>
                   <td className="px-3 py-2 text-right">{money(line.credit)}</td>
@@ -628,7 +625,7 @@ function AccountingDocumentModal({ document, onClose }: { document: AccountingDo
             </tbody>
             <tfoot>
               <tr className="border-t border-line bg-paper font-semibold">
-                <td className="px-3 py-2" colSpan={6}>Totales</td>
+                <td className="px-3 py-2" colSpan={5}>Totales</td>
                 <td className="px-3 py-2 text-right">{money(document.total_debit)}</td>
                 <td className="px-3 py-2 text-right">{money(document.total_credit)}</td>
               </tr>

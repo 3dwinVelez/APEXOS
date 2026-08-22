@@ -31,7 +31,6 @@ Toda pantalla debe poder entenderse sin capacitacion extensa. Antes de considera
 - El texto visible debe ser breve y funcional.
 - La decoracion no debe competir con la operacion.
 - La consistencia entre modulos es parte de la funcionalidad.
-- Los campos numéricos permiten borrar temporalmente el cero, seleccionan el valor cero al recibir foco y normalizan un campo vacío a `0` al salir.
 
 ## Patron aplicado
 

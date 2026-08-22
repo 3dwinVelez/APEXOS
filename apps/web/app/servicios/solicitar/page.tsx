@@ -225,7 +225,7 @@ function PublicServiceRequestContent() {
               </p>
             </div>
             <div className="grid gap-4 px-5 py-6 text-center sm:px-10 sm:py-8">
-              <button className="mx-auto inline-flex h-14 w-full max-w-sm items-center justify-center gap-2 rounded-xl bg-[#08796c] px-6 text-base font-bold text-white shadow-lg shadow-teal-900/20 hover:bg-[#075e54]" onClick={() => { setCreated(null); setForm(initialForm); setRequestItems([{ reference_id: "", service_type: "montaje", observation: "" }]); setStep(0); }} type="button">
+              <button className="mx-auto inline-flex h-14 w-full max-w-sm items-center justify-center gap-2 rounded-xl bg-apex px-6 text-base font-bold text-white shadow-lg shadow-teal-900/20" onClick={() => { setCreated(null); setForm(initialForm); setRequestItems([{ reference_id: "", service_type: "montaje", observation: "" }]); setStep(0); }} type="button">
                 Realizar otra solicitud
               </button>
               <p className="text-sm text-neutral-500">Puedes cerrar esta ventana si no necesitas registrar otro servicio.</p>
@@ -267,8 +267,8 @@ function PublicServiceRequestContent() {
                 const active = index === step;
                 const done = index < step;
                 return (
-                  <button aria-current={active ? "step" : undefined} className={`flex min-w-0 flex-col items-center gap-1 rounded-md px-1 py-2 text-center transition sm:flex-row sm:px-3 sm:text-left ${active ? "bg-[#dff1ed] text-[#075e54]" : done ? "bg-emerald-50 text-emerald-800" : "text-neutral-500"}`} disabled={index > step} key={item.title} onClick={() => setStep(index)} type="button">
-                    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${active ? "bg-[#08796c] text-white" : done ? "bg-emerald-600 text-white" : "bg-paper"}`}>
+                  <button aria-current={active ? "step" : undefined} className={`flex min-w-0 flex-col items-center gap-1 rounded-md px-1 py-2 text-center transition sm:flex-row sm:px-3 sm:text-left ${active ? "bg-apex/10 text-apex" : done ? "bg-emerald-50 text-emerald-800" : "text-neutral-500"}`} disabled={index > step} key={item.title} onClick={() => setStep(index)} type="button">
+                    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${active ? "bg-apex text-white" : done ? "bg-emerald-600 text-white" : "bg-paper"}`}>
                       {done ? <Check size={17} /> : <Icon size={17} />}
                     </span>
                     <span className="min-w-0">
@@ -287,7 +287,7 @@ function PublicServiceRequestContent() {
             {step === 0 ? (
               <div className="space-y-5">
                 <div className="border-b border-line pb-4">
-                  <p className="text-xs font-bold uppercase text-[#075e54]">Paso 1 · Tus datos</p>
+                  <p className="text-xs font-bold uppercase text-apex">Paso 1 · Tus datos</p>
                   <h2 className="mt-1 text-xl font-bold sm:text-2xl">¿Quién solicita el servicio?</h2>
                   <p className="mt-2 text-sm leading-6 text-neutral-600">Necesitamos tu nombre y dos telefonos de contacto para llamarte y confirmar la visita.</p>
                 </div>
@@ -304,7 +304,7 @@ function PublicServiceRequestContent() {
             {step === 1 ? (
               <div className="space-y-5">
                 <div className="border-b border-line pb-4">
-                  <p className="text-xs font-bold uppercase text-[#075e54]">Paso 2 · Dirección</p>
+                  <p className="text-xs font-bold uppercase text-apex">Paso 2 · Dirección</p>
                   <h2 className="mt-1 text-xl font-bold sm:text-2xl">¿Dónde realizaremos el servicio?</h2>
                   <p className="mt-2 text-sm leading-6 text-neutral-600">Escribe la direccion como si se la explicaras a un mensajero.</p>
                 </div>
@@ -320,8 +320,8 @@ function PublicServiceRequestContent() {
                     </select></Field>
                   </div>
                 </div>
-                <div className="rounded-2xl border border-[#4f9489] bg-[#dff1ed] p-4">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#075e54]">Asi quedara registrada</p>
+                <div className="rounded-2xl border border-apex/20 bg-apex/10 p-4">
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-apex">Asi quedara registrada</p>
                   <p className="mt-2 font-semibold">{addressPreview || "Completa los datos de direccion."}</p>
                 </div>
               </div>
@@ -330,7 +330,7 @@ function PublicServiceRequestContent() {
             {step === 2 ? (
               <div className="space-y-5">
                 <div className="border-b border-line pb-4">
-                  <p className="text-xs font-bold uppercase text-[#075e54]">Paso 3 · Servicios</p>
+                  <p className="text-xs font-bold uppercase text-apex">Paso 3 · Servicios</p>
                   <h2 className="mt-1 text-xl font-bold sm:text-2xl">¿Qué productos debemos atender?</h2>
                   <p className="mt-2 text-sm leading-6 text-neutral-600">Registra cada producto por separado. Puedes pedir montaje, desmontaje o ambos.</p>
                 </div>
@@ -349,7 +349,7 @@ function PublicServiceRequestContent() {
                       </div>
                     </div>
                   ))}
-                  <button className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md border border-dashed border-[#4f9489] bg-[#edf7f4] px-4 text-sm font-bold text-[#075e54] disabled:opacity-40 sm:w-auto" disabled={requestItems.length >= 20 || !references.length} onClick={() => setRequestItems((current) => [...current, { reference_id: "", service_type: serviceTypes[0]?.code || "montaje", observation: "" }])} type="button"><Plus size={17} /> Añadir otro producto</button>
+                  <button className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md border border-dashed border-apex bg-apex/5 px-4 text-sm font-bold text-apex disabled:opacity-40 sm:w-auto" disabled={requestItems.length >= 20 || !references.length} onClick={() => setRequestItems((current) => [...current, { reference_id: "", service_type: serviceTypes[0]?.code || "montaje", observation: "" }])} type="button"><Plus size={17} /> Añadir otro producto</button>
                 </div>
                 <Field label="Algo que debamos saber" hint="Opcional: horario, indicaciones o detalles del producto."><textarea className="apex-public-input min-h-28 py-3" placeholder="Ej. Solo hay porteria hasta las 5 pm." value={form.notes} onChange={(event) => setField("notes", event.target.value)} /></Field>
                 {!loadingReferences && !references.length ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">No encontramos referencias activas para esta empresa. Activa el maestro de referencias antes de recibir solicitudes externas.</div> : null}
@@ -379,11 +379,11 @@ function PublicServiceRequestContent() {
                 <ArrowLeft size={17} /> Volver
               </button>
               {step < steps.length - 1 ? (
-                <button className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-[#08796c] px-6 text-sm font-bold text-white hover:bg-[#075e54]" onClick={nextStep} type="button">
+                <button className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-apex px-6 text-sm font-bold text-white" onClick={nextStep} type="button">
                   Continuar a {steps[step + 1].shortTitle} <ArrowRight size={17} />
                 </button>
               ) : (
-                <button className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-[#08796c] px-6 text-sm font-bold text-white hover:bg-[#075e54] disabled:opacity-60" disabled={saving} onClick={submit} type="button">
+                <button className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-apex px-6 text-sm font-bold text-white disabled:opacity-60" disabled={saving} onClick={submit} type="button">
                   <Send size={17} /> {saving ? "Enviando..." : "Enviar solicitud"}
                 </button>
               )}
