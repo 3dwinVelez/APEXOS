@@ -1,0 +1,28 @@
+{
+  "ok": true,
+  "environment": "PRODUCTION",
+  "model_company": "NYVORA",
+  "commit": "aaa25e7d8d78",
+  "executed_at": "2026-08-21T20:38:00-05:00",
+  "run_id": "nyvora-correction-evidence-1787362338627",
+  "order_id": 146,
+  "external_order_id": "1bb776de-112c-4ba1-a5a6-c4ab555a5e5e",
+  "correction_id": "5b4d2438-c6e0-4b02-ab75-5419dc9766ff",
+  "authorization_id": "4fe9f1a4-1da9-4ecc-a43d-b258e5a0a159",
+  "checks": {
+    "authorized_role_full_flow": "passed",
+    "limited_role_blocked": "passed",
+    "other_tenant_blocked": "passed",
+    "binary_validation": "passed",
+    "evidence_persistence": "passed",
+    "platform_regression": "passed"
+  },
+  "platform_checks": [
+    "session",
+    "services_orders",
+    "services_references",
+    "hr_employees",
+    "inventory_items",
+    "accounting_accounts"
+  ]
+}

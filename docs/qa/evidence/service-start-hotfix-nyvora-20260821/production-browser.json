@@ -1,0 +1,21 @@
+{
+  "ok": true,
+  "environment": "PRODUCTION",
+  "company": "NYVORA",
+  "web_commit": "aaa25e7d8d783e169e73959c2f14a39986709a92",
+  "executed_at": "2026-08-21T20:40:00-05:00",
+  "order": {
+    "id": "2f7cc236-45d2-4493-9ec0-1e3792ff3599",
+    "number": "OS-00017",
+    "items": 2
+  },
+  "checks": {
+    "order_execution": "passed",
+    "first_item_in_progress": "passed",
+    "second_item_pending": "passed",
+    "inspection_visible": "passed",
+    "correction_control_visible": "passed",
+    "persistence_after_reload": "passed",
+    "visible_error_absent": "passed"
+  }
+}

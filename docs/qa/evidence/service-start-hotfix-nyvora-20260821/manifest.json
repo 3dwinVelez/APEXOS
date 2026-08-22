@@ -9,7 +9,8 @@
     "error": { "status": "passed", "evidence": ["error.md", "nyvora-certification.json"] },
     "support_scripts": { "status": "passed", "evidence": ["support-scripts.md"] },
     "regression": { "status": "passed", "evidence": ["regression.md"] },
-    "platform_regression": { "status": "passed", "evidence": ["platform-regression.json"] }
+    "platform_regression": { "status": "passed", "evidence": ["platform-regression.json"] },
+    "production_verification": { "status": "passed", "evidence": ["production.md", "production-certification.json", "production-browser.json"] }
   },
   "certification": {
     "status": "passed",
