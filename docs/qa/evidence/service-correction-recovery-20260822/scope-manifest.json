@@ -2,8 +2,8 @@
   "change_id": "service-correction-recovery-20260822",
   "base_commit": "aa1bf70a251fdf0b33d379ce42ad3e1beb46b4c5",
   "base_commits": {
-    "develop": "90170406560876eb69258ef778755d0c674b2924",
-    "main": "aa1bf70a251fdf0b33d379ce42ad3e1beb46b4c5"
+    "develop": "8098f0fd3cf35675551da328475441b1549b507e",
+    "main": "423fb0caa6bd35e45467074c47cff4db9e3406f7"
   },
   "certified_commit": "90170406560876eb69258ef778755d0c674b2924",
   "allowed_paths": [
