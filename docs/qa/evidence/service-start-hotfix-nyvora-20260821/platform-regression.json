@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "environment": "QA",
+  "model_company": "NYVORA",
+  "commit": "cbc00df6bebb",
+  "checks": [
+    "session",
+    "services_orders",
+    "services_references",
+    "hr_employees",
+    "inventory_items",
+    "accounting_accounts"
+  ],
+  "unauthorized_blocked": true
+}
