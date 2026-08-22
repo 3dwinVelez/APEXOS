@@ -178,6 +178,3 @@ Si falla el frontend:
 npm --workspace apps/web run typecheck
 npm --workspace apps/web run build
 ```
-# Infraestructura local minima
-
-El arranque local conecta el servicio `brain` directamente a PostgreSQL. PgBouncer queda reservado para el stack completo y no debe bloquear `ARRANCAR_APEXOS.bat` si su imagen opcional no esta disponible.

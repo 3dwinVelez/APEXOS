@@ -46,7 +46,7 @@ type ServiceOrder = {
   close_longitude?: number;
   duration_minutes?: number;
   no_execution_reason?: string;
-  incidents: Array<{ id: number | string; item_id?: number | string | null; description: string; type: string; created_at?: string; metadata?: Record<string, unknown> }>;
+  incidents: Array<{ id: number | string; item_id?: number | string | null; description: string; type: string; created_at?: string }>;
   photos: ServicePhoto[];
   items: ServiceOrderItem[];
   item_progress?: { total: number; pending: number; active: number; completed: number; blocked: number; all_completed: boolean; partial: boolean };
@@ -70,7 +70,6 @@ const statusLabel: Record<string, string> = {
   en_curso: "En curso",
   inspeccion: "Inspeccion",
   ejecucion: "Ejecucion",
-  bloqueada: "Bloqueada",
   cerrada: "Cerrada",
   no_ejecutada: "No ejecutada",
   cancelada: "Cancelada",
@@ -118,16 +117,6 @@ function panelForStatus(status: string): Panel {
 
 function itemIsFinished(status: string) {
   return ["completada", "no_ejecutada"].includes(status);
-}
-
-function photoBelongsToItem(photo: ServicePhoto, itemKey: string) {
-  return String(photo.metadata?.service_item_key || "") === itemKey
-    || String(photo.item_id || "") === itemKey;
-}
-
-function incidentBelongsToItem(incident: ServiceOrder["incidents"][number], itemKey: string) {
-  return String(incident.metadata?.service_item_key || "") === itemKey
-    || String(incident.item_id || "") === itemKey;
 }
 
 function asCollection<T>(value: unknown): T[] {
@@ -300,7 +289,7 @@ export default function ServiceOperationPage() {
   }, [order, noExecutionReason, selectedItem]);
 
   async function transitionItem(status: string) {
-    if (!selectedItem) return;
+    if (!selectedItem || selectedItem.legacy) return;
     setWorking(true);
     setMessage("");
     try {
@@ -332,7 +321,6 @@ export default function ServiceOperationPage() {
   async function uploadPhoto(type: string, file: CapturedFile | null, metadata: Record<string, unknown> = {}, captureKey = type) {
     const orderLevelEvidence = type === "firma_cliente";
     const targetItemId = !orderLevelEvidence && selectedItem && !selectedItem.legacy ? String(selectedItem.id) : "";
-    const targetItemKey = !orderLevelEvidence && selectedItem ? String(selectedItem.id) : "";
     if (file && (type === "pieza_averiada" ? hasPersistedProblemEvidence(metadata.part_id as number | string) : hasPersistedPhoto(type))) {
       setMessage(`La evidencia ${photoLabels[type] || type} ya fue registrada y no puede repetirse.`);
       return false;
@@ -352,7 +340,7 @@ export default function ServiceOperationPage() {
       const companyId = typeof window !== "undefined" ? localStorage.getItem("apexos_company_id") || "" : "";
       const serviceId = String(params.id);
       let storagePath = "";
-      const clientUploadId = `${params.id}:${targetItemKey || "order"}:${captureKey}:${file.name}:${file.size}:${file.processedAt || Date.now()}`;
+      const clientUploadId = `${params.id}:${targetItemId || "legacy"}:${captureKey}:${file.name}:${file.size}:${file.processedAt || Date.now()}`;
       if (file.base64 && (companyId || AUTHORIZED_UPLOADS_ENABLED)) {
         try {
           const imageData = { base64: file.base64, name: file.name, type: file.type };
@@ -389,7 +377,6 @@ export default function ServiceOperationPage() {
           file_name: file.name,
           metadata: {
             ...metadata,
-            ...(targetItemKey ? { service_item_key: targetItemKey } : {}),
             client_upload_id: clientUploadId,
             original_size_bytes: file.originalSize || file.size,
             optimized_size_bytes: file.size,
@@ -404,7 +391,7 @@ export default function ServiceOperationPage() {
         photos: current.photos.some((photo) => photo.id === savedPhoto.id)
           ? current.photos.map((photo) => photo.id === savedPhoto.id ? savedPhoto : photo)
           : [...current.photos, savedPhoto],
-        items: targetItemKey ? current.items.map((item) => String(item.id) === targetItemKey ? {
+        items: targetItemId ? current.items.map((item) => String(item.id) === targetItemId ? {
           ...item,
           photos: (item.photos || []).some((photo) => photo.id === savedPhoto.id)
             ? (item.photos || []).map((photo) => photo.id === savedPhoto.id ? savedPhoto : photo)
@@ -463,8 +450,7 @@ export default function ServiceOperationPage() {
       } : undefined;
       const body = action === "close-not-executed" ? {
         no_execution_reason: noExecutionReason || "Cliente no disponible / evidencia pendiente",
-        ...(selectedItem && !selectedItem.legacy ? { item_id: Number(selectedItem.id) } : {}),
-        ...(selectedItem?.legacy ? { item_key: String(selectedItem.id) } : {})
+        ...(selectedItem && !selectedItem.legacy ? { item_id: Number(selectedItem.id) } : {})
       } : {};
       const updated = await api<ServiceOrder>(`/api/v1/services/orders/${params.id}/${action}`, {
         method: "PATCH",
@@ -495,24 +481,15 @@ export default function ServiceOperationPage() {
   }
 
   function hasProblemEvidence(partId: number | string) {
-    return Boolean(captures[`pieza_${partId}`]) || Boolean(order?.photos.some((photo) => photoBelongsToItem(photo, selectedItemId) && photo.type === "pieza_averiada" && String(photo.metadata?.part_id) === String(partId)));
+    return Boolean(captures[`pieza_${partId}`]) || Boolean(order?.photos.some((photo) => String(photo.item_id || "") === selectedItemId && photo.type === "pieza_averiada" && String(photo.metadata?.part_id) === String(partId)));
   }
 
   function hasPersistedProblemEvidence(partId: number | string) {
-    const acceptsHistoricalOrderEvidence = Boolean(selectedItem?.legacy && order?.items.length === 1);
-    return Boolean(order?.photos.some((photo) => (
-      photoBelongsToItem(photo, selectedItemId)
-      || (acceptsHistoricalOrderEvidence && !photo.metadata?.service_item_key && photo.item_id == null)
-    ) && photo.type === "pieza_averiada" && String(photo.metadata?.part_id) === String(partId)));
+    return Boolean(order?.photos.some((photo) => String(photo.item_id || "") === selectedItemId && photo.type === "pieza_averiada" && String(photo.metadata?.part_id) === String(partId)));
   }
 
   function hasPersistedPhoto(type: string) {
-    const acceptsHistoricalOrderEvidence = Boolean(selectedItem?.legacy && order?.items.length === 1);
-    return Boolean(order?.photos.some((photo) => photo.type === type && (
-      type === "firma_cliente"
-      || photoBelongsToItem(photo, selectedItemId)
-      || (acceptsHistoricalOrderEvidence && !photo.metadata?.service_item_key && photo.item_id == null)
-    )));
+    return Boolean(order?.photos.some((photo) => photo.type === type && (type === "firma_cliente" || selectedItemId.startsWith("legacy-") || String(photo.item_id || "") === selectedItemId)));
   }
 
   function uploadsPending(types: string[]) {
@@ -596,8 +573,7 @@ export default function ServiceOperationPage() {
     return api<ServiceOrder>(`/api/v1/services/orders/${params.id}/inspection`, {
       method: "PATCH",
       body: JSON.stringify({
-        ...(selectedItem && !selectedItem.legacy ? { item_id: Number(selectedItemId) } : {}),
-        ...(selectedItem?.legacy ? { item_key: selectedItemId } : {}),
+        ...(selectedItemId && !selectedItemId.startsWith("legacy-") ? { item_id: Number(selectedItemId) } : {}),
         decision,
         items: inspection,
         metadata: {
@@ -618,10 +594,7 @@ export default function ServiceOperationPage() {
       if (!inspected) return;
       const updated = await api<ServiceOrder>(`/api/v1/services/orders/${params.id}/execution`, {
         method: "PATCH",
-        body: JSON.stringify({
-          ...(selectedItem && !selectedItem.legacy ? { item_id: Number(selectedItemId) } : {}),
-          ...(selectedItem?.legacy ? { item_key: selectedItemId } : {})
-        })
+        body: JSON.stringify(selectedItemId && !selectedItemId.startsWith("legacy-") ? { item_id: Number(selectedItemId) } : {})
       });
       setOrder((current) => mergeOrderState(current, updated));
       setClosureMode(false);
@@ -715,14 +688,8 @@ export default function ServiceOperationPage() {
     return {
       item,
       index,
-      photos: order.photos.filter((photo) => photo.type !== "firma_cliente" && (
-        photoBelongsToItem(photo, String(item.id))
-        || (item.legacy && order.items.length === 1 && !photo.metadata?.service_item_key && photo.item_id == null)
-      )),
-      incidents: order.incidents.filter((incident) => (
-        incidentBelongsToItem(incident, String(item.id))
-        || (item.legacy && order.items.length === 1 && !incident.metadata?.service_item_key && incident.item_id == null)
-      )),
+      photos: item.legacy ? order.photos : order.photos.filter((photo) => photo.type !== "firma_cliente" && String(photo.item_id || "") === String(item.id)),
+      incidents: item.legacy ? order.incidents : order.incidents.filter((incident) => String(incident.item_id || "") === String(item.id)),
       inspection: itemInspection
     };
   });
@@ -764,14 +731,10 @@ export default function ServiceOperationPage() {
             </button>;
           })}
         </div>
-        {selectedItem && !["completada", "no_ejecutada"].includes(selectedItem.status) ? <div className="mt-3 flex flex-wrap gap-2 border-t border-line pt-3">
+        {selectedItem && !selectedItem.legacy && !["completada", "no_ejecutada"].includes(selectedItem.status) ? <div className="mt-3 flex flex-wrap gap-2 border-t border-line pt-3">
           {selectedItem.status === "pendiente" ? <button className="inline-flex h-11 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white" disabled={working} onClick={() => transitionItem("en_curso")} type="button"><Play size={16} /> Iniciar solicitud</button> : null}
           {selectedItem.status === "ejecucion" ? <span className="inline-flex min-h-11 items-center rounded-md bg-emerald-50 px-3 text-sm font-semibold text-emerald-800">Captura ambas evidencias para finalizar</span> : null}
-          {selectedItem.status === "bloqueada" ? (
-            <button className="inline-flex h-11 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white" disabled={working} onClick={() => transitionItem("en_curso")} type="button"><Play size={16} /> Reanudar solicitud</button>
-          ) : (
-            <button className="inline-flex h-11 items-center gap-2 rounded-md border border-amber-300 px-4 text-sm font-semibold text-amber-900" disabled={working} onClick={() => transitionItem("bloqueada")} type="button"><FileSignature size={16} /> Bloquear</button>
-          )}
+          <button className="inline-flex h-11 items-center gap-2 rounded-md border border-amber-300 px-4 text-sm font-semibold text-amber-900" disabled={working} onClick={() => transitionItem("bloqueada")} type="button"><FileSignature size={16} /> Bloquear</button>
         </div> : null}
       </section> : null}
 

@@ -1,8 +1,6 @@
 const prisma = require("../../core/prisma");
 const { brainQueue } = require("../../fabric/queues");
 const accountingService = require("../accounting/service");
-const { partyRoleWhere } = require("../parties/roles");
-const { createHash } = require("node:crypto");
 
 function appError(statusCode, code, message) {
   const error = new Error(message);
@@ -13,7 +11,7 @@ function appError(statusCode, code, message) {
 
 async function createItem(tenantId, userId, data) {
   const {
-    code = null, legacy_code = null, name, type, unit, category_id, family_code = null, society_code = null, branch_code = null, costing_method = "weighted_average",
+    code = null, name, type, unit, category_id, family_code = null, society_code = null, branch_code = null, costing_method = "weighted_average",
     unit_cost, unit_price, tax_rate = 0,
     stock_min = 0, stock_max = null,
     weight_kg = 0, volume_m3 = 0, metadata = {}
@@ -67,7 +65,6 @@ async function createItem(tenantId, userId, data) {
     data: {
       tenant_id: tenantId,
       code: finalCode,
-      legacy_code: String(legacy_code || "").trim() || null,
       name: name.trim(),
       type,
       unit,
@@ -100,7 +97,6 @@ function normalizeCode(value) {
 function warehouseDto(place) {
   const locations = place.locations || [];
   const stockTotal = locations.reduce((sum, location) => sum + (location.items || []).reduce((inner, item) => inner + Number(item.qty || 0), 0), 0);
-  const consignmentCustomerId = Number(place.metadata?.consignment_customer_id || 0) || null;
   return {
     id: place.id,
     code: place.code,
@@ -108,8 +104,6 @@ function warehouseDto(place) {
     type: place.type,
     warehouse_type: place.warehouse_type || "owned",
     warehouse_type_label: place.warehouse_type === "consignment" ? "Consignacion" : "Propia",
-    consignment_customer_id: consignmentCustomerId,
-    consignment_customer_name: place.consignment_customer?.legal_name || place.consignment_customer?.name || "",
     address: place.address || "",
     city: place.city || "",
     country: place.country || "CO",
@@ -183,7 +177,6 @@ async function updateItem(tenantId, itemId, data) {
     if (!item.active) throw appError(422, "INACTIVE", "No se puede editar un item inactivo");
 
     const { code, type, stock_current, tenant_id, family_code, costing_method, society_code, branch_code, ...safeData } = data;
-    if (safeData.legacy_code !== undefined) safeData.legacy_code = String(safeData.legacy_code || "").trim() || null;
     if (costing_method && costing_method !== "weighted_average") throw appError(400, "INVALID_COSTING_METHOD", "Por ahora solo esta disponible promedio ponderado");
     const nextSocietyCode = society_code !== undefined ? normalizeCode(society_code) : item.society_code;
     const nextBranchCode = branch_code !== undefined ? normalizeCode(branch_code) : item.branch_code;
@@ -229,17 +222,15 @@ async function listItems(tenantId, filters = {}) {
     const {
       search, type, category_id, abc_class,
       low_stock = false, active = true,
-      page = 1, limit = 20, all = false, sort_by = "name", sort_dir = "asc"
+      page = 1, limit = 20, sort_by = "name", sort_dir = "asc"
     } = filters;
 
     const safePage = Math.max(1, Number(page));
-    const safeLimit = String(all) === "true" ? 5000 : Math.min(100, Math.max(1, Number(limit)));
-    const where = {};
-    if (String(active).toLowerCase() !== "all") where.active = ![false, "false", "0"].includes(active);
+    const safeLimit = Math.min(100, Math.max(1, Number(limit)));
+    const where = { active: active !== false };
     if (search) {
       where.OR = [
         { code: { contains: search, mode: "insensitive" } },
-        { legacy_code: { contains: search, mode: "insensitive" } },
         { name: { contains: search, mode: "insensitive" } }
       ];
     }
@@ -290,77 +281,30 @@ async function applyWeightedAverageCost(tx, tenantId, userId, item, qty, unitCos
   return nextAverage;
 }
 
-async function getSocietyValuationTx(tx, societyCode, itemId) {
-  const society = normalizeCode(societyCode);
-  if (!society) throw appError(400, "SOCIETY_REQUIRED", "La sociedad es obligatoria para valorar inventario");
-  let valuation = await tx.skuValuation.findFirst({ where: { society_code: society, item_id: Number(itemId) } });
-  if (valuation) return valuation;
-  const locations = await tx.itemLocation.findMany({ where: { item_id: Number(itemId), location: { place: { society_code: society } } } });
-  const item = await tx.item.findFirst({ where: { id: Number(itemId) } });
-  const quantity = locations.reduce((sum, row) => sum + Number(row.qty || 0), 0);
-  const average = Number(item?.unit_cost || 0);
-  return tx.skuValuation.create({ data: { society_code: society, item_id: Number(itemId), quantity_balance: quantity, value_balance: Math.round(quantity * average * 100) / 100, average_cost: average } });
-}
-
-function calculateSocietyValuation({ quantityBalance, valueBalance, averageCost, qty, unitCost, direction }) {
-  const previousQty = Number(quantityBalance || 0);
-  const previousValue = Number(valueBalance || 0);
-  const previousAverage = Number(averageCost || 0);
-  const quantity = Number(qty || 0);
-  if (quantity <= 0) throw appError(400, "INVALID_QTY", "La cantidad debe ser mayor a cero");
-  if (direction === "in") {
-    const incomingCost = Number(unitCost ?? previousAverage);
-    const nextQty = previousQty + quantity;
-    const nextValue = previousValue + quantity * incomingCost;
-    return { quantity_balance: nextQty, value_balance: Math.round(nextValue * 100) / 100, average_cost: nextQty > 0 ? Math.round((nextValue / nextQty) * 10000) / 10000 : incomingCost, recognized_cost: incomingCost };
-  }
-  if (direction !== "out") throw appError(400, "INVALID_VALUATION_DIRECTION", "Direccion de valoracion invalida");
-  if (previousQty - quantity < -0.0001) throw appError(422, "INSUFFICIENT_SOCIETY_STOCK", "Stock insuficiente en la sociedad");
-  const nextQty = previousQty - quantity;
-  const nextValue = Math.max(0, previousValue - quantity * previousAverage);
-  return { quantity_balance: nextQty, value_balance: Math.round(nextValue * 100) / 100, average_cost: nextQty > 0 ? previousAverage : 0, recognized_cost: previousAverage };
-}
-
-async function applySocietyValuationTx(tx, tenantId, userId, { societyCode, item, qty, unitCost, direction, sourceType, sourceId }) {
-  await tx.$queryRawUnsafe(
-    "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))::text AS lock_result",
-    `${tenantId}:${normalizeCode(societyCode)}:${item.id}`
-  );
-  const valuation = await getSocietyValuationTx(tx, societyCode, item.id);
-  const result = calculateSocietyValuation({ quantityBalance: valuation.quantity_balance, valueBalance: valuation.value_balance, averageCost: valuation.average_cost, qty, unitCost, direction });
-  const updated = await tx.skuValuation.update({ where: { id: valuation.id }, data: { quantity_balance: result.quantity_balance, value_balance: result.value_balance, average_cost: result.average_cost, version: { increment: 1 } } });
-  await tx.productCost.create({ data: { item_id: item.id, society_code: normalizeCode(societyCode), costing_method: "weighted_average", quantity_balance: result.quantity_balance, value_balance: updated.value_balance, average_cost: result.average_cost, last_unit_cost: result.recognized_cost, source_type: sourceType, source_id: sourceId, created_by: userId || null } });
-  return { ...updated, recognized_cost: result.recognized_cost };
-}
-
 async function stockMoveTx(tx, tenantId, userId, data) {
   const {
     item_id, type, qty, from_location_id = null, to_location_id = null,
-    transaction_id = null, purchase_order_line_id = null, cost = null, lot = null, reason = null, expiry = null,
-    society_code = null, source_type = null, source_id = null, correlation_id = null, idempotency_key = null, affect_valuation = true
+    transaction_id = null, cost = null, lot = null, reason = null, expiry = null
   } = data;
 
-  if (type === "transfer") {
-    throw appError(409, "WAREHOUSE_TRANSFER_REQUIRED", "Los traslados deben crearse, despacharse a transito y descargarse completamente desde el modulo de traslados");
-  }
-  if (!["in", "out", "adjustment"].includes(type)) {
+  if (!["in", "out", "transfer", "adjustment"].includes(type)) {
     throw appError(400, "INVALID_MOVE_TYPE", "Tipo de movimiento invalido");
   }
   if (!qty || qty <= 0) throw appError(400, "INVALID_QTY", "La cantidad debe ser mayor a 0");
 
   const item = await tx.item.findFirst({ where: { id: item_id, active: true } });
   if (!item) throw appError(404, "ITEM_NOT_FOUND", "Item no encontrado");
-  if (idempotency_key) {
-    const existing = await tx.movement.findFirst({ where: { idempotency_key } });
-    if (existing) return { movement: existing, item, idempotent: true };
+
+  if ((type === "out" || type === "transfer") && !from_location_id) {
+    throw appError(400, "FROM_LOCATION_REQUIRED", "from_location_id es obligatorio para salidas y transferencias");
+  }
+  if ((type === "in" || type === "transfer") && !to_location_id) {
+    throw appError(400, "TO_LOCATION_REQUIRED", "to_location_id es obligatorio para entradas y transferencias");
+  }
+  if (type === "transfer" && from_location_id === to_location_id) {
+    throw appError(400, "SAME_LOCATION", "No puedes transferir a la misma ubicacion");
   }
 
-  if (type === "out" && !from_location_id) {
-    throw appError(400, "FROM_LOCATION_REQUIRED", "from_location_id es obligatorio para salidas");
-  }
-  if (type === "in" && !to_location_id) {
-    throw appError(400, "TO_LOCATION_REQUIRED", "to_location_id es obligatorio para entradas");
-  }
   const delta = (type === "in" || type === "adjustment") ? qty : -qty;
   if (item.stock_current + delta < 0) {
     throw appError(422, "INSUFFICIENT_STOCK", "Stock insuficiente");
@@ -377,14 +321,9 @@ async function stockMoveTx(tx, tenantId, userId, data) {
     });
   }
 
-  const locationId = to_location_id || from_location_id;
-  const location = locationId ? await tx.location.findFirst({ where: { id: locationId }, include: { place: true } }) : null;
-  const movementSociety = normalizeCode(society_code || location?.place?.society_code || item.society_code);
   let nextAverageCost = item.unit_cost;
-  let valuation = null;
-  if (affect_valuation && item.costing_method === "weighted_average") {
-    valuation = await applySocietyValuationTx(tx, tenantId, userId, { societyCode: movementSociety, item, qty, unitCost: cost ?? item.unit_cost, direction: (type === "in" || type === "adjustment") ? "in" : "out", sourceType: source_type || "movement", sourceId: source_id || transaction_id });
-    nextAverageCost = valuation.average_cost;
+  if ((type === "in" || type === "adjustment") && item.costing_method === "weighted_average") {
+    nextAverageCost = await applyWeightedAverageCost(tx, tenantId, userId, item, qty, cost ?? item.unit_cost, "movement", transaction_id);
   }
 
   const movement = await tx.movement.create({
@@ -394,12 +333,6 @@ async function stockMoveTx(tx, tenantId, userId, data) {
       from_location: from_location_id,
       to_location: to_location_id,
       transaction_id,
-      purchase_order_line_id,
-      society_code: movementSociety,
-      source_type,
-      source_id,
-      correlation_id,
-      idempotency_key,
       qty,
       cost: cost ?? item.unit_cost,
       lot,
@@ -413,7 +346,7 @@ async function stockMoveTx(tx, tenantId, userId, data) {
   if (to_location_id) {
     const currentTo = await tx.itemLocation.findFirst({ where: { item_id, location_id: to_location_id, lot: lot ?? null } });
     if (currentTo) {
-      await tx.itemLocation.update({ where: { id: currentTo.id }, data: { qty: { increment: qty }, cost: nextAverageCost } });
+      await tx.itemLocation.update({ where: { id: currentTo.id }, data: { qty: { increment: qty } } });
     } else {
       await tx.itemLocation.create({
         data: { item_id, location_id: to_location_id, qty, lot, expiry: expiry ? new Date(expiry) : null, cost: cost ?? item.unit_cost }
@@ -438,135 +371,11 @@ async function stockMoveTx(tx, tenantId, userId, data) {
     });
   }
 
-  return { movement, item: updated, valuation };
+  return { movement, item: updated };
 }
 
 async function stockMove(tenantId, userId, data) {
   return prisma.runWithTenant(tenantId, async () => prisma.$transaction((tx) => stockMoveTx(tx, tenantId, userId, data)));
-}
-
-async function ensureTransitLocationTx(tx, tenantId, societyCode) {
-  const code = `TRANSITO-${normalizeCode(societyCode)}`;
-  let place = await tx.place.findFirst({ where: { code, type: "transit", __includeInactive: true } });
-  if (!place) place = await tx.place.create({ data: { type: "transit", code, name: `Mercancia en transito ${societyCode}`, society_code: normalizeCode(societyCode), active: true } });
-  let location = await tx.location.findFirst({ where: { place_id: place.id, code: "TRANSITO" } });
-  if (!location) location = await tx.location.create({ data: { place_id: place.id, code: "TRANSITO", zone: "transit", active: true } });
-  return location;
-}
-
-async function createWarehouseTransfer(tenantId, userId, data) {
-  if (!Array.isArray(data.lines) || !data.lines.length) throw appError(400, "NO_TRANSFER_LINES", "El traslado requiere al menos una linea");
-  const itemIds = data.lines.map((line) => Number(line.item_id));
-  if (new Set(itemIds).size !== itemIds.length) throw appError(400, "DUPLICATE_TRANSFER_SKU", "Cada SKU debe aparecer una sola vez en el traslado");
-  if (Number(data.origin_place_id) === Number(data.destination_place_id)) throw appError(400, "SAME_WAREHOUSE", "La bodega origen y destino deben ser diferentes");
-  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
-    if (data.idempotency_key) {
-      const existing = await tx.warehouseTransfer.findFirst({ where: { idempotency_key: data.idempotency_key }, include: { lines: true } });
-      if (existing) return existing;
-    }
-    const [origin, destination] = await Promise.all([
-      tx.place.findFirst({ where: { id: Number(data.origin_place_id), type: "warehouse", active: true } }),
-      tx.place.findFirst({ where: { id: Number(data.destination_place_id), type: "warehouse", active: true } })
-    ]);
-    if (!origin || !destination) throw appError(404, "WAREHOUSE_NOT_FOUND", "Bodega origen o destino no encontrada");
-    if (!origin.society_code || origin.society_code !== destination.society_code) throw appError(422, "CROSS_SOCIETY_TRANSFER", "El traslado debe realizarse entre bodegas de la misma sociedad");
-    const count = await tx.warehouseTransfer.count();
-    const lines = [];
-    for (const row of data.lines) {
-      if (Number(row.qty) <= 0) throw appError(400, "INVALID_QTY", "La cantidad debe ser mayor a cero");
-      const item = await tx.item.findFirst({ where: { id: Number(row.item_id), active: true } });
-      if (!item) throw appError(404, "ITEM_NOT_FOUND", `Item ${row.item_id} no encontrado`);
-      const valuation = await getSocietyValuationTx(tx, origin.society_code, item.id);
-      lines.push({ tenant_id: tenantId, item_id: item.id, qty: Number(row.qty), unit_cost: Number(valuation.average_cost), lot: row.lot || null });
-    }
-    return tx.warehouseTransfer.create({ data: { number: `TR-${String(count + 1).padStart(6, "0")}`, society_code: origin.society_code, origin_place_id: origin.id, destination_place_id: destination.id, reason: data.reason || null, correlation_id: data.correlation_id || crypto.randomUUID(), idempotency_key: data.idempotency_key || null, created_by: userId || null, lines: { create: lines } }, include: { lines: true } });
-  }));
-}
-
-async function dispatchWarehouseTransfer(tenantId, userId, transferId) {
-  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
-    const transfer = await tx.warehouseTransfer.findFirst({ where: { id: Number(transferId) }, include: { lines: true } });
-    if (!transfer) throw appError(404, "TRANSFER_NOT_FOUND", "Traslado no encontrado");
-    if (transfer.status === "in_transit" || transfer.status === "received") return transfer;
-    if (transfer.status !== "draft") throw appError(422, "INVALID_TRANSFER_STATUS", "Solo un traslado en borrador puede despacharse");
-    const originLocation = await tx.location.findFirst({ where: { place_id: transfer.origin_place_id, active: true }, orderBy: { id: "asc" } });
-    if (!originLocation) throw appError(404, "ORIGIN_LOCATION_NOT_FOUND", "La bodega origen no tiene ubicacion activa");
-    const transit = await ensureTransitLocationTx(tx, tenantId, transfer.society_code);
-    for (const line of transfer.lines) {
-      const originStock = await tx.itemLocation.findFirst({ where: { item_id: line.item_id, location_id: originLocation.id, lot: line.lot } });
-      if (!originStock || Number(originStock.qty) < Number(line.qty)) throw appError(422, "INSUFFICIENT_LOCATION_STOCK", `Stock insuficiente para despachar item ${line.item_id}`);
-      await tx.itemLocation.update({ where: { id: originStock.id }, data: { qty: { decrement: line.qty } } });
-      const transitStock = await tx.itemLocation.findFirst({ where: { item_id: line.item_id, location_id: transit.id, lot: line.lot } });
-      if (transitStock) await tx.itemLocation.update({ where: { id: transitStock.id }, data: { qty: { increment: line.qty }, cost: line.unit_cost } });
-      else await tx.itemLocation.create({ data: { item_id: line.item_id, location_id: transit.id, qty: line.qty, lot: line.lot, cost: line.unit_cost } });
-      await tx.movement.create({ data: { type: "transfer_dispatch", item_id: line.item_id, from_location: originLocation.id, to_location: transit.id, qty: line.qty, cost: line.unit_cost, society_code: transfer.society_code, source_type: "warehouse_transfer", source_id: transfer.id, correlation_id: transfer.correlation_id, idempotency_key: `transfer:${transfer.id}:dispatch:${line.id}`, reason: transfer.reason, created_by: userId || null } });
-    }
-    return tx.warehouseTransfer.update({ where: { id: transfer.id }, data: { status: "in_transit", transit_location_id: transit.id, dispatched_by: userId || null, dispatched_at: new Date() }, include: { lines: true } });
-  }));
-}
-
-async function receiveWarehouseTransfer(tenantId, userId, transferId) {
-  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
-    const transfer = await tx.warehouseTransfer.findFirst({ where: { id: Number(transferId) }, include: { lines: true } });
-    if (!transfer) throw appError(404, "TRANSFER_NOT_FOUND", "Traslado no encontrado");
-    if (transfer.status === "received") return transfer;
-    if (transfer.status !== "in_transit") throw appError(422, "INVALID_TRANSFER_STATUS", "Solo un traslado en transito puede descargarse");
-    const destination = await tx.location.findFirst({ where: { place_id: transfer.destination_place_id, active: true }, orderBy: { id: "asc" } });
-    if (!destination) throw appError(404, "DESTINATION_LOCATION_NOT_FOUND", "La bodega destino no tiene ubicacion activa");
-    for (const line of transfer.lines) {
-      const transitStock = await tx.itemLocation.findFirst({ where: { item_id: line.item_id, location_id: transfer.transit_location_id, lot: line.lot } });
-      if (!transitStock || Number(transitStock.qty) < Number(line.qty)) throw appError(409, "TRANSIT_BALANCE_MISMATCH", "El saldo en transito no permite la descarga completa");
-      await tx.itemLocation.update({ where: { id: transitStock.id }, data: { qty: { decrement: line.qty } } });
-      const destinationStock = await tx.itemLocation.findFirst({ where: { item_id: line.item_id, location_id: destination.id, lot: line.lot } });
-      if (destinationStock) await tx.itemLocation.update({ where: { id: destinationStock.id }, data: { qty: { increment: line.qty }, cost: line.unit_cost } });
-      else await tx.itemLocation.create({ data: { item_id: line.item_id, location_id: destination.id, qty: line.qty, lot: line.lot, cost: line.unit_cost } });
-      await tx.movement.create({ data: { type: "transfer_receive", item_id: line.item_id, from_location: transfer.transit_location_id, to_location: destination.id, qty: line.qty, cost: line.unit_cost, society_code: transfer.society_code, source_type: "warehouse_transfer", source_id: transfer.id, correlation_id: transfer.correlation_id, idempotency_key: `transfer:${transfer.id}:receive:${line.id}`, reason: transfer.reason, created_by: userId || null } });
-    }
-    return tx.warehouseTransfer.update({ where: { id: transfer.id }, data: { status: "received", received_by: userId || null, received_at: new Date() }, include: { lines: true } });
-  }));
-}
-
-async function listWarehouseTransfers(tenantId, query = {}) {
-  return prisma.runWithTenant(tenantId, async () => {
-    const where = {
-      ...(query.status ? { status: query.status } : {}),
-      ...(query.society_code ? { society_code: normalizeCode(query.society_code) } : {}),
-      ...(query.origin_place_id ? { origin_place_id: Number(query.origin_place_id) } : {}),
-      ...(query.destination_place_id ? { destination_place_id: Number(query.destination_place_id) } : {})
-    };
-    if (query.from_date || query.to_date) {
-      where.created_at = {};
-      if (query.from_date) where.created_at.gte = new Date(query.from_date + "T00:00:00");
-      if (query.to_date) where.created_at.lte = new Date(query.to_date + "T23:59:59.999");
-    }
-    const rows = await prisma.warehouseTransfer.findMany({ where, include: { lines: { include: { item: true } } }, orderBy: { created_at: "desc" }, take: Math.min(Number(query.limit || 100), 500) });
-    const placeIds = [...new Set(rows.flatMap((row) => [row.origin_place_id, row.destination_place_id]))];
-    const places = placeIds.length ? await prisma.place.findMany({ where: { id: { in: placeIds } } }) : [];
-    const placeById = new Map(places.map((place) => [place.id, place]));
-    return rows.map((row) => ({ ...row, origin: placeById.get(row.origin_place_id) || null, destination: placeById.get(row.destination_place_id) || null }));
-  });
-}
-
-async function getWarehouseTransfer(tenantId, transferId) {
-  return prisma.runWithTenant(tenantId, async () => {
-    const row = await prisma.warehouseTransfer.findFirst({ where: { id: Number(transferId) }, include: { lines: { include: { item: true } } } });
-    if (!row) throw appError(404, "TRANSFER_NOT_FOUND", "Traslado no encontrado");
-    const userIds = [...new Set([row.created_by, row.dispatched_by, row.received_by].filter(Boolean))];
-    const [origin, destination, users] = await Promise.all([
-      prisma.place.findFirst({ where: { id: row.origin_place_id } }),
-      prisma.place.findFirst({ where: { id: row.destination_place_id } }),
-      userIds.length ? prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true, email: true } }) : []
-    ]);
-    const userById = new Map(users.map((user) => [user.id, user]));
-    return {
-      ...row,
-      origin,
-      destination,
-      created_by_user: row.created_by ? userById.get(row.created_by) || null : null,
-      dispatched_by_user: row.dispatched_by ? userById.get(row.dispatched_by) || null : null,
-      received_by_user: row.received_by ? userById.get(row.received_by) || null : null
-    };
-  });
 }
 
 async function listFamilies(tenantId, query = {}) {
@@ -649,15 +458,7 @@ async function listWarehouses(tenantId, query = {}) {
       include: { locations: { include: { items: true } } },
       orderBy: { code: "asc" }
     });
-    const customerIds = [...new Set(warehouses.map((warehouse) => Number(warehouse.metadata?.consignment_customer_id || 0)).filter(Boolean))];
-    const customers = customerIds.length
-      ? await prisma.party.findMany({ where: { id: { in: customerIds }, active: true, AND: [partyRoleWhere("customer")] } })
-      : [];
-    const customerById = new Map(customers.map((customer) => [customer.id, customer]));
-    return warehouses.map((warehouse) => warehouseDto({
-      ...warehouse,
-      consignment_customer: customerById.get(Number(warehouse.metadata?.consignment_customer_id || 0)) || null
-    }));
+    return warehouses.map(warehouseDto);
   });
 }
 
@@ -673,14 +474,6 @@ async function saveWarehouse(tenantId, data, placeId = null) {
   await assertWarehouseOrganization(tenantId, societyCode, branchCode, costCenterCode);
 
   return prisma.runWithTenant(tenantId, async () => {
-    const consignmentCustomerId = warehouseType === "consignment" ? Number(data.consignment_customer_id || 0) : 0;
-    if (warehouseType === "consignment" && !consignmentCustomerId) {
-      throw appError(400, "CONSIGNMENT_CUSTOMER_REQUIRED", "La bodega de consignacion debe tener un cliente propietario");
-    }
-    if (consignmentCustomerId) {
-      const customer = await prisma.party.findFirst({ where: { id: consignmentCustomerId, active: true, AND: [partyRoleWhere("customer")] } });
-      if (!customer) throw appError(422, "CONSIGNMENT_CUSTOMER_INVALID", "El cliente de consignacion no existe o no esta activo");
-    }
     const duplicated = await prisma.place.findFirst({
       where: { code, __includeInactive: true, ...(placeId ? { id: { not: Number(placeId) } } : {}) }
     });
@@ -703,8 +496,7 @@ async function saveWarehouse(tenantId, data, placeId = null) {
         society_code: societyCode,
         branch_code: branchCode,
         cost_center_code: costCenterCode,
-        warehouse_type: warehouseType,
-        consignment_customer_id: consignmentCustomerId || null
+        warehouse_type: warehouseType
       }
     };
 
@@ -815,10 +607,10 @@ async function adjustStock(tenantId, userId, data) {
 
 async function getKardex(tenantId, itemId, filters = {}) {
   return prisma.runWithTenant(tenantId, async () => {
-    const item = await prisma.item.findFirst({ where: { id: itemId }, select: { id: true, code: true, legacy_code: true, name: true, unit: true, stock_current: true, unit_cost: true } });
+    const item = await prisma.item.findFirst({ where: { id: itemId }, select: { id: true, code: true, name: true, unit: true, stock_current: true, unit_cost: true } });
     if (!item) throw appError(404, "ITEM_NOT_FOUND", "Item no encontrado");
 
-    const { from_date, to_date, type, location_id, warehouse_id, page = 1, limit = 50 } = filters;
+    const { from_date, to_date, type, location_id, page = 1, limit = 50 } = filters;
     const safePage = Math.max(1, Number(page));
     const safeLimit = Math.min(500, Math.max(1, Number(limit)));
     const where = { item_id: itemId };
@@ -826,27 +618,13 @@ async function getKardex(tenantId, itemId, filters = {}) {
     if (from_date || to_date) where.created_at = {};
     if (from_date) where.created_at.gte = new Date(from_date);
     if (to_date) where.created_at.lte = new Date(to_date);
-    if (warehouse_id) {
-      const warehouseLocations = await prisma.location.findMany({ where: { place_id: Number(warehouse_id) }, select: { id: true } });
-      const locationIds = warehouseLocations.map((row) => row.id);
-      where.OR = [{ from_location: { in: locationIds } }, { to_location: { in: locationIds } }];
-    } else if (location_id) where.OR = [{ from_location: Number(location_id) }, { to_location: Number(location_id) }];
+    if (location_id) where.OR = [{ from_location: Number(location_id) }, { to_location: Number(location_id) }];
 
     const [allMovements, total] = await Promise.all([
       prisma.movement.findMany({ where, orderBy: { created_at: "asc" }, include: { transaction: true } }),
       prisma.movement.count({ where })
     ]);
     const locationIds = [...new Set(allMovements.flatMap((movement) => [movement.from_location, movement.to_location]).filter(Boolean))];
-    const transferIds = [...new Set(allMovements.filter((movement) => movement.source_type === "warehouse_transfer" && movement.source_id).map((movement) => movement.source_id))];
-    const initialLoadDocumentIds = [...new Set(allMovements.filter((movement) => movement.source_type === "inventory_initial_load" && movement.source_id).map((movement) => movement.source_id))];
-    const transfers = transferIds.length ? await prisma.warehouseTransfer.findMany({ where: { id: { in: transferIds } }, select: { id: true, number: true } }) : [];
-    const transferById = new Map(transfers.map((transfer) => [transfer.id, transfer]));
-    const purchaseNumbers = [...new Set(allMovements.filter((movement) => movement.source_type === "purchase_order_receipt" && movement.transaction?.number).map((movement) => movement.transaction.number))];
-    const receiptDocuments = purchaseNumbers.length ? await prisma.cntCabdoc.findMany({ where: { document_type: "EM", reference: { in: purchaseNumbers } }, orderBy: { posting_date: "desc" } }) : [];
-    const receiptDocumentByReference = new Map();
-    for (const document of receiptDocuments) if (!receiptDocumentByReference.has(document.reference)) receiptDocumentByReference.set(document.reference, document);
-    const initialLoadDocuments = initialLoadDocumentIds.length ? await prisma.cntCabdoc.findMany({ where: { id: { in: initialLoadDocumentIds } } }) : [];
-    const initialLoadDocumentById = new Map(initialLoadDocuments.map((document) => [document.id, document]));
     const locations = locationIds.length ? await prisma.location.findMany({ where: { id: { in: locationIds } }, include: { place: true } }) : [];
     const locationById = new Map(locations.map((location) => [location.id, location]));
 
@@ -859,7 +637,6 @@ async function getKardex(tenantId, itemId, filters = {}) {
 
     function movementSign(movement) {
       if (movement.type === "out") return -1;
-      if (["transfer", "transfer_dispatch", "transfer_receive"].includes(movement.type)) return 0;
       return 1;
     }
 
@@ -875,19 +652,15 @@ async function getKardex(tenantId, itemId, filters = {}) {
         direction: signedQty >= 0 ? "in" : "out",
         item_id: item.id,
         item_code: item.code,
-        item_legacy_code: item.legacy_code || "",
         item_name: item.name,
         qty: Number(movement.qty || 0),
-        in_qty: signedQty > 0 || movement.type === "transfer_receive" ? Number(movement.qty || 0) : 0,
-        out_qty: signedQty < 0 || movement.type === "transfer_dispatch" ? Number(movement.qty || 0) : 0,
+        in_qty: signedQty > 0 ? Number(movement.qty || 0) : 0,
+        out_qty: signedQty < 0 ? Number(movement.qty || 0) : 0,
         balance: Math.round(balance * 10000) / 10000,
         unit_cost: Number(movement.cost || 0),
         value: Math.round(Number(movement.qty || 0) * Number(movement.cost || 0) * 100) / 100,
-        document_type: movement.source_type || movement.transaction?.type || movement.type,
-        document_id: movement.source_id || movement.transaction_id || null,
-        document_number: movement.transaction?.number || transferById.get(movement.source_id)?.number || initialLoadDocumentById.get(movement.source_id)?.full_number || "",
-        accounting_document_id: initialLoadDocumentById.get(movement.source_id)?.id || receiptDocumentByReference.get(movement.transaction?.number)?.id || null,
-        accounting_document_number: initialLoadDocumentById.get(movement.source_id)?.full_number || receiptDocumentByReference.get(movement.transaction?.number)?.full_number || "",
+        document_type: movement.transaction?.type || movement.reason || movement.type,
+        document_number: movement.transaction?.number || "",
         reason: movement.reason || "",
         from_location_id: movement.from_location,
         to_location_id: movement.to_location,
@@ -904,14 +677,13 @@ async function getKardex(tenantId, itemId, filters = {}) {
 
 async function getInventoryCosts(tenantId, filters = {}) {
   return prisma.runWithTenant(tenantId, async () => {
-    const { search, family_code, society_code, warehouse_id, page = 1, limit = 100, all = false } = filters;
+    const { search, family_code, page = 1, limit = 100 } = filters;
     const safePage = Math.max(1, Number(page));
-    const safeLimit = String(all) === "true" ? 5000 : Math.min(200, Math.max(1, Number(limit)));
+    const safeLimit = Math.min(200, Math.max(1, Number(limit)));
     const where = { active: true };
     if (search) {
       where.OR = [
         { code: { contains: search, mode: "insensitive" } },
-        { legacy_code: { contains: search, mode: "insensitive" } },
         { name: { contains: search, mode: "insensitive" } }
       ];
     }
@@ -932,55 +704,34 @@ async function getInventoryCosts(tenantId, filters = {}) {
       where: { item_id: { in: itemIds } },
       orderBy: { created_at: "desc" }
     }) : [];
-    const valuations = itemIds.length ? await prisma.skuValuation.findMany({ where: { item_id: { in: itemIds }, ...(society_code ? { society_code: normalizeCode(society_code) } : {}) } }) : [];
     const latestCostByItem = new Map();
     for (const row of costRows) {
       if (!latestCostByItem.has(row.item_id)) latestCostByItem.set(row.item_id, row);
     }
     const data = items.map((item) => {
       const latestCost = latestCostByItem.get(item.id);
-      const valuation = valuations.find((row) => row.item_id === item.id && row.society_code === normalizeCode(society_code || item.society_code)) || valuations.find((row) => row.item_id === item.id);
-      const physicalStock = (item.locations || []).filter((row) => row.location?.place?.type === "warehouse" && (!valuation || row.location?.place?.society_code === valuation.society_code)).reduce((sum, row) => sum + Number(row.qty || 0), 0);
-      const transitStock = (item.locations || []).filter((row) => row.location?.place?.type === "transit" && (!valuation || row.location?.place?.society_code === valuation.society_code)).reduce((sum, row) => sum + Number(row.qty || 0), 0);
+      const locationStock = (item.locations || []).reduce((sum, row) => sum + Number(row.qty || 0), 0);
       const warehouseLabels = [...new Set((item.locations || [])
         .filter((row) => Number(row.qty || 0) !== 0)
         .map((row) => `${row.location?.place?.code || ""} ${row.location?.place?.name || ""} / ${row.location?.code || ""}`.trim()))];
-      const warehouseRows = (item.locations || [])
-        .filter((row) => Number(row.qty || 0) !== 0 && (!valuation || row.location?.place?.society_code === valuation.society_code))
-        .filter((row) => !warehouse_id || row.location?.place_id === Number(warehouse_id))
-        .map((row) => ({
-          location_id: row.location_id,
-          warehouse_id: row.location?.place_id,
-          warehouse_code: row.location?.place?.code || "",
-          warehouse_name: row.location?.place?.name || "",
-          location_code: row.location?.code || "",
-          type: row.location?.place?.type || "warehouse",
-          qty: Number(row.qty || 0)
-        }));
-      const averageCost = Number(valuation?.average_cost ?? item.unit_cost ?? latestCost?.average_cost ?? 0);
-      const stock = Number(valuation?.quantity_balance ?? item.stock_current ?? 0);
+      const averageCost = Number(item.unit_cost || latestCost?.average_cost || 0);
+      const stock = Number(item.stock_current || 0);
       return {
         id: item.id,
         code: item.code,
-        legacy_code: item.legacy_code || "",
         name: item.name,
         family_code: item.family_code || item.family?.code || "",
         family_name: item.family?.name || "",
         unit: item.unit,
-        society_code: valuation?.society_code || item.society_code || "",
         stock_current: stock,
-        physical_stock: physicalStock,
-        transit_stock: transitStock,
-        available_stock: physicalStock,
-        location_stock: physicalStock + transitStock,
+        location_stock: locationStock,
         average_cost: averageCost,
         last_unit_cost: Number(latestCost?.last_unit_cost ?? item.unit_cost ?? 0),
-        value_balance: Number(valuation?.value_balance ?? Math.round(stock * averageCost * 100) / 100),
+        value_balance: Math.round(stock * averageCost * 100) / 100,
         last_cost_date: latestCost?.created_at || null,
         last_source_type: latestCost?.source_type || "",
         last_source_id: latestCost?.source_id || null,
-        warehouses: warehouseLabels,
-        warehouse_rows: warehouseRows
+        warehouses: warehouseLabels
       };
     });
     const totals = data.reduce((acc, row) => ({
@@ -1030,97 +781,6 @@ async function reserve() {
   return { reserved: true };
 }
 
-function normalizeInitialLoadHeader(value) {
-  return String(value || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_");
-}
-
-async function parseInitialInventoryWorkbook(buffer) {
-  const ExcelJS = require("exceljs");
-  const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(buffer);
-  const sheet = workbook.worksheets.find((row) => normalizeInitialLoadHeader(row.name) === "cargue_inicial") || workbook.worksheets[0];
-  if (!sheet || sheet.rowCount < 2) throw appError(400, "EMPTY_INITIAL_LOAD", "La plantilla no contiene posiciones");
-  const headers = sheet.getRow(4).values.slice(1).map(normalizeInitialLoadHeader);
-  const required = ["fecha_contabilizacion", "sku", "bodega", "cantidad", "costo_unitario"];
-  const missingHeaders = required.filter((header) => !headers.includes(header));
-  if (missingHeaders.length) throw appError(422, "INVALID_INITIAL_LOAD_TEMPLATE", `Faltan columnas: ${missingHeaders.join(", ")}`);
-  const rows = [];
-  sheet.eachRow((row, rowNumber) => {
-    if (rowNumber <= 4) return;
-    const data = {};
-    headers.forEach((header, index) => { data[header] = row.getCell(index + 1).value; });
-    if (Object.values(data).some((value) => value !== null && value !== undefined && String(value).trim())) rows.push({ ...data, excel_row: rowNumber });
-  });
-  if (!rows.length) throw appError(400, "EMPTY_INITIAL_LOAD", "La plantilla no contiene posiciones");
-  return rows;
-}
-
-function excelDate(value) {
-  if (value instanceof Date) return value;
-  const parsed = new Date(String(value || ""));
-  if (Number.isNaN(parsed.getTime())) throw appError(422, "INVALID_INITIAL_LOAD_DATE", `Fecha de contabilizacion invalida: ${value || "vacia"}`);
-  return parsed;
-}
-
-async function prepareInitialInventoryRows(tx, rows) {
-  const prepared = [];
-  const duplicates = new Set();
-  for (const row of rows) {
-    const sku = normalizeCode(row.sku).toUpperCase();
-    const warehouseCode = normalizeCode(row.bodega).toUpperCase();
-    const locationCode = normalizeCode(row.ubicacion).toUpperCase();
-    const qty = Number(row.cantidad);
-    const unitCost = Number(row.costo_unitario);
-    if (!sku || !warehouseCode || !(qty > 0) || !(unitCost > 0) || !Number.isFinite(unitCost)) throw appError(422, "INVALID_INITIAL_LOAD_ROW", `Fila ${row.excel_row}: SKU, bodega, cantidad y costo positivos son obligatorios`);
-    const item = await tx.item.findFirst({ where: { code: sku, active: true }, include: { family: { include: { accounting: true } } } });
-    if (!item) throw appError(404, "INITIAL_LOAD_ITEM_NOT_FOUND", `Fila ${row.excel_row}: SKU ${sku} no existe o esta inactivo`);
-    const warehouse = await tx.place.findFirst({ where: { code: warehouseCode, type: "warehouse", active: true } });
-    if (!warehouse) throw appError(404, "INITIAL_LOAD_WAREHOUSE_NOT_FOUND", `Fila ${row.excel_row}: bodega ${warehouseCode} no existe o esta inactiva`);
-    if (!warehouse.society_code || item.society_code !== warehouse.society_code) throw appError(422, "INITIAL_LOAD_SOCIETY_MISMATCH", `Fila ${row.excel_row}: el SKU y la bodega deben pertenecer a la misma sociedad`);
-    const location = await tx.location.findFirst({ where: { place_id: warehouse.id, active: true, ...(locationCode ? { code: locationCode } : {}) }, orderBy: { id: "asc" } });
-    if (!location) throw appError(404, "INITIAL_LOAD_LOCATION_NOT_FOUND", `Fila ${row.excel_row}: la bodega no tiene la ubicacion ${locationCode || "activa"}`);
-    const inventoryAccount = item.family?.accounting?.goods_receipt_account_code;
-    if (!inventoryAccount) throw appError(422, "INITIAL_LOAD_INVENTORY_ACCOUNT_REQUIRED", `Fila ${row.excel_row}: el SKU ${sku} no tiene cuenta de inventario de alta en su familia`);
-    const duplicateKey = `${item.id}:${location.id}:${normalizeCode(row.lote)}`;
-    if (duplicates.has(duplicateKey)) throw appError(422, "DUPLICATE_INITIAL_LOAD_ROW", `Fila ${row.excel_row}: SKU, ubicacion y lote repetidos en el archivo`);
-    duplicates.add(duplicateKey);
-    prepared.push({ excel_row: row.excel_row, posting_date: excelDate(row.fecha_contabilizacion), item, warehouse, location, qty, unit_cost: unitCost, lot: normalizeCode(row.lote) || null, notes: normalizeCode(row.observaciones), inventory_account_code: inventoryAccount });
-  }
-  const societies = new Set(prepared.map((row) => row.warehouse.society_code));
-  const dates = new Set(prepared.map((row) => row.posting_date.toISOString().slice(0, 10)));
-  if (societies.size !== 1) throw appError(422, "INITIAL_LOAD_SINGLE_SOCIETY", "Cada archivo de cargue inicial debe contener una sola sociedad");
-  if (dates.size !== 1) throw appError(422, "INITIAL_LOAD_SINGLE_DATE", "Todas las posiciones deben usar la misma fecha de contabilizacion");
-  return prepared;
-}
-
-async function validateInitialInventoryWorkbook(tenantId, buffer) {
-  const rows = await parseInitialInventoryWorkbook(buffer);
-  if (rows.length > 5000) throw appError(413, "INITIAL_LOAD_TOO_LARGE", "La plantilla admite maximo 5.000 posiciones por cargue");
-  const prepared = await prisma.runWithTenant(tenantId, () => prepareInitialInventoryRows(prisma, rows));
-  await accountingService.assertPeriodOpen(tenantId, prepared[0].posting_date);
-  const totalValue = prepared.reduce((sum, row) => sum + row.qty * row.unit_cost, 0);
-  return { valid: true, file_hash: createHash("sha256").update(buffer).digest("hex"), society_code: prepared[0].warehouse.society_code, posting_date: prepared[0].posting_date, bridge_account_code: "99999999", positions: prepared.map((row) => ({ excel_row: row.excel_row, sku: row.item.code, description: row.item.name, warehouse: `${row.warehouse.code} - ${row.warehouse.name}`, location: row.location.code, qty: row.qty, unit: row.item.unit, unit_cost: row.unit_cost, total: Math.round(row.qty * row.unit_cost * 100) / 100, inventory_account_code: row.inventory_account_code })), totals: { lines: prepared.length, units: prepared.reduce((sum, row) => sum + row.qty, 0), value: Math.round(totalValue * 100) / 100 } };
-}
-
-async function postInitialInventoryWorkbook(tenantId, userId, buffer) {
-  const rows = await parseInitialInventoryWorkbook(buffer);
-  if (rows.length > 5000) throw appError(413, "INITIAL_LOAD_TOO_LARGE", "La plantilla admite maximo 5.000 posiciones por cargue");
-  const fileHash = createHash("sha256").update(buffer).digest("hex");
-  const reference = `CINI-${fileHash.slice(0, 16).toUpperCase()}`;
-  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
-    const duplicate = await tx.cntCabdoc.findFirst({ where: { reference } });
-    if (duplicate) throw appError(409, "INITIAL_LOAD_ALREADY_POSTED", `Esta plantilla ya fue contabilizada como ${duplicate.full_number}`);
-    const prepared = await prepareInitialInventoryRows(tx, rows);
-    await accountingService.assertPeriodOpen(tenantId, prepared[0].posting_date);
-    const accountingDocument = await accountingService.createInitialInventoryDocumentTx(tx, tenantId, userId, {
-      posting_date: prepared[0].posting_date, reference, society_code: prepared[0].warehouse.society_code,
-      lines: prepared.map((row) => ({ inventory_account_code: row.inventory_account_code, branch_code: row.warehouse.branch_code || row.item.branch_code, cost_center_code: row.warehouse.cost_center_code || row.warehouse.society_code, amount: row.qty * row.unit_cost, description: `Cargue inicial ${row.item.code} ${row.warehouse.code}` }))
-    });
-    for (const row of prepared) await stockMoveTx(tx, tenantId, userId, { item_id: row.item.id, type: "in", qty: row.qty, to_location_id: row.location.id, cost: row.unit_cost, lot: row.lot, society_code: row.warehouse.society_code, source_type: "inventory_initial_load", source_id: accountingDocument.id, idempotency_key: `initial-load:${fileHash}:${row.excel_row}`, reason: row.notes || `Cargue inicial ${accountingDocument.full_number}` });
-    return { valid: true, reference, accounting_document: accountingDocument, positions: prepared.length, units: prepared.reduce((sum, row) => sum + row.qty, 0), total_value: Math.round(prepared.reduce((sum, row) => sum + row.qty * row.unit_cost, 0) * 100) / 100 };
-  }, { maxWait: 5000, timeout: 30000 }));
-}
-
 module.exports = {
   createItem,
   updateItem,
@@ -1135,19 +795,9 @@ module.exports = {
   applyWeightedAverageCost,
   stockMove,
   stockMoveTx,
-  getSocietyValuationTx,
-  calculateSocietyValuation,
-  applySocietyValuationTx,
-  createWarehouseTransfer,
-  dispatchWarehouseTransfer,
-  receiveWarehouseTransfer,
-  listWarehouseTransfers,
-  getWarehouseTransfer,
   adjustStock,
   getKardex,
   getInventoryCosts,
   runSlotting,
-  validateInitialInventoryWorkbook,
-  postInitialInventoryWorkbook,
   reserve
 };

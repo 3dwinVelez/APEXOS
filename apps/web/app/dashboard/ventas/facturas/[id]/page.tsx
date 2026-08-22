@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
-import { asCollection, asRecord } from "@/lib/api-collections";
 import { VentasNav } from "@/components/ventas-nav";
 
 type InvoiceDetail = {
@@ -12,9 +11,6 @@ type InvoiceDetail = {
   total: number; balance: number; status: string; header_text: string;
   society_code: string; branch_code: string; cost_center_code: string; notes: string;
   customer: { id: number; name: string; legal_name?: string; tax_id?: string; email?: string; balance: number; credit_limit: number };
-  created_at?: string; posted_at?: string; cancelled_at?: string;
-  created_by_user?: { name: string; email: string } | null; posted_by_user?: { name: string; email: string } | null; cancelled_by_user?: { name: string; email: string } | null;
-  accounting_document?: { full_number: string; posting_date: string; lines: Array<{ id: number; account_code: string; description: string; debit: number; credit: number }> } | null;
   lines: Array<{ id: number; line_no: number; item: { id: number; code: string; name: string } | null; description: string; qty: number; unit: string; unit_price: number; discount: number; subtotal: number; tax_rate: number; tax_amount: number; total: number; place: { id: number; code: string; name: string } | null; customer_invoice_number: string | null }>;
   cxc: { id: number; number: string; balance: number; status: string; lines: Array<{ account_code: string; movement: string; amount: number; description: string }> } | null;
 };
@@ -28,22 +24,8 @@ export default function FacturaDetailPage() {
 
   const load = useCallback(() => {
     setLoading(true);
-    api<unknown>(`/api/v1/sales/invoices/${id}`)
-      .then((response) => {
-        const record = asRecord<InvoiceDetail>(response, ["invoice"]);
-        if (!record.id) {
-          setInvoice(null);
-          return;
-        }
-        const cxc = record.cxc
-          ? { ...record.cxc, lines: asCollection<InvoiceDetail["cxc"]["lines"][number]>(record.cxc.lines, ["lines"]) }
-          : null;
-        setInvoice({
-          ...record,
-          lines: asCollection<InvoiceDetail["lines"][number]>(record.lines, ["lines"]),
-          cxc
-        } as InvoiceDetail);
-      })
+    api<InvoiceDetail>(`/api/v1/sales/invoices/${id}`)
+      .then(setInvoice)
       .catch((err) => setError(err instanceof Error ? err.message : "Error"))
       .finally(() => setLoading(false));
   }, [id]);
@@ -94,16 +76,6 @@ export default function FacturaDetailPage() {
             <p>Sociedad: {invoice.society_code} / Sucursal: {invoice.branch_code}</p>
             <p>Concepto: {invoice.header_text}</p>
           </div>
-        </div>
-      </section>
-
-      <section className="rounded-lg border border-line bg-white p-4">
-        <h2 className="mb-3 font-semibold">Trazabilidad del documento</h2>
-        <div className="grid gap-3 text-sm md:grid-cols-4">
-          <p><span className="block text-xs text-neutral-500">Creado</span>{invoice.created_at ? new Date(invoice.created_at).toLocaleString("es-CO") : "--"}<span className="block">{invoice.created_by_user?.name || invoice.created_by_user?.email || "--"}</span></p>
-          <p><span className="block text-xs text-neutral-500">Contabilizado</span>{invoice.posted_at ? new Date(invoice.posted_at).toLocaleString("es-CO") : "--"}<span className="block">{invoice.posted_by_user?.name || invoice.posted_by_user?.email || "--"}</span></p>
-          <p><span className="block text-xs text-neutral-500">Asiento contable</span>{invoice.accounting_document?.full_number || "--"}<span className="block">{invoice.accounting_document?.posting_date ? new Date(invoice.accounting_document.posting_date).toLocaleDateString("es-CO") : "--"}</span></p>
-          <p><span className="block text-xs text-neutral-500">Anulación</span>{invoice.cancelled_at ? new Date(invoice.cancelled_at).toLocaleString("es-CO") : "--"}<span className="block">{invoice.cancelled_by_user?.name || invoice.cancelled_by_user?.email || "--"}</span></p>
         </div>
       </section>
 

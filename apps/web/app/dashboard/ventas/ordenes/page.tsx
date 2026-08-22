@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { asCollection } from "@/lib/api-collections";
 import { VentasNav } from "@/components/ventas-nav";
 
 type SaleOrder = { id: number; number: string; status: string; total: number; party: { name: string } };
@@ -12,8 +11,8 @@ export default function OrdenesVentaPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    api<unknown>("/api/v1/sales/orders")
-      .then((response) => setOrders(asCollection<SaleOrder>(response, ["orders"])))
+    api<SaleOrder[]>("/api/v1/sales/orders")
+      .then((rows) => setOrders(rows || []))
       .catch((err) => setError(err instanceof Error ? err.message : "Error cargando órdenes"));
   }, []);
 

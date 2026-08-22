@@ -25,6 +25,16 @@ async function accountsReceivableRoutes(fastify) {
     preHandler: requirePermission("accounting", "read")
   }, async (request) => service.getCustomerBalance(request.user?.tenant_id, Number(request.params.id)));
 
+  // Payments
+  fastify.post("/accounts-receivable/payments", {
+    schema: schema.paymentSchema,
+    preHandler: requirePermission("accounting", "write")
+  }, async (request, reply) => reply.code(201).send(await service.registerPayment(
+    request.user?.tenant_id,
+    request.user.id,
+    request.body
+  )));
+
   // Reports
   fastify.get("/accounts-receivable/reports/aging", {
     preHandler: requirePermission("accounting", "read")

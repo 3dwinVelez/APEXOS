@@ -427,12 +427,7 @@ function serviceOrderHref(order: ServiceOrder) {
 }
 
 function correctionHref(order: ServiceOrder) {
-  const href = serviceOrderHref(order);
-  return `${href}${href.includes("?") ? "&" : "?"}corregir=1`;
-}
-
-function correctionAvailable(order: ServiceOrder) {
-  return !requiresAdminCompletion(order) && isOperableOrderId(order.id);
+  return `${serviceOrderHref(order)}?corregir=1`;
 }
 
 function orderKey(order: ServiceOrder) {
@@ -1073,7 +1068,7 @@ export default function ServicesPage() {
                   <Pencil size={15} /> Editar o reasignar
                 </button>
               ) : null}
-              {canCorrectAnyState && correctionAvailable(order) ? (
+              {canCorrectAnyState && isOperableOrderId(order.id) ? (
                 <Link className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-teal-700 text-sm font-semibold text-white" href={correctionHref(order)}>
                   <ShieldCheck size={15} /> Corregir y anexar
                 </Link>
@@ -1152,7 +1147,7 @@ export default function ServicesPage() {
                         </div>
                       </td>
                       <td className="text-right align-middle">
-                        {canCorrectAnyState && correctionAvailable(order) ? (
+                        {canCorrectAnyState && isOperableOrderId(order.id) ? (
                           <Link className="mb-1.5 inline-flex h-8 items-center gap-1.5 rounded-md bg-teal-700 px-2 text-xs font-semibold text-white shadow-sm transition hover:bg-teal-800" href={correctionHref(order)}>
                             <ShieldCheck size={14} /> Corregir
                           </Link>

@@ -9,23 +9,30 @@ test("la factura de compra reutiliza la transaccion para crear el documento cont
   const tx = {
     party: { findFirst: async () => ({ id: 11, type: "supplier", active: true }) },
     location: { findFirst: async () => ({ id: 22, code: "BOD-QA", active: true, place: {} }) },
+    productCost: { create: async () => ({}) },
+    itemLocation: {
+      findFirst: async () => null,
+      create: async () => ({})
+    },
+    movement: { create: async () => ({}) },
     item: {
       findFirst: async () => ({
         id: 33,
         code: "SKU-QA",
         name: "Producto QA",
         stock_current: 0,
+        unit_cost: 0,
         family: {
           accounting: {
             goods_receipt_account_code: "1435",
             gr_ir_account_code: "2610"
           }
         }
-      })
+      }),
+      update: async () => ({})
     }
   };
   let accountingTx = null;
-  let inventoryTx = null;
 
   require.cache[prismaPath] = {
     id: prismaPath,
@@ -40,11 +47,7 @@ test("la factura de compra reutiliza la transaccion para crear el documento cont
     id: inventoryPath,
     filename: inventoryPath,
     loaded: true,
-    exports: {
-      stockMoveTx: async (receivedTx) => {
-        inventoryTx = receivedTx;
-      }
-    }
+    exports: {}
   };
   require.cache[accountingPath] = {
     id: accountingPath,
@@ -84,6 +87,5 @@ test("la factura de compra reutiliza la transaccion para crear el documento cont
   });
 
   assert.strictEqual(accountingTx, tx);
-  assert.strictEqual(inventoryTx, tx);
   assert.equal(result.number, "CP-000044");
 });

@@ -31,13 +31,8 @@ const accountingRoutes = [
   ["GET", "/api/v1/accounting/vat-masters"],
   ["POST", "/api/v1/accounting/vat-masters"],
   ["DELETE", "/api/v1/accounting/vat-masters/COMPRAS-19"],
-  ["GET", "/api/v1/accounting/retention-masters"],
-  ["POST", "/api/v1/accounting/retention-masters"],
-  ["GET", "/api/v1/accounting/suppliers/1/retentions"],
-  ["PUT", "/api/v1/accounting/suppliers/1/retentions"],
   ["GET", "/api/v1/accounting/payable-accounts"],
   ["GET", "/api/v1/accounting/documents"],
-  ["GET", "/api/v1/accounting/documents/1"],
   ["POST", "/api/v1/accounting/documents"],
   ["GET", "/api/v1/accounting/payables/documents"],
   ["GET", "/api/v1/accounting/payables/open-invoices"],
@@ -51,17 +46,7 @@ const accountingRoutes = [
   ["GET", "/api/v1/accounting/third-parties"],
   ["POST", "/api/v1/accounting/third-parties"],
   ["PUT", "/api/v1/accounting/third-parties/1"],
-  ["GET", "/api/v1/treasury/banks"],
-  ["POST", "/api/v1/treasury/banks"],
-  ["PATCH", "/api/v1/treasury/banks/1"],
-  ["GET", "/api/v1/treasury/open-items"],
-  ["GET", "/api/v1/treasury/payments"],
-  ["GET", "/api/v1/treasury/payments/1"],
-  ["POST", "/api/v1/treasury/payments"],
-  ["POST", "/api/v1/treasury/payments/1/cancel"],
-  ["GET", "/api/v1/treasury/advances"],
-  ["POST", "/api/v1/treasury/advances"],
-  ["POST", "/api/v1/treasury/advances/1/apply"]
+  ["POST", "/api/v1/accounting/payments"]
 ];
 
 test("all accounting UI routes are registered under /api/v1", async (t) => {

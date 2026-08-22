@@ -9,7 +9,6 @@ import { ModalFrame } from "@/components/ui/ModalFrame";
 type ThirdParty = {
   id: number;
   type: string;
-  roles?: string[];
   name: string;
   legal_name?: string | null;
   tax_id?: string | null;
@@ -30,28 +29,17 @@ type ThirdParty = {
     tax_responsibilities?: string[];
     dane_code?: string | null;
     department?: string | null;
-    receivable_account_code?: string | null;
-    withholding_rates?: Array<{ code: string }>;
-    customer_retentions?: Array<{ code: string }>;
-    supplier_retention_codes?: string[];
-    payable_account_code?: string | null;
   };
 };
 type DocumentTypeMaster = { code: string; description: string; active: boolean; source?: string };
 type DaneLocationMaster = { dane_code: string; city: string; department: string; active: boolean; source?: string };
-type AccountMaster = { id: number; code: string; name: string; type: string; allows_tx: boolean; active: boolean };
-type RetentionMaster = { id?: number; code: string; description: string; retention_type: string; percent: number; minimum_base?: number; active: boolean };
 type ThirdPartyMasters = {
   document_types: DocumentTypeMaster[];
   locations: DaneLocationMaster[];
-  accounts: AccountMaster[];
-  sales_retentions: RetentionMaster[];
-  purchase_retentions: RetentionMaster[];
 };
 
 const EMPTY = {
   type: "customer",
-  roles: ["customer"] as string[],
   name: "",
   legal_name: "",
   person_type: "juridica",
@@ -69,24 +57,15 @@ const EMPTY = {
   department: "",
   dane_code: "",
   tax_responsibilities: "",
-  receivable_account_code: "1305",
-  payable_account_code: "2205",
-  sales_retention_codes: [] as string[],
-  supplier_retention_codes: [] as string[],
   active: true
 };
-const EMPTY_MASTERS: ThirdPartyMasters = { document_types: [], locations: [], accounts: [], sales_retentions: [], purchase_retentions: [] };
+const EMPTY_MASTERS: ThirdPartyMasters = { document_types: [], locations: [] };
 
 const TYPES = [
   ["customer", "Cliente"],
   ["supplier", "Proveedor"],
   ["employee", "Empleado"]
 ];
-const roleLabels = Object.fromEntries(TYPES);
-
-function partyRoles(item: ThirdParty) {
-  return item.roles?.length ? item.roles : [item.type];
-}
 const LEGACY_DOCUMENT_TYPES: Record<string, string> = {
   NIT: "31",
   CC: "13",
@@ -131,7 +110,6 @@ export default function TercerosContablesPage() {
   const [editing, setEditing] = useState<ThirdParty | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [mastersOpen, setMastersOpen] = useState(false);
-  const [formTab, setFormTab] = useState<"general" | "retentions">("general");
   const [search, setSearch] = useState("");
   const [type, setType] = useState("");
   const [loading, setLoading] = useState(true);
@@ -157,13 +135,8 @@ export default function TercerosContablesPage() {
 
   const loadMasters = useCallback(async () => {
     try {
-      const [thirdPartyMasters, accounts, salesRetentions, purchaseRetentions] = await Promise.all([
-        api<Pick<ThirdPartyMasters, "document_types" | "locations">>("/api/v1/accounting/third-party-masters"),
-        api<AccountMaster[]>("/api/v1/accounting/accounts?active=true&limit=1000"),
-        api<RetentionMaster[]>("/api/v1/accounting/retention-masters?scope=sales"),
-        api<RetentionMaster[]>("/api/v1/accounting/retention-masters?scope=purchases")
-      ]);
-      setMasters({ ...thirdPartyMasters, accounts, sales_retentions: salesRetentions, purchase_retentions: purchaseRetentions });
+      const data = await api<ThirdPartyMasters>("/api/v1/accounting/third-party-masters");
+      setMasters(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudieron cargar maestros contables");
     }
@@ -181,17 +154,14 @@ export default function TercerosContablesPage() {
   const stats = useMemo(() => ({
     total: items.length,
     active: items.filter((item) => item.active).length,
-    suppliers: items.filter((item) => partyRoles(item).includes("supplier")).length,
-    customers: items.filter((item) => partyRoles(item).includes("customer")).length
+    suppliers: items.filter((item) => item.type === "supplier").length,
+    customers: items.filter((item) => item.type === "customer").length
   }), [items]);
   const documentLabels = useMemo(() => Object.fromEntries(masters.document_types.map((item) => [item.code, item.description])), [masters.document_types]);
-  const receivableAccounts = useMemo(() => masters.accounts.filter((account) => account.active !== false && account.allows_tx !== false && account.type === "asset" && ["1305", "1330", "1355"].some((prefix) => account.code.startsWith(prefix))), [masters.accounts]);
-  const payableAccounts = useMemo(() => masters.accounts.filter((account) => account.active !== false && account.allows_tx !== false && account.type === "liability" && (["2205", "2335"].some((prefix) => account.code.startsWith(prefix)) || /proveedor|pagar/i.test(account.name))), [masters.accounts]);
 
   function openCreate() {
     setEditing(null);
     setForm(EMPTY);
-    setFormTab("general");
     setModalOpen(true);
   }
 
@@ -199,7 +169,6 @@ export default function TercerosContablesPage() {
     setEditing(item);
     setForm({
       type: item.type || "customer",
-      roles: partyRoles(item),
       name: item.name || "",
       legal_name: item.legal_name || "",
       person_type: item.metadata?.person_type || "juridica",
@@ -217,13 +186,8 @@ export default function TercerosContablesPage() {
       department: item.metadata?.department || "",
       dane_code: item.metadata?.dane_code || "",
       tax_responsibilities: item.metadata?.tax_responsibilities?.join(", ") || "",
-      receivable_account_code: item.metadata?.receivable_account_code || "1305",
-      payable_account_code: item.metadata?.payable_account_code || "2205",
-      sales_retention_codes: (item.metadata?.customer_retentions || item.metadata?.withholding_rates)?.map((row) => row.code) || [],
-      supplier_retention_codes: item.metadata?.supplier_retention_codes || [],
       active: item.active
     });
-    setFormTab("general");
     setModalOpen(true);
   }
 
@@ -240,14 +204,11 @@ export default function TercerosContablesPage() {
       const computedLegalName = form.person_type === "natural" ? naturalLegalName(form) : form.legal_name || form.name;
       const payload = {
         ...form,
-        type: form.roles[0],
         name: form.person_type === "natural" ? computedLegalName : form.name,
         legal_name: computedLegalName,
         tax_type: form.document_type,
         verification_digit: calculateVerificationDigit(form.tax_id),
-        tax_responsibilities: form.tax_responsibilities.split(",").map((value) => value.trim()).filter(Boolean),
-        withholding_rates: form.sales_retention_codes.map((code) => ({ code })),
-        supplier_retention_codes: form.supplier_retention_codes
+        tax_responsibilities: form.tax_responsibilities.split(",").map((value) => value.trim()).filter(Boolean)
       };
       await api<ThirdParty>(editing ? `/api/v1/accounting/third-parties/${editing.id}` : "/api/v1/accounting/third-parties", {
         method: editing ? "PUT" : "POST",
@@ -268,11 +229,11 @@ export default function TercerosContablesPage() {
     setError("");
     setOk("");
     try {
-      const data = await api<Pick<ThirdPartyMasters, "document_types" | "locations">>("/api/v1/accounting/third-party-masters/document-types", {
+      const data = await api<ThirdPartyMasters>("/api/v1/accounting/third-party-masters/document-types", {
         method: "POST",
         body: JSON.stringify(docDraft)
       });
-      setMasters((current) => ({ ...current, ...data }));
+      setMasters(data);
       setDocDraft({ code: "", description: "" });
       setOk("Tipo de documento guardado");
     } catch (err) {
@@ -287,11 +248,11 @@ export default function TercerosContablesPage() {
     setError("");
     setOk("");
     try {
-      const data = await api<Pick<ThirdPartyMasters, "document_types" | "locations">>("/api/v1/accounting/third-party-masters/locations", {
+      const data = await api<ThirdPartyMasters>("/api/v1/accounting/third-party-masters/locations", {
         method: "POST",
         body: JSON.stringify(locationDraft)
       });
-      setMasters((current) => ({ ...current, ...data }));
+      setMasters(data);
       setLocationDraft({ dane_code: "", city: "", department: "" });
       setOk("Ciudad DANE guardada");
     } catch (err) {
@@ -430,7 +391,7 @@ export default function TercerosContablesPage() {
                   <p className="font-mono text-xs">{normalizeDocumentType(item.tax_type || item.metadata?.document_type)} {item.tax_id || "-"}{item.metadata?.verification_digit !== null && item.metadata?.verification_digit !== undefined ? `-${item.metadata.verification_digit}` : ""}</p>
                   <p className="text-xs text-neutral-500">{documentLabels[normalizeDocumentType(item.tax_type || item.metadata?.document_type)] || item.tax_type || "Documento"}</p>
                 </td>
-                <td className="px-4 py-3">{partyRoles(item).map((role) => roleLabels[role] || role).join(" / ")}</td>
+                <td className="px-4 py-3">{TYPES.find(([value]) => value === item.type)?.[1] || item.type}</td>
                 <td className="px-4 py-3">{[item.city, item.metadata?.department].filter(Boolean).join(", ") || "-"}</td>
                 <td className="px-4 py-3">
                   <p>{item.email || "-"}</p>
@@ -455,31 +416,13 @@ export default function TercerosContablesPage() {
       {modalOpen ? (
         <ModalFrame title={editing ? "Editar tercero" : "Nuevo tercero"} onClose={() => setModalOpen(false)} maxWidth="max-w-5xl">
           <form className="space-y-5" onSubmit={save}>
-            <div className="flex gap-2 border-b border-line" role="tablist" aria-label="Secciones del tercero">
-              <button className={`border-b-2 px-4 py-2 text-sm font-medium ${formTab === "general" ? "border-apex text-apex" : "border-transparent text-neutral-500"}`} onClick={() => setFormTab("general")} role="tab" aria-selected={formTab === "general"} type="button">Datos generales</button>
-              <button className={`border-b-2 px-4 py-2 text-sm font-medium ${formTab === "retentions" ? "border-apex text-apex" : "border-transparent text-neutral-500"}`} onClick={() => setFormTab("retentions")} role="tab" aria-selected={formTab === "retentions"} type="button">Retenciones</button>
-            </div>
-            {formTab === "general" ? <>
             <section className="grid gap-4 md:grid-cols-4">
-              <fieldset className="text-sm md:col-span-2">
-                <legend>Roles del tercero</legend>
-                <div className="mt-1 flex min-h-10 flex-wrap items-center gap-4 rounded-md border border-line px-3">
-                  {TYPES.map(([value, label]) => (
-                    <label className="inline-flex items-center gap-2" key={value}>
-                      <input
-                        checked={form.roles.includes(value)}
-                        onChange={(event) => setForm((prev) => {
-                          const roles = event.target.checked ? [...new Set([...prev.roles, value])] : prev.roles.filter((role) => role !== value);
-                          return { ...prev, roles, type: roles[0] || prev.type };
-                        })}
-                        type="checkbox"
-                      />
-                      {label}
-                    </label>
-                  ))}
-                </div>
-                {!form.roles.length ? <span className="text-xs text-red-600">Selecciona al menos un rol.</span> : null}
-              </fieldset>
+              <label className="text-sm">
+                Tipo
+                <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.type} onChange={(event) => setForm((prev) => ({ ...prev, type: event.target.value }))}>
+                  {TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </label>
               <label className="text-sm">
                 Persona
                 <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.person_type} onChange={(event) => setForm((prev) => ({ ...prev, person_type: event.target.value }))}>
@@ -576,68 +519,15 @@ export default function TercerosContablesPage() {
                 Responsabilidades
                 <input className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" placeholder="R-99-PN, O-13..." value={form.tax_responsibilities} onChange={(event) => setForm((prev) => ({ ...prev, tax_responsibilities: event.target.value }))} />
               </label>
-              {form.roles.includes("customer") ? (
-                <label className="text-sm md:col-span-2">
-                    Cuenta asociada CxC
-                    <select className="mt-1 h-10 w-full rounded-md border border-line px-3 font-mono text-sm" value={form.receivable_account_code} onChange={(event) => setForm((prev) => ({ ...prev, receivable_account_code: event.target.value }))} required>
-                      <option value="">Seleccionar cuenta CxC</option>
-                      {receivableAccounts.map((account) => <option key={account.id} value={account.code}>{account.code} - {account.name}</option>)}
-                    </select>
-                </label>
-              ) : null}
-              {form.roles.includes("supplier") ? (
-                <label className="text-sm md:col-span-2">
-                    Cuenta asociada CxP
-                    <select className="mt-1 h-10 w-full rounded-md border border-line px-3 font-mono text-sm" value={form.payable_account_code} onChange={(event) => setForm((prev) => ({ ...prev, payable_account_code: event.target.value }))} required>
-                      <option value="">Seleccionar cuenta CxP</option>
-                      {payableAccounts.map((account) => <option key={account.id} value={account.code}>{account.code} - {account.name}</option>)}
-                    </select>
-                </label>
-              ) : null}
               <label className="text-sm md:col-span-4">
                 Direccion
                 <input className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.address} onChange={(event) => setForm((prev) => ({ ...prev, address: event.target.value }))} />
               </label>
             </section>
-            </> : (
-              <section className="grid gap-5 md:grid-cols-2" role="tabpanel">
-                {form.roles.includes("customer") ? (
-                  <fieldset className="rounded-md border border-line p-4">
-                    <legend className="px-1 text-sm font-semibold">Retenciones de venta</legend>
-                    <p className="mb-3 text-xs text-neutral-500">Solo se muestran retenciones activas del maestro de ventas.</p>
-                    <div className="space-y-2">
-                      {masters.sales_retentions.filter((retention) => retention.active !== false).map((retention) => (
-                        <label className="flex items-start gap-2 rounded-md border border-line p-3 text-sm" key={retention.code}>
-                          <input checked={form.sales_retention_codes.includes(retention.code)} onChange={(event) => setForm((prev) => ({ ...prev, sales_retention_codes: event.target.checked ? [...new Set([...prev.sales_retention_codes, retention.code])] : prev.sales_retention_codes.filter((code) => code !== retention.code) }))} type="checkbox" />
-                          <span><strong className="font-mono">{retention.code}</strong><span className="block text-xs text-neutral-500">{retention.description} · {retention.percent}%</span></span>
-                        </label>
-                      ))}
-                      {!masters.sales_retentions.some((retention) => retention.active !== false) ? <p className="text-sm text-neutral-500">No hay retenciones de venta activas.</p> : null}
-                    </div>
-                  </fieldset>
-                ) : null}
-                {form.roles.includes("supplier") ? (
-                  <fieldset className="rounded-md border border-line p-4">
-                    <legend className="px-1 text-sm font-semibold">Retenciones de compra</legend>
-                    <p className="mb-3 text-xs text-neutral-500">Solo se muestran retenciones activas del maestro de compras.</p>
-                    <div className="space-y-2">
-                      {masters.purchase_retentions.filter((retention) => retention.active !== false).map((retention) => (
-                        <label className="flex items-start gap-2 rounded-md border border-line p-3 text-sm" key={retention.code}>
-                          <input checked={form.supplier_retention_codes.includes(retention.code)} onChange={(event) => setForm((prev) => ({ ...prev, supplier_retention_codes: event.target.checked ? [...new Set([...prev.supplier_retention_codes, retention.code])] : prev.supplier_retention_codes.filter((code) => code !== retention.code) }))} type="checkbox" />
-                          <span><strong className="font-mono">{retention.code}</strong><span className="block text-xs text-neutral-500">{retention.description} · {retention.percent}%</span></span>
-                        </label>
-                      ))}
-                      {!masters.purchase_retentions.some((retention) => retention.active !== false) ? <p className="text-sm text-neutral-500">No hay retenciones de compra activas.</p> : null}
-                    </div>
-                  </fieldset>
-                ) : null}
-                {!form.roles.includes("customer") && !form.roles.includes("supplier") ? <p className="text-sm text-neutral-500">Asigna el rol Cliente o Proveedor para configurar retenciones.</p> : null}
-              </section>
-            )}
 
             <div className="flex justify-end gap-2 border-t border-line pt-4">
               <button className="h-10 rounded-md border border-line px-4 text-sm" onClick={() => setModalOpen(false)} type="button">Cancelar</button>
-              <button className="h-10 rounded-md bg-apex px-4 text-sm font-medium text-white disabled:opacity-60" disabled={saving || !form.roles.length} type="submit">{saving ? "Guardando..." : "Guardar"}</button>
+              <button className="h-10 rounded-md bg-apex px-4 text-sm font-medium text-white disabled:opacity-60" disabled={saving} type="submit">{saving ? "Guardando..." : "Guardar"}</button>
             </div>
           </form>
           <datalist id="accounting-dane-locations">

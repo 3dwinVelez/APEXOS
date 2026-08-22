@@ -11,9 +11,6 @@ config/*.env
 .next-dev/
 .next-cert/
 apps/web/.next-dev-*/
-apps/web/.next-agent-*/
-.tools/
-outputs/
 dist/
 coverage/
 *.log
@@ -31,4 +28,3 @@ venv/
 logs/
 .npm-cache/
 supabase/.temp/
-.agents/reports/
