@@ -6,7 +6,7 @@ Evitar que una corrección de un módulo reemplace o elimine funciones previamen
 
 ## Flujo obligatorio
 
-1. Actualizar referencias remotas y registrar el SHA actual del destino.
+1. Actualizar referencias remotas y registrar el SHA actual del destino. El validador compara los árboles completos aunque las ramas tengan commits de merge distintos.
 2. Implementar únicamente en `desarrollo` sobre el baseline vigente.
 3. Inventariar los archivos indispensables y declararlos en `allowed_paths`.
 4. Declarar individualmente cualquier eliminación en `allowed_deletions`.

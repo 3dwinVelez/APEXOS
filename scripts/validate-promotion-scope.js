@@ -55,7 +55,8 @@ function main() {
   const target = git(["rev-parse", targetRef]);
   const certified = git(["rev-parse", manifest.certified_commit]);
   if (target !== git(["rev-parse", manifest.base_commit])) fail(`el destino ${targetRef} cambio desde el baseline aprobado`);
-  try { git(["merge-base", "--is-ancestor", target, candidate]); } catch { fail("el candidato no contiene el destino vigente"); }
+  const commonBase = git(["merge-base", target, candidate]);
+  if (!commonBase) fail("el candidato y el destino no comparten un historial controlado");
   try { git(["merge-base", "--is-ancestor", certified, candidate]); } catch { fail("el candidato no contiene el commit funcional certificado"); }
   const changes = changedFiles(target, candidate);
   validateManifest(manifest, path.dirname(absoluteManifest), changes);
