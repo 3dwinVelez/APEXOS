@@ -37,7 +37,4 @@ test("la solicitud publica conserva contraste aunque el panel use tema oscuro", 
   assert.match(styles, /\.apex-service-request \.bg-apex\\\/10/);
   assert.match(styles, /border-color: var\(--request-line\)/);
   assert.match(styles, /color: #697671/);
-  assert.match(source, /bg-\[\#dff1ed\] text-\[\#075e54\]/);
-  assert.match(source, /bg-\[\#08796c\].*text-white/);
-  assert.doesNotMatch(source, /active \? "bg-apex\/10 text-apex"/);
 });

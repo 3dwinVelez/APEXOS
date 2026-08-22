@@ -100,7 +100,7 @@ async function invoiceSaleOrder(tenantId, userId, soId, data) {
       });
     }
 
-    await tx.party.update({ where: { id: saleOrder.party_id }, data: { receivable_balance: { increment: total } } });
+    await tx.party.update({ where: { id: saleOrder.party_id }, data: { balance: { increment: total } } });
 
     await tx.transaction.update({ where: { id: saleOrder.id }, data: { status: "invoiced" } });
 

@@ -99,9 +99,9 @@ services:
     volumes:
       - ../services/brain/models:/app/models
     environment:
-      DATABASE_URL: postgresql://apex:${DB_PASS:-apex_dev_password}@postgres:5432/apexos
+      DATABASE_URL: postgresql://apex:${DB_PASS:-apex_dev_password}@pgbouncer:6432/apexos?pgbouncer=true
     depends_on:
-      postgres:
+      pgbouncer:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "python3", "-c", "import http.client; c=http.client.HTTPConnection('localhost:8000'); c.request('GET','/health'); r=c.getresponse(); exit(0 if r.status==200 else 1)"]

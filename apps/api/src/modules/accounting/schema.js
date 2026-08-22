@@ -45,7 +45,6 @@ const thirdPartySchema = {
     required: ["name"],
     properties: {
       type: { type: "string" },
-      roles: { type: "array", items: { type: "string", enum: ["customer", "supplier", "employee"] }, uniqueItems: true },
       name: { type: "string", minLength: 1 },
       legal_name: { type: "string" },
       person_type: { type: "string", enum: ["natural", "juridica"] },
@@ -69,17 +68,6 @@ const thirdPartySchema = {
       credit_limit: { type: "number" },
       credit_days: { type: "integer" },
       active: { type: "boolean" },
-      receivable_account_code: { type: "string" },
-      payable_account_code: { type: "string" },
-      withholding_rates: {
-        type: "array",
-        items: {
-          type: "object",
-          required: ["code"],
-          properties: { code: { type: "string", minLength: 1 } }
-        }
-      },
-      supplier_retention_codes: { type: "array", items: { type: "string", minLength: 1 }, uniqueItems: true },
       role_flags: { type: "object", additionalProperties: true },
       metadata: { type: "object", additionalProperties: true }
     }
@@ -219,39 +207,7 @@ const vatMasterSchema = {
       concept: { type: "string", minLength: 1 },
       percent: { type: "number", minimum: 0 },
       account_code: { type: "string", minLength: 1 },
-      scope: { type: "string", enum: ["sales", "purchases"] },
       active: { type: "boolean" }
-    }
-  }
-};
-
-const retentionMasterSchema = {
-  body: {
-    type: "object",
-    required: ["code", "type", "concept", "percent", "minimum_base", "account_code"],
-    properties: {
-      code: { type: "string", minLength: 1 },
-      type: { type: "string", enum: ["retefuente", "reteiva", "reteica"] },
-      concept: { type: "string", minLength: 1 },
-      percent: { type: "number", minimum: 0, maximum: 100 },
-      minimum_base: { type: "number", minimum: 0 },
-      account_code: { type: "string", minLength: 1 },
-      scope: { type: "string", enum: ["sales", "purchases"] },
-      active: { type: "boolean" }
-    }
-  }
-};
-
-const supplierRetentionsSchema = {
-  body: {
-    type: "object",
-    required: ["retention_codes"],
-    properties: {
-      retention_codes: {
-        type: "array",
-        uniqueItems: true,
-        items: { type: "string", minLength: 1 }
-      }
     }
   }
 };
@@ -318,8 +274,6 @@ module.exports = {
   accountingNumberingSchema,
   accountingDocumentSchema,
   vatMasterSchema,
-  retentionMasterSchema,
-  supplierRetentionsSchema,
   payableDocumentSchema,
   payableApplicationSchema
 };

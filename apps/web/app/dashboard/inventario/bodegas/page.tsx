@@ -11,7 +11,6 @@ type Branch = { code: string; name: string; society_code: string; active: boolea
 type CostCenter = { code: string; name: string; society_code: string; branch_code: string; active: boolean };
 type OrganizationTree = { societies: Society[]; branches: Branch[]; cost_centers: CostCenter[] };
 type WarehouseType = "owned" | "consignment";
-type Customer = { id: number; name: string; legal_name?: string; tax_id?: string };
 type WarehouseRow = {
   id: number;
   code: string;
@@ -27,8 +26,6 @@ type WarehouseRow = {
   active: boolean;
   locations_count: number;
   stock_total: number;
-  consignment_customer_id?: number | null;
-  consignment_customer_name?: string;
 };
 
 const EMPTY_TREE: OrganizationTree = { societies: [], branches: [], cost_centers: [] };
@@ -37,7 +34,6 @@ const EMPTY_FORM = {
   code: "",
   name: "",
   warehouse_type: "owned" as WarehouseType,
-  consignment_customer_id: 0,
   address: "",
   city: "",
   country: "CO",
@@ -50,7 +46,6 @@ const EMPTY_FORM = {
 export default function WarehousesPage() {
   const [warehouses, setWarehouses] = useState<WarehouseRow[]>([]);
   const [tree, setTree] = useState<OrganizationTree>(EMPTY_TREE);
-  const [customers, setCustomers] = useState<Customer[]>([]);
   const [form, setForm] = useState(EMPTY_FORM);
   const [query, setQuery] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
@@ -63,14 +58,12 @@ export default function WarehousesPage() {
     setLoading(true);
     setError("");
     try {
-      const [warehouseRows, orgTree, customerRows] = await Promise.all([
+      const [warehouseRows, orgTree] = await Promise.all([
         api<WarehouseRow[]>("/api/v1/inventory/warehouses?active=all"),
-        api<OrganizationTree>("/api/v1/accounting/organization-tree"),
-        api<Customer[]>("/api/v1/sales/customers")
+        api<OrganizationTree>("/api/v1/accounting/organization-tree")
       ]);
       setWarehouses(warehouseRows || []);
       setTree(orgTree || EMPTY_TREE);
-      setCustomers(customerRows || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo cargar el maestro de bodegas");
     } finally {
@@ -111,7 +104,6 @@ export default function WarehousesPage() {
       code: row.code,
       name: row.name,
       warehouse_type: row.warehouse_type || "owned",
-      consignment_customer_id: row.consignment_customer_id || 0,
       address: row.address || "",
       city: row.city || "",
       country: row.country || "CO",
@@ -197,7 +189,6 @@ export default function WarehousesPage() {
                 <th className="px-4 py-3">Codigo</th>
                 <th className="px-4 py-3">Bodega</th>
                 <th className="px-4 py-3">Tipo</th>
-                <th className="px-4 py-3">Cliente consignacion</th>
                 <th className="px-4 py-3">Sociedad</th>
                 <th className="px-4 py-3">Sucursal</th>
                 <th className="px-4 py-3">Centro costo</th>
@@ -207,8 +198,8 @@ export default function WarehousesPage() {
               </tr>
             </thead>
             <tbody>
-              {loading ? <tr><td className="px-4 py-6 text-neutral-500" colSpan={10}>Cargando...</td></tr> : null}
-              {!loading && !filtered.length ? <tr><td className="px-4 py-6 text-neutral-500" colSpan={10}>No hay bodegas registradas.</td></tr> : null}
+              {loading ? <tr><td className="px-4 py-6 text-neutral-500" colSpan={9}>Cargando...</td></tr> : null}
+              {!loading && !filtered.length ? <tr><td className="px-4 py-6 text-neutral-500" colSpan={9}>No hay bodegas registradas.</td></tr> : null}
               {filtered.map((row) => (
                 <tr className="border-b border-line/70 last:border-0" key={row.id}>
                   <td className="px-4 py-3 font-mono text-xs">{row.code}</td>
@@ -217,7 +208,6 @@ export default function WarehousesPage() {
                     <p className="text-xs text-neutral-500">{[row.city, row.address].filter(Boolean).join(" · ") || "Sin direccion"}</p>
                   </td>
                   <td className="px-4 py-3">{row.warehouse_type_label}</td>
-                  <td className="px-4 py-3">{row.consignment_customer_name || "-"}</td>
                   <td className="px-4 py-3 font-mono text-xs">{row.society_code}</td>
                   <td className="px-4 py-3 font-mono text-xs">{row.branch_code}</td>
                   <td className="px-4 py-3 font-mono text-xs">{row.cost_center_code}</td>
@@ -263,14 +253,6 @@ export default function WarehousesPage() {
               <label className="text-sm">Pais
                 <input className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm uppercase" value={form.country} onChange={(event) => setForm((current) => ({ ...current, country: event.target.value.toUpperCase() }))} />
               </label>
-              {form.warehouse_type === "consignment" ? (
-                <label className="text-sm">Cliente propietario
-                  <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.consignment_customer_id} onChange={(event) => setForm((current) => ({ ...current, consignment_customer_id: Number(event.target.value) }))} required>
-                    <option value={0}>Seleccionar cliente</option>
-                    {customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.legal_name || customer.name}{customer.tax_id ? ` (${customer.tax_id})` : ""}</option>)}
-                  </select>
-                </label>
-              ) : null}
               <label className="text-sm">Ciudad
                 <input className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.city} onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))} />
               </label>

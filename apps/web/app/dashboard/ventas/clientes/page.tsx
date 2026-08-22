@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { asCollection } from "@/lib/api-collections";
 import { VentasNav } from "@/components/ventas-nav";
 import { ActionCard } from "@/components/ui/ActionCard";
 import { ModalFrame } from "@/components/ui/ModalFrame";
@@ -17,8 +16,7 @@ export default function ClientesPage() {
   const [form, setForm] = useState({ name: "", tax_id: "", email: "", city: "", country: "CO", segment: "" });
 
   async function load() {
-    const response = await api<unknown>("/api/v1/sales/customers");
-    setCustomers(asCollection<Customer>(response, ["customers"]));
+    setCustomers(await api<Customer[]>("/api/v1/sales/customers"));
   }
 
   useEffect(() => {

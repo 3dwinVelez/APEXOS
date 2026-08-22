@@ -1,4 +1,0 @@
-﻿interface:
-  display_name: "ERP Self Improvement"
-  short_description: "Propone mejoras revisables al sistema de agentes"
-  default_prompt: "Use $erp-self-improvement para proponer una mejora basada en evidencia mediante pull request."

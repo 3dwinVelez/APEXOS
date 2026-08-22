@@ -99,8 +99,7 @@ function ensureEnv() {
     DATABASE_URL: `postgresql://apex:apex_dev_password@localhost:${localPostgresPort}/apexos`,
     REDIS_URL: "redis://localhost:6379",
     DISABLE_REDIS: "1",
-    NEXT_PUBLIC_API_URL: "http://127.0.0.1:3000",
-    OFFLINE_CERT_DB_PASSWORD: "apex_offline_cert_local_password"
+    NEXT_PUBLIC_API_URL: "http://127.0.0.1:3000"
   };
 
   let next = env;

@@ -4,12 +4,11 @@ import test from "node:test";
 
 const pageSource = fs.readFileSync(new URL("../app/dashboard/servicios/[id]/page.tsx", import.meta.url), "utf8");
 const serviceSource = fs.readFileSync(new URL("../../api/src/modules/services/service.js", import.meta.url), "utf8");
-const apiSource = fs.readFileSync(new URL("../lib/api.ts", import.meta.url), "utf8");
 
 test("la vista agrupa soportes, novedades e inspeccion por solicitud", () => {
   assert.match(pageSource, /\["cerrada", "no_ejecutada"\]\.includes\(data\.status\)[\s\S]*\? "historial"/);
   assert.match(pageSource, /const supportGroups = order\.items\.map/);
-  assert.match(pageSource, /photoBelongsToItem\(photo, String\(item\.id\)\)/);
+  assert.match(pageSource, /String\(photo\.item_id \|\| ""\) === String\(item\.id\)/);
   assert.match(pageSource, /item\.metadata\?\.inspection\?\.items/);
   assert.match(pageSource, /supportGroups\.map\(\(\{ item, index, photos, incidents, inspection: itemInspection \}\)/);
   assert.match(pageSource, /Validacion de piezas/);
@@ -31,20 +30,8 @@ test("los soportes sin item se conservan como generales", () => {
 });
 
 test("las ordenes heredadas no duplican sus soportes generales", () => {
-  assert.match(pageSource, /const hasLegacyItem = order\.items\.some\(\(item\) => item\.legacy\)/);
-  assert.match(pageSource, /const generalPhotos = hasLegacyItem \? \[\] :/);
+  assert.match(pageSource, /photos: item\.legacy \? order\.photos/);
   assert.match(serviceSource, /const generalEvidence = hasPersistedItems \?/);
-});
-
-test("una orden heredada de una solicitud conserva soportes historicos sin clave", () => {
-  assert.match(pageSource, /item\.legacy && order\.items\.length === 1 && !photo\.metadata\?\.service_item_key/);
-  assert.match(pageSource, /item\.legacy && order\.items\.length === 1 && !incident\.metadata\?\.service_item_key/);
-});
-
-test("la deduplicacion de evidencia se limita a cada solicitud externa", () => {
-  assert.match(apiSource, /const serviceItemKey = String\(body\.metadata\?\.service_item_key \|\| ""\)/);
-  assert.match(apiSource, /String\(item\.metadata\?\.service_item_key \|\| ""\) === serviceItemKey/);
-  assert.match(apiSource, /originalType === "firma_cliente"/);
 });
 
 test("el reporte PDF usa los mismos grupos por referencia", () => {

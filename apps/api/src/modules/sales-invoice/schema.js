@@ -13,15 +13,13 @@ const createInvoiceSchema = {
       branch_code: { type: "string", minLength: 1 },
       cost_center_code: { type: "string", minLength: 1 },
       associated_account_code: { type: "string", minLength: 1 },
-      sales_order_id: { type: "integer" },
-      post_immediately: { type: "boolean" },
       notes: { type: "string" },
       lines: {
         type: "array",
         minItems: 1,
         items: {
           type: "object",
-          required: ["item_id", "qty", "place_id"],
+          required: ["item_id", "qty", "unit_price"],
           properties: {
             item_id: { type: "integer" },
             qty: { type: "number", exclusiveMinimum: 0 },
@@ -30,7 +28,6 @@ const createInvoiceSchema = {
             tax_rate: { type: "number" },
             place_id: { type: "integer" },
             customer_invoice_number: { type: "string" },
-            source_order_line_id: { type: "integer" },
             description: { type: "string" }
           }
         }
@@ -41,9 +38,7 @@ const createInvoiceSchema = {
           type: "object",
           properties: {
             code: { type: "string" },
-            base_amount: { type: "number", minimum: 0 },
-            percent: { type: "number", minimum: 0 },
-            amount: { type: "number", minimum: 0 }
+            base_amount: { type: "number" }
           }
         }
       }
