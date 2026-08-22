@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "environment": "QA",
+  "model_company": "NYVORA",
+  "commit": "cbc00df6bebb",
+  "run_id": "nyvora-correction-evidence-1787361078652",
+  "order_id": 58,
+  "external_order_id": "22f6c16f-fae6-4aac-9bcb-66871ae1734e",
+  "checks": {
+    "authorized_role_full_flow": "passed",
+    "limited_role_blocked": "passed",
+    "other_tenant_blocked": "passed",
+    "binary_validation": "passed",
+    "evidence_persistence": "passed"
+  }
+}
