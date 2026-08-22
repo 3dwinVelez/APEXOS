@@ -35,8 +35,8 @@
     "trigger": "cualquier falla funcional, de permisos, aislamiento, persistencia o regresion posterior al despliegue"
   },
   "approval": {
-    "status": "pending",
-    "approved_by": "",
-    "approved_at": ""
+    "status": "approved",
+    "approved_by": "Solicitante autorizado de APEXOS (aprobacion explicita en tarea Codex)",
+    "approved_at": "2026-08-21T19:23:53-05:00"
   }
 }
