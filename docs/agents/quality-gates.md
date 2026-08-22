@@ -62,3 +62,13 @@ Antes de ejecutarlos:
 - Una prueba no ejecutada se reporta como omitida con motivo, nunca como aprobada.
 - El build no sustituye typecheck, lint o pruebas.
 - Un agente no puede certificar una regla funcional que no fue confirmada.
+
+## Alcance de promocion
+
+Antes de promover se ejecuta:
+
+```powershell
+npm run qa:promotion:scope -- <manifiesto-alcance.json> <candidato> <destino>
+```
+
+La compuerta compara el diff neto, no solo el ultimo commit. Rechaza rutas inesperadas, eliminaciones no autorizadas, un destino que ya no coincide con el commit base y capacidades protegidas sin evidencia aprobada. Después de cualquier sincronización o aporte desde otra máquina debe recalcularse y ejecutarse nuevamente.
