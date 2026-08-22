@@ -1,0 +1,50 @@
+{
+  "change_id": "service-correction-recovery-20260822",
+  "base_commit": "aa1bf70a251fdf0b33d379ce42ad3e1beb46b4c5",
+  "base_commits": {
+    "develop": "32307ac918cdaa6f87f9aeedbb125f8def8c71df",
+    "main": "aa1bf70a251fdf0b33d379ce42ad3e1beb46b4c5"
+  },
+  "certified_commit": "24022de",
+  "allowed_paths": [
+    "AGENTS.md",
+    "apps/api/scripts/certifications/service-master-correction-qa.js",
+    "apps/api/src/modules/services/administrativeCorrections.js",
+    "apps/api/test/service-order-administrative-corrections.test.js",
+    "apps/web/app/dashboard/servicios/page.tsx",
+    "apps/web/components/services/AdministrativeCorrectionPanel.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/serviceCorrectionForm.ts",
+    "apps/web/test/service-correction-form.test.mjs",
+    "apps/web/test/service-order-special-edit.test.mjs",
+    "docs/CHANGE_APPROVAL_QA_POLICY.md",
+    "docs/agents/quality-gates.md",
+    "docs/project/modulos/servicios.md",
+    "docs/releases/CONTROLLED_PROMOTION_SCOPE_POLICY.md",
+    "docs/services/ADMINISTRATIVE_ORDER_CORRECTIONS.md",
+    "docs/qa/evidence/service-correction-recovery-20260822/",
+    "package.json",
+    "scripts/certifications/service-master-correction-qa.js",
+    "scripts/test/validate-promotion-scope.test.js",
+    "scripts/validate-promotion-scope.js",
+    "supabase/migrations/20260821120000_service_orders_administrative_statuses.sql"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "services_order_start",
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    {
+      "name": "services_administrative_correction",
+      "status": "passed",
+      "evidence": ["analysis.md", "local-validation.md"]
+    },
+    {
+      "name": "services_rbac_and_tenant_isolation",
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    }
+  ]
+}
