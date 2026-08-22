@@ -29,6 +29,18 @@
     "script": "../../../../scripts/certifications/service-master-correction-qa.js",
     "evidence": ["master-certification.json", "browser-certification.json"]
   },
+  "production_verification": {
+    "status": "passed",
+    "environment": "PRODUCTION",
+    "deployed_commit": "423fb0caa6bd35e45467074c47cff4db9e3406f7",
+    "model_company": "NYVORA",
+    "evidence": [
+      "production-certification.json",
+      "production-platform-regression.json",
+      "production-browser-certification.json",
+      "production.md"
+    ]
+  },
   "rollback_plan": {
     "status": "ready",
     "strategy": "controlled_revert",
