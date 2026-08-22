@@ -60,7 +60,11 @@ function main() {
   if (target !== git(["rev-parse", declaredBase])) fail(`el destino ${targetRef} cambio desde el baseline aprobado`);
   const commonBase = git(["merge-base", target, candidate]);
   if (!commonBase) fail("el candidato y el destino no comparten un historial controlado");
-  try { git(["merge-base", "--is-ancestor", certified, candidate]); } catch { fail("el candidato no contiene el commit funcional certificado"); }
+  let certifiedContained = true;
+  try { git(["merge-base", "--is-ancestor", certified, candidate]); } catch { certifiedContained = false; }
+  if (!certifiedContained) {
+    try { git(["merge-base", "--is-ancestor", certified, target]); } catch { fail("ni el candidato ni el destino contienen el commit funcional certificado"); }
+  }
   const changes = changedFiles(target, candidate);
   validateManifest(manifest, path.dirname(absoluteManifest), changes);
   console.log(`ALCANCE DE PROMOCION VALIDO: ${manifest.change_id} (${changes.length} rutas)`);

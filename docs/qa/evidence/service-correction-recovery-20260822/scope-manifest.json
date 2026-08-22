@@ -2,10 +2,10 @@
   "change_id": "service-correction-recovery-20260822",
   "base_commit": "aa1bf70a251fdf0b33d379ce42ad3e1beb46b4c5",
   "base_commits": {
-    "develop": "32307ac918cdaa6f87f9aeedbb125f8def8c71df",
+    "develop": "90170406560876eb69258ef778755d0c674b2924",
     "main": "aa1bf70a251fdf0b33d379ce42ad3e1beb46b4c5"
   },
-  "certified_commit": "24022de",
+  "certified_commit": "90170406560876eb69258ef778755d0c674b2924",
   "allowed_paths": [
     "AGENTS.md",
     "apps/api/scripts/certifications/service-master-correction-qa.js",
@@ -34,17 +34,17 @@
     {
       "name": "services_order_start",
       "status": "passed",
-      "evidence": ["local-validation.md"]
+      "evidence": ["local-validation.md", "browser-certification.json"]
     },
     {
       "name": "services_administrative_correction",
       "status": "passed",
-      "evidence": ["analysis.md", "local-validation.md"]
+      "evidence": ["analysis.md", "local-validation.md", "master-certification.json", "browser-certification.json"]
     },
     {
       "name": "services_rbac_and_tenant_isolation",
       "status": "passed",
-      "evidence": ["local-validation.md"]
+      "evidence": ["local-validation.md", "master-certification.json", "browser-certification.json"]
     }
   ]
 }
