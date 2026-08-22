@@ -46,8 +46,8 @@
     "detail": "Se aplico en el proyecto Supabase QA la migracion 20260821120000_service_orders_administrative_statuses.sql que amplia service_orders_status_check con reabierta, revision y lista_facturacion. Verificado: pg_get_constraintdef muestra el constraint ampliado."
   },
   "approval": {
-    "status": "pending",
-    "approved_by": "",
-    "approved_at": ""
+    "status": "approved",
+    "approved_by": "Solicitante autorizado de APEXOS (aprobacion explicita del tren completo en tarea Codex)",
+    "approved_at": "2026-08-21T19:28:02-05:00"
   }
 }

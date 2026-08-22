@@ -35,8 +35,8 @@
     "trigger": "cualquier falla funcional, visual, de aislamiento o regresion posterior a una futura promocion autorizada"
   },
   "approval": {
-    "status": "pending",
-    "approved_by": "",
-    "approved_at": ""
+    "status": "approved",
+    "approved_by": "Solicitante autorizado de APEXOS (aprobacion explicita del tren completo en tarea Codex)",
+    "approved_at": "2026-08-21T19:28:02-05:00"
   }
 }
