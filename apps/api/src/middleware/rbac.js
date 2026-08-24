@@ -75,13 +75,120 @@ function isAdministrativeRole(role) {
     metadata.role_type,
     metadata.profile_kind,
     metadata.scope
-  ].map((value) => String(value || "").trim().toLowerCase());
-  return values.some((value) => value === "apex_admin"
+  ].map((value) => String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " "));
+  return values.some((value) => value === "apex admin"
     || value === "owner"
     || value === "admin"
     || value === "superadmin"
     || value === "administrador"
-    || value === "administrador de empresa");
+    || value === "administrador de empresa"
+    || value === "administrador empresa"
+    || value === "admin empresa"
+    || value === "company admin"
+    || value === "platform admin");
+}
+
+const ADMIN_CAPABILITY_RULES = {
+  users: {
+    read: [["usuarios", ["access", "view", "manage_users"]]],
+    create: [["usuarios", ["create", "manage_users"]]],
+    edit: [["usuarios", ["edit", "manage_users"]]],
+    attach: [["usuarios", ["attach", "edit", "manage_users"]]],
+    delete_physical_records: [["usuarios", ["delete_physical_records"]]]
+  },
+  roles: {
+    read: [["roles", ["access", "view", "manage_roles"]], ["usuarios", ["create", "manage_users"]]],
+    create: [["roles", ["create", "manage_roles", "administer"]]],
+    edit: [["roles", ["edit", "configure", "manage_roles", "administer"]]],
+    delete: [["roles", ["delete", "manage_roles", "administer"]]]
+  },
+  master_data: {
+    read: [["usuarios", ["access", "view", "create", "edit", "manage_users"]]],
+    edit: [["usuarios", ["edit", "manage_users"]], ["configuracion", ["configure", "administer"]]]
+  }
+};
+
+function legacyPermissionContext(role) {
+  const legacy = role?.metadata?.legacy_permissions;
+  return legacy && typeof legacy === "object" && !Array.isArray(legacy) ? legacy : null;
+}
+
+function hasAdminCapability(role, resource, action) {
+  if (!role) return false;
+  if (role.name === "APEX_ADMIN" || isAdministrativeRole(role)) return true;
+  const rules = ADMIN_CAPABILITY_RULES[resource]?.[action] || [];
+  const legacy = legacyPermissionContext(role);
+  if (legacy) {
+    return rules.some(([key, actions]) => actions.some((candidate) => legacy[key]?.[candidate] === true));
+  }
+
+  const permissions = Array.isArray(role.permissions) ? role.permissions : [];
+  const granularModule = `admin.${resource}`;
+  const granularActions = new Set([action, resource === "users" ? "manage_users" : "manage_roles"]);
+  if (permissions.some((permission) => (
+    (permission.module === granularModule || permission.module === "*")
+    && (granularActions.has(permission.action) || permission.action === "*")
+  ))) return true;
+
+  const coarseAction = ["read"].includes(action) ? "read" : action === "delete_physical_records" ? "delete_physical_records" : "write";
+  return permissions.some((permission) => (
+    (permission.module === "admin" || permission.module === "*")
+    && (permission.action === coarseAction || permission.action === "*")
+  ));
+}
+
+function requireAnyAdminCapability(requirements) {
+  const requested = Array.isArray(requirements)
+    ? requirements.filter((item) => item?.resource && item?.action)
+    : [];
+  if (!requested.length) throw new Error("Se requiere al menos una capacidad administrativa.");
+
+  return async function adminCapabilityMiddleware(request, reply) {
+    return measurePhase("authorization", async () => {
+      const role = request.user.role;
+      if (!role) return reply.code(401).send({ error: "No autenticado", code: "NO_AUTENTICADO" });
+      if (!tenantHasModule(request.tenant, "admin")) {
+        return reply.code(403).send({
+          error: "Modulo no habilitado para esta empresa",
+          code: "MODULO_NO_HABILITADO",
+          details: { module: "admin" }
+        });
+      }
+      const granted = requested.find(({ resource, action }) => hasAdminCapability(role, resource, action));
+      if (!granted) {
+        return reply.code(403).send({
+          error: "Sin capacidad administrativa para esta accion",
+          code: "CAPACIDAD_ROL_DENEGADA",
+          details: { capabilities: requested.map(({ resource, action }) => `${resource}:${action}`) }
+        });
+      }
+      const scopeViolation = roleScopeViolation(role, request);
+      if (scopeViolation) {
+        return reply.code(403).send({
+          error: "Fuera del alcance permitido para el rol",
+          code: "ALCANCE_ROL_DENEGADO",
+          details: { module: "admin", action: `${granted.resource}:${granted.action}`, scope: scopeViolation }
+        });
+      }
+      request.rbacScope = {
+        role_id: role.id,
+        role_name: role.name,
+        scope: role.metadata?.scope || "company",
+        scopes: role.metadata?.scopes || {},
+        restrictions: role.metadata?.restrictions || {}
+      };
+    });
+  };
+}
+
+function requireAdminCapability(resource, action) {
+  return requireAnyAdminCapability([{ resource, action }]);
 }
 
 function permissionMiddleware(module, action, allowAdministrativeBypass) {
@@ -214,4 +321,14 @@ async function checkSoD(tenantId, userId, newRoleName) {
   });
 }
 
-module.exports = { requirePermission, requireExplicitPermission, requireAnyPermission, checkSoD, tenantHasModule };
+module.exports = {
+  requirePermission,
+  requireExplicitPermission,
+  requireAnyPermission,
+  requireAdminCapability,
+  requireAnyAdminCapability,
+  hasAdminCapability,
+  isAdministrativeRole,
+  checkSoD,
+  tenantHasModule
+};
