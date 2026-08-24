@@ -104,3 +104,19 @@ test("las rutas de usuarios y roles exigen capacidades granulares", () => {
   assert.match(source, /post\("\/admin\/roles"[\s\S]*requireAdminCapability\("roles", "create"\)/);
   assert.match(source, /delete\("\/admin\/roles\/:id"[\s\S]*requireAdminCapability\("roles", "delete"\)/);
 });
+
+test("la edicion administrativa aplica los campos enviados y no conserva silenciosamente el valor anterior", () => {
+  const source = fs.readFileSync(path.resolve(__dirname, "../src/modules/admin/service.js"), "utf8");
+  assert.match(source, /position: cleanText\(input\.position \|\| input\.rol\) \|\| current\.employee\?\.position/);
+  assert.match(source, /department: cleanText\(input\.department \|\| input\.area\) \|\| current\.employee\?\.department/);
+  assert.match(source, /can_punch_time: input\.can_punch_time === undefined/);
+});
+
+test("todas las operaciones administrativas por id acotan usuario y rol al tenant autenticado", () => {
+  const source = fs.readFileSync(path.resolve(__dirname, "../src/modules/admin/service.js"), "utf8");
+  const userLookups = source.match(/prisma\.user\.findFirstOrThrow\(\{ where: \{ id:[^}]+\}/g) || [];
+  assert.ok(userLookups.length >= 10);
+  for (const lookup of userLookups) assert.match(lookup, /tenant_id: tenantId/);
+  assert.match(source, /prisma\.role\.findFirst\(\{ where: \{ id: roleId, tenant_id: tenantId \}/);
+  assert.match(source, /prisma\.role\.findFirst\(\{ where: \{ id: Number\(input\.role_id\), tenant_id: tenantId \}/);
+});

@@ -1014,15 +1014,15 @@ async function createUser(tenantId, input, actorId = null) {
   assertPasswordPolicy(rawPassword);
   const password = await bcrypt.hash(rawPassword, 12);
   return prisma.runWithTenant(tenantId, async () => {
-    const existing = await prisma.user.findFirst({ where: { email } });
+    const existing = await prisma.user.findFirst({ where: { tenant_id: tenantId, email } });
     if (existing) {
       const err = new Error("Ya existe un usuario con este correo en la empresa.");
       err.statusCode = 409;
       throw err;
     }
     const role = input.role_id
-      ? await prisma.role.findFirst({ where: { id: Number(input.role_id) } })
-      : await prisma.role.findFirst({ where: { name: "Empleado" } });
+      ? await prisma.role.findFirst({ where: { id: Number(input.role_id), tenant_id: tenantId } })
+      : await prisma.role.findFirst({ where: { name: "Empleado", tenant_id: tenantId } });
     if (!role) throw badRequest("Debe seleccionar un rol valido para el usuario.");
     if (role?.metadata?.active === false) {
       throw badRequest("El rol seleccionado esta inactivo");
@@ -1143,10 +1143,12 @@ async function createUser(tenantId, input, actorId = null) {
 async function updateUser(tenantId, id, input, actorId = null) {
   tenantId = normalizeTenantId(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
-    const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id) }, include: { employee: true } });
+    const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id), tenant_id: tenantId }, include: { employee: true } });
     const previousSnapshot = userAuditSnapshot(current, current.employee);
     const previousMetadata = current.employee?.metadata || {};
     const previousAccess = previousMetadata.access || {};
+    const previousEmployment = previousMetadata.employment || {};
+    const previousOperational = previousMetadata.operational || {};
     const submittedName = cleanText(input.name || input.nombre);
     const submittedPartsName = `${cleanText(input.first_names)} ${cleanText(input.last_names)}`.trim();
     const fullName = cleanText(submittedName || submittedPartsName || current.name);
@@ -1159,7 +1161,7 @@ async function updateUser(tenantId, id, input, actorId = null) {
     if (!roleId) throw badRequest("El rol principal es obligatorio.");
     if (!company) throw badRequest("La empresa del usuario es obligatoria.");
     if (!document) throw badRequest("El numero de documento es obligatorio.");
-    const role = await prisma.role.findFirst({ where: { id: roleId } });
+    const role = await prisma.role.findFirst({ where: { id: roleId, tenant_id: tenantId } });
     if (!role) throw badRequest("Debe seleccionar un rol valido para el usuario.");
     if (role?.metadata?.active === false) throw badRequest("El rol seleccionado esta inactivo");
     const credentialSync = await syncSupabaseCredentials({
@@ -1173,6 +1175,7 @@ async function updateUser(tenantId, id, input, actorId = null) {
     const lastNames = cleanText(input.last_names) || (nameParts.length > 1 ? nameParts.slice(-1).join(" ") : "");
     const userStatus = input.user_status || input.labor_status || input.estado_laboral || previousMetadata.user_status || previousMetadata.labor_status || "activo";
     const active = !["inactivo", "suspendido", "retirado"].includes(userStatus) && input.active !== false && input.activo !== false;
+    const profileKind = normalizeProfileKind(input.profile_kind || input.user_kind || input.tipo_usuario || previousMetadata.profile_kind || current.employee?.user_type);
     const data = {
       name: fullName,
       email,
@@ -1186,14 +1189,17 @@ async function updateUser(tenantId, id, input, actorId = null) {
     await prisma.user.update({ where: { id: current.id }, data });
     await authorizationState.revokeAllUserSessions(current.id, "user_authorization_changed");
     const employeeData = {
-      code: current.employee?.code || input.code || input.id_interno || `EMP-${current.id}`,
-      user_type: current.employee?.user_type || "empleado",
-      position: current.employee?.position || "empleado",
-      department: current.employee?.department || "Operacion",
-      salary_base: Number(current.employee?.salary_base || 0),
-      contract_type: current.employee?.contract_type || "indefinite",
-      hire_date: current.employee?.hire_date || new Date(),
-      end_date: current.employee?.end_date || null,
+      code: cleanText(input.code || input.id_interno) || current.employee?.code || `EMP-${current.id}`,
+      user_type: cleanText(input.user_type) || (profileKind === "tecnico" ? "tecnico" : current.employee?.user_type || "empleado"),
+      position: cleanText(input.position || input.rol) || current.employee?.position || "empleado",
+      department: cleanText(input.department || input.area) || current.employee?.department || "Operacion",
+      salary_base: input.salary_base !== undefined || input.salario_base !== undefined || input.salario !== undefined
+        ? Number(input.salary_base || input.salario_base || input.salario || 0)
+        : Number(current.employee?.salary_base || 0),
+      salary_type: cleanText(input.salary_type) || current.employee?.salary_type || "monthly",
+      contract_type: cleanText(input.contract_type) || current.employee?.contract_type || previousEmployment.contract_type || "indefinite",
+      hire_date: input.hire_date ? new Date(input.hire_date) : current.employee?.hire_date || new Date(),
+      end_date: input.end_date ? new Date(input.end_date) : input.end_date === null ? null : current.employee?.end_date || null,
       active,
       metadata: {
         ...previousMetadata,
@@ -1205,13 +1211,46 @@ async function updateUser(tenantId, id, input, actorId = null) {
         company,
         labor_status: userStatus,
         user_status: userStatus,
+        profile_kind: profileKind || previousMetadata.profile_kind || "administrativo",
+        user_kind: profileKind || previousMetadata.user_kind || "administrativo",
+        phone: input.phone === undefined ? previousMetadata.phone || "" : input.phone,
+        address: input.address === undefined ? previousMetadata.address || "" : input.address,
+        city: input.city === undefined ? previousMetadata.city || "" : input.city,
+        state_region: input.state_region === undefined ? previousMetadata.state_region || "" : input.state_region,
+        country: input.country === undefined ? previousMetadata.country || "Colombia" : input.country,
         access: {
           ...previousAccess,
           email,
           site: input.site || input.base_site || previousAccess.site || "",
           role_id: roleId,
           role_name: input.role_name || role.name || previousAccess.role_name || "",
+          additional_roles: input.additional_roles === undefined ? previousAccess.additional_roles || "" : input.additional_roles,
+          operational_profile: input.operational_profile === undefined ? previousAccess.operational_profile || "" : input.operational_profile,
+          area: input.area || input.department || previousAccess.area || "",
+          manager: input.manager === undefined ? previousAccess.manager || "" : input.manager,
+          special_permissions: input.special_permissions === undefined ? previousAccess.special_permissions || "" : input.special_permissions,
           require_password_change: input.require_password_change === undefined ? Boolean(previousAccess.require_password_change) : toBoolean(input.require_password_change)
+        },
+        employment: {
+          ...previousEmployment,
+          engagement_type: input.engagement_type === undefined ? previousEmployment.engagement_type || "empleado" : input.engagement_type,
+          contract_type: input.contract_type === undefined ? previousEmployment.contract_type || current.employee?.contract_type || "indefinite" : input.contract_type,
+          cost_center: input.cost_center === undefined ? previousEmployment.cost_center || "" : input.cost_center,
+          workday: input.workday === undefined ? previousEmployment.workday || "" : input.workday,
+          base_shift: input.base_shift === undefined ? previousEmployment.base_shift || "" : input.base_shift,
+          labor_notes: input.labor_notes === undefined ? previousEmployment.labor_notes || "" : input.labor_notes
+        },
+        operational: {
+          ...previousOperational,
+          classification: input.operational_classification === undefined ? previousOperational.classification || "administrativo" : input.operational_classification,
+          can_punch_time: input.can_punch_time === undefined ? Boolean(previousOperational.can_punch_time) : toBoolean(input.can_punch_time),
+          can_receive_services: input.can_receive_services === undefined ? Boolean(previousOperational.can_receive_services) : toBoolean(input.can_receive_services),
+          can_be_assigned_routes: input.can_be_assigned_routes === undefined ? Boolean(previousOperational.can_be_assigned_routes) : toBoolean(input.can_be_assigned_routes),
+          can_manage_inventory: input.can_manage_inventory === undefined ? Boolean(previousOperational.can_manage_inventory) : toBoolean(input.can_manage_inventory),
+          can_approve_documents: input.can_approve_documents === undefined ? Boolean(previousOperational.can_approve_documents) : toBoolean(input.can_approve_documents),
+          can_authorize_exceptions: input.can_authorize_exceptions === undefined ? Boolean(previousOperational.can_authorize_exceptions) : toBoolean(input.can_authorize_exceptions),
+          base_site: input.base_site === undefined ? previousOperational.base_site || "" : input.base_site,
+          zone: input.operation_zone === undefined ? previousOperational.zone || "" : input.operation_zone
         },
         user_audit_trail: [
           ...(Array.isArray(previousMetadata.user_audit_trail) ? previousMetadata.user_audit_trail : []).slice(-9),
@@ -1224,7 +1263,7 @@ async function updateUser(tenantId, id, input, actorId = null) {
     } else {
       await prisma.employee.create({ data: { ...employeeData, tenant_id: tenantId, user_id: current.id, salary_type: "monthly", hire_date: new Date(), contract_type: "indefinite" } });
     }
-    const user = await prisma.user.findFirstOrThrow({ where: { id: current.id }, include: { role: true, employee: true } });
+    const user = await prisma.user.findFirstOrThrow({ where: { id: current.id, tenant_id: tenantId }, include: { role: true, employee: true } });
     await prisma.auditLog.create({
       data: {
         tenant_id: tenantId,
@@ -1245,7 +1284,7 @@ async function setUserActive(tenantId, id, active, actorId = null) {
   tenantId = normalizeTenantId(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const enabled = toBoolean(active);
-    const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id) }, include: { employee: true } });
+    const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id), tenant_id: tenantId }, include: { employee: true } });
     const previousSnapshot = userAuditSnapshot(current, current.employee);
     await prisma.user.update({
       where: { id: Number(id) },
@@ -1269,7 +1308,7 @@ async function setUserActive(tenantId, id, active, actorId = null) {
         }
       });
     }
-    const user = await prisma.user.findFirstOrThrow({ where: { id: Number(id) }, include: { role: true, employee: true } });
+    const user = await prisma.user.findFirstOrThrow({ where: { id: Number(id), tenant_id: tenantId }, include: { role: true, employee: true } });
     await prisma.auditLog.create({
       data: {
         tenant_id: tenantId,
@@ -1289,7 +1328,7 @@ async function setUserActive(tenantId, id, active, actorId = null) {
 async function updateUserAccess(tenantId, id, input, actorId = null) {
   tenantId = normalizeTenantId(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
-    const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id) }, include: { employee: true } });
+    const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id), tenant_id: tenantId }, include: { employee: true } });
     const previousSnapshot = userAuditSnapshot(current, current.employee);
     const metadata = current.employee?.metadata || {};
     const access = metadata.access || {};
@@ -1328,7 +1367,7 @@ async function updateUserAccess(tenantId, id, input, actorId = null) {
         }
       });
     }
-    const user = await prisma.user.findFirstOrThrow({ where: { id: current.id }, include: { role: true, employee: true } });
+    const user = await prisma.user.findFirstOrThrow({ where: { id: current.id, tenant_id: tenantId }, include: { role: true, employee: true } });
     await prisma.auditLog.create({
       data: {
         tenant_id: tenantId,
@@ -1348,7 +1387,7 @@ async function updateUserAccess(tenantId, id, input, actorId = null) {
 async function addUserDocument(tenantId, id, input, actorId = null) {
   tenantId = normalizeTenantId(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
-    const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id) }, include: { employee: true } });
+    const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id), tenant_id: tenantId }, include: { employee: true } });
     if (!input.document_type || !input.file_name) {
       const err = new Error("Tipo documental y nombre de archivo son obligatorios");
       err.statusCode = 400;
@@ -1384,7 +1423,7 @@ async function addUserDocument(tenantId, id, input, actorId = null) {
         }
       });
     }
-    const user = await prisma.user.findFirstOrThrow({ where: { id: current.id }, include: { role: true, employee: true } });
+    const user = await prisma.user.findFirstOrThrow({ where: { id: current.id, tenant_id: tenantId }, include: { role: true, employee: true } });
     await prisma.auditLog.create({
       data: {
         tenant_id: tenantId,
@@ -1404,7 +1443,7 @@ async function addUserDocument(tenantId, id, input, actorId = null) {
 async function removeUserDocument(tenantId, id, documentId, actorId = null) {
   tenantId = normalizeTenantId(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
-    const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id) }, include: { employee: true } });
+    const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id), tenant_id: tenantId }, include: { employee: true } });
     const metadata = current.employee?.metadata || {};
     const documents = Array.isArray(metadata.documents) ? metadata.documents : [];
     const removed = documents.find((document) => String(document.id) === String(documentId)) || null;
@@ -1424,7 +1463,7 @@ async function removeUserDocument(tenantId, id, documentId, actorId = null) {
         }
       });
     }
-    const user = await prisma.user.findFirstOrThrow({ where: { id: current.id }, include: { role: true, employee: true } });
+    const user = await prisma.user.findFirstOrThrow({ where: { id: current.id, tenant_id: tenantId }, include: { role: true, employee: true } });
     await prisma.auditLog.create({
       data: {
         tenant_id: tenantId,
