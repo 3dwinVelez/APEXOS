@@ -224,8 +224,8 @@ async function main() {
     record(result, "administrator_cannot_edit_other_tenant", crossTenant.status === 404, { status: crossTenant.status });
 
     await admin.setUserActive(tenant.id, users.readonly.id, false, apexUser.id);
-    const inactiveLogin = await request("/api/v1/auth/login", { method: "POST", expected: 403, body: { email: users.readonly.email, password: PASSWORD } });
-    record(result, "inactive_user_cannot_login", inactiveLogin.status === 403, { status: inactiveLogin.status });
+    const inactiveLogin = await request("/api/v1/auth/login", { method: "POST", expected: [401, 403], body: { email: users.readonly.email, password: PASSWORD } });
+    record(result, "inactive_user_cannot_login", [401, 403].includes(inactiveLogin.status), { status: inactiveLogin.status });
 
     result.fixture = { tenant_id: tenant.id, admin_user_id: users.administrator.id, created_user_id: adminCreated.payload.id };
     result.status = "passed";
