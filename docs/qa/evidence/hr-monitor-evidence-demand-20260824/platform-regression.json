@@ -1,0 +1,14 @@
+{
+  "change_id": "hr-monitor-evidence-demand-20260824",
+  "runtime_commit": "5cffaa4ac8c414e8d3cff31ed2aeac543fb13cdd",
+  "status": "passed",
+  "checks": {
+    "full_test_suite": { "status": "passed", "passed": 257, "failed": 0 },
+    "focused_monitor_tests": { "status": "passed", "passed": 16, "failed": 0 },
+    "marking_only_regression": { "status": "passed", "passed": 22, "failed": 0 },
+    "typescript": { "status": "passed" },
+    "eslint": { "status": "passed" },
+    "next_build": { "status": "passed", "routes": 63 },
+    "dependency_audit": { "status": "passed", "total": 0, "high": 0, "critical": 0 }
+  }
+}

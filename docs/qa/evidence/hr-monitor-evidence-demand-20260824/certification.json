@@ -1,0 +1,96 @@
+{
+  "change_id": "hr-monitor-evidence-demand-20260824",
+  "environment": "QA",
+  "company": "NYVORA",
+  "generated_at": "2026-08-24T18:56:30.634Z",
+  "api_commit": "unknown",
+  "runtime_commit": "5cffaa4ac8c414e8d3cff31ed2aeac543fb13cdd",
+  "checks": [
+    {
+      "name": "activity_summary_available",
+      "ok": true,
+      "detail": {
+        "id": 3,
+        "source": "activity",
+        "evidence_type": "photo",
+        "file_name": "activity-20260824185630.png",
+        "mime_type": "image/png",
+        "file_size": 68,
+        "storage_path": "company/a35b0d91-d38f-47c2-b531-be9e9d082eeb/hr/work-sessions/3/users/11/activities/3/1787597791952-activity-20260824185630.png",
+        "has_base64_data": false,
+        "available": true
+      }
+    },
+    {
+      "name": "activity_summary_excludes_payload",
+      "ok": true,
+      "detail": {
+        "has_base64_data": false
+      }
+    },
+    {
+      "name": "punch_summary_available",
+      "ok": true,
+      "detail": {
+        "id": 12,
+        "source": "punch",
+        "file_name": "punch-20260824185630.png",
+        "mime_type": "image/png",
+        "file_size": 68,
+        "storage_path": "company/a35b0d91-d38f-47c2-b531-be9e9d082eeb/hr/overtime-extensions/11/1787597792077-punch-20260824185630.png",
+        "has_base64_data": true,
+        "available": true
+      }
+    },
+    {
+      "name": "punch_summary_excludes_payload",
+      "ok": true,
+      "detail": {
+        "has_base64_data": true
+      }
+    },
+    {
+      "name": "activity_loaded_on_demand",
+      "ok": true,
+      "detail": {
+        "id": 3,
+        "source": "activity"
+      }
+    },
+    {
+      "name": "punch_loaded_on_demand",
+      "ok": true,
+      "detail": {
+        "id": 12,
+        "source": "punch"
+      }
+    },
+    {
+      "name": "marking_only_role_denied",
+      "ok": true,
+      "detail": {
+        "code": "PERMISO_DENEGADO"
+      }
+    },
+    {
+      "name": "missing_evidence_controlled",
+      "ok": true,
+      "detail": {
+        "code": "EVIDENCIA_MONITOR_NO_ENCONTRADA"
+      }
+    },
+    {
+      "name": "cross_tenant_evidence_denied",
+      "ok": true,
+      "detail": {
+        "other_tenant_id": "99851213-7b68-4768-a4de-647fc5663cfe"
+      }
+    }
+  ],
+  "fixture": {
+    "employee_user_id": 11,
+    "monitor_user_id": 12,
+    "route_id": 6
+  },
+  "status": "passed"
+}
