@@ -45,6 +45,7 @@ async function hrRoutes(fastify) {
   fastify.post("/hr/routes/preop/:id/submit", { schema: schemas.preopSubmitSchema, preHandler: requirePermission("hr", "write") }, (request) => service.submitPreoperationalChecklist(request.user?.tenant_id, request.user, request.params.id, request.body));
   fastify.get("/hr/routes/:id/tracking", { preHandler: requirePermission("hr", "read") }, (request) => service.getRouteTracking(request.user?.tenant_id, request.params.id, request.query));
   fastify.get("/hr/operations-map", { preHandler: requirePermission("hr", "read") }, (request) => service.getOperationsMap(request.user?.tenant_id, request.query));
+  fastify.get("/hr/monitor-evidence/:source/:id", { preHandler: requirePermission("hr", "read") }, (request) => service.getMonitorEvidence(request.user?.tenant_id, request.params.source, request.params.id));
 
   fastify.get("/hr/gps/active", { preHandler: requirePermission("hr", "read") }, (request) => service.listActiveGps(request.user?.tenant_id, request.query));
   fastify.get("/hr/gps/history", { preHandler: requirePermission("hr", "read") }, (request) => service.listGpsHistory(request.user?.tenant_id, request.query));

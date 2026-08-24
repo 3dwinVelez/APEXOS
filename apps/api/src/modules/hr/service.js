@@ -114,21 +114,57 @@ const monitorEvidenceSelect = {
   metadata: true
 };
 
-function monitorEvidenceSummary(evidence = {}) {
+function monitorEvidenceSummary(evidence = {}, context = {}) {
   const base64 = evidence.base64_data || evidence.base64 || "";
   const fileUrl = evidence.file_url || evidence.url || evidence.metadata?.file_url || "";
   const fileName = evidence.file_name || evidence.name || "";
-  if (!base64 && !fileUrl && !fileName && !evidence.storage_path && !evidence.id) return {};
+  const evidenceId = evidence.id || context.id;
+  const available = Boolean(base64 || fileUrl || fileName || evidence.storage_path || evidenceId);
+  if (!available) return {};
   return {
-    ...(evidence.id ? { id: evidence.id } : {}),
+    ...(evidenceId ? { id: evidenceId } : {}),
+    ...(context.source ? { source: context.source } : {}),
     ...(evidence.evidence_type ? { evidence_type: evidence.evidence_type } : {}),
     ...(fileName ? { file_name: fileName } : {}),
     ...(fileUrl ? { file_url: fileUrl } : {}),
     ...(evidence.mime_type || evidence.type ? { mime_type: evidence.mime_type || evidence.type } : {}),
     ...(evidence.file_size || evidence.size ? { file_size: evidence.file_size || evidence.size } : {}),
     ...(evidence.storage_path ? { storage_path: evidence.storage_path } : {}),
-    has_base64_data: Boolean(base64)
+    has_base64_data: Boolean(base64),
+    available
   };
+}
+
+function monitorEvidencePayload(evidence = {}) {
+  const summary = monitorEvidenceSummary(evidence);
+  const base64 = String(evidence.base64_data || evidence.base64 || "").trim();
+  return {
+    ...summary,
+    ...(base64 ? { base64_data: base64 } : {})
+  };
+}
+
+async function getMonitorEvidence(tenantId, source, id) {
+  const evidenceId = optionalNumericId(id);
+  if (!evidenceId || !["activity", "punch"].includes(String(source))) {
+    throw validationError("Evidencia de monitor invalida.", 400, "EVIDENCIA_MONITOR_INVALIDA");
+  }
+  return prisma.runWithTenant(tenantId, async () => {
+    let evidence;
+    if (source === "activity") {
+      evidence = await prisma.activityEvidence.findFirst({
+        where: { id: evidenceId, tenant_id: tenantId, activity: { tenant_id: tenantId } }
+      });
+    } else {
+      const punch = await prisma.timePunch.findFirst({ where: { id: evidenceId, tenant_id: tenantId } });
+      evidence = punch?.extra_evidence || punch?.metadata?.extra_evidence || null;
+    }
+    const payload = monitorEvidencePayload(evidence || {});
+    if (!payload.base64_data && !payload.file_url) {
+      throw validationError("La evidencia solicitada no existe o no contiene un archivo disponible.", 404, "EVIDENCIA_MONITOR_NO_ENCONTRADA");
+    }
+    return { ...payload, id: evidenceId, source };
+  });
 }
 
 function employeeDisplayName(employee) {
@@ -2008,7 +2044,7 @@ async function getOperationsMap(tenantId, query = {}) {
           extra_minutes: punch.extra_minutes,
           extra_reason: punch.extra_reason,
           extra_detail: punch.extra_detail,
-          extra_evidence: monitorEvidenceSummary(punch.extra_evidence || {}),
+          extra_evidence: monitorEvidenceSummary(punch.extra_evidence || {}, { id: punch.id, source: "punch" }),
           metadata: punch.metadata || {}
         });
       }
@@ -2049,7 +2085,7 @@ async function getOperationsMap(tenantId, query = {}) {
           extra_minutes: punch.extra_minutes,
           extra_reason: punch.extra_reason,
           extra_detail: punch.extra_detail,
-          extra_evidence: monitorEvidenceSummary(punch.extra_evidence || {}),
+          extra_evidence: monitorEvidenceSummary(punch.extra_evidence || {}, { id: punch.id, source: "punch" }),
           metadata: punch.metadata || {}
         })),
         activity_points: routeActivities.map((activity) => ({
@@ -2064,7 +2100,7 @@ async function getOperationsMap(tenantId, query = {}) {
           vehicle_plate: activity.vehicle_plate,
           route_id: activity.route_id,
           observation: activity.observation,
-          evidence: (activity.evidence || []).map(monitorEvidenceSummary),
+          evidence: (activity.evidence || []).map((evidence) => monitorEvidenceSummary(evidence, { source: "activity" })),
           metadata: activity.metadata || {}
         })),
         marks_by_user: Array.from(marksByUser.entries()).map(([user_name, marks]) => ({ user_name, marks }))
@@ -2381,6 +2417,7 @@ module.exports = {
   getPreoperationalMetrics,
   getRouteTracking,
   getOperationsMap,
+  getMonitorEvidence,
   createPunch,
   createOwnPunch,
   createGpsPing,
