@@ -2,8 +2,10 @@
   "change_id": "hr-marking-only-20260824",
   "environment": "QA_LOCAL_ISOLATED",
   "company": "NYVORA",
-  "executed_at": "2026-08-24T17:39:52.000Z",
+  "executed_at": "2026-08-24T18:15:00.000Z",
   "base_url": "http://127.0.0.1:3101",
+  "runtime_commit": "016f27228f0dd5cf348681682dd5fd43642509e4",
+  "framework": "Next.js 16.3.2",
   "status": "passed",
   "checks": [
     {

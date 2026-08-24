@@ -16,6 +16,8 @@ El certificado versionado creó un usuario, un empleado y dos horarios controlad
 
 Evidencia estructurada: `certification.json` (17/17 controles) y `browser-certification.json` (7/7 controles).
 
+La certificación se repitió después del endurecimiento de dependencias sobre el runtime `016f27228f0dd5cf348681682dd5fd43642509e4`, con Next.js 16.3.2. El flujo funcional y el aislamiento permanecieron estables después de eliminar las 11 vulnerabilidades altas.
+
 ## Aislamiento visible
 
 La sesión no mostró Sidebar, navegación móvil ni asistente IA. Las navegaciones directas a `/dashboard`, `/dashboard/servicios` y `/dashboard/talento-humano/mapa` fueron redirigidas a la pantalla exclusiva de marcaciones.
