@@ -39,9 +39,9 @@ async function main() {
   const lock = JSON.parse(fs.readFileSync(path.join(root, "package-lock.json"), "utf8"));
   const apiRequire = createRequire(path.join(root, "apps/api/package.json"));
   const versions = {
-    next: lock.packages?.["node_modules/next"]?.version || null,
-    puppeteer_core: lock.packages?.["node_modules/puppeteer-core"]?.version || null,
-    sharp: lock.packages?.["node_modules/sharp"]?.version || null,
+    next: lock.packages?.["apps/web/node_modules/next"]?.version || null,
+    puppeteer_core: lock.packages?.["apps/api/node_modules/puppeteer-core"]?.version || null,
+    sharp: lock.packages?.["apps/api/node_modules/sharp"]?.version || null,
     postcss: lock.packages?.["node_modules/postcss"]?.version || null,
     brace_expansion_v1: lock.packages?.["node_modules/brace-expansion"]?.version || null,
     brace_expansion_v5: lock.packages?.["node_modules/nodemon/node_modules/brace-expansion"]?.version || null,
@@ -67,7 +67,8 @@ async function main() {
     check(result, "next_security_line", major(versions.next) >= 16, { version: versions.next });
     check(result, "puppeteer_security_line", major(versions.puppeteer_core) >= 25, { version: versions.puppeteer_core });
     check(result, "sharp_security_line", major(versions.sharp) >= 0 && Number(String(versions.sharp).split(".")[1] || 0) >= 35, { version: versions.sharp });
-    check(result, "extract_zip_removed", !lock.packages?.["node_modules/extract-zip"], {});
+    const containsExtractZip = Object.keys(lock.packages || {}).some((entry) => entry.endsWith("node_modules/extract-zip"));
+    check(result, "extract_zip_removed", !containsExtractZip, {});
 
     const puppeteer = apiRequire("puppeteer-core");
     const sharp = apiRequire("sharp");
