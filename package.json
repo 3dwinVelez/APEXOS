@@ -60,6 +60,7 @@
     "certify:platform-regression:qa": "node scripts/certifications/platform-regression-qa.js",
     "certify:hr-landing:qa": "node scripts/certifications/hr-landing-qa.js",
     "certify:hr-monitor-evidence:qa": "node scripts/certifications/hr-monitor-evidence-demand-qa.js",
+    "certify:admin-role-capabilities:qa": "node scripts/certifications/admin-role-capabilities-qa.js",
     "certify:production:mass:nyvora": "node scripts/certifications/nyvora-production-mass-regression.js",
     "qa:hr-services-stress": "node scripts/qa-hr-services-linear-stress.js",
     "qa:performance": "node scripts/performance/qa-latency-benchmark.js",
