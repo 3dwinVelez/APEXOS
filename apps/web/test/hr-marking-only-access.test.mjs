@@ -46,3 +46,13 @@ test("la pantalla usa exclusivamente endpoints autocontenidos self", () => {
   assert.doesNotMatch(marking, /api<[^>]+>\("\/api\/v1\/hr\/routes"/);
   assert.doesNotMatch(marking, /\/api\/v1\/hr\/operations-map/);
 });
+
+test("el perfil exclusivo se conserva al crear roles y usuarios Supabase", () => {
+  const api = read("../lib/api.ts");
+  const roleRoute = read("../app/api/admin/roles/route.ts");
+  const userRoute = read("../app/api/admin/users/route.ts");
+  assert.match(api, /name: "Empleado marcaciones"[\s\S]*access_profile: "marking_only"/);
+  assert.match(api, /access_profile: role\.access_profile/);
+  assert.match(roleRoute, /access_profile: clean\(role\.access_profile\)/);
+  assert.match(userRoute, /access_profile: clean\(body\.access_profile\)/);
+});

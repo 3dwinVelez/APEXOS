@@ -433,6 +433,7 @@ export async function PATCH(request: NextRequest) {
         role_id: roleId || metadata.role_id,
         role_name: roleName || metadata.role_name,
         role_type: clean(body.role_type) || metadata.role_type,
+        access_profile: clean(body.access_profile) || metadata.access_profile,
         role_scope: clean(body.role_scope) || metadata.role_scope,
         permissions: rolePermissions,
         document: documentNumber,
@@ -446,6 +447,7 @@ export async function PATCH(request: NextRequest) {
           role_id: roleId || previousAccess.role_id || null,
           role_name: roleName || previousAccess.role_name || "",
           role_type: clean(body.role_type) || previousAccess.role_type || "",
+          access_profile: clean(body.access_profile) || previousAccess.access_profile || "standard",
           role_scope: clean(body.role_scope) || previousAccess.role_scope || "",
           permissions: rolePermissions,
           require_password_change: nextPassword ? true : body.require_password_change === undefined ? Boolean(previousAccess.require_password_change) : Boolean(body.require_password_change),
@@ -523,7 +525,8 @@ export async function POST(request: NextRequest) {
           full_name: fullName,
           company_id: companyId,
           profile_kind: profileKind,
-          role_name: normalizedRoleName
+          role_name: normalizedRoleName,
+          access_profile: clean(body.access_profile) || "standard"
         }
       })
     }) as { id: string; email?: string };
@@ -559,6 +562,7 @@ export async function POST(request: NextRequest) {
       role_id: body.role_id || null,
       role_name: normalizedRoleName,
       role_type: clean(body.role_type) || "",
+      access_profile: clean(body.access_profile) || "standard",
       role_scope: clean(body.role_scope) || "",
       permissions: rolePermissions,
       document: clean(body.document) || "",
@@ -569,6 +573,7 @@ export async function POST(request: NextRequest) {
         role_id: body.role_id || null,
         role_name: normalizedRoleName,
         role_type: clean(body.role_type) || "",
+        access_profile: clean(body.access_profile) || "standard",
         role_scope: clean(body.role_scope) || "",
         permissions: rolePermissions,
         profile_kind: profileKind,

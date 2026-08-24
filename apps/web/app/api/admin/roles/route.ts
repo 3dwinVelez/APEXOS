@@ -114,6 +114,7 @@ function rolePayload(role: AnyRow, catalogId: string, companyId: string, { delet
       role_numeric_id: Number(role.id) || toNumberId(role.name),
       role_name: clean(role.name) || clean(role.nombre) || "Rol",
       role_type: clean(role.role_type) || "custom",
+      access_profile: clean(role.access_profile) || "standard",
       scope: clean(role.scope) || "company",
       scopes: role.scopes || { locations: [], areas: [], cost_centers: [], processes: [] },
       restrictions: role.restrictions || { locations: [], areas: [], cost_centers: [], processes: [] },
@@ -155,12 +156,14 @@ async function propagateRolePermissions(companyId: string, role: AnyRow) {
           ...metadata,
           role_name: clean(role.name) || metadata.role_name,
           role_type: clean(role.role_type) || metadata.role_type,
+          access_profile: clean(role.access_profile) || metadata.access_profile,
           role_scope: clean(role.scope) || metadata.role_scope,
           permissions,
           access: {
             ...access,
             role_name: clean(role.name) || access.role_name,
             role_type: clean(role.role_type) || access.role_type,
+            access_profile: clean(role.access_profile) || access.access_profile,
             role_scope: clean(role.scope) || access.role_scope,
             permissions
           }

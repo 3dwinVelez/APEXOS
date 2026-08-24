@@ -103,6 +103,7 @@ const tenantModuleCodesByPermissionModule: Record<string, string[]> = {
   admin: ["M-22", "administracion", "administracion_apex", "admin"],
   brain: ["AI-CORE", "apex-ai", "apex_ai", "brain"],
   hr: ["M-17", "talento-humano", "talento_humano", "hr"],
+  time_tracking: ["M-17", "talento-humano", "talento_humano", "hr", "time_tracking", "marcaciones"],
   inventory: ["M-01", "inventario", "inventory"],
   invoicing: ["M-04", "facturacion", "invoicing"],
   payroll: ["M-17", "nomina", "payroll"],
@@ -435,7 +436,7 @@ function mergeAdminPermissions(overrides: Record<string, Record<string, boolean>
 function defaultAdminRoles(activeModules = getStoredTenantActiveModules()) {
   const catalog = filteredAdminPermissionCatalog(activeModules);
   const all = Object.fromEntries(catalog.map((item) => [item.key, protectPhysicalDeleteDefaults(item.actions)]));
-  const shared = { scopes: { locations: [], areas: [], cost_centers: [], processes: [] }, restrictions: { locations: [], areas: [], cost_centers: [], processes: [] }, can_delegate: false, sensitive: false };
+  const shared = { access_profile: "standard", scopes: { locations: [], areas: [], cost_centers: [], processes: [] }, restrictions: { locations: [], areas: [], cost_centers: [], processes: [] }, can_delegate: false, sensitive: false };
   return [
     { id: 1, name: "Administrador de empresa", description: "Administra usuarios, roles y operacion de la empresa.", active: true, is_system: true, hierarchy_level: 90, role_type: "admin_empresa", scope: "company", permissions: all, ...shared },
     { id: 2, name: "Supervisor operativo", description: "Supervisa ejecucion diaria y evidencias operativas.", active: true, is_system: false, hierarchy_level: 60, role_type: "supervisor", scope: "area", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true, reports: true }, marcaciones: { access: true, view: true, create: true, edit: true, approve: true, reject: true, export: true, reports: true }, servicios: { access: true, view: true, create: true, edit: true, approve: true, attach: true, download: true, reports: true }, transporte: { access: true, view: true, edit: true, reports: true } }, activeModules), ...shared },
@@ -443,7 +444,8 @@ function defaultAdminRoles(activeModules = getStoredTenantActiveModules()) {
     { id: 4, name: "Auditor", description: "Consulta auditoria, reportes y documentos sensibles.", active: true, is_system: false, hierarchy_level: 65, role_type: "auditor", scope: "company", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true, reports: true }, auditoria: { access: true, view: true, export: true, download: true, reports: true, sensitive: true }, reportes: { access: true, view: true, export: true, download: true, reports: true, sensitive: true }, documentos: { access: true, view: true, download: true, sensitive: true } }, activeModules), ...shared, sensitive: true },
     { id: 5, name: "Soporte tecnico", description: "Soporte de configuracion y diagnostico.", active: true, is_system: false, hierarchy_level: 75, role_type: "soporte", scope: "company", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true, reports: true }, usuarios: { access: true, view: true, edit: true }, roles: { access: true, view: true }, configuracion: { access: true, view: true, edit: true, configure: true }, auditoria: { access: true, view: true, reports: true }, notificaciones: { access: true, view: true, create: true, edit: true }, ia: { access: true, view: true, execute: true } }, activeModules), ...shared },
     { id: 6, name: "Tecnico", description: "Ejecuta exclusivamente servicios activos asignados.", active: true, is_system: true, hierarchy_level: 35, role_type: "operativo", scope: "assigned", permissions: mergeAdminPermissions({ servicios: { access: true, view: true, edit: true, attach: true, download: true } }, activeModules), ...shared },
-    { id: 7, name: "Empleado", description: "Consulta operativa y registra jornada.", active: true, is_system: false, hierarchy_level: 20, role_type: "operativo", scope: "location", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true }, marcaciones: { access: true, view: true, create: true }, documentos: { access: true, view: true, download: true } }, activeModules), ...shared }
+    { id: 7, name: "Empleado", description: "Consulta operativa y registra jornada.", active: true, is_system: false, hierarchy_level: 20, role_type: "operativo", scope: "location", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true }, marcaciones: { access: true, view: true, create: true }, documentos: { access: true, view: true, download: true } }, activeModules), ...shared },
+    { id: 8, name: "Empleado marcaciones", description: "Registra exclusivamente su propia jornada.", active: true, is_system: false, hierarchy_level: 15, role_type: "operativo", scope: "self", permissions: mergeAdminPermissions({ marcaciones: { access: true, view: true, create: true } }, activeModules), ...shared, access_profile: "marking_only" }
   ];
 }
 
@@ -583,6 +585,7 @@ function roleFromCatalogItem(item: {
     is_system: Boolean(metadata.is_system),
     hierarchy_level: Number(metadata.hierarchy_level || item.sort_order || 10),
     role_type: String(metadata.role_type || "custom"),
+    access_profile: String(metadata.access_profile || "standard"),
     scope: String(metadata.scope || "company"),
     scopes: metadata.scopes as AdminRole["scopes"] || { locations: [], areas: [], cost_centers: [], processes: [] },
     restrictions: metadata.restrictions as AdminRole["restrictions"] || { locations: [], areas: [], cost_centers: [], processes: [] },
@@ -687,6 +690,7 @@ async function saveSupabaseAdminRole(role: AdminRole) {
         role_numeric_id: role.id,
         role_name: role.name,
         role_type: role.role_type || "custom",
+        access_profile: role.access_profile || "standard",
         scope: role.scope || "company",
         scopes: role.scopes || { locations: [], areas: [], cost_centers: [], processes: [] },
         restrictions: role.restrictions || { locations: [], areas: [], cost_centers: [], processes: [] },
@@ -3725,6 +3729,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         is_system: false,
         hierarchy_level: Number(body.hierarchy_level || 10),
         role_type: body.role_type || "custom",
+        access_profile: body.access_profile || "standard",
         scope: body.scope || "company",
         scopes: body.scopes || { locations: [], areas: [], cost_centers: [], processes: [] },
         restrictions: body.restrictions || { locations: [], areas: [], cost_centers: [], processes: [] },
@@ -3766,6 +3771,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       active: pathname.endsWith("/status") ? Boolean(body.active ?? body.activo) : (body.active !== false && body.activo !== false),
       hierarchy_level: Number(body.hierarchy_level || role.hierarchy_level || 10),
       role_type: body.role_type || role.role_type || "custom",
+      access_profile: body.access_profile || role.access_profile || "standard",
       scope: body.scope || role.scope || "company",
       scopes: body.scopes || role.scopes || { locations: [], areas: [], cost_centers: [], processes: [] },
       restrictions: body.restrictions || role.restrictions || { locations: [], areas: [], cost_centers: [], processes: [] },
@@ -3934,7 +3940,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         const response = await fetch("/api/admin/users", {
           method: "POST",
           headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ ...body, role_name: role.name, role_permissions: role.permissions, role_type: role.role_type, role_scope: role.scope })
+          body: JSON.stringify({ ...body, role_name: role.name, role_permissions: role.permissions, role_type: role.role_type, role_scope: role.scope, access_profile: role.access_profile })
         });
         if (response.ok) {
           const created = await response.json() as { user_id: string; employee?: AnyRow };
@@ -4035,7 +4041,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         employee_id: employeeId,
         action: pathname.endsWith("/status") ? "status" : "update",
         ...body,
-        ...(role ? { role_name: role.name, role_permissions: role.permissions, role_type: role.role_type, role_scope: role.scope } : {})
+        ...(role ? { role_name: role.name, role_permissions: role.permissions, role_type: role.role_type, role_scope: role.scope, access_profile: role.access_profile } : {})
       })
     }).then(() => true).catch((error) => {
       safeDevLog("No fue posible actualizar usuario via Next API.", error);
