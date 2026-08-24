@@ -25,6 +25,36 @@ function changedFiles(base, candidate) {
   });
 }
 
+function normalizedChange(change) {
+  return `${change.status}:${change.file}`;
+}
+
+function validateExpectedChanges(manifest, changes) {
+  if (manifest.scope_schema_version !== 2) return;
+  if (!manifest.change_intent || typeof manifest.change_intent.summary !== "string" || !manifest.change_intent.summary.trim()) {
+    fail("scope_schema_version 2 requiere change_intent.summary");
+  }
+  if (!Array.isArray(manifest.change_intent.modules) || !manifest.change_intent.modules.length) {
+    fail("scope_schema_version 2 requiere change_intent.modules");
+  }
+  if (!Array.isArray(manifest.expected_changes) || !manifest.expected_changes.length) {
+    fail("scope_schema_version 2 requiere expected_changes");
+  }
+  const expected = manifest.expected_changes.map((change) => {
+    if (!change || !["A", "M", "D"].includes(change.status) || typeof change.file !== "string" || !change.file.trim()) {
+      fail("expected_changes solo admite entradas exactas { status: A|M|D, file }");
+    }
+    return normalizedChange(change);
+  }).sort();
+  if (new Set(expected).size !== expected.length) fail("expected_changes contiene entradas duplicadas");
+  const actual = changes.map(normalizedChange).sort();
+  if (expected.length !== actual.length || expected.some((entry, index) => entry !== actual[index])) {
+    const missing = expected.filter((entry) => !actual.includes(entry));
+    const extra = actual.filter((entry) => !expected.includes(entry));
+    fail(`diff distinto al inventario exacto; faltan [${missing.join(", ")}], sobran [${extra.join(", ")}]`);
+  }
+}
+
 function validateManifest(manifest, manifestDir, changes) {
   if (!manifest.change_id || (!manifest.base_commit && !manifest.base_commits) || !manifest.certified_commit) fail("faltan change_id, base_commit/base_commits o certified_commit");
   if (!Array.isArray(manifest.allowed_paths) || !manifest.allowed_paths.length) fail("allowed_paths debe declarar rutas puntuales");
@@ -33,6 +63,7 @@ function validateManifest(manifest, manifestDir, changes) {
   if (unexpected.length) fail(`rutas fuera de alcance: ${unexpected.map(({ status, file }) => `${status}:${file}`).join(", ")}`);
   const forbiddenDeletes = changes.filter(({ status, file }) => status.startsWith("D") && !manifest.allowed_deletions.includes(file));
   if (forbiddenDeletes.length) fail(`eliminaciones no autorizadas: ${forbiddenDeletes.map(({ file }) => file).join(", ")}`);
+  validateExpectedChanges(manifest, changes);
   if (!Array.isArray(manifest.protected_capabilities) || !manifest.protected_capabilities.length) fail("protected_capabilities es obligatorio");
   for (const capability of manifest.protected_capabilities) {
     if (!capability.name || capability.status !== "passed") fail("toda capacidad protegida debe estar identificada y aprobada");
@@ -79,4 +110,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { changedFiles, matchesAllowed, validateManifest };
+module.exports = { changedFiles, matchesAllowed, validateExpectedChanges, validateManifest };

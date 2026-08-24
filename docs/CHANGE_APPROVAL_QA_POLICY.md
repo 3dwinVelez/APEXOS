@@ -92,6 +92,10 @@ Antes de integrar una correccion se compara el estado actual del destino contra 
 6. El manifiesto debe enumerar capacidades protegidas y su evidencia. La funcion intervenida y las funciones previamente corregidas del mismo dominio se prueban juntas.
 7. Toda eliminacion requiere una coincidencia exacta en `allowed_deletions`; los prefijos o comodines no autorizan borrados.
 8. Si varias maquinas trabajan simultaneamente, cada entrega debe sincronizarse primero con el destino, recalcular el diff y repetir la compuerta. Una certificacion sobre un diff anterior queda invalidada.
+9. Todo manifiesto nuevo usa `scope_schema_version: 2`, declara su intención y módulos, y enumera exactamente cada entrada `A`, `M` o `D` en `expected_changes`.
+10. `allowed_paths` no autoriza cambios adicionales dentro de un directorio. Si el diff contiene una entrada que no aparece exactamente en `expected_changes`, la promoción queda bloqueada.
+11. Si un mismo archivo contiene varias funciones, el certificado debe identificar y probar las capacidades vecinas; autorizar el archivo no autoriza reemplazar secciones ajenas al objetivo.
+12. Un commit con cambios en módulos que no coinciden con su propósito declarado debe dividirse o reconstruirse mediante hunks puntuales sobre el destino remoto vigente.
 
 La guia operativa completa se encuentra en `docs/releases/CONTROLLED_PROMOTION_SCOPE_POLICY.md`.
 
