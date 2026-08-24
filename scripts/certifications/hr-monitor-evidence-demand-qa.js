@@ -21,6 +21,7 @@ const hr = require("../../apps/api/src/modules/hr/service");
 
 const API_URL = String(args["api-url"] || "http://127.0.0.1:3100").replace(/\/$/, "");
 const OUTPUT = path.resolve(String(args.output || "docs/qa/evidence/hr-monitor-evidence-demand-20260824/certification.json"));
+const FIXTURE_OUTPUT = args["fixture-output"] ? path.resolve(String(args["fixture-output"])) : "";
 const RUN_ID = new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
 const PASSWORD = `Qa-Monitor-${crypto.randomBytes(6).toString("hex")}#26`;
 const MARKING_EMAIL = `qa.monitor.employee.${RUN_ID}@nyvora.test`;
@@ -167,9 +168,14 @@ async function main() {
     result.error = { message: error.message, payload: error.payload || null };
     throw error;
   } finally {
-    if (employeeUser?.id) await admin.setUserActive(tenant.id, employeeUser.id, false).catch(() => undefined);
-    if (monitorUser?.id) await admin.setUserActive(tenant.id, monitorUser.id, false).catch(() => undefined);
-    if (route?.id) await prisma.runWithTenant(tenant.id, () => prisma.timeRoute.updateMany({ where: { id: route.id }, data: { status: "inactive" } })).catch(() => undefined);
+    if (FIXTURE_OUTPUT && result.status === "passed") {
+      fs.mkdirSync(path.dirname(FIXTURE_OUTPUT), { recursive: true });
+      fs.writeFileSync(FIXTURE_OUTPUT, JSON.stringify({ admin_email: ADMIN_EMAIL, password: PASSWORD, tenant_id: tenant.id, employee_user_id: employeeUser.id, monitor_user_id: monitorUser.id, route_id: route.id, date: TODAY }));
+    } else {
+      if (employeeUser?.id) await admin.setUserActive(tenant.id, employeeUser.id, false).catch(() => undefined);
+      if (monitorUser?.id) await admin.setUserActive(tenant.id, monitorUser.id, false).catch(() => undefined);
+      if (route?.id) await prisma.runWithTenant(tenant.id, () => prisma.timeRoute.updateMany({ where: { id: route.id }, data: { status: "inactive" } })).catch(() => undefined);
+    }
     fs.mkdirSync(path.dirname(OUTPUT), { recursive: true });
     fs.writeFileSync(OUTPUT, `${JSON.stringify(result, null, 2)}\n`);
   }
