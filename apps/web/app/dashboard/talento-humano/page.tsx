@@ -1,80 +1,92 @@
-"use client";
-
-import { api } from "@/lib/api";
-import { CalendarDays, FileText, MapPinned, Route, Smartphone, Truck } from "lucide-react";
+import { ArrowRight, CalendarDays, Clock3, FileText, MapPinned, Smartphone, WalletCards } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
-type Employee = { id: number };
+const JOURNEY_ACTIONS = [
+  { title: "Crear y asignar horarios", detail: "Diseña mallas, organiza jornadas y asigna personas.", href: "/dashboard/talento-humano/rutas", icon: <CalendarDays size={19} /> },
+  { title: "Marcaciones y jornadas", detail: "Registra entradas, salidas, GPS y evidencias.", href: "/dashboard/talento-humano/marcacion", icon: <Smartphone size={19} /> },
+  { title: "Monitor de jornada", detail: "Supervisa ubicación, actividad y cumplimiento en vivo.", href: "/dashboard/talento-humano/mapa", icon: <MapPinned size={19} /> },
+  { title: "Reportes de tiempo", detail: "Consulta horas laboradas, extras y trazabilidad.", href: "/dashboard/talento-humano/reportes", icon: <FileText size={19} /> }
+] as const;
 
 export default function TalentPage() {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [vehicles, setVehicles] = useState<{ id: number }[]>([]);
-
-  useEffect(() => {
-    Promise.all([
-      api<Employee[]>("/api/v1/hr/employees").catch(() => []),
-      api<{ id: number }[]>("/api/v1/transport/vehicles").catch(() => [])
-    ]).then(([employeeData, vehicleData]) => {
-      setEmployees(employeeData);
-      setVehicles(vehicleData);
-    }).catch(() => undefined);
-  }, []);
-
   return (
     <div className="apex-workspace-shell space-y-5">
       <section className="apex-context-hero">
         <div className="relative z-10 flex flex-col gap-5 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
-            <p className="apex-eyebrow">M-17 - Talento Humano</p>
-            <h1 className="mt-2 max-w-3xl text-2xl font-semibold sm:text-3xl">Operación de personal y jornadas</h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/65">Gestiona horarios, marcaciones, seguimiento GPS y trazabilidad del equipo operativo.</p>
+            <p className="apex-eyebrow">M-17 · Talento Humano</p>
+            <h1 className="mt-2 max-w-3xl text-2xl font-semibold sm:text-3xl">Gestión de talento y tiempo laboral</h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/65">Planea mallas horarias, registra jornadas y consulta la trazabilidad del equipo desde un solo lugar.</p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <span className="apex-guide-chip">1. Marca o planea</span>
-              <span className="apex-guide-chip">2. Supervisa campo</span>
-              <span className="apex-guide-chip">3. Consulta trazabilidad</span>
+              <span className="apex-guide-chip">1. Planea la malla</span>
+              <span className="apex-guide-chip">2. Registra la jornada</span>
+              <span className="apex-guide-chip">3. Controla y reporta</span>
             </div>
           </div>
-          <div className="flex shrink-0 flex-wrap gap-2">
-            <Link className="apex-hero-action inline-flex items-center gap-2 px-5 text-sm font-semibold" href="/dashboard/talento-humano/marcacion"><Smartphone size={16} /> Marcación móvil</Link>
-            <Link className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" href="/dashboard/talento-humano/rutas"><Route size={16} /> Nuevo horario</Link>
-          </div>
+          <Link className="apex-hero-action inline-flex shrink-0 items-center gap-2 px-5 text-sm font-semibold" href="/dashboard/talento-humano/rutas">
+            <CalendarDays size={17} /> Abrir mallas horarias
+          </Link>
         </div>
       </section>
 
-      {!employees.length || !vehicles.length ? (
-        <section className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
-          Para operar necesitas personas y vehiculos base. Los usuarios se crean desde Administracion APEX y la flota desde Transporte.
-        </section>
-      ) : null}
-
-      <section className="apex-section-card p-4">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-apex">Funciones del módulo</p>
-            <h2 className="mt-1 text-xl font-semibold">¿Qué necesitas gestionar?</h2>
-            <p className="mt-1 text-sm text-neutral-600">Accesos organizados según el trabajo diario del equipo.</p>
-          </div>
+      <section className="apex-section-card p-4 sm:p-5">
+        <div className="mb-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-apex">Áreas de trabajo</p>
+          <h2 className="mt-1 text-xl font-semibold">Selecciona el proceso que necesitas gestionar</h2>
+          <p className="mt-1 text-sm text-neutral-600">Las funciones están agrupadas por dominio para mantener una navegación clara y predecible.</p>
         </div>
-        <div className="apex-dense-actions">
-          <ActionTile icon={<Smartphone size={20} />} title="Registrar jornada" detail="Marcación móvil, GPS y evidencia para personal operativo." href="/dashboard/talento-humano/marcacion" primary />
-          <ActionTile icon={<Route size={20} />} title="Planear y asignar horarios" detail="Organiza personas, jornadas y recursos de campo." href="/dashboard/talento-humano/rutas" primary />
-          <ActionTile icon={<MapPinned size={20} />} title="Supervisar operación en vivo" detail="Consulta ubicación, actividad y trazabilidad por persona." href="/dashboard/talento-humano/mapa" primary />
-          <ActionTile icon={<CalendarDays size={20} />} title="Consultar reportes" detail="Horas laboradas, extras y trazabilidad por empleado." href="/dashboard/talento-humano/reportes" />
-          <ActionTile icon={<FileText size={20} />} title="Configurar nómina" detail="Administra recargos y conceptos contables." href="/dashboard/talento-humano/nomina" />
-          <ActionTile icon={<Truck size={20} />} title="Gestionar vehículos" detail="Consulta disponibilidad y estado documental de la flota." href="/dashboard/transporte" />
+
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(19rem,1fr)]">
+          <article className="overflow-hidden rounded-xl border border-apex/40 bg-white shadow-sm">
+            <div className="flex flex-col gap-4 border-b border-apex/15 p-5 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex min-w-0 gap-3">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-apex text-white shadow-sm"><Clock3 size={23} /></span>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-xl font-semibold">Mallas horarias</h3>
+                    <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800">Disponible</span>
+                  </div>
+                  <p className="mt-1 max-w-2xl text-sm leading-6 text-neutral-600">Todo lo relacionado con planeación de horarios, marcaciones, jornadas, seguimiento y reportes de tiempo.</p>
+                </div>
+              </div>
+              <Link className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-apex px-4 text-sm font-semibold text-white transition hover:bg-apex/90" href="/dashboard/talento-humano/rutas">
+                Gestionar mallas <ArrowRight size={16} />
+              </Link>
+            </div>
+            <div className="grid gap-3 p-4 sm:grid-cols-2">
+              {JOURNEY_ACTIONS.map((action) => <JourneyAction key={action.href} {...action} />)}
+            </div>
+          </article>
+
+          <article className="flex min-h-full flex-col rounded-xl border border-line bg-white p-5">
+            <div className="flex items-start justify-between gap-3">
+              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-paper text-apex"><WalletCards size={23} /></span>
+              <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">En planeación</span>
+            </div>
+            <h3 className="mt-4 text-xl font-semibold">Nómina</h3>
+            <p className="mt-2 text-sm leading-6 text-neutral-600">Este espacio reunirá la configuración, liquidación y seguimiento del proceso de nómina.</p>
+            <ul className="mt-4 space-y-2 text-sm text-neutral-600">
+              <li className="flex gap-2"><span className="text-apex">•</span> Conceptos y novedades</li>
+              <li className="flex gap-2"><span className="text-apex">•</span> Liquidación y comprobantes</li>
+              <li className="flex gap-2"><span className="text-apex">•</span> Aportes y trazabilidad contable</li>
+            </ul>
+            <button className="mt-auto h-10 w-full cursor-not-allowed rounded-lg border border-line bg-paper px-4 text-sm font-semibold text-neutral-500" disabled type="button">Disponible próximamente</button>
+          </article>
         </div>
       </section>
     </div>
   );
 }
 
-function ActionTile({ icon, title, detail, href, primary = false }: { icon: ReactNode; title: string; detail: string; href: string; primary?: boolean }) {
+function JourneyAction({ icon, title, detail, href }: { icon: ReactNode; title: string; detail: string; href: string }) {
   return (
-    <Link className={`flex min-h-28 items-start gap-3 rounded-lg border p-4 transition hover:border-apex hover:shadow-md ${primary ? "border-apex/50 bg-apex/10 shadow-sm" : "border-line bg-white"}`} href={href}>
-      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${primary ? "bg-apex text-white" : "bg-paper text-apex"}`}>{icon}</span>
-      <span className="min-w-0"><span className="font-semibold">{title}</span><span className="mt-1 block text-sm leading-5 text-neutral-600">{detail}</span></span>
+    <Link className="group flex min-h-24 items-start gap-3 rounded-lg border border-line bg-white p-4 transition hover:border-apex hover:shadow-md" href={href}>
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-paper text-apex transition group-hover:bg-apex group-hover:text-white">{icon}</span>
+      <span className="min-w-0">
+        <span className="flex items-center gap-2 font-semibold">{title}<ArrowRight className="opacity-0 transition group-hover:opacity-100" size={14} /></span>
+        <span className="mt-1 block text-sm leading-5 text-neutral-600">{detail}</span>
+      </span>
     </Link>
   );
 }
