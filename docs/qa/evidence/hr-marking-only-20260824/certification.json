@@ -1,0 +1,160 @@
+{
+  "change_id": "hr-marking-only-20260824",
+  "environment": "QA",
+  "company": "NYVORA",
+  "generated_at": "2026-08-24T17:38:39.075Z",
+  "api_commit": "unknown",
+  "fixture": {
+    "user_id": 1,
+    "employee_id": 1,
+    "own_route_id": 1,
+    "foreign_route_id": 2
+  },
+  "checks": [
+    {
+      "name": "login_role",
+      "ok": true,
+      "detail": {
+        "role": "Empleado marcaciones"
+      }
+    },
+    {
+      "name": "access_profile",
+      "ok": true,
+      "detail": {
+        "access_profile": "marking_only"
+      }
+    },
+    {
+      "name": "permission_isolation",
+      "ok": true,
+      "detail": {
+        "permissions": [
+          {
+            "id": 40,
+            "role_id": 16,
+            "module": "time_tracking",
+            "action": "read"
+          },
+          {
+            "id": 41,
+            "role_id": 16,
+            "module": "time_tracking",
+            "action": "write"
+          }
+        ]
+      }
+    },
+    {
+      "name": "self_identity",
+      "ok": true,
+      "detail": {
+        "employee_id": 1
+      }
+    },
+    {
+      "name": "assigned_routes_only",
+      "ok": true,
+      "detail": {
+        "route_ids": [
+          1
+        ]
+      }
+    },
+    {
+      "name": "denied_employees",
+      "ok": true,
+      "detail": {
+        "code": "PERMISO_DENEGADO"
+      }
+    },
+    {
+      "name": "denied_routes",
+      "ok": true,
+      "detail": {
+        "code": "PERMISO_DENEGADO"
+      }
+    },
+    {
+      "name": "denied_operations-map",
+      "ok": true,
+      "detail": {
+        "code": "PERMISO_DENEGADO"
+      }
+    },
+    {
+      "name": "denied_attendance",
+      "ok": true,
+      "detail": {
+        "code": "PERMISO_DENEGADO"
+      }
+    },
+    {
+      "name": "foreign_route_denied",
+      "ok": true,
+      "detail": {
+        "code": "HORARIO_AJENO_DENEGADO"
+      }
+    },
+    {
+      "name": "spoofed_identity_replaced",
+      "ok": true,
+      "detail": {
+        "employee_id": 1
+      }
+    },
+    {
+      "name": "own_activity_created",
+      "ok": true,
+      "detail": {
+        "activity_id": 1,
+        "employee_id": 1
+      }
+    },
+    {
+      "name": "own_gps_created",
+      "ok": true,
+      "detail": {
+        "gps_id": 1,
+        "employee_id": 1
+      }
+    },
+    {
+      "name": "punch_inicio_almuerzo",
+      "ok": true,
+      "detail": {
+        "punch_id": 2,
+        "next": "fin_almuerzo"
+      }
+    },
+    {
+      "name": "punch_fin_almuerzo",
+      "ok": true,
+      "detail": {
+        "punch_id": 3,
+        "next": "salida"
+      }
+    },
+    {
+      "name": "punch_salida",
+      "ok": true,
+      "detail": {
+        "punch_id": 4,
+        "next": null
+      }
+    },
+    {
+      "name": "complete_marking_flow",
+      "ok": true,
+      "detail": {
+        "punch_types": [
+          "entrada",
+          "inicio_almuerzo",
+          "fin_almuerzo",
+          "salida"
+        ]
+      }
+    }
+  ],
+  "status": "passed"
+}
