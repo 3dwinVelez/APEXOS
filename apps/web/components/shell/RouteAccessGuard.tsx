@@ -1,6 +1,7 @@
 "use client";
 
 import { loadModuleAccess } from "@/lib/moduleAccess";
+import { isMarkingOnlyAccess, MARKING_ONLY_PATH } from "@/lib/accessProfile";
 import { MODULES, MODULES_BY_SLUG } from "@/lib/modules";
 import { ShieldAlert } from "lucide-react";
 import Link from "next/link";
@@ -25,6 +26,14 @@ export function RouteAccessGuard({ children }: { children: React.ReactNode }) {
     let alive = true;
 
     async function checkAccess() {
+      if (isMarkingOnlyAccess()) {
+        if (pathname !== MARKING_ONLY_PATH) {
+          router.replace(MARKING_ONLY_PATH);
+          return;
+        }
+        if (alive) setState("allowed");
+        return;
+      }
       if (localStorage.getItem("role_name")?.toLowerCase() === "tecnico" && !pathname.startsWith("/dashboard/servicios")) {
         router.replace("/dashboard/servicios");
         return;

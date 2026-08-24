@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { API_BASE_URL } from "@/lib/apiBaseUrl";
 import { flattenRolePermissions } from "@/lib/rolePermissions";
 import { touchSession } from "@/lib/sessionSecurity";
+import { dashboardLandingPath, isMarkingOnlyAccess, MARKING_ONLY_PROFILE } from "@/lib/accessProfile";
 import { getSupabaseConfigStatus, supabaseAuth, supabaseFetch } from "@/lib/supabaseClient";
 import { ArrowRight, Check, LockKeyhole, Mail, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import { useState } from "react";
@@ -60,7 +61,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   async function resolveSupabaseProfile(email: string) {
-    const rows = await supabaseFetch<Array<{ user_type?: string; metadata?: { role_name?: string; profile_kind?: string; permissions?: unknown; role_type?: string; role_scope?: string } }>>(
+    const rows = await supabaseFetch<Array<{ user_type?: string; metadata?: { role_name?: string; profile_kind?: string; access_profile?: string; permissions?: unknown; role_type?: string; role_scope?: string } }>>(
       `/rest/v1/employees?select=user_type,metadata&email=eq.${encodeURIComponent(email)}&status=eq.active&limit=20`
     ).catch(() => []);
     const employee = rows.find(serviceTechnicianEmployee) || rows[0];
@@ -76,6 +77,7 @@ export default function LoginPage() {
         localStorage.setItem("role_metadata", JSON.stringify({
           role_type: employee.metadata.role_type,
           role_scope: employee.metadata.role_scope,
+          access_profile: employee.metadata.access_profile,
           legacy_permissions: employee.metadata.permissions
         }));
       }
@@ -164,7 +166,8 @@ export default function LoginPage() {
       touchSession();
       const roleName = localStorage.getItem("role_name")?.toLowerCase();
       document.documentElement.dataset.role = roleName || "";
-      window.location.assign(roleName === "tecnico" ? "/dashboard/servicios" : "/dashboard");
+      document.documentElement.dataset.accessProfile = isMarkingOnlyAccess() ? MARKING_ONLY_PROFILE : "standard";
+      window.location.assign(dashboardLandingPath());
     } catch (err) {
       setError(friendlyLoginError(err));
     } finally {

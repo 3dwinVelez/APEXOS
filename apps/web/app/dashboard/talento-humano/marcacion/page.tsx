@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { getGpsFix, type GpsFix } from "@/lib/gps";
 import { scheduleGpsRequired } from "@/lib/hrScheduleMonitor";
 import { publishHrMonitorRefresh } from "@/lib/hrMonitorRefresh";
+import { isMarkingOnlyAccess } from "@/lib/accessProfile";
 import { SignatureCapture } from "@/components/operations/SignatureCapture";
 import { PhotoCapture, type CapturedFile } from "@/components/operations/PhotoCapture";
 import { AlertTriangle, ArrowLeft, CheckCircle2, ExternalLink, MapPin, Navigation, Plus, RefreshCw, Truck, X } from "lucide-react";
@@ -14,10 +15,6 @@ type Employee = { id: number | string; user_id?: string; code: string; document_
 type Attendance = { user_name: string; route_id?: number | string | null; next_type: string | null; punches: Array<{ id: number; type: string; time: string; vehicle_plate: string }> };
 type AttendancePunch = Attendance["punches"][number];
 type TimeRoute = { id: number | string; code?: string; display_id?: string; source_route_id?: number | string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string; gps_required?: boolean; tracking_mode?: string; metadata?: Record<string, unknown> };
-type OperationPunch = { id: number | string; user_name: string; type: string; time?: string; punched_at?: string; vehicle_plate?: string; route_id?: number | string | null };
-type OperationActivity = { id: number | string; user_name: string; type: string; time?: string; occurred_at?: string; observation?: string; latitude?: number; longitude?: number; accuracy_meters?: number; evidence?: Array<{ base64_data?: string; file_name?: string }> };
-type OperationRoute = TimeRoute & { punch_points?: OperationPunch[]; activity_points?: OperationActivity[] };
-type OperationsMap = { routes: OperationRoute[] };
 type PreopItem = { section: string; item_key: string; label: string; severity: string; blocks_route: boolean; evidence_required: boolean };
 type PreopChecklist = { id: number; route_id?: number; plate: string; checklist_status: string; risk_level: string };
 type PreopTemplate = { sections: string[]; items: PreopItem[] };
@@ -171,7 +168,6 @@ function routeSyncMetadata(route: TimeRoute | null | undefined) {
 export default function MobilePunchPage() {
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [routes, setRoutes] = useState<TimeRoute[]>([]);
-  const [operationsMap, setOperationsMap] = useState<OperationsMap | null>(null);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [message, setMessage] = useState("");
   const [extraReason, setExtraReason] = useState("");
@@ -204,11 +200,11 @@ export default function MobilePunchPage() {
 
   const load = useCallback(async () => {
     const [me, routeData, attendanceData, typesData, sessionData] = await Promise.all([
-      api<Employee>("/api/v1/hr/me").catch(() => null),
-      api<TimeRoute[]>("/api/v1/hr/routes").catch(() => []),
-      api<Attendance[]>("/api/v1/hr/attendance").catch(() => []),
-      api<ActivityType[]>("/api/v1/hr/activity-types").catch(() => []),
-      api<WorkSession>("/api/v1/hr/work-sessions/current").catch(() => null)
+      api<Employee>("/api/v1/hr/self").catch(() => null),
+      api<TimeRoute[]>("/api/v1/hr/self/routes").catch(() => []),
+      api<Attendance[]>("/api/v1/hr/self/attendance").catch(() => []),
+      api<ActivityType[]>("/api/v1/hr/self/activity-types").catch(() => []),
+      api<WorkSession>("/api/v1/hr/self/work-session").catch(() => null)
     ]);
     setEmployee(me);
     setRoutes(routeData);
@@ -216,7 +212,7 @@ export default function MobilePunchPage() {
     setActivityTypes(typesData);
     setSession(sessionData);
     if (typesData[0]) setActivityTypeId((current) => current || String(typesData[0].id));
-    const active = await api<{ checklist: PreopChecklist | null; template: PreopTemplate }>("/api/v1/hr/routes/preop/active").catch(() => null);
+    const active = await api<{ checklist: PreopChecklist | null; template: PreopTemplate }>("/api/v1/hr/self/preop/active").catch(() => null);
     if (active?.checklist) {
       setPreop(active.checklist);
       setPreopTemplate(active.template);
@@ -266,33 +262,14 @@ export default function MobilePunchPage() {
     || (assignedRoutes.length === 1 ? assignedRoutes[0] : null);
   const gpsRequired = scheduleGpsRequired(route);
   const routeRequired = assignedRoutes.length > 1 && !route;
-  const operationRoute = operationsMap?.routes?.find((item) => String(item.id) === String(route?.id || ""));
-  const userMatches = useCallback((value: unknown) => {
-    const key = normalizeKey(String(value || ""));
-    return Boolean(key && (aliases.includes(key) || key === normalizeKey(userName) || key === normalizeKey(employeeName(employee))));
-  }, [aliases, employee, userName]);
   const attendanceForRoute = attendance.find((item) => {
     const identityMatch = aliases.includes(normalizeKey(item.user_name)) || item.user_name === userName || item.user_name === employeeName(employee);
     const routeMatch = route ? String(item.route_id || "") === String(route.id) : true;
     return identityMatch && routeMatch;
   });
-  const operationPunches = (operationRoute?.punch_points || [])
-    .filter((punch) => userMatches(punch.user_name))
-    .sort((left, right) => String(left.punched_at || left.time || "").localeCompare(String(right.punched_at || right.time || "")))
-    .map((punch) => ({
-      id: Number(punch.id) || Date.parse(String(punch.punched_at || punch.time || "")) || 0,
-      type: punch.type,
-      time: punch.time || (punch.punched_at ? new Date(punch.punched_at).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }) : ""),
-      vehicle_plate: punch.vehicle_plate || route?.vehicle_plate || ""
-    }));
-  const fallbackNextType = (() => {
-    const lastType = operationPunches[operationPunches.length - 1]?.type;
-    if (!lastType) return "entrada";
-    const currentIndex = punchOrder.indexOf(lastType);
-    return currentIndex >= 0 && currentIndex < punchOrder.length - 1 ? punchOrder[currentIndex + 1] : null;
-  })();
+  const fallbackNextType = "entrada";
   const optimisticPunchesForRoute = optimisticPunches.filter((punch) => String(punch.route_id || "") === String(route?.id || ""));
-  const mergedPunches = [...(attendanceForRoute?.punches || []), ...operationPunches, ...optimisticPunchesForRoute]
+  const mergedPunches = [...(attendanceForRoute?.punches || []), ...optimisticPunchesForRoute]
     .reduce<AttendancePunch[]>((acc, punch) => {
       if (!punch.type || acc.some((item) => item.type === punch.type)) return acc;
       acc.push(punch);
@@ -309,19 +286,9 @@ export default function MobilePunchPage() {
     next_type: mergedPunches.length ? nextPunchForTypes(mergedPunches.map((punch) => punch.type)) : (attendanceForRoute?.next_type || fallbackNextType),
     punches: mergedPunches
   };
-  const operationActivities = (operationRoute?.activity_points || []).filter((activity) => userMatches(activity.user_name));
   const sessionActivities = [
     ...optimisticActivities,
-    ...(session?.activities?.length ? session.activities : operationActivities.map((activity) => ({
-    id: Number(activity.id) || Date.parse(String(activity.occurred_at || activity.time || "")) || 0,
-    activity_type_name: activity.type,
-    observation: activity.observation || "",
-    occurred_at: activity.occurred_at || activity.time || new Date().toISOString(),
-    latitude: activity.latitude ?? null,
-    longitude: activity.longitude ?? null,
-    accuracy_meters: activity.accuracy_meters ?? null,
-    evidence: activity.evidence || []
-    })))
+    ...(session?.activities || [])
   ];
   const doneTypes = new Set(currentAttendance.punches.map((punch) => punch.type) || []);
   const nextType = currentAttendance.next_type;
@@ -346,7 +313,7 @@ export default function MobilePunchPage() {
         setGps(fix);
         setGpsUpdatedAt(Date.now());
         setGpsStatus("ok");
-        api("/api/v1/hr/gps/ping", {
+        api("/api/v1/hr/self/gps/ping", {
           method: "POST",
           body: JSON.stringify({
             user_name: userName,
@@ -385,13 +352,9 @@ export default function MobilePunchPage() {
   useEffect(() => {
     if (!route?.id) return;
     let mounted = true;
-    Promise.all([
-      api<WorkSession>(`/api/v1/hr/work-sessions/current?route_id=${encodeURIComponent(String(route.id))}`).catch(() => null),
-      api<OperationsMap>(`/api/v1/hr/operations-map?date=${todayBogota()}&minutes=30&footprint_days=30`).catch(() => null)
-    ]).then(([sessionData, operationsData]) => {
+    api<WorkSession>(`/api/v1/hr/self/work-session?route_id=${encodeURIComponent(String(route.id))}`).catch(() => null).then((sessionData) => {
       if (!mounted) return;
       if (sessionData) setSession(sessionData);
-      setOperationsMap(operationsData);
     });
     return () => {
       mounted = false;
@@ -409,7 +372,7 @@ export default function MobilePunchPage() {
       setGpsStatus("ok");
       setGpsUpdatedAt(Date.now());
       if (userName) {
-        void api("/api/v1/hr/gps/ping", {
+        void api("/api/v1/hr/self/gps/ping", {
           method: "POST",
           body: JSON.stringify({
             user_name: userName,
@@ -475,7 +438,7 @@ export default function MobilePunchPage() {
       setExtraReason("");
       setExtraDetail("");
       setExtraEvidence(null);
-      enqueuePendingSync("/api/v1/hr/time-punches", payload, punchLabels[type].title);
+      enqueuePendingSync("/api/v1/hr/self/time-punches", payload, punchLabels[type].title);
       setPendingSync(readPendingSync());
       void flushPendingSync((items, syncMessage) => {
         setPendingSync(items);
@@ -579,7 +542,7 @@ export default function MobilePunchPage() {
         ...routeSyncMetadata(route)
       }
     };
-    enqueuePendingSync("/api/v1/hr/work-activities", activityPayload, "Actividad");
+    enqueuePendingSync("/api/v1/hr/self/work-activities", activityPayload, "Actividad");
     setPendingSync(readPendingSync());
     void flushPendingSync((items, syncMessage) => {
       setPendingSync(items);
@@ -615,7 +578,7 @@ export default function MobilePunchPage() {
       setPreopMessage("La declaracion responsable requiere firma digital.");
       return;
     }
-    const result = await api<{ status: string; route_authorized: boolean }>(`/api/v1/hr/routes/preop/${preop.id}/submit`, {
+    const result = await api<{ status: string; route_authorized: boolean }>(`/api/v1/hr/self/preop/${preop.id}/submit`, {
       method: "POST",
       body: JSON.stringify({
         mileage_initial: Number(mileageInitial || 0),
@@ -646,7 +609,7 @@ export default function MobilePunchPage() {
   return (
     <div className="mx-auto max-w-md space-y-4 pb-32 md:pb-8">
       <header className="sticky top-0 z-20 -mx-3 border-b border-line bg-paper/95 px-3 py-3 backdrop-blur sm:-mx-4 sm:px-4 md:static md:mx-0 md:border-0 md:bg-transparent md:px-0">
-        <Link className="mb-3 inline-flex h-11 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-medium text-neutral-600 hover:text-apex md:border-0 md:bg-transparent md:px-0" href="/dashboard/talento-humano"><ArrowLeft size={18} /> Control de horarios</Link>
+        {!isMarkingOnlyAccess() ? <Link className="mb-3 inline-flex h-11 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-medium text-neutral-600 hover:text-apex md:border-0 md:bg-transparent md:px-0" href="/dashboard/talento-humano"><ArrowLeft size={18} /> Control de horarios</Link> : null}
         <p className="text-sm font-medium text-apex">Marcacion movil</p>
         <h1 className="text-2xl font-semibold">Mi jornada</h1>
       </header>
