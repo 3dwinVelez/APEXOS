@@ -1,0 +1,42 @@
+{
+  "change_id": "hr-landing-recovery-20260824",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "9747fb6db5ebfe15b4c2983395192c030a84bf84",
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["functional.md", "browser-certification.json"] },
+    "error": { "status": "passed", "evidence": ["error.md", "browser-certification.json"] },
+    "support_scripts": { "status": "passed", "evidence": ["support-scripts.md", "local-validation.md"] },
+    "regression": { "status": "passed", "evidence": ["regression.md"] },
+    "platform_regression": { "status": "passed", "evidence": ["platform-regression.json"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-landing-qa.js",
+    "evidence": ["hr-landing-certification.json", "browser-certification.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/platform-regression-qa.js",
+    "evidence": ["platform-regression.json"]
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../../scripts/certifications/hr-landing-qa.js",
+    "evidence": ["hr-landing-certification.json", "browser-certification.json"]
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "0abda8c41168642f99da0831e15f940b98232a12",
+    "trigger": "cualquier falla de navegación, contraste, permisos, orden funcional o regresión al considerar una promoción posterior"
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "Ejecución QA autorizada por el solicitante de APEXOS hasta develop",
+    "approved_at": "2026-08-24T10:25:00-05:00"
+  }
+}
