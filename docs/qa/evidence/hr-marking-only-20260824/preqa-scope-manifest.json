@@ -1,0 +1,90 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-marking-only-preqa-20260824",
+  "change_intent": {
+    "summary": "Crear un rol de empleado que acceda exclusivamente a su propia pantalla y flujo de marcaciones sin exponer otros módulos ni datos",
+    "modules": ["talent-human", "authentication", "rbac"]
+  },
+  "base_commits": {
+    "develop": "cd167879b7c696a06c00456c39d54173886f9f01",
+    "main": "0abda8c41168642f99da0831e15f940b98232a12"
+  },
+  "certified_commit": "60193e8a914c0095aabbad5e55924ffaf1601c0b",
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/src/middleware/rbac.js" },
+    { "status": "M", "file": "apps/api/src/modules/admin/service.js" },
+    { "status": "M", "file": "apps/api/src/modules/hr/routes.js" },
+    { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
+    { "status": "M", "file": "apps/api/src/security/supabaseAuth.js" },
+    { "status": "A", "file": "apps/api/test/hr-marking-only-rbac.test.js" },
+    { "status": "M", "file": "apps/api/test/supabase-company-context.test.js" },
+    { "status": "M", "file": "apps/web/app/api/admin/roles/route.ts" },
+    { "status": "M", "file": "apps/web/app/api/admin/users/route.ts" },
+    { "status": "M", "file": "apps/web/app/dashboard/layout.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/marcacion/page.tsx" },
+    { "status": "M", "file": "apps/web/app/login/page.tsx" },
+    { "status": "A", "file": "apps/web/components/shell/DashboardChrome.tsx" },
+    { "status": "M", "file": "apps/web/components/shell/RouteAccessGuard.tsx" },
+    { "status": "A", "file": "apps/web/lib/accessProfile.ts" },
+    { "status": "M", "file": "apps/web/lib/api.ts" },
+    { "status": "A", "file": "apps/web/test/hr-marking-only-access.test.mjs" },
+    { "status": "A", "file": "docs/qa/evidence/hr-marking-only-20260824/browser-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-marking-only-20260824/certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-marking-only-20260824/error.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-marking-only-20260824/functional.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-marking-only-20260824/marking-only-ui.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-marking-only-20260824/preqa-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-marking-only-20260824/regression.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-marking-only-20260824/support-scripts.md" },
+    { "status": "A", "file": "scripts/certifications/hr-marking-only-qa.js" }
+  ],
+  "allowed_paths": [
+    "apps/api/src/middleware/rbac.js",
+    "apps/api/src/modules/admin/service.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/security/supabaseAuth.js",
+    "apps/api/test/hr-marking-only-rbac.test.js",
+    "apps/api/test/supabase-company-context.test.js",
+    "apps/web/app/api/admin/roles/route.ts",
+    "apps/web/app/api/admin/users/route.ts",
+    "apps/web/app/dashboard/layout.tsx",
+    "apps/web/app/dashboard/talento-humano/marcacion/page.tsx",
+    "apps/web/app/login/page.tsx",
+    "apps/web/components/shell/DashboardChrome.tsx",
+    "apps/web/components/shell/RouteAccessGuard.tsx",
+    "apps/web/lib/accessProfile.ts",
+    "apps/web/lib/api.ts",
+    "apps/web/test/hr-marking-only-access.test.mjs",
+    "docs/qa/evidence/hr-marking-only-20260824/",
+    "scripts/certifications/hr-marking-only-qa.js"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "marking_only_role_and_permissions",
+      "status": "passed",
+      "evidence": ["certification.json", "functional.md"]
+    },
+    {
+      "name": "own_identity_and_tenant_isolation",
+      "status": "passed",
+      "evidence": ["certification.json", "error.md"]
+    },
+    {
+      "name": "complete_marking_state_flow",
+      "status": "passed",
+      "evidence": ["certification.json", "marking-only-ui.png"]
+    },
+    {
+      "name": "exclusive_browser_navigation",
+      "status": "passed",
+      "evidence": ["browser-certification.json", "marking-only-ui.png"]
+    },
+    {
+      "name": "adjacent_hr_and_provider_regression",
+      "status": "passed",
+      "evidence": ["regression.md", "support-scripts.md"]
+    }
+  ]
+}

@@ -1,8 +1,11 @@
 # Certificación funcional: rol Empleado marcaciones
 
-Fecha: 2026-08-24  
-Rama evaluada: `desarrollo`  
-Empresa modelo: `NYVORA`  
+Fecha: 2026-08-24
+
+Rama evaluada: `desarrollo`
+
+Empresa modelo: `NYVORA`
+
 Entorno: PostgreSQL y aplicaciones API/web reales en infraestructura QA local aislada.
 
 ## Resultado
