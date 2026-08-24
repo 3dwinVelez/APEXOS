@@ -33,6 +33,7 @@ const TENANT_MODULE_CODES = {
   admin: ["M-22", "administracion", "administracion_apex", "admin"],
   brain: ["AI-CORE", "apex-ai", "apex_ai", "brain"],
   hr: ["M-17", "talento-humano", "talento_humano", "hr"],
+  time_tracking: ["M-17", "talento-humano", "talento_humano", "hr", "time_tracking", "marcaciones"],
   inventory: ["M-01", "inventario", "inventory"],
   invoicing: ["M-04", "facturacion", "invoicing"],
   payroll: ["M-17", "nomina", "payroll"],
@@ -92,7 +93,7 @@ const PERMISSION_CATALOG = [
   { key: "servicios", label: "Servicios", group: "operacion", module: "services", submodule: "orders", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import", "attach", "download", "execute", "reports"], grants: grants("services", ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import", "attach", "download", "execute", "reports"]) },
   { key: "servicios_correcciones", label: "Edicion especial de ordenes", group: "operacion", module: "services", submodule: "order-corrections", actions: [SERVICE_ORDER_OVERRIDE_PERMISSION], grants: { [SERVICE_ORDER_OVERRIDE_PERMISSION]: [["services.orders", SERVICE_ORDER_OVERRIDE_PERMISSION]] }, allowPhysicalDelete: false },
   { key: "talento_humano", label: "Talento humano", group: "administracion", module: "hr", submodule: "hr", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "export", "import", "sensitive", "reports"], grants: grants("hr", ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "export", "import", "sensitive", "reports"]) },
-  { key: "marcaciones", label: "Marcaciones y jornadas", group: "operacion", module: "hr", submodule: "time", actions: ["access", "view", "create", "edit", "approve", "reject", "export", "reports"], grants: grants("hr", ["access", "view", "create", "edit", "approve", "reject", "export", "reports"]) },
+  { key: "marcaciones", label: "Marcaciones y jornadas", group: "operacion", module: "time_tracking", submodule: "time", actions: ["access", "view", "create", "edit", "approve", "reject", "export", "reports"], grants: grants("time_tracking", ["access", "view", "create", "edit", "approve", "reject", "export", "reports"]) },
   { key: "proyectos", label: "Proyectos", group: "gestion", module: "projects", submodule: "projects", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "export", "attach", "download", "reports"], grants: grants("projects", ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "export", "attach", "download", "reports"]) },
   { key: "contabilidad", label: "Contabilidad", group: "finanzas", module: "accounting", submodule: "accounting", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import", "sensitive", "reports", "configure"], grants: grants("accounting", ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import", "sensitive", "reports", "configure"]) },
   { key: "facturacion", label: "Facturacion", group: "finanzas", module: "invoicing", submodule: "billing", actions: ["access", "view", "create", "edit", "approve", "reject", "void", "export", "download", "sensitive"], grants: grants("invoicing", ["access", "view", "create", "edit", "approve", "reject", "void", "export", "download", "sensitive"]) },
@@ -135,6 +136,7 @@ const SYSTEM_ROLE_TEMPLATES = [
   { name: "Soporte tecnico", description: "Soporta configuracion, diagnostico y administracion tecnica controlada.", is_system: false, hierarchy_level: 75, role_type: "soporte", legacy_permissions: permissionPreset(["dashboard", "usuarios", "roles", "configuracion", "auditoria", "notificaciones", "ia"], ["access", "view", "edit", "configure", "administer", "reports"]) },
   { name: "Tecnico", description: "Ejecuta servicios, consulta referencias y registra trabajo de campo.", is_system: false, hierarchy_level: 35, role_type: "operativo", legacy_permissions: permissionPreset(["dashboard", "servicios", "marcaciones", "transporte", "documentos"], ["access", "view", "create", "edit", "attach", "download"]) },
   { name: "Empleado", description: "Consulta operativa y registra jornada.", is_system: false, hierarchy_level: 20, role_type: "operativo", legacy_permissions: permissionPreset(["dashboard", "marcaciones", "documentos"], ["access", "view", "create", "download"]) },
+  { name: "Empleado marcaciones", description: "Registra exclusivamente su propia jornada sin acceso a otros modulos o datos de empleados.", is_system: false, hierarchy_level: 15, role_type: "operativo", access_profile: "marking_only", legacy_permissions: permissionPreset(["marcaciones"], ["access", "view", "create"]) },
   { name: "Coordinador", description: "Rol legacy de coordinacion operativa y administrativa.", is_system: false, hierarchy_level: 70, role_type: "coordinador", legacy_permissions: permissionPreset(["dashboard", "usuarios", "roles", "servicios", "marcaciones", "transporte", "reportes", "configuracion", "nomina"], ["access", "view", "create", "edit", "approve", "export", "configure"]) }
 ];
 
@@ -376,6 +378,7 @@ function roleDto(role, activeModules = null) {
     es_sistema: role.is_system,
     hierarchy_level: Number(metadata.hierarchy_level || 10),
     role_type: metadata.role_type || "custom",
+    access_profile: metadata.access_profile || "standard",
     scope: metadata.scope || "company",
     scopes: metadata.scopes || { locations: [], areas: [], cost_centers: [], processes: [] },
     restrictions: metadata.restrictions || { locations: [], areas: [], cost_centers: [], processes: [] },
@@ -549,6 +552,7 @@ async function upsertRoleFromLegacy(tenantId, data, activeModules = null) {
       legacy_permissions: legacyPermissions,
       hierarchy_level: Number(data.hierarchy_level || data.level || 10),
       role_type: data.role_type || data.type || "custom",
+      access_profile: data.access_profile || "standard",
       scope: data.scope || "company",
       scopes: data.scopes || { locations: [], areas: [], cost_centers: [], processes: [] },
       restrictions: data.restrictions || { locations: [], areas: [], cost_centers: [], processes: [] },
@@ -915,6 +919,7 @@ async function updateRole(tenantId, id, input, actorId = null, actorRoleName = "
           legacy_permissions: legacyPermissions,
           hierarchy_level: Number(input.hierarchy_level || current.metadata?.hierarchy_level || 10),
           role_type: input.role_type || current.metadata?.role_type || "custom",
+          access_profile: input.access_profile || current.metadata?.access_profile || "standard",
           scope: input.scope || current.metadata?.scope || "company",
           scopes: input.scopes || current.metadata?.scopes || { locations: [], areas: [], cost_centers: [], processes: [] },
           restrictions: input.restrictions || current.metadata?.restrictions || { locations: [], areas: [], cost_centers: [], processes: [] },

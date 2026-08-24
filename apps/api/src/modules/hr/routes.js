@@ -1,11 +1,31 @@
 const tenancy = require("../../middleware/tenancy");
-const { requirePermission } = require("../../middleware/rbac");
+const { requirePermission, requireAnyPermission } = require("../../middleware/rbac");
 const schemas = require("./schema");
 const service = require("./service");
 
 async function hrRoutes(fastify) {
   fastify.addHook("preHandler", fastify.authenticate);
   fastify.addHook("preHandler", tenancy);
+
+  const ownRead = requireAnyPermission([
+    { module: "time_tracking", action: "read" },
+    { module: "hr", action: "read" }
+  ]);
+  const ownWrite = requireAnyPermission([
+    { module: "time_tracking", action: "write" },
+    { module: "hr", action: "write" }
+  ]);
+
+  fastify.get("/hr/self", { preHandler: ownRead }, (request) => service.getCurrentEmployee(request.user?.tenant_id, request.user));
+  fastify.get("/hr/self/routes", { preHandler: ownRead }, (request) => service.listOwnRoutes(request.user?.tenant_id, request.user, request.query));
+  fastify.get("/hr/self/attendance", { preHandler: ownRead }, (request) => service.listOwnAttendance(request.user?.tenant_id, request.user, request.query));
+  fastify.get("/hr/self/activity-types", { preHandler: ownRead }, (request) => service.listActivityTypes(request.user?.tenant_id, request.query));
+  fastify.get("/hr/self/work-session", { preHandler: ownRead }, (request) => service.getOwnWorkSession(request.user?.tenant_id, request.user, request.query));
+  fastify.get("/hr/self/preop/active", { preHandler: ownRead }, (request) => service.getOwnPreoperationalChecklist(request.user?.tenant_id, request.user, request.query));
+  fastify.post("/hr/self/preop/:id/submit", { schema: schemas.preopSubmitSchema, preHandler: ownWrite }, (request) => service.submitOwnPreoperationalChecklist(request.user?.tenant_id, request.user, request.params.id, request.body));
+  fastify.post("/hr/self/gps/ping", { schema: schemas.gpsPingSchema, preHandler: ownWrite, config: { rateLimit: { max: 60, timeWindow: "1 minute" } } }, (request) => service.createOwnGpsPing(request.user?.tenant_id, request.user, request.body));
+  fastify.post("/hr/self/time-punches", { schema: schemas.punchSchema, preHandler: ownWrite }, (request) => service.createOwnPunch(request.user?.tenant_id, request.user, request.body));
+  fastify.post("/hr/self/work-activities", { schema: schemas.workActivitySchema, preHandler: ownWrite }, (request) => service.createOwnWorkActivity(request.user?.tenant_id, request.user, request.body));
 
   fastify.get("/hr/schedules", { preHandler: requirePermission("hr", "read") }, (request) => service.listSchedules(request.user?.tenant_id, request.query));
   fastify.post("/hr/schedules", { schema: schemas.scheduleSchema, preHandler: requirePermission("hr", "write") }, (request) => service.createSchedule(request.user?.tenant_id, request.body));

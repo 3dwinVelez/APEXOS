@@ -6,6 +6,7 @@ const MODULE_CODES = {
   admin: ["M-22", "administracion", "administracion_apex", "admin"],
   brain: ["AI-CORE", "apex-ai", "apex_ai", "brain"],
   hr: ["M-17", "talento-humano", "talento_humano", "hr"],
+  time_tracking: ["M-17", "talento-humano", "talento_humano", "hr", "time_tracking", "marcaciones"],
   inventory: ["M-01", "inventario", "inventory"],
   invoicing: ["M-04", "facturacion", "invoicing"],
   payroll: ["M-17", "nomina", "payroll", "talento-humano", "talento_humano", "hr"],
@@ -140,6 +141,61 @@ function requireExplicitPermission(module, action) {
   return permissionMiddleware(module, action, false);
 }
 
+function requireAnyPermission(requirements) {
+  const requested = Array.isArray(requirements)
+    ? requirements.filter((item) => item?.module && item?.action)
+    : [];
+  if (!requested.length) throw new Error("Se requiere al menos un permiso RBAC.");
+
+  return async function anyPermissionMiddleware(request, reply) {
+    return measurePhase("authorization", async () => {
+      const role = request.user.role;
+      if (!role) return reply.code(401).send({ error: "No autenticado", code: "NO_AUTENTICADO" });
+
+      const enabled = requested.filter(({ module }) => tenantHasModule(request.tenant, module));
+      if (!enabled.length) {
+        return reply.code(403).send({
+          error: "Modulo no habilitado para esta empresa",
+          code: "MODULO_NO_HABILITADO",
+          details: { modules: requested.map(({ module }) => module) }
+        });
+      }
+
+      if (role.name === "APEX_ADMIN" || isAdministrativeRole(role)) return;
+      const permissions = role.permissions || [];
+      const granted = enabled.find(({ module, action }) => permissions.some((permission) => {
+        const moduleOk = permission.module === module || permission.module === "*";
+        const actionOk = permission.action === action || permission.action === "*";
+        return moduleOk && actionOk;
+      }));
+      if (!granted) {
+        return reply.code(403).send({
+          error: "Sin permiso para esta acción",
+          code: "PERMISO_DENEGADO",
+          details: { permissions: enabled }
+        });
+      }
+
+      const scopeViolation = roleScopeViolation(role, request);
+      if (scopeViolation) {
+        return reply.code(403).send({
+          error: "Fuera del alcance permitido para el rol",
+          code: "ALCANCE_ROL_DENEGADO",
+          details: { module: granted.module, action: granted.action, scope: scopeViolation }
+        });
+      }
+
+      request.rbacScope = {
+        role_id: role.id,
+        role_name: role.name,
+        scope: role.metadata?.scope || "company",
+        scopes: role.metadata?.scopes || {},
+        restrictions: role.metadata?.restrictions || {}
+      };
+    });
+  };
+}
+
 async function checkSoD(tenantId, userId, newRoleName) {
   return prisma.runWithTenant(tenantId, async () => {
     const user = await prisma.user.findUnique({ where: { id: userId }, include: { role: true } });
@@ -158,4 +214,4 @@ async function checkSoD(tenantId, userId, newRoleName) {
   });
 }
 
-module.exports = { requirePermission, requireExplicitPermission, checkSoD, tenantHasModule };
+module.exports = { requirePermission, requireExplicitPermission, requireAnyPermission, checkSoD, tenantHasModule };

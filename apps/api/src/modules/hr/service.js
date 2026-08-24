@@ -461,6 +461,32 @@ async function listRoutes(tenantId, query = {}) {
   });
 }
 
+function routeAssignedToEmployee(route, employee) {
+  if (!route || !employee) return false;
+  const aliases = new Set(aliasesForEmployee(employee).map(normalizeKey));
+  return (Array.isArray(route.employees) ? route.employees : [])
+    .some((value) => aliases.has(normalizeKey(value)));
+}
+
+async function assertOwnAssignedRoute(tenantId, employee, input = {}) {
+  const routeId = operationalRouteNumericId(input);
+  if (!routeId) return null;
+  const route = await prisma.timeRoute.findFirst({ where: { tenant_id: tenantId, id: routeId } });
+  if (!route || !routeAssignedToEmployee(route, employee)) {
+    const err = new Error("El horario indicado no esta asignado al empleado conectado.");
+    err.statusCode = 403;
+    err.code = "HORARIO_AJENO_DENEGADO";
+    throw err;
+  }
+  return route;
+}
+
+async function listOwnRoutes(tenantId, user, query = {}) {
+  const employee = await getCurrentEmployee(tenantId, user);
+  const routes = await listRoutes(tenantId, query);
+  return routes.filter((route) => routeAssignedToEmployee(route, employee));
+}
+
 async function listRouteEventSummaries(tenantId) {
   return prisma.runWithTenant(tenantId, async () => {
     const [routes, employees] = await Promise.all([
@@ -879,6 +905,12 @@ async function getActivePreoperationalChecklist(tenantId, user, query = {}) {
   });
 }
 
+async function getOwnPreoperationalChecklist(tenantId, user, query = {}) {
+  const employee = await getCurrentEmployee(tenantId, user);
+  await prisma.runWithTenant(tenantId, () => assertOwnAssignedRoute(tenantId, employee, query));
+  return getActivePreoperationalChecklist(tenantId, user, { route_id: query.route_id });
+}
+
 function answerIsFailure(answer) {
   return ["no_cumple", "no cumple", "fail", "falla"].includes(normalizeKey(answer));
 }
@@ -1012,6 +1044,24 @@ async function submitPreoperationalChecklist(tenantId, user, id, input) {
     }
     return { checklist: updated, route_authorized: status !== "bloqueado", status, risk_level: riskLevel };
   });
+}
+
+async function submitOwnPreoperationalChecklist(tenantId, user, id, input) {
+  const employee = await getCurrentEmployee(tenantId, user);
+  await prisma.runWithTenant(tenantId, async () => {
+    const checklist = await prisma.routePreoperationalChecklist.findFirst({
+      where: { id: Number(id), driver_id: employee.id },
+      select: { id: true, route_id: true }
+    });
+    if (!checklist) {
+      const err = new Error("El checklist indicado no pertenece al empleado conectado.");
+      err.statusCode = 403;
+      err.code = "CHECKLIST_AJENO_DENEGADO";
+      throw err;
+    }
+    await assertOwnAssignedRoute(tenantId, employee, { route_id: checklist.route_id });
+  });
+  return submitPreoperationalChecklist(tenantId, user, id, input);
 }
 
 async function ensureActivityTypes() {
@@ -1216,6 +1266,15 @@ async function getCurrentWorkSession(tenantId, user, query = {}) {
   });
 }
 
+async function getOwnWorkSession(tenantId, user, query = {}) {
+  const employee = await getCurrentEmployee(tenantId, user);
+  await prisma.runWithTenant(tenantId, () => assertOwnAssignedRoute(tenantId, employee, query));
+  return getCurrentWorkSession(tenantId, user, {
+    date: query.date,
+    route_id: query.route_id
+  });
+}
+
 function buildSessionAlerts(session, activities = []) {
   const alerts = [];
   if (session && !activities.length) alerts.push({ type: "sin_actividades", severity: "warning", message: "Jornada activa sin actividades registradas." });
@@ -1354,6 +1413,12 @@ async function createWorkActivity(tenantId, user, input) {
       include: { activity_type: true, evidence: true }
     });
   });
+}
+
+async function createOwnWorkActivity(tenantId, user, input) {
+  const employee = await getCurrentEmployee(tenantId, user);
+  await prisma.runWithTenant(tenantId, () => assertOwnAssignedRoute(tenantId, employee, input));
+  return createWorkActivity(tenantId, user, ownOperationalInput(input, employee, user));
 }
 
 async function getPreoperationalMetrics(tenantId, query = {}) {
@@ -1621,6 +1686,27 @@ async function createPunch(tenantId, input, user) {
   throw lastError;
 }
 
+function ownOperationalInput(input, employee, user) {
+  const userName = employeeUserName(employee, user?.name || user?.email || "");
+  return {
+    ...input,
+    employee_id: employee.id,
+    user_name: userName,
+    metadata: {
+      ...(input.metadata || {}),
+      current_user_only: true,
+      supplied_employee_id: undefined,
+      supplied_user_name: undefined
+    }
+  };
+}
+
+async function createOwnPunch(tenantId, user, input) {
+  const employee = await getCurrentEmployee(tenantId, user);
+  await prisma.runWithTenant(tenantId, () => assertOwnAssignedRoute(tenantId, employee, input));
+  return createPunch(tenantId, ownOperationalInput(input, employee, user), user);
+}
+
 async function createGpsPing(tenantId, input) {
   return prisma.runWithTenant(tenantId, async () => {
     // Solo buscar empleado existente — NO auto-crear. GPS pings son datos de presencia,
@@ -1650,6 +1736,12 @@ async function createGpsPing(tenantId, input) {
       }
     });
   });
+}
+
+async function createOwnGpsPing(tenantId, user, input) {
+  const employee = await getCurrentEmployee(tenantId, user);
+  await prisma.runWithTenant(tenantId, () => assertOwnAssignedRoute(tenantId, employee, input));
+  return createGpsPing(tenantId, ownOperationalInput(input, employee, user));
 }
 
 async function listActiveGps(tenantId, query = {}) {
@@ -2059,6 +2151,53 @@ async function listAttendance(tenantId, query = {}) {
   });
 }
 
+async function listOwnAttendance(tenantId, user, query = {}) {
+  const employee = await getCurrentEmployee(tenantId, user);
+  const day = query.date || query.fecha ? startOfDay(query.date || query.fecha) : startOfDay();
+  const start = query.fecha_inicio ? startOfDay(query.fecha_inicio) : day;
+  const end = query.fecha_fin ? endOfDay(query.fecha_fin) : endOfDay(day);
+  const aliases = aliasesForEmployee(employee);
+  return prisma.runWithTenant(tenantId, async () => {
+    const punches = await prisma.timePunch.findMany({
+      where: {
+        date: { gte: start, lt: end },
+        OR: [
+          { employee_id: employee.id },
+          ...(aliases.length ? [{ user_name: { in: aliases } }] : [])
+        ]
+      },
+      orderBy: [{ punched_at: "asc" }]
+    });
+    if (query.flat === "1" || query.legacy === "1") {
+      return punches.map((punch) => ({
+        usuario: punch.user_name,
+        user_name: punch.user_name,
+        placa: punch.vehicle_plate,
+        vehiculo_placa: punch.vehicle_plate,
+        tipo: punch.type,
+        tipo_marca: punch.type,
+        hora: punch.time,
+        fecha: punch.date.toISOString().slice(0, 10),
+        es_extra: punch.extra_minutes > 0,
+        minutos_extra: punch.extra_minutes
+      }));
+    }
+    const grouped = new Map();
+    for (const punch of punches) {
+      const key = `${punch.user_name}::${punch.route_id || "sin_horario"}`;
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key).push(punch);
+    }
+    return Array.from(grouped.values()).map((rows) => ({
+      user_name: rows[0]?.user_name || "",
+      route_id: rows[0]?.route_id || null,
+      last_type: rows[rows.length - 1].type || "sin_marcar",
+      next_type: nextPunchType(rows),
+      punches: rows
+    }));
+  });
+}
+
 async function processDay(tenantId, input = {}) {
   const day = startOfDay(input.date || new Date());
   return prisma.runWithTenant(tenantId, async () => {
@@ -2229,27 +2368,35 @@ module.exports = {
   getCurrentEmployee,
   createEmployee,
   listRoutes,
+  listOwnRoutes,
   listRouteEventSummaries,
   createRoute,
   updateRoute,
   createRoutesBulk,
   getPreoperationalTemplate,
   getActivePreoperationalChecklist,
+  getOwnPreoperationalChecklist,
   submitPreoperationalChecklist,
+  submitOwnPreoperationalChecklist,
   getPreoperationalMetrics,
   getRouteTracking,
   getOperationsMap,
   createPunch,
+  createOwnPunch,
   createGpsPing,
+  createOwnGpsPing,
   listActivityTypes,
   createActivityType,
   updateActivityType,
   getCurrentWorkSession,
+  getOwnWorkSession,
   listWorkActivities,
   createWorkActivity,
+  createOwnWorkActivity,
   listActiveGps,
   listGpsHistory,
   listAttendance,
+  listOwnAttendance,
   processDay,
   listWorkdays,
   processPayrollRange,
