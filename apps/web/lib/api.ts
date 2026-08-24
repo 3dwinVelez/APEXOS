@@ -664,12 +664,12 @@ async function loadSupabaseAdminRoles() {
   return roles;
 }
 
-async function saveSupabaseAdminRole(role: AdminRole) {
+async function saveSupabaseAdminRole(role: AdminRole, operation: "create" | "edit" = "edit") {
   const membership = await currentSupabaseCompanyUser();
   if (!membership?.company_id) throw new Error("No se encontro una empresa activa para guardar el rol.");
   const serverResult = await nextAdminRolesRequest<{ role?: AdminRole & { code?: string } }>({
     method: "POST",
-    body: JSON.stringify({ company_id: membership.company_id, role })
+    body: JSON.stringify({ company_id: membership.company_id, operation, role })
   });
   forgetDeletedAdminRole(role, membership.company_id);
   if (serverResult.role) return { ...role, ...serverResult.role };
@@ -3755,7 +3755,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         sensitive: Boolean(body.sensitive),
         permissions: filterAdminPermissions(body.permissions || emptyAdminPermissions())
       };
-      const persisted = await saveSupabaseAdminRole(role);
+      const persisted = await saveSupabaseAdminRole(role, "create");
       const next = [...roles, persisted];
       saveStoredAdminRoles(next);
       return persisted as T;

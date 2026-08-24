@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authCredentialPatch } from "@/lib/adminUserCredentialSync";
+import { hasAdministrativeCapability, isAdministrativeRole } from "@/lib/moduleAccessPolicy";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
@@ -131,7 +132,7 @@ function userStatusToEmployeeStatus(value: unknown) {
 function companyRole(roleName: unknown) {
   const value = String(roleName || "").toLowerCase();
   if (value.includes("owner")) return "owner";
-  if (value.includes("admin") || value.includes("coordinador")) return "admin";
+  if (isAdministrativeRole([value])) return "admin";
   if (value.includes("viewer") || value.includes("consulta")) return "viewer";
   return "member";
 }
@@ -142,14 +143,14 @@ function permissionFlag(permissions: unknown, moduleKey: string, action: string)
   return Boolean(row && typeof row === "object" && (row as Record<string, unknown>)[action]);
 }
 
-function isAdministrativeAccess(metadata: AnyRow) {
+function isAdministrativeAccess(metadata: AnyRow, resource: "users" | "roles" = "users", action: "read" | "create" | "edit" | "delete" = "read") {
   const access = metadata.access && typeof metadata.access === "object" ? metadata.access as AnyRow : {};
   const permissions = access.permissions || access.role_permissions || metadata.permissions || metadata.role_permissions;
-  return companyRoleFromAccess({
+  return hasAdministrativeCapability({
     roleName: access.role_name || metadata.role_name,
     roleType: access.role_type || metadata.role_type,
     permissions
-  }) === "admin";
+  }, resource, action);
 }
 
 function companyRoleFromAccess(input: { roleName?: unknown; roleType?: unknown; permissions?: unknown }) {
@@ -157,16 +158,8 @@ function companyRoleFromAccess(input: { roleName?: unknown; roleType?: unknown; 
   const roleType = String(input.roleType || "").toLowerCase();
   if (roleName.includes("owner") || roleType.includes("owner")) return "owner";
   if (
-    roleName.includes("admin")
-    || roleName.includes("coordinador")
-    || roleType.includes("admin")
-    || roleType.includes("superadmin")
-    || roleType.includes("coordinador")
-    || roleType.includes("soporte")
+    isAdministrativeRole([roleName, roleType])
     || permissionFlag(input.permissions, "usuarios", "manage_users")
-    || permissionFlag(input.permissions, "roles", "manage_roles")
-    || permissionFlag(input.permissions, "configuracion", "administer")
-    || permissionFlag(input.permissions, "configuracion", "configure")
   ) {
     return "admin";
   }
@@ -243,7 +236,7 @@ async function syncSupabaseUserState(input: {
   });
 }
 
-async function requireCompanyAdmin(token: string, companyId?: string | null) {
+async function requireCompanyAdmin(token: string, companyId?: string | null, action: "read" | "create" | "edit" | "delete" = "read") {
   const userId = jwtSubject(token);
   if (!userId) throw httpError("Sesion invalida para validar permisos de administrador.", 401);
   const filter = companyId ? `&company_id=eq.${encodeURIComponent(companyId)}` : "";
@@ -251,15 +244,16 @@ async function requireCompanyAdmin(token: string, companyId?: string | null) {
     method: "GET",
     token
   }) as Array<{ company_id: string; user_id?: string; role?: string }>;
-  const admin = rows.find((row) => ["owner", "admin", "superadmin"].includes(String(row.role || "").toLowerCase()));
-  if (admin) return admin;
+  const owner = rows.find((row) => ["owner", "superadmin"].includes(String(row.role || "").toLowerCase()));
+  if (owner) return owner;
+  const admin = rows.find((row) => String(row.role || "").toLowerCase() === "admin");
 
   const employeeFilter = companyId ? `&company_id=eq.${encodeURIComponent(companyId)}` : "";
   const employees = await supabaseRequest(`/rest/v1/employees?select=company_id,user_id,metadata&user_id=eq.${encodeURIComponent(userId)}&status=eq.active${employeeFilter}&limit=20`, {
     method: "GET",
     service: true
   }) as Array<{ company_id: string; user_id?: string; metadata?: AnyRow }>;
-  const employeeAdmin = employees.find((row) => row.company_id && isAdministrativeAccess(row.metadata || {}));
+  const employeeAdmin = employees.find((row) => row.company_id && isAdministrativeAccess(row.metadata || {}, "users", action));
   if (employeeAdmin) {
     await syncSupabaseUserState({
       userId,
@@ -271,7 +265,19 @@ async function requireCompanyAdmin(token: string, companyId?: string | null) {
     });
     return { company_id: employeeAdmin.company_id, user_id: userId, role: "admin" };
   }
-  throw new Error("No tienes permisos para administrar usuarios en esta empresa.");
+  const employee = employees.find((row) => row.company_id);
+  const metadata = employee?.metadata || {};
+  const access = metadata.access && typeof metadata.access === "object" ? metadata.access as AnyRow : {};
+  const hasCapabilityContext = Boolean(
+    metadata.role_name
+    || metadata.role_type
+    || access.role_name
+    || access.role_type
+    || metadata.permissions
+    || access.permissions
+  );
+  if (admin && !hasCapabilityContext) return admin;
+  throw httpError("No tienes permisos para administrar usuarios en esta empresa.", 403);
 }
 
 async function adminCompanies(token: string) {
@@ -287,7 +293,7 @@ async function adminCompanies(token: string) {
     method: "GET",
     service: true
   }) as Array<{ company_id: string; metadata?: AnyRow }>;
-  return employees.filter((row) => row.company_id && isAdministrativeAccess(row.metadata || {})).map((row) => row.company_id);
+  return employees.filter((row) => row.company_id && isAdministrativeAccess(row.metadata || {}, "users", "read")).map((row) => row.company_id);
 }
 
 export async function GET(request: NextRequest) {
@@ -329,11 +335,11 @@ export async function PATCH(request: NextRequest) {
     const rows = await supabaseRequest(`/rest/v1/employees?select=id,company_id,user_id,email,first_name,last_name,document_number,position,department,status,user_type,metadata&id=eq.${employeeId}&limit=1`, { method: "GET", service: true }) as AnyRow[];
     const current = rows[0];
     if (!current?.company_id) return NextResponse.json({ message: "Usuario no encontrado." }, { status: 404 });
-    await requireCompanyAdmin(token, String(current.company_id));
-
     const metadata = (current.metadata && typeof current.metadata === "object" ? current.metadata : {}) as AnyRow;
     const documents = Array.isArray(metadata.documents) ? metadata.documents : [];
     const action = String(body.action || "update");
+    const requiredCapability = action === "document_remove" ? "delete" : action === "document_add" ? "edit" : "edit";
+    await requireCompanyAdmin(token, String(current.company_id), requiredCapability);
     let nextMetadata = metadata;
     let patch: AnyRow = {};
 
@@ -511,7 +517,7 @@ export async function POST(request: NextRequest) {
     const rolePermissions = rolePermissionsFromBody(body);
 
     const requestedCompanyId = clean(body.company_id);
-    const membership = await requireCompanyAdmin(token, requestedCompanyId);
+    const membership = await requireCompanyAdmin(token, requestedCompanyId, "create");
     const companyId = requestedCompanyId || membership.company_id;
 
     const authUser = await supabaseRequest("/auth/v1/admin/users", {
