@@ -1,0 +1,65 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-landing-recovery-preqa-20260824",
+  "change_intent": {
+    "summary": "Recuperar exclusivamente el ordenamiento certificado de la portada de Talento Humano y endurecer el control contra cambios cruzados",
+    "modules": ["talent-human", "promotion-governance"]
+  },
+  "base_commits": {
+    "develop": "ac77956b8b3b9bee4c36b5fc69e1e7eab23223a4",
+    "main": "0abda8c41168642f99da0831e15f940b98232a12"
+  },
+  "certified_commit": "48dc06b",
+  "expected_changes": [
+    { "status": "M", "file": "AGENTS.md" },
+    { "status": "A", "file": "apps/api/scripts/certifications/hr-landing-qa.js" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/page.tsx" },
+    { "status": "M", "file": "apps/web/package.json" },
+    { "status": "A", "file": "apps/web/test/hr-landing-information-architecture.test.mjs" },
+    { "status": "M", "file": "docs/CHANGE_APPROVAL_QA_POLICY.md" },
+    { "status": "M", "file": "docs/agents/quality-gates.md" },
+    { "status": "A", "file": "docs/audits/TALENT_HUMAN_LANDING_REGRESSION_20260824.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-landing-recovery-20260824/analysis.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-landing-recovery-20260824/local-validation.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-landing-recovery-20260824/preqa-scope-manifest.json" },
+    { "status": "M", "file": "docs/releases/CONTROLLED_PROMOTION_SCOPE_POLICY.md" },
+    { "status": "M", "file": "package.json" },
+    { "status": "A", "file": "scripts/certifications/hr-landing-qa.js" },
+    { "status": "M", "file": "scripts/test/validate-promotion-scope.test.js" },
+    { "status": "M", "file": "scripts/validate-promotion-scope.js" }
+  ],
+  "allowed_paths": [
+    "AGENTS.md",
+    "apps/api/scripts/certifications/hr-landing-qa.js",
+    "apps/web/app/dashboard/talento-humano/page.tsx",
+    "apps/web/package.json",
+    "apps/web/test/hr-landing-information-architecture.test.mjs",
+    "docs/CHANGE_APPROVAL_QA_POLICY.md",
+    "docs/agents/quality-gates.md",
+    "docs/audits/TALENT_HUMAN_LANDING_REGRESSION_20260824.md",
+    "docs/qa/evidence/hr-landing-recovery-20260824/",
+    "docs/releases/CONTROLLED_PROMOTION_SCOPE_POLICY.md",
+    "package.json",
+    "scripts/certifications/hr-landing-qa.js",
+    "scripts/test/validate-promotion-scope.test.js",
+    "scripts/validate-promotion-scope.js"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "hr_landing_information_architecture",
+      "status": "passed",
+      "evidence": ["analysis.md", "local-validation.md"]
+    },
+    {
+      "name": "hr_journey_navigation",
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    {
+      "name": "cross_module_scope_isolation",
+      "status": "passed",
+      "evidence": ["analysis.md", "local-validation.md"]
+    }
+  ]
+}
