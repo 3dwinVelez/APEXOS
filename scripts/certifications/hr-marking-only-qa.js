@@ -56,17 +56,12 @@ async function request(pathname, { token = "", method = "GET", body, expected = 
 }
 
 async function nyvoraTenant() {
-  const companies = await prisma.$queryRawUnsafe("select id,name,legal_name from public.companies order by name");
+  const directTenant = await prisma.tenant.findFirst({ where: { name: { contains: "NYVORA", mode: "insensitive" } } });
+  if (directTenant) return { company: null, tenant: directTenant };
+  const companies = await prisma.$queryRawUnsafe("select id,name,legal_name from public.companies order by name").catch(() => []);
   const company = companies.find((item) => normalize(item.name).includes("nyvora") || normalize(item.legal_name).includes("nyvora"));
   if (!company) throw new Error("No existe la empresa modelo Nyvora en QA.");
-  const tenant = await prisma.tenant.findFirst({
-    where: {
-      OR: [
-        { name: { contains: "NYVORA", mode: "insensitive" } },
-        { config: { path: ["company_id"], equals: String(company.id) } }
-      ]
-    }
-  });
+  const tenant = await prisma.tenant.findFirst({ where: { config: { path: ["company_id"], equals: String(company.id) } } });
   if (!tenant) throw new Error("No existe tenant operativo Nyvora en QA.");
   return { company, tenant };
 }
@@ -76,7 +71,7 @@ async function main() {
     throw new Error("La certificacion solo puede ejecutarse con configuracion QA.");
   }
   const health = await request("/health");
-  const { company, tenant } = await nyvoraTenant();
+  const { tenant } = await nyvoraTenant();
   const roles = await admin.listRoles(tenant.id, {}, "APEX_ADMIN");
   const role = roles.find((item) => item.name === "Empleado marcaciones");
   if (!role) throw new Error("No se creo el rol Empleado marcaciones.");
