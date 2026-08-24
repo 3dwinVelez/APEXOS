@@ -1,0 +1,23 @@
+{
+  "ok": true,
+  "environment": "QA",
+  "model_company": "NYVORA",
+  "web_commit": "9747fb6db5ebfe15b4c2983395192c030a84bf84",
+  "executed_at": "2026-08-24T10:25:00-05:00",
+  "checks": {
+    "ordered_landing_visible": "passed",
+    "planning_marking_monitor_reports_order": "passed",
+    "payroll_separate_and_planned": "passed",
+    "routes_link_loaded_authorized": "passed",
+    "marking_link_loaded_authorized": "passed",
+    "monitor_link_loaded_authorized": "passed",
+    "reports_link_loaded_authorized": "passed",
+    "dark_theme_content_preserved": "passed",
+    "limited_role_hr_api_blocked_403": "passed",
+    "limited_role_visible_error_feedback": "passed"
+  },
+  "observations": [
+    "El rol limitado puede ver la portada por tener el módulo activo, pero las operaciones y datos de Talento Humano permanecen bloqueados por permisos.",
+    "No se crearon ni modificaron horarios, marcaciones o registros operativos durante la navegación."
+  ]
+}
