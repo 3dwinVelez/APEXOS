@@ -2,7 +2,7 @@ import { assertActiveSession, clearSession, emitAppAlert, keepSessionAlive, setP
 import { clearSupabaseFetchCache, getSupabaseAccessToken, supabaseAuth, supabaseFetch } from "./supabaseClient";
 import { getServiceImageUrl, uploadServiceImageData } from "./supabaseStorage";
 import { API_BASE_URL } from "./apiBaseUrl";
-import { scheduleMonitorPunchEvidence, scheduleTrackingMode } from "./hrScheduleMonitor";
+import { scheduleMonitorPunchEvidence, scheduleMonitorPunchEvidenceSummary, scheduleTrackingMode } from "./hrScheduleMonitor";
 
 const API_URL = API_BASE_URL;
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
@@ -1833,6 +1833,24 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   const active = search.get("active");
   const method = String(options.method || "GET").toUpperCase();
 
+  const monitorEvidenceMatch = pathname.match(/^\/api\/v1\/hr\/monitor-evidence\/(activity|punch)\/([^/]+)$/);
+  if (monitorEvidenceMatch && method === "GET") {
+    const companyId = await currentSupabaseCompanyId();
+    const source = monitorEvidenceMatch[1];
+    const id = monitorEvidenceMatch[2];
+    if (source === "activity") {
+      const rows = await supabaseFetch<Array<{ id: string; metadata?: AnyRow }>>(`/rest/v1/gps_pings?select=id,metadata&company_id=eq.${encodeURIComponent(companyId)}&id=eq.${encodeURIComponent(id)}&source=eq.work_activity&limit=1`);
+      const row = rows[0];
+      const base64 = String(row?.metadata?.photo || "").trim();
+      if (!base64) throw new Error("La evidencia de la actividad no esta disponible.");
+      return { id, source, base64_data: base64, file_name: String(row?.metadata?.photo_name || "evidencia.jpg"), available: true } as T;
+    }
+    const rows = await supabaseFetch<Array<{ id: string; extra_evidence?: AnyRow; metadata?: AnyRow }>>(`/rest/v1/time_punches?select=id,extra_evidence,metadata&company_id=eq.${encodeURIComponent(companyId)}&id=eq.${encodeURIComponent(id)}&limit=1`);
+    const evidence = scheduleMonitorPunchEvidence(rows[0] || {});
+    if (!evidence.base64_data && !evidence.file_url) throw new Error("La evidencia de la marcacion no esta disponible.");
+    return { id, source, ...evidence, available: true } as T;
+  }
+
   if (pathname === "/api/v1/hr/activity-types") {
     const masterData = await loadSupabaseUserMasterData().catch(() => defaultUserMasterData());
     const activityTypes = Array.isArray((masterData as AnyRow).activity_types) ? (masterData as AnyRow).activity_types as ActivityTypeLike[] : [];
@@ -2316,7 +2334,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
           vehicle_plate: route.vehicle_plate || "",
           route_id: route.id,
           observation: String(activity.metadata?.observation || ""),
-          evidence: activity.metadata?.photo ? [{ base64_data: String(activity.metadata.photo), file_name: String(activity.metadata?.photo_name || "evidencia.jpg") }] : [],
+          evidence: activity.metadata?.photo ? [{ id: activity.id, file_name: String(activity.metadata?.photo_name || "evidencia.jpg"), has_base64_data: true, available: true }] : [],
           metadata: activity.metadata || {}
         }));
       const routePunches = punches
@@ -2335,7 +2353,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
           extra_minutes: punch.extra_minutes || 0,
           extra_reason: punch.extra_reason || "",
           extra_detail: punch.extra_detail || "",
-          extra_evidence: scheduleMonitorPunchEvidence(punch),
+          extra_evidence: scheduleMonitorPunchEvidenceSummary(punch),
           metadata: punch.metadata || {}
         }));
       const userNames = Array.from(new Set([...routePunches.map((punch) => punch.user_name), ...routeActivities.map((activity) => activity.user_name)]));

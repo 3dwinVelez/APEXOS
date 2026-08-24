@@ -40,7 +40,12 @@ test("el monitor solicita estado operativo fresco y conserva evidencia resumida"
   const monitorSource = read("app/dashboard/talento-humano/rutas/page.tsx");
   const apiSource = read("lib/api.ts");
   assert.match(monitorSource, /operations-map[^\n]+\{ cache: "no-store" \}/);
-  assert.match(monitorSource, /extra_evidence\?\.has_base64_data/);
+  assert.match(monitorSource, /event\.evidence\?\.\[0\]\?\.available/);
+  assert.match(monitorSource, /\/api\/v1\/hr\/monitor-evidence\/\$\{source\}\/\$\{encodeURIComponent/);
+  assert.match(monitorSource, /Cargar evidencia/);
+  assert.match(monitorSource, /Reintentar evidencia/);
+  assert.match(apiSource, /scheduleMonitorPunchEvidenceSummary\(punch\)/);
+  assert.match(apiSource, /evidence: activity\.metadata\?\.photo \? \[\{ id: activity\.id/);
   assert.match(apiSource, /options\.cache === "no-store"/);
   assert.match(apiSource, /!bypassReadCache/);
   assert.match(apiSource, /inFlightGetRequests\.has\(requestKey\)/);
