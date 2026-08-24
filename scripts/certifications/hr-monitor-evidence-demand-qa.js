@@ -112,20 +112,20 @@ async function main() {
 
     const employeeLogin = await request("/api/v1/auth/login", { method: "POST", body: { email: MARKING_EMAIL, password: PASSWORD } });
     const employeeToken = employeeLogin.token;
-    await request("/api/v1/hr/self/time-punches", { token: employeeToken, method: "POST", body: { type: "entrada", route_id: route.id, punched_at: new Date().toISOString() } });
+    await request("/api/v1/hr/self/time-punches", { token: employeeToken, method: "POST", body: { employee_id: employeeUser.employee_id, user_name: MARKING_EMAIL, type: "entrada", route_id: route.id, punched_at: new Date().toISOString() } });
     const types = await request("/api/v1/hr/self/activity-types", { token: employeeToken });
     const activity = await request("/api/v1/hr/self/work-activities", {
       token: employeeToken,
       method: "POST",
-      body: { activity_type_id: types[0].id, route_id: route.id, gps_required: false, gps_skipped: true, observation: "Actividad con evidencia bajo demanda", photo: { base64: PHOTO, name: `activity-${RUN_ID}.png`, type: "image/png", size: 68 } }
+      body: { activity_type_id: types[0].id, employee_id: employeeUser.employee_id, user_name: MARKING_EMAIL, route_id: route.id, gps_required: false, gps_skipped: true, observation: "Actividad con evidencia bajo demanda", photo: { base64: PHOTO, name: `activity-${RUN_ID}.png`, type: "image/png", size: 68 } }
     });
     for (const type of ["inicio_almuerzo", "fin_almuerzo"]) {
-      await request("/api/v1/hr/self/time-punches", { token: employeeToken, method: "POST", body: { type, route_id: route.id, punched_at: new Date().toISOString() } });
+      await request("/api/v1/hr/self/time-punches", { token: employeeToken, method: "POST", body: { employee_id: employeeUser.employee_id, user_name: MARKING_EMAIL, type, route_id: route.id, punched_at: new Date().toISOString() } });
     }
     const exit = await request("/api/v1/hr/self/time-punches", {
       token: employeeToken,
       method: "POST",
-      body: { type: "salida", route_id: route.id, punched_at: new Date().toISOString(), extra_reason: "certificacion_qa", extra_detail: "Prueba controlada de evidencia de salida", extra_evidence: { base64: PHOTO, name: `punch-${RUN_ID}.png`, type: "image/png", size: 68 } }
+      body: { employee_id: employeeUser.employee_id, user_name: MARKING_EMAIL, type: "salida", route_id: route.id, punched_at: new Date().toISOString(), extra_reason: "certificacion_qa", extra_detail: "Prueba controlada de evidencia de salida", extra_evidence: { base64: PHOTO, name: `punch-${RUN_ID}.png`, type: "image/png", size: 68 } }
     });
 
     const monitorLogin = await request("/api/v1/auth/login", { method: "POST", body: { email: ADMIN_EMAIL, password: PASSWORD } });
