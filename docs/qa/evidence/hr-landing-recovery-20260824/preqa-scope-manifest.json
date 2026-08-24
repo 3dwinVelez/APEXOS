@@ -9,7 +9,7 @@
     "develop": "ac77956b8b3b9bee4c36b5fc69e1e7eab23223a4",
     "main": "0abda8c41168642f99da0831e15f940b98232a12"
   },
-  "certified_commit": "48dc06b",
+  "certified_commit": "c0c1cea929a21fc588c3ada94453be373daf5739",
   "expected_changes": [
     { "status": "M", "file": "AGENTS.md" },
     { "status": "A", "file": "apps/api/scripts/certifications/hr-landing-qa.js" },
