@@ -38,11 +38,10 @@ async function main() {
   const output = path.resolve(root, String(args.output || "docs/qa/evidence/dependency-security-20260824/certification.json"));
   const lock = JSON.parse(fs.readFileSync(path.join(root, "package-lock.json"), "utf8"));
   const apiRequire = createRequire(path.join(root, "apps/api/package.json"));
-  const webRequire = createRequire(path.join(root, "apps/web/package.json"));
   const versions = {
-    next: webRequire("next/package.json").version,
-    puppeteer_core: apiRequire("puppeteer-core/package.json").version,
-    sharp: apiRequire("sharp/package.json").version,
+    next: lock.packages?.["node_modules/next"]?.version || null,
+    puppeteer_core: lock.packages?.["node_modules/puppeteer-core"]?.version || null,
+    sharp: lock.packages?.["node_modules/sharp"]?.version || null,
     postcss: lock.packages?.["node_modules/postcss"]?.version || null,
     brace_expansion_v1: lock.packages?.["node_modules/brace-expansion"]?.version || null,
     brace_expansion_v5: lock.packages?.["node_modules/nodemon/node_modules/brace-expansion"]?.version || null,
