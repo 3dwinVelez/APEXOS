@@ -1,11 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Download, Search, X } from "lucide-react";
 import { InventoryNav } from "@/components/inventory-nav";
 import { api } from "@/lib/api";
+import { downloadExcelWorkbook } from "@/lib/reportExports";
+import { ModalFrame } from "@/components/ui/ModalFrame";
 
-type Item = { id: number; code: string; name: string; unit: string; stock_current: number; unit_cost: number };
+type Item = {
+  id: number;
+  code: string;
+  legacy_code?: string | null;
+  name: string;
+  unit: string;
+  stock_current: number;
+  unit_cost: number;
+};
 type KardexRow = {
   id: number;
   created_at: string;
@@ -18,47 +28,111 @@ type KardexRow = {
   unit_cost: number;
   value: number;
   document_type: string;
+  document_id?: number | null;
   document_number: string;
+  accounting_document_id?: number | null;
+  accounting_document_number?: string;
   reason: string;
   warehouse: string;
   from_warehouse: string;
   to_warehouse: string;
 };
-type KardexResponse = { item: Item; data: KardexRow[]; total: number; current_stock: number; current_average_cost: number };
+type KardexResponse = {
+  item: Item;
+  data: KardexRow[];
+  total: number;
+  current_stock: number;
+  current_average_cost: number;
+};
 type CostRow = {
   id: number;
   code: string;
+  legacy_code?: string | null;
   name: string;
   family_code: string;
   family_name: string;
   unit: string;
   stock_current: number;
+  society_code: string;
+  physical_stock: number;
+  transit_stock: number;
+  available_stock: number;
   average_cost: number;
   last_unit_cost: number;
   value_balance: number;
   last_cost_date?: string | null;
   last_source_type: string;
   warehouses: string[];
+  warehouse_rows: Array<{
+    location_id: number;
+    warehouse_id: number;
+    warehouse_code: string;
+    warehouse_name: string;
+    location_code: string;
+    type: string;
+    qty: number;
+  }>;
 };
-type CostsResponse = { data: CostRow[]; total: number; totals: { stock_units: number; inventory_value: number } };
+type CostsResponse = {
+  data: CostRow[];
+  total: number;
+  totals: { stock_units: number; inventory_value: number };
+};
+type TransferDetail = {
+  origin?: { name?: string };
+  destination?: { name?: string };
+  lines?: Array<{ id: number; qty: number; item?: { code?: string; name?: string } }>;
+};
+type Warehouse = { id: number; code: string; name: string };
+type AccountingDetail = { full_number?: string; document_type?: string; posting_date?: string; reference?: string; header_text?: string; created_by_name?: string; lines?: Array<{ id: number; account_code: string; description?: string; debit: number; credit: number; party_tax_id?: string }> };
 
 function money(value: number) {
-  return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(value || 0);
+  return new Intl.NumberFormat("es-CO", {
+    style: "currency",
+    currency: "COP",
+    maximumFractionDigits: 0,
+  }).format(value || 0);
 }
 
 function dateTime(value?: string | null) {
   if (!value) return "--";
-  return new Date(value).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" });
+  return new Date(value).toLocaleString("es-CO", {
+    dateStyle: "short",
+    timeStyle: "short",
+  });
 }
 
 function movementLabel(type: string) {
-  const labels: Record<string, string> = { in: "Entrada", out: "Salida", transfer: "Transferencia", adjustment: "Ajuste" };
+  const labels: Record<string, string> = {
+    in: "Entrada",
+    out: "Salida",
+    transfer: "Transferencia",
+    transfer_dispatch: "Despacho a tránsito",
+    transfer_receive: "Descarga de tránsito",
+    adjustment: "Ajuste",
+  };
   return labels[type] || type;
+}
+
+function documentLabel(type: string) {
+  const labels: Record<string, string> = {
+    warehouse_transfer: "Traslado entre bodegas",
+    purchase_order_receipt: "Recepción de orden de compra",
+    purchase_return: "Devolución de compra",
+    purchase_invoice: "Factura de compra",
+    sales_invoice: "Factura de venta",
+    movement: "Movimiento de inventario",
+  };
+  return labels[type] || type || "Movimiento de inventario";
 }
 
 export default function ReportesInventarioPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [selectedItemId, setSelectedItemId] = useState("");
+  const [selectedSku, setSelectedSku] = useState("");
+  const [skuError, setSkuError] = useState("");
+  const [skuPickerOpen, setSkuPickerOpen] = useState(false);
+  const [skuPickerSearch, setSkuPickerSearch] = useState("");
   const [query, setQuery] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -66,91 +140,240 @@ export default function ReportesInventarioPage() {
   const [costs, setCosts] = useState<CostsResponse | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [stockDetail, setStockDetail] = useState<CostRow | null>(null);
+  const [movementDetail, setMovementDetail] = useState<KardexRow | null>(null);
+  const [transferDetail, setTransferDetail] = useState<TransferDetail | null>(null);
+  const [accountingDetail, setAccountingDetail] = useState<AccountingDetail | null>(null);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [warehouseId, setWarehouseId] = useState("");
 
   async function loadBase() {
-    const [itemRows, costRows] = await Promise.all([
-      api<{ data: Item[] }>("/api/v1/inventory/items?limit=200&sort_by=code"),
-      api<CostsResponse>("/api/v1/inventory/costs?limit=200")
+    const [itemRows, costRows, warehouseRows] = await Promise.all([
+      api<{ data: Item[] }>("/api/v1/inventory/items?all=true&sort_by=code"),
+      api<CostsResponse>("/api/v1/inventory/costs?all=true"),
+      api<Warehouse[]>("/api/v1/inventory/warehouses"),
     ]);
     setItems(itemRows.data || []);
     setCosts(costRows);
-    const firstItem = itemRows.data?.[0];
-    if (firstItem) setSelectedItemId((current) => current || String(firstItem.id));
+    setWarehouses(warehouseRows || []);
   }
 
-  const loadKardex = useCallback(async (itemId: string) => {
-    if (!itemId) return;
-    setLoading(true);
-    setError("");
-    try {
-      const params = new URLSearchParams({ limit: "300" });
-      if (fromDate) params.set("from_date", fromDate);
-      if (toDate) params.set("to_date", toDate);
-      setKardex(await api<KardexResponse>(`/api/v1/inventory/kardex/${itemId}?${params.toString()}`));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo cargar el kardex");
-    } finally {
-      setLoading(false);
-    }
-  }, [fromDate, toDate]);
+  const loadKardex = useCallback(
+    async (itemId: string) => {
+      if (!itemId) return;
+      setLoading(true);
+      setError("");
+      try {
+        const params = new URLSearchParams({ limit: "300" });
+        if (fromDate) params.set("from_date", fromDate);
+        if (toDate) params.set("to_date", toDate);
+        if (warehouseId) params.set("warehouse_id", warehouseId);
+        setKardex(
+          await api<KardexResponse>(
+            `/api/v1/inventory/kardex/${itemId}?${params.toString()}`,
+          ),
+        );
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "No se pudo cargar el kardex",
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fromDate, toDate, warehouseId],
+  );
 
   useEffect(() => {
-    loadBase().catch((err) => setError(err instanceof Error ? err.message : "No se pudieron cargar reportes"));
+    loadBase().catch((err) =>
+      setError(
+        err instanceof Error ? err.message : "No se pudieron cargar reportes",
+      ),
+    );
   }, []);
 
   useEffect(() => {
     if (selectedItemId) void loadKardex(selectedItemId);
   }, [loadKardex, selectedItemId]);
 
+  useEffect(() => {
+    const params = new URLSearchParams({ all: "true" });
+    if (warehouseId) params.set("warehouse_id", warehouseId);
+    api<CostsResponse>(`/api/v1/inventory/costs?${params}`).then(setCosts).catch((err) => setError(err instanceof Error ? err.message : "No se pudo filtrar por bodega"));
+  }, [warehouseId]);
+
   const filteredCosts = useMemo(() => {
     const text = query.trim().toLowerCase();
-    return (costs?.data || []).filter((item) => !text || [item.code, item.name, item.family_code, item.family_name].some((value) => value.toLowerCase().includes(text)));
+    return (costs?.data || []).filter(
+      (item) =>
+        !text ||
+        [item.code, item.legacy_code || "", item.name, item.family_code, item.family_name].some(
+          (value) => value.toLowerCase().includes(text),
+        ),
+    );
   }, [costs, query]);
+  const skuPickerResults = useMemo(() => {
+    const needle = skuPickerSearch.trim().toLowerCase();
+    return items.filter((item) => !needle || item.code.toLowerCase().includes(needle) || (item.legacy_code || "").toLowerCase().includes(needle) || item.name.toLowerCase().includes(needle)).slice(0, 100);
+  }, [items, skuPickerSearch]);
 
-  const selectedCost = filteredCosts.find((item) => String(item.id) === selectedItemId) || costs?.data.find((item) => String(item.id) === selectedItemId);
+  const selectedCost =
+    filteredCosts.find((item) => String(item.id) === selectedItemId) ||
+    costs?.data.find((item) => String(item.id) === selectedItemId);
+
+  function selectSku(item: Item) {
+    setSelectedItemId(String(item.id));
+    setSelectedSku(item.code);
+    setSkuError("");
+    setSkuPickerOpen(false);
+    setSkuPickerSearch("");
+  }
+
+  function validateSku() {
+    const code = selectedSku.trim().toUpperCase();
+    if (!code) {
+      setSelectedItemId("");
+      setSkuError("");
+      setSkuPickerSearch("");
+      setSkuPickerOpen(true);
+      return;
+    }
+    const item = items.find((row) => row.code.toUpperCase() === code || (row.legacy_code || "").toUpperCase() === code);
+    if (!item) {
+      setSelectedItemId("");
+      setSkuError(`El SKU ${code} no existe o está inactivo.`);
+      return;
+    }
+    selectSku(item);
+  }
+
+  async function openMovement(row: KardexRow) {
+    setMovementDetail(row);
+    setTransferDetail(null);
+    setAccountingDetail(null);
+    if (row.document_type === "warehouse_transfer" && row.document_id) {
+      try {
+        setTransferDetail(
+          await api("/api/v1/inventory/transfers/" + row.document_id),
+        );
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "No se pudo cargar el documento",
+        );
+      }
+    }
+    if (row.accounting_document_id) {
+      try {
+        setAccountingDetail(await api<AccountingDetail>(`/api/v1/accounting/documents/${row.accounting_document_id}`));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "No se pudo cargar el asiento contable");
+      }
+    }
+  }
+
+  function exportKardex() {
+    downloadExcelWorkbook(`kardex-${kardex?.item.code || "producto"}.xls`, [{ name: "Kardex", columns: [
+      { key: "fecha", label: "Fecha" }, { key: "tipo", label: "Tipo" }, { key: "documento", label: "Documento" }, { key: "contabilidad", label: "Documento contable" }, { key: "sku", label: "SKU" }, { key: "codigo_anterior", label: "Código anterior" }, { key: "producto", label: "Producto" }, { key: "bodega", label: "Bodega" }, { key: "entrada", label: "Entrada" }, { key: "salida", label: "Salida" }, { key: "saldo", label: "Saldo" }, { key: "costo", label: "Costo" }, { key: "valor", label: "Valor" }
+    ], rows: (kardex?.data || []).map((row) => ({ fecha: dateTime(row.created_at), tipo: movementLabel(row.type), documento: row.document_number, contabilidad: row.accounting_document_number, sku: row.item_code, codigo_anterior: kardex?.item.legacy_code || "", producto: row.item_name, bodega: row.warehouse, entrada: row.in_qty, salida: row.out_qty, saldo: row.balance, costo: row.unit_cost, valor: row.value })) }]);
+  }
+
+  function exportCosts() {
+    const rows = filteredCosts.flatMap((item) => (item.warehouse_rows.length ? item.warehouse_rows : [{ warehouse_code: "--", warehouse_name: "Sin bodega", location_code: "", type: "warehouse", qty: 0 }]).map((warehouse) => ({ sku: item.code, codigo_anterior: item.legacy_code || "", producto: item.name, familia: item.family_name, sociedad: item.society_code, bodega: warehouse.type === "transit" ? "Transito" : `${warehouse.warehouse_code} - ${warehouse.warehouse_name}`, ubicacion: warehouse.location_code, cantidad: warehouse.qty, costo_promedio: item.average_cost, ultimo_costo: item.last_unit_cost, valor: warehouse.qty * item.average_cost })));
+    downloadExcelWorkbook("inventario-costos.xls", [{ name: "Costos por bodega", columns: [
+      { key: "sku", label: "SKU" }, { key: "codigo_anterior", label: "Código anterior" }, { key: "producto", label: "Producto" }, { key: "familia", label: "Familia" }, { key: "sociedad", label: "Sociedad" }, { key: "bodega", label: "Bodega" }, { key: "ubicacion", label: "Ubicacion" }, { key: "cantidad", label: "Cantidad" }, { key: "costo_promedio", label: "Costo promedio" }, { key: "ultimo_costo", label: "Ultimo costo" }, { key: "valor", label: "Valor" }
+    ], rows }]);
+  }
 
   return (
     <div className="space-y-4">
       <header>
         <p className="text-sm font-medium text-apex">Inventario - Reportes</p>
         <h1 className="text-3xl font-semibold">Kardex y costos</h1>
-        <p className="mt-1 text-sm text-neutral-600">Consulta movimientos por producto y el costo promedio actual del SKU.</p>
+        <p className="mt-1 text-sm text-neutral-600">
+          Consulta movimientos por producto y el costo promedio actual del SKU.
+        </p>
       </header>
       <InventoryNav />
 
-      {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
+      {error ? (
+        <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          {error}
+        </p>
+      ) : null}
 
       <section className="rounded-md border border-line bg-white p-4">
-        <div className="grid gap-3 lg:grid-cols-[1fr_160px_160px_auto]">
-          <label className="text-sm">Producto
-            <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={selectedItemId} onChange={(event) => setSelectedItemId(event.target.value)}>
-              <option value="">Seleccionar SKU</option>
-              {items.map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}
-            </select>
+        <div className="grid gap-3 lg:grid-cols-[1fr_220px_160px_160px_auto]">
+          <label className="text-sm">
+            Producto
+            <div className="mt-1 flex"><input className={`h-10 min-w-0 flex-1 rounded-l-md border px-3 font-mono text-sm ${skuError ? "border-red-400" : "border-line"}`} placeholder="Escribe el SKU" value={selectedSku} onBlur={validateSku} onChange={(event) => { setSelectedSku(event.target.value.toUpperCase()); setSelectedItemId(""); setSkuError(""); }} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); validateSku(); } }} /><button aria-label="Buscar producto" className="h-10 w-10 rounded-r-md border border-l-0 border-line text-apex hover:bg-paper" onClick={() => { setSkuPickerSearch(selectedSku); setSkuPickerOpen(true); }} type="button"><Search className="mx-auto" size={16} /></button></div>
+            {skuError ? <span className="mt-1 block text-xs text-red-600">{skuError}</span> : null}
           </label>
-          <label className="text-sm">Desde
-            <input className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} />
+          <label className="text-sm">Bodega<select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={warehouseId} onChange={(event) => setWarehouseId(event.target.value)}><option value="">Todas las bodegas</option>{warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.code} - {warehouse.name}</option>)}</select></label>
+          <label className="text-sm">
+            Desde
+            <input
+              className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm"
+              type="date"
+              value={fromDate}
+              onChange={(event) => setFromDate(event.target.value)}
+            />
           </label>
-          <label className="text-sm">Hasta
-            <input className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} />
+          <label className="text-sm">
+            Hasta
+            <input
+              className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm"
+              type="date"
+              value={toDate}
+              onChange={(event) => setToDate(event.target.value)}
+            />
           </label>
-          <button className="mt-6 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white disabled:opacity-60" disabled={loading || !selectedItemId} onClick={() => loadKardex(selectedItemId)} type="button">
+          <button
+            className="mt-6 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white disabled:opacity-60"
+            disabled={loading || !selectedItemId}
+            onClick={() => loadKardex(selectedItemId)}
+            type="button"
+          >
             <Search size={16} /> Consultar
           </button>
         </div>
       </section>
 
+      {skuPickerOpen ? <ModalFrame maxWidth="md:max-w-3xl" onClose={() => { setSkuPickerOpen(false); setSkuPickerSearch(""); }} title="Seleccionar producto">
+        <div className="space-y-4"><label className="relative block"><Search className="absolute left-3 top-3 text-neutral-400" size={16} /><input autoFocus className="h-10 w-full rounded-md border border-line pl-10 pr-3 text-sm" placeholder="Buscar por SKU, código anterior o nombre" value={skuPickerSearch} onChange={(event) => setSkuPickerSearch(event.target.value)} /></label><div className="max-h-[55vh] divide-y divide-line overflow-y-auto rounded-md border border-line">{skuPickerResults.map((item) => <button className="flex w-full items-center justify-between gap-4 p-3 text-left text-sm hover:bg-paper" key={item.id} onClick={() => selectSku(item)} type="button"><span><strong className="font-mono">{item.code}</strong>{item.legacy_code ? <span className="ml-2 font-mono text-neutral-500">Anterior: {item.legacy_code}</span> : null}<span className="ml-2">{item.name}</span></span><span className="text-xs text-neutral-500">{item.unit || "UND"}</span></button>)}{!skuPickerResults.length ? <p className="p-6 text-center text-sm text-neutral-500">No hay SKU que coincidan con la búsqueda.</p> : null}</div></div>
+      </ModalFrame> : null}
+
       <section className="grid gap-3 md:grid-cols-4">
-        <Metric label="Stock actual" value={String(kardex?.current_stock ?? selectedCost?.stock_current ?? 0)} />
-        <Metric label="Costo promedio" value={money(kardex?.current_average_cost ?? selectedCost?.average_cost ?? 0)} />
-        <Metric label="Valor inventario SKU" value={money((kardex?.current_stock ?? selectedCost?.stock_current ?? 0) * (kardex?.current_average_cost ?? selectedCost?.average_cost ?? 0))} />
+        <Metric
+          label="Stock actual"
+          value={String(
+            kardex?.current_stock ?? selectedCost?.stock_current ?? 0,
+          )}
+        />
+        <Metric
+          label="Costo promedio"
+          value={money(
+            kardex?.current_average_cost ?? selectedCost?.average_cost ?? 0,
+          )}
+        />
+        <Metric
+          label="Valor inventario SKU"
+          value={money(
+            (kardex?.current_stock ?? selectedCost?.stock_current ?? 0) *
+              (kardex?.current_average_cost ?? selectedCost?.average_cost ?? 0),
+          )}
+        />
         <Metric label="Movimientos" value={String(kardex?.total ?? 0)} />
       </section>
 
       <section className="rounded-md border border-line bg-white">
-        <div className="border-b border-line p-4">
+        <div className="flex items-center justify-between border-b border-line p-4">
+          <div>
           <h2 className="text-base font-semibold">Kardex del producto</h2>
-          <p className="text-sm text-neutral-500">Entradas suman, salidas restan y el saldo queda acumulado por fecha.</p>
+          <p className="text-sm text-neutral-500">
+            Entradas suman, salidas restan y el saldo queda acumulado por fecha.
+          </p>
+          </div>
+          <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-sm" onClick={exportKardex} type="button"><Download size={15} /> Excel</button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1180px] border-collapse text-sm">
@@ -170,20 +393,70 @@ export default function ReportesInventarioPage() {
             </thead>
             <tbody>
               {(kardex?.data || []).map((row) => (
-                <tr className="border-b border-line/70 last:border-0" key={row.id}>
+                <tr
+                  className="border-b border-line/70 last:border-0"
+                  key={row.id}
+                >
                   <td className="px-3 py-2">{dateTime(row.created_at)}</td>
                   <td className="px-3 py-2">{movementLabel(row.type)}</td>
-                  <td className="px-3 py-2 font-mono text-xs">{row.document_number || row.document_type || row.reason || "--"}</td>
-                  <td className="px-3 py-2"><span className="font-mono text-xs">{row.item_code}</span> {row.item_name}</td>
-                  <td className="px-3 py-2">{row.warehouse || row.from_warehouse || row.to_warehouse || "--"}</td>
-                  <td className="px-3 py-2 text-right text-emerald-700">{row.in_qty || ""}</td>
-                  <td className="px-3 py-2 text-right text-rose-700">{row.out_qty || ""}</td>
-                  <td className="px-3 py-2 text-right font-semibold">{row.balance}</td>
-                  <td className="px-3 py-2 text-right">{money(row.unit_cost)}</td>
+                  <td className="px-3 py-2">
+                    <button
+                      className="font-mono text-xs text-apex hover:underline"
+                      onClick={() => void openMovement(row)}
+                      title="Ver detalle del documento"
+                      type="button"
+                    >
+                      {row.document_number ||
+                        documentLabel(row.document_type) ||
+                        row.reason ||
+                        "--"}
+                    </button>
+                    {row.accounting_document_number ? <span className="mt-1 block font-mono text-[11px] text-neutral-500">Contabilidad: {row.accounting_document_number}</span> : null}
+                  </td>
+                  <td className="px-3 py-2">
+                    <button
+                      className="text-left hover:text-apex hover:underline"
+                      onClick={() => {
+                        const cost = costs?.data.find(
+                          (item) => item.code === row.item_code,
+                        );
+                        if (cost) setStockDetail(cost);
+                      }}
+                      title="Ver existencias por bodega"
+                      type="button"
+                    >
+                      <span className="font-mono text-xs">{row.item_code}</span>{" "}
+                      {row.item_name}
+                    </button>
+                  </td>
+                  <td className="px-3 py-2">
+                    {row.warehouse ||
+                      row.from_warehouse ||
+                      row.to_warehouse ||
+                      "--"}
+                  </td>
+                  <td className="px-3 py-2 text-right text-emerald-700">
+                    {row.in_qty || ""}
+                  </td>
+                  <td className="px-3 py-2 text-right text-rose-700">
+                    {row.out_qty || ""}
+                  </td>
+                  <td className="px-3 py-2 text-right font-semibold">
+                    {row.balance}
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    {money(row.unit_cost)}
+                  </td>
                   <td className="px-3 py-2 text-right">{money(row.value)}</td>
                 </tr>
               ))}
-              {!kardex?.data?.length ? <tr><td className="px-3 py-6 text-neutral-500" colSpan={10}>No hay movimientos para este producto.</td></tr> : null}
+              {!kardex?.data?.length ? (
+                <tr>
+                  <td className="px-3 py-6 text-neutral-500" colSpan={10}>
+                    No hay movimientos para este producto.
+                  </td>
+                </tr>
+              ) : null}
             </tbody>
           </table>
         </div>
@@ -193,9 +466,16 @@ export default function ReportesInventarioPage() {
         <div className="flex flex-col gap-3 border-b border-line p-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="text-base font-semibold">Mini reporte de costos</h2>
-            <p className="text-sm text-neutral-500">Costo promedio actual, último costo y valor de inventario por SKU.</p>
+            <p className="text-sm text-neutral-500">
+              Costo promedio actual, último costo y valor de inventario por SKU.
+            </p>
           </div>
-          <input className="h-10 rounded-md border border-line px-3 text-sm md:w-80" placeholder="Buscar SKU, familia o producto" value={query} onChange={(event) => setQuery(event.target.value)} />
+          <div className="flex gap-2"><input
+            className="h-10 rounded-md border border-line px-3 text-sm md:w-80"
+            placeholder="Buscar SKU, familia o producto"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          /><button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm" onClick={exportCosts} type="button"><Download size={15} /> Excel</button></div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[980px] border-collapse text-sm">
@@ -204,30 +484,228 @@ export default function ReportesInventarioPage() {
                 <th className="px-3 py-2">SKU</th>
                 <th className="px-3 py-2">Producto</th>
                 <th className="px-3 py-2">Familia</th>
+                <th className="px-3 py-2">Sociedad</th>
                 <th className="px-3 py-2">Bodegas</th>
-                <th className="px-3 py-2 text-right">Stock</th>
+                <th className="px-3 py-2 text-right">Fisico</th>
+                <th className="px-3 py-2 text-right">Transito</th>
                 <th className="px-3 py-2 text-right">Costo promedio</th>
                 <th className="px-3 py-2 text-right">Ultimo costo</th>
                 <th className="px-3 py-2 text-right">Valor</th>
               </tr>
             </thead>
             <tbody>
-              {filteredCosts.map((row) => (
-                <tr className="border-b border-line/70 last:border-0 hover:bg-paper/70" key={row.id}>
-                  <td className="px-3 py-2 font-mono text-xs">{row.code}</td>
-                  <td className="px-3 py-2">{row.name}</td>
-                  <td className="px-3 py-2">{row.family_code ? `${row.family_code} - ${row.family_name}` : "--"}</td>
-                  <td className="px-3 py-2">{row.warehouses.slice(0, 2).join(", ") || "--"}</td>
-                  <td className="px-3 py-2 text-right">{row.stock_current}</td>
-                  <td className="px-3 py-2 text-right">{money(row.average_cost)}</td>
-                  <td className="px-3 py-2 text-right">{money(row.last_unit_cost)}</td>
-                  <td className="px-3 py-2 text-right font-semibold">{money(row.value_balance)}</td>
-                </tr>
-              ))}
+              {filteredCosts.flatMap((row) =>
+                (row.warehouse_rows?.length
+                  ? row.warehouse_rows
+                  : [
+                      {
+                        location_id: 0,
+                        warehouse_id: 0,
+                        warehouse_code: "--",
+                        warehouse_name: "Sin bodega",
+                        location_code: "",
+                        type: "warehouse",
+                        qty: 0,
+                      },
+                    ]
+                ).map((warehouse) => (
+                  <tr
+                    className="border-b border-line/70 last:border-0 hover:bg-paper/70"
+                    key={row.id + "-" + warehouse.location_id}
+                  >
+                    <td className="px-3 py-2">
+                      <button
+                        className="font-mono text-xs text-apex hover:underline"
+                        onClick={() => setStockDetail(row)}
+                        title="Ver existencias por bodega"
+                        type="button"
+                      >
+                        {row.code}
+                      </button>
+                    </td>
+                    <td className="px-3 py-2">{row.name}</td>
+                    <td className="px-3 py-2">
+                      {row.family_code
+                        ? `${row.family_code} - ${row.family_name}`
+                        : "--"}
+                    </td>
+                    <td className="px-3 py-2 font-mono text-xs">
+                      {row.society_code || "--"}
+                    </td>
+                    <td className="px-3 py-2">
+                      {warehouse.type === "transit"
+                        ? "Tránsito"
+                        : warehouse.warehouse_code +
+                          " - " +
+                          warehouse.warehouse_name}{" "}
+                      {warehouse.location_code
+                        ? "/ " + warehouse.location_code
+                        : ""}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {warehouse.type === "warehouse" ? warehouse.qty : 0}
+                    </td>
+                    <td className="px-3 py-2 text-right text-amber-700">
+                      {warehouse.type === "transit" ? warehouse.qty : 0}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {money(row.average_cost)}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {money(row.last_unit_cost)}
+                    </td>
+                    <td className="px-3 py-2 text-right font-semibold">
+                      {money(warehouse.qty * row.average_cost)}
+                    </td>
+                  </tr>
+                )),
+              )}
             </tbody>
           </table>
         </div>
       </section>
+      {stockDetail ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4"
+          onMouseDown={() => setStockDetail(null)}
+        >
+          <section
+            className="w-full max-w-3xl rounded-lg bg-white shadow-xl"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <header className="flex items-start justify-between border-b border-line p-4">
+              <div>
+                <p className="text-sm text-neutral-500">
+                  Existencias por bodega
+                </p>
+                <h2 className="text-xl font-semibold">
+                  {stockDetail.code} - {stockDetail.name}
+                </h2>
+              </div>
+              <button onClick={() => setStockDetail(null)} type="button">
+                <X size={20} />
+              </button>
+            </header>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-line bg-paper text-left">
+                  <th className="px-4 py-2">Bodega</th>
+                  <th className="px-4 py-2">Ubicación</th>
+                  <th className="px-4 py-2">Estado</th>
+                  <th className="px-4 py-2 text-right">Cantidad</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stockDetail.warehouse_rows.map((row) => (
+                  <tr className="border-b border-line/70" key={row.location_id}>
+                    <td className="px-4 py-2">
+                      {row.warehouse_code} - {row.warehouse_name}
+                    </td>
+                    <td className="px-4 py-2">{row.location_code || "--"}</td>
+                    <td className="px-4 py-2">
+                      {row.type === "transit" ? "En tránsito" : "Disponible"}
+                    </td>
+                    <td className="px-4 py-2 text-right">{row.qty}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        </div>
+      ) : null}
+      {movementDetail ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4"
+          onMouseDown={() => setMovementDetail(null)}
+        >
+          <section
+            className="max-h-[85vh] w-full max-w-3xl overflow-auto rounded-lg bg-white shadow-xl"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <header className="flex items-start justify-between border-b border-line p-4">
+              <div>
+                <p className="text-sm text-neutral-500">
+                  {documentLabel(movementDetail.document_type)}
+                </p>
+                <h2 className="text-xl font-semibold">
+                  {movementDetail.document_number ||
+                    "Movimiento " + movementDetail.id}
+                </h2>
+              </div>
+              <button onClick={() => setMovementDetail(null)} type="button">
+                <X size={20} />
+              </button>
+            </header>
+            <div className="grid gap-2 p-4 text-sm md:grid-cols-2">
+              <p>
+                <strong>Fecha:</strong> {dateTime(movementDetail.created_at)}
+              </p>
+              <p>
+                <strong>Movimiento:</strong>{" "}
+                {movementLabel(movementDetail.type)}
+              </p>
+              <p>
+                <strong>Origen:</strong> {movementDetail.from_warehouse || "--"}
+              </p>
+              <p>
+                <strong>Destino:</strong> {movementDetail.to_warehouse || "--"}
+              </p>
+              <p>
+                <strong>Cantidad:</strong>{" "}
+                {movementDetail.in_qty || movementDetail.out_qty}
+              </p>
+              <p>
+                <strong>Costo:</strong> {money(movementDetail.unit_cost)}
+              </p>
+              {movementDetail.accounting_document_number ? (
+                <p><strong>Documento contable:</strong> {movementDetail.accounting_document_number}</p>
+              ) : null}
+            </div>
+            {transferDetail ? (
+              <div className="border-t border-line p-4">
+                <h3 className="mb-2 font-semibold">Detalle del traslado</h3>
+                <p className="mb-3 text-sm">
+                  {transferDetail.origin?.name} →{" "}
+                  {transferDetail.destination?.name}
+                </p>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-line bg-paper text-left">
+                      <th className="px-3 py-2">SKU</th>
+                      <th className="px-3 py-2">Producto</th>
+                      <th className="px-3 py-2 text-right">Cantidad</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {transferDetail.lines?.map((line) => (
+                      <tr className="border-b border-line/70" key={line.id}>
+                        <td className="px-3 py-2 font-mono">
+                          {line.item?.code}
+                        </td>
+                        <td className="px-3 py-2">{line.item?.name}</td>
+                        <td className="px-3 py-2 text-right">{line.qty}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+            {accountingDetail ? (
+              <div className="border-t border-line p-4">
+                <h3 className="mb-2 font-semibold">Asiento contable {accountingDetail.full_number}</h3>
+                <div className="mb-3 grid gap-2 text-sm md:grid-cols-2">
+                  <p><strong>Clase:</strong> {accountingDetail.document_type || "--"}</p>
+                  <p><strong>Fecha:</strong> {dateTime(accountingDetail.posting_date)}</p>
+                  <p><strong>Referencia:</strong> {accountingDetail.reference || "--"}</p>
+                  <p><strong>Usuario:</strong> {accountingDetail.created_by_name || "--"}</p>
+                  <p className="md:col-span-2"><strong>Texto:</strong> {accountingDetail.header_text || "--"}</p>
+                </div>
+                <table className="w-full text-sm"><thead><tr className="border-b border-line bg-paper text-left"><th className="px-3 py-2">Cuenta</th><th className="px-3 py-2">Descripcion</th><th className="px-3 py-2">NIT</th><th className="px-3 py-2 text-right">Debito</th><th className="px-3 py-2 text-right">Credito</th></tr></thead><tbody>{accountingDetail.lines?.map((line) => <tr className="border-b border-line/70" key={line.id}><td className="px-3 py-2 font-mono">{line.account_code}</td><td className="px-3 py-2">{line.description}</td><td className="px-3 py-2">{line.party_tax_id || "--"}</td><td className="px-3 py-2 text-right">{money(line.debit)}</td><td className="px-3 py-2 text-right">{money(line.credit)}</td></tr>)}</tbody></table>
+              </div>
+            ) : null}
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }

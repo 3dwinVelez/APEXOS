@@ -33,6 +33,7 @@ import { InventoryNav } from "@/components/inventory-nav";
 type InventoryItem = {
   id: number;
   code: string;
+  legacy_code?: string | null;
   name: string;
   type: string;
   unit: string;
@@ -98,6 +99,7 @@ type AssistantPanel = "operacion" | "costos" | "wms";
 
 const INITIAL_FORM = {
   code: "",
+  legacy_code: "",
   name: "",
   society_code: "",
   branch_code: "",
@@ -204,6 +206,7 @@ export default function NuevoProductoPage() {
     if (!needle) return items;
     return items.filter((item) => [
       item.code,
+      item.legacy_code || "",
       item.name,
       item.type,
       item.unit,
@@ -258,6 +261,7 @@ export default function NuevoProductoPage() {
         method: "POST",
         body: JSON.stringify({
           name: form.name,
+          legacy_code: form.legacy_code.trim(),
           type: form.type,
           unit: form.unit,
           family_code: form.family.toUpperCase(),
@@ -423,6 +427,9 @@ export default function NuevoProductoPage() {
                     <Field label="Codigo asignado">
                       <input className="h-10 w-full rounded-md border border-line bg-paper px-3 text-sm text-neutral-600" readOnly value={selectedFamily?.code_start && selectedFamily?.code_end ? `${selectedFamily.code_start}-${selectedFamily.code_end}` : "Automatico"} />
                     </Field>
+                    <Field label="Código artículo anterior">
+                      <input className="h-10 w-full rounded-md border border-line px-3 text-sm" placeholder="Opcional; código del sistema anterior" value={form.legacy_code} onChange={(e) => setForm((p) => ({ ...p, legacy_code: e.target.value }))} />
+                    </Field>
                     <Field label="Marca / linea">
                       <input className="h-10 w-full rounded-md border border-line px-3 text-sm" placeholder="Opcional" value={form.brand} onChange={(e) => setForm((p) => ({ ...p, brand: e.target.value }))} />
                     </Field>
@@ -533,7 +540,7 @@ export default function NuevoProductoPage() {
                 actions={(
                   <div className="relative w-full md:w-80">
                     <Search className="absolute left-3 top-2.5 text-neutral-400" size={16} />
-                    <input className="h-10 w-full rounded-md border border-line pl-9 pr-3 text-sm" placeholder="Buscar SKU, nombre, tipo o familia" value={query} onChange={(e) => setQuery(e.target.value)} />
+                    <input className="h-10 w-full rounded-md border border-line pl-9 pr-3 text-sm" placeholder="Buscar SKU, código anterior, nombre, tipo o familia" value={query} onChange={(e) => setQuery(e.target.value)} />
                   </div>
                 )}
               />
@@ -544,7 +551,7 @@ export default function NuevoProductoPage() {
                   {filteredItems.map((item) => (
                     <button className={`w-full rounded-md border p-3 text-left text-sm hover:border-apex ${selectedItem.id === item.id ? "border-apex bg-[#146C6312]" : "border-line"}`} key={item.id} onClick={() => setSelectedItem(item)} type="button">
                       <span className="flex items-center justify-between gap-2">
-                        <span className="truncate font-semibold">{item.code}</span>
+                        <span className="truncate font-semibold">{item.code}{item.legacy_code ? ` · Anterior: ${item.legacy_code}` : ""}</span>
                         <ItemStatus item={item} />
                       </span>
                       <span className="mt-1 block truncate text-xs text-neutral-500">{item.name} / {typeLabels[item.type] || item.type} / {item.unit}</span>
@@ -595,6 +602,7 @@ export default function NuevoProductoPage() {
               {assistantPanel === "operacion" ? (
                 <div className="space-y-2 text-sm">
                   <MetricRow label="Codigo" value={selectedItem?.code || "Automatico al guardar"} />
+                  <MetricRow label="Código anterior" value={selectedItem?.legacy_code || "Sin código anterior"} />
                   <MetricRow label="Tipo" value={typeLabels[form.type] || form.type} />
                   <MetricRow label="Unidad" value={form.unit} />
                   <MetricRow label="Stock critico" value={`${totals.critical} productos`} />
@@ -677,11 +685,12 @@ function SegmentedNav({ active, onChange }: { active: WorkspaceTab; onChange: (t
 
 function ProductProfile({ families, item, saving, onPatch }: { families: InventoryFamily[]; item: InventoryItem | null; saving: boolean; onPatch: (patch: InventoryItemPatch) => void }) {
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState({ unit_cost: 0, unit_price: 0, stock_min: 0, stock_max: 0, family: "", notes: "" });
+  const [draft, setDraft] = useState({ legacy_code: "", unit_cost: 0, unit_price: 0, stock_min: 0, stock_max: 0, family: "", notes: "" });
 
   useEffect(() => {
     if (!item) return;
     setDraft({
+      legacy_code: item.legacy_code || "",
       unit_cost: item.unit_cost || 0,
       unit_price: item.unit_price || 0,
       stock_min: item.stock_min || 0,
@@ -703,6 +712,7 @@ function ProductProfile({ families, item, saving, onPatch }: { families: Invento
         <div>
           <p className="text-sm text-neutral-500">Producto seleccionado</p>
           <h2 className="text-2xl font-semibold">{item.code}</h2>
+          <p className="text-sm text-neutral-500">Código anterior: {item.legacy_code || "--"}</p>
           <p className="text-sm text-neutral-600">{item.name} / {typeLabels[item.type] || item.type} / {item.unit}</p>
         </div>
         <button className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-line px-3 text-xs font-medium hover:bg-paper" onClick={() => setEditing((value) => !value)} type="button">
@@ -719,6 +729,9 @@ function ProductProfile({ families, item, saving, onPatch }: { families: Invento
 
       {editing ? (
         <div className="grid gap-3 border-t border-line p-4 lg:grid-cols-2">
+          <Field label="Código artículo anterior">
+            <input className="h-10 w-full rounded-md border border-line px-3 text-sm" value={draft.legacy_code} onChange={(e) => setDraft((p) => ({ ...p, legacy_code: e.target.value }))} />
+          </Field>
           <Field label="Costo">
             <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} type="number" value={numberInputValue(draft.unit_cost)} onChange={(e) => setDraft((p) => ({ ...p, unit_cost: numberFromInput(e.target.value) }))} />
           </Field>
@@ -741,7 +754,7 @@ function ProductProfile({ families, item, saving, onPatch }: { families: Invento
             <input className="h-10 w-full rounded-md border border-line px-3 text-sm" value={draft.notes} onChange={(e) => setDraft((p) => ({ ...p, notes: e.target.value }))} />
           </Field>
           <div className="lg:col-span-2">
-            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white disabled:opacity-50" disabled={saving || !draft.family} onClick={() => onPatch({ unit_cost: draft.unit_cost, unit_price: draft.unit_price, stock_min: draft.stock_min, stock_max: draft.stock_max || null, family_code: draft.family, metadata: { ...(item.metadata || {}), family: draft.family, notes: draft.notes } })} type="button">
+            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white disabled:opacity-50" disabled={saving || !draft.family} onClick={() => onPatch({ legacy_code: draft.legacy_code, unit_cost: draft.unit_cost, unit_price: draft.unit_price, stock_min: draft.stock_min, stock_max: draft.stock_max || null, family_code: draft.family, metadata: { ...(item.metadata || {}), family: draft.family, notes: draft.notes } })} type="button">
               <Save size={16} />
               Guardar cambios
             </button>

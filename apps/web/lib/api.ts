@@ -2463,6 +2463,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       first_name?: string;
       last_name?: string;
       document_number?: string;
+      phone?: string;
       email?: string;
       position?: string;
       department?: string;
@@ -3932,19 +3933,11 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   const adminUserAccessMatch = pathname.match(/^\/api\/v1\/admin\/users\/([^/]+)\/access$/);
   if (adminUserAccessMatch) {
     const body = JSON.parse(String(options.body || "{}"));
-    let accessError = "";
-    const nextApiOk = await nextAdminUsersRequest({
+    const result = await nextAdminUsersRequest({
       method: "PATCH",
       body: JSON.stringify({ employee_id: adminUserAccessMatch[1], action: "access", ...body })
-    }).then(() => true).catch((error) => {
-      safeDevLog("No fue posible actualizar acceso via Next API.", error);
-      accessError = error instanceof Error ? error.message : String(error || "");
-      return false;
     });
-    if (!nextApiOk) {
-      throw new Error(accessError || "No fue posible sincronizar el acceso del usuario con la membresia de empresa.");
-    }
-    return supabaseApiFallback(`/api/v1/admin/users`) as T;
+    return result as T;
   }
 
   if (pathname === "/api/v1/admin/users") {
@@ -4012,14 +4005,19 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       last_name?: string;
       email?: string;
       document_number?: string;
+      phone?: string;
       position?: string;
       department?: string;
       status?: string;
       user_type?: string;
       metadata?: AnyRow;
-    }>>("/rest/v1/employees?select=id,company_id,user_id,first_name,last_name,email,document_number,position,department,status,user_type,metadata&order=created_at.desc&limit=250");
+    }>>("/rest/v1/employees?select=id,company_id,user_id,first_name,last_name,email,document_number,phone,position,department,hire_date,status,user_type,metadata&order=created_at.desc&limit=250");
     return employees.map((employee) => {
       const name = fullName(employee);
+      const metadata = employee.metadata || {};
+      const access = metadata.access && typeof metadata.access === "object" ? metadata.access as AnyRow : {};
+      const employment = metadata.employment && typeof metadata.employment === "object" ? metadata.employment as AnyRow : {};
+      const operational = metadata.operational && typeof metadata.operational === "object" ? metadata.operational as AnyRow : {};
       const roleId = Number(employee.metadata?.role_id || (employee.user_type === "conductor" ? 2 : 1));
       const role = roles.find((item) => item.id === roleId) || roles[0];
       return {
@@ -4034,14 +4032,36 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         active: employee.status === "active",
         code: String(employee.metadata?.code || employee.document_number || employee.id.slice(0, 8)),
         document: employee.document_number || String(employee.metadata?.document || ""),
-        company: "SCJ",
+        company: String(metadata.company || ""),
+        first_names: employee.first_name || "",
+        last_names: employee.last_name || "",
+        document_type: String(metadata.document_type || "CC"),
+        phone: employee.phone || "",
         position: employee.position || employee.user_type || "",
         department: employee.department || "",
-        salary_base: 0,
+        salary_base: Number(employment.salary_base || 0),
         labor_status: employee.status || "active",
-        operational_classification: employee.user_type || employee.position || "operario",
-        base_site: "Sede Demo SCJ",
-        site: String(employee.metadata?.access && typeof employee.metadata.access === "object" ? (employee.metadata.access as AnyRow).site || "Sede Demo SCJ" : "Sede Demo SCJ"),
+        user_status: String(metadata.user_status || (employee.status === "active" ? "activo" : "inactivo")),
+        access_email: String(access.email || employee.email || ""),
+        site: String(access.site || ""),
+        area: String(access.area || employee.department || ""),
+        require_password_change: Boolean(access.require_password_change),
+        session_status: String(access.session_status || "sin_sesion"),
+        ...metadata,
+        ...employment,
+        operational_classification: String(operational.classification || employee.user_type || employee.position || "operario"),
+        can_punch_time: Boolean(operational.can_punch_time),
+        can_receive_services: Boolean(operational.can_receive_services),
+        can_be_assigned_routes: Boolean(operational.can_be_assigned_routes),
+        can_manage_inventory: Boolean(operational.can_manage_inventory),
+        can_approve_documents: Boolean(operational.can_approve_documents),
+        can_authorize_exceptions: Boolean(operational.can_authorize_exceptions),
+        driver_license: String(operational.driver_license || ""),
+        license_category: String(operational.license_category || ""),
+        license_expires_at: String(operational.license_expires_at || ""),
+        operational_restrictions: String(operational.restrictions || ""),
+        base_site: String(operational.base_site || access.site || ""),
+        operation_zone: String(operational.zone || ""),
         documents: Array.isArray(employee.metadata?.documents) ? employee.metadata.documents : []
       };
     }) as T;
@@ -4053,7 +4073,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const employeeId = adminUserMatch[1];
     const roles = await loadSupabaseAdminRoles().catch(() => storedAdminRoles());
     const role = roles.find((item) => item.id === Number(body.role_id));
-    const nextApiOk = await nextAdminUsersRequest({
+    const result = await nextAdminUsersRequest({
       method: "PATCH",
       body: JSON.stringify({
         employee_id: employeeId,
@@ -4061,14 +4081,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         ...body,
         ...(role ? { role_name: role.name, role_permissions: role.permissions, role_type: role.role_type, role_scope: role.scope, access_profile: role.access_profile } : {})
       })
-    }).then(() => true).catch((error) => {
-      safeDevLog("No fue posible actualizar usuario via Next API.", error);
-      return false;
     });
-    if (!nextApiOk) {
-      throw new Error("No fue posible sincronizar el usuario con roles, permisos y membresia de empresa.");
-    }
-    return supabaseApiFallback(`/api/v1/admin/users`) as T;
+    return result as T;
   }
 
   return null;
@@ -4161,7 +4175,7 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
     response = await fetchWithTimeout(`${API_URL}${path}`, {
       ...options,
       headers: {
-        ...(options.body ? { "Content-Type": "application/json" } : {}),
+        ...(options.body && !(typeof FormData !== "undefined" && options.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(supabaseSession && companyId ? { "x-company-id": companyId } : {}),
         ...options.headers

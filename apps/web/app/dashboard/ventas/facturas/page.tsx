@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { asCollection } from "@/lib/api-collections";
 import { VentasNav } from "@/components/ventas-nav";
 
 type Invoice = {
@@ -22,8 +23,8 @@ export default function FacturasPage() {
     const params = new URLSearchParams();
     if (filters.status) params.set("status", filters.status);
     if (filters.search) params.set("search", filters.search);
-    api<Invoice[]>(`/api/v1/sales/invoices?${params.toString()}`)
-      .then((res) => setInvoices(res || []))
+    api<unknown>(`/api/v1/sales/invoices?${params.toString()}`)
+      .then((response) => setInvoices(asCollection<Invoice>(response, ["invoices"])))
       .catch(() => setInvoices([]))
       .finally(() => setLoading(false));
   }, [filters.search, filters.status]);
@@ -62,7 +63,7 @@ export default function FacturasPage() {
           <tbody>
             {invoices.map((inv) => (
               <tr key={inv.id} className="border-b border-line hover:bg-paper">
-                <td className="py-2 pr-4 font-mono">{inv.number}</td>
+                <td className="py-2 pr-4 font-mono"><Link href={`/dashboard/ventas/facturas/${inv.id}`} className="text-apex underline-offset-2 hover:underline" title="Ver detalle del documento">{inv.number}</Link></td>
                 <td className="py-2 pr-4">{inv.customer?.name || `#${inv.customer?.id}`}</td>
                 <td className="py-2 pr-4">{new Date(inv.date).toLocaleDateString()}</td>
                 <td className="py-2 pr-4">${inv.total.toLocaleString()}</td>
