@@ -6,12 +6,9 @@ import {
   AlertTriangle,
   BarChart3,
   Building2,
-  CheckCircle2,
-  ClipboardCheck,
   Edit3,
   Mail,
   MapPin,
-  PackageCheck,
   Phone,
   Plus,
   Save,
@@ -21,7 +18,6 @@ import {
   Truck,
   Users
 } from "lucide-react";
-import Link from "next/link";
 import { api } from "@/lib/api";
 import { LATAM_COUNTRIES, currencyForCountry, money, taxIdLabel } from "@/lib/latam";
 import { ComprasNav } from "@/components/compras-nav";
@@ -65,7 +61,6 @@ type Supplier = {
 };
 
 type WorkspaceTab = "directorio" | "nuevo" | "desempeno";
-type AssistantPanel = "abastecimiento" | "riesgo" | "finanzas";
 
 const statusLabels: Record<string, string> = {
   draft: "Borrador",
@@ -78,17 +73,10 @@ const statusLabels: Record<string, string> = {
   closed: "Cerrada"
 };
 
-const templates = [
-  { label: "Proveedor local", country: "", credit_days: 30, segment: "local", category: "abastecimiento" },
-  { label: "Importador", country: "", credit_days: 45, segment: "internacional", category: "importacion" },
-  { label: "Servicio logistico", country: "", credit_days: 15, segment: "servicios", category: "logistica" }
-];
-
 export default function ProveedoresPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("directorio");
-  const [assistantPanel, setAssistantPanel] = useState<AssistantPanel>("abastecimiento");
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
@@ -132,14 +120,6 @@ export default function ProveedoresPage() {
       supplier.metadata.category || ""
     ].some((value) => value.toLowerCase().includes(needle)));
   }, [query, suppliers]);
-
-  const totals = useMemo(() => {
-    return suppliers.reduce((acc, supplier) => ({
-      totalPurchased: acc.totalPurchased + Number(supplier.metrics.total_purchased || 0),
-      openOrders: acc.openOrders + Number(supplier.metrics.open_orders || 0),
-      pendingReceipts: acc.pendingReceipts + Number(supplier.metrics.pending_receipts || 0)
-    }), { totalPurchased: 0, openOrders: 0, pendingReceipts: 0 });
-  }, [suppliers]);
 
   const canSave = Boolean(form.name.trim());
 
@@ -198,47 +178,16 @@ export default function ProveedoresPage() {
     }
   }
 
-  function applyTemplate(template: (typeof templates)[number]) {
-    setForm((current) => ({
-      ...current,
-      country: template.country,
-      credit_days: template.credit_days,
-      segment: template.segment,
-      category: template.category
-    }));
-  }
-
   return (
     <div className="space-y-4">
       <header className="rounded-md border border-line bg-white">
         <div className="border-b border-line p-4">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-            <div>
-              <p className="text-sm font-medium text-apex">Compras / Proveedores</p>
-              <h1 className="mt-1 text-3xl font-semibold">Workspace de proveedores</h1>
-              <p className="mt-1 max-w-3xl text-sm text-neutral-600">
-                Gestiona proveedores como una red operativa conectada a OC, WMS, recepciones, costos y trazabilidad.
-              </p>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-3">
-              <HeaderMetric label="Proveedores" value={String(suppliers.length)} />
-              <HeaderMetric label="OC abiertas" value={String(totals.openOrders)} />
-              <HeaderMetric label="Pendiente recibir" value={String(totals.pendingReceipts)} />
-            </div>
-          </div>
+          <p className="text-sm font-medium text-apex">Compras / Proveedores</p>
+          <h1 className="mt-1 text-2xl font-semibold">Proveedores</h1>
+          <p className="mt-1 text-sm text-neutral-600">Crea, consulta y actualiza el maestro de proveedores.</p>
         </div>
-        <div className="flex flex-col gap-3 p-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="p-3">
           <SegmentedNav active={activeTab} onChange={setActiveTab} />
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Link className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-medium hover:bg-paper" href="/dashboard/compras/ordenes/nueva">
-              <ClipboardCheck size={16} />
-              Nueva OC
-            </Link>
-            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-3 text-sm font-medium text-white" onClick={() => setActiveTab("nuevo")} type="button">
-              <Plus size={16} />
-              Nuevo proveedor
-            </button>
-          </div>
         </div>
       </header>
 
@@ -247,7 +196,7 @@ export default function ProveedoresPage() {
       {error ? <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
       {ok ? <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{ok}</p> : null}
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <section>
         <div className="space-y-4">
           {activeTab === "directorio" ? (
             <section className="rounded-md border border-line bg-white">
@@ -332,14 +281,7 @@ export default function ProveedoresPage() {
                   <input className="h-10 w-full rounded-md border border-line px-3 text-sm" placeholder="Ej: entrega martes y jueves, requiere cita, validar certificados" value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} />
                 </Field>
 
-                <div className="flex flex-col gap-2 border-t border-line pt-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex flex-wrap gap-2">
-                    {templates.map((template) => (
-                      <button className="h-9 rounded-md border border-line px-3 text-xs hover:bg-paper" key={template.label} onClick={() => applyTemplate(template)} type="button">
-                        {template.label}
-                      </button>
-                    ))}
-                  </div>
+                <div className="flex justify-end border-t border-line pt-4">
                   <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white disabled:opacity-50" disabled={saving || !canSave} type="submit">
                     <Save size={16} />
                     Guardar proveedor
@@ -375,58 +317,6 @@ export default function ProveedoresPage() {
           ) : null}
         </div>
 
-        <aside className="space-y-4 xl:sticky xl:top-4 xl:self-start">
-          <section className="rounded-md border border-line bg-white">
-            <PanelHeader icon={ShieldCheck} title="Centro de control" detail="Contexto del proveedor seleccionado." />
-            <div className="space-y-4 p-4">
-              <div className="grid grid-cols-3 gap-1 rounded-md bg-paper p-1">
-                <PanelTab label="Supply" active={assistantPanel === "abastecimiento"} onClick={() => setAssistantPanel("abastecimiento")} />
-                <PanelTab label="Riesgo" active={assistantPanel === "riesgo"} onClick={() => setAssistantPanel("riesgo")} />
-                <PanelTab label="Finanzas" active={assistantPanel === "finanzas"} onClick={() => setAssistantPanel("finanzas")} />
-              </div>
-
-              {assistantPanel === "abastecimiento" ? (
-                <div className="space-y-2 text-sm">
-                  <MetricRow label="Proveedor" value={selectedSupplier?.name || "Sin seleccion"} />
-                  <MetricRow label="OC abiertas" value={String(selectedSupplier?.metrics.open_orders || 0)} />
-                  <MetricRow label="Pendiente WMS" value={String(selectedSupplier?.metrics.pending_receipts || 0)} />
-                  <MetricRow label="Ultima OC" value={selectedSupplier?.metrics.last_order_number || "-"} />
-                </div>
-              ) : null}
-
-              {assistantPanel === "riesgo" ? (
-                <div>
-                  <FlowStep icon={CheckCircle2} title="Datos minimos" detail="Documento, pais y contacto" active={Boolean(selectedSupplier?.tax_id && selectedSupplier?.email)} />
-                  <FlowStep icon={ShieldCheck} title="Compliance" detail="Segmento y responsable definidos" active={Boolean(selectedSupplier?.metadata.owner)} />
-                  <FlowStep icon={AlertTriangle} title="Recepciones pendientes" detail="OC abiertas con saldo WMS" active={Boolean(selectedSupplier?.metrics.pending_receipts)} warn />
-                </div>
-              ) : null}
-
-              {assistantPanel === "finanzas" ? (
-                <div className="space-y-2 text-sm">
-                  <MetricRow label="Total comprado" value={money(selectedSupplier?.metrics.total_purchased || 0)} />
-                  <MetricRow label="Dias credito" value={`${selectedSupplier?.credit_days || 0} dias`} />
-                  <MetricRow label="Nivel servicio" value={`${selectedSupplier?.metrics.service_level ?? 100}%`} />
-                  <MetricRow label="Moneda base" value={currencyForCountry(selectedSupplier?.country || "CO")} />
-                </div>
-              ) : null}
-            </div>
-          </section>
-
-          <section className="rounded-md border border-line bg-white p-4">
-            <h2 className="text-sm font-semibold">Acciones conectadas</h2>
-            <div className="mt-3 grid gap-2">
-              <Link className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-3 text-sm font-medium text-white" href="/dashboard/compras/ordenes/nueva">
-                <ClipboardCheck size={16} />
-                Crear OC
-              </Link>
-              <Link className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-medium hover:bg-paper" href="/dashboard/compras/ordenes/recibir">
-                <PackageCheck size={16} />
-                Ver recepciones
-              </Link>
-            </div>
-          </section>
-        </aside>
       </section>
     </div>
   );
@@ -594,38 +484,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="mb-1 block text-xs font-medium text-neutral-600">{label}</span>
       {children}
     </label>
-  );
-}
-
-function MetricRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-3 border-b border-line py-2 last:border-b-0">
-      <span className="text-neutral-500">{label}</span>
-      <span className="font-medium">{value}</span>
-    </div>
-  );
-}
-
-function PanelTab({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return (
-    <button className={`h-8 rounded-md px-2 text-xs font-medium ${active ? "bg-white text-apex shadow-sm" : "text-neutral-600 hover:bg-white/70"}`} onClick={onClick} type="button">
-      {label}
-    </button>
-  );
-}
-
-function FlowStep({ icon: Icon, title, detail, active, warn }: { icon: LucideIcon; title: string; detail: string; active: boolean; warn?: boolean }) {
-  const activeClass = warn ? "bg-amber-50 text-amber-800" : "bg-[#146C6312] text-apex";
-  return (
-    <div className="flex gap-3 border-b border-line py-3 last:border-b-0">
-      <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${active ? activeClass : "bg-neutral-100 text-neutral-500"}`}>
-        <Icon size={17} />
-      </span>
-      <span>
-        <span className="block text-sm font-medium">{title}</span>
-        <span className="block text-xs text-neutral-500">{detail}</span>
-      </span>
-    </div>
   );
 }
 
