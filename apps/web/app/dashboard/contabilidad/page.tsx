@@ -1,6 +1,4 @@
-import Link from "next/link";
 import { BarChart3, BookOpen, Building2, FilePlus2, Landmark, ReceiptText, Users, WalletCards } from "lucide-react";
-import { ContabilidadNav } from "@/components/contabilidad-nav";
 import { ActionCard } from "@/components/ui/ActionCard";
 
 const actions = [
@@ -19,18 +17,12 @@ export default function ContabilidadPage() {
   return (
     <div className="apex-workspace-shell space-y-4">
       <header className="apex-section-card p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-medium text-apex">M-07 · Finanzas</p>
-            <h1 className="text-3xl font-semibold">Contabilidad</h1>
-            <p className="mt-1 text-sm text-neutral-600">Registros, maestros, obligaciones e informes financieros organizados por tarea.</p>
-          </div>
-          <Link className="apex-primary-action inline-flex items-center justify-center gap-2 px-4 text-sm font-semibold" href="/dashboard/contabilidad/asientos">
-            <FilePlus2 size={16} /> Registrar asiento
-          </Link>
+        <div>
+          <p className="text-sm font-medium text-apex">M-07 · Finanzas</p>
+          <h1 className="text-3xl font-semibold">Contabilidad</h1>
+          <p className="mt-1 text-sm text-neutral-600">Registros, maestros, obligaciones e informes financieros organizados por tarea.</p>
         </div>
       </header>
-      <ContabilidadNav />
       <section aria-label="Herramientas activas de contabilidad" className="apex-dense-actions">
         {actions.map((action) => <ActionCard key={action.href} {...action} />)}
       </section>

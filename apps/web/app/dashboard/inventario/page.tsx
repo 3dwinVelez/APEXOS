@@ -1,6 +1,4 @@
-import Link from "next/link";
 import { ArrowRightLeft, BarChart3, Boxes, FileUp, FolderTree, PackagePlus, ScanLine, Warehouse } from "lucide-react";
-import { InventoryNav } from "@/components/inventory-nav";
 import { ActionCard } from "@/components/ui/ActionCard";
 
 const actions = [
@@ -19,18 +17,12 @@ export default function InventarioHomePage() {
   return (
     <div className="apex-workspace-shell space-y-4">
       <header className="apex-section-card p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-medium text-apex">M-01 · Operación</p>
-            <h1 className="text-3xl font-semibold">Inventario</h1>
-            <p className="mt-1 text-sm text-neutral-600">Productos, bodegas, existencias y movimientos en un flujo operativo único.</p>
-          </div>
-          <Link className="apex-primary-action inline-flex items-center justify-center gap-2 px-4 text-sm font-semibold" href="/dashboard/inventario/productos/nuevo">
-            <PackagePlus size={16} /> Nuevo producto
-          </Link>
+        <div>
+          <p className="text-sm font-medium text-apex">M-01 · Operación</p>
+          <h1 className="text-3xl font-semibold">Inventario</h1>
+          <p className="mt-1 text-sm text-neutral-600">Productos, bodegas, existencias y movimientos en un flujo operativo único.</p>
         </div>
       </header>
-      <InventoryNav />
       <section aria-label="Herramientas activas de inventario" className="apex-dense-actions">
         {actions.map((action) => <ActionCard key={action.href} {...action} />)}
       </section>

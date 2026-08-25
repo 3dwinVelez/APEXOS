@@ -4,7 +4,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import Link from "next/link";
-import { Landmark, WalletCards } from "lucide-react";
+import { Landmark } from "lucide-react";
 
 type Account = { id: number; code: string; name: string; type?: string; active?: boolean; allows_tx?: boolean };
 type Party = { id: number; name: string; legal_name?: string; tax_id?: string };
@@ -99,7 +99,7 @@ export default function TreasuryPage() {
   }
 
   return <div className="apex-workspace-shell space-y-4">
-    <header className="apex-section-card p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-medium text-apex">M-08 · Finanzas</p><h1 className="text-3xl font-semibold">Tesorería</h1><p className="mt-1 text-sm text-neutral-600">Recaudos, pagos, bancos y movimientos organizados en un solo espacio.</p></div><Link className="apex-primary-action inline-flex items-center justify-center gap-2 px-4 text-sm font-semibold" href="/dashboard/tesoreria/anticipos"><WalletCards size={16} /> Anticipos y cruces</Link></div></header>
+    <header className="apex-section-card p-4"><div><p className="text-sm font-medium text-apex">M-08 · Finanzas</p><h1 className="text-3xl font-semibold">Tesorería</h1><p className="mt-1 text-sm text-neutral-600">Recaudos, pagos, bancos y movimientos organizados en un solo espacio.</p></div></header>
     <nav aria-label="Herramientas de tesorería" className="apex-section-card flex flex-wrap gap-2 p-2">{[["payments", "Recaudos y pagos"], ["banks", "Bancos"], ["report", "Movimientos"]].map(([value, label]) => <button key={value} onClick={() => setTab(value as typeof tab)} className={`h-9 rounded-md px-4 text-sm font-medium ${tab === value ? "bg-apex text-white" : "border border-line bg-white hover:border-apex hover:text-apex"}`} type="button">{label}</button>)}<Link className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-white px-4 text-sm font-medium hover:border-apex hover:text-apex" href="/dashboard/tesoreria/anticipos"><Landmark size={15} /> Anticipos</Link></nav>
     {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}{message ? <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p> : null}
 

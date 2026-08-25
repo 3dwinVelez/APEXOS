@@ -54,7 +54,7 @@ test("los formularios comerciales tienen etiquetas visibles y conservan sus cont
 
 test("tesorería conserva pagos bancos reportes y anticipos con una jerarquía compacta", () => {
   const treasury = read("apps/web/app/dashboard/tesoreria/page.tsx");
-  for (const marker of ["Recaudos y pagos", "Bancos", "Movimientos", "Anticipos y cruces", "Datos del movimiento", "Selección de documentos"]) assert.match(treasury, new RegExp(marker));
+  for (const marker of ["Recaudos y pagos", "Bancos", "Movimientos", "Anticipos", "Datos del movimiento", "Selección de documentos"]) assert.match(treasury, new RegExp(marker));
   for (const endpoint of ["/api/v1/treasury/banks", "/api/v1/treasury/payments", "/api/v1/treasury/open-items"]) assert.match(treasury, new RegExp(endpoint.replaceAll("/", "\\/")));
   assert.match(treasury, /submitPayment/);
   assert.match(treasury, /cancelPayment/);
@@ -78,4 +78,21 @@ test("el formulario de productos conserva sus funciones y elimina paneles de rel
   assert.match(product, /Boolean\(selectedItem && selectedItem\.metadata\.purchase_profile/);
   assert.match(product, /selectedItem\?\.stock_current/);
   assert.doesNotMatch(product, /Centro de control|Plantillas rapidas|Acciones conectadas|Workspace de productos|Codigo automatico por familia/);
+});
+
+test("las portadas ERP ofrecen una sola capa de acceso por función", () => {
+  const inventory = read("apps/web/app/dashboard/inventario/page.tsx");
+  const accounting = read("apps/web/app/dashboard/contabilidad/page.tsx");
+  const sales = read("apps/web/app/dashboard/ventas/page.tsx");
+  const treasury = read("apps/web/app/dashboard/tesoreria/page.tsx");
+
+  for (const source of [inventory, accounting, sales]) {
+    assert.match(source, /<ActionCard/);
+    assert.doesNotMatch(source, /<InventoryNav|<ContabilidadNav|<VentasNav|apex-primary-action/);
+  }
+  assert.equal(inventory.match(/\/dashboard\/inventario\/productos\/nuevo/g)?.length, 1);
+  assert.equal(accounting.match(/\/dashboard\/contabilidad\/asientos/g)?.length, 1);
+  assert.equal(sales.match(/\/dashboard\/ventas\/ordenes\/nueva/g)?.length, 1);
+  assert.equal(treasury.match(/\/dashboard\/tesoreria\/anticipos/g)?.length, 1);
+  assert.doesNotMatch(treasury, /apex-primary-action/);
 });
