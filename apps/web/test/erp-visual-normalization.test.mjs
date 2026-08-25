@@ -74,5 +74,8 @@ test("el formulario de productos conserva sus funciones y elimina paneles de rel
   assert.match(product, /method: "PATCH"/);
   assert.match(product, /lot_control: form\.lot_control/);
   assert.match(product, /serial_control: form\.serial_control/);
+  assert.match(product, /selectedItem\?\.id === item\.id/);
+  assert.match(product, /Boolean\(selectedItem && selectedItem\.metadata\.purchase_profile/);
+  assert.match(product, /selectedItem\?\.stock_current/);
   assert.doesNotMatch(product, /Centro de control|Plantillas rapidas|Acciones conectadas|Workspace de productos|Codigo automatico por familia/);
 });

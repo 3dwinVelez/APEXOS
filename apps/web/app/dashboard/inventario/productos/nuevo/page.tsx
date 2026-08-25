@@ -494,7 +494,7 @@ export default function NuevoProductoPage() {
                 <div className="space-y-2">
                   {loading ? <p className="rounded-md border border-line p-3 text-sm text-neutral-500">Cargando productos...</p> : null}
                   {filteredItems.map((item) => (
-                    <button className={`w-full rounded-md border p-3 text-left text-sm hover:border-apex ${selectedItem.id === item.id ? "border-apex bg-[#146C6312]" : "border-line"}`} key={item.id} onClick={() => setSelectedItem(item)} type="button">
+                    <button className={`w-full rounded-md border p-3 text-left text-sm hover:border-apex ${selectedItem?.id === item.id ? "border-apex bg-[#146C6312]" : "border-line"}`} key={item.id} onClick={() => setSelectedItem(item)} type="button">
                       <span className="flex items-center justify-between gap-2">
                         <span className="truncate font-semibold">{item.code}{item.legacy_code ? ` · Anterior: ${item.legacy_code}` : ""}</span>
                         <ItemStatus item={item} />
@@ -517,14 +517,14 @@ export default function NuevoProductoPage() {
                 <div className="rounded-md border border-line p-4">
                   <h3 className="mb-3 text-sm font-semibold">Flujo del producto</h3>
                   <TimelineItem icon={Tag} title="Maestro creado" detail="SKU, unidad, familia y reglas base" done={Boolean(selectedItem)} />
-                  <TimelineItem icon={ClipboardCheck} title="Compras" detail="OC, proveedor frecuente y costo" done={selectedItem.metadata.purchase_profile !== "no comprable"} />
-                  <TimelineItem icon={Warehouse} title="WMS" detail="Ubicacion, lote, vencimiento y putaway" done={selectedItem.metadata.wms_profile !== "no almacenable"} />
-                  <TimelineItem icon={ShoppingCart} title="Ventas" detail="Precio, impuesto y disponibilidad" done={selectedItem.metadata.sales_profile !== "no vendible"} />
-                  <TimelineItem icon={Receipt} title="Finanzas" detail="Costo, margen, inventario y COGS" done={Boolean(selectedItem.unit_cost || selectedItem.unit_price)} />
+                  <TimelineItem icon={ClipboardCheck} title="Compras" detail="OC, proveedor frecuente y costo" done={Boolean(selectedItem && selectedItem.metadata.purchase_profile !== "no comprable")} />
+                  <TimelineItem icon={Warehouse} title="WMS" detail="Ubicacion, lote, vencimiento y putaway" done={Boolean(selectedItem && selectedItem.metadata.wms_profile !== "no almacenable")} />
+                  <TimelineItem icon={ShoppingCart} title="Ventas" detail="Precio, impuesto y disponibilidad" done={Boolean(selectedItem && selectedItem.metadata.sales_profile !== "no vendible")} />
+                  <TimelineItem icon={Receipt} title="Finanzas" detail="Costo, margen, inventario y COGS" done={Boolean(selectedItem && (selectedItem.unit_cost || selectedItem.unit_price))} />
                 </div>
                 <div className="rounded-md border border-line p-4">
                   <h3 className="mb-3 text-sm font-semibold">Impacto actual</h3>
-                  <TraceLink icon={Boxes} label="Stock actual" value={`${selectedItem.stock_current || 0} ${selectedItem.unit || ""}`} />
+                  <TraceLink icon={Boxes} label="Stock actual" value={`${selectedItem?.stock_current || 0} ${selectedItem?.unit || ""}`} />
                   <TraceLink icon={DollarSign} label="Margen" value={`${selectedItem ? itemMargin(selectedItem) : 0}%`} />
                   <TraceLink icon={Warehouse} label="Perfil WMS" value={selectedItem?.metadata.wms_profile || "-"} />
                   <TraceLink icon={Factory} label="Tipo operativo" value={selectedItem ? typeLabels[selectedItem.type] || selectedItem.type : "-"} />
