@@ -1,0 +1,39 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "purchases-visual-normalization-preqa-20260825",
+  "change_intent": {
+    "summary": "Reducir saturación y duplicidad visual en Compras sin alterar operaciones activas",
+    "modules": ["purchases-ui", "promotion-governance"]
+  },
+  "base_commits": {
+    "develop": "e0dd24101416a5e1675b155e4a2e99284541e2fe",
+    "main": "0abda8c41168642f99da0831e15f940b98232a12"
+  },
+  "certified_commit": "c32d0bb",
+  "expected_changes": [
+    { "status": "M", "file": "apps/web/app/dashboard/compras/ordenes/nueva/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/compras/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/compras/proveedores/page.tsx" },
+    { "status": "M", "file": "apps/web/test/erp-visual-normalization.test.mjs" },
+    { "status": "A", "file": "docs/qa/evidence/purchases-visual-normalization-20260825/REPORTE.md" },
+    { "status": "A", "file": "docs/qa/evidence/purchases-visual-normalization-20260825/certification-contract.json" },
+    { "status": "A", "file": "docs/qa/evidence/purchases-visual-normalization-20260825/local-validation.md" },
+    { "status": "A", "file": "docs/qa/evidence/purchases-visual-normalization-20260825/preqa-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/purchases-visual-normalization-20260825/qa-runbook.md" }
+  ],
+  "allowed_paths": [
+    "apps/web/app/dashboard/compras/ordenes/nueva/page.tsx",
+    "apps/web/app/dashboard/compras/page.tsx",
+    "apps/web/app/dashboard/compras/proveedores/page.tsx",
+    "apps/web/test/erp-visual-normalization.test.mjs",
+    "docs/qa/evidence/purchases-visual-normalization-20260825/"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    { "name": "purchase_order_create_edit_approve", "status": "passed", "evidence": ["REPORTE.md", "local-validation.md"] },
+    { "name": "purchase_order_directory_traceability", "status": "passed", "evidence": ["REPORTE.md", "local-validation.md"] },
+    { "name": "supplier_directory_create_edit", "status": "passed", "evidence": ["REPORTE.md", "local-validation.md"] },
+    { "name": "receiving_invoice_import_report_navigation", "status": "passed", "evidence": ["REPORTE.md", "local-validation.md"] },
+    { "name": "cross_module_scope_isolation", "status": "passed", "evidence": ["REPORTE.md", "local-validation.md"] }
+  ]
+}
