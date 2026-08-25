@@ -112,6 +112,17 @@ const adjustStockSchema = {
   }
 };
 
+const inventoryAdjustmentSchema = {
+  body: {
+    type: "object", additionalProperties: false,
+    required: ["document_type", "warehouse_id", "posting_date", "reason", "lines"],
+    properties: {
+      document_type: { type: "string", enum: ["AE", "AS"] }, warehouse_id: { type: "integer" }, posting_date: { type: "string", minLength: 10 }, reason: { type: "string", minLength: 1 }, idempotency_key: { type: "string", minLength: 1 },
+      lines: { type: "array", minItems: 1, items: { type: "object", additionalProperties: false, required: ["item_id", "qty"], properties: { item_id: { type: "integer" }, qty: { type: "number", exclusiveMinimum: 0 }, unit_cost: { type: "number", exclusiveMinimum: 0 } } } }
+    }
+  }
+};
+
 const warehouseTransferSchema = {
   body: {
     type: "object",
@@ -139,4 +150,4 @@ const warehouseTransferSchema = {
   }
 };
 
-module.exports = { createItemSchema, moveStockSchema, updateItemSchema, adjustStockSchema, familySchema, warehouseSchema, warehouseTransferSchema };
+module.exports = { createItemSchema, moveStockSchema, updateItemSchema, adjustStockSchema, inventoryAdjustmentSchema, familySchema, warehouseSchema, warehouseTransferSchema };

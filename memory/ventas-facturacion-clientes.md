@@ -23,6 +23,7 @@
 - Cada línea indica SKU, cantidad y bodega de origen.
 - Una bodega de consignación debe estar enlazada a un cliente. La factura puede mezclar bodegas propias y de consignación, pero la bodega debe corresponder al cliente facturado y exige referencia por línea.
 - La importación Excel admite varias facturas agrupadas por `grupo_factura` y es atómica.
+- La pantalla de nueva factura ofrece la descarga de la plantilla oficial `.xlsx`, con ejemplos y una hoja de instrucciones.
 - Moneda inicial: COP. Facturación electrónica DIAN queda fuera del alcance inicial.
 - CxC controla vencimientos, saldos, antigüedad, abonos parciales y pagos completos.
 - Un recaudo selecciona cuenta de caja/banco, puede aplicar a varias facturas del mismo cliente y no permite sobrepago.

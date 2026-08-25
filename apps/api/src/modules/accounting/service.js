@@ -1978,6 +1978,41 @@ async function createInitialInventoryDocumentTx(tx, tenantId, userId, data) {
   return tx.cntCabdoc.findUnique({ where: { id: cabdoc.id }, include: { lines: { orderBy: { line_no: "asc" } } } });
 }
 
+async function createInventoryAdjustmentDocumentTx(tx, tenantId, userId, data) {
+  const postingDate = data.posting_date instanceof Date ? data.posting_date : new Date(data.posting_date);
+  const documentType = normalizeAccountingDocumentType(data.document_type);
+  if (!["AE", "AS"].includes(documentType)) throw appError(400, "INVALID_ADJUSTMENT_DOCUMENT_TYPE", "La clase de ajuste debe ser AE o AS");
+  const tenant = await tx.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
+  const config = tenant?.config && typeof tenant.config === "object" ? tenant.config : {};
+  const accounting = config.accounting && typeof config.accounting === "object" ? config.accounting : {};
+  const customNumbering = Array.isArray(accounting.accounting_numbering) ? accounting.accounting_numbering : [];
+  const numbering = customNumbering.find((row) => normalizeAccountingDocumentType(row.document_type) === documentType && row.active !== false) || { document_type: documentType, prefix: documentType, next_number: 1, active: true, source: "Sistema" };
+  const documentNumber = Number(numbering.next_number) || 1;
+  const prefix = normalizeCode(numbering.prefix || documentType);
+  const fullNumber = `${prefix}-${String(documentNumber).padStart(6, "0")}`;
+  let internalParty = await tx.party.findFirst({ where: { type: "internal", metadata: { path: ["system_code"], equals: "INVENTORY_ADJUSTMENT" }, __includeInactive: true } });
+  if (!internalParty) internalParty = await tx.party.create({ data: { type: "internal", name: "Ajustes de inventario", active: true, metadata: { system_code: "INVENTORY_ADJUSTMENT", hidden_from_operational_masters: true } } });
+  const total = round((data.lines || []).reduce((sum, row) => sum + Number(row.amount || 0), 0));
+  if (total <= 0) throw appError(422, "EMPTY_INVENTORY_ADJUSTMENT", "El ajuste no tiene valor para contabilizar");
+  const cabdoc = await tx.cntCabdoc.create({ data: { document_type: documentType, document_number: documentNumber, full_number: fullNumber, posting_date: postingDate, reference: data.reference, header_text: data.header_text, society_code: normalizeCode(data.society_code), total_debit: total, total_credit: total, created_by: userId || null } });
+  let lineNo = 1;
+  for (const source of data.lines || []) {
+    const debitCode = normalizeCode(source.debit_account_code);
+    const creditCode = normalizeCode(source.credit_account_code);
+    for (const movement of ["debit", "credit"]) {
+      const accountCode = movement === "debit" ? debitCode : creditCode;
+      const account = await tx.account.findFirst({ where: { code: accountCode, active: true, allows_tx: true } });
+      if (!account) throw appError(422, "ADJUSTMENT_ACCOUNT_NOT_FOUND", `La cuenta ${accountCode} no existe, esta inactiva o no permite movimientos`);
+      const amount = round(source.amount);
+      const ledger = await tx.ledgerEntry.create({ data: { account_id: account.id, date: postingDate, debit: movement === "debit" ? amount : 0, credit: movement === "credit" ? amount : 0, balance: 0, description: source.description, period: periodFromDate(postingDate) } });
+      await tx.cntCuedoc.create({ data: { cabdoc_id: cabdoc.id, line_no: lineNo++, account_id: account.id, account_code: account.code, branch_code: normalizeCode(source.branch_code), cost_center_code: normalizeCode(source.cost_center_code), party_id: internalParty.id, movement, debit: movement === "debit" ? amount : 0, credit: movement === "credit" ? amount : 0, description: source.description, ledger_entry_id: ledger.id } });
+    }
+  }
+  const nextNumbering = [...customNumbering.filter((row) => normalizeAccountingDocumentType(row.document_type) !== documentType), { ...numbering, document_type: documentType, prefix, next_number: documentNumber + 1, active: true }];
+  await tx.tenant.update({ where: { id: tenantId }, data: { config: { ...config, accounting: { ...accounting, accounting_numbering: nextNumbering } } } });
+  return tx.cntCabdoc.findUnique({ where: { id: cabdoc.id }, include: { lines: { orderBy: { line_no: "asc" } } } });
+}
+
 module.exports = {
   initChartOfAccounts,
   listAccounts,
@@ -2013,6 +2048,7 @@ module.exports = {
   createAccountingDocument,
   createGoodsReceiptDocumentTx,
   createInitialInventoryDocumentTx,
+  createInventoryAdjustmentDocumentTx,
   listPayableDocuments,
   listOpenPayableInvoices,
   listSupplierPayableDocuments,

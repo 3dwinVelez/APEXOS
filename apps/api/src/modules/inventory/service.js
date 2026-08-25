@@ -813,6 +813,77 @@ async function adjustStock(tenantId, userId, data) {
   });
 }
 
+function resolveAdjustmentCost({ documentType, averageCost, enteredCost }) {
+  const current = Number(averageCost || 0);
+  if (current > 0) return current;
+  if (documentType === "AE" && Number(enteredCost || 0) > 0) return Number(enteredCost);
+  if (documentType === "AS") throw appError(422, "ADJUSTMENT_AVERAGE_COST_REQUIRED", "El SKU no tiene costo promedio para contabilizar la salida");
+  throw appError(422, "ADJUSTMENT_COST_REQUIRED", "El SKU no tiene costo; ingresa el costo unitario para la entrada");
+}
+
+async function createInventoryAdjustment(tenantId, userId, data) {
+  const documentType = String(data.document_type || "").toUpperCase();
+  if (!["AE", "AS"].includes(documentType)) throw appError(400, "INVALID_ADJUSTMENT_TYPE", "Selecciona ajuste de entrada AE o salida AS");
+  if (!String(data.reason || "").trim()) throw appError(400, "ADJUSTMENT_REASON_REQUIRED", "El motivo es obligatorio");
+  if (!Array.isArray(data.lines) || !data.lines.length) throw appError(400, "ADJUSTMENT_LINES_REQUIRED", "Agrega al menos una posicion");
+  const ids = data.lines.map((row) => Number(row.item_id));
+  if (new Set(ids).size !== ids.length) throw appError(400, "DUPLICATE_ADJUSTMENT_SKU", "Cada SKU debe aparecer una sola vez");
+  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
+    if (data.idempotency_key) {
+      const existing = await tx.inventoryAdjustment.findFirst({ where: { idempotency_key: data.idempotency_key }, include: { lines: { include: { item: true } } } });
+      if (existing) return existing;
+    }
+    const warehouse = await tx.place.findFirst({ where: { id: Number(data.warehouse_id), type: "warehouse", active: true } });
+    if (!warehouse?.society_code) throw appError(404, "ADJUSTMENT_WAREHOUSE_NOT_FOUND", "La bodega activa debe tener sociedad");
+    const location = await tx.location.findFirst({ where: { place_id: warehouse.id, active: true }, orderBy: { id: "asc" } });
+    if (!location) throw appError(422, "ADJUSTMENT_LOCATION_REQUIRED", "La bodega no tiene ubicacion activa");
+    const postingDate = new Date(data.posting_date || Date.now());
+    if (Number.isNaN(postingDate.getTime())) throw appError(400, "INVALID_POSTING_DATE", "La fecha de contabilizacion no es valida");
+    await accountingService.assertPeriodOpen(tenantId, postingDate);
+    const adjustment = await tx.inventoryAdjustment.create({ data: { number: `PENDING-${crypto.randomUUID()}`, document_type: documentType, society_code: warehouse.society_code, warehouse_id: warehouse.id, posting_date: postingDate, reason: String(data.reason).trim(), idempotency_key: data.idempotency_key || null, created_by: userId || null } });
+    const accountingLines = [];
+    for (const source of data.lines) {
+      const qty = Number(source.qty);
+      if (!(qty > 0)) throw appError(400, "INVALID_ADJUSTMENT_QTY", "Todas las cantidades deben ser mayores a cero");
+      const { item, accounting } = await getFamilyAccountingByItem(tx, Number(source.item_id));
+      if (item.society_code !== warehouse.society_code) throw appError(422, "ADJUSTMENT_SOCIETY_MISMATCH", `El SKU ${item.code} no pertenece a la sociedad de la bodega`);
+      const valuation = await getSocietyValuationTx(tx, warehouse.society_code, item.id);
+      const automaticCost = Number(valuation.average_cost || item.unit_cost || 0);
+      let unitCost;
+      try { unitCost = resolveAdjustmentCost({ documentType, averageCost: automaticCost, enteredCost: source.unit_cost }); }
+      catch (error) { if (error?.code === "ADJUSTMENT_COST_REQUIRED") error.message = `El SKU ${item.code} no tiene costo; ingresa el costo unitario`; throw error; }
+      const total = Math.round(qty * unitCost * 100) / 100;
+      await tx.inventoryAdjustmentLine.create({ data: { adjustment_id: adjustment.id, item_id: item.id, qty, unit_cost: unitCost, total } });
+      await stockMoveTx(tx, tenantId, userId, { item_id: item.id, type: documentType === "AE" ? "in" : "out", qty, to_location_id: documentType === "AE" ? location.id : null, from_location_id: documentType === "AS" ? location.id : null, cost: unitCost, reason: adjustment.reason, society_code: warehouse.society_code, source_type: "inventory_adjustment", source_id: adjustment.id, correlation_id: data.idempotency_key || null, idempotency_key: `adjustment:${adjustment.id}:${item.id}` });
+      accountingLines.push({ debit_account_code: documentType === "AE" ? accounting.goods_receipt_account_code : accounting.manual_out_account_code, credit_account_code: documentType === "AE" ? accounting.manual_in_account_code : accounting.goods_receipt_account_code, amount: total, branch_code: warehouse.branch_code || item.branch_code, cost_center_code: warehouse.cost_center_code || warehouse.society_code, description: `${documentType} ${item.code} - ${adjustment.reason}` });
+    }
+    const accountingDocument = await accountingService.createInventoryAdjustmentDocumentTx(tx, tenantId, userId, { document_type: documentType, posting_date: postingDate, reference: String(adjustment.id), header_text: `Ajuste de inventario - ${adjustment.reason}`, society_code: warehouse.society_code, lines: accountingLines });
+    return tx.inventoryAdjustment.update({ where: { id: adjustment.id }, data: { number: accountingDocument.full_number, accounting_document_id: accountingDocument.id }, include: { lines: { include: { item: true } } } });
+  }));
+}
+
+async function listInventoryAdjustments(tenantId, query = {}) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const where = { ...(query.id ? { id: Number(query.id) } : {}), ...(query.document_type ? { document_type: String(query.document_type).toUpperCase() } : {}), ...(query.warehouse_id ? { warehouse_id: Number(query.warehouse_id) } : {}), ...(query.item_id ? { lines: { some: { item_id: Number(query.item_id) } } } : {}) };
+    if (query.from_date || query.to_date) { where.posting_date = {}; if (query.from_date) where.posting_date.gte = new Date(`${query.from_date}T00:00:00`); if (query.to_date) where.posting_date.lte = new Date(`${query.to_date}T23:59:59.999`); }
+    const rows = await prisma.inventoryAdjustment.findMany({ where, include: { lines: { include: { item: true } } }, orderBy: { posting_date: "desc" }, take: Math.min(Number(query.limit || 500), 1000) });
+    const warehouseIds = [...new Set(rows.map((row) => row.warehouse_id))];
+    const userIds = [...new Set(rows.map((row) => row.created_by).filter(Boolean))];
+    const [warehouses, users, documents] = await Promise.all([txless(warehouseIds, (ids) => prisma.place.findMany({ where: { id: { in: ids } } })), txless(userIds, (ids) => prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, email: true } })), prisma.cntCabdoc.findMany({ where: { id: { in: rows.map((row) => row.accounting_document_id).filter(Boolean) } } })]);
+    const warehouseById = new Map(warehouses.map((row) => [row.id, row])); const userById = new Map(users.map((row) => [row.id, row])); const documentById = new Map(documents.map((row) => [row.id, row]));
+    return rows.map((row) => ({ ...row, warehouse: warehouseById.get(row.warehouse_id) || null, created_by_user: userById.get(row.created_by) || null, accounting_document: documentById.get(row.accounting_document_id) || null }));
+  });
+}
+
+function txless(ids, loader) { return ids.length ? loader(ids) : Promise.resolve([]); }
+
+async function getInventoryAdjustment(tenantId, id) {
+  const rows = await listInventoryAdjustments(tenantId, { id, limit: 1 });
+  const row = rows[0];
+  if (!row) throw appError(404, "ADJUSTMENT_NOT_FOUND", "Ajuste no encontrado");
+  return row;
+}
+
 async function getKardex(tenantId, itemId, filters = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const item = await prisma.item.findFirst({ where: { id: itemId }, select: { id: true, code: true, legacy_code: true, name: true, unit: true, stock_current: true, unit_cost: true } });
@@ -839,6 +910,7 @@ async function getKardex(tenantId, itemId, filters = {}) {
     const locationIds = [...new Set(allMovements.flatMap((movement) => [movement.from_location, movement.to_location]).filter(Boolean))];
     const transferIds = [...new Set(allMovements.filter((movement) => movement.source_type === "warehouse_transfer" && movement.source_id).map((movement) => movement.source_id))];
     const initialLoadDocumentIds = [...new Set(allMovements.filter((movement) => movement.source_type === "inventory_initial_load" && movement.source_id).map((movement) => movement.source_id))];
+    const adjustmentIds = [...new Set(allMovements.filter((movement) => movement.source_type === "inventory_adjustment" && movement.source_id).map((movement) => movement.source_id))];
     const transfers = transferIds.length ? await prisma.warehouseTransfer.findMany({ where: { id: { in: transferIds } }, select: { id: true, number: true } }) : [];
     const transferById = new Map(transfers.map((transfer) => [transfer.id, transfer]));
     const purchaseNumbers = [...new Set(allMovements.filter((movement) => movement.source_type === "purchase_order_receipt" && movement.transaction?.number).map((movement) => movement.transaction.number))];
@@ -847,6 +919,8 @@ async function getKardex(tenantId, itemId, filters = {}) {
     for (const document of receiptDocuments) if (!receiptDocumentByReference.has(document.reference)) receiptDocumentByReference.set(document.reference, document);
     const initialLoadDocuments = initialLoadDocumentIds.length ? await prisma.cntCabdoc.findMany({ where: { id: { in: initialLoadDocumentIds } } }) : [];
     const initialLoadDocumentById = new Map(initialLoadDocuments.map((document) => [document.id, document]));
+    const adjustments = adjustmentIds.length ? await prisma.inventoryAdjustment.findMany({ where: { id: { in: adjustmentIds } } }) : [];
+    const adjustmentById = new Map(adjustments.map((row) => [row.id, row]));
     const locations = locationIds.length ? await prisma.location.findMany({ where: { id: { in: locationIds } }, include: { place: true } }) : [];
     const locationById = new Map(locations.map((location) => [location.id, location]));
 
@@ -885,9 +959,9 @@ async function getKardex(tenantId, itemId, filters = {}) {
         value: Math.round(Number(movement.qty || 0) * Number(movement.cost || 0) * 100) / 100,
         document_type: movement.source_type || movement.transaction?.type || movement.type,
         document_id: movement.source_id || movement.transaction_id || null,
-        document_number: movement.transaction?.number || transferById.get(movement.source_id)?.number || initialLoadDocumentById.get(movement.source_id)?.full_number || "",
-        accounting_document_id: initialLoadDocumentById.get(movement.source_id)?.id || receiptDocumentByReference.get(movement.transaction?.number)?.id || null,
-        accounting_document_number: initialLoadDocumentById.get(movement.source_id)?.full_number || receiptDocumentByReference.get(movement.transaction?.number)?.full_number || "",
+        document_number: movement.transaction?.number || transferById.get(movement.source_id)?.number || adjustmentById.get(movement.source_id)?.number || initialLoadDocumentById.get(movement.source_id)?.full_number || "",
+        accounting_document_id: adjustmentById.get(movement.source_id)?.accounting_document_id || initialLoadDocumentById.get(movement.source_id)?.id || receiptDocumentByReference.get(movement.transaction?.number)?.id || null,
+        accounting_document_number: adjustmentById.get(movement.source_id)?.number || initialLoadDocumentById.get(movement.source_id)?.full_number || receiptDocumentByReference.get(movement.transaction?.number)?.full_number || "",
         reason: movement.reason || "",
         from_location_id: movement.from_location,
         to_location_id: movement.to_location,
@@ -1137,6 +1211,7 @@ module.exports = {
   stockMoveTx,
   getSocietyValuationTx,
   calculateSocietyValuation,
+  resolveAdjustmentCost,
   applySocietyValuationTx,
   createWarehouseTransfer,
   dispatchWarehouseTransfer,
@@ -1144,6 +1219,9 @@ module.exports = {
   listWarehouseTransfers,
   getWarehouseTransfer,
   adjustStock,
+  createInventoryAdjustment,
+  listInventoryAdjustments,
+  getInventoryAdjustment,
   getKardex,
   getInventoryCosts,
   runSlotting,

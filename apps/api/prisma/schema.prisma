@@ -184,6 +184,7 @@ model Item {
     costs         ProductCost[]
     valuations    SkuValuation[]
     transfer_lines WarehouseTransferLine[]
+    adjustment_lines InventoryAdjustmentLine[]
     salesInvoiceLines SalesInvoiceLine[]
 
   @@unique([tenant_id, code])
@@ -428,6 +429,47 @@ model Transaction {
   @@index([tenant_id, party_id])
   @@index([tenant_id, created_at])
   @@index([tenant_id, type, created_at])
+}
+
+model InventoryAdjustment {
+    id                     Int       @id @default(autoincrement())
+    tenant_id              String
+    number                 String
+    document_type          String
+    society_code           String
+    warehouse_id           Int
+    posting_date           DateTime
+    reason                 String
+    status                 String    @default("posted")
+    accounting_document_id Int?
+    idempotency_key        String?
+    created_by             Int?
+    created_at             DateTime  @default(now())
+    updated_at             DateTime  @updatedAt
+    lines                  InventoryAdjustmentLine[]
+
+    @@map("inv_adjustments")
+    @@unique([tenant_id, number])
+    @@unique([tenant_id, idempotency_key])
+    @@index([tenant_id, posting_date, document_type])
+    @@index([tenant_id, warehouse_id])
+}
+
+model InventoryAdjustmentLine {
+    id            Int                 @id @default(autoincrement())
+    tenant_id     String
+    adjustment_id Int
+    adjustment    InventoryAdjustment @relation(fields: [adjustment_id], references: [id], onDelete: Cascade)
+    item_id       Int
+    item          Item                @relation(fields: [item_id], references: [id])
+    qty           Float
+    unit_cost     Float
+    total         Float
+    created_at    DateTime            @default(now())
+
+    @@map("inv_adjustment_lines")
+    @@index([tenant_id, adjustment_id])
+    @@index([tenant_id, item_id])
 }
 
 model TransactionLine {

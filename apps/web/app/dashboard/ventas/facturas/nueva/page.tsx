@@ -320,6 +320,9 @@ export default function NuevaFacturaPage() {
         Importar facturas Excel
         <input className="hidden" type="file" accept=".xlsx" disabled={saving} onChange={(event) => importExcel(event.target.files?.[0])} />
       </label>
+      <a className="ml-2 inline-flex h-10 items-center rounded-md border border-line bg-white px-4 text-sm hover:border-apex hover:text-apex" download href="/plantillas/Plantilla_Importacion_Facturas_Venta.xlsx">
+        Descargar formato con ejemplo
+      </a>
       {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
       {ok ? <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{ok}</p> : null}
 

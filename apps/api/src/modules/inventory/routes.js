@@ -91,6 +91,10 @@ async function inventoryRoutes(fastify) {
     preHandler: requirePermission("inventory", "approve")
   }, async (request) => service.adjustStock(request.user?.tenant_id, request.user.id, request.body));
 
+  fastify.get("/inventory/adjustments", { preHandler: requirePermission("inventory", "read") }, async (request) => service.listInventoryAdjustments(request.user?.tenant_id, request.query));
+  fastify.get("/inventory/adjustments/:id", { preHandler: requirePermission("inventory", "read") }, async (request) => service.getInventoryAdjustment(request.user?.tenant_id, request.params.id));
+  fastify.post("/inventory/adjustments", { schema: schemas.inventoryAdjustmentSchema, preHandler: requirePermission("inventory", "approve") }, async (request, reply) => reply.code(201).send(await service.createInventoryAdjustment(request.user?.tenant_id, request.user.id, request.body)));
+
   fastify.get("/inventory/costs", {
     preHandler: requirePermission("inventory", "read")
   }, async (request) => service.getInventoryCosts(request.user?.tenant_id, request.query));

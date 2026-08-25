@@ -33,6 +33,13 @@ Inventario debe separar maestro, bodega, stock y analitica. La vista principal d
 
 ## Cargue inicial
 
+## Ajustes de inventario
+
+- Inventario permite crear documentos multiposicion `AE` (entrada) y `AS` (salida), con bodega, fecha y motivo obligatorio. Se contabilizan al guardar y generan un identificador consecutivo visible en Kardex.
+- AE usa el costo promedio vigente; si el SKU aun no tiene costo exige costo unitario. AS usa siempre el promedio vigente y no permite inventario negativo.
+- AE debita inventario de alta y acredita ajuste manual de entrada; AS debita ajuste manual de salida y acredita inventario de alta, según la familia del SKU.
+- El reporte muestra documento, fecha, tipo, bodega, motivo, usuario, posiciones y asiento contable relacionado.
+
 - `Inventario > Cargue inicial` permite descargar una plantilla `.xlsx`, validar el archivo sin afectar saldos y confirmar posteriormente la contabilizacion.
 - Cada archivo corresponde a una sociedad y fecha; exige SKU, bodega, cantidad y costo unitario positivos. Ubicacion, lote y observaciones son opcionales.
 - La confirmacion es atomica: incrementa stock global y por ubicacion, registra kardex `inventory_initial_load`, actualiza costo promedio y valoracion por SKU/sociedad y crea un comprobante `AJ`.

@@ -8,6 +8,8 @@ Las facturas están en `/dashboard/ventas/facturas`. Cartera, recaudos, vencimie
 
 La importación `.xlsx` agrupa facturas por `grupo_factura`; un error invalida el lote completo. La anulación genera NCV y asiento inverso, devuelve unidades con el costo histórico y conserva la trazabilidad.
 
+La pantalla de nueva factura permite descargar la plantilla oficial de importación. El libro incluye la hoja `Facturas` con ejemplos de múltiples posiciones y facturas, además de una hoja `Instrucciones` con campos obligatorios, opcionales y reglas de consignación.
+
 ## Cambios aplicados
 
 - La factura nueva presenta diez filas vacias de captura. Las filas que permanezcan totalmente vacias no se envian a simulacion ni contabilizacion, y `Emitir y nueva` restablece el mismo grid de diez filas.

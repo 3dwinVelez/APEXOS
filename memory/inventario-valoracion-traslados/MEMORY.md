@@ -4,6 +4,8 @@ Leer este archivo antes de cambiar costos, movimientos, reportes o traslados de 
 
 ## Decisiones confirmadas
 
+- Los ajustes manuales son documentos multiposicion contabilizados automaticamente: `AE` para entradas y `AS` para salidas. Exigen bodega, fecha y motivo; dejan usuario, detalle, kardex y asiento. La entrada toma costo promedio y solo permite capturarlo cuando el SKU no tiene costo; la salida usa el promedio vigente y bloquea stock negativo. AE debita inventario de alta contra ajuste manual de entrada; AS debita ajuste manual de salida contra inventario de alta.
+
 - Cada producto puede guardar un código de artículo anterior de texto libre. Es opcional, no sustituye el SKU vigente y debe mostrarse y buscarse en las vistas que trabajen con productos.
 
 - Las bodegas de consignación deben persistir y mostrar el cliente activo al que pertenecen. Los traslados y sus líneas están sujetos al aislamiento automático por `tenant_id`.
