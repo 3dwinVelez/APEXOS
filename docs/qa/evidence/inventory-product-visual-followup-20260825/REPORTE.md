@@ -14,3 +14,7 @@ No se modificaron endpoints, payloads, permisos, modelos, migraciones ni archivo
 - ESLint: 0 errores; 6 advertencias preexistentes fuera del alcance.
 - Build Next.js: aprobado, 73 rutas.
 - Inspección web: la versión previa desplegada permitió reproducir el exceso visual. La candidata exacta requiere despliegue en `develop` para el recorrido autenticado final en QA.
+
+## Hallazgo de QA y corrección
+
+El primer recorrido del rediseño desplegado reprodujo un error recuperable al abrir Trazabilidad sin producto seleccionado. La corrección añade guardas nulas en Directorio y Trazabilidad sin alterar sus datos ni contratos; debe verificarse nuevamente sobre el commit exacto promovido.
