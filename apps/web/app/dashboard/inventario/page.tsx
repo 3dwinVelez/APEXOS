@@ -1,145 +1,39 @@
 import Link from "next/link";
-import { ArrowRight, ArrowRightLeft, BarChart3, Boxes, ClipboardList, FileUp, PackagePlus, Radio, ScanLine, Warehouse } from "lucide-react";
+import { ArrowRightLeft, BarChart3, Boxes, FileUp, FolderTree, PackagePlus, ScanLine, Warehouse } from "lucide-react";
 import { InventoryNav } from "@/components/inventory-nav";
+import { ActionCard } from "@/components/ui/ActionCard";
 
-const workspaces = [
-  { href: "/dashboard/inventario/productos", title: "Productos", detail: "Consulta el maestro transversal y accede a la creación de nuevos SKU.", icon: PackagePlus, action: "Ver lista" },
-  { href: "/dashboard/inventario/wms", title: "WMS", detail: "Layout 2D, ubicaciones, tareas, recepcion, picking y putaway.", icon: Warehouse, action: "Abrir WMS" },
-  { href: "/dashboard/inventario/stock", title: "Stock", detail: "Movimientos, ajustes, saldos y confiabilidad operativa.", icon: Boxes, action: "Ver stock" },
-  { href: "/dashboard/inventario/cargue-inicial", title: "Cargue inicial", detail: "Carga existencias y costos iniciales desde una plantilla Excel con contabilizacion.", icon: FileUp, action: "Abrir cargue" },
-  { href: "/dashboard/inventario/traslados", title: "Traslados", detail: "Despacha entre bodegas, controla el tránsito y descarga en destino.", icon: ArrowRightLeft, action: "Ver traslados" },
-  { href: "/dashboard/inventario/reportes", title: "Analitica", detail: "Rotacion, ABC, alertas, criticidad y decisiones de reposicion.", icon: BarChart3, action: "Ver reportes" }
-];
-
-const flow = [
-  ["Producto", "SKU, unidad, precio, costo"],
-  ["Compra", "Proveedor, lead time, OC"],
-  ["WMS", "Ubicacion, recibo y putaway"],
-  ["Venta", "Precio, impuestos y disponibilidad"],
-  ["Finanzas", "Costo, margen e inventario"]
-];
+const actions = [
+  { href: "/dashboard/inventario/productos/nuevo", title: "Nuevo producto", detail: "Registrar un SKU con sus datos comerciales y de inventario.", icon: PackagePlus, primary: true },
+  { href: "/dashboard/inventario/productos", title: "Lista de productos", detail: "Buscar y exportar el maestro activo e histórico.", icon: ScanLine },
+  { href: "/dashboard/inventario/familias", title: "Familias", detail: "Configurar clasificación y cuentas asociadas.", icon: FolderTree },
+  { href: "/dashboard/inventario/bodegas", title: "Bodegas", detail: "Administrar centros de almacenamiento y consignación.", icon: Warehouse },
+  { href: "/dashboard/inventario/stock", title: "Stock", detail: "Consultar existencias y movimientos por SKU.", icon: Boxes },
+  { href: "/dashboard/inventario/wms", title: "WMS", detail: "Gestionar ubicaciones y tareas de bodega.", icon: Warehouse },
+  { href: "/dashboard/inventario/cargue-inicial", title: "Cargue inicial", detail: "Validar e importar saldos iniciales desde Excel.", icon: FileUp },
+  { href: "/dashboard/inventario/traslados", title: "Traslados", detail: "Despachar, recibir y consultar movimientos entre bodegas.", icon: ArrowRightLeft },
+  { href: "/dashboard/inventario/reportes", title: "Reportes", detail: "Revisar kardex, valoración y análisis de inventario.", icon: BarChart3 }
+] as const;
 
 export default function InventarioHomePage() {
   return (
-    <div className="space-y-4">
-      <header className="rounded-md border border-line bg-white">
-        <div className="border-b border-line p-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <p className="text-sm font-medium text-apex">M-01 / Operacion</p>
-              <h1 className="mt-1 text-3xl font-semibold">Inventario</h1>
-              <p className="mt-1 max-w-3xl text-sm text-neutral-600">
-                Controla productos, ubicaciones, stock y trazabilidad desde una vista limpia, operativa y conectada con toda la plataforma.
-              </p>
-            </div>
-            <Link className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white" href="/dashboard/inventario/productos/nuevo">
-              Nuevo producto
-              <ArrowRight size={16} />
-            </Link>
+    <div className="apex-workspace-shell space-y-4">
+      <header className="apex-section-card p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-medium text-apex">M-01 · Operación</p>
+            <h1 className="text-3xl font-semibold">Inventario</h1>
+            <p className="mt-1 text-sm text-neutral-600">Productos, bodegas, existencias y movimientos en un flujo operativo único.</p>
           </div>
-        </div>
-        <div className="grid gap-2 p-3 md:grid-cols-3">
-          <Kpi icon={ScanLine} label="Maestro unico" value="SKU transversal" />
-          <Kpi icon={Warehouse} label="WMS conectado" value="Ubicacion real" />
-          <Kpi icon={Radio} label="Operacion viva" value="Stock + eventos" />
+          <Link className="apex-primary-action inline-flex items-center justify-center gap-2 px-4 text-sm font-semibold" href="/dashboard/inventario/productos/nuevo">
+            <PackagePlus size={16} /> Nuevo producto
+          </Link>
         </div>
       </header>
-
       <InventoryNav />
-
-      <section className="grid gap-4 xl:grid-cols-[1fr_340px]">
-        <div className="space-y-4">
-          <section className="rounded-md border border-line bg-white">
-            <div className="border-b border-line p-4">
-              <h2 className="text-base font-semibold">Workspaces de inventario</h2>
-              <p className="text-sm text-neutral-500">Cada entrada representa una responsabilidad operativa clara, sin repetir la navegacion superior.</p>
-            </div>
-            <div className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
-              {workspaces.map((card) => {
-                const Icon = card.icon;
-                return (
-                  <Link className="group rounded-md border border-line bg-paper p-4 hover:border-apex hover:bg-white" href={card.href} key={card.href}>
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-white text-apex group-hover:bg-[#146C6312]">
-                      <Icon size={18} />
-                    </span>
-                    <span className="mt-4 block font-semibold">{card.title}</span>
-                    <span className="mt-1 block min-h-14 text-sm text-neutral-500">{card.detail}</span>
-                    <span className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-apex">
-                      {card.action}
-                      <ArrowRight size={15} />
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
-          </section>
-
-          <section className="rounded-md border border-line bg-white">
-            <div className="border-b border-line p-4">
-              <div className="flex items-center gap-2">
-                <ClipboardList className="text-apex" size={18} />
-                <h2 className="text-base font-semibold">Flujo transversal del producto</h2>
-              </div>
-            </div>
-            <div className="grid gap-3 p-4 lg:grid-cols-5">
-              {flow.map(([title, detail], index) => (
-                <div className="rounded-md border border-line bg-paper p-3" key={title}>
-                  <span className="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-md bg-white text-xs font-semibold text-apex">{index + 1}</span>
-                  <p className="text-sm font-semibold">{title}</p>
-                  <p className="mt-1 text-xs text-neutral-500">{detail}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        </div>
-
-        <aside className="space-y-4">
-          <section className="rounded-md border border-line bg-white p-4">
-            <h2 className="text-base font-semibold">Panel operativo</h2>
-            <p className="mt-1 text-sm text-neutral-500">Simplicidad es poder: crear un producto debe habilitar toda la cadena, no llenar una ficha infinita.</p>
-            <div className="mt-4 space-y-2">
-              <Step number="01" title="Identificar" detail="SKU, nombre, tipo y unidad." />
-              <Step number="02" title="Controlar" detail="Stock minimo, maximo y WMS." />
-              <Step number="03" title="Conectar" detail="Compras, ventas, costos y reportes." />
-            </div>
-          </section>
-
-          <section className="rounded-md border border-line bg-white p-4">
-            <h2 className="text-base font-semibold">Accion recomendada</h2>
-            <p className="mt-1 text-sm text-neutral-500">Empieza por productos: todo flujo operativo necesita un maestro limpio y confiable.</p>
-            <Link className="mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white" href="/dashboard/inventario/productos/nuevo">
-              Abrir productos
-              <ArrowRight size={16} />
-            </Link>
-          </section>
-        </aside>
+      <section aria-label="Herramientas activas de inventario" className="apex-dense-actions">
+        {actions.map((action) => <ActionCard key={action.href} {...action} />)}
       </section>
-    </div>
-  );
-}
-
-function Kpi({ icon: Icon, label, value }: { icon: typeof ScanLine; label: string; value: string }) {
-  return (
-    <div className="flex items-center gap-3 rounded-md border border-line bg-paper px-3 py-2">
-      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white text-apex">
-        <Icon size={16} />
-      </span>
-      <span>
-        <span className="block text-xs text-neutral-500">{label}</span>
-        <span className="block text-sm font-semibold">{value}</span>
-      </span>
-    </div>
-  );
-}
-
-function Step({ number, title, detail }: { number: string; title: string; detail: string }) {
-  return (
-    <div className="flex gap-3 rounded-md border border-line bg-paper p-3">
-      <span className="text-xs font-semibold text-apex">{number}</span>
-      <span>
-        <span className="block text-sm font-medium">{title}</span>
-        <span className="block text-xs text-neutral-500">{detail}</span>
-      </span>
     </div>
   );
 }

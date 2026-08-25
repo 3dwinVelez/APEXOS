@@ -8,6 +8,7 @@ const ITEMS = [
   { href: "/dashboard/ventas/clientes", label: "Clientes" },
   { href: "/dashboard/ventas/ordenes/nueva", label: "Nueva OV" },
   { href: "/dashboard/ventas/ordenes", label: "Órdenes" },
+  { href: "/dashboard/ventas/facturas/nueva", label: "Nueva factura" },
   { href: "/dashboard/ventas/facturas", label: "Facturas" },
   { href: "/dashboard/ventas/reportes", label: "Reportes" }
 ];
@@ -15,7 +16,7 @@ const ITEMS = [
 export function VentasNav() {
   const pathname = usePathname();
   return (
-    <nav className="mb-4 flex flex-wrap gap-2">
+    <nav aria-label="Navegación de ventas" className="mb-4 flex flex-wrap gap-2">
       {ITEMS.map((item) => {
         const active = pathname === item.href;
         return (

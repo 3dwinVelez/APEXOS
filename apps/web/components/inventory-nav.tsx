@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 const ITEMS = [
   { href: "/dashboard/inventario", label: "Resumen" },
-  { href: "/dashboard/inventario/productos/nuevo", label: "Productos" },
+  { href: "/dashboard/inventario/productos/nuevo", label: "Nuevo producto" },
   { href: "/dashboard/inventario/productos", label: "Lista de productos" },
   { href: "/dashboard/inventario/familias", label: "Familias" },
   { href: "/dashboard/inventario/bodegas", label: "Bodegas" },
@@ -19,7 +19,7 @@ const ITEMS = [
 export function InventoryNav() {
   const pathname = usePathname();
   return (
-    <nav className="mb-4 flex flex-wrap gap-2">
+    <nav aria-label="Navegación de inventario" className="mb-4 flex flex-wrap gap-2">
       {ITEMS.map((item) => {
         const active = pathname === item.href;
         return (
