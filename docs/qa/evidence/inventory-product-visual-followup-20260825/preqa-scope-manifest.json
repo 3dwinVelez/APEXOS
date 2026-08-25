@@ -1,0 +1,79 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "inventory-product-visual-followup-preqa-20260825",
+  "change_intent": {
+    "summary": "Simplificar el formulario de productos sin cambiar sus contratos ni capacidades activas",
+    "modules": [
+      "inventory-ui",
+      "promotion-governance"
+    ]
+  },
+  "base_commits": {
+    "develop": "e148de5a5b3e4bdc2f4abc1e0f5d1d0fa5db5723",
+    "main": "0abda8c41168642f99da0831e15f940b98232a12"
+  },
+  "certified_commit": "9dfbfb1",
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/productos/nuevo/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/erp-visual-normalization.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/inventory-product-visual-followup-20260825/REPORTE.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/inventory-product-visual-followup-20260825/certification-contract.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/inventory-product-visual-followup-20260825/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/inventory-product-visual-followup-20260825/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/inventory-product-visual-followup-20260825/qa-runbook.md"
+    }
+  ],
+  "allowed_paths": [
+    "apps/web/app/dashboard/inventario/productos/nuevo/page.tsx",
+    "apps/web/test/erp-visual-normalization.test.mjs",
+    "docs/qa/evidence/inventory-product-visual-followup-20260825/"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "inventory_item_create_contract",
+      "status": "passed",
+      "evidence": ["REPORTE.md", "local-validation.md"]
+    },
+    {
+      "name": "inventory_item_edit_contract",
+      "status": "passed",
+      "evidence": ["REPORTE.md", "local-validation.md"]
+    },
+    {
+      "name": "inventory_item_traceability",
+      "status": "passed",
+      "evidence": ["REPORTE.md", "local-validation.md"]
+    },
+    {
+      "name": "cross_module_scope_isolation",
+      "status": "passed",
+      "evidence": ["REPORTE.md", "local-validation.md"]
+    },
+    {
+      "name": "qa_visual_runbook",
+      "status": "passed",
+      "evidence": ["certification-contract.json", "qa-runbook.md"]
+    }
+  ]
+}
