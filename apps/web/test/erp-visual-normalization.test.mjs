@@ -59,3 +59,20 @@ test("tesorería conserva pagos bancos reportes y anticipos con una jerarquía c
   assert.match(treasury, /submitPayment/);
   assert.match(treasury, /cancelPayment/);
 });
+
+test("el formulario de productos conserva sus funciones y elimina paneles de relleno", () => {
+  const product = read("apps/web/app/dashboard/inventario/productos/nuevo/page.tsx");
+
+  for (const label of ["Datos básicos", "Valores y existencias", "Opciones operativas", "Crear producto", "Directorio", "Trazabilidad"]) {
+    assert.match(product, new RegExp(label));
+  }
+  for (const field of ["Sociedad", "Sucursal", "Nombre", "Tipo", "Unidad", "Familia", "Impuesto", "Costo unitario", "Precio venta", "Stock minimo", "Stock maximo", "Peso kg", "Volumen m3", "Notas operativas"]) {
+    assert.ok(product.includes(field), field);
+  }
+  assert.match(product, /"\/api\/v1\/inventory\/items"/);
+  assert.match(product, /method: "POST"/);
+  assert.match(product, /method: "PATCH"/);
+  assert.match(product, /lot_control: form\.lot_control/);
+  assert.match(product, /serial_control: form\.serial_control/);
+  assert.doesNotMatch(product, /Centro de control|Plantillas rapidas|Acciones conectadas|Workspace de productos|Codigo automatico por familia/);
+});

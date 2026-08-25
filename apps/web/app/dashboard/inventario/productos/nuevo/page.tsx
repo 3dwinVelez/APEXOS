@@ -20,12 +20,10 @@ import {
   Search,
   ShieldCheck,
   ShoppingCart,
-  Sparkles,
   Tag,
   Truck,
   Warehouse
 } from "lucide-react";
-import Link from "next/link";
 import { api } from "@/lib/api";
 import { LATAM_CURRENCIES, money, taxRatesForCountry } from "@/lib/latam";
 import { InventoryNav } from "@/components/inventory-nav";
@@ -95,7 +93,6 @@ type InventoryItemPatch = Partial<Omit<InventoryItem, "metadata">> & {
 };
 
 type WorkspaceTab = "crear" | "directorio" | "trazabilidad";
-type AssistantPanel = "operacion" | "costos" | "wms";
 
 const INITIAL_FORM = {
   code: "",
@@ -128,13 +125,6 @@ const INITIAL_FORM = {
 
 const EMPTY_TREE: OrganizationTree = { societies: [], branches: [], cost_centers: [] };
 
-const templates = [
-  { label: "Retail / producto", type: "product", unit: "UND", margin: 35, stock_min: 5, stock_max: 50, family: "mercancia", wms_profile: "picking" },
-  { label: "Materia prima", type: "raw_material", unit: "KG", margin: 0, stock_min: 20, stock_max: 200, family: "produccion", wms_profile: "reserva" },
-  { label: "Servicio", type: "service", unit: "UND", margin: 60, stock_min: 0, stock_max: 0, family: "servicios", wms_profile: "no almacenable" },
-  { label: "Componente", type: "component", unit: "UND", margin: 10, stock_min: 10, stock_max: 100, family: "ensamble", wms_profile: "reserva" }
-];
-
 const typeLabels: Record<string, string> = {
   product: "Producto",
   service: "Servicio",
@@ -157,7 +147,6 @@ export default function NuevoProductoPage() {
   const [tree, setTree] = useState<OrganizationTree>(EMPTY_TREE);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("crear");
-  const [assistantPanel, setAssistantPanel] = useState<AssistantPanel>("operacion");
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
@@ -216,17 +205,6 @@ export default function NuevoProductoPage() {
     ].some((value) => value.toLowerCase().includes(needle)));
   }, [items, query]);
 
-  const totals = useMemo(() => {
-    return items.reduce((acc, item) => {
-      const critical = Number(item.stock_current || 0) <= Number(item.stock_min || 0) && item.type !== "service";
-      return {
-        critical: acc.critical + (critical ? 1 : 0),
-        stockValue: acc.stockValue + Number(item.stock_current || 0) * Number(item.unit_cost || 0),
-        sellable: acc.sellable + (["product", "service"].includes(item.type) ? 1 : 0)
-      };
-    }, { critical: 0, stockValue: 0, sellable: 0 });
-  }, [items]);
-
   const margin = form.unit_price ? Math.round(((Number(form.unit_price) - Number(form.unit_cost)) / Number(form.unit_price)) * 100) : 0;
   const activeBranches = activeBranchesFor(form.society_code);
   const availableFamilies = filteredFamilies(form.society_code, form.branch_code);
@@ -237,19 +215,6 @@ export default function NuevoProductoPage() {
   function nextFamilyCode(preferred?: string) {
     if (preferred && availableFamilies.some((family) => family.code === preferred)) return preferred;
     return availableFamilies[0]?.code || "";
-  }
-
-  function applyTemplate(template: (typeof templates)[number]) {
-    setForm((current) => ({
-      ...current,
-      type: template.type,
-      unit: template.unit,
-      stock_min: template.stock_min,
-      stock_max: template.stock_max,
-      family: nextFamilyCode(template.family.toUpperCase()),
-      wms_profile: template.wms_profile,
-      unit_price: current.unit_cost > 0 ? Math.round(current.unit_cost / (1 - template.margin / 100)) : current.unit_price
-    }));
   }
 
   async function createItem(keepCreating = false) {
@@ -326,35 +291,20 @@ export default function NuevoProductoPage() {
 
   return (
     <div className="space-y-4">
-      <header className="rounded-md border border-line bg-white">
-        <div className="border-b border-line p-4">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-            <div>
-              <p className="text-sm font-medium text-apex">Inventario / Productos</p>
-              <h1 className="mt-1 text-3xl font-semibold">Workspace de productos</h1>
-              <p className="mt-1 max-w-3xl text-sm text-neutral-600">
-                Crea un maestro simple de entender, pero suficientemente potente para compras, ventas, WMS, produccion, costos y analitica.
-              </p>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-3">
-              <HeaderMetric label="Productos" value={String(items.length)} />
-              <HeaderMetric label="Criticos" value={String(totals.critical)} />
-              <HeaderMetric label="Valor stock ref." value={money(totals.stockValue, form.currency)} />
-            </div>
+      <header className="rounded-md border border-line bg-white p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-sm font-medium text-apex">Inventario / Productos</p>
+            <h1 className="mt-1 text-2xl font-semibold">Productos</h1>
+            <p className="mt-1 text-sm text-neutral-600">Crea, consulta y actualiza el maestro de productos.</p>
           </div>
+          <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-3 text-sm font-medium text-white disabled:opacity-50" disabled={saving || !canSave} onClick={() => createItem(false)} type="button">
+            <Save size={16} />
+            Crear producto
+          </button>
         </div>
-        <div className="flex flex-col gap-3 p-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="mt-3 border-t border-line pt-3">
           <SegmentedNav active={activeTab} onChange={setActiveTab} />
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <span className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line bg-white px-3 text-sm text-neutral-600">
-              <Sparkles size={16} />
-              Codigo automatico por familia
-            </span>
-            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-3 text-sm font-medium text-white disabled:opacity-50" disabled={saving || !canSave} onClick={() => createItem(false)} type="button">
-              <Save size={16} />
-              Crear producto
-            </button>
-          </div>
         </div>
       </header>
 
@@ -363,12 +313,12 @@ export default function NuevoProductoPage() {
       {error ? <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
       {ok ? <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{ok}</p> : null}
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <section>
         <div className="space-y-4">
           {activeTab === "crear" ? (
             <>
               <section className="rounded-md border border-line bg-white">
-                <PanelHeader icon={PackagePlus} title="Crear producto" detail="Captura lo minimo para operar; los detalles viven agrupados por impacto." />
+                <PanelHeader icon={PackagePlus} title="Datos básicos" detail="Identificación y clasificación del producto." />
                 <div className="space-y-4 p-4">
                   <div className="grid gap-3 lg:grid-cols-[180px_180px_1fr_180px_150px]">
                     <Field label="Sociedad">
@@ -452,9 +402,9 @@ export default function NuevoProductoPage() {
               </section>
 
               <section className="rounded-md border border-line bg-white">
-                <PanelHeader icon={DollarSign} title="Costos, precio y stock" detail="El producto nace listo para margen, reposicion y decisiones de compra." />
+                <PanelHeader icon={DollarSign} title="Valores y existencias" detail="Costos, precios y niveles de stock." />
                 <div className="grid gap-4 p-4 lg:grid-cols-3">
-                  <div className="grid gap-3 rounded-md border border-line bg-paper p-3">
+                  <div className="grid gap-3">
                     <Field label="Moneda">
                       <select className="h-10 w-full rounded-md border border-line px-3 text-sm" value={form.currency} onChange={(e) => setForm((p) => ({ ...p, currency: e.target.value }))}>
                         {LATAM_CURRENCIES.map((currency) => <option key={currency} value={currency}>{currency}</option>)}
@@ -469,7 +419,7 @@ export default function NuevoProductoPage() {
                     <MiniMetric label="Margen estimado" value={`${Number.isFinite(margin) ? margin : 0}%`} />
                   </div>
 
-                  <div className="grid gap-3 rounded-md border border-line bg-paper p-3">
+                  <div className="grid gap-3">
                     <Field label="Stock minimo">
                       <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} type="number" value={numberInputValue(form.stock_min)} onChange={(e) => setForm((p) => ({ ...p, stock_min: numberFromInput(e.target.value) }))} />
                     </Field>
@@ -479,7 +429,7 @@ export default function NuevoProductoPage() {
                     <MiniMetric label="Reposicion sugerida" value={String(Math.max(0, Number(form.stock_max) - Number(form.stock_min)))} />
                   </div>
 
-                  <div className="grid gap-3 rounded-md border border-line bg-paper p-3">
+                  <div className="grid gap-3">
                     <Field label="Peso kg">
                       <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} step="0.01" type="number" value={numberInputValue(form.weight_kg)} onChange={(e) => setForm((p) => ({ ...p, weight_kg: numberFromInput(e.target.value) }))} />
                     </Field>
@@ -492,21 +442,16 @@ export default function NuevoProductoPage() {
               </section>
 
               <section className="rounded-md border border-line bg-white">
-                <PanelHeader icon={Layers3} title="Perfiles transversales" detail="Define como se comporta el producto en cada modulo sin llenar pantallas separadas." />
+                <PanelHeader icon={Layers3} title="Opciones operativas" detail="Reglas aplicadas en Compras, Ventas y WMS." />
                 <div className="grid gap-4 p-4 lg:grid-cols-3">
                   <ProfileSelect icon={ClipboardCheck} title="Compras" value={form.purchase_profile} onChange={(value) => setForm((p) => ({ ...p, purchase_profile: value }))} options={["comprable", "no comprable", "bajo contrato", "importado"]} />
                   <ProfileSelect icon={ShoppingCart} title="Ventas" value={form.sales_profile} onChange={(value) => setForm((p) => ({ ...p, sales_profile: value }))} options={["vendible", "no vendible", "solo cotizacion", "kit"]} />
                   <ProfileSelect icon={Warehouse} title="WMS" value={form.wms_profile} onChange={(value) => setForm((p) => ({ ...p, wms_profile: value }))} options={["almacenable", "picking", "reserva", "cross dock", "no almacenable"]} />
                 </div>
 
-                <div className="grid gap-3 border-t border-line p-4 lg:grid-cols-[1fr_220px]">
+                <div className="border-t border-line p-4">
                   <Field label="Notas operativas">
                     <input className="h-10 w-full rounded-md border border-line px-3 text-sm" placeholder="Ej: requiere lote, vencimiento, temperatura, serial, inspeccion de calidad" value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} />
-                  </Field>
-                  <Field label="Costeo">
-                    <select className="h-10 w-full rounded-md border border-line px-3 text-sm" value="weighted_average" onChange={() => undefined}>
-                      <option value="weighted_average">Promedio ponderado</option>
-                    </select>
                   </Field>
                 </div>
 
@@ -589,74 +534,6 @@ export default function NuevoProductoPage() {
           ) : null}
         </div>
 
-        <aside className="space-y-4 xl:sticky xl:top-4 xl:self-start">
-          <section className="rounded-md border border-line bg-white">
-            <PanelHeader icon={ShieldCheck} title="Centro de control" detail="Resumen y decisiones del producto." />
-            <div className="space-y-4 p-4">
-              <div className="grid grid-cols-3 gap-1 rounded-md bg-paper p-1">
-                <PanelTab label="Operacion" active={assistantPanel === "operacion"} onClick={() => setAssistantPanel("operacion")} />
-                <PanelTab label="Costos" active={assistantPanel === "costos"} onClick={() => setAssistantPanel("costos")} />
-                <PanelTab label="WMS" active={assistantPanel === "wms"} onClick={() => setAssistantPanel("wms")} />
-              </div>
-
-              {assistantPanel === "operacion" ? (
-                <div className="space-y-2 text-sm">
-                  <MetricRow label="Codigo" value={selectedItem?.code || "Automatico al guardar"} />
-                  <MetricRow label="Código anterior" value={selectedItem?.legacy_code || "Sin código anterior"} />
-                  <MetricRow label="Tipo" value={typeLabels[form.type] || form.type} />
-                  <MetricRow label="Unidad" value={form.unit} />
-                  <MetricRow label="Stock critico" value={`${totals.critical} productos`} />
-                </div>
-              ) : null}
-
-              {assistantPanel === "costos" ? (
-                <div className="space-y-2 text-sm">
-                  <MetricRow label="Costo" value={money(form.unit_cost, form.currency)} />
-                  <MetricRow label="Precio" value={money(form.unit_price, form.currency)} />
-                  <MetricRow label="Margen" value={`${Number.isFinite(margin) ? margin : 0}%`} />
-                  <MetricRow label="Metodo" value="Promedio ponderado" />
-                </div>
-              ) : null}
-
-              {assistantPanel === "wms" ? (
-                <div>
-                  <FlowStep icon={Warehouse} title="Almacenable" detail="Puede tener ubicacion fisica" active={form.wms_profile !== "no almacenable"} />
-                  <FlowStep icon={ShieldCheck} title="Control lote" detail="Trazabilidad por lote o serial" active={form.lot_control || form.serial_control} />
-                  <FlowStep icon={AlertTriangle} title="Stock minimo" detail="Dispara alerta de reposicion" active={Number(form.stock_min) > 0} warn />
-                </div>
-              ) : null}
-            </div>
-          </section>
-
-          <section className="rounded-md border border-line bg-white p-4">
-            <h2 className="text-sm font-semibold">Plantillas rapidas</h2>
-            <div className="mt-3 space-y-2">
-              {templates.map((template) => (
-                <button className="w-full rounded-md border border-line p-3 text-left hover:border-apex hover:bg-paper" key={template.label} onClick={() => applyTemplate(template)} type="button">
-                  <span className="flex items-center justify-between gap-2 text-sm font-medium">
-                    {template.label}
-                    <ArrowRight size={15} />
-                  </span>
-                  <span className="mt-1 block text-xs text-neutral-500">{typeLabels[template.type]} / {template.unit} / stock {template.stock_min}-{template.stock_max}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <section className="rounded-md border border-line bg-white p-4">
-            <h2 className="text-sm font-semibold">Acciones conectadas</h2>
-            <div className="mt-3 grid gap-2">
-              <Link className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-medium hover:bg-paper" href="/dashboard/compras/ordenes/nueva">
-                <ClipboardCheck size={16} />
-                Comprar
-              </Link>
-              <Link className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-medium hover:bg-paper" href="/dashboard/inventario/wms">
-                <Warehouse size={16} />
-                Ubicar en WMS
-              </Link>
-            </div>
-          </section>
-        </aside>
       </section>
     </div>
   );
@@ -845,38 +722,6 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
       <span className={`h-2 w-2 rounded-full ${checked ? "bg-apex" : "bg-neutral-300"}`} />
       {label}
     </button>
-  );
-}
-
-function MetricRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-3 border-b border-line py-2 last:border-b-0">
-      <span className="text-neutral-500">{label}</span>
-      <span className="font-medium">{value}</span>
-    </div>
-  );
-}
-
-function PanelTab({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return (
-    <button className={`h-8 rounded-md px-2 text-xs font-medium ${active ? "bg-white text-apex shadow-sm" : "text-neutral-600 hover:bg-white/70"}`} onClick={onClick} type="button">
-      {label}
-    </button>
-  );
-}
-
-function FlowStep({ icon: Icon, title, detail, active, warn }: { icon: LucideIcon; title: string; detail: string; active: boolean; warn?: boolean }) {
-  const activeClass = warn ? "bg-amber-50 text-amber-800" : "bg-[#146C6312] text-apex";
-  return (
-    <div className="flex gap-3 border-b border-line py-3 last:border-b-0">
-      <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${active ? activeClass : "bg-neutral-100 text-neutral-500"}`}>
-        <Icon size={17} />
-      </span>
-      <span>
-        <span className="block text-sm font-medium">{title}</span>
-        <span className="block text-xs text-neutral-500">{detail}</span>
-      </span>
-    </div>
   );
 }
 
