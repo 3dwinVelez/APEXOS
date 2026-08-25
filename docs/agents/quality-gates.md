@@ -62,3 +62,15 @@ Antes de ejecutarlos:
 - Una prueba no ejecutada se reporta como omitida con motivo, nunca como aprobada.
 - El build no sustituye typecheck, lint o pruebas.
 - Un agente no puede certificar una regla funcional que no fue confirmada.
+
+## Alcance de promocion
+
+Antes de promover se ejecuta:
+
+```powershell
+npm run qa:promotion:scope -- <manifiesto-alcance.json> <candidato> <destino>
+```
+
+La compuerta compara el diff neto, no solo el ultimo commit. Rechaza rutas inesperadas, eliminaciones no autorizadas, un destino que ya no coincide con el commit base y capacidades protegidas sin evidencia aprobada. Después de cualquier sincronización o aporte desde otra máquina debe recalcularse y ejecutarse nuevamente.
+
+Los manifiestos nuevos usan `scope_schema_version: 2`. Además de `allowed_paths`, deben declarar `change_intent` y el inventario exacto `expected_changes`. Esto bloquea un archivo lateral aunque esté incluido accidentalmente por un prefijo amplio. Antes de aceptar un aporte de otra máquina se ejecuta la compuerta contra el destino remoto vigente y se revisa que el propósito del commit coincida con sus módulos reales.

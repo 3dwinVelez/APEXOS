@@ -1,0 +1,18 @@
+{
+  "ok": true,
+  "environment": "QA",
+  "model_company": "NYVORA",
+  "commit": "042f88684b94",
+  "run_id": "nyvora-correction-evidence-1787361968582",
+  "order_id": 59,
+  "external_order_id": "da96f2ea-786f-4f40-9b13-954a1e0e8e68",
+  "correction_id": "0521114b-a730-4c4d-9610-4a002f498b65",
+  "authorization_id": "0e5a2272-94c2-42bc-a70d-f941ce32f058",
+  "checks": {
+    "authorized_role_full_flow": "passed",
+    "limited_role_blocked": "passed",
+    "other_tenant_blocked": "passed",
+    "binary_validation": "passed",
+    "evidence_persistence": "passed"
+  }
+}

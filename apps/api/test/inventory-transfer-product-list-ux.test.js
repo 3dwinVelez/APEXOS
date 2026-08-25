@@ -21,7 +21,7 @@ test("inventario ofrece lista de productos filtrable y exportable", () => {
   const nav = fs.readFileSync(path.join(root, "apps/web/components/inventory-nav.tsx"), "utf8");
   assert.match(page, /Lista de productos/);
   assert.match(page, /active=all/);
-  assert.match(page, /SKU, nombre, familia o sociedad/);
+  assert.match(page, /SKU, código anterior, nombre, familia o sociedad/);
   assert.match(page, /downloadExcelWorkbook\("lista-productos\.xls"/);
   assert.match(nav, /Lista de productos/);
 });

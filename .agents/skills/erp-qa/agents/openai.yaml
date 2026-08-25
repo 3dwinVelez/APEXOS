@@ -1,4 +1,0 @@
-﻿interface:
-  display_name: "ERP QA"
-  short_description: "Ejecuta validaciones seguras y trazables del ERP"
-  default_prompt: "Use $erp-qa para validar un cambio de APEX OS sin acceder a producción."

@@ -2,7 +2,7 @@ import { assertActiveSession, clearSession, emitAppAlert, keepSessionAlive, setP
 import { clearSupabaseFetchCache, getSupabaseAccessToken, supabaseAuth, supabaseFetch } from "./supabaseClient";
 import { getServiceImageUrl, uploadServiceImageData } from "./supabaseStorage";
 import { API_BASE_URL } from "./apiBaseUrl";
-import { scheduleMonitorPunchEvidence, scheduleTrackingMode } from "./hrScheduleMonitor";
+import { scheduleMonitorPunchEvidence, scheduleMonitorPunchEvidenceSummary, scheduleTrackingMode } from "./hrScheduleMonitor";
 
 const API_URL = API_BASE_URL;
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
@@ -103,6 +103,7 @@ const tenantModuleCodesByPermissionModule: Record<string, string[]> = {
   admin: ["M-22", "administracion", "administracion_apex", "admin"],
   brain: ["AI-CORE", "apex-ai", "apex_ai", "brain"],
   hr: ["M-17", "talento-humano", "talento_humano", "hr"],
+  time_tracking: ["M-17", "talento-humano", "talento_humano", "hr", "time_tracking", "marcaciones"],
   inventory: ["M-01", "inventario", "inventory"],
   invoicing: ["M-04", "facturacion", "invoicing"],
   payroll: ["M-17", "nomina", "payroll"],
@@ -365,7 +366,7 @@ const adminPermissionCatalog = [
   { key: "servicios", label: "Servicios", group: "operacion", module: "services", submodule: "orders", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import", "attach", "download", "execute", "reports"] },
   { key: "servicios_correcciones", label: "Edicion especial de ordenes", group: "operacion", module: "services.orders", submodule: "order-corrections", actions: ["edit_any_state"], allowPhysicalDelete: false },
   { key: "talento_humano", label: "Talento humano", group: "administracion", module: "hr", submodule: "hr", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "export", "import", "sensitive", "reports"] },
-  { key: "marcaciones", label: "Marcaciones y jornadas", group: "operacion", module: "hr", submodule: "time", actions: ["access", "view", "create", "edit", "approve", "reject", "export", "reports"] },
+  { key: "marcaciones", label: "Marcaciones y jornadas", group: "operacion", module: "time_tracking", submodule: "time", actions: ["access", "view", "create", "edit", "approve", "reject", "export", "reports"] },
   { key: "proyectos", label: "Proyectos", group: "gestion", module: "projects", submodule: "projects", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "export", "attach", "download", "reports"] },
   { key: "contabilidad", label: "Contabilidad", group: "finanzas", module: "accounting", submodule: "accounting", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import", "sensitive", "reports", "configure"] },
   { key: "facturacion", label: "Facturacion", group: "finanzas", module: "invoicing", submodule: "billing", actions: ["access", "view", "create", "edit", "approve", "reject", "void", "export", "download", "sensitive"] },
@@ -435,7 +436,7 @@ function mergeAdminPermissions(overrides: Record<string, Record<string, boolean>
 function defaultAdminRoles(activeModules = getStoredTenantActiveModules()) {
   const catalog = filteredAdminPermissionCatalog(activeModules);
   const all = Object.fromEntries(catalog.map((item) => [item.key, protectPhysicalDeleteDefaults(item.actions)]));
-  const shared = { scopes: { locations: [], areas: [], cost_centers: [], processes: [] }, restrictions: { locations: [], areas: [], cost_centers: [], processes: [] }, can_delegate: false, sensitive: false };
+  const shared = { access_profile: "standard", scopes: { locations: [], areas: [], cost_centers: [], processes: [] }, restrictions: { locations: [], areas: [], cost_centers: [], processes: [] }, can_delegate: false, sensitive: false };
   return [
     { id: 1, name: "Administrador de empresa", description: "Administra usuarios, roles y operacion de la empresa.", active: true, is_system: true, hierarchy_level: 90, role_type: "admin_empresa", scope: "company", permissions: all, ...shared },
     { id: 2, name: "Supervisor operativo", description: "Supervisa ejecucion diaria y evidencias operativas.", active: true, is_system: false, hierarchy_level: 60, role_type: "supervisor", scope: "area", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true, reports: true }, marcaciones: { access: true, view: true, create: true, edit: true, approve: true, reject: true, export: true, reports: true }, servicios: { access: true, view: true, create: true, edit: true, approve: true, attach: true, download: true, reports: true }, transporte: { access: true, view: true, edit: true, reports: true } }, activeModules), ...shared },
@@ -443,7 +444,8 @@ function defaultAdminRoles(activeModules = getStoredTenantActiveModules()) {
     { id: 4, name: "Auditor", description: "Consulta auditoria, reportes y documentos sensibles.", active: true, is_system: false, hierarchy_level: 65, role_type: "auditor", scope: "company", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true, reports: true }, auditoria: { access: true, view: true, export: true, download: true, reports: true, sensitive: true }, reportes: { access: true, view: true, export: true, download: true, reports: true, sensitive: true }, documentos: { access: true, view: true, download: true, sensitive: true } }, activeModules), ...shared, sensitive: true },
     { id: 5, name: "Soporte tecnico", description: "Soporte de configuracion y diagnostico.", active: true, is_system: false, hierarchy_level: 75, role_type: "soporte", scope: "company", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true, reports: true }, usuarios: { access: true, view: true, edit: true }, roles: { access: true, view: true }, configuracion: { access: true, view: true, edit: true, configure: true }, auditoria: { access: true, view: true, reports: true }, notificaciones: { access: true, view: true, create: true, edit: true }, ia: { access: true, view: true, execute: true } }, activeModules), ...shared },
     { id: 6, name: "Tecnico", description: "Ejecuta exclusivamente servicios activos asignados.", active: true, is_system: true, hierarchy_level: 35, role_type: "operativo", scope: "assigned", permissions: mergeAdminPermissions({ servicios: { access: true, view: true, edit: true, attach: true, download: true } }, activeModules), ...shared },
-    { id: 7, name: "Empleado", description: "Consulta operativa y registra jornada.", active: true, is_system: false, hierarchy_level: 20, role_type: "operativo", scope: "location", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true }, marcaciones: { access: true, view: true, create: true }, documentos: { access: true, view: true, download: true } }, activeModules), ...shared }
+    { id: 7, name: "Empleado", description: "Consulta operativa y registra jornada.", active: true, is_system: false, hierarchy_level: 20, role_type: "operativo", scope: "location", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true }, marcaciones: { access: true, view: true, create: true }, documentos: { access: true, view: true, download: true } }, activeModules), ...shared },
+    { id: 8, name: "Empleado marcaciones", description: "Registra exclusivamente su propia jornada.", active: true, is_system: false, hierarchy_level: 15, role_type: "operativo", scope: "self", permissions: mergeAdminPermissions({ marcaciones: { access: true, view: true, create: true } }, activeModules), ...shared, access_profile: "marking_only" }
   ];
 }
 
@@ -583,6 +585,7 @@ function roleFromCatalogItem(item: {
     is_system: Boolean(metadata.is_system),
     hierarchy_level: Number(metadata.hierarchy_level || item.sort_order || 10),
     role_type: String(metadata.role_type || "custom"),
+    access_profile: String(metadata.access_profile || "standard"),
     scope: String(metadata.scope || "company"),
     scopes: metadata.scopes as AdminRole["scopes"] || { locations: [], areas: [], cost_centers: [], processes: [] },
     restrictions: metadata.restrictions as AdminRole["restrictions"] || { locations: [], areas: [], cost_centers: [], processes: [] },
@@ -661,12 +664,12 @@ async function loadSupabaseAdminRoles() {
   return roles;
 }
 
-async function saveSupabaseAdminRole(role: AdminRole) {
+async function saveSupabaseAdminRole(role: AdminRole, operation: "create" | "edit" = "edit") {
   const membership = await currentSupabaseCompanyUser();
   if (!membership?.company_id) throw new Error("No se encontro una empresa activa para guardar el rol.");
   const serverResult = await nextAdminRolesRequest<{ role?: AdminRole & { code?: string } }>({
     method: "POST",
-    body: JSON.stringify({ company_id: membership.company_id, role })
+    body: JSON.stringify({ company_id: membership.company_id, operation, role })
   });
   forgetDeletedAdminRole(role, membership.company_id);
   if (serverResult.role) return { ...role, ...serverResult.role };
@@ -687,6 +690,7 @@ async function saveSupabaseAdminRole(role: AdminRole) {
         role_numeric_id: role.id,
         role_name: role.name,
         role_type: role.role_type || "custom",
+        access_profile: role.access_profile || "standard",
         scope: role.scope || "company",
         scopes: role.scopes || { locations: [], areas: [], cost_centers: [], processes: [] },
         restrictions: role.restrictions || { locations: [], areas: [], cost_centers: [], processes: [] },
@@ -1829,6 +1833,24 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   const active = search.get("active");
   const method = String(options.method || "GET").toUpperCase();
 
+  const monitorEvidenceMatch = pathname.match(/^\/api\/v1\/hr\/monitor-evidence\/(activity|punch)\/([^/]+)$/);
+  if (monitorEvidenceMatch && method === "GET") {
+    const companyId = await currentSupabaseCompanyId();
+    const source = monitorEvidenceMatch[1];
+    const id = monitorEvidenceMatch[2];
+    if (source === "activity") {
+      const rows = await supabaseFetch<Array<{ id: string; metadata?: AnyRow }>>(`/rest/v1/gps_pings?select=id,metadata&company_id=eq.${encodeURIComponent(companyId)}&id=eq.${encodeURIComponent(id)}&source=eq.work_activity&limit=1`);
+      const row = rows[0];
+      const base64 = String(row?.metadata?.photo || "").trim();
+      if (!base64) throw new Error("La evidencia de la actividad no esta disponible.");
+      return { id, source, base64_data: base64, file_name: String(row?.metadata?.photo_name || "evidencia.jpg"), available: true } as T;
+    }
+    const rows = await supabaseFetch<Array<{ id: string; extra_evidence?: AnyRow; metadata?: AnyRow }>>(`/rest/v1/time_punches?select=id,extra_evidence,metadata&company_id=eq.${encodeURIComponent(companyId)}&id=eq.${encodeURIComponent(id)}&limit=1`);
+    const evidence = scheduleMonitorPunchEvidence(rows[0] || {});
+    if (!evidence.base64_data && !evidence.file_url) throw new Error("La evidencia de la marcacion no esta disponible.");
+    return { id, source, ...evidence, available: true } as T;
+  }
+
   if (pathname === "/api/v1/hr/activity-types") {
     const masterData = await loadSupabaseUserMasterData().catch(() => defaultUserMasterData());
     const activityTypes = Array.isArray((masterData as AnyRow).activity_types) ? (masterData as AnyRow).activity_types as ActivityTypeLike[] : [];
@@ -2312,7 +2334,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
           vehicle_plate: route.vehicle_plate || "",
           route_id: route.id,
           observation: String(activity.metadata?.observation || ""),
-          evidence: activity.metadata?.photo ? [{ base64_data: String(activity.metadata.photo), file_name: String(activity.metadata?.photo_name || "evidencia.jpg") }] : [],
+          evidence: activity.metadata?.photo ? [{ id: activity.id, file_name: String(activity.metadata?.photo_name || "evidencia.jpg"), has_base64_data: true, available: true }] : [],
           metadata: activity.metadata || {}
         }));
       const routePunches = punches
@@ -2331,7 +2353,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
           extra_minutes: punch.extra_minutes || 0,
           extra_reason: punch.extra_reason || "",
           extra_detail: punch.extra_detail || "",
-          extra_evidence: scheduleMonitorPunchEvidence(punch),
+          extra_evidence: scheduleMonitorPunchEvidenceSummary(punch),
           metadata: punch.metadata || {}
         }));
       const userNames = Array.from(new Set([...routePunches.map((punch) => punch.user_name), ...routeActivities.map((activity) => activity.user_name)]));
@@ -2863,6 +2885,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   }
 
   const serviceOrderActionMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)\/(start|inspection|execution|close|close-not-executed)$/);
+  const serviceOrderItemStatusMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)\/items\/([^/]+)\/status$/);
   const serviceOrderIncidentsMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)\/incidents$/);
   const serviceOrderPhotosMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)\/photos$/);
   const serviceOrderCorrectionsMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)\/corrections$/);
@@ -2904,6 +2927,56 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       const body = JSON.parse(String(options.body || "{}")) as { questions?: unknown };
       return await saveSupabaseSatisfactionQuestions(body.questions) as T;
     }
+  }
+  if (serviceOrderItemStatusMatch && method === "PATCH") {
+    const [, orderId, itemKey] = serviceOrderItemStatusMatch;
+    const body = JSON.parse(String(options.body || "{}")) as { status?: string; expected_version?: number };
+    const current = await accessibleSupabaseServiceOrder(orderId);
+    const metadata = current.metadata && typeof current.metadata === "object" ? { ...(current.metadata as AnyRow) } : {};
+    const items = Array.isArray(metadata.items) ? (metadata.items as AnyRow[]).map((item) => ({ ...item })) : [];
+    const prefix = `public-${orderId}-`;
+    const itemIndex = itemKey.startsWith(prefix) ? Number(itemKey.slice(prefix.length)) : -1;
+    if (!Number.isInteger(itemIndex) || itemIndex < 0 || itemIndex >= items.length) throw new Error("La solicitud externa indicada no existe en la orden.");
+    const item = items[itemIndex];
+    const status = String(body.status || "").trim();
+    const allowedStatuses = new Set(["pendiente", "en_curso", "inspeccion", "ejecucion", "completada", "no_ejecutada", "bloqueada"]);
+    if (!allowedStatuses.has(status)) throw new Error("Estado de solicitud invalido.");
+    const currentVersion = Number(item.version || 1);
+    if (!Number.isInteger(Number(body.expected_version)) || Number(body.expected_version) !== currentVersion) {
+      throw new Error("La solicitud fue modificada por otro usuario. Actualiza la orden.");
+    }
+    if (status === "completada") {
+      const evidence = await supabaseFetch<ServiceEvidenceRow[]>(
+        `/rest/v1/service_evidence?select=id,evidence_type,metadata&order_id=eq.${encodeURIComponent(orderId)}&limit=100`
+      );
+      const types = new Set(evidence
+        .filter((photo) => String(photo.metadata?.service_item_key || "") === itemKey)
+        .map((photo) => String(photo.metadata?.original_type || photo.evidence_type || "")));
+      if (!types.has("producto_abierto") || !types.has("producto_cerrado")) {
+        throw new Error("La solicitud requiere evidencia de producto abierto y cerrado.");
+      }
+    }
+    const now = new Date().toISOString();
+    items[itemIndex] = {
+      ...item,
+      status,
+      version: currentVersion + 1,
+      ...(status === "en_curso" && !item.started_at ? { started_at: now } : {}),
+      ...(["completada", "no_ejecutada"].includes(status) ? { completed_at: now } : {})
+    };
+    const pending = items.filter((candidate) => String(candidate.status || "pendiente") === "pendiente").length;
+    const finished = items.filter((candidate) => ["completada", "no_ejecutada"].includes(String(candidate.status || "pendiente"))).length;
+    const blocked = items.filter((candidate) => String(candidate.status || "pendiente") === "bloqueada").length;
+    const active = items.length - pending - finished - blocked;
+    metadata.items = items;
+    metadata.request_count = items.length;
+    const patchStatus = finished === items.length ? "ejecucion" : active || finished || blocked ? "ejecucion" : "en_curso";
+    await supabaseFetch<void>(`/rest/v1/service_orders?id=eq.${encodeURIComponent(orderId)}`, {
+      method: "PATCH",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ status: patchStatus, metadata })
+    });
+    return await supabaseApiFallback<T>(`/api/v1/services/orders/${orderId}`);
   }
   if (pathname === "/api/v1/services/orders" && method === "POST") {
     const body = JSON.parse(String(options.body || "{}"));
@@ -3053,6 +3126,23 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const now = new Date().toISOString();
     const metadata = current.metadata && typeof current.metadata === "object" ? current.metadata : {};
     const patch: AnyRow = { metadata: { ...metadata, ...(body.metadata || {}) } };
+    const publicItemKey = String(body.item_key || "");
+    const updatePublicItem = (status: string, itemMetadata: AnyRow = {}) => {
+      if (!publicItemKey) return false;
+      const orderItems = Array.isArray(metadata.items) ? (metadata.items as AnyRow[]).map((item) => ({ ...item })) : [];
+      const prefix = `public-${orderId}-`;
+      const itemIndex = publicItemKey.startsWith(prefix) ? Number(publicItemKey.slice(prefix.length)) : -1;
+      if (!Number.isInteger(itemIndex) || itemIndex < 0 || itemIndex >= orderItems.length) throw new Error("La solicitud externa indicada no existe en la orden.");
+      const item = orderItems[itemIndex];
+      orderItems[itemIndex] = {
+        ...item,
+        status,
+        version: Number(item.version || 1) + 1,
+        metadata: { ...((item.metadata as AnyRow | undefined) || {}), ...itemMetadata }
+      };
+      patch.metadata = { ...metadata, ...((patch.metadata as AnyRow | undefined) || {}), items: orderItems };
+      return true;
+    };
 
     if (action === "start") {
       patch.status = "en_curso";
@@ -3072,28 +3162,29 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         action: item.action || "ninguna",
         supplier_name: item.supplier_name || ""
       })) : [];
-      patch.status = "inspeccion";
-      patch.metadata = {
-        ...metadata,
-        inspection: {
-          items,
-          decision: body.decision || "pendiente",
-          problem_count: items.filter((item: AnyRow) => item.status !== "ok").length,
-          inspected_at: now,
-          ...(body.metadata || {})
-        }
+      const inspection = {
+        items,
+        decision: body.decision || "pendiente",
+        problem_count: items.filter((item: AnyRow) => item.status !== "ok").length,
+        inspected_at: now,
+        ...(body.metadata || {})
       };
+      patch.status = "inspeccion";
+      if (!updatePublicItem("inspeccion", { inspection })) patch.metadata = { ...metadata, inspection };
     }
     if (action === "execution") {
       patch.status = "ejecucion";
-      patch.metadata = {
-        ...metadata,
-        inspection: {
-          ...((metadata.inspection as AnyRow) || {}),
-          decision: "armable",
-          moved_to_execution_at: now
-        }
-      };
+      if (publicItemKey) {
+        const orderItems = Array.isArray(metadata.items) ? metadata.items as AnyRow[] : [];
+        const prefix = `public-${orderId}-`;
+        const itemIndex = publicItemKey.startsWith(prefix) ? Number(publicItemKey.slice(prefix.length)) : -1;
+        const itemInspection = itemIndex >= 0 && itemIndex < orderItems.length && orderItems[itemIndex]?.metadata && typeof orderItems[itemIndex].metadata === "object"
+          ? ((orderItems[itemIndex].metadata as AnyRow).inspection as AnyRow | undefined) || {}
+          : {};
+        updatePublicItem("ejecucion", { inspection: { ...itemInspection, decision: "armable", moved_to_execution_at: now } });
+      } else {
+        patch.metadata = { ...metadata, inspection: { ...((metadata.inspection as AnyRow) || {}), decision: "armable", moved_to_execution_at: now } };
+      }
     }
     if (action === "close" || action === "close-not-executed") {
       const evidence = await supabaseFetch<Array<{ evidence_type?: string; metadata?: AnyRow }>>(
@@ -3121,7 +3212,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       patch.close_latitude = body.latitude ?? null;
       patch.close_longitude = body.longitude ?? null;
       patch.no_execution_reason = action === "close-not-executed" ? body.no_execution_reason : null;
-      patch.metadata = { ...metadata, ...(body.metadata || {}), close_accuracy_meters: body.accuracy_meters ?? null };
+      patch.metadata = { ...((patch.metadata as AnyRow) || metadata), ...(body.metadata || {}), close_accuracy_meters: body.accuracy_meters ?? null };
+      if (action === "close-not-executed" && publicItemKey) updatePublicItem("no_ejecutada", { no_execution_reason: body.no_execution_reason, completed_at: now });
       if (action === "close-not-executed") {
         await supabaseFetch<void>("/rest/v1/service_incidents", {
           method: "POST",
@@ -3132,7 +3224,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
             type: "no_ejecutada",
             description: body.no_execution_reason,
             action: "cierre_no_ejecutado",
-            metadata: body.metadata || {}
+            metadata: { ...(body.metadata || {}), ...(publicItemKey ? { service_item_key: publicItemKey } : {}) }
           })
         });
       }
@@ -3192,12 +3284,18 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         if (retryMatch[0]?.id) return await resolveServiceEvidencePhoto({ ...retryMatch[0], metadata: { ...(retryMatch[0].metadata || {}), original_type: originalType } }) as T;
       }
       const partId = body.metadata?.part_id == null ? "" : String(body.metadata.part_id);
+      const serviceItemKey = String(body.metadata?.service_item_key || "");
       const existing = await supabaseFetch<Array<{ id: string; metadata?: AnyRow }>>(
         `/rest/v1/service_evidence?select=id,metadata&order_id=eq.${encodeURIComponent(orderId)}&metadata->>original_type=eq.${encodeURIComponent(originalType)}&limit=20`
       );
-      const duplicate = originalType === "pieza_averiada"
-        ? existing.some((item) => String(item.metadata?.part_id ?? "") === partId)
-        : existing.length > 0;
+      const sameEvidenceScope = (item: { metadata?: AnyRow }) => serviceItemKey
+        ? String(item.metadata?.service_item_key || "") === serviceItemKey
+        : !item.metadata?.service_item_key;
+      const duplicate = originalType === "firma_cliente"
+        ? existing.length > 0
+        : originalType === "pieza_averiada"
+          ? existing.some((item) => sameEvidenceScope(item) && String(item.metadata?.part_id ?? "") === partId)
+          : existing.some(sameEvidenceScope);
       if (duplicate) throw new Error("Esta evidencia ya fue registrada y no puede repetirse.");
       const uploaded = body.base64_data && !body.storage_path
         ? await uploadServiceImageData(current.company_id, orderId, {
@@ -3524,7 +3622,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         safeDevLog("No fue posible consultar partes de referencias Supabase.", error);
         return [];
       }),
-      supabaseFetch<Array<{ id: string; order_id: string; type?: string; description?: string; action?: string }>>(`/rest/v1/service_incidents?select=id,order_id,type,description,action${orderFilter}&limit=500`).catch((error) => {
+      supabaseFetch<Array<{ id: string; order_id: string; type?: string; description?: string; action?: string; metadata?: AnyRow }>>(`/rest/v1/service_incidents?select=id,order_id,type,description,action,metadata${orderFilter}&limit=500`).catch((error) => {
         safeDevLog("No fue posible consultar novedades de servicios Supabase.", error);
         return [];
       }),
@@ -3574,6 +3672,35 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       const orderEvidence = evidenceByOrder.get(order.id) || [];
       const effectiveStatus = effectiveServiceOrderStatus(order);
       const publicItems = Array.isArray(order.metadata?.items) ? order.metadata.items as AnyRow[] : [];
+      const mappedPublicItems = publicItems.map((item, index) => {
+        const itemKey = `public-${order.id}-${index}`;
+        const itemReference = refsById.get(String(item.reference_id || ""));
+        return {
+          id: itemKey,
+          reference_id: String(item.reference_id || ""),
+          reference: itemReference ? { ...itemReference, parts: partsByReference.get(itemReference.id) || [] } : null,
+          service_type: String(item.service_type || order.service_type || "montaje"),
+          quantity: Number(item.quantity || 1),
+          observation: String(item.observation || ""),
+          status: String(item.status || "pendiente"),
+          version: Number(item.version || 1),
+          metadata: item.metadata && typeof item.metadata === "object" ? item.metadata : {},
+          photos: orderEvidence
+            .filter((photo) => String(photo.metadata?.service_item_key || "") === itemKey)
+            .map((photo) => ({ ...photo, type: String(photo.metadata?.original_type || photo.evidence_type || "") })),
+          incidents: (incidentsByOrder.get(order.id) || []).filter((incident) => String(incident.metadata?.service_item_key || "") === itemKey),
+          legacy: true
+        };
+      });
+      const itemProgress = mappedPublicItems.length ? {
+        total: mappedPublicItems.length,
+        pending: mappedPublicItems.filter((item) => item.status === "pendiente").length,
+        active: mappedPublicItems.filter((item) => !["pendiente", "completada", "no_ejecutada", "bloqueada"].includes(item.status)).length,
+        completed: mappedPublicItems.filter((item) => ["completada", "no_ejecutada"].includes(item.status)).length,
+        blocked: mappedPublicItems.filter((item) => item.status === "bloqueada").length,
+        all_completed: mappedPublicItems.every((item) => ["completada", "no_ejecutada"].includes(item.status)),
+        partial: mappedPublicItems.some((item) => ["completada", "no_ejecutada"].includes(item.status)) && !mappedPublicItems.every((item) => ["completada", "no_ejecutada"].includes(item.status))
+      } : undefined;
       return {
         ...order,
         version: Number((order.metadata && typeof order.metadata === "object" ? order.metadata as AnyRow : {}).version || 1),
@@ -3593,20 +3720,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         incidents: incidentsByOrder.get(order.id) || [],
         photos: orderEvidence.map((item) => ({ ...item, type: String(item.metadata?.original_type || item.evidence_type || "") })),
         evidence: orderEvidence.map((item) => ({ ...item, type: String(item.metadata?.original_type || item.evidence_type || "") })),
-        items: publicItems.length ? publicItems.map((item, index) => {
-          const itemReference = refsById.get(String(item.reference_id || ""));
-          return {
-            id: `public-${order.id}-${index}`,
-            reference_id: String(item.reference_id || ""),
-            reference: itemReference ? { ...itemReference, parts: partsByReference.get(itemReference.id) || [] } : null,
-            service_type: String(item.service_type || order.service_type || "montaje"),
-            quantity: Number(item.quantity || 1),
-            observation: String(item.observation || ""),
-            status: "pendiente",
-            version: 1,
-            legacy: true
-          };
-        }) : undefined,
+        items: mappedPublicItems.length ? mappedPublicItems : undefined,
+        item_progress: itemProgress,
         inspection_items: referenceWithParts?.parts?.map((part) => ({ part_id: part.id, name: part.name, status: "pendiente" })) || []
       };
     });
@@ -3633,6 +3748,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         is_system: false,
         hierarchy_level: Number(body.hierarchy_level || 10),
         role_type: body.role_type || "custom",
+        access_profile: body.access_profile || "standard",
         scope: body.scope || "company",
         scopes: body.scopes || { locations: [], areas: [], cost_centers: [], processes: [] },
         restrictions: body.restrictions || { locations: [], areas: [], cost_centers: [], processes: [] },
@@ -3640,7 +3756,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         sensitive: Boolean(body.sensitive),
         permissions: filterAdminPermissions(body.permissions || emptyAdminPermissions())
       };
-      const persisted = await saveSupabaseAdminRole(role);
+      const persisted = await saveSupabaseAdminRole(role, "create");
       const next = [...roles, persisted];
       saveStoredAdminRoles(next);
       return persisted as T;
@@ -3674,6 +3790,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       active: pathname.endsWith("/status") ? Boolean(body.active ?? body.activo) : (body.active !== false && body.activo !== false),
       hierarchy_level: Number(body.hierarchy_level || role.hierarchy_level || 10),
       role_type: body.role_type || role.role_type || "custom",
+      access_profile: body.access_profile || role.access_profile || "standard",
       scope: body.scope || role.scope || "company",
       scopes: body.scopes || role.scopes || { locations: [], areas: [], cost_centers: [], processes: [] },
       restrictions: body.restrictions || role.restrictions || { locations: [], areas: [], cost_centers: [], processes: [] },
@@ -3834,7 +3951,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         const response = await fetch("/api/admin/users", {
           method: "POST",
           headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ ...body, role_name: role.name, role_permissions: role.permissions, role_type: role.role_type, role_scope: role.scope })
+          body: JSON.stringify({ ...body, role_name: role.name, role_permissions: role.permissions, role_type: role.role_type, role_scope: role.scope, access_profile: role.access_profile })
         });
         if (response.ok) {
           const created = await response.json() as { user_id: string; employee?: AnyRow };
@@ -3962,7 +4079,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         employee_id: employeeId,
         action: pathname.endsWith("/status") ? "status" : "update",
         ...body,
-        ...(role ? { role_name: role.name, role_permissions: role.permissions, role_type: role.role_type, role_scope: role.scope } : {})
+        ...(role ? { role_name: role.name, role_permissions: role.permissions, role_type: role.role_type, role_scope: role.scope, access_profile: role.access_profile } : {})
       })
     });
     return result as T;

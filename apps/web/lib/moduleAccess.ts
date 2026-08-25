@@ -241,9 +241,17 @@ function permissionCandidates(module: ApexModule) {
 
 function hasAdministrativeRole() {
   if (typeof window === "undefined") return false;
+  let roleType = "";
+  try {
+    const metadata = JSON.parse(localStorage.getItem("role_metadata") || "{}");
+    roleType = String(metadata?.role_type || "");
+  } catch {
+    roleType = "";
+  }
   return isAdministrativeRole([
     localStorage.getItem("role_name"),
-    localStorage.getItem("apexos_company_role")
+    localStorage.getItem("apexos_company_role"),
+    roleType
   ]);
 }
 

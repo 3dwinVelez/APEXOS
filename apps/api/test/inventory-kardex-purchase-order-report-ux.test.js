@@ -10,7 +10,7 @@ test("reportes de inventario validan SKU libre y ofrecen buscador modal", () => 
   assert.match(page, /placeholder="Escribe el SKU"/);
   assert.match(page, /El SKU \$\{code\} no existe o está inactivo/);
   assert.match(page, /title="Seleccionar producto"/);
-  assert.match(page, /Buscar todos los SKU por código o nombre/);
+  assert.match(page, /Buscar por SKU, código anterior o nombre/);
   assert.doesNotMatch(page, /<option value="">Seleccionar SKU<\/option>/);
 });
 

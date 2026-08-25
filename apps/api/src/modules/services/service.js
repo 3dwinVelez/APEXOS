@@ -2,6 +2,7 @@ const prisma = require("../../core/prisma");
 const { getTenantConfig, invalidateTenantCache } = require("../../core/tenantCache");
 const { MAX_DOCUMENT_BYTES, MAX_EVIDENCE_BYTES, assertSafeFile, normalizeFileName, secureStoragePath } = require("../../security/policy");
 const { ITEM_STATUSES, FINAL_ITEM_STATUSES, normalizeItem, validateItems, aggregateItemProgress, legacyItem } = require("./orderItems");
+const { nextServiceOrderNumber } = require("./orderNumber");
 
 function appError(statusCode, code, message) {
   const error = new Error(message);
@@ -16,12 +17,11 @@ function startOfDay(value) {
 }
 
 async function nextNumber() {
-  const last = await prisma.serviceOrder.findFirst({
-    orderBy: { id: "desc" },
+  const existing = await prisma.serviceOrder.findMany({
+    where: { number: { startsWith: "OS-" } },
     select: { number: true }
   });
-  const nextSeq = last ? (parseInt(last.number.replace("OS-", ""), 10) || 0) + 1 : 1;
-  return `OS-${String(nextSeq).padStart(5, "0")}`;
+  return nextServiceOrderNumber(existing.map((order) => order.number));
 }
 
 function orderInclude() {

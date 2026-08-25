@@ -1,0 +1,65 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "admin-role-capabilities-preqa-20260824",
+  "change_intent": {
+    "summary": "Alinear las capacidades granulares de usuarios y roles, persistir la edición administrativa y reforzar el aislamiento de tenant",
+    "modules": ["administration", "users", "roles", "rbac", "tenant-isolation"]
+  },
+  "base_commits": {
+    "develop": "76eed9cd65f81e5542ca4816ec44057ce800a614",
+    "main": "0abda8c41168642f99da0831e15f940b98232a12"
+  },
+  "certified_commit": "2f14ab862d841e952745be9e97215d7a4293527c",
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/src/middleware/rbac.js" },
+    { "status": "M", "file": "apps/api/src/modules/admin/routes.js" },
+    { "status": "M", "file": "apps/api/src/modules/admin/service.js" },
+    { "status": "A", "file": "apps/api/test/admin-role-capabilities.test.js" },
+    { "status": "M", "file": "apps/web/app/api/admin/roles/route.ts" },
+    { "status": "M", "file": "apps/web/app/api/admin/users/route.ts" },
+    { "status": "M", "file": "apps/web/lib/api.ts" },
+    { "status": "M", "file": "apps/web/lib/moduleAccess.ts" },
+    { "status": "M", "file": "apps/web/lib/moduleAccessPolicy.ts" },
+    { "status": "A", "file": "apps/web/test/admin-role-capabilities.test.mjs" },
+    { "status": "M", "file": "apps/web/test/module-access-policy.test.mjs" },
+    { "status": "A", "file": "docs/qa/evidence/admin-role-capabilities-20260824/admin-create-user-form.png" },
+    { "status": "A", "file": "docs/qa/evidence/admin-role-capabilities-20260824/admin-role-user-visible.png" },
+    { "status": "A", "file": "docs/qa/evidence/admin-role-capabilities-20260824/browser-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/admin-role-capabilities-20260824/certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/admin-role-capabilities-20260824/diagnosis.md" },
+    { "status": "A", "file": "docs/qa/evidence/admin-role-capabilities-20260824/error.md" },
+    { "status": "A", "file": "docs/qa/evidence/admin-role-capabilities-20260824/functional.md" },
+    { "status": "A", "file": "docs/qa/evidence/admin-role-capabilities-20260824/manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/admin-role-capabilities-20260824/platform-regression.json" },
+    { "status": "A", "file": "docs/qa/evidence/admin-role-capabilities-20260824/preqa-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/admin-role-capabilities-20260824/regression.md" },
+    { "status": "A", "file": "docs/qa/evidence/admin-role-capabilities-20260824/support-scripts.md" },
+    { "status": "M", "file": "package.json" },
+    { "status": "A", "file": "scripts/certifications/admin-role-capabilities-qa.js" }
+  ],
+  "allowed_paths": [
+    "apps/api/src/middleware/rbac.js",
+    "apps/api/src/modules/admin/routes.js",
+    "apps/api/src/modules/admin/service.js",
+    "apps/api/test/admin-role-capabilities.test.js",
+    "apps/web/app/api/admin/roles/route.ts",
+    "apps/web/app/api/admin/users/route.ts",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/moduleAccess.ts",
+    "apps/web/lib/moduleAccessPolicy.ts",
+    "apps/web/test/admin-role-capabilities.test.mjs",
+    "apps/web/test/module-access-policy.test.mjs",
+    "docs/qa/evidence/admin-role-capabilities-20260824/",
+    "package.json",
+    "scripts/certifications/admin-role-capabilities-qa.js"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    { "name": "administrator_user_and_role_management", "status": "passed", "evidence": ["certification.json", "browser-certification.json"] },
+    { "name": "granular_role_matrix", "status": "passed", "evidence": ["certification.json", "functional.md", "error.md"] },
+    { "name": "user_edit_persistence", "status": "passed", "evidence": ["certification.json", "regression.md"] },
+    { "name": "rbac_and_tenant_isolation", "status": "passed", "evidence": ["certification.json", "error.md"] },
+    { "name": "marking_only_role_isolation", "status": "passed", "evidence": ["certification.json", "regression.md"] },
+    { "name": "services_and_hr_adjacent_regression", "status": "passed", "evidence": ["platform-regression.json", "regression.md"] }
+  ]
+}

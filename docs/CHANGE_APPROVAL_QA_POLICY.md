@@ -80,6 +80,25 @@ Antes de aprobar una migracion que incluya modelos Prisma, consultas nuevas o mo
 
 La migracion debe probarse primero sobre una base aislada o QA, registrar el nombre exacto aplicado y verificar nuevamente la alineacion. Queda prohibido ejecutar en bloque migraciones historicas pendientes para corregir una diferencia puntual.
 
+## Compuerta obligatoria de alcance y preservacion
+
+Antes de integrar una correccion se compara el estado actual del destino contra el candidato completo. No se aprueba una rama por el nombre de sus commits ni por haber aprobado pruebas en otra maquina: se aprueba exclusivamente su diferencia neta.
+
+1. El manifiesto de alcance debe declarar el commit base exacto del destino, el commit funcional certificado, las rutas permitidas y todas las eliminaciones autorizadas.
+2. `npm run qa:promotion:scope -- <manifiesto> <candidato> <destino>` debe terminar correctamente antes de cada promocion.
+3. Un archivo fuera de `allowed_paths` bloquea la promocion aunque pertenezca a otro arreglo valido, haya sido creado por otra maquina o ya exista en una rama intermedia.
+4. Ninguna correccion puntual puede promover migraciones, artefactos, modulos o refactorizaciones no indispensables para su objetivo.
+5. Recuperar una funcion desde el historial se hace aplicando commits o hunks revisados sobre el `main` vigente. Copiar un arbol antiguo, reemplazar el branch completo o revertir un tren masivo sin inventario de capacidades queda prohibido.
+6. El manifiesto debe enumerar capacidades protegidas y su evidencia. La funcion intervenida y las funciones previamente corregidas del mismo dominio se prueban juntas.
+7. Toda eliminacion requiere una coincidencia exacta en `allowed_deletions`; los prefijos o comodines no autorizan borrados.
+8. Si varias maquinas trabajan simultaneamente, cada entrega debe sincronizarse primero con el destino, recalcular el diff y repetir la compuerta. Una certificacion sobre un diff anterior queda invalidada.
+9. Todo manifiesto nuevo usa `scope_schema_version: 2`, declara su intención y módulos, y enumera exactamente cada entrada `A`, `M` o `D` en `expected_changes`.
+10. `allowed_paths` no autoriza cambios adicionales dentro de un directorio. Si el diff contiene una entrada que no aparece exactamente en `expected_changes`, la promoción queda bloqueada.
+11. Si un mismo archivo contiene varias funciones, el certificado debe identificar y probar las capacidades vecinas; autorizar el archivo no autoriza reemplazar secciones ajenas al objetivo.
+12. Un commit con cambios en módulos que no coinciden con su propósito declarado debe dividirse o reconstruirse mediante hunks puntuales sobre el destino remoto vigente.
+
+La guia operativa completa se encuentra en `docs/releases/CONTROLLED_PROMOTION_SCOPE_POLICY.md`.
+
 ## Contenido minimo del manifiesto
 
 ```json

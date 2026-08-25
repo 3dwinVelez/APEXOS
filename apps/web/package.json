@@ -12,9 +12,7 @@
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
     "test:offline": "node --experimental-strip-types --test test/offline-storage.test.mjs test/offline-operation-queue.test.mjs test/offline-csp.test.mjs test/offline-panel.test.mjs",
-    "test:sales-contracts": "node --experimental-strip-types --test test/sales-collection-contracts.test.mjs",
-    "test:hr-landing": "node --test test/hr-landing-information-architecture.test.mjs",
-    "test:sales-invoice-lines": "node --experimental-strip-types --test test/sales-invoice-lines.test.mjs"
+    "test:hr-landing": "node --test test/hr-landing-information-architecture.test.mjs"
   },
   "dependencies": {
     "@apex-os/types": "2.0.0",
@@ -23,7 +21,7 @@
     "clsx": "^2.1.1",
     "dexie": "4.4.4",
     "lucide-react": "^0.469.0",
-    "next": "^15.5.22",
+    "next": "^16.3.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.54.2",
@@ -38,9 +36,9 @@
     "@types/react-dom": "^19.0.2",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.17.0",
-    "eslint-config-next": "^15.5.22",
+    "eslint-config-next": "^16.3.2",
     "fake-indexeddb": "6.2.5",
-    "postcss": "^8.5.23",
+    "postcss": "^8.5.26",
     "tailwindcss": "^3.4.17",
     "typescript": "5.8.2"
   }

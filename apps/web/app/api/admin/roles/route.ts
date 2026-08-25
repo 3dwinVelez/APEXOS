@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { hasAdministrativeCapability } from "@/lib/moduleAccessPolicy";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
@@ -62,7 +63,7 @@ function roleCatalogCode(role: AnyRow) {
   return `role_${Number(role.id) || toNumberId(role.name)}`;
 }
 
-async function requireCompanyRoleAdmin(token: string, companyId?: string | null) {
+async function requireCompanyRoleAdmin(token: string, companyId?: string | null, action: "read" | "create" | "edit" | "delete" = "read") {
   const userId = jwtSubject(token);
   if (!userId) throw httpError("Sesion invalida para gestionar roles.", 401);
   const filter = companyId ? `&company_id=eq.${encodeURIComponent(companyId)}` : "";
@@ -70,9 +71,29 @@ async function requireCompanyRoleAdmin(token: string, companyId?: string | null)
     method: "GET",
     service: true
   }) as Array<{ company_id: string; role?: string }>;
-  const admin = rows.find((row) => ["owner", "admin", "superadmin"].includes(String(row.role || "").toLowerCase()));
-  if (!admin?.company_id) throw httpError("No tienes permisos para gestionar roles en esta empresa.", 403);
-  return admin.company_id;
+  const owner = rows.find((row) => ["owner", "superadmin"].includes(String(row.role || "").toLowerCase()));
+  if (owner?.company_id) return owner.company_id;
+  const admin = rows.find((row) => String(row.role || "").toLowerCase() === "admin");
+  const employeeFilter = companyId ? `&company_id=eq.${encodeURIComponent(companyId)}` : "";
+  const employees = await supabaseRequest(`/rest/v1/employees?select=company_id,metadata&user_id=eq.${encodeURIComponent(userId)}&status=eq.active${employeeFilter}&limit=20`, {
+    method: "GET",
+    service: true
+  }) as Array<{ company_id?: string; metadata?: AnyRow }>;
+  const capable = employees.find((employee) => {
+    const metadata = employee.metadata || {};
+    const access = metadata.access && typeof metadata.access === "object" ? metadata.access as AnyRow : {};
+    return employee.company_id && hasAdministrativeCapability({
+      roleName: access.role_name || metadata.role_name,
+      roleType: access.role_type || metadata.role_type,
+      permissions: access.permissions || metadata.permissions
+    }, "roles", action);
+  });
+  if (capable?.company_id) return capable.company_id;
+  const metadata = employees[0]?.metadata || {};
+  const access = metadata.access && typeof metadata.access === "object" ? metadata.access as AnyRow : {};
+  const hasCapabilityContext = Boolean(metadata.role_name || metadata.role_type || access.role_name || access.role_type || metadata.permissions || access.permissions);
+  if (admin?.company_id && !hasCapabilityContext) return admin.company_id;
+  throw httpError("No tienes permisos para gestionar roles en esta empresa.", 403);
 }
 
 async function ensureCompanyRoleCatalog(companyId: string) {
@@ -114,6 +135,7 @@ function rolePayload(role: AnyRow, catalogId: string, companyId: string, { delet
       role_numeric_id: Number(role.id) || toNumberId(role.name),
       role_name: clean(role.name) || clean(role.nombre) || "Rol",
       role_type: clean(role.role_type) || "custom",
+      access_profile: clean(role.access_profile) || "standard",
       scope: clean(role.scope) || "company",
       scopes: role.scopes || { locations: [], areas: [], cost_centers: [], processes: [] },
       restrictions: role.restrictions || { locations: [], areas: [], cost_centers: [], processes: [] },
@@ -155,12 +177,14 @@ async function propagateRolePermissions(companyId: string, role: AnyRow) {
           ...metadata,
           role_name: clean(role.name) || metadata.role_name,
           role_type: clean(role.role_type) || metadata.role_type,
+          access_profile: clean(role.access_profile) || metadata.access_profile,
           role_scope: clean(role.scope) || metadata.role_scope,
           permissions,
           access: {
             ...access,
             role_name: clean(role.name) || access.role_name,
             role_type: clean(role.role_type) || access.role_type,
+            access_profile: clean(role.access_profile) || access.access_profile,
             role_scope: clean(role.scope) || access.role_scope,
             permissions
           }
@@ -180,7 +204,8 @@ export async function POST(request: NextRequest) {
     if (!token) return NextResponse.json({ message: "Sesion requerida." }, { status: 401 });
     const body = await request.json().catch(() => ({})) as AnyRow;
     const role = body.role && typeof body.role === "object" ? body.role as AnyRow : body;
-    const companyId = await requireCompanyRoleAdmin(token, clean(body.company_id));
+    const operation = String(body.operation || "edit") === "create" ? "create" : "edit";
+    const companyId = await requireCompanyRoleAdmin(token, clean(body.company_id), operation);
     const catalogId = await ensureCompanyRoleCatalog(companyId);
     await supabaseRequest("/rest/v1/master_catalog_items?on_conflict=catalog_id,code", {
       method: "POST",
@@ -205,7 +230,7 @@ export async function DELETE(request: NextRequest) {
     if (!token) return NextResponse.json({ message: "Sesion requerida." }, { status: 401 });
     const body = await request.json().catch(() => ({})) as AnyRow;
     const role = body.role && typeof body.role === "object" ? body.role as AnyRow : body;
-    const companyId = await requireCompanyRoleAdmin(token, clean(body.company_id));
+    const companyId = await requireCompanyRoleAdmin(token, clean(body.company_id), "delete");
     const catalogId = await ensureCompanyRoleCatalog(companyId);
     await supabaseRequest("/rest/v1/master_catalog_items?on_conflict=catalog_id,code", {
       method: "POST",

@@ -1,0 +1,18 @@
+{
+  "change_id": "hr-monitor-evidence-demand-20260824",
+  "environment": "QA_LOCAL_ISOLATED",
+  "company": "NYVORA",
+  "runtime_commit": "5cffaa4ac8c414e8d3cff31ed2aeac543fb13cdd",
+  "executed_at": "2026-08-24T14:00:00-05:00",
+  "checks": [
+    { "name": "schedule_monitor_opened", "status": "passed", "detail": "Horario sintetico 6 abierto desde la consulta de mallas" },
+    { "name": "activity_evidence_not_eagerly_loaded", "status": "passed", "detail": "2 acciones disponibles y 0 imagenes antes de solicitar evidencia" },
+    { "name": "activity_evidence_loaded_on_demand", "status": "passed", "detail": "La actividad reemplazo su accion por una imagen data:image valida" },
+    { "name": "punch_evidence_loaded_on_demand", "status": "passed", "detail": "La marcacion de cierre reemplazo su accion por una imagen data:image valida" },
+    { "name": "all_requested_images_rendered", "status": "passed", "detail": "0 acciones pendientes y 2 imagenes visibles al finalizar" },
+    { "name": "browser_console", "status": "passed", "detail": "0 errores de consola" },
+    { "name": "synthetic_fixture_cleanup", "status": "passed", "detail": "Usuarios desactivados, horario inactivado y credencial temporal eliminada" }
+  ],
+  "evidence": ["monitor-evidence-loaded.png"],
+  "status": "passed"
+}

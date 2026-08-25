@@ -1,0 +1,57 @@
+{
+  "change_id": "hr-marking-only-20260824",
+  "environment": "QA_LOCAL_ISOLATED",
+  "company": "NYVORA",
+  "executed_at": "2026-08-24T18:15:00.000Z",
+  "base_url": "http://127.0.0.1:3101",
+  "runtime_commit": "016f27228f0dd5cf348681682dd5fd43642509e4",
+  "framework": "Next.js 16.3.2",
+  "status": "passed",
+  "checks": [
+    {
+      "name": "exclusive_landing",
+      "status": "passed",
+      "expected": "/dashboard/talento-humano/marcacion",
+      "actual": "/dashboard/talento-humano/marcacion"
+    },
+    {
+      "name": "exclusive_chrome",
+      "status": "passed",
+      "detail": "La cabecera muestra Marcaciones, acceso exclusivo a mi jornada y Mi cuenta; no presenta Sidebar, MobileNav ni asistente IA."
+    },
+    {
+      "name": "completed_shift_visible",
+      "status": "passed",
+      "detail": "La interfaz mostró Entrada, Inicio almuerzo, Fin almuerzo y Salida como registrados correctamente."
+    },
+    {
+      "name": "dashboard_redirect",
+      "status": "passed",
+      "requested": "/dashboard",
+      "actual": "/dashboard/talento-humano/marcacion"
+    },
+    {
+      "name": "services_redirect",
+      "status": "passed",
+      "requested": "/dashboard/servicios",
+      "actual": "/dashboard/talento-humano/marcacion"
+    },
+    {
+      "name": "hr_map_redirect",
+      "status": "passed",
+      "requested": "/dashboard/talento-humano/mapa",
+      "actual": "/dashboard/talento-humano/marcacion"
+    },
+    {
+      "name": "browser_console",
+      "status": "passed",
+      "detail": "Sin errores de consola durante el flujo autenticado."
+    }
+  ],
+  "evidence": [
+    "marking-only-ui.png"
+  ],
+  "limitations": [
+    "Certificación previa a integración ejecutada en infraestructura QA local aislada; debe repetirse con el commit exacto desplegado en develop antes de cualquier promoción posterior."
+  ]
+}

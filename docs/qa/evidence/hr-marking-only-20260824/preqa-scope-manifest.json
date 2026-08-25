@@ -1,0 +1,118 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-marking-only-security-preqa-20260824",
+  "change_intent": {
+    "summary": "Crear un rol de empleado que acceda exclusivamente a sus marcaciones y eliminar las 11 vulnerabilidades altas de dependencias antes de integrar el cambio",
+    "modules": ["talent-human", "authentication", "rbac", "dependency-security", "web-tooling"]
+  },
+  "base_commits": {
+    "develop": "cd167879b7c696a06c00456c39d54173886f9f01",
+    "main": "0abda8c41168642f99da0831e15f940b98232a12"
+  },
+  "certified_commit": "1ba28429a2e5425ac6c3c44fecbf973a798ca1b8",
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/package.json" },
+    { "status": "M", "file": "apps/api/src/middleware/rbac.js" },
+    { "status": "M", "file": "apps/api/src/modules/admin/service.js" },
+    { "status": "M", "file": "apps/api/src/modules/hr/routes.js" },
+    { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
+    { "status": "M", "file": "apps/api/src/security/supabaseAuth.js" },
+    { "status": "A", "file": "apps/api/test/hr-marking-only-rbac.test.js" },
+    { "status": "M", "file": "apps/api/test/supabase-company-context.test.js" },
+    { "status": "M", "file": "apps/web/app/api/admin/roles/route.ts" },
+    { "status": "M", "file": "apps/web/app/api/admin/users/route.ts" },
+    { "status": "M", "file": "apps/web/app/dashboard/layout.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/marcacion/page.tsx" },
+    { "status": "M", "file": "apps/web/app/login/page.tsx" },
+    { "status": "A", "file": "apps/web/components/shell/DashboardChrome.tsx" },
+    { "status": "M", "file": "apps/web/components/shell/RouteAccessGuard.tsx" },
+    { "status": "M", "file": "apps/web/eslint.config.mjs" },
+    { "status": "A", "file": "apps/web/lib/accessProfile.ts" },
+    { "status": "M", "file": "apps/web/lib/api.ts" },
+    { "status": "M", "file": "apps/web/next-env.d.ts" },
+    { "status": "M", "file": "apps/web/next.config.ts" },
+    { "status": "M", "file": "apps/web/package.json" },
+    { "status": "A", "file": "apps/web/test/hr-marking-only-access.test.mjs" },
+    { "status": "M", "file": "apps/web/tsconfig.json" },
+    { "status": "A", "file": "docs/qa/evidence/dependency-security-20260824/certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/dependency-security-20260824/validation.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-marking-only-20260824/browser-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-marking-only-20260824/certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-marking-only-20260824/error.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-marking-only-20260824/functional.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-marking-only-20260824/marking-only-ui.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-marking-only-20260824/preqa-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-marking-only-20260824/regression.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-marking-only-20260824/support-scripts.md" },
+    { "status": "M", "file": "package-lock.json" },
+    { "status": "M", "file": "package.json" },
+    { "status": "A", "file": "scripts/certifications/dependency-security.js" },
+    { "status": "A", "file": "scripts/certifications/hr-marking-only-qa.js" },
+    { "status": "M", "file": "scripts/dev-web.js" }
+  ],
+  "allowed_paths": [
+    "apps/api/package.json",
+    "apps/api/src/middleware/rbac.js",
+    "apps/api/src/modules/admin/service.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/security/supabaseAuth.js",
+    "apps/api/test/hr-marking-only-rbac.test.js",
+    "apps/api/test/supabase-company-context.test.js",
+    "apps/web/app/api/admin/roles/route.ts",
+    "apps/web/app/api/admin/users/route.ts",
+    "apps/web/app/dashboard/layout.tsx",
+    "apps/web/app/dashboard/talento-humano/marcacion/page.tsx",
+    "apps/web/app/login/page.tsx",
+    "apps/web/components/shell/DashboardChrome.tsx",
+    "apps/web/components/shell/RouteAccessGuard.tsx",
+    "apps/web/eslint.config.mjs",
+    "apps/web/lib/accessProfile.ts",
+    "apps/web/lib/api.ts",
+    "apps/web/next-env.d.ts",
+    "apps/web/next.config.ts",
+    "apps/web/package.json",
+    "apps/web/test/hr-marking-only-access.test.mjs",
+    "apps/web/tsconfig.json",
+    "docs/qa/evidence/dependency-security-20260824/",
+    "docs/qa/evidence/hr-marking-only-20260824/",
+    "package-lock.json",
+    "package.json",
+    "scripts/certifications/dependency-security.js",
+    "scripts/certifications/hr-marking-only-qa.js",
+    "scripts/dev-web.js"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "marking_only_role_and_permissions",
+      "status": "passed",
+      "evidence": ["certification.json", "functional.md"]
+    },
+    {
+      "name": "own_identity_and_tenant_isolation",
+      "status": "passed",
+      "evidence": ["certification.json", "error.md"]
+    },
+    {
+      "name": "complete_marking_state_flow",
+      "status": "passed",
+      "evidence": ["certification.json", "marking-only-ui.png"]
+    },
+    {
+      "name": "exclusive_browser_navigation",
+      "status": "passed",
+      "evidence": ["browser-certification.json", "marking-only-ui.png"]
+    },
+    {
+      "name": "adjacent_hr_and_provider_regression",
+      "status": "passed",
+      "evidence": ["regression.md", "support-scripts.md"]
+    },
+    {
+      "name": "dependency_security_zero_known_vulnerabilities",
+      "status": "passed",
+      "evidence": ["../dependency-security-20260824/certification.json", "../dependency-security-20260824/validation.md"]
+    }
+  ]
+}

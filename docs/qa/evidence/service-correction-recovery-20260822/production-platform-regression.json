@@ -1,0 +1,8 @@
+{
+  "ok": true,
+  "environment": "PRODUCTION",
+  "model_company": "NYVORA",
+  "commit": "423fb0caa6bd",
+  "checks": ["session", "services_orders", "services_references", "hr_employees", "inventory_items", "accounting_accounts"],
+  "unauthorized_blocked": true
+}

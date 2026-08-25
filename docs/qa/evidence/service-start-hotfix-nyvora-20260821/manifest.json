@@ -1,0 +1,43 @@
+{
+  "change_id": "service-start-hotfix-nyvora-20260821",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "042f88684b94a6a9fa4358458d6325d11b812839",
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["functional.md", "browser-certification.json"] },
+    "error": { "status": "passed", "evidence": ["error.md", "nyvora-certification.json"] },
+    "support_scripts": { "status": "passed", "evidence": ["support-scripts.md"] },
+    "regression": { "status": "passed", "evidence": ["regression.md"] },
+    "platform_regression": { "status": "passed", "evidence": ["platform-regression.json"] },
+    "production_verification": { "status": "passed", "evidence": ["production.md", "production-certification.json", "production-browser.json"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/service-correction-evidence-nyvora.js",
+    "evidence": ["browser-certification.json", "nyvora-certification.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/platform-regression-qa.js",
+    "evidence": ["platform-regression.json"]
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../../scripts/certifications/service-correction-evidence-nyvora.js",
+    "evidence": ["nyvora-certification.json", "browser-certification.json"]
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "b3ab7bc653602931ce11785835aa1207ecc3198a",
+    "trigger": "cualquier falla de inicio, persistencia, permisos, aislamiento o regresion despues del despliegue"
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "Solicitante autorizado de APEXOS (autorizacion explicita develop y main en tarea Codex)",
+    "approved_at": "2026-08-21T20:13:29-05:00"
+  }
+}

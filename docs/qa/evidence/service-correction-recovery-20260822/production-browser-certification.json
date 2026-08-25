@@ -1,0 +1,23 @@
+{
+  "ok": true,
+  "environment": "PRODUCTION",
+  "model_company": "NYVORA",
+  "web_commit": "423fb0caa6bd35e45467074c47cff4db9e3406f7",
+  "executed_at": "2026-08-22T09:32:25-05:00",
+  "order_id": "2f7cc236-45d2-4493-9ec0-1e3792ff3599",
+  "order_number": "OS-00017",
+  "correction_value": "ok - certificación productiva Corregir 2026-08-22",
+  "correction_reason": "Certificación controlada en main de la función Corregir",
+  "checks": {
+    "updated_three_step_form_visible": "passed",
+    "requirements_explained_before_submit": "passed",
+    "submit_enabled_only_when_complete": "passed",
+    "field_correction_applied": "passed",
+    "version_advanced_to_3": "passed",
+    "persistence_after_reload": "passed",
+    "history_reason_and_applied_status": "passed",
+    "order_status_execution_preserved": "passed",
+    "request_one_in_progress_preserved": "passed",
+    "request_two_pending_preserved": "passed"
+  }
+}

@@ -2,8 +2,9 @@
 
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
+import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { Archive, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, FileCheck2, Filter, History, MapPin, Paperclip, Plus, RotateCcw, Save, Search, Truck, Wrench } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 type VehicleDocument = {
@@ -239,6 +240,7 @@ function vehiclePayload(form: typeof emptyVehicle) {
 }
 
 export default function TransportPage() {
+  const [access, setAccess] = useState({ ready: false, canRead: false, canWrite: false, canReadHr: false });
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selected, setSelected] = useState<Vehicle | null>(null);
@@ -263,29 +265,39 @@ export default function TransportPage() {
     observations: ""
   });
 
-  async function load() {
+  const load = useCallback(async () => {
     setMessage("");
     const [vehicleResult, employeeResult] = await Promise.allSettled([
-      api<Vehicle[]>("/api/v1/transport/vehicles"),
-      api<Employee[]>("/api/v1/hr/employees?active=true")
+      api<Vehicle[]>("/api/v1/transport/vehicles?include_retired=true"),
+      access.canReadHr ? api<Employee[]>("/api/v1/hr/employees?active=true") : Promise.resolve([] as Employee[])
     ]);
     if (vehicleResult.status === "fulfilled") setVehicles(vehicleResult.value);
     else setVehicles([]);
     if (employeeResult.status === "fulfilled") setEmployees(employeeResult.value);
     else setEmployees([]);
 
-    const errors = [
-      vehicleResult.status === "rejected" ? "vehiculos" : "",
-      employeeResult.status === "rejected" ? "conductores/usuarios" : ""
-    ].filter(Boolean);
-    if (errors.length) {
-      setMessage(`No fue posible consultar ${errors.join(" y ")}. Revisa permisos RLS, empresa activa o conectividad Supabase.`);
+    if (vehicleResult.status === "rejected") {
+      const detail = vehicleResult.reason instanceof Error ? vehicleResult.reason.message : String(vehicleResult.reason || "");
+      setMessage(/403|permiso/i.test(detail)
+        ? "Tu perfil no tiene permiso para consultar Transporte. Solicita transport:read al administrador."
+        : "No fue posible consultar vehiculos. Revisa la empresa activa o la conectividad del ambiente.");
+    } else if (employeeResult.status === "rejected") {
+      setMessage("La flota esta disponible, pero no fue posible cargar empleados para asociar conductores. Puedes continuar con un conductor manual.");
     }
-  }
+  }, [access.canReadHr]);
 
   useEffect(() => {
-    load();
+    setAccess({
+      ready: true,
+      canRead: hasStoredRolePermission("transport", "read"),
+      canWrite: hasStoredRolePermission("transport", "write"),
+      canReadHr: hasStoredRolePermission("hr", "read")
+    });
   }, []);
+
+  useEffect(() => {
+    if (access.ready && access.canRead) load();
+  }, [access.ready, access.canRead, load]);
 
   async function openVehicle(vehicle: Vehicle) {
     const detail = await api<Vehicle>(`/api/v1/transport/vehicles/${vehicle.id}`).catch(() => vehicle);
@@ -413,7 +425,7 @@ export default function TransportPage() {
     };
     return vehicles
       .filter((vehicle) => !term || [vehicle.plate, vehicle.brand, vehicle.line, vehicle.model, vehicle.type, vehicle.base_site, vehicle.ownership_type, vehicle.authorized_driver_name].join(" ").toLowerCase().includes(term))
-      .filter((vehicle) => !statusFilter || vehicle.master_status === statusFilter)
+      .filter((vehicle) => statusFilter ? vehicle.master_status === statusFilter : vehicle.master_status !== "retirado")
       .filter((vehicle) => !siteFilter || vehicle.base_site === siteFilter)
       .filter((vehicle) => !ownershipFilter || vehicle.ownership_type === ownershipFilter)
       .sort((a, b) => {
@@ -452,6 +464,19 @@ export default function TransportPage() {
     if (next) setActiveTab(next);
   }
 
+  if (!access.ready) {
+    return <div className="rounded-md border border-line bg-white p-6 text-sm text-neutral-600">Validando permisos de Transporte...</div>;
+  }
+
+  if (!access.canRead) {
+    return (
+      <section className="rounded-md border border-amber-200 bg-amber-50 p-6">
+        <h1 className="text-xl font-semibold text-amber-950">Transporte no disponible para este perfil</h1>
+        <p className="mt-2 text-sm text-amber-900">La empresa tiene el modulo activo, pero tu rol no incluye <strong>transport:read</strong>. Solicita el permiso al administrador.</p>
+      </section>
+    );
+  }
+
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-start justify-between gap-4">
@@ -460,7 +485,7 @@ export default function TransportPage() {
           <h1 className="mt-1 text-3xl font-semibold">Vehiculos</h1>
           <p className="mt-2 max-w-3xl text-sm text-neutral-600">Consulta el estado de cada placa, corrige documentos y mantén la flota lista para Planeacion.</p>
         </div>
-        <button className="inline-flex h-11 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white hover:bg-apex/90" onClick={newVehicle} type="button"><Plus size={17} /> Crear vehiculo</button>
+        {access.canWrite ? <button className="inline-flex h-11 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white hover:bg-apex/90" onClick={newVehicle} type="button"><Plus size={17} /> Crear vehiculo</button> : null}
       </header>
 
       {message ? <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{message}</div> : null}
@@ -571,6 +596,7 @@ export default function TransportPage() {
               </div>
             </div>
 
+            <fieldset className="contents disabled:cursor-not-allowed disabled:opacity-80" disabled={!access.canWrite}>
             {activeTab === "Identificacion" ? (
               <FormGrid>
                 <Input label="Placa *" value={form.plate} onChange={(value) => setField("plate", value.toUpperCase().replace(/\s+/g, ""))} />
@@ -687,13 +713,14 @@ export default function TransportPage() {
                 </div>
               </div>
             ) : null}
+            </fieldset>
 
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3">
               <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => setShowEditor(false)} type="button"><Archive size={16} /> Cerrar</button>
               <div className="flex flex-wrap gap-2">
                 {activeTabIndex > 0 ? <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => moveEditor(-1)} type="button"><ChevronLeft size={16} /> Anterior</button> : null}
                 {activeTabIndex < editorTabs.length - 1 ? <button className="inline-flex h-10 items-center gap-2 rounded-md border border-apex px-3 text-sm font-semibold text-apex hover:bg-paper" onClick={() => moveEditor(1)} type="button">Siguiente <ChevronRight size={16} /></button> : null}
-                <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-60" onClick={saveVehicle} disabled={saving} type="button"><Save size={16} /> {saving ? "Guardando..." : selected ? "Guardar cambios" : "Crear vehiculo"}</button>
+                {access.canWrite ? <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-60" onClick={saveVehicle} disabled={saving} type="button"><Save size={16} /> {saving ? "Guardando..." : selected ? "Guardar cambios" : "Crear vehiculo"}</button> : <span className="inline-flex h-10 items-center rounded-md bg-paper px-3 text-sm font-semibold text-neutral-600">Consulta de solo lectura</span>}
               </div>
             </div>
           </div>
