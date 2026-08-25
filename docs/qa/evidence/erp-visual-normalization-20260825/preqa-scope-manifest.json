@@ -1,0 +1,137 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "erp-visual-normalization-preqa-20260825",
+  "change_intent": {
+    "summary": "Normalizar visualmente Inventario, Contabilidad, Tesoreria y Ventas conservando exclusivamente herramientas activas y sus contratos",
+    "modules": [
+      "inventory-ui",
+      "accounting-ui",
+      "treasury-ui",
+      "sales-ui",
+      "promotion-governance"
+    ]
+  },
+  "base_commits": {
+    "develop": "42ddb6c11600eeec47ce277e5c752cf7a5d27856",
+    "main": "0abda8c41168642f99da0831e15f940b98232a12"
+  },
+  "certified_commit": "006925f",
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/contabilidad/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/tesoreria/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/ventas/clientes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/ventas/ordenes/nueva/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/ventas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/contabilidad-nav.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/inventory-nav.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ventas-nav.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/erp-visual-normalization.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-visual-normalization-20260825/REPORTE.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-visual-normalization-20260825/certification-contract.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-visual-normalization-20260825/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-visual-normalization-20260825/qa-runbook.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-visual-normalization-20260825/preqa-scope-manifest.json"
+    }
+  ],
+  "allowed_paths": [
+    "apps/web/app/dashboard/inventario/page.tsx",
+    "apps/web/app/dashboard/contabilidad/page.tsx",
+    "apps/web/app/dashboard/tesoreria/page.tsx",
+    "apps/web/app/dashboard/ventas/page.tsx",
+    "apps/web/app/dashboard/ventas/clientes/page.tsx",
+    "apps/web/app/dashboard/ventas/ordenes/nueva/page.tsx",
+    "apps/web/components/inventory-nav.tsx",
+    "apps/web/components/contabilidad-nav.tsx",
+    "apps/web/components/ventas-nav.tsx",
+    "apps/web/test/erp-visual-normalization.test.mjs",
+    "docs/qa/evidence/erp-visual-normalization-20260825/"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "active_module_navigation",
+      "status": "passed",
+      "evidence": [
+        "REPORTE.md",
+        "local-validation.md"
+      ]
+    },
+    {
+      "name": "sales_form_contracts",
+      "status": "passed",
+      "evidence": [
+        "REPORTE.md",
+        "local-validation.md"
+      ]
+    },
+    {
+      "name": "treasury_payment_contracts",
+      "status": "passed",
+      "evidence": [
+        "REPORTE.md",
+        "local-validation.md"
+      ]
+    },
+    {
+      "name": "cross_module_scope_isolation",
+      "status": "passed",
+      "evidence": [
+        "REPORTE.md",
+        "local-validation.md"
+      ]
+    },
+    {
+      "name": "qa_visual_runbook",
+      "status": "passed",
+      "evidence": [
+        "certification-contract.json",
+        "qa-runbook.md"
+      ]
+    }
+  ]
+}
