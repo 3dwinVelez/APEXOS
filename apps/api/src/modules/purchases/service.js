@@ -1039,7 +1039,14 @@ async function preparePurchaseInvoiceAccounting(tx, data) {
       }
       poInvoiceControls.push({ poLine, item, qty, unitCost, amount: Math.round(qty * unitCost * 100) / 100 });
     }
-    const accountCode = data.with_purchase_order ? item.family.accounting.gr_ir_account_code : item.family.accounting.goods_receipt_account_code;
+    const configuredAccount = data.with_purchase_order ? item.family.accounting.gr_ir_account_code : item.family.accounting.goods_receipt_account_code;
+    const accountCode = String(configuredAccount || "").trim();
+    if (!accountCode) {
+      throw appError(422, "PURCHASE_INVOICE_ACCOUNT_REQUIRED", `El SKU ${item.code} no tiene cuenta ${data.with_purchase_order ? "EM/RF" : "de inventario alta"} parametrizada en su familia`);
+    }
+    if (data.with_purchase_order && accountCode === String(data.associated_account_code || "").trim()) {
+      throw appError(422, "GR_IR_EQUALS_PAYABLE_ACCOUNT", `La cuenta EM/RF del SKU ${item.code} no puede ser igual a la cuenta asociada del proveedor. Corrija la familia del articulo antes de contabilizar`);
+    }
     const description = String(line.description || `${item.code} ${item.name}`).trim();
     payableLines.push({
       account_code: accountCode,

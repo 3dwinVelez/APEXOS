@@ -457,7 +457,7 @@ async function validateApiScenario(scjSession) {
     active: true,
     accounting: {
       goods_receipt_account_code: "1435",
-      gr_ir_account_code: "2205",
+      gr_ir_account_code: "2335",
       sales_cost_account_code: "5105",
       sales_revenue_account_code: "4135",
       return_revenue_account_code: "4135",
