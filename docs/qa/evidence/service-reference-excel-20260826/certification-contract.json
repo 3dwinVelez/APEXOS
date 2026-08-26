@@ -25,6 +25,6 @@
     "tenant_isolation_regression",
     "platform_regression"
   ],
-  "blocking_reason": "QA credentials are not configured. The deployed QA API now matches origin/develop 990a85dc5dba, but that baseline does not yet contain this Excel candidate.",
+  "blocking_reason": "The candidate 92277899a336 is not deployed: QA reports 990a85dc5dba and the XLSX returns 404. No authenticated QA browser session, certification secrets, linked Railway project, or remote workflow for this certificate is available.",
   "functional_approval": "pending_execution"
 }

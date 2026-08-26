@@ -45,3 +45,19 @@ Para completar la certificación y habilitar la promoción controlada deben exis
 - Recomendadas para el control RBAC: `QA_SERVICE_READONLY_EMAIL` y `QA_SERVICE_READONLY_PASSWORD`
 
 Con estas variables, el certificado `scripts/certifications/service-reference-excel-qa.js` descarga y abre la plantilla desplegada, rechaza un lote inválido sin inyección, crea y recarga una referencia válida, actualiza la misma referencia, comprueba piezas/manuales/permisos y finalmente desactiva el registro temporal.
+
+Antes de certificar también debe confirmarse que `/health` de QA reporte el SHA candidato final desplegado.
+
+## Reintento de certificación
+
+El reintento solicitado el 2026-08-26 confirmó lo siguiente:
+
+- `origin/desarrollo` y `origin/develop` continúan en `990a85dc5dba`.
+- El candidato controlado continúa en `92277899a336` y su manifiesto conserva 17 rutas exactas sin eliminaciones.
+- `/health` de QA responde con `990a85dc5dba`; por tanto, el candidato aún no está desplegado.
+- La plantilla `.xlsx` remota responde HTTP 404 en esa versión.
+- El navegador QA redirige la ruta de referencias a `/login`; no existe una sesión QA autenticada disponible para el certificado visual.
+- El entorno local no contiene las variables seguras requeridas y Railway no está autenticado ni vinculado.
+- El workflow remoto `release-check.yml` no ejecuta el certificado de referencias ni provee sus variables específicas.
+
+Resultado: certificación end-to-end **no ejecutable** y promoción **bloqueada**. Las pruebas locales aprobadas no se presentan como sustituto de la certificación funcional en QA.
