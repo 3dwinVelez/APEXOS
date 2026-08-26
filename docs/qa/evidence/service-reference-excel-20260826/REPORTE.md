@@ -8,9 +8,7 @@ Producción (`main`): fuera de alcance
 
 ## Estado
 
-La implementación está completa, el candidato aislado fue reconstruido sobre `origin/develop@990a85d` y las validaciones locales están aprobadas. La promoción remota a `develop` permanece bloqueada por política porque no están disponibles en este entorno las credenciales de QA necesarias para ejecutar el certificado end-to-end versionado.
-
-No se realizó ninguna inserción real ni se modificó `develop` o `main` durante el intento de certificación bloqueado.
+La implementación está completa y el candidato aislado `4a08f995b076` fue desplegado en el entorno temporal Railway `xlsx-preview-20260826`. El certificado end-to-end versionado finalizó con 14 controles aprobados y limpieza del registro temporal. `develop` y `main` permanecieron sin cambios durante la certificación.
 
 La nueva verificación remota del 2026-08-26 confirmó que el API QA ya ejecuta `990a85dc5dba`, el mismo SHA de `origin/develop`. Ese despliegue contiene actualizaciones posteriores de Inventario y Ventas, pero no contiene el candidato Excel; por ello no puede mostrar todavía el cambio solicitado. El candidato se reconstruyó sobre ese SHA sin reemplazar ni retirar dichas actualizaciones.
 
@@ -32,21 +30,16 @@ La nueva verificación remota del 2026-08-26 confirmó que el API QA ya ejecuta 
 3. La plantilla anterior no comunicaba tipos, límites ni dependencias entre título y URL del manual.
 4. La primera exportación OOXML del generador de diseño no era interoperable con el lector web. Fue normalizada y verificada nuevamente con los dos motores antes de incorporarla.
 
-## Bloqueo de promoción
+## Certificación remota
 
-Para completar la certificación y habilitar la promoción controlada deben existir, como variables seguras del entorno (no en el repositorio):
-
-- `QA_API_URL`
-- `QA_WEB_URL`
-- `QA_SUPABASE_URL`
-- `QA_SUPABASE_ANON_KEY`
-- `QA_SERVICE_ADMIN_EMAIL`
-- `QA_SERVICE_ADMIN_PASSWORD`
-- Recomendadas para el control RBAC: `QA_SERVICE_READONLY_EMAIL` y `QA_SERVICE_READONLY_PASSWORD`
-
-Con estas variables, el certificado `scripts/certifications/service-reference-excel-qa.js` descarga y abre la plantilla desplegada, rechaza un lote inválido sin inyección, crea y recarga una referencia válida, actualiza la misma referencia, comprueba piezas/manuales/permisos y finalmente desactiva el registro temporal.
-
-Antes de certificar también debe confirmarse que `/health` de QA reporte el SHA candidato final desplegado.
+- `/health` confirmó el SHA `4a08f995b076`.
+- La plantilla respondió HTTP 200, MIME OOXML y 19.804 bytes.
+- Se verificaron las hojas `Referencias`, `Ejemplo` e `Instrucciones` y los 15 encabezados.
+- Un lote inválido fue rechazado con HTTP 400 sin inyección parcial.
+- Un lote válido creó la referencia, persistió piezas y manual, y una segunda importación actualizó sin duplicar piezas.
+- La importación sin autenticación fue rechazada con HTTP 401.
+- La referencia temporal se desactivó y el usuario temporal fue eliminado al finalizar.
+- La evidencia no contiene credenciales: `certification.json`.
 
 ## Reintento de certificación
 
@@ -60,4 +53,4 @@ El reintento solicitado el 2026-08-26 confirmó lo siguiente:
 - El entorno local no contiene las variables seguras requeridas y Railway no está autenticado ni vinculado.
 - El workflow remoto `release-check.yml` no ejecuta el certificado de referencias ni provee sus variables específicas.
 
-Resultado: certificación end-to-end **no ejecutable** y promoción **bloqueada**. Las pruebas locales aprobadas no se presentan como sustituto de la certificación funcional en QA.
+Este registro histórico de bloqueo fue resuelto con el despliegue temporal y la ejecución certificada indicada arriba. La promoción sigue sujeta al manifiesto de alcance y a la aprobación controlada hacia `develop`; `main` continúa fuera de alcance.

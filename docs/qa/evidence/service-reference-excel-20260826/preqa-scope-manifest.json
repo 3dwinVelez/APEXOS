@@ -22,6 +22,7 @@
     { "status": "A", "file": "apps/web/public/plantillas/plantilla-referencias-servicio.xlsx" },
     { "status": "A", "file": "apps/web/test/service-reference-import.test.mjs" },
     { "status": "A", "file": "docs/qa/evidence/service-reference-excel-20260826/REPORTE.md" },
+    { "status": "A", "file": "docs/qa/evidence/service-reference-excel-20260826/certification.json" },
     { "status": "A", "file": "docs/qa/evidence/service-reference-excel-20260826/certification-contract.json" },
     { "status": "A", "file": "docs/qa/evidence/service-reference-excel-20260826/local-validation.md" },
     { "status": "A", "file": "docs/qa/evidence/service-reference-excel-20260826/preqa-scope-manifest.json" },

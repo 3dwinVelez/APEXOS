@@ -1,0 +1,29 @@
+{
+  "certification": "service-reference-excel-qa",
+  "environment": "QA",
+  "expected_commit": "4a08f995b076",
+  "checks": [
+    { "name": "deployed_commit", "status": "passed", "detail": { "status": 200, "commit": "4a08f995b076" } },
+    { "name": "xlsx_download", "status": "passed", "detail": { "status": 200, "bytes": 19804, "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" } },
+    { "name": "xlsx_structure", "status": "passed", "detail": { "sheets": ["Referencias", "Ejemplo", "Instrucciones"] } },
+    { "name": "xlsx_headers_and_guidance", "status": "passed", "detail": { "headers": 15 } },
+    { "name": "admin_login", "status": "passed", "detail": { "status": 200 } },
+    { "name": "invalid_batch_rejected", "status": "passed", "detail": { "status": 400 } },
+    { "name": "invalid_batch_no_injection", "status": "passed", "detail": { "status": 200 } },
+    { "name": "valid_excel_rows_imported", "status": "passed", "detail": { "status": 200, "created": 1, "updated": 0, "skipped": 0 } },
+    { "name": "import_returns_reference", "status": "passed", "detail": { "id": "78" } },
+    { "name": "import_persists_all_fields", "status": "passed", "detail": { "status": 200, "parts": 2, "manuals": 1 } },
+    { "name": "unauthenticated_import_denied", "status": "passed", "detail": { "status": 401 } },
+    { "name": "existing_reference_updated", "status": "passed", "detail": { "status": 200, "created": 0, "updated": 1 } },
+    { "name": "update_replaces_parts_without_duplicates", "status": "passed", "detail": { "status": 200, "parts": 1 } },
+    { "name": "temporary_reference_deactivated", "status": "passed", "detail": { "status": 200 } }
+  ],
+  "cleanup": "temporary_reference_deactivated",
+  "certified_at": "2026-08-26T20:38:40.424Z",
+  "status": "passed",
+  "test_record": {
+    "reference_id": "78",
+    "code": "QA-XLSX-20260826203840",
+    "credentials_recorded": false
+  }
+}
