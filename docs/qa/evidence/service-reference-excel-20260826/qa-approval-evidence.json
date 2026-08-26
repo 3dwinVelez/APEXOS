@@ -1,0 +1,47 @@
+{
+  "change_id": "service-reference-excel-20260826",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "4a08f995b0762e6a2f3ec9fec7ce5c9ae326e66b",
+  "authorization_scope": "develop_qa_only",
+  "main_promotion_authorized": false,
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["REPORTE.md", "certification.json"] },
+    "error": { "status": "passed", "evidence": ["certification.json"] },
+    "support_scripts": { "status": "passed", "evidence": ["local-validation.md"] },
+    "regression": { "status": "passed", "evidence": ["protected-service-master.json"] },
+    "platform_regression": { "status": "passed", "evidence": ["protected-platform-regression.json"] },
+    "promotion_scope": { "status": "passed", "evidence": ["preqa-scope-manifest.json"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/service-reference-excel-qa.js",
+    "evidence": ["certification.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/service-master-correction-qa.js",
+    "evidence": ["protected-service-master.json"]
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../../scripts/certifications/platform-regression-qa.js",
+    "evidence": ["protected-platform-regression.json"]
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "0abda8c41168642f99da0831e15f940b98232a12",
+    "trigger": "cualquier falla de importacion XLSX, validacion, atomicidad, permisos, aislamiento o regresion protegida; este plan no autoriza despliegue a main"
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_user_functional_qa_only",
+    "approved_by": "Solicitante autorizado de APEXOS en tarea Codex",
+    "approved_at": "2026-08-26T16:11:09-05:00",
+    "main_release": "not_authorized"
+  }
+}

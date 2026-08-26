@@ -28,6 +28,7 @@
     { "status": "A", "file": "docs/qa/evidence/service-reference-excel-20260826/preqa-scope-manifest.json" },
     { "status": "A", "file": "docs/qa/evidence/service-reference-excel-20260826/protected-platform-regression.json" },
     { "status": "A", "file": "docs/qa/evidence/service-reference-excel-20260826/protected-service-master.json" },
+    { "status": "A", "file": "docs/qa/evidence/service-reference-excel-20260826/qa-approval-evidence.json" },
     { "status": "M", "file": "package-lock.json" },
     { "status": "A", "file": "scripts/certifications/service-reference-excel-qa.js" },
     { "status": "A", "file": "scripts/test/service-reference-excel-qa-certification.test.js" }
