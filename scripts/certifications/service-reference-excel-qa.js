@@ -79,11 +79,12 @@ function importRow(code, overrides = {}) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args["env-file"]) require("../load-env")(String(args["env-file"]));
-  const apiUrl = assertQaUrl("QA_API_URL", requiredAny("QA_API_URL"));
-  const webUrl = assertQaUrl("QA_WEB_URL", requiredAny("QA_WEB_URL", "NEXT_PUBLIC_APP_URL"));
-  const supabaseUrl = assertQaUrl("QA_SUPABASE_URL", requiredAny("QA_SUPABASE_URL"));
-  const anonKey = requiredAny("QA_SUPABASE_ANON_KEY", "NEXT_PUBLIC_SUPABASE_ANON_KEY");
-  const expectedCommit = requiredAny("QA_EXPECTED_COMMIT");
+  if (String(args["allow-local-candidate"] || "").toLowerCase() === "true") process.env.ALLOW_LOCAL_CANDIDATE = "true";
+  const apiUrl = assertQaUrl("QA_API_URL", String(args["api-url"] || requiredAny("QA_API_URL")));
+  const webUrl = assertQaUrl("QA_WEB_URL", String(args["web-url"] || process.env.QA_WEB_URL || process.env.NEXT_PUBLIC_APP_URL || ""));
+  const supabaseUrl = assertQaUrl("QA_SUPABASE_URL", requiredAny("QA_SUPABASE_URL", "SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL"));
+  const anonKey = requiredAny("QA_SUPABASE_ANON_KEY", "SUPABASE_ANON_KEY", "NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  const expectedCommit = String(args["expected-commit"] || requiredAny("QA_EXPECTED_COMMIT"));
   const outputPath = path.resolve(String(args.output || `service-reference-excel-qa-${Date.now()}.json`));
   const runId = new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
   const code = `QA-XLSX-${runId}`;
@@ -108,7 +109,7 @@ async function main() {
     const referenceHeaders = columns.map((_, index) => String(workbook.getWorksheet("Referencias").getRow(1).getCell(index + 1).value || ""));
     check("xlsx_headers_and_guidance", JSON.stringify(referenceHeaders) === JSON.stringify(columns) && workbook.getWorksheet("Ejemplo").actualRowCount >= 3 && workbook.getWorksheet("Instrucciones").actualRowCount >= 19, { headers: referenceHeaders.length });
 
-    const adminLogin = await login(supabaseUrl, anonKey, requiredAny("QA_SERVICE_ADMIN_EMAIL", "QA_TRANSPORT_ADMIN_EMAIL"), requiredAny("QA_SERVICE_ADMIN_PASSWORD", "QA_TRANSPORT_ADMIN_PASSWORD"));
+    const adminLogin = await login(supabaseUrl, anonKey, requiredAny("QA_SERVICE_ADMIN_EMAIL", "QA_TRANSPORT_ADMIN_EMAIL", "QA_SUPABASE_SCJ_EMAIL"), requiredAny("QA_SERVICE_ADMIN_PASSWORD", "QA_TRANSPORT_ADMIN_PASSWORD", "QA_SUPABASE_SCJ_PASSWORD"));
     check("admin_login", adminLogin.ok && Boolean(adminLogin.body.access_token), { status: adminLogin.status });
     adminToken = adminLogin.body.access_token;
     const adminHeaders = authHeaders(adminToken);

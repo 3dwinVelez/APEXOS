@@ -1,0 +1,28 @@
+{
+  "certification": "service-reference-excel-qa",
+  "environment": "QA",
+  "status": "blocked_missing_qa_credentials",
+  "functional_commit": "a09bbe9",
+  "script": "../../../../scripts/certifications/service-reference-excel-qa.js",
+  "required_checks": [
+    "deployed_commit",
+    "xlsx_download",
+    "xlsx_structure",
+    "xlsx_headers_and_guidance",
+    "admin_login",
+    "invalid_batch_rejected",
+    "invalid_batch_no_injection",
+    "valid_excel_rows_imported",
+    "import_persists_all_fields",
+    "readonly_or_unauthenticated_import_denied",
+    "existing_reference_updated",
+    "update_replaces_parts_without_duplicates",
+    "temporary_reference_deactivated",
+    "service_start_regression",
+    "administrative_correction_regression",
+    "tenant_isolation_regression",
+    "platform_regression"
+  ],
+  "blocking_reason": "QA URLs and credentials are not configured in this execution environment.",
+  "functional_approval": "pending_execution"
+}
