@@ -1,0 +1,36 @@
+{
+  "certification": "service-reference-excel-qa",
+  "environment": "QA",
+  "status": "passed",
+  "functional_commit": "a09bbe9",
+  "develop_base_commit": "990a85dc5dbad7802d0a0e81196c688b92f38df5",
+  "candidate_functional_commit": "d9b4e4b",
+  "script": "../../../../scripts/certifications/service-reference-excel-qa.js",
+  "required_checks": [
+    "deployed_commit",
+    "xlsx_download",
+    "xlsx_structure",
+    "xlsx_headers_and_guidance",
+    "admin_login",
+    "invalid_batch_rejected",
+    "invalid_batch_no_injection",
+    "valid_excel_rows_imported",
+    "import_persists_all_fields",
+    "readonly_or_unauthenticated_import_denied",
+    "existing_reference_updated",
+    "update_replaces_parts_without_duplicates",
+    "temporary_reference_deactivated",
+    "service_start_regression",
+    "administrative_correction_regression",
+    "tenant_isolation_regression",
+    "platform_regression"
+  ],
+  "certified_candidate": "4a08f995b076",
+  "evidence": "certification.json",
+  "protected_evidence": [
+    "protected-service-master.json",
+    "protected-platform-regression.json"
+  ],
+  "execution_note": "Executed in isolated Railway QA preview xlsx-preview-20260826 with an ephemeral admin fixture. The fixture and temporary reference were cleaned after execution; credentials were not recorded.",
+  "functional_approval": "passed_automated_e2e_pending_user_qa"
+}
