@@ -39,6 +39,8 @@ La nueva verificación remota del 2026-08-26 confirmó que el API QA ya ejecuta 
 - Un lote válido creó la referencia, persistió piezas y manual, y una segunda importación actualizó sin duplicar piezas.
 - La importación sin autenticación fue rechazada con HTTP 401.
 - La referencia temporal se desactivó y el usuario temporal fue eliminado al finalizar.
+- La regresión protegida creó e inició una orden, aplicó siete correcciones auditables, bloqueó el rol limitado y el acceso entre tenants, y dejó la orden cancelada.
+- La regresión transversal aprobó sesión, Servicios, Talento Humano, Inventario y Contabilidad; los cuatro usuarios técnicos quedaron desactivados.
 - La evidencia no contiene credenciales: `certification.json`.
 
 ## Reintento de certificación

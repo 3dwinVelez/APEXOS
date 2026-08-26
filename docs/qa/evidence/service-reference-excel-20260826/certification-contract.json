@@ -27,6 +27,10 @@
   ],
   "certified_candidate": "4a08f995b076",
   "evidence": "certification.json",
+  "protected_evidence": [
+    "protected-service-master.json",
+    "protected-platform-regression.json"
+  ],
   "execution_note": "Executed in isolated Railway QA preview xlsx-preview-20260826 with an ephemeral admin fixture. The fixture and temporary reference were cleaned after execution; credentials were not recorded.",
   "functional_approval": "passed_automated_e2e_pending_user_qa"
 }
