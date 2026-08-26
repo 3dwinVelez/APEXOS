@@ -20,10 +20,8 @@ import {
   Save,
   Search,
   Send,
-  SlidersHorizontal,
   Trash2,
   Truck,
-  Upload,
   Warehouse
 } from "lucide-react";
 import Link from "next/link";
@@ -87,7 +85,6 @@ type PoLine = {
 };
 
 type WorkspaceTab = "crear" | "ordenes" | "trazabilidad";
-type AssistantPanel = "inventario" | "wms" | "finanzas";
 
 const statusLabels: Record<string, string> = {
   draft: "Borrador",
@@ -99,12 +96,6 @@ const statusLabels: Record<string, string> = {
   cancelled: "Cancelada",
   closed: "Cerrada"
 };
-
-const templates = [
-  { name: "Reposicion critica", priority: "alta", tag: "stock critico", detail: "Cubre minimos y productos ABC." },
-  { name: "Compra mensual", priority: "normal", tag: "recurrente", detail: "Orden base para abastecimiento." },
-  { name: "Urgencia WMS", priority: "urgente", tag: "inbound hoy", detail: "Prioriza recepcion y putaway." }
-];
 
 function blankLine(expectedAt: string): PoLine {
   return { localId: crypto.randomUUID(), item_id: 0, sku: "", description: "", unit: "UND", qty: 0, unit_cost: 0, discount: 0, tax_rate: 0, expected_at: expectedAt, notes: "", stock_current: 0, stock_min: 0, stock_max: 0, abc_class: "C" };
@@ -132,7 +123,6 @@ export default function NuevaOCPage() {
   const [skuSearchMessage, setSkuSearchMessage] = useState("");
   const [orderFilter, setOrderFilter] = useState("all");
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("crear");
-  const [assistantPanel, setAssistantPanel] = useState<AssistantPanel>("inventario");
   const [form, setForm] = useState({
     supplier_id: 0,
     warehouse_id: 0,
@@ -165,7 +155,6 @@ export default function NuevaOCPage() {
     setSelectedOrder((orderData || [])[0] || null);
   }
 
-  const supplier = suppliers.find((entry) => entry.id === Number(form.supplier_id));
   const filteredItems = useMemo(() => {
     const needle = query.trim().toLowerCase();
     const source = needle ? items.filter((item) => [item.code, item.legacy_code || "", item.name, item.abc_class || ""].some((value) => value.toLowerCase().includes(needle))) : items;
@@ -193,13 +182,7 @@ export default function NuevaOCPage() {
     });
   }, [orders, orderFilter, query]);
 
-  const totals = useMemo(() => {
-    const subtotal = lines.reduce((sum, line) => line.item_id ? sum + Math.max(0, line.qty * line.unit_cost - line.discount) : sum, 0);
-    return { subtotal, taxes: 0, total: subtotal };
-  }, [lines]);
-
   const activeLines = lines.filter((line) => line.item_id && line.qty > 0);
-  const criticalLineCount = activeLines.filter((line) => line.stock_current <= line.stock_min).length;
   const canCreate = Boolean(form.supplier_id && form.warehouse_id && activeLines.length);
 
   function addItem(item: Item) {
@@ -273,10 +256,6 @@ export default function NuevaOCPage() {
 
   function removeLine(id: string) {
     setLines((current) => current.map((line) => line.localId === id ? blankLine(form.expected_at) : line));
-  }
-
-  function applyTemplate(template: (typeof templates)[number]) {
-    setForm((current) => ({ ...current, priority: template.priority, tags: template.tag }));
   }
 
   function editOrder(order: PurchaseOrder) {
@@ -428,20 +407,9 @@ export default function NuevaOCPage() {
     <div className="space-y-4">
       <header className="rounded-md border border-line bg-white">
         <div className="border-b border-line p-4">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-            <div>
-              <p className="text-sm font-medium text-apex">Compras / Orden de compra</p>
-              <h1 className="mt-1 text-3xl font-semibold">Workspace de abastecimiento</h1>
-              <p className="mt-1 max-w-3xl text-sm text-neutral-600">
-                Crea la OC, controla costos, dispara WMS y mantiene trazabilidad sin convertir compras en un formulario pesado.
-              </p>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-3">
-              <HeaderMetric label="Borrador" value={money(totals.total, form.currency)} />
-              <HeaderMetric label="Lineas" value={String(activeLines.length)} />
-              <HeaderMetric label="Riesgo stock" value={String(criticalLineCount)} />
-            </div>
-          </div>
+          <p className="text-sm font-medium text-apex">Compras / Orden de compra</p>
+          <h1 className="mt-1 text-2xl font-semibold">Orden de compra</h1>
+          <p className="mt-1 text-sm text-neutral-600">Crea, consulta y aprueba órdenes de abastecimiento.</p>
         </div>
 
         <div className="flex flex-col gap-3 p-3 lg:flex-row lg:items-center lg:justify-between">
@@ -474,7 +442,7 @@ export default function NuevaOCPage() {
         </section>
       ) : null}
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <section>
         <div className="space-y-4">
           {activeTab === "crear" ? (
             <>
@@ -485,7 +453,7 @@ export default function NuevaOCPage() {
                 </div>
               ) : null}
               <section className="rounded-md border border-line bg-white">
-                <PanelHeader icon={PackagePlus} title="Construir OC" detail="Primero lo esencial; la configuracion avanzada vive en paneles auxiliares." />
+                <PanelHeader icon={PackagePlus} title="Datos de la orden" detail="Proveedor, destino, entrega y condiciones." />
                 <div className="space-y-4 p-4">
                   <div className="grid gap-3 lg:grid-cols-4">
                     <Field label="Proveedor">
@@ -533,17 +501,7 @@ export default function NuevaOCPage() {
               </section>
 
               <section className="rounded-md border border-line bg-white">
-                <PanelHeader
-                  icon={Boxes}
-                  title="Productos"
-                  detail="Escribe el SKU directamente en la tabla o selecciónalo desde el buscador."
-                  actions={(
-                    <div className="flex flex-wrap gap-2">
-                      <ActionButton icon={Upload} label="Importar" variant="ghost" compact />
-                      <ActionButton icon={Copy} label="Pegar Excel" variant="ghost" compact />
-                    </div>
-                  )}
-                />
+                <PanelHeader icon={Boxes} title="Productos" detail="Escribe el SKU directamente en la tabla o selecciónalo desde el buscador." />
 
                 <div className="space-y-4 p-4">
                   <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
@@ -663,70 +621,6 @@ export default function NuevaOCPage() {
           ) : null}
         </div>
 
-        <aside className="space-y-4 xl:sticky xl:top-4 xl:self-start">
-          <section className="rounded-md border border-line bg-white">
-            <PanelHeader icon={SlidersHorizontal} title="Centro de control" detail="Resumen, automatizaciones y paneles de apoyo." />
-            <div className="space-y-4 p-4">
-              <div className="space-y-2 text-sm">
-                <MetricRow label="Subtotal" value={money(totals.subtotal, form.currency)} />
-                <MetricRow label="Total OC" value={money(totals.total, form.currency)} strong />
-              </div>
-              <div className="grid gap-2">
-                <ActionButton icon={Save} label={editingOrder ? "Guardar cambios" : "Guardar borrador"} disabled={saving || !canCreate} onClick={() => createOrder(false)} variant="secondary" />
-                {!editingOrder ? <ActionButton icon={Plus} label="Aprobar y nueva" disabled={saving || !canCreate} onClick={() => createOrder(true, true)} variant="secondary" /> : null}
-                <ActionButton icon={Send} label={editingOrder ? "Guardar y aprobar" : "Crear y aprobar"} disabled={saving || !canCreate} onClick={() => createOrder(true)} variant="primary" />
-              </div>
-            </div>
-          </section>
-
-          <section className="rounded-md border border-line bg-white p-4">
-            <div className="grid grid-cols-3 gap-1 rounded-md bg-paper p-1">
-              <PanelTab label="Inventario" active={assistantPanel === "inventario"} onClick={() => setAssistantPanel("inventario")} />
-              <PanelTab label="WMS" active={assistantPanel === "wms"} onClick={() => setAssistantPanel("wms")} />
-              <PanelTab label="Finanzas" active={assistantPanel === "finanzas"} onClick={() => setAssistantPanel("finanzas")} />
-            </div>
-            <div className="mt-4">
-              {assistantPanel === "inventario" ? (
-                <div className="space-y-2 text-sm">
-                  <MetricRow label="Proveedor" value={supplier?.name || "Sin seleccionar"} />
-                  <MetricRow label="Lineas criticas" value={`${criticalLineCount} lineas`} />
-                  <MetricRow label="Sugeridos" value={`${smartItems.length} SKU`} />
-                  <MetricRow label="Lead time" value={supplier ? "6.4 dias" : "-"} />
-                </div>
-              ) : null}
-              {assistantPanel === "wms" ? (
-                <div>
-                  <FlowStep icon={CheckCircle2} title="OC aprobada" detail="Libera el abastecimiento" active />
-                  <FlowStep icon={Warehouse} title="InboundOrder" detail="Disponible para recepcion movil" active={selectedOrder?.status === "confirmed" || selectedOrder?.status === "partial"} />
-                  <FlowStep icon={Truck} title="Recibo + putaway" detail="Valida diferencias y destino" active={Boolean(selectedOrder?.received_percent)} />
-                </div>
-              ) : null}
-              {assistantPanel === "finanzas" ? (
-                <div className="space-y-2 text-sm">
-                  <MetricRow label="Condicion pago" value={form.payment_terms} />
-                  <MetricRow label="Moneda" value={form.currency} />
-                  <MetricRow label="Base CxP" value={money(totals.total, form.currency)} />
-                  <MetricRow label="Centro costo" value="Operativo" />
-                </div>
-              ) : null}
-            </div>
-          </section>
-
-          <section className="rounded-md border border-line bg-white p-4">
-            <h2 className="text-sm font-semibold">Plantillas rapidas</h2>
-            <div className="mt-3 space-y-2">
-              {templates.map((template) => (
-                <button className="w-full rounded-md border border-line p-3 text-left hover:border-apex hover:bg-paper" key={template.name} onClick={() => applyTemplate(template)} type="button">
-                  <span className="flex items-center justify-between gap-2 text-sm font-medium">
-                    {template.name}
-                    <ChevronRight size={15} />
-                  </span>
-                  <span className="mt-1 block text-xs text-neutral-500">{template.detail}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-        </aside>
       </section>
       {skuSearchLineId ? <ModalFrame maxWidth="md:max-w-3xl" onClose={() => { setSkuSearchLineId(null); setSkuSearchMessage(""); }} title="Buscar SKU para la posición">
         <div className="space-y-4">
@@ -888,37 +782,6 @@ function MoneyInput({ value, onChange }: { value: number; onChange: (value: numb
 function StatusPill({ status }: { status: string }) {
   const critical = ["cancelled", "partial"].includes(status);
   return <span className={`rounded-full px-2 py-1 text-[11px] ${critical ? "bg-amber-50 text-amber-800" : "bg-neutral-100 text-neutral-700"}`}>{statusLabels[status] || status}</span>;
-}
-
-function MetricRow({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
-  return (
-    <div className="flex items-center justify-between gap-3 border-b border-line py-2 last:border-b-0">
-      <span className="text-neutral-500">{label}</span>
-      <span className={strong ? "text-lg font-semibold" : "font-medium"}>{value}</span>
-    </div>
-  );
-}
-
-function PanelTab({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return (
-    <button className={`h-8 rounded-md px-2 text-xs font-medium ${active ? "bg-white text-apex shadow-sm" : "text-neutral-600 hover:bg-white/70"}`} onClick={onClick} type="button">
-      {label}
-    </button>
-  );
-}
-
-function FlowStep({ icon: Icon, title, detail, active }: { icon: LucideIcon; title: string; detail: string; active?: boolean }) {
-  return (
-    <div className="flex gap-3 border-b border-line py-3 last:border-b-0">
-      <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${active ? "bg-[#146C6312] text-apex" : "bg-neutral-100 text-neutral-500"}`}>
-        <Icon size={17} />
-      </span>
-      <span>
-        <span className="block text-sm font-medium">{title}</span>
-        <span className="block text-xs text-neutral-500">{detail}</span>
-      </span>
-    </div>
-  );
 }
 
 function TimelineItem({ icon: Icon, title, detail, done }: { icon: LucideIcon; title: string; detail: string; done?: boolean }) {

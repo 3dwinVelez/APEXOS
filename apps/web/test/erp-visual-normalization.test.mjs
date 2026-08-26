@@ -96,3 +96,22 @@ test("las portadas ERP ofrecen una sola capa de acceso por función", () => {
   assert.equal(treasury.match(/\/dashboard\/tesoreria\/anticipos/g)?.length, 1);
   assert.doesNotMatch(treasury, /apex-primary-action/);
 });
+
+test("compras elimina relleno y duplicidad sin retirar operaciones activas", () => {
+  const landing = read("apps/web/app/dashboard/compras/page.tsx");
+  const order = read("apps/web/app/dashboard/compras/ordenes/nueva/page.tsx");
+  const suppliers = read("apps/web/app/dashboard/compras/proveedores/page.tsx");
+
+  assert.match(landing, /Herramientas activas de compras/);
+  assert.match(landing, /<ActionCard/);
+  for (const href of ["/ordenes/nueva", "/ordenes/recibir", "/proveedores", "/facturas", "/importaciones", "/reportes/ordenes"]) {
+    assert.match(landing, new RegExp(href.replaceAll("/", "\\/")));
+  }
+  assert.doesNotMatch(landing, /ComprasNav|Workspaces principales|Panel operativo|Accion recomendada|Flujo conectado|<Kpi|<Step/);
+
+  for (const marker of ["Crear OC", "Ordenes", "Trazabilidad", "Guardar borrador", "Crear y aprobar", "/api/v1/purchases/orders"]) assert.match(order, new RegExp(marker.replaceAll("/", "\\/")));
+  assert.doesNotMatch(order, /Centro de control|Plantillas rapidas|Pegar Excel|label="Importar"|assistantPanel/);
+
+  for (const marker of ["Directorio", "Alta rapida", "Desempeno", "Guardar proveedor", "/api/v1/purchases/suppliers"]) assert.match(suppliers, new RegExp(marker.replaceAll("/", "\\/")));
+  assert.doesNotMatch(suppliers, /Centro de control|Acciones conectadas|Proveedor local|Servicio logistico|assistantPanel/);
+});
