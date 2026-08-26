@@ -3,6 +3,7 @@ import { clearSupabaseFetchCache, getSupabaseAccessToken, supabaseAuth, supabase
 import { getServiceImageUrl, uploadServiceImageData } from "./supabaseStorage";
 import { API_BASE_URL } from "./apiBaseUrl";
 import { scheduleMonitorPunchEvidence, scheduleMonitorPunchEvidenceSummary, scheduleTrackingMode } from "./hrScheduleMonitor";
+import { validateServiceReferenceImport } from "./serviceReferenceImport";
 
 const API_URL = API_BASE_URL;
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
@@ -2779,8 +2780,13 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   if (pathname === "/api/v1/services/references/import" && method === "POST") {
     if (technicianSession()) throw new Error("El tecnico no puede importar referencias.");
     const body = JSON.parse(String(options.body || "{}")) as { rows?: AnyRow[] };
+    const validation = validateServiceReferenceImport((body.rows || []).map((row, index) => ({ ...row, __row: index + 2 })));
+    if (validation.issues.length) {
+      const summary = validation.issues.slice(0, 10).map((issue) => `fila ${issue.row}, ${issue.field}: ${issue.message}`).join("; ");
+      throw new Error(`Corrige la plantilla antes de importar: ${summary}${validation.issues.length > 10 ? `; y ${validation.issues.length - 10} error(es) mas` : ""}`);
+    }
     const grouped = new Map<string, AnyRow>();
-    for (const row of body.rows || []) {
+    for (const row of validation.rows) {
       const code = String(row.code || "").trim().toUpperCase();
       if (!code || !String(row.name || "").trim()) continue;
       const current = grouped.get(code) || { ...row, code, parts: [], manuals: [] };
@@ -2805,17 +2811,12 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const result = { created: 0, updated: 0, skipped: 0, references: [] as AnyRow[] };
     const companyId = await currentSupabaseCompanyId();
     for (const row of grouped.values()) {
-      try {
-        const existing = await supabaseFetch<Array<{ id: string }>>(
-          `/rest/v1/service_references?select=id&company_id=eq.${encodeURIComponent(companyId)}&code=eq.${encodeURIComponent(String(row.code))}&limit=1`
-        );
-        const saved = await saveSupabaseServiceReference(row, existing[0]?.id);
-        result[existing[0] ? "updated" : "created"] += 1;
-        result.references.push(saved);
-      } catch (error) {
-        safeDevLog(`No fue posible importar la referencia ${String(row.code)}.`, error);
-        result.skipped += 1;
-      }
+      const existing = await supabaseFetch<Array<{ id: string }>>(
+        `/rest/v1/service_references?select=id&company_id=eq.${encodeURIComponent(companyId)}&code=eq.${encodeURIComponent(String(row.code))}&limit=1`
+      );
+      const saved = await saveSupabaseServiceReference(row, existing[0]?.id);
+      result[existing[0] ? "updated" : "created"] += 1;
+      result.references.push(saved);
     }
     return result as T;
   }
