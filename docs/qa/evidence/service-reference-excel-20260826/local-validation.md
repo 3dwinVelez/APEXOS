@@ -7,7 +7,7 @@
 - Pruebas de atomicidad transaccional: 2/2.
 - Contrato del certificado QA: 2/2.
 - TypeScript: aprobado.
-- Build productivo Next.js: aprobado, 75 páginas generadas.
+- Build productivo del candidato reconstruido sobre `origin/develop@990a85d`: aprobado, 75 páginas generadas.
 - Plantilla: paquete ZIP/OOXML válido, 19.804 bytes, 3 hojas, 15 encabezados y 7.996 reglas de validación de celdas.
 - Render visual revisado para las hojas `Referencias`, `Ejemplo` e `Instrucciones`.
 

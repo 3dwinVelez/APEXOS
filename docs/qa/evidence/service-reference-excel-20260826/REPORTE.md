@@ -8,9 +8,11 @@ Producción (`main`): fuera de alcance
 
 ## Estado
 
-La implementación está completa y las validaciones locales están aprobadas. La promoción remota a `develop` permanece bloqueada por política porque no están disponibles en este entorno las URLs y credenciales de QA necesarias para ejecutar el certificado end-to-end versionado.
+La implementación está completa, el candidato aislado fue reconstruido sobre `origin/develop@990a85d` y las validaciones locales están aprobadas. La promoción remota a `develop` permanece bloqueada por política porque no están disponibles en este entorno las credenciales de QA necesarias para ejecutar el certificado end-to-end versionado.
 
 No se realizó ninguna inserción real ni se modificó `develop` o `main` durante el intento de certificación bloqueado.
+
+La nueva verificación remota del 2026-08-26 confirmó que el API QA ya ejecuta `990a85dc5dba`, el mismo SHA de `origin/develop`. Ese despliegue contiene actualizaciones posteriores de Inventario y Ventas, pero no contiene el candidato Excel; por ello no puede mostrar todavía el cambio solicitado. El candidato se reconstruyó sobre ese SHA sin reemplazar ni retirar dichas actualizaciones.
 
 ## Cambios implementados
 

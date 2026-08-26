@@ -3,6 +3,8 @@
   "environment": "QA",
   "status": "blocked_missing_qa_credentials",
   "functional_commit": "a09bbe9",
+  "develop_base_commit": "990a85dc5dbad7802d0a0e81196c688b92f38df5",
+  "candidate_functional_commit": "d9b4e4b",
   "script": "../../../../scripts/certifications/service-reference-excel-qa.js",
   "required_checks": [
     "deployed_commit",
@@ -23,6 +25,6 @@
     "tenant_isolation_regression",
     "platform_regression"
   ],
-  "blocking_reason": "QA URLs and credentials are not configured in this execution environment.",
+  "blocking_reason": "QA credentials are not configured. The deployed QA API now matches origin/develop 990a85dc5dba, but that baseline does not yet contain this Excel candidate.",
   "functional_approval": "pending_execution"
 }

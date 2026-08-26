@@ -1,0 +1,76 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "service-reference-excel-20260826",
+  "change_intent": {
+    "summary": "Sustituir exclusivamente la plantilla CSV de referencias de servicio por un flujo Excel validado y transaccional",
+    "modules": ["services-references", "promotion-governance"]
+  },
+  "base_commits": {
+    "develop": "990a85dc5dbad7802d0a0e81196c688b92f38df5",
+    "main": "0abda8c41168642f99da0831e15f940b98232a12"
+  },
+  "certified_commit": "d9b4e4b",
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/src/modules/services/schema.js" },
+    { "status": "M", "file": "apps/api/src/modules/services/service.js" },
+    { "status": "A", "file": "apps/api/test/service-reference-import-atomic.test.js" },
+    { "status": "A", "file": "apps/api/test/service-reference-import-validation.test.js" },
+    { "status": "M", "file": "apps/web/app/dashboard/servicios/referencias/page.tsx" },
+    { "status": "M", "file": "apps/web/lib/api.ts" },
+    { "status": "A", "file": "apps/web/lib/serviceReferenceImport.ts" },
+    { "status": "M", "file": "apps/web/package.json" },
+    { "status": "A", "file": "apps/web/public/plantillas/plantilla-referencias-servicio.xlsx" },
+    { "status": "A", "file": "apps/web/test/service-reference-import.test.mjs" },
+    { "status": "A", "file": "docs/qa/evidence/service-reference-excel-20260826/REPORTE.md" },
+    { "status": "A", "file": "docs/qa/evidence/service-reference-excel-20260826/certification-contract.json" },
+    { "status": "A", "file": "docs/qa/evidence/service-reference-excel-20260826/local-validation.md" },
+    { "status": "A", "file": "docs/qa/evidence/service-reference-excel-20260826/preqa-scope-manifest.json" },
+    { "status": "M", "file": "package-lock.json" },
+    { "status": "A", "file": "scripts/certifications/service-reference-excel-qa.js" },
+    { "status": "A", "file": "scripts/test/service-reference-excel-qa-certification.test.js" }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/services/schema.js",
+    "apps/api/src/modules/services/service.js",
+    "apps/api/test/service-reference-import-atomic.test.js",
+    "apps/api/test/service-reference-import-validation.test.js",
+    "apps/web/app/dashboard/servicios/referencias/page.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/serviceReferenceImport.ts",
+    "apps/web/package.json",
+    "apps/web/public/plantillas/plantilla-referencias-servicio.xlsx",
+    "apps/web/test/service-reference-import.test.mjs",
+    "docs/qa/evidence/service-reference-excel-20260826/",
+    "package-lock.json",
+    "scripts/certifications/service-reference-excel-qa.js",
+    "scripts/test/service-reference-excel-qa-certification.test.js"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "service_reference_excel_contract",
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    {
+      "name": "service_reference_validation_and_atomicity",
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    {
+      "name": "services_rbac_and_tenant_isolation",
+      "status": "passed",
+      "evidence": ["local-validation.md", "../service-correction-recovery-20260822/master-certification.json"]
+    },
+    {
+      "name": "service_start_and_administrative_correction_regression",
+      "status": "passed",
+      "evidence": ["../service-start-hotfix-nyvora-20260821/nyvora-certification.json", "../service-correction-recovery-20260822/master-certification.json"]
+    },
+    {
+      "name": "cross_module_scope_isolation",
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    }
+  ]
+}
