@@ -9,13 +9,14 @@
 
 ## Resultado local
 
-- Pruebas API de rango inclusivo, rango invertido y limite de 92 dias: 2/2 aprobadas.
-- Regresion API de Talento Humano (mapa y evidencia): 5/5 aprobadas.
-- Pruebas web de XLSX real, filtros, landing y evidencia: 7/7 aprobadas.
+- Candidato reconstruido sobre `origin/desarrollo@c952033`: `3147dba`, sin conflictos ni archivos fuera del alcance.
+- Pruebas API y contratos protegidos de Talento Humano: 18/18 aprobadas.
+- Pruebas web de Talento Humano, XLSX, filtros, RBAC y monitor: 21/21 aprobadas.
 - Contrato del certificado QA versionado: 2/2 aprobadas.
 - TypeScript: aprobado.
 - ESLint oficial del workspace: aprobado.
-- Build productivo: aprobado; 75 paginas generadas, incluida `/dashboard/talento-humano/reportes`.
+- Build productivo reproducible con Next.js 16.3.2: aprobado; 75 paginas generadas, incluida `/dashboard/talento-humano/reportes`.
+- `npm audit --omit=dev --audit-level=high`: aprobado sin vulnerabilidades altas; permanecen 2 avisos moderados transitivos de `uuid` heredados por ExcelJS, cuya correccion propuesta degrada ExcelJS a una version incompatible.
 - Libro XLSX abierto nuevamente con ExcelJS: firma OOXML valida, tabla filtrable, formato numerico y panel congelado verificados.
 - Interfaz local: la ruta cargo y el control de acceso nego correctamente una sesion sin autenticar.
 

@@ -10,7 +10,7 @@
     "origin_develop": "8874e177654a5b04974c5500e38f12c547532d72",
     "main": "0abda8c41168642f99da0831e15f940b98232a12"
   },
-  "certified_commit": "4de6d5b",
+  "certified_commit": "3147dba",
   "certification_status": "blocked_missing_qa_environment",
   "expected_changes": [
     { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
