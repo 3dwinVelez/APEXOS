@@ -33,3 +33,14 @@
 La certificacion navegador QA no se ejecuto: `config/qa.env` no existe y la sesion local disponible no esta autenticada. El script `scripts/certifications/hr-reports-export-qa.js` queda versionado para validar commit desplegado, rol autorizado, rol sin exportacion, aislamiento de otro tenant y estructura del XLSX.
 
 Conforme a `AGENTS.md`, esta evidencia local no sustituye la certificacion funcional QA ni autoriza push o promocion a `develop`.
+
+## Validacion del candidato remoto final
+
+- Candidato publicado exclusivamente en `origin/desarrollo`: `4cb658180b761c348ee8c770d6033dfd450fd420`.
+- Pruebas API, contratos protegidos y contrato del certificado: 19/19 aprobadas.
+- Pruebas web de Talento Humano, XLSX, filtros, RBAC, contexto de empresa y monitor: 26/26 aprobadas.
+- TypeScript: aprobado.
+- ESLint: 0 errores y 6 advertencias preexistentes de navegacion interna.
+- CI remoto: Git Governance Guard, Build Web, Lint & TypeCheck, Build API y Security Audit aprobados (`https://github.com/3dwinVelez/APEXOS/actions/runs/33207519963`).
+- QA esta disponible, pero `/health` publica `8874e177654a` (`origin/develop`) y no el candidato `4cb658180b76`.
+- El gate `qa:promotion:scope` permanece bloqueado por `hr_export_rbac_and_tenant_isolation=qa_pending`; no se promovio a `develop`.
