@@ -33,6 +33,15 @@ function qaUrl(value) {
   return value.replace(/\/$/, "");
 }
 
+function qaApiUrl(value) {
+  const url = new URL(value);
+  if (process.env.TARGET_ENV !== "qa") throw new Error("TARGET_ENV debe ser qa.");
+  if (url.protocol !== "https:") throw new Error("QA_API_URL debe usar HTTPS.");
+  const qaHost = /(^|[.-])qa([.-]|$)/i.test(url.hostname);
+  if (/prod|production/i.test(value) && !qaHost) throw new Error("QA_API_URL parece productiva; certificacion cancelada.");
+  return value.replace(/\/$/, "");
+}
+
 function chromePath() {
   const candidates = [
     process.env.QA_CHROME_PATH,
@@ -104,6 +113,7 @@ async function waitForDownload(directory, timeoutMs = 20_000) {
 
 async function main() {
   const webUrl = qaUrl(required("QA_WEB_URL"));
+  const apiUrl = qaApiUrl(required("QA_API_URL"));
   const expectedCommit = required("QA_EXPECTED_COMMIT");
   const outputPath = path.resolve(String(args.output || `hr-reports-export-qa-${Date.now()}.json`));
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), "apexos-hr-reports-qa-"));
@@ -116,6 +126,13 @@ async function main() {
   };
 
   try {
+    const healthResponse = await fetch(`${apiUrl}/health`, { signal: AbortSignal.timeout(15_000) });
+    const health = await healthResponse.json().catch(() => ({}));
+    check("deployed_commit", healthResponse.ok && String(health.commit || "").startsWith(expectedCommit.slice(0, 12)), {
+      status: healthResponse.status,
+      commit: health.commit || "missing"
+    });
+
     browser = await puppeteer.launch({ executablePath: chromePath(), headless: true, userDataDir: profile, args: ["--no-first-run", "--no-default-browser-check", "--disable-extensions"] });
     const page = await browser.newPage();
     await page.setViewport({ width: 1440, height: 1000 });
@@ -123,13 +140,6 @@ async function main() {
     await client.send("Browser.setDownloadBehavior", { behavior: "allow", downloadPath: downloads });
 
     await login(page, webUrl, required("QA_ADMIN_EMAIL"), required("QA_ADMIN_PASSWORD"));
-    const deployed = await page.evaluate(async () => {
-      const response = await fetch("/api/admin/users");
-      const body = await response.json().catch(() => ({}));
-      return { status: response.status, commit: body.commit || "" };
-    });
-    check("deployed_commit", deployed.status === 200 && String(deployed.commit).startsWith(expectedCommit), { status: deployed.status, commit: deployed.commit || "missing" });
-
     await openReports(page, webUrl);
     await clickButton(page, "Ultimos 7 dias");
     await page.waitForFunction(() => document.body.innerText.includes("Rango aplicado:") && !document.body.innerText.includes("Consultando..."), { timeout: 20_000 });
