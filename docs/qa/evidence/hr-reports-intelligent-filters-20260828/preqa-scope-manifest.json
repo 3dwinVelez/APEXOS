@@ -1,0 +1,47 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-reports-intelligent-filters-20260828",
+  "change_intent": {
+    "summary": "Corregir el filtrado temporal de reportes de Talento Humano, agregar filtros inteligentes y reemplazar CSV por XLSX autorizado",
+    "modules": ["human-resources-reports", "promotion-governance"]
+  },
+  "base_commits": {
+    "origin_desarrollo": "c952033469ba385e08cbf3c703e7c34f02dba869",
+    "origin_develop": "8874e177654a5b04974c5500e38f12c547532d72",
+    "main": "0abda8c41168642f99da0831e15f940b98232a12"
+  },
+  "certified_commit": null,
+  "certification_status": "blocked_missing_qa_environment",
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
+    { "status": "A", "file": "apps/api/test/hr-reports-range.test.js" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx" },
+    { "status": "M", "file": "apps/web/lib/api.ts" },
+    { "status": "M", "file": "apps/web/lib/reportExports.ts" },
+    { "status": "A", "file": "apps/web/test/hr-reports-xlsx.test.mjs" },
+    { "status": "M", "file": "docs/project/modulos/talento-humano.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-reports-intelligent-filters-20260828/local-validation.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-reports-intelligent-filters-20260828/preqa-scope-manifest.json" },
+    { "status": "A", "file": "scripts/certifications/hr-reports-export-qa.js" },
+    { "status": "A", "file": "scripts/test/hr-reports-export-qa-certification.test.js" }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-reports-range.test.js",
+    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/reportExports.ts",
+    "apps/web/test/hr-reports-xlsx.test.mjs",
+    "docs/project/modulos/talento-humano.md",
+    "docs/qa/evidence/hr-reports-intelligent-filters-20260828/",
+    "scripts/certifications/hr-reports-export-qa.js",
+    "scripts/test/hr-reports-export-qa-certification.test.js"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    { "name": "hr_report_range_and_filters", "status": "local_passed", "evidence": ["local-validation.md"] },
+    { "name": "hr_report_xlsx_export", "status": "local_passed", "evidence": ["local-validation.md"] },
+    { "name": "hr_export_rbac_and_tenant_isolation", "status": "qa_pending", "evidence": ["local-validation.md"] },
+    { "name": "hr_map_and_activity_evidence_regression", "status": "local_passed", "evidence": ["local-validation.md"] }
+  ]
+}

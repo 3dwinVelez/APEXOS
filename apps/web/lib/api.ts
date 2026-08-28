@@ -2004,12 +2004,14 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
 
   if (pathname === "/api/v1/hr/work-activities" && method === "GET") {
     const companyId = await currentSupabaseCompanyId();
-    const limit = Math.min(Number(search.get("limit") || 500), 1000);
+    const limit = Math.min(Number(search.get("limit") || 1000), 5000);
     const userName = search.get("user_name") || search.get("usuario") || "";
     const date = search.get("date") || search.get("fecha") || "";
+    const from = search.get("fecha_inicio") || search.get("from") || date;
+    const to = search.get("fecha_fin") || search.get("to") || date;
     const userFilter = userName ? `&user_name=eq.${encodeURIComponent(userName)}` : "";
-    const dateFilter = date
-      ? `&captured_at=gte.${encodeURIComponent(`${date}T00:00:00-05:00`)}&captured_at=lt.${encodeURIComponent(`${date}T23:59:59-05:00`)}`
+    const dateFilter = from || to
+      ? `&captured_at=gte.${encodeURIComponent(`${from || to}T00:00:00-05:00`)}&captured_at=lt.${encodeURIComponent(`${adjacentLocalDate(to || from, 1)}T00:00:00-05:00`)}`
       : "";
     const rows = await supabaseFetch<Array<{
       id: string;
@@ -2147,6 +2149,11 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   if (pathname === "/api/v1/hr/attendance") {
     const companyId = await currentSupabaseCompanyId();
     const day = search.get("date") || search.get("fecha") || localDate();
+    const from = search.get("fecha_inicio") || search.get("from") || day;
+    const to = search.get("fecha_fin") || search.get("to") || day;
+    const punchDateFilter = from === to
+      ? `punch_date=eq.${encodeURIComponent(from)}`
+      : `punch_date=gte.${encodeURIComponent(from)}&punch_date=lte.${encodeURIComponent(to)}`;
     const punches = await supabaseFetch<Array<{
       id: string;
       employee_id?: string;
@@ -2167,7 +2174,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       extra_detail?: string;
       extra_evidence?: AnyRow;
       metadata?: AnyRow;
-    }>>(`/rest/v1/time_punches?select=id,employee_id,user_id,user_name,punch_type,punch_date,punch_time,punched_at,route_id,vehicle_id,vehicle_plate,latitude,longitude,accuracy_meters,extra_minutes,extra_reason,extra_detail,extra_evidence,metadata&company_id=eq.${encodeURIComponent(companyId)}&punch_date=eq.${encodeURIComponent(day)}&order=punched_at.asc&limit=500`);
+    }>>(`/rest/v1/time_punches?select=id,employee_id,user_id,user_name,punch_type,punch_date,punch_time,punched_at,route_id,vehicle_id,vehicle_plate,latitude,longitude,accuracy_meters,extra_minutes,extra_reason,extra_detail,extra_evidence,metadata&company_id=eq.${encodeURIComponent(companyId)}&${punchDateFilter}&order=punched_at.asc&limit=5000`);
     const grouped = new Map<string, Array<{
       id: string;
       employee_id?: string;
@@ -2705,6 +2712,12 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
 
   if (pathname === "/api/v1/hr/routes") {
     const companyId = await currentSupabaseCompanyId();
+    const day = search.get("date") || search.get("fecha") || "";
+    const from = search.get("fecha_inicio") || search.get("from") || day;
+    const to = search.get("fecha_fin") || search.get("to") || day;
+    const dateFilter = from || to
+      ? `&route_date=gte.${encodeURIComponent(from || to)}&route_date=lte.${encodeURIComponent(to || from)}`
+      : "";
     const routes = await supabaseFetch<Array<{
       id: string;
       code?: string;
@@ -2716,7 +2729,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       status?: string;
       notes?: string;
       metadata?: AnyRow;
-    }>>(`/rest/v1/operational_routes?select=id,code,route_date,vehicle_plate,start_time,end_time,tolerance_minutes,status,notes,metadata&company_id=eq.${encodeURIComponent(companyId)}&order=route_date.desc&limit=120`);
+    }>>(`/rest/v1/operational_routes?select=id,code,route_date,vehicle_plate,start_time,end_time,tolerance_minutes,status,notes,metadata&company_id=eq.${encodeURIComponent(companyId)}${dateFilter}&order=route_date.desc&limit=500`);
     const assignments = await supabaseFetch<Array<{
       route_id: string;
       employee_id?: string;

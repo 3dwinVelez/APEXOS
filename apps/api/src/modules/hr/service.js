@@ -76,6 +76,22 @@ function endOfDay(value = new Date()) {
   return new Date(date.getTime() + 86400000);
 }
 
+function boundedReportRange(query = {}, { defaultToday = true, maxDays = 92 } = {}) {
+  const fromValue = query.fecha_inicio || query.from || query.date || query.fecha;
+  const toValue = query.fecha_fin || query.to || query.date || query.fecha;
+  if (!fromValue && !toValue && !defaultToday) return null;
+  const start = startOfDay(fromValue || toValue || new Date());
+  const end = endOfDay(toValue || fromValue || new Date());
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    throw validationError("El rango de fechas no es valido.", 400, "INVALID_REPORT_DATE_RANGE");
+  }
+  if (end <= start) throw validationError("La fecha final debe ser igual o posterior a la inicial.", 400, "INVALID_REPORT_DATE_RANGE");
+  if ((end.getTime() - start.getTime()) / 86400000 > maxDays) {
+    throw validationError(`El rango maximo permitido es de ${maxDays} dias.`, 400, "REPORT_DATE_RANGE_TOO_LARGE");
+  }
+  return { start, end };
+}
+
 function timeString(date) {
   return new Intl.DateTimeFormat("es-CO", { timeZone: OPERATING_TIMEZONE, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(date));
 }
@@ -464,13 +480,13 @@ async function updateSchedule(tenantId, id, input) {
 }
 
 async function listRoutes(tenantId, query = {}) {
-  const day = query.date ? startOfDay(query.date) : null;
+  const range = boundedReportRange(query, { defaultToday: false });
   return prisma.runWithTenant(tenantId, async () => {
     const [rows, employees] = await Promise.all([
       prisma.timeRoute.findMany({
-        where: day ? { date: { gte: day, lt: endOfDay(day) } } : {},
+        where: range ? { date: { gte: range.start, lt: range.end } } : {},
         orderBy: { date: "desc" },
-        take: 100
+        take: range ? 500 : 100
       }),
       prisma.employee.findMany({ where: { active: true }, include: { user: { select: safeUserSelect } }, take: 500 })
     ]);
@@ -1325,17 +1341,17 @@ function buildSessionAlerts(session, activities = []) {
 }
 
 async function listWorkActivities(tenantId, query = {}) {
-  const day = query.date ? startOfDay(query.date) : startOfDay();
+  const range = boundedReportRange(query);
   return prisma.runWithTenant(tenantId, async () => prisma.workActivity.findMany({
     where: {
-      occurred_at: { gte: day, lt: endOfDay(day) },
+      occurred_at: { gte: range.start, lt: range.end },
       ...(query.user_name ? { user_name: query.user_name } : {}),
       ...(query.session_id ? { session_id: Number(query.session_id) } : {}),
       ...(query.activity_type_id ? { activity_type_id: Number(query.activity_type_id) } : {})
     },
     include: { activity_type: true, evidence: true },
     orderBy: { occurred_at: "desc" },
-    take: Math.min(Number(query.limit || 200), 500)
+    take: Math.min(Number(query.limit || 200), 5000)
   }));
 }
 
@@ -2146,13 +2162,11 @@ function nextPunchType(punches) {
 }
 
 async function listAttendance(tenantId, query = {}) {
-  const day = query.date || query.fecha ? startOfDay(query.date || query.fecha) : startOfDay();
-  const start = query.fecha_inicio ? startOfDay(query.fecha_inicio) : day;
-  const end = query.fecha_fin ? endOfDay(query.fecha_fin) : endOfDay(day);
+  const range = boundedReportRange(query);
   return prisma.runWithTenant(tenantId, async () => {
     const punches = await prisma.timePunch.findMany({
       where: {
-        date: { gte: start, lt: end },
+        date: { gte: range.start, lt: range.end },
         ...(query.user_name || query.usuario ? { user_name: query.user_name || query.usuario } : {})
       },
       orderBy: [{ user_name: "asc" }, { punched_at: "asc" }]
