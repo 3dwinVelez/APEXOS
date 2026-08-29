@@ -20,6 +20,8 @@ test("el certificado de reportes exige QA, commit y tres perfiles controlados", 
   assert.match(source, /process\.platform.*ComSpec.*cmd\.exe/s);
   assert.match(source, /export_permission_enforced/);
   assert.match(source, /tenant_isolation/);
+  assert.match(source, /allowDenied/);
+  assert.match(source, /access_denied/);
   assert.match(source, /CONFIRM_HR_REPORTS_FIXTURE/);
   assert.match(source, /credentials_recorded: false/);
 });

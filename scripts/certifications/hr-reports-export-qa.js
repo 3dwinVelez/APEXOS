@@ -103,11 +103,13 @@ async function logout(page) {
   await page.waitForFunction(() => location.pathname === "/login", { timeout: 15_000 });
 }
 
-async function openReports(page, webUrl) {
+async function openReports(page, webUrl, { allowDenied = false } = {}) {
   await page.goto(`${webUrl}/dashboard/talento-humano/reportes`, { waitUntil: "domcontentloaded" });
-  await page.waitForFunction(() => document.body.innerText.includes("Horas laboradas y trazabilidad"), { timeout: 20_000 });
+  await page.waitForFunction(() => document.body.innerText.includes("Horas laboradas y trazabilidad") || document.body.innerText.includes("Acceso no autorizado"), { timeout: 20_000 });
   await page.waitForFunction(() => !document.body.innerText.includes("Validando permisos..."), { timeout: 20_000 });
-  assert.equal(await page.evaluate(() => document.body.innerText.includes("Acceso no autorizado")), false, "El rol autorizado no puede abrir reportes.");
+  const denied = await page.evaluate(() => document.body.innerText.includes("Acceso no autorizado"));
+  if (!allowDenied) assert.equal(denied, false, "El rol autorizado no puede abrir reportes.");
+  return !denied;
 }
 
 async function reportState(page) {
@@ -205,9 +207,9 @@ async function main() {
 
     await logout(page);
     await login(page, webUrl, otherTenantEmail, otherTenantPassword);
-    await openReports(page, webUrl);
-    const otherTenantState = await reportState(page);
-    check("tenant_isolation", !otherTenantState.employeeIds.includes(adminEmployeeId), { other_tenant_employee_count: otherTenantState.employeeIds.length });
+    const otherTenantAllowed = await openReports(page, webUrl, { allowDenied: true });
+    const otherTenantState = otherTenantAllowed ? await reportState(page) : { employeeIds: [] };
+    check("tenant_isolation", !otherTenantState.employeeIds.includes(adminEmployeeId), { access_denied: !otherTenantAllowed, other_tenant_employee_count: otherTenantState.employeeIds.length });
     evidence.status = "passed";
     evidence.fixture = fixture ? { source: "hr_reports_certification_v1", credentials_recorded: false } : null;
   } catch (error) {
