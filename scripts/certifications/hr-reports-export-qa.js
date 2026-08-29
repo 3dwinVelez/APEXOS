@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
+const { execFileSync } = require("node:child_process");
 const puppeteer = require("puppeteer-core");
 const ExcelJS = require("exceljs");
 
@@ -51,6 +52,18 @@ function chromePath() {
   const selected = candidates.find((candidate) => fs.existsSync(candidate));
   if (!selected) throw new Error("Google Chrome no esta disponible para la certificacion QA.");
   return selected;
+}
+
+function railwayDeployment(projectId, service, deploymentId, expectedCommit) {
+  const output = execFileSync("railway", [
+    "deployment", "list", "-p", projectId, "-e", "production", "-s", service, "--json"
+  ], { encoding: "utf8", windowsHide: true });
+  const deployments = JSON.parse(output);
+  const current = deployments[0];
+  assert.equal(current?.id, deploymentId, `${service} no conserva el despliegue QA certificado como activo.`);
+  assert.equal(current?.status, "SUCCESS", `${service} no esta desplegado correctamente.`);
+  assert.match(String(current?.meta?.cliMessage || ""), new RegExp(expectedCommit.slice(0, 7), "i"), `${service} no esta ligado al SHA candidato.`);
+  return { id: current.id, status: current.status, message: current.meta.cliMessage };
 }
 
 async function clickButton(page, label) {
@@ -128,10 +141,19 @@ async function main() {
   try {
     const healthResponse = await fetch(`${apiUrl}/health`, { signal: AbortSignal.timeout(15_000) });
     const health = await healthResponse.json().catch(() => ({}));
-    check("deployed_commit", healthResponse.ok && String(health.commit || "").startsWith(expectedCommit.slice(0, 12)), {
-      status: healthResponse.status,
-      commit: health.commit || "missing"
-    });
+    const healthCommit = String(health.commit || "");
+    if (healthCommit === "unknown") {
+      const projectId = required("QA_RAILWAY_PROJECT_ID");
+      const apiDeployment = railwayDeployment(projectId, "apexos-api-qa", required("QA_API_DEPLOYMENT_ID"), expectedCommit);
+      const webDeployment = railwayDeployment(projectId, "apexos-web-qa", required("QA_WEB_DEPLOYMENT_ID"), expectedCommit);
+      check("deployed_commit", healthResponse.ok, { status: healthResponse.status, commit: healthCommit, proof: "railway_cli_deployments", apiDeployment, webDeployment });
+    } else {
+      check("deployed_commit", healthResponse.ok && healthCommit.startsWith(expectedCommit.slice(0, 12)), {
+        status: healthResponse.status,
+        commit: healthCommit || "missing",
+        proof: "health_commit"
+      });
+    }
 
     browser = await puppeteer.launch({ executablePath: chromePath(), headless: true, userDataDir: profile, args: ["--no-first-run", "--no-default-browser-check", "--disable-extensions"] });
     const page = await browser.newPage();
