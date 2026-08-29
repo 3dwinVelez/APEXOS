@@ -16,6 +16,7 @@ test("el certificado de reportes exige QA, commit y tres perfiles controlados", 
   assert.match(source, /railwayDeployment/);
   assert.match(source, /railway_cli_deployments/);
   assert.match(source, /merge-base.*--is-ancestor/s);
+  assert.match(source, /process\.platform.*railway\.exe/s);
   assert.match(source, /export_permission_enforced/);
   assert.match(source, /tenant_isolation/);
 });

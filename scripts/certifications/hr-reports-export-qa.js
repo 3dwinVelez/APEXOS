@@ -55,7 +55,8 @@ function chromePath() {
 }
 
 function railwayDeployment(projectId, service, deploymentId, expectedCommit) {
-  const output = execFileSync("railway", [
+  const railwayExecutable = process.platform === "win32" ? "railway.exe" : "railway";
+  const output = execFileSync(railwayExecutable, [
     "deployment", "list", "-p", projectId, "-e", "production", "-s", service, "--json"
   ], { encoding: "utf8", windowsHide: true });
   const deployments = JSON.parse(output);
