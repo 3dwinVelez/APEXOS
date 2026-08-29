@@ -1,0 +1,17 @@
+{
+  "certification": "hr-reports-export-qa",
+  "environment": "QA",
+  "expected_commit": "4cb658180b761c348ee8c770d6033dfd450fd420",
+  "checks": [
+    { "name": "deployed_commit", "status": "passed", "detail": { "status": 200, "commit": "unknown", "proof": "railway_cli_deployments", "apiDeployment": { "id": "5bbba219-4a94-42e3-8038-b391a065ab8b", "status": "SUCCESS", "message": "QA HR reports candidate db2896c", "deployedCommit": "db2896c" }, "webDeployment": { "id": "daa0f576-7206-47a1-ba17-41d0f6f41baf", "status": "SUCCESS", "message": "QA HR reports candidate aa66d9b", "deployedCommit": "aa66d9b" } } },
+    { "name": "authorized_report_visible", "status": "passed", "detail": { "rows": 1 } },
+    { "name": "smart_range_applied", "status": "passed", "detail": {} },
+    { "name": "controlled_hr_data_available", "status": "passed", "detail": { "employee_count": 6 } },
+    { "name": "xlsx_structure", "status": "passed", "detail": { "sheets": ["Resumen", "Jornadas", "Trazabilidad"], "journey_rows": 1 } },
+    { "name": "export_permission_enforced", "status": "passed", "detail": {} },
+    { "name": "tenant_isolation", "status": "passed", "detail": { "access_denied": true, "other_tenant_employee_count": 0 } }
+  ],
+  "certified_at": "2026-08-29T13:10:49.463Z",
+  "status": "passed",
+  "fixture": { "source": "hr_reports_certification_v1", "credentials_recorded": false }
+}
