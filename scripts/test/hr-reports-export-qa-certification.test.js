@@ -38,5 +38,8 @@ test("el fixture rota perfiles exportador, solo lectura y aislamiento sin regist
   assert.match(fixtureSource, /\[\["hr", "read"\], \["hr", "export"\]\]/);
   assert.match(fixtureSource, /\[\["hr", "read"\]\]/);
   assert.match(fixtureSource, /HR REPORTS QA ISOLATION/);
+  assert.match(fixtureSource, /QA-HR-REPORTS-001/);
+  assert.match(fixtureSource, /type: "entrada"/);
+  assert.match(fixtureSource, /type: "salida"/);
   assert.doesNotMatch(fixtureSource, /password:\s*["'][^"'`$]/);
 });

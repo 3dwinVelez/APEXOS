@@ -42,6 +42,35 @@ async function ensureUser(tenantId, roleId, key, name) {
   return { email, password: temporaryPassword, userId: user.id };
 }
 
+async function ensureReportJourney(tenantId, exporter) {
+  const employee = await prisma.employee.upsert({
+    where: { tenant_id_code: { tenant_id: tenantId, code: "QA-HR-REPORTS-001" } },
+    update: { user_id: exporter.userId, active: true, metadata: { source: FIXTURE_TAG, name: "Jornada certificable", document: "QA-HR-001" } },
+    create: {
+      tenant_id: tenantId,
+      user_id: exporter.userId,
+      code: "QA-HR-REPORTS-001",
+      user_type: "operativo",
+      position: "Certificacion QA",
+      department: "Talento Humano",
+      salary_base: 1,
+      hire_date: new Date(),
+      active: true,
+      metadata: { source: FIXTURE_TAG, name: "Jornada certificable", document: "QA-HR-001" }
+    }
+  });
+  const dateKey = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
+  const date = new Date(`${dateKey}T00:00:00-05:00`);
+  await prisma.timePunch.deleteMany({ where: { tenant_id: tenantId, employee_id: employee.id, date } });
+  await prisma.timePunch.createMany({
+    data: [
+      { tenant_id: tenantId, employee_id: employee.id, user_name: exporter.email, type: "entrada", punched_at: new Date(`${dateKey}T08:00:00-05:00`), date, time: "08:00", latitude: 4.711, longitude: -74.0721, metadata: { source: FIXTURE_TAG } },
+      { tenant_id: tenantId, employee_id: employee.id, user_name: exporter.email, type: "salida", punched_at: new Date(`${dateKey}T17:15:00-05:00`), date, time: "17:15", latitude: 4.7112, longitude: -74.0719, extra_minutes: 15, extra_reason: "Certificacion QA", extra_detail: "Jornada controlada para validar XLSX", metadata: { source: FIXTURE_TAG } }
+    ]
+  });
+  return employee.id;
+}
+
 async function bootstrapHrReportsFixture() {
   if (String(process.env.CONFIRM_HR_REPORTS_FIXTURE || "").toLowerCase() !== "true") {
     throw new Error("CONFIRM_HR_REPORTS_FIXTURE=true es obligatorio para poblar datos controlados");
@@ -54,9 +83,11 @@ async function bootstrapHrReportsFixture() {
   const exporter = await ensureUser(primary.id, exporterRole.id, "exporter", "QA HR Reportes Exportador");
   const readonly = await ensureUser(primary.id, readonlyRole.id, "readonly", "QA HR Reportes Solo Lectura");
   const otherTenant = await ensureUser(isolation.id, isolationRole.id, "isolation", "QA HR Reportes Aislamiento");
+  const reportEmployeeId = await ensureReportJourney(primary.id, exporter);
   return {
     primaryTenantId: primary.id,
     isolationTenantId: isolation.id,
+    reportEmployeeId,
     credentials: { exporter, readonly, otherTenant }
   };
 }
