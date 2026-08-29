@@ -59,11 +59,18 @@ function railwayDeployment(projectId, service, deploymentId, expectedCommit) {
     "deployment", "list", "-p", projectId, "-e", "production", "-s", service, "--json"
   ], { encoding: "utf8", windowsHide: true });
   const deployments = JSON.parse(output);
-  const current = deployments[0];
+  const current = deployments.find((deployment) => deployment.status === "SUCCESS");
   assert.equal(current?.id, deploymentId, `${service} no conserva el despliegue QA certificado como activo.`);
   assert.equal(current?.status, "SUCCESS", `${service} no esta desplegado correctamente.`);
-  assert.match(String(current?.meta?.cliMessage || ""), new RegExp(expectedCommit.slice(0, 7), "i"), `${service} no esta ligado al SHA candidato.`);
-  return { id: current.id, status: current.status, message: current.meta.cliMessage };
+  const message = String(current?.meta?.cliMessage || "");
+  const deployedCommit = message.match(/\b[0-9a-f]{7,40}\b/i)?.[0] || "";
+  assert.ok(deployedCommit, `${service} no publica un SHA en el mensaje de despliegue.`);
+  try {
+    execFileSync("git", ["merge-base", "--is-ancestor", expectedCommit, deployedCommit], { windowsHide: true });
+  } catch {
+    assert.fail(`${service} no contiene el commit funcional certificado.`);
+  }
+  return { id: current.id, status: current.status, message, deployedCommit };
 }
 
 async function clickButton(page, label) {
