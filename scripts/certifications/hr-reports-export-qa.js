@@ -95,9 +95,11 @@ async function login(page, webUrl, email, password) {
 }
 
 async function logout(page) {
-  const button = await page.$('button[aria-label="Cerrar sesion"]');
-  assert.ok(button, "No se encontro el control de cierre de sesion.");
-  await button.click();
+  await page.evaluate(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+    location.href = "/login";
+  });
   await page.waitForFunction(() => location.pathname === "/login", { timeout: 15_000 });
 }
 

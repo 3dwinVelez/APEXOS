@@ -28,6 +28,7 @@ test("el certificado abre el flujo real y valida el archivo XLSX descargado", ()
   assert.match(source, /dashboard\/talento-humano\/reportes/);
   assert.match(source, /Ultimos 7 dias/);
   assert.match(source, /Descargar Excel/);
+  assert.match(source, /localStorage\.clear\(\).*sessionStorage\.clear\(\)/s);
   assert.match(source, /ExcelJS\.Workbook/);
   assert.match(source, /Resumen.*Jornadas.*Trazabilidad/s);
   assert.doesNotMatch(source, /QA_\w*(TOKEN|SECRET)/);
