@@ -55,10 +55,10 @@ function chromePath() {
 }
 
 function railwayDeployment(projectId, service, deploymentId, expectedCommit) {
-  const railwayExecutable = process.platform === "win32" ? "railway.exe" : "railway";
-  const output = execFileSync(railwayExecutable, [
-    "deployment", "list", "-p", projectId, "-e", "production", "-s", service, "--json"
-  ], { encoding: "utf8", windowsHide: true });
+  const railwayArgs = ["deployment", "list", "-p", projectId, "-e", "production", "-s", service, "--json"];
+  const executable = process.platform === "win32" ? (process.env.ComSpec || "cmd.exe") : "railway";
+  const args = process.platform === "win32" ? ["/d", "/s", "/c", "railway", ...railwayArgs] : railwayArgs;
+  const output = execFileSync(executable, args, { encoding: "utf8", windowsHide: true });
   const deployments = JSON.parse(output);
   const current = deployments.find((deployment) => deployment.status === "SUCCESS");
   assert.equal(current?.id, deploymentId, `${service} no conserva el despliegue QA certificado como activo.`);
