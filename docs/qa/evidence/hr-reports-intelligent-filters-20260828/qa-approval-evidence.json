@@ -1,0 +1,46 @@
+{
+  "change_id": "hr-reports-intelligent-filters-20260828",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "4cb658180b761c348ee8c770d6033dfd450fd420",
+  "authorization_scope": "develop_qa_only",
+  "main_promotion_authorized": false,
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["certification.json"] },
+    "error": { "status": "passed", "evidence": ["certification.json"] },
+    "support_scripts": { "status": "passed", "evidence": ["local-validation.md"] },
+    "regression": { "status": "passed", "evidence": ["platform-regression.json"] },
+    "platform_regression": { "status": "passed", "evidence": ["platform-regression.json"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-reports-export-qa.js",
+    "evidence": ["certification.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../apps/api/scripts/certifications/platform-regression-qa.js",
+    "evidence": ["platform-regression.json"]
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../../apps/api/scripts/certifications/platform-regression-qa.js",
+    "evidence": ["platform-regression.json"]
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "0abda8c41168642f99da0831e15f940b98232a12",
+    "trigger": "cualquier falla de filtros, exportacion XLSX, permisos, aislamiento o regresion; este plan no autoriza despliegue a main"
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_user_functional_qa_only",
+    "approved_by": "Solicitante autorizado de APEXOS en tarea Codex: procede y termina la implementacion",
+    "approved_at": "2026-08-29T08:12:00-05:00",
+    "main_release": "not_authorized"
+  }
+}
