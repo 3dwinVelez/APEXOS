@@ -5,6 +5,7 @@ const path = require("node:path");
 const { execFileSync } = require("node:child_process");
 const puppeteer = require("puppeteer-core");
 const ExcelJS = require("exceljs");
+const { bootstrapHrReportsFixture } = require("./fixtures/hr-reports-qa-fixture");
 
 function parseArgs(argv) {
   const args = {};
@@ -140,6 +141,13 @@ async function main() {
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), "apexos-hr-reports-qa-"));
   const downloads = fs.mkdtempSync(path.join(os.tmpdir(), "apexos-hr-reports-xlsx-"));
   const evidence = { certification: "hr-reports-export-qa", environment: "QA", expected_commit: expectedCommit, checks: [], certified_at: new Date().toISOString() };
+  const fixture = String(process.env.CONFIRM_HR_REPORTS_FIXTURE || "").toLowerCase() === "true" ? await bootstrapHrReportsFixture() : null;
+  const adminEmail = fixture?.credentials.exporter.email || required("QA_ADMIN_EMAIL");
+  const adminPassword = fixture?.credentials.exporter.password || required("QA_ADMIN_PASSWORD");
+  const readonlyEmail = fixture?.credentials.readonly.email || required("QA_HR_NO_EXPORT_EMAIL");
+  const readonlyPassword = fixture?.credentials.readonly.password || required("QA_HR_NO_EXPORT_PASSWORD");
+  const otherTenantEmail = fixture?.credentials.otherTenant.email || required("QA_OTHER_TENANT_EMAIL");
+  const otherTenantPassword = fixture?.credentials.otherTenant.password || required("QA_OTHER_TENANT_PASSWORD");
   let browser;
   const check = (name, ok, detail = {}) => {
     evidence.checks.push({ name, status: ok ? "passed" : "failed", detail });
@@ -169,7 +177,7 @@ async function main() {
     const client = await page.createCDPSession();
     await client.send("Browser.setDownloadBehavior", { behavior: "allow", downloadPath: downloads });
 
-    await login(page, webUrl, required("QA_ADMIN_EMAIL"), required("QA_ADMIN_PASSWORD"));
+    await login(page, webUrl, adminEmail, adminPassword);
     await openReports(page, webUrl);
     await clickButton(page, "Ultimos 7 dias");
     await page.waitForFunction(() => document.body.innerText.includes("Rango aplicado:") && !document.body.innerText.includes("Consultando..."), { timeout: 20_000 });
@@ -188,17 +196,18 @@ async function main() {
     check("xlsx_structure", ["Resumen", "Jornadas", "Trazabilidad"].every((name) => sheetNames.includes(name)) && Boolean(journeys?.getTable("ApexosJornadasTable")), { sheets: sheetNames, journey_rows: Math.max(0, Number(journeys?.rowCount || 5) - 5) });
 
     await logout(page);
-    await login(page, webUrl, required("QA_HR_NO_EXPORT_EMAIL"), required("QA_HR_NO_EXPORT_PASSWORD"));
+    await login(page, webUrl, readonlyEmail, readonlyPassword);
     await openReports(page, webUrl);
     const restrictedState = await reportState(page);
     check("export_permission_enforced", !restrictedState.exportEnabled, {});
 
     await logout(page);
-    await login(page, webUrl, required("QA_OTHER_TENANT_EMAIL"), required("QA_OTHER_TENANT_PASSWORD"));
+    await login(page, webUrl, otherTenantEmail, otherTenantPassword);
     await openReports(page, webUrl);
     const otherTenantState = await reportState(page);
     check("tenant_isolation", !otherTenantState.employeeIds.includes(adminEmployeeId), { other_tenant_employee_count: otherTenantState.employeeIds.length });
     evidence.status = "passed";
+    evidence.fixture = fixture ? { source: "hr_reports_certification_v1", credentials_recorded: false } : null;
   } catch (error) {
     evidence.status = "failed";
     evidence.error = error.message;

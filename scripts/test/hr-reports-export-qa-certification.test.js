@@ -4,6 +4,7 @@ const path = require("node:path");
 const test = require("node:test");
 
 const source = fs.readFileSync(path.resolve(__dirname, "../certifications/hr-reports-export-qa.js"), "utf8");
+const fixtureSource = fs.readFileSync(path.resolve(__dirname, "../certifications/fixtures/hr-reports-qa-fixture.js"), "utf8");
 
 test("el certificado de reportes exige QA, commit y tres perfiles controlados", () => {
   for (const token of [
@@ -19,6 +20,8 @@ test("el certificado de reportes exige QA, commit y tres perfiles controlados", 
   assert.match(source, /process\.platform.*ComSpec.*cmd\.exe/s);
   assert.match(source, /export_permission_enforced/);
   assert.match(source, /tenant_isolation/);
+  assert.match(source, /CONFIRM_HR_REPORTS_FIXTURE/);
+  assert.match(source, /credentials_recorded: false/);
 });
 
 test("el certificado abre el flujo real y valida el archivo XLSX descargado", () => {
@@ -28,4 +31,12 @@ test("el certificado abre el flujo real y valida el archivo XLSX descargado", ()
   assert.match(source, /ExcelJS\.Workbook/);
   assert.match(source, /Resumen.*Jornadas.*Trazabilidad/s);
   assert.doesNotMatch(source, /QA_\w*(TOKEN|SECRET)/);
+});
+
+test("el fixture rota perfiles exportador, solo lectura y aislamiento sin registrar claves", () => {
+  assert.match(fixtureSource, /CONFIRM_HR_REPORTS_FIXTURE/);
+  assert.match(fixtureSource, /\[\["hr", "read"\], \["hr", "export"\]\]/);
+  assert.match(fixtureSource, /\[\["hr", "read"\]\]/);
+  assert.match(fixtureSource, /HR REPORTS QA ISOLATION/);
+  assert.doesNotMatch(fixtureSource, /password:\s*["'][^"'`$]/);
 });
