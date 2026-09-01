@@ -5,8 +5,12 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { ArrowLeft, CalendarCheck2, CheckCircle2, Clock3, FileClock, ListTodo, RefreshCw } from "lucide-react";
 
-type Row = Record<string, any>;
-type Dashboard = { totals: { visits: number; scheduled: number; in_progress: number; completed: number; overdue: number; commitments: number; overdue_commitments: number; quotations: number }; visits: Row[]; commitments: Row[]; quotations: Row[] };
+type Advisor = { id: number; name: string };
+type Customer = { id: number; legal_name: string; city?: string | null; address?: string | null };
+type Visit = { id: number; advisor_id: number; customer_id?: number | null; visit_date: string; status: string; customer?: Customer | null; advisor: Advisor; reason?: { name: string } | null };
+type Commitment = { id: number; description: string; due_date: string; customer: Customer; advisor: Advisor };
+type Quotation = { id: number; quotation_number: string; valid_until: string; customer: Customer; advisor: Advisor };
+type Dashboard = { totals: { visits: number; scheduled: number; in_progress: number; completed: number; overdue: number; commitments: number; overdue_commitments: number; quotations: number }; visits: Visit[]; commitments: Commitment[]; quotations: Quotation[] };
 const input = "h-10 rounded-md border border-line bg-white px-3 text-sm";
 const localDate = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 const dateTime = (value: string) => new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
@@ -15,13 +19,13 @@ const shortDate = (value: string) => new Intl.DateTimeFormat("es-CO", { timeZone
 export default function MyDayPage() {
   const [date, setDate] = useState(localDate());
   const [advisor, setAdvisor] = useState("");
-  const [advisors, setAdvisors] = useState<Row[]>([]);
+  const [advisors, setAdvisors] = useState<Advisor[]>([]);
   const [data, setData] = useState<Dashboard | null>(null);
   const [revision, setRevision] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  useEffect(() => { let active = true; setLoading(true); setError(""); const query = new URLSearchParams({ date }); if (advisor) query.set("advisor_id", advisor); Promise.all([api<Dashboard>(`/api/v1/commercial-management/my-day?${query}`, { cache: "no-store" }), api<Row[]>("/api/v1/commercial-management/advisors", { cache: "no-store" })]).then(([dashboard, people]) => { if (active) { setData(dashboard); setAdvisors(people); } }).catch(value => { if (active) setError(value instanceof Error ? value.message : "No fue posible cargar Mi día."); }).finally(() => { if (active) setLoading(false); }); return () => { active = false; }; }, [date, advisor, revision]);
-  async function toggleCommitment(item: Row) { await api(`/api/v1/commercial-management/commitments/${item.id}/status`, { method: "PATCH", body: JSON.stringify({ status: "COMPLETED" }) }); setRevision(value => value + 1); }
+  useEffect(() => { let active = true; setLoading(true); setError(""); const query = new URLSearchParams({ date }); if (advisor) query.set("advisor_id", advisor); Promise.all([api<Dashboard>(`/api/v1/commercial-management/my-day?${query}`, { cache: "no-store" }), api<Advisor[]>("/api/v1/commercial-management/advisors", { cache: "no-store" })]).then(([dashboard, people]) => { if (active) { setData(dashboard); setAdvisors(people); } }).catch(value => { if (active) setError(value instanceof Error ? value.message : "No fue posible cargar Mi día."); }).finally(() => { if (active) setLoading(false); }); return () => { active = false; }; }, [date, advisor, revision]);
+  async function toggleCommitment(item: Commitment) { await api(`/api/v1/commercial-management/commitments/${item.id}/status`, { method: "PATCH", body: JSON.stringify({ status: "COMPLETED" }) }); setRevision(value => value + 1); }
   return <div className="apex-workspace-shell space-y-4">
     <header className="apex-section-card flex flex-wrap items-start justify-between gap-3 p-5"><div><Link className="inline-flex items-center gap-1 text-sm text-apex" href="/dashboard/gestion-comercial"><ArrowLeft size={16}/> Gestión Comercial</Link><h1 className="mt-2 flex items-center gap-2 text-2xl font-semibold"><CalendarCheck2 className="text-apex"/> Mi día</h1><p className="mt-1 text-sm text-neutral-600">Prioriza visitas, compromisos y cotizaciones que requieren seguimiento.</p></div><div className="flex flex-wrap gap-2"><input className={input} type="date" value={date} onChange={event => setDate(event.target.value)}/><select className={input} value={advisor} onChange={event => setAdvisor(event.target.value)}><option value="">Todos mis asesores</option>{advisors.map(person => <option key={person.id} value={person.id}>{person.name}</option>)}</select><button className={`${input} inline-flex items-center gap-2`} onClick={() => setRevision(value => value + 1)}><RefreshCw size={16}/>Actualizar</button></div></header>
     {error && <p role="alert" className="rounded-md bg-red-50 p-4 text-red-700">{error}</p>}{loading && <p role="status">Organizando el día…</p>}
