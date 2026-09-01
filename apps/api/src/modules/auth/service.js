@@ -8,7 +8,7 @@ const accountingService = require("../accounting/service");
 const authorizationState = require("../../security/authorizationState");
 
 const SEED_MODULES = ["M-01", "M-03", "M-04", "M-05", "M-07", "M-22"];
-const ALL_MODULES = Array.from({ length: 26 }, (_, index) => `M-${String(index + 1).padStart(2, "0")}`);
+const ALL_MODULES = Array.from({ length: 27 }, (_, index) => `M-${String(index + 1).padStart(2, "0")}`);
 
 function publicUser(user) {
   const role = user.role || {};

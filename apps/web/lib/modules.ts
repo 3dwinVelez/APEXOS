@@ -337,6 +337,17 @@ export const MODULES: ApexModule[] = [
     capabilities: ["Planes", "Facturación mensual", "Límites", "Exportación"],
     nextActions: ["Ver plan", "Cambiar plan", "Consultar consumo"],
     icon: FileText
+  },
+  {
+    id: "M-27",
+    slug: "gestion-comercial",
+    name: "Gestión Comercial",
+    area: "Comercial",
+    status: "Base funcional",
+    summary: "Agenda comercial, clientes, visitas, cotizaciones, pedidos, presupuestos y seguimiento gerencial por empresa.",
+    capabilities: ["Mi día", "Visitas", "Clientes", "Cotizaciones y pedidos", "Reportes gerenciales"],
+    nextActions: ["Programar visita", "Abrir Mi día", "Consultar oportunidades"],
+    icon: ContactRound
   }
 ];
 
