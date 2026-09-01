@@ -1,0 +1,9 @@
+{
+  "change_id": "commercial-management-m27-20260901",
+  "status": "passed",
+  "environment": "QA_LOCAL",
+  "model_company": "NYVORA",
+  "certified_commit": "48a9e7374e5b7ee4ab7d47f65985ca0513f9d7e4",
+  "checks": ["rbac", "authentication_modules", "purchases_supplier_and_orders", "inventory_valuation", "services_order_items", "web_production_build"],
+  "unrelated_net_diff": "none"
+}
