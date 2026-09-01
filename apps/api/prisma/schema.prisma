@@ -186,6 +186,7 @@ model Item {
     transfer_lines WarehouseTransferLine[]
     adjustment_lines InventoryAdjustmentLine[]
     salesInvoiceLines SalesInvoiceLine[]
+    commercial_products CommercialProduct[]
 
   @@unique([tenant_id, code])
   @@index([tenant_id, legacy_code])
@@ -265,6 +266,7 @@ model Category {
   parent_id Int?
   type      String @default("item")
   items     Item[]
+  commercial_products CommercialProduct[]
 
   @@unique([tenant_id, name, type])
   @@index([tenant_id])
@@ -2420,3 +2422,412 @@ model EInvoice {
   @@index([tenant_id, created_at])
 }
 
+
+
+model CommercialAdvisor {
+  id                  Int                        @id @default(autoincrement())
+  tenant_id           String
+  code                String
+  name                String
+  email               String?
+  phone               String?
+  zone                String?
+  zone_id             Int?
+  zone_master         CommercialZone?             @relation(fields: [zone_id], references: [id])
+  user_id             Int?
+  supervisor_user_id  Int?
+  active              Boolean                    @default(true)
+  external_advisor_id String?
+  created_at          DateTime                   @default(now())
+  updated_at          DateTime                   @updatedAt
+  customers           CommercialCustomer[]
+  advisor_budgets     CommercialAdvisorBudget[]
+  customer_budgets    CommercialCustomerBudget[]
+  visits              CommercialVisit[]
+  orders              CommercialSalesOrder[]
+  commitments         CommercialCustomerCommitment[]
+  quotations          CommercialQuotation[]
+
+  @@unique([tenant_id, code])
+  @@unique([tenant_id, user_id])
+  @@index([tenant_id, supervisor_user_id, active])
+  @@index([tenant_id, zone_id, active])
+  @@map("commercial_advisors")
+}
+
+model CommercialCustomer {
+  id                   Int                        @id @default(autoincrement())
+  tenant_id            String
+  code                 String
+  legal_name           String
+  trade_name           String?
+  identification_type  String?
+  identification       String?
+  contact_name         String?
+  contact_position     String?
+  phone                String?
+  whatsapp             String?
+  email                String?
+  address              String?
+  city                 String?
+  department           String?
+  notes                String?
+  zone                 String?
+  advisor_id           Int
+  advisor              CommercialAdvisor          @relation(fields: [advisor_id], references: [id])
+  segment              String                     @default("C")
+  category_id          Int?
+  category             CommercialCustomerCategory? @relation(fields: [category_id], references: [id])
+  status               String                     @default("ACTIVE")
+  visit_frequency_days Int                        @default(30)
+  credit_capacity      Decimal                    @default(0) @db.Decimal(18, 2)
+  last_purchase_at     DateTime?
+  last_visit_at        DateTime?
+  external_customer_id String?
+  created_at           DateTime                   @default(now())
+  updated_at           DateTime                   @updatedAt
+  budgets              CommercialCustomerBudget[]
+  visits               CommercialVisit[]
+  orders               CommercialSalesOrder[]
+  commitments          CommercialCustomerCommitment[]
+  quotations           CommercialQuotation[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, advisor_id, status])
+  @@index([tenant_id, category_id, status])
+  @@map("commercial_customers")
+}
+
+model CommercialCustomerCommitment {
+  id           Int                @id @default(autoincrement())
+  tenant_id    String
+  customer_id  Int
+  customer     CommercialCustomer @relation(fields: [customer_id], references: [id])
+  advisor_id   Int
+  advisor      CommercialAdvisor  @relation(fields: [advisor_id], references: [id])
+  visit_id     Int?
+  description  String
+  due_date     DateTime
+  status       String             @default("PENDING")
+  completed_at DateTime?
+  created_by   Int?
+  created_at   DateTime           @default(now())
+  updated_at   DateTime           @updatedAt
+
+  @@index([tenant_id, advisor_id, status, due_date])
+  @@index([tenant_id, customer_id, status])
+  @@map("commercial_customer_commitments")
+}
+
+model CommercialZone {
+  id          Int                 @id @default(autoincrement())
+  tenant_id   String
+  code        String
+  name        String
+  description String?
+  city        String?
+  department  String?
+  active      Boolean             @default(true)
+  created_at  DateTime            @default(now())
+  updated_at  DateTime            @updatedAt
+  advisors    CommercialAdvisor[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, active, name])
+  @@map("commercial_zones")
+}
+
+model CommercialCustomerCategory {
+  id          Int                  @id @default(autoincrement())
+  tenant_id   String
+  code        String
+  name        String
+  description String?
+  active      Boolean              @default(true)
+  created_at  DateTime             @default(now())
+  updated_at  DateTime             @updatedAt
+  customers   CommercialCustomer[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, active, name])
+  @@map("commercial_customer_categories")
+}
+
+model CommercialPeriod {
+  id               Int                        @id @default(autoincrement())
+  tenant_id        String
+  name             String
+  start_date       DateTime
+  end_date         DateTime
+  status           String                     @default("DRAFT")
+  created_at       DateTime                   @default(now())
+  updated_at       DateTime                   @updatedAt
+  advisor_budgets  CommercialAdvisorBudget[]
+  customer_budgets CommercialCustomerBudget[]
+
+  @@unique([tenant_id, name])
+  @@index([tenant_id, status, start_date, end_date])
+  @@map("commercial_periods")
+}
+
+model CommercialAdvisorBudget {
+  id            Int               @id @default(autoincrement())
+  tenant_id     String
+  period_id     Int
+  period        CommercialPeriod  @relation(fields: [period_id], references: [id])
+  advisor_id    Int
+  advisor       CommercialAdvisor @relation(fields: [advisor_id], references: [id])
+  budget_amount Decimal           @db.Decimal(18, 2)
+  budget_type   String            @default("MONTHLY")
+  budget_date   DateTime
+  created_at    DateTime          @default(now())
+  updated_at    DateTime          @updatedAt
+
+  @@unique([tenant_id, period_id, advisor_id, budget_type, budget_date])
+  @@map("commercial_advisor_budgets")
+}
+
+model CommercialCustomerBudget {
+  id            Int                @id @default(autoincrement())
+  tenant_id     String
+  period_id     Int
+  period        CommercialPeriod   @relation(fields: [period_id], references: [id])
+  customer_id   Int
+  customer      CommercialCustomer @relation(fields: [customer_id], references: [id])
+  advisor_id    Int
+  advisor       CommercialAdvisor  @relation(fields: [advisor_id], references: [id])
+  budget_amount Decimal            @db.Decimal(18, 2)
+  budget_type   String             @default("MONTHLY")
+  budget_date   DateTime
+  created_at    DateTime           @default(now())
+  updated_at    DateTime           @updatedAt
+
+  @@unique([tenant_id, period_id, customer_id, budget_type, budget_date])
+  @@index([tenant_id, period_id, advisor_id])
+  @@map("commercial_customer_budgets")
+}
+
+model CommercialVisit {
+  id                 Int                    @id @default(autoincrement())
+  tenant_id          String
+  advisor_id         Int
+  advisor            CommercialAdvisor      @relation(fields: [advisor_id], references: [id])
+  customer_id        Int?
+  customer           CommercialCustomer?    @relation(fields: [customer_id], references: [id])
+  visit_date         DateTime
+  scheduled_end_at   DateTime?
+  planned_duration_minutes Int @default(60)
+  visit_type         String                 @default("IN_PERSON")
+  status             String                 @default("SCHEDULED")
+  started_at         DateTime?
+  completed_at       DateTime?
+  result_code        String?
+  reason_id          Int?
+  reason             CommercialVisitReason? @relation(fields: [reason_id], references: [id])
+  result_id          Int?
+  result             CommercialVisitResult? @relation(fields: [result_id], references: [id])
+  notes              String?
+  outcome_notes      String?
+  reschedule_reason  String?
+  rescheduled_from_id Int?
+  rescheduled_from   CommercialVisit?       @relation("CommercialVisitRescheduling", fields: [rescheduled_from_id], references: [id])
+  rescheduled_visits CommercialVisit[]      @relation("CommercialVisitRescheduling")
+  follow_up_required Boolean                @default(false)
+  follow_up_date     DateTime?
+  created_by         Int?
+  created_at         DateTime               @default(now())
+  updated_at         DateTime               @updatedAt
+  orders             CommercialSalesOrder[]
+  events             CommercialVisitEvent[]
+  quotations         CommercialQuotation[]
+
+  @@index([tenant_id, advisor_id, visit_date])
+  @@index([tenant_id, advisor_id, status, visit_date])
+  @@index([rescheduled_from_id])
+  @@index([tenant_id, customer_id, visit_date])
+  @@index([reason_id])
+  @@index([result_id])
+  @@map("commercial_visits")
+}
+
+model CommercialVisitEvent {
+  id            Int             @id @default(autoincrement())
+  tenant_id     String
+  visit_id      Int
+  visit         CommercialVisit @relation(fields: [visit_id], references: [id])
+  event_type    String
+  event_at      DateTime        @default(now())
+  scheduled_for DateTime?
+  details       Json            @default("{}")
+  created_by    Int?
+
+  @@index([tenant_id, visit_id, event_at])
+  @@map("commercial_visit_events")
+}
+
+model CommercialSettings {
+  id                             Int      @id @default(autoincrement())
+  tenant_id                      String   @unique
+  default_visit_duration_minutes Int      @default(60)
+  default_quote_validity_days    Int      @default(15)
+  created_at                     DateTime @default(now())
+  updated_at                     DateTime @updatedAt
+
+  @@map("commercial_settings")
+}
+
+model CommercialVisitReason {
+  id          Int               @id @default(autoincrement())
+  tenant_id   String
+  code        String
+  name        String
+  description String?
+  active      Boolean           @default(true)
+  created_at  DateTime          @default(now())
+  updated_at  DateTime          @updatedAt
+  visits      CommercialVisit[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, active, name])
+  @@map("commercial_visit_reasons")
+}
+
+model CommercialVisitResult {
+  id                   Int               @id @default(autoincrement())
+  tenant_id            String
+  code                 String
+  name                 String
+  description          String?
+  counts_as_effective  Boolean           @default(false)
+  requires_observation Boolean           @default(true)
+  active               Boolean           @default(true)
+  created_at            DateTime          @default(now())
+  updated_at            DateTime          @updatedAt
+  visits                CommercialVisit[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, active, name])
+  @@map("commercial_visit_results")
+}
+
+model CommercialProduct {
+  id                  Int                        @id @default(autoincrement())
+  tenant_id           String
+  code                String
+  name                String
+  category            String?
+  classification_id   Int?
+  classification      Category?                   @relation(fields: [classification_id], references: [id])
+  subcategory         String?
+  line                String?
+  unit                String                      @default("UND")
+  source_type         String                      @default("LOCAL")
+  inventory_item_id   Int?
+  inventory_item      Item?                       @relation(fields: [inventory_item_id], references: [id])
+  unit_price          Decimal                    @db.Decimal(18, 2)
+  active              Boolean                    @default(true)
+  external_product_id String?
+  created_at          DateTime                   @default(now())
+  updated_at          DateTime                   @updatedAt
+  order_lines         CommercialSalesOrderLine[]
+  quote_lines         CommercialQuotationLine[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, active, name])
+  @@unique([tenant_id, inventory_item_id])
+  @@index([tenant_id, source_type, active])
+  @@map("commercial_products")
+}
+
+model CommercialSalesOrder {
+  id                      Int                        @id @default(autoincrement())
+  tenant_id               String
+  order_number            String
+  customer_id             Int
+  customer                CommercialCustomer         @relation(fields: [customer_id], references: [id])
+  advisor_id              Int
+  advisor                 CommercialAdvisor          @relation(fields: [advisor_id], references: [id])
+  visit_id                Int?
+  visit                   CommercialVisit?           @relation(fields: [visit_id], references: [id])
+  quotation_id            Int?                        @unique
+  quotation               CommercialQuotation?       @relation(fields: [quotation_id], references: [id])
+  order_date              DateTime                   @default(now())
+  status                  String                     @default("DRAFT")
+  subtotal                Decimal                    @db.Decimal(18, 2)
+  discount                Decimal                    @default(0) @db.Decimal(18, 2)
+  total                   Decimal                    @db.Decimal(18, 2)
+  notes                   String?
+  external_sales_order_id String?
+  created_by              Int?
+  created_at              DateTime                   @default(now())
+  updated_at              DateTime                   @updatedAt
+  lines                   CommercialSalesOrderLine[]
+
+  @@unique([tenant_id, order_number])
+  @@index([tenant_id, advisor_id, order_date])
+  @@index([tenant_id, customer_id, status])
+  @@map("commercial_sales_orders")
+}
+
+model CommercialQuotation {
+  id               Int                         @id @default(autoincrement())
+  tenant_id        String
+  quotation_number String
+  customer_id      Int
+  customer         CommercialCustomer          @relation(fields: [customer_id], references: [id])
+  advisor_id       Int
+  advisor          CommercialAdvisor           @relation(fields: [advisor_id], references: [id])
+  visit_id         Int?
+  visit            CommercialVisit?            @relation(fields: [visit_id], references: [id])
+  quotation_date   DateTime                    @default(now())
+  valid_until      DateTime
+  status           String                      @default("OPEN")
+  subtotal         Decimal                     @db.Decimal(18, 2)
+  discount         Decimal                     @default(0) @db.Decimal(18, 2)
+  total            Decimal                     @db.Decimal(18, 2)
+  notes            String?
+  created_by       Int?
+  created_at       DateTime                    @default(now())
+  updated_at       DateTime                    @updatedAt
+  lines            CommercialQuotationLine[]
+  sales_order      CommercialSalesOrder?
+
+  @@unique([tenant_id, quotation_number])
+  @@index([tenant_id, advisor_id, status, valid_until])
+  @@index([tenant_id, customer_id, quotation_date])
+  @@map("commercial_quotations")
+}
+
+model CommercialQuotationLine {
+  id             Int                   @id @default(autoincrement())
+  quotation_id   Int
+  quotation      CommercialQuotation   @relation(fields: [quotation_id], references: [id], onDelete: Cascade)
+  product_id     Int
+  product        CommercialProduct     @relation(fields: [product_id], references: [id])
+  product_code   String
+  product_name   String
+  quantity       Decimal               @db.Decimal(18, 4)
+  unit_price     Decimal               @db.Decimal(18, 2)
+  discount       Decimal               @default(0) @db.Decimal(18, 2)
+  line_total     Decimal               @db.Decimal(18, 2)
+
+  @@index([quotation_id])
+  @@map("commercial_quotation_lines")
+}
+
+model CommercialSalesOrderLine {
+  id             Int                  @id @default(autoincrement())
+  sales_order_id Int
+  sales_order    CommercialSalesOrder @relation(fields: [sales_order_id], references: [id], onDelete: Cascade)
+  product_id     Int
+  product        CommercialProduct    @relation(fields: [product_id], references: [id])
+  product_code   String
+  product_name   String
+  quantity       Decimal              @db.Decimal(18, 4)
+  unit_price     Decimal              @db.Decimal(18, 2)
+  discount       Decimal              @default(0) @db.Decimal(18, 2)
+  line_total     Decimal              @db.Decimal(18, 2)
+
+  @@index([sales_order_id])
+  @@map("commercial_sales_order_lines")
+}

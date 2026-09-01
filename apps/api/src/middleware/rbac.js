@@ -17,7 +17,8 @@ const MODULE_CODES = {
   "accounts-receivable": ["M-07", "contabilidad", "accounting", "cxc", "accounts-receivable"],
   services: ["M-26", "servicios", "services"],
   "services.orders": ["M-26", "servicios", "services"],
-  transport: ["M-14", "transporte", "transport"]
+  transport: ["M-14", "transporte", "transport"],
+  "commercial-management": ["M-27", "gestion-comercial", "gestion_comercial", "commercial-management"]
 };
 
 function tenantHasModule(tenant, module) {
