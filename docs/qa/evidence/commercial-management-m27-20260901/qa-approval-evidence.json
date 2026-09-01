@@ -1,0 +1,21 @@
+{
+  "change_id": "commercial-management-m27-20260901",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "48a9e7374e5b7ee4ab7d47f65985ca0513f9d7e4",
+  "authorization_scope": "develop_qa_only",
+  "main_promotion_authorized": false,
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["certification.json"] },
+    "error": { "status": "passed", "evidence": ["certification.json"] },
+    "support_scripts": { "status": "passed", "evidence": ["local-validation.md"] },
+    "regression": { "status": "passed", "evidence": ["platform-regression.json"] },
+    "platform_regression": { "status": "passed", "evidence": ["platform-regression.json"] }
+  },
+  "certification": { "status": "passed", "script": "../../../../scripts/certifications/commercial-management-m27-qa.js", "evidence": ["certification.json"] },
+  "regression_certification": { "status": "passed", "script": "../../../../scripts/certifications/commercial-management-m27-qa.js", "evidence": ["platform-regression.json"] },
+  "model_company_certification": { "status": "passed", "company": "NYVORA", "environment": "QA", "script": "../../../../scripts/certifications/commercial-management-m27-qa.js", "evidence": ["certification.json"] },
+  "rollback_plan": { "status": "ready", "strategy": "controlled_revert", "previous_main_commit": "22f83300301077f5dc211aee17f01fc52ecc324e", "trigger": "cualquier regresión funcional, de aislamiento, navegación o documentos; no autoriza main" },
+  "approval": { "status": "approved", "scope": "promotion_to_develop_for_user_functional_qa_only", "approved_by": "Solicitante autorizado de APEXOS en tarea Codex", "approved_at": "2026-09-01T15:30:00-05:00", "main_release": "not_authorized" }
+}

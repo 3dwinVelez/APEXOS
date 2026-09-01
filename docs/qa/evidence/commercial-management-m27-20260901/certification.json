@@ -1,0 +1,75 @@
+{
+  "change_id": "commercial-management-m27-20260901",
+  "status": "passed",
+  "environment": "QA_LOCAL",
+  "model_company": "NYVORA",
+  "commit": "48a9e7374e5b7ee4ab7d47f65985ca0513f9d7e4",
+  "started_at": "2026-09-01T20:55:04.065Z",
+  "finished_at": "2026-09-01T20:56:06.501Z",
+  "checks": [
+    {
+      "name": "prisma_schema",
+      "status": "passed",
+      "command": "npm run prisma:validate",
+      "exit_code": 0,
+      "stdout": "\n> apex-os@2.0.0 prisma:validate\n> npx prisma validate --schema apps/api/prisma/schema.prisma\n\nEnvironment variables loaded from .env\nPrisma schema loaded from apps\\api\\prisma\\schema.prisma\nThe schema at apps\\api\\prisma\\schema.prisma is valid 🚀\n",
+      "stderr": ""
+    },
+    {
+      "name": "commercial_unit_contracts",
+      "status": "passed",
+      "command": "node --test apps/api/test/commercial-management-contract.test.js apps/api/test/commercial-management-domain.test.js apps/api/test/commercial-advisor-report.test.js apps/api/test/commercial-quotation-conversion.test.js apps/api/test/commercial-quotation-report.test.js",
+      "exit_code": 0,
+      "stdout": "✔ valor suma todos los pedidos vigentes sin duplicar por cotizacion y respeta filtros (27.2141ms)\n✔ categorias excluyentes, cotizacion convertida y documentos cancelados (4.0061ms)\n✔ filtros y agrupacion Colombia, semana de lunes incluso entre años (0.9118ms)\n✔ rutas comerciales exigen autenticacion, tenancy y permisos propios (4.9653ms)\n✔ el modulo se licencia con M-27 y no reutiliza modelos ERP (4.5184ms)\n✔ las visitas conservan programacion, ejecucion y reprogramacion trazables (8.8514ms)\n✔ asesores, zonas y categorias tienen mantenimiento sin borrado fisico (3.2708ms)\n✔ la consulta de visitas admite filtros operativos (2.7897ms)\n✔ motivos y resultados de visita son maestros editables y se usan en el flujo (4.4921ms)\n✔ el cliente expone cupo, compromisos y perfil 360 comercial (4.3856ms)\n✔ las visitas bloquean solapamientos y guardan lead time con duracion (3.2208ms)\n✔ Mi dia prioriza trabajo y la agenda expone una validacion preventiva (1.4491ms)\n✔ el catalogo comercial se integra con inventarios sin diferencias de precio (3.2338ms)\n✔ cotizaciones tienen vigencia, pdf operativo y conversion opcional a pedido (4.6514ms)\n✔ los pedidos se consultan con detalle, alcance y filtros operativos (1.5422ms)\n✔ presupuestos soportan frecuencia mensual y diaria sin mezclar fechas (3.8993ms)\n✔ duracion no se calcula desde null ni para reprogramaciones (1.8435ms)\n✔ calcula total del pedido y descuento como monto (0.6677ms)\n✔ rechaza descuentos superiores al bruto (0.801ms)\n✔ calcula avance, proyeccion y semaforo dinamicos (0.5707ms)\n✔ pedido cancelado no pertenece a estados de venta reconocida (1.4465ms)\n✔ valida un mes calendario completo usando la zona horaria de Colombia (51.1367ms)\n✔ conserva cotizacion, admite mas, menos, cero y nuevos productos (4.4691ms)\n✔ compara union de productos con valores netos y conserva fechas distintas (4.1481ms)\n✔ pendiente no se etiqueta como no comprado y cancelados no suman pedidos (1.0373ms)\n✔ agrupa lineas repetidas sin duplicar cantidades ni valores (0.7782ms)\nℹ tests 26\nℹ suites 0\nℹ pass 26\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 334.0611\n",
+      "stderr": ""
+    },
+    {
+      "name": "commercial_database_flow",
+      "status": "passed",
+      "command": "node --test apps/api/test/commercial-document-flow.integration.test.js",
+      "exit_code": 0,
+      "stdout": "✔ cotizacion, cancelacion con motivo, pedido, visita y 360 en base local (1665.9508ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1949.4827\n",
+      "stderr": ""
+    },
+    {
+      "name": "commercial_web_contracts",
+      "status": "passed",
+      "command": "node --test apps/web/test/commercial-visit-selection.test.mjs",
+      "exit_code": 0,
+      "stdout": "✔ paneles limitan a top 10 sin filtros y muestran todas las coincidencias al filtrar (34.5886ms)\n✔ presupuestos separa configuración y ejecución con filtros compartidos (6.0892ms)\n✔ agenda busca cliente con texto, Enter y lista desplegable inteligente (1.6761ms)\n✔ reportes enlaza comparativo cotizado pedido con filtros y cantidades originales (1.4888ms)\n✔ agenda comparte el todo de compromisos y lo refresca tras guardar una visita (2.3997ms)\n✔ inicio muestra alertas y permite chulear compromisos sin ocultar fallos (1.145ms)\n✔ acciones de visita distinguen gestion, ejecucion e historial de solo consulta (1.1394ms)\n✔ conversion editable compartida e historial adaptado al contenido (2.7596ms)\n✔ doble clic abre historial por ID y permite regresar desde documentos (1.8764ms)\n✔ cada visita remonta su detalle por ID y consulta datos operativos sin cache (2.0964ms)\n✔ no-store tambien evita reutilizar solicitudes GET en curso (1.7414ms)\n✔ prospeccion sin cliente y calendario con historial completo (1.1289ms)\n✔ pendientes en tabla con cancelacion justificada y resultado comercial (1.86ms)\n✔ la negociacion captura productos por codigo y conserva nombre y precio del maestro (0.9369ms)\n✔ la consulta de pedidos filtra, abre detalle con doble clic y descarga PDF (0.8855ms)\n✔ el inicio compacto enlaza una consulta completa de cotizaciones (1.2978ms)\n✔ el control muestra finalizacion y duracion real de cada visita (0.7329ms)\n✔ el pedido abre la cotizacion de origen con doble clic (0.761ms)\n✔ la cotizacion abre el pedido generado con doble clic (1.2312ms)\n✔ presupuestos permite crear y comparar contra pedidos realizados (1.225ms)\n✔ presupuesto suma registrados y conserva filtros de fecha, asesor y cliente (1.9648ms)\n✔ Mi día, disponibilidad previa y exportaciones gerenciales estan disponibles (2.3818ms)\n✔ Gestión Comercial se publica como M-27 en la navegación lateral (1.3181ms)\nℹ tests 23\nℹ suites 0\nℹ pass 23\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 294.1598\n",
+      "stderr": ""
+    },
+    {
+      "name": "commercial_lint",
+      "status": "passed",
+      "command": "npm --workspace apps/web exec eslint -- app/dashboard/gestion-comercial lib/commercial-report-export.ts lib/commercialDocumentPdf.ts test/commercial-visit-selection.test.mjs",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "name": "web_typecheck",
+      "status": "passed",
+      "command": "npm --workspace apps/web run typecheck",
+      "exit_code": 0,
+      "stdout": "\n> @apex-os/web@2.0.0 typecheck\n> tsc -p tsconfig.typecheck.json --noEmit\n\n",
+      "stderr": ""
+    },
+    {
+      "name": "web_production_build",
+      "status": "passed",
+      "command": "npm --workspace apps/web run build",
+      "exit_code": 0,
+      "stdout": "\n> @apex-os/web@2.0.0 build\n> next build\n\n▲ Next.js 16.3.2 (Turbopack)\n✓ Running next.config.ts took 62ms\n- Experiments (use with caution):\n  · optimizePackageImports\n\n  Creating an optimized production build ...\n✓ Compiled successfully in 5.7s\n  Running TypeScript ...\n  Finished TypeScript in 8.1s ...\n  Collecting page data using 7 workers ...\n  Generating static pages using 7 workers (0/84) ...\n  Generating static pages using 7 workers (21/84) \r\n  Generating static pages using 7 workers (42/84) \r\n  Generating static pages using 7 workers (63/84) \r\n✓ Generating static pages using 7 workers (84/84) in 3.5s\n  Finalizing page optimization ...\n\nRoute (app)\n┌ ○ /\n├ ○ /_not-found\n├ ƒ /api/admin/roles\n├ ƒ /api/admin/users\n├ ƒ /api/platform/companies\n├ ƒ /api/platform/company-modules\n├ ƒ /api/platform/company-sessions\n├ ƒ /api/public/service-requests\n├ ƒ /api/services/monitor-orders\n├ ƒ /api/v1/[...path]\n├ ƒ /api/v1/services/orders/[id]\n├ ○ /dashboard\n├ ƒ /dashboard/[module]\n├ ○ /dashboard/administracion\n├ ○ /dashboard/administracion/suscripciones\n├ ○ /dashboard/apex-ai\n├ ○ /dashboard/compras\n├ ○ /dashboard/compras/facturas\n├ ○ /dashboard/compras/importaciones\n├ ○ /dashboard/compras/ordenes/nueva\n├ ○ /dashboard/compras/ordenes/recibir\n├ ○ /dashboard/compras/proveedores\n├ ○ /dashboard/compras/reportes/ordenes\n├ ○ /dashboard/configuracion\n├ ○ /dashboard/contabilidad\n├ ○ /dashboard/contabilidad/asientos\n├ ○ /dashboard/contabilidad/cuentas-por-pagar\n├ ○ /dashboard/contabilidad/estructura\n├ ○ /dashboard/contabilidad/iva\n├ ○ /dashboard/contabilidad/plan-cuentas\n├ ○ /dashboard/contabilidad/reportes\n├ ○ /dashboard/contabilidad/retenciones\n├ ○ /dashboard/contabilidad/terceros\n├ ƒ /dashboard/cxc/clientes/[id]/estado-cuenta\n├ ○ /dashboard/cxc/documentos\n├ ○ /dashboard/cxc/reportes/cartera\n├ ○ /dashboard/cxc/retenciones\n├ ○ /dashboard/facturacion\n├ ○ /dashboard/facturacion/documentos\n├ ○ /dashboard/facturacion/emitir\n├ ○ /dashboard/gestion-comercial\n├ ○ /dashboard/gestion-comercial/agenda\n├ ƒ /dashboard/gestion-comercial/agenda/[id]/ejecucion\n├ ○ /dashboard/gestion-comercial/cotizaciones\n├ ○ /dashboard/gestion-comercial/maestros\n├ ○ /dashboard/gestion-comercial/mi-dia\n├ ○ /dashboard/gestion-comercial/pedidos\n├ ○ /dashboard/gestion-comercial/presupuestos\n├ ○ /dashboard/gestion-comercial/reportes\n├ ○ /dashboard/gestion-comercial/reportes/cotizado-vs-pedido\n├ ○ /dashboard/inventario\n├ ○ /dashboard/inventario/ajustes\n├ ○ /dashboard/inventario/ajustes/nuevo\n├ ○ /dashboard/inventario/bodegas\n├ ○ /dashboard/inventario/cargue-inicial\n├ ○ /dashboard/inventario/familias\n├ ○ /dashboard/inventario/productos\n├ ○ /dashboard/inventario/productos/nuevo\n├ ○ /dashboard/inventario/reportes\n├ ○ /dashboard/inventario/stock\n├ ○ /dashboard/inventario/traslados\n├ ○ /dashboard/inventario/traslados/nuevo\n├ ○ /dashboard/inventario/wms\n├ ○ /dashboard/proyectos\n├ ○ /dashboard/servicios\n├ ƒ /dashboard/servicios/[id]\n├ ○ /dashboard/servicios/nuevo\n├ ○ /dashboard/servicios/referencias\n├ ○ /dashboard/servicios/reportes\n├ ○ /dashboard/talento-humano\n├ ○ /dashboard/talento-humano/mapa\n├ ○ /dashboard/talento-humano/marcacion\n├ ○ /dashboard/talento-humano/nomina\n├ ○ /dashboard/talento-humano/reportes\n├ ○ /dashboard/talento-humano/rutas\n├ ○ /dashboard/tesoreria\n├ ○ /dashboard/tesoreria/anticipos\n├ ○ /dashboard/transporte\n├ ○ /dashboard/ventas\n├ ○ /dashboard/ventas/clientes\n├ ○ /dashboard/ventas/facturas\n├ ƒ /dashboard/ventas/facturas/[id]\n├ ○ /dashboard/ventas/facturas/nueva\n├ ○ /dashboard/ventas/ordenes\n├ ○ /dashboard/ventas/ordenes/nueva\n├ ○ /dashboard/ventas/reportes\n├ ○ /login\n├ ○ /onboarding\n├ ○ /register\n└ ○ /servicios/solicitar\n\n\n○  (Static)   prerendered as static content\nƒ  (Dynamic)  server-rendered on demand\n\n",
+      "stderr": ""
+    },
+    {
+      "name": "protected_module_regression",
+      "status": "passed",
+      "command": "node --test apps/api/test/rbac-module-access.test.js apps/api/test/purchases-supplier-flow.test.js apps/api/test/purchase-order-entry-grid.test.js apps/api/test/purchase-order-close-pdf.test.js apps/api/test/inventory-valuation-transit.test.js apps/api/test/service-order-items-domain.test.js apps/api/test/supabase-auth-modules.test.js",
+      "exit_code": 0,
+      "stdout": "Redis disabled - using noop queues\n✔ compra usa costo de la linea y recalcula promedio por sociedad (10.6742ms)\n✔ venta reconoce el promedio vigente de la tabla de costo (2.2986ms)\n✔ salida total deja costo y valor en cero (0.796ms)\n✔ venta no permite exceder el saldo de la sociedad (1.4582ms)\n✔ traslado no requiere recalculo: conserva cantidad, valor y promedio (0.853ms)\n✔ descarga de traslado no acepta cantidades parciales en su contrato (0.4322ms)\n✔ reportes de inventario conservan filtro por bodega, todos los SKU, Excel y asiento (1.7415ms)\nRedis disabled - using noop queues\n✔ el cierre calcula únicamente el saldo pendiente y conserva lo recibido (2.8949ms)\n✔ el contrato exige motivo y solo expone el cierre cuando existe saldo (0.8968ms)\n✔ el PDF de la OC contiene cabecera, bodega, posiciones y totales (274.6389ms)\n✔ la orden inicia con diez posiciones y permite escribir o buscar SKU (4.5008ms)\n✔ la orden excluye filas vacias y no captura IVA por posicion (0.8356ms)\n✔ el panel de ordenes no ofrece recepcion WMS (0.5619ms)\n✔ los borradores se pueden abrir y guardar sobre la misma orden (0.5452ms)\nRedis disabled - using noop queues\n✔ supplier creation returns the complete UI contract (86.1656ms)\n✔ supplier partial update does not require name (2.4992ms)\n✔ supplier creation promotes an existing customer without overwriting canonical identity (1.7631ms)\n✔ RBAC reconoce todos los identificadores vigentes de Inventario (1.8376ms)\n✔ RBAC normaliza espacios y mayusculas en los modulos del tenant (0.4139ms)\n✔ RBAC mantiene bloqueado Inventario cuando no esta habilitado (0.5521ms)\n✔ RBAC reconoce los identificadores tecnicos usados por permisos y sincronizacion (1.0813ms)\n✔ accepts 1 service request(s) without changing query shape (4.9219ms)\n✔ accepts 3 service request(s) without changing query shape (0.4722ms)\n✔ accepts 10 service request(s) without changing query shape (0.4188ms)\n✔ accepts 20 service request(s) without changing query shape (0.2984ms)\n✔ rejects empty, oversized and invalid requests (3.6053ms)\n✔ aggregates pending, active, partial and complete states without a new global status (2.9001ms)\n✔ legacy orders remain readable as one synthetic request (0.6102ms)\n✔ normalization keeps independent references, service types and quantities (0.9493ms)\n✔ active module view is queried with the authenticated user identity (64.535ms)\nℹ tests 30\nℹ suites 0\nℹ pass 30\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1081.6987\n",
+      "stderr": ""
+    }
+  ]
+}
