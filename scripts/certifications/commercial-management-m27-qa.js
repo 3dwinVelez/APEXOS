@@ -22,7 +22,7 @@ try {
   run("commercial_lint", "npm", ["--workspace", "apps/web", "exec", "eslint", "--", "app/dashboard/gestion-comercial", "lib/commercial-report-export.ts", "lib/commercialDocumentPdf.ts", "test/commercial-visit-selection.test.mjs"]);
   run("web_typecheck", "npm", ["--workspace", "apps/web", "run", "typecheck"]);
   run("web_production_build", "npm", ["--workspace", "apps/web", "run", "build"]);
-  run("protected_module_regression", "node", ["--test", "apps/api/test/rbac-module-access.test.js", "apps/api/test/purchase-invoice-transaction.test.js", "apps/api/test/inventory-valuation-transit.test.js", "apps/api/test/service-order-items-domain.test.js", "apps/api/test/supabase-auth-modules.test.js"]);
+  run("protected_module_regression", "node", ["--test", "apps/api/test/rbac-module-access.test.js", "apps/api/test/purchases-supplier-flow.test.js", "apps/api/test/purchase-order-entry-grid.test.js", "apps/api/test/purchase-order-close-pdf.test.js", "apps/api/test/inventory-valuation-transit.test.js", "apps/api/test/service-order-items-domain.test.js", "apps/api/test/supabase-auth-modules.test.js"]);
   const evidence = { change_id: "commercial-management-m27-20260901", status: "passed", commit: process.env.CERTIFIED_COMMIT || "WORKTREE", started_at: startedAt, finished_at: new Date().toISOString(), checks };
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(output, `${JSON.stringify(evidence, null, 2)}\n`);
