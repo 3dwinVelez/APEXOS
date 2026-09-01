@@ -31,19 +31,23 @@ export default function CommercialMastersPage() {
   const [editing, setEditing] = useState<Row | null>(null);
   const [creating, setCreating] = useState(false);
   const [message, setMessage] = useState("");
+  const [access, setAccess] = useState<Row | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const [advisorData, customerData, productData, zoneData, categoryData, reasonData, resultData] = await Promise.all([
+      const [advisorData, customerData, productData, zoneData, categoryData, reasonData, resultData, accessData] = await Promise.all([
         api<Row[]>("/api/v1/commercial-management/advisors"),
         api<Row[]>("/api/v1/commercial-management/customers"),
         api<Row[]>("/api/v1/commercial-management/products"),
         api<Row[]>("/api/v1/commercial-management/zones"),
         api<Row[]>("/api/v1/commercial-management/customer-categories"),
         api<Row[]>("/api/v1/commercial-management/visit-reasons"),
-        api<Row[]>("/api/v1/commercial-management/visit-results")
+        api<Row[]>("/api/v1/commercial-management/visit-results"),
+        api<Row>("/api/v1/commercial-management/access-context", { cache: "no-store" })
       ]);
       setAdvisors(advisorData); setCustomers(customerData); setProducts(productData); setZones(zoneData); setCategories(categoryData); setVisitReasons(reasonData); setVisitResults(resultData);
+      setAccess(accessData);
+      if (!accessData.can_manage_masters) setMaster("customers");
     } catch (error) { setMessage(error instanceof Error ? error.message : "No fue posible cargar los maestros."); }
   }, []);
   useEffect(() => { void load(); }, [load]);
@@ -61,13 +65,14 @@ export default function CommercialMastersPage() {
   }
 
   return <div className="apex-workspace-shell space-y-4">
-    <header className="apex-section-card p-4 sm:p-5"><div className="flex flex-wrap items-start justify-between gap-3"><div><Link className="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-apex" href="/dashboard/gestion-comercial"><ArrowLeft size={15}/>Volver a Gestión Comercial</Link><h1 className="text-2xl font-semibold">Asesores y maestros comerciales</h1><p className="mt-1 text-sm text-neutral-600">Administra datos configurables sin eliminar registros con trazabilidad.</p></div><button className="apex-primary-action inline-flex h-10 items-center gap-2 px-4 text-sm font-semibold" onClick={() => { setEditing(null); setCreating(true); }} type="button"><Plus size={16}/>Crear {title.toLowerCase()}</button></div></header>
+    <header className="apex-section-card p-4 sm:p-5"><div className="flex flex-wrap items-start justify-between gap-3"><div><Link className="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-apex" href="/dashboard/gestion-comercial"><ArrowLeft size={15}/>Volver a Gestión Comercial</Link><h1 className="text-2xl font-semibold">{access?.can_manage_masters ? "Asesores y maestros comerciales" : "Mis clientes"}</h1><p className="mt-1 text-sm text-neutral-600">{access?.can_manage_masters ? "Administra datos configurables sin eliminar registros con trazabilidad." : "Consulta y administra únicamente los clientes asignados a tu usuario asesor."}</p></div><button className="apex-primary-action inline-flex h-11 items-center gap-2 px-4 text-sm font-semibold" onClick={() => { setEditing(null); setCreating(true); }} type="button"><Plus size={16}/>Crear {title.toLowerCase()}</button></div></header>
     {message ? <div className="rounded-md border border-line bg-white px-4 py-3 text-sm">{message}</div> : null}
-    <VisitSettingsCard />
-    <section className="apex-section-card p-4">
-      {master === "products" ? <div className="mb-4"><ProductImportPanel onImported={load}/></div> : null}
-      <div className="mb-4 flex flex-wrap gap-2">{(["advisors", "customers", "products", "zones", "categories", "visit-reasons", "visit-results"] as Master[]).map((item) => <button className={`rounded-md px-4 py-2 text-sm font-semibold ${master === item ? "bg-apex text-white" : "border border-line"}`} key={item} onClick={() => { setMaster(item); setQuery(""); }} type="button">{item === "advisors" ? "Asesores" : item === "customers" ? "Clientes" : item === "products" ? "Productos" : item === "zones" ? "Zonas" : item === "categories" ? "Categorías" : item === "visit-reasons" ? "Motivos de visita" : "Resultados de visita"}</button>)}</div>
+    {access?.can_manage_masters ? <VisitSettingsCard /> : null}
+    <section className="apex-section-card p-4 [&>div:last-child]:hidden md:[&>div:last-child]:block">
+      {access?.can_manage_masters && master === "products" ? <div className="mb-4"><ProductImportPanel onImported={load}/></div> : null}
+      {access?.can_manage_masters ? <div className="mb-4 flex flex-wrap gap-2">{(["advisors", "customers", "products", "zones", "categories", "visit-reasons", "visit-results"] as Master[]).map((item) => <button className={`rounded-md px-4 py-2 text-sm font-semibold ${master === item ? "bg-apex text-white" : "border border-line"}`} key={item} onClick={() => { setMaster(item); setQuery(""); }} type="button">{item === "advisors" ? "Asesores" : item === "customers" ? "Clientes" : item === "products" ? "Productos" : item === "zones" ? "Zonas" : item === "categories" ? "Categorías" : item === "visit-reasons" ? "Motivos de visita" : "Resultados de visita"}</button>)}</div> : null}
       <label className="relative block max-w-md"><Search className="absolute left-3 top-3 text-neutral-400" size={16}/><input className={`${inputClass} pl-9`} placeholder={`Buscar en ${title.toLowerCase()}`} value={query} onChange={(event) => setQuery(event.target.value)}/></label>
+      <div className="mt-4 space-y-3 md:hidden">{filtered.map(row => { const active = master === "customers" ? row.status !== "INACTIVE" : row.active; return <article className="rounded-lg border border-line p-4" key={row.id}><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-semibold text-neutral-500">{row.code || "Sin código"}</p><h3 className="font-semibold">{row.name || row.legal_name}</h3></div><span className={`rounded-full px-2 py-1 text-xs font-semibold ${active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>{active ? (master === "customers" ? row.status : "Activo") : "Inactivo"}</span></div><p className="mt-3 text-sm text-neutral-600">{rowDetail(master, row)}</p><div className="mt-4 grid grid-cols-2 gap-2"><button className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-line text-sm font-semibold" onClick={() => setEditing(row)} type="button"><Pencil size={16}/>Editar</button><button className="h-11 rounded-md border border-line text-sm font-semibold" onClick={() => void toggleActive(row)} type="button">{active ? "Inactivar" : "Activar"}</button></div></article>; })}{!filtered.length ? <p className="p-6 text-center text-sm text-neutral-500">No hay registros para mostrar.</p> : null}</div>
       <div className="mt-4 overflow-x-auto"><table className="w-full min-w-[720px] text-left text-sm"><thead><tr className="border-b border-line text-xs uppercase text-neutral-500"><th className="px-3 py-2">Código</th><th className="px-3 py-2">Nombre</th><th className="px-3 py-2">Detalle</th><th className="px-3 py-2">Estado</th><th className="px-3 py-2 text-right">Acciones</th></tr></thead><tbody>{filtered.map((row) => { const active = master === "customers" ? row.status !== "INACTIVE" : row.active; return <tr className="border-b border-line/70" key={row.id}><td className="px-3 py-3 font-semibold">{row.code}</td><td className="px-3 py-3">{row.name || row.legal_name}</td><td className="px-3 py-3 text-neutral-600">{rowDetail(master, row)}</td><td className="px-3 py-3"><span className={`rounded-full px-2 py-1 text-xs font-semibold ${active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>{active ? (master === "customers" ? row.status : "Activo") : "Inactivo"}</span></td><td className="px-3 py-3"><div className="flex justify-end gap-2"><button className="inline-flex items-center gap-1 rounded-md border border-line px-3 py-2 text-xs font-semibold" onClick={() => setEditing(row)} type="button"><Pencil size={14}/>Editar</button><button className="rounded-md border border-line px-3 py-2 text-xs font-semibold" onClick={() => void toggleActive(row)} type="button">{active ? "Inactivar" : "Activar"}</button></div></td></tr>; })}</tbody></table>{!filtered.length ? <p className="p-6 text-center text-sm text-neutral-500">No hay registros para mostrar.</p> : null}</div>
     </section>
     {(creating || editing) ? <MasterModal master={master} record={editing} zones={zones.filter((zone) => zone.active)} categories={categories.filter((category) => category.active)} advisors={advisors.filter((advisor) => advisor.active)} onClose={() => { setCreating(false); setEditing(null); }} onSaved={async () => { setCreating(false); setEditing(null); setMessage("Registro guardado correctamente."); await load(); }}/>: null}
@@ -95,6 +100,7 @@ function rowDetail(master: Master, row: Row) {
 function MasterModal({ master, record, zones, categories, advisors, onClose, onSaved }: { master: Master; record: Row | null; zones: Row[]; categories: Row[]; advisors: Row[]; onClose: () => void; onSaved: () => Promise<void> }) {
   const [form, setForm] = useState<Row>(record ? editableBody(master, record) : { active: true, status: "ACTIVE", advisor_id: advisors[0]?.id || "", category_id: categories[0]?.id || "", visit_frequency_days: 30, unit: "UND" });
   const [busy, setBusy] = useState(false); const [error, setError] = useState("");
+  useEffect(() => { const previous = document.body.style.overflow; document.body.style.overflow = "hidden"; const escape = (event: KeyboardEvent) => { if (event.key === "Escape" && !busy) onClose(); }; window.addEventListener("keydown", escape); return () => { document.body.style.overflow = previous; window.removeEventListener("keydown", escape); }; }, [busy, onClose]);
   const field = (name: string) => ({ value: form[name] ?? "", onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setForm({ ...form, [name]: event.target.value }) });
   async function save(event: FormEvent) {
     event.preventDefault(); setBusy(true); setError("");

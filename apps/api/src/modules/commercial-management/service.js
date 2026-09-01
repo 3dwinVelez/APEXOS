@@ -18,6 +18,20 @@ async function actorScope(db, tenantId, actor) {
   return { kind: "advisor", advisorIds: [advisor.id], advisor };
 }
 
+async function accessContext(tenantId, actor) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const scope = await actorScope(prisma, tenantId, actor);
+    return {
+      scope: scope.kind,
+      advisor_id: scope.advisor?.id || null,
+      advisor_name: scope.advisor?.name || null,
+      can_manage_masters: scope.kind === "admin",
+      can_manage_budgets: scope.kind === "admin",
+      can_view_team: scope.kind !== "advisor"
+    };
+  });
+}
+
 function scopeWhere(scope) { return scope.kind === "admin" ? {} : { advisor_id: { in: scope.advisorIds } }; }
 function bogotaDay(dateText) {
   const value = /^\d{4}-\d{2}-\d{2}$/.test(String(dateText || "")) ? dateText : new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
@@ -543,16 +557,19 @@ async function cancelQuotation(tenantId, actor, id, reason) {
   }));
 }
 
-async function changeOrderStatus(tenantId, actor, id, status) {
+async function changeOrderStatus(tenantId, actor, id, status, reason) {
   const transitions = { REGISTERED: ["CONFIRMED", "CANCELLED"], CONFIRMED: ["INVOICED", "CANCELLED"], INVOICED: [], CANCELLED: [] };
   return prisma.runWithTenant(tenantId, async () => prisma.$transaction(async (tx) => {
     const scope = await actorScope(tx, tenantId, actor);
     const current = await tx.commercialSalesOrder.findFirst({ where: { id: Number(id), tenant_id: tenantId, ...scopeWhere(scope) } });
     if (!current) fail(404, "Pedido no encontrado dentro de tu alcance.");
     if (!(transitions[current.status] || []).includes(status)) fail(409, `No se puede cambiar un pedido ${current.status} a ${status}.`);
-    const updated = await tx.commercialSalesOrder.update({ where: { id: current.id }, data: { status } });
+    const justification = String(reason || "").trim();
+    if (status === "CANCELLED" && !justification) fail(400, "El motivo de cancelacion es obligatorio.");
+    const notes = status === "CANCELLED" ? [current.notes, `Motivo de cancelacion: ${justification}`].filter(Boolean).join("\n") : current.notes;
+    const updated = await tx.commercialSalesOrder.update({ where: { id: current.id }, data: { status, notes } });
     if (status === "CONFIRMED" || status === "INVOICED") await tx.commercialCustomer.update({ where: { id: current.customer_id }, data: { last_purchase_at: current.order_date } });
-    await audit(tx, tenantId, actor, status === "CANCELLED" ? "CANCEL" : "STATUS_CHANGE", "CommercialSalesOrder", current.id, current, updated); return updated;
+    await audit(tx, tenantId, actor, status === "CANCELLED" ? "CANCEL" : "STATUS_CHANGE", "CommercialSalesOrder", current.id, current, status === "CANCELLED" ? { ...updated, cancellation_reason: justification } : updated); return updated;
   }));
 }
 
@@ -594,4 +611,4 @@ async function dashboard(tenantId, actor, periodId) {
   });
 }
 
-module.exports = { quotationComparisonReport, advisorReport, myDay, checkVisitAvailability, listAdvisors, createAdvisor, updateAdvisor, listZones, createZone, updateZone, listCustomerCategories, createCustomerCategory, updateCustomerCategory, listVisitReasons, createVisitReason, updateVisitReason, listVisitResults, createVisitResult, updateVisitResult, getSettings, updateSettings, listCustomers, createCustomer, updateCustomer, listCommitments, createCommitment, changeCommitmentStatus, listProducts, createProduct, updateProduct, importProducts, listPeriods, createPeriod, upsertAdvisorBudget, upsertCustomerBudget, listBudgets, createVisit, listVisits, visitTimeline, createVisitCustomer, startVisit, completeVisit, rescheduleVisit, visitReport, listQuotations, getQuotation, createQuotation, convertQuotationToOrder, cancelQuotation, listOrders, getOrder, createOrder, changeOrderStatus, customerOverview, dashboard };
+module.exports = { accessContext, quotationComparisonReport, advisorReport, myDay, checkVisitAvailability, listAdvisors, createAdvisor, updateAdvisor, listZones, createZone, updateZone, listCustomerCategories, createCustomerCategory, updateCustomerCategory, listVisitReasons, createVisitReason, updateVisitReason, listVisitResults, createVisitResult, updateVisitResult, getSettings, updateSettings, listCustomers, createCustomer, updateCustomer, listCommitments, createCommitment, changeCommitmentStatus, listProducts, createProduct, updateProduct, importProducts, listPeriods, createPeriod, upsertAdvisorBudget, upsertCustomerBudget, listBudgets, createVisit, listVisits, visitTimeline, createVisitCustomer, startVisit, completeVisit, rescheduleVisit, visitReport, listQuotations, getQuotation, createQuotation, convertQuotationToOrder, cancelQuotation, listOrders, getOrder, createOrder, changeOrderStatus, customerOverview, dashboard };
