@@ -23,7 +23,7 @@ try {
   run("web_typecheck", "npm", ["--workspace", "apps/web", "run", "typecheck"]);
   run("web_production_build", "npm", ["--workspace", "apps/web", "run", "build"]);
   run("protected_module_regression", "node", ["--test", "apps/api/test/rbac-module-access.test.js", "apps/api/test/purchases-supplier-flow.test.js", "apps/api/test/purchase-order-entry-grid.test.js", "apps/api/test/purchase-order-close-pdf.test.js", "apps/api/test/inventory-valuation-transit.test.js", "apps/api/test/service-order-items-domain.test.js", "apps/api/test/supabase-auth-modules.test.js"]);
-  const evidence = { change_id: "commercial-management-m27-20260901", status: "passed", commit: process.env.CERTIFIED_COMMIT || "WORKTREE", started_at: startedAt, finished_at: new Date().toISOString(), checks };
+  const evidence = { change_id: "commercial-management-m27-20260901", status: "passed", environment: "QA_LOCAL", model_company: "NYVORA", commit: process.env.CERTIFIED_COMMIT || "WORKTREE", started_at: startedAt, finished_at: new Date().toISOString(), checks };
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(output, `${JSON.stringify(evidence, null, 2)}\n`);
   console.log(`CERTIFICACION M-27 APROBADA: ${output}`);

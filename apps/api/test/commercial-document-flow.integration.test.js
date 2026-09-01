@@ -22,7 +22,7 @@ test("cotizacion, cancelacion con motivo, pedido, visita y 360 en base local", {
       require.cache[corePath] = { id: corePath, filename: corePath, loaded: true, exports: adapter };
       delete require.cache[servicePath];
       const service = require(servicePath);
-      const tenant = "test-commercial-" + randomUUID();
+      const tenant = "NYVORA-QA-commercial-" + randomUUID();
       const actor = { role: { name: "admin" } };
       const advisor = await tx.commercialAdvisor.create({ data: { tenant_id: tenant, code: "A", name: "QA advisor", user_id: 77801 } });
       const customer = await tx.commercialCustomer.create({ data: { tenant_id: tenant, code: "C", legal_name: "QA customer", advisor_id: advisor.id } });
