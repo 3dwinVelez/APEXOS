@@ -4110,7 +4110,7 @@ export async function api<T>(path: string, options: RequestInit = {}, retried = 
     const scope = writeCacheScope(path);
     clearApiReadCaches(scope);
   }
-  const requestKey = method === "GET" && !retried ? `${isSupabaseSession() ? "supabase" : "api"}:${companyScope}:${path}` : "";
+  const requestKey = method === "GET" && !retried && !bypassReadCache ? `${isSupabaseSession() ? "supabase" : "api"}:${companyScope}:${path}` : "";
   const cacheKey = requestKey && !bypassReadCache ? requestKey : "";
   if (cacheKey) {
     const completed = completedGetRequests.get(cacheKey);
