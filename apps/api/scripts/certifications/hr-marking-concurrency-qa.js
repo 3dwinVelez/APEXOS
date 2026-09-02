@@ -220,7 +220,10 @@ async function main() {
     const role = await certificationRole(tenant);
     actors = await fixtures(tenant, role, Math.max(...LEVELS));
     await authenticateActors(actors, tenant, target);
-    for (const level of LEVELS) evidence.levels.push(await runLevel(tenant, actors, level));
+    for (let index = 0; index < LEVELS.length; index += 1) {
+      evidence.levels.push(await runLevel(tenant, actors, LEVELS[index]));
+      if (index < LEVELS.length - 1) await new Promise((resolve) => setTimeout(resolve, 61000));
+    }
     evidence.status = "passed";
   } catch (error) {
     evidence.status = "failed";

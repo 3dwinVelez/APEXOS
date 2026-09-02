@@ -11,5 +11,6 @@ Runtime: Node.js `22.23.2` aislado y compatible con `engines.node=22.x`.
 - Regresion HR ampliada inicial: 44 aprobadas y 1 fallida por un delimitador CRLF incorrecto del test estatico `hr-operations-map-contract`; se corrigio el alcance de extraccion sin retirar la asercion.
 - Regresion HR ampliada definitiva: 45 aprobadas, 0 fallidas.
 - La precertificacion masiva rechazo dos ejecuciones de concurrencia con `Serializable`: PostgreSQL registro `could not serialize access due to read/write dependencies among transactions`. El candidato se corrigio para usar el aislamiento transaccional por defecto más el bloqueo asesor granular; la evidencia fallida permanece versionada.
+- La siguiente ejecucion aprobo 20 y 50 usuarios; el nivel 100 fue rechazado al acumular en la misma ventana las 350 solicitudes previas y superar el limite de 600/minuto. El certificador separa ahora cada nivel por 61 segundos para medir rafagas independientes sin alterar el limite operativo.
 
 El script documental `npm run agent:test -- --profile safe` no existe en el `package.json` vigente. Se ejecutaron manualmente todos los gates que `docs/agents/quality-gates.md` declara para ese perfil; esta inconsistencia documental no se registra como gate aprobado ni se corrige dentro del alcance funcional.

@@ -18,6 +18,7 @@ test("el certificador masivo exige QA, SHA exacto y niveles 20/50/100", () => {
   assert.match(source, /AbortSignal\.timeout/);
   assert.match(source, /authorizationState\.createSession/);
   assert.match(source, /setTimeout\(resolve, 61000\)/);
+  assert.match(source, /index < LEVELS\.length - 1/);
 });
 
 test("el certificador comprueba idempotencia, perdida, duplicados y horario del dia", () => {

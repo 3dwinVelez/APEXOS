@@ -1,0 +1,45 @@
+{
+  "certification": "hr-marking-concurrency-qa",
+  "environment": "LOCAL",
+  "company": "NYVORA",
+  "run_id": "hr_marking_concurrency_1788351009278",
+  "expected_commit": "8cdeb83",
+  "deployed_commit": "8cdeb83",
+  "levels": [
+    {
+      "concurrency": 20,
+      "requests": 100,
+      "persisted": 80,
+      "errors": 0,
+      "duplicates": 0,
+      "lost": 0,
+      "idempotent_replays": 20,
+      "p50_ms": 659,
+      "p95_ms": 979,
+      "p99_ms": 983,
+      "max_ms": 983,
+      "route_visibility_today_only": true
+    },
+    {
+      "concurrency": 50,
+      "requests": 250,
+      "persisted": 200,
+      "errors": 0,
+      "duplicates": 0,
+      "lost": 0,
+      "idempotent_replays": 50,
+      "p50_ms": 1238,
+      "p95_ms": 1659,
+      "p99_ms": 1687,
+      "max_ms": 1697,
+      "route_visibility_today_only": true
+    }
+  ],
+  "cleanup": "events_and_routes_deleted_certification_identities_deactivated",
+  "status": "failed",
+  "generated_at": "2026-09-02T12:10:09.311Z",
+  "error": {
+    "code": "ERR_ASSERTION",
+    "message": "Nivel 100 tuvo errores.\n\n150 !== 0\n"
+  }
+}
