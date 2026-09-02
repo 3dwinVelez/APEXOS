@@ -8,6 +8,7 @@
 4. El cliente no enviaba una clave idempotente; una respuesta perdida podia provocar un segundo intento indistinguible y duplicar o desordenar la secuencia.
 5. La cola optimista reintentaba permanentemente cualquier `4xx`, dejando una solicitud invalida al frente y bloqueando eventos posteriores.
 6. La consulta autocontenida aceptaba rangos del cliente y exponia horarios asignados fuera del dia actual.
+7. La primera correccion con aislamiento `Serializable` fue rechazada por la precertificacion: las consultas de identidad/metadatos generaban conflictos de predicado entre empleados diferentes. Se retiro ese aislamiento y se mantuvo el bloqueo asesor granular por empleado, que protege la secuencia sin serializar toda la carga.
 
 ## Correccion aplicada
 

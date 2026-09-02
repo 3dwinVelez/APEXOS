@@ -1,0 +1,16 @@
+{
+  "certification": "hr-marking-concurrency-qa",
+  "environment": "LOCAL",
+  "company": "NYVORA",
+  "run_id": "hr_marking_concurrency_1788350657740",
+  "expected_commit": "8eb1f12",
+  "deployed_commit": "8eb1f12",
+  "levels": [],
+  "cleanup": "events_and_routes_deleted_certification_identities_deactivated",
+  "status": "failed",
+  "generated_at": "2026-09-02T12:04:17.769Z",
+  "error": {
+    "code": "Error",
+    "message": "JWT_SECRET debe tener al menos 24 caracteres."
+  }
+}

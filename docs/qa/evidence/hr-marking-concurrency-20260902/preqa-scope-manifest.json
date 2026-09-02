@@ -31,6 +31,9 @@
     { "status": "A", "file": "docs/qa/evidence/hr-marking-concurrency-20260902/functional.md" },
     { "status": "A", "file": "docs/qa/evidence/hr-marking-concurrency-20260902/local-validation.md" },
     { "status": "A", "file": "docs/qa/evidence/hr-marking-concurrency-20260902/local-mass-certification-attempt-1-failed.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-marking-concurrency-20260902/local-mass-certification-attempt-2-failed.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-marking-concurrency-20260902/local-mass-certification-attempt-3-failed.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-marking-concurrency-20260902/local-mass-certification-attempt-4-failed.json" },
     { "status": "A", "file": "docs/qa/evidence/hr-marking-concurrency-20260902/preqa-scope-manifest.json" },
     { "status": "A", "file": "docs/qa/evidence/hr-marking-concurrency-20260902/support-scripts.md" },
     { "status": "A", "file": "supabase/migrations/20260902090000_time_punch_idempotency.sql" }

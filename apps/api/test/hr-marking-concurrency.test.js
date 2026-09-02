@@ -105,7 +105,7 @@ test("createPunch usa lock por empleado, idempotencia y opciones de transaccion 
     assert.equal(result.ok, true);
     assert.equal(lockCalls, 1);
     assert.equal(createdData.idempotency_key, "qa-idempotency-0001");
-    assert.deepEqual(transactionOptions, { maxWait: 10000, timeout: 20000, isolationLevel: "Serializable" });
+    assert.deepEqual(transactionOptions, { maxWait: 10000, timeout: 20000 });
   } finally {
     loaded.restore();
   }

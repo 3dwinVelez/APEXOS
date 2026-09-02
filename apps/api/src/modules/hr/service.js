@@ -1748,8 +1748,7 @@ async function createPunch(tenantId, input, user) {
     try {
       return await prisma.runWithTenant(tenantId, () => prisma.$transaction((tx) => attemptPunch(tx), {
         maxWait: 10000,
-        timeout: 20000,
-        isolationLevel: "Serializable"
+        timeout: 20000
       }));
     } catch (error) {
       if (error.code === "P2002" && idempotencyKey) {
