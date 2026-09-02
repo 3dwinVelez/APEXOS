@@ -25,12 +25,16 @@ const TODAY = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota", yea
 const YESTERDAY = new Date(`${TODAY}T12:00:00-05:00`);
 YESTERDAY.setDate(YESTERDAY.getDate() - 1);
 
-function requireQa() {
-  assert.equal(String(process.env.CERTIFICATION_TARGET || "").toLowerCase(), "qa", "CERTIFICATION_TARGET debe ser qa.");
-  assert.match(API_URL, /apexos-api-qa-production\.up\.railway\.app$/, "El API debe ser QA.");
+function requireEnvironment() {
+  const target = String(process.env.CERTIFICATION_TARGET || "").toLowerCase();
+  assert.ok(["local", "qa"].includes(target), "CERTIFICATION_TARGET debe ser local o qa.");
+  if (target === "qa") assert.match(API_URL, /apexos-api-qa-production\.up\.railway\.app$/, "El API debe ser QA.");
+  if (target === "local") assert.match(API_URL, /^http:\/\/(127\.0\.0\.1|localhost):\d+$/, "El API local debe usar loopback.");
   assert.ok(EXPECTED_COMMIT, "CERTIFICATION_EXPECTED_COMMIT es obligatorio.");
-  assert.ok(String(process.env.DATABASE_URL || "").includes("jbirkghkekuifgfsgquq"), "DATABASE_URL debe corresponder a Supabase QA.");
+  if (target === "qa") assert.ok(String(process.env.DATABASE_URL || "").includes("jbirkghkekuifgfsgquq"), "DATABASE_URL debe corresponder a Supabase QA.");
+  if (target === "local") assert.match(String(process.env.DATABASE_URL || ""), /@(127\.0\.0\.1|localhost):/, "DATABASE_URL debe ser local.");
   assert.deepEqual(LEVELS, [20, 50, 100], "La certificacion oficial exige niveles 20,50,100.");
+  return target;
 }
 
 function percentile(values, ratio) {
@@ -108,6 +112,35 @@ async function authenticateActors(actors) {
   }
 }
 
+async function certificationTenant(target) {
+  if (target === "qa") {
+    const tenant = await prisma.tenant.findFirst({ where: { name: { equals: "NYVORA", mode: "insensitive" }, active: true } });
+    assert.ok(tenant, "Tenant NYVORA no encontrado.");
+    return tenant;
+  }
+  return prisma.tenant.upsert({
+    where: { domain: "nyvora-hr-cert.local" },
+    update: { active: true, active_modules: ["M-17"], timezone: "America/Bogota" },
+    create: { name: "NYVORA QA LOCAL", domain: "nyvora-hr-cert.local", active: true, active_modules: ["M-17"], timezone: "America/Bogota", config: { source: "hr_marking_concurrency_qa" } }
+  });
+}
+
+async function certificationRole(tenant) {
+  const role = await prisma.role.upsert({
+    where: { tenant_id_name: { tenant_id: tenant.id, name: "Empleado marcaciones" } },
+    update: { metadata: { access_profile: "marking_only", source: "hr_marking_concurrency_qa" } },
+    create: { tenant_id: tenant.id, name: "Empleado marcaciones", description: "Rol local controlado para certificar marcaciones", metadata: { access_profile: "marking_only", source: "hr_marking_concurrency_qa" } }
+  });
+  for (const action of ["read", "write"]) {
+    await prisma.permission.upsert({
+      where: { role_id_module_action: { role_id: role.id, module: "time_tracking", action } },
+      update: {},
+      create: { role_id: role.id, module: "time_tracking", action }
+    });
+  }
+  return prisma.role.findUnique({ where: { id: role.id }, include: { permissions: true } });
+}
+
 async function runLevel(tenant, actors, concurrency) {
   const selected = actors.slice(0, concurrency);
   const routeIds = [];
@@ -164,8 +197,8 @@ async function runLevel(tenant, actors, concurrency) {
 }
 
 async function main() {
-  requireQa();
-  const evidence = { certification: "hr-marking-concurrency-qa", environment: "QA", company: "NYVORA", run_id: RUN_ID, expected_commit: EXPECTED_COMMIT, deployed_commit: "", levels: [], cleanup: "pending", status: "running", generated_at: new Date().toISOString() };
+  const target = requireEnvironment();
+  const evidence = { certification: "hr-marking-concurrency-qa", environment: target.toUpperCase(), company: "NYVORA", run_id: RUN_ID, expected_commit: EXPECTED_COMMIT, deployed_commit: "", levels: [], cleanup: "pending", status: "running", generated_at: new Date().toISOString() };
   let actors = [];
   try {
     const healthResponse = await fetch(`${API_URL}/health`, { signal: AbortSignal.timeout(15000) });
@@ -173,10 +206,8 @@ async function main() {
     assert.equal(healthResponse.status, 200);
     evidence.deployed_commit = String(health.commit || "");
     assert.equal(evidence.deployed_commit, EXPECTED_COMMIT.slice(0, 12), "QA no ejecuta el commit esperado.");
-    const tenant = await prisma.tenant.findFirst({ where: { name: { equals: "NYVORA", mode: "insensitive" }, active: true } });
-    assert.ok(tenant, "Tenant NYVORA no encontrado.");
-    const role = await prisma.role.findUnique({ where: { tenant_id_name: { tenant_id: tenant.id, name: "Empleado marcaciones" } } });
-    assert.ok(role, "Rol Empleado marcaciones no encontrado.");
+    const tenant = await certificationTenant(target);
+    const role = await certificationRole(tenant);
     actors = await fixtures(tenant, role, Math.max(...LEVELS));
     await authenticateActors(actors);
     for (const level of LEVELS) evidence.levels.push(await runLevel(tenant, actors, level));

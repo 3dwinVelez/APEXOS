@@ -7,6 +7,8 @@ const source = fs.readFileSync(path.resolve(__dirname, "../scripts/certification
 
 test("el certificador masivo exige QA, SHA exacto y niveles 20/50/100", () => {
   assert.match(source, /CERTIFICATION_TARGET/);
+  assert.match(source, /\["local", "qa"\]/);
+  assert.match(source, /DATABASE_URL debe ser local/);
   assert.match(source, /apexos-api-qa-production/);
   assert.match(source, /CERTIFICATION_EXPECTED_COMMIT/);
   assert.match(source, /20,50,100/);

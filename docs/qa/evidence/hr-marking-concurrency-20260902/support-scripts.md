@@ -18,3 +18,5 @@ npm --workspace apps/api run certify:hr-marking-concurrency:qa -- --output docs/
 ```
 
 El certificador bloquea hosts distintos al API QA, valida el SHA y ejecuta niveles 20/50/100. No usa endpoints productivos.
+
+El mismo artefacto admite una precertificacion `CERTIFICATION_TARGET=local` únicamente contra loopback y PostgreSQL local. Este modo crea/reutiliza una empresa Nyvora local marcada para certificación; nunca acepta una URL o base remota.
