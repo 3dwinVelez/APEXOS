@@ -1512,8 +1512,10 @@ model TimePunch {
   extra_detail      String?
   extra_evidence     Json      @default("{}")
   metadata          Json      @default("{}")
+  idempotency_key   String?
   created_at        DateTime  @default(now())
 
+  @@unique([tenant_id, idempotency_key])
   @@index([tenant_id, employee_id, date])
   @@index([tenant_id, user_name, date])
   @@index([tenant_id, date, punched_at])

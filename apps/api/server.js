@@ -361,6 +361,9 @@ async function build() {
     if (error.statusCode && error.statusCode >= 400 && error.statusCode < 500) {
       return reply.code(error.statusCode).send({ error: error.message, code: error.code || "VALIDACION", request_id: requestId });
     }
+    if (error.statusCode === 503 && error.code === "MARCACION_CONCURRENCIA_TEMPORAL") {
+      return reply.code(503).send({ error: error.message, code: error.code, request_id: requestId });
+    }
     if (error.statusCode === 400) return reply.code(400).send({ error: error.message, code: "VALIDACION", request_id: requestId });
     if (error.statusCode === 429) return reply.code(429).send({ error: "Demasiadas solicitudes", code: "LIMITE_SOLICITUDES", request_id: requestId });
     fastify.log.error({ err: error, requestId, url: request.url, method: request.method, userId: request.user?.id, tenantId: request.user?.tenant_id }, "Unhandled API error");

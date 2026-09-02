@@ -530,12 +530,18 @@ async function assertOwnAssignedRoute(tenantId, employee, input = {}) {
     err.code = "HORARIO_AJENO_DENEGADO";
     throw err;
   }
+  if (startOfDay(route.date).getTime() !== startOfDay().getTime()) {
+    const err = new Error("Solo puedes operar el horario asignado para el dia actual.");
+    err.statusCode = 409;
+    err.code = "HORARIO_FUERA_DEL_DIA";
+    throw err;
+  }
   return route;
 }
 
-async function listOwnRoutes(tenantId, user, query = {}) {
+async function listOwnRoutes(tenantId, user) {
   const employee = await getCurrentEmployee(tenantId, user);
-  const routes = await listRoutes(tenantId, query);
+  const routes = await listRoutes(tenantId, { date: startOfDay().toISOString().slice(0, 10) });
   return routes.filter((route) => routeAssignedToEmployee(route, employee));
 }
 
@@ -1506,6 +1512,7 @@ async function getPreoperationalMetrics(tenantId, query = {}) {
 }
 
 async function createPunch(tenantId, input, user) {
+  const idempotencyKey = String(input.idempotency_key || input.metadata?.idempotency_key || "").trim().slice(0, 120) || null;
   const attemptPunch = async (tx) => {
     const punchedAt = input.punched_at ? new Date(input.punched_at) : new Date();
     const currentEmployee = user?.id ? await tx.employee.findFirst({
@@ -1516,6 +1523,17 @@ async function createPunch(tenantId, input, user) {
     const type = normalizePunchType(input.type || input.tipo_marca);
     const inputRouteId = operationalRouteNumericId(input);
     const route = inputRouteId ? await tx.timeRoute.findFirst({ where: { tenant_id: tenantId, id: inputRouteId } }) : null;
+    const lockScope = `${tenantId}:${employee.id}:${route?.id || inputRouteId || "sin-horario"}:${startOfDay(punchedAt).toISOString()}`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${lockScope}, 0))`;
+    if (idempotencyKey) {
+      const replayedPunch = await tx.timePunch.findFirst({ where: { tenant_id: tenantId, idempotency_key: idempotencyKey } });
+      if (replayedPunch && replayedPunch.employee_id !== employee.id) {
+        throw validationError("La clave de idempotencia ya pertenece a otra marcacion.", 409, "IDEMPOTENCY_KEY_CONFLICT");
+      }
+      if (replayedPunch) {
+        return { ok: true, replayed: true, hora: replayedPunch.time, punch: replayedPunch, next: null };
+      }
+    }
     const preopApproved = isDriver(employee) && route?.vehicle_plate && type === "entrada"
       ? await tx.routePreoperationalChecklist.findFirst({
         where: {
@@ -1624,7 +1642,8 @@ async function createPunch(tenantId, input, user) {
           employee_name: employeeDisplayName(employee) || resolvedUserName,
           user_email: employee.user?.email || user?.email || "",
           identity_aliases: identityAliases
-        }
+        },
+        idempotency_key: idempotencyKey
       }
     });
     if (input.latitude != null && input.longitude != null) {
@@ -1723,19 +1742,37 @@ async function createPunch(tenantId, input, user) {
     };
   };
 
-  // Reintenta la transacción ante carreras de secuencia concurrentes.
+  // Reintenta solo fallos transitorios de adquisicion/serializacion de transaccion.
   let lastError = null;
   for (let attempt = 0; attempt < 5; attempt += 1) {
     try {
-      return await prisma.runWithTenant(tenantId, () => prisma.$transaction((tx) => attemptPunch(tx), { timeout: 20000 }));
+      return await prisma.runWithTenant(tenantId, () => prisma.$transaction((tx) => attemptPunch(tx), {
+        maxWait: 10000,
+        timeout: 20000,
+        isolationLevel: "Serializable"
+      }));
     } catch (error) {
-      const raceCodes = new Set(["MARCACION_FUERA_DE_SECUENCIA", "JORNADA_COMPLETA", "P2034"]);
-      if (!raceCodes.has(error.code || error.name)) throw error;
+      if (error.code === "P2002" && idempotencyKey) {
+        const replayedPunch = await prisma.runWithTenant(tenantId, () => prisma.timePunch.findFirst({
+          where: { tenant_id: tenantId, idempotency_key: idempotencyKey }
+        }));
+        const suppliedEmployeeId = numericId(input.employee_id);
+        if (replayedPunch && suppliedEmployeeId && replayedPunch.employee_id !== suppliedEmployeeId) {
+          throw validationError("La clave de idempotencia ya pertenece a otra marcacion.", 409, "IDEMPOTENCY_KEY_CONFLICT");
+        }
+        if (replayedPunch) return { ok: true, replayed: true, hora: replayedPunch.time, punch: replayedPunch, next: null };
+      }
+      const transientCodes = new Set(["P2024", "P2028", "P2034"]);
+      if (!transientCodes.has(error.code || error.name)) throw error;
       lastError = error;
       if (attempt < 4) await new Promise((resolve) => setTimeout(resolve, 120 * (attempt + 1)));
     }
   }
-  throw lastError;
+  const unavailable = new Error("No fue posible confirmar la marcacion por alta concurrencia. Se reintentara automaticamente.");
+  unavailable.statusCode = 503;
+  unavailable.code = "MARCACION_CONCURRENCIA_TEMPORAL";
+  unavailable.cause = lastError;
+  throw unavailable;
 }
 
 function ownOperationalInput(input, employee, user) {

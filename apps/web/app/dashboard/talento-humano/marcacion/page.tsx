@@ -14,7 +14,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 type Employee = { id: number | string; user_id?: string; code: string; document_number?: string; user_type?: string; position?: string; metadata: { name: string; user_type?: string; code?: string; identity_aliases?: string[] }; user: { name: string; email?: string } };
 type Attendance = { user_name: string; route_id?: number | string | null; next_type: string | null; punches: Array<{ id: number; type: string; time: string; vehicle_plate: string }> };
 type AttendancePunch = Attendance["punches"][number];
-type TimeRoute = { id: number | string; code?: string; display_id?: string; source_route_id?: number | string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string; gps_required?: boolean; tracking_mode?: string; metadata?: Record<string, unknown> };
+type TimeRoute = { id: number | string; date?: string; code?: string; display_id?: string; source_route_id?: number | string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string; gps_required?: boolean; tracking_mode?: string; metadata?: Record<string, unknown> };
 type PreopItem = { section: string; item_key: string; label: string; severity: string; blocks_route: boolean; evidence_required: boolean };
 type PreopChecklist = { id: number; route_id?: number; plate: string; checklist_status: string; risk_level: string };
 type PreopTemplate = { sections: string[]; items: PreopItem[] };
@@ -68,6 +68,11 @@ function enqueuePendingSync(path: string, payload: unknown, label: string) {
   return item;
 }
 
+function permanentSyncFailure(error: unknown) {
+  const status = Number((error as { status?: number })?.status || 0);
+  return status >= 400 && status < 500 && ![408, 429].includes(status);
+}
+
 async function flushPendingSync(onUpdate?: (items: PendingSyncItem[], message?: string) => void) {
   if (typeof window === "undefined" || pendingSyncInFlight) return false;
   let queue = readPendingSync();
@@ -87,7 +92,14 @@ async function flushPendingSync(onUpdate?: (items: PendingSyncItem[], message?: 
         changed = true;
         publishHrMonitorRefresh({ source: "mobile-sync" });
         onUpdate?.(queue, queue.length ? `${item.label} sincronizado. Quedan ${queue.length} registro(s) por confirmar.` : `${item.label} sincronizado. El monitor ya puede actualizarse.`);
-      } catch {
+      } catch (error) {
+        if (permanentSyncFailure(error)) {
+          queue = queue.slice(1);
+          writePendingSync(queue);
+          changed = true;
+          onUpdate?.(queue, `${item.label} no fue aceptado: ${error instanceof Error ? error.message : "validacion permanente"}. Revisa el horario y vuelve a intentar.`);
+          continue;
+        }
         const next = { ...item, attempts: item.attempts + 1 };
         queue = [next, ...queue.slice(1)];
         writePendingSync(queue);
@@ -185,7 +197,7 @@ export default function MobilePunchPage() {
   const [fuelLevel, setFuelLevel] = useState("");
   const [signature, setSignature] = useState<CapturedFile | null>(null);
   const [session, setSession] = useState<WorkSession | null>(null);
-  const [optimisticPunches, setOptimisticPunches] = useState<Array<AttendancePunch & { route_id?: number | string | null }>>([]);
+  const [optimisticPunches, setOptimisticPunches] = useState<Array<AttendancePunch & { route_id?: number | string | null; idempotency_key?: string }>>([]);
   const [optimisticActivities, setOptimisticActivities] = useState<WorkActivity[]>([]);
   const [activityTypes, setActivityTypes] = useState<ActivityType[]>([]);
   const [activityModal, setActivityModal] = useState(false);
@@ -207,8 +219,13 @@ export default function MobilePunchPage() {
       api<WorkSession>("/api/v1/hr/self/work-session").catch(() => null)
     ]);
     setEmployee(me);
-    setRoutes(routeData);
+    setRoutes(routeData.filter((item) => !item.date || String(item.date).slice(0, 10) === todayBogota()));
     setAttendance(attendanceData);
+    const pendingPunchKeys = new Set(readPendingSync()
+      .filter((item) => item.path.endsWith("/time-punches"))
+      .map((item) => String((item.payload as { idempotency_key?: string })?.idempotency_key || ""))
+      .filter(Boolean));
+    setOptimisticPunches((current) => current.filter((punch) => punch.idempotency_key && pendingPunchKeys.has(punch.idempotency_key)));
     setActivityTypes(typesData);
     setSession(sessionData);
     if (typesData[0]) setActivityTypeId((current) => current || String(typesData[0].id));
@@ -251,6 +268,7 @@ export default function MobilePunchPage() {
   const userName = !isGenericIdentityAlias(employee?.code) ? employee?.code || employeeName(employee) || "" : employeeName(employee) || employee?.user?.email || String(employee?.id || "");
   const aliases = employeeAliases(employee);
   const assignedRoutes = useMemo(() => routes.filter((item) => {
+    if (item.date && String(item.date).slice(0, 10) !== todayBogota()) return false;
     const routeEmployees = [...(item.employees || []), ...(item.employee_ids || []), ...(item.employee_names || [])];
     return routeEmployees.some((emp) => {
       const empKey = normalizeKey(emp);
@@ -410,12 +428,13 @@ export default function MobilePunchPage() {
         setMessage("Cierre fuera de horario: selecciona motivo, escribe el sustento y adjunta evidencia fotografica.");
         return;
       }
+      const idempotencyKey = globalThis.crypto?.randomUUID?.() || `hr-punch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const optimisticTime = new Date().toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
       setOptimisticPunches((current) => [
         ...current.filter((punch) => !(String(punch.route_id || "") === String(route?.id || "") && punch.type === type)),
-        { id: Date.now(), type, time: optimisticTime, vehicle_plate: vehiclePlate, route_id: route?.id || null }
+        { id: Date.now(), type, time: optimisticTime, vehicle_plate: vehiclePlate, route_id: route?.id || null, idempotency_key: idempotencyKey }
       ].slice(-20));
-      setMessage(`${punchLabels[type].title} registrado. Sincronizando en segundo plano...`);
+      setMessage(`${punchLabels[type].title} pendiente de confirmar. Sincronizando...`);
       setMarkingType(null);
       const payload: Record<string, unknown> = {
         employee_id: employee.id,
@@ -427,7 +446,8 @@ export default function MobilePunchPage() {
         accuracy_meters: fix?.accuracy_meters,
         vehicle_plate: vehiclePlate,
         route_id: route?.id,
-        metadata: { source: "apexos-mobile", current_user_only: true, gps_required: gpsRequired, tracking_mode: gpsRequired ? "gps" : "punch_only", ...routeSyncMetadata(route) }
+        idempotency_key: idempotencyKey,
+        metadata: { source: "apexos-mobile", current_user_only: true, idempotency_key: idempotencyKey, gps_required: gpsRequired, tracking_mode: gpsRequired ? "gps" : "punch_only", ...routeSyncMetadata(route) }
       };
       if (type === "salida") {
         const closingDetail = extraDetail.trim();

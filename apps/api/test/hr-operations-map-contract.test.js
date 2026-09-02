@@ -24,9 +24,11 @@ test("la evidencia completa se consulta bajo demanda con permiso HR y aislamient
 });
 
 test("el listado dinamico usa agregados ligeros para todas las rutas", () => {
+  const listingSource = serviceSource.match(/async function listRouteEventSummaries[\s\S]*?(?=\r?\nasync function listEmployees)/)?.[0] || "";
   assert.match(serviceSource, /async function listRouteEventSummaries/);
   assert.match(serviceSource, /timePunch\.groupBy/);
   assert.match(serviceSource, /workActivity\.groupBy/);
   assert.match(summarySource, /event_count: punchCount \+ activityCount/);
-  assert.doesNotMatch(serviceSource.match(/async function listRouteEventSummaries[\s\S]*?\n}\n/)?.[0] || "", /base64_data/);
+  assert.match(listingSource, /return prisma\.runWithTenant/);
+  assert.doesNotMatch(listingSource, /base64_data/);
 });

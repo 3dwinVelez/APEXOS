@@ -285,14 +285,18 @@ export async function authorizedJson<T>(input: string, options: RequestInit = {}
       const message = requestErrorMessage(input, response.status, detail);
       alertRequestFailure(input, response.status, detail);
       reportClientFailure(input, response.status, detail, String(options.method || "GET"));
-      throw new Error(message);
+      throw Object.assign(new Error(message), { status: response.status, retryable: true });
     }
     const body = await response.json().catch(() => ({ error: response.statusText }));
     const detail = body.error || body.message || response.statusText;
     const message = requestErrorMessage(input, response.status, detail);
     alertRequestFailure(input, response.status, detail);
     reportClientFailure(input, response.status, detail, String(options.method || "GET"));
-    throw new Error(message);
+    throw Object.assign(new Error(message), {
+      status: response.status,
+      code: typeof body.code === "string" ? body.code : "",
+      retryable: response.status === 408 || response.status === 429
+    });
   }
   return response.json() as Promise<T>;
 }
@@ -1935,6 +1939,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       }
     }
     const extraEvidence = normalizePunchExtraEvidence(body.extra_evidence);
+    const idempotencyKey = String(body.idempotency_key || body.metadata?.idempotency_key || "").trim().slice(0, 120) || null;
     const row = {
       company_id: employee.company_id,
       employee_id: identity.employee_id,
@@ -1951,6 +1956,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       extra_minutes: extraMinutes,
       extra_reason: body.extra_reason || null,
       extra_detail: body.extra_detail || null,
+      idempotency_key: idempotencyKey,
       ...(extraEvidence ? { extra_evidence: extraEvidence } : {}),
       metadata: {
         ...(body.metadata || {}),
@@ -1965,19 +1971,19 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     };
     let inserted: Array<Record<string, unknown>>;
     try {
-      inserted = await supabaseFetch<Array<Record<string, unknown>>>("/rest/v1/time_punches?select=*", {
+      inserted = await supabaseFetch<Array<Record<string, unknown>>>("/rest/v1/time_punches?on_conflict=company_id,idempotency_key&select=*", {
         method: "POST",
         body: JSON.stringify(row),
-        headers: { Prefer: "return=representation" }
+        headers: { Prefer: "return=representation,resolution=merge-duplicates" }
       });
     } catch (error) {
       if (!String(error).includes("extra_evidence")) throw error;
       const fallbackRow = { ...row };
       delete fallbackRow.extra_evidence;
-      inserted = await supabaseFetch<Array<Record<string, unknown>>>("/rest/v1/time_punches?select=*", {
+      inserted = await supabaseFetch<Array<Record<string, unknown>>>("/rest/v1/time_punches?on_conflict=company_id,idempotency_key&select=*", {
         method: "POST",
         body: JSON.stringify(fallbackRow),
-        headers: { Prefer: "return=representation" }
+        headers: { Prefer: "return=representation,resolution=merge-duplicates" }
       });
     }
     const punchIdentityFilter = identity.employee_id
