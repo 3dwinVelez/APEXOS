@@ -35,6 +35,7 @@
     { "status": "A", "file": "docs/qa/evidence/hr-marking-concurrency-20260902/local-mass-certification-attempt-3-failed.json" },
     { "status": "A", "file": "docs/qa/evidence/hr-marking-concurrency-20260902/local-mass-certification-attempt-4-failed.json" },
     { "status": "A", "file": "docs/qa/evidence/hr-marking-concurrency-20260902/local-mass-certification-attempt-5-failed.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-marking-concurrency-20260902/local-mass-certification.json" },
     { "status": "A", "file": "docs/qa/evidence/hr-marking-concurrency-20260902/preqa-scope-manifest.json" },
     { "status": "A", "file": "docs/qa/evidence/hr-marking-concurrency-20260902/support-scripts.md" },
     { "status": "A", "file": "supabase/migrations/20260902090000_time_punch_idempotency.sql" }
@@ -68,12 +69,12 @@
     {
       "name": "idempotent_serialized_time_punch_contract",
       "status": "passed",
-      "evidence": ["diagnosis.md", "local-validation.md"]
+      "evidence": ["diagnosis.md", "local-validation.md", "local-mass-certification.json"]
     },
     {
       "name": "qa_mass_certificate_is_versioned_and_environment_guarded",
       "status": "passed",
-      "evidence": ["support-scripts.md", "local-validation.md"]
+      "evidence": ["support-scripts.md", "local-validation.md", "local-mass-certification.json"]
     },
     {
       "name": "adjacent_hr_regression",
