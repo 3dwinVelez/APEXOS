@@ -24,7 +24,7 @@ async function hrRoutes(fastify) {
   fastify.get("/hr/self/preop/active", { preHandler: ownRead }, (request) => service.getOwnPreoperationalChecklist(request.user?.tenant_id, request.user, request.query));
   fastify.post("/hr/self/preop/:id/submit", { schema: schemas.preopSubmitSchema, preHandler: ownWrite }, (request) => service.submitOwnPreoperationalChecklist(request.user?.tenant_id, request.user, request.params.id, request.body));
   fastify.post("/hr/self/gps/ping", { schema: schemas.gpsPingSchema, preHandler: ownWrite, config: { rateLimit: { max: 60, timeWindow: "1 minute" } } }, (request) => service.createOwnGpsPing(request.user?.tenant_id, request.user, request.body));
-  fastify.post("/hr/self/time-punches", { schema: schemas.punchSchema, preHandler: ownWrite }, (request) => service.createOwnPunch(request.user?.tenant_id, request.user, request.body));
+  fastify.post("/hr/self/time-punches", { schema: schemas.punchSchema, preHandler: ownWrite, config: { rateLimit: { max: 600, timeWindow: "1 minute" } } }, (request) => service.createOwnPunch(request.user?.tenant_id, request.user, request.body));
   fastify.post("/hr/self/work-activities", { schema: schemas.workActivitySchema, preHandler: ownWrite }, (request) => service.createOwnWorkActivity(request.user?.tenant_id, request.user, request.body));
 
   fastify.get("/hr/schedules", { preHandler: requirePermission("hr", "read") }, (request) => service.listSchedules(request.user?.tenant_id, request.query));

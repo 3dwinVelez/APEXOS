@@ -115,10 +115,12 @@ test("el contrato versiona idempotencia y evita reintentar validaciones permanen
   const schema = fs.readFileSync(path.resolve(__dirname, "../prisma/schema.prisma"), "utf8");
   const migration = fs.readFileSync(path.resolve(__dirname, "../prisma/migrations/20260902090000_hr_time_punch_idempotency/migration.sql"), "utf8");
   const page = fs.readFileSync(path.resolve(__dirname, "../../web/app/dashboard/talento-humano/marcacion/page.tsx"), "utf8");
+  const routes = fs.readFileSync(path.resolve(__dirname, "../src/modules/hr/routes.js"), "utf8");
   assert.match(schema, /idempotency_key\s+String\?/);
   assert.match(schema, /@@unique\(\[tenant_id, idempotency_key\]\)/);
   assert.match(migration, /CREATE UNIQUE INDEX "TimePunch_tenant_id_idempotency_key_key"/);
   assert.match(page, /permanentSyncFailure/);
   assert.match(page, /idempotency_key: idempotencyKey/);
   assert.match(page, /pendiente de confirmar/);
+  assert.match(routes, /\/hr\/self\/time-punches[\s\S]*?rateLimit: \{ max: 600, timeWindow: "1 minute" \}/);
 });

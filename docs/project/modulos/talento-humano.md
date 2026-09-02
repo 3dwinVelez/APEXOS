@@ -7,6 +7,7 @@
 - Cada marcacion movil genera una `idempotency_key`. Prisma y el respaldo Supabase mantienen unicidad por tenant/empresa para que un reintento de red devuelva la marca existente y no inserte duplicados.
 - La secuencia de marcacion se serializa mediante un bloqueo transaccional por tenant, empleado, horario y dia. Personas diferentes no comparten el bloqueo y conservan concurrencia real.
 - La transaccion admite hasta 10 segundos para adquirir conexion, conserva un limite de ejecucion de 20 segundos y reintenta solo fallos transitorios de pool o serializacion. Las reglas funcionales `4xx` no se reintentan.
+- El endpoint autocontenido de marcaciones admite hasta 600 solicitudes por minuto para soportar la rafaga certificada de 100 usuarios; autenticacion y las demas rutas conservan sus limites restrictivos.
 - La cola movil conserva errores transitorios para sincronizacion posterior y descarta solicitudes rechazadas permanentemente, evitando que una marca invalida bloquee las siguientes.
 - La certificacion masiva versionada usa Nyvora en QA, valida el SHA desplegado y ejecuta niveles de 20, 50 y 100 usuarios con cuatro marcas, reenvio idempotente, persistencia, ausencia de perdidas/duplicados y limpieza controlada.
 

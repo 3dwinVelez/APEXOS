@@ -3,6 +3,8 @@ const fs = require("node:fs");
 const path = require("node:path");
 const bcrypt = require("bcrypt");
 const prisma = require("../../src/core/prisma");
+const jwt = require("../../src/security/jwt");
+const authorizationState = require("../../src/security/authorizationState");
 
 function argsFrom(argv) {
   const result = {};
@@ -101,7 +103,14 @@ async function fixtures(tenant, role, count) {
   return actors;
 }
 
-async function authenticateActors(actors) {
+async function authenticateActors(actors, tenant, target) {
+  if (target === "local") {
+    for (const item of actors) {
+      const session = await authorizationState.createSession(item.user, tenant);
+      item.token = jwt.sign({ id: item.user.id, tenant_id: tenant.id, role: item.user.role, sid: session.id, uv: item.user.authorization_version, tv: tenant.authorization_version }, { expiresIn: "2h" });
+    }
+    return;
+  }
   for (let offset = 0; offset < actors.length; offset += 10) {
     const batch = actors.slice(offset, offset + 10);
     await Promise.all(batch.map(async (item) => {
@@ -109,6 +118,7 @@ async function authenticateActors(actors) {
       item.token = login.token || login.access_token;
       assert.ok(item.token, `Login sin token para ${item.email}.`);
     }));
+    if (offset + 10 < actors.length) await new Promise((resolve) => setTimeout(resolve, 61000));
   }
 }
 
@@ -209,7 +219,7 @@ async function main() {
     const tenant = await certificationTenant(target);
     const role = await certificationRole(tenant);
     actors = await fixtures(tenant, role, Math.max(...LEVELS));
-    await authenticateActors(actors);
+    await authenticateActors(actors, tenant, target);
     for (const level of LEVELS) evidence.levels.push(await runLevel(tenant, actors, level));
     evidence.status = "passed";
   } catch (error) {

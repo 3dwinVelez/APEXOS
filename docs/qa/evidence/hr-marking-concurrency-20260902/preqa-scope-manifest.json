@@ -17,6 +17,7 @@
     { "status": "A", "file": "apps/api/scripts/certifications/hr-marking-concurrency-qa.js" },
     { "status": "M", "file": "apps/api/server.js" },
     { "status": "M", "file": "apps/api/src/modules/hr/schema.js" },
+    { "status": "M", "file": "apps/api/src/modules/hr/routes.js" },
     { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
     { "status": "A", "file": "apps/api/test/hr-marking-concurrency-certificate.test.js" },
     { "status": "A", "file": "apps/api/test/hr-marking-concurrency.test.js" },
@@ -29,6 +30,7 @@
     { "status": "A", "file": "docs/qa/evidence/hr-marking-concurrency-20260902/error.md" },
     { "status": "A", "file": "docs/qa/evidence/hr-marking-concurrency-20260902/functional.md" },
     { "status": "A", "file": "docs/qa/evidence/hr-marking-concurrency-20260902/local-validation.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-marking-concurrency-20260902/local-mass-certification-attempt-1-failed.json" },
     { "status": "A", "file": "docs/qa/evidence/hr-marking-concurrency-20260902/preqa-scope-manifest.json" },
     { "status": "A", "file": "docs/qa/evidence/hr-marking-concurrency-20260902/support-scripts.md" },
     { "status": "A", "file": "supabase/migrations/20260902090000_time_punch_idempotency.sql" }
@@ -40,6 +42,7 @@
     "apps/api/scripts/certifications/hr-marking-concurrency-qa.js",
     "apps/api/server.js",
     "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/routes.js",
     "apps/api/src/modules/hr/service.js",
     "apps/api/test/hr-marking-concurrency-certificate.test.js",
     "apps/api/test/hr-marking-concurrency.test.js",
