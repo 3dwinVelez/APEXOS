@@ -61,6 +61,15 @@ async function purchasesRoutes(fastify) {
     preHandler: requirePermission("purchases", "read")
   }, async (request) => service.simulatePurchaseInvoice(request.user?.tenant_id, request.body));
 
+  fastify.get("/purchases/invoices/report", {
+    preHandler: requirePermission("purchases", "read")
+  }, async (request) => service.listPurchaseInvoiceReport(request.user?.tenant_id, request.query));
+
+  fastify.post("/purchases/invoices/:id/annul", {
+    schema: schema.annulInvoiceSchema,
+    preHandler: requirePermission("purchases", "approve")
+  }, async (request) => service.annulPurchaseInvoice(request.user?.tenant_id, request.user.id, Number(request.params.id), request.body));
+
   fastify.post("/purchases/orders/:id/receive", {
     schema: schema.purchaseReceiptSchema,
     preHandler: requirePermission("purchases", "approve")

@@ -36,7 +36,7 @@ test("purchase invoice posts accounting and PO controls in one extended transact
     active: true,
     family: {
       accounting: {
-        gr_ir_account_code: "143505",
+        gr_ir_account_code: "2335",
         goods_receipt_account_code: "143505"
       }
     }
@@ -83,7 +83,7 @@ test("purchase invoice posts accounting and PO controls in one extended transact
   let accountingTx;
   let accountingPayload;
   const fakeAccountingService = {
-    createPayableDocumentInTransaction: async (tx, tenantId, userId, payload) => {
+    createPayableDocumentTx: async (tx, tenantId, userId, payload) => {
       accountingTx = tx;
       accountingPayload = { tenantId, userId, payload };
       return { id: 501, number: "FC-501", lines: [] };
@@ -109,14 +109,57 @@ test("purchase invoice posts accounting and PO controls in one extended transact
     });
 
     assert.equal(transactionCalls, 1);
-    assert.deepEqual(transactionOptions, { maxWait: 5_000, timeout: 20_000 });
+    assert.equal(transactionOptions, undefined);
     assert.equal(accountingTx, fakeTx);
     assert.equal(accountingPayload.tenantId, "tenant-1");
     assert.equal(accountingPayload.userId, 7);
     assert.equal(accountingPayload.payload.source_module, "purchases");
+    assert.equal(accountingPayload.payload.lines[0].account_code, "2335");
+    assert.equal(accountingPayload.payload.lines[0].movement, "debit");
     assert.equal(controls.length, 1);
     assert.equal(controls[0].cxp_cabdoc_id, 501);
     assert.deepEqual(result.purchase_order, { id: 201, number: "OC-201" });
+  } finally {
+    loaded.restore();
+  }
+});
+
+test("purchase invoice blocks an EM/RF account equal to the supplier payable account", async () => {
+  const supplier = { id: 41, type: "supplier", active: true };
+  const item = {
+    id: 81,
+    code: "ITEM-81",
+    name: "Insumo",
+    active: true,
+    family: { accounting: { gr_ir_account_code: "2205", goods_receipt_account_code: "1435" } }
+  };
+  const purchaseOrderLine = { id: 301, item_id: item.id, qty: 2, description: "Insumo" };
+  const fakePrisma = {
+    runWithTenant: (_tenantId, callback) => callback(),
+    party: { findFirst: async () => supplier },
+    transaction: { findFirst: async () => ({ id: 201, number: "OC-201", party_id: supplier.id, status: "open", lines: [purchaseOrderLine] }) },
+    item: { findFirst: async () => item },
+    purchaseOrderInvoiceLine: { findMany: async () => [] }
+  };
+  let simulationCalled = false;
+  const loaded = loadPurchasesService({
+    fakePrisma,
+    fakeAccountingService: { simulatePayableDocument: async () => { simulationCalled = true; } }
+  });
+
+  try {
+    await assert.rejects(
+      loaded.service.simulatePurchaseInvoice("tenant-1", {
+        document_kind: "invoice",
+        with_purchase_order: true,
+        supplier_id: supplier.id,
+        purchase_order_id: 201,
+        associated_account_code: "2205",
+        lines: [{ item_id: item.id, purchase_order_line_id: purchaseOrderLine.id, qty: 1, unit_cost: 100, vat_code: "IVA19" }]
+      }),
+      (error) => error.code === "GR_IR_EQUALS_PAYABLE_ACCOUNT" && error.statusCode === 422
+    );
+    assert.equal(simulationCalled, false);
   } finally {
     loaded.restore();
   }

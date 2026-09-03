@@ -267,15 +267,7 @@ export default function TransfersPage() {
                   </span>
                 </td>
                 <td className="px-3 py-2">
-                  {row.status === "draft" ? (
-                    <button
-                      className="text-apex hover:underline"
-                      onClick={() => void action(row.id, "dispatch")}
-                      type="button"
-                    >
-                      Despachar
-                    </button>
-                  ) : row.status === "in_transit" ? (
+                  {row.status === "in_transit" ? (
                     <button
                       className="text-apex hover:underline"
                       onClick={() => void action(row.id, "receive")}

@@ -107,7 +107,7 @@ function movementLabel(type: string) {
     in: "Entrada",
     out: "Salida",
     transfer: "Transferencia",
-    transfer_dispatch: "Despacho a tránsito",
+    transfer_dispatch: "Traslado",
     transfer_receive: "Descarga de tránsito",
     adjustment: "Ajuste",
   };
@@ -126,7 +126,9 @@ function documentLabel(type: string) {
   return labels[type] || type || "Movimiento de inventario";
 }
 
-export default function ReportesInventarioPage() {
+export default function ReportesInventarioPage(){return <InventoryReports/>}
+
+export function InventoryReports({mode="all"}:{mode?:"all"|"kardex"|"costs"}) {
   const [items, setItems] = useState<Item[]>([]);
   const [selectedItemId, setSelectedItemId] = useState("");
   const [selectedSku, setSelectedSku] = useState("");
@@ -146,6 +148,7 @@ export default function ReportesInventarioPage() {
   const [accountingDetail, setAccountingDetail] = useState<AccountingDetail | null>(null);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [warehouseId, setWarehouseId] = useState("");
+  const showKardex=mode!=="costs",showCosts=mode!=="kardex";
 
   async function loadBase() {
     const [itemRows, costRows, warehouseRows] = await Promise.all([
@@ -288,7 +291,7 @@ export default function ReportesInventarioPage() {
     <div className="space-y-4">
       <header>
         <p className="text-sm font-medium text-apex">Inventario - Reportes</p>
-        <h1 className="text-3xl font-semibold">Kardex y costos</h1>
+        <h1 className="text-3xl font-semibold">{mode==="kardex"?"Kardex de inventario":mode==="costs"?"Costos de inventario":"Kardex y costos"}</h1>
         <p className="mt-1 text-sm text-neutral-600">
           Consulta movimientos por producto y el costo promedio actual del SKU.
         </p>
@@ -303,13 +306,13 @@ export default function ReportesInventarioPage() {
 
       <section className="rounded-md border border-line bg-white p-4">
         <div className="grid gap-3 lg:grid-cols-[1fr_220px_160px_160px_auto]">
-          <label className="text-sm">
+          <label className={`text-sm ${showKardex?"":"hidden"}`}>
             Producto
             <div className="mt-1 flex"><input className={`h-10 min-w-0 flex-1 rounded-l-md border px-3 font-mono text-sm ${skuError ? "border-red-400" : "border-line"}`} placeholder="Escribe el SKU" value={selectedSku} onBlur={validateSku} onChange={(event) => { setSelectedSku(event.target.value.toUpperCase()); setSelectedItemId(""); setSkuError(""); }} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); validateSku(); } }} /><button aria-label="Buscar producto" className="h-10 w-10 rounded-r-md border border-l-0 border-line text-apex hover:bg-paper" onClick={() => { setSkuPickerSearch(selectedSku); setSkuPickerOpen(true); }} type="button"><Search className="mx-auto" size={16} /></button></div>
             {skuError ? <span className="mt-1 block text-xs text-red-600">{skuError}</span> : null}
           </label>
           <label className="text-sm">Bodega<select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={warehouseId} onChange={(event) => setWarehouseId(event.target.value)}><option value="">Todas las bodegas</option>{warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.code} - {warehouse.name}</option>)}</select></label>
-          <label className="text-sm">
+          <label className={`text-sm ${showKardex?"":"hidden"}`}>
             Desde
             <input
               className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm"
@@ -318,7 +321,7 @@ export default function ReportesInventarioPage() {
               onChange={(event) => setFromDate(event.target.value)}
             />
           </label>
-          <label className="text-sm">
+          <label className={`text-sm ${showKardex?"":"hidden"}`}>
             Hasta
             <input
               className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm"
@@ -328,7 +331,7 @@ export default function ReportesInventarioPage() {
             />
           </label>
           <button
-            className="mt-6 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white disabled:opacity-60"
+            className={`mt-6 h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white disabled:opacity-60 ${showKardex?"inline-flex":"hidden"}`}
             disabled={loading || !selectedItemId}
             onClick={() => loadKardex(selectedItemId)}
             type="button"
@@ -342,7 +345,7 @@ export default function ReportesInventarioPage() {
         <div className="space-y-4"><label className="relative block"><Search className="absolute left-3 top-3 text-neutral-400" size={16} /><input autoFocus className="h-10 w-full rounded-md border border-line pl-10 pr-3 text-sm" placeholder="Buscar por SKU, código anterior o nombre" value={skuPickerSearch} onChange={(event) => setSkuPickerSearch(event.target.value)} /></label><div className="max-h-[55vh] divide-y divide-line overflow-y-auto rounded-md border border-line">{skuPickerResults.map((item) => <button className="flex w-full items-center justify-between gap-4 p-3 text-left text-sm hover:bg-paper" key={item.id} onClick={() => selectSku(item)} type="button"><span><strong className="font-mono">{item.code}</strong>{item.legacy_code ? <span className="ml-2 font-mono text-neutral-500">Anterior: {item.legacy_code}</span> : null}<span className="ml-2">{item.name}</span></span><span className="text-xs text-neutral-500">{item.unit || "UND"}</span></button>)}{!skuPickerResults.length ? <p className="p-6 text-center text-sm text-neutral-500">No hay SKU que coincidan con la búsqueda.</p> : null}</div></div>
       </ModalFrame> : null}
 
-      <section className="grid gap-3 md:grid-cols-4">
+      <section className={`grid gap-3 md:grid-cols-4 ${showKardex?"":"hidden"}`}>
         <Metric
           label="Stock actual"
           value={String(
@@ -365,7 +368,7 @@ export default function ReportesInventarioPage() {
         <Metric label="Movimientos" value={String(kardex?.total ?? 0)} />
       </section>
 
-      <section className="rounded-md border border-line bg-white">
+      <section className={`rounded-md border border-line bg-white ${showKardex?"":"hidden"}`}>
         <div className="flex items-center justify-between border-b border-line p-4">
           <div>
           <h2 className="text-base font-semibold">Kardex del producto</h2>
@@ -462,7 +465,7 @@ export default function ReportesInventarioPage() {
         </div>
       </section>
 
-      <section className="rounded-md border border-line bg-white">
+      <section className={`rounded-md border border-line bg-white ${showCosts?"":"hidden"}`}>
         <div className="flex flex-col gap-3 border-b border-line p-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="text-base font-semibold">Mini reporte de costos</h2>

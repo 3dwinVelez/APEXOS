@@ -530,7 +530,7 @@ export default function PurchaseInvoicesPage() {
         <ModalFrame title="Simulacion contable" onClose={() => setSimulation(null)} maxWidth="max-w-5xl">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-sm text-neutral-600">Clase {simulation.document_class} - {simulation.document_kind === "credit_note" ? "Nota credito proveedor" : "Factura proveedor"} - vence {new Date(simulation.due_date).toLocaleDateString("es-CO")}</p>
+              <p className="text-sm text-neutral-600">Clase {simulation.document_class} - {simulation.document_kind === "credit_note" ? "Nota credito proveedor" : "Factura proveedor"} - vence {simulation.due_date.slice(0, 10).split("-").reverse().join("/")}</p>
               <p className="mt-1 text-sm text-neutral-500">Proveedor: {simulation.supplier.name} - Referencia: {simulation.supplier_reference}</p>
             </div>
             <div className="flex flex-wrap gap-2 text-sm">

@@ -86,6 +86,7 @@ type InventoryFamily = {
 type Society = { code: string; name: string; active: boolean };
 type Branch = { code: string; name: string; society_code: string; active: boolean };
 type OrganizationTree = { societies: Society[]; branches: Branch[]; cost_centers: Array<{ code: string; name: string; society_code: string; branch_code: string; active: boolean }> };
+type Classification = { id: number; name: string; type: "category" | "subcategory" | "line" | "subline" | "brand" | "reference"; parent_id?: number | null };
 
 type InventoryItemPatch = Partial<Omit<InventoryItem, "metadata">> & {
   family_code?: string;
@@ -102,8 +103,6 @@ const INITIAL_FORM = {
   branch_code: "",
   type: "product",
   unit: "UND",
-  unit_cost: 0,
-  unit_price: 0,
   tax_rate: 0,
   currency: "USD",
   stock_min: 0,
@@ -111,9 +110,13 @@ const INITIAL_FORM = {
   weight_kg: 0,
   volume_m3: 0,
   family: "",
-  brand: "",
+  category_id: 0,
+  subcategory_id: 0,
+  line_id: 0,
+  subline_id: 0,
+  brand_id: 0,
+  reference_id: 0,
   channel: "omnicanal",
-  wms_profile: "almacenable",
   purchase_profile: "comprable",
   sales_profile: "vendible",
   costing_method: "weighted_average",
@@ -145,6 +148,7 @@ export default function NuevoProductoPage() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [families, setFamilies] = useState<InventoryFamily[]>([]);
   const [tree, setTree] = useState<OrganizationTree>(EMPTY_TREE);
+  const [classifications, setClassifications] = useState<Classification[]>([]);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("crear");
   const [query, setQuery] = useState("");
@@ -158,7 +162,7 @@ export default function NuevoProductoPage() {
   const filteredFamilies = useCallback((societyCode: string, branchCode: string) => families.filter((family) => family.active !== false && (!societyCode || family.society_code === societyCode) && (!branchCode || family.branch_code === branchCode)), [families]);
 
   useEffect(() => {
-    Promise.all([loadItems(), loadFamilies(), loadOrganization()]).catch((err) => setError(err instanceof Error ? err.message : "No fue posible cargar productos"));
+    Promise.all([loadItems(), loadFamilies(), loadOrganization(), loadClassifications()]).catch((err) => setError(err instanceof Error ? err.message : "No fue posible cargar productos"));
   }, []);
 
   useEffect(() => {
@@ -190,6 +194,10 @@ export default function NuevoProductoPage() {
     setTree(await api<OrganizationTree>("/api/v1/accounting/organization-tree"));
   }
 
+  async function loadClassifications() {
+    setClassifications(await api<Classification[]>("/api/v1/inventory/classifications"));
+  }
+
   const filteredItems = useMemo(() => {
     const needle = query.trim().toLowerCase();
     if (!needle) return items;
@@ -205,12 +213,17 @@ export default function NuevoProductoPage() {
     ].some((value) => value.toLowerCase().includes(needle)));
   }, [items, query]);
 
-  const margin = form.unit_price ? Math.round(((Number(form.unit_price) - Number(form.unit_cost)) / Number(form.unit_price)) * 100) : 0;
   const activeBranches = activeBranchesFor(form.society_code);
   const availableFamilies = filteredFamilies(form.society_code, form.branch_code);
   const selectedFamily = availableFamilies.find((family) => family.code === form.family);
   const canSave = Boolean(form.name.trim() && form.society_code && form.branch_code && form.type && form.unit && selectedFamily);
   const taxRates = taxRatesForCountry("CO");
+  const categories = classifications.filter((row) => row.type === "category");
+  const subcategories = classifications.filter((row) => row.type === "subcategory" && row.parent_id === form.category_id);
+  const productLines = classifications.filter((row) => row.type === "line" && row.parent_id === form.subcategory_id);
+  const sublines = classifications.filter((row) => row.type === "subline" && row.parent_id === form.line_id);
+  const brands = classifications.filter((row) => row.type === "brand");
+  const references = classifications.filter((row) => row.type === "reference");
 
   function nextFamilyCode(preferred?: string) {
     if (preferred && availableFamilies.some((family) => family.code === preferred)) return preferred;
@@ -229,12 +242,11 @@ export default function NuevoProductoPage() {
           legacy_code: form.legacy_code.trim(),
           type: form.type,
           unit: form.unit,
+          category_id: form.category_id || undefined,
           family_code: form.family.toUpperCase(),
           society_code: form.society_code,
           branch_code: form.branch_code,
           costing_method: "weighted_average",
-          unit_cost: Number(form.unit_cost),
-          unit_price: Number(form.unit_price),
           tax_rate: Number(form.tax_rate),
           stock_min: Number(form.stock_min),
           stock_max: Number(form.stock_max) || null,
@@ -244,9 +256,15 @@ export default function NuevoProductoPage() {
             family: form.family,
             society_code: form.society_code,
             branch_code: form.branch_code,
-            brand: form.brand,
+            category_id: form.category_id || null,
+            subcategory_id: form.subcategory_id || null,
+            line_id: form.line_id || null,
+            subline_id: form.subline_id || null,
+            brand_id: form.brand_id || null,
+            reference_id: form.reference_id || null,
+            brand: classifications.find((row) => row.id === form.brand_id)?.name || "",
+            reference: classifications.find((row) => row.id === form.reference_id)?.name || "",
             channel: form.channel,
-            wms_profile: form.wms_profile,
             purchase_profile: form.purchase_profile,
             sales_profile: form.sales_profile,
             costing_method: "weighted_average",
@@ -262,7 +280,7 @@ export default function NuevoProductoPage() {
       await loadItems();
       setSelectedItem(created);
       if (!keepCreating) setActiveTab("directorio");
-      setForm(keepCreating ? { ...INITIAL_FORM, society_code: form.society_code, branch_code: form.branch_code, type: form.type, unit: form.unit, family: form.family, wms_profile: form.wms_profile } : { ...INITIAL_FORM, society_code: form.society_code, branch_code: form.branch_code, family: nextFamilyCode() });
+      setForm(keepCreating ? { ...INITIAL_FORM, society_code: form.society_code, branch_code: form.branch_code, type: form.type, unit: form.unit, family: form.family } : { ...INITIAL_FORM, society_code: form.society_code, branch_code: form.branch_code, family: nextFamilyCode() });
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible crear el producto");
     } finally {
@@ -380,9 +398,12 @@ export default function NuevoProductoPage() {
                     <Field label="Código artículo anterior">
                       <input className="h-10 w-full rounded-md border border-line px-3 text-sm" placeholder="Opcional; código del sistema anterior" value={form.legacy_code} onChange={(e) => setForm((p) => ({ ...p, legacy_code: e.target.value }))} />
                     </Field>
-                    <Field label="Marca / linea">
-                      <input className="h-10 w-full rounded-md border border-line px-3 text-sm" placeholder="Opcional" value={form.brand} onChange={(e) => setForm((p) => ({ ...p, brand: e.target.value }))} />
-                    </Field>
+                    <Field label="Categoria"><select className="control" value={form.category_id} onChange={(e) => setForm((p) => ({ ...p, category_id:Number(e.target.value),subcategory_id:0,line_id:0,subline_id:0 }))}><option value={0}>Seleccionar</option>{categories.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></Field>
+                    <Field label="Subcategoria"><select className="control" disabled={!form.category_id} value={form.subcategory_id} onChange={(e) => setForm((p) => ({ ...p, subcategory_id:Number(e.target.value),line_id:0,subline_id:0 }))}><option value={0}>Seleccionar</option>{subcategories.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></Field>
+                    <Field label="Linea"><select className="control" disabled={!form.subcategory_id} value={form.line_id} onChange={(e) => setForm((p) => ({ ...p, line_id:Number(e.target.value),subline_id:0 }))}><option value={0}>Seleccionar</option>{productLines.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></Field>
+                    <Field label="Sublinea"><select className="control" disabled={!form.line_id} value={form.subline_id} onChange={(e) => setForm((p) => ({ ...p, subline_id:Number(e.target.value) }))}><option value={0}>Seleccionar</option>{sublines.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></Field>
+                    <Field label="Marca"><select className="control" value={form.brand_id} onChange={(e) => setForm((p) => ({ ...p, brand_id:Number(e.target.value) }))}><option value={0}>Seleccionar</option>{brands.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></Field>
+                    <Field label="Referencia"><select className="control" value={form.reference_id} onChange={(e) => setForm((p) => ({ ...p, reference_id:Number(e.target.value) }))}><option value={0}>Seleccionar</option>{references.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></Field>
                     <Field label="Canal">
                       <select className="h-10 w-full rounded-md border border-line px-3 text-sm" value={form.channel} onChange={(e) => setForm((p) => ({ ...p, channel: e.target.value }))}>
                         <option value="omnicanal">Omnicanal</option>
@@ -402,7 +423,7 @@ export default function NuevoProductoPage() {
               </section>
 
               <section className="rounded-md border border-line bg-white">
-                <PanelHeader icon={DollarSign} title="Valores y existencias" detail="Costos, precios y niveles de stock." />
+                <PanelHeader icon={DollarSign} title="Existencias y dimensiones" detail="El costo se forma desde inventario y el precio se administra en Ventas." />
                 <div className="grid gap-4 p-4 lg:grid-cols-3">
                   <div className="grid gap-3">
                     <Field label="Moneda">
@@ -410,13 +431,8 @@ export default function NuevoProductoPage() {
                         {LATAM_CURRENCIES.map((currency) => <option key={currency} value={currency}>{currency}</option>)}
                       </select>
                     </Field>
-                    <Field label="Costo unitario">
-                      <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} type="number" value={numberInputValue(form.unit_cost)} onChange={(e) => setForm((p) => ({ ...p, unit_cost: numberFromInput(e.target.value) }))} />
-                    </Field>
-                    <Field label="Precio venta">
-                      <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} type="number" value={numberInputValue(form.unit_price)} onChange={(e) => setForm((p) => ({ ...p, unit_price: numberFromInput(e.target.value) }))} />
-                    </Field>
-                    <MiniMetric label="Margen estimado" value={`${Number.isFinite(margin) ? margin : 0}%`} />
+                    <MiniMetric label="Costo" value="Se calcula con los movimientos" />
+                    <MiniMetric label="Precio" value="Se configura en Ventas" />
                   </div>
 
                   <div className="grid gap-3">
@@ -436,17 +452,15 @@ export default function NuevoProductoPage() {
                     <Field label="Volumen m3">
                       <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} step="0.001" type="number" value={numberInputValue(form.volume_m3)} onChange={(e) => setForm((p) => ({ ...p, volume_m3: numberFromInput(e.target.value) }))} />
                     </Field>
-                    <MiniMetric label="Perfil WMS" value={form.wms_profile} />
                   </div>
                 </div>
               </section>
 
               <section className="rounded-md border border-line bg-white">
-                <PanelHeader icon={Layers3} title="Opciones operativas" detail="Reglas aplicadas en Compras, Ventas y WMS." />
-                <div className="grid gap-4 p-4 lg:grid-cols-3">
+                <PanelHeader icon={Layers3} title="Opciones operativas" detail="Reglas aplicadas en Compras y Ventas." />
+                <div className="grid gap-4 p-4 lg:grid-cols-2">
                   <ProfileSelect icon={ClipboardCheck} title="Compras" value={form.purchase_profile} onChange={(value) => setForm((p) => ({ ...p, purchase_profile: value }))} options={["comprable", "no comprable", "bajo contrato", "importado"]} />
                   <ProfileSelect icon={ShoppingCart} title="Ventas" value={form.sales_profile} onChange={(value) => setForm((p) => ({ ...p, sales_profile: value }))} options={["vendible", "no vendible", "solo cotizacion", "kit"]} />
-                  <ProfileSelect icon={Warehouse} title="WMS" value={form.wms_profile} onChange={(value) => setForm((p) => ({ ...p, wms_profile: value }))} options={["almacenable", "picking", "reserva", "cross dock", "no almacenable"]} />
                 </div>
 
                 <div className="border-t border-line p-4">

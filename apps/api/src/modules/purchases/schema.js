@@ -165,7 +165,7 @@ const purchaseReturnSchema = {
     }
   }
 };
-const annulInvoiceSchema = { body: { type: "object", properties: { reason: { type: "string" } } } };
+const annulInvoiceSchema = { body: { type: "object", required: ["reason"], properties: { reason: { type: "string", minLength: 3, maxLength: 500 } } } };
 const closePurchaseOrderSchema = {
   body: {
     type: "object",
