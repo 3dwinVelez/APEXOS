@@ -1,0 +1,42 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "commercial-schema-bootstrap-20260903",
+  "change_intent": {
+    "summary": "Restaurar la migracion base faltante de Gestion Comercial para desplegar sus rutas y esquema en QA",
+    "modules": ["commercial-management", "tenant-isolation", "rbac", "promotion-governance"]
+  },
+  "base_commits": {
+    "desarrollo": "750ed27f891264dc25711c70ab6ade8e1dd59271",
+    "develop": "750ed27f891264dc25711c70ab6ade8e1dd59271",
+    "main": "0abda8c41168642f99da0831e15f940b98232a12"
+  },
+  "certified_commit": "1fbaa1d92567e217e89e36ed97502663962c8aa1",
+  "certification_status": "passed",
+  "expected_changes": [
+    { "status": "A", "file": "apps/api/prisma/migrations/20260814140000_commercial_management_base/migration.sql" },
+    { "status": "A", "file": "apps/api/test/commercial-migration-chain.test.js" },
+    { "status": "A", "file": "apps/api/test/commercial-route-registration.integration.test.js" },
+    { "status": "A", "file": "scripts/certifications/commercial-schema-bootstrap-local.js" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-schema-bootstrap-20260903/certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-schema-bootstrap-20260903/error.md" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-schema-bootstrap-20260903/functional.md" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-schema-bootstrap-20260903/platform-regression.json" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-schema-bootstrap-20260903/preqa-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-schema-bootstrap-20260903/qa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-schema-bootstrap-20260903/support-scripts.md" }
+  ],
+  "allowed_paths": [
+    "apps/api/prisma/migrations/20260814140000_commercial_management_base/migration.sql",
+    "apps/api/test/commercial-migration-chain.test.js",
+    "apps/api/test/commercial-route-registration.integration.test.js",
+    "scripts/certifications/commercial-schema-bootstrap-local.js",
+    "docs/qa/evidence/commercial-schema-bootstrap-20260903/"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    { "name": "commercial_schema_migration_chain", "status": "passed", "evidence": ["certification.json", "functional.md"] },
+    { "name": "commercial_visits_and_commitments_routes", "status": "passed", "evidence": ["certification.json", "functional.md"] },
+    { "name": "commercial_rbac_and_tenant_isolation", "status": "passed", "evidence": ["certification.json", "platform-regression.json"] },
+    { "name": "commercial_frontend_contracts", "status": "passed", "evidence": ["certification.json", "platform-regression.json"] }
+  ]
+}

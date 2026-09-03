@@ -1,0 +1,23 @@
+{
+  "change_id": "commercial-schema-bootstrap-20260903",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "1fbaa1d92567e217e89e36ed97502663962c8aa1",
+  "authorization_scope": "local_implementation_on_desarrollo_only",
+  "main_promotion_authorized": false,
+  "remote_migration_authorized": false,
+  "railway_deployment_authorized": false,
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["functional.md", "certification.json"] },
+    "error": { "status": "passed", "evidence": ["error.md", "certification.json"] },
+    "support_scripts": { "status": "passed", "evidence": ["support-scripts.md"] },
+    "regression": { "status": "passed", "evidence": ["platform-regression.json", "certification.json"] },
+    "platform_regression": { "status": "passed", "evidence": ["platform-regression.json"] }
+  },
+  "certification": { "status": "passed", "script": "../../../../scripts/certifications/commercial-schema-bootstrap-local.js", "evidence": ["certification.json"] },
+  "regression_certification": { "status": "passed", "script": "../../../../scripts/certifications/commercial-schema-bootstrap-local.js", "evidence": ["platform-regression.json", "certification.json"] },
+  "model_company_certification": { "status": "passed", "company": "NYVORA", "environment": "QA", "script": "../../../../scripts/certifications/commercial-schema-bootstrap-local.js", "evidence": ["functional.md", "certification.json"] },
+  "rollback_plan": { "status": "ready", "strategy": "controlled_revert", "previous_main_commit": "0abda8c41168642f99da0831e15f940b98232a12", "trigger": "cualquier falla de migracion comercial, rutas, RBAC o aislamiento; no autoriza cambios remotos ni main" },
+  "approval": { "status": "approved", "scope": "local_implementation_and_certification_on_desarrollo", "approved_by": "Solicitante autorizado de APEXOS en tarea Codex", "approved_at": "2026-09-03T14:00:00-05:00", "remote_qa": "not_authorized", "main_release": "not_authorized" }
+}
