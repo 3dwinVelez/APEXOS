@@ -1,0 +1,49 @@
+{
+  "change_id": "commercial-management-population-20260903",
+  "environment": "QA",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "292733220d47bed8901d827739d2a847b760e35e",
+  "authorization_scope": "qa_population_and_local_implementation_only",
+  "develop_promotion_authorized": false,
+  "railway_redeploy_authorized": false,
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["run.json", "rerun.json", "REPORT.md"] },
+    "error": { "status": "passed", "evidence": ["REPORT.md", "../commercial-runtime-dependency-20260903/error.md"] },
+    "support_scripts": { "status": "passed", "evidence": ["local-validation.md"] },
+    "regression": { "status": "passed", "evidence": ["platform-regression.json"] },
+    "platform_regression": { "status": "passed", "evidence": ["platform-regression.json"] },
+    "promotion_scope": { "status": "passed", "evidence": ["preqa-scope-manifest.json"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/commercial-management-population-qa.js",
+    "evidence": ["run.json", "rerun.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/commercial-schema-bootstrap-local.js",
+    "evidence": ["platform-regression.json", "../commercial-runtime-dependency-20260903/certification.json"]
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "Cliente Piloto QA",
+    "environment": "QA",
+    "script": "../../../../scripts/certifications/commercial-management-population-qa.js",
+    "evidence": ["run.json", "rerun.json"]
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert_of_punctual_commits_only",
+    "previous_develop_commit": "1a414a8a8cb87a520d3312ce2eedeb469a326bd2",
+    "trigger": "regresion de arranque, metricas, Gestion Comercial, RBAC o aislamiento"
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "qa_data_population_and_local_certification_on_desarrollo",
+    "approved_by": "Solicitante autorizado de APEXOS en tarea Codex",
+    "approved_at": "2026-09-03T15:00:00-05:00",
+    "remote_code_promotion": "not_authorized",
+    "main_release": "not_authorized"
+  }
+}

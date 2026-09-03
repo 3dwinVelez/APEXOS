@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "date": "2026-09-03",
+  "tests": {
+    "total": 37,
+    "passed": 35,
+    "failed": 0,
+    "skipped": 2
+  },
+  "covered": [
+    "commercial-domain",
+    "commercial-contract",
+    "commercial-routes",
+    "commercial-documents",
+    "commercial-reports",
+    "rbac-module-access",
+    "supabase-auth-modules",
+    "qa-population-guards"
+  ],
+  "remote_runs": ["run.json", "rerun.json"],
+  "runtime_dependency_evidence": "../commercial-runtime-dependency-20260903/certification.json"
+}
