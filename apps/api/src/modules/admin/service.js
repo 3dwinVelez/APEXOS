@@ -41,7 +41,6 @@ const TENANT_MODULE_CODES = {
   projects: ["M-19", "proyectos", "projects"],
   sales: ["M-03", "ventas", "sales"],
   services: ["M-26", "servicios", "services"],
-  "commercial-management": ["M-27", "gestion-comercial", "gestion_comercial", "commercial-management"],
   transport: ["M-14", "transporte", "transport"]
 };
 
@@ -85,7 +84,6 @@ const PERMISSION_CATALOG = [
   { key: "wms", label: "WMS", group: "operacion", module: "inventory", submodule: "wms", actions: ["access", "view", "create", "edit", "approve", "execute", "reports"], grants: grants("inventory", ["access", "view", "create", "edit", "approve", "execute", "reports"]) },
   { key: "compras", label: "Compras", group: "compras", module: "purchases", submodule: "orders", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import", "attach", "download"], grants: grants("purchases", ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import", "attach", "download"]) },
   { key: "ventas", label: "Ventas", group: "comercial", module: "sales", submodule: "orders", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import"], grants: grants("sales", ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import"]) },
-  { key: "gestion_comercial", label: "Gestion comercial M-27", group: "comercial", module: "commercial-management", submodule: "commercial-management", actions: ["access", "view", "create", "edit", "export", "reports"], grants: grants("commercial-management", ["access", "view", "create", "edit", "export", "reports"]), allowPhysicalDelete: false },
   { key: "facturacion_ventas", label: "Facturacion ventas", group: "comercial", module: "sales-invoice", submodule: "invoices", actions: ["access", "view", "create", "edit", "approve", "void", "export"], grants: grants("sales-invoice", ["access", "view", "create", "edit", "approve", "void", "export"]) },
   { key: "cxc", label: "Cuentas por cobrar", group: "finanzas", module: "accounts-receivable", submodule: "receivables", actions: ["access", "view", "create", "edit", "approve", "reject", "void", "export", "reports"], grants: grants("accounts-receivable", ["access", "view", "create", "edit", "approve", "reject", "void", "export", "reports"]) },
   { key: "logistica", label: "Logistica", group: "operacion", module: "transport", submodule: "logistics", actions: ["access", "view", "create", "edit", "approve", "execute", "reports"], grants: grants("transport", ["access", "view", "create", "edit", "approve", "execute", "reports"]) },
@@ -132,7 +130,7 @@ const SYSTEM_ROLE_TEMPLATES = [
   { name: "Analista contable", description: "Gestiona contabilidad, facturacion y reportes financieros.", is_system: false, hierarchy_level: 50, role_type: "analista", legacy_permissions: permissionPreset(["dashboard", "contabilidad", "facturacion", "reportes", "documentos"], ["access", "view", "create", "edit", "approve", "export", "import", "download", "reports", "sensitive"]) },
   { name: "Analista de compras", description: "Gestiona proveedores, compras, importaciones y documentos asociados.", is_system: false, hierarchy_level: 50, role_type: "analista", legacy_permissions: permissionPreset(["dashboard", "proveedores", "compras", "importaciones", "inventarios", "documentos"], ["access", "view", "create", "edit", "approve", "reject", "export", "import", "attach", "download"]) },
   { name: "Analista de inventario", description: "Administra productos, stock, WMS y reportes de inventario.", is_system: false, hierarchy_level: 50, role_type: "analista", legacy_permissions: permissionPreset(["dashboard", "inventarios", "wms", "compras", "reportes"], ["access", "view", "create", "edit", "approve", "export", "import", "reports"]) },
-  { name: "Comercial", description: "Asesor comercial con acceso exclusivo a su cartera, visitas, documentos, compromisos, presupuesto y reportes.", is_system: false, hierarchy_level: 45, role_type: "comercial", legacy_permissions: permissionPreset(["dashboard", "gestion_comercial"], ["access", "view", "create", "edit", "export", "reports"]) },
+  { name: "Comercial", description: "Gestiona clientes, ventas y seguimiento comercial.", is_system: false, hierarchy_level: 45, role_type: "comercial", legacy_permissions: permissionPreset(["dashboard", "clientes", "ventas", "servicios", "reportes"], ["access", "view", "create", "edit", "export", "reports"]) },
   { name: "Usuario solo lectura", description: "Consulta informacion autorizada sin modificar datos.", is_system: false, hierarchy_level: 10, role_type: "lectura", legacy_permissions: permissionPreset(ALL_PERMISSION_KEYS, ["access", "view", "reports"]) },
   { name: "Auditor", description: "Consulta auditoria, documentos y reportes con foco de control.", is_system: false, hierarchy_level: 65, role_type: "auditor", legacy_permissions: permissionPreset(["dashboard", "auditoria", "documentos", "reportes", "usuarios", "roles", "contabilidad"], ["access", "view", "export", "download", "reports", "sensitive"]) },
   { name: "Soporte tecnico", description: "Soporta configuracion, diagnostico y administracion tecnica controlada.", is_system: false, hierarchy_level: 75, role_type: "soporte", legacy_permissions: permissionPreset(["dashboard", "usuarios", "roles", "configuracion", "auditoria", "notificaciones", "ia"], ["access", "view", "edit", "configure", "administer", "reports"]) },
@@ -585,15 +583,6 @@ async function ensureSystemRoles(tenantId) {
     const existing = new Set(currentRoles.map((role) => role.name));
     for (const template of SYSTEM_ROLE_TEMPLATES) {
       if (!existing.has(template.name)) await upsertRoleFromLegacy(tenantId, { ...template, active: true }, activeModules);
-    }
-    if (tenantHasModule(activeModules, "commercial-management")) {
-      const commercialRole = await prisma.role.findFirst({ where: { tenant_id: tenantId, name: "Comercial" }, include: { permissions: true } });
-      if (commercialRole) {
-        const commercialLegacy = permissionPreset(["gestion_comercial"], ["access", "view", "create", "edit", "export", "reports"]);
-        const mergedLegacy = normalizeLegacyPermissions({ ...(commercialRole.metadata?.legacy_permissions || {}), gestion_comercial: commercialLegacy.gestion_comercial }, activeModules);
-        await prisma.role.update({ where: { id: commercialRole.id }, data: { description: "Asesor comercial con acceso exclusivo a su cartera, visitas, documentos, compromisos, presupuesto y reportes.", metadata: { ...(commercialRole.metadata || {}), legacy_permissions: mergedLegacy } } });
-        await prisma.permission.createMany({ data: legacyToRbacPermissions(mergedLegacy, activeModules).map((permission) => ({ role_id: commercialRole.id, ...permission })), skipDuplicates: true });
-      }
     }
   });
   systemRolesInFlight.set(tenantId, bootstrap);

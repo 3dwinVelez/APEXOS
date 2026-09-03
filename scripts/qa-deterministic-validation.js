@@ -89,7 +89,7 @@ async function validateApi(app) {
       code_end: `7${batch.slice(-5)}99`,
       accounting: {
         goods_receipt_account_code: "1435",
-        gr_ir_account_code: "2335",
+        gr_ir_account_code: "2205",
         sales_cost_account_code: "6135",
         sales_revenue_account_code: "4135",
         return_revenue_account_code: "4175",

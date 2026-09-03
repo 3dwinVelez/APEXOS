@@ -113,7 +113,6 @@ const tenantModuleCodesByPermissionModule: Record<string, string[]> = {
   sales: ["M-03", "ventas", "sales"],
   services: ["M-26", "servicios", "services"],
   "services.orders": ["M-26", "servicios", "services"],
-  "commercial-management": ["M-27", "gestion-comercial", "gestion_comercial", "commercial-management"],
   transport: ["M-14", "transporte", "transport"]
 };
 
@@ -365,7 +364,6 @@ const adminPermissionCatalog = [
   { key: "wms", label: "WMS", group: "operacion", module: "inventory", submodule: "wms", actions: ["access", "view", "create", "edit", "approve", "execute", "reports"] },
   { key: "compras", label: "Compras", group: "compras", module: "purchases", submodule: "orders", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import", "attach", "download"] },
   { key: "ventas", label: "Ventas", group: "comercial", module: "sales", submodule: "orders", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import"] },
-  { key: "gestion_comercial", label: "Gestion comercial M-27", group: "comercial", module: "commercial-management", submodule: "commercial-management", actions: ["access", "view", "create", "edit", "export", "reports"], allowPhysicalDelete: false },
   { key: "logistica", label: "Logistica", group: "operacion", module: "transport", submodule: "logistics", actions: ["access", "view", "create", "edit", "approve", "execute", "reports"] },
   { key: "transporte", label: "Transporte", group: "operacion", module: "transport", submodule: "vehicles", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "export", "import", "attach", "download", "configure"] },
   { key: "ultima_milla", label: "Ultima milla", group: "operacion", module: "transport", submodule: "last_mile", actions: ["access", "view", "create", "edit", "approve", "execute", "reports"] },

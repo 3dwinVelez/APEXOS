@@ -63,8 +63,6 @@ type MasterOption = { code: string; name: string; description?: string; active?:
 type ServiceType = { code: string; label: string; active?: boolean };
 type ServiceStore = { code: string; label: string; active?: boolean };
 type SatisfactionQuestion = { id: string; label: string; active?: boolean };
-type CommercialZone = { id: number; code: string; name: string; active?: boolean };
-type CommercialAdvisor = { id: number; user_id?: number | null; code: string; name: string; email?: string | null; phone?: string | null; zone_id?: number | null; active?: boolean };
 type PlatformLog = {
   id: string;
   at: string;
@@ -207,9 +205,6 @@ type UserForm = {
   operational_restrictions: string;
   base_site: string;
   operation_zone: string;
-  commercial_advisor_enabled: boolean;
-  commercial_advisor_code: string;
-  commercial_zone_id: string;
 };
 
 const actionLabels: Record<string, string> = {
@@ -302,10 +297,7 @@ const emptyUser: UserForm = {
   license_expires_at: "",
   operational_restrictions: "",
   base_site: "",
-  operation_zone: "",
-  commercial_advisor_enabled: false,
-  commercial_advisor_code: "",
-  commercial_zone_id: ""
+  operation_zone: ""
 };
 
 const fallbackUserMasterData: UserMasterData = {
@@ -746,8 +738,6 @@ export default function AdministracionPage() {
   const [logLevelFilter, setLogLevelFilter] = useState("all");
   const [logModuleFilter, setLogModuleFilter] = useState("all");
   const [users, setUsers] = useState<AdminUser[]>([]);
-  const [commercialZones, setCommercialZones] = useState<CommercialZone[]>([]);
-  const [commercialAdvisors, setCommercialAdvisors] = useState<CommercialAdvisor[]>([]);
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
   const [roleForm, setRoleForm] = useState(emptyRoleForm([]));
   const [roleFilter, setRoleFilter] = useState("");
@@ -859,7 +849,7 @@ export default function AdministracionPage() {
 
   const load = useCallback(async () => {
     setMessage("");
-    const [catalogResult, rolesResult, usersResult, masterResult, serviceTypesResult, serviceStoresResult, satisfactionQuestionsResult, platformLogsResult, commercialZonesResult, commercialAdvisorsResult] = await Promise.allSettled([
+    const [catalogResult, rolesResult, usersResult, masterResult, serviceTypesResult, serviceStoresResult, satisfactionQuestionsResult, platformLogsResult] = await Promise.allSettled([
       api<CatalogItem[]>("/api/v1/admin/permissions/catalog"),
       api<Role[]>("/api/v1/admin/roles"),
       api<AdminUser[]>("/api/v1/admin/users"),
@@ -867,9 +857,7 @@ export default function AdministracionPage() {
       api<ServiceType[]>("/api/v1/services/service-types"),
       api<ServiceStore[]>("/api/v1/services/service-stores"),
       api<SatisfactionQuestion[]>("/api/v1/services/satisfaction-questions"),
-      api<PlatformLog[]>("/api/v1/admin/platform-logs?limit=120"),
-      api<CommercialZone[]>("/api/v1/commercial-management/zones?active=true"),
-      api<CommercialAdvisor[]>("/api/v1/commercial-management/advisors")
+      api<PlatformLog[]>("/api/v1/admin/platform-logs?limit=120")
     ]);
     const localCatalog = fallbackAdminPermissionCatalog() as CatalogItem[];
     const catalogData = catalogResult.status === "fulfilled" && catalogResult.value.length ? catalogResult.value : localCatalog;
@@ -883,8 +871,6 @@ export default function AdministracionPage() {
     setCatalog(catalogData);
     setRoles(rolesData);
     setUsers(usersData);
-    setCommercialZones(commercialZonesResult.status === "fulfilled" ? commercialZonesResult.value : []);
-    setCommercialAdvisors(commercialAdvisorsResult.status === "fulfilled" ? commercialAdvisorsResult.value : []);
     setMasterData({ ...fallbackUserMasterData, ...masterDataResult });
     setServiceTypes(serviceTypesData.length ? serviceTypesData : defaultServiceTypes);
     setServiceStores(serviceStoresData.length ? serviceStoresData : defaultServiceStores);
@@ -1156,14 +1142,8 @@ export default function AdministracionPage() {
   }
 
   function selectUser(user: AdminUser) {
-    const advisor = commercialAdvisors.find((item) => Number(item.user_id) === Number(user.id));
     setSelectedUserId(user.id);
-    setUserForm({
-      ...userToForm(user),
-      commercial_advisor_enabled: Boolean(advisor),
-      commercial_advisor_code: advisor?.code || "",
-      commercial_zone_id: advisor?.zone_id ? String(advisor.zone_id) : ""
-    });
+    setUserForm(userToForm(user));
     setUserTab("basicos");
     setUserEditorOpen(true);
     setUserSaveConfirmation(false);
@@ -1172,7 +1152,7 @@ export default function AdministracionPage() {
   function newUser() {
     const companyName = typeof window !== "undefined" ? (localStorage.getItem("apexos_company_name") || localStorage.getItem("company_name") || "Nyvora") : "Nyvora";
     setSelectedUserId(null);
-    setUserForm({ ...emptyUser, company: companyName, commercial_advisor_code: `ASE-${String(users.length + 1).padStart(3, "0")}` });
+    setUserForm({ ...emptyUser, company: companyName });
     setUserTab("basicos");
     setSelectedDocumentFile(null);
     setUserEditorOpen(true);
@@ -1190,10 +1170,6 @@ export default function AdministracionPage() {
     if (!selectedUserId && !userForm.password) return "La clave inicial es obligatoria.";
     if (userForm.password && userForm.password.length < 8) return "La clave debe tener minimo 8 caracteres.";
     if (userForm.password && (!/[A-Za-z]/.test(userForm.password) || !/[0-9]/.test(userForm.password))) return "La clave debe combinar letras y numeros.";
-    if (userForm.commercial_advisor_enabled && !userForm.commercial_advisor_code.trim()) return "El codigo del asesor comercial es obligatorio.";
-    if (userForm.commercial_advisor_enabled && !userForm.commercial_zone_id) return "La zona comercial del asesor es obligatoria.";
-    const selectedRole = roles.find((role) => role.id === Number(userForm.role_id));
-    if (userForm.commercial_advisor_enabled && !selectedRole?.permissions?.gestion_comercial?.access) return "El rol seleccionado debe tener permiso de entrada a Gestion comercial M-27.";
     return "";
   }
 
@@ -1211,38 +1187,15 @@ export default function AdministracionPage() {
         payload.password = userForm.password;
         payload.require_password_change = true;
       }
-      const savedUser = selectedUserId
-        ? await api<AdminUser>(`/api/v1/admin/users/${selectedUserApiId()}`, { method: "PUT", body: JSON.stringify(payload) })
-        : await api<AdminUser>("/api/v1/admin/users", { method: "POST", body: JSON.stringify(payload) });
-      const linkedAdvisor = commercialAdvisors.find((item) => Number(item.user_id) === Number(savedUser.id));
-      if (userForm.commercial_advisor_enabled) {
-        const advisorPayload = {
-          code: userForm.commercial_advisor_code.trim(),
-          name: savedUser.name,
-          email: savedUser.email,
-          phone: userForm.phone || undefined,
-          zone_id: Number(userForm.commercial_zone_id),
-          user_id: Number(savedUser.id),
-          active: savedUser.active !== false
-        };
-        await api(`/api/v1/commercial-management/advisors${linkedAdvisor ? `/${linkedAdvisor.id}` : ""}`, {
-          method: linkedAdvisor ? "PATCH" : "POST",
-          body: JSON.stringify(advisorPayload)
-        });
-      } else if (linkedAdvisor) {
-        await api(`/api/v1/commercial-management/advisors/${linkedAdvisor.id}`, {
-          method: "PATCH",
-          body: JSON.stringify({ active: false })
-        });
-      }
+      if (selectedUserId) await api(`/api/v1/admin/users/${selectedUserApiId()}`, { method: "PUT", body: JSON.stringify(payload) });
+      else await api("/api/v1/admin/users", { method: "POST", body: JSON.stringify(payload) });
       const emailChanged = Boolean(selectedUser && selectedUser.email.trim().toLowerCase() !== userForm.email.trim().toLowerCase());
       const passwordChanged = Boolean(userForm.password);
       const confirmation = selectedUserId
         ? `Usuario actualizado.${emailChanged ? " Correo de acceso sincronizado con autenticacion." : ""}${passwordChanged ? " Clave temporal actualizada." : ""}`
         : "Usuario creado con identidad de acceso y membresia sincronizadas.";
-      const commercialConfirmation = userForm.commercial_advisor_enabled ? " Asesor comercial vinculado al usuario." : linkedAdvisor ? " Vinculo comercial desactivado." : "";
-      setMessage(`${confirmation}${commercialConfirmation}`);
-      notify(selectedUserId ? "Cambios confirmados" : "Usuario creado", `${confirmation}${commercialConfirmation}`);
+      setMessage(confirmation);
+      notify(selectedUserId ? "Cambios confirmados" : "Usuario creado", confirmation);
       setUserSaveConfirmation(false);
       setSelectedUserId(null);
       setUserForm(emptyUser);
@@ -1289,25 +1242,6 @@ export default function AdministracionPage() {
             </div>
           </div>
         </div>
-      </section>
-    );
-  }
-
-  function renderCommercialAdvisorFields() {
-    return (
-      <section className="rounded-md border border-apex/30 bg-apex/5 p-4 md:col-span-2 xl:col-span-3">
-        <Toggle
-          label="Vincular este usuario como asesor de Gestión Comercial"
-          checked={userForm.commercial_advisor_enabled}
-          onChange={(value) => setUserField("commercial_advisor_enabled", value)}
-        />
-        {userForm.commercial_advisor_enabled ? (
-          <div className="mt-3 grid gap-3 md:grid-cols-2">
-            <Field label="Código del asesor" value={userForm.commercial_advisor_code} onChange={(value) => setUserField("commercial_advisor_code", value.toUpperCase())} />
-            <SelectField label="Zona comercial" value={userForm.commercial_zone_id} onChange={(value) => setUserField("commercial_zone_id", value)} options={[["", "Seleccionar zona"], ...commercialZones.filter((zone) => zone.active !== false).map((zone) => [String(zone.id), `${zone.code} · ${zone.name}`] as [string, string])]} />
-            <p className="text-xs text-neutral-600 md:col-span-2">El asesor quedará ligado a esta identidad APEX. Al iniciar sesión solo podrá consultar y gestionar su cartera, visitas, compromisos, cotizaciones, pedidos, presupuesto y resultados.</p>
-          </div>
-        ) : null}
       </section>
     );
   }
@@ -1970,7 +1904,6 @@ export default function AdministracionPage() {
             <SelectField label="Estado" value={userForm.user_status} onChange={(value) => setUserField("user_status", value)} options={optionPairs(masterData.user_statuses)} />
             <Field label="Clave temporal" type="password" value={userForm.password} onChange={(value) => setUserField("password", value)} />
             <Toggle label="Exigir cambio de clave" checked={userForm.require_password_change} onChange={(value) => setUserField("require_password_change", value)} />
-            {renderCommercialAdvisorFields()}
           </div>
           <p className="mt-3 rounded-md bg-paper px-3 py-2 text-xs font-medium text-neutral-600">Los permisos y alcances se administran desde el maestro de Roles y permisos. En esta vista solo se asigna el rol principal del usuario.</p>
         </section>
@@ -2024,7 +1957,6 @@ export default function AdministracionPage() {
             <SelectField label="Estado" value={userForm.user_status} onChange={(value) => setUserField("user_status", value)} options={optionPairs(masterData.user_statuses)} />
             <Field label="Nueva clave temporal" type="password" value={userForm.password} onChange={(value) => setUserField("password", value)} />
             <Toggle label="Exigir cambio de clave" checked={userForm.require_password_change} onChange={(value) => setUserField("require_password_change", value)} />
-            {renderCommercialAdvisorFields()}
           </div>
           <p className="mt-3 rounded-md bg-paper px-3 py-2 text-xs font-medium text-neutral-600">Para cambiar clave sin correo, escribe una clave temporal y usa Cambiar clave. El usuario debera cambiarla en el proximo ingreso.</p>
         </section>
@@ -2076,7 +2008,6 @@ export default function AdministracionPage() {
           <SelectField label="Estado de sesion" value={userForm.session_status} onChange={(value) => setUserField("session_status", value)} options={optionPairs(masterData.session_statuses)} />
           <Toggle label="Requiere cambio de clave" checked={userForm.require_password_change} onChange={(value) => setUserField("require_password_change", value)} />
           <Field label="MFA / 2FA futuro" value={userForm.mfa_status} onChange={(value) => setUserField("mfa_status", value)} />
-          {renderCommercialAdvisorFields()}
           <p className="rounded-md bg-paper px-3 py-2 text-xs font-medium text-neutral-600 md:col-span-2 xl:col-span-3">Los permisos, alcances y roles adicionales se controlan en el maestro de Roles y permisos; aqui solo se asigna el rol principal.</p>
         </div>
       );
