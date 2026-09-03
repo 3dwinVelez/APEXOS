@@ -11,6 +11,7 @@ const ITEMS = [
   { href: "/dashboard/compras/facturas", label: "Facturas" },
   { href: "/dashboard/compras/importaciones", label: "Importaciones" },
   { href: "/dashboard/compras/reportes/ordenes", label: "Reporte de OC" }
+  ,{ href: "/dashboard/compras/reportes/facturas", label: "Reporte de facturas" }
 ];
 
 export function ComprasNav() {

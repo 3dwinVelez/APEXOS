@@ -180,7 +180,7 @@ async function updateItem(tenantId, itemId, data) {
   return prisma.runWithTenant(tenantId, async () => {
     const item = await prisma.item.findFirst({ where: { id: itemId } });
     if (!item) throw appError(404, "NOT_FOUND", "Item no encontrado");
-    if (!item.active) throw appError(422, "INACTIVE", "No se puede editar un item inactivo");
+    if (!item.active && data.active !== true) throw appError(422, "INACTIVE", "No se puede editar un item inactivo");
 
     const { code, type, stock_current, tenant_id, family_code, costing_method, society_code, branch_code, ...safeData } = data;
     if (safeData.legacy_code !== undefined) safeData.legacy_code = String(safeData.legacy_code || "").trim() || null;
@@ -218,6 +218,14 @@ async function updateItem(tenantId, itemId, data) {
     if (safeData.category_id) {
       const category = await prisma.category.findFirst({ where: { id: safeData.category_id } });
       if (!category) throw appError(404, "CATEGORY_NOT_FOUND", "La categoria no existe");
+    }
+
+    if (safeData.active === false) {
+      const locationStock = await prisma.itemLocation.aggregate({ where: { item_id: item.id }, _sum: { qty: true } });
+      if (Math.abs(Number(item.stock_current || 0)) > 0.0001 || Math.abs(Number(locationStock._sum.qty || 0)) > 0.0001) throw appError(422, "ITEM_HAS_STOCK", "Solo se puede cerrar un producto sin existencias");
+      const openOrderLine = await prisma.transactionLine.findFirst({ where: { item_id: item.id, transaction: { type: "purchase", status: { notIn: ["received", "cancelled", "closed"] } } } });
+      if (openOrderLine) throw appError(422, "ITEM_HAS_OPEN_PURCHASE_ORDERS", "No se puede cerrar un producto con ordenes de compra abiertas");
+      safeData.metadata = { ...(item.metadata || {}), ...(safeData.metadata || {}), closed_at: new Date().toISOString() };
     }
 
     return prisma.item.update({ where: { id: itemId }, data: safeData });
@@ -479,29 +487,65 @@ async function createWarehouseTransfer(tenantId, userId, data) {
       const valuation = await getSocietyValuationTx(tx, origin.society_code, item.id);
       lines.push({ tenant_id: tenantId, item_id: item.id, qty: Number(row.qty), unit_cost: Number(valuation.average_cost), lot: row.lot || null });
     }
-    return tx.warehouseTransfer.create({ data: { number: `TR-${String(count + 1).padStart(6, "0")}`, society_code: origin.society_code, origin_place_id: origin.id, destination_place_id: destination.id, reason: data.reason || null, correlation_id: data.correlation_id || crypto.randomUUID(), idempotency_key: data.idempotency_key || null, created_by: userId || null, lines: { create: lines } }, include: { lines: true } });
+    const created = await tx.warehouseTransfer.create({ data: { number: `TR-${String(count + 1).padStart(6, "0")}`, society_code: origin.society_code, origin_place_id: origin.id, destination_place_id: destination.id, reason: data.reason || null, correlation_id: data.correlation_id || crypto.randomUUID(), idempotency_key: data.idempotency_key || null, created_by: userId || null, lines: { create: lines } }, include: { lines: true } });
+    return dispatchWarehouseTransferTx(tx, tenantId, userId, created);
   }));
+}
+
+const CLASSIFICATION_LEVELS = ["category", "subcategory", "line", "subline", "brand", "reference"];
+const CLASSIFICATION_PARENT = { subcategory: "category", line: "subcategory", subline: "line" };
+async function listClassificationMasters(tenantId) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const rows = await prisma.category.findMany({ where: { type: { in: CLASSIFICATION_LEVELS } }, orderBy: [{ type: "asc" }, { name: "asc" }] });
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    return rows.map((row) => ({ ...row, parent: row.parent_id ? byId.get(row.parent_id) || null : null }));
+  });
+}
+async function saveClassificationMaster(tenantId, data, id = null) {
+  const type = String(data.type || "").trim().toLowerCase();
+  const name = String(data.name || "").trim();
+  if (!CLASSIFICATION_LEVELS.includes(type) || !name) throw appError(400, "INVALID_CLASSIFICATION", "Tipo y nombre son obligatorios");
+  return prisma.runWithTenant(tenantId, async () => {
+    let parentId = null;
+    if (CLASSIFICATION_PARENT[type]) {
+      parentId = Number(data.parent_id);
+      const parent = await prisma.category.findFirst({ where: { id: parentId, type: CLASSIFICATION_PARENT[type] } });
+      if (!parent) throw appError(400, "INVALID_CLASSIFICATION_PARENT", `El padre debe ser de tipo ${CLASSIFICATION_PARENT[type]}`);
+    }
+    const duplicate = await prisma.category.findFirst({ where: { name: { equals: name, mode: "insensitive" }, type, ...(id ? { id: { not: Number(id) } } : {}) } });
+    if (duplicate) throw appError(409, "DUPLICATE_CLASSIFICATION", `Ya existe ${name} en ${type}`);
+    if (id) {
+      const current = await prisma.category.findFirst({ where: { id: Number(id) } });
+      if (!current) throw appError(404, "CLASSIFICATION_NOT_FOUND", "Clasificacion no encontrada");
+      return prisma.category.update({ where: { id: current.id }, data: { name, type, parent_id: parentId } });
+    }
+    return prisma.category.create({ data: { tenant_id: tenantId, name, type, parent_id: parentId } });
+  });
+}
+
+async function dispatchWarehouseTransferTx(tx, tenantId, userId, transfer) {
+  if (transfer.status === "in_transit" || transfer.status === "received") return transfer;
+  if (transfer.status !== "draft") throw appError(422, "INVALID_TRANSFER_STATUS", "Solo un traslado en borrador puede pasar a transito");
+  const originLocation = await tx.location.findFirst({ where: { place_id: transfer.origin_place_id, active: true }, orderBy: { id: "asc" } });
+  if (!originLocation) throw appError(404, "ORIGIN_LOCATION_NOT_FOUND", "La bodega origen no tiene ubicacion activa");
+  const transit = await ensureTransitLocationTx(tx, tenantId, transfer.society_code);
+  for (const line of transfer.lines) {
+    const originStock = await tx.itemLocation.findFirst({ where: { item_id: line.item_id, location_id: originLocation.id, lot: line.lot } });
+    if (!originStock || Number(originStock.qty) < Number(line.qty)) throw appError(422, "INSUFFICIENT_LOCATION_STOCK", `Stock insuficiente para trasladar item ${line.item_id}`);
+    await tx.itemLocation.update({ where: { id: originStock.id }, data: { qty: { decrement: line.qty } } });
+    const transitStock = await tx.itemLocation.findFirst({ where: { item_id: line.item_id, location_id: transit.id, lot: line.lot } });
+    if (transitStock) await tx.itemLocation.update({ where: { id: transitStock.id }, data: { qty: { increment: line.qty }, cost: line.unit_cost } });
+    else await tx.itemLocation.create({ data: { item_id: line.item_id, location_id: transit.id, qty: line.qty, lot: line.lot, cost: line.unit_cost } });
+    await tx.movement.create({ data: { type: "transfer_dispatch", item_id: line.item_id, from_location: originLocation.id, to_location: transit.id, qty: line.qty, cost: line.unit_cost, society_code: transfer.society_code, source_type: "warehouse_transfer", source_id: transfer.id, correlation_id: transfer.correlation_id, idempotency_key: `transfer:${transfer.id}:dispatch:${line.id}`, reason: transfer.reason, created_by: userId || null } });
+  }
+  return tx.warehouseTransfer.update({ where: { id: transfer.id }, data: { status: "in_transit", transit_location_id: transit.id, dispatched_by: userId || null, dispatched_at: new Date() }, include: { lines: true } });
 }
 
 async function dispatchWarehouseTransfer(tenantId, userId, transferId) {
   return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
     const transfer = await tx.warehouseTransfer.findFirst({ where: { id: Number(transferId) }, include: { lines: true } });
     if (!transfer) throw appError(404, "TRANSFER_NOT_FOUND", "Traslado no encontrado");
-    if (transfer.status === "in_transit" || transfer.status === "received") return transfer;
-    if (transfer.status !== "draft") throw appError(422, "INVALID_TRANSFER_STATUS", "Solo un traslado en borrador puede despacharse");
-    const originLocation = await tx.location.findFirst({ where: { place_id: transfer.origin_place_id, active: true }, orderBy: { id: "asc" } });
-    if (!originLocation) throw appError(404, "ORIGIN_LOCATION_NOT_FOUND", "La bodega origen no tiene ubicacion activa");
-    const transit = await ensureTransitLocationTx(tx, tenantId, transfer.society_code);
-    for (const line of transfer.lines) {
-      const originStock = await tx.itemLocation.findFirst({ where: { item_id: line.item_id, location_id: originLocation.id, lot: line.lot } });
-      if (!originStock || Number(originStock.qty) < Number(line.qty)) throw appError(422, "INSUFFICIENT_LOCATION_STOCK", `Stock insuficiente para despachar item ${line.item_id}`);
-      await tx.itemLocation.update({ where: { id: originStock.id }, data: { qty: { decrement: line.qty } } });
-      const transitStock = await tx.itemLocation.findFirst({ where: { item_id: line.item_id, location_id: transit.id, lot: line.lot } });
-      if (transitStock) await tx.itemLocation.update({ where: { id: transitStock.id }, data: { qty: { increment: line.qty }, cost: line.unit_cost } });
-      else await tx.itemLocation.create({ data: { item_id: line.item_id, location_id: transit.id, qty: line.qty, lot: line.lot, cost: line.unit_cost } });
-      await tx.movement.create({ data: { type: "transfer_dispatch", item_id: line.item_id, from_location: originLocation.id, to_location: transit.id, qty: line.qty, cost: line.unit_cost, society_code: transfer.society_code, source_type: "warehouse_transfer", source_id: transfer.id, correlation_id: transfer.correlation_id, idempotency_key: `transfer:${transfer.id}:dispatch:${line.id}`, reason: transfer.reason, created_by: userId || null } });
-    }
-    return tx.warehouseTransfer.update({ where: { id: transfer.id }, data: { status: "in_transit", transit_location_id: transit.id, dispatched_by: userId || null, dispatched_at: new Date() }, include: { lines: true } });
+    return dispatchWarehouseTransferTx(tx, tenantId, userId, transfer);
   }));
 }
 
@@ -931,9 +975,15 @@ async function getKardex(tenantId, itemId, filters = {}) {
       return `${location.place?.code || ""} ${location.place?.name || ""} / ${location.code}`.trim();
     }
 
+    const filteredLocationIds = warehouse_id
+      ? new Set((await prisma.location.findMany({ where: { place_id: Number(warehouse_id) }, select: { id: true } })).map((row) => row.id))
+      : location_id ? new Set([Number(location_id)]) : null;
+
     function movementSign(movement) {
       if (movement.type === "out") return -1;
-      if (["transfer", "transfer_dispatch", "transfer_receive"].includes(movement.type)) return 0;
+      if (movement.type === "transfer_dispatch") return filteredLocationIds?.has(movement.from_location) ? -1 : 0;
+      if (movement.type === "transfer_receive") return filteredLocationIds?.has(movement.to_location) ? 1 : 0;
+      if (movement.type === "transfer") return 0;
       return 1;
     }
 
@@ -957,7 +1007,7 @@ async function getKardex(tenantId, itemId, filters = {}) {
         balance: Math.round(balance * 10000) / 10000,
         unit_cost: Number(movement.cost || 0),
         value: Math.round(Number(movement.qty || 0) * Number(movement.cost || 0) * 100) / 100,
-        document_type: movement.source_type || movement.transaction?.type || movement.type,
+        document_type: movement.source_type === "warehouse_transfer" ? "Traslado" : movement.source_type || movement.transaction?.type || movement.type,
         document_id: movement.source_id || movement.transaction_id || null,
         document_number: movement.transaction?.number || transferById.get(movement.source_id)?.number || adjustmentById.get(movement.source_id)?.number || initialLoadDocumentById.get(movement.source_id)?.full_number || "",
         accounting_document_id: adjustmentById.get(movement.source_id)?.accounting_document_id || initialLoadDocumentById.get(movement.source_id)?.id || receiptDocumentByReference.get(movement.transaction?.number)?.id || null,
@@ -1195,10 +1245,30 @@ async function postInitialInventoryWorkbook(tenantId, userId, buffer) {
   }, { maxWait: 5000, timeout: 30000 }));
 }
 
+async function updateSalesPrices(tenantId, userId, prices) {
+  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
+    const normalized = prices.map((row) => ({ sku: normalizeCode(row.sku), price: Number(row.price) }));
+    const duplicate = normalized.find((row, index) => normalized.findIndex((other) => other.sku === row.sku) !== index);
+    if (duplicate) throw appError(409, "DUPLICATE_PRICE_SKU", `El SKU ${duplicate.sku} aparece repetido`);
+    const items = await tx.item.findMany({ where: { code: { in: normalized.map((row) => row.sku) }, active: true } });
+    const byCode = new Map(items.map((item) => [item.code, item]));
+    const missing = normalized.filter((row) => !byCode.has(row.sku)).map((row) => row.sku);
+    if (missing.length) throw appError(404, "PRICE_SKU_NOT_FOUND", `No existen o estan cerrados: ${missing.join(", ")}`);
+    for (const row of normalized) {
+      const item = byCode.get(row.sku);
+      await tx.item.update({ where: { id: item.id }, data: { unit_price: row.price, metadata: { ...(item.metadata || {}), sales_price_updated_at: new Date().toISOString(), sales_price_updated_by: userId || null } } });
+      await tx.auditLog.create({ data: { user_id: userId || null, action: "UPDATE_SALES_PRICE", module: "sales", entity: "Item", entity_id: String(item.id), old_value: { unit_price: item.unit_price }, new_value: { unit_price: row.price } } });
+    }
+    return { updated: normalized.length, prices: normalized };
+  }));
+}
+
 module.exports = {
   createItem,
   updateItem,
   listItems,
+  listClassificationMasters,
+  saveClassificationMaster,
   listFamilies,
   listWarehouses,
   listWarehouseLocations,
@@ -1226,6 +1296,7 @@ module.exports = {
   getInventoryCosts,
   runSlotting,
   validateInitialInventoryWorkbook,
+  updateSalesPrices,
   postInitialInventoryWorkbook,
   reserve
 };

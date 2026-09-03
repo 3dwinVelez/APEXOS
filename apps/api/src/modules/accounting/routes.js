@@ -211,6 +211,16 @@ async function accountingRoutes(fastify) {
     preHandler: requirePermission("accounting", "write")
   }, async (request, reply) => reply.code(201).send(await service.saveDaneLocationMaster(request.user?.tenant_id, request.body)));
 
+  fastify.post("/accounting/third-party-masters/supplier-categories", {
+    schema: schema.namedMasterSchema,
+    preHandler: requirePermission("accounting", "write")
+  }, async (request, reply) => reply.code(201).send(await service.saveSupplierCategoryMaster(request.user?.tenant_id, request.body)));
+
+  fastify.post("/accounting/third-party-masters/payment-terms", {
+    schema: schema.namedMasterSchema,
+    preHandler: requirePermission("accounting", "write")
+  }, async (request, reply) => reply.code(201).send(await service.savePaymentTermMaster(request.user?.tenant_id, request.body)));
+
   fastify.get("/accounting/third-parties", {
     preHandler: requirePermission("accounting", "read")
   }, async (request) => service.listThirdParties(request.user?.tenant_id, request.query));

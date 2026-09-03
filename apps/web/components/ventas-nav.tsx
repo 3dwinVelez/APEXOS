@@ -10,6 +10,7 @@ const ITEMS = [
   { href: "/dashboard/ventas/ordenes", label: "Órdenes" },
   { href: "/dashboard/ventas/facturas/nueva", label: "Nueva factura" },
   { href: "/dashboard/ventas/facturas", label: "Facturas" },
+  { href: "/dashboard/ventas/precios", label: "Precios" },
   { href: "/dashboard/ventas/reportes", label: "Reportes" }
 ];
 

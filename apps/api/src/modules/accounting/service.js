@@ -77,6 +77,14 @@ const DEFAULT_DANE_LOCATIONS = [
   { dane_code: "73001", city: "Ibague", department: "Tolima" },
   { dane_code: "54001", city: "Cucuta", department: "Norte de Santander" }
 ].map((row) => ({ ...row, active: true, source: "DANE" }));
+const DEFAULT_SUPPLIER_CATEGORIES = [
+  { code: "GENERAL", description: "General" },
+  { code: "INSUMOS", description: "Insumos" },
+  { code: "SERVICIOS", description: "Servicios" },
+  { code: "LOGISTICA", description: "Logistica" }
+].map((row) => ({ ...row, active: true, source: "Sistema" }));
+const DEFAULT_PAYMENT_TERMS = [0, 15, 30, 45, 60, 90]
+  .map((days) => ({ code: `AP${days}`, description: days ? `${days} dias` : "Contado", days, active: true, source: "Sistema" }));
 const DEFAULT_ACCOUNTING_DOCUMENT_TYPES = [
   { code: "CC", description: "Comprobante contable" },
   { code: "CE", description: "Comprobante de egreso" },
@@ -318,7 +326,9 @@ async function getThirdPartyMasters(tenantId) {
   const masters = accounting.third_party_masters || {};
   return {
     document_types: mergeByCode(DEFAULT_DOCUMENT_TYPES, masters.document_types, "code"),
-    locations: mergeByCode(DEFAULT_DANE_LOCATIONS, masters.locations, "dane_code")
+    locations: mergeByCode(DEFAULT_DANE_LOCATIONS, masters.locations, "dane_code"),
+    supplier_categories: mergeByCode(DEFAULT_SUPPLIER_CATEGORIES, masters.supplier_categories, "code"),
+    payment_terms: mergeByCode(DEFAULT_PAYMENT_TERMS, masters.payment_terms, "code")
   };
 }
 
@@ -361,6 +371,21 @@ async function saveDaneLocationMaster(tenantId, data) {
     active: data.active !== false,
     source: "Empresa"
   });
+}
+
+async function saveSupplierCategoryMaster(tenantId, data) {
+  const code = normalizeCode(data.code);
+  const description = String(data.description || "").trim();
+  if (!code || !description) throw appError(400, "REQUIRED_SUPPLIER_CATEGORY", "Codigo y nombre de categoria son obligatorios");
+  return updateThirdPartyMasterRow(tenantId, "supplier_categories", "code", { code, description, active: data.active !== false, source: "Empresa" });
+}
+
+async function savePaymentTermMaster(tenantId, data) {
+  const days = Number(data.days);
+  const code = normalizeCode(data.code || `AP${days}`);
+  const description = String(data.description || "").trim();
+  if (!code || !description || !Number.isInteger(days) || days < 0 || days > 365) throw appError(400, "INVALID_PAYMENT_TERM", "El termino requiere codigo, nombre y dias entre 0 y 365");
+  return updateThirdPartyMasterRow(tenantId, "payment_terms", "code", { code, description, days, active: data.active !== false, source: "Empresa" });
 }
 
 async function getAccountingDocumentMasters(tenantId) {
@@ -1451,6 +1476,59 @@ async function createPayableDocument(tenantId, userId, data) {
   ));
 }
 
+async function annulPayableDocument(tenantId, userId, documentId, data = {}) {
+  const reason = String(data.reason || "").trim();
+  if (reason.length < 3) throw appError(400, "ANNUL_REASON_REQUIRED", "El motivo de anulacion debe tener al menos 3 caracteres");
+  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
+    const document = await tx.cxpCabdoc.findFirst({ where: { id: Number(documentId) }, include: { lines: true } });
+    if (!document) throw appError(404, "PAYABLE_DOCUMENT_NOT_FOUND", "Documento de cuentas por pagar no encontrado");
+    if (document.status === "cancelled") throw appError(409, "PAYABLE_ALREADY_CANCELLED", "El documento ya esta anulado");
+    if (Math.abs(Number(document.balance) - Number(document.total)) > 0.01 || Number(document.applied_total) > 0.01) {
+      throw appError(422, "PAYABLE_HAS_APPLICATIONS", "No se puede anular una factura con pagos, cruces o aplicaciones; primero anule esos movimientos");
+    }
+    const original = await tx.cntCabdoc.findFirst({ where: { id: document.accounting_document_id, is_cancelled: false }, include: { lines: { orderBy: { line_no: "asc" } } } });
+    if (!original) throw appError(404, "PAYABLE_ACCOUNTING_NOT_FOUND", "No se encontro el asiento contable original vigente");
+    const postingDate = new Date();
+    await assertPeriodOpen(tenantId, postingDate);
+    const tenant = await tx.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
+    const config = tenant?.config && typeof tenant.config === "object" ? tenant.config : {};
+    const accounting = config.accounting && typeof config.accounting === "object" ? config.accounting : {};
+    const documentTypes = mergeByCode(DEFAULT_ACCOUNTING_DOCUMENT_TYPES, accounting.accounting_document_types, "code").map((row) => ({ ...row, code: normalizeAccountingDocumentType(row.code) }));
+    const reversalType = document.document_kind === "invoice" ? "NCP" : "CP";
+    const numbering = mergeNumbering(documentTypes, accounting.accounting_numbering).find((row) => row.document_type === reversalType && row.active !== false);
+    if (!numbering) throw appError(400, "REVERSAL_NUMBERING_NOT_FOUND", `La clase ${reversalType} no tiene numeracion activa`);
+    const documentNumber = Number(numbering.next_number) || 1;
+    const prefix = normalizeCode(numbering.prefix || reversalType);
+    const fullNumber = `${prefix}-${String(documentNumber).padStart(6, "0")}`;
+    const reversal = await tx.cntCabdoc.create({ data: {
+      document_type: reversalType, document_number: documentNumber, full_number: fullNumber, posting_date: postingDate,
+      reference: document.number, header_text: `Anulacion ${document.number}: ${reason}`, society_code: document.society_code,
+      status: "posted", referenced_document_id: original.id, is_reversal: true,
+      total_debit: original.total_credit, total_credit: original.total_debit, created_by: userId || null
+    } });
+    let lineNo = 1;
+    for (const line of original.lines) {
+      const debit = Number(line.credit || 0);
+      const credit = Number(line.debit || 0);
+      const ledger = await tx.ledgerEntry.create({ data: { account_id: line.account_id, transaction_id: null, date: postingDate, debit, credit, balance: 0, description: `Anulacion ${line.description}: ${reason}`, period: periodFromDate(postingDate) } });
+      await tx.cntCuedoc.create({ data: {
+        cabdoc_id: reversal.id, line_no: lineNo++, account_id: line.account_id, account_code: line.account_code,
+        branch_code: line.branch_code, cost_center_code: line.cost_center_code, party_id: line.party_id, party_tax_id: line.party_tax_id,
+        movement: debit > 0 ? "debit" : "credit", debit, credit, description: `Anulacion ${line.description}: ${reason}`,
+        tax_type: line.tax_type, tax_code: line.tax_code, tax_base: line.tax_base, tax_rate: line.tax_rate, tax_amount: line.tax_amount,
+        ledger_entry_id: ledger.id
+      } });
+    }
+    await tx.cntCabdoc.update({ where: { id: original.id }, data: { status: "cancelled", is_cancelled: true, cancelled_by: userId || null, cancelled_at: postingDate } });
+    await tx.cxpCabdoc.update({ where: { id: document.id }, data: { status: "cancelled", balance: 0 } });
+    await tx.party.update({ where: { id: document.supplier_id }, data: { payable_balance: { increment: document.document_kind === "invoice" ? -Number(document.total) : Number(document.total) } } });
+    const nextNumbering = [...(Array.isArray(accounting.accounting_numbering) ? accounting.accounting_numbering : []).filter((row) => normalizeAccountingDocumentType(row.document_type) !== reversalType), { ...numbering, document_type: reversalType, prefix, next_number: documentNumber + 1, active: true }];
+    await tx.tenant.update({ where: { id: tenantId }, data: { config: { ...config, accounting: { ...accounting, accounting_numbering: nextNumbering } } } });
+    await tx.auditLog.create({ data: { user_id: userId || null, action: "ANNUL", module: "purchases", entity: "CxpCabdoc", entity_id: String(document.id), old_value: { status: document.status, balance: document.balance }, new_value: { status: "cancelled", reason, cancelled_at: postingDate.toISOString(), reversal_document_id: reversal.id, reversal_number: fullNumber } } });
+    return { ...document, status: "cancelled", balance: 0, cancellation: { reason, cancelled_by: userId || null, cancelled_at: postingDate, reversal_document_id: reversal.id, reversal_number: fullNumber } };
+  }, COMPLEX_TRANSACTION_OPTIONS));
+}
+
 const createPayableDocumentInTransaction = createPayableDocumentTx;
 
 async function applyPayableCreditNote(tenantId, userId, data) {
@@ -2036,6 +2114,8 @@ module.exports = {
   getThirdPartyMasters,
   saveDocumentTypeMaster,
   saveDaneLocationMaster,
+  saveSupplierCategoryMaster,
+  savePaymentTermMaster,
   getAccountingDocumentMasters,
   saveAccountingDocumentType,
   saveAccountingNumbering,
@@ -2056,6 +2136,7 @@ module.exports = {
   createPayableDocument,
   createPayableDocumentTx,
   createPayableDocumentInTransaction,
+  annulPayableDocument,
   applyPayableCreditNote,
   listThirdParties,
   saveThirdParty,
