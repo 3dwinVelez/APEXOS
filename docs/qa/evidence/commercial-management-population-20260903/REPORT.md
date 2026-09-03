@@ -27,6 +27,7 @@ Los archivos `run.json` y `rerun.json` prueban la repetibilidad sin crecimiento 
 1. El primer intento de productos devolvio `409` porque Inventarios esta habilitado en la compania. El script se corrigio para poblar primero el maestro de Inventarios y consumir la sincronizacion oficial del modulo comercial.
 2. Los flujos comerciales no devolvieron errores funcionales no esperados durante las dos pasadas completas.
 3. Los logs de Railway registran `MODULE_NOT_FOUND: prom-client` en el hook transversal de metricas, incluso cuando las respuestas comerciales terminan en `200` o `201`. La correccion ya existe y esta certificada localmente en los commits `ee38534` y `3951e5b`, pero no esta en el commit desplegado de QA. Por politica, este incidente permanece abierto hasta que se autorice y complete la promocion puntual `desarrollo -> develop` y el redeploy de QA.
+4. `qa:promotion:scope` aprobo las 20 rutas exactas del candidato contra `origin/develop`. `qa:approval:evidence` bloqueo la publicacion porque su politica exige empresa modelo `NYVORA` y alcance `develop -> main`; la certificacion solicitada se ejecuto en `Cliente Piloto QA` y no autoriza produccion.
 
 ## Seguridad y alcance
 

@@ -7,6 +7,7 @@
   "authorization_scope": "qa_population_and_local_implementation_only",
   "develop_promotion_authorized": false,
   "railway_redeploy_authorized": false,
+  "approval_gate_status": "blocked_requires_nyvora_and_develop_to_main_scope",
   "checks": {
     "functional": { "status": "passed", "evidence": ["run.json", "rerun.json", "REPORT.md"] },
     "error": { "status": "passed", "evidence": ["REPORT.md", "../commercial-runtime-dependency-20260903/error.md"] },
