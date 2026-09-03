@@ -1,8 +1,10 @@
 # Poblacion y estabilidad de Gestion Comercial en QA
 
-Fecha: 2026-09-03  
-Ambiente: QA (`develop`)  
-Compania: `Cliente Piloto QA`  
+Fecha: 2026-09-03
+
+Ambiente: QA (`develop`)
+
+Compania: `Cliente Piloto QA`
 Lote deterministico: `QA-CM-STABILITY-V1`
 
 ## Resultado funcional
