@@ -1,0 +1,16 @@
+{
+  "certification": "hr-marking-concurrency-qa",
+  "environment": "LOCAL",
+  "company": "NYVORA",
+  "run_id": "hr_marking_concurrency_1788350360919",
+  "expected_commit": "ea8ee4420daf3b888e48d39f9b8fd1a5c9a1e1f4",
+  "deployed_commit": "ea8ee4420daf",
+  "levels": [],
+  "cleanup": "events_and_routes_deleted_certification_identities_deactivated",
+  "status": "failed",
+  "generated_at": "2026-09-02T11:59:20.947Z",
+  "error": {
+    "code": "VALIDACION",
+    "message": "POST /api/v1/auth/login: 429 Rate limit exceeded, retry in 59 seconds"
+  }
+}

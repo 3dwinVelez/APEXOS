@@ -28,6 +28,7 @@ const punchSchema = {
       accuracy_meters: { type: "number" },
       vehicle_plate: { type: "string" },
       route_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
+      idempotency_key: { type: "string", minLength: 8, maxLength: 120 },
       extra_reason: { type: "string" },
       extra_detail: { type: "string" },
       extra_evidence: {

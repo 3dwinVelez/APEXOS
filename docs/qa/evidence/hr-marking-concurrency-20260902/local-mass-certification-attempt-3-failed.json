@@ -1,0 +1,16 @@
+{
+  "certification": "hr-marking-concurrency-qa",
+  "environment": "LOCAL",
+  "company": "NYVORA",
+  "run_id": "hr_marking_concurrency_1788350718153",
+  "expected_commit": "8eb1f12",
+  "deployed_commit": "8eb1f12",
+  "levels": [],
+  "cleanup": "events_and_routes_deleted_certification_identities_deactivated",
+  "status": "failed",
+  "generated_at": "2026-09-02T12:05:18.191Z",
+  "error": {
+    "code": "ERR_ASSERTION",
+    "message": "Nivel 20 tuvo errores.\n\n60 !== 0\n"
+  }
+}
