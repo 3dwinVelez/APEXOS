@@ -38,7 +38,6 @@ export function VisitOperationsPanel() {
   const [advisor, setAdvisor] = useState("");
   const [date, setDate] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
   const load = useCallback(async () => {
     try {
       const [v, a] = await Promise.all([
@@ -54,7 +53,7 @@ export function VisitOperationsPanel() {
       setError(
         e instanceof Error ? e.message : "No fue posible cargar las visitas.",
       );
-    } finally { setLoading(false); }
+    }
   }, []);
   useEffect(() => {
     void load();
@@ -174,8 +173,7 @@ export function VisitOperationsPanel() {
         </p>
       ) : null}
       {!hasFilters && visits.length > 10 ? <p className="border-b border-line px-4 py-2 text-xs text-neutral-500">Mostrando las 10 visitas más recientes. Usa un filtro para consultar todos los resultados coincidentes.</p> : null}
-      {loading ? <p className="p-8 text-center text-sm text-neutral-600" role="status">Consultando visitas…</p> : null}
-      {!loading ? <div className="hidden overflow-x-auto md:block">
+      <div className="overflow-x-auto">
         <table className="w-full min-w-[1080px] text-left text-sm">
           <thead className="bg-paper text-xs uppercase text-neutral-500">
             <tr>
@@ -193,7 +191,7 @@ export function VisitOperationsPanel() {
             {visible.map((visit) => (
               <tr className="border-t border-line align-top" key={visit.id}>
                 <td className="px-4 py-3">
-                  <button type="button" className="font-semibold hover:text-apex hover:underline" title="Ver historial completo" onClick={() => setHistoryId(visit.id)}>VIS-{String(visit.id).padStart(5, "0")}</button>
+                  <button type="button" className="font-semibold hover:text-apex hover:underline" title="Doble clic para ver historial completo (Enter para abrir)" onDoubleClick={() => setHistoryId(visit.id)} onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setHistoryId(visit.id); } }}>VIS-{String(visit.id).padStart(5, "0")}</button>
                   <span
                     className={`mt-1 block w-fit rounded-full px-2 py-1 text-xs font-semibold ${badge[visit.display_status] || "bg-neutral-100"}`}
                   >
@@ -225,20 +223,20 @@ export function VisitOperationsPanel() {
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-2">
                     {visit.status === "SCHEDULED" ? <Link
-                      className="inline-flex h-11 items-center gap-1 rounded-md border border-line px-3 text-xs font-semibold"
+                      className="inline-flex items-center gap-1 rounded-md border border-line px-3 py-2 text-xs font-semibold"
                       href={`/dashboard/gestion-comercial/agenda?visita=${visit.id}`}
                     >
                       <Pencil size={14} />
                       Gestionar visita
                     </Link> : visit.status === "IN_PROGRESS" ? (
                       <Link
-                        className="inline-flex h-11 items-center gap-1 rounded-md border border-apex px-3 text-xs font-semibold text-apex"
+                        className="inline-flex items-center gap-1 rounded-md border border-apex px-3 py-2 text-xs font-semibold text-apex"
                         href={`/dashboard/gestion-comercial/agenda/${visit.id}/ejecucion`}
                       >
                         <SquareCheckBig size={14} />
                         Continuar visita
                       </Link>
-                    ) : <button type="button" className="inline-flex h-11 items-center gap-1 rounded-md border border-line px-3 text-xs font-semibold" onClick={() => setHistoryId(visit.id)}><History size={14}/>{visit.status === "RESCHEDULED" ? "Ver reprogramación" : "Ver historial"}</button>}
+                    ) : <button type="button" className="inline-flex items-center gap-1 rounded-md border border-line px-3 py-2 text-xs font-semibold" onClick={() => setHistoryId(visit.id)}><History size={14}/>{visit.status === "RESCHEDULED" ? "Ver reprogramación" : "Ver historial"}</button>}
                   </div>
                 </td>
               </tr>
@@ -250,8 +248,7 @@ export function VisitOperationsPanel() {
             No hay visitas que coincidan con los filtros.
           </p>
         ) : null}
-      </div> : null}
-      {!loading ? <div className="space-y-3 p-3 md:hidden">{visible.map(visit => <article className="rounded-lg border border-line bg-white p-4" key={visit.id}><div className="flex items-start justify-between gap-3"><button className="font-semibold text-apex" onClick={() => setHistoryId(visit.id)} type="button">VIS-{String(visit.id).padStart(5, "0")}</button><span className={`rounded-full px-2 py-1 text-xs font-semibold ${badge[visit.display_status] || "bg-neutral-100"}`}>{statusLabels[visit.display_status] || visit.display_status}</span></div><h3 className="mt-3 font-semibold">{visit.customer?.legal_name || "Prospección sin cliente"}</h3><p className="text-xs text-neutral-600">{[visit.customer?.address, visit.customer?.city].filter(Boolean).join(" · ") || "Sin ubicación"}</p><div className="mt-3 grid grid-cols-2 gap-3 text-sm"><p><span className="block text-xs text-neutral-500">Agenda</span><strong>{formatDate(visit.visit_date)}</strong></p><p><span className="block text-xs text-neutral-500">Asesor</span>{visit.advisor?.name}</p><p><span className="block text-xs text-neutral-500">Motivo</span>{visit.reason?.name || "Sin motivo"}</p><div><span className="block text-xs text-neutral-500">Resultado</span><CommercialResult visit={visit}/></div></div><div className="mt-4">{visit.status === "SCHEDULED" ? <Link className="apex-primary-action flex h-11 items-center justify-center gap-2 text-sm font-semibold" href={`/dashboard/gestion-comercial/agenda?visita=${visit.id}`}><Pencil size={16}/>Gestionar visita</Link> : visit.status === "IN_PROGRESS" ? <Link className="apex-primary-action flex h-11 items-center justify-center gap-2 text-sm font-semibold" href={`/dashboard/gestion-comercial/agenda/${visit.id}/ejecucion`}><SquareCheckBig size={16}/>Continuar visita</Link> : <button className="h-11 w-full rounded-md border border-line text-sm font-semibold" onClick={() => setHistoryId(visit.id)} type="button"><History className="mr-2 inline" size={16}/>{visit.status === "RESCHEDULED" ? "Ver reprogramación" : "Ver historial"}</button>}</div></article>)}{!visible.length ? <p className="p-6 text-center text-sm text-neutral-500">No hay visitas que coincidan con los filtros.</p> : null}</div> : null}
+      </div>
       {historyId !== null && <VisitHistory key={historyId} visitId={historyId} onClose={() => setHistoryId(null)}/>}
     </section>
   );

@@ -12,8 +12,7 @@ import {
   ShoppingCart,
   UsersRound
 } from "lucide-react";
-import { ReactNode, useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { ReactNode } from "react";
 import { VisitOperationsPanel } from "./VisitOperationsPanel";
 import { OpenQuotationSummary } from "./OpenQuotationSummary";
 import { CommitmentAlerts } from "./CommitmentAlerts";
@@ -26,8 +25,6 @@ type AccessCardProps = {
 };
 
 export default function CommercialManagementPage() {
-  const [access, setAccess] = useState<{ can_manage_masters: boolean } | null>(null);
-  useEffect(() => { void api<{ can_manage_masters: boolean }>("/api/v1/commercial-management/access-context", { cache: "no-store" }).then(setAccess).catch(() => setAccess(null)); }, []);
   return (
     <div className="apex-workspace-shell space-y-4">
       <header className="apex-section-card p-4 sm:p-5">
@@ -51,12 +48,12 @@ export default function CommercialManagementPage() {
       <section aria-label="Accesos de Gestión Comercial" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
         <AccessCard eyebrow="Operación" href="/dashboard/gestion-comercial/mi-dia" icon={<CalendarCheck2 size={24} />} title="Mi día" />
         <AccessCard eyebrow="Gerencia" href="/dashboard/gestion-comercial/reportes" icon={<ChartNoAxesCombined size={24} />} title="Reportes" />
-        {access?.can_manage_masters ? <AccessCard
+        <AccessCard
           eyebrow="Configuración"
           href="/dashboard/gestion-comercial/maestros"
           icon={<Settings2 size={24} />}
           title="Maestros"
-        /> : null}
+        />
         <AccessCard
           eyebrow="Planeación"
           href="/dashboard/gestion-comercial/presupuestos"

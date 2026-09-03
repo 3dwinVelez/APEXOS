@@ -27,8 +27,7 @@ export default function BudgetsPage() {
     }),
     [advisors, setAdvisors] = useState<Row[]>([]),
     [customers, setCustomers] = useState<Row[]>([]),
-    [orders, setOrders] = useState<Row[]>([]),
-    [access, setAccess] = useState<Row | null>(null);
+    [orders, setOrders] = useState<Row[]>([]);
   const [view, setView] = useState<"configuration" | "execution">("execution"),
     [years, setYears] = useState<string[] | null>([String(new Date().getFullYear())]),
     [months, setMonths] = useState<string[] | null>(null),
@@ -37,7 +36,7 @@ export default function BudgetsPage() {
     [creating, setCreating] = useState(false),
     [message, setMessage] = useState("");
   const load = useCallback(async () => {
-    const [p, b, a, c, o, permissions] = await Promise.all([
+    const [p, b, a, c, o] = await Promise.all([
       api<Row[]>("/api/v1/commercial-management/periods"),
       api<Row>(
         "/api/v1/commercial-management/budgets",
@@ -45,14 +44,12 @@ export default function BudgetsPage() {
       api<Row[]>("/api/v1/commercial-management/advisors"),
       api<Row[]>("/api/v1/commercial-management/customers"),
       api<Row[]>("/api/v1/commercial-management/orders", { cache: "no-store" }),
-      api<Row>("/api/v1/commercial-management/access-context", { cache: "no-store" }),
     ]);
     setPeriods(p);
     setData(b);
     setAdvisors(a);
     setCustomers(c);
     setOrders(o);
-    setAccess(permissions);
   }, []);
   useEffect(() => {
     void load().catch((e) => setMessage(e.message));
@@ -149,10 +146,10 @@ export default function BudgetsPage() {
         </div>
       ) : null}
 <section className="apex-section-card space-y-4 p-4">
-        <div className="flex flex-wrap gap-2">{[["execution", "Ejecutado vs. real"], ...(access?.can_manage_budgets ? [["configuration", "Configuración del presupuesto"]] : [])].map(([value, label]) => <button type="button" key={value} aria-pressed={view === value} onClick={() => setView(value as "configuration" | "execution")} className={`rounded-md border px-4 py-2 text-sm font-semibold ${view === value ? "border-apex bg-apex text-white" : "border-line"}`}>{label}</button>)}</div>
+        <div className="flex flex-wrap gap-2">{[["execution", "Ejecutado vs. real"], ["configuration", "Configuración del presupuesto"]].map(([value, label]) => <button type="button" key={value} aria-pressed={view === value} onClick={() => setView(value as "configuration" | "execution")} className={`rounded-md border px-4 py-2 text-sm font-semibold ${view === value ? "border-apex bg-apex text-white" : "border-line"}`}>{label}</button>)}</div>
         <BudgetFilters periods={periods} advisors={advisors} years={years} months={months} selectedAdvisors={advisorFilter} onYears={setYears} onMonths={setMonths} onAdvisors={setAdvisorFilter}/>
       </section>
-      {view === "configuration" && access?.can_manage_budgets ? <section className="apex-section-card p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-lg font-semibold">Configuración del presupuesto</h2><p className="text-sm text-neutral-600">Crea y modifica metas mensuales o diarias según los filtros seleccionados.</p></div><button className="apex-primary-action inline-flex h-10 items-center gap-2 px-4 text-sm font-semibold" onClick={() => setCreating(true)} type="button"><Plus size={16}/>Crear presupuesto</button></div><BudgetTable rows={filteredRows} onEdit={setEditing}/></section> : <Report rows={report} />}
+      {view === "configuration" ? <section className="apex-section-card p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-lg font-semibold">Configuración del presupuesto</h2><p className="text-sm text-neutral-600">Crea y modifica metas mensuales o diarias según los filtros seleccionados.</p></div><button className="apex-primary-action inline-flex h-10 items-center gap-2 px-4 text-sm font-semibold" onClick={() => setCreating(true)} type="button"><Plus size={16}/>Crear presupuesto</button></div><BudgetTable rows={filteredRows} onEdit={setEditing}/></section> : <Report rows={report} />}
       {creating ? (
         <CreateModal
           periods={periods}
@@ -195,8 +192,8 @@ function BudgetTable({
   onEdit: (r: Row) => void;
 }) {
   return (
-    <div className="mt-4">
-      <div className="hidden overflow-x-auto md:block"><table className="w-full min-w-[680px] text-left text-sm">
+    <div className="mt-4 overflow-x-auto">
+      <table className="w-full min-w-[680px] text-left text-sm">
         <thead>
           <tr className="border-b border-line text-xs uppercase text-neutral-500">
             <th className="p-3">Período</th>
@@ -233,8 +230,7 @@ function BudgetTable({
             </tr>
           ))}
         </tbody>
-      </table></div>
-      <div className="space-y-3 md:hidden">{rows.map(r => <article className="rounded-lg border border-line p-4" key={`mobile-${r.scope}-${r.id}`}><div className="flex items-start justify-between gap-3"><div><p className="text-xs text-neutral-500">{r.period?.name}</p><h3 className="font-semibold">{r.owner}</h3><p className="text-xs text-neutral-500">{r.scope === "advisor" ? "Asesor" : "Cliente"} · {r.budget_type === "DAILY" ? `Diario · ${new Date(r.budget_date).toLocaleDateString("es-CO")}` : "Mensual"}</p></div><strong>{money.format(Number(r.budget_amount))}</strong></div><button className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-md border border-line text-sm font-semibold" onClick={() => onEdit(r)} type="button"><Pencil size={16}/>Modificar presupuesto</button></article>)}</div>
+      </table>
       {!rows.length ? (
         <p className="p-6 text-center text-sm text-neutral-500">
           No hay presupuestos registrados.
@@ -252,8 +248,8 @@ function Report({ rows }: { rows: Row[] }) {
       <p className="text-sm text-neutral-600">
         Cuenta pedidos registrados, confirmados y facturados dentro del período. Excluye los cancelados.
       </p>
-      <div className="mt-4">
-        <div className="hidden overflow-x-auto md:block"><table className="w-full min-w-[800px] text-left text-sm">
+      <div className="mt-4 overflow-x-auto">
+        <table className="w-full min-w-[800px] text-left text-sm">
           <thead className="bg-paper text-xs uppercase text-neutral-500">
             <tr>
               <th className="p-3">Período</th>
@@ -295,8 +291,7 @@ function Report({ rows }: { rows: Row[] }) {
               </tr>
             ))}
           </tbody>
-        </table></div>
-        <div className="space-y-3 md:hidden">{rows.map(r => <article className="rounded-lg border border-line p-4" key={`mobile-report-${r.scope}-${r.id}`}><div className="flex items-start justify-between gap-3"><div><p className="text-xs text-neutral-500">{r.period?.name} · {r.scope === "advisor" ? "Asesor" : "Cliente"}</p><h3 className="font-semibold">{r.owner}</h3></div><span className={`rounded-full px-2 py-1 text-xs font-semibold ${r.compliance >= 1 ? "bg-emerald-50 text-emerald-700" : r.compliance >= 0.8 ? "bg-amber-50 text-amber-800" : "bg-red-50 text-red-700"}`}>{(r.compliance * 100).toFixed(1)}%</span></div><div className="mt-4 grid grid-cols-2 gap-3 text-sm"><p><span className="block text-xs text-neutral-500">Presupuesto</span><strong>{money.format(Number(r.budget_amount))}</strong></p><p><span className="block text-xs text-neutral-500">Pedidos</span><strong>{money.format(r.sales)}</strong></p><p className="col-span-2"><span className="block text-xs text-neutral-500">Diferencia</span><strong className={r.difference < 0 ? "text-red-700" : "text-emerald-700"}>{money.format(r.difference)}</strong></p></div></article>)}</div>
+        </table>
         {!rows.length ? (
           <p className="p-6 text-center text-sm text-neutral-500">
             Crea un presupuesto para visualizar su ejecución.
@@ -515,13 +510,12 @@ function Modal({
   onClose: () => void;
   children: ReactNode;
 }) {
-  useEffect(() => { const previous = document.body.style.overflow; document.body.style.overflow = "hidden"; const escape = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); }; window.addEventListener("keydown", escape); return () => { document.body.style.overflow = previous; window.removeEventListener("keydown", escape); }; }, [onClose]);
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="budget-modal-title">
-      <div className="max-h-[92vh] w-full max-w-md overflow-auto rounded-t-xl bg-white p-5 shadow-xl sm:rounded-xl">
-        <div className="sticky top-0 z-10 -mx-5 -mt-5 mb-4 flex justify-between border-b border-line bg-white p-5">
-          <h2 id="budget-modal-title" className="text-lg font-semibold">{title}</h2>
-          <button aria-label="Cerrar" className="flex h-11 w-11 items-center justify-center rounded-md border border-line" onClick={onClose} type="button">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl">
+        <div className="mb-4 flex justify-between">
+          <h2 className="text-lg font-semibold">{title}</h2>
+          <button onClick={onClose} type="button">
             <X size={18} />
           </button>
         </div>

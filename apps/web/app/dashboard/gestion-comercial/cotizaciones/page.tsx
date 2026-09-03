@@ -3,10 +3,9 @@
 
 import { api } from "@/lib/api";
 import { downloadCommercialDocumentPdf } from "@/lib/commercialDocumentPdf";
-import { ArrowLeft, Download, Plus, Search, X } from "lucide-react";
+import { ArrowLeft, Download, Search, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { StandaloneCommercialDocumentEditor } from "../StandaloneCommercialDocumentEditor";
 
 type Row = Record<string, any>;
 const inputClass =
@@ -31,8 +30,6 @@ export default function QuotationsPage() {
   const [status, setStatus] = useState("");
   const [advisor, setAdvisor] = useState("");
   const [message, setMessage] = useState("");
-  const [creating, setCreating] = useState(false);
-  const [loading, setLoading] = useState(true);
   const load = useCallback(async () => {
     try {
       setRows(
@@ -46,7 +43,7 @@ export default function QuotationsPage() {
           ? error.message
           : "No fue posible consultar las cotizaciones.",
       );
-    } finally { setLoading(false); }
+    }
   }, []);
   useEffect(() => {
     void load();
@@ -126,7 +123,9 @@ export default function QuotationsPage() {
               Consulta oportunidades abiertas, vencidas o convertidas en pedido.
             </p>
           </div>
-          <div className="flex items-center gap-3"><p className="text-sm font-semibold">{filtered.length} de {rows.length} cotizaciones</p><button className="apex-primary-action inline-flex h-10 items-center gap-2 px-4 text-sm font-semibold" onClick={() => setCreating(true)} type="button"><Plus size={16}/>Nueva cotización</button></div>
+          <p className="text-sm font-semibold">
+            {filtered.length} de {rows.length} cotizaciones
+          </p>
         </div>
       </header>
       {message ? (
@@ -173,8 +172,7 @@ export default function QuotationsPage() {
             ))}
           </select>
         </div>
-        {loading ? <p className="p-8 text-center text-sm text-neutral-600" role="status">Consultando cotizaciones…</p> : null}
-        {!loading ? <div className="hidden overflow-x-auto md:block">
+        <div className="overflow-x-auto">
           <table className="w-full min-w-[850px] text-left text-sm">
             <thead className="bg-paper text-xs uppercase text-neutral-500">
               <tr>
@@ -185,7 +183,7 @@ export default function QuotationsPage() {
                 <th className="px-4 py-3">Asesor</th>
                 <th className="px-4 py-3 text-right">Valor</th>
                 <th className="px-4 py-3">Estado</th>
-                <th className="px-4 py-3 text-right">Acciones</th>
+                <th className="px-4 py-3 text-right">PDF</th>
               </tr>
             </thead>
             <tbody>
@@ -197,8 +195,8 @@ export default function QuotationsPage() {
                   <td className="px-4 py-3">
                     <button
                       className="font-semibold text-apex hover:underline"
-                      onClick={() => void openDetail(row)}
-                      title="Ver detalle"
+                      onDoubleClick={() => void openDetail(row)}
+                      title="Doble clic para ver detalle"
                       type="button"
                     >
                       {row.quotation_number}
@@ -215,7 +213,14 @@ export default function QuotationsPage() {
                     {statusLabels[row.display_status] || row.display_status}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <div className="flex justify-end gap-2"><button className="inline-flex h-11 items-center rounded-md border border-line px-3 text-xs font-semibold" onClick={() => void openDetail(row)} type="button">Ver detalle</button><button className="inline-flex h-11 items-center gap-1 rounded-md border border-line px-3 text-xs font-semibold text-apex" onClick={() => download(row)} type="button"><Download size={14}/>PDF</button></div>
+                    <button
+                      className="inline-flex h-9 items-center gap-1 rounded-md border border-line px-3 text-xs font-semibold text-apex"
+                      onClick={() => download(row)}
+                      type="button"
+                    >
+                      <Download size={14} />
+                      PDF
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -226,8 +231,7 @@ export default function QuotationsPage() {
               No hay cotizaciones que coincidan con los filtros.
             </p>
           ) : null}
-        </div> : null}
-        {!loading ? <div className="space-y-3 p-3 md:hidden">{filtered.map(row => <article className="rounded-lg border border-line bg-white p-4" key={row.id}><div className="flex items-start justify-between gap-3"><div><button className="font-semibold text-apex" onClick={() => void openDetail(row)} type="button">{row.quotation_number}</button><p className="mt-1 text-xs text-neutral-500">Emitida {date(row.quotation_date)}</p></div><span className="rounded-full bg-paper px-2 py-1 text-xs font-semibold">{statusLabels[row.display_status] || row.display_status}</span></div><div className="mt-3 grid grid-cols-2 gap-3 text-sm"><p><span className="block text-xs text-neutral-500">Cliente</span><strong>{row.customer?.legal_name}</strong></p><p><span className="block text-xs text-neutral-500">Asesor</span>{row.advisor?.name}</p><p><span className="block text-xs text-neutral-500">Vence</span>{date(row.valid_until)}</p><p><span className="block text-xs text-neutral-500">Valor</span><strong>{money.format(Number(row.total))}</strong></p></div><div className="mt-4 grid grid-cols-2 gap-2"><button className="h-11 rounded-md border border-line text-sm font-semibold" onClick={() => void openDetail(row)} type="button">Ver detalle</button><button className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-line text-sm font-semibold text-apex" onClick={() => download(row)} type="button"><Download size={16}/>PDF</button></div></article>)}{!filtered.length ? <p className="p-6 text-center text-sm text-neutral-500">No hay cotizaciones que coincidan con los filtros.</p> : null}</div> : null}
+        </div>
       </section>
       {selected ? (
         <QuotationDetail
@@ -236,7 +240,6 @@ export default function QuotationsPage() {
           onDownload={() => download(selected)}
         />
       ) : null}
-      {creating ? <StandaloneCommercialDocumentEditor kind="quotation" onClose={() => setCreating(false)} onCreated={async created => { setCreating(false); setMessage(`Cotización ${created.quotation_number} generada sin visita.`); await load(); }}/>: null}
     </div>
   );
 }
@@ -251,14 +254,12 @@ function QuotationDetail({
   onDownload: () => void;
 }) {
   const [showOrder, setShowOrder] = useState(false);
-  useEffect(() => { const previous = document.body.style.overflow; document.body.style.overflow = "hidden"; const escape = (event: KeyboardEvent) => { if (event.key === "Escape") showOrder ? setShowOrder(false) : onClose(); }; window.addEventListener("keydown", escape); return () => { document.body.style.overflow = previous; window.removeEventListener("keydown", escape); }; }, [onClose, showOrder]);
   return (
     <>
       <div
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="quotation-detail-title"
       >
         <div className="max-h-[90vh] w-full max-w-4xl overflow-auto rounded-xl bg-white p-5 shadow-xl">
           <div className="flex items-start justify-between gap-3">
@@ -266,7 +267,7 @@ function QuotationDetail({
               <p className="text-xs font-semibold uppercase text-apex">
                 Detalle de cotización
               </p>
-              <h2 id="quotation-detail-title" className="text-xl font-semibold">{row.quotation_number}</h2>
+              <h2 className="text-xl font-semibold">{row.quotation_number}</h2>
               <p className="text-sm text-neutral-600">
                 Emitida {date(row.quotation_date)} · vence{" "}
                 {date(row.valid_until)}
@@ -274,7 +275,7 @@ function QuotationDetail({
             </div>
             <button
               aria-label="Cerrar detalle"
-              className="flex h-11 w-11 items-center justify-center rounded-md border border-line"
+              className="rounded-md border border-line p-2"
               onClick={onClose}
               type="button"
             >
@@ -301,8 +302,8 @@ function QuotationDetail({
               {row.sales_order ? (
                 <button
                   className="font-semibold text-apex underline-offset-2 hover:underline"
-                  onClick={() => setShowOrder(true)}
-                  title="Ver el pedido"
+                  onDoubleClick={() => setShowOrder(true)}
+                  title="Doble clic para ver el pedido"
                   type="button"
                 >
                   {row.sales_order.order_number}

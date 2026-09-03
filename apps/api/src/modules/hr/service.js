@@ -76,6 +76,22 @@ function endOfDay(value = new Date()) {
   return new Date(date.getTime() + 86400000);
 }
 
+function boundedReportRange(query = {}, { defaultToday = true, maxDays = 92 } = {}) {
+  const fromValue = query.fecha_inicio || query.from || query.date || query.fecha;
+  const toValue = query.fecha_fin || query.to || query.date || query.fecha;
+  if (!fromValue && !toValue && !defaultToday) return null;
+  const start = startOfDay(fromValue || toValue || new Date());
+  const end = endOfDay(toValue || fromValue || new Date());
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    throw validationError("El rango de fechas no es valido.", 400, "INVALID_REPORT_DATE_RANGE");
+  }
+  if (end <= start) throw validationError("La fecha final debe ser igual o posterior a la inicial.", 400, "INVALID_REPORT_DATE_RANGE");
+  if ((end.getTime() - start.getTime()) / 86400000 > maxDays) {
+    throw validationError(`El rango maximo permitido es de ${maxDays} dias.`, 400, "REPORT_DATE_RANGE_TOO_LARGE");
+  }
+  return { start, end };
+}
+
 function timeString(date) {
   return new Intl.DateTimeFormat("es-CO", { timeZone: OPERATING_TIMEZONE, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(date));
 }
@@ -464,13 +480,13 @@ async function updateSchedule(tenantId, id, input) {
 }
 
 async function listRoutes(tenantId, query = {}) {
-  const day = query.date ? startOfDay(query.date) : null;
+  const range = boundedReportRange(query, { defaultToday: false });
   return prisma.runWithTenant(tenantId, async () => {
     const [rows, employees] = await Promise.all([
       prisma.timeRoute.findMany({
-        where: day ? { date: { gte: day, lt: endOfDay(day) } } : {},
+        where: range ? { date: { gte: range.start, lt: range.end } } : {},
         orderBy: { date: "desc" },
-        take: 100
+        take: range ? 500 : 100
       }),
       prisma.employee.findMany({ where: { active: true }, include: { user: { select: safeUserSelect } }, take: 500 })
     ]);
@@ -514,12 +530,18 @@ async function assertOwnAssignedRoute(tenantId, employee, input = {}) {
     err.code = "HORARIO_AJENO_DENEGADO";
     throw err;
   }
+  if (startOfDay(route.date).getTime() !== startOfDay().getTime()) {
+    const err = new Error("Solo puedes operar el horario asignado para el dia actual.");
+    err.statusCode = 409;
+    err.code = "HORARIO_FUERA_DEL_DIA";
+    throw err;
+  }
   return route;
 }
 
-async function listOwnRoutes(tenantId, user, query = {}) {
+async function listOwnRoutes(tenantId, user) {
   const employee = await getCurrentEmployee(tenantId, user);
-  const routes = await listRoutes(tenantId, query);
+  const routes = await listRoutes(tenantId, { date: startOfDay().toISOString().slice(0, 10) });
   return routes.filter((route) => routeAssignedToEmployee(route, employee));
 }
 
@@ -1325,17 +1347,17 @@ function buildSessionAlerts(session, activities = []) {
 }
 
 async function listWorkActivities(tenantId, query = {}) {
-  const day = query.date ? startOfDay(query.date) : startOfDay();
+  const range = boundedReportRange(query);
   return prisma.runWithTenant(tenantId, async () => prisma.workActivity.findMany({
     where: {
-      occurred_at: { gte: day, lt: endOfDay(day) },
+      occurred_at: { gte: range.start, lt: range.end },
       ...(query.user_name ? { user_name: query.user_name } : {}),
       ...(query.session_id ? { session_id: Number(query.session_id) } : {}),
       ...(query.activity_type_id ? { activity_type_id: Number(query.activity_type_id) } : {})
     },
     include: { activity_type: true, evidence: true },
     orderBy: { occurred_at: "desc" },
-    take: Math.min(Number(query.limit || 200), 500)
+    take: Math.min(Number(query.limit || 200), 5000)
   }));
 }
 
@@ -1490,6 +1512,7 @@ async function getPreoperationalMetrics(tenantId, query = {}) {
 }
 
 async function createPunch(tenantId, input, user) {
+  const idempotencyKey = String(input.idempotency_key || input.metadata?.idempotency_key || "").trim().slice(0, 120) || null;
   const attemptPunch = async (tx) => {
     const punchedAt = input.punched_at ? new Date(input.punched_at) : new Date();
     const currentEmployee = user?.id ? await tx.employee.findFirst({
@@ -1500,6 +1523,17 @@ async function createPunch(tenantId, input, user) {
     const type = normalizePunchType(input.type || input.tipo_marca);
     const inputRouteId = operationalRouteNumericId(input);
     const route = inputRouteId ? await tx.timeRoute.findFirst({ where: { tenant_id: tenantId, id: inputRouteId } }) : null;
+    const lockScope = `${tenantId}:${employee.id}:${route?.id || inputRouteId || "sin-horario"}:${startOfDay(punchedAt).toISOString()}`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${lockScope}, 0))`;
+    if (idempotencyKey) {
+      const replayedPunch = await tx.timePunch.findFirst({ where: { tenant_id: tenantId, idempotency_key: idempotencyKey } });
+      if (replayedPunch && replayedPunch.employee_id !== employee.id) {
+        throw validationError("La clave de idempotencia ya pertenece a otra marcacion.", 409, "IDEMPOTENCY_KEY_CONFLICT");
+      }
+      if (replayedPunch) {
+        return { ok: true, replayed: true, hora: replayedPunch.time, punch: replayedPunch, next: null };
+      }
+    }
     const preopApproved = isDriver(employee) && route?.vehicle_plate && type === "entrada"
       ? await tx.routePreoperationalChecklist.findFirst({
         where: {
@@ -1608,7 +1642,8 @@ async function createPunch(tenantId, input, user) {
           employee_name: employeeDisplayName(employee) || resolvedUserName,
           user_email: employee.user?.email || user?.email || "",
           identity_aliases: identityAliases
-        }
+        },
+        idempotency_key: idempotencyKey
       }
     });
     if (input.latitude != null && input.longitude != null) {
@@ -1707,19 +1742,36 @@ async function createPunch(tenantId, input, user) {
     };
   };
 
-  // Reintenta la transacción ante carreras de secuencia concurrentes.
+  // Reintenta solo fallos transitorios de adquisicion/serializacion de transaccion.
   let lastError = null;
   for (let attempt = 0; attempt < 5; attempt += 1) {
     try {
-      return await prisma.runWithTenant(tenantId, () => prisma.$transaction((tx) => attemptPunch(tx), { timeout: 20000 }));
+      return await prisma.runWithTenant(tenantId, () => prisma.$transaction((tx) => attemptPunch(tx), {
+        maxWait: 10000,
+        timeout: 20000
+      }));
     } catch (error) {
-      const raceCodes = new Set(["MARCACION_FUERA_DE_SECUENCIA", "JORNADA_COMPLETA", "P2034"]);
-      if (!raceCodes.has(error.code || error.name)) throw error;
+      if (error.code === "P2002" && idempotencyKey) {
+        const replayedPunch = await prisma.runWithTenant(tenantId, () => prisma.timePunch.findFirst({
+          where: { tenant_id: tenantId, idempotency_key: idempotencyKey }
+        }));
+        const suppliedEmployeeId = numericId(input.employee_id);
+        if (replayedPunch && suppliedEmployeeId && replayedPunch.employee_id !== suppliedEmployeeId) {
+          throw validationError("La clave de idempotencia ya pertenece a otra marcacion.", 409, "IDEMPOTENCY_KEY_CONFLICT");
+        }
+        if (replayedPunch) return { ok: true, replayed: true, hora: replayedPunch.time, punch: replayedPunch, next: null };
+      }
+      const transientCodes = new Set(["P2024", "P2028", "P2034"]);
+      if (!transientCodes.has(error.code || error.name)) throw error;
       lastError = error;
       if (attempt < 4) await new Promise((resolve) => setTimeout(resolve, 120 * (attempt + 1)));
     }
   }
-  throw lastError;
+  const unavailable = new Error("No fue posible confirmar la marcacion por alta concurrencia. Se reintentara automaticamente.");
+  unavailable.statusCode = 503;
+  unavailable.code = "MARCACION_CONCURRENCIA_TEMPORAL";
+  unavailable.cause = lastError;
+  throw unavailable;
 }
 
 function ownOperationalInput(input, employee, user) {
@@ -2146,13 +2198,11 @@ function nextPunchType(punches) {
 }
 
 async function listAttendance(tenantId, query = {}) {
-  const day = query.date || query.fecha ? startOfDay(query.date || query.fecha) : startOfDay();
-  const start = query.fecha_inicio ? startOfDay(query.fecha_inicio) : day;
-  const end = query.fecha_fin ? endOfDay(query.fecha_fin) : endOfDay(day);
+  const range = boundedReportRange(query);
   return prisma.runWithTenant(tenantId, async () => {
     const punches = await prisma.timePunch.findMany({
       where: {
-        date: { gte: start, lt: end },
+        date: { gte: range.start, lt: range.end },
         ...(query.user_name || query.usuario ? { user_name: query.user_name || query.usuario } : {})
       },
       orderBy: [{ user_name: "asc" }, { punched_at: "asc" }]

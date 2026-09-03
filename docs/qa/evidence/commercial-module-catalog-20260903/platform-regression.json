@@ -1,0 +1,18 @@
+{
+  "change_id": "commercial-module-catalog-20260903",
+  "status": "passed",
+  "environment": "QA_LOCAL",
+  "model_company": "NYVORA",
+  "certified_commit": "8762b020bc1711386f6eb4e3d20ced75f619c807",
+  "checks": [
+    "commercial_navigation_and_contracts",
+    "company_module_enablement",
+    "tenant_module_rbac",
+    "purchases_supplier_flow",
+    "inventory_valuation",
+    "services_order_items",
+    "web_typecheck",
+    "web_production_build"
+  ],
+  "unrelated_net_diff": "none"
+}

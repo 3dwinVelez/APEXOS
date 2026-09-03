@@ -8,7 +8,6 @@ async function routes(fastify) {
   fastify.addHook("preHandler", tenancy);
   const read = requirePermission("commercial-management", "read");
   const write = requirePermission("commercial-management", "write");
-  fastify.get("/commercial-management/access-context", { preHandler: read }, (r) => service.accessContext(r.user.tenant_id, r.user));
   fastify.get("/commercial-management/reports/quotation-comparison", { preHandler: read, schema: { querystring: { type: "object", required: ["year"], properties: { year: { type: "integer", minimum: 2000, maximum: 2100 } } } } }, r => service.quotationComparisonReport(r.user.tenant_id, r.user, r.query.year));
   fastify.get("/commercial-management/visits/:id/history", { preHandler: read }, r => service.visitTimeline(r.user.tenant_id, r.user, r.params.id, true));
 fastify.get("/commercial-management/reports/advisors", { preHandler: read, schema: { querystring: { type: "object", required: ["year"], properties: { year: { type: "integer", minimum: 2000, maximum: 2100 }, month: { type: "integer", minimum: 1, maximum: 12 }, day: { type: "integer", minimum: 1, maximum: 31 }, advisor_id: { type: "integer", minimum: 1 }, group: { type: "string", enum: ["advisor", "day", "week", "month", "year"] } } } } }, r => service.advisorReport(r.user.tenant_id, r.user, r.query));
@@ -63,7 +62,7 @@ fastify.get("/commercial-management/reports/advisors", { preHandler: read, schem
   fastify.get("/commercial-management/orders", { preHandler: read }, (r) => service.listOrders(r.user.tenant_id, r.user, r.query));
   fastify.get("/commercial-management/orders/:id", { preHandler: read }, (r) => service.getOrder(r.user.tenant_id, r.user, r.params.id));
   fastify.post("/commercial-management/orders", { schema: schemas.order, preHandler: write }, async (r, reply) => reply.code(201).send(await service.createOrder(r.user.tenant_id, r.user, r.body)));
-  fastify.patch("/commercial-management/orders/:id/status", { schema: schemas.orderStatus, preHandler: write }, (r) => service.changeOrderStatus(r.user.tenant_id, r.user, r.params.id, r.body.status, r.body.reason));
+  fastify.patch("/commercial-management/orders/:id/status", { schema: schemas.orderStatus, preHandler: write }, (r) => service.changeOrderStatus(r.user.tenant_id, r.user, r.params.id, r.body.status));
   fastify.get("/commercial-management/dashboard", { preHandler: read }, (r) => service.dashboard(r.user.tenant_id, r.user, r.query.period_id));
 }
 

@@ -47,6 +47,14 @@ test("la pantalla usa exclusivamente endpoints autocontenidos self", () => {
   assert.doesNotMatch(marking, /\/api\/v1\/hr\/operations-map/);
 });
 
+test("la pantalla limita horarios al dia de Bogota y usa marcaciones idempotentes", () => {
+  const marking = read("../app/dashboard/talento-humano/marcacion/page.tsx");
+  assert.match(marking, /timeZone: "America\/Bogota"/);
+  assert.match(marking, /String\(item\.date\)\.slice\(0, 10\) !== todayBogota\(\)/);
+  assert.match(marking, /idempotency_key: idempotencyKey/);
+  assert.match(marking, /permanentSyncFailure/);
+});
+
 test("el perfil exclusivo se conserva al crear roles y usuarios Supabase", () => {
   const api = read("../lib/api.ts");
   const roleRoute = read("../app/api/admin/roles/route.ts");

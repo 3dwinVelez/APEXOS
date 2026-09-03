@@ -1,0 +1,41 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "commercial-module-catalog-20260903",
+  "change_intent": {
+    "summary": "Publicar M-27 Gestion Comercial en el catalogo tenant para que Administración APEX pueda habilitarlo por compañía",
+    "modules": ["commercial-management", "platform-administration", "tenant-isolation", "rbac", "promotion-governance"]
+  },
+  "base_commits": {
+    "desarrollo": "35f004e8a00564373662e86994d1e933537c3a47",
+    "develop": "35f004e8a00564373662e86994d1e933537c3a47",
+    "main": "0abda8c41168642f99da0831e15f940b98232a12"
+  },
+  "certified_commit": "8762b020bc1711386f6eb4e3d20ced75f619c807",
+  "certification_status": "passed",
+  "expected_changes": [
+    { "status": "A", "file": "apps/web/test/commercial-module-catalog.test.mjs" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-module-catalog-20260903/certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-module-catalog-20260903/error.md" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-module-catalog-20260903/functional.md" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-module-catalog-20260903/local-validation.md" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-module-catalog-20260903/platform-regression.json" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-module-catalog-20260903/preqa-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-module-catalog-20260903/qa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-module-catalog-20260903/support-scripts.md" },
+    { "status": "A", "file": "scripts/certifications/commercial-module-catalog-qa.js" },
+    { "status": "A", "file": "supabase/migrations/20260903100000_commercial_management_module_catalog.sql" }
+  ],
+  "allowed_paths": [
+    "apps/web/test/commercial-module-catalog.test.mjs",
+    "docs/qa/evidence/commercial-module-catalog-20260903/",
+    "scripts/certifications/commercial-module-catalog-qa.js",
+    "supabase/migrations/20260903100000_commercial_management_module_catalog.sql"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    { "name": "commercial_module_catalog_visibility", "status": "passed", "evidence": ["functional.md", "certification.json"] },
+    { "name": "company_module_enablement_and_tenant_isolation", "status": "passed", "evidence": ["functional.md", "certification.json"] },
+    { "name": "commercial_rbac_and_navigation", "status": "passed", "evidence": ["platform-regression.json", "certification.json"] },
+    { "name": "purchases_inventory_services_regression", "status": "passed", "evidence": ["platform-regression.json", "certification.json"] }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-reports-intelligent-filters-20260828",
+  "change_intent": {
+    "summary": "Corregir el filtrado temporal de reportes de Talento Humano, agregar filtros inteligentes y reemplazar CSV por XLSX autorizado",
+    "modules": ["human-resources-reports", "promotion-governance"]
+  },
+  "base_commits": {
+    "desarrollo": "c952033469ba385e08cbf3c703e7c34f02dba869",
+    "develop": "8874e177654a5b04974c5500e38f12c547532d72",
+    "main": "0abda8c41168642f99da0831e15f940b98232a12"
+  },
+  "certified_commit": "4cb658180b761c348ee8c770d6033dfd450fd420",
+  "certification_status": "passed",
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
+    { "status": "A", "file": "apps/api/test/hr-reports-range.test.js" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx" },
+    { "status": "M", "file": "apps/web/lib/api.ts" },
+    { "status": "M", "file": "apps/web/lib/reportExports.ts" },
+    { "status": "M", "file": "apps/web/package.json" },
+    { "status": "A", "file": "apps/web/test/hr-reports-xlsx.test.mjs" },
+    { "status": "M", "file": "docs/project/modulos/talento-humano.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-reports-intelligent-filters-20260828/local-validation.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-reports-intelligent-filters-20260828/certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-reports-intelligent-filters-20260828/platform-regression.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-reports-intelligent-filters-20260828/preqa-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-reports-intelligent-filters-20260828/qa-approval-evidence.json" },
+    { "status": "M", "file": "package-lock.json" },
+    { "status": "A", "file": "scripts/certifications/fixtures/hr-reports-qa-fixture.js" },
+    { "status": "A", "file": "scripts/certifications/hr-reports-export-qa.js" },
+    { "status": "A", "file": "scripts/test/hr-reports-export-qa-certification.test.js" }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-reports-range.test.js",
+    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/reportExports.ts",
+    "apps/web/package.json",
+    "apps/web/test/hr-reports-xlsx.test.mjs",
+    "docs/project/modulos/talento-humano.md",
+    "docs/qa/evidence/hr-reports-intelligent-filters-20260828/",
+    "package-lock.json",
+    "scripts/certifications/fixtures/hr-reports-qa-fixture.js",
+    "scripts/certifications/hr-reports-export-qa.js",
+    "scripts/test/hr-reports-export-qa-certification.test.js"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    { "name": "hr_report_range_and_filters", "status": "passed", "evidence": ["local-validation.md", "certification.json"] },
+    { "name": "hr_report_xlsx_export", "status": "passed", "evidence": ["certification.json"] },
+    { "name": "hr_export_rbac_and_tenant_isolation", "status": "passed", "evidence": ["certification.json"] },
+    { "name": "hr_map_and_activity_evidence_regression", "status": "passed", "evidence": ["local-validation.md", "platform-regression.json"] },
+    { "name": "platform_regression", "status": "passed", "evidence": ["platform-regression.json"] }
+  ]
+}
