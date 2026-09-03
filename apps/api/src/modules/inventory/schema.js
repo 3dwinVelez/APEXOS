@@ -1,7 +1,7 @@
 const createItemSchema = {
   body: {
     type: "object",
-    required: ["name", "type", "unit", "family_code", "society_code", "branch_code", "unit_cost", "unit_price"],
+    required: ["name", "type", "unit", "family_code", "society_code", "branch_code"],
     properties: {
       code: { type: "string", minLength: 1 },
       legacy_code: { type: "string" },
@@ -150,4 +150,7 @@ const warehouseTransferSchema = {
   }
 };
 
-module.exports = { createItemSchema, moveStockSchema, updateItemSchema, adjustStockSchema, inventoryAdjustmentSchema, familySchema, warehouseSchema, warehouseTransferSchema };
+const classificationMasterSchema = { body: { type: "object", required: ["type", "name"], properties: { type: { type: "string", enum: ["category", "subcategory", "line", "subline", "brand", "reference"] }, name: { type: "string", minLength: 1 }, parent_id: { type: ["integer", "null"] } } } };
+const salesPriceBulkSchema = { body: { type: "object", additionalProperties: false, required: ["prices"], properties: { prices: { type: "array", minItems: 1, maxItems: 5000, items: { type: "object", additionalProperties: false, required: ["sku", "price"], properties: { sku: { type: "string", minLength: 1 }, price: { type: "number", minimum: 0 } } } } } } };
+
+module.exports = { createItemSchema, moveStockSchema, updateItemSchema, adjustStockSchema, inventoryAdjustmentSchema, familySchema, warehouseSchema, warehouseTransferSchema, classificationMasterSchema, salesPriceBulkSchema };

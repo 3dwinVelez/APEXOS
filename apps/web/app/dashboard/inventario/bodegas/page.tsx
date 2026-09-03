@@ -5,6 +5,7 @@ import { Building2, Pencil, Plus, Search, Trash2, Warehouse } from "lucide-react
 import { api } from "@/lib/api";
 import { InventoryNav } from "@/components/inventory-nav";
 import { ModalFrame } from "@/components/ui/ModalFrame";
+import { LATAM_COUNTRIES } from "@/lib/latam";
 
 type Society = { code: string; name: string; active: boolean };
 type Branch = { code: string; name: string; society_code: string; active: boolean };
@@ -12,6 +13,7 @@ type CostCenter = { code: string; name: string; society_code: string; branch_cod
 type OrganizationTree = { societies: Society[]; branches: Branch[]; cost_centers: CostCenter[] };
 type WarehouseType = "owned" | "consignment";
 type Customer = { id: number; name: string; legal_name?: string; tax_id?: string };
+type LocationMaster={dane_code:string;city:string;department:string;active?:boolean};
 type WarehouseRow = {
   id: number;
   code: string;
@@ -51,6 +53,7 @@ export default function WarehousesPage() {
   const [warehouses, setWarehouses] = useState<WarehouseRow[]>([]);
   const [tree, setTree] = useState<OrganizationTree>(EMPTY_TREE);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [locations,setLocations]=useState<LocationMaster[]>([]);
   const [form, setForm] = useState(EMPTY_FORM);
   const [query, setQuery] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
@@ -63,14 +66,16 @@ export default function WarehousesPage() {
     setLoading(true);
     setError("");
     try {
-      const [warehouseRows, orgTree, customerRows] = await Promise.all([
+      const [warehouseRows, orgTree, customerRows, masters] = await Promise.all([
         api<WarehouseRow[]>("/api/v1/inventory/warehouses?active=all"),
         api<OrganizationTree>("/api/v1/accounting/organization-tree"),
-        api<Customer[]>("/api/v1/sales/customers")
+        api<Customer[]>("/api/v1/sales/customers"),
+        api<{locations:LocationMaster[]}>("/api/v1/accounting/third-party-masters")
       ]);
       setWarehouses(warehouseRows || []);
       setTree(orgTree || EMPTY_TREE);
       setCustomers(customerRows || []);
+      setLocations((masters.locations||[]).filter(row=>row.active!==false));
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo cargar el maestro de bodegas");
     } finally {
@@ -261,7 +266,7 @@ export default function WarehousesPage() {
                 </select>
               </label>
               <label className="text-sm">Pais
-                <input className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm uppercase" value={form.country} onChange={(event) => setForm((current) => ({ ...current, country: event.target.value.toUpperCase() }))} />
+                <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.country} onChange={(event) => setForm((current) => ({ ...current, country: event.target.value,city:"" }))}>{LATAM_COUNTRIES.map(row=><option key={row.code} value={row.code}>{row.name}</option>)}</select>
               </label>
               {form.warehouse_type === "consignment" ? (
                 <label className="text-sm">Cliente propietario
@@ -272,7 +277,7 @@ export default function WarehousesPage() {
                 </label>
               ) : null}
               <label className="text-sm">Ciudad
-                <input className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.city} onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))} />
+                <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.city} onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))}><option value="">Seleccionar</option>{locations.map(row=><option key={row.dane_code} value={row.city}>{row.city} - {row.department}</option>)}</select>
               </label>
               <label className="text-sm">Direccion
                 <input className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.address} onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))} />

@@ -1017,3 +1017,29 @@ html.dark .platform-alert-close:hover {
   }
 }
 
+.control {
+  height: 2.5rem;
+  width: 100%;
+  border-radius: 0.375rem;
+  border: 1px solid var(--color-line, #d9dfdd);
+  background: white;
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+}
+
+.btn-primary,
+.btn-secondary {
+  display: inline-flex;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.375rem;
+  padding: 0 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.btn-primary { background: var(--color-apex, #146c63); color: white; }
+.btn-secondary { border: 1px solid var(--color-line, #d9dfdd); background: white; }
+

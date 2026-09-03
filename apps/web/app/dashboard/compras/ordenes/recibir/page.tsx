@@ -51,6 +51,7 @@ export default function RecibirOCPage() {
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
   const [saving, setSaving] = useState(false);
+  const [orderSearchOpen,setOrderSearchOpen]=useState(false);
   const [filters, setFilters] = useState({ number: "", from: "", to: "", status: "", supplier: "", warehouse: "", product: "" });
 
   const suppliers = useMemo(() => [...new Map(orders.filter((row) => row.party?.id).map((row) => [row.party!.id, row.party!])).values()], [orders]);
@@ -200,7 +201,7 @@ export default function RecibirOCPage() {
           <button className="rounded-md border border-line px-3 py-2 text-sm" onClick={() => setFilters({ number: "", from: "", to: "", status: "", supplier: "", warehouse: "", product: "" })} type="button">Limpiar</button>
         </div>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <label className="text-sm">Número de OC<input className="mt-1 h-10 w-full rounded-md border border-line px-3" onChange={(e) => setFilters((v) => ({ ...v, number: e.target.value }))} placeholder="Ej. OC-000123" value={filters.number} /></label>
+          <label className="text-sm">Número de OC<input className="mt-1 h-10 w-full rounded-md border border-line px-3" onChange={(e) => setFilters((v) => ({ ...v, number: e.target.value }))} onKeyDown={e=>{if(e.key==="Enter"&&!filters.number.trim()){e.preventDefault();setOrderSearchOpen(true)}}} placeholder="Escribe una OC o Enter para buscar" value={filters.number} /></label>
           <label className="text-sm">Fecha desde<input className="mt-1 h-10 w-full rounded-md border border-line px-3" onChange={(e) => setFilters((v) => ({ ...v, from: e.target.value }))} type="date" value={filters.from} /></label>
           <label className="text-sm">Fecha hasta<input className="mt-1 h-10 w-full rounded-md border border-line px-3" onChange={(e) => setFilters((v) => ({ ...v, to: e.target.value }))} type="date" value={filters.to} /></label>
           <label className="text-sm">Estado<select className="mt-1 h-10 w-full rounded-md border border-line px-3" onChange={(e) => setFilters((v) => ({ ...v, status: e.target.value }))} value={filters.status}><option value="">Todos</option><option value="confirmed">Pendiente</option><option value="partial">Parcial</option><option value="received">Recibida</option></select></label>
@@ -210,6 +211,7 @@ export default function RecibirOCPage() {
         </div>
         <p className="mt-3 text-xs text-neutral-500">{filteredOrders.length} de {orders.length} órdenes encontradas</p>
       </section>
+      {orderSearchOpen?<ModalFrame title="Buscar órdenes pendientes de ingreso" onClose={()=>setOrderSearchOpen(false)} maxWidth="md:max-w-6xl"><p className="mb-3 text-sm text-neutral-600">Los filtros de bodega, proveedor, fechas y estado se combinan. Selecciona una orden para recibirla.</p><div className="max-h-[60vh] overflow-auto rounded border border-line"><table className="w-full text-sm"><thead><tr className="border-b bg-paper text-left"><th className="p-3">OC</th><th>Proveedor</th><th>Bodega</th><th>Entrega</th><th>Estado</th><th></th></tr></thead><tbody>{filteredOrders.filter(o=>["confirmed","partial"].includes(o.status)).map(o=><tr className="border-b" key={o.id}><td className="p-3 font-mono">{o.number}</td><td>{o.party?.name}</td><td>{o.metadata?.warehouse_name}</td><td>{String(o.metadata?.expected_at||o.date).slice(0,10)}</td><td>{statusLabels[o.status]}</td><td><button className="btn-primary" onClick={()=>{setOrderSearchOpen(false);openReceipt(o)}}>Seleccionar</button></td></tr>)}</tbody></table></div></ModalFrame>:null}
 
       <section className="space-y-3">
         {filteredOrders.map((order) => {

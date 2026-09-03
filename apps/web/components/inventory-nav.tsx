@@ -8,13 +8,15 @@ const ITEMS = [
   { href: "/dashboard/inventario/productos/nuevo", label: "Nuevo producto" },
   { href: "/dashboard/inventario/productos", label: "Lista de productos" },
   { href: "/dashboard/inventario/familias", label: "Familias" },
+  { href: "/dashboard/inventario/clasificaciones", label: "Clasificacion" },
   { href: "/dashboard/inventario/bodegas", label: "Bodegas" },
   { href: "/dashboard/inventario/wms", label: "WMS" },
   { href: "/dashboard/inventario/stock", label: "Stock" },
   { href: "/dashboard/inventario/cargue-inicial", label: "Cargue inicial" },
   { href: "/dashboard/inventario/traslados", label: "Traslados" },
   { href: "/dashboard/inventario/ajustes", label: "Ajustes" },
-  { href: "/dashboard/inventario/reportes", label: "Reportes" }
+  { href: "/dashboard/inventario/reportes/kardex", label: "Kardex" },
+  { href: "/dashboard/inventario/reportes/costos", label: "Costos" }
 ];
 
 export function InventoryNav() {

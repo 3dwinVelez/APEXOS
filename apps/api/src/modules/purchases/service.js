@@ -10,6 +10,57 @@ function appError(statusCode, code, message) {
   return error;
 }
 
+function calculateVerificationDigit(taxId) {
+  const digits = String(taxId || "").replace(/\D/g, "");
+  if (!digits) return null;
+  const weights = [71, 67, 59, 53, 47, 43, 41, 37, 29, 23, 19, 17, 13, 7, 3];
+  const padded = digits.padStart(15, "0").slice(-15);
+  const remainder = padded.split("").reduce((sum, digit, index) => sum + Number(digit) * weights[index], 0) % 11;
+  return remainder > 1 ? 11 - remainder : remainder;
+}
+
+async function normalizeSupplierMasterData(tenantId, data, previousMetadata = {}) {
+  const metadata = { ...previousMetadata, ...(data.metadata || {}) };
+  const usesControlledMasters = [metadata.document_type, metadata.dane_code, metadata.category_code, metadata.payment_term_code].some((value) => value !== undefined && value !== null && String(value).trim() !== "");
+  if (!usesControlledMasters) return {
+    creditDays: Number(data.credit_days ?? previousMetadata.supplier_credit_days ?? 0),
+    city: data.city,
+    metadata: { ...metadata, verification_digit: calculateVerificationDigit(data.tax_id), purchase_order_contact: { name: String(metadata.purchase_order_contact?.name || "").trim(), phone: String(metadata.purchase_order_contact?.phone || "").trim(), email: String(metadata.purchase_order_contact?.email || "").trim() } }
+  };
+  const masters = await accountingService.getThirdPartyMasters(tenantId);
+  const documentType = String(metadata.document_type || "31").trim().toUpperCase();
+  const locationCode = String(metadata.dane_code || "").trim().toUpperCase();
+  const categoryCode = String(metadata.category_code || metadata.category || "GENERAL").trim().toUpperCase();
+  const paymentTermCode = String(metadata.payment_term_code || `AP${Number(data.credit_days || 0)}`).trim().toUpperCase();
+  const documentTypeRow = (masters.document_types || []).find((row) => row.active !== false && row.code === documentType);
+  if (!documentTypeRow) throw appError(400, "DOCUMENT_TYPE_NOT_IN_MASTER", "El tipo de documento debe existir y estar activo en el maestro contable");
+  const location = locationCode ? (masters.locations || []).find((row) => row.active !== false && row.dane_code === locationCode) : null;
+  if (locationCode && !location) throw appError(400, "DANE_LOCATION_NOT_IN_MASTER", "La ciudad debe existir y estar activa en el maestro contable");
+  const category = (masters.supplier_categories || []).find((row) => row.active !== false && row.code === categoryCode);
+  if (!category) throw appError(400, "SUPPLIER_CATEGORY_NOT_IN_MASTER", "La categoria debe existir y estar activa en el maestro de proveedores");
+  const paymentTerm = (masters.payment_terms || []).find((row) => row.active !== false && row.code === paymentTermCode);
+  if (!paymentTerm) throw appError(400, "PAYMENT_TERM_NOT_IN_MASTER", "Los dias de credito deben seleccionarse desde el maestro AP");
+  return {
+    creditDays: Number(paymentTerm.days),
+    city: location?.city || data.city || null,
+    metadata: {
+      ...metadata,
+      document_type: documentType,
+      verification_digit: calculateVerificationDigit(data.tax_id),
+      dane_code: location?.dane_code || null,
+      department: location?.department || null,
+      category_code: category.code,
+      category: category.description,
+      payment_term_code: paymentTerm.code,
+      purchase_order_contact: {
+        name: String(metadata.purchase_order_contact?.name || "").trim(),
+        phone: String(metadata.purchase_order_contact?.phone || "").trim(),
+        email: String(metadata.purchase_order_contact?.email || "").trim()
+      }
+    }
+  };
+}
+
 async function createSupplier(tenantId, userId, data) {
   const {
     name, tax_id, tax_type = "company", email, phone, address, city, country = null,
@@ -19,6 +70,7 @@ async function createSupplier(tenantId, userId, data) {
   if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw appError(400, "INVALID_EMAIL", "Formato de email invalido");
   if (credit_limit < 0) throw appError(400, "INVALID_LIMIT", "El limite de credito no puede ser negativo");
   if (credit_days < 0 || credit_days > 365) throw appError(400, "INVALID_DAYS", "Los dias de credito deben estar entre 0 y 365");
+  const normalized = await normalizeSupplierMasterData(tenantId, data);
 
   return prisma.runWithTenant(tenantId, async () => {
     if (tax_id) {
@@ -28,7 +80,7 @@ async function createSupplier(tenantId, userId, data) {
         const promoted = await prisma.party.update({
           where: { id: existing.id },
           data: {
-            metadata: withPartyRoles({ ...(existing.metadata || {}), ...(metadata || {}), supplier_credit_limit: credit_limit, supplier_credit_days: credit_days }, ["supplier"])
+            metadata: withPartyRoles({ ...(existing.metadata || {}), ...normalized.metadata, supplier_credit_limit: credit_limit, supplier_credit_days: normalized.creditDays }, ["supplier"])
           }
         });
         return presentPartyForRole(promoted, "supplier");
@@ -43,13 +95,13 @@ async function createSupplier(tenantId, userId, data) {
         email,
         phone,
         address,
-        city,
+        city: normalized.city,
         country: country || "CO",
         credit_limit,
-        credit_days,
+        credit_days: normalized.creditDays,
         balance: 0,
         active: true,
-        metadata: withPartyRoles({ ...metadata, supplier_credit_limit: credit_limit, supplier_credit_days: credit_days }, ["supplier"])
+        metadata: withPartyRoles({ ...normalized.metadata, supplier_credit_limit: credit_limit, supplier_credit_days: normalized.creditDays }, ["supplier"])
       }
     });
     return enrichSupplier(presentPartyForRole(created, "supplier"));
@@ -195,6 +247,7 @@ async function updateSupplier(tenantId, supplierId, data) {
       if (existing) throw appError(409, "DUPLICATE_TAX_ID", `Ya existe un proveedor con el ID fiscal ${data.tax_id}`);
     }
 
+    const normalized = await normalizeSupplierMasterData(tenantId, { ...supplier, ...data, metadata: { ...(supplier.metadata || {}), ...(data.metadata || {}) }, credit_days: data.credit_days ?? supplier.credit_days }, supplier.metadata || {});
     const updated = await prisma.party.update({
       where: { id: supplier.id },
       data: {
@@ -204,14 +257,16 @@ async function updateSupplier(tenantId, supplierId, data) {
         email: data.email ?? supplier.email,
         phone: data.phone ?? supplier.phone,
         address: data.address ?? supplier.address,
-        city: data.city ?? supplier.city,
+        city: normalized.city ?? supplier.city,
         country: data.country ?? supplier.country,
+        credit_limit: data.credit_limit ?? supplier.credit_limit,
+        credit_days: normalized.creditDays,
         active: data.active ?? supplier.active,
         metadata: withPartyRoles({
           ...(supplier.metadata || {}),
-          ...(data.metadata || {}),
+          ...normalized.metadata,
           ...(data.credit_limit !== undefined ? { supplier_credit_limit: data.credit_limit } : {}),
-          ...(data.credit_days !== undefined ? { supplier_credit_days: data.credit_days } : {})
+          supplier_credit_days: normalized.creditDays
         }, ["supplier"])
       }
     });
@@ -644,6 +699,58 @@ async function annulPurchaseInvoice(tenantId, userId, documentId, data) {
     }
   }));
   return result;
+}
+
+async function listPurchaseInvoiceReport(tenantId, query = {}) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const documentWhere = { document_class: { in: ["CP", "NCP"] } };
+    if (query.supplier_id) documentWhere.supplier_id = Number(query.supplier_id);
+    if (query.from_date || query.to_date) {
+      documentWhere.posting_date = {};
+      if (query.from_date) documentWhere.posting_date.gte = new Date(`${query.from_date}T00:00:00`);
+      if (query.to_date) documentWhere.posting_date.lte = new Date(`${query.to_date}T23:59:59.999`);
+    }
+    const documents = await prisma.cxpCabdoc.findMany({ where: documentWhere, include: { lines: true }, orderBy: { posting_date: "desc" }, take: Math.min(Number(query.limit || 1000), 5000) });
+    if (!documents.length) return [];
+    const documentIds = documents.map((row) => row.id);
+    const controls = await prisma.purchaseOrderInvoiceLine.findMany({ where: { cxp_cabdoc_id: { in: documentIds } } });
+    const supplierIds = [...new Set(documents.map((row) => row.supplier_id))];
+    const itemIds = [...new Set(controls.map((row) => row.item_id))];
+    const orderIds = [...new Set(controls.map((row) => row.purchase_order_id))];
+    const [suppliers, items, orders] = await Promise.all([
+      prisma.party.findMany({ where: { id: { in: supplierIds } } }),
+      itemIds.length ? prisma.item.findMany({ where: { id: { in: itemIds } } }) : [],
+      orderIds.length ? prisma.transaction.findMany({ where: { id: { in: orderIds }, type: "purchase" } }) : []
+    ]);
+    const supplierById = new Map(suppliers.map((row) => [row.id, row]));
+    const itemById = new Map(items.map((row) => [row.id, row]));
+    const orderById = new Map(orders.map((row) => [row.id, row]));
+    const controlsByDocument = new Map();
+    for (const row of controls) controlsByDocument.set(row.cxp_cabdoc_id, [...(controlsByDocument.get(row.cxp_cabdoc_id) || []), row]);
+    const rows = [];
+    for (const document of documents) {
+      const supplier = supplierById.get(document.supplier_id);
+      const linked = controlsByDocument.get(document.id) || [];
+      for (const control of linked) {
+        const item = itemById.get(control.item_id);
+        if (query.search) {
+          const needle = String(query.search).trim().toLowerCase();
+          const haystack = [document.number, document.supplier_reference, supplier?.tax_id, supplier?.name, item?.code, item?.legacy_code, item?.name, orderById.get(control.purchase_order_id)?.number].join(" ").toLowerCase();
+          if (!haystack.includes(needle)) continue;
+        }
+        const sourceLine = document.lines.find((line) => line.line_no === linked.indexOf(control) + 1);
+        rows.push({
+          document_id: document.id, internal_number: document.number, document_kind: document.document_kind, status: document.status,
+          supplier_tax_id: document.supplier_tax_id || supplier?.tax_id || "", supplier_name: supplier?.legal_name || supplier?.name || "",
+          sku: item?.code || "", legacy_code: item?.legacy_code || "", product_name: item?.name || "", quantity: Number(control.qty),
+          purchase_order_code: orderById.get(control.purchase_order_id)?.number || "", unit_cost: Number(control.unit_cost), total_cost: Number(control.amount),
+          vat_code: sourceLine?.vat_code || "", vat_percent: Number(sourceLine?.vat_percent || 0), vat_amount: Number(sourceLine?.vat_amount || 0),
+          supplier_reference: document.supplier_reference, posting_date: document.posting_date, due_date: document.due_date
+        });
+      }
+    }
+    return rows;
+  });
 }
 
 const PO_TRANSITIONS = {
@@ -1167,6 +1274,7 @@ module.exports = {
   simulatePurchaseInvoice,
   createPurchaseInvoice,
   annulPurchaseInvoice,
+  listPurchaseInvoiceReport,
   purchaseReceiptLineState,
   allocateImportCosts,
   receivePurchaseOrder,

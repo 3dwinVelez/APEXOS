@@ -11,6 +11,10 @@ async function inventoryRoutes(fastify) {
     preHandler: requirePermission("inventory", "read")
   }, async (request) => service.listItems(request.user?.tenant_id, request.query));
 
+  fastify.get("/inventory/classifications", { preHandler: requirePermission("inventory", "read") }, async (request) => service.listClassificationMasters(request.user?.tenant_id));
+  fastify.post("/inventory/classifications", { schema: schemas.classificationMasterSchema, preHandler: requirePermission("inventory", "write") }, async (request, reply) => reply.code(201).send(await service.saveClassificationMaster(request.user?.tenant_id, request.body)));
+  fastify.put("/inventory/classifications/:id", { schema: schemas.classificationMasterSchema, preHandler: requirePermission("inventory", "write") }, async (request) => service.saveClassificationMaster(request.user?.tenant_id, request.body, Number(request.params.id)));
+
   fastify.get("/inventory/families", {
     preHandler: requirePermission("inventory", "read")
   }, async (request) => service.listFamilies(request.user?.tenant_id, request.query));
@@ -85,6 +89,11 @@ async function inventoryRoutes(fastify) {
     schema: schemas.updateItemSchema,
     preHandler: requirePermission("inventory", "write")
   }, async (request) => service.updateItem(request.user?.tenant_id, Number(request.params.id), request.body));
+
+  fastify.post("/inventory/sales-prices", {
+    schema: schemas.salesPriceBulkSchema,
+    preHandler: requirePermission("sales", "write")
+  }, async (request) => service.updateSalesPrices(request.user?.tenant_id, request.user.id, request.body.prices));
 
   fastify.post("/inventory/adjust", {
     schema: schemas.adjustStockSchema,

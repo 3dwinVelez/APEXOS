@@ -82,7 +82,7 @@ export default function NuevoTrasladoPage() {
     setSaving(true);
     try {
       const created = await api<{ number?: string }>("/api/v1/inventory/transfers", { method: "POST", body: JSON.stringify({ origin_place_id: Number(header.origin_place_id), destination_place_id: Number(header.destination_place_id), reason: header.reason.trim(), idempotency_key: crypto.randomUUID(), lines: lines.map((line) => ({ item_id: Number(line.item_id), qty: Number(line.qty) })) }) });
-      if (createAnother) { setLines([emptyLine()]); setHeader((current) => ({ ...current, reason: "" })); setMessage(`${created.number || "Traslado"} creado. Puedes registrar el siguiente con las mismas bodegas.`); }
+      if (createAnother) { setLines([emptyLine()]); setHeader((current) => ({ ...current, reason: "" })); setMessage(`${created.number || "Traslado"} creado y enviado a transito. Puedes registrar el siguiente con las mismas bodegas.`); }
       else router.push("/dashboard/inventario/traslados");
     } catch (err) { setError(err instanceof Error ? err.message : "No se pudo crear el traslado"); }
     finally { setSaving(false); }
@@ -91,7 +91,7 @@ export default function NuevoTrasladoPage() {
   function submit(event: FormEvent) { event.preventDefault(); void createTransfer(false); }
 
   return <div className="space-y-5">
-    <header><p className="text-sm font-medium text-apex">Inventario - Traslados</p><h1 className="text-3xl font-semibold">Nuevo traslado</h1><p className="mt-1 text-sm text-neutral-600">La cabecera define origen y destino; agrega varios SKU consultando su existencia disponible.</p></header>
+    <header><p className="text-sm font-medium text-apex">Inventario - Traslados</p><h1 className="text-3xl font-semibold">Nuevo traslado</h1><p className="mt-1 text-sm text-neutral-600">Al guardar, el stock sale de la bodega origen y el documento queda en transito hasta su descarga completa.</p></header>
     <InventoryNav />
     {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
     {message ? <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p> : null}

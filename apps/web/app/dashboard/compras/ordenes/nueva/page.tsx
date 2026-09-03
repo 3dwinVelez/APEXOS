@@ -63,7 +63,7 @@ type PurchaseOrder = {
   metadata: { priority?: string; warehouse_id?: number; tags?: string[]; payment_terms?: string; expected_at?: string; wms?: { inbound_order?: string } };
   received_percent: number;
   pending_quantity: number;
-  lines: Array<{ id: number; item_id: number; description: string; qty: number; unit?: string; unit_cost: number; discount?: number; total: number; metadata?: { expected_at?: string; notes?: string }; received_quantity: number; pending_quantity: number }>;
+  lines: Array<{ id: number; item_id: number; item?:{code:string;legacy_code?:string|null}|null; description: string; qty: number; unit?: string; unit_cost: number; discount?: number; total: number; metadata?: { expected_at?: string; notes?: string }; received_quantity: number; pending_quantity: number }>;
 };
 
 type PoLine = {
@@ -121,6 +121,8 @@ export default function NuevaOCPage() {
   const [skuSearchLineId, setSkuSearchLineId] = useState<string | null>(null);
   const [skuSearch, setSkuSearch] = useState("");
   const [skuSearchMessage, setSkuSearchMessage] = useState("");
+  const [supplierSearchOpen,setSupplierSearchOpen]=useState(false);
+  const [supplierSearch,setSupplierSearch]=useState("");
   const [orderFilter, setOrderFilter] = useState("all");
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("crear");
   const [form, setForm] = useState({
@@ -457,15 +459,9 @@ export default function NuevaOCPage() {
                 <div className="space-y-4 p-4">
                   <div className="grid gap-3 lg:grid-cols-4">
                     <Field label="Proveedor">
-                      <select className="h-10 w-full rounded-md border border-line px-3 text-sm" value={form.supplier_id} onChange={(e) => {
-                        const supplierId = Number(e.target.value);
-                        const selected = suppliers.find((entry) => entry.id === supplierId);
-                        setForm((p) => ({ ...p, supplier_id: supplierId, currency: currencyForCountry(selected.country, p.currency) }));
-                      }}>
-                        <option value={0}>Seleccionar proveedor</option>
-                        {suppliers.map((entry) => <option key={entry.id} value={entry.id}>{entry.name}</option>)}
-                      </select>
+                      <input className="control" placeholder="Escribe NIT o Enter para buscar" value={form.supplier_id?(suppliers.find(s=>s.id===form.supplier_id)?.tax_id||""):supplierSearch} onChange={e=>{setSupplierSearch(e.target.value);const match=suppliers.find(s=>s.tax_id===e.target.value.trim());setForm(p=>({...p,supplier_id:match?.id||0}))}} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();setSupplierSearchOpen(true)}}}/>
                     </Field>
+                    <Field label="Nombre del proveedor"><input className="control bg-paper" readOnly value={suppliers.find(s=>s.id===form.supplier_id)?.name||""}/></Field>
                     <Field label="Bodega destino">
                       <select className="h-10 w-full rounded-md border border-line px-3 text-sm" disabled={!warehouses.length} value={form.warehouse_id} onChange={(e) => setForm((p) => ({ ...p, warehouse_id: Number(e.target.value) }))}>
                         {warehouses.length ? <option value={0}>Seleccionar bodega</option> : <option value={0}>Crea una bodega primero</option>}
@@ -632,6 +628,7 @@ export default function NuevaOCPage() {
           </div>
         </div>
       </ModalFrame> : null}
+      {supplierSearchOpen?<ModalFrame maxWidth="md:max-w-3xl" onClose={()=>setSupplierSearchOpen(false)} title="Buscar proveedor"><input autoFocus className="control mb-3" placeholder="Buscar dinámicamente por NIT o nombre" value={supplierSearch} onChange={e=>setSupplierSearch(e.target.value)}/><div className="max-h-[55vh] divide-y overflow-auto rounded border border-line">{suppliers.filter(s=>!supplierSearch.trim()||[s.tax_id,s.name].some(v=>String(v||"").toLowerCase().includes(supplierSearch.toLowerCase()))).map(s=><button className="flex w-full justify-between p-3 text-left hover:bg-paper" key={s.id} onClick={()=>{setForm(p=>({...p,supplier_id:s.id,currency:currencyForCountry(s.country,p.currency)}));setSupplierSearch("");setSupplierSearchOpen(false)}}><span>{s.name}</span><span className="font-mono">{s.tax_id}</span></button>)}</div></ModalFrame>:null}
       {closingOrder ? <ModalFrame maxWidth="md:max-w-xl" onClose={() => !saving && setClosingOrder(null)} title={`Cerrar orden ${closingOrder.number}`}>
         <div className="space-y-4">
           <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
@@ -724,8 +721,8 @@ function SelectedOrderCard({ selectedOrder, onApprove, onDuplicate, onEdit, onDo
         <div className="space-y-2">
           {selectedOrder.lines.slice(0, 6).map((line) => (
             <div className="flex items-center justify-between gap-3 rounded-md border border-line bg-paper px-3 py-2 text-sm" key={line.id}>
-              <span className="min-w-0 truncate">{line.description}</span>
-              <span className="shrink-0 font-medium">{line.qty} und</span>
+              <span className="min-w-0 truncate"><b className="font-mono">{line.item?.code||line.item_id}</b> · {line.description}</span>
+              <span className="shrink-0 font-medium">Pedida {line.qty} · Entregada {line.received_quantity||0}</span>
             </div>
           ))}
         </div>

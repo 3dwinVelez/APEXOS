@@ -111,6 +111,14 @@ const daneLocationMasterSchema = {
   }
 };
 
+const namedMasterSchema = {
+  body: {
+    type: "object",
+    required: ["code", "description"],
+    properties: { code: { type: "string", minLength: 1 }, description: { type: "string", minLength: 1 }, days: { type: "integer", minimum: 0, maximum: 365 }, active: { type: "boolean" } }
+  }
+};
+
 const organizationUnitSchema = {
   body: {
     type: "object",
@@ -311,6 +319,7 @@ module.exports = {
   thirdPartySchema,
   documentTypeMasterSchema,
   daneLocationMasterSchema,
+  namedMasterSchema,
   organizationUnitSchema,
   periodSchema,
   paymentSchema,
