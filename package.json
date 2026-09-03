@@ -53,6 +53,7 @@
     "qa:approval:evidence": "node scripts/validate-change-approval-evidence.js",
     "qa:promotion:scope": "node scripts/validate-promotion-scope.js",
     "certify:auth-session": "node scripts/certifications/auth-session-readiness.js",
+    "certify:commercial-population:qa": "node scripts/certifications/commercial-management-population-qa.js",
     "certify:service-order-edit:qa": "node scripts/certifications/service-order-edit-qa.js",
     "certify:service-correction-external-id:qa": "node scripts/certifications/service-correction-external-id-qa.js",
     "certify:service-correction-evidence:nyvora": "node scripts/certifications/service-correction-evidence-nyvora.js",
