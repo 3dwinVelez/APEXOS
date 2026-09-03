@@ -1,5 +1,13 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+
+test("el contenedor API instala la dependencia de métricas en su propio workspace", () => {
+  const packageJson = JSON.parse(fs.readFileSync(path.resolve(__dirname, "../package.json"), "utf8"));
+  assert.equal(packageJson.dependencies?.["prom-client"], "^15.1.3");
+  assert.doesNotThrow(() => require("prom-client"));
+});
 
 test("commitments y visits estan montadas en /api/v1 y bloquean acceso anonimo", {
   skip: process.env.COMMERCIAL_ROUTE_INTEGRATION !== "1"
