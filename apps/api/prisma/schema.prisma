@@ -1492,6 +1492,431 @@ model VehicleMasterAuditLog {
   @@index([tenant_id, plate])
 }
 
+model TransportCarrier {
+  id              Int               @id @default(autoincrement())
+  tenant_id       String
+  code            String
+  legal_name      String
+  trade_name      String?
+  tax_id          String?
+  supplier_id     Int?
+  phone           String?
+  email           String?
+  status          String            @default("activo")
+  service_levels  Json              @default("[]")
+  operating_zones Json              @default("[]")
+  vehicle_types   Json              @default("[]")
+  score           Float             @default(0)
+  metadata        Json              @default("{}")
+  active          Boolean           @default(true)
+  created_at      DateTime          @default(now())
+  updated_at      DateTime          @updatedAt
+  drivers         TransportDriver[]
+  trips           TransportTrip[]
+  rate_cards      TransportRateCard[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, status, active])
+  @@index([tenant_id, tax_id])
+}
+
+model TransportOrigin {
+  id                Int                 @id @default(autoincrement())
+  tenant_id         String
+  code              String
+  name              String
+  address           String
+  city              String
+  department        String?
+  country           String              @default("CO")
+  latitude          Float
+  longitude         Float
+  timezone          String              @default("America/Bogota")
+  operation_start   String?
+  operation_end     String?
+  service_minutes   Int                 @default(60)
+  metadata          Json                @default("{}")
+  active            Boolean             @default(true)
+  created_at        DateTime            @default(now())
+  updated_at        DateTime            @updatedAt
+  needs             TransportNeed[]
+  trips             TransportTrip[]
+  rate_cards        TransportRateCard[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, city, active])
+}
+
+model TransportRateCard {
+  id                   Int               @id @default(autoincrement())
+  tenant_id            String
+  code                 String
+  version              Int               @default(1)
+  name                 String
+  status               String            @default("borrador")
+  carrier_id           Int?
+  carrier              TransportCarrier? @relation(fields: [carrier_id], references: [id], onDelete: Restrict)
+  origin_id            Int?
+  origin               TransportOrigin?  @relation(fields: [origin_id], references: [id], onDelete: Restrict)
+  destination_city     String?
+  destination_department String?
+  service_level        String?
+  vehicle_type         String?
+  valid_from           DateTime
+  valid_to             DateTime
+  currency             String            @default("COP")
+  base_rate            Decimal           @default(0) @db.Decimal(18, 2)
+  minimum_charge       Decimal           @default(0) @db.Decimal(18, 2)
+  price_per_km         Decimal           @default(0) @db.Decimal(18, 4)
+  price_per_kg         Decimal           @default(0) @db.Decimal(18, 4)
+  price_per_m3         Decimal           @default(0) @db.Decimal(18, 4)
+  price_per_stop       Decimal           @default(0) @db.Decimal(18, 2)
+  fuel_surcharge_pct   Decimal           @default(0) @db.Decimal(7, 4)
+  tolls_flat           Decimal           @default(0) @db.Decimal(18, 2)
+  priority             Int               @default(100)
+  metadata             Json              @default("{}")
+  active               Boolean           @default(true)
+  created_by           Int?
+  created_at           DateTime          @default(now())
+  updated_at           DateTime          @updatedAt
+
+  @@unique([tenant_id, code, version])
+  @@index([tenant_id, status, valid_from, valid_to], map: "TransportRateCard_tenant_status_valid_idx")
+  @@index([tenant_id, carrier_id, active], map: "TransportRateCard_tenant_carrier_active_idx")
+  @@index([tenant_id, origin_id, destination_city], map: "TransportRateCard_tenant_origin_destination_idx")
+}
+
+model TransportDriver {
+  id                 Int                @id @default(autoincrement())
+  tenant_id          String
+  code               String
+  document           String
+  name               String
+  phone              String?
+  employee_id        Int?
+  carrier_id         Int?
+  carrier            TransportCarrier?  @relation(fields: [carrier_id], references: [id], onDelete: Restrict)
+  license_number     String?
+  license_category   String?
+  license_expires_at DateTime?
+  certifications     Json               @default("[]")
+  status             String             @default("disponible")
+  metadata           Json               @default("{}")
+  active             Boolean            @default(true)
+  created_at         DateTime           @default(now())
+  updated_at         DateTime           @updatedAt
+  trips               TransportTrip[]
+
+  @@unique([tenant_id, code])
+  @@unique([tenant_id, document])
+  @@index([tenant_id, carrier_id, status])
+  @@index([tenant_id, employee_id])
+}
+
+model TransportDeliveryPoint {
+  id                   Int             @id @default(autoincrement())
+  tenant_id            String
+  code                 String
+  name                 String
+  customer_party_id    Int?
+  commercial_customer_id Int?
+  address              String
+  city                 String
+  department           String?
+  country              String          @default("CO")
+  latitude             Float?
+  longitude            Float?
+  timezone             String          @default("America/Bogota")
+  window_start         String?
+  window_end           String?
+  receiving_days       Json            @default("[]")
+  service_minutes      Int             @default(30)
+  access_restrictions  String?
+  appointment_required Boolean         @default(false)
+  geofence_radius_m    Int             @default(150)
+  instructions         String?
+  metadata             Json            @default("{}")
+  active               Boolean         @default(true)
+  created_at           DateTime        @default(now())
+  updated_at           DateTime        @updatedAt
+  needs                TransportNeed[]
+  stops                TransportStop[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, customer_party_id, active])
+  @@index([tenant_id, commercial_customer_id, active], map: "TransportDeliveryPoint_commercial_customer_active_idx")
+  @@index([tenant_id, city, active])
+}
+
+model TransportNeed {
+  id                    Int                 @id @default(autoincrement())
+  tenant_id             String
+  code                  String
+  source_type           String
+  source_id             String?
+  source_reference      String?
+  sales_order_id        Int?
+  origin_place_id       Int?
+  origin_id             Int?
+  origin                TransportOrigin?    @relation(fields: [origin_id], references: [id], onDelete: Restrict)
+  origin_name           String
+  delivery_point_id     Int
+  delivery_point        TransportDeliveryPoint @relation(fields: [delivery_point_id], references: [id], onDelete: Restrict)
+  available_at          DateTime
+  due_at                DateTime
+  priority              String              @default("normal")
+  service_level         String              @default("normal")
+  weight_kg             Float
+  volume_m3             Float
+  pallets               Float               @default(0)
+  packages              Int                 @default(0)
+  temperature_min_c     Float?
+  temperature_max_c     Float?
+  required_vehicle_type String?
+  cargo_value           Decimal             @default(0) @db.Decimal(18, 2)
+  customer_freight      Decimal             @default(0) @db.Decimal(18, 2)
+  currency              String              @default("COP")
+  status                String              @default("pendiente")
+  validation_errors     Json                @default("[]")
+  metadata              Json                @default("{}")
+  created_by            Int?
+  created_at            DateTime            @default(now())
+  updated_at            DateTime            @updatedAt
+  lines                 TransportNeedLine[]
+  trip_links            TransportTripNeed[]
+  stops                 TransportStop[]
+  attempts              TransportDeliveryAttempt[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, status, due_at])
+  @@index([tenant_id, source_type, source_id])
+  @@index([tenant_id, delivery_point_id, due_at])
+  @@index([tenant_id, origin_id, status])
+}
+
+model TransportNeedLine {
+  id             Int           @id @default(autoincrement())
+  tenant_id      String
+  need_id        Int
+  need           TransportNeed @relation(fields: [need_id], references: [id], onDelete: Restrict)
+  item_id        Int?
+  sku            String
+  description    String?
+  quantity       Decimal       @db.Decimal(18, 4)
+  unit           String
+  weight_kg      Float         @default(0)
+  volume_m3      Float         @default(0)
+  pallets        Float         @default(0)
+  metadata       Json          @default("{}")
+
+  @@index([tenant_id, need_id])
+  @@index([tenant_id, item_id])
+}
+
+model TransportTrip {
+  id                 Int                    @id @default(autoincrement())
+  tenant_id          String
+  code               String
+  status             String                 @default("borrador")
+  origin_place_id    Int?
+  origin_id          Int?
+  origin             TransportOrigin?       @relation(fields: [origin_id], references: [id], onDelete: Restrict)
+  origin_name        String
+  carrier_id         Int?
+  carrier            TransportCarrier?      @relation(fields: [carrier_id], references: [id], onDelete: Restrict)
+  vehicle_id         Int?
+  vehicle_plate      String?
+  driver_id          Int?
+  driver             TransportDriver?       @relation(fields: [driver_id], references: [id], onDelete: Restrict)
+  planned_departure  DateTime?
+  actual_departure   DateTime?
+  planned_arrival    DateTime?
+  actual_arrival     DateTime?
+  planned_distance_km Float                  @default(0)
+  planned_duration_minutes Int               @default(0)
+  total_weight_kg    Float                   @default(0)
+  total_volume_m3    Float                   @default(0)
+  total_pallets      Float                   @default(0)
+  estimated_cost     Decimal                 @default(0) @db.Decimal(18, 2)
+  committed_cost     Decimal                 @default(0) @db.Decimal(18, 2)
+  actual_cost        Decimal                 @default(0) @db.Decimal(18, 2)
+  currency           String                  @default("COP")
+  service_level      String                  @default("normal")
+  version            Int                     @default(1)
+  metadata           Json                    @default("{}")
+  created_by         Int?
+  created_at         DateTime                @default(now())
+  updated_at         DateTime                @updatedAt
+  needs              TransportTripNeed[]
+  stops              TransportStop[]
+  events             TransportTripEvent[]
+  attempts           TransportDeliveryAttempt[]
+  settlements        TransportSettlement[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, status, planned_departure])
+  @@index([tenant_id, carrier_id, status])
+  @@index([tenant_id, vehicle_id, status])
+  @@index([tenant_id, origin_id, status])
+}
+
+model TransportTripNeed {
+  id         Int           @id @default(autoincrement())
+  tenant_id  String
+  trip_id    Int
+  trip       TransportTrip @relation(fields: [trip_id], references: [id], onDelete: Restrict)
+  need_id    Int
+  need       TransportNeed @relation(fields: [need_id], references: [id], onDelete: Restrict)
+  created_at DateTime      @default(now())
+
+  @@unique([trip_id, need_id])
+  @@index([tenant_id, trip_id])
+  @@index([tenant_id, need_id])
+}
+
+model TransportStop {
+  id                 Int                    @id @default(autoincrement())
+  tenant_id          String
+  trip_id            Int
+  trip               TransportTrip          @relation(fields: [trip_id], references: [id], onDelete: Restrict)
+  need_id            Int?
+  need               TransportNeed?         @relation(fields: [need_id], references: [id], onDelete: Restrict)
+  delivery_point_id  Int?
+  delivery_point     TransportDeliveryPoint? @relation(fields: [delivery_point_id], references: [id], onDelete: Restrict)
+  sequence           Int
+  stop_type          String                 @default("entrega")
+  status             String                 @default("pendiente")
+  planned_arrival    DateTime?
+  actual_arrival     DateTime?
+  service_started_at DateTime?
+  completed_at       DateTime?
+  address_snapshot   String?
+  latitude           Float?
+  longitude          Float?
+  instructions       String?
+  metadata           Json                   @default("{}")
+  events             TransportTripEvent[]
+  attempts           TransportDeliveryAttempt[]
+
+  @@unique([trip_id, sequence])
+  @@index([tenant_id, trip_id, status])
+  @@index([tenant_id, delivery_point_id])
+}
+
+model TransportTripEvent {
+  id          BigInt         @id @default(autoincrement())
+  tenant_id   String
+  trip_id     Int
+  trip        TransportTrip  @relation(fields: [trip_id], references: [id], onDelete: Restrict)
+  stop_id     Int?
+  stop        TransportStop? @relation(fields: [stop_id], references: [id], onDelete: Restrict)
+  event_type  String
+  occurred_at DateTime       @default(now())
+  source      String         @default("usuario")
+  latitude    Float?
+  longitude   Float?
+  actor_id    Int?
+  device_id   String?
+  observation String?
+  data        Json           @default("{}")
+  created_at  DateTime       @default(now())
+
+  @@index([tenant_id, trip_id, occurred_at])
+  @@index([tenant_id, stop_id, occurred_at])
+  @@index([tenant_id, event_type, occurred_at])
+}
+
+model TransportDeliveryAttempt {
+  id               Int           @id @default(autoincrement())
+  tenant_id        String
+  trip_id          Int
+  trip             TransportTrip @relation(fields: [trip_id], references: [id], onDelete: Restrict)
+  stop_id          Int
+  stop             TransportStop @relation(fields: [stop_id], references: [id], onDelete: Restrict)
+  need_id          Int?
+  need             TransportNeed? @relation(fields: [need_id], references: [id], onDelete: Restrict)
+  attempt_number   Int
+  result           String
+  cause_code       String?
+  responsible      String?
+  evidence         Json           @default("[]")
+  delivered_lines Json           @default("[]")
+  additional_cost  Decimal        @default(0) @db.Decimal(18, 2)
+  recoverable      Boolean        @default(false)
+  next_attempt_at  DateTime?
+  approved_by      Int?
+  occurred_at      DateTime       @default(now())
+  observations     String?
+  pod              TransportPod?
+  created_at       DateTime       @default(now())
+
+  @@unique([stop_id, attempt_number])
+  @@index([tenant_id, trip_id, occurred_at])
+  @@index([tenant_id, result, occurred_at])
+}
+
+model TransportPod {
+  id                Int                      @id @default(autoincrement())
+  tenant_id         String
+  attempt_id        Int                      @unique
+  attempt           TransportDeliveryAttempt @relation(fields: [attempt_id], references: [id], onDelete: Restrict)
+  received_at       DateTime
+  receiver_name     String
+  receiver_document String?
+  signature         String?
+  photos            Json                     @default("[]")
+  latitude          Float?
+  longitude         Float?
+  observations      String?
+  created_by        Int?
+  created_at        DateTime                 @default(now())
+
+  @@index([tenant_id, received_at])
+}
+
+model TransportSettlement {
+  id             Int                       @id @default(autoincrement())
+  tenant_id      String
+  code           String
+  trip_id        Int
+  trip           TransportTrip             @relation(fields: [trip_id], references: [id], onDelete: Restrict)
+  status         String                    @default("borrador")
+  estimated_cost Decimal                   @default(0) @db.Decimal(18, 2)
+  committed_cost Decimal                   @default(0) @db.Decimal(18, 2)
+  liquidated_cost Decimal                  @default(0) @db.Decimal(18, 2)
+  currency       String                    @default("COP")
+  approved_by    Int?
+  approved_at    DateTime?
+  metadata       Json                      @default("{}")
+  created_by     Int?
+  created_at     DateTime                  @default(now())
+  updated_at     DateTime                  @updatedAt
+  lines          TransportSettlementLine[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, trip_id, status])
+}
+
+model TransportSettlementLine {
+  id           Int                 @id @default(autoincrement())
+  tenant_id    String
+  settlement_id Int
+  settlement   TransportSettlement @relation(fields: [settlement_id], references: [id], onDelete: Restrict)
+  concept      String
+  quantity     Decimal             @default(1) @db.Decimal(18, 4)
+  unit_rate    Decimal             @default(0) @db.Decimal(18, 2)
+  total        Decimal             @default(0) @db.Decimal(18, 2)
+  source       String?
+  support      Json                @default("{}")
+  recoverable  Boolean             @default(false)
+  approved_by  Int?
+  metadata     Json                @default("{}")
+  created_at   DateTime            @default(now())
+
+  @@index([tenant_id, settlement_id])
+  @@index([tenant_id, concept])
+}
+
 model TimePunch {
   id                Int       @id @default(autoincrement())
   tenant_id         String

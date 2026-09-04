@@ -15,6 +15,9 @@ const TENANT_MODELS = new Set([
   "ProcessedWorkday", "GpsPing", "WorkSession", "ActivityType", "WorkActivity", "ActivityEvidence",
   "Vehicle", "ServiceOrder", "ServiceOrderItem", "ServiceOrderCorrection", "ServiceOrderCorrectionChange", "ServiceReference",
   "VehicleDocument", "VehicleMasterAuditLog", "ServiceReferencePart", "ServiceIncident", "ServicePhoto",
+  "TransportCarrier", "TransportDriver", "TransportOrigin", "TransportDeliveryPoint", "TransportRateCard", "TransportNeed", "TransportNeedLine",
+  "TransportTrip", "TransportTripNeed", "TransportStop", "TransportTripEvent", "TransportDeliveryAttempt",
+  "TransportPod", "TransportSettlement", "TransportSettlementLine",
   "EvidenceUploadAuthorization", "AuthorizationSession",
   "Project", "ProjectCommitment", "ProjectDeliverable", "ProjectRisk", "ProjectResourceAssignment",
   "ProjectComment", "ProjectEvidence", "ProjectAlert", "ProjectLog",
@@ -34,6 +37,7 @@ const SOFT_DELETE = new Set([
   "Tenant", "User", "InventoryFamily", "InventoryFamilyAccounting",
   "Location", "Account", "ProjectResourceAssignment", "WorkSchedule",
   "ActivityType", "Vehicle", "VehicleDocument", "ServiceReference",
+  "TransportCarrier", "TransportDriver", "TransportOrigin", "TransportDeliveryPoint", "TransportRateCard",
   "Workflow", "CustomField", "EInvoiceConfig"
 ]);
 
