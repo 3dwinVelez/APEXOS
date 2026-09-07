@@ -17,6 +17,7 @@
     { "status": "A", "file": "docs/qa/evidence/apex-heart-ytd-data-20260907/functional.md" },
     { "status": "A", "file": "docs/qa/evidence/apex-heart-ytd-data-20260907/preqa-scope-manifest.json" },
     { "status": "A", "file": "docs/qa/evidence/apex-heart-ytd-data-20260907/qa-data-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/apex-heart-ytd-data-20260907/qa-approval-evidence.json" },
     { "status": "A", "file": "docs/qa/evidence/apex-heart-ytd-data-20260907/support-scripts.md" },
     { "status": "M", "file": "package.json" },
     { "status": "A", "file": "scripts/certifications/apex-heart-qa-data.js" },
