@@ -1,0 +1,83 @@
+{
+  "certification": "apex-heart-qa-ytd-data",
+  "version": 1,
+  "status": "passed",
+  "generated_at": "2026-09-07T04:29:13.623Z",
+  "environment": "QA develop",
+  "tenant": "Cliente Piloto QA",
+  "period": {
+    "from": "2026-01-01",
+    "to": "2026-09-30"
+  },
+  "checks": [
+    {
+      "name": "commercial_history",
+      "status": "passed"
+    },
+    {
+      "name": "purchasing_history",
+      "status": "passed"
+    },
+    {
+      "name": "inventory_history",
+      "status": "passed"
+    },
+    {
+      "name": "portfolio_context",
+      "status": "passed"
+    },
+    {
+      "name": "product_context",
+      "status": "passed"
+    },
+    {
+      "name": "active_metrics",
+      "status": "passed"
+    }
+  ],
+  "data_status": {
+    "invoices": 45,
+    "products": 53,
+    "receivables": 25,
+    "payables": 9,
+    "inventory_snapshots": 324,
+    "freshness": "2026-09-07T04:36:04.703Z"
+  },
+  "datasets": {
+    "products": 36,
+    "categories": 6,
+    "monthly": 9,
+    "purchase_trend": 9,
+    "receivable_aging": 5,
+    "payable_aging": 5,
+    "inventory_health": 4,
+    "inventory_trend": 9,
+    "invoice_details": 250,
+    "alerts": 5
+  },
+  "metrics": {
+    "revenue": 3262521795,
+    "gross_profit": 1091550755,
+    "gross_margin_pct": 33.46,
+    "cogs": 2170971040,
+    "units_sold": 3959,
+    "inventory_quantity": 2431,
+    "inventory_value": 1035759900,
+    "average_inventory_value": 1022397933.33,
+    "inventory_days": 129.04,
+    "gmroi": 1.07,
+    "purchases": 274396525,
+    "payable_balance": 76136196.15,
+    "receivable_balance": 895426062.7,
+    "overdue_balance": 895426062.7,
+    "overdue_ratio_pct": 100,
+    "receivable_days": 75.2,
+    "payable_days": 76.03,
+    "cash_cycle_days": 128.21,
+    "excess_inventory_value": 554151727.6,
+    "excess_inventory_pct": 53.5,
+    "cash_effort": 1449577790.3,
+    "financing_cost": 70239653.25,
+    "economic_net_margin": 1021311101.75
+  }
+}

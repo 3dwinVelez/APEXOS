@@ -23,6 +23,8 @@
     "db:push": "npx prisma db push --schema apps/api/prisma/schema.prisma --skip-generate",
     "seed:demo": "node scripts/seed-admin.js",
     "seed:apex-heart": "node scripts/seed-apex-heart-demo.js",
+    "seed:apex-heart:qa:ytd": "node scripts/seed-apex-heart-qa-ytd.js",
+    "certify:apex-heart:qa:data": "node scripts/certifications/apex-heart-qa-data.js --output=docs/qa/evidence/apex-heart-ytd-data-20260907/qa-data-certification.json",
     "seed:ops": "node scripts/seed-scj-puebla-ops.js",
     "seed:supabase:ops": "node scripts/seed-supabase-ops.js",
     "seed:supabase:active-demo": "node scripts/seed-supabase-active-demo.js",
