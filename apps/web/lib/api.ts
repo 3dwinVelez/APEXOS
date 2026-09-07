@@ -100,6 +100,7 @@ const fallbackActivityTypes = [
 type ActivityTypeLike = { id?: number | string; code?: string; name?: string; description?: string | null; active?: boolean; sort_order?: number; metadata?: AnyRow };
 
 const tenantModuleCodesByPermissionModule: Record<string, string[]> = {
+  apex_heart: ["M-28", "reportes", "apex_heart"],
   accounting: ["M-07", "contabilidad", "finance", "accounting"],
   admin: ["M-22", "administracion", "administracion_apex", "admin"],
   brain: ["AI-CORE", "apex-ai", "apex_ai", "brain"],
@@ -4154,6 +4155,45 @@ export async function api<T>(path: string, options: RequestInit = {}, retried = 
     })
     .finally(() => inFlightGetRequests.delete(requestKey));
   return request;
+}
+
+export type ApexHeartRule = {
+  id: number; code: string; name: string; metric: string; operator: "gt" | "lt";
+  warning_threshold: number; critical_threshold: number; enabled: boolean;
+  cooldown_hours: number; recipients?: string[];
+  action_label?: string; action_href?: string;
+};
+
+export type ApexHeartDashboard = {
+  period: { from: string; to: string; days: number };
+  data_status: { invoices: number; products: number; receivables: number; payables: number; inventory_snapshots: number; freshness: string };
+  metrics: Record<string, number>;
+  products: Array<{ item_id: number; code: string; name: string; category: string; revenue: number; cost: number; gross_profit: number; margin_pct: number; gmroi: number; inventory_days: number; inventory_value: number; revenue_share_pct: number; cumulative_pct: number; abc_class: string; score: number }>;
+  monthly: Array<{ period: string; revenue: number; gross_profit: number; margin_pct: number }>;
+  computed_alerts: Array<{ code: string; title: string; message: string; severity: string; metric_value: number; threshold: number; action_label?: string; action_href?: string }>;
+  alerts: Array<{ id: number; title: string; message: string; severity: string; status: string; action_label?: string; action_href?: string }>;
+  rules: ApexHeartRule[];
+  config: Record<string, number | boolean | string[]>;
+};
+
+export function getApexHeartDashboard(from: string, to: string) {
+  return api<ApexHeartDashboard>(`/api/v1/apex-heart/dashboard?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+}
+
+export function evaluateApexHeartAlerts(from: string, to: string) {
+  return api<{ created_or_updated: number }>("/api/v1/apex-heart/alerts/evaluate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ from, to }) });
+}
+
+export function updateApexHeartConfig(config: Record<string, number | boolean | string[]>) {
+  return api("/api/v1/apex-heart/config", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(config) });
+}
+
+export function updateApexHeartRule(id: number, rule: Partial<ApexHeartRule>) {
+  return api(`/api/v1/apex-heart/alert-rules/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rule) });
+}
+
+export function acknowledgeApexHeartAlert(id: number) {
+  return api(`/api/v1/apex-heart/alerts/${id}/acknowledge`, { method: "POST" });
 }
 
 async function apiInternal<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {

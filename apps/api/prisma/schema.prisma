@@ -2741,6 +2741,97 @@ model BrainMetric {
   @@index([tenant_id, metric, period])
 }
 
+// === APEX HEART: CONTROL GERENCIAL TRANSVERSAL ===
+model ApexHeartConfig {
+  id                    Int      @id @default(autoincrement())
+  tenant_id             String   @unique
+  annual_financing_rate Float    @default(14.42)
+  lost_portfolio_rate   Float    @default(5)
+  holding_rate          Float    @default(25)
+  order_cost            Float    @default(50000)
+  lead_time_days        Int      @default(14)
+  safety_stock_days     Int      @default(1)
+  inventory_target_days Int      @default(60)
+  alert_email_enabled   Boolean  @default(true)
+  alert_in_app_enabled  Boolean  @default(true)
+  recipients            Json     @default("[\"owner\",\"admin\"]")
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  @@map("apex_heart_configs")
+}
+
+model ApexHeartAlertRule {
+  id                Int      @id @default(autoincrement())
+  tenant_id         String
+  code              String
+  name              String
+  description       String?
+  metric            String
+  operator          String
+  warning_threshold Float
+  critical_threshold Float
+  severity          String   @default("warning")
+  enabled           Boolean  @default(true)
+  cooldown_hours    Int      @default(24)
+  action_label      String?
+  action_href       String?
+  recipients        Json     @default("[\"owner\",\"admin\"]")
+  created_by        Int?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  @@map("apex_heart_alert_rules")
+  @@unique([tenant_id, code])
+  @@index([tenant_id, enabled])
+  @@index([tenant_id, metric])
+}
+
+model ApexHeartAlert {
+  id             Int       @id @default(autoincrement())
+  tenant_id      String
+  rule_id        Int?
+  fingerprint    String
+  metric         String
+  metric_value   Float
+  threshold      Float
+  severity       String
+  status         String    @default("open")
+  title          String
+  message        String
+  action_label   String?
+  action_href    String?
+  context        Json      @default("{}")
+  detected_at    DateTime  @default(now())
+  acknowledged_at DateTime?
+  acknowledged_by Int?
+  resolved_at    DateTime?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  @@map("apex_heart_alerts")
+  @@unique([tenant_id, fingerprint])
+  @@index([tenant_id, status, severity])
+  @@index([tenant_id, detected_at])
+}
+
+model ApexHeartInventorySnapshot {
+  id          Int      @id @default(autoincrement())
+  tenant_id   String
+  snapshot_date DateTime
+  item_id     Int
+  quantity    Float    @default(0)
+  unit_cost   Float    @default(0)
+  value       Float    @default(0)
+  source      String   @default("system")
+  created_at  DateTime @default(now())
+
+  @@map("apex_heart_inventory_snapshots")
+  @@unique([tenant_id, snapshot_date, item_id])
+  @@index([tenant_id, snapshot_date])
+  @@index([tenant_id, item_id, snapshot_date])
+}
+
 model Workflow {
   id          Int     @id @default(autoincrement())
   tenant_id   String
