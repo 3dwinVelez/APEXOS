@@ -1,0 +1,113 @@
+{
+  "certification": "apex-heart-local",
+  "version": 2,
+  "status": "passed",
+  "generated_at": "2026-09-07T02:59:18.540Z",
+  "commit": "13903c53e7eabf2a0910750eea81d6eb771814fd",
+  "environment": {
+    "type": "local-isolated-qa",
+    "database": "apexos_heart_cert",
+    "node": "v24.14.0"
+  },
+  "checks": [
+    {
+      "name": "authentication",
+      "status": "passed",
+      "detail": "HTTP 200"
+    },
+    {
+      "name": "dashboard_endpoint",
+      "status": "passed",
+      "detail": "HTTP 200"
+    },
+    {
+      "name": "populated_metrics",
+      "status": "passed",
+      "detail": "{\"revenue\":461543000,\"inventory\":122130000,\"profit\":160918000}"
+    },
+    {
+      "name": "abc_parity",
+      "status": "passed",
+      "detail": "6 products"
+    },
+    {
+      "name": "cash_cycle",
+      "status": "passed",
+      "detail": "{\"days\":174.32,\"effort\":137095928.98,\"cost\":9615328.08}"
+    },
+    {
+      "name": "configurable_rules",
+      "status": "passed",
+      "detail": "6 rules / 5 active conditions"
+    },
+    {
+      "name": "permission_denied",
+      "status": "passed",
+      "detail": "HTTP 403"
+    },
+    {
+      "name": "config_update",
+      "status": "passed",
+      "detail": "HTTP 200"
+    },
+    {
+      "name": "rule_update",
+      "status": "passed",
+      "detail": "HTTP 200"
+    },
+    {
+      "name": "alert_evaluation",
+      "status": "passed",
+      "detail": "HTTP 200"
+    },
+    {
+      "name": "persistent_alerts",
+      "status": "passed",
+      "detail": "5 open alerts"
+    },
+    {
+      "name": "tenant_isolation",
+      "status": "passed",
+      "detail": "HTTP 404"
+    },
+    {
+      "name": "alert_acknowledgement",
+      "status": "passed",
+      "detail": "HTTP 200"
+    },
+    {
+      "name": "model_company",
+      "status": "passed",
+      "detail": "NYVORA controlled fixture"
+    }
+  ],
+  "summary": {
+    "metrics": {
+      "revenue": 461543000,
+      "gross_profit": 160918000,
+      "gross_margin_pct": 34.87,
+      "cogs": 300625000,
+      "units_sold": 387,
+      "inventory_quantity": 304,
+      "inventory_value": 122130000,
+      "average_inventory_value": 122184090.91,
+      "inventory_days": 139,
+      "gmroi": 1.32,
+      "purchases": 122650000,
+      "payable_balance": 5320000,
+      "receivable_balance": 67683808.5,
+      "overdue_balance": 18382941.5,
+      "overdue_ratio_pct": 27.16,
+      "receivable_days": 50.15,
+      "payable_days": 14.83,
+      "cash_cycle_days": 174.32,
+      "excess_inventory_value": 69412120.48,
+      "excess_inventory_pct": 56.83,
+      "cash_effort": 137095928.98,
+      "financing_cost": 9615328.08,
+      "economic_net_margin": 151302671.92
+    },
+    "products": 6,
+    "rules": 6
+  }
+}
