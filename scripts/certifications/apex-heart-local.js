@@ -34,6 +34,10 @@ async function main() {
     const body = dashboard.json();
     check("populated_metrics", body.metrics.revenue > 0 && body.metrics.inventory_value > 0 && body.metrics.gross_profit > 0, JSON.stringify({ revenue: body.metrics.revenue, inventory: body.metrics.inventory_value, profit: body.metrics.gross_profit }));
     check("abc_parity", body.products.length >= 6 && body.products.some((item) => item.abc_class === "A") && body.products.some((item) => item.abc_class === "C"), `${body.products.length} products`);
+    check("management_contexts", body.categories.length >= 5 && body.monthly.length >= 12 && body.purchase_trend.length >= 12, `${body.categories.length} categories / ${body.monthly.length} sales months / ${body.purchase_trend.length} purchase months`);
+    check("document_traceability", body.invoice_details.length >= 100 && body.invoice_details.every((line) => line.number && line.customer && line.product), `${body.invoice_details.length} invoice lines`);
+    check("aging_analysis", body.receivable_aging.length === 5 && body.payable_aging.length === 5 && body.receivable_aging.reduce((sum, row) => sum + row.value, 0) > 0, "five receivable and payable aging buckets");
+    check("inventory_analysis", body.inventory_health.length === 4 && body.inventory_trend.length >= 12, `${body.inventory_health.length} health bands / ${body.inventory_trend.length} months`);
     check("cash_cycle", Number.isFinite(body.metrics.cash_cycle_days) && Number.isFinite(body.metrics.cash_effort) && Number.isFinite(body.metrics.financing_cost), JSON.stringify({ days: body.metrics.cash_cycle_days, effort: body.metrics.cash_effort, cost: body.metrics.financing_cost }));
     check("configurable_rules", body.rules.length >= 6 && body.computed_alerts.length > 0, `${body.rules.length} rules / ${body.computed_alerts.length} active conditions`);
     const deniedLogin = await app.inject({ method: "POST", url: "/api/v1/auth/login", payload: { email: deniedUser.email, password: "test1234" } });
@@ -58,7 +62,7 @@ async function main() {
     await app.inject({ method: "PATCH", url: "/api/v1/apex-heart/config", headers, payload: { annual_financing_rate: originalRate } });
     await app.inject({ method: "PUT", url: `/api/v1/apex-heart/alert-rules/${rule.id}`, headers, payload: { warning_threshold: rule.warning_threshold, critical_threshold: rule.critical_threshold, enabled: rule.enabled } });
     check("model_company", (await prisma.tenant.findUnique({ where: { id: demoTenant.id } })).name === "NYVORA", "NYVORA controlled fixture");
-    const result = { certification: "apex-heart-local", version: 2, status: "passed", generated_at: new Date().toISOString(), commit: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(), environment: { type: "local-isolated-qa", database: new URL(process.env.DATABASE_URL).pathname.slice(1), node: process.version }, checks, summary: { metrics: body.metrics, products: body.products.length, rules: body.rules.length } };
+    const result = { certification: "apex-heart-local", version: 3, status: "passed", generated_at: new Date().toISOString(), commit: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(), environment: { type: "local-isolated-qa", database: new URL(process.env.DATABASE_URL).pathname.slice(1), node: process.version }, checks, summary: { metrics: body.metrics, products: body.products.length, categories: body.categories.length, invoice_lines: body.invoice_details.length, rules: body.rules.length } };
     fs.mkdirSync(path.dirname(output), { recursive: true }); fs.writeFileSync(output, `${JSON.stringify(result, null, 2)}\n`);
     console.log(JSON.stringify(result, null, 2));
   } finally {

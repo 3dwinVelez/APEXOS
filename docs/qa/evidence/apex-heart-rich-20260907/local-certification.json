@@ -1,0 +1,135 @@
+{
+  "certification": "apex-heart-local",
+  "version": 3,
+  "status": "passed",
+  "generated_at": "2026-09-07T03:35:05.629Z",
+  "commit": "d62955b12f8fe1a360edaa5ab618a66a2e91f5a9",
+  "environment": {
+    "type": "local-isolated-qa",
+    "database": "apexos_heart_cert",
+    "node": "v24.14.0"
+  },
+  "checks": [
+    {
+      "name": "authentication",
+      "status": "passed",
+      "detail": "HTTP 200"
+    },
+    {
+      "name": "dashboard_endpoint",
+      "status": "passed",
+      "detail": "HTTP 200"
+    },
+    {
+      "name": "populated_metrics",
+      "status": "passed",
+      "detail": "{\"revenue\":5353442971,\"inventory\":1136153900,\"profit\":1856624851}"
+    },
+    {
+      "name": "abc_parity",
+      "status": "passed",
+      "detail": "42 products"
+    },
+    {
+      "name": "management_contexts",
+      "status": "passed",
+      "detail": "6 categories / 17 sales months / 17 purchase months"
+    },
+    {
+      "name": "document_traceability",
+      "status": "passed",
+      "detail": "250 invoice lines"
+    },
+    {
+      "name": "aging_analysis",
+      "status": "passed",
+      "detail": "five receivable and payable aging buckets"
+    },
+    {
+      "name": "inventory_analysis",
+      "status": "passed",
+      "detail": "4 health bands / 17 months"
+    },
+    {
+      "name": "cash_cycle",
+      "status": "passed",
+      "detail": "{\"days\":246.39,\"effort\":1746003254.66,\"cost\":175562113.41}"
+    },
+    {
+      "name": "configurable_rules",
+      "status": "passed",
+      "detail": "6 rules / 4 active conditions"
+    },
+    {
+      "name": "permission_denied",
+      "status": "passed",
+      "detail": "HTTP 403"
+    },
+    {
+      "name": "config_update",
+      "status": "passed",
+      "detail": "HTTP 200"
+    },
+    {
+      "name": "rule_update",
+      "status": "passed",
+      "detail": "HTTP 200"
+    },
+    {
+      "name": "alert_evaluation",
+      "status": "passed",
+      "detail": "HTTP 200"
+    },
+    {
+      "name": "persistent_alerts",
+      "status": "passed",
+      "detail": "4 open alerts"
+    },
+    {
+      "name": "tenant_isolation",
+      "status": "passed",
+      "detail": "HTTP 404"
+    },
+    {
+      "name": "alert_acknowledgement",
+      "status": "passed",
+      "detail": "HTTP 200"
+    },
+    {
+      "name": "model_company",
+      "status": "passed",
+      "detail": "NYVORA controlled fixture"
+    }
+  ],
+  "summary": {
+    "metrics": {
+      "revenue": 5353442971,
+      "gross_profit": 1856624851,
+      "gross_margin_pct": 34.68,
+      "cogs": 3496818120,
+      "units_sold": 6531,
+      "inventory_quantity": 2552,
+      "inventory_value": 1136153900,
+      "average_inventory_value": 1093593700,
+      "inventory_days": 164.19,
+      "gmroi": 1.7,
+      "purchases": 684745032,
+      "payable_balance": 23896725.6,
+      "receivable_balance": 1025038656.78,
+      "overdue_balance": 975737789.78,
+      "overdue_ratio_pct": 95.19,
+      "receivable_days": 100.52,
+      "payable_days": 18.32,
+      "cash_cycle_days": 246.39,
+      "excess_inventory_value": 720964597.88,
+      "excess_inventory_pct": 63.46,
+      "cash_effort": 1746003254.66,
+      "financing_cost": 175562113.41,
+      "economic_net_margin": 1681062737.59
+    },
+    "products": 42,
+    "categories": 6,
+    "invoice_lines": 250,
+    "rules": 6
+  }
+}

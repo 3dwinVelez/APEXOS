@@ -27,6 +27,22 @@ const DEFAULT_RULES = [
 function n(value) { return Number(value) || 0; }
 function round(value, digits = 2) { const factor = 10 ** digits; return Math.round(n(value) * factor) / factor; }
 function ratio(a, b, scale = 100) { return b ? round((a / b) * scale) : 0; }
+function monthKey(value) { return new Date(value).toISOString().slice(0, 7); }
+function agingBucket(dueDate, at) {
+  const overdueDays = Math.floor((at - new Date(dueDate)) / 86400000);
+  if (overdueDays <= 0) return "Por vencer";
+  if (overdueDays <= 30) return "1-30 días";
+  if (overdueDays <= 60) return "31-60 días";
+  if (overdueDays <= 90) return "61-90 días";
+  return "> 90 días";
+}
+function buildAging(documents, at) {
+  const buckets = ["Por vencer", "1-30 días", "31-60 días", "61-90 días", "> 90 días"];
+  return buckets.map((bucket) => {
+    const rows = documents.filter((document) => agingBucket(document.due_date, at) === bucket);
+    return { bucket, value: round(rows.reduce((sum, document) => sum + n(document.balance), 0)), documents: rows.length };
+  });
+}
 function startOfDay(value) { const date = value ? new Date(value) : new Date(); date.setHours(0, 0, 0, 0); return date; }
 function endOfDay(value) { const date = value ? new Date(value) : new Date(); date.setHours(23, 59, 59, 999); return date; }
 function recipientRoleFilters(recipients = []) {
@@ -96,12 +112,12 @@ async function ensureDefaults(tenantId) {
 async function buildDashboard(tenantId, query = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const to = endOfDay(query.to);
-    const from = startOfDay(query.from || new Date(to.getFullYear(), to.getMonth() - 11, 1));
+    const from = startOfDay(query.from || new Date(to.getFullYear(), to.getMonth() - 17, 1));
     if (from > to) throw Object.assign(new Error("El periodo inicial no puede ser posterior al final"), { statusCode: 400 });
     const days = Math.max(1, Math.ceil((to - from) / 86400000) + 1);
     const { config, rules } = await ensureDefaults(tenantId);
     const [invoices, items, receivables, payables, snapshots, openAlerts] = await Promise.all([
-      prisma.salesInvoice.findMany({ where: { date: { gte: from, lte: to }, is_cancelled: false, is_reversal: false, document_kind: "invoice", status: { notIn: ["draft", "cancelled", "annulled"] } }, include: { lines: { include: { item: { include: { category: true, family: true } } } } }, orderBy: { date: "asc" } }),
+      prisma.salesInvoice.findMany({ where: { date: { gte: from, lte: to }, is_cancelled: false, is_reversal: false, document_kind: "invoice", status: { notIn: ["draft", "cancelled", "annulled"] } }, include: { customer: { select: { name: true } }, lines: { include: { item: { include: { category: true, family: true } } } } }, orderBy: { date: "asc" } }),
       prisma.item.findMany({ where: { active: true, type: { in: ["product", "item", "producto"] } }, include: { category: true, family: true } }),
       prisma.cxcCabdoc.findMany({ where: { document_kind: "invoice", balance: { gt: .01 }, status: { notIn: ["cancelled", "annulled"] } } }),
       prisma.cxpCabdoc.findMany({ where: { document_kind: "invoice", posting_date: { gte: from, lte: to }, status: { notIn: ["cancelled", "annulled"] } } }),
@@ -142,7 +158,37 @@ async function buildDashboard(tenantId, query = {}) {
       for (const line of invoice.lines) { row.revenue += n(line.subtotal || line.total); row.gross_profit += n(line.subtotal || line.total) - n(line.cost_value); }
       monthly.set(period, row);
     }
-    return { period: { from: from.toISOString(), to: to.toISOString(), days }, data_status: { invoices: invoices.length, products: items.length, receivables: receivables.length, payables: payables.length, inventory_snapshots: snapshots.length, freshness: new Date().toISOString() }, metrics, products: products.slice(0, Number(query.limit) || 100), monthly: [...monthly.values()].map((row) => ({ ...row, revenue: round(row.revenue), gross_profit: round(row.gross_profit), margin_pct: ratio(row.gross_profit, row.revenue) })), rules, computed_alerts: evaluateRules(metrics, rules), alerts: openAlerts, config };
+    const purchaseMonthly = new Map();
+    for (const document of payables) {
+      const period = monthKey(document.posting_date);
+      const row = purchaseMonthly.get(period) || { period, purchases: 0 };
+      row.purchases += n(document.total);
+      purchaseMonthly.set(period, row);
+    }
+    const periods = [...new Set([...monthly.keys(), ...purchaseMonthly.keys()])].sort();
+    const purchaseTrend = periods.map((period) => {
+      const sales = n(monthly.get(period)?.revenue);
+      const purchasesValue = n(purchaseMonthly.get(period)?.purchases);
+      return { period, sales: round(sales), purchases: round(purchasesValue), purchase_sales_ratio_pct: ratio(purchasesValue, sales) };
+    });
+    const categoryMap = new Map();
+    for (const product of products) {
+      const row = categoryMap.get(product.category) || { category: product.category, revenue: 0, gross_profit: 0, cost: 0, units: 0, inventory_value: 0 };
+      row.revenue += product.revenue; row.gross_profit += product.gross_profit; row.cost += product.cost; row.units += product.units; row.inventory_value += product.inventory_value;
+      categoryMap.set(product.category, row);
+    }
+    const categories = [...categoryMap.values()].map((row) => ({ ...row, revenue: round(row.revenue), gross_profit: round(row.gross_profit), cost: round(row.cost), units: round(row.units), inventory_value: round(row.inventory_value), margin_pct: ratio(row.gross_profit, row.revenue), inventory_days: row.cost ? round(row.inventory_value * days / row.cost) : 0, gmroi: row.inventory_value ? round(row.gross_profit / row.inventory_value) : 0 })).sort((a, b) => b.revenue - a.revenue);
+    const inventoryHealth = [
+      { status: "Saludable", test: (product) => product.inventory_days > 0 && product.inventory_days <= n(config.inventory_target_days) },
+      { status: "Lento", test: (product) => product.inventory_days > n(config.inventory_target_days) && product.inventory_days <= 120 },
+      { status: "Crítico", test: (product) => product.inventory_days > 120 && product.inventory_days < 999 },
+      { status: "Sin rotación", test: (product) => product.inventory_days >= 999 || product.units <= 0 }
+    ].map(({ status, test }) => { const rows = products.filter(test); return { status, products: rows.length, value: round(rows.reduce((sum, row) => sum + row.inventory_value, 0)) }; });
+    const invoiceDetails = invoices.flatMap((invoice) => invoice.lines.map((line) => ({ invoice_id: invoice.id, number: invoice.number, date: invoice.date.toISOString(), customer: invoice.customer?.name || "Cliente", item_id: line.item_id, product: line.item?.name || line.description, category: line.item?.category?.name || "Sin categoría", quantity: round(line.qty), revenue: round(line.subtotal || line.total), cost: round(line.cost_value), gross_profit: round(n(line.subtotal || line.total) - n(line.cost_value)), margin_pct: ratio(n(line.subtotal || line.total) - n(line.cost_value), n(line.subtotal || line.total)) }))).sort((a, b) => b.revenue - a.revenue).slice(0, 250);
+    const inventorySnapshots = new Map();
+    for (const snapshot of snapshots) { const period = monthKey(snapshot.snapshot_date); inventorySnapshots.set(period, n(inventorySnapshots.get(period)) + n(snapshot.value)); }
+    const inventoryTrend = [...inventorySnapshots.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([period, value]) => ({ period, value: round(value) }));
+    return { period: { from: from.toISOString(), to: to.toISOString(), days }, data_status: { invoices: invoices.length, products: items.length, receivables: receivables.length, payables: payables.length, inventory_snapshots: snapshots.length, freshness: new Date().toISOString() }, metrics, products: products.slice(0, Number(query.limit) || 100), categories, monthly: [...monthly.values()].map((row) => ({ ...row, revenue: round(row.revenue), gross_profit: round(row.gross_profit), margin_pct: ratio(row.gross_profit, row.revenue) })), purchase_trend: purchaseTrend, receivable_aging: buildAging(receivables, to), payable_aging: buildAging(payables.filter((document) => n(document.balance) > .01), to), inventory_health: inventoryHealth, inventory_trend: inventoryTrend, invoice_details: invoiceDetails, rules, computed_alerts: evaluateRules(metrics, rules), alerts: openAlerts, config };
   });
 }
 
@@ -230,4 +276,4 @@ async function acknowledgeAlert(tenantId, userId, id) {
   });
 }
 
-module.exports = { DEFAULT_CONFIG, DEFAULT_RULES, classifyProducts, evaluateRules, buildDashboard, updateConfig, saveRule, evaluateAndPersistAlerts, acknowledgeAlert, captureInventorySnapshot, refreshAllTenants };
+module.exports = { DEFAULT_CONFIG, DEFAULT_RULES, classifyProducts, evaluateRules, buildAging, buildDashboard, updateConfig, saveRule, evaluateAndPersistAlerts, acknowledgeAlert, captureInventorySnapshot, refreshAllTenants };
