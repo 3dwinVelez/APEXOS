@@ -1,0 +1,47 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "apex-heart-rich-20260907",
+  "change_intent": {
+    "summary": "Ampliar Apex Heart con contexto gerencial, visualización legible y datos demostrativos suficientes",
+    "modules": ["apex-heart", "reportes", "ventas", "compras", "inventario", "cartera", "qa-certification"]
+  },
+  "base_commits": { "develop": "92009f60c590382248dd4a818a4d01233c322fa7" },
+  "certified_commit": "b8f41a1f53f6a927cb180f98668b47003e35de24",
+  "certification_status": "local_passed_qa_pending",
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/src/modules/apex-heart/service.js" },
+    { "status": "M", "file": "apps/api/test/apex-heart-domain.test.js" },
+    { "status": "M", "file": "apps/web/app/dashboard/reportes/apex-heart/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/reportes/page.tsx" },
+    { "status": "M", "file": "apps/web/lib/api.ts" },
+    { "status": "M", "file": "apps/web/test/apex-heart-ui.test.mjs" },
+    { "status": "M", "file": "package.json" },
+    { "status": "M", "file": "scripts/certifications/apex-heart-local.js" },
+    { "status": "M", "file": "scripts/seed-apex-heart-demo.js" },
+    { "status": "A", "file": "docs/qa/evidence/apex-heart-rich-20260907/local-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/apex-heart-rich-20260907/platform-regression.json" },
+    { "status": "A", "file": "docs/qa/evidence/apex-heart-rich-20260907/functional.md" },
+    { "status": "A", "file": "docs/qa/evidence/apex-heart-rich-20260907/error.md" },
+    { "status": "A", "file": "docs/qa/evidence/apex-heart-rich-20260907/support-scripts.md" },
+    { "status": "A", "file": "docs/qa/evidence/apex-heart-rich-20260907/preqa-scope-manifest.json" }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/apex-heart/service.js",
+    "apps/api/test/apex-heart-domain.test.js",
+    "apps/web/app/dashboard/reportes/apex-heart/page.tsx",
+    "apps/web/app/dashboard/reportes/page.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/test/apex-heart-ui.test.mjs",
+    "package.json",
+    "scripts/certifications/apex-heart-local.js",
+    "scripts/seed-apex-heart-demo.js",
+    "docs/qa/evidence/apex-heart-rich-20260907/"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    { "name": "tenant_isolation_and_permissions", "status": "passed", "evidence": ["local-certification.json", "error.md"] },
+    { "name": "management_metrics_and_traceability", "status": "passed", "evidence": ["local-certification.json", "functional.md"] },
+    { "name": "adjacent_platform_regression", "status": "passed", "evidence": ["platform-regression.json"] },
+    { "name": "dark_and_light_theme_contract", "status": "passed", "evidence": ["support-scripts.md"] }
+  ]
+}
