@@ -1,0 +1,38 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "apex-heart-ytd-data-20260907",
+  "change_intent": {
+    "summary": "Poblar Apex Heart en QA con datos completos de enero a septiembre de 2026 y certificar todos sus datasets gráficos",
+    "modules": ["apex-heart", "qa-data", "sales", "purchases", "inventory", "accounts-receivable", "supabase"]
+  },
+  "base_commits": {
+    "desarrollo": "ca0c36fa044ce0ec2a545eb931e0835c7eca8698",
+    "develop": "6196ac1254692846ce8157d33bde4a9183bb33a4"
+  },
+  "certified_commit": "564fd8527ab42c7f553542dba1aafa99fc08e6fb",
+  "certification_status": "qa_passed",
+  "expected_changes": [
+    { "status": "A", "file": "apps/api/test/apex-heart-qa-seed-contract.test.js" },
+    { "status": "A", "file": "docs/qa/evidence/apex-heart-ytd-data-20260907/error.md" },
+    { "status": "A", "file": "docs/qa/evidence/apex-heart-ytd-data-20260907/functional.md" },
+    { "status": "A", "file": "docs/qa/evidence/apex-heart-ytd-data-20260907/preqa-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/apex-heart-ytd-data-20260907/qa-data-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/apex-heart-ytd-data-20260907/support-scripts.md" },
+    { "status": "M", "file": "package.json" },
+    { "status": "A", "file": "scripts/certifications/apex-heart-qa-data.js" },
+    { "status": "A", "file": "scripts/seed-apex-heart-qa-ytd.js" }
+  ],
+  "allowed_paths": [
+    "apps/api/test/apex-heart-qa-seed-contract.test.js",
+    "docs/qa/evidence/apex-heart-ytd-data-20260907/",
+    "package.json",
+    "scripts/certifications/apex-heart-qa-data.js",
+    "scripts/seed-apex-heart-qa-ytd.js"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    { "name": "tenant_guard_and_non_destructive_seed", "status": "passed", "evidence": ["error.md", "support-scripts.md"] },
+    { "name": "complete_graph_datasets", "status": "passed", "evidence": ["qa-data-certification.json", "functional.md"] },
+    { "name": "idempotent_qa_population", "status": "passed", "evidence": ["functional.md", "support-scripts.md"] }
+  ]
+}
