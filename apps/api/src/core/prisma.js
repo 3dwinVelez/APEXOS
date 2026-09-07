@@ -22,6 +22,7 @@ const TENANT_MODELS = new Set([
   "SalesInvoice", "SalesInvoiceLine", "CxcCabdoc", "CxcCuedoc", "CxcPayment", "RetentionMaster", "SkuValuation",
   "WarehouseTransfer", "WarehouseTransferLine",
   "BrainEvent", "BrainMetric", "CustomField", "AuditLog", "Workflow",
+  "ApexHeartConfig", "ApexHeartAlertRule", "ApexHeartAlert", "ApexHeartInventorySnapshot",
   "Category", "SensorReading", "OKR", "SoDRule", "EInvoice", "EInvoiceConfig"
 ]);
 
@@ -43,6 +44,7 @@ const PHYSICAL_DELETE_ALLOWED = new Set([
   "GpsPing", "TimePunch", "ProcessedWorkday", "WorkSession", "ServiceOrderItem",
   "WorkActivity", "ActivityEvidence", "ServicePhoto", "ServiceIncident", "EvidenceUploadAuthorization", "AuthorizationSession",
   "SensorReading", "BrainEvent", "BrainMetric",
+  "ApexHeartAlert", "ApexHeartInventorySnapshot",
   "RoutePreoperationalChecklistAnswer", "RoutePreoperationalChecklistEvidence",
   "RoutePreoperationalFinding", "RouteStartAuthorization", "RouteBlockEvent",
   "ItemLocation", "ServiceReferencePart", "TimeRoute"
