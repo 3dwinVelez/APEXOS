@@ -6,7 +6,7 @@
     "modules": ["apex-heart", "reportes", "ventas", "compras", "inventario", "cartera", "qa-certification"]
   },
   "base_commits": { "develop": "92009f60c590382248dd4a818a4d01233c322fa7" },
-  "certified_commit": "b8f41a1f53f6a927cb180f98668b47003e35de24",
+  "certified_commit": "13d293df58c55314307ede429081380c8281d962",
   "certification_status": "local_passed_qa_pending",
   "expected_changes": [
     { "status": "M", "file": "apps/api/src/modules/apex-heart/service.js" },

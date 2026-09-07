@@ -2,8 +2,8 @@
   "certification": "apex-heart-platform-regression-local",
   "version": 1,
   "status": "passed",
-  "generated_at": "2026-09-07T03:35:41.622Z",
-  "commit": "b8f41a1f53f6a927cb180f98668b47003e35de24",
+  "generated_at": "2026-09-07T03:59:06.786Z",
+  "commit": "13d293df58c55314307ede429081380c8281d962",
   "environment": "local-isolated-qa",
   "checks": [
     {
