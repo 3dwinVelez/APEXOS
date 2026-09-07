@@ -55,6 +55,7 @@
     "qa:promotion:scope": "node scripts/validate-promotion-scope.js",
     "certify:auth-session": "node scripts/certifications/auth-session-readiness.js",
     "certify:apex-heart:local": "node scripts/certifications/apex-heart-local.js --output=docs/qa/evidence/apex-heart-20260906/local-certification.json",
+    "certify:apex-heart:regression": "node scripts/certifications/apex-heart-platform-regression-local.js --output=docs/qa/evidence/apex-heart-20260906/platform-regression.json",
     "certify:service-order-edit:qa": "node scripts/certifications/service-order-edit-qa.js",
     "certify:service-correction-external-id:qa": "node scripts/certifications/service-correction-external-id-qa.js",
     "certify:service-correction-evidence:nyvora": "node scripts/certifications/service-correction-evidence-nyvora.js",
