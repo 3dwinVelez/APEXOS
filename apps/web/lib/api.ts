@@ -4169,7 +4169,14 @@ export type ApexHeartDashboard = {
   data_status: { invoices: number; products: number; receivables: number; payables: number; inventory_snapshots: number; freshness: string };
   metrics: Record<string, number>;
   products: Array<{ item_id: number; code: string; name: string; category: string; revenue: number; cost: number; gross_profit: number; margin_pct: number; gmroi: number; inventory_days: number; inventory_value: number; revenue_share_pct: number; cumulative_pct: number; abc_class: string; score: number }>;
+  categories: Array<{ category: string; revenue: number; gross_profit: number; cost: number; units: number; inventory_value: number; margin_pct: number; inventory_days: number; gmroi: number }>;
   monthly: Array<{ period: string; revenue: number; gross_profit: number; margin_pct: number }>;
+  purchase_trend: Array<{ period: string; sales: number; purchases: number; purchase_sales_ratio_pct: number }>;
+  receivable_aging: Array<{ bucket: string; value: number; documents: number }>;
+  payable_aging: Array<{ bucket: string; value: number; documents: number }>;
+  inventory_health: Array<{ status: string; products: number; value: number }>;
+  inventory_trend: Array<{ period: string; value: number }>;
+  invoice_details: Array<{ invoice_id: number; number: string; date: string; customer: string; item_id: number | null; product: string; category: string; quantity: number; revenue: number; cost: number; gross_profit: number; margin_pct: number }>;
   computed_alerts: Array<{ code: string; title: string; message: string; severity: string; metric_value: number; threshold: number; action_label?: string; action_href?: string }>;
   alerts: Array<{ id: number; title: string; message: string; severity: string; status: string; action_label?: string; action_href?: string }>;
   rules: ApexHeartRule[];

@@ -11,7 +11,11 @@ test("Apex Heart está registrado como M-28 y visible en Reportes", () => {
   assert.match(modules, /id:\s*"M-28"/);
   assert.match(modules, /name:\s*"Apex Heart"/);
   assert.match(access, /reportes:\s*"apex_heart"/);
-  for (const label of ["Pulso ejecutivo", "Productos ABC", "Compra → Caja", "Alertas", "Configuración"]) assert.match(page, new RegExp(label));
+  for (const label of ["Pulso ejecutivo", "Productos ABC", "Compras y vencimientos", "Inventario", "Crédito y caja", "Facturas por producto", "Alertas", "Configuración"]) assert.match(page, new RegExp(label));
+  for (const chart of ["Pareto ABC de ventas", "Matriz margen × GMROI", "Compras frente a ventas", "Salud del inventario", "Envejecimiento de cartera", "Componentes del ciclo de caja", "Detalle por factura y producto"]) assert.match(page, new RegExp(chart));
+  assert.doesNotMatch(page, /from-rose-50|bg-white|text-neutral-600/);
+  const landing = read("../app/dashboard/reportes/page.tsx");
+  assert.doesNotMatch(landing, /from-rose-50|bg-white|text-neutral-600/);
 });
 
 test("la migración Supabase protege todas las tablas Apex Heart con RLS", () => {
