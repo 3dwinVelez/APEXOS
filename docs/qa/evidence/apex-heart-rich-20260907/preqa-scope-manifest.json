@@ -24,6 +24,7 @@
     { "status": "A", "file": "docs/qa/evidence/apex-heart-rich-20260907/error.md" },
     { "status": "A", "file": "docs/qa/evidence/apex-heart-rich-20260907/support-scripts.md" },
     { "status": "A", "file": "docs/qa/evidence/apex-heart-rich-20260907/preqa-scope-manifest.json" }
+    ,{ "status": "A", "file": "docs/qa/evidence/apex-heart-rich-20260907/qa-approval-evidence.json" }
   ],
   "allowed_paths": [
     "apps/api/src/modules/apex-heart/service.js",
