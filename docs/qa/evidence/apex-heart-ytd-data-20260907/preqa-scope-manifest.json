@@ -9,7 +9,7 @@
     "desarrollo": "ca0c36fa044ce0ec2a545eb931e0835c7eca8698",
     "develop": "6196ac1254692846ce8157d33bde4a9183bb33a4"
   },
-  "certified_commit": "564fd8527ab42c7f553542dba1aafa99fc08e6fb",
+  "certified_commit": "7eef59e382d8b8fb4323cda0d10ee0f2ba05ca6a",
   "certification_status": "qa_passed",
   "expected_changes": [
     { "status": "A", "file": "apps/api/test/apex-heart-qa-seed-contract.test.js" },
