@@ -1,0 +1,393 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "phase0-ux-transport-preqa-20260907",
+  "change_intent": {
+    "summary": "Promover la experiencia UX fase 0, mejoras de Inventarios, Compras y Ventas, y la cadena completa del TMS con API y migraciones.",
+    "modules": [
+      "phase-zero-ux",
+      "inventory-ui",
+      "purchases-ui",
+      "sales-ui",
+      "transport-tms",
+      "api",
+      "database-migrations",
+      "promotion-governance"
+    ]
+  },
+  "base_commits": {
+    "develop": "5c2b43e"
+  },
+  "certified_commit": "00ac509",
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/package.json"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260721190000_purchase_tax_retention_reversals/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260721220000_inventory_society_valuation_transit/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260904120000_transport_tms_foundation/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260904160000_transport_tms_planning/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260904180000_transport_tms_live_tracking/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260904190000_transport_tms_configuration/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260904200000_transport_tms_notifications/migration.sql"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/prisma/schema.prisma"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/core/prisma.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/transport/routes.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/tms-evidence-storage.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/tms-schema.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/tms-service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-tms-foundation.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/ordenes/nueva/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/proveedores/[id]/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/ajustes/nuevo/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/bodegas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/cargue-inicial/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/clasificaciones/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/familias/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/productos/nuevo/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/productos/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/stock/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/traslados/nuevo/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/configuracion/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/layout.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/maestros/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/monitoreo/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/notificaciones/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/operacion/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/ordenes/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/planeacion/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/pod/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/tarifas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/ventas/ordenes/nueva/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/ventas/ordenes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/globals.css"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/layout.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/login/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/brain/AiExperienceLayer.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/RouteAccessGuard.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/Sidebar.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/system/ToastCenter.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/tms-live-map.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport-nav.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/feedback.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/package.json"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/login-phase-zero-ux.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-tms-ui.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/design/APEX_OS_UI_UX_ROADMAP_CHECKLIST.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/project/modulos/transporte-tms.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/project/modulos/transporte.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-tms-foundation-20260904/REPORTE.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-tms-foundation-20260904/local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-tms-foundation-20260904/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-tms-foundation-20260904/run-20260904145348.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-tms-foundation-20260904/run-20260904150543.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-tms-foundation-20260904/run-20260904153954.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-tms-foundation-20260904/run-20260904154104.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-tms-foundation-20260904/run-20260908023315.json"
+    },
+    {
+      "status": "M",
+      "file": "package-lock.json"
+    },
+    {
+      "status": "M",
+      "file": "package.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/transport-tms-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/phase0-transport-20260907/preqa-scope-manifest.json"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/package.json",
+    "apps/api/prisma/migrations/20260721190000_purchase_tax_retention_reversals/migration.sql",
+    "apps/api/prisma/migrations/20260721220000_inventory_society_valuation_transit/migration.sql",
+    "apps/api/prisma/migrations/20260904120000_transport_tms_foundation/migration.sql",
+    "apps/api/prisma/migrations/20260904160000_transport_tms_planning/migration.sql",
+    "apps/api/prisma/migrations/20260904180000_transport_tms_live_tracking/migration.sql",
+    "apps/api/prisma/migrations/20260904190000_transport_tms_configuration/migration.sql",
+    "apps/api/prisma/migrations/20260904200000_transport_tms_notifications/migration.sql",
+    "apps/api/prisma/schema.prisma",
+    "apps/api/src/core/prisma.js",
+    "apps/api/src/modules/transport/routes.js",
+    "apps/api/src/modules/transport/tms-evidence-storage.js",
+    "apps/api/src/modules/transport/tms-schema.js",
+    "apps/api/src/modules/transport/tms-service.js",
+    "apps/api/test/transport-tms-foundation.test.js",
+    "apps/web/app/dashboard/compras/ordenes/nueva/page.tsx",
+    "apps/web/app/dashboard/compras/proveedores/[id]/page.tsx",
+    "apps/web/app/dashboard/inventario/ajustes/nuevo/page.tsx",
+    "apps/web/app/dashboard/inventario/bodegas/page.tsx",
+    "apps/web/app/dashboard/inventario/cargue-inicial/page.tsx",
+    "apps/web/app/dashboard/inventario/clasificaciones/page.tsx",
+    "apps/web/app/dashboard/inventario/familias/page.tsx",
+    "apps/web/app/dashboard/inventario/productos/nuevo/page.tsx",
+    "apps/web/app/dashboard/inventario/productos/page.tsx",
+    "apps/web/app/dashboard/inventario/stock/page.tsx",
+    "apps/web/app/dashboard/inventario/traslados/nuevo/page.tsx",
+    "apps/web/app/dashboard/transporte/configuracion/page.tsx",
+    "apps/web/app/dashboard/transporte/layout.tsx",
+    "apps/web/app/dashboard/transporte/maestros/page.tsx",
+    "apps/web/app/dashboard/transporte/monitoreo/page.tsx",
+    "apps/web/app/dashboard/transporte/notificaciones/page.tsx",
+    "apps/web/app/dashboard/transporte/operacion/page.tsx",
+    "apps/web/app/dashboard/transporte/ordenes/page.tsx",
+    "apps/web/app/dashboard/transporte/planeacion/page.tsx",
+    "apps/web/app/dashboard/transporte/pod/page.tsx",
+    "apps/web/app/dashboard/transporte/tarifas/page.tsx",
+    "apps/web/app/dashboard/ventas/ordenes/nueva/page.tsx",
+    "apps/web/app/dashboard/ventas/ordenes/page.tsx",
+    "apps/web/app/globals.css",
+    "apps/web/app/layout.tsx",
+    "apps/web/app/login/page.tsx",
+    "apps/web/components/brain/AiExperienceLayer.tsx",
+    "apps/web/components/shell/RouteAccessGuard.tsx",
+    "apps/web/components/shell/Sidebar.tsx",
+    "apps/web/components/system/ToastCenter.tsx",
+    "apps/web/components/tms-live-map.tsx",
+    "apps/web/components/transport-nav.tsx",
+    "apps/web/components/ui/feedback.tsx",
+    "apps/web/package.json",
+    "apps/web/test/login-phase-zero-ux.test.mjs",
+    "apps/web/test/transport-tms-ui.test.mjs",
+    "docs/design/APEX_OS_UI_UX_ROADMAP_CHECKLIST.md",
+    "docs/project/modulos/transporte-tms.md",
+    "docs/project/modulos/transporte.md",
+    "docs/qa/evidence/transport-tms-foundation-20260904/REPORTE.md",
+    "docs/qa/evidence/transport-tms-foundation-20260904/local-certification.json",
+    "docs/qa/evidence/transport-tms-foundation-20260904/local-validation.md",
+    "docs/qa/evidence/transport-tms-foundation-20260904/run-20260904145348.json",
+    "docs/qa/evidence/transport-tms-foundation-20260904/run-20260904150543.json",
+    "docs/qa/evidence/transport-tms-foundation-20260904/run-20260904153954.json",
+    "docs/qa/evidence/transport-tms-foundation-20260904/run-20260904154104.json",
+    "docs/qa/evidence/transport-tms-foundation-20260904/run-20260908023315.json",
+    "package-lock.json",
+    "package.json",
+    "scripts/certifications/transport-tms-local.js",
+    "docs/qa/evidence/phase0-transport-20260907/preqa-scope-manifest.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "login_and_theme",
+      "status": "passed",
+      "evidence": [
+        "../transport-tms-foundation-20260904/run-20260908023315.json"
+      ]
+    },
+    {
+      "name": "inventory_purchases_sales_ux",
+      "status": "passed",
+      "evidence": [
+        "../transport-tms-foundation-20260904/run-20260908023315.json"
+      ]
+    },
+    {
+      "name": "transport_tms_end_to_end",
+      "status": "passed",
+      "evidence": [
+        "../transport-tms-foundation-20260904/run-20260908023315.json"
+      ]
+    },
+    {
+      "name": "tenant_isolation_and_soft_delete",
+      "status": "passed",
+      "evidence": [
+        "../transport-tms-foundation-20260904/run-20260908023315.json"
+      ]
+    },
+    {
+      "name": "cross_module_scope_isolation",
+      "status": "passed",
+      "evidence": [
+        "../transport-tms-foundation-20260904/run-20260908023315.json"
+      ]
+    }
+  ]
+}
