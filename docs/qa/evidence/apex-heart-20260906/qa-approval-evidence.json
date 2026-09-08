@@ -1,0 +1,21 @@
+{
+  "change_id": "apex-heart-20260906",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "44e974338f64b1191b819d820ad9d7cbe8f5fa1e",
+  "authorization_scope": "develop_qa_only",
+  "main_promotion_authorized": false,
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["functional.md", "local-certification.json"] },
+    "error": { "status": "passed", "evidence": ["error.md", "local-certification.json"] },
+    "support_scripts": { "status": "passed", "evidence": ["support-scripts.md"] },
+    "regression": { "status": "passed", "evidence": ["platform-regression.json"] },
+    "platform_regression": { "status": "passed", "evidence": ["platform-regression.json"] }
+  },
+  "certification": { "status": "passed", "script": "../../../../scripts/certifications/apex-heart-local.js", "evidence": ["local-certification.json"] },
+  "regression_certification": { "status": "passed", "script": "../../../../scripts/certifications/apex-heart-platform-regression-local.js", "evidence": ["platform-regression.json"] },
+  "model_company_certification": { "status": "passed", "company": "NYVORA", "environment": "QA", "script": "../../../../scripts/certifications/apex-heart-local.js", "evidence": ["local-certification.json"] },
+  "rollback_plan": { "status": "ready", "strategy": "controlled_revert", "previous_main_commit": "0abda8c41168642f99da0831e15f940b98232a12", "trigger": "cualquier falla funcional, de aislamiento, métricas, navegación o alertas; no autoriza main" },
+  "approval": { "status": "approved", "scope": "promotion_to_develop_for_user_functional_qa_only", "approved_by": "Solicitante autorizado de APEXOS en tarea Codex", "approved_at": "2026-09-06T22:03:00-05:00", "main_release": "not_authorized" }
+}

@@ -2,8 +2,8 @@
   "certification": "apex-heart-local",
   "version": 2,
   "status": "passed",
-  "generated_at": "2026-09-07T02:59:18.540Z",
-  "commit": "13903c53e7eabf2a0910750eea81d6eb771814fd",
+  "generated_at": "2026-09-07T03:02:08.010Z",
+  "commit": "44e974338f64b1191b819d820ad9d7cbe8f5fa1e",
   "environment": {
     "type": "local-isolated-qa",
     "database": "apexos_heart_cert",

@@ -9,7 +9,7 @@
     "desarrollo": "ca0c36fa044ce0ec2a545eb931e0835c7eca8698",
     "develop": "6196ac1254692846ce8157d33bde4a9183bb33a4"
   },
-  "certified_commit": "564fd8527ab42c7f553542dba1aafa99fc08e6fb",
+  "certified_commit": "7eef59e382d8b8fb4323cda0d10ee0f2ba05ca6a",
   "certification_status": "qa_passed",
   "expected_changes": [
     { "status": "A", "file": "apps/api/test/apex-heart-qa-seed-contract.test.js" },
@@ -17,6 +17,7 @@
     { "status": "A", "file": "docs/qa/evidence/apex-heart-ytd-data-20260907/functional.md" },
     { "status": "A", "file": "docs/qa/evidence/apex-heart-ytd-data-20260907/preqa-scope-manifest.json" },
     { "status": "A", "file": "docs/qa/evidence/apex-heart-ytd-data-20260907/qa-data-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/apex-heart-ytd-data-20260907/qa-approval-evidence.json" },
     { "status": "A", "file": "docs/qa/evidence/apex-heart-ytd-data-20260907/support-scripts.md" },
     { "status": "M", "file": "package.json" },
     { "status": "A", "file": "scripts/certifications/apex-heart-qa-data.js" },
