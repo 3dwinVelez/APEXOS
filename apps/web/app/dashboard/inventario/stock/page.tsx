@@ -51,7 +51,7 @@ export default function StockPage() {
       <InventoryNav />
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
       <section className="rounded-md border border-line bg-white p-4">
-        <div className="mb-4 grid gap-3 lg:grid-cols-[1fr_auto_auto_auto]">
+        <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(260px,1fr)_auto_auto_auto]">
           <input
             className="h-10 rounded-md border border-line px-3 text-sm"
             placeholder="Buscar SKU, código anterior, producto o unidad..."
@@ -81,7 +81,27 @@ export default function StockPage() {
           <div className="rounded-md border border-line bg-paper p-3 text-sm"><span className="block text-neutral-500">Críticas</span><strong className="text-xl">{criticalCount}</strong></div>
           <div className="rounded-md border border-line bg-paper p-3 text-sm"><span className="block text-neutral-500">Agotadas</span><strong className="text-xl">{outCount}</strong></div>
         </div>
-        <div className="max-h-[62vh] overflow-auto rounded-md border border-line">
+        <div className="grid gap-3 lg:hidden">
+          {filteredItems.map((item) => {
+            const itemStatus = item.stock_current <= 0 ? "Agotado" : item.stock_current <= item.stock_min ? "Crítico" : "OK";
+            const coverage = item.stock_max ? Math.round((item.stock_current / item.stock_max) * 100) : null;
+            return (
+              <article className="rounded-md border border-line bg-paper/40 p-4" key={item.id}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0"><p className="font-mono text-sm font-semibold">{item.code}</p><h2 className="truncate font-medium">{item.name}</h2></div>
+                  <span className={`shrink-0 rounded-full px-2 py-1 text-xs ${itemStatus === "Crítico" ? "bg-amber-50 text-amber-700" : itemStatus === "Agotado" ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-700"}`}>{itemStatus}</span>
+                </div>
+                <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  <div><dt className="text-neutral-500">Clasificación ABC</dt><dd>{item.abc_class || "C"}</dd></div>
+                  <div><dt className="text-neutral-500">Stock actual</dt><dd className="font-semibold">{item.stock_current}</dd></div>
+                  <div><dt className="text-neutral-500">Stock mínimo</dt><dd>{item.stock_min}</dd></div>
+                  <div><dt className="text-neutral-500">Cobertura</dt><dd>{coverage === null ? "-" : `${coverage}%`}</dd></div>
+                </dl>
+              </article>
+            );
+          })}
+        </div>
+        <div className="hidden max-h-[62vh] overflow-auto rounded-md border border-line lg:block" role="region" aria-label="Tabla de existencias" tabIndex={0}>
           <table className="w-full min-w-[820px] text-sm">
             <thead className="sticky top-0 z-10 bg-white">
               <tr className="border-b border-line text-left text-xs uppercase text-neutral-500">

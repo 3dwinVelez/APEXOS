@@ -1,0 +1,76 @@
+# Seguimiento UI/UX APEX OS
+
+Actualizado: 2026-09-07  
+Rama de implementación: `desarrollo`  
+Flujo autorizado: `desarrollo -> develop -> main`
+
+Leyenda: `[x]` terminado y validado · `[-]` en curso · `[ ]` pendiente · `[!]` bloqueado.
+
+## Fase 0 — Corregir lo roto
+
+- [x] Guía APEX AI bajo demanda mediante ayuda contextual `?`.
+- [x] Cierre de la guía sin propagación ni navegación accidental.
+- [x] Persistencia de “No mostrar de nuevo”.
+- [x] Componente reutilizable `EmptyState` con icono, descripción y dos acciones.
+- [x] Empty state de órdenes de venta.
+- [x] Empty state de productos con distinción entre catálogo vacío y filtros sin resultado.
+- [x] Empty state de órdenes de compra, diferenciando catálogo vacío y filtros sin resultado.
+- [x] Empty state de Transporte en tarifarios, adaptado a permisos de escritura.
+- [-] Auditoría WCAG AA: contraste base, foco, movimiento reducido y anuncios accesibles terminados en Login, Inventario, Compras y Ventas; inspección manual y pantallas restantes pendientes.
+- [x] Login responsive con temas claro/oscuro y movimiento reducido accesible.
+- [x] Skeleton durante validación de permisos.
+- [x] Sistema global de toast de éxito/error/reintento.
+- [x] Loading y bloqueo de doble envío en Ventas, Compras e Inventario.
+- [x] Loading y toast en acciones críticas de Inventario: ajustes, traslados, cargue inicial, productos, familias, bodegas y clasificaciones.
+- [x] Títulos nativos en módulos del sidebar colapsado.
+- [x] Tooltips visuales consistentes para el sidebar colapsado, visibles con mouse y teclado.
+
+## Fase 1 — Estandarizar y pulir
+
+- [ ] Consolidar tokens de color, tipografía, espaciado, radios y sombras.
+- [ ] Estandarizar Button, Input, Select, Textarea y estados de validación.
+- [ ] Estandarizar Card, Tabs, Modal, Drawer, Toast, Badge, Avatar y Skeleton.
+- [ ] Implementar DataTable con selección, ordenamiento, filtros y paginación.
+- [ ] Agregar acciones masivas y configuración persistente de columnas.
+- [ ] Normalizar formularios a dos columnas y validación `onBlur`.
+- [ ] Dividir formularios extensos en pasos.
+- [ ] Resolver overflow de pestañas.
+- [ ] Unificar centro e historial de notificaciones.
+
+## Fase 2 — Experiencia inteligente
+
+- [ ] Command palette global y acciones rápidas.
+- [ ] Dashboard contextual por rol.
+- [ ] APEX AI operativo: anomalías, sugerencias y alertas predictivas.
+- [ ] Atajos de navegación y breadcrumbs avanzados.
+- [ ] Trazabilidad universal entre módulos.
+- [ ] Operaciones críticas offline-first.
+- [ ] Internacionalización ES/EN/PT.
+
+## Fase 3 — World-class
+
+- [ ] Microinteracciones y transiciones con movimiento reducido.
+- [ ] Accesibilidad AAA y navegación completa por teclado.
+- [ ] Temas, densidad, tamaño de fuente, favoritos y vistas guardadas.
+- [ ] Colaboración y presencia en tiempo real.
+- [ ] Analytics, drill-down y reportes programados.
+- [ ] Objetivos de rendimiento percibido y virtualización.
+- [ ] Onboarding interactivo y checklist de configuración.
+- [ ] Experiencia tablet/móvil y PWA.
+- [ ] Confianza visual: sesión, auditoría, permisos y 2FA.
+- [ ] Detalles de productividad: fechas, moneda, copiar, undo/redo y autocomplete.
+
+## Evidencia acumulada
+
+| Fecha | Incremento | Evidencia |
+|---|---|---|
+| 2026-09-07 | Login, guía contextual, permisos y empty states iniciales | `apps/web/test/login-phase-zero-ux.test.mjs`; typecheck y build aprobados |
+| 2026-09-07 | Toast global accesible con temas, cierre automático y reintento | `components/system/ToastCenter.tsx`; prueba contractual en `login-phase-zero-ux.test.mjs` |
+| 2026-09-07 | Loading y feedback en creación de OV y OC | Typecheck, lint del alcance, 6/6 pruebas UX y build de 98 rutas aprobados |
+| 2026-09-07 | Loading y feedback en ajustes de Inventario | Bloqueo de doble envío, reintento con la misma clave de idempotencia, typecheck, lint del alcance, 7/7 pruebas UX y build de 98 rutas aprobados |
+| 2026-09-07 | Loading y feedback en traslados y cargue inicial | Bloqueo de doble acción, toast de éxito/error y reintento seguro; typecheck, lint del alcance, 9/9 pruebas UX y build de 98 rutas aprobados |
+| 2026-09-07 | Loading y feedback en maestro de productos | Bloqueo de guardados simultáneos, toast para creación/edición y reintento de edición; typecheck, lint del alcance, 10/10 pruebas UX y build de 98 rutas aprobados |
+| 2026-09-07 | Loading y feedback en maestros secundarios de Inventario | Familias, bodegas y clasificaciones con bloqueo de dobles acciones y feedback accesible; typecheck, lint del alcance, 11/11 pruebas UX y build de 98 rutas aprobados |
+| 2026-09-07 | Empty states de Compras y Transporte | Estados vacíos accionables y sensibles a filtros/permisos; typecheck, lint del alcance, 12/12 pruebas UX y build de 98 rutas aprobados |
+| 2026-09-07 | Accesibilidad del sidebar colapsado | Tooltips flotantes no recortados, nombres accesibles, página activa y foco visible; typecheck, lint del alcance, 13/13 pruebas UX y build de 98 rutas aprobados; inspección visual local pendiente |
+| 2026-09-07 | Auditoría WCAG AA transversal | Contraste programático, foco visible global, movimiento reducido y regiones vivas; typecheck, lint del alcance, 15/15 pruebas UX y build de 98 rutas aprobados |

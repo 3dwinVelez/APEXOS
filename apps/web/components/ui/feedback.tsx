@@ -25,8 +25,23 @@ export function Skeleton({ className, ...props }: HTMLAttributes<HTMLDivElement>
   return <div aria-hidden="true" className={twMerge("animate-pulse rounded-md bg-surface-muted", className)} {...props} />;
 }
 
-export function EmptyState({ title, detail, action }: { title: string; detail?: string; action?: ReactNode }) {
-  return <div className="grid min-h-40 place-items-center border-y border-line px-4 py-8 text-center">
-    <div><p className="font-semibold text-content-strong">{title}</p>{detail ? <p className="mt-1 text-sm text-content-muted">{detail}</p> : null}{action ? <div className="mt-4">{action}</div> : null}</div>
+export function EmptyState({ icon, title, description, detail, primaryAction, secondaryAction, action, className }: {
+  icon?: ReactNode;
+  title: string;
+  description?: string;
+  detail?: string;
+  primaryAction?: ReactNode;
+  secondaryAction?: ReactNode;
+  action?: ReactNode;
+  className?: string;
+}) {
+  const copy = description || detail;
+  return <div className={twMerge("grid min-h-48 place-items-center border-y border-line px-5 py-10 text-center", className)}>
+    <div className="max-w-md">
+      {icon ? <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-apex/10 text-apex">{icon}</div> : null}
+      <p className="font-semibold text-content-strong">{title}</p>
+      {copy ? <p className="mt-1 text-sm leading-6 text-content-muted">{copy}</p> : null}
+      {primaryAction || secondaryAction || action ? <div className="mt-5 flex flex-wrap items-center justify-center gap-3">{primaryAction || action}{secondaryAction}</div> : null}
+    </div>
   </div>;
 }

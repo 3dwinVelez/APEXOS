@@ -4,6 +4,7 @@ import { loadModuleAccess } from "@/lib/moduleAccess";
 import { isMarkingOnlyAccess, MARKING_ONLY_PATH } from "@/lib/accessProfile";
 import { MODULES, MODULES_BY_SLUG } from "@/lib/modules";
 import { ShieldAlert } from "lucide-react";
+import { Skeleton } from "@/components/ui/feedback";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -65,8 +66,18 @@ export function RouteAccessGuard({ children }: { children: React.ReactNode }) {
 
   if (state === "checking") {
     return (
-      <section className="rounded-md border border-line bg-white p-6 text-sm text-neutral-600">
-        Validando permisos...
+      <section aria-label="Validando permisos" aria-live="polite" className="space-y-5 rounded-md border border-line bg-white p-6">
+        <span className="sr-only">Validando permisos</span>
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-8 w-64 max-w-full" />
+          <Skeleton className="h-4 w-[32rem] max-w-full" />
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          <Skeleton className="h-28" />
+          <Skeleton className="h-28" />
+          <Skeleton className="h-28" />
+        </div>
       </section>
     );
   }

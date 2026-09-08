@@ -1492,6 +1492,26 @@ model VehicleMasterAuditLog {
   @@index([tenant_id, plate])
 }
 
+model TransportTmsConfig {
+  id                    Int      @id @default(autoincrement())
+  tenant_id             String   @unique
+  timezone              String   @default("America/Bogota")
+  default_currency      String   @default("COP")
+  distance_unit         String   @default("km")
+  weight_unit           String   @default("kg")
+  road_factor           Float    @default(1.2)
+  gps_interval_seconds  Int      @default(30)
+  gps_retention_days    Int      @default(90)
+  mobile_config         Json     @default("{}")
+  notification_config   Json     @default("{}")
+  metadata              Json     @default("{}")
+  updated_by            Int?
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  @@index([tenant_id, updated_at])
+}
+
 model TransportCarrier {
   id              Int               @id @default(autoincrement())
   tenant_id       String
@@ -1606,6 +1626,7 @@ model TransportDriver {
   created_at         DateTime           @default(now())
   updated_at         DateTime           @updatedAt
   trips               TransportTrip[]
+  gps_positions       TransportGpsPosition[]
 
   @@unique([tenant_id, code])
   @@unique([tenant_id, document])
@@ -1752,6 +1773,7 @@ model TransportTrip {
   events             TransportTripEvent[]
   attempts           TransportDeliveryAttempt[]
   settlements        TransportSettlement[]
+  gps_positions      TransportGpsPosition[]
 
   @@unique([tenant_id, code])
   @@index([tenant_id, status, planned_departure])
@@ -1797,10 +1819,65 @@ model TransportStop {
   metadata           Json                   @default("{}")
   events             TransportTripEvent[]
   attempts           TransportDeliveryAttempt[]
+  gps_positions      TransportGpsPosition[]
 
   @@unique([trip_id, sequence])
   @@index([tenant_id, trip_id, status])
   @@index([tenant_id, delivery_point_id])
+}
+
+model TransportGpsPosition {
+  id              BigInt           @id @default(autoincrement())
+  tenant_id       String
+  trip_id         Int
+  trip            TransportTrip    @relation(fields: [trip_id], references: [id], onDelete: Restrict)
+  stop_id         Int?
+  stop            TransportStop?   @relation(fields: [stop_id], references: [id], onDelete: Restrict)
+  driver_id       Int?
+  driver          TransportDriver? @relation(fields: [driver_id], references: [id], onDelete: Restrict)
+  device_id       String
+  client_event_id String
+  recorded_at     DateTime
+  received_at     DateTime          @default(now())
+  latitude        Float
+  longitude       Float
+  accuracy_m      Float?
+  altitude_m      Float?
+  speed_kph       Float?
+  heading         Float?
+  battery_pct     Float?
+  is_mocked       Boolean           @default(false)
+  metadata        Json              @default("{}")
+
+  @@unique([tenant_id, device_id, client_event_id])
+  @@index([tenant_id, trip_id, recorded_at(sort: Desc)])
+  @@index([tenant_id, driver_id, recorded_at(sort: Desc)])
+  @@index([tenant_id, recorded_at(sort: Desc)])
+}
+
+model TransportNotification {
+  id           BigInt    @id @default(autoincrement())
+  tenant_id    String
+  channel      String
+  event_type   String
+  recipient    String
+  subject      String?
+  body         String
+  status       String    @default("pendiente")
+  trip_id      Int?
+  need_id      Int?
+  attempt_id   Int?
+  provider_ref String?
+  error        String?
+  metadata     Json      @default("{}")
+  created_by   Int?
+  sent_at      DateTime?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  @@index([tenant_id, status, created_at(sort: Desc)])
+  @@index([tenant_id, trip_id, created_at(sort: Desc)])
+  @@index([tenant_id, need_id, created_at(sort: Desc)])
 }
 
 model TransportTripEvent {

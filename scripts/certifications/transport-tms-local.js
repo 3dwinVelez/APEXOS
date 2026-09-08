@@ -85,7 +85,8 @@ async function main() {
     const invalidClose = await request(`/api/v1/transport/trips/${trip.body.id}/transition`, { method: "POST", headers, body: JSON.stringify({ status: "cerrado" }) });
     check("invalid_transition_blocked", invalidClose.status === 409, { status: invalidClose.status, code: invalidClose.body.code });
 
-    const attempt = await request(`/api/v1/transport/trips/${trip.body.id}/stops/${trip.body.stops[0].id}/attempts`, { method: "POST", headers, body: JSON.stringify({ result: "completa", delivered_lines: [{ sku: "QA-SKU", quantity: 24 }], additional_cost: 0, recoverable: false, pod: { received_at: fromNow(7), receiver_name: "Receptor certificacion", receiver_document: "QA-REC", latitude: 4.711, longitude: -74.0721, photos: [] } }) });
+    const evidencePrefix = `tms-evidence/local-certification/${runId}`;
+    const attempt = await request(`/api/v1/transport/trips/${trip.body.id}/stops/${trip.body.stops[0].id}/attempts`, { method: "POST", headers, body: JSON.stringify({ result: "completa", delivered_lines: [{ sku: "QA-SKU", quantity: 24 }], additional_cost: 0, recoverable: false, pod: { received_at: fromNow(7), receiver_name: "Receptor certificacion", receiver_document: "QA-REC", latitude: 4.711, longitude: -74.0721, signature: `${evidencePrefix}/signature.png`, photos: [`${evidencePrefix}/delivery.png`] } }) });
     check("delivery_and_pod_recorded", attempt.status === 201 && attempt.body.result === "completa" && Boolean(attempt.body.pod?.id), { status: attempt.status }); evidence.created.attempt_id = attempt.body.id; evidence.created.pod_id = attempt.body.pod?.id;
 
     const delivered = await request(`/api/v1/transport/trips/${trip.body.id}/transition`, { method: "POST", headers, body: JSON.stringify({ status: "entregado" }) });
