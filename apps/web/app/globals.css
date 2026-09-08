@@ -7,7 +7,7 @@
   --color-ink: 23 33 43;
   --color-paper: 245 247 249;
   --color-line: 229 231 235;
-  --color-apex: 20 184 166;
+  --color-apex: 15 118 110;
   --color-signal: 245 158 11;
   --color-success: 34 197 94;
   --color-warning: 245 158 11;
@@ -54,6 +54,163 @@ html.dark .apex-login-field input {
   background:
     radial-gradient(circle at 78% 11%, rgb(255 255 255 / 0.84), transparent 24rem),
     radial-gradient(circle at 10% 93%, rgb(var(--color-apex) / 0.1), transparent 26rem);
+}
+
+.apex-login-grid {
+  opacity: 0.38;
+  background-image:
+    linear-gradient(rgb(var(--color-apex) / 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--color-apex) / 0.055) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: linear-gradient(to right, black, transparent 70%);
+}
+
+.apex-login-orb {
+  background: rgb(var(--color-apex) / 0.16);
+  filter: blur(18px);
+}
+
+.apex-login-card::after {
+  position: absolute;
+  right: -4rem;
+  top: -5rem;
+  width: 12rem;
+  height: 12rem;
+  border-radius: 9999px;
+  background: rgb(var(--color-apex) / 0.08);
+  content: "";
+  pointer-events: none;
+}
+
+.apex-login-split,
+.apex-login-panel,
+.apex-login-control,
+.apex-login-hero-title,
+.apex-login-hero-copy,
+.apex-login-form-title,
+.apex-login-label,
+.apex-login-footer {
+  transition: background-color 220ms ease, border-color 220ms ease, color 220ms ease;
+}
+
+.apex-flow-wave {
+  left: -3%;
+  width: 106%;
+  transform-origin: 50% 55%;
+  animation: apexWaveDrift 4.8s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.apex-flow-wave > path:not(:last-child) {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: apexWaveBreathe 3.1s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+.apex-flow-wave > path:nth-of-type(3n + 1) { animation-delay: -1.7s; }
+.apex-flow-wave > path:nth-of-type(3n + 2) { animation-delay: -3.4s; }
+.apex-flow-wave > path:last-child {
+  animation: apexWaveGlow 2.5s ease-in-out infinite alternate;
+}
+
+@keyframes apexWaveDrift {
+  0% { transform: translate3d(-1.2%, 1.2%, 0) scaleY(0.96); }
+  50% { transform: translate3d(0.5%, -1.4%, 0) scaleY(1.04); }
+  100% { transform: translate3d(1.4%, 0.8%, 0) scaleY(0.98); }
+}
+
+@keyframes apexWaveBreathe {
+  0% { opacity: 0.38; transform: translateY(-5px) scaleY(0.97); }
+  100% { opacity: 0.9; transform: translateY(7px) scaleY(1.04); }
+}
+
+@keyframes apexWaveGlow {
+  0% { opacity: 0.2; transform: translateY(-7px); }
+  100% { opacity: 0.52; transform: translateY(9px); }
+}
+
+html[data-theme="light"] .apex-login-split,
+html:not(.dark):not([data-theme="dark"]) .apex-login-split {
+  background: #e9eef3 !important;
+  color: #142235 !important;
+}
+
+html[data-theme="light"] .apex-login-visual,
+html:not(.dark):not([data-theme="dark"]) .apex-login-visual {
+  background:
+    radial-gradient(circle at 82% 72%, rgb(20 184 166 / 0.13), transparent 24rem),
+    linear-gradient(145deg, #f5f8fa, #e3eaf0);
+}
+
+html[data-theme="light"] .apex-login-panel,
+html:not(.dark):not([data-theme="dark"]) .apex-login-panel {
+  background: #ffffff !important;
+  box-shadow: -24px 0 70px rgb(15 35 50 / 0.09);
+}
+
+html[data-theme="light"] .apex-login-hero-title,
+html:not(.dark):not([data-theme="dark"]) .apex-login-hero-title,
+html[data-theme="light"] .apex-login-form-title strong,
+html:not(.dark):not([data-theme="dark"]) .apex-login-form-title strong {
+  color: #132136 !important;
+}
+
+html[data-theme="light"] .apex-login-hero-copy,
+html:not(.dark):not([data-theme="dark"]) .apex-login-hero-copy,
+html[data-theme="light"] .apex-login-form-title,
+html:not(.dark):not([data-theme="dark"]) .apex-login-form-title {
+  color: #52647b !important;
+}
+
+html[data-theme="light"] .apex-login-label,
+html:not(.dark):not([data-theme="dark"]) .apex-login-label {
+  color: #33445b !important;
+}
+
+html[data-theme="light"] .apex-login-control,
+html:not(.dark):not([data-theme="dark"]) .apex-login-control {
+  border-color: #b8c4d1 !important;
+  background: #f4f7fa !important;
+}
+
+html[data-theme="light"] .apex-login-input,
+html:not(.dark):not([data-theme="dark"]) .apex-login-input {
+  color: #132136 !important;
+}
+
+html[data-theme="light"] .apex-login-footer,
+html:not(.dark):not([data-theme="dark"]) .apex-login-footer {
+  border-color: #d8e0e8 !important;
+}
+
+html[data-theme="light"] .apex-login-footer-copy,
+html:not(.dark):not([data-theme="dark"]) .apex-login-footer-copy,
+html[data-theme="light"] .apex-login-security,
+html:not(.dark):not([data-theme="dark"]) .apex-login-security {
+  color: #607188 !important;
+}
+
+.apex-login-input:-webkit-autofill,
+.apex-login-input:-webkit-autofill:hover,
+.apex-login-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: currentColor;
+  box-shadow: 0 0 0 1000px transparent inset;
+  transition: background-color 9999s ease-out;
+}
+
+html[data-theme="light"] .apex-login-split > button,
+html:not(.dark):not([data-theme="dark"]) .apex-login-split > button {
+  border-color: #cbd5df;
+  background: #ffffff;
+  color: #334155;
+}
+
+html[data-theme="dark"] .apex-login-split > button,
+html.dark:not([data-theme="light"]) .apex-login-split > button {
+  border-color: #526078;
+  background: #172131;
+  color: #dce8f5;
 }
 
 .apex-public-wave {
@@ -114,6 +271,11 @@ html.dark .apex-public-glow {
   background:
     radial-gradient(circle at 78% 11%, rgb(var(--color-apex) / 0.07), transparent 25rem),
     radial-gradient(circle at 8% 90%, rgb(var(--color-apex) / 0.09), transparent 25rem);
+}
+
+html[data-theme="dark"] .apex-login-grid,
+html.dark:not([data-theme="light"]) .apex-login-grid {
+  opacity: 0.18;
 }
 
 html.dark .apex-public-wave {
@@ -259,6 +421,26 @@ select,
 textarea {
   outline-color: #0f766e;
   outline-offset: 2px;
+}
+
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid rgb(var(--color-apex));
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 .apex-page-shell {
@@ -1042,4 +1224,18 @@ html.dark .platform-alert-close:hover {
 
 .btn-primary { background: var(--color-apex, #146c63); color: white; }
 .btn-secondary { border: 1px solid var(--color-line, #d9dfdd); background: white; }
+
+@media (prefers-reduced-motion: reduce) {
+  .apex-public-shell *,
+  .apex-public-shell *::before,
+  .apex-public-shell *::after,
+  .apex-login-split *,
+  .apex-login-split *::before,
+  .apex-login-split *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 

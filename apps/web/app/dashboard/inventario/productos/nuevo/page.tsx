@@ -27,6 +27,8 @@ import {
 import { api } from "@/lib/api";
 import { LATAM_CURRENCIES, money, taxRatesForCountry } from "@/lib/latam";
 import { InventoryNav } from "@/components/inventory-nav";
+import { Button } from "@/components/ui/button";
+import { showToast } from "@/components/system/ToastCenter";
 
 type InventoryItem = {
   id: number;
@@ -231,6 +233,7 @@ export default function NuevoProductoPage() {
   }
 
   async function createItem(keepCreating = false) {
+    if (saving) return;
     setSaving(true);
     setError("");
     setOk("");
@@ -277,19 +280,22 @@ export default function NuevoProductoPage() {
         })
       });
       setOk(`${created.code} creado y disponible en compras, ventas, WMS y costos`);
+      showToast({ tone: "success", title: `Producto creado — ${created.code}`, description: "Ya está disponible en compras, ventas, WMS y costos." });
       await loadItems();
       setSelectedItem(created);
       if (!keepCreating) setActiveTab("directorio");
       setForm(keepCreating ? { ...INITIAL_FORM, society_code: form.society_code, branch_code: form.branch_code, type: form.type, unit: form.unit, family: form.family } : { ...INITIAL_FORM, society_code: form.society_code, branch_code: form.branch_code, family: nextFamilyCode() });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No fue posible crear el producto");
+      const detail = err instanceof Error ? err.message : "No fue posible crear el producto";
+      setError(detail);
+      showToast({ tone: "error", title: "No fue posible crear el producto", description: detail });
     } finally {
       setSaving(false);
     }
   }
 
   async function updateSelectedItem(patch: InventoryItemPatch) {
-    if (!selectedItem) return;
+    if (!selectedItem || saving) return;
     setSaving(true);
     setError("");
     try {
@@ -298,10 +304,13 @@ export default function NuevoProductoPage() {
         body: JSON.stringify(patch)
       });
       setOk(`${updated.code} actualizado`);
+      showToast({ tone: "success", title: `Producto actualizado — ${updated.code}`, description: "Los cambios quedaron guardados en el maestro de productos." });
       setSelectedItem({ ...selectedItem, ...updated });
       await loadItems();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No fue posible actualizar el producto");
+      const detail = err instanceof Error ? err.message : "No fue posible actualizar el producto";
+      setError(detail);
+      showToast({ tone: "error", title: "No fue posible actualizar el producto", description: detail, retry: () => void updateSelectedItem(patch) });
     } finally {
       setSaving(false);
     }
@@ -310,16 +319,12 @@ export default function NuevoProductoPage() {
   return (
     <div className="space-y-4">
       <header className="rounded-md border border-line bg-white p-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div>
           <div>
             <p className="text-sm font-medium text-apex">Inventario / Productos</p>
             <h1 className="mt-1 text-2xl font-semibold">Productos</h1>
             <p className="mt-1 text-sm text-neutral-600">Crea, consulta y actualiza el maestro de productos.</p>
           </div>
-          <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-3 text-sm font-medium text-white disabled:opacity-50" disabled={saving || !canSave} onClick={() => createItem(false)} type="button">
-            <Save size={16} />
-            Crear producto
-          </button>
         </div>
         <div className="mt-3 border-t border-line pt-3">
           <SegmentedNav active={activeTab} onChange={setActiveTab} />
@@ -328,8 +333,8 @@ export default function NuevoProductoPage() {
 
       <InventoryNav />
 
-      {error ? <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
-      {ok ? <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{ok}</p> : null}
+      {error ? <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">{error}</p> : null}
+      {ok ? <p aria-live="polite" className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700" role="status">{ok}</p> : null}
 
       <section>
         <div className="space-y-4">
@@ -476,14 +481,14 @@ export default function NuevoProductoPage() {
                     <Toggle label="Serial" checked={form.serial_control} onChange={(value) => setForm((p) => ({ ...p, serial_control: value }))} />
                   </div>
                   <div className="flex flex-col gap-2 sm:flex-row">
-                    <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line px-4 text-sm font-medium hover:bg-paper disabled:opacity-50" disabled={saving || !canSave} onClick={() => createItem(true)} type="button">
+                    <Button disabled={!canSave} loading={saving} onClick={() => void createItem(true)} type="button" variant="secondary">
                       <Plus size={16} />
-                      Crear y seguir
-                    </button>
-                    <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white disabled:opacity-50" disabled={saving || !canSave} onClick={() => createItem(false)} type="button">
+                      {saving ? "Creando producto…" : "Crear y seguir"}
+                    </Button>
+                    <Button disabled={!canSave} loading={saving} onClick={() => void createItem(false)} type="button">
                       <Save size={16} />
-                      Crear producto
-                    </button>
+                      {saving ? "Creando producto…" : "Crear producto"}
+                    </Button>
                   </div>
                 </div>
               </section>

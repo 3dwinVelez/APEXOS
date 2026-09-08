@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { PlatformAlerts } from "@/components/system/PlatformAlerts";
 import { SessionLifecycle } from "@/components/system/SessionLifecycle";
+import { ToastCenter } from "@/components/system/ToastCenter";
 
 export const metadata: Metadata = {
   title: "APEX OS",
@@ -18,6 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <SessionLifecycle />
         <PlatformAlerts />
+        <ToastCenter />
         {children}
       </body>
     </html>

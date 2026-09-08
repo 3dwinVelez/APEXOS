@@ -6,6 +6,7 @@ import { Download, PackagePlus, Search } from "lucide-react";
 import { InventoryNav } from "@/components/inventory-nav";
 import { api } from "@/lib/api";
 import { downloadExcelWorkbook } from "@/lib/reportExports";
+import { EmptyState, Skeleton } from "@/components/ui/feedback";
 
 type Product = {
   id: number;
@@ -76,16 +77,31 @@ export default function ProductListPage() {
     <InventoryNav />
     {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
     <section className="rounded-md border border-line bg-white">
-      <div className="grid gap-3 border-b border-line p-4 md:grid-cols-[minmax(240px,1fr)_220px_180px_auto] md:items-end">
+      <div className="grid gap-3 border-b border-line p-4 sm:grid-cols-2 lg:grid-cols-[minmax(240px,1fr)_220px_180px_auto] lg:items-end">
         <label className="text-sm">Buscar<div className="relative mt-1"><Search className="absolute left-3 top-3 text-neutral-400" size={16} /><input className="h-10 w-full rounded-md border border-line pl-10 pr-3" placeholder="SKU, código anterior, nombre, familia o sociedad" value={search} onChange={(event) => setSearch(event.target.value)} /></div></label>
         <label className="text-sm">Familia<select className="mt-1 h-10 w-full rounded-md border border-line px-2" value={family} onChange={(event) => setFamily(event.target.value)}><option value="">Todas</option>{families.map((name) => <option key={name} value={name}>{name}</option>)}</select></label>
         <label className="text-sm">Estado<select className="mt-1 h-10 w-full rounded-md border border-line px-2" value={status} onChange={(event) => setStatus(event.target.value)}><option value="all">Todos</option><option value="active">Activos</option><option value="inactive">Inactivos</option></select></label>
-        <span className="pb-2 text-sm text-neutral-500">{visibleItems.length} productos</span>
+        <span className="self-end pb-2 text-sm text-neutral-500" aria-live="polite">{visibleItems.length} productos</span>
       </div>
-      <div className="overflow-x-auto"><table className="w-full min-w-[950px] text-sm"><thead><tr className="border-b border-line bg-paper text-left"><th className="px-3 py-2">SKU</th><th className="px-3 py-2">Nombre</th><th className="px-3 py-2">Familia</th><th className="px-3 py-2">Tipo</th><th className="px-3 py-2">Unidad</th><th className="px-3 py-2">Sociedad</th><th className="px-3 py-2">Estado</th><th className="px-3 py-2 text-right">Accion</th></tr></thead><tbody>
+      {!loading && visibleItems.length ? <div className="grid gap-3 p-4 lg:hidden">
+        {visibleItems.map((item) => <article className="rounded-md border border-line bg-paper/40 p-4" key={item.id}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0"><p className="font-mono text-sm font-semibold">{item.code}</p><h2 className="truncate font-medium">{item.name}</h2></div>
+            <span className={`shrink-0 rounded-full px-2 py-1 text-xs ${item.active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>{item.active ? "Activo" : "Inactivo"}</span>
+          </div>
+          <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+            <div><dt className="text-neutral-500">Familia</dt><dd>{item.family_code || "Sin familia"}</dd></div>
+            <div><dt className="text-neutral-500">Tipo</dt><dd>{TYPE_LABELS[item.type] || item.type}</dd></div>
+            <div><dt className="text-neutral-500">Unidad</dt><dd>{item.unit}</dd></div>
+            <div><dt className="text-neutral-500">Sociedad</dt><dd>{item.society_code || "--"}</dd></div>
+          </dl>
+          <Link className="mt-4 inline-flex h-10 w-full items-center justify-center rounded-md border border-line bg-white px-3 text-sm font-medium text-apex" href={`/dashboard/inventario/productos/${item.id}`}>Editar producto</Link>
+        </article>)}
+      </div> : null}
+      <div className="hidden overflow-x-auto lg:block"><table className="w-full min-w-[950px] text-sm"><thead><tr className="border-b border-line bg-paper text-left"><th className="px-3 py-2">SKU</th><th className="px-3 py-2">Nombre</th><th className="px-3 py-2">Familia</th><th className="px-3 py-2">Tipo</th><th className="px-3 py-2">Unidad</th><th className="px-3 py-2">Sociedad</th><th className="px-3 py-2">Estado</th><th className="px-3 py-2 text-right">Accion</th></tr></thead><tbody>
         {visibleItems.map((item) => <tr className="border-b border-line/70" key={item.id}><td className="px-3 py-2 font-mono font-medium"><span>{item.code}</span>{item.legacy_code ? <span className="block text-xs font-normal text-neutral-500">Anterior: {item.legacy_code}</span> : null}</td><td className="px-3 py-2">{item.name}</td><td className="px-3 py-2">{item.family_code || "Sin familia"}</td><td className="px-3 py-2">{TYPE_LABELS[item.type] || item.type}</td><td className="px-3 py-2">{item.unit}</td><td className="px-3 py-2">{item.society_code || "--"}</td><td className="px-3 py-2"><span className={`rounded-full px-2 py-1 text-xs ${item.active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>{item.active ? "Activo" : "Inactivo"}</span></td><td className="px-3 py-2 text-right"><Link className="rounded-md border border-line px-3 py-2 text-apex" href={`/dashboard/inventario/productos/${item.id}`}>Editar</Link></td></tr>)}
-        {!loading && !visibleItems.length ? <tr><td className="px-4 py-8 text-center text-neutral-500" colSpan={8}>No hay productos que coincidan con los filtros.</td></tr> : null}
-        {loading ? <tr><td className="px-4 py-8 text-center text-neutral-500" colSpan={8}>Cargando productos...</td></tr> : null}
+        {!loading && !visibleItems.length ? <tr><td colSpan={8}><EmptyState className="border-0" description={items.length ? "Ajusta o limpia los filtros para volver a ver productos." : "Crea el primer SKU para controlar existencias, costos y disponibilidad."} icon={<PackagePlus size={22} />} primaryAction={!items.length ? <Link className="rounded-md bg-apex px-4 py-2 text-sm font-semibold text-white" href="/dashboard/inventario/productos/nuevo">Crear primer producto</Link> : undefined} title={items.length ? "No hay productos con estos filtros" : "Aún no tienes productos"} /></td></tr> : null}
+        {loading ? <tr><td className="p-4" colSpan={8}><div className="space-y-3" aria-label="Cargando productos"><Skeleton className="h-10" /><Skeleton className="h-10" /><Skeleton className="h-10" /></div></td></tr> : null}
       </tbody></table></div>
     </section>
   </div>;

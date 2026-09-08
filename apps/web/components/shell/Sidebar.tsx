@@ -6,7 +6,9 @@ import { UserSessionBadge } from "@/components/shell/UserSessionBadge";
 import { ChevronLeft, ChevronRight, Home, LockKeyhole, Search, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
@@ -52,7 +54,7 @@ export function Sidebar() {
 
   function linkClass(active: boolean, enabled = true) {
     if (!enabled) return "flex h-9 w-full items-center gap-2 rounded-md px-2 text-left text-sm text-neutral-400 opacity-75";
-    return `flex h-9 items-center gap-2 rounded-md px-2 text-sm transition-colors ${active ? "bg-apex text-white" : "text-neutral-700 hover:bg-paper"}`;
+    return `flex h-9 w-full items-center gap-2 rounded-md px-2 text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-apex ${active ? "bg-apex text-white" : "text-neutral-700 hover:bg-paper"}`;
   }
 
   function renderItem(item: (typeof items)[number]) {
@@ -60,31 +62,34 @@ export function Sidebar() {
     const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
     if (!item.enabled) {
       return (
+        <SidebarTooltip collapsed={collapsed} key={item.href} label={`${item.label} bloqueado por suscripción o permisos`}>
         <button
+          aria-label={collapsed ? `${item.label} bloqueado por suscripción o permisos` : undefined}
           aria-disabled="true"
           className={linkClass(false, false)}
           disabled
-          key={item.href}
-          title={`${item.label} bloqueado por suscripcion o permisos`}
           type="button"
         >
           <Icon size={18} />
           {!collapsed ? <span className="min-w-0 flex-1 truncate">{item.label}</span> : null}
           {!collapsed ? <LockKeyhole className="shrink-0" size={14} /> : null}
         </button>
+        </SidebarTooltip>
       );
     }
     return (
+      <SidebarTooltip collapsed={collapsed} key={item.href} label={item.label}>
       <Link
+        aria-current={active ? "page" : undefined}
+        aria-label={collapsed ? item.label : undefined}
         className={linkClass(active, item.enabled)}
         href={item.href}
-        key={item.href}
         prefetch={false}
-        title={item.label}
       >
         <Icon size={18} />
         {!collapsed ? item.label : null}
       </Link>
+      </SidebarTooltip>
     );
   }
 
@@ -96,7 +101,7 @@ export function Sidebar() {
         </div>
         <button
           aria-label={collapsed ? "Expandir menú" : "Ocultar menú"}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-line hover:bg-paper"
+          className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-line hover:bg-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-apex"
           onClick={toggle}
           type="button"
         >
@@ -109,7 +114,7 @@ export function Sidebar() {
             <span className="sr-only">Buscar modulos</span>
             <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
             <input
-                className="h-9 w-full rounded-md border border-line bg-paper pl-9 pr-9 text-sm text-neutral-800 outline-none transition placeholder:text-neutral-400 focus:border-apex focus:bg-white"
+                className="h-9 w-full rounded-md border border-line bg-paper pl-9 pr-9 text-sm text-neutral-800 outline-none transition placeholder:text-neutral-400 focus:border-apex focus:bg-white focus-visible:ring-2 focus-visible:ring-apex/40"
               onChange={(event) => setModuleQuery(event.target.value)}
               placeholder="Buscar modulo"
               type="search"
@@ -118,10 +123,10 @@ export function Sidebar() {
             {moduleQuery ? <button aria-label="Limpiar busqueda" className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-neutral-400 hover:bg-white hover:text-neutral-700" onClick={() => setModuleQuery("")} type="button"><X size={15} /></button> : null}
           </label>
         ) : null}
-        {!technicianMode ? <Link className={linkClass(pathname === "/dashboard")} href="/dashboard" prefetch={false} title="Inicio">
+        {!technicianMode ? <SidebarTooltip collapsed={collapsed} label="Inicio"><Link aria-current={pathname === "/dashboard" ? "page" : undefined} aria-label={collapsed ? "Inicio" : undefined} className={linkClass(pathname === "/dashboard")} href="/dashboard" prefetch={false}>
           <Home size={18} />
           {!collapsed ? "Inicio" : null}
-        </Link> : null}
+        </Link></SidebarTooltip> : null}
         {orderedItems.map(renderItem)}
         {!collapsed && normalizedQuery && orderedItems.length === 0 ? <p className="px-3 py-4 text-sm text-neutral-500">No hay modulos disponibles para esta busqueda.</p> : null}
       </nav>
@@ -135,6 +140,24 @@ export function Sidebar() {
         </div>
       )}
     </aside>
+  );
+}
+
+function SidebarTooltip({ children, collapsed, label }: { children: ReactNode; collapsed: boolean; label: string }) {
+  const anchor = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
+
+  function show() {
+    if (!collapsed || !anchor.current) return;
+    const rect = anchor.current.getBoundingClientRect();
+    setPosition({ left: rect.right + 12, top: rect.top + rect.height / 2 });
+  }
+
+  return (
+    <div className="w-full" onBlur={() => setPosition(null)} onFocus={show} onMouseEnter={show} onMouseLeave={() => setPosition(null)} ref={anchor}>
+      {children}
+      {position ? createPortal(<span className="pointer-events-none fixed z-[130] w-max max-w-64 -translate-y-1/2 rounded-md bg-neutral-950 px-3 py-2 text-xs font-medium text-white shadow-lg" role="tooltip" style={{ left: position.left, top: position.top }}>{label}</span>, document.body) : null}
+    </div>
   );
 }
 
