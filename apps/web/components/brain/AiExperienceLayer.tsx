@@ -3,7 +3,7 @@
 import { api } from "@/lib/api";
 import { AI_ASSISTANCE_EVENT, AI_ASSISTANCE_KEY } from "@/components/brain/AiAssistanceToggle";
 import { useApexAiAccess } from "@/components/brain/useApexAiAccess";
-import { AlertTriangle, Bell, CheckCircle2, ChevronRight, Lightbulb, Loader2, Sparkles, X, Zap } from "lucide-react";
+import { AlertTriangle, Bell, CheckCircle2, ChevronRight, HelpCircle, Lightbulb, Loader2, X, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -337,8 +337,8 @@ export function AiExperienceLayer() {
     const dismissed = readSet(insightKey);
     setDismissedInsights(dismissed);
 
-    const guideSeen = localStorage.getItem(guideKey) === "1";
-    setCoachOpen(!isMobile && !guideSeen && steps.length > 0);
+    // La guia es contextual y voluntaria: nunca bloquea la navegacion al entrar.
+    setCoachOpen(false);
 
     if (isSupabaseSession()) {
       setInsights([]);
@@ -365,7 +365,9 @@ export function AiExperienceLayer() {
     };
   }, [coachOpen, refreshTarget]);
 
-  function closeCoach() {
+  function closeCoach(event?: { preventDefault(): void; stopPropagation(): void }) {
+    event?.preventDefault();
+    event?.stopPropagation();
     localStorage.setItem(guideKey, "1");
     setCoachOpen(false);
   }
@@ -433,7 +435,7 @@ export function AiExperienceLayer() {
             <div className="mt-4 flex items-center justify-between gap-3">
               <span className="text-xs text-neutral-500">{stepIndex + 1} de {steps.length}</span>
               <div className="flex items-center gap-2">
-                <button className="h-11 rounded-md border border-line px-3 text-sm font-medium hover:bg-paper md:h-9" onClick={closeCoach} type="button">Cerrar</button>
+                <button className="h-11 rounded-md border border-line px-3 text-sm font-medium hover:bg-paper md:h-9" onClick={closeCoach} type="button">No mostrar de nuevo</button>
                 <button className="inline-flex h-11 items-center gap-2 rounded-md bg-apex px-3 text-sm font-medium text-white md:h-9" onClick={nextStep} type="button">
                   {stepIndex >= steps.length - 1 ? "Finalizar" : "Siguiente"}
                   <ChevronRight size={15} />
@@ -503,16 +505,18 @@ export function AiExperienceLayer() {
 
         <div className="flex items-center gap-2">
           <button
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-medium shadow-lg hover:bg-paper"
-            onClick={() => {
+            aria-label="Abrir ayuda contextual de APEX AI"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-line bg-white text-apex shadow-lg transition hover:-translate-y-0.5 hover:border-apex hover:bg-apex/5"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
               setStepIndex(0);
               setCoachOpen(true);
-              localStorage.removeItem(guideKey);
             }}
+            title="Ayuda contextual"
             type="button"
           >
-            <Sparkles size={16} className="text-apex" />
-            Guia IA
+            <HelpCircle size={20} />
           </button>
           <button
             className="relative inline-flex h-12 w-12 items-center justify-center rounded-md bg-apex text-white shadow-lg hover:bg-apex/90"

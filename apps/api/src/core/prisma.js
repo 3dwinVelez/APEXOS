@@ -15,9 +15,9 @@ const TENANT_MODELS = new Set([
   "ProcessedWorkday", "GpsPing", "WorkSession", "ActivityType", "WorkActivity", "ActivityEvidence",
   "Vehicle", "ServiceOrder", "ServiceOrderItem", "ServiceOrderCorrection", "ServiceOrderCorrectionChange", "ServiceReference",
   "VehicleDocument", "VehicleMasterAuditLog", "ServiceReferencePart", "ServiceIncident", "ServicePhoto",
-  "TransportCarrier", "TransportDriver", "TransportOrigin", "TransportDeliveryPoint", "TransportRateCard", "TransportNeed", "TransportNeedLine",
+  "TransportTmsConfig", "TransportCarrier", "TransportDriver", "TransportOrigin", "TransportDeliveryPoint", "TransportRateCard", "TransportNeed", "TransportNeedLine",
   "TransportTrip", "TransportTripNeed", "TransportStop", "TransportTripEvent", "TransportDeliveryAttempt",
-  "TransportPod", "TransportSettlement", "TransportSettlementLine",
+  "TransportPod", "TransportSettlement", "TransportSettlementLine", "TransportGpsPosition", "TransportNotification",
   "EvidenceUploadAuthorization", "AuthorizationSession",
   "Project", "ProjectCommitment", "ProjectDeliverable", "ProjectRisk", "ProjectResourceAssignment",
   "ProjectComment", "ProjectEvidence", "ProjectAlert", "ProjectLog",
@@ -29,9 +29,9 @@ const TENANT_MODELS = new Set([
 ]);
 
 const WRITE_OPS = new Set(["create", "createMany", "upsert"]);
-const READ_OPS = new Set(["findFirst", "findMany", "count", "aggregate", "groupBy"]);
+const READ_OPS = new Set(["findFirst", "findFirstOrThrow", "findMany", "count", "aggregate", "groupBy"]);
 const DELETE_OPS = new Set(["delete", "deleteMany"]);
-const FIND_OPS = new Set(["findFirst", "findMany"]);
+const FIND_OPS = new Set(["findFirst", "findFirstOrThrow", "findMany"]);
 const SOFT_DELETE = new Set([
   "Item", "Party", "Employee", "Resource", "Place",
   "Tenant", "User", "InventoryFamily", "InventoryFamilyAccounting",

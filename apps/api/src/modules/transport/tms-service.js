@@ -1,4 +1,5 @@
 const prisma = require("../../core/prisma");
+const { point, lineString, distance: turfDistance, buffer: turfBuffer, booleanPointInPolygon, pointToLineDistance } = require("@turf/turf");
 
 const TRIP_TRANSITIONS = Object.freeze({
   borrador: ["planificado", "cancelado"],
@@ -15,6 +16,8 @@ const TRIP_TRANSITIONS = Object.freeze({
 
 const ATTEMPT_RESULTS = new Set(["completa", "parcial", "rechazada", "cliente_cerrado", "direccion_incorrecta", "averia"]);
 const TERMINAL_STOP_RESULTS = new Set(["completa", "parcial"]);
+const NOVELTY_RESULTS = new Set(["rechazada", "cliente_cerrado", "direccion_incorrecta", "averia"]);
+const SAFE_EVIDENCE_REFERENCE = /^(service-images|tms-evidence)\/[a-zA-Z0-9/_-]+\.(png|jpe?g|webp)$/i;
 
 function appError(statusCode, code, message, details) {
   const error = new Error(message);
@@ -467,7 +470,7 @@ async function commitPlan(tenantId, user, input) {
 async function getTrip(tenantId, id) {
   return prisma.runWithTenant(tenantId, async () => {
     const trip = await prisma.transportTrip.findFirstOrThrow({
-      where: { id: Number(id) }, include: { origin: true, carrier: true, driver: true, needs: { include: { need: { include: { delivery_point: true, lines: true } } } }, stops: { include: { delivery_point: true, attempts: { include: { pod: true } } }, orderBy: { sequence: "asc" } }, events: { orderBy: { occurred_at: "asc" } }, settlements: { include: { lines: true } } }
+      where: { id: Number(id) }, include: { origin: true, carrier: true, driver: true, needs: { include: { need: { include: { delivery_point: true, lines: true } } } }, stops: { include: { need: { include: { lines: true } }, delivery_point: true, attempts: { include: { pod: true }, orderBy: { attempt_number: "asc" } } }, orderBy: { sequence: "asc" } }, events: { orderBy: { occurred_at: "asc" } }, settlements: { include: { lines: true } } }
     });
     return { ...trip, events: trip.events.map((event) => ({ ...event, id: String(event.id) })) };
   });
@@ -553,6 +556,8 @@ async function transitionTrip(tenantId, user, id, input) {
     const needStatus = { despachado: "despachada", en_transito: "en_transito", entregado: "entregada", cerrado: "cerrada", cancelado: "pendiente" }[next];
     if (needStatus) await prisma.transportNeed.updateMany({ where: { tenant_id: String(tenantId), trip_links: { some: { trip_id: trip.id } } }, data: { status: needStatus } });
     await prisma.transportTripEvent.create({ data: { trip_id: trip.id, event_type: `ESTADO_${next.toUpperCase()}`, occurred_at: now, actor_id: user?.id || null, observation: input.reason || null, data: { previous_status: trip.status, new_status: next } } });
+    if (next === "despachado") await notifyTripCustomers(tenantId, user, trip.id, "DESPACHADO", `El viaje ${trip.code} fue despachado.`);
+    if (next === "entregado") await notifyTripCustomers(tenantId, user, trip.id, "ENTREGADO", `El viaje ${trip.code} completo sus entregas.`);
     return getTrip(tenantId, updated.id);
   });
 }
@@ -569,10 +574,13 @@ async function recordTripEvent(tenantId, user, id, input) {
 
 async function registerDeliveryAttempt(tenantId, user, tripId, stopId, input) {
   return prisma.runWithTenant(tenantId, async () => {
-    const stop = await prisma.transportStop.findFirstOrThrow({ where: { id: Number(stopId), trip_id: Number(tripId) }, include: { trip: true } });
+    const stop = await prisma.transportStop.findFirstOrThrow({ where: { id: Number(stopId), trip_id: Number(tripId) }, include: { trip: true, need: { include: { lines: true } } } });
     if (!["despachado", "en_transito"].includes(stop.trip.status)) throw appError(409, "TMS_TRIP_NOT_IN_EXECUTION", "El viaje debe estar despachado o en transito.");
     if (!ATTEMPT_RESULTS.has(input.result)) throw appError(400, "TMS_INVALID_ATTEMPT_RESULT", "Resultado de entrega no reconocido.");
-    if (["completa", "parcial"].includes(input.result) && (!input.pod || !String(input.pod.receiver_name || "").trim())) throw appError(400, "TMS_POD_REQUIRED", "La entrega completa o parcial requiere receptor en el POD.");
+    validateAttemptInput(input);
+    if (["completa", "parcial"].includes(input.result)) {
+      const config = await getTmsConfig(tenantId); validatePodInput(input, stop.need, config.mobile_config || {});
+    }
     const count = await prisma.transportDeliveryAttempt.count({ where: { stop_id: stop.id } });
     const attempt = await prisma.transportDeliveryAttempt.create({
       data: {
@@ -587,7 +595,297 @@ async function registerDeliveryAttempt(tenantId, user, tripId, stopId, input) {
     await prisma.transportStop.update({ where: { id: stop.id }, data: { status: stopStatus, completed_at: TERMINAL_STOP_RESULTS.has(input.result) ? new Date() : null } });
     if (stop.need_id) await prisma.transportNeed.update({ where: { id: stop.need_id }, data: { status: input.result === "completa" ? "entregada" : input.result === "parcial" ? "entrega_parcial" : "reintento_pendiente" } });
     await prisma.transportTripEvent.create({ data: { trip_id: stop.trip_id, stop_id: stop.id, event_type: `ENTREGA_${input.result.toUpperCase()}`, actor_id: user?.id || null, data: { attempt_id: attempt.id, attempt_number: attempt.attempt_number, cause_code: input.cause_code || null } } });
+    if (!TERMINAL_STOP_RESULTS.has(input.result)) await notifyTripCustomers(tenantId, user, stop.trip_id, "ENTREGA_RECHAZADA", `La parada ${stop.sequence} registro la novedad ${input.result}.`);
     return attempt;
+  });
+}
+
+function validatePodInput(input, need, settings = {}) {
+  const pod = input.pod || {}; const photos = Array.isArray(pod.photos) ? pod.photos : [];
+  if (!String(pod.receiver_name || "").trim()) throw appError(400, "TMS_POD_RECEIVER_REQUIRED", "El POD requiere el nombre del receptor.");
+  if (settings.require_signature !== false && !String(pod.signature || "").trim()) throw appError(400, "TMS_POD_SIGNATURE_REQUIRED", "La firma es obligatoria para completar la entrega.");
+  if (settings.require_photo !== false && !photos.length) throw appError(400, "TMS_POD_PHOTO_REQUIRED", "Se requiere al menos una fotografia.");
+  for (const reference of photos) if (!SAFE_EVIDENCE_REFERENCE.test(String(reference))) throw appError(400, "TMS_POD_UNSAFE_EVIDENCE", "La fotografia debe ser una referencia validada de almacenamiento TMS.");
+  if (pod.signature && !SAFE_EVIDENCE_REFERENCE.test(String(pod.signature))) throw appError(400, "TMS_POD_UNSAFE_SIGNATURE", "La firma debe ser una referencia validada de almacenamiento TMS.");
+  if (input.result === "parcial") {
+    if (!Array.isArray(input.delivered_lines) || !input.delivered_lines.length) throw appError(400, "TMS_PARTIAL_LINES_REQUIRED", "La entrega parcial requiere cantidades entregadas por producto.");
+    const ordered = new Map((need?.lines || []).map((line) => [String(line.sku), numberValue(line.quantity)]));
+    for (const line of input.delivered_lines) { const quantity = numberValue(line.quantity); if (!line.sku || quantity <= 0 || !ordered.has(String(line.sku)) || quantity > ordered.get(String(line.sku))) throw appError(400, "TMS_INVALID_PARTIAL_QUANTITY", `Cantidad parcial invalida para ${line.sku || "producto"}.`); }
+  }
+}
+
+function validateAttemptInput(input) {
+  const evidence = Array.isArray(input.evidence) ? input.evidence : [];
+  for (const reference of evidence) if (!SAFE_EVIDENCE_REFERENCE.test(String(reference))) throw appError(400, "TMS_UNSAFE_ATTEMPT_EVIDENCE", "La evidencia de la novedad debe provenir del almacenamiento TMS.");
+  if (!NOVELTY_RESULTS.has(input.result)) return;
+  if (!String(input.cause_code || "").trim()) throw appError(400, "TMS_NOVELTY_CAUSE_REQUIRED", "La novedad requiere una causa.");
+  if (!String(input.responsible || "").trim()) throw appError(400, "TMS_NOVELTY_RESPONSIBLE_REQUIRED", "La novedad requiere un responsable.");
+  if (!evidence.length) throw appError(400, "TMS_NOVELTY_EVIDENCE_REQUIRED", "La novedad requiere evidencia fotografica.");
+  const retryAt = dateValue(input.next_attempt_at, "Proximo intento", true);
+  if (retryAt <= new Date()) throw appError(400, "TMS_RETRY_DATE_INVALID", "El proximo intento debe quedar programado en el futuro.");
+}
+
+function validRouteCoordinates(trip) {
+  const metadata = trip?.metadata || {};
+  const candidate = metadata.route_geometry?.type === "LineString" ? metadata.route_geometry.coordinates : metadata.planned_route?.type === "LineString" ? metadata.planned_route.coordinates : metadata.route_coordinates;
+  if (!Array.isArray(candidate) || candidate.length < 2) return null;
+  const coordinates = candidate.map((coordinate) => Array.isArray(coordinate) ? [Number(coordinate[0]), Number(coordinate[1])] : null);
+  return coordinates.every((coordinate) => coordinate && Number.isFinite(coordinate[0]) && Number.isFinite(coordinate[1]) && Math.abs(coordinate[0]) <= 180 && Math.abs(coordinate[1]) <= 90) ? coordinates : null;
+}
+
+function turfSpatialStatus(trip, latest, target, geofenceM) {
+  const currentPoint = point([Number(latest.longitude), Number(latest.latitude)]);
+  const targetPoint = point([Number(target.longitude), Number(target.latitude)]);
+  const distanceKm = turfDistance(currentPoint, targetPoint, { units: "kilometers" });
+  const customGeofence = target?.metadata?.geofence_geojson || trip?.metadata?.geofence_geojson;
+  let insideGeofence;
+  try { insideGeofence = customGeofence?.type === "Polygon" || customGeofence?.type === "MultiPolygon" ? booleanPointInPolygon(currentPoint, customGeofence) : booleanPointInPolygon(currentPoint, turfBuffer(targetPoint, geofenceM / 1000, { units: "kilometers", steps: 32 })); }
+  catch { insideGeofence = distanceKm * 1000 <= geofenceM; }
+  const coordinates = validRouteCoordinates(trip);
+  const deviationKm = coordinates ? pointToLineDistance(currentPoint, lineString(coordinates), { units: "kilometers" }) : null;
+  const corridorM = Math.max(50, Number(trip?.metadata?.corridor_radius_m || 500));
+  return { distanceKm, insideGeofence, deviationKm, corridorM, offRoute: deviationKm != null && deviationKm * 1000 > corridorM };
+}
+
+function podDateWhere(query = {}) { return query.date_from || query.date_to ? { received_at: { ...(query.date_from ? { gte: dateValue(query.date_from, "Desde") } : {}), ...(query.date_to ? { lte: dateValue(query.date_to, "Hasta") } : {}) } } : {}; }
+async function listPods(tenantId, query = {}) { return prisma.runWithTenant(tenantId, () => prisma.transportDeliveryAttempt.findMany({ where: { pod: { is: podDateWhere(query) }, ...(query.result ? { result: query.result } : {}), ...(query.driver_id ? { trip: { driver_id: Number(query.driver_id) } } : {}), ...(query.carrier_id ? { trip: { carrier_id: Number(query.carrier_id) } } : {}) }, include: { pod: true, trip: { include: { driver: true, carrier: true } }, stop: { include: { delivery_point: true } }, need: true }, orderBy: { occurred_at: "desc" }, take: Math.min(numberValue(query.limit, 100), 500) })); }
+async function getPod(tenantId, id) { return prisma.runWithTenant(tenantId, () => prisma.transportPod.findFirstOrThrow({ where: { id: Number(id) }, include: { attempt: { include: { trip: { include: { driver: true, carrier: true } }, stop: { include: { delivery_point: true } }, need: { include: { lines: true } } } } } })); }
+async function getPodStats(tenantId, query = {}) { return prisma.runWithTenant(tenantId, async () => { const rows = await prisma.transportDeliveryAttempt.findMany({ where: { ...(query.date_from || query.date_to ? { occurred_at: { ...(query.date_from ? { gte: dateValue(query.date_from, "Desde") } : {}), ...(query.date_to ? { lte: dateValue(query.date_to, "Hasta") } : {}) } } : {}), ...(query.result ? { result: query.result } : {}), ...(query.driver_id ? { trip: { driver_id: Number(query.driver_id) } } : {}), ...(query.carrier_id ? { trip: { carrier_id: Number(query.carrier_id) } } : {}) }, select: { result: true, attempt_number: true } }); const total = rows.length; const count = (result) => rows.filter((row) => row.result === result).length; return { total, complete: count("completa"), partial: count("parcial"), rejected: rows.filter((row) => !TERMINAL_STOP_RESULTS.has(row.result)).length, complete_pct: total ? Number((count("completa") / total * 100).toFixed(1)) : 0, partial_pct: total ? Number((count("parcial") / total * 100).toFixed(1)) : 0, first_attempt_pct: total ? Number((rows.filter((row) => row.attempt_number === 1 && row.result === "completa").length / total * 100).toFixed(1)) : 0 }; }); }
+
+function calculateLiveStatus(trip, latest, now = new Date()) {
+  const nextStop = trip.stops?.find((stop) => !TERMINAL_STOP_RESULTS.has(stop.status) && !stop.completed_at) || null;
+  if (!latest) return { signal_status: "sin_senal", stale_seconds: null, next_stop: nextStop, distance_to_stop_km: null, eta_minutes: null, inside_geofence: false, alerts: [{ code: "GPS_SIN_SENAL", severity: "high", message: "El viaje no ha reportado posiciones GPS." }] };
+  const staleSeconds = Math.max(0, Math.round((now.getTime() - new Date(latest.recorded_at).getTime()) / 1000));
+  const target = nextStop?.latitude != null && nextStop?.longitude != null ? nextStop : nextStop?.delivery_point;
+  const geofenceM = Number(nextStop?.delivery_point?.geofence_radius_m || 150);
+  const spatial = target?.latitude != null && target?.longitude != null ? turfSpatialStatus(trip, latest, target, geofenceM) : null;
+  const distanceKm = spatial?.distanceKm ?? null; const inside = spatial?.insideGeofence ?? false;
+  const speed = Math.max(Number(latest.speed_kph || 0), 25); const eta = distanceKm == null ? null : Math.round(distanceKm / speed * 60);
+  const alerts = [];
+  if (staleSeconds > 300) alerts.push({ code: "GPS_DESACTUALIZADO", severity: "high", message: `Sin posicion reciente hace ${staleSeconds} segundos.` });
+  if (latest.is_mocked) alerts.push({ code: "GPS_SIMULADO", severity: "high", message: "El dispositivo reporta una ubicacion simulada." });
+  if (latest.accuracy_m != null && Number(latest.accuracy_m) > 100) alerts.push({ code: "GPS_BAJA_PRECISION", severity: "medium", message: "La precision GPS supera 100 metros." });
+  if (latest.battery_pct != null && Number(latest.battery_pct) <= 15) alerts.push({ code: "BATERIA_BAJA", severity: "medium", message: "El dispositivo tiene bateria baja." });
+  if (spatial?.offRoute) alerts.push({ code: "DESVIO_DE_RUTA", severity: "high", message: `El vehiculo esta a ${Math.round(spatial.deviationKm * 1000)} m del corredor planificado.` });
+  return { signal_status: staleSeconds > 300 ? "desactualizada" : "activa", stale_seconds: staleSeconds, next_stop: nextStop, distance_to_stop_km: distanceKm == null ? null : Number(distanceKm.toFixed(2)), eta_minutes: eta, inside_geofence: inside, route_deviation_m: spatial?.deviationKm == null ? null : Math.round(spatial.deviationKm * 1000), corridor_radius_m: spatial?.corridorM ?? null, off_route: spatial?.offRoute ?? false, route_coordinates: validRouteCoordinates(trip), spatial_engine: "turf", alerts };
+}
+
+async function getLiveMonitoring(tenantId, query = {}) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const statuses = query.include_planned === "true" ? ["planificado", "asignado", "en_cargue", "despachado", "en_transito"] : ["despachado", "en_transito"];
+    const trips = await prisma.transportTrip.findMany({ where: { status: { in: statuses } }, include: { driver: true, carrier: true, stops: { include: { delivery_point: true }, orderBy: { sequence: "asc" } } }, orderBy: { planned_departure: "asc" }, take: 200 });
+    const units = await Promise.all(trips.map(async (trip) => {
+      const latest = await prisma.transportGpsPosition.findFirst({ where: { trip_id: trip.id }, orderBy: { recorded_at: "desc" } });
+      const live = calculateLiveStatus(trip, latest);
+      return { trip_id: trip.id, trip_code: trip.code, status: trip.status, vehicle_id: trip.vehicle_id, vehicle_plate: trip.vehicle_plate, driver: trip.driver, carrier: trip.carrier, latest: latest ? serializeGpsPosition(latest) : null, ...live };
+    }));
+    const alerts = units.flatMap((unit) => unit.alerts.map((alert) => ({ ...alert, trip_id: unit.trip_id, trip_code: unit.trip_code, vehicle_plate: unit.vehicle_plate })));
+    return { generated_at: new Date().toISOString(), refresh_seconds: 15, summary: { active: units.length, with_signal: units.filter((unit) => unit.signal_status === "activa").length, stale: units.filter((unit) => unit.signal_status === "desactualizada").length, without_signal: units.filter((unit) => unit.signal_status === "sin_senal").length, inside_geofence: units.filter((unit) => unit.inside_geofence).length, off_route: units.filter((unit) => unit.off_route).length, alerts: alerts.length }, units, alerts };
+  });
+}
+
+function parseCsv(text) {
+  const rows = []; let row = []; let value = ""; let quoted = false;
+  for (let index = 0; index < String(text).length; index += 1) {
+    const char = String(text)[index]; const next = String(text)[index + 1];
+    if (char === '"' && quoted && next === '"') { value += '"'; index += 1; }
+    else if (char === '"') quoted = !quoted;
+    else if (char === "," && !quoted) { row.push(value.trim()); value = ""; }
+    else if ((char === "\n" || char === "\r") && !quoted) { if (char === "\r" && next === "\n") index += 1; row.push(value.trim()); if (row.some(Boolean)) rows.push(row); row = []; value = ""; }
+    else value += char;
+  }
+  row.push(value.trim()); if (row.some(Boolean)) rows.push(row);
+  if (!rows.length) return [];
+  const headers = rows.shift().map((header) => normalizedMatch(header).replace(/\s+/g, "_"));
+  return rows.map((cells, rowIndex) => ({ row: rowIndex + 2, data: Object.fromEntries(headers.map((header, index) => [header, cells[index] || ""])) }));
+}
+
+async function getOrder(tenantId, id) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const order = await prisma.transportNeed.findFirstOrThrow({ where: { id: Number(id) }, include: { origin: true, delivery_point: true, lines: true, trip_links: { include: { trip: { include: { stops: true, events: { orderBy: { occurred_at: "asc" } } } } } }, attempts: { include: { pod: true }, orderBy: { occurred_at: "asc" } } } });
+    return { ...order, trip_links: order.trip_links.map((link) => ({ ...link, trip: { ...link.trip, events: link.trip.events.map((event) => ({ ...event, id: String(event.id) })) } })) };
+  });
+}
+
+async function updateOrder(tenantId, user, id, input) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const current = await getOrder(tenantId, id);
+    if (!["pendiente", "incompleta"].includes(current.status)) throw appError(409, "TMS_ORDER_NOT_EDITABLE", "Solo se pueden editar ordenes pendientes o incompletas.");
+    const merged = { ...current, ...input };
+    const point = input.delivery_point_id ? await prisma.transportDeliveryPoint.findFirstOrThrow({ where: { id: Number(input.delivery_point_id) } }) : current.delivery_point;
+    const origin = input.origin_id ? await prisma.transportOrigin.findFirstOrThrow({ where: { id: Number(input.origin_id) } }) : current.origin;
+    const availableAt = dateValue(merged.available_at, "Fecha disponible", true); const dueAt = dateValue(merged.due_at, "Fecha limite", true);
+    if (dueAt < availableAt) throw appError(400, "TMS_INVALID_NEED_WINDOW", "La fecha limite no puede ser anterior a la fecha disponible.");
+    const errors = needValidationErrors(merged, point);
+    const updated = await prisma.transportNeed.update({ where: { id: current.id }, data: { code: normalizedCode(merged.code), source_reference: merged.source_reference || null, origin_id: origin?.id || null, origin_name: origin?.name || merged.origin_name, delivery_point_id: point.id, available_at: availableAt, due_at: dueAt, priority: merged.priority, service_level: merged.service_level, weight_kg: numberValue(merged.weight_kg), volume_m3: numberValue(merged.volume_m3), pallets: numberValue(merged.pallets), packages: numberValue(merged.packages), required_vehicle_type: merged.required_vehicle_type || null, cargo_value: numberValue(merged.cargo_value), currency: merged.currency || "COP", status: errors.length ? "incompleta" : "pendiente", validation_errors: errors, metadata: { ...(current.metadata || {}), ...(input.metadata || {}), last_edited_by: user?.id || null } } });
+    return getOrder(tenantId, updated.id);
+  });
+}
+
+async function cancelOrder(tenantId, user, id, input = {}) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const current = await getOrder(tenantId, id);
+    if (!["pendiente", "incompleta", "planificada"].includes(current.status)) throw appError(409, "TMS_ORDER_NOT_CANCELLABLE", "La orden ya esta en ejecucion y no puede cancelarse.");
+    if (current.trip_links.some((link) => !["borrador", "planificado", "cancelado"].includes(link.trip.status))) throw appError(409, "TMS_ORDER_TRIP_IN_EXECUTION", "La orden pertenece a un viaje en ejecucion.");
+    return prisma.transportNeed.update({ where: { id: current.id }, data: { status: "cancelada", metadata: { ...(current.metadata || {}), cancellation_reason: input?.reason || null, cancelled_by: user?.id || null, cancelled_at: new Date().toISOString() } } });
+  });
+}
+
+async function getOrderTracking(tenantId, id) {
+  const order = await getOrder(tenantId, id); const trips = [];
+  for (const link of order.trip_links) trips.push(await getTripTracking(tenantId, link.trip.id, { limit: 500 }));
+  return { order_id: order.id, code: order.code, status: order.status, trips };
+}
+
+async function getOrderPod(tenantId, id) {
+  const order = await getOrder(tenantId, id);
+  return { order_id: order.id, code: order.code, attempts: order.attempts, pods: order.attempts.map((attempt) => attempt.pod).filter(Boolean) };
+}
+
+async function importOrdersCsv(tenantId, user, input) {
+  const parsed = parseCsv(input.csv); const required = ["code", "origin_code", "delivery_point_code", "available_at", "due_at", "weight_kg", "volume_m3"];
+  if (!parsed.length) throw appError(400, "TMS_EMPTY_CSV", "El archivo CSV no contiene filas de datos.");
+  const errors = []; const prepared = [];
+  await prisma.runWithTenant(tenantId, async () => {
+    const origins = await prisma.transportOrigin.findMany(); const points = await prisma.transportDeliveryPoint.findMany();
+    const originByCode = new Map(origins.map((row) => [normalizedCode(row.code), row])); const pointByCode = new Map(points.map((row) => [normalizedCode(row.code), row]));
+    for (const entry of parsed) {
+      const missing = required.filter((field) => !entry.data[field]); const origin = originByCode.get(normalizedCode(entry.data.origin_code)); const point = pointByCode.get(normalizedCode(entry.data.delivery_point_code));
+      if (missing.length || !origin || !point) { errors.push({ row: entry.row, missing, ...(origin ? {} : { origin_code: "no_encontrado" }), ...(point ? {} : { delivery_point_code: "no_encontrado" }) }); continue; }
+      prepared.push({ ...entry.data, source_type: entry.data.source_type || "csv", origin_id: origin.id, origin_name: origin.name, delivery_point_id: point.id, weight_kg: numberValue(entry.data.weight_kg), volume_m3: numberValue(entry.data.volume_m3), pallets: numberValue(entry.data.pallets), packages: numberValue(entry.data.packages), currency: entry.data.currency || "COP" });
+    }
+  });
+  if (errors.length) return { status: "invalid", total: parsed.length, valid: prepared.length, errors };
+  if (input.dry_run) return { status: "validated", total: parsed.length, valid: prepared.length, errors: [] };
+  const created = []; for (const order of prepared) created.push(await createNeed(tenantId, user, order));
+  return { status: "completed", total: parsed.length, created: created.length, order_ids: created.map((order) => order.id), errors: [] };
+}
+
+const DEFAULT_TMS_CONFIG = Object.freeze({ timezone: "America/Bogota", default_currency: "COP", distance_unit: "km", weight_unit: "kg", road_factor: 1.2, gps_interval_seconds: 30, gps_retention_days: 90, mobile_config: { tracking_enabled: true, background_tracking: true, require_photo: true, require_signature: true, allow_offline: true, max_offline_hours: 24 }, notification_config: { email_enabled: true, sms_enabled: false, push_enabled: true, notify_on_dispatched: true, notify_on_delivered: true, notify_on_rejected: true }, metadata: {} });
+
+async function getTmsConfig(tenantId) {
+  return prisma.runWithTenant(tenantId, async () => (await prisma.transportTmsConfig.findFirst({ where: { tenant_id: String(tenantId) } })) || { ...DEFAULT_TMS_CONFIG, tenant_id: String(tenantId), persisted: false });
+}
+
+async function saveTmsConfig(tenantId, user, section, input) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const current = await getTmsConfig(tenantId);
+    const data = section === "mobile" ? { mobile_config: { ...(current.mobile_config || {}), ...input } } : section === "notifications" ? { notification_config: { ...(current.notification_config || {}), ...input } } : { ...input, default_currency: input.default_currency?.toUpperCase() || current.default_currency };
+    return prisma.transportTmsConfig.upsert({ where: { tenant_id: String(tenantId) }, create: { ...DEFAULT_TMS_CONFIG, ...data, tenant_id: String(tenantId), updated_by: user?.id || null }, update: { ...data, updated_by: user?.id || null } });
+  });
+}
+
+function gpsPositionData(position, context = {}) {
+  assertCoordinatePair(position.latitude, position.longitude);
+  const recordedAt = dateValue(position.recorded_at, "Fecha GPS", true);
+  if (recordedAt.getTime() > Date.now() + 10 * 60 * 1000) throw appError(400, "TMS_GPS_FUTURE_TIMESTAMP", "La posicion GPS no puede estar mas de 10 minutos en el futuro.");
+  return {
+    trip_id: Number(context.trip_id), driver_id: context.driver_id || null, stop_id: position.stop_id ? Number(position.stop_id) : null,
+    device_id: String(context.device_id || "").trim(), client_event_id: String(position.client_event_id || "").trim(), recorded_at: recordedAt,
+    latitude: numberValue(position.latitude), longitude: numberValue(position.longitude), accuracy_m: position.accuracy_m ?? null,
+    altitude_m: position.altitude_m ?? null, speed_kph: position.speed_kph ?? null, heading: position.heading ?? null,
+    battery_pct: position.battery_pct ?? null, is_mocked: position.is_mocked === true, metadata: position.metadata || {}
+  };
+}
+
+function serializeGpsPosition(position) {
+  return { ...position, id: String(position.id) };
+}
+
+function serializeNotification(notification) { return { ...notification, id: String(notification.id) }; }
+
+async function listNotifications(tenantId, query = {}) {
+  return prisma.runWithTenant(tenantId, async () => (await prisma.transportNotification.findMany({ where: { ...(query.status ? { status: query.status } : {}), ...(query.channel ? { channel: query.channel } : {}), ...(query.trip_id ? { trip_id: Number(query.trip_id) } : {}) }, orderBy: { created_at: "desc" }, take: Math.min(numberValue(query.limit, 100), 500) })).map(serializeNotification));
+}
+
+async function sendNotification(tenantId, user, input) {
+  return prisma.runWithTenant(tenantId, async () => {
+    if (input.trip_id) await prisma.transportTrip.findFirstOrThrow({ where: { id: Number(input.trip_id) } });
+    if (input.need_id) await prisma.transportNeed.findFirstOrThrow({ where: { id: Number(input.need_id) } });
+    let status = "pendiente"; let error = null; let providerRef = null;
+    if (input.channel === "email") {
+      try {
+        const { emailQueue } = require("../../fabric/queues");
+        if (emailQueue?.add) { const job = await emailQueue.add("tms-notification", { tenant_id: String(tenantId), to: input.recipient, subject: input.subject || "Actualizacion de entrega", text: input.body }); status = "encolada"; providerRef = String(job?.id || ""); }
+        else error = "EMAIL_QUEUE_DISABLED";
+      } catch (cause) { error = cause.message; }
+    }
+    const row = await prisma.transportNotification.create({ data: { channel: input.channel, event_type: normalizedCode(input.event_type).replace(/-/g, "_"), recipient: String(input.recipient).trim(), subject: input.subject || null, body: input.body, status, trip_id: input.trip_id || null, need_id: input.need_id || null, attempt_id: input.attempt_id || null, provider_ref: providerRef, error, metadata: input.metadata || {}, created_by: user?.id || null } });
+    return serializeNotification(row);
+  });
+}
+
+async function notifyTripCustomers(tenantId, user, tripId, eventType, message) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const config = await getTmsConfig(tenantId); const settings = config.notification_config || {};
+    const eventSetting = { DESPACHADO: "notify_on_dispatched", ENTREGADO: "notify_on_delivered", ENTREGA_RECHAZADA: "notify_on_rejected" }[eventType];
+    if (settings.email_enabled === false || (eventSetting && settings[eventSetting] === false)) return [];
+    const trip = await prisma.transportTrip.findFirst({ where: { id: Number(tripId) }, include: { needs: { include: { need: { include: { delivery_point: true } } } } } });
+    if (!trip) return [];
+    const sent = [];
+    for (const link of trip.needs) {
+      const recipient = link.need.metadata?.notification_email || link.need.delivery_point?.metadata?.notification_email || link.need.delivery_point?.metadata?.email;
+      if (recipient) sent.push(await sendNotification(tenantId, user, { channel: "email", event_type: eventType, recipient, subject: `Orden ${link.need.code}: ${eventType.toLowerCase()}`, body: message, trip_id: trip.id, need_id: link.need.id, metadata: { automatic: true } }));
+    }
+    return sent;
+  });
+}
+
+async function recordGpsBatch(tenantId, user, input) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const trip = await prisma.transportTrip.findFirstOrThrow({ where: { id: Number(input.trip_id) } });
+    if (!["despachado", "en_transito"].includes(trip.status)) throw appError(409, "TMS_TRIP_NOT_TRACKABLE", "El viaje debe estar despachado o en transito para recibir GPS.");
+    if (!trip.driver_id) throw appError(409, "TMS_DRIVER_REQUIRED", "El viaje debe tener un conductor asignado para recibir GPS.");
+    const deviceId = String(input.device_id || "").trim();
+    if (!deviceId) throw appError(400, "TMS_DEVICE_REQUIRED", "El dispositivo es obligatorio.");
+    const clientIds = new Set();
+    const rows = input.positions.map((position) => {
+      const row = gpsPositionData(position, { trip_id: trip.id, driver_id: trip.driver_id, device_id: deviceId });
+      if (!row.client_event_id || clientIds.has(row.client_event_id)) throw appError(400, "TMS_GPS_EVENT_ID_INVALID", "Cada posicion debe tener un client_event_id unico dentro del lote.");
+      clientIds.add(row.client_event_id);
+      return { ...row, tenant_id: String(tenantId) };
+    });
+    const stopIds = [...new Set(rows.map((row) => row.stop_id).filter(Boolean))];
+    if (stopIds.length) {
+      const stops = await prisma.transportStop.findMany({ where: { id: { in: stopIds }, trip_id: trip.id }, select: { id: true } });
+      if (stops.length !== stopIds.length) throw appError(404, "TMS_GPS_STOP_NOT_FOUND", "Una posicion referencia una parada que no pertenece al viaje.");
+    }
+    const created = await prisma.transportGpsPosition.createMany({ data: rows, skipDuplicates: true });
+    const latest = await prisma.transportGpsPosition.findFirst({ where: { trip_id: trip.id }, orderBy: { recorded_at: "desc" } });
+    if (latest) {
+      await prisma.transportTripEvent.create({ data: { trip_id: trip.id, event_type: "GPS_BATCH_RECEIVED", occurred_at: latest.recorded_at, source: "movil", latitude: latest.latitude, longitude: latest.longitude, actor_id: user?.id || null, device_id: deviceId, data: { received: rows.length, inserted: created.count, mocked: rows.filter((row) => row.is_mocked).length } } });
+    }
+    return { received: rows.length, inserted: created.count, duplicates: rows.length - created.count, latest: latest ? serializeGpsPosition(latest) : null };
+  });
+}
+
+async function getTripTracking(tenantId, id, query = {}) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const trip = await prisma.transportTrip.findFirstOrThrow({ where: { id: Number(id) }, select: { id: true, code: true, status: true, driver_id: true, vehicle_id: true, vehicle_plate: true } });
+    const limit = Math.max(1, Math.min(numberValue(query.limit, 500), 2000));
+    const recordedAt = { ...(query.from ? { gte: dateValue(query.from, "Desde") } : {}), ...(query.to ? { lte: dateValue(query.to, "Hasta") } : {}) };
+    const positions = await prisma.transportGpsPosition.findMany({
+      where: { trip_id: trip.id, ...(Object.keys(recordedAt).length ? { recorded_at: recordedAt } : {}) },
+      orderBy: { recorded_at: "desc" }, take: limit
+    });
+    positions.reverse();
+    return { trip, count: positions.length, latest: positions.length ? serializeGpsPosition(positions[positions.length - 1]) : null, positions: positions.map(serializeGpsPosition) };
+  });
+}
+
+async function recordStopVisit(tenantId, user, tripId, stopId, action, input = {}) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const stop = await prisma.transportStop.findFirstOrThrow({ where: { id: Number(stopId), trip_id: Number(tripId) }, include: { trip: true } });
+    if (!["despachado", "en_transito"].includes(stop.trip.status)) throw appError(409, "TMS_TRIP_NOT_IN_EXECUTION", "El viaje debe estar despachado o en transito.");
+    assertCoordinatePair(input.latitude, input.longitude);
+    const occurredAt = dateValue(input.occurred_at, "Fecha de visita") || new Date();
+    const arriving = action === "arrive";
+    if (arriving && stop.actual_arrival) throw appError(409, "TMS_STOP_ALREADY_ARRIVED", "La llegada a la parada ya fue registrada.");
+    if (!arriving && !stop.actual_arrival) throw appError(409, "TMS_STOP_ARRIVAL_REQUIRED", "Debe registrarse la llegada antes de la salida.");
+    if (!arriving && stop.completed_at) throw appError(409, "TMS_STOP_ALREADY_DEPARTED", "La salida de la parada ya fue registrada.");
+    const updated = await prisma.transportStop.update({ where: { id: stop.id }, data: arriving ? { actual_arrival: occurredAt, service_started_at: occurredAt, status: "arribada" } : { completed_at: occurredAt } });
+    const event = await prisma.transportTripEvent.create({ data: { trip_id: stop.trip_id, stop_id: stop.id, event_type: arriving ? "PARADA_LLEGADA" : "PARADA_SALIDA", occurred_at: occurredAt, source: input.device_id ? "movil" : "usuario", latitude: input.latitude ?? null, longitude: input.longitude ?? null, actor_id: user?.id || null, device_id: input.device_id || null, observation: input.observation || null, data: input.metadata || {} } });
+    return { stop: updated, event: { ...event, id: String(event.id) } };
   });
 }
 
@@ -633,9 +931,9 @@ async function getControlTower(tenantId) {
 }
 
 module.exports = {
-  TRIP_TRANSITIONS, ATTEMPT_RESULTS, assertTripTransition, needValidationErrors, vehicleCapacityKg, haversineKm, optimizeStopOrder, calculateRateQuote,
-  listCarriers, saveCarrier, listDrivers, saveDriver, listOrigins, saveOrigin, listDeliveryPoints, saveDeliveryPoint,
+  TRIP_TRANSITIONS, ATTEMPT_RESULTS, assertTripTransition, needValidationErrors, vehicleCapacityKg, haversineKm, optimizeStopOrder, calculateRateQuote, gpsPositionData, calculateLiveStatus, turfSpatialStatus, validRouteCoordinates, validatePodInput, validateAttemptInput,
+  getTmsConfig, saveTmsConfig, listCarriers, saveCarrier, listDrivers, saveDriver, listOrigins, saveOrigin, listDeliveryPoints, saveDeliveryPoint,
   listRateCards, saveRateCard, versionRateCard, activateRateCard, deactivateRateCard, createNeed, listNeeds, getPlanningWorkbench, evaluatePlan, commitPlan,
   createTrip, listTrips, getTrip, assignTrip, transitionTrip, recordTripEvent, registerDeliveryAttempt,
-  createSettlement, approveSettlement, getControlTower
+  getOrder, updateOrder, cancelOrder, importOrdersCsv, getOrderTracking, getOrderPod, parseCsv, recordGpsBatch, getTripTracking, recordStopVisit, getLiveMonitoring, listNotifications, sendNotification, listPods, getPod, getPodStats, createSettlement, approveSettlement, getControlTower
 };

@@ -6,6 +6,8 @@ import { api } from "@/lib/api";
 import { InventoryNav } from "@/components/inventory-nav";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { LATAM_COUNTRIES } from "@/lib/latam";
+import { Button } from "@/components/ui/button";
+import { showToast } from "@/components/system/ToastCenter";
 
 type Society = { code: string; name: string; active: boolean };
 type Branch = { code: string; name: string; society_code: string; active: boolean };
@@ -130,6 +132,7 @@ export default function WarehousesPage() {
 
   async function save(event: FormEvent) {
     event.preventDefault();
+    if (saving) return;
     setSaving(true);
     setError("");
     setOk("");
@@ -141,15 +144,20 @@ export default function WarehousesPage() {
       });
       setWarehouses(rows);
       setModalOpen(false);
-      setOk(form.id ? "Bodega actualizada" : "Bodega creada");
+      const success = form.id ? "Bodega actualizada" : "Bodega creada";
+      setOk(success);
+      showToast({ tone: "success", title: success, description: `${payload.code} quedó guardada en el maestro de bodegas.` });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo guardar la bodega");
+      const detail = err instanceof Error ? err.message : "No se pudo guardar la bodega";
+      setError(detail);
+      showToast({ tone: "error", title: "No se pudo guardar la bodega", description: detail });
     } finally {
       setSaving(false);
     }
   }
 
   async function remove(row: WarehouseRow) {
+    if (saving) return;
     if (!window.confirm(`Confirma borrar la bodega ${row.code}.`)) return;
     setSaving(true);
     setError("");
@@ -157,8 +165,11 @@ export default function WarehousesPage() {
     try {
       setWarehouses(await api<WarehouseRow[]>(`/api/v1/inventory/warehouses/${row.id}`, { method: "DELETE" }));
       setOk("Bodega eliminada");
+      showToast({ tone: "success", title: "Bodega eliminada", description: `${row.code} fue retirada del maestro.` });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo borrar la bodega");
+      const detail = err instanceof Error ? err.message : "No se pudo borrar la bodega";
+      setError(detail);
+      showToast({ tone: "error", title: "No se pudo borrar la bodega", description: detail });
     } finally {
       setSaving(false);
     }
@@ -178,8 +189,8 @@ export default function WarehousesPage() {
       </header>
       <InventoryNav />
 
-      {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
-      {ok ? <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{ok}</p> : null}
+      {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">{error}</p> : null}
+      {ok ? <p aria-live="polite" className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700" role="status">{ok}</p> : null}
 
       <section className="grid gap-3 md:grid-cols-3">
         <Metric icon={Warehouse} label="Bodegas" value={stats.total} />
@@ -195,7 +206,27 @@ export default function WarehousesPage() {
             <input className="h-10 w-full rounded-md border border-line pl-9 pr-3 text-sm" placeholder="Buscar codigo, sociedad, ciudad..." value={query} onChange={(event) => setQuery(event.target.value)} />
           </label>
         </div>
-        <div className="overflow-x-auto">
+        {!loading && filtered.length ? <div className="grid gap-3 p-4 lg:hidden">
+          {filtered.map((row) => (
+            <article className="rounded-md border border-line bg-paper/40 p-4" key={row.id}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0"><p className="font-mono text-xs text-neutral-500">{row.code}</p><h3 className="font-medium">{row.name}</h3><p className="text-xs text-neutral-500">{[row.city, row.address].filter(Boolean).join(" · ") || "Sin direccion"}</p></div>
+                <span className={`shrink-0 rounded-md px-2 py-1 text-xs font-medium ${row.active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>{row.active ? "Activa" : "Inactiva"}</span>
+              </div>
+              <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                <div><dt className="text-neutral-500">Tipo</dt><dd>{row.warehouse_type_label}</dd></div>
+                <div><dt className="text-neutral-500">Sociedad</dt><dd className="font-mono text-xs">{row.society_code}</dd></div>
+                <div><dt className="text-neutral-500">Sucursal</dt><dd className="font-mono text-xs">{row.branch_code}</dd></div>
+                <div><dt className="text-neutral-500">Ubicaciones</dt><dd>{row.locations_count}</dd></div>
+              </dl>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line bg-white text-sm" onClick={() => openEdit(row)} type="button"><Pencil size={14} /> Editar</button>
+                <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-rose-200 bg-white text-sm text-rose-700 disabled:opacity-50" disabled={saving} onClick={() => remove(row)} type="button"><Trash2 size={14} /> Borrar</button>
+              </div>
+            </article>
+          ))}
+        </div> : null}
+        <div className="hidden overflow-x-auto lg:block">
           <table className="w-full min-w-[980px] border-collapse text-sm">
             <thead>
               <tr className="border-b border-line text-left text-xs uppercase text-neutral-500">
@@ -313,10 +344,8 @@ export default function WarehousesPage() {
             </label>
 
             <div className="flex justify-end gap-2 border-t border-line pt-4">
-              <button className="h-10 rounded-md border border-line px-4 text-sm" onClick={() => setModalOpen(false)} type="button">Cancelar</button>
-              <button className="h-10 rounded-md bg-apex px-4 text-sm font-medium text-white disabled:opacity-60" disabled={saving} type="submit">
-                {saving ? "Guardando..." : "Guardar"}
-              </button>
+              <Button disabled={saving} onClick={() => setModalOpen(false)} type="button" variant="secondary">Cancelar</Button>
+              <Button loading={saving} type="submit">{saving ? "Guardando bodega…" : "Guardar"}</Button>
             </div>
           </form>
         </ModalFrame>

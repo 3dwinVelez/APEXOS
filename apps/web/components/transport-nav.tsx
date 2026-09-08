@@ -6,9 +6,14 @@ import { usePathname } from "next/navigation";
 const ITEMS = [
   { href: "/dashboard/transporte", label: "Flota" },
   { href: "/dashboard/transporte/operacion", label: "Torre y viajes" },
+  { href: "/dashboard/transporte/monitoreo", label: "Monitoreo en vivo" },
+  { href: "/dashboard/transporte/notificaciones", label: "Notificaciones" },
+  { href: "/dashboard/transporte/pod", label: "Pruebas de entrega" },
+  { href: "/dashboard/transporte/ordenes", label: "Ordenes" },
   { href: "/dashboard/transporte/planeacion", label: "Planeador" },
   { href: "/dashboard/transporte/tarifas", label: "Tarifarios" },
   { href: "/dashboard/transporte/maestros", label: "Maestros TMS" }
+  ,{ href: "/dashboard/transporte/configuracion", label: "Configuracion" }
 ];
 
 export function TransportNav() {

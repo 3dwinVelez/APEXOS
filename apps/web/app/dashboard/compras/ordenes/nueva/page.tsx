@@ -20,6 +20,7 @@ import {
   Save,
   Search,
   Send,
+  ShoppingCart,
   Trash2,
   Truck,
   Warehouse
@@ -31,6 +32,8 @@ import { ComprasNav } from "@/components/compras-nav";
 import { ZeroFriendlyNumberInput } from "@/components/ui/ZeroFriendlyNumberInput";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { downloadPurchaseOrderPdf, type PurchaseOrderPdfData } from "@/lib/purchaseOrderPdf";
+import { showToast } from "@/components/system/ToastCenter";
+import { EmptyState } from "@/components/ui/feedback";
 
 type Supplier = { id: number; name: string; tax_id: string; email: string; city: string; country: string; credit_days: number };
 type Item = {
@@ -339,7 +342,9 @@ export default function NuevaOCPage() {
         })
       });
       const finalPo = approve ? await api<PurchaseOrder>(`/api/v1/purchases/orders/${po.id}/approve`, { method: "POST", body: JSON.stringify({}) }) : po;
-      setOk(approve ? `${finalPo.number} aprobada y lista para WMS` : editingOrder ? `${po.number} actualizada en borrador` : `${po.number} creada en borrador`);
+      const successMessage = approve ? `${finalPo.number} aprobada y lista para WMS` : editingOrder ? `${po.number} actualizada en borrador` : `${po.number} creada en borrador`;
+      setOk(successMessage);
+      showToast({ tone: "success", title: approve ? `Orden aprobada — ${finalPo.number}` : `Borrador guardado — ${po.number}`, description: successMessage });
       setEditingOrder(null);
       setLines(blankLines(form.expected_at));
       if (createAnother) {
@@ -352,7 +357,9 @@ export default function NuevaOCPage() {
       }
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo guardar la OC");
+      const message = err instanceof Error ? err.message : "No se pudo guardar la OC";
+      setError(message);
+      showToast({ tone: "error", title: "No se pudo guardar la orden de compra", description: message, retry: () => void createOrder(approve, createAnother) });
     } finally {
       setSaving(false);
     }
@@ -427,8 +434,8 @@ export default function NuevaOCPage() {
 
       <ComprasNav />
 
-      {error ? <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
-      {ok ? <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{ok}</p> : null}
+      {error ? <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">{error}</p> : null}
+      {ok ? <p aria-live="polite" className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700" role="status">{ok}</p> : null}
 
       {suppliers.length === 0 || items.length === 0 || warehouses.length === 0 ? (
         <section className="grid gap-3 rounded-md border border-amber-200 bg-amber-50 p-4 lg:grid-cols-[1fr_auto] lg:items-center">
@@ -577,7 +584,16 @@ export default function NuevaOCPage() {
               />
 
               <div className="grid gap-4 p-4 lg:grid-cols-[320px_1fr]">
-                <div className="space-y-2">
+                {!visibleOrders.length ? (
+                  <EmptyState
+                    className="rounded-md border border-line lg:col-span-2"
+                    description={orders.length ? "No hay órdenes que coincidan con el estado seleccionado. Prueba mostrando todos los estados." : "Crea la primera orden para conectar proveedor, inventario, recepción y contabilidad."}
+                    icon={<ShoppingCart size={22} />}
+                    primaryAction={<button className="rounded-md bg-apex px-4 py-2 text-sm font-semibold text-white" onClick={() => orders.length ? setOrderFilter("all") : setActiveTab("crear")} type="button">{orders.length ? "Mostrar todas" : "Crear primera orden"}</button>}
+                    title={orders.length ? "Sin resultados para este filtro" : "Aún no hay órdenes de compra"}
+                  />
+                ) : null}
+                <div className={visibleOrders.length ? "space-y-2" : "hidden"}>
                   {visibleOrders.slice(0, 12).map((order) => (
                     <button className={`w-full rounded-md border p-3 text-left text-sm hover:border-apex ${selectedOrder?.id === order.id ? "border-apex bg-[#146C6312]" : "border-line"}`} key={order.id} onClick={() => setSelectedOrder(order)} onDoubleClick={() => order.status === "draft" && editOrder(order)} title={order.status === "draft" ? "Doble clic para editar este borrador" : "Seleccionar orden"} type="button">
                       <span className="flex items-center justify-between gap-2">
@@ -589,7 +605,7 @@ export default function NuevaOCPage() {
                   ))}
                 </div>
 
-                <SelectedOrderCard selectedOrder={selectedOrder} onApprove={approveOrder} onDuplicate={duplicateOrder} onEdit={editOrder} onDownload={downloadOrder} onClose={(order) => { setClosingOrder(order); setCloseReason(""); setError(""); }} />
+                {visibleOrders.length ? <SelectedOrderCard selectedOrder={selectedOrder} onApprove={approveOrder} onDuplicate={duplicateOrder} onEdit={editOrder} onDownload={downloadOrder} onClose={(order) => { setClosingOrder(order); setCloseReason(""); setError(""); }} /> : null}
               </div>
             </section>
           ) : null}

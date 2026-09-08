@@ -59,10 +59,30 @@ El cierre requiere liquidacion aprobada. La entrega requiere que todas las parad
 - Costos estimado, comprometido y real separados.
 - Cierre condicionado a liquidacion aprobada.
 - Maestros inactivables y transacciones historicas preservadas.
+- Tracking GPS por lotes de hasta 200 posiciones, idempotente por dispositivo y evento de cliente.
+- Consulta cronologica de tracking por viaje con filtros de fecha y limite controlado.
+- Registro auditable de llegada y salida por parada, desde torre operativa o dispositivo movil.
+- Deteccion y trazabilidad de posiciones simuladas, precision, velocidad y bateria.
+- Configuracion central por empresa para unidades, zona horaria, factor vial, retencion GPS, app movil y notificaciones.
+- Ordenes logisticas sobre la necesidad TMS, con detalle, edicion preplaneacion, cancelacion controlada, tracking, POD e importacion CSV validada.
+- Monitoreo cartografico OpenStreetMap con señal de flota, ETA, siguiente parada, geocercas y alertas por telemetria.
+- Registro durable de notificaciones manuales y automaticas para despacho, entrega y rechazo, con cola de correo opcional.
+- POD avanzado con carga real de foto y firma a MinIO, inspeccion binaria, limite de 2 MB, referencias seguras, cantidades parciales, filtros y KPIs de primer intento.
+- Las evidencias se visualizan mediante enlaces temporales de cinco minutos y validacion estricta del tenant.
+- El monitoreo usa Turf.js para distancia geodesica, geocercas circulares o GeoJSON y desviacion contra el corredor planificado; sin geometria conserva compatibilidad con los viajes existentes.
+- Rechazos, cliente cerrado, direccion incorrecta y averia exigen causa, responsable, fotografia y reintento futuro; cada parada conserva su historial de intentos y costos.
 
 ## API local
 
 - `GET /api/v1/transport/control-tower`
+- `GET /api/v1/transport/monitoring/live|fleet`
+- `GET /api/v1/transport/notifications`
+- `POST /api/v1/transport/notifications/send`
+- `GET /api/v1/transport/pod|pod/stats|pod/:id`
+- `POST /api/v1/transport/trips/:tripId/stops/:stopId/evidence`
+- `GET /api/v1/transport/evidence/view?reference=...`
+- `GET|PUT /api/v1/transport/config`
+- `PUT /api/v1/transport/config/mobile|notifications`
 - `GET|POST|PUT /api/v1/transport/carriers`
 - `GET|POST|PUT /api/v1/transport/drivers`
 - `GET|POST|PUT /api/v1/transport/delivery-points`
@@ -74,11 +94,17 @@ El cierre requiere liquidacion aprobada. La entrega requiere que todas las parad
 - `POST /api/v1/transport/planning/evaluate`
 - `POST /api/v1/transport/planning/commit`
 - `GET|POST /api/v1/transport/needs`
+- `GET|POST|PUT|DELETE /api/v1/transport/orders`
+- `POST /api/v1/transport/orders/import`
+- `GET /api/v1/transport/orders/:id/tracking|pod`
 - `GET|POST /api/v1/transport/trips`
 - `POST /api/v1/transport/trips/:id/assign`
 - `POST /api/v1/transport/trips/:id/transition`
 - `POST /api/v1/transport/trips/:id/events`
 - `POST /api/v1/transport/trips/:tripId/stops/:stopId/attempts`
+- `POST /api/v1/transport/trips/:tripId/stops/:stopId/arrive|depart`
+- `GET /api/v1/transport/trips/:id/tracking`
+- `POST /api/v1/transport/mobile/gps/batch`
 - `POST /api/v1/transport/trips/:id/settlements`
 - `POST /api/v1/transport/settlements/:id/approve`
 
@@ -86,7 +112,7 @@ El cierre requiere liquidacion aprobada. La entrega requiere que todas las parad
 
 1. Tendering y aceptacion de transportadora.
 2. Motor cartografico vial con trafico, ventanas y VRP de mayor escala.
-3. Geocercas, telemetria, ETA y alertas por excepcion.
+3. Geocercas, ETA y alertas por excepcion sobre la telemetria GPS ya persistida.
 4. Devolucion fisica y financiera.
 5. Match de factura del transportador y provision contable.
 6. Loading 3D, compartimientos y restricciones de mercancia.

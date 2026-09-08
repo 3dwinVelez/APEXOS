@@ -6,6 +6,8 @@ import { VentasNav } from "@/components/ventas-nav";
 import { ZeroFriendlyNumberInput } from "@/components/ui/ZeroFriendlyNumberInput";
 import { api } from "@/lib/api";
 import { asCollection } from "@/lib/api-collections";
+import { Button } from "@/components/ui/button";
+import { showToast } from "@/components/system/ToastCenter";
 
 type Customer = { id: number; name: string };
 type Item = { id: number; code: string; name: string; unit_price: number };
@@ -27,8 +29,7 @@ export default function NuevaOVPage() {
       .catch((err) => setError(err instanceof Error ? err.message : "Error cargando datos"));
   }, []);
 
-  async function submit(event: React.FormEvent) {
-    event.preventDefault();
+  async function createOrder() {
     setError("");
     setOk("");
     setSaving(true);
@@ -42,11 +43,19 @@ export default function NuevaOVPage() {
         })
       });
       setOk("Orden creada: " + result.number);
+      showToast({ tone: "success", title: `Orden creada — ${result.number}`, description: "La orden quedó disponible para continuar su flujo comercial." });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo crear la orden");
+      const message = err instanceof Error ? err.message : "No se pudo crear la orden";
+      setError(message);
+      showToast({ tone: "error", title: "No se pudo crear la orden", description: message, retry: () => void createOrder() });
     } finally {
       setSaving(false);
     }
+  }
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    await createOrder();
   }
 
   return (
@@ -57,8 +66,8 @@ export default function NuevaOVPage() {
         <p className="mt-1 text-sm text-neutral-600">Registra los datos mínimos del pedido. El precio se completa desde el producto y puede ajustarse antes de guardar.</p>
       </header>
       <VentasNav />
-      {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
-      {ok ? <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{ok}</p> : null}
+      {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">{error}</p> : null}
+      {ok ? <p aria-live="polite" className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700" role="status">{ok}</p> : null}
 
       <form className="apex-section-card overflow-hidden" onSubmit={submit}>
         <div className="flex items-center gap-2 border-b border-line px-4 py-3">
@@ -93,9 +102,7 @@ export default function NuevaOVPage() {
           </Field>
         </div>
         <div className="flex items-center justify-end border-t border-line bg-paper px-4 py-3">
-          <button className="h-10 rounded-md bg-apex px-5 text-sm font-medium text-white disabled:opacity-50" disabled={saving || !form.customer_id || !form.item_id || form.qty <= 0} type="submit">
-            {saving ? "Guardando…" : "Crear orden"}
-          </button>
+          <Button disabled={!form.customer_id || !form.item_id || form.qty <= 0} loading={saving} type="submit">{saving ? "Guardando orden…" : "Crear orden"}</Button>
         </div>
       </form>
     </div>

@@ -4,6 +4,7 @@ const schemas = require("./schema");
 const service = require("./service");
 const tmsSchemas = require("./tms-schema");
 const tms = require("./tms-service");
+const tmsEvidence = require("./tms-evidence-storage");
 
 async function transportRoutes(fastify) {
   fastify.addHook("preHandler", fastify.authenticate);
@@ -19,6 +20,19 @@ async function transportRoutes(fastify) {
   fastify.patch("/transport/vehicles/:id/documents/:documentId", { schema: schemas.vehicleDocumentUpdateSchema, preHandler: requirePermission("transport", "write") }, (request) => service.updateVehicleDocument(request.user?.tenant_id, request.user, request.params.id, request.params.documentId, request.body));
 
   fastify.get("/transport/control-tower", { preHandler: requirePermission("transport", "read") }, (request) => tms.getControlTower(request.user?.tenant_id));
+  fastify.get("/transport/monitoring/live", { preHandler: requirePermission("transport", "read") }, (request) => tms.getLiveMonitoring(request.user?.tenant_id, request.query));
+  fastify.get("/transport/monitoring/fleet", { preHandler: requirePermission("transport", "read") }, (request) => tms.getLiveMonitoring(request.user?.tenant_id, request.query));
+  fastify.get("/transport/notifications", { preHandler: requirePermission("transport", "read") }, (request) => tms.listNotifications(request.user?.tenant_id, request.query));
+  fastify.post("/transport/notifications/send", { schema: tmsSchemas.notificationSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.sendNotification(request.user?.tenant_id, request.user, request.body)));
+  fastify.get("/transport/pod", { preHandler: requirePermission("transport", "read") }, (request) => tms.listPods(request.user?.tenant_id, request.query));
+  fastify.get("/transport/pod/stats", { preHandler: requirePermission("transport", "read") }, (request) => tms.getPodStats(request.user?.tenant_id, request.query));
+  fastify.get("/transport/pod/:id", { preHandler: requirePermission("transport", "read") }, (request) => tms.getPod(request.user?.tenant_id, request.params.id));
+  fastify.get("/transport/evidence/view", { preHandler: requirePermission("transport", "read") }, (request) => tmsEvidence.evidenceUrl(request.user?.tenant_id, request.query.reference));
+  fastify.post("/transport/trips/:tripId/stops/:stopId/evidence", { preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tmsEvidence.uploadEvidence(request.user?.tenant_id, request.user, request.params.tripId, request.params.stopId, await request.file())));
+  fastify.get("/transport/config", { preHandler: requirePermission("transport", "read") }, (request) => tms.getTmsConfig(request.user?.tenant_id));
+  fastify.put("/transport/config", { schema: tmsSchemas.configSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.saveTmsConfig(request.user?.tenant_id, request.user, "general", request.body));
+  fastify.put("/transport/config/mobile", { schema: tmsSchemas.mobileConfigSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.saveTmsConfig(request.user?.tenant_id, request.user, "mobile", request.body));
+  fastify.put("/transport/config/notifications", { schema: tmsSchemas.notificationConfigSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.saveTmsConfig(request.user?.tenant_id, request.user, "notifications", request.body));
 
   fastify.get("/transport/carriers", { preHandler: requirePermission("transport", "read") }, (request) => tms.listCarriers(request.user?.tenant_id, request.query));
   fastify.post("/transport/carriers", { schema: tmsSchemas.carrierSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.saveCarrier(request.user?.tenant_id, null, request.body)));
@@ -49,14 +63,26 @@ async function transportRoutes(fastify) {
 
   fastify.get("/transport/needs", { preHandler: requirePermission("transport", "read") }, (request) => tms.listNeeds(request.user?.tenant_id, request.query));
   fastify.post("/transport/needs", { schema: tmsSchemas.needSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.createNeed(request.user?.tenant_id, request.user, request.body)));
+  fastify.get("/transport/orders", { preHandler: requirePermission("transport", "read") }, (request) => tms.listNeeds(request.user?.tenant_id, request.query));
+  fastify.post("/transport/orders", { schema: tmsSchemas.needSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.createNeed(request.user?.tenant_id, request.user, request.body)));
+  fastify.post("/transport/orders/import", { schema: tmsSchemas.orderImportSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.importOrdersCsv(request.user?.tenant_id, request.user, request.body));
+  fastify.get("/transport/orders/:id", { preHandler: requirePermission("transport", "read") }, (request) => tms.getOrder(request.user?.tenant_id, request.params.id));
+  fastify.put("/transport/orders/:id", { schema: tmsSchemas.orderUpdateSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.updateOrder(request.user?.tenant_id, request.user, request.params.id, request.body));
+  fastify.delete("/transport/orders/:id", { preHandler: requirePermission("transport", "write") }, (request) => tms.cancelOrder(request.user?.tenant_id, request.user, request.params.id, request.body));
+  fastify.get("/transport/orders/:id/tracking", { preHandler: requirePermission("transport", "read") }, (request) => tms.getOrderTracking(request.user?.tenant_id, request.params.id));
+  fastify.get("/transport/orders/:id/pod", { preHandler: requirePermission("transport", "read") }, (request) => tms.getOrderPod(request.user?.tenant_id, request.params.id));
 
   fastify.get("/transport/trips", { preHandler: requirePermission("transport", "read") }, (request) => tms.listTrips(request.user?.tenant_id, request.query));
   fastify.get("/transport/trips/:id", { preHandler: requirePermission("transport", "read") }, (request) => tms.getTrip(request.user?.tenant_id, request.params.id));
+  fastify.get("/transport/trips/:id/tracking", { preHandler: requirePermission("transport", "read") }, (request) => tms.getTripTracking(request.user?.tenant_id, request.params.id, request.query));
   fastify.post("/transport/trips", { schema: tmsSchemas.tripSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.createTrip(request.user?.tenant_id, request.user, request.body)));
   fastify.post("/transport/trips/:id/assign", { schema: tmsSchemas.assignmentSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.assignTrip(request.user?.tenant_id, request.user, request.params.id, request.body));
   fastify.post("/transport/trips/:id/transition", { schema: tmsSchemas.transitionSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.transitionTrip(request.user?.tenant_id, request.user, request.params.id, request.body));
   fastify.post("/transport/trips/:id/events", { schema: tmsSchemas.eventSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.recordTripEvent(request.user?.tenant_id, request.user, request.params.id, request.body)));
   fastify.post("/transport/trips/:tripId/stops/:stopId/attempts", { schema: tmsSchemas.attemptSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.registerDeliveryAttempt(request.user?.tenant_id, request.user, request.params.tripId, request.params.stopId, request.body)));
+  fastify.post("/transport/trips/:tripId/stops/:stopId/arrive", { schema: tmsSchemas.stopVisitSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.recordStopVisit(request.user?.tenant_id, request.user, request.params.tripId, request.params.stopId, "arrive", request.body));
+  fastify.post("/transport/trips/:tripId/stops/:stopId/depart", { schema: tmsSchemas.stopVisitSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.recordStopVisit(request.user?.tenant_id, request.user, request.params.tripId, request.params.stopId, "depart", request.body));
+  fastify.post("/transport/mobile/gps/batch", { schema: tmsSchemas.gpsBatchSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.recordGpsBatch(request.user?.tenant_id, request.user, request.body));
   fastify.post("/transport/trips/:id/settlements", { schema: tmsSchemas.settlementSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.createSettlement(request.user?.tenant_id, request.user, request.params.id, request.body)));
   fastify.post("/transport/settlements/:id/approve", { preHandler: requirePermission("transport", "write") }, (request) => tms.approveSettlement(request.user?.tenant_id, request.user, request.params.id));
 }
