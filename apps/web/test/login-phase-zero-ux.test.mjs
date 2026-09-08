@@ -37,6 +37,19 @@ test("el login define superficies diferenciadas para tema claro y oscuro", () =>
   assert.match(styles, /html\[data-theme="dark"\] \.apex-login-split > button/);
 });
 
+test("la portada pública comparte el lenguaje visual moderno y adaptable del login", () => {
+  const source = read("app/page.tsx");
+  const styles = read("app/globals.css");
+  assert.match(source, /apex-login-split/);
+  assert.match(source, /apex-login-visual/);
+  assert.match(source, /apex-login-panel/);
+  assert.match(source, /apex-flow-wave/);
+  assert.match(source, /Entrar de forma segura/);
+  assert.match(source, /href="\/login"/);
+  assert.match(styles, /html\[data-theme="light"\] \.apex-home-chip/);
+  assert.match(styles, /html\[data-theme="light"\] \.apex-home-secondary/);
+});
+
 test("la onda del login tiene movimiento suave y respeta reduced motion", () => {
   const styles = read("app/globals.css");
   assert.match(styles, /@keyframes apexWaveDrift/);

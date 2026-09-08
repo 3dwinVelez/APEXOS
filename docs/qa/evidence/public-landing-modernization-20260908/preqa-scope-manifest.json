@@ -1,0 +1,42 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "public-landing-modernization-preqa-20260908",
+  "change_intent": {
+    "summary": "Alinear la portada pública con el lenguaje visual moderno, animado y adaptable del login.",
+    "modules": ["public-landing-ui", "theme-system", "promotion-governance"]
+  },
+  "base_commits": {
+    "develop": "339ca1f"
+  },
+  "certified_commit": "00e1a89",
+  "expected_changes": [
+    { "status": "M", "file": "apps/web/app/globals.css" },
+    { "status": "M", "file": "apps/web/app/page.tsx" },
+    { "status": "M", "file": "apps/web/test/login-phase-zero-ux.test.mjs" },
+    { "status": "A", "file": "docs/qa/evidence/public-landing-modernization-20260908/preqa-scope-manifest.json" }
+  ],
+  "allowed_paths": [
+    "apps/web/app/globals.css",
+    "apps/web/app/page.tsx",
+    "apps/web/test/login-phase-zero-ux.test.mjs",
+    "docs/qa/evidence/public-landing-modernization-20260908/preqa-scope-manifest.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "public_landing_navigation",
+      "status": "passed",
+      "evidence": ["../../../../apps/web/test/login-phase-zero-ux.test.mjs"]
+    },
+    {
+      "name": "light_dark_theme_consistency",
+      "status": "passed",
+      "evidence": ["../../../../apps/web/test/login-phase-zero-ux.test.mjs"]
+    },
+    {
+      "name": "motion_and_reduced_motion",
+      "status": "passed",
+      "evidence": ["../../../../apps/web/test/login-phase-zero-ux.test.mjs"]
+    }
+  ]
+}

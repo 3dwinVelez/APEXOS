@@ -191,6 +191,35 @@ html:not(.dark):not([data-theme="dark"]) .apex-login-security {
   color: #607188 !important;
 }
 
+html[data-theme="light"] .apex-home-chip,
+html:not(.dark):not([data-theme="dark"]) .apex-home-chip {
+  border-color: #c4d2dc;
+  background: rgb(255 255 255 / 0.68);
+  color: #40536b;
+}
+
+html[data-theme="light"] .apex-home-secondary,
+html:not(.dark):not([data-theme="dark"]) .apex-home-secondary {
+  border-color: #d2dce5;
+  background: #f4f7fa;
+}
+
+html[data-theme="light"] .apex-home-secondary:hover,
+html:not(.dark):not([data-theme="dark"]) .apex-home-secondary:hover {
+  border-color: #14b8a6;
+  background: #edf8f6;
+}
+
+html[data-theme="light"] .apex-home-secondary strong,
+html:not(.dark):not([data-theme="dark"]) .apex-home-secondary strong {
+  color: #132136;
+}
+
+html[data-theme="light"] .apex-home-secondary small,
+html:not(.dark):not([data-theme="dark"]) .apex-home-secondary small {
+  color: #607188;
+}
+
 .apex-login-input:-webkit-autofill,
 .apex-login-input:-webkit-autofill:hover,
 .apex-login-input:-webkit-autofill:focus {
