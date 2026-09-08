@@ -1,0 +1,45 @@
+{
+  "certification": "apex-heart-platform-regression-local",
+  "version": 1,
+  "status": "passed",
+  "generated_at": "2026-09-07T03:35:41.622Z",
+  "commit": "b8f41a1f53f6a927cb180f98668b47003e35de24",
+  "environment": "local-isolated-qa",
+  "checks": [
+    {
+      "name": "session",
+      "status": "passed",
+      "http_status": 200
+    },
+    {
+      "name": "inventory",
+      "status": "passed",
+      "http_status": 200
+    },
+    {
+      "name": "purchases",
+      "status": "passed",
+      "http_status": 200
+    },
+    {
+      "name": "sales",
+      "status": "passed",
+      "http_status": 200
+    },
+    {
+      "name": "receivables",
+      "status": "passed",
+      "http_status": 200
+    },
+    {
+      "name": "accounting",
+      "status": "passed",
+      "http_status": 200
+    },
+    {
+      "name": "unauthenticated_access",
+      "status": "passed",
+      "http_status": 401
+    }
+  ]
+}

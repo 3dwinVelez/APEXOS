@@ -14,6 +14,7 @@ import {
   FileCheck2,
   FileText,
   Gauge,
+  HeartPulse,
   Landmark,
   PackageCheck,
   ReceiptText,
@@ -41,6 +42,17 @@ export type ApexModule = {
 };
 
 export const MODULES: ApexModule[] = [
+  {
+    id: "M-28",
+    slug: "reportes",
+    name: "Apex Heart",
+    area: "Control gerencial",
+    status: "Base funcional",
+    summary: "Corazón analítico de APEX OS: productividad, margen, inventario, compras, ventas, cartera, caja y alertas accionables.",
+    capabilities: ["Pulso ejecutivo", "Productos ABC", "Ciclo de caja", "Alertas configurables", "Trazabilidad gerencial"],
+    nextActions: ["Revisar alertas", "Analizar margen", "Liberar capital"],
+    icon: HeartPulse
+  },
   {
     id: "M-01",
     slug: "inventario",
