@@ -1,0 +1,56 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "commercial-management-population-20260903",
+  "change_intent": {
+    "summary": "Corregir la dependencia runtime de metricas y agregar poblacion funcional repetible para Gestion Comercial en QA",
+    "modules": ["commercial-management", "inventory-integration", "api-runtime", "rbac", "tenant-isolation", "promotion-governance"]
+  },
+  "base_commits": {
+    "desarrollo": "2f5ceb8f2447e4a861294a5dc3cdd52f345537fa",
+    "develop": "1a414a8a8cb87a520d3312ce2eedeb469a326bd2",
+    "main": "0abda8c41168642f99da0831e15f940b98232a12"
+  },
+  "certified_commit": "292733220d47bed8901d827739d2a847b760e35e",
+  "certification_status": "passed",
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/package.json" },
+    { "status": "M", "file": "apps/api/test/commercial-route-registration.integration.test.js" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-management-population-20260903/REPORT.md" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-management-population-20260903/local-validation.md" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-management-population-20260903/platform-regression.json" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-management-population-20260903/preqa-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-management-population-20260903/qa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-management-population-20260903/rerun.json" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-management-population-20260903/run.json" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/error.md" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/functional.md" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/platform-regression.json" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/preqa-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/qa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/support-scripts.md" },
+    { "status": "M", "file": "package-lock.json" },
+    { "status": "M", "file": "package.json" },
+    { "status": "A", "file": "scripts/certifications/commercial-management-population-qa.js" },
+    { "status": "A", "file": "scripts/test/commercial-management-population-qa.test.js" }
+  ],
+  "allowed_paths": [
+    "apps/api/package.json",
+    "apps/api/test/commercial-route-registration.integration.test.js",
+    "package-lock.json",
+    "package.json",
+    "scripts/certifications/commercial-management-population-qa.js",
+    "scripts/test/commercial-management-population-qa.test.js",
+    "docs/qa/evidence/commercial-management-population-20260903/",
+    "docs/qa/evidence/commercial-runtime-dependency-20260903/"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    { "name": "commercial_catalogs_customers_and_products", "status": "passed", "evidence": ["run.json", "rerun.json"] },
+    { "name": "commercial_visits_commitments_quotes_and_orders", "status": "passed", "evidence": ["run.json", "rerun.json"] },
+    { "name": "commercial_reports_dashboard_and_budgets", "status": "passed", "evidence": ["run.json", "rerun.json"] },
+    { "name": "commercial_rbac_and_tenant_isolation", "status": "passed", "evidence": ["run.json", "platform-regression.json"] },
+    { "name": "inventory_commercial_product_sync", "status": "passed", "evidence": ["run.json", "rerun.json"] },
+    { "name": "api_runtime_metrics_dependency", "status": "passed", "evidence": ["../commercial-runtime-dependency-20260903/certification.json"] }
+  ]
+}

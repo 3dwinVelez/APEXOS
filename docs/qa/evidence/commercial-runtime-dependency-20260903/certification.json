@@ -1,0 +1,212 @@
+{
+  "change_id": "commercial-schema-bootstrap-20260903",
+  "status": "passed",
+  "environment": "DISPOSABLE_LOCAL_POSTGRESQL_16",
+  "commit": "ee38534915a9b7eec9cd34ab33abf4d0ca1d044a",
+  "started_at": "2026-09-03T19:59:20.325Z",
+  "finished_at": "2026-09-03T20:00:00.288Z",
+  "remote_qa": "not_executed_requires_independent_authorization",
+  "error": null,
+  "checks": [
+    {
+      "name": "postgres_init",
+      "status": "passed",
+      "command": "C:\\Program Files\\PostgreSQL\\16\\bin\\initdb.exe -D C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-commercial-schema-KppNeL\\data -U postgres --auth=trust --encoding=UTF8 --no-locale",
+      "exit_code": 0,
+      "stdout": "The files belonging to this database system will be owned by user \"mq1\".\r\nThis user must also own the server process.\r\n\r\nThe database cluster will be initialized with locale \"C\".\r\nThe default text search configuration will be set to \"english\".\r\n\r\nData page checksums are disabled.\r\n\r\ncreating directory C:/Users/mq1/AppData/Local/Temp/apexos-commercial-schema-KppNeL/data ... ok\r\ncreating subdirectories ... ok\r\nselecting dynamic shared memory implementation ... windows\r\nselecting default max_connections ... 100\r\nselecting default shared_buffers ... 128MB\r\nselecting default time zone ... America/Bogota\r\ncreating configuration files ... ok\r\nrunning bootstrap script ... ok\r\nperforming post-bootstrap initialization ... ok\r\nsyncing data to disk ... ok\r\n\r\nSuccess. You can now start the database server using:\r\n\r\n    ^\"C^:^\\Program^ Files^\\PostgreSQL^\\16^\\bin^\\pg^_ctl^\" -D ^\"C^:^\\Users^\\mq1^\\AppData^\\Local^\\Temp^\\apexos^-commercial^-schema^-KppNeL^\\data^\" -l logfile start\r\n\r\n",
+      "stderr": ""
+    },
+    {
+      "name": "postgres_start",
+      "status": "passed",
+      "command": "C:\\Program Files\\PostgreSQL\\16\\bin\\pg_ctl.exe -D C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-commercial-schema-KppNeL\\data -o -p 60403 -h 127.0.0.1 -w start",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "name": "database_create",
+      "status": "passed",
+      "command": "C:\\Program Files\\PostgreSQL\\16\\bin\\createdb.exe -h 127.0.0.1 -p 60403 -U postgres commercial_schema_cert",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "name": "flow_database_create",
+      "status": "passed",
+      "command": "C:\\Program Files\\PostgreSQL\\16\\bin\\createdb.exe -h 127.0.0.1 -p 60403 -U postgres commercial_flow_cert",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "name": "dependency_bootstrap",
+      "status": "passed",
+      "command": "C:\\Program Files\\PostgreSQL\\16\\bin\\psql.exe -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 60403 -U postgres -d commercial_schema_cert -f C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-commercial-schema-KppNeL\\dependencies.sql",
+      "exit_code": 0,
+      "stdout": "CREATE TABLE\r\nCREATE TABLE\r\nCREATE TABLE\r\nINSERT 0 2\r\n",
+      "stderr": ""
+    },
+    {
+      "name": "migration_20260814140000_commercial_management_base",
+      "status": "passed",
+      "command": "C:\\Program Files\\PostgreSQL\\16\\bin\\psql.exe -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 60403 -U postgres -d commercial_schema_cert -f C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS-worktrees\\desarrollo-login-visibility\\apps\\api\\prisma\\migrations\\20260814140000_commercial_management_base\\migration.sql",
+      "exit_code": 0,
+      "stdout": "CREATE TABLE\r\nCREATE INDEX\r\nCREATE INDEX\r\nCREATE INDEX\r\nCREATE TABLE\r\nCREATE INDEX\r\nCREATE INDEX\r\nCREATE TABLE\r\nCREATE INDEX\r\nCREATE INDEX\r\nCREATE TABLE\r\nCREATE INDEX\r\nCREATE TABLE\r\nCREATE INDEX\r\nCREATE INDEX\r\nCREATE TABLE\r\nCREATE INDEX\r\nCREATE INDEX\r\nCREATE TABLE\r\nCREATE INDEX\r\nCREATE INDEX\r\nCREATE TABLE\r\nCREATE INDEX\r\nCREATE INDEX\r\nCREATE INDEX\r\nCREATE TABLE\r\nCREATE INDEX\r\n",
+      "stderr": ""
+    },
+    {
+      "name": "migration_20260814150000_commercial_visit_scheduling",
+      "status": "passed",
+      "command": "C:\\Program Files\\PostgreSQL\\16\\bin\\psql.exe -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 60403 -U postgres -d commercial_schema_cert -f C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS-worktrees\\desarrollo-login-visibility\\apps\\api\\prisma\\migrations\\20260814150000_commercial_visit_scheduling\\migration.sql",
+      "exit_code": 0,
+      "stdout": "ALTER TABLE\r\nALTER TABLE\r\nALTER TABLE\r\nCREATE INDEX\r\nCREATE INDEX\r\n",
+      "stderr": ""
+    },
+    {
+      "name": "migration_20260814170000_commercial_advisor_masters",
+      "status": "passed",
+      "command": "C:\\Program Files\\PostgreSQL\\16\\bin\\psql.exe -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 60403 -U postgres -d commercial_schema_cert -f C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS-worktrees\\desarrollo-login-visibility\\apps\\api\\prisma\\migrations\\20260814170000_commercial_advisor_masters\\migration.sql",
+      "exit_code": 0,
+      "stdout": "CREATE TABLE\r\nCREATE INDEX\r\nCREATE INDEX\r\nCREATE TABLE\r\nCREATE INDEX\r\nCREATE INDEX\r\nALTER TABLE\r\nALTER TABLE\r\nALTER TABLE\r\nALTER TABLE\r\nCREATE INDEX\r\nCREATE INDEX\r\nINSERT 0 0\r\nUPDATE 0\r\nINSERT 0 0\r\nUPDATE 0\r\n",
+      "stderr": ""
+    },
+    {
+      "name": "migration_20260814190000_commercial_customer_details",
+      "status": "passed",
+      "command": "C:\\Program Files\\PostgreSQL\\16\\bin\\psql.exe -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 60403 -U postgres -d commercial_schema_cert -f C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS-worktrees\\desarrollo-login-visibility\\apps\\api\\prisma\\migrations\\20260814190000_commercial_customer_details\\migration.sql",
+      "exit_code": 0,
+      "stdout": "ALTER TABLE\r\n",
+      "stderr": ""
+    },
+    {
+      "name": "migration_20260828143000_commercial_visit_masters",
+      "status": "passed",
+      "command": "C:\\Program Files\\PostgreSQL\\16\\bin\\psql.exe -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 60403 -U postgres -d commercial_schema_cert -f C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS-worktrees\\desarrollo-login-visibility\\apps\\api\\prisma\\migrations\\20260828143000_commercial_visit_masters\\migration.sql",
+      "exit_code": 0,
+      "stdout": "CREATE TABLE\r\nCREATE TABLE\r\nCREATE INDEX\r\nCREATE INDEX\r\nCREATE INDEX\r\nCREATE INDEX\r\nALTER TABLE\r\nALTER TABLE\r\nCREATE INDEX\r\nCREATE INDEX\r\nALTER TABLE\r\nALTER TABLE\r\nINSERT 0 8\r\nINSERT 0 12\r\n",
+      "stderr": ""
+    },
+    {
+      "name": "migration_20260828170000_commercial_customer_commitments",
+      "status": "passed",
+      "command": "C:\\Program Files\\PostgreSQL\\16\\bin\\psql.exe -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 60403 -U postgres -d commercial_schema_cert -f C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS-worktrees\\desarrollo-login-visibility\\apps\\api\\prisma\\migrations\\20260828170000_commercial_customer_commitments\\migration.sql",
+      "exit_code": 0,
+      "stdout": "ALTER TABLE\r\nCREATE TABLE\r\nCREATE INDEX\r\nCREATE INDEX\r\n",
+      "stderr": "psql:C:/Users/mq1/Documents/Proyectos/APEXOS-worktrees/desarrollo-login-visibility/apps/api/prisma/migrations/20260828170000_commercial_customer_commitments/migration.sql:20: NOTICE:  identifier \"commercial_customer_commitments_tenant_id_advisor_id_status_due_date_idx\" will be truncated to \"commercial_customer_commitments_tenant_id_advisor_id_status_due\"\r\npsql:C:/Users/mq1/Documents/Proyectos/APEXOS-worktrees/desarrollo-login-visibility/apps/api/prisma/migrations/20260828170000_commercial_customer_commitments/migration.sql:21: NOTICE:  identifier \"commercial_customer_commitments_tenant_id_customer_id_status_idx\" will be truncated to \"commercial_customer_commitments_tenant_id_customer_id_status_id\"\r\n"
+    },
+    {
+      "name": "migration_20260828203000_commercial_visit_timeline_catalog_bridge",
+      "status": "passed",
+      "command": "C:\\Program Files\\PostgreSQL\\16\\bin\\psql.exe -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 60403 -U postgres -d commercial_schema_cert -f C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS-worktrees\\desarrollo-login-visibility\\apps\\api\\prisma\\migrations\\20260828203000_commercial_visit_timeline_catalog_bridge\\migration.sql",
+      "exit_code": 0,
+      "stdout": "ALTER TABLE\r\nALTER TABLE\r\nUPDATE 0\r\nCREATE TABLE\r\nCREATE INDEX\r\nINSERT 0 0\r\nCREATE TABLE\r\nINSERT 0 2\r\nALTER TABLE\r\nALTER TABLE\r\nALTER TABLE\r\nALTER TABLE\r\nALTER TABLE\r\nALTER TABLE\r\nALTER TABLE\r\nALTER TABLE\r\nCREATE INDEX\r\nCREATE INDEX\r\n",
+      "stderr": ""
+    },
+    {
+      "name": "migration_20260829100000_commercial_quotations",
+      "status": "passed",
+      "command": "C:\\Program Files\\PostgreSQL\\16\\bin\\psql.exe -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 60403 -U postgres -d commercial_schema_cert -f C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS-worktrees\\desarrollo-login-visibility\\apps\\api\\prisma\\migrations\\20260829100000_commercial_quotations\\migration.sql",
+      "exit_code": 0,
+      "stdout": "ALTER TABLE\r\nCREATE TABLE\r\nCREATE INDEX\r\nCREATE INDEX\r\nCREATE INDEX\r\nCREATE TABLE\r\nCREATE INDEX\r\nALTER TABLE\r\nCREATE INDEX\r\nALTER TABLE\r\n",
+      "stderr": "psql:C:/Users/mq1/Documents/Proyectos/APEXOS-worktrees/desarrollo-login-visibility/apps/api/prisma/migrations/20260829100000_commercial_quotations/migration.sql:27: NOTICE:  identifier \"commercial_quotations_tenant_id_advisor_id_status_valid_until_idx\" will be truncated to \"commercial_quotations_tenant_id_advisor_id_status_valid_until_i\"\r\n"
+    },
+    {
+      "name": "migration_20260829113000_commercial_daily_budgets",
+      "status": "passed",
+      "command": "C:\\Program Files\\PostgreSQL\\16\\bin\\psql.exe -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 60403 -U postgres -d commercial_schema_cert -f C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS-worktrees\\desarrollo-login-visibility\\apps\\api\\prisma\\migrations\\20260829113000_commercial_daily_budgets\\migration.sql",
+      "exit_code": 0,
+      "stdout": "ALTER TABLE\r\nALTER TABLE\r\nUPDATE 0\r\nALTER TABLE\r\nDROP INDEX\r\nCREATE INDEX\r\nALTER TABLE\r\nALTER TABLE\r\nUPDATE 0\r\nALTER TABLE\r\nDROP INDEX\r\nCREATE INDEX\r\n",
+      "stderr": ""
+    },
+    {
+      "name": "migration_20260831120000_commercial_prospect_visits",
+      "status": "passed",
+      "command": "C:\\Program Files\\PostgreSQL\\16\\bin\\psql.exe -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 60403 -U postgres -d commercial_schema_cert -f C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS-worktrees\\desarrollo-login-visibility\\apps\\api\\prisma\\migrations\\20260831120000_commercial_prospect_visits\\migration.sql",
+      "exit_code": 0,
+      "stdout": "ALTER TABLE\r\n",
+      "stderr": ""
+    },
+    {
+      "name": "schema_and_minimal_flow",
+      "status": "passed",
+      "command": "C:\\Program Files\\PostgreSQL\\16\\bin\\psql.exe -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 60403 -U postgres -d commercial_schema_cert -f C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-commercial-schema-KppNeL\\verification.sql",
+      "exit_code": 0,
+      "stdout": "DO\r\nINSERT 0 1\r\nINSERT 0 1\r\nINSERT 0 1\r\nINSERT 0 1\r\nDO\r\n",
+      "stderr": ""
+    },
+    {
+      "name": "migration_contracts",
+      "status": "passed",
+      "command": "C:\\Program Files\\nodejs\\node.exe --test apps/api/test/commercial-migration-chain.test.js",
+      "exit_code": 0,
+      "stdout": "TAP version 13\n# Subtest: la cadena comercial crea su esquema antes de alterarlo\nok 1 - la cadena comercial crea su esquema antes de alterarlo\n  ---\n  duration_ms: 2.622\n  type: 'test'\n  ...\n# Subtest: las rutas que fallaron en QA permanecen registradas en el API\nok 2 - las rutas que fallaron en QA permanecen registradas en el API\n  ---\n  duration_ms: 0.8226\n  type: 'test'\n  ...\n1..2\n# tests 2\n# suites 0\n# pass 2\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 667.5956\n",
+      "stderr": ""
+    },
+    {
+      "name": "commercial_api_contracts",
+      "status": "passed",
+      "command": "C:\\Program Files\\nodejs\\node.exe --test apps/api/test/commercial-management-contract.test.js",
+      "exit_code": 0,
+      "stdout": "TAP version 13\n# Subtest: rutas comerciales exigen autenticacion, tenancy y permisos propios\nok 1 - rutas comerciales exigen autenticacion, tenancy y permisos propios\n  ---\n  duration_ms: 2.318\n  type: 'test'\n  ...\n# Subtest: el modulo se licencia con M-27 y no reutiliza modelos ERP\nok 2 - el modulo se licencia con M-27 y no reutiliza modelos ERP\n  ---\n  duration_ms: 3.2139\n  type: 'test'\n  ...\n# Subtest: las visitas conservan programacion, ejecucion y reprogramacion trazables\nok 3 - las visitas conservan programacion, ejecucion y reprogramacion trazables\n  ---\n  duration_ms: 2.6639\n  type: 'test'\n  ...\n# Subtest: asesores, zonas y categorias tienen mantenimiento sin borrado fisico\nok 4 - asesores, zonas y categorias tienen mantenimiento sin borrado fisico\n  ---\n  duration_ms: 2.0545\n  type: 'test'\n  ...\n# Subtest: la consulta de visitas admite filtros operativos\nok 5 - la consulta de visitas admite filtros operativos\n  ---\n  duration_ms: 2.6048\n  type: 'test'\n  ...\n# Subtest: motivos y resultados de visita son maestros editables y se usan en el flujo\nok 6 - motivos y resultados de visita son maestros editables y se usan en el flujo\n  ---\n  duration_ms: 2.3799\n  type: 'test'\n  ...\n# Subtest: el cliente expone cupo, compromisos y perfil 360 comercial\nok 7 - el cliente expone cupo, compromisos y perfil 360 comercial\n  ---\n  duration_ms: 3.9791\n  type: 'test'\n  ...\n# Subtest: las visitas bloquean solapamientos y guardan lead time con duracion\nok 8 - las visitas bloquean solapamientos y guardan lead time con duracion\n  ---\n  duration_ms: 2.6759\n  type: 'test'\n  ...\n# Subtest: Mi dia prioriza trabajo y la agenda expone una validacion preventiva\nok 9 - Mi dia prioriza trabajo y la agenda expone una validacion preventiva\n  ---\n  duration_ms: 2.9818\n  type: 'test'\n  ...\n# Subtest: el catalogo comercial se integra con inventarios sin diferencias de precio\nok 10 - el catalogo comercial se integra con inventarios sin diferencias de precio\n  ---\n  duration_ms: 5.1956\n  type: 'test'\n  ...\n# Subtest: cotizaciones tienen vigencia, pdf operativo y conversion opcional a pedido\nok 11 - cotizaciones tienen vigencia, pdf operativo y conversion opcional a pedido\n  ---\n  duration_ms: 1.9549\n  type: 'test'\n  ...\n# Subtest: los pedidos se consultan con detalle, alcance y filtros operativos\nok 12 - los pedidos se consultan con detalle, alcance y filtros operativos\n  ---\n  duration_ms: 1.4647\n  type: 'test'\n  ...\n# Subtest: presupuestos soportan frecuencia mensual y diaria sin mezclar fechas\nok 13 - presupuestos soportan frecuencia mensual y diaria sin mezclar fechas\n  ---\n  duration_ms: 3.0998\n  type: 'test'\n  ...\n1..13\n# tests 13\n# suites 0\n# pass 13\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 307.8828\n",
+      "stderr": ""
+    },
+    {
+      "name": "prisma_schema",
+      "status": "passed",
+      "command": "C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js run prisma:validate",
+      "exit_code": 0,
+      "stdout": "\n> apex-os@2.0.0 prisma:validate\n> npx prisma validate --schema apps/api/prisma/schema.prisma\n\nEnvironment variables loaded from .env\nPrisma schema loaded from apps\\api\\prisma\\schema.prisma\nThe schema at apps\\api\\prisma\\schema.prisma is valid 🚀\n",
+      "stderr": ""
+    },
+    {
+      "name": "prisma_client",
+      "status": "passed",
+      "command": "C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js run prisma:generate",
+      "exit_code": 0,
+      "stdout": "\n> apex-os@2.0.0 prisma:generate\n> npm --workspace apps/api run prisma:generate\n\n\n> @apex-os/api@2.0.0 prisma:generate\n> prisma generate\n\nPrisma schema loaded from prisma\\schema.prisma\n\n✔ Generated Prisma Client (v5.22.0) to .\\..\\..\\node_modules\\@prisma\\client in 1.91s\n\nStart by importing your Prisma Client (See: https://pris.ly/d/importing-client)\n\nTip: Want to react to database changes in your app as they happen? Discover how with Pulse: https://pris.ly/tip-1-pulse\n\n",
+      "stderr": ""
+    },
+    {
+      "name": "flow_schema_push",
+      "status": "passed",
+      "command": "C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js run db:push",
+      "exit_code": 0,
+      "stdout": "\n> apex-os@2.0.0 db:push\n> npx prisma db push --schema apps/api/prisma/schema.prisma --skip-generate\n\nEnvironment variables loaded from .env\nPrisma schema loaded from apps\\api\\prisma\\schema.prisma\nDatasource \"db\": PostgreSQL database \"commercial_flow_cert\", schema \"public\" at \"127.0.0.1:60403\"\n\nYour database is now in sync with your Prisma schema. Done in 4.27s\n\n",
+      "stderr": ""
+    },
+    {
+      "name": "commercial_route_registration",
+      "status": "passed",
+      "command": "C:\\Program Files\\nodejs\\node.exe --test apps/api/test/commercial-route-registration.integration.test.js",
+      "exit_code": 0,
+      "stdout": "API bootstrap\"}\n# {\"level\":30,\"time\":1788465595944,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering cors\"}\n# {\"level\":30,\"time\":1788465595968,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered cors\"}\n# {\"level\":30,\"time\":1788465595968,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering rate-limit\"}\n# {\"level\":30,\"time\":1788465595981,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered rate-limit\"}\n# {\"level\":30,\"time\":1788465595981,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering security headers\"}\n# {\"level\":30,\"time\":1788465595983,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered security headers\"}\n# {\"level\":30,\"time\":1788465595983,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering websocket\"}\n# {\"level\":30,\"time\":1788465596061,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered websocket\"}\n# {\"level\":30,\"time\":1788465596061,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering multipart\"}\n# {\"level\":30,\"time\":1788465596099,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered multipart\"}\n# {\"level\":30,\"time\":1788465596099,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering auth decorator\"}\n# {\"level\":30,\"time\":1788465596099,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered auth decorator\"}\n# {\"level\":30,\"time\":1788465596099,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering audit hook\"}\n# {\"level\":30,\"time\":1788465596108,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered audit hook\"}\n# {\"level\":30,\"time\":1788465596108,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering platform technical log hooks\"}\n# {\"level\":30,\"time\":1788465596163,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered platform technical log hooks\"}\n# {\"level\":30,\"time\":1788465596163,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering performance logging\"}\n# {\"level\":30,\"time\":1788465596163,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered performance logging\"}\n# {\"level\":30,\"time\":1788465596163,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering API modules\"}\n# {\"level\":30,\"time\":1788465596208,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering auth routes\"}\n# {\"level\":30,\"time\":1788465596208,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered auth routes\"}\n# {\"level\":30,\"time\":1788465596211,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering onboarding routes\"}\n# {\"level\":30,\"time\":1788465596212,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered onboarding routes\"}\n# {\"level\":30,\"time\":1788465596226,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering brain routes\"}\n# {\"level\":30,\"time\":1788465596226,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered brain routes\"}\n# {\"level\":30,\"time\":1788465596242,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering admin routes\"}\n# {\"level\":30,\"time\":1788465596242,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered admin routes\"}\n# {\"level\":30,\"time\":1788465596249,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering inventory routes\"}\n# {\"level\":30,\"time\":1788465596249,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered inventory routes\"}\n# {\"level\":30,\"time\":1788465596254,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering accounting routes\"}\n# {\"level\":30,\"time\":1788465596254,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered accounting routes\"}\n# {\"level\":30,\"time\":1788465596263,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering purchases routes\"}\n# {\"level\":30,\"time\":1788465596263,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered purchases routes\"}\n# {\"level\":30,\"time\":1788465596269,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering projects routes\"}\n# {\"level\":30,\"time\":1788465596269,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered projects routes\"}\n# {\"level\":30,\"time\":1788465596274,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering sales routes\"}\n# {\"level\":30,\"time\":1788465596274,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered sales routes\"}\n# {\"level\":30,\"time\":1788465596279,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering invoicing routes\"}\n# {\"level\":30,\"time\":1788465596279,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered invoicing routes\"}\n# {\"level\":30,\"time\":1788465596390,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering hr routes\"}\n# {\"level\":30,\"time\":1788465596390,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered hr routes\"}\n# {\"level\":30,\"time\":1788465596405,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering services routes\"}\n# {\"level\":30,\"time\":1788465596405,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered services routes\"}\n# {\"level\":30,\"time\":1788465596412,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering offline routes\"}\n# {\"level\":30,\"time\":1788465596412,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered offline routes\"}\n# {\"level\":30,\"time\":1788465596416,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering transport routes\"}\n# {\"level\":30,\"time\":1788465596416,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered transport routes\"}\n# {\"level\":30,\"time\":1788465596422,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering sales-invoice routes\"}\n# {\"level\":30,\"time\":1788465596422,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered sales-invoice routes\"}\n# {\"level\":30,\"time\":1788465596427,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering accounts-receivable routes\"}\n# {\"level\":30,\"time\":1788465596427,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered accounts-receivable routes\"}\n# {\"level\":30,\"time\":1788465596432,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering treasury routes\"}\n# {\"level\":30,\"time\":1788465596433,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered treasury routes\"}\n# {\"level\":30,\"time\":1788465596445,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering commercial-management routes\"}\n# {\"level\":30,\"time\":1788465596445,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered commercial-management routes\"}\n# {\"level\":30,\"time\":1788465596445,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered API modules\"}\n# {\"level\":30,\"time\":1788465596445,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering brain websocket route\"}\n# {\"level\":30,\"time\":1788465596446,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered brain websocket route\"}\n# {\"level\":30,\"time\":1788465596447,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Starting background workers\"}\n# {\"level\":30,\"time\":1788465596447,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Redis disabled: background workers and crons disabled\"}\n# {\"level\":30,\"time\":1788465596447,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Finished background workers\"}\n# {\"level\":30,\"time\":1788465596447,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registering health route\"}\n# {\"level\":30,\"time\":1788465596451,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"msg\":\"Registered health route\"}\n# {\"level\":30,\"time\":1788465597675,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"reqId\":\"req-1\",\"req\":{\"method\":\"GET\",\"url\":\"/api/v1/commercial-management/commitments\",\"host\":\"localhost:80\",\"remoteAddress\":\"127.0.0.1\"},\"msg\":\"incoming request\"}\n# {\"level\":30,\"time\":1788465597699,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"reqId\":\"req-1\",\"res\":{\"statusCode\":401},\"responseTime\":12.518999999999778,\"msg\":\"request completed\"}\n# {\"level\":30,\"time\":1788465597701,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"reqId\":\"req-2\",\"req\":{\"method\":\"GET\",\"url\":\"/api/v1/commercial-management/visits\",\"host\":\"localhost:80\",\"remoteAddress\":\"127.0.0.1\"},\"msg\":\"incoming request\"}\n# {\"level\":30,\"time\":1788465597703,\"pid\":1756,\"hostname\":\"DESKTOP-6QIJ49H\",\"reqId\":\"req-2\",\"res\":{\"statusCode\":401},\"responseTime\":1.8269000000000233,\"msg\":\"request completed\"}\n1..2\n# tests 2\n# suites 0\n# pass 2\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 3164.1289\n",
+      "stderr": ""
+    },
+    {
+      "name": "commercial_service_flow",
+      "status": "passed",
+      "command": "C:\\Program Files\\nodejs\\node.exe --test apps/api/test/commercial-document-flow.integration.test.js",
+      "exit_code": 0,
+      "stdout": "TAP version 13\n# Subtest: cotizacion, cancelacion con motivo, pedido, visita y 360 en base local\nok 1 - cotizacion, cancelacion con motivo, pedido, visita y 360 en base local\n  ---\n  duration_ms: 1024.4005\n  type: 'test'\n  ...\n1..1\n# tests 1\n# suites 0\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 1312.8035\n",
+      "stderr": ""
+    },
+    {
+      "name": "commercial_web_contracts",
+      "status": "passed",
+      "command": "C:\\Program Files\\nodejs\\node.exe --test apps/web/test/commercial-visit-selection.test.mjs apps/web/test/commercial-module-catalog.test.mjs",
+      "exit_code": 0,
+      "stdout": "TAP version 13\n# Subtest: M-27 se publica en el catalogo tenant y se inicializa para planes y empresas\nok 1 - M-27 se publica en el catalogo tenant y se inicializa para planes y empresas\n  ---\n  duration_ms: 2.953\n  type: 'test'\n  ...\n# Subtest: Administracion consulta el catalogo completo y permite habilitar M-27 por empresa\nok 2 - Administracion consulta el catalogo completo y permite habilitar M-27 por empresa\n  ---\n  duration_ms: 7.0587\n  type: 'test'\n  ...\n# Subtest: paneles limitan a top 10 sin filtros y muestran todas las coincidencias al filtrar\nok 3 - paneles limitan a top 10 sin filtros y muestran todas las coincidencias al filtrar\n  ---\n  duration_ms: 43.4127\n  type: 'test'\n  ...\n# Subtest: presupuestos separa configuración y ejecución con filtros compartidos\nok 4 - presupuestos separa configuración y ejecución con filtros compartidos\n  ---\n  duration_ms: 6.7025\n  type: 'test'\n  ...\n# Subtest: agenda busca cliente con texto, Enter y lista desplegable inteligente\nok 5 - agenda busca cliente con texto, Enter y lista desplegable inteligente\n  ---\n  duration_ms: 3.3752\n  type: 'test'\n  ...\n# Subtest: reportes enlaza comparativo cotizado pedido con filtros y cantidades originales\nok 6 - reportes enlaza comparativo cotizado pedido con filtros y cantidades originales\n  ---\n  duration_ms: 2.2487\n  type: 'test'\n  ...\n# Subtest: agenda comparte el todo de compromisos y lo refresca tras guardar una visita\nok 7 - agenda comparte el todo de compromisos y lo refresca tras guardar una visita\n  ---\n  duration_ms: 2.7581\n  type: 'test'\n  ...\n# Subtest: inicio muestra alertas y permite chulear compromisos sin ocultar fallos\nok 8 - inicio muestra alertas y permite chulear compromisos sin ocultar fallos\n  ---\n  duration_ms: 3.4607\n  type: 'test'\n  ...\n# Subtest: acciones de visita distinguen gestion, ejecucion e historial de solo consulta\nok 9 - acciones de visita distinguen gestion, ejecucion e historial de solo consulta\n  ---\n  duration_ms: 2.7975\n  type: 'test'\n  ...\n# Subtest: conversion editable compartida e historial adaptado al contenido\nok 10 - conversion editable compartida e historial adaptado al contenido\n  ---\n  duration_ms: 2.9126\n  type: 'test'\n  ...\n# Subtest: doble clic abre historial por ID y permite regresar desde documentos\nok 11 - doble clic abre historial por ID y permite regresar desde documentos\n  ---\n  duration_ms: 1.5932\n  type: 'test'\n  ...\n# Subtest: cada visita remonta su detalle por ID y consulta datos operativos sin cache\nok 12 - cada visita remonta su detalle por ID y consulta datos operativos sin cache\n  ---\n  duration_ms: 2.4176\n  type: 'test'\n  ...\n# Subtest: no-store tambien evita reutilizar solicitudes GET en curso\nok 13 - no-store tambien evita reutilizar solicitudes GET en curso\n  ---\n  duration_ms: 4.0081\n  type: 'test'\n  ...\n# Subtest: prospeccion sin cliente y calendario con historial completo\nok 14 - prospeccion sin cliente y calendario con historial completo\n  ---\n  duration_ms: 1.2864\n  type: 'test'\n  ...\n# Subtest: pendientes en tabla con cancelacion justificada y resultado comercial\nok 15 - pendientes en tabla con cancelacion justificada y resultado comercial\n  ---\n  duration_ms: 1.0434\n  type: 'test'\n  ...\n# Subtest: la negociacion captura productos por codigo y conserva nombre y precio del maestro\nok 16 - la negociacion captura productos por codigo y conserva nombre y precio del maestro\n  ---\n  duration_ms: 0.7236\n  type: 'test'\n  ...\n# Subtest: la consulta de pedidos filtra, abre detalle con doble clic y descarga PDF\nok 17 - la consulta de pedidos filtra, abre detalle con doble clic y descarga PDF\n  ---\n  duration_ms: 1.5243\n  type: 'test'\n  ...\n# Subtest: el inicio compacto enlaza una consulta completa de cotizaciones\nok 18 - el inicio compacto enlaza una consulta completa de cotizaciones\n  ---\n  duration_ms: 1.9929\n  type: 'test'\n  ...\n# Subtest: el control muestra finalizacion y duracion real de cada visita\nok 19 - el control muestra finalizacion y duracion real de cada visita\n  ---\n  duration_ms: 0.7033\n  type: 'test'\n  ...\n# Subtest: el pedido abre la cotizacion de origen con doble clic\nok 20 - el pedido abre la cotizacion de origen con doble clic\n  ---\n  duration_ms: 1.145\n  type: 'test'\n  ...\n# Subtest: la cotizacion abre el pedido generado con doble clic\nok 21 - la cotizacion abre el pedido generado con doble clic\n  ---\n  duration_ms: 0.6814\n  type: 'test'\n  ...\n# Subtest: presupuestos permite crear y comparar contra pedidos realizados\nok 22 - presupuestos permite crear y comparar contra pedidos realizados\n  ---\n  duration_ms: 0.6921\n  type: 'test'\n  ...\n# Subtest: presupuesto suma registrados y conserva filtros de fecha, asesor y cliente\nok 23 - presupuesto suma registrados y conserva filtros de fecha, asesor y cliente\n  ---\n  duration_ms: 1.2923\n  type: 'test'\n  ...\n# Subtest: Mi día, disponibilidad previa y exportaciones gerenciales estan disponibles\nok 24 - Mi día, disponibilidad previa y exportaciones gerenciales estan disponibles\n  ---\n  duration_ms: 4.6118\n  type: 'test'\n  ...\n# Subtest: Gestión Comercial se publica como M-27 en la navegación lateral\nok 25 - Gestión Comercial se publica como M-27 en la navegación lateral\n  ---\n  duration_ms: 1.8013\n  type: 'test'\n  ...\n1..25\n# tests 25\n# suites 0\n# pass 25\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 384.1646\n",
+      "stderr": ""
+    },
+    {
+      "name": "rbac_and_tenant_regression",
+      "status": "passed",
+      "command": "C:\\Program Files\\nodejs\\node.exe --test apps/api/test/rbac-module-access.test.js apps/api/test/supabase-auth-modules.test.js",
+      "exit_code": 0,
+      "stdout": "TAP version 13\n# Subtest: RBAC reconoce todos los identificadores vigentes de Inventario\nok 1 - RBAC reconoce todos los identificadores vigentes de Inventario\n  ---\n  duration_ms: 3.1959\n  type: 'test'\n  ...\n# Subtest: RBAC normaliza espacios y mayusculas en los modulos del tenant\nok 2 - RBAC normaliza espacios y mayusculas en los modulos del tenant\n  ---\n  duration_ms: 0.3939\n  type: 'test'\n  ...\n# Subtest: RBAC mantiene bloqueado Inventario cuando no esta habilitado\nok 3 - RBAC mantiene bloqueado Inventario cuando no esta habilitado\n  ---\n  duration_ms: 0.3154\n  type: 'test'\n  ...\n# Subtest: RBAC reconoce los identificadores tecnicos usados por permisos y sincronizacion\nok 4 - RBAC reconoce los identificadores tecnicos usados por permisos y sincronizacion\n  ---\n  duration_ms: 0.6644\n  type: 'test'\n  ...\n# Subtest: active module view is queried with the authenticated user identity\nok 5 - active module view is queried with the authenticated user identity\n  ---\n  duration_ms: 47.3292\n  type: 'test'\n  ...\n1..5\n# tests 5\n# suites 0\n# pass 5\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 308.2017\n",
+      "stderr": ""
+    }
+  ]
+}

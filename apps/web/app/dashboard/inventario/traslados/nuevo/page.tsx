@@ -7,6 +7,8 @@ import { Plus, Search, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { InventoryNav } from "@/components/inventory-nav";
 import { ModalFrame } from "@/components/ui/ModalFrame";
+import { Button } from "@/components/ui/button";
+import { showToast } from "@/components/system/ToastCenter";
 
 type Warehouse = { id: number; code: string; name: string; society_code: string };
 type Item = { id: number; code: string; legacy_code?: string | null; name: string; unit: string; warehouse_rows: Array<{ warehouse_id: number; qty: number }> };
@@ -72,7 +74,8 @@ export default function NuevoTrasladoPage() {
     setSkuSearch(search);
   }
 
-  async function createTransfer(createAnother: boolean) {
+  async function createTransfer(createAnother: boolean, idempotencyKey = crypto.randomUUID()) {
+    if (saving) return;
     setError(""); setMessage("");
     if (!header.origin_place_id || !header.destination_place_id) return setError("Selecciona las bodegas de origen y destino.");
     if (duplicateSkus.size) return setError("Cada SKU debe aparecer una sola vez en el traslado.");
@@ -81,10 +84,16 @@ export default function NuevoTrasladoPage() {
     if (insufficient) return setError(`La cantidad solicitada supera la existencia disponible de ${insufficient.item_code}.`);
     setSaving(true);
     try {
-      const created = await api<{ number?: string }>("/api/v1/inventory/transfers", { method: "POST", body: JSON.stringify({ origin_place_id: Number(header.origin_place_id), destination_place_id: Number(header.destination_place_id), reason: header.reason.trim(), idempotency_key: crypto.randomUUID(), lines: lines.map((line) => ({ item_id: Number(line.item_id), qty: Number(line.qty) })) }) });
-      if (createAnother) { setLines([emptyLine()]); setHeader((current) => ({ ...current, reason: "" })); setMessage(`${created.number || "Traslado"} creado y enviado a transito. Puedes registrar el siguiente con las mismas bodegas.`); }
+      const created = await api<{ number?: string }>("/api/v1/inventory/transfers", { method: "POST", body: JSON.stringify({ origin_place_id: Number(header.origin_place_id), destination_place_id: Number(header.destination_place_id), reason: header.reason.trim(), idempotency_key: idempotencyKey, lines: lines.map((line) => ({ item_id: Number(line.item_id), qty: Number(line.qty) })) }) });
+      const transferNumber = created.number || "Traslado";
+      showToast({ tone: "success", title: `${transferNumber} creado`, description: "El stock salió de la bodega de origen y quedó en tránsito." });
+      if (createAnother) { setLines([emptyLine()]); setHeader((current) => ({ ...current, reason: "" })); setMessage(`${transferNumber} creado y enviado a transito. Puedes registrar el siguiente con las mismas bodegas.`); }
       else router.push("/dashboard/inventario/traslados");
-    } catch (err) { setError(err instanceof Error ? err.message : "No se pudo crear el traslado"); }
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : "No se pudo crear el traslado";
+      setError(detail);
+      showToast({ tone: "error", title: "No se pudo crear el traslado", description: detail, retry: () => void createTransfer(createAnother, idempotencyKey) });
+    }
     finally { setSaving(false); }
   }
 
@@ -93,8 +102,8 @@ export default function NuevoTrasladoPage() {
   return <div className="space-y-5">
     <header><p className="text-sm font-medium text-apex">Inventario - Traslados</p><h1 className="text-3xl font-semibold">Nuevo traslado</h1><p className="mt-1 text-sm text-neutral-600">Al guardar, el stock sale de la bodega origen y el documento queda en transito hasta su descarga completa.</p></header>
     <InventoryNav />
-    {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
-    {message ? <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p> : null}
+    {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">{error}</p> : null}
+    {message ? <p aria-live="polite" className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700" role="status">{message}</p> : null}
     <form className="space-y-4" onSubmit={submit}>
       <section className="rounded-md border border-line bg-white p-4"><h2 className="mb-3 font-semibold">Cabecera</h2><div className="grid gap-3 md:grid-cols-3">
         <label className="text-sm">Bodega origen<select className="mt-1 h-10 w-full rounded-md border border-line px-2" required value={header.origin_place_id} onChange={(e) => { setHeader({ ...header, origin_place_id: e.target.value, destination_place_id: "" }); setLines((current) => current.map((line) => ({ ...line, qty: 1 }))); }}><option value="">Seleccionar</option>{warehouses.map((row) => <option key={row.id} value={row.id}>{row.code} - {row.name}</option>)}</select></label>
@@ -112,7 +121,7 @@ export default function NuevoTrasladoPage() {
           <button aria-label="Eliminar línea" className="mt-6 h-10 rounded-md border border-red-200 text-red-600 disabled:opacity-40" disabled={lines.length === 1} onClick={() => setLines((current) => current.filter((row) => row.key !== line.key))} type="button"><Trash2 className="mx-auto" size={16} /></button>
         </div>)}</div>
       </section>
-      <div className="flex flex-wrap justify-end gap-2"><Link className="rounded-md border border-line px-4 py-2 text-sm" href="/dashboard/inventario/traslados">Cancelar</Link><button className="rounded-md border border-apex px-4 py-2 text-sm font-medium text-apex disabled:opacity-50" disabled={saving || duplicateSkus.size > 0} onClick={() => void createTransfer(true)} type="button">Crear y nuevo</button><button className="rounded-md bg-apex px-4 py-2 text-sm font-medium text-white disabled:opacity-50" disabled={saving || duplicateSkus.size > 0} type="submit">{saving ? "Guardando..." : "Crear traslado"}</button></div>
+      <div className="flex flex-wrap justify-end gap-2"><Link className="rounded-md border border-line px-4 py-2 text-sm" href="/dashboard/inventario/traslados">Cancelar</Link><Button disabled={duplicateSkus.size > 0} loading={saving} onClick={() => void createTransfer(true)} type="button" variant="secondary">{saving ? "Creando traslado…" : "Crear y nuevo"}</Button><Button disabled={duplicateSkus.size > 0} loading={saving} type="submit">{saving ? "Creando traslado…" : "Crear traslado"}</Button></div>
     </form>
     {skuSearchLineKey ? <ModalFrame maxWidth="md:max-w-3xl" onClose={() => { setSkuSearchLineKey(null); setSkuSearch(""); }} title="Buscar SKU para el traslado">
       <div className="space-y-4">

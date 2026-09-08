@@ -38,7 +38,7 @@ export default function CommercialManagementPage() {
           </div>
           <Link
             className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white hover:opacity-90"
-            href="/dashboard/gestion-comercial/agenda"
+            href="/dashboard/gestion-comercial/agenda?calendario=1"
           >
             <CalendarDays size={17} /> Ver agenda
           </Link>
@@ -92,7 +92,7 @@ export default function CommercialManagementPage() {
             <p className="mt-0.5 text-sm text-neutral-600">Programa, busca, ejecuta y reprograma visitas desde el calendario comercial.</p>
           </div>
         </div>
-        <Link className="inline-flex items-center gap-1 text-sm font-semibold text-apex" href="/dashboard/gestion-comercial/agenda">
+        <Link className="inline-flex items-center gap-1 text-sm font-semibold text-apex" href="/dashboard/gestion-comercial/agenda?calendario=1">
           Abrir calendario <ArrowRight size={16} />
         </Link>
       </section>
