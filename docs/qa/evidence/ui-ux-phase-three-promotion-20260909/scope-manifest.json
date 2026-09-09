@@ -1,0 +1,362 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "ui-ux-phase-three-to-develop-20260909",
+  "change_intent": {
+    "summary": "Promover a QA la experiencia World-class de Fase 3 y la corrección de visibilidad de señales APEX AI ya integrada en desarrollo.",
+    "modules": [
+      "web-ui-ux-phase-three",
+      "apex-heart",
+      "collaboration",
+      "authentication-totp",
+      "pwa",
+      "brain-insights-gating",
+      "promotion-governance"
+    ]
+  },
+  "base_commits": {
+    "develop": "e495883283bd84108bd1cf43a483cf4295d424f8"
+  },
+  "certified_commit": "d8eea92",
+  "certification_status": "local_passed_qa_pending",
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260909170000_apex_heart_report_schedules/migration.sql"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/prisma/schema.prisma"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/scripts/certifications/apex-heart-report-schedules-local.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/scripts/certifications/collaboration-two-users-local.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/server.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/fabric/crons.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/apex-heart/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/apex-heart/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/collaboration/hub.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/collaboration/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/apex-heart-domain.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/collaboration-hub.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/reportes/apex-heart/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/globals.css"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/layout.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/manifest.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/DashboardChrome.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/shell/NavigationAccessibility.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/shell/PageTransition.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/system/CollaborationPresence.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/CommandPalette.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/system/ExperiencePreferences.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/system/FieldProductivity.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/system/WorldClassToolkit.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/data-table.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/api.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/regionalFormat.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/supabaseClient.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/apex-icon.svg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/sw.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/certify-ui-ux-phase-three-accessibility-local.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/certify-ui-ux-phase-three-collaboration-local.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/certify-ui-ux-phase-three-foundation-local.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/certify-ui-ux-phase-three-personalization-local.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/certify-ui-ux-phase-three-toolkit-local.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/certify-ui-ux-phase-three-totp-local.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/phase-three-analytics.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/phase-three-collaboration.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/phase-three-personalization.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/phase-three-world-class-foundation.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/phase-three-world-class-toolkit.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "docs/design/APEX_OS_UI_UX_ROADMAP_CHECKLIST.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-accessibility-20260909/browser-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-accessibility-20260909/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-analytics-20260909/api-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-analytics-20260909/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-collaboration-20260909/browser-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-collaboration-20260909/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-collaboration-remote-20260909/api-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-collaboration-remote-20260909/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-complete-20260909/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-foundation-20260909/browser-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-foundation-20260909/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-personalization-20260909/browser-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-personalization-20260909/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-promotion-20260909/scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-toolkit-20260909/browser-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-toolkit-20260909/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-totp-20260909/browser-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-totp-20260909/local-validation.md"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/prisma/migrations/20260909170000_apex_heart_report_schedules/migration.sql",
+    "apps/api/prisma/schema.prisma",
+    "apps/api/scripts/certifications/apex-heart-report-schedules-local.js",
+    "apps/api/scripts/certifications/collaboration-two-users-local.js",
+    "apps/api/server.js",
+    "apps/api/src/fabric/crons.js",
+    "apps/api/src/modules/apex-heart/routes.js",
+    "apps/api/src/modules/apex-heart/service.js",
+    "apps/api/src/modules/collaboration/hub.js",
+    "apps/api/src/modules/collaboration/routes.js",
+    "apps/api/test/apex-heart-domain.test.js",
+    "apps/api/test/collaboration-hub.test.js",
+    "apps/web/app/dashboard/reportes/apex-heart/page.tsx",
+    "apps/web/app/globals.css",
+    "apps/web/app/layout.tsx",
+    "apps/web/app/manifest.ts",
+    "apps/web/components/shell/DashboardChrome.tsx",
+    "apps/web/components/shell/NavigationAccessibility.tsx",
+    "apps/web/components/shell/PageTransition.tsx",
+    "apps/web/components/system/CollaborationPresence.tsx",
+    "apps/web/components/system/CommandPalette.tsx",
+    "apps/web/components/system/ExperiencePreferences.tsx",
+    "apps/web/components/system/FieldProductivity.tsx",
+    "apps/web/components/system/WorldClassToolkit.tsx",
+    "apps/web/components/ui/data-table.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/regionalFormat.ts",
+    "apps/web/lib/supabaseClient.ts",
+    "apps/web/public/apex-icon.svg",
+    "apps/web/public/sw.js",
+    "apps/web/test/certify-ui-ux-phase-three-accessibility-local.mjs",
+    "apps/web/test/certify-ui-ux-phase-three-collaboration-local.mjs",
+    "apps/web/test/certify-ui-ux-phase-three-foundation-local.mjs",
+    "apps/web/test/certify-ui-ux-phase-three-personalization-local.mjs",
+    "apps/web/test/certify-ui-ux-phase-three-toolkit-local.mjs",
+    "apps/web/test/certify-ui-ux-phase-three-totp-local.mjs",
+    "apps/web/test/phase-three-analytics.test.mjs",
+    "apps/web/test/phase-three-collaboration.test.mjs",
+    "apps/web/test/phase-three-personalization.test.mjs",
+    "apps/web/test/phase-three-world-class-foundation.test.mjs",
+    "apps/web/test/phase-three-world-class-toolkit.test.mjs",
+    "docs/design/APEX_OS_UI_UX_ROADMAP_CHECKLIST.md",
+    "docs/qa/evidence/ui-ux-phase-three-accessibility-20260909/browser-certification.json",
+    "docs/qa/evidence/ui-ux-phase-three-accessibility-20260909/local-validation.md",
+    "docs/qa/evidence/ui-ux-phase-three-analytics-20260909/api-certification.json",
+    "docs/qa/evidence/ui-ux-phase-three-analytics-20260909/local-validation.md",
+    "docs/qa/evidence/ui-ux-phase-three-collaboration-20260909/browser-certification.json",
+    "docs/qa/evidence/ui-ux-phase-three-collaboration-20260909/local-validation.md",
+    "docs/qa/evidence/ui-ux-phase-three-collaboration-remote-20260909/api-certification.json",
+    "docs/qa/evidence/ui-ux-phase-three-collaboration-remote-20260909/local-validation.md",
+    "docs/qa/evidence/ui-ux-phase-three-complete-20260909/local-validation.md",
+    "docs/qa/evidence/ui-ux-phase-three-foundation-20260909/browser-certification.json",
+    "docs/qa/evidence/ui-ux-phase-three-foundation-20260909/local-validation.md",
+    "docs/qa/evidence/ui-ux-phase-three-personalization-20260909/browser-certification.json",
+    "docs/qa/evidence/ui-ux-phase-three-personalization-20260909/local-validation.md",
+    "docs/qa/evidence/ui-ux-phase-three-promotion-20260909/scope-manifest.json",
+    "docs/qa/evidence/ui-ux-phase-three-toolkit-20260909/browser-certification.json",
+    "docs/qa/evidence/ui-ux-phase-three-toolkit-20260909/local-validation.md",
+    "docs/qa/evidence/ui-ux-phase-three-totp-20260909/browser-certification.json",
+    "docs/qa/evidence/ui-ux-phase-three-totp-20260909/local-validation.md"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "phase_three_accessibility_personalization_and_productivity",
+      "status": "passed",
+      "evidence": [
+        "../ui-ux-phase-three-complete-20260909/local-validation.md",
+        "../ui-ux-phase-three-accessibility-20260909/browser-certification.json",
+        "../ui-ux-phase-three-totp-20260909/browser-certification.json"
+      ]
+    },
+    {
+      "name": "apex_heart_drilldown_and_scheduled_reports",
+      "status": "passed",
+      "evidence": [
+        "../ui-ux-phase-three-analytics-20260909/api-certification.json",
+        "../ui-ux-phase-three-analytics-20260909/local-validation.md"
+      ]
+    },
+    {
+      "name": "authenticated_multi_tenant_collaboration",
+      "status": "passed",
+      "evidence": [
+        "../ui-ux-phase-three-collaboration-remote-20260909/api-certification.json",
+        "../ui-ux-phase-three-collaboration-remote-20260909/local-validation.md"
+      ]
+    },
+    {
+      "name": "brain_insights_module_gating",
+      "status": "passed",
+      "evidence": [
+        "../brain-insights-module-gating-20260909/local-validation.md",
+        "../brain-insights-module-gating-20260909/browser-diagnosis.md"
+      ]
+    }
+  ]
+}
+
