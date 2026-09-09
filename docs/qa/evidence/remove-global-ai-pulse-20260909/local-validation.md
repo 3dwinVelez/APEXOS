@@ -1,7 +1,7 @@
 # Validación local — retiro de la señal global APEX AI
 
-Fecha: 2026-09-09  
-Entorno: LOCAL  
+Fecha: 2026-09-09
+Entorno: LOCAL
 Rama: `desarrollo`
 
 ## Alcance
