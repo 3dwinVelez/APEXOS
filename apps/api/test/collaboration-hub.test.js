@@ -1,0 +1,4 @@
+const test = require("node:test"); const assert = require("node:assert/strict"); const hub = require("../src/modules/collaboration/hub");
+function socket() { return { readyState: 1, sent: [], send(value) { this.sent.push(JSON.parse(value)); } }; }
+test("el hub aísla salas por tenant y retransmite presencia sanitizada", () => { const a=socket(),b=socket(),other=socket();hub.join("t1",a);hub.join("t1",b);hub.join("t2",other);const message=hub.safeMessage({type:"presence",tabId:"tab",path:"/dashboard/inventario",state:"editing",form:{secret:"x"}},{tenant_id:"t1",email:"user@apex.test"});hub.broadcast("t1",message,a);assert.equal(b.sent.length,1);assert.equal(other.sent.length,0);assert.equal(b.sent[0].state,"editing");assert.equal("form" in b.sent[0],false);hub.leave("t1",a);hub.leave("t1",b);hub.leave("t2",other);});
+test("el hub rechaza tipos ajenos a presencia",()=>assert.equal(hub.safeMessage({type:"data"},{tenant_id:"t1"}),null));

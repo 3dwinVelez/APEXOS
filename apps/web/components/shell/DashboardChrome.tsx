@@ -5,15 +5,20 @@ import { ApexIntelligencePulse } from "@/components/brain/ApexIntelligencePulse"
 import { AiExperienceLayer } from "@/components/brain/AiExperienceLayer";
 import { ContextBreadcrumbs } from "@/components/shell/ContextBreadcrumbs";
 import { MobileNav } from "@/components/shell/MobileNav";
+import { PageTransition } from "@/components/shell/PageTransition";
 import { RouteAccessGuard } from "@/components/shell/RouteAccessGuard";
 import { Sidebar } from "@/components/shell/Sidebar";
 import { TechnicianWorkspaceHeader } from "@/components/shell/TechnicianWorkspaceHeader";
 import { UserSessionBadge } from "@/components/shell/UserSessionBadge";
 import { NotificationCenter } from "@/components/system/NotificationCenter";
 import { CommandPalette } from "@/components/system/CommandPalette";
+import { CollaborationPresence } from "@/components/system/CollaborationPresence";
+import { ExperiencePreferences } from "@/components/system/ExperiencePreferences";
 import { LocaleSwitcher } from "@/components/system/LocaleSwitcher";
 import { OfflineFirstStatus } from "@/components/system/OfflineFirstStatus";
 import { TraceabilityCenter } from "@/components/system/TraceabilityCenter";
+import { WorldClassToolkit } from "@/components/system/WorldClassToolkit";
+import { FieldProductivity } from "@/components/system/FieldProductivity";
 import { isMarkingOnlyAccess, MARKING_ONLY_PROFILE } from "@/lib/accessProfile";
 import { Clock3 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -58,13 +63,14 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
   return (
     <div className="apex-app-gradient min-h-screen md:flex">
       <div className="technician-hide"><Sidebar /></div>
-      <main className="min-w-0 flex-1 overflow-x-hidden p-3 pb-24 sm:p-4 md:p-6 md:pb-6">
-        <div className="mb-3 flex flex-wrap justify-end gap-2"><OfflineFirstStatus /><LocaleSwitcher /><TraceabilityCenter /><CommandPalette /><NotificationCenter /></div>
+      <main className="min-w-0 flex-1 overflow-x-hidden p-3 pb-24 sm:p-4 md:p-6 md:pb-6" id="apex-main-content" tabIndex={-1}>
+        <FieldProductivity />
+        <div className="mb-3 flex flex-wrap justify-end gap-2"><OfflineFirstStatus /><LocaleSwitcher /><TraceabilityCenter /><CollaborationPresence /><ExperiencePreferences /><WorldClassToolkit /><CommandPalette /><NotificationCenter /></div>
         <ContextBreadcrumbs />
         <TechnicianWorkspaceHeader />
         <ApexAiHeader />
         <ApexIntelligencePulse />
-        <RouteAccessGuard>{children}</RouteAccessGuard>
+        <RouteAccessGuard><PageTransition>{children}</PageTransition></RouteAccessGuard>
       </main>
       <MobileNav />
       <div className="technician-hide"><AiExperienceLayer /></div>

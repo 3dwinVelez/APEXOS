@@ -1,0 +1,35 @@
+{
+  "certification": "ui-ux-phase-three-totp-local-simulated-provider",
+  "environment": "LOCAL",
+  "provider": "simulated-supabase-contract",
+  "generatedAt": "2026-09-09T18:05:47.412Z",
+  "status": "passed",
+  "checks": [
+    {
+      "name": "totp_qr_and_code_field_visible",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "totp_verified_feedback",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "totp_three_step_contract",
+      "passed": true,
+      "detail": {
+        "requests": [
+          "/factors",
+          "/factors/factor-local-cert/challenge",
+          "/factors/factor-local-cert/verify"
+        ]
+      }
+    },
+    {
+      "name": "totp_code_sent_to_verify_only",
+      "passed": true,
+      "detail": {}
+    }
+  ]
+}

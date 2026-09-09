@@ -1,0 +1,28 @@
+{
+  "certification": "apex-heart-report-schedules-local",
+  "environment": "LOCAL",
+  "generatedAt": "2026-09-09T17:08:48.757Z",
+  "status": "passed",
+  "checks": [
+    {
+      "name": "active_tenant_available",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "schedule_persisted",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "tenant_list_contains_schedule",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "due_schedule_executed",
+      "passed": true,
+      "detail": {}
+    }
+  ]
+}

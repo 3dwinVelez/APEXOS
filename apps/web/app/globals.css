@@ -28,6 +28,59 @@
   --shadow-overlay: 0 24px 70px rgb(15 23 42 / 0.2);
 }
 
+html[data-font-scale="small"] { font-size: 15px; }
+html[data-font-scale="medium"] { font-size: 16px; }
+html[data-font-scale="large"] { font-size: 18px; }
+
+html[data-density="compact"] {
+  --space-page: 1rem;
+  --space-section: 0.75rem;
+}
+
+html[data-density="compact"] .apex-dashboard-content table,
+html[data-density="compact"] .apex-app-gradient table { font-size: 0.75rem; }
+html[data-density="compact"] .apex-workspace-shell { row-gap: 0.75rem; }
+html[data-density="compact"] .apex-workspace-shell :where(input, select, textarea) { min-height: 2.25rem; }
+.apex-virtual-row { content-visibility: auto; contain-intrinsic-size: 44px; }
+
+html[data-contrast="high"] {
+  --color-line: 75 85 99;
+  --color-apex: 5 96 88;
+  --surface-muted: 229 231 235;
+  --text-body: 17 24 39;
+  --text-muted: 31 41 55;
+}
+
+html.dark[data-contrast="high"] {
+  --color-line: 209 213 219;
+  --color-apex: 94 234 212;
+  --surface-muted: 31 41 55;
+  --text-strong: 255 255 255;
+  --text-body: 243 244 246;
+  --text-muted: 229 231 235;
+}
+
+html[data-contrast="high"] .apex-dashboard-content a:not([role="button"]) {
+  text-decoration: underline;
+  text-decoration-thickness: 0.12em;
+  text-underline-offset: 0.18em;
+}
+
+html[data-contrast="high"] :where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline-width: 3px !important;
+  outline-color: rgb(var(--text-strong)) !important;
+  outline-offset: 3px !important;
+}
+
+html[data-reduced-motion="true"] *,
+html[data-reduced-motion="true"] *::before,
+html[data-reduced-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+  transition-duration: 0.01ms !important;
+}
+
 .apex-public-input {
   min-height: 3rem;
   width: 100%;
@@ -464,6 +517,43 @@ textarea {
   outline-offset: 2px;
 }
 
+.apex-skip-link {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  z-index: 200;
+  transform: translateY(-180%);
+  border-radius: 0.5rem;
+  background: rgb(var(--color-apex));
+  color: white;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition: transform 150ms ease;
+}
+
+.apex-skip-link:focus-visible { transform: translateY(0); }
+
+.apex-interactive {
+  transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.apex-interactive:hover { transform: translateY(-1px); }
+.apex-interactive:active { transform: translateY(0) scale(0.985); }
+
+@keyframes apexPageEnter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes apexDialogEnter {
+  from { opacity: 0; transform: translateY(-8px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.apex-page-enter { animation: apexPageEnter 220ms ease-out both; }
+.apex-dialog-enter { animation: apexDialogEnter 180ms ease-out both; }
+
 @media (prefers-reduced-motion: reduce) {
   html:focus-within {
     scroll-behavior: auto;
@@ -476,6 +566,16 @@ textarea {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .apex-page-enter,
+  .apex-dialog-enter {
+    animation: none !important;
+  }
+
+  .apex-interactive:hover,
+  .apex-interactive:active {
+    transform: none !important;
   }
 }
 

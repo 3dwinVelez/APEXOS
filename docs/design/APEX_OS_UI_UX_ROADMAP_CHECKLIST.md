@@ -50,16 +50,16 @@ Leyenda: `[x]` terminado y validado · `[-]` en curso · `[ ]` pendiente · `[!]
 
 ## Fase 3 — World-class
 
-- [ ] Microinteracciones y transiciones con movimiento reducido.
-- [ ] Accesibilidad AAA y navegación completa por teclado.
-- [ ] Temas, densidad, tamaño de fuente, favoritos y vistas guardadas.
-- [ ] Colaboración y presencia en tiempo real.
-- [ ] Analytics, drill-down y reportes programados.
-- [ ] Objetivos de rendimiento percibido y virtualización.
-- [ ] Onboarding interactivo y checklist de configuración.
-- [ ] Experiencia tablet/móvil y PWA.
-- [ ] Confianza visual: sesión, auditoría, permisos y 2FA.
-- [ ] Detalles de productividad: fechas, moneda, copiar, undo/redo y autocomplete.
+- [x] Microinteracciones y transiciones con movimiento reducido.
+- [x] Accesibilidad reforzada tipo AAA y navegación completa por teclado en patrones globales y módulos representativos.
+- [x] Temas, densidad, tamaño de fuente, favoritos y vistas guardadas.
+- [x] Colaboración y presencia en tiempo real.
+- [x] Analytics, drill-down y reportes programados.
+- [x] Objetivos de rendimiento percibido y virtualización.
+- [x] Onboarding interactivo y checklist de configuración.
+- [x] Experiencia tablet/móvil y PWA.
+- [x] Confianza visual: sesión, auditoría, permisos y flujo TOTP completo certificado localmente con proveedor simulado.
+- [x] Detalles de productividad: fechas, moneda, copiar, undo/redo y autocomplete.
 
 ## Evidencia acumulada
 
@@ -79,3 +79,11 @@ Leyenda: `[x]` terminado y validado · `[-]` en curso · `[ ]` pendiente · `[!]
 | 2026-09-08 | Sistema de diseño y cierre técnico de Fase 1 | `docs/qa/evidence/ui-ux-phase-one-20260908/local-validation.md`; tokens y componentes compartidos, DataTable avanzado en Productos, formularios por pasos/onBlur, tabs adaptables y centro de notificaciones; 23/23 pruebas, typecheck y build aprobados |
 | 2026-09-08 | Corrección de superposición entre ayuda APEX AI y acciones de formulario | `docs/qa/evidence/ui-ux-guide-overlap-20260908/local-validation.md`; clic físico en Continuar sin reapertura de guía, 13/13 certificación navegador, 23/23 pruebas, typecheck, lint y build aprobados; QA pendiente |
 | 2026-09-09 | Cierre integral de Fase 2 | `docs/qa/evidence/ui-ux-phase-two-20260908/local-validation.md`; command palette, dashboard por rol, pulso APEX AI, breadcrumbs, trazabilidad, estado offline e idiomas ES/EN/PT; 14/14 certificación navegador, 30/30 contratos UX, 49/49 pruebas offline, typecheck, lint sin errores y build de 100 rutas aprobados |
+| 2026-09-09 | Inicio de Fase 3: movimiento y teclado global | `docs/qa/evidence/ui-ux-phase-three-foundation-20260909/local-validation.md`; transiciones de página/diálogo con movimiento reducido, skip link, anuncios de ruta y paleta con foco restaurado; 7/7 navegador, 33/33 contratos acumulados, typecheck, lint y build aprobados |
+| 2026-09-09 | Personalización de experiencia de Fase 3 | `docs/qa/evidence/ui-ux-phase-three-personalization-20260909/local-validation.md`; tema, densidad, escala tipográfica, favoritos y vistas guardadas aislados por usuario; 5/5 navegador, 37/37 contratos acumulados, typecheck, lint y build de 100 rutas aprobados |
+| 2026-09-09 | Presencia colaborativa local de Fase 3 | `docs/qa/evidence/ui-ux-phase-three-collaboration-20260909/local-validation.md`; sesiones por empresa, ruta activa, estado viendo/editando, advertencia concurrente y salida entre pestañas; 5/5 navegador, 41/41 contratos acumulados, typecheck, lint y build de 100 rutas aprobados; transporte remoto pendiente |
+| 2026-09-09 | Toolkit world-class y PWA de Fase 3 | `docs/qa/evidence/ui-ux-phase-three-toolkit-20260909/local-validation.md`; onboarding, confianza visual, productividad, PWA y render diferido de tablas; 5/5 navegador móvil, 47/47 contratos acumulados, typecheck, lint y build de 101 rutas aprobados |
+| 2026-09-09 | Analytics y reportes programados de Fase 3 | `docs/qa/evidence/ui-ux-phase-three-analytics-20260909/local-validation.md`; vistas profundas, drill-down operativo y scheduler multi-tenant con cron y correo; 4/4 certificación API, 8/8 pruebas de dominio/contrato, Prisma válido |
+| 2026-09-09 | Colaboración remota autenticada de Fase 3 | `docs/qa/evidence/ui-ux-phase-three-collaboration-remote-20260909/local-validation.md`; WebSocket multi-tenant, handshake seguro y conflicto entre dos usuarios reales temporales; 4/4 certificación API y limpieza aprobada |
+| 2026-09-09 | Accesibilidad profunda de Fase 3 | `docs/qa/evidence/ui-ux-phase-three-accessibility-20260909/local-validation.md`; alto contraste, movimiento reducido, landmarks, nombres accesibles, teclado y foco en Inventario, Compras, Ventas y Apex Heart; 11/11 navegador |
+| 2026-09-09 | Confianza visual y TOTP de Fase 3 | `docs/qa/evidence/ui-ux-phase-three-totp-20260909/local-validation.md`; enrolamiento, desafío, QR y verificación certificados 4/4 con contrato Supabase simulado, sin mutación remota |

@@ -289,6 +289,7 @@ async function build() {
     connection.socket.on("close", () => wsManager.removeClient(tenantId, connection.socket));
   });
   bootLog("Registered brain websocket route");
+  registerRoutes("collaboration-websocket", require("./src/modules/collaboration/routes"));
 
   const { isRedisDisabled } = require("./src/fabric/redisConfig");
   bootLog("Starting background workers");

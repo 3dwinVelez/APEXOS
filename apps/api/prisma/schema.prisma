@@ -2909,6 +2909,28 @@ model ApexHeartInventorySnapshot {
   @@index([tenant_id, item_id, snapshot_date])
 }
 
+model ApexHeartReportSchedule {
+  id          Int      @id @default(autoincrement())
+  tenant_id   String
+  name        String
+  view        String   @default("pulse")
+  frequency   String   @default("weekly")
+  weekday     Int?
+  month_day   Int?
+  send_hour   Int      @default(8)
+  timezone    String   @default("America/Bogota")
+  recipients Json     @default("[]")
+  enabled     Boolean  @default(true)
+  next_run_at DateTime
+  last_run_at DateTime?
+  created_by  Int?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("apex_heart_report_schedules")
+  @@index([tenant_id, enabled, next_run_at])
+}
+
 model Workflow {
   id          Int     @id @default(autoincrement())
   tenant_id   String
