@@ -1,0 +1,64 @@
+{
+  "change_id": "supplier-create-button-visibility-to-develop-20260909",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "9bcc9dc",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "browser-certification.json",
+        "local-validation.md"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "browser-certification.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "local-validation.md"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../../../../apps/web/test/supplier-create-button-visibility.test.mjs",
+        "browser-certification.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "local-validation.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../apps/web/test/certify-supplier-create-button-visible-local.mjs",
+    "evidence": [
+      "browser-certification.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../apps/web/test/certify-supplier-create-button-visible-local.mjs",
+    "evidence": [
+      "browser-certification.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Solicitante autorizado de APEXOS en tarea Codex",
+    "approved_at": "2026-09-09T14:10:00-05:00",
+    "main_release": "not_authorized"
+  }
+}
+
