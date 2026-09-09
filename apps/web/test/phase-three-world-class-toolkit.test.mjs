@@ -1,0 +1,11 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
+test("el onboarding guarda progreso por usuario y enlaza recorridos", () => { const source = read("components/system/WorldClassToolkit.tsx"); assert.match(source, /apex_onboarding_v1/); assert.match(source, /completed\.length/); assert.match(source, /Explora Apex Heart/); });
+test("el centro muestra confianza y acciones productivas accesibles", () => { const source = read("components/system/WorldClassToolkit.tsx"); for (const value of ["Sesión protegida", "Permisos activos", "Auditoría habilitada", "Revisar 2FA", "Copiar enlace", "Deshacer", "Rehacer"]) assert.match(source, new RegExp(value)); });
+test("la aplicación registra PWA e instalación diferida", () => { const source = read("components/system/WorldClassToolkit.tsx"); assert.match(source, /serviceWorker\.register/); assert.match(source, /beforeinstallprompt/); assert.match(read("app/manifest.ts"), /standalone/); assert.match(read("public/sw.js"), /caches\.open/); });
+test("las tablas compartidas reducen render y fijan encabezados", () => { const table = read("components/ui/data-table.tsx"), css = read("app/globals.css"); assert.match(table, /Resultados virtualizados/); assert.match(table, /sticky top-0/); assert.match(css, /content-visibility: auto/); });

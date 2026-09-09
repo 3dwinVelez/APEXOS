@@ -1,0 +1,29 @@
+{
+  "certification": "ui-ux-phase-three-toolkit-local",
+  "environment": "LOCAL",
+  "baseUrl": "http://127.0.0.1:3001",
+  "generatedAt": "2026-09-09T16:42:50.131Z",
+  "status": "passed",
+  "checks": [
+    {
+      "name": "mobile_panel_fits",
+      "passed": true
+    },
+    {
+      "name": "onboarding_visible",
+      "passed": true
+    },
+    {
+      "name": "trust_signals_visible",
+      "passed": true
+    },
+    {
+      "name": "copy_feedback",
+      "passed": true
+    },
+    {
+      "name": "service_worker_registered",
+      "passed": true
+    }
+  ]
+}

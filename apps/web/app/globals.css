@@ -41,6 +41,7 @@ html[data-density="compact"] .apex-dashboard-content table,
 html[data-density="compact"] .apex-app-gradient table { font-size: 0.75rem; }
 html[data-density="compact"] .apex-workspace-shell { row-gap: 0.75rem; }
 html[data-density="compact"] .apex-workspace-shell :where(input, select, textarea) { min-height: 2.25rem; }
+.apex-virtual-row { content-visibility: auto; contain-intrinsic-size: 44px; }
 
 .apex-public-input {
   min-height: 3rem;

@@ -55,11 +55,11 @@ Leyenda: `[x]` terminado y validado · `[-]` en curso · `[ ]` pendiente · `[!]
 - [x] Temas, densidad, tamaño de fuente, favoritos y vistas guardadas.
 - [-] Colaboración y presencia en tiempo real: presencia, rutas y edición concurrente entre pestañas terminadas; transporte remoto entre dispositivos pendiente.
 - [-] Analytics, drill-down y reportes programados: navegación profunda por URL y producto terminada; programación persistente pendiente.
-- [ ] Objetivos de rendimiento percibido y virtualización.
-- [ ] Onboarding interactivo y checklist de configuración.
-- [ ] Experiencia tablet/móvil y PWA.
-- [ ] Confianza visual: sesión, auditoría, permisos y 2FA.
-- [ ] Detalles de productividad: fechas, moneda, copiar, undo/redo y autocomplete.
+- [x] Objetivos de rendimiento percibido y virtualización.
+- [x] Onboarding interactivo y checklist de configuración.
+- [x] Experiencia tablet/móvil y PWA.
+- [-] Confianza visual: sesión, auditoría y permisos visibles; activación 2FA real pendiente.
+- [-] Detalles de productividad: copiar y comandos undo/redo terminados; formatos regionales y autocomplete transversal pendientes.
 
 ## Evidencia acumulada
 
@@ -82,3 +82,4 @@ Leyenda: `[x]` terminado y validado · `[-]` en curso · `[ ]` pendiente · `[!]
 | 2026-09-09 | Inicio de Fase 3: movimiento y teclado global | `docs/qa/evidence/ui-ux-phase-three-foundation-20260909/local-validation.md`; transiciones de página/diálogo con movimiento reducido, skip link, anuncios de ruta y paleta con foco restaurado; 7/7 navegador, 33/33 contratos acumulados, typecheck, lint y build aprobados |
 | 2026-09-09 | Personalización de experiencia de Fase 3 | `docs/qa/evidence/ui-ux-phase-three-personalization-20260909/local-validation.md`; tema, densidad, escala tipográfica, favoritos y vistas guardadas aislados por usuario; 5/5 navegador, 37/37 contratos acumulados, typecheck, lint y build de 100 rutas aprobados |
 | 2026-09-09 | Presencia colaborativa local de Fase 3 | `docs/qa/evidence/ui-ux-phase-three-collaboration-20260909/local-validation.md`; sesiones por empresa, ruta activa, estado viendo/editando, advertencia concurrente y salida entre pestañas; 5/5 navegador, 41/41 contratos acumulados, typecheck, lint y build de 100 rutas aprobados; transporte remoto pendiente |
+| 2026-09-09 | Toolkit world-class y PWA de Fase 3 | `docs/qa/evidence/ui-ux-phase-three-toolkit-20260909/local-validation.md`; onboarding, confianza visual, productividad, PWA y render diferido de tablas; 5/5 navegador móvil, 47/47 contratos acumulados, typecheck, lint y build de 101 rutas aprobados |
