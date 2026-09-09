@@ -66,6 +66,7 @@ test("la guia APEX AI es contextual y sus controles no propagan navegacion", () 
   assert.match(source, /event\?\.preventDefault\(\)/);
   assert.match(source, /event\?\.stopPropagation\(\)/);
   assert.match(source, /No mostrar de nuevo/);
+  assert.match(source, /md:bottom-20/, "el lanzador no debe cubrir acciones al pie de formularios");
 });
 
 test("los permisos usan skeleton y EmptyState admite icono y dos acciones", () => {
