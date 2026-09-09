@@ -1,0 +1,47 @@
+{
+  "change_id": "ui-ux-phase-three-to-develop-20260909",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "a6a0d95d3cf54362d90974c1f470b999ba7dfa08",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": ["../ui-ux-phase-three-complete-20260909/local-validation.md", "../ui-ux-phase-three-accessibility-20260909/browser-certification.json"]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": ["../ui-ux-phase-three-totp-20260909/local-validation.md", "../ui-ux-phase-three-collaboration-remote-20260909/local-validation.md"]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": ["../ui-ux-phase-three-complete-20260909/local-validation.md"]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": ["../ui-ux-phase-three-toolkit-20260909/browser-certification.json", "../ui-ux-phase-three-collaboration-20260909/browser-certification.json"]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": ["../ui-ux-phase-three-foundation-20260909/browser-certification.json", "../brain-insights-module-gating-20260909/browser-diagnosis.md"]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../apps/web/test/certify-ui-ux-phase-three-accessibility-local.mjs",
+    "evidence": ["../ui-ux-phase-three-accessibility-20260909/browser-certification.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../apps/web/test/certify-ui-ux-phase-three-toolkit-local.mjs",
+    "evidence": ["../ui-ux-phase-three-toolkit-20260909/browser-certification.json", "../ui-ux-phase-three-collaboration-remote-20260909/api-certification.json", "../ui-ux-phase-three-analytics-20260909/api-certification.json"]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Solicitante autorizado de APEXOS en tarea Codex",
+    "approved_at": "2026-09-09T13:20:00-05:00",
+    "main_release": "not_authorized"
+  }
+}

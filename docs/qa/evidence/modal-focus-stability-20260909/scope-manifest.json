@@ -1,0 +1,77 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "modal-focus-stability-to-develop-20260909",
+  "change_intent": {
+    "summary": "Evitar que los campos de texto pierdan el foco al escribir dentro de los modales compartidos del frontend.",
+    "modules": [
+      "web-ui",
+      "modal-accessibility",
+      "purchases-ui",
+      "promotion-governance"
+    ]
+  },
+  "base_commits": {
+    "develop": "843a5a7868cd3fd97ae58233d81f3d9b2f8032e6"
+  },
+  "certified_commit": "491196622e9166d0f883cd23bc9d0ae58fb56bbd",
+  "certification_status": "local_passed_qa_pending",
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/ModalFrame.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/certify-supplier-create-button-visible-local.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/modal-focus-stability.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "docs/qa/evidence/supplier-create-button-visibility-20260909/browser-certification.json"
+    },
+    {
+      "status": "M",
+      "file": "docs/qa/evidence/supplier-create-button-visibility-20260909/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/modal-focus-stability-20260909/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/modal-focus-stability-20260909/scope-manifest.json"
+    }
+  ],
+  "allowed_paths": [
+    "apps/web/components/ui/ModalFrame.tsx",
+    "apps/web/test/certify-supplier-create-button-visible-local.mjs",
+    "apps/web/test/modal-focus-stability.test.mjs",
+    "docs/qa/evidence/supplier-create-button-visibility-20260909/browser-certification.json",
+    "docs/qa/evidence/supplier-create-button-visibility-20260909/local-validation.md",
+    "docs/qa/evidence/modal-focus-stability-20260909/preqa-approval-evidence.json",
+    "docs/qa/evidence/modal-focus-stability-20260909/scope-manifest.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "modal_text_input_focus_stability",
+      "status": "passed",
+      "evidence": [
+        "../supplier-create-button-visibility-20260909/browser-certification.json",
+        "../supplier-create-button-visibility-20260909/local-validation.md",
+        "../../../../apps/web/test/modal-focus-stability.test.mjs"
+      ]
+    },
+    {
+      "name": "supplier_create_action_visibility_and_dialog",
+      "status": "passed",
+      "evidence": [
+        "../supplier-create-button-visibility-20260909/browser-certification.json",
+        "../supplier-create-button-visibility-20260909/local-validation.md"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "certification": "ui-ux-phase-three-foundation-local",
+  "environment": "LOCAL",
+  "baseUrl": "http://127.0.0.1:3001",
+  "generatedAt": "2026-09-09T15:52:08.628Z",
+  "status": "passed",
+  "checks": [
+    {
+      "name": "skip_link_first_focus",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "skip_link_targets_main",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "palette_semantics",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "palette_focus_return",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "page_transition_active",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "reduced_motion_disables_transition",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "route_announced",
+      "passed": true,
+      "detail": {}
+    }
+  ]
+}
