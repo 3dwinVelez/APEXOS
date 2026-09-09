@@ -1,16 +1,17 @@
 "use client";
 
-import { Bookmark, Check, Moon, Settings2, Star, Sun, Trash2 } from "lucide-react";
+import { Accessibility, Bookmark, Check, Moon, Settings2, Star, Sun, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type Density = "comfortable" | "compact";
 type FontScale = "small" | "medium" | "large";
+type Contrast = "standard" | "high";
 type SavedPlace = { path: string; label: string };
-type Preferences = { density: Density; fontScale: FontScale; favorites: SavedPlace[]; views: SavedPlace[] };
+type Preferences = { density: Density; fontScale: FontScale; contrast: Contrast; reducedMotion: boolean; favorites: SavedPlace[]; views: SavedPlace[] };
 
-const defaults: Preferences = { density: "comfortable", fontScale: "medium", favorites: [], views: [] };
+const defaults: Preferences = { density: "comfortable", fontScale: "medium", contrast: "standard", reducedMotion: false, favorites: [], views: [] };
 const storagePrefix = "apex_experience_v1";
 
 function pageLabel(pathname: string) {
@@ -26,6 +27,8 @@ function storageKey() {
 function applyPreferences(preferences: Preferences) {
   document.documentElement.dataset.density = preferences.density;
   document.documentElement.dataset.fontScale = preferences.fontScale;
+  document.documentElement.dataset.contrast = preferences.contrast;
+  document.documentElement.dataset.reducedMotion = preferences.reducedMotion ? "true" : "false";
 }
 
 export function ExperiencePreferences() {
@@ -78,6 +81,7 @@ export function ExperiencePreferences() {
         <fieldset><legend className="mb-2 text-xs font-semibold text-content-strong">Apariencia</legend><button className="apex-interactive flex h-10 w-full items-center justify-between rounded-control border border-line px-3 text-xs font-semibold" onClick={toggleTheme} type="button"><span className="flex items-center gap-2">{theme === "dark" ? <Moon size={15} /> : <Sun size={15} />}{theme === "dark" ? "Tema oscuro" : "Tema claro"}</span><span className="text-content-muted">Cambiar</span></button></fieldset>
         <fieldset><legend className="mb-2 text-xs font-semibold text-content-strong">Densidad</legend><div className="grid grid-cols-2 gap-2">{(["comfortable", "compact"] as Density[]).map((value) => <button aria-pressed={preferences.density === value} className={`h-10 rounded-control border px-2 text-xs font-semibold ${preferences.density === value ? "border-apex bg-apex/10 text-apex" : "border-line"}`} key={value} onClick={() => persist({ ...preferences, density: value })} type="button">{value === "comfortable" ? "Cómoda" : "Compacta"}</button>)}</div></fieldset>
         <fieldset><legend className="mb-2 text-xs font-semibold text-content-strong">Tamaño de texto</legend><div className="grid grid-cols-3 gap-2">{(["small", "medium", "large"] as FontScale[]).map((value) => <button aria-pressed={preferences.fontScale === value} className={`h-10 rounded-control border px-2 text-xs font-semibold ${preferences.fontScale === value ? "border-apex bg-apex/10 text-apex" : "border-line"}`} key={value} onClick={() => persist({ ...preferences, fontScale: value })} type="button">{{ small: "Pequeño", medium: "Medio", large: "Grande" }[value]}</button>)}</div></fieldset>
+        <fieldset><legend className="mb-2 flex items-center gap-2 text-xs font-semibold text-content-strong"><Accessibility size={14} />Accesibilidad</legend><div className="grid grid-cols-2 gap-2"><button aria-pressed={preferences.contrast === "high"} className={`min-h-11 rounded-control border px-2 text-xs font-semibold ${preferences.contrast === "high" ? "border-apex bg-apex/10 text-apex" : "border-line"}`} onClick={() => persist({ ...preferences, contrast: preferences.contrast === "high" ? "standard" : "high" })} type="button">Alto contraste</button><button aria-pressed={preferences.reducedMotion} className={`min-h-11 rounded-control border px-2 text-xs font-semibold ${preferences.reducedMotion ? "border-apex bg-apex/10 text-apex" : "border-line"}`} onClick={() => persist({ ...preferences, reducedMotion: !preferences.reducedMotion })} type="button">Reducir movimiento</button></div><p className="mt-2 text-xs text-content-muted">Refuerza contraste, enlaces, foco y animaciones sin cambiar tus datos.</p></fieldset>
         <div className="grid grid-cols-2 gap-2"><button aria-pressed={favorite} className="apex-interactive flex min-h-11 items-center justify-center gap-2 rounded-control border border-line px-2 text-xs font-semibold" onClick={toggleFavorite} type="button"><Star fill={favorite ? "currentColor" : "none"} size={15} />{favorite ? "En favoritos" : "Favorito"}</button><button aria-pressed={viewSaved} className="apex-interactive flex min-h-11 items-center justify-center gap-2 rounded-control border border-line px-2 text-xs font-semibold" onClick={toggleView} type="button"><Bookmark fill={viewSaved ? "currentColor" : "none"} size={15} />{viewSaved ? "Vista guardada" : "Guardar vista"}</button></div>
       </div>
 

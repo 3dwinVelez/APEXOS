@@ -1,0 +1,128 @@
+{
+  "certification": "ui-ux-phase-three-accessibility-local",
+  "environment": "LOCAL",
+  "baseUrl": "http://127.0.0.1:3001",
+  "generatedAt": "2026-09-09T17:54:49.268Z",
+  "status": "passed",
+  "checks": [
+    {
+      "name": "accessible_preferences_applied",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "landmarks_productos",
+      "passed": true,
+      "detail": {
+        "h1": 1,
+        "main": 1,
+        "skip": 1,
+        "unnamedButtons": 0,
+        "horizontalOverflow": false,
+        "contrast": "high",
+        "reducedMotion": "true"
+      }
+    },
+    {
+      "name": "labels_and_layout_productos",
+      "passed": true,
+      "detail": {
+        "h1": 1,
+        "main": 1,
+        "skip": 1,
+        "unnamedButtons": 0,
+        "horizontalOverflow": false,
+        "contrast": "high",
+        "reducedMotion": "true"
+      }
+    },
+    {
+      "name": "landmarks_compras",
+      "passed": true,
+      "detail": {
+        "h1": 1,
+        "main": 1,
+        "skip": 1,
+        "unnamedButtons": 0,
+        "horizontalOverflow": false,
+        "contrast": "high",
+        "reducedMotion": "true"
+      }
+    },
+    {
+      "name": "labels_and_layout_compras",
+      "passed": true,
+      "detail": {
+        "h1": 1,
+        "main": 1,
+        "skip": 1,
+        "unnamedButtons": 0,
+        "horizontalOverflow": false,
+        "contrast": "high",
+        "reducedMotion": "true"
+      }
+    },
+    {
+      "name": "landmarks_ventas",
+      "passed": true,
+      "detail": {
+        "h1": 1,
+        "main": 1,
+        "skip": 1,
+        "unnamedButtons": 0,
+        "horizontalOverflow": false,
+        "contrast": "high",
+        "reducedMotion": "true"
+      }
+    },
+    {
+      "name": "labels_and_layout_ventas",
+      "passed": true,
+      "detail": {
+        "h1": 1,
+        "main": 1,
+        "skip": 1,
+        "unnamedButtons": 0,
+        "horizontalOverflow": false,
+        "contrast": "high",
+        "reducedMotion": "true"
+      }
+    },
+    {
+      "name": "landmarks_apex-heart",
+      "passed": true,
+      "detail": {
+        "h1": 1,
+        "main": 1,
+        "skip": 1,
+        "unnamedButtons": 0,
+        "horizontalOverflow": false,
+        "contrast": "high",
+        "reducedMotion": "true"
+      }
+    },
+    {
+      "name": "labels_and_layout_apex-heart",
+      "passed": true,
+      "detail": {
+        "h1": 1,
+        "main": 1,
+        "skip": 1,
+        "unnamedButtons": 0,
+        "horizontalOverflow": false,
+        "contrast": "high",
+        "reducedMotion": "true"
+      }
+    },
+    {
+      "name": "keyboard_shortcut_focuses_palette",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "escape_restores_trigger_focus",
+      "passed": true,
+      "detail": {}
+    }
+  ]
+}

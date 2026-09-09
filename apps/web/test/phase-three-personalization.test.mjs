@@ -14,6 +14,8 @@ test("las preferencias se aíslan por usuario y persisten densidad y fuente", ()
   assert.match(source, /user_email/);
   assert.match(source, /dataset\.density/);
   assert.match(source, /dataset\.fontScale/);
+  assert.match(source, /dataset\.contrast/);
+  assert.match(source, /dataset\.reducedMotion/);
   assert.match(source, /localStorage\.setItem\(storageKey\(\)/);
 });
 
@@ -31,6 +33,8 @@ test("densidad y escala tipográfica tienen reglas globales", () => {
   assert.match(styles, /data-font-scale="small"/);
   assert.match(styles, /data-font-scale="large"/);
   assert.match(styles, /data-density="compact"/);
+  assert.match(styles, /data-contrast="high"/);
+  assert.match(styles, /data-reduced-motion="true"/);
 });
 
 test("el panel está disponible globalmente en el dashboard", () => {

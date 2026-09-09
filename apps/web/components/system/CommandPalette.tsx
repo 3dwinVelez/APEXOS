@@ -61,7 +61,7 @@ export function CommandPalette() {
   };
 
   return <>
-    <button aria-keyshortcuts="Control+K Meta+K" className="apex-interactive inline-flex h-10 min-w-10 items-center justify-center gap-2 rounded-control border border-line bg-surface px-3 text-xs font-semibold text-content-muted hover:text-content-strong" onClick={() => setOpen(true)} ref={trigger} type="button"><Command size={15} /><span className="hidden lg:inline">{t("commands")}</span><kbd className="hidden rounded border border-line px-1.5 py-0.5 text-[10px] xl:inline">Ctrl K</kbd></button>
+    <button aria-keyshortcuts="Control+K Meta+K" aria-label={t("commands")} className="apex-interactive inline-flex h-10 min-w-10 items-center justify-center gap-2 rounded-control border border-line bg-surface px-3 text-xs font-semibold text-content-muted hover:text-content-strong" onClick={() => setOpen(true)} ref={trigger} type="button"><Command size={15} /><span className="hidden lg:inline">{t("commands")}</span><kbd className="hidden rounded border border-line px-1.5 py-0.5 text-[10px] xl:inline">Ctrl K</kbd></button>
     {open ? <div aria-labelledby="apex-command-title" aria-modal="true" className="fixed inset-0 z-[90] flex items-start justify-center bg-neutral-950/45 px-3 pt-[12vh] backdrop-blur-sm" onMouseDown={(event) => { if (event.currentTarget === event.target) close(); }} role="dialog">
       <section className="apex-dialog-enter w-full max-w-2xl overflow-hidden rounded-card border border-line bg-surface shadow-overlay">
         <h2 className="sr-only" id="apex-command-title">{t("commands")}</h2>
