@@ -54,7 +54,7 @@ Leyenda: `[x]` terminado y validado · `[-]` en curso · `[ ]` pendiente · `[!]
 - [-] Accesibilidad AAA y navegación completa por teclado: base global terminada; auditoría profunda por módulo en curso.
 - [x] Temas, densidad, tamaño de fuente, favoritos y vistas guardadas.
 - [-] Colaboración y presencia en tiempo real: presencia, rutas y edición concurrente entre pestañas terminadas; transporte remoto entre dispositivos pendiente.
-- [ ] Analytics, drill-down y reportes programados.
+- [-] Analytics, drill-down y reportes programados: navegación profunda por URL y producto terminada; programación persistente pendiente.
 - [ ] Objetivos de rendimiento percibido y virtualización.
 - [ ] Onboarding interactivo y checklist de configuración.
 - [ ] Experiencia tablet/móvil y PWA.
