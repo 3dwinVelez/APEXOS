@@ -69,9 +69,10 @@ test("internacionalización permite ES EN PT y persiste preferencia", () => {
   assert.match(switcher, /PT/);
 });
 
-test("DashboardChrome integra todas las capacidades de Fase 2", () => {
+test("DashboardChrome integra las capacidades globales sin insertar señales sobre todos los módulos", () => {
   const source = read("components/shell/DashboardChrome.tsx");
-  for (const component of ["CommandPalette", "ContextBreadcrumbs", "ApexIntelligencePulse", "TraceabilityCenter", "OfflineFirstStatus", "LocaleSwitcher"]) {
+  for (const component of ["CommandPalette", "ContextBreadcrumbs", "TraceabilityCenter", "OfflineFirstStatus", "LocaleSwitcher"]) {
     assert.match(source, new RegExp(`<${component}`), `${component} debe estar montado globalmente`);
   }
+  assert.doesNotMatch(source, /ApexIntelligencePulse/, "la señal inteligente no debe mostrarse globalmente en los módulos");
 });
