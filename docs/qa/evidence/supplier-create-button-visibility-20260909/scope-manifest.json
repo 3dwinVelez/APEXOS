@@ -1,0 +1,69 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "supplier-create-button-visibility-to-develop-20260909",
+  "change_intent": {
+    "summary": "Restaurar el fondo visible de botones primarios, incluido Nuevo proveedor, corrigiendo el uso de tokens CSS RGB.",
+    "modules": [
+      "purchases-ui",
+      "design-system",
+      "promotion-governance"
+    ]
+  },
+  "base_commits": {
+    "develop": "babdce333f47c6cc231fb831f5ccafdd5bc26c0e"
+  },
+  "certified_commit": "9bcc9dc",
+  "certification_status": "local_passed_qa_pending",
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/web/app/globals.css"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/certify-supplier-create-button-visible-local.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/supplier-create-button-visibility.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/supplier-create-button-visibility-20260909/browser-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/supplier-create-button-visibility-20260909/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/supplier-create-button-visibility-20260909/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/supplier-create-button-visibility-20260909/scope-manifest.json"
+    }
+  ],
+  "allowed_paths": [
+    "apps/web/app/globals.css",
+    "apps/web/test/certify-supplier-create-button-visible-local.mjs",
+    "apps/web/test/supplier-create-button-visibility.test.mjs",
+    "docs/qa/evidence/supplier-create-button-visibility-20260909/browser-certification.json",
+    "docs/qa/evidence/supplier-create-button-visibility-20260909/local-validation.md",
+    "docs/qa/evidence/supplier-create-button-visibility-20260909/preqa-approval-evidence.json",
+    "docs/qa/evidence/supplier-create-button-visibility-20260909/scope-manifest.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "supplier_create_action_visibility_and_dialog",
+      "status": "passed",
+      "evidence": [
+        "browser-certification.json",
+        "local-validation.md",
+        "../../../../apps/web/test/supplier-create-button-visibility.test.mjs"
+      ]
+    }
+  ]
+}
+
