@@ -1,0 +1,206 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "ui-ux-phases-zero-one-preqa-20260908",
+  "change_intent": {
+    "summary": "Cerrar las fases UI/UX 0 y 1 con accesibilidad, sistema de diseño, tablas, formularios, tabs y notificaciones.",
+    "modules": [
+      "inventory-ui",
+      "purchases-ui",
+      "sales-ui",
+      "design-system",
+      "notification-system",
+      "promotion-governance"
+    ]
+  },
+  "base_commits": {
+    "develop": "c7adec2be8c5ff713344d0ccf67d7c7007f4cef6"
+  },
+  "certified_commit": "e121028faec53f6f9e450eea9e1ba6c5804f574a",
+  "certification_status": "local_passed_qa_pending",
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/ordenes/nueva/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/productos/nuevo/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/productos/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/stock/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/ventas/ordenes/nueva/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/globals.css"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/compras-nav.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/inventory-nav.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/DashboardChrome.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/system/NotificationCenter.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/ToastCenter.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/ModalFrame.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/ui/avatar.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/button.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/card.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/data-table.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/ui/drawer.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/feedback.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/form-controls.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/ui/layout.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/ui/tabs.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ventas-nav.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/tailwind.config.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/certify-ui-ux-phase-one-local.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/login-phase-zero-ux.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/phase-one-design-system.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "docs/design/APEX_OS_UI_UX_ROADMAP_CHECKLIST.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-one-20260908/browser-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-one-20260908/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-zero-20260908/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-one-20260908/preqa-scope-manifest.json"
+    }
+  ],
+  "allowed_paths": [
+    "apps/web/app/dashboard/compras/ordenes/nueva/page.tsx",
+    "apps/web/app/dashboard/inventario/productos/nuevo/page.tsx",
+    "apps/web/app/dashboard/inventario/productos/page.tsx",
+    "apps/web/app/dashboard/inventario/stock/page.tsx",
+    "apps/web/app/dashboard/ventas/ordenes/nueva/page.tsx",
+    "apps/web/app/globals.css",
+    "apps/web/components/compras-nav.tsx",
+    "apps/web/components/inventory-nav.tsx",
+    "apps/web/components/shell/DashboardChrome.tsx",
+    "apps/web/components/system/NotificationCenter.tsx",
+    "apps/web/components/system/ToastCenter.tsx",
+    "apps/web/components/ui/ModalFrame.tsx",
+    "apps/web/components/ui/avatar.tsx",
+    "apps/web/components/ui/button.tsx",
+    "apps/web/components/ui/card.tsx",
+    "apps/web/components/ui/data-table.tsx",
+    "apps/web/components/ui/drawer.tsx",
+    "apps/web/components/ui/feedback.tsx",
+    "apps/web/components/ui/form-controls.tsx",
+    "apps/web/components/ui/layout.tsx",
+    "apps/web/components/ui/tabs.tsx",
+    "apps/web/components/ventas-nav.tsx",
+    "apps/web/tailwind.config.ts",
+    "apps/web/test/certify-ui-ux-phase-one-local.mjs",
+    "apps/web/test/login-phase-zero-ux.test.mjs",
+    "apps/web/test/phase-one-design-system.test.mjs",
+    "docs/design/APEX_OS_UI_UX_ROADMAP_CHECKLIST.md",
+    "docs/qa/evidence/ui-ux-phase-one-20260908/browser-certification.json",
+    "docs/qa/evidence/ui-ux-phase-one-20260908/local-validation.md",
+    "docs/qa/evidence/ui-ux-phase-zero-20260908/local-validation.md",
+    "docs/qa/evidence/ui-ux-phase-one-20260908/preqa-scope-manifest.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "phase_zero_accessibility_and_feedback",
+      "status": "passed",
+      "evidence": [
+        "../../../../apps/web/test/login-phase-zero-ux.test.mjs",
+        "local-validation.md"
+      ]
+    },
+    {
+      "name": "phase_one_design_system_and_data_table",
+      "status": "passed",
+      "evidence": [
+        "../../../../apps/web/test/phase-one-design-system.test.mjs",
+        "browser-certification.json"
+      ]
+    },
+    {
+      "name": "inventory_purchases_sales_responsive_flows",
+      "status": "passed",
+      "evidence": [
+        "../../../../apps/web/test/certify-ui-ux-phase-one-local.mjs",
+        "browser-certification.json"
+      ]
+    }
+  ]
+}
