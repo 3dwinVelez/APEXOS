@@ -35,3 +35,4 @@ test("el canal no transmite contenido de formularios y expira sesiones", () => {
 test("la presencia está disponible globalmente en el dashboard", () => {
   assert.match(read("components/shell/DashboardChrome.tsx"), /<CollaborationPresence \/>/);
 });
+test("la presencia remota autentica después del handshake y no expone tokens en URL", () => { const source = read("components/system/CollaborationPresence.tsx"); assert.match(source, /new WebSocket\(`\$\{remoteUrl\}\/collaboration\/live`\)/); assert.match(source, /type: "authenticate"/); assert.doesNotMatch(source, /collaboration\/live\?token/); });

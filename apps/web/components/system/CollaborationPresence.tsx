@@ -30,6 +30,7 @@ export function CollaborationPresence() {
   const [state, setState] = useState<PresenceState>("viewing");
   const [peers, setPeers] = useState<Record<string, Peer>>({});
   const channel = useRef<BroadcastChannel | null>(null);
+  const remote = useRef<WebSocket | null>(null);
   const tabId = useRef("");
 
   useEffect(() => {
@@ -42,6 +43,8 @@ export function CollaborationPresence() {
     const channelName = `apex-collaboration:${identity.company}`;
     channel.current?.close();
     channel.current = typeof BroadcastChannel === "undefined" ? null : new BroadcastChannel(channelName);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+    const remoteUrl = (process.env.NEXT_PUBLIC_WS_URL || apiUrl.replace(/^http/, "ws")).replace(/\/$/, "");
 
     const receive = (message: PresenceMessage) => {
       if (!message?.tabId || message.tabId === tabId.current || message.company !== identity.company) return;
@@ -55,6 +58,7 @@ export function CollaborationPresence() {
     const broadcast = (nextState = state, type: PresenceMessage["type"] = "presence") => {
       const message: PresenceMessage = { type, tabId: tabId.current, ...identity, path: pathname, state: nextState, at: Date.now() };
       channel.current?.postMessage(message);
+      if (remote.current?.readyState === WebSocket.OPEN) remote.current.send(JSON.stringify(message));
       localStorage.setItem(signalKey, JSON.stringify(message));
     };
     const onStorage = (event: StorageEvent) => {
@@ -71,6 +75,11 @@ export function CollaborationPresence() {
     const cleanup = window.setInterval(() => setPeers((current) => Object.fromEntries(Object.entries(current).filter(([, peer]) => Date.now() - peer.at < staleMs))), heartbeatMs);
     const heartbeat = window.setInterval(() => broadcast(), heartbeatMs);
     channel.current?.addEventListener("message", (event) => receive(event.data as PresenceMessage));
+    if (remoteUrl) {
+      remote.current = new WebSocket(`${remoteUrl}/collaboration/live`);
+      remote.current.addEventListener("open", () => remote.current?.send(JSON.stringify({ type: "authenticate", token: localStorage.getItem("token") || "", company_id: identity.company })));
+      remote.current.addEventListener("message", (event) => { try { const value = JSON.parse(String(event.data)); if (value.type !== "authenticated") receive(value as PresenceMessage); } catch { /* Ignorar mensajes remotos inválidos. */ } });
+    }
     window.addEventListener("storage", onStorage);
     document.addEventListener("focusin", onFocus);
     document.addEventListener("focusout", onBlur);
@@ -86,6 +95,7 @@ export function CollaborationPresence() {
       document.removeEventListener("focusin", onFocus);
       document.removeEventListener("focusout", onBlur);
       channel.current?.close();
+      remote.current?.close();
     };
   }, [pathname, state]);
 
