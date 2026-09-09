@@ -4,7 +4,7 @@ import { BrainPanel } from "@/components/brain/BrainPanel";
 import { api } from "@/lib/api";
 import { loadModuleAccess, ModuleAccessState } from "@/lib/moduleAccess";
 import { MODULES } from "@/lib/modules";
-import { Activity, AlertTriangle, ArrowRight, Boxes, CheckCircle2, ClipboardCheck, LockKeyhole, MapPinned, ShieldCheck, Truck, Users, Wrench } from "lucide-react";
+import { Activity, AlertTriangle, ArrowRight, Boxes, CheckCircle2, ClipboardCheck, Compass, LockKeyhole, MapPinned, ShieldCheck, Truck, Users, Wrench } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -76,6 +76,15 @@ const statusTones = [
   "bg-rose-600"
 ];
 
+function dashboardRoleProfile(role: string) {
+  const normalized = role.toLocaleLowerCase();
+  if (/admin|owner|super/.test(normalized)) return { label: "Dirección y administración", focus: "Control integral, excepciones y decisiones transversales", modules: ["reportes", "administracion", "inventario"] };
+  if (/comercial|venta|asesor/.test(normalized)) return { label: "Gestión comercial", focus: "Clientes, oportunidades, pedidos y cumplimiento", modules: ["gestion-comercial", "ventas", "cxc"] };
+  if (/tecn|oper|servicio/.test(normalized)) return { label: "Operación de campo", focus: "Ejecución, evidencias, rutas y novedades", modules: ["servicios", "transporte", "talento-humano"] };
+  if (/contab|finan|tesor/.test(normalized)) return { label: "Gestión financiera", focus: "Caja, cartera, contabilidad y alertas de cierre", modules: ["contabilidad", "tesoreria", "cxc"] };
+  return { label: "Mi operación", focus: "Actividad prioritaria según tus permisos", modules: ["inventario", "compras", "ventas"] };
+}
+
 function buildServiceTrend(orders: ServicesSummary["data"]) {
   const formatter = new Intl.DateTimeFormat("es-CO", { weekday: "short" });
   return Array.from({ length: 7 }, (_, index) => {
@@ -144,8 +153,10 @@ export default function DashboardPage() {
   const [dataLoading, setDataLoading] = useState(true);
   const [sourceErrors, setSourceErrors] = useState<string[]>([]);
   const [accessError, setAccessError] = useState(false);
+  const [roleName, setRoleName] = useState("");
 
   useEffect(() => {
+    setRoleName(localStorage.getItem("role_name") || localStorage.getItem("apexos_company_role") || "Usuario");
     if (localStorage.getItem("role_name")?.toLowerCase() === "tecnico") {
       router.replace("/dashboard/servicios");
       return;
@@ -229,6 +240,8 @@ export default function DashboardPage() {
   const activeServices = summary.services.pending + summary.services.in_progress;
   const supportedModules = activeModules.filter((module) => ["servicios", "talento-humano", "transporte"].includes(module.slug));
   const visibleSourceErrors = accessError ? ["Acceso a módulos", ...sourceErrors] : sourceErrors;
+  const roleProfile = dashboardRoleProfile(roleName);
+  const roleModules = roleProfile.modules.map((slug) => MODULES.find((module) => module.slug === slug)).filter((module) => module && enabled(module.slug)).slice(0, 3);
 
   const headlineMetrics = [
     { module: "servicios", label: "Servicios abiertos", value: activeServices, context: `${summary.servicesToday} programados hoy`, icon: Wrench, color: moduleColors.servicios },
@@ -297,6 +310,10 @@ export default function DashboardPage() {
 
   return (
     <div className="apex-workspace-shell space-y-6">
+      <section className="flex flex-col gap-4 rounded-card border border-apex/20 bg-gradient-to-r from-apex/10 via-surface to-surface p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-start gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-apex text-white"><Compass size={19} /></span><div><p className="text-xs font-semibold uppercase tracking-wide text-apex">Panel contextual · {roleName || "Usuario"}</p><h2 className="text-lg font-semibold text-content-strong">{roleProfile.label}</h2><p className="text-sm text-content-muted">{roleProfile.focus}</p></div></div>
+        <div className="flex gap-2 overflow-x-auto">{roleModules.map((module) => { const Icon = module!.icon; return <Link className="inline-flex h-10 shrink-0 items-center gap-2 rounded-control border border-line bg-surface px-3 text-xs font-semibold hover:border-apex" href={`/dashboard/${module!.slug}`} key={module!.slug}><Icon size={15} />{module!.name}</Link>; })}</div>
+      </section>
       <section className="border-b border-line pb-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-[22px] font-semibold">Dashboard</h1>

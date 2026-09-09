@@ -1,6 +1,6 @@
 # Seguimiento UI/UX APEX OS
 
-Actualizado: 2026-09-08
+Actualizado: 2026-09-09
 Rama de implementación: `desarrollo`  
 Flujo autorizado: `desarrollo -> develop -> main`
 
@@ -40,13 +40,13 @@ Leyenda: `[x]` terminado y validado · `[-]` en curso · `[ ]` pendiente · `[!]
 
 ## Fase 2 — Experiencia inteligente
 
-- [ ] Command palette global y acciones rápidas.
-- [ ] Dashboard contextual por rol.
-- [ ] APEX AI operativo: anomalías, sugerencias y alertas predictivas.
-- [ ] Atajos de navegación y breadcrumbs avanzados.
-- [ ] Trazabilidad universal entre módulos.
-- [ ] Operaciones críticas offline-first.
-- [ ] Internacionalización ES/EN/PT.
+- [x] Command palette global y acciones rápidas.
+- [x] Dashboard contextual por rol.
+- [x] APEX AI operativo: anomalías, sugerencias y alertas predictivas.
+- [x] Atajos de navegación y breadcrumbs avanzados.
+- [x] Trazabilidad universal entre módulos.
+- [x] Operaciones críticas offline-first.
+- [x] Internacionalización ES/EN/PT.
 
 ## Fase 3 — World-class
 
@@ -78,3 +78,4 @@ Leyenda: `[x]` terminado y validado · `[-]` en curso · `[ ]` pendiente · `[!]
 | 2026-09-08 | Cierre integral de Fase 0 | `docs/qa/evidence/ui-ux-phase-zero-20260908/local-validation.md`; auditoría manual de 11 rutas en escritorio y móvil (390 px), Stock corregido, 17/17 pruebas UX, typecheck, lint y build aprobados |
 | 2026-09-08 | Sistema de diseño y cierre técnico de Fase 1 | `docs/qa/evidence/ui-ux-phase-one-20260908/local-validation.md`; tokens y componentes compartidos, DataTable avanzado en Productos, formularios por pasos/onBlur, tabs adaptables y centro de notificaciones; 23/23 pruebas, typecheck y build aprobados |
 | 2026-09-08 | Corrección de superposición entre ayuda APEX AI y acciones de formulario | `docs/qa/evidence/ui-ux-guide-overlap-20260908/local-validation.md`; clic físico en Continuar sin reapertura de guía, 13/13 certificación navegador, 23/23 pruebas, typecheck, lint y build aprobados; QA pendiente |
+| 2026-09-09 | Cierre integral de Fase 2 | `docs/qa/evidence/ui-ux-phase-two-20260908/local-validation.md`; command palette, dashboard por rol, pulso APEX AI, breadcrumbs, trazabilidad, estado offline e idiomas ES/EN/PT; 14/14 certificación navegador, 30/30 contratos UX, 49/49 pruebas offline, typecheck, lint sin errores y build de 100 rutas aprobados |

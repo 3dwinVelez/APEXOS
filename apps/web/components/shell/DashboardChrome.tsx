@@ -1,13 +1,19 @@
 "use client";
 
 import { ApexAiHeader } from "@/components/brain/ApexAiHeader";
+import { ApexIntelligencePulse } from "@/components/brain/ApexIntelligencePulse";
 import { AiExperienceLayer } from "@/components/brain/AiExperienceLayer";
+import { ContextBreadcrumbs } from "@/components/shell/ContextBreadcrumbs";
 import { MobileNav } from "@/components/shell/MobileNav";
 import { RouteAccessGuard } from "@/components/shell/RouteAccessGuard";
 import { Sidebar } from "@/components/shell/Sidebar";
 import { TechnicianWorkspaceHeader } from "@/components/shell/TechnicianWorkspaceHeader";
 import { UserSessionBadge } from "@/components/shell/UserSessionBadge";
 import { NotificationCenter } from "@/components/system/NotificationCenter";
+import { CommandPalette } from "@/components/system/CommandPalette";
+import { LocaleSwitcher } from "@/components/system/LocaleSwitcher";
+import { OfflineFirstStatus } from "@/components/system/OfflineFirstStatus";
+import { TraceabilityCenter } from "@/components/system/TraceabilityCenter";
 import { isMarkingOnlyAccess, MARKING_ONLY_PROFILE } from "@/lib/accessProfile";
 import { Clock3 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -53,9 +59,11 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
     <div className="apex-app-gradient min-h-screen md:flex">
       <div className="technician-hide"><Sidebar /></div>
       <main className="min-w-0 flex-1 overflow-x-hidden p-3 pb-24 sm:p-4 md:p-6 md:pb-6">
-        <div className="mb-3 flex justify-end"><NotificationCenter /></div>
+        <div className="mb-3 flex flex-wrap justify-end gap-2"><OfflineFirstStatus /><LocaleSwitcher /><TraceabilityCenter /><CommandPalette /><NotificationCenter /></div>
+        <ContextBreadcrumbs />
         <TechnicianWorkspaceHeader />
         <ApexAiHeader />
+        <ApexIntelligencePulse />
         <RouteAccessGuard>{children}</RouteAccessGuard>
       </main>
       <MobileNav />
