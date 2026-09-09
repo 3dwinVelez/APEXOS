@@ -4203,6 +4203,11 @@ export function acknowledgeApexHeartAlert(id: number) {
   return api(`/api/v1/apex-heart/alerts/${id}/acknowledge`, { method: "POST" });
 }
 
+export type ApexHeartReportSchedule = { id: number; name: string; view: string; frequency: "weekly" | "monthly"; weekday?: number | null; month_day?: number | null; send_hour: number; timezone: string; recipients: string[]; enabled: boolean; next_run_at: string; last_run_at?: string | null };
+export function listApexHeartReportSchedules() { return api<ApexHeartReportSchedule[]>("/api/v1/apex-heart/report-schedules"); }
+export function saveApexHeartReportSchedule(input: Omit<ApexHeartReportSchedule, "id" | "next_run_at" | "last_run_at">) { return api<ApexHeartReportSchedule>("/api/v1/apex-heart/report-schedules", { method: "POST", body: JSON.stringify(input) }); }
+export function deleteApexHeartReportSchedule(id: number) { return api(`/api/v1/apex-heart/report-schedules/${id}`, { method: "DELETE" }); }
+
 async function apiInternal<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
   assertActiveSession();
   await keepSessionAlive();

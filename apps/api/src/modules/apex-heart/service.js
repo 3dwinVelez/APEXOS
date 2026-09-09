@@ -276,4 +276,48 @@ async function acknowledgeAlert(tenantId, userId, id) {
   });
 }
 
-module.exports = { DEFAULT_CONFIG, DEFAULT_RULES, classifyProducts, evaluateRules, buildAging, buildDashboard, updateConfig, saveRule, evaluateAndPersistAlerts, acknowledgeAlert, captureInventorySnapshot, refreshAllTenants };
+const REPORT_VIEWS = new Set(["pulse", "abc", "purchases", "inventory", "cash", "invoices", "alerts"]);
+function nextReportRun(data, from = new Date()) {
+  const frequency = data.frequency === "monthly" ? "monthly" : "weekly";
+  const candidate = new Date(from); candidate.setUTCMinutes(0, 0, 0); candidate.setUTCHours(Math.max(0, Math.min(23, Number(data.send_hour) || 8)));
+  if (frequency === "weekly") {
+    const weekday = Math.max(0, Math.min(6, Number(data.weekday) || 1));
+    candidate.setUTCDate(candidate.getUTCDate() + ((weekday - candidate.getUTCDay() + 7) % 7));
+    if (candidate <= from) candidate.setUTCDate(candidate.getUTCDate() + 7);
+  } else {
+    const day = Math.max(1, Math.min(28, Number(data.month_day) || 1));
+    candidate.setUTCDate(day);
+    if (candidate <= from) candidate.setUTCMonth(candidate.getUTCMonth() + 1, day);
+  }
+  return candidate;
+}
+function cleanReportSchedule(data) {
+  const recipients = [...new Set((Array.isArray(data.recipients) ? data.recipients : String(data.recipients || "").split(",")).map((value) => String(value).trim().toLowerCase()).filter((value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)))];
+  if (!String(data.name || "").trim()) throw Object.assign(new Error("El reporte requiere nombre."), { statusCode: 400 });
+  if (!recipients.length) throw Object.assign(new Error("Agrega al menos un correo válido."), { statusCode: 400 });
+  const frequency = data.frequency === "monthly" ? "monthly" : "weekly";
+  return { name: String(data.name).trim().slice(0, 100), view: REPORT_VIEWS.has(data.view) ? data.view : "pulse", frequency, weekday: frequency === "weekly" ? Math.max(0, Math.min(6, Number(data.weekday) || 1)) : null, month_day: frequency === "monthly" ? Math.max(1, Math.min(28, Number(data.month_day) || 1)) : null, send_hour: Math.max(0, Math.min(23, Number(data.send_hour) || 8)), timezone: String(data.timezone || "America/Bogota").slice(0, 80), recipients, enabled: data.enabled !== false };
+}
+async function listReportSchedules(tenantId) { return prisma.runWithTenant(tenantId, () => prisma.apexHeartReportSchedule.findMany({ where: { tenant_id: tenantId }, orderBy: { created_at: "desc" } })); }
+async function saveReportSchedule(tenantId, userId, data, id) {
+  const clean = cleanReportSchedule(data); const next_run_at = nextReportRun(clean);
+  return prisma.runWithTenant(tenantId, async () => {
+    if (!id) return prisma.apexHeartReportSchedule.create({ data: { ...clean, next_run_at, tenant_id: tenantId, created_by: userId || null } });
+    const current = await prisma.apexHeartReportSchedule.findFirst({ where: { id: Number(id), tenant_id: tenantId } });
+    if (!current) throw Object.assign(new Error("Programación no encontrada."), { statusCode: 404 });
+    return prisma.apexHeartReportSchedule.update({ where: { id: current.id }, data: { ...clean, next_run_at } });
+  });
+}
+async function deleteReportSchedule(tenantId, id) { return prisma.runWithTenant(tenantId, async () => { const result = await prisma.apexHeartReportSchedule.deleteMany({ where: { id: Number(id), tenant_id: tenantId } }); if (!result.count) throw Object.assign(new Error("Programación no encontrada."), { statusCode: 404 }); }); }
+async function runDueReportSchedules(at = new Date()) {
+  const due = await prisma.apexHeartReportSchedule.findMany({ where: { enabled: true, next_run_at: { lte: at } }, take: 100 });
+  for (const schedule of due) await prisma.runWithTenant(schedule.tenant_id, async () => {
+    const dashboard = await buildDashboard(schedule.tenant_id);
+    const metrics = dashboard.metrics;
+    await emailQueue.add("apex-heart-report", { tenant_id: schedule.tenant_id, to: schedule.recipients, subject: `[Apex Heart] ${schedule.name}`, text: `Ventas: ${round(metrics.revenue)}\nUtilidad: ${round(metrics.gross_profit)}\nMargen: ${round(metrics.gross_margin_pct)}%\nInventario: ${round(metrics.inventory_value)}\nCartera: ${round(metrics.receivable_balance)}`, html: `<h2>${schedule.name}</h2><p>Ventas: ${round(metrics.revenue)}</p><p>Utilidad: ${round(metrics.gross_profit)}</p><p>Margen: ${round(metrics.gross_margin_pct)}%</p>` }, { jobId: `apex-heart-report-${schedule.id}-${schedule.next_run_at.toISOString()}` });
+    await prisma.apexHeartReportSchedule.update({ where: { id: schedule.id }, data: { last_run_at: at, next_run_at: nextReportRun(schedule, at) } });
+  });
+  return { processed: due.length };
+}
+
+module.exports = { DEFAULT_CONFIG, DEFAULT_RULES, classifyProducts, evaluateRules, buildAging, buildDashboard, updateConfig, saveRule, evaluateAndPersistAlerts, acknowledgeAlert, captureInventorySnapshot, refreshAllTenants, nextReportRun, cleanReportSchedule, listReportSchedules, saveReportSchedule, deleteReportSchedule, runDueReportSchedules };

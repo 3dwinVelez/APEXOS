@@ -1,7 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 process.env.REDIS_DISABLED = "true";
-const { buildAging, classifyProducts, evaluateRules } = require("../src/modules/apex-heart/service");
+const { buildAging, classifyProducts, evaluateRules, cleanReportSchedule, nextReportRun } = require("../src/modules/apex-heart/service");
 
 test("Apex Heart clasifica productos por Pareto y calcula rentabilidad", () => {
   const item = (id, code, subtotal, cost) => ({ item_id: id, description: code, qty: 1, subtotal, cost_value: cost, item: { code, name: code, category: { name: "Categoría" } } });
@@ -11,6 +11,17 @@ test("Apex Heart clasifica productos por Pareto y calcula rentabilidad", () => {
   assert.equal(rows[0].gross_profit, 400);
   assert.equal(rows[0].gmroi, 2);
   assert.ok(rows[0].score > rows[2].score);
+});
+
+test("Apex Heart valida y calcula la siguiente entrega semanal", () => {
+  const clean = cleanReportSchedule({ name: "Pulso lunes", view: "abc", frequency: "weekly", weekday: 1, send_hour: 8, recipients: ["gerencia@apex.test", "gerencia@apex.test"] });
+  assert.deepEqual(clean.recipients, ["gerencia@apex.test"]);
+  assert.equal(clean.view, "abc");
+  assert.equal(nextReportRun(clean, new Date("2026-09-09T12:00:00Z")).toISOString(), "2026-09-14T08:00:00.000Z");
+});
+
+test("Apex Heart rechaza programaciones sin destinatarios válidos", () => {
+  assert.throws(() => cleanReportSchedule({ name: "Sin correo", recipients: ["incorrecto"] }), /correo válido/);
 });
 
 test("Apex Heart eleva alertas configurables por severidad", () => {
