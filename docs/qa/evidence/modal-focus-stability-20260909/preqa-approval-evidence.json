@@ -1,0 +1,63 @@
+{
+  "change_id": "modal-focus-stability-to-develop-20260909",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "491196622e9166d0f883cd23bc9d0ae58fb56bbd",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../supplier-create-button-visibility-20260909/browser-certification.json",
+        "../supplier-create-button-visibility-20260909/local-validation.md"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../supplier-create-button-visibility-20260909/browser-certification.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../supplier-create-button-visibility-20260909/local-validation.md"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../../../../apps/web/test/modal-focus-stability.test.mjs",
+        "../supplier-create-button-visibility-20260909/browser-certification.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../supplier-create-button-visibility-20260909/local-validation.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../apps/web/test/certify-supplier-create-button-visible-local.mjs",
+    "evidence": [
+      "../supplier-create-button-visibility-20260909/browser-certification.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../apps/web/test/certify-supplier-create-button-visible-local.mjs",
+    "evidence": [
+      "../supplier-create-button-visibility-20260909/browser-certification.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Solicitante autorizado de APEXOS en tarea Codex",
+    "approved_at": "2026-09-09T15:00:00-05:00",
+    "main_release": "not_authorized"
+  }
+}

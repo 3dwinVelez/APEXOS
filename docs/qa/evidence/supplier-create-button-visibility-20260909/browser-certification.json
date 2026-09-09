@@ -2,7 +2,7 @@
   "certification": "supplier-create-button-visibility-local",
   "environment": "LOCAL",
   "baseUrl": "http://127.0.0.1:3001",
-  "generatedAt": "2026-09-09T20:16:08.316Z",
+  "generatedAt": "2026-09-09T20:36:18.721Z",
   "status": "passed",
   "checks": [
     {
@@ -40,6 +40,16 @@
     },
     {
       "name": "create_supplier_dialog_opens",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "focus_stays_after_first_character",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "typing_accumulates_without_focus_loss",
       "passed": true,
       "detail": {}
     }

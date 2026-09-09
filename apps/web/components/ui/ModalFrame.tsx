@@ -15,6 +15,9 @@ export function ModalFrame({ title, children, onClose, maxWidth = "md:max-w-2xl"
   const [mounted, setMounted] = useState(false);
   const titleId = useId();
   const dialogRef = useRef<HTMLElement>(null);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
 
   useEffect(() => {
     setMounted(true);
@@ -22,7 +25,7 @@ export function ModalFrame({ title, children, onClose, maxWidth = "md:max-w-2xl"
     const previousFocus = document.activeElement as HTMLElement | null;
     document.body.style.overflow = "hidden";
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") onCloseRef.current();
       if (event.key === "Tab" && dialogRef.current) {
         const focusable = [...dialogRef.current.querySelectorAll<HTMLElement>('button, a, input, select, textarea, [tabindex]:not([tabindex="-1"])')].filter((element) => !element.hasAttribute("disabled"));
         if (!focusable.length) return;
@@ -37,7 +40,7 @@ export function ModalFrame({ title, children, onClose, maxWidth = "md:max-w-2xl"
       window.removeEventListener("keydown", closeOnEscape);
       previousFocus?.focus();
     };
-  }, [onClose]);
+  }, []);
 
   useEffect(() => { if (mounted) dialogRef.current?.querySelector<HTMLElement>('button, input, select, textarea, [tabindex]:not([tabindex="-1"])')?.focus(); }, [mounted]);
 
