@@ -1,7 +1,9 @@
 # Corrección local — superposición de ayuda APEX AI
 
-Fecha: 2026-09-08  
-Rama: `desarrollo`  
+Fecha: 2026-09-08
+
+Rama: `desarrollo`
+
 Estado: aprobado localmente; revalidación QA pendiente.
 
 ## Novedad reproducida
