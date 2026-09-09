@@ -26,10 +26,11 @@ Rules for Codex and any automated agent:
 - Treat absence of authorization as prohibition.
 - Do not skip validations to finish a delivery.
 - Every change must include tests and evidence.
-- An agent is not authorized to push or promote a change presented as complete unless a versioned certification script exercises the full requested flow and its manifest passes `npm run qa:approval:evidence -- <manifest>`.
+- An agent is not authorized to push or promote a change presented as complete unless a versioned certification script exercises the full requested flow. For `desarrollo -> develop`, its local pre-QA manifest must pass `npm run qa:preqa:evidence -- <manifest>`. For `develop -> main`, its QA manifest must pass `npm run qa:approval:evidence -- <manifest>`.
 - Unit tests, lint, type checks, builds, API success responses, or code review alone never constitute complete certification.
 - A failed, pending, partial, simulated-only, or unexecuted end-to-end certification blocks publication and promotion. The agent must state the block explicitly and may not claim the incident is resolved.
 - Every promotion to `main` must pass `docs/CHANGE_APPROVAL_QA_POLICY.md` and `npm run qa:approval:evidence -- <manifest>` with explicit functional QA approval. Automated checks alone never authorize `main`.
+- Every promotion to `develop` must pass `npm run qa:preqa:evidence -- <manifest>` with completed local certification and explicit authorization to deploy the candidate for functional QA. This pre-QA gate never authorizes `main`.
 - Every promotion must be scoped against the current target commit. Before `develop` or `main`, a versioned scope manifest must pass `npm run qa:promotion:scope -- <scope-manifest> <candidate-ref> <target-ref>`.
 - Every new scope manifest must use `scope_schema_version: 2`, declare `change_intent.modules`, and enumerate the exact `A`, `M`, or `D` entry for every file in `expected_changes`. Broad directory permission never substitutes this exact inventory.
 - Branch-wide merges are forbidden when their net diff contains files, modules, migrations, deletions, or generated evidence outside the approved scope manifest. An agent must isolate or reconstruct the punctual commits first.

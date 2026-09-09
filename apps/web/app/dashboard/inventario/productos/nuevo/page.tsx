@@ -28,6 +28,7 @@ import { api } from "@/lib/api";
 import { LATAM_CURRENCIES, money, taxRatesForCountry } from "@/lib/latam";
 import { InventoryNav } from "@/components/inventory-nav";
 import { Button } from "@/components/ui/button";
+import { StepIndicator } from "@/components/ui/layout";
 import { showToast } from "@/components/system/ToastCenter";
 
 type InventoryItem = {
@@ -153,6 +154,7 @@ export default function NuevoProductoPage() {
   const [classifications, setClassifications] = useState<Classification[]>([]);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("crear");
+  const [createStep, setCreateStep] = useState(0);
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
@@ -340,7 +342,8 @@ export default function NuevoProductoPage() {
         <div className="space-y-4">
           {activeTab === "crear" ? (
             <>
-              <section className="rounded-md border border-line bg-white">
+              <StepIndicator current={createStep} steps={["Datos básicos", "Existencias", "Operación"]} />
+              {createStep === 0 ? <section className="rounded-md border border-line bg-white">
                 <PanelHeader icon={PackagePlus} title="Datos básicos" detail="Identificación y clasificación del producto." />
                 <div className="space-y-4 p-4">
                   <div className="grid gap-3 lg:grid-cols-[180px_180px_1fr_180px_150px]">
@@ -425,9 +428,10 @@ export default function NuevoProductoPage() {
                     </Field>
                   </div>
                 </div>
-              </section>
+                <div className="flex justify-end border-t border-line p-4"><Button disabled={!form.name || !form.society_code || !form.branch_code || !form.family} onClick={() => setCreateStep(1)} type="button">Continuar</Button></div>
+              </section> : null}
 
-              <section className="rounded-md border border-line bg-white">
+              {createStep === 1 ? <section className="rounded-md border border-line bg-white">
                 <PanelHeader icon={DollarSign} title="Existencias y dimensiones" detail="El costo se forma desde inventario y el precio se administra en Ventas." />
                 <div className="grid gap-4 p-4 lg:grid-cols-3">
                   <div className="grid gap-3">
@@ -459,9 +463,10 @@ export default function NuevoProductoPage() {
                     </Field>
                   </div>
                 </div>
-              </section>
+                <div className="flex justify-between border-t border-line p-4"><Button onClick={() => setCreateStep(0)} type="button" variant="ghost">Anterior</Button><Button onClick={() => setCreateStep(2)} type="button">Continuar</Button></div>
+              </section> : null}
 
-              <section className="rounded-md border border-line bg-white">
+              {createStep === 2 ? <section className="rounded-md border border-line bg-white">
                 <PanelHeader icon={Layers3} title="Opciones operativas" detail="Reglas aplicadas en Compras y Ventas." />
                 <div className="grid gap-4 p-4 lg:grid-cols-2">
                   <ProfileSelect icon={ClipboardCheck} title="Compras" value={form.purchase_profile} onChange={(value) => setForm((p) => ({ ...p, purchase_profile: value }))} options={["comprable", "no comprable", "bajo contrato", "importado"]} />
@@ -481,6 +486,7 @@ export default function NuevoProductoPage() {
                     <Toggle label="Serial" checked={form.serial_control} onChange={(value) => setForm((p) => ({ ...p, serial_control: value }))} />
                   </div>
                   <div className="flex flex-col gap-2 sm:flex-row">
+                    <Button onClick={() => setCreateStep(1)} type="button" variant="ghost">Anterior</Button>
                     <Button disabled={!canSave} loading={saving} onClick={() => void createItem(true)} type="button" variant="secondary">
                       <Plus size={16} />
                       {saving ? "Creando producto…" : "Crear y seguir"}
@@ -491,7 +497,7 @@ export default function NuevoProductoPage() {
                     </Button>
                   </div>
                 </div>
-              </section>
+              </section> : null}
             </>
           ) : null}
 
@@ -701,7 +707,7 @@ function ProfileSelect({ icon: Icon, title, value, options, onChange }: { icon: 
         <Icon className="text-apex" size={16} />
         <h3 className="text-sm font-semibold">{title}</h3>
       </div>
-      <select className="h-10 w-full rounded-md border border-line px-3 text-sm" value={value} onChange={(e) => onChange(e.target.value)}>
+      <select aria-label={`Perfil de ${title.toLowerCase()}`} className="h-10 w-full rounded-md border border-line px-3 text-sm" value={value} onChange={(e) => onChange(e.target.value)}>
         {options.map((option) => <option key={option} value={option}>{option}</option>)}
       </select>
     </div>
@@ -737,7 +743,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) {
   return (
-    <button className={`inline-flex h-9 items-center gap-2 rounded-md border px-3 text-xs font-medium ${checked ? "border-apex bg-[#146C6312] text-apex" : "border-line bg-white text-neutral-700 hover:bg-paper"}`} onClick={() => onChange(!checked)} type="button">
+    <button aria-pressed={checked} className={`inline-flex h-9 items-center gap-2 rounded-md border px-3 text-xs font-medium ${checked ? "border-apex bg-[#146C6312] text-apex" : "border-line bg-white text-neutral-700 hover:bg-paper"}`} onClick={() => onChange(!checked)} type="button">
       <span className={`h-2 w-2 rounded-full ${checked ? "bg-apex" : "bg-neutral-300"}`} />
       {label}
     </button>

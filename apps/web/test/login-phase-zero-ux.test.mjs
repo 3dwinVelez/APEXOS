@@ -193,3 +193,13 @@ test("los flujos prioritarios anuncian errores y confirmaciones", () => {
     assert.match(source, /role="status"/, `${file} debe anunciar confirmaciones`);
   }
 });
+
+test("stock identifica filtros y anuncia errores y resultados accesiblemente", () => {
+  const source = read("app/dashboard/inventario/stock/page.tsx");
+  assert.match(source, /aria-label="Buscar existencias"/);
+  assert.match(source, /aria-label="Filtrar por estado de stock"/);
+  assert.match(source, /aria-label="Filtrar por clasificación ABC"/);
+  assert.match(source, /aria-label="Ordenar existencias"/);
+  assert.match(source, /aria-live="assertive"[^>]*role="alert"/);
+  assert.match(source, /aria-live="polite"[^>]*role="status"/);
+});

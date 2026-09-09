@@ -31,7 +31,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     <button
       ref={ref}
       className={twMerge(
-        "inline-flex items-center justify-center gap-2 rounded-md border text-sm font-semibold transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-apex focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        "inline-flex items-center justify-center gap-2 rounded-control border text-sm font-semibold transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-apex focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
         variants[variant],
         sizes[size],
         className

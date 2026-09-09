@@ -1,6 +1,6 @@
 # Seguimiento UI/UX APEX OS
 
-Actualizado: 2026-09-07  
+Actualizado: 2026-09-08
 Rama de implementación: `desarrollo`  
 Flujo autorizado: `desarrollo -> develop -> main`
 
@@ -16,7 +16,7 @@ Leyenda: `[x]` terminado y validado · `[-]` en curso · `[ ]` pendiente · `[!]
 - [x] Empty state de productos con distinción entre catálogo vacío y filtros sin resultado.
 - [x] Empty state de órdenes de compra, diferenciando catálogo vacío y filtros sin resultado.
 - [x] Empty state de Transporte en tarifarios, adaptado a permisos de escritura.
-- [-] Auditoría WCAG AA: contraste base, foco, movimiento reducido y anuncios accesibles terminados en Login, Inventario, Compras y Ventas; inspección manual y pantallas restantes pendientes.
+- [x] Auditoría WCAG AA: contraste base, foco, movimiento reducido, nombres accesibles y anuncios verificados en Login, Inventario, Compras y Ventas, incluyendo inspección manual en escritorio y móvil.
 - [x] Login responsive con temas claro/oscuro y movimiento reducido accesible.
 - [x] Skeleton durante validación de permisos.
 - [x] Sistema global de toast de éxito/error/reintento.
@@ -27,15 +27,16 @@ Leyenda: `[x]` terminado y validado · `[-]` en curso · `[ ]` pendiente · `[!]
 
 ## Fase 1 — Estandarizar y pulir
 
-- [ ] Consolidar tokens de color, tipografía, espaciado, radios y sombras.
-- [ ] Estandarizar Button, Input, Select, Textarea y estados de validación.
-- [ ] Estandarizar Card, Tabs, Modal, Drawer, Toast, Badge, Avatar y Skeleton.
-- [ ] Implementar DataTable con selección, ordenamiento, filtros y paginación.
-- [ ] Agregar acciones masivas y configuración persistente de columnas.
-- [ ] Normalizar formularios a dos columnas y validación `onBlur`.
-- [ ] Dividir formularios extensos en pasos.
-- [ ] Resolver overflow de pestañas.
-- [ ] Unificar centro e historial de notificaciones.
+- [x] Consolidar tokens de color, tipografía, espaciado, radios y sombras.
+- [x] Estandarizar Button, Input, Select, Textarea y estados de validación.
+- [x] Estandarizar Card, Tabs, Modal, Drawer, Toast, Badge, Avatar y Skeleton.
+- [x] Implementar DataTable con selección, ordenamiento, filtros y paginación.
+- [x] Agregar acciones masivas y configuración persistente de columnas.
+- [x] Normalizar formularios a dos columnas y validación `onBlur`.
+- [x] Dividir formularios extensos en pasos.
+- [x] Resolver overflow de pestañas.
+- [x] Unificar centro e historial de notificaciones.
+- [x] Inspección visual autenticada de Fase 1 en escritorio y móvil, sin overflow horizontal ni controles sin nombre en las rutas críticas.
 
 ## Fase 2 — Experiencia inteligente
 
@@ -74,3 +75,5 @@ Leyenda: `[x]` terminado y validado · `[-]` en curso · `[ ]` pendiente · `[!]
 | 2026-09-07 | Empty states de Compras y Transporte | Estados vacíos accionables y sensibles a filtros/permisos; typecheck, lint del alcance, 12/12 pruebas UX y build de 98 rutas aprobados |
 | 2026-09-07 | Accesibilidad del sidebar colapsado | Tooltips flotantes no recortados, nombres accesibles, página activa y foco visible; typecheck, lint del alcance, 13/13 pruebas UX y build de 98 rutas aprobados; inspección visual local pendiente |
 | 2026-09-07 | Auditoría WCAG AA transversal | Contraste programático, foco visible global, movimiento reducido y regiones vivas; typecheck, lint del alcance, 15/15 pruebas UX y build de 98 rutas aprobados |
+| 2026-09-08 | Cierre integral de Fase 0 | `docs/qa/evidence/ui-ux-phase-zero-20260908/local-validation.md`; auditoría manual de 11 rutas en escritorio y móvil (390 px), Stock corregido, 17/17 pruebas UX, typecheck, lint y build aprobados |
+| 2026-09-08 | Sistema de diseño y cierre técnico de Fase 1 | `docs/qa/evidence/ui-ux-phase-one-20260908/local-validation.md`; tokens y componentes compartidos, DataTable avanzado en Productos, formularios por pasos/onBlur, tabs adaptables y centro de notificaciones; 23/23 pruebas, typecheck y build aprobados |

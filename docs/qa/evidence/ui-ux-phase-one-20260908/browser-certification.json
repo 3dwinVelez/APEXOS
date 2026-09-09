@@ -1,0 +1,71 @@
+{
+  "certification": "ui-ux-phase-one-local",
+  "environment": "LOCAL",
+  "baseUrl": "http://127.0.0.1:3001",
+  "generatedAt": "2026-09-09T00:07:19.218Z",
+  "status": "passed",
+  "checks": [
+    {
+      "name": "authenticated_dashboard",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "products_datatable",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "products_column_configuration",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "products_no_horizontal_overflow",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "product_three_steps",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "product_step_navigation",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "purchases_controls_named",
+      "passed": true,
+      "detail": {
+        "unlabelledPurchases": 0
+      }
+    },
+    {
+      "name": "sales_onblur_validation",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "mobile_no_overflow:/dashboard/inventario/productos",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "mobile_no_overflow:/dashboard/inventario/productos/nuevo",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "mobile_no_overflow:/dashboard/compras/ordenes/nueva",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "mobile_no_overflow:/dashboard/ventas/ordenes/nueva",
+      "passed": true,
+      "detail": {}
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "change_id": "ui-ux-phases-zero-one-preqa-20260908",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "e121028faec53f6f9e450eea9e1ba6c5804f574a",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": ["browser-certification.json", "local-validation.md"]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": ["browser-certification.json", "local-validation.md"]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": ["browser-certification.json"]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../apps/web/test/certify-ui-ux-phase-one-local.mjs",
+    "evidence": ["browser-certification.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../apps/web/test/certify-ui-ux-phase-one-local.mjs",
+    "evidence": ["browser-certification.json"]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Solicitante autorizado de APEXOS en tarea Codex",
+    "approved_at": "2026-09-08T19:16:49-05:00",
+    "main_release": "not_authorized"
+  }
+}

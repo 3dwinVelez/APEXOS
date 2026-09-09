@@ -7,6 +7,7 @@ import { RouteAccessGuard } from "@/components/shell/RouteAccessGuard";
 import { Sidebar } from "@/components/shell/Sidebar";
 import { TechnicianWorkspaceHeader } from "@/components/shell/TechnicianWorkspaceHeader";
 import { UserSessionBadge } from "@/components/shell/UserSessionBadge";
+import { NotificationCenter } from "@/components/system/NotificationCenter";
 import { isMarkingOnlyAccess, MARKING_ONLY_PROFILE } from "@/lib/accessProfile";
 import { Clock3 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -52,6 +53,7 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
     <div className="apex-app-gradient min-h-screen md:flex">
       <div className="technician-hide"><Sidebar /></div>
       <main className="min-w-0 flex-1 overflow-x-hidden p-3 pb-24 sm:p-4 md:p-6 md:pb-6">
+        <div className="mb-3 flex justify-end"><NotificationCenter /></div>
         <TechnicianWorkspaceHeader />
         <ApexAiHeader />
         <RouteAccessGuard>{children}</RouteAccessGuard>

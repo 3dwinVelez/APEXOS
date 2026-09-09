@@ -510,7 +510,7 @@ export default function NuevaOCPage() {
                   <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
                     <div className="relative">
                       <Search className="absolute left-3 top-2.5 text-neutral-400" size={16} />
-                      <input className="h-10 w-full rounded-md border border-line pl-9 pr-3 text-sm" placeholder="Buscar SKU, producto, ABC o estado de inventario" value={query} onChange={(e) => setQuery(e.target.value)} />
+                      <input aria-label="Buscar productos para la orden" className="h-10 w-full rounded-md border border-line pl-9 pr-3 text-sm" placeholder="Buscar SKU, producto, ABC o estado de inventario" value={query} onChange={(e) => setQuery(e.target.value)} />
                     </div>
                     <span className="rounded-md border border-line bg-paper px-3 py-2 text-xs text-neutral-600">
                       {query ? `${filteredItems.length} resultados` : `${smartItems.length} sugeridos`}
@@ -548,8 +548,8 @@ export default function NuevaOCPage() {
                           <tr className="border-t border-line/70" key={line.localId}>
                             <td className="px-3 py-2"><input aria-label="SKU" className="h-9 w-44 rounded-md border border-line px-2 font-mono text-sm uppercase" list="purchase-order-skus" placeholder="Escribe o Enter para buscar" value={line.sku} onChange={(event) => updateSku(line.localId, event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); handleSkuEnter(line); } }} /></td>
                             <td className="px-3 py-2">{line.description || <span className="text-neutral-400">Seleccione un SKU existente</span>}</td>
-                            <td className="px-3 py-2"><NumberInput value={line.qty} onChange={(value) => updateLine(line.localId, { qty: value })} /></td>
-                            <td className="px-3 py-2"><MoneyInput value={line.unit_cost} onChange={(value) => updateLine(line.localId, { unit_cost: value })} /></td>
+                            <td className="px-3 py-2"><NumberInput label={`Cantidad de ${line.sku || "línea vacía"}`} value={line.qty} onChange={(value) => updateLine(line.localId, { qty: value })} /></td>
+                            <td className="px-3 py-2"><MoneyInput label={`Costo unitario de ${line.sku || "línea vacía"}`} value={line.unit_cost} onChange={(value) => updateLine(line.localId, { unit_cost: value })} /></td>
                             <td className="px-3 py-2 font-medium">{line.item_id ? money(Math.max(0, line.qty * line.unit_cost), form.currency) : "—"}</td>
                             <td className="px-3 py-2 text-right">
                               <button className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-line text-neutral-500 hover:bg-paper" onClick={() => removeLine(line.localId)} type="button" aria-label="Quitar linea">
@@ -779,17 +779,17 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function NumberInput({ value, suffix, onChange }: { value: number; suffix?: string; onChange: (value: number) => void }) {
+function NumberInput({ value, suffix, label, onChange }: { value: number; suffix?: string; label: string; onChange: (value: number) => void }) {
   return (
     <div className="flex h-9 items-center rounded-md border border-line bg-white">
-      <ZeroFriendlyNumberInput className="h-full w-20 rounded-md px-2 text-sm outline-none" min={0} step="0.01" value={value} onValueChange={onChange} />
+      <ZeroFriendlyNumberInput aria-label={label} className="h-full w-20 rounded-md px-2 text-sm outline-none" min={0} step="0.01" value={value} onValueChange={onChange} />
       {suffix ? <span className="pr-2 text-xs text-neutral-500">{suffix}</span> : null}
     </div>
   );
 }
 
-function MoneyInput({ value, onChange }: { value: number; onChange: (value: number) => void }) {
-  return <NumberInput value={value} onChange={onChange} />;
+function MoneyInput({ value, label, onChange }: { value: number; label: string; onChange: (value: number) => void }) {
+  return <NumberInput label={label} value={value} onChange={onChange} />;
 }
 
 function StatusPill({ status }: { status: string }) {

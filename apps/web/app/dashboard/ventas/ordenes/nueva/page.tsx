@@ -8,6 +8,8 @@ import { api } from "@/lib/api";
 import { asCollection } from "@/lib/api-collections";
 import { Button } from "@/components/ui/button";
 import { showToast } from "@/components/system/ToastCenter";
+import { Select, Textarea } from "@/components/ui/form-controls";
+import { FormGrid } from "@/components/ui/layout";
 
 type Customer = { id: number; name: string };
 type Item = { id: number; code: string; name: string; unit_price: number };
@@ -19,6 +21,7 @@ export default function NuevaOVPage() {
   const [ok, setOk] = useState("");
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ customer_id: 0, item_id: 0, qty: 1, unit_price: 0, notes: "" });
+  const [touched, setTouched] = useState({ customer: false, item: false, qty: false });
 
   useEffect(() => {
     Promise.all([api<unknown>("/api/v1/sales/customers"), api<unknown>("/api/v1/inventory/items")])
@@ -74,33 +77,27 @@ export default function NuevaOVPage() {
           <ShoppingCart className="text-apex" size={18} />
           <h2 className="font-semibold">Datos de la orden</h2>
         </div>
-        <div className="grid gap-4 p-4 md:grid-cols-2">
-          <Field label="Cliente" required>
-            <select className="h-10 w-full rounded-md border border-line px-3 text-sm" value={form.customer_id} onChange={(event) => setForm((current) => ({ ...current, customer_id: Number(event.target.value) }))} required>
+        <FormGrid className="p-4">
+          <Select error={touched.customer && !form.customer_id ? "Selecciona un cliente" : undefined} label="Cliente *" value={form.customer_id} onBlur={() => setTouched((value) => ({ ...value, customer: true }))} onChange={(event) => setForm((current) => ({ ...current, customer_id: Number(event.target.value) }))} required>
               <option value={0}>Seleccionar cliente</option>
               {customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.name}</option>)}
-            </select>
-          </Field>
-          <Field label="Producto o servicio" required>
-            <select className="h-10 w-full rounded-md border border-line px-3 text-sm" value={form.item_id} onChange={(event) => {
+          </Select>
+          <Select error={touched.item && !form.item_id ? "Selecciona un producto o servicio" : undefined} label="Producto o servicio *" value={form.item_id} onBlur={() => setTouched((value) => ({ ...value, item: true }))} onChange={(event) => {
               const itemId = Number(event.target.value);
               const found = items.find((item) => item.id === itemId);
               setForm((current) => ({ ...current, item_id: itemId, unit_price: found?.unit_price || 0 }));
             }} required>
               <option value={0}>Seleccionar producto</option>
               {items.map((item) => <option key={item.id} value={item.id}>{item.code} · {item.name}</option>)}
-            </select>
-          </Field>
-          <Field label="Cantidad" required>
-            <ZeroFriendlyNumberInput className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0.01} step="0.01" value={form.qty} onValueChange={(value) => setForm((current) => ({ ...current, qty: value }))} />
+          </Select>
+          <Field error={touched.qty && form.qty <= 0 ? "La cantidad debe ser mayor que cero" : undefined} label="Cantidad" required>
+            <ZeroFriendlyNumberInput aria-invalid={touched.qty && form.qty <= 0} className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0.01} onBlur={() => setTouched((value) => ({ ...value, qty: true }))} step="0.01" value={form.qty} onValueChange={(value) => setForm((current) => ({ ...current, qty: value }))} />
           </Field>
           <Field label="Precio unitario" required>
             <ZeroFriendlyNumberInput className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} step="0.01" value={form.unit_price} onValueChange={(value) => setForm((current) => ({ ...current, unit_price: value }))} />
           </Field>
-          <Field label="Notas o condiciones">
-            <textarea className="min-h-20 w-full rounded-md border border-line px-3 py-2 text-sm" value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} />
-          </Field>
-        </div>
+          <Textarea label="Notas o condiciones" value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} />
+        </FormGrid>
         <div className="flex items-center justify-end border-t border-line bg-paper px-4 py-3">
           <Button disabled={!form.customer_id || !form.item_id || form.qty <= 0} loading={saving} type="submit">{saving ? "Guardando orden…" : "Crear orden"}</Button>
         </div>
@@ -109,6 +106,6 @@ export default function NuevaOVPage() {
   );
 }
 
-function Field({ label, required = false, children }: { label: string; required?: boolean; children: React.ReactNode }) {
-  return <label className="block text-sm font-medium">{label}{required ? <span className="ml-1 text-red-600">*</span> : null}<span className="mt-1 block">{children}</span></label>;
+function Field({ label, required = false, error, children }: { label: string; required?: boolean; error?: string; children: React.ReactNode }) {
+  return <label className="block text-sm font-medium">{label}{required ? <span className="ml-1 text-red-600">*</span> : null}<span className="mt-1 block">{children}</span>{error ? <span className="mt-1 block text-xs text-error" role="alert">{error}</span> : null}</label>;
 }

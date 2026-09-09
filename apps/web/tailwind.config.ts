@@ -23,6 +23,19 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"]
+      },
+      borderRadius: {
+        control: "var(--radius-control)",
+        card: "var(--radius-card)",
+        overlay: "var(--radius-overlay)"
+      },
+      boxShadow: {
+        card: "var(--shadow-card)",
+        overlay: "var(--shadow-overlay)"
+      },
+      spacing: {
+        page: "var(--space-page)",
+        section: "var(--space-section)"
       }
     }
   },

@@ -7,6 +7,9 @@ export type ToastTone = "success" | "error" | "info";
 export type ToastRequest = { title: string; description?: string; tone?: ToastTone; retry?: () => void; duration?: number };
 
 const TOAST_EVENT = "apex:toast";
+export const NOTIFICATION_EVENT = "apex:notification";
+export const NOTIFICATION_STORAGE_KEY = "apex_notification_history";
+export type StoredNotification = ToastRequest & { id: string; createdAt: string; read: boolean };
 
 export function showToast(request: ToastRequest) {
   if (typeof window === "undefined") return;
@@ -22,6 +25,12 @@ export function ToastCenter() {
       const request = (event as CustomEvent<ToastRequest>).detail;
       if (timer.current) window.clearTimeout(timer.current);
       setToast(request);
+      try {
+        const current = JSON.parse(localStorage.getItem(NOTIFICATION_STORAGE_KEY) || "[]") as StoredNotification[];
+        const stored: StoredNotification = { ...request, retry: undefined, id: crypto.randomUUID(), createdAt: new Date().toISOString(), read: false };
+        localStorage.setItem(NOTIFICATION_STORAGE_KEY, JSON.stringify([stored, ...current].slice(0, 50)));
+        window.dispatchEvent(new CustomEvent(NOTIFICATION_EVENT, { detail: stored }));
+      } catch { /* El toast sigue funcionando si el historial local no está disponible. */ }
       timer.current = window.setTimeout(() => setToast(null), request.duration ?? 4800);
     };
     window.addEventListener(TOAST_EVENT, receive);
