@@ -5,6 +5,7 @@ import { PlatformAlerts } from "@/components/system/PlatformAlerts";
 import { SessionLifecycle } from "@/components/system/SessionLifecycle";
 import { ToastCenter } from "@/components/system/ToastCenter";
 import { I18nProvider } from "@/lib/i18n";
+import { NavigationAccessibility } from "@/components/shell/NavigationAccessibility";
 
 export const metadata: Metadata = {
   title: "APEX OS",
@@ -19,6 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <I18nProvider>
+          <NavigationAccessibility />
           <SessionLifecycle />
           <PlatformAlerts />
           <ToastCenter />

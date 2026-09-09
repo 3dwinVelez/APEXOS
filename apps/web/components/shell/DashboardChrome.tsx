@@ -5,6 +5,7 @@ import { ApexIntelligencePulse } from "@/components/brain/ApexIntelligencePulse"
 import { AiExperienceLayer } from "@/components/brain/AiExperienceLayer";
 import { ContextBreadcrumbs } from "@/components/shell/ContextBreadcrumbs";
 import { MobileNav } from "@/components/shell/MobileNav";
+import { PageTransition } from "@/components/shell/PageTransition";
 import { RouteAccessGuard } from "@/components/shell/RouteAccessGuard";
 import { Sidebar } from "@/components/shell/Sidebar";
 import { TechnicianWorkspaceHeader } from "@/components/shell/TechnicianWorkspaceHeader";
@@ -58,13 +59,13 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
   return (
     <div className="apex-app-gradient min-h-screen md:flex">
       <div className="technician-hide"><Sidebar /></div>
-      <main className="min-w-0 flex-1 overflow-x-hidden p-3 pb-24 sm:p-4 md:p-6 md:pb-6">
+      <main className="min-w-0 flex-1 overflow-x-hidden p-3 pb-24 sm:p-4 md:p-6 md:pb-6" id="apex-main-content" tabIndex={-1}>
         <div className="mb-3 flex flex-wrap justify-end gap-2"><OfflineFirstStatus /><LocaleSwitcher /><TraceabilityCenter /><CommandPalette /><NotificationCenter /></div>
         <ContextBreadcrumbs />
         <TechnicianWorkspaceHeader />
         <ApexAiHeader />
         <ApexIntelligencePulse />
-        <RouteAccessGuard>{children}</RouteAccessGuard>
+        <RouteAccessGuard><PageTransition>{children}</PageTransition></RouteAccessGuard>
       </main>
       <MobileNav />
       <div className="technician-hide"><AiExperienceLayer /></div>

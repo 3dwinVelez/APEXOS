@@ -464,6 +464,43 @@ textarea {
   outline-offset: 2px;
 }
 
+.apex-skip-link {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  z-index: 200;
+  transform: translateY(-180%);
+  border-radius: 0.5rem;
+  background: rgb(var(--color-apex));
+  color: white;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition: transform 150ms ease;
+}
+
+.apex-skip-link:focus-visible { transform: translateY(0); }
+
+.apex-interactive {
+  transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.apex-interactive:hover { transform: translateY(-1px); }
+.apex-interactive:active { transform: translateY(0) scale(0.985); }
+
+@keyframes apexPageEnter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes apexDialogEnter {
+  from { opacity: 0; transform: translateY(-8px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.apex-page-enter { animation: apexPageEnter 220ms ease-out both; }
+.apex-dialog-enter { animation: apexDialogEnter 180ms ease-out both; }
+
 @media (prefers-reduced-motion: reduce) {
   html:focus-within {
     scroll-behavior: auto;
@@ -476,6 +513,16 @@ textarea {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .apex-page-enter,
+  .apex-dialog-enter {
+    animation: none !important;
+  }
+
+  .apex-interactive:hover,
+  .apex-interactive:active {
+    transform: none !important;
   }
 }
 
