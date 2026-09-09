@@ -12,6 +12,7 @@ import { TechnicianWorkspaceHeader } from "@/components/shell/TechnicianWorkspac
 import { UserSessionBadge } from "@/components/shell/UserSessionBadge";
 import { NotificationCenter } from "@/components/system/NotificationCenter";
 import { CommandPalette } from "@/components/system/CommandPalette";
+import { CollaborationPresence } from "@/components/system/CollaborationPresence";
 import { ExperiencePreferences } from "@/components/system/ExperiencePreferences";
 import { LocaleSwitcher } from "@/components/system/LocaleSwitcher";
 import { OfflineFirstStatus } from "@/components/system/OfflineFirstStatus";
@@ -61,7 +62,7 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
     <div className="apex-app-gradient min-h-screen md:flex">
       <div className="technician-hide"><Sidebar /></div>
       <main className="min-w-0 flex-1 overflow-x-hidden p-3 pb-24 sm:p-4 md:p-6 md:pb-6" id="apex-main-content" tabIndex={-1}>
-        <div className="mb-3 flex flex-wrap justify-end gap-2"><OfflineFirstStatus /><LocaleSwitcher /><TraceabilityCenter /><ExperiencePreferences /><CommandPalette /><NotificationCenter /></div>
+        <div className="mb-3 flex flex-wrap justify-end gap-2"><OfflineFirstStatus /><LocaleSwitcher /><TraceabilityCenter /><CollaborationPresence /><ExperiencePreferences /><CommandPalette /><NotificationCenter /></div>
         <ContextBreadcrumbs />
         <TechnicianWorkspaceHeader />
         <ApexAiHeader />

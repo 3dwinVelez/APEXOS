@@ -53,7 +53,7 @@ Leyenda: `[x]` terminado y validado · `[-]` en curso · `[ ]` pendiente · `[!]
 - [x] Microinteracciones y transiciones con movimiento reducido.
 - [-] Accesibilidad AAA y navegación completa por teclado: base global terminada; auditoría profunda por módulo en curso.
 - [x] Temas, densidad, tamaño de fuente, favoritos y vistas guardadas.
-- [ ] Colaboración y presencia en tiempo real.
+- [-] Colaboración y presencia en tiempo real: presencia, rutas y edición concurrente entre pestañas terminadas; transporte remoto entre dispositivos pendiente.
 - [ ] Analytics, drill-down y reportes programados.
 - [ ] Objetivos de rendimiento percibido y virtualización.
 - [ ] Onboarding interactivo y checklist de configuración.
@@ -81,3 +81,4 @@ Leyenda: `[x]` terminado y validado · `[-]` en curso · `[ ]` pendiente · `[!]
 | 2026-09-09 | Cierre integral de Fase 2 | `docs/qa/evidence/ui-ux-phase-two-20260908/local-validation.md`; command palette, dashboard por rol, pulso APEX AI, breadcrumbs, trazabilidad, estado offline e idiomas ES/EN/PT; 14/14 certificación navegador, 30/30 contratos UX, 49/49 pruebas offline, typecheck, lint sin errores y build de 100 rutas aprobados |
 | 2026-09-09 | Inicio de Fase 3: movimiento y teclado global | `docs/qa/evidence/ui-ux-phase-three-foundation-20260909/local-validation.md`; transiciones de página/diálogo con movimiento reducido, skip link, anuncios de ruta y paleta con foco restaurado; 7/7 navegador, 33/33 contratos acumulados, typecheck, lint y build aprobados |
 | 2026-09-09 | Personalización de experiencia de Fase 3 | `docs/qa/evidence/ui-ux-phase-three-personalization-20260909/local-validation.md`; tema, densidad, escala tipográfica, favoritos y vistas guardadas aislados por usuario; 5/5 navegador, 37/37 contratos acumulados, typecheck, lint y build de 100 rutas aprobados |
+| 2026-09-09 | Presencia colaborativa local de Fase 3 | `docs/qa/evidence/ui-ux-phase-three-collaboration-20260909/local-validation.md`; sesiones por empresa, ruta activa, estado viendo/editando, advertencia concurrente y salida entre pestañas; 5/5 navegador, 41/41 contratos acumulados, typecheck, lint y build de 100 rutas aprobados; transporte remoto pendiente |
