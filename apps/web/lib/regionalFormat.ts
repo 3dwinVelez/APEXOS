@@ -1,0 +1,6 @@
+export type ApexRegion = "CO" | "MX" | "US" | "BR";
+const settings: Record<ApexRegion, { locale: string; currency: string; timezone: string }> = { CO: { locale: "es-CO", currency: "COP", timezone: "America/Bogota" }, MX: { locale: "es-MX", currency: "MXN", timezone: "America/Mexico_City" }, US: { locale: "en-US", currency: "USD", timezone: "America/New_York" }, BR: { locale: "pt-BR", currency: "BRL", timezone: "America/Sao_Paulo" } };
+export function currentRegion(): ApexRegion { if (typeof window === "undefined") return "CO"; const value = localStorage.getItem("apex_region"); return value && value in settings ? value as ApexRegion : "CO"; }
+export function regionSettings(region = currentRegion()) { return settings[region]; }
+export function formatRegionalMoney(value: number, region = currentRegion()) { const config = settings[region]; return new Intl.NumberFormat(config.locale, { style: "currency", currency: config.currency, maximumFractionDigits: config.currency === "COP" ? 0 : 2 }).format(Number(value) || 0); }
+export function formatRegionalDate(value: string | Date, region = currentRegion()) { const config = settings[region]; return new Intl.DateTimeFormat(config.locale, { dateStyle: "medium", timeStyle: "short", timeZone: config.timezone }).format(new Date(value)); }

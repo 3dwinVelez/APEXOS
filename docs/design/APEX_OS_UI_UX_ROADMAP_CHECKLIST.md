@@ -59,7 +59,7 @@ Leyenda: `[x]` terminado y validado · `[-]` en curso · `[ ]` pendiente · `[!]
 - [x] Onboarding interactivo y checklist de configuración.
 - [x] Experiencia tablet/móvil y PWA.
 - [-] Confianza visual: sesión, auditoría, permisos y flujo TOTP implementados; verificación con cuenta Supabase QA pendiente.
-- [-] Detalles de productividad: copiar y comandos undo/redo terminados; formatos regionales y autocomplete transversal pendientes.
+- [x] Detalles de productividad: fechas, moneda, copiar, undo/redo y autocomplete.
 
 ## Evidencia acumulada
 

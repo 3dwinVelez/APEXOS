@@ -3,10 +3,11 @@ import { acknowledgeApexHeartAlert, ApexHeartDashboard, deleteApexHeartReportSch
 import { Activity, AlertTriangle, BadgeDollarSign, Boxes, CircleDollarSign, FileText, HeartPulse, RefreshCw, Settings2, ShoppingCart, TrendingUp, WalletCards } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { formatRegionalMoney } from "@/lib/regionalFormat";
 import { useEffect, useMemo, useState } from "react";
 import { Area, Bar, CartesianGrid, Cell, ComposedChart, Legend, Line, Pie, PieChart, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from "recharts";
 
-const money = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
+const money = { format: (value: number) => formatRegionalMoney(value) };
 const number = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 });
 const compact = new Intl.NumberFormat("es-CO", { notation: "compact", maximumFractionDigits: 1 });
 const today = new Date(), initialTo = today.toISOString().slice(0, 10), initialFrom = new Date(today.getFullYear() - 1, today.getMonth(), 1).toISOString().slice(0, 10);
