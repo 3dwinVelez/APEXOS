@@ -1,7 +1,6 @@
 "use client";
 
 import { ApexAiHeader } from "@/components/brain/ApexAiHeader";
-import { ApexIntelligencePulse } from "@/components/brain/ApexIntelligencePulse";
 import { AiExperienceLayer } from "@/components/brain/AiExperienceLayer";
 import { ContextBreadcrumbs } from "@/components/shell/ContextBreadcrumbs";
 import { MobileNav } from "@/components/shell/MobileNav";
@@ -69,7 +68,6 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
         <ContextBreadcrumbs />
         <TechnicianWorkspaceHeader />
         <ApexAiHeader />
-        <ApexIntelligencePulse />
         <RouteAccessGuard><PageTransition>{children}</PageTransition></RouteAccessGuard>
       </main>
       <MobileNav />
