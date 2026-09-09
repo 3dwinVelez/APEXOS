@@ -41,6 +41,13 @@ try {
   await page.click("button.btn-primary");
   await page.waitForSelector('[role="dialog"]');
   record("create_supplier_dialog_opens", await page.evaluate(() => document.querySelector('[role="dialog"]')?.textContent?.includes("Crear proveedor") === true));
+  const nameInput = 'input[required]';
+  await page.click(nameInput);
+  await page.keyboard.type("A");
+  record("focus_stays_after_first_character", await page.evaluate((selector) => document.activeElement === document.querySelector(selector) && document.querySelector(selector)?.value === "A", nameInput));
+  await page.keyboard.type("B");
+  await page.keyboard.type("C");
+  record("typing_accumulates_without_focus_loss", await page.evaluate((selector) => document.activeElement === document.querySelector(selector) && document.querySelector(selector)?.value === "ABC", nameInput));
 } finally {
   await browser.close();
 }
