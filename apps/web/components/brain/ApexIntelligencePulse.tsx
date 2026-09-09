@@ -1,6 +1,7 @@
 "use client";
 
 import { api } from "@/lib/api";
+import { useApexAiAccess } from "@/components/brain/useApexAiAccess";
 import { AlertTriangle, ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -11,10 +12,11 @@ type Response = { data?: Insight[] };
 
 export function ApexIntelligencePulse() {
   const pathname = usePathname();
+  const aiAccess = useApexAiAccess();
   const [insight, setInsight] = useState<Insight | null>(null);
   useEffect(() => {
     const moduleName = pathname.split("/")[2] || "dashboard";
-    if (moduleName === "apex-ai") {
+    if (moduleName === "apex-ai" || aiAccess !== "enabled") {
       setInsight(null);
       return;
     }
@@ -25,7 +27,7 @@ export function ApexIntelligencePulse() {
         return ["critical", "warning", "opportunity", "info"].indexOf(a.severity) - ["critical", "warning", "opportunity", "info"].indexOf(b.severity);
       })[0] || null))
       .catch(() => setInsight(null));
-  }, [pathname]);
+  }, [pathname, aiAccess]);
   if (!insight) return null;
   const Icon = insight.severity === "critical" || insight.severity === "warning" ? AlertTriangle : Sparkles;
   return <aside aria-label="Señal inteligente prioritaria" className="mb-3 flex flex-col gap-3 rounded-card border border-apex/20 bg-apex/5 px-4 py-3 sm:flex-row sm:items-center">
