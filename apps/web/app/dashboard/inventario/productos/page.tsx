@@ -6,7 +6,8 @@ import { Download, PackagePlus, Search } from "lucide-react";
 import { InventoryNav } from "@/components/inventory-nav";
 import { api } from "@/lib/api";
 import { downloadExcelWorkbook } from "@/lib/reportExports";
-import { EmptyState, Skeleton } from "@/components/ui/feedback";
+import { SmartDataTable, type DataColumn } from "@/components/ui/data-table";
+import { Button } from "@/components/ui/button";
 
 type Product = {
   id: number;
@@ -58,7 +59,7 @@ export default function ProductListPage() {
     });
   }, [family, items, search, status]);
 
-  function exportExcel() {
+  function exportProducts(rows: Product[]) {
     downloadExcelWorkbook("lista-productos.xls", [{
       name: "Productos",
       columns: [
@@ -68,9 +69,22 @@ export default function ProductListPage() {
         { key: "stock_max", label: "Stock máximo" },
         { key: "iva", label: "IVA %" }, { key: "abc", label: "ABC" }
       ],
-      rows: visibleItems.map((item) => ({ sku: item.code, codigo_anterior: item.legacy_code || "", nombre: item.name, familia: item.family_code || "Sin familia", tipo: TYPE_LABELS[item.type] || item.type, unidad: item.unit, sociedad: item.society_code || "--", estado: item.active ? "Activo" : "Inactivo", stock: Number(item.stock_current || 0), stock_min: Number(item.stock_min || 0), stock_max: item.stock_max == null ? "" : Number(item.stock_max), iva: Number(item.tax_rate || 0), abc: item.abc_class || "--" }))
+      rows: rows.map((item) => ({ sku: item.code, codigo_anterior: item.legacy_code || "", nombre: item.name, familia: item.family_code || "Sin familia", tipo: TYPE_LABELS[item.type] || item.type, unidad: item.unit, sociedad: item.society_code || "--", estado: item.active ? "Activo" : "Inactivo", stock: Number(item.stock_current || 0), stock_min: Number(item.stock_min || 0), stock_max: item.stock_max == null ? "" : Number(item.stock_max), iva: Number(item.tax_rate || 0), abc: item.abc_class || "--" }))
     }]);
   }
+
+  function exportExcel() { exportProducts(visibleItems); }
+
+  const columns: DataColumn<Product>[] = [
+    { id: "sku", header: "SKU", sortValue: (item) => item.code, cell: (item) => <span className="font-mono font-medium">{item.code}{item.legacy_code ? <small className="block text-content-muted">Anterior: {item.legacy_code}</small> : null}</span>, hideable: false },
+    { id: "name", header: "Nombre", sortValue: (item) => item.name, cell: (item) => item.name, hideable: false },
+    { id: "family", header: "Familia", sortValue: (item) => item.family_code || "", cell: (item) => item.family_code || "Sin familia" },
+    { id: "type", header: "Tipo", sortValue: (item) => TYPE_LABELS[item.type] || item.type, cell: (item) => TYPE_LABELS[item.type] || item.type },
+    { id: "unit", header: "Unidad", cell: (item) => item.unit },
+    { id: "society", header: "Sociedad", cell: (item) => item.society_code || "--" },
+    { id: "status", header: "Estado", sortValue: (item) => item.active ? 1 : 0, cell: (item) => <span className={`rounded-full px-2 py-1 text-xs ${item.active ? "bg-success/10 text-content-strong" : "bg-surface-muted text-content-muted"}`}>{item.active ? "Activo" : "Inactivo"}</span> },
+    { id: "action", header: "Acción", className: "text-right", cell: (item) => <Link className="rounded-control border border-line px-3 py-2 text-apex" href={`/dashboard/inventario/productos/${item.id}`}>Editar</Link>, hideable: false }
+  ];
 
   return <div className="space-y-5">
     <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between"><div><p className="text-sm font-medium text-apex">Inventario - Maestro</p><h1 className="text-3xl font-semibold">Lista de productos</h1><p className="mt-1 text-sm text-neutral-600">Consulta los SKU registrados, sus datos operativos, existencias y valores de referencia.</p></div><div className="flex gap-2"><button className="inline-flex h-10 items-center gap-2 rounded-md border border-line bg-white px-4 text-sm" disabled={!visibleItems.length} onClick={exportExcel} type="button"><Download size={16} /> Excel</button><Link className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white" href="/dashboard/inventario/productos/nuevo"><PackagePlus size={16} /> Nuevo producto</Link></div></header>
@@ -98,11 +112,7 @@ export default function ProductListPage() {
           <Link className="mt-4 inline-flex h-10 w-full items-center justify-center rounded-md border border-line bg-white px-3 text-sm font-medium text-apex" href={`/dashboard/inventario/productos/${item.id}`}>Editar producto</Link>
         </article>)}
       </div> : null}
-      <div className="hidden overflow-x-auto lg:block"><table className="w-full min-w-[950px] text-sm"><thead><tr className="border-b border-line bg-paper text-left"><th className="px-3 py-2">SKU</th><th className="px-3 py-2">Nombre</th><th className="px-3 py-2">Familia</th><th className="px-3 py-2">Tipo</th><th className="px-3 py-2">Unidad</th><th className="px-3 py-2">Sociedad</th><th className="px-3 py-2">Estado</th><th className="px-3 py-2 text-right">Accion</th></tr></thead><tbody>
-        {visibleItems.map((item) => <tr className="border-b border-line/70" key={item.id}><td className="px-3 py-2 font-mono font-medium"><span>{item.code}</span>{item.legacy_code ? <span className="block text-xs font-normal text-neutral-500">Anterior: {item.legacy_code}</span> : null}</td><td className="px-3 py-2">{item.name}</td><td className="px-3 py-2">{item.family_code || "Sin familia"}</td><td className="px-3 py-2">{TYPE_LABELS[item.type] || item.type}</td><td className="px-3 py-2">{item.unit}</td><td className="px-3 py-2">{item.society_code || "--"}</td><td className="px-3 py-2"><span className={`rounded-full px-2 py-1 text-xs ${item.active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>{item.active ? "Activo" : "Inactivo"}</span></td><td className="px-3 py-2 text-right"><Link className="rounded-md border border-line px-3 py-2 text-apex" href={`/dashboard/inventario/productos/${item.id}`}>Editar</Link></td></tr>)}
-        {!loading && !visibleItems.length ? <tr><td colSpan={8}><EmptyState className="border-0" description={items.length ? "Ajusta o limpia los filtros para volver a ver productos." : "Crea el primer SKU para controlar existencias, costos y disponibilidad."} icon={<PackagePlus size={22} />} primaryAction={!items.length ? <Link className="rounded-md bg-apex px-4 py-2 text-sm font-semibold text-white" href="/dashboard/inventario/productos/nuevo">Crear primer producto</Link> : undefined} title={items.length ? "No hay productos con estos filtros" : "Aún no tienes productos"} /></td></tr> : null}
-        {loading ? <tr><td className="p-4" colSpan={8}><div className="space-y-3" aria-label="Cargando productos"><Skeleton className="h-10" /><Skeleton className="h-10" /><Skeleton className="h-10" /></div></td></tr> : null}
-      </tbody></table></div>
+      <div className="hidden p-4 lg:block"><SmartDataTable bulkActions={(selected, clear) => <><Button onClick={() => exportProducts(selected)} size="compact">Exportar {selected.length}</Button><Button onClick={clear} size="compact" variant="ghost">Limpiar selección</Button></>} columns={columns} emptyDetail={items.length ? "Ajusta o limpia los filtros para volver a ver productos." : "Crea el primer SKU para controlar existencias, costos y disponibilidad."} emptyTitle={items.length ? "No hay productos con estos filtros" : "Aún no tienes productos"} loading={loading} pageSize={10} rowKey={(item) => item.id} rows={visibleItems} storageKey="inventory-products" /></div>
     </section>
   </div>;
 }

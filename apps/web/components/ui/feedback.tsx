@@ -11,11 +11,11 @@ const tones: Record<Tone, string> = {
 };
 
 export function Badge({ tone = "neutral", className, ...props }: HTMLAttributes<HTMLSpanElement> & { tone?: Tone }) {
-  return <span className={twMerge("inline-flex min-h-6 items-center rounded px-2 text-xs font-semibold", tones[tone], className)} {...props} />;
+  return <span className={twMerge("inline-flex min-h-6 items-center rounded-control px-2 text-xs font-semibold", tones[tone], className)} {...props} />;
 }
 
 export function Alert({ tone = "info", title, children, className }: { tone?: Tone; title?: string; children: ReactNode; className?: string }) {
-  return <div className={twMerge("rounded-md border p-3 text-sm", tones[tone], className)} role={tone === "error" ? "alert" : "status"}>
+  return <div className={twMerge("rounded-card border p-3 text-sm", tones[tone], className)} role={tone === "error" ? "alert" : "status"}>
     {title ? <p className="font-semibold">{title}</p> : null}
     <div className={title ? "mt-1" : ""}>{children}</div>
   </div>;

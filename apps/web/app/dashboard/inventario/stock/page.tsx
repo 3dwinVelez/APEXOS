@@ -49,35 +49,36 @@ export default function StockPage() {
         <h1 className="text-3xl font-semibold">Stock actual</h1>
       </header>
       <InventoryNav />
-      {error ? <p className="text-sm text-red-700">{error}</p> : null}
+      {error ? <p aria-live="assertive" className="text-sm text-red-700" role="alert">{error}</p> : null}
       <section className="rounded-md border border-line bg-white p-4">
         <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(260px,1fr)_auto_auto_auto]">
           <input
+            aria-label="Buscar existencias"
             className="h-10 rounded-md border border-line px-3 text-sm"
             placeholder="Buscar SKU, código anterior, producto o unidad..."
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
-          <select className="h-10 rounded-md border border-line px-3 text-sm" value={status} onChange={(event) => setStatus(event.target.value as StockStatus)}>
+          <select aria-label="Filtrar por estado de stock" className="h-10 rounded-md border border-line px-3 text-sm" value={status} onChange={(event) => setStatus(event.target.value as StockStatus)}>
             <option value="todos">Todos los estados</option>
             <option value="critico">Stock crítico</option>
             <option value="agotado">Agotados</option>
             <option value="ok">Con cobertura</option>
           </select>
-          <select className="h-10 rounded-md border border-line px-3 text-sm" value={abc} onChange={(event) => setAbc(event.target.value)}>
+          <select aria-label="Filtrar por clasificación ABC" className="h-10 rounded-md border border-line px-3 text-sm" value={abc} onChange={(event) => setAbc(event.target.value)}>
             <option value="todos">Todas ABC</option>
             <option value="A">ABC A</option>
             <option value="B">ABC B</option>
             <option value="C">ABC C</option>
           </select>
-          <select className="h-10 rounded-md border border-line px-3 text-sm" value={sort} onChange={(event) => setSort(event.target.value)}>
+          <select aria-label="Ordenar existencias" className="h-10 rounded-md border border-line px-3 text-sm" value={sort} onChange={(event) => setSort(event.target.value)}>
             <option value="criticidad">Más crítico</option>
             <option value="nombre">Nombre</option>
             <option value="stock">Mayor stock</option>
           </select>
         </div>
         <div className="mb-4 grid gap-3 md:grid-cols-3">
-          <div className="rounded-md border border-line bg-paper p-3 text-sm"><span className="block text-neutral-500">Referencias</span><strong className="text-xl">{filteredItems.length}</strong></div>
+          <div aria-atomic="true" aria-live="polite" className="rounded-md border border-line bg-paper p-3 text-sm" role="status"><span className="block text-neutral-500">Referencias</span><strong className="text-xl">{filteredItems.length}</strong></div>
           <div className="rounded-md border border-line bg-paper p-3 text-sm"><span className="block text-neutral-500">Críticas</span><strong className="text-xl">{criticalCount}</strong></div>
           <div className="rounded-md border border-line bg-paper p-3 text-sm"><span className="block text-neutral-500">Agotadas</span><strong className="text-xl">{outCount}</strong></div>
         </div>
