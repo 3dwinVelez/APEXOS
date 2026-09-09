@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const directory = path.dirname(fileURLToPath(import.meta.url));
 const operation = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/operacion/page.tsx"), "utf8");
 const masters = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/maestros/page.tsx"), "utf8");
-const navigation = fs.readFileSync(path.resolve(directory, "../components/transport-nav.tsx"), "utf8");
+const transportLayout = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/layout.tsx"), "utf8");
 const planning = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/planeacion/page.tsx"), "utf8");
 const rates = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/tarifas/page.tsx"), "utf8");
 const configuration = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/configuracion/page.tsx"), "utf8");
@@ -16,18 +16,39 @@ const monitoring = fs.readFileSync(path.resolve(directory, "../app/dashboard/tra
 const liveMap = fs.readFileSync(path.resolve(directory, "../components/tms-live-map.tsx"), "utf8");
 const notifications = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/notificaciones/page.tsx"), "utf8");
 const pod = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/pod/page.tsx"), "utf8");
+const fleet = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/page.tsx"), "utf8");
+const packing = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/cubicaje/page.tsx"), "utf8");
+const profilePicker = fs.readFileSync(path.resolve(directory, "../components/transport/VehicleProfilePicker.tsx"), "utf8");
+
+test("Transporte usa un lobby APP sin navegación interna redundante", () => {
+  assert.doesNotMatch(transportLayout, /TransportNav|TabsList|TabLink/);
+  assert.match(transportLayout, /transport-workspace/);
+  assert.match(fleet, /apex-workspace-shell/);
+  assert.match(fleet, /apex-section-card/);
+  assert.match(fleet, /Herramientas activas de transporte/);
+  assert.match(fleet, /transportActions\.map/);
+  assert.match(fleet, /\/dashboard\/transporte\/flota/);
+  assert.match(packing, /apex-workspace-shell/);
+  assert.match(packing, /apex-section-card/);
+  assert.match(packing, /Largo/);
+  assert.match(packing, /Ancho/);
+  assert.match(packing, /Alto/);
+  assert.match(packing, /aria-modal="true"/);
+  assert.match(packing, /Espacio y vehículo/);
+  assert.match(packing, /Pedidos y viaje/);
+  assert.match(packing, /Productos y restricciones/);
+  assert.match(packing, /event\.key === "Escape"/);
+  assert.match(packing, /volume_utilization_pct/);
+  assert.match(packing, /weight_utilization_pct/);
+  assert.match(profilePicker, /Seleccionar tipo de vehículo/);
+  assert.match(profilePicker, /Espacio interior/);
+  assert.doesNotMatch(profilePicker, /profiles\.map\(\(profile\) => \{[\s\S]*?<button/);
+});
 
 test("Transporte separa flota, operacion y maestros TMS", () => {
-  assert.match(navigation, /\/dashboard\/transporte\/operacion/);
-  assert.match(navigation, /\/dashboard\/transporte\/maestros/);
-  assert.match(navigation, /\/dashboard\/transporte\/planeacion/);
-  assert.match(navigation, /\/dashboard\/transporte\/tarifas/);
-  assert.match(navigation, /Flota/);
-  assert.match(navigation, /\/dashboard\/transporte\/configuracion/);
-  assert.match(navigation, /\/dashboard\/transporte\/ordenes/);
-  assert.match(navigation, /\/dashboard\/transporte\/monitoreo/);
-  assert.match(navigation, /\/dashboard\/transporte\/notificaciones/);
-  assert.match(navigation, /\/dashboard\/transporte\/pod/);
+  for (const route of ["flota", "operacion", "maestros", "planeacion", "tarifas", "configuracion", "ordenes", "monitoreo", "notificaciones", "pod"]) {
+    assert.match(fleet, new RegExp(`/dashboard/transporte/${route}`));
+  }
 });
 test("POD expone KPIs, filtros y evidencia", () => { assert.match(pod, /\/transport\/pod\/stats/); assert.match(pod, /Primer intento/); assert.match(pod, /photos/); assert.match(pod, /signature/); });
 test("la operacion carga foto y firma POD como archivos", () => { assert.match(operation, /pod_photo/); assert.match(operation, /pod_signature_file/); assert.match(operation, /\/evidence/); assert.match(operation, /FormData/); });

@@ -1261,6 +1261,65 @@ html.dark .platform-alert-close:hover {
 .btn-primary { background: var(--color-apex, #146c63); color: white; }
 .btn-secondary { border: 1px solid var(--color-line, #d9dfdd); background: white; }
 
+/* Shared information architecture for every Transport application. */
+.transport-workspace {
+  min-width: 0;
+}
+
+.transport-workspace > * {
+  min-width: 0;
+}
+
+.transport-workspace > div > header {
+  border: 1px solid rgb(var(--color-line));
+  background: rgb(var(--surface));
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+.transport-workspace :where(section, form, aside) {
+  min-width: 0;
+}
+
+.transport-workspace :where(input, select, textarea, button) {
+  scroll-margin: 6rem;
+}
+
+.transport-workspace :where(input, select, textarea):focus-visible {
+  outline: 2px solid rgb(var(--color-apex) / 0.35);
+  outline-offset: 1px;
+}
+
+.transport-workspace :where(table) {
+  font-variant-numeric: tabular-nums;
+}
+
+.transport-workspace :where(thead th) {
+  white-space: nowrap;
+}
+
+.transport-workspace :where(tbody tr) {
+  transition: background-color 150ms ease;
+}
+
+.transport-workspace :where(tbody tr:hover) {
+  background: rgb(var(--color-apex) / 0.04);
+}
+
+@media (max-width: 767px) {
+  .transport-workspace > div > header {
+    padding: 0.875rem;
+  }
+
+  .transport-workspace :where(button) {
+    min-height: 2.75rem;
+  }
+
+  .transport-workspace :where(.grid-cols-2) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .apex-public-shell *,
   .apex-public-shell *::before,

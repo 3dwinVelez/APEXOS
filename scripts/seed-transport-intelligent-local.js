@@ -12,8 +12,8 @@ if (!/^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(apiUrl)) throw new Error("La
 const email = process.env.LOCAL_TMS_EMAIL || "demo@apex.local";
 const password = process.env.LOCAL_TMS_PASSWORD || "test1234";
 const runId = new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
-const output = path.resolve(arg("output", `docs/qa/evidence/transport-tms-foundation-20260904/run-${runId}.json`));
-const evidence = { certification: "transport-tms-local", environment: "LOCAL_DESARROLLO", run_id: runId, api_url: apiUrl, status: "running", checks: [], created: {} };
+const output = path.resolve(arg("output", `tmp/transport-demo-${runId}.json`));
+const evidence = { certification: "transport-demo-local", environment: "LOCAL_DESARROLLO", run_id: runId, api_url: apiUrl, status: "running", checks: [], created: {} };
 
 function check(name, passed, detail = {}) {
   evidence.checks.push({ name, status: passed ? "passed" : "failed", detail });
@@ -58,14 +58,14 @@ async function main() {
     const rateV2 = await request(`/api/v1/transport/rate-cards/${rate.body.id}/versions`, { method: "POST", headers, body: JSON.stringify({ code: rate.body.code, name: rate.body.name, carrier_id: carrier.body.id, origin_id: origin.body.id, destination_city: "Bogota", service_level: "normal", vehicle_type: "camion", valid_from: fromNow(-24), valid_to: fromNow(24 * 365), currency: "COP", base_rate: 510000, minimum_charge: 600000, price_per_km: 2500, price_per_kg: 25, price_per_m3: 1000, price_per_stop: 50000, fuel_surcharge_pct: 10, tolls_flat: 30000, status: "activa" }) });
     check("rate_v2_published_and_v1_replaced", rateV2.status === 201 && rateV2.body.status === "activa" && rateV2.body.version === 2, { status: rateV2.status, version: rateV2.body.version }); evidence.created.rate_card_id = rateV2.body.id;
 
-    const vehiclePayload = { plate: `Q${runId.slice(-6)}`, type: "camion", brand: "APEX QA", ownership_type: "tercero", base_site: "Local", linked_company: carrier.body.legal_name, status: "activo", capacity_value: 5, capacity_unit: "ton", volume_available: 30, soat_issued_at: fromNow(-24), soat_expires: fromNow(24 * 365), technical_review_issued_at: fromNow(-24), technical_review_expires: fromNow(24 * 365) };
+    const vehiclePayload = { plate: `Q${runId.slice(-6)}`, type: "camion", brand: "APEX DEMO", metadata: {cargo_space:{length:6,width:2.4,height:2.4,max_weight:5000}}, ownership_type: "tercero", base_site: "Local", linked_company: carrier.body.legal_name, status: "activo", capacity_value: 5, capacity_unit: "ton", volume_available: 30, soat_issued_at: fromNow(-24), soat_expires: fromNow(24 * 365), technical_review_issued_at: fromNow(-24), technical_review_expires: fromNow(24 * 365) };
     const vehicle = await request("/api/v1/transport/vehicles", { method: "POST", headers, body: JSON.stringify(vehiclePayload) });
     check("eligible_vehicle_created", vehicle.ok && vehicle.body.master_status === "apto_documentalmente", { status: vehicle.status, master_status: vehicle.body.master_status }); evidence.created.vehicle_id = vehicle.body.id;
 
     const incomplete = await request("/api/v1/transport/needs", { method: "POST", headers, body: JSON.stringify({ code: `QA-INC-${runId}`, source_type: "certificacion", origin_id: origin.body.id, origin_name: origin.body.name, delivery_point_id: point.body.id, available_at: fromNow(1), due_at: fromNow(8), weight_kg: 0, volume_m3: 0, pallets: 0, packages: 1, currency: "COP" }) });
     check("incomplete_need_visible", incomplete.status === 201 && incomplete.body.status === "incompleta" && incomplete.body.validation_errors.includes("peso_faltante"), { status: incomplete.status, validation_errors: incomplete.body.validation_errors }); evidence.created.incomplete_need_id = incomplete.body.id;
 
-    const need = await request("/api/v1/transport/needs", { method: "POST", headers, body: JSON.stringify({ code: `QA-NEC-${runId}`, source_type: "pedido_erp", source_reference: `P-${runId}`, origin_id: origin.body.id, origin_name: origin.body.name, delivery_point_id: point.body.id, available_at: fromNow(1), due_at: fromNow(8), priority: "alta", service_level: "normal", required_vehicle_type: "camion", weight_kg: 1200, volume_m3: 8, pallets: 3, packages: 24, cargo_value: 4500000, currency: "COP", lines: [{ sku: "QA-SKU", description: "Carga certificacion", quantity: 24, unit: "UND", weight_kg: 1200, volume_m3: 8, pallets: 3 }] }) });
+    const need = await request("/api/v1/transport/needs", { method: "POST", headers, body: JSON.stringify({ code: `QA-NEC-${runId}`, source_type: "pedido_erp", source_reference: `P-${runId}`, origin_id: origin.body.id, origin_name: origin.body.name, delivery_point_id: point.body.id, available_at: fromNow(1), due_at: fromNow(8), priority: "alta", service_level: "normal", required_vehicle_type: "camion", weight_kg: 1200, volume_m3: 8, pallets: 3, packages: 24, cargo_value: 4500000, currency: "COP", lines: [{ sku: "QA-SKU", description: "Carga demostrativa", metadata: {packing:{length:0.6,width:0.4,height:0.4,weight:50,rotation:"upright",stackable:true,max_top_load:150}}, quantity: 24, unit: "UND", weight_kg: 1200, volume_m3: 8, pallets: 3 }] }) });
     check("complete_need_created", need.status === 201 && need.body.status === "pendiente" && need.body.validation_errors.length === 0, { status: need.status }); evidence.created.need_id = need.body.id;
 
     const evaluation = await request("/api/v1/transport/planning/evaluate", { method: "POST", headers, body: JSON.stringify({ origin_id: origin.body.id, need_ids: [need.body.id], vehicle_id: vehicle.body.id, vehicle_type: "camion", service_level: "normal", strategy: "balanced" }) });
@@ -75,42 +75,13 @@ async function main() {
     const trip = { status: committed.status, body: committed.body.trip || {} };
     check("optimized_trip_committed", committed.status === 201 && trip.body.status === "planificado" && trip.body.stops.length === 1 && Number(trip.body.total_weight_kg) === 1200 && Number(trip.body.planned_distance_km) > 0, { status: committed.status, estimated_cost: trip.body.estimated_cost }); evidence.created.trip_id = trip.body.id; evidence.created.stop_id = trip.body.stops[0].id;
 
-    const assigned = await request(`/api/v1/transport/trips/${trip.body.id}/assign`, { method: "POST", headers, body: JSON.stringify({ carrier_id: carrier.body.id, vehicle_id: vehicle.body.id, driver_id: driver.body.id, committed_cost: 720000, reason: "Certificacion local" }) });
-    check("trip_assigned", assigned.ok && assigned.body.status === "asignado" && assigned.body.vehicle_plate === vehicle.body.plate, { status: assigned.status });
-
-    for (const status of ["en_cargue", "despachado", "en_transito"]) {
-      const transitioned = await request(`/api/v1/transport/trips/${trip.body.id}/transition`, { method: "POST", headers, body: JSON.stringify({ status }) });
-      check(`trip_transition_${status}`, transitioned.ok && transitioned.body.status === status, { status: transitioned.status });
+    for (const [suffix, quantity, length, width, height, weight, maxTop] of [["BEBIDAS",40,0.4,0.3,0.3,12,60],["ELECTRO",8,0.8,0.6,1.2,45,0],["INSUMOS",18,0.6,0.4,0.5,20,80]]) {
+      const extra=await request("/api/v1/transport/needs", {method:"POST",headers,body:JSON.stringify({code:`DEMO-${suffix}-${runId}`,source_type:"demo_local",origin_id:origin.body.id,origin_name:origin.body.name,delivery_point_id:point.body.id,available_at:fromNow(1),due_at:fromNow(12),weight_kg:quantity*weight,volume_m3:quantity*length*width*height,packages:quantity,service_level:"normal",required_vehicle_type:"camion",lines:[{sku:suffix,description:suffix,quantity,weight_kg:quantity*weight,volume_m3:quantity*length*width*height,metadata:{packing:{length,width,height,weight,rotation:"upright",stackable:maxTop>0,max_top_load:maxTop}}}]})});
+      check(`demo_${suffix}`,extra.status===201,{status:extra.status});
     }
-    const invalidClose = await request(`/api/v1/transport/trips/${trip.body.id}/transition`, { method: "POST", headers, body: JSON.stringify({ status: "cerrado" }) });
-    check("invalid_transition_blocked", invalidClose.status === 409, { status: invalidClose.status, code: invalidClose.body.code });
-
-    const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64");
-    const form = new FormData(); form.append("file", new Blob([png], { type: "image/png" }), "delivery.png");
-    const uploadResponse = await fetch(`${apiUrl}/api/v1/transport/trips/${trip.body.id}/stops/${trip.body.stops[0].id}/evidence`, { method: "POST", headers, body: form });
-    const uploaded = await uploadResponse.json();
-    check("real_evidence_uploaded", uploadResponse.status === 201 && Boolean(uploaded.storage_reference), { status: uploadResponse.status });
-    const attempt = await request(`/api/v1/transport/trips/${trip.body.id}/stops/${trip.body.stops[0].id}/attempts`, { method: "POST", headers, body: JSON.stringify({ result: "completa", delivered_lines: [{ sku: "QA-SKU", quantity: 24 }], additional_cost: 0, recoverable: false, pod: { received_at: fromNow(7), receiver_name: "Receptor certificacion", receiver_document: "QA-REC", latitude: 4.711, longitude: -74.0721, signature: uploaded.storage_reference, photos: [uploaded.storage_reference] } }) });
-    check("delivery_and_pod_recorded", attempt.status === 201 && attempt.body.result === "completa" && Boolean(attempt.body.pod?.id), { status: attempt.status }); evidence.created.attempt_id = attempt.body.id; evidence.created.pod_id = attempt.body.pod?.id;
-
-    const delivered = await request(`/api/v1/transport/trips/${trip.body.id}/transition`, { method: "POST", headers, body: JSON.stringify({ status: "entregado" }) });
-    check("trip_delivered", delivered.ok && delivered.body.status === "entregado", { status: delivered.status });
-
-    const settlement = await request(`/api/v1/transport/trips/${trip.body.id}/settlements`, { method: "POST", headers, body: JSON.stringify({ code: `QA-LIQ-${runId}`, currency: "COP", lines: [{ concept: "FLETE_BASE", quantity: 1, unit_rate: 720000, total: 720000, source: "contrato" }, { concept: "PEAJES", quantity: 1, unit_rate: 150000, total: 150000, source: "soporte" }] }) });
-    check("settlement_created", settlement.status === 201 && Number(settlement.body.liquidated_cost) === 870000 && settlement.body.lines.length === 2, { status: settlement.status }); evidence.created.settlement_id = settlement.body.id;
-    const approved = await request(`/api/v1/transport/settlements/${settlement.body.id}/approve`, { method: "POST", headers, body: "{}" });
-    check("settlement_approved", approved.ok && approved.body.status === "aprobada", { status: approved.status });
-    const closed = await request(`/api/v1/transport/trips/${trip.body.id}/transition`, { method: "POST", headers, body: JSON.stringify({ status: "cerrado" }) });
-    check("trip_closed_with_traceability", closed.ok && closed.body.status === "cerrado" && Number(closed.body.actual_cost) === 870000 && closed.body.events.some((event) => event.event_type === "LIQUIDACION_APROBADA"), { status: closed.status, events: closed.body.events?.length });
-
-    await request(`/api/v1/transport/vehicles/${vehicle.body.id}`, { method: "PUT", headers, body: JSON.stringify({ ...vehiclePayload, status: "retirado", reason: "Cierre certificacion local" }) });
-    await request(`/api/v1/transport/drivers/${driver.body.id}`, { method: "PUT", headers, body: JSON.stringify({ code: driver.body.code, document: driver.body.document, name: driver.body.name, carrier_id: carrier.body.id, status: "inactivo" }) });
-    await request(`/api/v1/transport/carriers/${carrier.body.id}`, { method: "PUT", headers, body: JSON.stringify({ code: carrier.body.code, legal_name: carrier.body.legal_name, status: "inactivo" }) });
-    await request(`/api/v1/transport/delivery-points/${point.body.id}`, { method: "PUT", headers, body: JSON.stringify({ code: point.body.code, name: point.body.name, address: point.body.address, city: point.body.city, country: point.body.country, latitude: point.body.latitude, longitude: point.body.longitude, window_start: point.body.window_start, window_end: point.body.window_end, active: false }) });
-    await request(`/api/v1/transport/rate-cards/${rateV2.body.id}/deactivate`, { method: "POST", headers, body: "{}" });
-    await request(`/api/v1/transport/origins/${origin.body.id}`, { method: "PUT", headers, body: JSON.stringify({ code: origin.body.code, name: origin.body.name, address: origin.body.address, city: origin.body.city, country: origin.body.country, latitude: origin.body.latitude, longitude: origin.body.longitude, active: false }) });
-    evidence.cleanup = "masters_and_rate_inactivated_and_vehicle_retired; transactional_trace_preserved";
-    evidence.status = "passed";
+    const profile=await request("/api/v1/transport/packing/profiles",{method:"POST",headers,body:JSON.stringify({id:"furgon-demo-5t",name:"Furgón seco · 5 toneladas",container:{length:6,width:2.4,height:2.4,max_weight:5000}})});
+    check("demo_profile",profile.ok,{status:profile.status});
+    evidence.status="passed";evidence.purpose="Reusable local demo. Masters, orders and planned trip intentionally kept active.";
   } catch (error) {
     evidence.status = "failed";
     evidence.error = error.message;
