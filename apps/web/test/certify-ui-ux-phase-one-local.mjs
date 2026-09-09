@@ -36,7 +36,11 @@ try {
   await page.goto(`${baseUrl}/dashboard/inventario/productos/nuevo`, { waitUntil: "networkidle0" });
   record("product_three_steps", await page.$$eval('[aria-label="Progreso del formulario"] li', (items) => items.length) === 3);
   await page.type('input[placeholder^="Ej: Cafe molido"]', "Certificación temporal");
-  await page.evaluate(() => [...document.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Continuar" && !button.hasAttribute("disabled"))?.click());
+  const continueButtons = await page.$$("button");
+  const continueButton = (await Promise.all(continueButtons.map(async (button) => ({ button, text: await button.evaluate((node) => node.textContent?.trim()) })))).find(({ text }) => text === "Continuar")?.button;
+  assert.ok(continueButton, "Continuar debe estar disponible");
+  await continueButton.click();
+  record("product_continue_not_obstructed_by_ai_help", await page.$('[aria-label="Cerrar guia"]') === null);
   record("product_step_navigation", await page.evaluate(() => document.body.textContent?.includes("Existencias y dimensiones") === true));
 
   await page.goto(`${baseUrl}/dashboard/compras/ordenes/nueva`, { waitUntil: "networkidle0" });

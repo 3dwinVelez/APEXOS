@@ -446,7 +446,7 @@ export function AiExperienceLayer() {
         </div>
       ) : null}
 
-      <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+84px)] right-3 z-50 flex flex-col items-end gap-3 md:bottom-4 md:right-4">
+      <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+84px)] right-3 z-50 flex flex-col items-end gap-3 md:bottom-20 md:right-4">
         {trayOpen ? (
           <section className="w-[calc(100vw-24px)] max-w-[380px] animate-[apexTrayIn_160ms_ease-out] rounded-md border border-line bg-white shadow-xl">
             <div className="flex items-start justify-between gap-3 border-b border-line p-4">
