@@ -2,6 +2,15 @@
 
 Todo cambio sigue exclusivamente `desarrollo -> develop -> main`. La aprobacion de pruebas automatizadas permite integrar en `develop`, pero nunca basta para promover a `main`.
 
+## Compuertas separadas por destino
+
+La llegada inicial a QA y la salida de QA son decisiones distintas:
+
+1. `desarrollo -> develop`: requiere certificacion local completa, autorizacion explicita para desplegar el candidato a QA y `npm run qa:preqa:evidence -- <manifiesto-preqa.json>`.
+2. `develop -> main`: requiere certificacion funcional sobre QA con el commit desplegado, aprobacion funcional explicita y `npm run qa:approval:evidence -- <manifiesto-qa.json>`.
+
+El manifiesto pre-QA debe declarar `environment: LOCAL`, `source_branch: desarrollo`, `target_branch: develop` y `qa_status: pending`. Esta compuerta solo habilita el despliegue necesario para ejecutar QA; nunca acredita funcionamiento en QA ni autoriza produccion.
+
 ## Evidencia obligatoria
 
 Antes de aprobar `develop -> main` debe existir un manifiesto JSON versionado con:

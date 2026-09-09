@@ -20,6 +20,10 @@
   "expected_changes": [
     {
       "status": "M",
+      "file": "AGENTS.md"
+    },
+    {
+      "status": "M",
       "file": "apps/web/app/dashboard/compras/ordenes/nueva/page.tsx"
     },
     {
@@ -127,6 +131,14 @@
       "file": "docs/design/APEX_OS_UI_UX_ROADMAP_CHECKLIST.md"
     },
     {
+      "status": "M",
+      "file": "docs/CHANGE_APPROVAL_QA_POLICY.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/agents/quality-gates.md"
+    },
+    {
       "status": "A",
       "file": "docs/qa/evidence/ui-ux-phase-one-20260908/browser-certification.json"
     },
@@ -136,14 +148,31 @@
     },
     {
       "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-one-20260908/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
       "file": "docs/qa/evidence/ui-ux-phase-zero-20260908/local-validation.md"
     },
     {
       "status": "A",
       "file": "docs/qa/evidence/ui-ux-phase-one-20260908/preqa-scope-manifest.json"
+    },
+    {
+      "status": "M",
+      "file": "package.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/test/validate-preqa-promotion-evidence.test.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/validate-preqa-promotion-evidence.js"
     }
   ],
   "allowed_paths": [
+    "AGENTS.md",
     "apps/web/app/dashboard/compras/ordenes/nueva/page.tsx",
     "apps/web/app/dashboard/inventario/productos/nuevo/page.tsx",
     "apps/web/app/dashboard/inventario/productos/page.tsx",
@@ -171,10 +200,16 @@
     "apps/web/test/login-phase-zero-ux.test.mjs",
     "apps/web/test/phase-one-design-system.test.mjs",
     "docs/design/APEX_OS_UI_UX_ROADMAP_CHECKLIST.md",
+    "docs/CHANGE_APPROVAL_QA_POLICY.md",
+    "docs/agents/quality-gates.md",
     "docs/qa/evidence/ui-ux-phase-one-20260908/browser-certification.json",
     "docs/qa/evidence/ui-ux-phase-one-20260908/local-validation.md",
+    "docs/qa/evidence/ui-ux-phase-one-20260908/preqa-approval-evidence.json",
     "docs/qa/evidence/ui-ux-phase-zero-20260908/local-validation.md",
-    "docs/qa/evidence/ui-ux-phase-one-20260908/preqa-scope-manifest.json"
+    "docs/qa/evidence/ui-ux-phase-one-20260908/preqa-scope-manifest.json",
+    "package.json",
+    "scripts/test/validate-preqa-promotion-evidence.test.js",
+    "scripts/validate-preqa-promotion-evidence.js"
   ],
   "allowed_deletions": [],
   "protected_capabilities": [
