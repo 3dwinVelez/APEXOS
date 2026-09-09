@@ -241,6 +241,10 @@
     },
     {
       "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-promotion-20260909/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
       "file": "docs/qa/evidence/ui-ux-phase-three-promotion-20260909/scope-manifest.json"
     },
     {
@@ -316,6 +320,7 @@
     "docs/qa/evidence/ui-ux-phase-three-foundation-20260909/local-validation.md",
     "docs/qa/evidence/ui-ux-phase-three-personalization-20260909/browser-certification.json",
     "docs/qa/evidence/ui-ux-phase-three-personalization-20260909/local-validation.md",
+    "docs/qa/evidence/ui-ux-phase-three-promotion-20260909/preqa-approval-evidence.json",
     "docs/qa/evidence/ui-ux-phase-three-promotion-20260909/scope-manifest.json",
     "docs/qa/evidence/ui-ux-phase-three-toolkit-20260909/browser-certification.json",
     "docs/qa/evidence/ui-ux-phase-three-toolkit-20260909/local-validation.md",
@@ -359,4 +364,3 @@
     }
   ]
 }
-
