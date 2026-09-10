@@ -53,6 +53,8 @@ test("la pantalla limita horarios al dia de Bogota y usa marcaciones idempotente
   assert.match(marking, /String\(item\.date\)\.slice\(0, 10\) !== todayBogota\(\)/);
   assert.match(marking, /idempotency_key: idempotencyKey/);
   assert.match(marking, /permanentSyncFailure/);
+  assert.doesNotMatch(marking, /Selecciona horario para marcar/);
+  assert.doesNotMatch(marking, /selectedRouteId/);
 });
 
 test("el perfil exclusivo se conserva al crear roles y usuarios Supabase", () => {

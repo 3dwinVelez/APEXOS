@@ -520,6 +520,45 @@ function routeAssignedToEmployee(route, employee) {
     .some((value) => aliases.has(normalizeKey(value)));
 }
 
+function routeIsOperational(route) {
+  return !["closed", "cerrada", "completed", "completada", "cancelled", "cancelada", "inactive", "inactiva"]
+    .includes(String(route?.status || "active").trim().toLowerCase());
+}
+
+async function resolveOwnRouteForToday(tenantId, employee) {
+  const dayStart = startOfDay();
+  const dayEnd = endOfDay(dayStart);
+  const routes = (await listRoutes(tenantId, { date: dayStart.toISOString().slice(0, 10) }))
+    .filter((route) => routeIsOperational(route) && routeAssignedToEmployee(route, employee))
+    .sort((left, right) => Number(right.id) - Number(left.id));
+  if (routes.length <= 1) return routes[0] || null;
+
+  const routeIds = routes.map((route) => Number(route.id));
+  const [activeSession, latestPunch] = await prisma.runWithTenant(tenantId, () => Promise.all([
+    prisma.workSession.findFirst({
+      where: {
+        employee_id: employee.id,
+        route_id: { in: routeIds },
+        date: { gte: dayStart, lt: dayEnd },
+        status: { in: ["activa", "active"] }
+      },
+      orderBy: { updated_at: "desc" },
+      select: { route_id: true }
+    }),
+    prisma.timePunch.findFirst({
+      where: {
+        employee_id: employee.id,
+        route_id: { in: routeIds },
+        date: { gte: dayStart, lt: dayEnd }
+      },
+      orderBy: { punched_at: "desc" },
+      select: { route_id: true }
+    })
+  ]));
+  const selectedId = Number(activeSession?.route_id || latestPunch?.route_id || routes[0].id);
+  return routes.find((route) => Number(route.id) === selectedId) || routes[0];
+}
+
 async function assertOwnAssignedRoute(tenantId, employee, input = {}) {
   const routeId = operationalRouteNumericId(input);
   if (!routeId) return null;
@@ -536,13 +575,20 @@ async function assertOwnAssignedRoute(tenantId, employee, input = {}) {
     err.code = "HORARIO_FUERA_DEL_DIA";
     throw err;
   }
+  const activeRoute = await resolveOwnRouteForToday(tenantId, employee);
+  if (!activeRoute || Number(activeRoute.id) !== Number(route.id)) {
+    const err = new Error("Este horario no es el horario activo del empleado para hoy.");
+    err.statusCode = 409;
+    err.code = "HORARIO_NO_ACTIVO";
+    throw err;
+  }
   return route;
 }
 
 async function listOwnRoutes(tenantId, user) {
   const employee = await getCurrentEmployee(tenantId, user);
-  const routes = await listRoutes(tenantId, { date: startOfDay().toISOString().slice(0, 10) });
-  return routes.filter((route) => routeAssignedToEmployee(route, employee));
+  const route = await resolveOwnRouteForToday(tenantId, employee);
+  return route ? [route] : [];
 }
 
 async function listRouteEventSummaries(tenantId) {

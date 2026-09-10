@@ -207,7 +207,6 @@ export default function MobilePunchPage() {
   const [activitySaving, setActivitySaving] = useState(false);
   const [activityMessage, setActivityMessage] = useState("");
   const [markingType, setMarkingType] = useState<string | null>(null);
-  const [selectedRouteId, setSelectedRouteId] = useState("");
   const [pendingSync, setPendingSync] = useState<PendingSyncItem[]>([]);
 
   const load = useCallback(async () => {
@@ -276,10 +275,10 @@ export default function MobilePunchPage() {
     });
   }), [aliases, employee, routes, userName]);
   const activeSessionRouteId = session?.session?.route_id ? String(session.session.route_id) : "";
-  const route = assignedRoutes.find((item) => String(item.id) === String(selectedRouteId || activeSessionRouteId))
-    || (assignedRoutes.length === 1 ? assignedRoutes[0] : null);
+  const route = assignedRoutes.find((item) => String(item.id) === activeSessionRouteId)
+    || assignedRoutes[0]
+    || null;
   const gpsRequired = scheduleGpsRequired(route);
-  const routeRequired = assignedRoutes.length > 1 && !route;
   const attendanceForRoute = attendance.find((item) => {
     const identityMatch = aliases.includes(normalizeKey(item.user_name)) || item.user_name === userName || item.user_name === employeeName(employee);
     const routeMatch = route ? String(item.route_id || "") === String(route.id) : true;
@@ -354,18 +353,6 @@ export default function MobilePunchPage() {
       if (timer) window.clearInterval(timer);
     };
   }, [employee, gpsRequired, route, userName, vehiclePlate]);
-
-  useEffect(() => {
-    if (!selectedRouteId && activeSessionRouteId) {
-      setSelectedRouteId(activeSessionRouteId);
-      return;
-    }
-    if (selectedRouteId && !assignedRoutes.some((item) => String(item.id) === String(selectedRouteId))) {
-      setSelectedRouteId("");
-      return;
-    }
-    if (!selectedRouteId && assignedRoutes.length === 1) setSelectedRouteId(String(assignedRoutes[0].id));
-  }, [activeSessionRouteId, assignedRoutes, selectedRouteId]);
 
   useEffect(() => {
     if (!route?.id) return;
@@ -656,21 +643,11 @@ export default function MobilePunchPage() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase text-neutral-500">Horario asignado</p>
-                <h2 className="mt-1 text-lg font-semibold">{route ? `Horario ${route.id}` : assignedRoutes.length ? "Selecciona un horario" : "Sin horario asignado"}</h2>
-                <p className="mt-1 text-sm text-neutral-600">{route ? `${route.start_time || "--"} - ${route.end_time || "--"}${route.vehicle_plate ? ` · ${route.vehicle_plate}` : ""} · ${gpsRequired ? "GPS activo" : "solo marcaciones"}` : assignedRoutes.length ? "Debes elegir sobre cual horario vas a registrar marcaciones y actividades." : "Consulta con administracion para asignar una jornada antes de marcar."}</p>
+                <h2 className="mt-1 text-lg font-semibold">{route ? `Horario ${route.id}` : "Sin horario asignado"}</h2>
+                <p className="mt-1 text-sm text-neutral-600">{route ? `${route.start_time || "--"} - ${route.end_time || "--"}${route.vehicle_plate ? ` · ${route.vehicle_plate}` : ""} · ${gpsRequired ? "GPS activo" : "solo marcaciones"}` : "Consulta con administracion para asignar una jornada antes de marcar."}</p>
               </div>
               <span className={`rounded-md px-2 py-1 text-xs font-semibold ${route ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>{assignedRoutes.length} asignado(s)</span>
             </div>
-            {assignedRoutes.length > 1 ? (
-              <select className="mt-3 h-12 w-full rounded-md border border-line bg-white px-3 text-base" value={selectedRouteId} onChange={(event) => setSelectedRouteId(event.target.value)}>
-                <option value="">Selecciona horario para marcar</option>
-                {assignedRoutes.map((item) => (
-                  <option key={String(item.id)} value={String(item.id)}>
-                    Horario {item.id} - {item.start_time || "--"} a {item.end_time || "--"}{item.vehicle_plate ? ` - ${item.vehicle_plate}` : ""}
-                  </option>
-                ))}
-              </select>
-            ) : null}
           </section>
 
           <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
@@ -790,7 +767,7 @@ export default function MobilePunchPage() {
       {view === "marcar" ? <div className="fixed inset-x-0 bottom-0 z-50 border-t border-line bg-white/95 px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur md:hidden">
         <button
           className={`h-14 w-full rounded-md text-base font-semibold text-white shadow-sm ${nextType ? punchLabels[nextType]?.color : "bg-apex"} disabled:bg-neutral-300`}
-          disabled={!employee || !route || routeRequired || !nextType || Boolean(markingType)}
+          disabled={!employee || !route || !nextType || Boolean(markingType)}
           onClick={() => nextType && mark(nextType)}
           type="button"
         >
