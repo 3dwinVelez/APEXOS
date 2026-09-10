@@ -139,6 +139,12 @@ const typeLabels: Record<string, string> = {
   raw_material: "Materia prima"
 };
 
+const INVENTORY_TRACKED_TYPES = new Set(["product", "raw_material", "component"]);
+
+function handlesInventory(type: string) {
+  return INVENTORY_TRACKED_TYPES.has(type);
+}
+
 function numberInputValue(value: number) {
   return value === 0 ? "" : String(value);
 }
@@ -153,7 +159,7 @@ export default function NuevoProductoPage() {
   const [tree, setTree] = useState<OrganizationTree>(EMPTY_TREE);
   const [classifications, setClassifications] = useState<Classification[]>([]);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
-  const [activeTab, setActiveTab] = useState<WorkspaceTab>("crear");
+  const [activeTab] = useState<WorkspaceTab>("crear");
   const [createStep, setCreateStep] = useState(0);
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
@@ -220,6 +226,7 @@ export default function NuevoProductoPage() {
   const activeBranches = activeBranchesFor(form.society_code);
   const availableFamilies = filteredFamilies(form.society_code, form.branch_code);
   const selectedFamily = availableFamilies.find((family) => family.code === form.family);
+  const inventoryTracked = handlesInventory(form.type);
   const canSave = Boolean(form.name.trim() && form.society_code && form.branch_code && form.type && form.unit && selectedFamily);
   const taxRates = taxRatesForCountry("CO");
   const categories = classifications.filter((row) => row.type === "category");
@@ -281,11 +288,11 @@ export default function NuevoProductoPage() {
           }
         })
       });
-      setOk(`${created.code} creado y disponible en compras, ventas, WMS y costos`);
-      showToast({ tone: "success", title: `Producto creado — ${created.code}`, description: "Ya está disponible en compras, ventas, WMS y costos." });
+      setOk(`${created.code} creado y disponible según su tipo operativo`);
+      showToast({ tone: "success", title: `Producto creado — ${created.code}`, description: "Ya está disponible según su tipo operativo." });
       await loadItems();
       setSelectedItem(created);
-      if (!keepCreating) setActiveTab("directorio");
+      if (!keepCreating) setCreateStep(0);
       setForm(keepCreating ? { ...INITIAL_FORM, society_code: form.society_code, branch_code: form.branch_code, type: form.type, unit: form.unit, family: form.family } : { ...INITIAL_FORM, society_code: form.society_code, branch_code: form.branch_code, family: nextFamilyCode() });
     } catch (err) {
       const detail = err instanceof Error ? err.message : "No fue posible crear el producto";
@@ -324,12 +331,9 @@ export default function NuevoProductoPage() {
         <div>
           <div>
             <p className="text-sm font-medium text-apex">Inventario / Productos</p>
-            <h1 className="mt-1 text-2xl font-semibold">Productos</h1>
-            <p className="mt-1 text-sm text-neutral-600">Crea, consulta y actualiza el maestro de productos.</p>
+            <h1 className="mt-1 text-2xl font-semibold">Nuevo producto</h1>
+            <p className="mt-1 text-sm text-neutral-600">Registra un producto, servicio o registro no inventariable con reglas claras desde el origen.</p>
           </div>
-        </div>
-        <div className="mt-3 border-t border-line pt-3">
-          <SegmentedNav active={activeTab} onChange={setActiveTab} />
         </div>
       </header>
 
@@ -342,9 +346,9 @@ export default function NuevoProductoPage() {
         <div className="space-y-4">
           {activeTab === "crear" ? (
             <>
-              <StepIndicator current={createStep} steps={["Datos básicos", "Existencias", "Operación"]} />
+              <StepIndicator current={createStep} steps={["Identificación", "Clasificación", "Configuración"]} />
               {createStep === 0 ? <section className="rounded-md border border-line bg-white">
-                <PanelHeader icon={PackagePlus} title="Datos básicos" detail="Identificación y clasificación del producto." />
+                <PanelHeader icon={PackagePlus} title="Identificación" detail="Nombre, tipo, unidad y código automático del registro." />
                 <div className="space-y-4 p-4">
                   <div className="grid gap-3 lg:grid-cols-[180px_180px_1fr_180px_150px]">
                     <Field label="Sociedad">
@@ -371,13 +375,25 @@ export default function NuevoProductoPage() {
                     <Field label="Nombre">
                       <input className="h-10 w-full rounded-md border border-line px-3 text-sm" placeholder="Ej: Cafe molido 500g, servicio instalacion, saco azucar 25kg" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
                     </Field>
-                    <Field label="Tipo">
-                      <select className="h-10 w-full rounded-md border border-line px-3 text-sm" value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))}>
+                    <Field label="Tipo de registro">
+                      <select className="h-10 w-full rounded-md border border-line px-3 text-sm" value={form.type} onChange={(e) => {
+                        const nextType = e.target.value;
+                        setForm((p) => ({
+                          ...p,
+                          type: nextType,
+                          stock_min: handlesInventory(nextType) ? p.stock_min : 0,
+                          stock_max: handlesInventory(nextType) ? p.stock_max : 0,
+                          lot_control: handlesInventory(nextType) ? p.lot_control : false,
+                          expiry_control: handlesInventory(nextType) ? p.expiry_control : false,
+                          serial_control: handlesInventory(nextType) ? p.serial_control : false
+                        }));
+                      }}>
                         <option value="product">Producto</option>
                         <option value="service">Servicio</option>
                         <option value="raw_material">Materia prima</option>
                         <option value="component">Componente</option>
                         <option value="asset">Activo</option>
+                        <option value="non_inventory">No inventariable</option>
                       </select>
                     </Field>
                     <Field label="Unidad">
@@ -400,16 +416,19 @@ export default function NuevoProductoPage() {
                         {availableFamilies.map((family) => <option key={family.id} value={family.code}>{family.code} - {family.name}</option>)}
                       </select>
                     </Field>
-                    <Field label="Codigo asignado">
-                      <input className="h-10 w-full rounded-md border border-line bg-paper px-3 text-sm text-neutral-600" readOnly value={selectedFamily?.code_start && selectedFamily?.code_end ? `${selectedFamily.code_start}-${selectedFamily.code_end}` : "Automatico"} />
+                    <Field label="Código automático">
+                      <div className="min-h-10 rounded-md border border-line bg-paper px-3 py-2 text-sm text-neutral-700">
+                        <span className="block font-medium">Se asignará al crear el producto</span>
+                        <span className="text-xs text-neutral-500">{selectedFamily?.code_start && selectedFamily?.code_end ? `Rango disponible ${selectedFamily.code_start}–${selectedFamily.code_end}` : "El sistema elegirá el siguiente código disponible."}</span>
+                      </div>
                     </Field>
                     <Field label="Código artículo anterior">
                       <input className="h-10 w-full rounded-md border border-line px-3 text-sm" placeholder="Opcional; código del sistema anterior" value={form.legacy_code} onChange={(e) => setForm((p) => ({ ...p, legacy_code: e.target.value }))} />
                     </Field>
-                    <Field label="Categoria"><select className="control" value={form.category_id} onChange={(e) => setForm((p) => ({ ...p, category_id:Number(e.target.value),subcategory_id:0,line_id:0,subline_id:0 }))}><option value={0}>Seleccionar</option>{categories.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></Field>
-                    <Field label="Subcategoria"><select className="control" disabled={!form.category_id} value={form.subcategory_id} onChange={(e) => setForm((p) => ({ ...p, subcategory_id:Number(e.target.value),line_id:0,subline_id:0 }))}><option value={0}>Seleccionar</option>{subcategories.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></Field>
-                    <Field label="Linea"><select className="control" disabled={!form.subcategory_id} value={form.line_id} onChange={(e) => setForm((p) => ({ ...p, line_id:Number(e.target.value),subline_id:0 }))}><option value={0}>Seleccionar</option>{productLines.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></Field>
-                    <Field label="Sublinea"><select className="control" disabled={!form.line_id} value={form.subline_id} onChange={(e) => setForm((p) => ({ ...p, subline_id:Number(e.target.value) }))}><option value={0}>Seleccionar</option>{sublines.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></Field>
+                    <Field label="Categoría"><select className="control" value={form.category_id} onChange={(e) => setForm((p) => ({ ...p, category_id:Number(e.target.value),subcategory_id:0,line_id:0,subline_id:0 }))}><option value={0}>Seleccionar</option>{categories.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></Field>
+                    <Field label="Subcategoría"><select className="control" disabled={!form.category_id} title={!form.category_id ? "Selecciona una categoría primero" : undefined} value={form.subcategory_id} onChange={(e) => setForm((p) => ({ ...p, subcategory_id:Number(e.target.value),line_id:0,subline_id:0 }))}><option value={0}>Seleccionar</option>{subcategories.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></Field>
+                    <Field label="Línea"><select className="control" disabled={!form.subcategory_id} title={!form.subcategory_id ? "Selecciona una subcategoría primero" : undefined} value={form.line_id} onChange={(e) => setForm((p) => ({ ...p, line_id:Number(e.target.value),subline_id:0 }))}><option value={0}>Seleccionar</option>{productLines.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></Field>
+                    <Field label="Sublínea"><select className="control" disabled={!form.line_id} title={!form.line_id ? "Selecciona una línea primero" : undefined} value={form.subline_id} onChange={(e) => setForm((p) => ({ ...p, subline_id:Number(e.target.value) }))}><option value={0}>Seleccionar</option>{sublines.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></Field>
                     <Field label="Marca"><select className="control" value={form.brand_id} onChange={(e) => setForm((p) => ({ ...p, brand_id:Number(e.target.value) }))}><option value={0}>Seleccionar</option>{brands.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></Field>
                     <Field label="Referencia"><select className="control" value={form.reference_id} onChange={(e) => setForm((p) => ({ ...p, reference_id:Number(e.target.value) }))}><option value={0}>Seleccionar</option>{references.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></Field>
                     <Field label="Canal">
@@ -432,7 +451,7 @@ export default function NuevoProductoPage() {
               </section> : null}
 
               {createStep === 1 ? <section className="rounded-md border border-line bg-white">
-                <PanelHeader icon={DollarSign} title="Existencias y dimensiones" detail="El costo se forma desde inventario y el precio se administra en Ventas." />
+                <PanelHeader icon={DollarSign} title="Clasificación y organización" detail="Ubica el registro dentro de sociedad, sucursal, familia, canal e impuestos." />
                 <div className="grid gap-4 p-4 lg:grid-cols-3">
                   <div className="grid gap-3">
                     <Field label="Moneda">
@@ -444,15 +463,18 @@ export default function NuevoProductoPage() {
                     <MiniMetric label="Precio" value="Se configura en Ventas" />
                   </div>
 
-                  <div className="grid gap-3">
-                    <Field label="Stock minimo">
+                  {inventoryTracked ? <div className="grid gap-3">
+                    <Field label="Stock mínimo">
                       <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} type="number" value={numberInputValue(form.stock_min)} onChange={(e) => setForm((p) => ({ ...p, stock_min: numberFromInput(e.target.value) }))} />
                     </Field>
-                    <Field label="Stock maximo">
+                    <Field label="Stock máximo">
                       <input className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0} type="number" value={numberInputValue(form.stock_max)} onChange={(e) => setForm((p) => ({ ...p, stock_max: numberFromInput(e.target.value) }))} />
                     </Field>
-                    <MiniMetric label="Reposicion sugerida" value={String(Math.max(0, Number(form.stock_max) - Number(form.stock_min)))} />
-                  </div>
+                    <MiniMetric label="Reposición sugerida" value={String(Math.max(0, Number(form.stock_max) - Number(form.stock_min)))} />
+                  </div> : <div className="rounded-md border border-line bg-paper p-3 text-sm text-neutral-600">
+                    <b className="text-neutral-900">Sin existencias físicas</b>
+                    <span className="mt-1 block">Los servicios, activos no inventariables y registros no inventariables no generan stock, lote, serie, vencimiento ni kardex físico.</span>
+                  </div>}
 
                   <div className="grid gap-3">
                     <Field label="Peso kg">
@@ -467,7 +489,7 @@ export default function NuevoProductoPage() {
               </section> : null}
 
               {createStep === 2 ? <section className="rounded-md border border-line bg-white">
-                <PanelHeader icon={Layers3} title="Opciones operativas" detail="Reglas aplicadas en Compras y Ventas." />
+                <PanelHeader icon={Layers3} title="Configuración" detail="Reglas fiscales, comerciales e inventariables según el tipo de registro." />
                 <div className="grid gap-4 p-4 lg:grid-cols-2">
                   <ProfileSelect icon={ClipboardCheck} title="Compras" value={form.purchase_profile} onChange={(value) => setForm((p) => ({ ...p, purchase_profile: value }))} options={["comprable", "no comprable", "bajo contrato", "importado"]} />
                   <ProfileSelect icon={ShoppingCart} title="Ventas" value={form.sales_profile} onChange={(value) => setForm((p) => ({ ...p, sales_profile: value }))} options={["vendible", "no vendible", "solo cotizacion", "kit"]} />
@@ -480,11 +502,11 @@ export default function NuevoProductoPage() {
                 </div>
 
                 <div className="flex flex-col gap-3 border-t border-line p-4 lg:flex-row lg:items-center lg:justify-between">
-                  <div className="flex flex-wrap gap-2">
+                  {inventoryTracked ? <div className="flex flex-wrap gap-2">
                     <Toggle label="Lote" checked={form.lot_control} onChange={(value) => setForm((p) => ({ ...p, lot_control: value }))} />
                     <Toggle label="Vencimiento" checked={form.expiry_control} onChange={(value) => setForm((p) => ({ ...p, expiry_control: value }))} />
                     <Toggle label="Serial" checked={form.serial_control} onChange={(value) => setForm((p) => ({ ...p, serial_control: value }))} />
-                  </div>
+                  </div> : <p className="rounded-md border border-line bg-paper px-3 py-2 text-sm text-neutral-600">Este tipo no maneja inventario físico; por eso se ocultan lote, serie y vencimiento.</p>}
                   <div className="flex flex-col gap-2 sm:flex-row">
                     <Button onClick={() => setCreateStep(1)} type="button" variant="ghost">Anterior</Button>
                     <Button disabled={!canSave} loading={saving} onClick={() => void createItem(true)} type="button" variant="secondary">
@@ -560,27 +582,6 @@ export default function NuevoProductoPage() {
         </div>
 
       </section>
-    </div>
-  );
-}
-
-function SegmentedNav({ active, onChange }: { active: WorkspaceTab; onChange: (tab: WorkspaceTab) => void }) {
-  const tabs: Array<{ id: WorkspaceTab; label: string; icon: LucideIcon }> = [
-    { id: "crear", label: "Crear producto", icon: PackagePlus },
-    { id: "directorio", label: "Directorio", icon: Boxes },
-    { id: "trazabilidad", label: "Trazabilidad", icon: Layers3 }
-  ];
-  return (
-    <div className="grid gap-1 rounded-md bg-paper p-1 sm:inline-grid sm:grid-cols-3">
-      {tabs.map((tab) => {
-        const Icon = tab.icon;
-        return (
-          <button className={`inline-flex h-9 items-center justify-center gap-2 rounded-md px-3 text-sm ${active === tab.id ? "bg-white text-apex shadow-sm" : "text-neutral-600 hover:bg-white/70"}`} key={tab.id} onClick={() => onChange(tab.id)} type="button">
-            <Icon size={15} />
-            {tab.label}
-          </button>
-        );
-      })}
     </div>
   );
 }

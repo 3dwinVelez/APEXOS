@@ -30,3 +30,33 @@ test("APEX AI no apunta a WMS oculto dentro de inventario", () => {
   assert.doesNotMatch(aiLayer, /inventario\/wms|wms-lego|Layout WMS/);
   assert.match(aiLayer, /stock-control/);
 });
+
+test("nuevo producto no duplica directorio ni trazabilidad como navegación interna", () => {
+  const source = read("app/dashboard/inventario/productos/nuevo/page.tsx");
+  assert.match(source, /<InventoryNav/);
+  assert.doesNotMatch(source, /SegmentedNav|setActiveTab|Vista de productos/);
+  assert.match(source, /Nuevo producto/);
+  assert.match(source, /Código automático/);
+  assert.match(source, /Se asignará al crear el producto/);
+});
+
+test("formulario de producto separa inventariables de servicios y no inventariables", () => {
+  const source = read("app/dashboard/inventario/productos/nuevo/page.tsx");
+  assert.match(source, /INVENTORY_TRACKED_TYPES/);
+  assert.match(source, /handlesInventory/);
+  assert.match(source, /value="service"/);
+  assert.match(source, /value="non_inventory"/);
+  assert.match(source, /Sin existencias físicas/);
+  assert.match(source, /no generan stock, lote, serie, vencimiento ni kardex físico/);
+  assert.match(source, /stock_min: handlesInventory\(nextType\) \? p\.stock_min : 0/);
+});
+
+test("formulario de producto usa agrupación operacional de fase 3", () => {
+  const source = read("app/dashboard/inventario/productos/nuevo/page.tsx");
+  for (const label of ["Identificación", "Clasificación", "Configuración", "Tipo de registro", "Categoría", "Subcategoría", "Línea", "Sublínea", "Stock mínimo", "Stock máximo"]) {
+    assert.match(source, new RegExp(label));
+  }
+  assert.match(source, /Selecciona una categoría primero/);
+  assert.match(source, /Selecciona una subcategoría primero/);
+  assert.match(source, /Selecciona una línea primero/);
+});
