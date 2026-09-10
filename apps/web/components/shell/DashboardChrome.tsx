@@ -15,6 +15,7 @@ import { CollaborationPresence } from "@/components/system/CollaborationPresence
 import { ExperiencePreferences } from "@/components/system/ExperiencePreferences";
 import { LocaleSwitcher } from "@/components/system/LocaleSwitcher";
 import { OfflineFirstStatus } from "@/components/system/OfflineFirstStatus";
+import { StandardTableExperience } from "@/components/system/StandardTableExperience";
 import { TraceabilityCenter } from "@/components/system/TraceabilityCenter";
 import { WorldClassToolkit } from "@/components/system/WorldClassToolkit";
 import { FieldProductivity } from "@/components/system/FieldProductivity";
@@ -64,6 +65,7 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
       <div className="technician-hide"><Sidebar /></div>
       <main className="min-w-0 flex-1 overflow-x-hidden p-3 pb-24 sm:p-4 md:p-6 md:pb-6" id="apex-main-content" tabIndex={-1}>
         <FieldProductivity />
+        <StandardTableExperience />
         <div className="mb-3 flex flex-wrap justify-end gap-2"><OfflineFirstStatus /><LocaleSwitcher /><TraceabilityCenter /><CollaborationPresence /><ExperiencePreferences /><WorldClassToolkit /><CommandPalette /><NotificationCenter /></div>
         <ContextBreadcrumbs />
         <TechnicianWorkspaceHeader />
