@@ -6,7 +6,7 @@
     "modules": ["talento-humano", "time-tracking", "qa-certification"]
   },
   "base_commits": {
-    "develop": "3bdebf537f8c0c6f69aa1e5d7424e5a24aa48595"
+    "develop": "3bdebf537f8c038debe496d3bb0c8424cc23b65c"
   },
   "certified_commit": "3bdebf537f8c",
   "certification_status": "qa_passed",
