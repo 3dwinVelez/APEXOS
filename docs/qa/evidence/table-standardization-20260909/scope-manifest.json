@@ -13,7 +13,7 @@
   "base_commits": {
     "develop": "450395012cf90d8e2f46c1b9d83b064658d17699"
   },
-  "certified_commit": "fd10f1a",
+  "certified_commit": "3147a81",
   "certification_status": "local_passed_qa_pending",
   "expected_changes": [
     { "status": "M", "file": "apps/web/app/globals.css" },
