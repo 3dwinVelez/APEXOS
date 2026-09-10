@@ -1,6 +1,6 @@
 # Validacion local y diagnostico QA
 
-- Candidato funcional: `38468b4`.
+- Candidato funcional reconstruido sobre `origin/develop`: `e46326e` (equivalente puntual de `desarrollo@38468b4`).
 - Diagnostico QA previo: 20 usuarios SCJ, 80 marcaciones y 20 reenvios idempotentes; 0 errores, 0 perdidas y 0 duplicados.
 - Latencia previa: p50 entre 16.602 ms y 21.234 ms; maximo 25.672 ms.
 - Causa: `ensurePreoperationalChecklist` usaba el cliente Prisma global dentro de una transaccion interactiva y podia esperar una segunda conexion del mismo pool.

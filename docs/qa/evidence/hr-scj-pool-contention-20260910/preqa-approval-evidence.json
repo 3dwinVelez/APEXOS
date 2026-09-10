@@ -3,7 +3,7 @@
   "environment": "LOCAL",
   "source_branch": "desarrollo",
   "target_branch": "develop",
-  "commit": "38468b4",
+  "commit": "e46326e",
   "qa_status": "pending",
   "checks": {
     "functional": { "status": "passed", "evidence": ["local-validation.md"] },

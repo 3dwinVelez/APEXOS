@@ -8,7 +8,7 @@
   "base_commits": {
     "develop": "450395012cf90d8e2f46c1b9d83b064658d17699"
   },
-  "certified_commit": "38468b4",
+  "certified_commit": "e46326e",
   "certification_status": "local_passed_qa_pending",
   "expected_changes": [
     { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
