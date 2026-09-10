@@ -14,6 +14,7 @@
     "certify:mass-regression:nyvora": "node scripts/certifications/nyvora-mass-regression.js",
     "certify:hr-monitor:nyvora": "node scripts/certifications/nyvora-hr-monitor-dynamic.js",
     "certify:hr-marking-concurrency:qa": "node scripts/certifications/hr-marking-concurrency-qa.js",
+    "certify:hr-single-active-schedule:qa": "node scripts/certifications/hr-single-active-schedule-qa.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init_apex_os_2",
     "prisma:validate": "prisma validate"
