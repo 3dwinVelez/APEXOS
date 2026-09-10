@@ -6,21 +6,14 @@
     "modules": ["talento-humano", "time-tracking", "qa-certification"]
   },
   "base_commits": {
-    "develop": "2cf09195d8b9f0aea5ae8bda1bb7403bdf1b5f21"
+    "develop": "40738831c28d03c1c4448840f8c5f374959df94f"
   },
-  "certified_commit": "197d44707ca632d469f41750074b181795b68262",
-  "certification_status": "local_passed_qa_pending",
+  "certified_commit": "40738831c28d03c1c4448840f8c5f374959df94f",
+  "certification_status": "qa_passed",
   "expected_changes": [
-    { "status": "M", "file": "apps/api/package.json" },
-    { "status": "A", "file": "apps/api/scripts/certifications/hr-single-active-schedule-qa.js" },
-    { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
-    { "status": "M", "file": "apps/api/test/hr-marking-concurrency.test.js" },
-    { "status": "A", "file": "apps/api/test/hr-single-active-schedule-certificate.test.js" },
-    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/marcacion/page.tsx" },
-    { "status": "M", "file": "apps/web/test/hr-marking-only-access.test.mjs" },
-    { "status": "A", "file": "docs/qa/evidence/hr-single-active-schedule-20260910/local-validation.md" },
-    { "status": "A", "file": "docs/qa/evidence/hr-single-active-schedule-20260910/preqa-approval-evidence.json" },
-    { "status": "A", "file": "docs/qa/evidence/hr-single-active-schedule-20260910/preqa-scope-manifest.json" }
+    { "status": "M", "file": "docs/qa/evidence/hr-single-active-schedule-20260910/local-validation.md" },
+    { "status": "M", "file": "docs/qa/evidence/hr-single-active-schedule-20260910/preqa-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-single-active-schedule-20260910/qa-certification.json" }
   ],
   "allowed_paths": [
     "apps/api/package.json",
