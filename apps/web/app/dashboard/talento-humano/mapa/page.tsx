@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { PointerEvent } from "react";
+import { bogotaCalendarDate, hasMapCoordinates, historicalMapViewport } from "@/lib/hrMapViewport";
 
 type GpsPoint = {
   id: string;
@@ -126,10 +127,6 @@ const punchTone: Record<string, string> = {
   salida: "bg-violet-500"
 };
 
-function today() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 function mapsUrl(point: { latitude: number | null; longitude: number | null }) {
   return point.latitude != null && point.longitude != null ? `https://www.google.com/maps?q=${point.latitude},${point.longitude}&z=17` : "";
 }
@@ -244,7 +241,7 @@ function RouteTrail({ points, center, zoom, color = "#0ea5e9", dashed = false }:
 }
 
 export default function LiveGpsMapPage() {
-  const [date, setDate] = useState(today());
+  const [date, setDate] = useState(bogotaCalendarDate());
   const [data, setData] = useState<OperationsMap | null>(null);
   const [mode, setMode] = useState<"vivo" | "historico">("vivo");
   const [selectedKey, setSelectedKey] = useState("");
@@ -293,7 +290,7 @@ export default function LiveGpsMapPage() {
   }, [mode]);
 
   useEffect(() => {
-    if (mode === "vivo") setDate(today());
+    if (mode === "vivo") setDate(bogotaCalendarDate());
   }, [mode]);
 
   useEffect(() => {
@@ -305,6 +302,14 @@ export default function LiveGpsMapPage() {
   const routes = useMemo(() => data?.routes || [], [data?.routes]);
   const activeWindowSeconds = (data?.active_window_minutes || 30) * 60;
   const users = useMemo(() => Array.from(new Set(people.map((person) => person.user_name).filter(Boolean))).sort(), [people]);
+  const routeTrails = useMemo(() => (routeId === "all" ? routes : routes.filter((route) => String(route.id) === routeId)).map((route) => ({
+    ...route,
+    punch_points: userName === "all" ? route.punch_points : (route.punch_points || []).filter((mark) => mark.user_name === userName),
+    activity_points: userName === "all" ? route.activity_points : (route.activity_points || []).filter((activity) => activity.user_name === userName),
+    marks_by_user: userName === "all" ? route.marks_by_user : (route.marks_by_user || []).filter((group) => group.user_name === userName)
+  })), [routeId, routes, userName]);
+  const visibleMarks = useMemo(() => routeTrails.flatMap((route) => route.punch_points || []).filter(hasMapCoordinates), [routeTrails]);
+  const visibleActivities = useMemo(() => routeTrails.flatMap((route) => route.activity_points || []).filter(hasMapCoordinates), [routeTrails]);
 
   const filteredPeople = useMemo(() => people.filter((person) => {
     const liveOnline = isOnline(person, activeWindowSeconds);
@@ -316,15 +321,25 @@ export default function LiveGpsMapPage() {
     return true;
   }), [activeWindowSeconds, people, routeId, userName, status]);
   const selected = filteredPeople.find((person) => person.key === selectedKey) || null;
+  const historicalViewport = useMemo(() => historicalMapViewport([
+    ...filteredPeople,
+    ...routeTrails.flatMap((route) => route.pings || []),
+    ...visibleMarks,
+    ...visibleActivities
+  ]), [filteredPeople, routeTrails, visibleActivities, visibleMarks]);
   const centerTarget = followSelected && selected?.latitude != null && selected.longitude != null
     ? { latitude: selected.latitude, longitude: selected.longitude }
-    : centerFrom(filteredPeople);
+    : mode === "historico" ? historicalViewport.center : centerFrom(filteredPeople);
   const targetLatitude = centerTarget.latitude;
   const targetLongitude = centerTarget.longitude;
   const [center, setCenter] = useState(centerTarget);
   useEffect(() => {
     setCenter({ latitude: targetLatitude, longitude: targetLongitude });
   }, [targetLatitude, targetLongitude]);
+
+  useEffect(() => {
+    if (mode === "historico" && !selected) setZoom(historicalViewport.zoom);
+  }, [date, historicalViewport.zoom, mode, routeId, selected, userName]);
 
   function startPan(event: PointerEvent<HTMLElement>) {
     if (event.target instanceof HTMLElement && event.target.closest("button,a,input,select")) return;
@@ -344,14 +359,6 @@ export default function LiveGpsMapPage() {
     if (drag) event.currentTarget.releasePointerCapture(event.pointerId);
     setDrag(null);
   }
-  const routeTrails = (routeId === "all" ? routes : routes.filter((route) => String(route.id) === routeId)).map((route) => ({
-    ...route,
-    punch_points: userName === "all" ? route.punch_points : (route.punch_points || []).filter((mark) => mark.user_name === userName),
-    marks_by_user: userName === "all" ? route.marks_by_user : (route.marks_by_user || []).filter((group) => group.user_name === userName)
-  }));
-  const visibleMarks = routeTrails.flatMap((route) => route.punch_points || []);
-  const visibleActivities = routeTrails.flatMap((route) => route.activity_points || []);
-
   return (
     <div className="-m-4 flex h-[calc(100vh-64px)] flex-col bg-[#0d1b2a] text-neutral-900 md:-m-6">
       <header className="z-20 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-[#0d1b2a] px-4 py-3 text-white">
