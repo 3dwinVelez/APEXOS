@@ -239,6 +239,13 @@ html:not(.dark):not([data-theme="dark"]) .apex-login-input {
   color: #132136 !important;
 }
 
+html[data-theme="light"] .apex-login-error,
+html:not(.dark):not([data-theme="dark"]) .apex-login-error {
+  border-color: #f3b8c0;
+  background: #fff1f3;
+  color: #9f1239;
+}
+
 html[data-theme="light"] .apex-login-footer,
 html:not(.dark):not([data-theme="dark"]) .apex-login-footer {
   border-color: #d8e0e8 !important;
@@ -418,6 +425,13 @@ html.dark:not([data-theme="light"]) .apex-login-field {
 html[data-theme="dark"] .apex-login-field input,
 html.dark:not([data-theme="light"]) .apex-login-field input {
   color: rgb(255 255 255);
+}
+
+html[data-theme="dark"] .apex-login-error,
+html.dark:not([data-theme="light"]) .apex-login-error {
+  border-color: rgb(251 113 133 / 0.42);
+  background: rgb(76 5 25 / 0.36);
+  color: #fecdd3;
 }
 
 .dark .apex-public-input {

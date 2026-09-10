@@ -288,7 +288,7 @@ export default function LoginPage() {
             </label>
           </div>
 
-          {error ? <p className="mt-5 rounded border border-rose-400/40 bg-rose-950/30 px-3 py-2 text-sm font-semibold text-rose-200" id="login-error" role="alert">{error}</p> : null}
+          {error ? <p className="apex-login-error mt-5 rounded border px-3 py-2 text-sm font-semibold" id="login-error" role="alert">{error}</p> : null}
 
           <Button className="mt-8 h-13 w-full rounded bg-[#31d7c5] text-base font-bold text-[#10202b] shadow-[0_14px_35px_rgba(49,215,197,.16)] hover:bg-[#5ce4d6]" disabled={loading} type="submit">
             <LockKeyhole size={19} />
