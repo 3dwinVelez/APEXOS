@@ -124,3 +124,14 @@ test("el contrato versiona idempotencia y evita reintentar validaciones permanen
   assert.match(page, /pendiente de confirmar/);
   assert.match(routes, /\/hr\/self\/time-punches[\s\S]*?rateLimit: \{ max: 600, timeWindow: "1 minute" \}/);
 });
+
+test("el preoperacional reutiliza la transaccion de marcacion y no agota el pool", () => {
+  const service = fs.readFileSync(path.resolve(__dirname, "../src/modules/hr/service.js"), "utf8");
+  assert.match(service, /ensurePreoperationalChecklist\(\{ tenantId, user, employee, route, punch: null, input, db: tx \}\)/);
+  assert.match(service, /ensurePreoperationalChecklist\(\{ tenantId, user, employee, route, punch, input, db: tx \}\)/);
+  const helperStart = service.indexOf("async function ensurePreoperationalChecklist");
+  const helperEnd = service.indexOf("async function getActivePreoperationalChecklist", helperStart);
+  const helper = helperStart >= 0 && helperEnd > helperStart ? service.slice(helperStart, helperEnd) : "";
+  assert.match(helper, /db = prisma/);
+  assert.doesNotMatch(helper, /await prisma\./);
+});

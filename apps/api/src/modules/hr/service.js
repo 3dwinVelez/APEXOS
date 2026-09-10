@@ -882,14 +882,14 @@ async function getCurrentEmployee(tenantId, user) {
   });
 }
 
-async function resolveVehicleForRoute(plate) {
+async function resolveVehicleForRoute(plate, db = prisma) {
   if (!plate) return null;
-  return prisma.vehicle.findFirst({ where: { plate } }).catch(() => null);
+  return db.vehicle.findFirst({ where: { plate } }).catch(() => null);
 }
 
-async function ensurePreoperationalChecklist({ tenantId, user, employee, route, punch, input }) {
+async function ensurePreoperationalChecklist({ tenantId, user, employee, route, punch, input, db = prisma }) {
   if (!isDriver(employee) || !route?.vehicle_plate || normalizePunchType(input.type || input.tipo_marca) !== "entrada") return null;
-  const existing = await prisma.routePreoperationalChecklist.findFirst({
+  const existing = await db.routePreoperationalChecklist.findFirst({
     where: {
       route_id: route.id,
       driver_id: employee.id,
@@ -900,8 +900,8 @@ async function ensurePreoperationalChecklist({ tenantId, user, employee, route, 
   });
   if (existing) return existing;
 
-  const vehicle = await resolveVehicleForRoute(route.vehicle_plate);
-  const checklist = await prisma.routePreoperationalChecklist.create({
+  const vehicle = await resolveVehicleForRoute(route.vehicle_plate, db);
+  const checklist = await db.routePreoperationalChecklist.create({
     data: {
       route_id: route.id,
       punch_id: punch?.id || null,
@@ -930,7 +930,7 @@ async function ensurePreoperationalChecklist({ tenantId, user, employee, route, 
       }
     }
   });
-  await prisma.routeStartAuthorization.create({
+  await db.routeStartAuthorization.create({
     data: {
       route_id: route.id,
       checklist_id: checklist.id,
@@ -940,7 +940,7 @@ async function ensurePreoperationalChecklist({ tenantId, user, employee, route, 
       reason: "Checklist preoperacional pendiente"
     }
   });
-  return prisma.routePreoperationalChecklist.findFirst({
+  return db.routePreoperationalChecklist.findFirst({
     where: { id: checklist.id },
     include: { answers: true, evidence: true, findings: true }
   });
@@ -1546,7 +1546,7 @@ async function createPunch(tenantId, input, user) {
       })
       : null;
     if (isDriver(employee) && route?.vehicle_plate && type === "entrada" && !preopApproved) {
-      const preop = await ensurePreoperationalChecklist({ tenantId, user, employee, route, punch: null, input });
+      const preop = await ensurePreoperationalChecklist({ tenantId, user, employee, route, punch: null, input, db: tx });
       return {
         ok: false,
         preoperational_required: true,
@@ -1727,7 +1727,7 @@ async function createPunch(tenantId, input, user) {
         if (Object.keys(data).length) await tx.workSession.update({ where: { id: session.id }, data });
       }
     }
-    const preop = await ensurePreoperationalChecklist({ tenantId, user, employee, route, punch, input });
+    const preop = await ensurePreoperationalChecklist({ tenantId, user, employee, route, punch, input, db: tx });
     return {
       ok: true,
       hora: timeString(punchedAt),
