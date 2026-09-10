@@ -7,7 +7,6 @@ const actions = [
   { href: "/dashboard/inventario/familias", title: "Familias", detail: "Configurar clasificación y cuentas asociadas.", icon: FolderTree },
   { href: "/dashboard/inventario/bodegas", title: "Bodegas", detail: "Administrar centros de almacenamiento y consignación.", icon: Warehouse },
   { href: "/dashboard/inventario/stock", title: "Stock", detail: "Consultar existencias y movimientos por SKU.", icon: Boxes },
-  { href: "/dashboard/inventario/wms", title: "WMS", detail: "Gestionar ubicaciones y tareas de bodega.", icon: Warehouse },
   { href: "/dashboard/inventario/cargue-inicial", title: "Cargue inicial", detail: "Validar e importar saldos iniciales desde Excel.", icon: FileUp },
   { href: "/dashboard/inventario/traslados", title: "Traslados", detail: "Despachar, recibir y consultar movimientos entre bodegas.", icon: ArrowRightLeft },
   { href: "/dashboard/inventario/reportes", title: "Reportes", detail: "Revisar kardex, valoración y análisis de inventario.", icon: BarChart3 }

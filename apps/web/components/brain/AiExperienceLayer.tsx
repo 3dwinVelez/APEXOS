@@ -121,15 +121,8 @@ function stepsForPath(pathname: string): CoachStep[] {
         id: "product-master",
         selector: 'a[href="/dashboard/inventario/productos/nuevo"]',
         title: "Producto maestro transversal",
-        body: "Crea productos una sola vez para compras, ventas, inventario, WMS, costos e impuestos LATAM.",
+        body: "Crea productos una sola vez para compras, ventas, inventario, costos e impuestos LATAM.",
         action: "Crear o completar producto"
-      },
-      {
-        id: "wms-lego",
-        selector: 'a[href="/dashboard/inventario/wms"]',
-        title: "Layout WMS tipo LEGO",
-        body: "Cada casilla representa una ubicacion fisica. La guia ayuda a configurar zonas, pasillos y ubicaciones sin consultores.",
-        action: "Abrir layout 2D"
       },
       {
         id: "stock-control",
