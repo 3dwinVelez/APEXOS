@@ -1,0 +1,16 @@
+{
+  "certification": "hr-single-active-schedule-qa",
+  "run_id": "hr_single_active_schedule_1789066724247",
+  "environment": "QA",
+  "tenant": "SCJ",
+  "expected_commit": "40738831c28d03c1c4448840f8c5f374959df94f",
+  "status": "passed",
+  "generated_at": "2026-09-10T18:58:44.268Z",
+  "deployed_commit": "40738831c28d",
+  "routes_created": 2,
+  "routes_visible": 1,
+  "visible_route_id": 80,
+  "alternate_route_rejected": true,
+  "active_route_marked": true,
+  "cleanup": "routes_events_removed_identity_deactivated"
+}
