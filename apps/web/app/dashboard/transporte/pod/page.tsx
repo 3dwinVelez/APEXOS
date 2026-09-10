@@ -48,11 +48,13 @@ export default function TransportPodPage() {
   async function openEvidence(reference: string) {
     try {
       setError("");
-      const response = await api<{ url: string }>(
+      const response = await api<{ url?: string; content_base64?: string; mime_type?: string }>(
         `/api/v1/transport/evidence/view?reference=${encodeURIComponent(reference)}`,
         { cache: "no-store" },
       );
-      window.open(response.url, "_blank", "noopener,noreferrer");
+      const localUrl = response.content_base64 ? URL.createObjectURL(new Blob([Uint8Array.from(atob(response.content_base64), char => char.charCodeAt(0))], { type: response.mime_type })) : null;
+      window.open(localUrl || response.url, "_blank", "noopener,noreferrer");
+      if (localUrl) setTimeout(() => URL.revokeObjectURL(localUrl), 60000);
     } catch (cause) {
       setError(
         cause instanceof Error

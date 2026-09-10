@@ -2,8 +2,9 @@
 
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
+import { ActionCard } from "@/components/ui/ActionCard";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
-import { Archive, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, FileCheck2, Filter, History, MapPin, Paperclip, Plus, RotateCcw, Save, Search, Truck, Wrench } from "lucide-react";
+import { Archive, Bell, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Cuboid, FileCheck2, Filter, History, MapPin, Navigation, Paperclip, Plus, RadioTower, ReceiptText, RotateCcw, Route, Save, Search, Settings, Truck, Users, Wrench } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
@@ -239,7 +240,7 @@ function vehiclePayload(form: typeof emptyVehicle) {
   return payload;
 }
 
-export default function TransportPage() {
+export function TransportFleetPage() {
   const [access, setAccess] = useState({ ready: false, canRead: false, canWrite: false, canReadHr: false });
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -478,8 +479,8 @@ export default function TransportPage() {
   }
 
   return (
-    <div className="space-y-5">
-      <header className="flex flex-wrap items-start justify-between gap-4">
+    <div className="apex-workspace-shell space-y-4">
+      <header className="apex-section-card flex flex-wrap items-start justify-between gap-4 p-4">
         <div>
           <p className="text-sm font-medium text-apex">M-14 · Maestro de flota</p>
           <h1 className="mt-1 text-3xl font-semibold">Vehiculos</h1>
@@ -726,6 +727,35 @@ export default function TransportPage() {
           </div>
         </ModalFrame>
       ) : null}
+    </div>
+  );
+}
+
+const transportActions = [
+  { href: "/dashboard/transporte/cubicaje", title: "Cubicaje inteligente", detail: "Simular el acomodo de pedidos y validar capacidad en un vehículo 3D.", icon: Cuboid, primary: true },
+  { href: "/dashboard/transporte/operacion", title: "Torre y viajes", detail: "Crear viajes, asignar recursos y controlar el ciclo operativo completo.", icon: RadioTower },
+  { href: "/dashboard/transporte/monitoreo", title: "Monitoreo en vivo", detail: "Consultar ubicación, ETA, geocercas, desvíos y alertas de la flota.", icon: Navigation },
+  { href: "/dashboard/transporte/ordenes", title: "Órdenes", detail: "Registrar, validar e importar la demanda logística pendiente.", icon: ClipboardList },
+  { href: "/dashboard/transporte/planeacion", title: "Planeador", detail: "Consolidar pedidos y evaluar rutas, capacidad y alternativas.", icon: Route },
+  { href: "/dashboard/transporte/pod", title: "Pruebas de entrega", detail: "Revisar entregas, novedades, fotografías, firmas y trazabilidad.", icon: FileCheck2 },
+  { href: "/dashboard/transporte/flota", title: "Flota", detail: "Administrar vehículos, capacidades, documentos y disponibilidad.", icon: Truck },
+  { href: "/dashboard/transporte/tarifas", title: "Tarifarios", detail: "Configurar versiones, vigencias y componentes del costo de transporte.", icon: ReceiptText },
+  { href: "/dashboard/transporte/maestros", title: "Maestros TMS", detail: "Gestionar transportadores, conductores, orígenes y destinos.", icon: Users },
+  { href: "/dashboard/transporte/notificaciones", title: "Notificaciones", detail: "Consultar y registrar comunicaciones operativas del TMS.", icon: Bell },
+  { href: "/dashboard/transporte/configuracion", title: "Configuración", detail: "Definir parámetros operativos, móviles y de comunicación.", icon: Settings }
+] as const;
+
+export default function TransportHomePage() {
+  return (
+    <div className="apex-workspace-shell space-y-4">
+      <header className="apex-section-card p-4">
+        <p className="text-sm font-medium text-apex">M-14 · Operación</p>
+        <h1 className="text-3xl font-semibold">Transporte</h1>
+        <p className="mt-1 text-sm text-neutral-600">Planeación, cubicaje, ejecución, entrega y liquidación en un solo flujo logístico.</p>
+      </header>
+      <section aria-label="Herramientas activas de transporte" className="apex-dense-actions">
+        {transportActions.map((action) => <ActionCard key={action.href} {...action} />)}
+      </section>
     </div>
   );
 }
