@@ -3,7 +3,7 @@
 import { api } from "@/lib/api";
 import { AI_ASSISTANCE_EVENT, AI_ASSISTANCE_KEY } from "@/components/brain/AiAssistanceToggle";
 import { useApexAiAccess } from "@/components/brain/useApexAiAccess";
-import { AlertTriangle, Bell, CheckCircle2, ChevronRight, HelpCircle, Lightbulb, Loader2, X, Zap } from "lucide-react";
+import { AlertTriangle, Brain, CheckCircle2, ChevronRight, Lightbulb, Loader2, Sparkles, X, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -398,6 +398,12 @@ export function AiExperienceLayer() {
 
   if (!enabled || aiAccess !== "enabled") return null;
 
+  function openCoach() {
+    setStepIndex(0);
+    setCoachOpen(true);
+    setTrayOpen(false);
+  }
+
   return (
     <>
       {coachOpen && currentStep ? (
@@ -446,9 +452,9 @@ export function AiExperienceLayer() {
         </div>
       ) : null}
 
-      <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+84px)] right-3 z-50 flex flex-col items-end gap-3 md:bottom-20 md:right-4">
+      <div className="pointer-events-none fixed bottom-[calc(env(safe-area-inset-bottom)+84px)] left-3 z-40 flex flex-col items-start gap-3 md:bottom-4 md:left-60">
         {trayOpen ? (
-          <section className="w-[calc(100vw-24px)] max-w-[380px] animate-[apexTrayIn_160ms_ease-out] rounded-md border border-line bg-white shadow-xl">
+          <section className="pointer-events-auto w-[calc(100vw-24px)] max-w-[380px] animate-[apexTrayIn_160ms_ease-out] rounded-md border border-line bg-white shadow-xl">
             <div className="flex items-start justify-between gap-3 border-b border-line p-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-apex">Bandeja APEX AI</p>
@@ -500,38 +506,39 @@ export function AiExperienceLayer() {
                 <div className="rounded-md bg-paper p-4 text-sm text-neutral-600">No tienes recomendaciones pendientes en este modulo.</div>
               )}
             </div>
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line p-3">
+              <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-sm font-medium hover:bg-paper" onClick={openCoach} type="button">
+                <Lightbulb size={15} />
+                Guia contextual
+              </button>
+              <Link className="inline-flex h-9 items-center gap-2 rounded-md bg-apex px-3 text-sm font-medium text-white hover:bg-apex/90" href="/dashboard/apex-ai">
+                <Sparkles size={15} />
+                Ver inteligencia
+              </Link>
+            </div>
           </section>
         ) : null}
 
-        <div className="flex items-center gap-2">
-          <button
-            aria-label="Abrir ayuda contextual de APEX AI"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-line bg-white text-apex shadow-lg transition hover:-translate-y-0.5 hover:border-apex hover:bg-apex/5"
-            onClick={(event) => {
+        <button
+          aria-label="APEX AI Core. Doble click para abrir recomendaciones"
+          className="apex-ai-mascot pointer-events-auto relative inline-flex h-12 w-12 items-center justify-center rounded-full border border-apex/30 bg-white text-apex shadow-lg transition hover:-translate-y-0.5 hover:border-apex hover:bg-apex/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-apex"
+          onDoubleClick={() => setTrayOpen((open) => !open)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
               event.preventDefault();
-              event.stopPropagation();
-              setStepIndex(0);
-              setCoachOpen(true);
-            }}
-            title="Ayuda contextual"
-            type="button"
-          >
-            <HelpCircle size={20} />
-          </button>
-          <button
-            className="relative inline-flex h-12 w-12 items-center justify-center rounded-md bg-apex text-white shadow-lg hover:bg-apex/90"
-            onClick={() => setTrayOpen((open) => !open)}
-            type="button"
-            aria-label="Abrir bandeja de recomendaciones APEX AI"
-          >
-            <Bell size={19} />
-            {visibleInsights.length ? (
-              <span className={`absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold ${criticalCount ? "bg-red-600" : "bg-emerald-600"}`}>
-                {visibleInsights.length}
-              </span>
-            ) : null}
-          </button>
-        </div>
+              setTrayOpen((open) => !open);
+            }
+          }}
+          title="Doble click para abrir APEX AI"
+          type="button"
+        >
+          <Brain size={20} />
+          {visibleInsights.length ? (
+            <span className={`absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold text-white ${criticalCount ? "bg-red-600" : "bg-emerald-600"}`}>
+              {visibleInsights.length}
+            </span>
+          ) : null}
+        </button>
       </div>
     </>
   );

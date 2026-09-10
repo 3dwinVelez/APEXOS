@@ -10,6 +10,13 @@ async function transportRoutes(fastify) {
   fastify.addHook("preHandler", fastify.authenticate);
   fastify.addHook("preHandler", tenancy);
 
+  const packing = require("./packing-service");
+  const packingSchema = { body: { type: "object", properties: { container: { type: "object" }, items: { type: "array", maxItems: 100, items: { type: "object" } }, need_ids: { type: "array", maxItems: 100, uniqueItems: true, items: { type: "integer", minimum: 1 } }, vehicle_id: { type: "integer", minimum: 1 }, respect_stops: { type: "boolean" } } } };
+  fastify.get("/transport/packing/workbench", { preHandler: requirePermission("transport", "read") }, r => packing.workbench(r.user.tenant_id));
+  fastify.post("/transport/packing/evaluate", { schema: packingSchema, preHandler: requirePermission("transport", "write") }, r => packing.evaluate(r.user.tenant_id, r.body));
+  fastify.post("/transport/packing/profiles", { preHandler: requirePermission("transport", "write") }, r => packing.saveProfile(r.user.tenant_id, r.user, r.body));
+  fastify.post("/transport/trips/:id/packing", { schema: packingSchema, preHandler: requirePermission("transport", "write") }, r => packing.saveTrip(r.user.tenant_id, r.user, r.params.id, r.body));
+
   fastify.get("/transport/vehicles", { preHandler: requirePermission("transport", "read") }, (request) => service.listVehicles(request.user?.tenant_id, request.query));
   fastify.get("/transport/vehicles/metrics/dashboard", { preHandler: requirePermission("transport", "read") }, (request) => service.getVehicleDashboardMetrics(request.user?.tenant_id));
   fastify.get("/transport/vehicles/planning/:plate", { preHandler: requirePermission("transport", "read") }, (request) => service.getPlanningVehicleStatus(request.user?.tenant_id, request.params.plate));
@@ -83,8 +90,9 @@ async function transportRoutes(fastify) {
   fastify.post("/transport/trips/:tripId/stops/:stopId/arrive", { schema: tmsSchemas.stopVisitSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.recordStopVisit(request.user?.tenant_id, request.user, request.params.tripId, request.params.stopId, "arrive", request.body));
   fastify.post("/transport/trips/:tripId/stops/:stopId/depart", { schema: tmsSchemas.stopVisitSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.recordStopVisit(request.user?.tenant_id, request.user, request.params.tripId, request.params.stopId, "depart", request.body));
   fastify.post("/transport/mobile/gps/batch", { schema: tmsSchemas.gpsBatchSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.recordGpsBatch(request.user?.tenant_id, request.user, request.body));
+  fastify.get("/transport/trips/:id/settlement-preview", { preHandler: requirePermission("transport", "read") }, request => tms.previewSettlement(request.user.tenant_id, request.params.id));
   fastify.post("/transport/trips/:id/settlements", { schema: tmsSchemas.settlementSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.createSettlement(request.user?.tenant_id, request.user, request.params.id, request.body)));
-  fastify.post("/transport/settlements/:id/approve", { preHandler: requirePermission("transport", "write") }, (request) => tms.approveSettlement(request.user?.tenant_id, request.user, request.params.id));
+  fastify.post("/transport/settlements/:id/approve", { preHandler: requirePermission("transport", "approve") }, (request) => tms.approveSettlement(request.user?.tenant_id, request.user, request.params.id));
 }
 
 module.exports = transportRoutes;

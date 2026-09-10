@@ -12,8 +12,8 @@ if (!/^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(apiUrl)) throw new Error("La
 const email = process.env.LOCAL_TMS_EMAIL || "demo@apex.local";
 const password = process.env.LOCAL_TMS_PASSWORD || "test1234";
 const runId = new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
-const output = path.resolve(arg("output", `docs/qa/evidence/transport-tms-foundation-20260904/run-${runId}.json`));
-const evidence = { certification: "transport-tms-local", environment: "LOCAL_DESARROLLO", run_id: runId, api_url: apiUrl, status: "running", checks: [], created: {} };
+const output = path.resolve(arg("output", `tmp/transport-intelligent-${runId}/evidence.json`));
+const evidence = { certification: "transport-intelligent-local", environment: "LOCAL_DESARROLLO", run_id: runId, api_url: apiUrl, status: "running", checks: [], created: {} };
 
 function check(name, passed, detail = {}) {
   evidence.checks.push({ name, status: passed ? "passed" : "failed", detail });
@@ -30,6 +30,25 @@ async function request(url, options = {}) {
 
 function fromNow(hours) { return new Date(Date.now() + hours * 3600000).toISOString(); }
 
+async function securityFixtures() {
+  require("../load-env")();
+  const database = new URL(process.env.DATABASE_URL);
+  if (!["localhost", "127.0.0.1"].includes(database.hostname)) throw new Error("Solo base local permitida.");
+  const { PrismaClient } = require("@prisma/client"); const db = new PrismaClient();
+  const bcrypt = require("bcrypt"), localPassword = require("node:crypto").randomBytes(18).toString("hex");
+  const contexts = {};
+  try {
+    const demo = await db.user.findFirstOrThrow({ where: { email } });
+    const other = await db.tenant.create({ data: { name: `TMS isolation ${runId}`, industry: "logistics", plan: "crown", active_modules: Array.from({length:28},(_,i)=>`M-${String(i+1).padStart(2,"0")}`) } });
+    for (const [name, tenantId, actions] of [["reader", demo.tenant_id, ["read"]], ["operator", demo.tenant_id, ["read", "write"]], ["other", other.id, ["read", "write", "approve"]]]) {
+      const role = await db.role.create({ data: { tenant_id: tenantId, name: `TMS-${name}-${runId}`, permissions: { create: actions.map(action => ({module:"transport",action})) } } });
+      const user = await db.user.create({ data: { tenant_id: tenantId, name: `TMS ${name}`, email: `${name}-${runId}@apex.local`, role_id: role.id, password: await bcrypt.hash(localPassword, 10) } });
+      const response = await request("/api/v1/auth/login", {method:"POST",body:JSON.stringify({email:user.email,password:localPassword})});
+      check(`login_${name}`,response.ok && Boolean(response.body.token),{status:response.status});contexts[name]={authorization:`Bearer ${response.body.token}`};
+    }
+  } finally { await db.$disconnect(); }
+  return contexts;
+}
 async function main() {
   let headers;
   try {
@@ -41,6 +60,7 @@ async function main() {
     check("local_admin_login", login.ok && Boolean(login.body.token), { status: login.status });
     headers = { authorization: `Bearer ${login.body.token}` };
 
+    const security = await securityFixtures();
     const carrier = await request("/api/v1/transport/carriers", { method: "POST", headers, body: JSON.stringify({ code: `QA-CAR-${runId}`, legal_name: `Transportadora local ${runId}`, tax_id: `TAX-${runId}`, status: "activo", service_levels: ["normal"], operating_zones: ["local"], vehicle_types: ["camion"] }) });
     check("carrier_created", carrier.status === 201 && Boolean(carrier.body.id), { status: carrier.status }); evidence.created.carrier_id = carrier.body.id;
 
@@ -78,6 +98,27 @@ async function main() {
     const assigned = await request(`/api/v1/transport/trips/${trip.body.id}/assign`, { method: "POST", headers, body: JSON.stringify({ carrier_id: carrier.body.id, vehicle_id: vehicle.body.id, driver_id: driver.body.id, committed_cost: 720000, reason: "Certificacion local" }) });
     check("trip_assigned", assigned.ok && assigned.body.status === "asignado" && assigned.body.vehicle_plate === vehicle.body.plate, { status: assigned.status });
 
+    const packingInput = { container: {length:6,width:2.4,height:2.4,max_weight:5000}, vehicle_id: vehicle.body.id, need_ids: [need.body.id], items: [{id:`${need.body.id}:${need.body.lines[0].id}`,length:0.6,width:0.4,height:0.4,weight:50,rotation:"upright",stackable:true,max_top_load:150}] };
+    const packing = await request("/api/v1/transport/packing/evaluate", {method:"POST",headers,body:JSON.stringify(packingInput)});
+    check("packing_orders_real_quantity",packing.ok && packing.body.feasible && packing.body.placements.length===24 && packing.body.total_weight===1200,{status:packing.status,units:packing.body.placements?.length});
+    const savedPacking=await request(`/api/v1/transport/trips/${trip.body.id}/packing`,{method:"POST",headers,body:JSON.stringify(packingInput)});
+    check("packing_saved_with_fingerprint",savedPacking.ok && Boolean(savedPacking.body.fingerprint),{status:savedPacking.status});
+    const profile=await request("/api/v1/transport/packing/profiles",{method:"POST",headers,body:JSON.stringify({id:`qa-${runId}`,name:`Furgon ${runId}`,container:packingInput.container})});
+    check("packing_profile_saved",profile.ok,{status:profile.status});
+    const denied=await request("/api/v1/transport/packing/evaluate",{method:"POST",headers:security.reader,body:JSON.stringify(packingInput)});
+    check("readonly_cannot_pack",denied.status===403,{status:denied.status});
+    const foreign=await request(`/api/v1/transport/trips/${trip.body.id}`,{headers:security.other});
+    check("tenant_trip_isolation",[403,404].includes(foreign.status),{status:foreign.status});
+    const foreignPacking=await request("/api/v1/transport/packing/evaluate",{method:"POST",headers:security.other,body:JSON.stringify(packingInput)});
+    check("tenant_packing_isolation",[403,404].includes(foreignPacking.status),{status:foreignPacking.status});
+    const additionalNeed=await request("/api/v1/transport/needs",{method:"POST",headers,body:JSON.stringify({code:`CONCURRENT-${runId}`,source_type:"certificacion",origin_id:origin.body.id,origin_name:origin.body.name,delivery_point_id:point.body.id,available_at:fromNow(1),due_at:fromNow(8),weight_kg:100,volume_m3:1})});
+    check("concurrency_need_created",additionalNeed.status===201,{status:additionalNeed.status});
+    const race=await Promise.all([1,2].map(i=>request("/api/v1/transport/trips",{method:"POST",headers,body:JSON.stringify({code:`RACE-${runId}-${i}`,origin_name:origin.body.name,origin_id:origin.body.id,need_ids:[additionalNeed.body.id]})})));
+    check("concurrent_planning_one_winner",race.filter(r=>r.status===201).length===1 && race.filter(r=>r.status===409).length===1,{statuses:race.map(r=>r.status)});
+    const secondTrip=race.find(r=>r.status===201).body;
+    const doubleAssigned=await request(`/api/v1/transport/trips/${secondTrip.id}/assign`,{method:"POST",headers,body:JSON.stringify({vehicle_id:vehicle.body.id,driver_id:driver.body.id})});
+    check("resource_double_booking_blocked",doubleAssigned.status===409,{status:doubleAssigned.status});
+    await request(`/api/v1/transport/trips/${secondTrip.id}/transition`,{method:"POST",headers,body:JSON.stringify({status:"cancelado"})});
     for (const status of ["en_cargue", "despachado", "en_transito"]) {
       const transitioned = await request(`/api/v1/transport/trips/${trip.body.id}/transition`, { method: "POST", headers, body: JSON.stringify({ status }) });
       check(`trip_transition_${status}`, transitioned.ok && transitioned.body.status === status, { status: transitioned.status });
@@ -90,19 +131,43 @@ async function main() {
     const uploadResponse = await fetch(`${apiUrl}/api/v1/transport/trips/${trip.body.id}/stops/${trip.body.stops[0].id}/evidence`, { method: "POST", headers, body: form });
     const uploaded = await uploadResponse.json();
     check("real_evidence_uploaded", uploadResponse.status === 201 && Boolean(uploaded.storage_reference), { status: uploadResponse.status });
+    const invalidEvidence=await request(`/api/v1/transport/trips/${trip.body.id}/stops/${trip.body.stops[0].id}/attempts`,{method:"POST",headers,body:JSON.stringify({result:"completa",pod:{receiver_name:"Certificador",signature:"tms-evidence/not-real/sign.png",photos:["tms-evidence/not-real/photo.png"]}})});
+    check("fake_pod_rejected",[403,422].includes(invalidEvidence.status),{status:invalidEvidence.status});
+    const localView=await request(`/api/v1/transport/evidence/view?reference=${encodeURIComponent(uploaded.storage_reference)}`,{headers});
+    check("real_pod_readable",localView.ok && Boolean(localView.body.content_base64 || localView.body.url),{status:localView.status});
+    const foreignEvidence=await request(`/api/v1/transport/evidence/view?reference=${encodeURIComponent(uploaded.storage_reference)}`,{headers:security.other});
+    check("tenant_evidence_isolation",foreignEvidence.status===403,{status:foreignEvidence.status});
+    const partial=await request(`/api/v1/transport/trips/${trip.body.id}/stops/${trip.body.stops[0].id}/attempts`,{method:"POST",headers,body:JSON.stringify({result:"parcial",delivered_lines:[{sku:"QA-SKU",quantity:10}],additional_cost:25000,recoverable:true,pod:{receiver_name:"Receptor parcial",signature:uploaded.storage_reference,photos:[uploaded.storage_reference]}})});
+    check("partial_delivery_recorded",partial.status===201,{status:partial.status});
+    const premature=await request(`/api/v1/transport/trips/${trip.body.id}/transition`,{method:"POST",headers,body:JSON.stringify({status:"entregado"})});
+    check("partial_blocks_delivery_close",premature.status===409,{status:premature.status});
     const attempt = await request(`/api/v1/transport/trips/${trip.body.id}/stops/${trip.body.stops[0].id}/attempts`, { method: "POST", headers, body: JSON.stringify({ result: "completa", delivered_lines: [{ sku: "QA-SKU", quantity: 24 }], additional_cost: 0, recoverable: false, pod: { received_at: fromNow(7), receiver_name: "Receptor certificacion", receiver_document: "QA-REC", latitude: 4.711, longitude: -74.0721, signature: uploaded.storage_reference, photos: [uploaded.storage_reference] } }) });
     check("delivery_and_pod_recorded", attempt.status === 201 && attempt.body.result === "completa" && Boolean(attempt.body.pod?.id), { status: attempt.status }); evidence.created.attempt_id = attempt.body.id; evidence.created.pod_id = attempt.body.pod?.id;
 
     const delivered = await request(`/api/v1/transport/trips/${trip.body.id}/transition`, { method: "POST", headers, body: JSON.stringify({ status: "entregado" }) });
     check("trip_delivered", delivered.ok && delivered.body.status === "entregado", { status: delivered.status });
 
-    const settlement = await request(`/api/v1/transport/trips/${trip.body.id}/settlements`, { method: "POST", headers, body: JSON.stringify({ code: `QA-LIQ-${runId}`, currency: "COP", lines: [{ concept: "FLETE_BASE", quantity: 1, unit_rate: 720000, total: 720000, source: "contrato" }, { concept: "PEAJES", quantity: 1, unit_rate: 150000, total: 150000, source: "soporte" }] }) });
-    check("settlement_created", settlement.status === 201 && Number(settlement.body.liquidated_cost) === 870000 && settlement.body.lines.length === 2, { status: settlement.status }); evidence.created.settlement_id = settlement.body.id;
+    const preview=await request(`/api/v1/transport/trips/${trip.body.id}/settlement-preview`,{headers});
+    check("automatic_settlement_includes_novelties",preview.ok && preview.body.total===745000 && preview.body.recoverable===25000,{total:preview.body.total,recoverable:preview.body.recoverable});
+    const invalidMoney=await request(`/api/v1/transport/trips/${trip.body.id}/settlements`,{method:"POST",headers,body:JSON.stringify({code:`NEG-${runId}`,lines:[{concept:"FLETE_BASE",quantity:2,unit_rate:100,total:-999}]})});
+    check("negative_settlement_rejected",invalidMoney.status===400,{status:invalidMoney.status});
+    const invalidCurrency=await request(`/api/v1/transport/trips/${trip.body.id}/settlements`,{method:"POST",headers,body:JSON.stringify({code:`USD-${runId}`,currency:"USD"})});
+    check("currency_mismatch_rejected",invalidCurrency.status===400,{status:invalidCurrency.status});
+    const settlement = await request(`/api/v1/transport/trips/${trip.body.id}/settlements`, {method:"POST",headers,body:JSON.stringify({code:`QA-LIQ-${runId}`,currency:"COP"})});
+    check("settlement_created",settlement.status===201 && Number(settlement.body.liquidated_cost)===745000,{status:settlement.status});evidence.created.settlement_id=settlement.body.id;
+    const duplicate=await request(`/api/v1/transport/trips/${trip.body.id}/settlements`,{method:"POST",headers,body:JSON.stringify({code:`DUP-${runId}`})});
+    check("duplicate_settlement_rejected",duplicate.status===409,{status:duplicate.status});
+    const forbiddenApproval=await request(`/api/v1/transport/settlements/${settlement.body.id}/approve`,{method:"POST",headers:security.operator,body:"{}"});
+    check("operator_cannot_approve",forbiddenApproval.status===403,{status:forbiddenApproval.status});
     const approved = await request(`/api/v1/transport/settlements/${settlement.body.id}/approve`, { method: "POST", headers, body: "{}" });
     check("settlement_approved", approved.ok && approved.body.status === "aprobada", { status: approved.status });
     const closed = await request(`/api/v1/transport/trips/${trip.body.id}/transition`, { method: "POST", headers, body: JSON.stringify({ status: "cerrado" }) });
-    check("trip_closed_with_traceability", closed.ok && closed.body.status === "cerrado" && Number(closed.body.actual_cost) === 870000 && closed.body.events.some((event) => event.event_type === "LIQUIDACION_APROBADA"), { status: closed.status, events: closed.body.events?.length });
+    check("trip_closed_with_traceability", closed.ok && closed.body.status === "cerrado" && Number(closed.body.actual_cost) === 745000 && closed.body.events.some((event) => event.event_type === "LIQUIDACION_APROBADA"), { status: closed.status, events: closed.body.events?.length });
 
+    const closedSettlement=await request(`/api/v1/transport/trips/${trip.body.id}/settlements`,{method:"POST",headers,body:JSON.stringify({code:`CLOSED-${runId}`})});
+    check("closed_trip_financial_immutable",closedSettlement.status===409,{status:closedSettlement.status});
+    const persisted=await request(`/api/v1/transport/trips/${trip.body.id}`,{headers});
+    check("packing_and_partial_trace_preserved",persisted.ok && Boolean(persisted.body.metadata?.packing?.fingerprint) && persisted.body.stops[0].attempts.length===2 && persisted.body.stops[0].attempts[1].delivered_lines[0].quantity===14,{status:persisted.status});
     await request(`/api/v1/transport/vehicles/${vehicle.body.id}`, { method: "PUT", headers, body: JSON.stringify({ ...vehiclePayload, status: "retirado", reason: "Cierre certificacion local" }) });
     await request(`/api/v1/transport/drivers/${driver.body.id}`, { method: "PUT", headers, body: JSON.stringify({ code: driver.body.code, document: driver.body.document, name: driver.body.name, carrier_id: carrier.body.id, status: "inactivo" }) });
     await request(`/api/v1/transport/carriers/${carrier.body.id}`, { method: "PUT", headers, body: JSON.stringify({ code: carrier.body.code, legal_name: carrier.body.legal_name, status: "inactivo" }) });
