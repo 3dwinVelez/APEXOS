@@ -71,8 +71,20 @@ test("internacionalización permite ES EN PT y persiste preferencia", () => {
 
 test("DashboardChrome integra las capacidades globales sin insertar señales sobre todos los módulos", () => {
   const source = read("components/shell/DashboardChrome.tsx");
-  for (const component of ["CommandPalette", "ContextBreadcrumbs", "TraceabilityCenter", "OfflineFirstStatus", "LocaleSwitcher"]) {
+  for (const component of ["CommandPalette", "ContextBreadcrumbs", "TraceabilityCenter", "OfflineFirstStatus", "LocaleSwitcher", "StandardTableExperience"]) {
     assert.match(source, new RegExp(`<${component}`), `${component} debe estar montado globalmente`);
   }
   assert.doesNotMatch(source, /ApexIntelligencePulse/, "la señal inteligente no debe mostrarse globalmente en los módulos");
+});
+
+test("tablas operativas heredadas reciben contador, columnas y persistencia sin tocar editores", () => {
+  const source = read("components/system/StandardTableExperience.tsx");
+  assert.match(source, /apex-standard-table-toolbar/);
+  assert.match(source, /registros/);
+  assert.match(source, /seleccionados/);
+  assert.match(source, /Configurar columnas de la tabla/);
+  assert.match(source, /localStorage\.setItem/);
+  assert.match(source, /closest\("dialog,\[role=dialog\],form"\)/);
+  assert.match(source, /tableLayout === "detail"/);
+  assert.match(source, /MutationObserver/);
 });
