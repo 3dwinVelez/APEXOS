@@ -6,16 +6,13 @@
     "modules": ["talento-humano", "time-tracking", "qa-certification"]
   },
   "base_commits": {
-    "develop": "450395012cf90d8e2f46c1b9d83b064658d17699"
+    "develop": "3bdebf537f8c0c6f69aa1e5d7424e5a24aa48595"
   },
-  "certified_commit": "e46326e",
-  "certification_status": "local_passed_qa_pending",
+  "certified_commit": "3bdebf537f8c",
+  "certification_status": "qa_passed",
   "expected_changes": [
-    { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
-    { "status": "M", "file": "apps/api/test/hr-marking-concurrency.test.js" },
-    { "status": "A", "file": "docs/qa/evidence/hr-scj-pool-contention-20260910/local-validation.md" },
-    { "status": "A", "file": "docs/qa/evidence/hr-scj-pool-contention-20260910/preqa-approval-evidence.json" },
-    { "status": "A", "file": "docs/qa/evidence/hr-scj-pool-contention-20260910/preqa-scope-manifest.json" }
+    { "status": "M", "file": "docs/qa/evidence/hr-scj-pool-contention-20260910/local-validation.md" },
+    { "status": "M", "file": "docs/qa/evidence/hr-scj-pool-contention-20260910/preqa-scope-manifest.json" }
   ],
   "allowed_paths": [
     "apps/api/src/modules/hr/service.js",
