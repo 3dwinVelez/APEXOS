@@ -63,6 +63,57 @@ test("self routes fuerza exclusivamente la fecha operativa actual", async () => 
   }
 });
 
+test("self routes entrega un unico horario y conserva el de la jornada activa", async () => {
+  const current = employee();
+  const today = new Date();
+  const routes = [
+    { id: 21, tenant_id: "tenant-qa", date: today, employees: [current.code], start_time: "08:00", end_time: "17:00", status: "active", notes: "", per_diem: 0, tolerance_minutes: 15 },
+    { id: 22, tenant_id: "tenant-qa", date: today, employees: [current.code], start_time: "09:00", end_time: "18:00", status: "active", notes: "", per_diem: 0, tolerance_minutes: 15 }
+  ];
+  const fakePrisma = {
+    runWithTenant: (_tenantId, callback) => callback(),
+    employee: { findFirst: async () => current, findMany: async () => [current] },
+    timeRoute: { findMany: async () => routes },
+    workSession: { findFirst: async () => ({ route_id: 21 }) },
+    timePunch: { findFirst: async () => ({ route_id: 22 }) }
+  };
+  const loaded = loadHrService(fakePrisma);
+  try {
+    const result = await loaded.service.listOwnRoutes("tenant-qa", { id: 7, email: current.user.email });
+    assert.deepEqual(result.map((route) => route.id), [21]);
+  } finally {
+    loaded.restore();
+  }
+});
+
+test("los endpoints self rechazan un horario alterno distinto al activo del dia", async () => {
+  const current = employee();
+  const today = new Date();
+  const routes = [
+    { id: 31, tenant_id: "tenant-qa", date: today, employees: [current.code], start_time: "08:00", end_time: "17:00", status: "active", notes: "", per_diem: 0, tolerance_minutes: 15 },
+    { id: 32, tenant_id: "tenant-qa", date: today, employees: [current.code], start_time: "09:00", end_time: "18:00", status: "active", notes: "", per_diem: 0, tolerance_minutes: 15 }
+  ];
+  const fakePrisma = {
+    runWithTenant: (_tenantId, callback) => callback(),
+    employee: { findFirst: async () => current, findMany: async () => [current] },
+    timeRoute: {
+      findFirst: async ({ where }) => routes.find((route) => route.id === where.id) || null,
+      findMany: async () => routes
+    },
+    workSession: { findFirst: async () => ({ route_id: 32 }) },
+    timePunch: { findFirst: async () => null }
+  };
+  const loaded = loadHrService(fakePrisma);
+  try {
+    await assert.rejects(
+      loaded.service.getOwnWorkSession("tenant-qa", { id: 7, email: current.user.email }, { route_id: 31 }),
+      (error) => error.code === "HORARIO_NO_ACTIVO" && error.statusCode === 409
+    );
+  } finally {
+    loaded.restore();
+  }
+});
+
 test("createPunch usa lock por empleado, idempotencia y opciones de transaccion resistentes", async () => {
   const current = employee();
   let transactionOptions;
@@ -123,4 +174,15 @@ test("el contrato versiona idempotencia y evita reintentar validaciones permanen
   assert.match(page, /idempotency_key: idempotencyKey/);
   assert.match(page, /pendiente de confirmar/);
   assert.match(routes, /\/hr\/self\/time-punches[\s\S]*?rateLimit: \{ max: 600, timeWindow: "1 minute" \}/);
+});
+
+test("el preoperacional reutiliza la transaccion de marcacion y no agota el pool", () => {
+  const service = fs.readFileSync(path.resolve(__dirname, "../src/modules/hr/service.js"), "utf8");
+  assert.match(service, /ensurePreoperationalChecklist\(\{ tenantId, user, employee, route, punch: null, input, db: tx \}\)/);
+  assert.match(service, /ensurePreoperationalChecklist\(\{ tenantId, user, employee, route, punch, input, db: tx \}\)/);
+  const helperStart = service.indexOf("async function ensurePreoperationalChecklist");
+  const helperEnd = service.indexOf("async function getActivePreoperationalChecklist", helperStart);
+  const helper = helperStart >= 0 && helperEnd > helperStart ? service.slice(helperStart, helperEnd) : "";
+  assert.match(helper, /db = prisma/);
+  assert.doesNotMatch(helper, /await prisma\./);
 });

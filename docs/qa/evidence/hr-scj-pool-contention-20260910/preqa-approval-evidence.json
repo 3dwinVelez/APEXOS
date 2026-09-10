@@ -1,0 +1,32 @@
+{
+  "change_id": "hr-scj-pool-contention-20260910",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "e46326e",
+  "qa_status": "pending",
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["local-validation.md"] },
+    "error": { "status": "passed", "evidence": ["local-validation.md"] },
+    "support_scripts": { "status": "passed", "evidence": ["local-validation.md"] },
+    "regression": { "status": "passed", "evidence": ["local-validation.md", "../../../../apps/api/test/hr-marking-concurrency.test.js"] },
+    "platform_regression": { "status": "passed", "evidence": ["local-validation.md"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../apps/api/test/hr-marking-concurrency.test.js",
+    "evidence": ["local-validation.md"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../apps/api/test/hr-marking-concurrency.test.js",
+    "evidence": ["local-validation.md"]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Solicitante autorizado de APEXOS en tarea Codex",
+    "approved_at": "2026-09-10T09:40:00-05:00",
+    "main_release": "not_authorized"
+  }
+}
