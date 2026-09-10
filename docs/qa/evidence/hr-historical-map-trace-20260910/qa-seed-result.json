@@ -1,0 +1,18 @@
+{
+  "source": "scj_hr_historical_trace_20260909_v1",
+  "environment": "QA",
+  "tenant": "SCJ",
+  "date": "2026-09-09",
+  "route_id": 81,
+  "employee_id": 100,
+  "employee_email": "juliana@apexos.local",
+  "vehicle_plate": "QA-HIST-01",
+  "punches": 4,
+  "punch_types": ["entrada", "inicio_almuerzo", "fin_almuerzo", "salida"],
+  "gps_points": 13,
+  "work_sessions": 1,
+  "operations_map_status": 200,
+  "operations_map_routes_visible": 1,
+  "operations_map_marks_by_user": 1,
+  "cleanup": "persistent_historical_fixture_requested_by_user"
+}
