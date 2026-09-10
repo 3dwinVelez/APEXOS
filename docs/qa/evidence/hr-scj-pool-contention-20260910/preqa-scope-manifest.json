@@ -1,0 +1,33 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-scj-pool-contention-20260910",
+  "change_intent": {
+    "summary": "Evitar que la marcacion abra una segunda conexion Prisma dentro de la transaccion activa",
+    "modules": ["talento-humano", "time-tracking", "qa-certification"]
+  },
+  "base_commits": {
+    "develop": "450395012cf90d8e2f46c1b9d83b064658d17699"
+  },
+  "certified_commit": "38468b4",
+  "certification_status": "local_passed_qa_pending",
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
+    { "status": "M", "file": "apps/api/test/hr-marking-concurrency.test.js" },
+    { "status": "A", "file": "docs/qa/evidence/hr-scj-pool-contention-20260910/local-validation.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-scj-pool-contention-20260910/preqa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-scj-pool-contention-20260910/preqa-scope-manifest.json" }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-marking-concurrency.test.js",
+    "docs/qa/evidence/hr-scj-pool-contention-20260910/local-validation.md",
+    "docs/qa/evidence/hr-scj-pool-contention-20260910/preqa-approval-evidence.json",
+    "docs/qa/evidence/hr-scj-pool-contention-20260910/preqa-scope-manifest.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    { "name": "idempotent_serialized_time_punch_contract", "status": "passed", "evidence": ["local-validation.md"] },
+    { "name": "preoperational_checklist_transaction_scope", "status": "passed", "evidence": ["local-validation.md"] },
+    { "name": "adjacent_hr_regression", "status": "passed", "evidence": ["local-validation.md"] }
+  ]
+}
