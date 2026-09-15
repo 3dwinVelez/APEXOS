@@ -12,20 +12,20 @@ test("command palette ofrece atajo global, búsqueda y acciones rápidas", () =>
   const source = read("components/system/CommandPalette.tsx");
   assert.match(source, /Control\+K Meta\+K/);
   assert.match(source, /event\.ctrlKey \|\| event\.metaKey/);
-  assert.match(source, /Crear producto/);
-  assert.match(source, /Nueva orden de compra/);
-  assert.match(source, /Nueva orden de venta/);
+  assert.match(source, /OPERATIONAL_ACTIONS/);
+  assert.match(source, /access\.bySlug\[slug\] === true/);
+  assert.match(source, /loadModuleAccess\(MODULES\)/);
   assert.match(source, /router\.push/);
 });
 
-test("dashboard adapta foco y accesos al rol activo", () => {
+test("dashboard adapta el inicio al trabajo operativo", () => {
   const source = read("app/dashboard/page.tsx");
-  assert.match(source, /dashboardRoleProfile/);
-  assert.match(source, /Dirección y administración/);
-  assert.match(source, /Gestión comercial/);
-  assert.match(source, /Operación de campo/);
-  assert.match(source, /Gestión financiera/);
-  assert.match(source, /Panel contextual/);
+  assert.match(source, /Mi operación/);
+  assert.match(source, /Acciones frecuentes/);
+  assert.match(source, /Mis módulos/);
+  assert.match(source, /Actividad reciente/);
+  assert.match(source, /actionsForWorkspace\(enabledSlugs, roleName\)/);
+  assert.doesNotMatch(source, /dashboardRoleProfile/);
 });
 
 test("APEX AI prioriza anomalías, oportunidades y acciones por módulo", () => {
@@ -71,8 +71,20 @@ test("internacionalización permite ES EN PT y persiste preferencia", () => {
 
 test("DashboardChrome integra las capacidades globales sin insertar señales sobre todos los módulos", () => {
   const source = read("components/shell/DashboardChrome.tsx");
-  for (const component of ["CommandPalette", "ContextBreadcrumbs", "TraceabilityCenter", "OfflineFirstStatus", "LocaleSwitcher"]) {
+  for (const component of ["CommandPalette", "ContextBreadcrumbs", "TraceabilityCenter", "OfflineFirstStatus", "LocaleSwitcher", "StandardTableExperience"]) {
     assert.match(source, new RegExp(`<${component}`), `${component} debe estar montado globalmente`);
   }
   assert.doesNotMatch(source, /ApexIntelligencePulse/, "la señal inteligente no debe mostrarse globalmente en los módulos");
+});
+
+test("tablas operativas heredadas reciben contador, columnas y persistencia sin tocar editores", () => {
+  const source = read("components/system/StandardTableExperience.tsx");
+  assert.match(source, /apex-standard-table-toolbar/);
+  assert.match(source, /registros/);
+  assert.match(source, /seleccionados/);
+  assert.match(source, /Configurar columnas de la tabla/);
+  assert.match(source, /localStorage\.setItem/);
+  assert.match(source, /closest\("dialog,\[role=dialog\],form"\)/);
+  assert.match(source, /tableLayout === "detail"/);
+  assert.match(source, /MutationObserver/);
 });

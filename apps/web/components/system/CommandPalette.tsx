@@ -1,18 +1,14 @@
 "use client";
 
+import { isSupabaseSession, loadModuleAccess, ModuleAccessState } from "@/lib/moduleAccess";
 import { MODULES } from "@/lib/modules";
+import { OPERATIONAL_ACTIONS } from "@/lib/operationalWorkspace";
 import { useI18n } from "@/lib/i18n";
-import { Boxes, Command, PackagePlus, Search, ShoppingCart, Sparkles, X } from "lucide-react";
+import { Command, Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type CommandItem = { id: string; label: string; detail: string; href: string; icon: typeof Search; keywords?: string };
-const quickActions: CommandItem[] = [
-  { id: "new-product", label: "Crear producto", detail: "Inventario", href: "/dashboard/inventario/productos/nuevo", icon: PackagePlus, keywords: "sku item" },
-  { id: "new-purchase", label: "Nueva orden de compra", detail: "Compras", href: "/dashboard/compras/ordenes/nueva", icon: ShoppingCart, keywords: "oc proveedor" },
-  { id: "new-sale", label: "Nueva orden de venta", detail: "Ventas", href: "/dashboard/ventas/ordenes/nueva", icon: Boxes, keywords: "ov cliente" },
-  { id: "ai", label: "Revisar inteligencia", detail: "APEX AI", href: "/dashboard/apex-ai", icon: Sparkles, keywords: "alertas anomalías sugerencias" }
-];
 
 export function CommandPalette() {
   const router = useRouter();
@@ -20,12 +16,20 @@ export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
+  const [access, setAccess] = useState<ModuleAccessState>({ loading: true, isPlatformAdmin: false, bySlug: {} });
   const input = useRef<HTMLInputElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
-  const items = useMemo<CommandItem[]>(() => [...quickActions, ...MODULES.map((module) => ({ id: `module-${module.slug}`, label: module.name, detail: module.area, href: `/dashboard/${module.slug}`, icon: module.icon, keywords: module.capabilities.join(" ") }))], []);
+  const items = useMemo<CommandItem[]>(() => {
+    const enabled = (slug: string) => access.bySlug[slug] === true;
+    const actions = OPERATIONAL_ACTIONS.filter((action) => enabled(action.module)).map((action) => ({ id: action.id, label: action.label, detail: action.description, href: action.href, icon: action.icon, keywords: action.keywords }));
+    const modules = MODULES.filter((module) => enabled(module.slug)).map((module) => ({ id: `module-${module.slug}`, label: module.name, detail: module.area, href: `/dashboard/${module.slug}`, icon: module.icon, keywords: `${module.capabilities.join(" ")} ${module.nextActions.join(" ")}` }));
+    return [...actions, ...modules];
+  }, [access]);
   const visible = useMemo(() => { const term = query.trim().toLocaleLowerCase(); return (term ? items.filter((item) => `${item.label} ${item.detail} ${item.keywords || ""}`.toLocaleLowerCase().includes(term)) : items).slice(0, 10); }, [items, query]);
 
   useEffect(() => {
+    if (localStorage.getItem("token") || isSupabaseSession()) void loadModuleAccess(MODULES).then(setAccess).catch(() => setAccess({ loading: false, isPlatformAdmin: false, bySlug: {} }));
+    else setAccess({ loading: false, isPlatformAdmin: false, bySlug: Object.fromEntries(MODULES.map((module) => [module.slug, true])) });
     const onKey = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); setOpen((value) => !value); }
       if (event.key === "Escape") {

@@ -1,6 +1,5 @@
 "use client";
 
-import { ApexAiHeader } from "@/components/brain/ApexAiHeader";
 import { AiExperienceLayer } from "@/components/brain/AiExperienceLayer";
 import { ContextBreadcrumbs } from "@/components/shell/ContextBreadcrumbs";
 import { MobileNav } from "@/components/shell/MobileNav";
@@ -9,17 +8,18 @@ import { RouteAccessGuard } from "@/components/shell/RouteAccessGuard";
 import { Sidebar } from "@/components/shell/Sidebar";
 import { TechnicianWorkspaceHeader } from "@/components/shell/TechnicianWorkspaceHeader";
 import { UserSessionBadge } from "@/components/shell/UserSessionBadge";
-import { NotificationCenter } from "@/components/system/NotificationCenter";
 import { CommandPalette } from "@/components/system/CommandPalette";
 import { CollaborationPresence } from "@/components/system/CollaborationPresence";
 import { ExperiencePreferences } from "@/components/system/ExperiencePreferences";
 import { LocaleSwitcher } from "@/components/system/LocaleSwitcher";
+import { NotificationCenter } from "@/components/system/NotificationCenter";
 import { OfflineFirstStatus } from "@/components/system/OfflineFirstStatus";
+import { StandardTableExperience } from "@/components/system/StandardTableExperience";
 import { TraceabilityCenter } from "@/components/system/TraceabilityCenter";
 import { WorldClassToolkit } from "@/components/system/WorldClassToolkit";
 import { FieldProductivity } from "@/components/system/FieldProductivity";
 import { isMarkingOnlyAccess, MARKING_ONLY_PROFILE } from "@/lib/accessProfile";
-import { Clock3 } from "lucide-react";
+import { ChevronDown, Clock3, SlidersHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type ChromeMode = "checking" | "standard" | "marking_only";
@@ -64,14 +64,32 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
       <div className="technician-hide"><Sidebar /></div>
       <main className="min-w-0 flex-1 overflow-x-hidden p-3 pb-24 sm:p-4 md:p-6 md:pb-6" id="apex-main-content" tabIndex={-1}>
         <FieldProductivity />
-        <div className="mb-3 flex flex-wrap justify-end gap-2"><OfflineFirstStatus /><LocaleSwitcher /><TraceabilityCenter /><CollaborationPresence /><ExperiencePreferences /><WorldClassToolkit /><CommandPalette /><NotificationCenter /></div>
+        <StandardTableExperience />
+        <div className="mb-3 flex flex-wrap justify-end gap-2"><OfflineFirstStatus /><LocaleSwitcher /><SecondaryWorkspaceTools /><CommandPalette /><NotificationCenter /></div>
         <ContextBreadcrumbs />
         <TechnicianWorkspaceHeader />
-        <ApexAiHeader />
         <RouteAccessGuard><PageTransition>{children}</PageTransition></RouteAccessGuard>
       </main>
       <MobileNav />
       <div className="technician-hide"><AiExperienceLayer /></div>
     </div>
+  );
+}
+
+function SecondaryWorkspaceTools() {
+  return (
+    <details className="group relative">
+      <summary className="apex-interactive inline-flex h-10 cursor-pointer list-none items-center justify-center gap-2 rounded-control border border-line bg-surface px-3 text-xs font-semibold text-content-muted hover:text-content-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-apex">
+        <SlidersHorizontal size={15} />
+        <span className="hidden lg:inline">Herramientas</span>
+        <ChevronDown className="transition group-open:rotate-180" size={14} />
+      </summary>
+      <div className="absolute right-0 z-50 mt-2 grid w-[min(92vw,520px)] gap-2 rounded-card border border-line bg-surface p-3 shadow-overlay sm:grid-cols-2">
+        <TraceabilityCenter />
+        <CollaborationPresence />
+        <ExperiencePreferences />
+        <WorldClassToolkit />
+      </div>
+    </details>
   );
 }

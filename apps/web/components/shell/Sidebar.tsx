@@ -2,6 +2,7 @@
 
 import { isSupabaseSession, loadModuleAccess, ModuleAccessState } from "@/lib/moduleAccess";
 import { MODULES } from "@/lib/modules";
+import { groupModules } from "@/lib/operationalWorkspace";
 import { UserSessionBadge } from "@/components/shell/UserSessionBadge";
 import { ChevronLeft, ChevronRight, Home, LockKeyhole, Search, X } from "lucide-react";
 import Link from "next/link";
@@ -46,11 +47,13 @@ export function Sidebar() {
     searchText: normalizeSearch([module.name, module.slug, module.area, module.summary, ...module.capabilities, ...module.nextActions].join(" "))
   }));
   const orderedItems = items
-    .filter((item) => !normalizedQuery || (item.enabled && queryMatches(item.searchText, normalizedQuery)))
+    .filter((item) => item.enabled && (!normalizedQuery || queryMatches(item.searchText, normalizedQuery)))
     .sort((a, b) => {
       if (a.enabled !== b.enabled) return a.enabled ? -1 : 1;
       return (access.orderBySlug?.[a.slug] ?? 999) - (access.orderBySlug?.[b.slug] ?? 999);
     });
+  const groupedItems = groupModules(orderedItems.map((item) => MODULES.find((module) => module.slug === item.slug)!).filter(Boolean))
+    .map((group) => ({ ...group, items: group.items.map((module) => orderedItems.find((item) => item.slug === module.slug)!).filter(Boolean) }));
 
   function linkClass(active: boolean, enabled = true) {
     if (!enabled) return "flex h-9 w-full items-center gap-2 rounded-md px-2 text-left text-sm text-neutral-400 opacity-75";
@@ -111,12 +114,12 @@ export function Sidebar() {
       <nav className="min-h-0 flex-1 space-y-0.5 overflow-y-auto pr-1">
         {!collapsed ? (
           <label className="relative mb-2 block">
-            <span className="sr-only">Buscar modulos</span>
+            <span className="sr-only">Buscar módulos y funciones</span>
             <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
             <input
                 className="h-9 w-full rounded-md border border-line bg-paper pl-9 pr-9 text-sm text-neutral-800 outline-none transition placeholder:text-neutral-400 focus:border-apex focus:bg-white focus-visible:ring-2 focus-visible:ring-apex/40"
               onChange={(event) => setModuleQuery(event.target.value)}
-              placeholder="Buscar modulo"
+              placeholder="Buscar módulos y funciones"
               type="search"
               value={moduleQuery}
             />
@@ -127,7 +130,10 @@ export function Sidebar() {
           <Home size={18} />
           {!collapsed ? "Inicio" : null}
         </Link></SidebarTooltip> : null}
-        {orderedItems.map(renderItem)}
+        {collapsed ? orderedItems.map(renderItem) : groupedItems.map((group) => <details className="group/sidebar" key={group.id}>
+          <summary className="flex cursor-pointer list-none items-center justify-between px-2 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-600 transition-colors hover:text-neutral-900"><span>{group.label}</span><ChevronRight className="transition group-open/sidebar:rotate-90" size={13} /></summary>
+          <div className="space-y-0.5">{group.items.map(renderItem)}</div>
+        </details>)}
         {!collapsed && normalizedQuery && orderedItems.length === 0 ? <p className="px-3 py-4 text-sm text-neutral-500">No hay modulos disponibles para esta busqueda.</p> : null}
       </nav>
       {!collapsed ? (

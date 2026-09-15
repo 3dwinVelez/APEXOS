@@ -19,9 +19,10 @@ test("los accesos ERP muestran únicamente herramientas activas y usan el sistem
     assert.doesNotMatch(source, /Workspaces|Panel operativo|Accion recomendada|Flujo transversal|futura|Preparado|En planeación/i);
   }
 
-  for (const href of ["/productos/nuevo", "/productos", "/familias", "/bodegas", "/stock", "/wms", "/cargue-inicial", "/traslados", "/reportes"]) {
+  for (const href of ["/productos/nuevo", "/productos", "/familias", "/bodegas", "/stock", "/cargue-inicial", "/traslados", "/reportes"]) {
     assert.match(inventory, new RegExp(href.replaceAll("/", "\\/")));
   }
+  assert.doesNotMatch(inventory, /\/dashboard\/inventario\/wms|title: "WMS"/);
   for (const href of ["/asientos", "/plan-cuentas", "/cuentas-por-pagar", "/cxc/documentos", "/terceros", "/iva", "/retenciones", "/estructura", "/reportes"]) {
     assert.match(accounting, new RegExp(href.replaceAll("/", "\\/")));
   }
@@ -35,6 +36,10 @@ test("la navegación diferencia acciones de alta y maestros fiscales activos", (
   const accountingNav = read("apps/web/components/contabilidad-nav.tsx");
   const salesNav = read("apps/web/components/ventas-nav.tsx");
   assert.match(inventoryNav, /label: "Nuevo producto"/);
+  assert.match(inventoryNav, /label: "Maestros"/);
+  assert.match(inventoryNav, /label: "Existencias"/);
+  assert.match(inventoryNav, /label: "Movimientos"/);
+  assert.doesNotMatch(inventoryNav, /label: "WMS"|inventario\/wms|TabsList/);
   assert.match(accountingNav, /label: "IVA"/);
   assert.match(accountingNav, /label: "Retenciones"/);
   assert.match(salesNav, /label: "Nueva factura"/);
