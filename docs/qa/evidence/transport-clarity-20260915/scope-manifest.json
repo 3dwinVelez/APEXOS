@@ -1,0 +1,51 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "transport-clarity-20260915",
+  "base_commit": "9ddcd51889bfde1f516940d831744e1e54704add",
+  "certified_commit": "48e74685558f5e65c0b326a18d5f19559c469514",
+  "change_intent": {
+    "summary": "Hacer comprensible el flujo de Transporte en menos de 20 segundos y alinear sus superficies críticas con el Design System.",
+    "modules": ["transport", "web-ui"]
+  },
+  "allowed_paths": [
+    "apps/web/app/dashboard/transporte/cubicaje/page.tsx",
+    "apps/web/app/dashboard/transporte/operacion/page.tsx",
+    "apps/web/app/dashboard/transporte/ordenes/page.tsx",
+    "apps/web/app/dashboard/transporte/page.tsx",
+    "apps/web/components/transport/CargoScene.tsx",
+    "apps/web/components/transport/TransportUI.tsx",
+    "apps/web/test/transport-tms-ui.test.mjs"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    { "status": "M", "file": "apps/web/app/dashboard/transporte/cubicaje/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/transporte/operacion/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/transporte/ordenes/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/transporte/page.tsx" },
+    { "status": "M", "file": "apps/web/components/transport/CargoScene.tsx" },
+    { "status": "M", "file": "apps/web/components/transport/TransportUI.tsx" },
+    { "status": "M", "file": "apps/web/test/transport-tms-ui.test.mjs" }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "transport-rbac-and-tenant-contracts",
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    {
+      "name": "transport-packing-invariants",
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    {
+      "name": "transport-20-second-comprehension",
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    {
+      "name": "transport-mobile-operability",
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    }
+  ]
+}
