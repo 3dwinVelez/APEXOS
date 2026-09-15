@@ -1,0 +1,47 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "transport-excel-intake-20260915",
+  "base_commit": "65cbef1073a3e1eb6fc7eaf4b3e0a578aa18f7bb",
+  "certified_commit": "0d2a36cbbc9d2c1f26fcdd4d8202ad4e52d75bb9",
+  "change_intent": {
+    "summary": "Reemplazar el cargue técnico de pedidos por una experiencia Excel guiada, extensible y comprensible.",
+    "modules": ["transport", "web-ui"]
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/transport/tms-service.js",
+    "apps/api/test/transport-tms-foundation.test.js",
+    "apps/web/app/dashboard/transporte/ordenes/page.tsx",
+    "apps/web/public/plantillas/Plantilla_Pedidos_Transporte.xlsx",
+    "apps/web/test/transport-tms-ui.test.mjs"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/src/modules/transport/tms-service.js" },
+    { "status": "M", "file": "apps/api/test/transport-tms-foundation.test.js" },
+    { "status": "M", "file": "apps/web/app/dashboard/transporte/ordenes/page.tsx" },
+    { "status": "A", "file": "apps/web/public/plantillas/Plantilla_Pedidos_Transporte.xlsx" },
+    { "status": "M", "file": "apps/web/test/transport-tms-ui.test.mjs" }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "transport-excel-intake",
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    {
+      "name": "transport-custom-fields",
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    {
+      "name": "transport-rbac-and-tenant-isolation",
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    {
+      "name": "transport-packing-invariants",
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    }
+  ]
+}
