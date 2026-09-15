@@ -80,6 +80,7 @@ const planningSchema = {
       origin_id: { type: "integer" }, need_ids: { type: "array", minItems: 1, uniqueItems: true, items: { type: "integer" } },
       vehicle_id: { type: "integer" }, vehicle_type: { type: "string" }, service_level: { type: "string" },
       strategy: { type: "string" }, return_to_origin: { type: "boolean" }, road_factor: { type: "number", minimum: 1, maximum: 2 },
+      compare_service_levels: { type: "boolean" },
       average_speed_kmh: { type: "number", minimum: 5, maximum: 120 }
     }
   }
@@ -91,7 +92,7 @@ const commitPlanningSchema = {
     required: ["code", "origin_id", "need_ids", "rate_card_id"],
     properties: {
       ...planningSchema.body.properties,
-      code: { type: "string", minLength: 1 }, rate_card_id: { type: "integer" }, planned_departure: { type: "string" },
+      code: { type: "string", minLength: 1 }, rate_card_id: { type: "integer" }, carrier_id: { type: "integer" }, planned_departure: { type: "string" },
       planned_arrival: { type: "string" }, metadata: { type: "object" }
     }
   }

@@ -816,7 +816,13 @@ async function getPlanningWorkbench(tenantId) {
 
     }
 
-    return { pending_needs: needs.length, consolidation_groups: [...grouped.values()] };
+    const [activeCarriers, activeRates, activeVehicles] = await Promise.all([
+      prisma.transportCarrier.count({ where: { status: "activo" } }),
+      prisma.transportRateCard.count({ where: { status: "activa", active: true } }),
+      prisma.vehicle.count({ where: { status: "activo" } })
+    ]);
+
+    return { pending_needs: needs.length, consolidation_groups: [...grouped.values()], readiness: { active_carriers: activeCarriers, active_rates: activeRates, active_vehicles: activeVehicles } };
 
   });
 
@@ -836,7 +842,7 @@ function rateApplies(rate, context) {
 
     && (!rate.destination_department || (departments.size === 1 && departments.has(normalizedMatch(rate.destination_department))))
 
-    && (!rate.service_level || normalizedMatch(rate.service_level) === normalizedMatch(context.service_level))
+    && (context.compare_service_levels || !rate.service_level || normalizedMatch(rate.service_level) === normalizedMatch(context.service_level))
 
     && (!rate.vehicle_type || normalizedMatch(rate.vehicle_type) === normalizedMatch(context.vehicle_type));
 
@@ -882,6 +888,8 @@ async function evaluatePlan(tenantId, input) {
 
     const vehicle = input.vehicle_id ? await prisma.vehicle.findFirstOrThrow({ where: { id: Number(input.vehicle_id) } }) : null;
 
+    const availableVehicles = vehicle ? [vehicle] : await prisma.vehicle.findMany({ where: { status: "activo" }, orderBy: { plate: "asc" }, take: 100 });
+
     const capacityKg = vehicle ? vehicleCapacityKg(vehicle) : 0;
 
     const capacity = {
@@ -912,9 +920,45 @@ async function evaluatePlan(tenantId, input) {
 
     });
 
-    const context = { origin, needs: foundNeeds, service_level: input.service_level || foundNeeds[0].service_level, vehicle_type: input.vehicle_type || vehicle?.type || foundNeeds[0].required_vehicle_type };
+    const serviceLevel = input.service_level || foundNeeds[0].service_level;
 
-    const quotes = rates.filter((rate) => rateApplies(rate, context)).map((rate) => calculateRateQuote(rate, totals));
+    const candidateVehicles = availableVehicles.filter((candidate) => {
+
+      const candidateCapacity = vehicleCapacityKg(candidate); const candidateVolume = numberValue(candidate.volume_available);
+
+      return (candidateCapacity <= 0 || totals.weight_kg <= candidateCapacity) && (candidateVolume <= 0 || totals.volume_m3 <= candidateVolume);
+
+    });
+
+    const vehiclesByType = new Map();
+
+    for (const candidate of candidateVehicles) {
+
+      const key = normalizedMatch(candidate.type || "sin_tipo"); const current = vehiclesByType.get(key);
+
+      if (!current || vehicleCapacityKg(candidate) < vehicleCapacityKg(current)) vehiclesByType.set(key, candidate);
+
+    }
+
+    const planningVehicles = vehicle ? candidateVehicles : [...vehiclesByType.values()];
+
+    const alternatives = [];
+
+    for (const candidate of planningVehicles.length ? planningVehicles : [null]) {
+
+      const context = { origin, needs: foundNeeds, service_level: serviceLevel, compare_service_levels: input.compare_service_levels === true, vehicle_type: input.vehicle_type || candidate?.type || foundNeeds[0].required_vehicle_type };
+
+      for (const rate of rates.filter((row) => rateApplies(row, context))) {
+
+        const quote = calculateRateQuote(rate, totals); const speed = normalizedMatch(rate.service_level) === "express" ? 55 : normalizedMatch(rate.service_level) === "economy" ? 38 : averageSpeed;
+
+        alternatives.push({ ...quote, option_id: `${rate.id}:${candidate?.id || "unassigned"}`, service_level: rate.service_level || serviceLevel, vehicle_id: candidate?.id || null, vehicle_plate: candidate?.plate || null, vehicle_type: candidate?.type || rate.vehicle_type || null, weight_capacity_kg: candidate ? vehicleCapacityKg(candidate) : null, volume_capacity_m3: candidate ? numberValue(candidate.volume_available) : null, duration_minutes: Math.ceil(route.distance_km / speed * 60) + serviceMinutes });
+
+      }
+
+    }
+
+    const quotes = alternatives;
 
     const strategy = input.strategy || "balanced";
 
@@ -940,7 +984,9 @@ async function evaluatePlan(tenantId, input) {
 
     });
 
-    quotes.forEach((quote, index) => { quote.rank = index + 1; quote.recommended = index === 0; });
+    const cheapest = quotes.length ? Math.min(...quotes.map((quote) => quote.total)) : 0; const fastest = quotes.length ? Math.min(...quotes.map((quote) => quote.duration_minutes)) : 0; const bestScore = quotes.length ? Math.max(...quotes.map((quote) => quote.carrier_score)) : 0; const highest = quotes.length ? Math.max(...quotes.map((quote) => quote.total)) : 0;
+
+    quotes.forEach((quote, index) => { quote.rank = index + 1; quote.recommended = index === 0; quote.benefits = [...(quote.total === cheapest ? ["menor_costo"] : []), ...(quote.duration_minutes === fastest ? ["menor_tiempo"] : []), ...(quote.carrier_score === bestScore ? ["mejor_servicio"] : [])]; quote.savings_vs_highest = highest - quote.total; });
 
     return {
 
@@ -974,7 +1020,7 @@ async function commitPlan(tenantId, user, input) {
 
   if (!plan.capacity.feasible) throw appError(409, "TMS_VEHICLE_CAPACITY_EXCEEDED", "El vehiculo seleccionado no tiene capacidad suficiente.", plan.capacity);
 
-  const quote = plan.quotes.find((candidate) => candidate.rate_card_id === Number(input.rate_card_id));
+  const quote = plan.quotes.find((candidate) => candidate.rate_card_id === Number(input.rate_card_id) && (!input.vehicle_id || candidate.vehicle_id === Number(input.vehicle_id)));
 
   if (!quote) throw appError(409, "TMS_RATE_NOT_APPLICABLE", "El tarifario seleccionado no es aplicable al plan actual.");
 
@@ -996,7 +1042,8 @@ async function commitPlan(tenantId, user, input) {
 
     estimated_cost: quote.total, currency: quote.currency, planned_distance_km: plan.totals.distance_km,
 
-    planned_duration_minutes: plan.planned_duration_minutes, metadata
+    vehicle_id: quote.vehicle_id || input.vehicle_id, carrier_id: quote.carrier_id || input.carrier_id,
+    planned_duration_minutes: quote.duration_minutes || plan.planned_duration_minutes, metadata
 
   });
 

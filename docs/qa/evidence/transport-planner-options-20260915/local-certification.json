@@ -1,0 +1,378 @@
+{
+  "certification": "transport-tms-local",
+  "environment": "LOCAL_DESARROLLO",
+  "run_id": "20260915202948",
+  "api_url": "http://localhost:3000",
+  "status": "passed",
+  "checks": [
+    {
+      "name": "api_health",
+      "status": "passed",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "authentication_required",
+      "status": "passed",
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "local_admin_login",
+      "status": "passed",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "order_intake_mode_available",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "mode": "connected",
+        "sources": [
+          "sales"
+        ],
+        "manual_import": true
+      }
+    },
+    {
+      "name": "carrier_created",
+      "status": "passed",
+      "detail": {
+        "status": 201
+      }
+    },
+    {
+      "name": "georeferenced_origin_created",
+      "status": "passed",
+      "detail": {
+        "status": 201
+      }
+    },
+    {
+      "name": "driver_created",
+      "status": "passed",
+      "detail": {
+        "status": 201
+      }
+    },
+    {
+      "name": "delivery_point_created",
+      "status": "passed",
+      "detail": {
+        "status": 201
+      }
+    },
+    {
+      "name": "excel_order_imported",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "created": 1,
+        "errors": []
+      }
+    },
+    {
+      "name": "excel_custom_fields_persist_after_reopen",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "code": "QA-XLS-20260915202948",
+        "custom_fields": {
+          "unidad_negocio": "Consumo masivo",
+          "temperatura_controlada": "SI"
+        }
+      }
+    },
+    {
+      "name": "excel_validation_blocks_unknown_origin",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "errors": [
+          {
+            "row": 2,
+            "missing": [
+              "available_at",
+              "due_at"
+            ],
+            "origin_code": "no_encontrado"
+          }
+        ]
+      }
+    },
+    {
+      "name": "modular_order_sync_available",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "sources": [
+          "sales"
+        ],
+        "reviewed": 0,
+        "created": 0,
+        "existing": 0
+      }
+    },
+    {
+      "name": "modular_order_sync_idempotent",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "reviewed": 0,
+        "created": 0,
+        "existing": 0
+      }
+    },
+    {
+      "name": "rate_v1_activated",
+      "status": "passed",
+      "detail": {
+        "status": 201,
+        "version": 1
+      }
+    },
+    {
+      "name": "rate_v2_published_and_v1_replaced",
+      "status": "passed",
+      "detail": {
+        "status": 201,
+        "version": 2
+      }
+    },
+    {
+      "name": "comparison_carrier_created",
+      "status": "passed",
+      "detail": {
+        "status": 201
+      }
+    },
+    {
+      "name": "comparison_rate_created",
+      "status": "passed",
+      "detail": {
+        "status": 201
+      }
+    },
+    {
+      "name": "eligible_vehicle_created",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "master_status": "apto_documentalmente"
+      }
+    },
+    {
+      "name": "incomplete_need_visible",
+      "status": "passed",
+      "detail": {
+        "status": 201,
+        "validation_errors": [
+          "peso_faltante",
+          "volumen_faltante"
+        ]
+      }
+    },
+    {
+      "name": "complete_need_created",
+      "status": "passed",
+      "detail": {
+        "status": 201
+      }
+    },
+    {
+      "name": "planner_returns_selectable_business_alternatives",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "alternatives": [
+          {
+            "carrier": "Transportadora express 20260915202948",
+            "vehicle": "MAP-101",
+            "service": "express",
+            "cost": 1018475.7,
+            "duration": 41,
+            "benefits": [
+              "menor_tiempo",
+              "mejor_servicio"
+            ]
+          },
+          {
+            "carrier": "Transportadora express 20260915202948",
+            "vehicle": "MAP-202",
+            "service": "express",
+            "cost": 1018475.7,
+            "duration": 41,
+            "benefits": [
+              "menor_tiempo",
+              "mejor_servicio"
+            ]
+          },
+          {
+            "carrier": "Transportadora express 20260915202948",
+            "vehicle": "Q202948",
+            "service": "express",
+            "cost": 1018475.7,
+            "duration": 41,
+            "benefits": [
+              "menor_tiempo",
+              "mejor_servicio"
+            ]
+          },
+          {
+            "carrier": "Transportadora local 20260915202948",
+            "vehicle": "MAP-101",
+            "service": "normal",
+            "cost": 717667.5,
+            "duration": 44,
+            "benefits": [
+              "menor_costo"
+            ]
+          },
+          {
+            "carrier": "Transportadora local 20260915202948",
+            "vehicle": "MAP-202",
+            "service": "normal",
+            "cost": 717667.5,
+            "duration": 44,
+            "benefits": [
+              "menor_costo"
+            ]
+          },
+          {
+            "carrier": "Transportadora local 20260915202948",
+            "vehicle": "Q202948",
+            "service": "normal",
+            "cost": 717667.5,
+            "duration": 44,
+            "benefits": [
+              "menor_costo"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "road_route_capacity_and_rate_evaluated",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "engine": "osrm",
+        "geometry_points": 295,
+        "distance_km": 9.77,
+        "quotes": 1
+      }
+    },
+    {
+      "name": "optimized_trip_committed",
+      "status": "passed",
+      "detail": {
+        "status": 201,
+        "estimated_cost": "717667.5"
+      }
+    },
+    {
+      "name": "trip_assigned",
+      "status": "passed",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "trip_transition_en_cargue",
+      "status": "passed",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "trip_transition_despachado",
+      "status": "passed",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "trip_transition_en_transito",
+      "status": "passed",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "invalid_transition_blocked",
+      "status": "passed",
+      "detail": {
+        "status": 409,
+        "code": "TMS_INVALID_TRIP_TRANSITION"
+      }
+    },
+    {
+      "name": "real_evidence_uploaded",
+      "status": "passed",
+      "detail": {
+        "status": 201
+      }
+    },
+    {
+      "name": "delivery_and_pod_recorded",
+      "status": "passed",
+      "detail": {
+        "status": 201
+      }
+    },
+    {
+      "name": "trip_delivered",
+      "status": "passed",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "settlement_created",
+      "status": "passed",
+      "detail": {
+        "status": 201
+      }
+    },
+    {
+      "name": "settlement_approved",
+      "status": "passed",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "trip_closed_with_traceability",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "events": 9
+      }
+    }
+  ],
+  "created": {
+    "carrier_id": 14,
+    "origin_id": 10,
+    "driver_id": 13,
+    "delivery_point_id": 13,
+    "excel_need_id": 26,
+    "rate_card_v1_id": 13,
+    "rate_card_id": 14,
+    "comparison_carrier_id": 15,
+    "comparison_rate_id": 15,
+    "vehicle_id": 63,
+    "incomplete_need_id": 27,
+    "need_id": 28,
+    "trip_id": 10,
+    "stop_id": 10,
+    "attempt_id": 10,
+    "pod_id": 10,
+    "settlement_id": 10
+  },
+  "cleanup": "masters_and_rate_inactivated_and_vehicle_retired; transactional_trace_preserved",
+  "finished_at": "2026-09-15T20:29:55.198Z"
+}
