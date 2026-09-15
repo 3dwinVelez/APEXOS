@@ -1,0 +1,47 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "transport-modular-intake-20260915",
+  "base_commit": "490798ed712de897983671022f12ee87f29144c1",
+  "certified_commit": "58206e64dc124816b3c4853a61955316d9846cea",
+  "change_intent": {
+    "summary": "Conectar los pedidos de módulos activos con Transporte y conservar una entrada autónoma simple para clientes que usan Transporte de forma independiente.",
+    "modules": ["transport", "sales", "commercial-management", "inventory", "web-ui"]
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/transport/routes.js",
+    "apps/api/src/modules/transport/tms-service.js",
+    "apps/api/test/transport-tms-foundation.test.js",
+    "apps/web/app/dashboard/transporte/ordenes/page.tsx",
+    "apps/web/test/transport-tms-ui.test.mjs"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/src/modules/transport/routes.js" },
+    { "status": "M", "file": "apps/api/src/modules/transport/tms-service.js" },
+    { "status": "M", "file": "apps/api/test/transport-tms-foundation.test.js" },
+    { "status": "M", "file": "apps/web/app/dashboard/transporte/ordenes/page.tsx" },
+    { "status": "M", "file": "apps/web/test/transport-tms-ui.test.mjs" }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "transport-rbac-and-tenant-isolation",
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    {
+      "name": "modular-order-source-gating",
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    {
+      "name": "standalone-order-import",
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    {
+      "name": "transport-packing-invariants",
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    }
+  ]
+}
