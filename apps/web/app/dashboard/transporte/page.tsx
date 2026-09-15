@@ -731,18 +731,36 @@ export function TransportFleetPage() {
   );
 }
 
-const transportActions = [
-  { href: "/dashboard/transporte/cubicaje", title: "Cubicaje inteligente", detail: "Simular el acomodo de pedidos y validar capacidad en un vehículo 3D.", icon: Cuboid, primary: true },
-  { href: "/dashboard/transporte/operacion", title: "Torre y viajes", detail: "Crear viajes, asignar recursos y controlar el ciclo operativo completo.", icon: RadioTower },
-  { href: "/dashboard/transporte/monitoreo", title: "Monitoreo en vivo", detail: "Consultar ubicación, ETA, geocercas, desvíos y alertas de la flota.", icon: Navigation },
-  { href: "/dashboard/transporte/ordenes", title: "Órdenes", detail: "Registrar, validar e importar la demanda logística pendiente.", icon: ClipboardList },
-  { href: "/dashboard/transporte/planeacion", title: "Planeador", detail: "Consolidar pedidos y evaluar rutas, capacidad y alternativas.", icon: Route },
-  { href: "/dashboard/transporte/pod", title: "Pruebas de entrega", detail: "Revisar entregas, novedades, fotografías, firmas y trazabilidad.", icon: FileCheck2 },
-  { href: "/dashboard/transporte/flota", title: "Flota", detail: "Administrar vehículos, capacidades, documentos y disponibilidad.", icon: Truck },
-  { href: "/dashboard/transporte/tarifas", title: "Tarifarios", detail: "Configurar versiones, vigencias y componentes del costo de transporte.", icon: ReceiptText },
-  { href: "/dashboard/transporte/maestros", title: "Maestros TMS", detail: "Gestionar transportadores, conductores, orígenes y destinos.", icon: Users },
-  { href: "/dashboard/transporte/notificaciones", title: "Notificaciones", detail: "Consultar y registrar comunicaciones operativas del TMS.", icon: Bell },
-  { href: "/dashboard/transporte/configuracion", title: "Configuración", detail: "Definir parámetros operativos, móviles y de comunicación.", icon: Settings }
+const transportWorkflows = [
+  {
+    title: "1. Preparar pedidos",
+    detail: "Registra o importa lo que debes transportar y corrige los datos incompletos.",
+    actions: [
+      { href: "/dashboard/transporte/ordenes", title: "Preparar pedidos", detail: "Registrar, validar e importar pedidos pendientes de transporte.", icon: ClipboardList, primary: true },
+      { href: "/dashboard/transporte/planeacion", title: "Crear un plan de viaje", detail: "Agrupar pedidos y comparar ruta, capacidad y costo.", icon: Route },
+      { href: "/dashboard/transporte/cubicaje", title: "Comprobar la carga", detail: "Validar visualmente qué cabe y cómo acomodarlo en el vehículo.", icon: Cuboid }
+    ]
+  },
+  {
+    title: "2. Ejecutar y entregar",
+    detail: "Asigna recursos, sigue los viajes y confirma cada entrega.",
+    actions: [
+      { href: "/dashboard/transporte/operacion", title: "Controlar viajes", detail: "Asignar vehículos y conductores, despachar y cerrar viajes.", icon: RadioTower },
+      { href: "/dashboard/transporte/monitoreo", title: "Seguir vehículos", detail: "Consultar posiciones y eventos recibidos durante el recorrido.", icon: Navigation },
+      { href: "/dashboard/transporte/pod", title: "Confirmar entregas", detail: "Revisar novedades, fotografías, firmas y cantidades entregadas.", icon: FileCheck2 }
+    ]
+  },
+  {
+    title: "3. Preparar la operación",
+    detail: "Mantén listos los datos que habilitan la planeación diaria.",
+    actions: [
+      { href: "/dashboard/transporte/flota", title: "Vehículos y documentos", detail: "Revisar capacidad, vigencias y disponibilidad de la flota.", icon: Truck },
+      { href: "/dashboard/transporte/tarifas", title: "Costos y tarifas", detail: "Definir vigencias y reglas para calcular el costo del viaje.", icon: ReceiptText },
+      { href: "/dashboard/transporte/maestros", title: "Datos básicos", detail: "Gestionar transportadores, conductores, orígenes y destinos.", icon: Users },
+      { href: "/dashboard/transporte/notificaciones", title: "Comunicaciones", detail: "Consultar los avisos registrados por la operación.", icon: Bell },
+      { href: "/dashboard/transporte/configuracion", title: "Preferencias de transporte", detail: "Definir parámetros operativos y de comunicación.", icon: Settings }
+    ]
+  }
 ] as const;
 
 export default function TransportHomePage() {
@@ -751,11 +769,20 @@ export default function TransportHomePage() {
       <header className="apex-section-card p-4">
         <p className="text-sm font-medium text-apex">M-14 · Operación</p>
         <h1 className="text-3xl font-semibold">Transporte</h1>
-        <p className="mt-1 text-sm text-neutral-600">Planeación, cubicaje, ejecución, entrega y liquidación en un solo flujo logístico.</p>
+        <p className="mt-1 max-w-3xl text-sm text-neutral-600">Lleva los pedidos desde la preparación del viaje hasta la entrega y el control del costo.</p>
+        <p className="mt-3 text-sm font-semibold text-neutral-800">Empieza preparando los pedidos pendientes.</p>
       </header>
-      <section aria-label="Herramientas activas de transporte" className="apex-dense-actions">
-        {transportActions.map((action) => <ActionCard key={action.href} {...action} />)}
-      </section>
+      {transportWorkflows.map((workflow) => (
+        <section aria-labelledby={`transport-${workflow.title.charAt(0)}`} className="space-y-2" key={workflow.title}>
+          <div>
+            <h2 className="text-lg font-semibold" id={`transport-${workflow.title.charAt(0)}`}>{workflow.title}</h2>
+            <p className="text-sm text-neutral-600">{workflow.detail}</p>
+          </div>
+          <div className="apex-dense-actions">
+            {workflow.actions.map((action) => <ActionCard key={action.href} {...action} />)}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }

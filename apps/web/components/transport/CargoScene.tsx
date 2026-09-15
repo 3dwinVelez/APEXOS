@@ -41,5 +41,5 @@ export default function CargoScene({container,plan,step,selected,onSelect}:{cont
     renderer.domElement.addEventListener("pointerdown",pointerDown);renderer.domElement.addEventListener("pointerup",click);
     return()=>{observer.disconnect();controls.dispose();resources.forEach(r=>r.dispose());renderer.dispose();renderer.forceContextLoss();renderer.domElement.remove();};
   },[container,plan,step,selected]);
-  return <div className="relative overflow-hidden rounded-xl border border-line bg-[#0d2028]"><div ref={host} className="h-[420px] min-h-72 w-full"/>{error?<p role="alert" className="absolute inset-x-4 top-4 text-white">{error}</p>:<p className="pointer-events-none absolute bottom-3 left-4 text-xs text-white/70">Cabina a la izquierda · Puerta trasera a la derecha · Arrastrar para girar · Rueda para zoom</p>}</div>;
+  return <div className="relative overflow-hidden rounded-md border border-line bg-slate-900"><div ref={host} className="h-[420px] min-h-72 w-full"/>{error?<p role="alert" className="absolute inset-x-4 top-4 text-white">{error}</p>:<p className="pointer-events-none absolute bottom-3 left-4 text-xs text-white/70">Cabina a la izquierda · Puerta trasera a la derecha · Arrastra para girar · Usa la rueda para acercar</p>}</div>;
 }

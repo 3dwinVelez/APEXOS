@@ -860,25 +860,25 @@ export default function TransportOperationPage() {
 
           <p className="text-xs font-semibold uppercase tracking-wide text-apex">
 
-            Operacion integral
+            Operación diaria
 
           </p>
 
-          <h1 className="mt-1 text-3xl font-semibold">Torre de transporte</h1>
+          <h1 className="mt-1 text-3xl font-semibold">Controlar viajes</h1>
 
           <p className="mt-2 text-sm text-neutral-600">
 
-            De la necesidad al viaje, entrega y liquidacion.
+            Revisa lo urgente, asigna recursos y lleva cada viaje hasta su entrega y liquidación.
 
           </p>
 
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex w-full flex-wrap gap-2 md:w-auto">
 
           <button
 
-            className="inline-flex h-10 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold"
+            className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-md border border-line bg-white px-3 text-sm font-semibold"
 
             onClick={() => void load()}
 
@@ -894,11 +894,11 @@ export default function TransportOperationPage() {
 
             <>
 
-              <Link className="rounded-md border border-line px-3 py-2 text-sm" href="/dashboard/transporte/ordenes">Gestionar órdenes</Link>
+              <Link className="inline-flex h-10 items-center whitespace-nowrap rounded-md border border-line px-3 text-sm" href="/dashboard/transporte/ordenes">Preparar pedidos</Link>
 
-              <Link className="rounded-md bg-apex px-3 py-2 text-sm font-semibold text-white" href="/dashboard/transporte/planeacion">Planear viaje</Link>
+              <Link className="inline-flex h-10 items-center whitespace-nowrap rounded-md bg-apex px-3 text-sm font-semibold text-white" href="/dashboard/transporte/planeacion">Crear plan de viaje</Link>
 
-              <Link className="rounded-md border border-apex px-3 py-2 text-sm text-apex" href="/dashboard/transporte/cubicaje">Cubicaje 3D</Link>
+              <Link className="inline-flex h-10 items-center whitespace-nowrap rounded-md border border-apex px-3 text-sm text-apex" href="/dashboard/transporte/cubicaje">Comprobar carga</Link>
 
             </>
 
@@ -918,6 +918,17 @@ export default function TransportOperationPage() {
 
       ) : null}
 
+      <section className="rounded-md border border-line bg-white p-4" aria-labelledby="transport-next-action">
+        <p className="text-xs font-semibold uppercase tracking-wide text-apex">Siguiente paso</p>
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-semibold" id="transport-next-action">{plannable.length ? `${plannable.length} pedidos están listos para crear un viaje` : tower.trips.length ? "Continúa con los viajes abiertos" : "Prepara el primer pedido para comenzar"}</h2>
+            <p className="mt-1 text-sm text-neutral-600">{plannable.length ? "Agrúpalos y compara vehículo, ruta y costo antes de confirmar." : tower.trips.length ? "Abre un viaje para revisar asignación, recorrido, entrega o liquidación." : "Necesitas origen, destino, fecha, peso y volumen para poder planear."}</p>
+          </div>
+          {canWrite ? <Link className="inline-flex h-10 items-center rounded-md bg-apex px-4 text-sm font-semibold text-white" href={plannable.length ? "/dashboard/transporte/planeacion" : tower.trips.length ? "#active-trips" : "/dashboard/transporte/ordenes"}>{plannable.length ? "Planear pedidos" : tower.trips.length ? "Ver viajes" : "Preparar pedido"}</Link> : null}
+        </div>
+      </section>
+
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
 
         <Metric
@@ -932,7 +943,7 @@ export default function TransportOperationPage() {
 
         <Metric
 
-          label="En ejecucion"
+          label="En ejecución"
 
           value={tower.in_execution}
 
@@ -994,7 +1005,7 @@ export default function TransportOperationPage() {
 
       <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
 
-        <section className="overflow-hidden rounded-xl border border-line bg-white">
+        <section className="overflow-hidden rounded-md border border-line bg-white" id="active-trips">
 
           <div className="border-b border-line px-4 py-3">
 
@@ -1002,7 +1013,7 @@ export default function TransportOperationPage() {
 
           </div>
 
-          <div className="overflow-x-auto">
+          {tower.trips.length ? <div className="overflow-x-auto">
 
             <table className="w-full text-left text-sm">
 
@@ -1092,35 +1103,15 @@ export default function TransportOperationPage() {
 
                 ))}
 
-                {!tower.trips.length ? (
-
-                  <tr>
-
-                    <td
-
-                      className="px-4 py-8 text-center text-neutral-500"
-
-                      colSpan={5}
-
-                    >
-
-                      No hay viajes abiertos.
-
-                    </td>
-
-                  </tr>
-
-                ) : null}
-
               </tbody>
 
             </table>
 
-          </div>
+          </div> : <div className="px-4 py-8 text-center text-neutral-500"><p className="font-semibold text-neutral-800">No hay viajes abiertos</p><p className="mt-1 text-sm">Prepara pedidos y crea un plan para iniciar la operación.</p></div>}
 
         </section>
 
-        <section className="rounded-xl border border-line bg-white p-4">
+        <section className="rounded-md border border-line bg-white p-4">
 
           <h2 className="font-semibold">Demanda por planear</h2>
 
@@ -1161,6 +1152,7 @@ export default function TransportOperationPage() {
               </div>
 
             ))}
+            {!needs.some(need => ["pendiente", "incompleta"].includes(need.status)) ? <p className="rounded-md bg-paper p-3 text-sm text-neutral-600">No hay pedidos pendientes. Cuando registres uno, aquí verás si está listo para planear o qué dato le falta.</p> : null}
 
           </div>
 

@@ -173,33 +173,36 @@ export default function CubicajePage() {
       <header className="apex-section-card p-4">
         <div>
           <p className="text-sm font-medium text-apex">M-14 · Planeación de carga</p>
-          <h1 className="text-2xl font-semibold md:text-3xl">Cubicaje inteligente</h1>
-          <p className="mt-1 text-sm text-neutral-600">Carga virtualmente tus pedidos. Comprueba qué cabe, cómo se acomoda y qué requiere otra solución.</p>
+          <h1 className="text-2xl font-semibold md:text-3xl">Comprobar la carga del vehículo</h1>
+          <p className="mt-1 text-sm text-neutral-600">Selecciona un vehículo y los pedidos. APEXOS te mostrará qué cabe y cómo acomodarlo antes del cargue físico.</p>
         </div>
       </header>
 
       {error ? <p role="alert" className="rounded-lg border border-rose-300 bg-rose-50 p-3 text-sm text-rose-800">{error}</p> : null}
       {notice ? <p role="status" className="rounded-lg border border-apex p-3 text-sm text-apex">{notice}</p> : null}
 
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <TransportMetric label="Bultos ubicados" value={plan ? `${plan.placements.length} / ${plan.requested_units}` : "—"} percent={plan?.requested_units ? plan.placements.length / plan.requested_units * 100 : 0} safeWhenFull />
-        <TransportMetric label="Volumen ocupado" value={plan ? `${plan.volume_utilization_pct.toFixed(1)}%` : "—"} percent={plan?.volume_utilization_pct || 0} hint={plan ? `${plan.packed_volume.toFixed(2)} m³` : undefined} />
-        <TransportMetric label="Carga útil utilizada" value={plan ? `${plan.weight_utilization_pct.toFixed(1)}%` : "—"} percent={plan?.weight_utilization_pct || 0} hint={plan ? `${plan.total_weight.toLocaleString()} kg` : undefined} />
-        <TransportMetric label="Resultado" value={busy ? "Calculando…" : plan?.feasible ? "Cabe" : plan ? "Revisar" : "Sin carga"} />
+      <section className="rounded-md border border-line bg-white p-3" aria-label="Configurar carga">
+        <p className="text-xs font-semibold uppercase tracking-wide text-apex">Empieza aquí</p>
+        <div className="mt-2 grid gap-2 sm:grid-cols-3">
+          <button className="h-12 rounded-md bg-apex px-4 text-left text-sm font-semibold text-white" onClick={() => setPanel("space")}>1. Seleccionar vehículo</button>
+          <button className="h-12 rounded-md border border-line px-4 text-left text-sm font-semibold hover:border-apex hover:text-apex" onClick={() => setPanel("orders")}>2. Agregar pedidos <span className="ml-1 rounded-full bg-paper px-2 py-0.5 text-xs text-neutral-800">{needIds.length}</span></button>
+          <button className="h-12 rounded-md border border-line px-4 text-left text-sm font-semibold hover:border-apex hover:text-apex" onClick={() => setPanel("products")}>3. Revisar productos <span className="ml-1 rounded-full bg-paper px-2 py-0.5 text-xs">{items.length}</span></button>
+        </div>
       </section>
 
-      <section className="flex flex-wrap gap-2 rounded-xl border border-line bg-white p-2" aria-label="Configurar cubicaje">
-        <button className="rounded-lg border border-line px-4 py-2 text-sm font-semibold hover:border-apex hover:text-apex" onClick={() => setPanel("space")}>1. Espacio y vehículo</button>
-        <button className="rounded-lg border border-line px-4 py-2 text-sm font-semibold hover:border-apex hover:text-apex" onClick={() => setPanel("orders")}>2. Pedidos y viaje <span className="ml-1 rounded-full bg-paper px-2 py-0.5 text-xs">{needIds.length}</span></button>
-        <button className="rounded-lg border border-line px-4 py-2 text-sm font-semibold hover:border-apex hover:text-apex" onClick={() => setPanel("products")}>3. Productos <span className="ml-1 rounded-full bg-paper px-2 py-0.5 text-xs">{items.length}</span></button>
-      </section>
+      {plan ? <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <TransportMetric label="Bultos acomodados" value={`${plan.placements.length} / ${plan.requested_units}`} percent={plan.requested_units ? plan.placements.length / plan.requested_units * 100 : 0} safeWhenFull />
+        <TransportMetric label="Espacio utilizado" value={`${plan.volume_utilization_pct.toFixed(1)}%`} percent={plan.volume_utilization_pct || 0} hint={`${plan.packed_volume.toFixed(2)} m³`} />
+        <TransportMetric label="Peso utilizado" value={`${plan.weight_utilization_pct.toFixed(1)}%`} percent={plan.weight_utilization_pct || 0} hint={`${plan.total_weight.toLocaleString()} kg`} />
+        <TransportMetric label="Resultado" value={busy ? "Calculando…" : plan.feasible ? "La carga cabe" : "Requiere ajustes"} />
+      </section> : <p className="rounded-md border border-line bg-paper p-3 text-sm text-neutral-600">Todavía no hay una simulación. Completa los tres pasos para ver el acomodo y validar la capacidad.</p>}
 
       <div className="min-w-0">
         <section className="min-w-0 space-y-4">
           <CargoScene container={plan?.container || container} plan={plan} step={step} selected={selected} onSelect={setSelected} />
 
           {plan ? (
-            <div className="rounded-xl border border-line bg-white p-4">
+            <div className="rounded-md border border-line bg-white p-4">
               <label className="flex flex-wrap items-center gap-3 text-sm">
                 Cargue virtual: {step} de {plan.placements.length}
                 <input aria-label="Paso de cargue" className="min-w-40 flex-1 accent-apex" type="range" min="0" max={plan.placements.length} value={step} onChange={e => setStep(Number(e.target.value))} />
@@ -221,7 +224,7 @@ export default function CubicajePage() {
           ) : null}
 
           {plan ? (
-            <details className="rounded-xl border border-line bg-white p-4">
+            <details className="rounded-md border border-line bg-white p-4">
               <summary className="cursor-pointer text-sm font-semibold">Ver posiciones y secuencia de cargue</summary>
               <div className="mt-3 max-h-72 overflow-auto">
                 <table className="w-full text-left text-xs">
@@ -241,7 +244,7 @@ export default function CubicajePage() {
             </details>
           ) : null}
 
-          <footer className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-white p-4">
+          <footer className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-white p-4">
             <p className="max-w-lg text-xs text-neutral-500">Acomodo factible por búsqueda heurística; no garantiza óptimo global. Verifica sujeción, estabilidad dinámica y límites por eje antes de cargar físicamente.</p>
             <div className="flex gap-2">
               <button disabled={!plan || busy} className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold disabled:opacity-40" onClick={exportPlan}>Exportar</button>
@@ -250,10 +253,10 @@ export default function CubicajePage() {
           </footer>
         </section>
 
-        {panel ? <aside aria-label="Configuración de cubicaje" aria-modal="true" role="dialog" className="fixed inset-0 z-50 grid place-items-center bg-black/55 p-3 backdrop-blur-sm sm:p-6" onMouseDown={() => setPanel(null)}>
-          <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-line bg-paper p-3 shadow-2xl sm:p-5" onMouseDown={event => event.stopPropagation()}>
+        {panel ? <aside aria-label="Configuración de carga" aria-modal="true" role="dialog" className="fixed inset-0 z-50 grid place-items-center bg-black/55 p-3 sm:p-6" onMouseDown={() => setPanel(null)}>
+          <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-md border border-line bg-paper p-3 sm:p-5" onMouseDown={event => event.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between gap-4 px-1">
-              <div><p className="text-xs font-semibold uppercase tracking-wide text-apex">Cubicaje inteligente</p><h2 className="text-xl font-semibold">{panel === "space" ? "Espacio y vehículo" : panel === "orders" ? "Pedidos y viaje" : "Productos y restricciones"}</h2></div>
+              <div><p className="text-xs font-semibold uppercase tracking-wide text-apex">Comprobar carga</p><h2 className="text-xl font-semibold">{panel === "space" ? "1. Seleccionar vehículo" : panel === "orders" ? "2. Agregar pedidos" : "3. Revisar productos"}</h2></div>
               <button aria-label="Cerrar configuración" className="grid h-10 w-10 place-items-center rounded-full border border-line bg-white text-xl hover:border-apex" onClick={() => setPanel(null)}>×</button>
             </div>
           <div className={panel === "space" ? "block" : "hidden"}>
