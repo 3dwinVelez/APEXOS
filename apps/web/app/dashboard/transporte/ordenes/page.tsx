@@ -213,7 +213,7 @@ export default function TransportOrdersPage() {
       ) : null}
       {intake?.mode === "connected" ? <section className="rounded-md border border-emerald-200 bg-emerald-50 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div><p className="text-xs font-semibold uppercase text-emerald-800">Conexión automática activa</p><h2 className="font-semibold">Pedidos de APEX OS</h2><p className="mt-1 text-sm text-neutral-700">{intake.sources.includes("commercial") ? "Gestión Comercial" : "Ventas"}{intake.sources.length > 1 ? " y Ventas" : ""} envía sus pedidos a Transporte sin volver a digitarlos.</p></div>
+          <div><p className="text-xs font-semibold uppercase text-emerald-800">Conexión automática activa</p><h2 className="font-semibold">Pedidos de APEX OS</h2><p className="mt-1 text-sm text-neutral-700">{intake.sources.includes("commercial") ? "Gestión Comercial" : "Ventas"}{intake.sources.length > 1 ? " y Ventas envían" : " envía"} sus pedidos a Transporte sin volver a digitarlos.</p></div>
           <button className="rounded-md bg-apex px-4 py-2 text-sm font-semibold text-white disabled:opacity-60" disabled={!canWrite || syncing} onClick={() => void syncOrders()}>{syncing ? "Sincronizando…" : "Actualizar pedidos"}</button>
         </div>
         {intake.reviewed !== undefined ? <p className="mt-3 text-xs text-neutral-600">Revisados: {intake.reviewed} · Nuevos: {intake.created || 0} · Ya existentes: {intake.existing || 0}</p> : null}
