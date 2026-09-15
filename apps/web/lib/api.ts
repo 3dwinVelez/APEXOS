@@ -80,6 +80,7 @@ function isSupabaseSession() {
 }
 
 type AnyRow = Record<string, unknown>;
+export type ApiRequestOptions = RequestInit & { suppressPlatformAlert?: boolean };
 type AdminRole = ReturnType<typeof defaultAdminRoles>[number];
 
 const fallbackActivityTypes = [
@@ -4109,7 +4110,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   return null;
 }
 
-export async function api<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
+export async function api<T>(path: string, options: ApiRequestOptions = {}, retried = false): Promise<T> {
   const method = String(options.method || "GET").toUpperCase();
   const bypassReadCache = options.cache === "no-store";
   const companyScope = typeof window !== "undefined" ? localStorage.getItem("apexos_company_id") || "" : "";
@@ -4208,7 +4209,7 @@ export function listApexHeartReportSchedules() { return api<ApexHeartReportSched
 export function saveApexHeartReportSchedule(input: Omit<ApexHeartReportSchedule, "id" | "next_run_at" | "last_run_at">) { return api<ApexHeartReportSchedule>("/api/v1/apex-heart/report-schedules", { method: "POST", body: JSON.stringify(input) }); }
 export function deleteApexHeartReportSchedule(id: number) { return api(`/api/v1/apex-heart/report-schedules/${id}`, { method: "DELETE" }); }
 
-async function apiInternal<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
+async function apiInternal<T>(path: string, options: ApiRequestOptions = {}, retried = false): Promise<T> {
   assertActiveSession();
   await keepSessionAlive();
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -4219,6 +4220,9 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
   const pathname = path.split("?")[0];
   const serviceOrderDetailMatch = pathname.match(/^\/api\/v1\/services\/orders\/([^/]+)$/);
   const preferOperationalApi = HAS_CONFIGURED_API_URL && shouldPreferOperationalApi(path);
+  const suppressPlatformAlert = options.suppressPlatformAlert === true;
+  const fetchOptions = { ...options };
+  delete fetchOptions.suppressPlatformAlert;
 
   if (serviceOrderDetailMatch && method === "PUT" && uuidOrNull(serviceOrderDetailMatch[1])) {
     const updated = await nextServiceOrderRequest<T>(serviceOrderDetailMatch[1], options);
@@ -4245,7 +4249,7 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
 
   try {
     response = await fetchWithTimeout(`${API_URL}${path}`, {
-      ...options,
+      ...fetchOptions,
       headers: {
         ...(options.body && !(typeof FormData !== "undefined" && options.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -4283,7 +4287,7 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
     if (response.status >= 500) {
       const detail = await response.text().catch(() => "");
       const message = requestErrorMessage(path, response.status, detail);
-      alertRequestFailure(path, response.status, detail);
+      if (!suppressPlatformAlert) alertRequestFailure(path, response.status, detail);
       reportClientFailure(path, response.status, detail, String(options.method || "GET"));
       throw new Error(message);
     }
@@ -4291,7 +4295,7 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
     const body = await response.json().catch(() => ({ error: response.statusText }));
     const detail = body.error || body.message || response.statusText;
     const message = requestErrorMessage(path, response.status, detail);
-    alertRequestFailure(path, response.status, detail);
+    if (!suppressPlatformAlert) alertRequestFailure(path, response.status, detail);
     reportClientFailure(path, response.status, detail, String(options.method || "GET"));
     throw new Error(message);
   }

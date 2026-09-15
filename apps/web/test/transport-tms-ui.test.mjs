@@ -122,6 +122,16 @@ test("el planeador evalua consolidacion, capacidad, ruta y alternativas", () => 
   assert.match(planning, /Alternativas tarifarias/);
 });
 
+test("el planeador convierte faltantes operativos en una guía comprensible", () => {
+  assert.match(planning, /planningGuidance/);
+  assert.match(planning, /Los pedidos deben salir del mismo origen/);
+  assert.match(planning, /Qué debes hacer/);
+  assert.match(planning, /Entendido, voy a corregirlo/);
+  assert.match(planning, /Detalle técnico para soporte/);
+  assert.match(planning, /<ModalFrame/);
+  assert.match(planning, /suppressPlatformAlert: true/);
+});
+
 test("los tarifarios exponen vigencias, versiones y componentes de costo", () => {
   assert.match(rates, /\/transport\/rate-cards/);
   assert.match(rates, /\/versions/);
