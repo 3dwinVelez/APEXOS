@@ -35,6 +35,7 @@ function atomicMutation(fn) {
 }
 
 const { point, lineString, distance: turfDistance, buffer: turfBuffer, booleanPointInPolygon, pointToLineDistance } = require("@turf/turf");
+const { planRoadRoute } = require("./routing-engine");
 
 
 
@@ -863,7 +864,7 @@ async function evaluatePlan(tenantId, input) {
 
     const config = await getTmsConfig(tenantId);
 
-    const route = optimizeStopOrder(origin, foundNeeds, { road_factor: config.road_factor, ...input });
+    const route = await planRoadRoute(origin, foundNeeds, { road_factor: config.road_factor, ...input }, optimizeStopOrder);
 
     const totals = {
 
@@ -901,7 +902,7 @@ async function evaluatePlan(tenantId, input) {
 
     const serviceMinutes = foundNeeds.reduce((sum, need) => sum + numberValue(need.delivery_point.service_minutes, 30), 0);
 
-    const durationMinutes = Math.ceil(route.distance_km / averageSpeed * 60 + serviceMinutes);
+    const durationMinutes = (route.duration_minutes || Math.ceil(route.distance_km / averageSpeed * 60)) + serviceMinutes;
 
     const now = new Date();
 
@@ -950,6 +951,8 @@ async function evaluatePlan(tenantId, input) {
       planned_duration_minutes: durationMinutes, capacity, quotes,
 
       warnings: [
+
+        ...(route.routing_warning ? ["direccionamiento_vial_no_disponible"] : []),
 
         ...(!capacity.feasible ? ["capacidad_vehiculo_excedida"] : []),
 

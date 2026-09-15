@@ -5,6 +5,7 @@ import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { AlertTriangle, CheckCircle2, MapPinned, RefreshCw, Route, Sparkles, Truck } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 
 type Origin = { id: number; code: string; name: string; city: string; latitude: number; longitude: number };
 type Need = { id: number; code: string; due_at: string; weight_kg: number; volume_m3: number; delivery_point: { name: string; city: string } };
@@ -14,11 +15,12 @@ type Vehicle = { id: number; plate: string; type?: string; master_status: string
 type Coordinate = { latitude: number; longitude: number };
 type Leg = { sequence: number; from: string; to: string; need_id?: number; distance_km: number; from_coordinate: Coordinate; to_coordinate: Coordinate };
 type Quote = { rate_card_id: number; rate_code: string; rate_version: number; carrier_name: string; currency: string; components: Record<string, number>; total: number; carrier_score: number; rank: number; recommended: boolean; minimum_applied: boolean };
-type Plan = { generated_at: string; strategy: string; origin: Origin; ordered_need_ids: number[]; route: { legs: Leg[]; distance_km: number; road_factor: number }; totals: { weight_kg: number; volume_m3: number; pallets: number; stop_count: number; distance_km: number }; planned_duration_minutes: number; capacity: { vehicle_id?: number; plate?: string; feasible: boolean; weight_feasible: boolean; volume_feasible: boolean; weight_capacity_kg: number; volume_capacity_m3: number }; quotes: Quote[]; warnings: string[] };
+type Plan = { generated_at: string; strategy: string; origin: Origin; ordered_need_ids: number[]; route: { legs: Leg[]; distance_km: number; road_factor: number | null; engine?: string; profile?: string; geometry?: { type: "LineString"; coordinates: number[][] } | null }; totals: { weight_kg: number; volume_m3: number; pallets: number; stop_count: number; distance_km: number }; planned_duration_minutes: number; capacity: { vehicle_id?: number; plate?: string; feasible: boolean; weight_feasible: boolean; volume_feasible: boolean; weight_capacity_kg: number; volume_capacity_m3: number }; quotes: Quote[]; warnings: string[] };
 type Guidance = { title: string; explanation: string; actions: string[]; technical?: string };
 
 const inputClass = "h-10 w-full rounded-md border border-line bg-white px-3 text-sm outline-none focus:border-apex";
 const money = (value: number, currency = "COP") => new Intl.NumberFormat("es-CO", { style: "currency", currency, maximumFractionDigits: 0 }).format(value);
+const PlanningRouteMap = dynamic(() => import("@/components/transport/PlanningRouteMap"), { ssr: false, loading: () => <div className="grid h-[360px] place-items-center bg-paper text-sm text-content-muted">Cargando mapa vial…</div> });
 
 function planningGuidance(caught: unknown): Guidance {
   const technical = caught instanceof Error ? caught.message : "No fue posible evaluar el plan.";
@@ -118,12 +120,9 @@ function PlanResult({ plan, selectedQuote, onSelectQuote, onCommit }: { plan: Pl
 }
 
 function RouteMap({ plan }: { plan: Plan }) {
-  const points = plan.route.legs.length ? [plan.route.legs[0].from_coordinate, ...plan.route.legs.map((leg) => leg.to_coordinate)] : [{ latitude: plan.origin.latitude, longitude: plan.origin.longitude }];
-  const minLat = Math.min(...points.map((point) => point.latitude)); const maxLat = Math.max(...points.map((point) => point.latitude));
-  const minLon = Math.min(...points.map((point) => point.longitude)); const maxLon = Math.max(...points.map((point) => point.longitude));
-  const project = (point: Coordinate) => ({ x: 35 + (point.longitude - minLon) / Math.max(maxLon - minLon, 0.01) * 530, y: 265 - (point.latitude - minLat) / Math.max(maxLat - minLat, 0.01) * 230 });
-  const projected = points.map(project);
-  return <section className="overflow-hidden rounded-xl border border-line bg-white"><div className="flex items-center gap-2 border-b border-line px-4 py-3"><MapPinned className="text-apex" size={18} /><h3 className="font-semibold">Mapa esquemático del plan</h3></div><svg aria-label="Ruta georreferenciada propuesta" className="h-[310px] w-full bg-[#F5F7F5]" role="img" viewBox="0 0 600 300"><defs><pattern height="24" id="grid" patternUnits="userSpaceOnUse" width="24"><path d="M 24 0 L 0 0 0 24" fill="none" stroke="#dfe6e2" strokeWidth="1" /></pattern></defs><rect fill="url(#grid)" height="300" width="600" /><polyline fill="none" points={projected.map((point) => `${point.x},${point.y}`).join(" ")} stroke="#146C63" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" />{projected.map((point, index) => <g key={`${point.x}-${point.y}-${index}`}><circle cx={point.x} cy={point.y} fill={index === 0 ? "#146C63" : "white"} r="13" stroke="#146C63" strokeWidth="3" /><text fill={index === 0 ? "white" : "#146C63"} fontSize="11" fontWeight="700" textAnchor="middle" x={point.x} y={point.y + 4}>{index === 0 ? "O" : index}</text></g>)}</svg><p className="border-t border-line px-4 py-2 text-xs text-neutral-500">Estimación geodésica ajustada por factor vial {plan.route.road_factor}. No sustituye todavía un motor cartográfico de tráfico.</p></section>;
+  const geometry = plan.route.geometry?.coordinates || [];
+  const stops = [{ label: plan.origin.name, position: [plan.origin.latitude, plan.origin.longitude] as [number, number], kind: "origin" as const, sequence: 0 }, ...plan.route.legs.filter((leg) => leg.need_id).map((leg) => ({ label: leg.to, position: [leg.to_coordinate.latitude, leg.to_coordinate.longitude] as [number, number], kind: "stop" as const, sequence: leg.sequence }))];
+  return <section className="overflow-hidden rounded-xl border border-line bg-white"><div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3"><div className="flex items-center gap-2"><MapPinned className="text-apex" size={18} /><h3 className="font-semibold">Ruta óptima por carretera</h3></div><span className="text-xs font-semibold uppercase text-apex">{plan.route.engine === "osrm" ? "Motor OSRM" : "Estimación temporal"}</span></div>{geometry.length ? <PlanningRouteMap geometry={geometry} stops={stops} /> : <div className="grid h-[310px] place-items-center bg-paper p-6 text-center text-sm text-content-muted">El motor vial no respondió. La secuencia se calculó temporalmente sin mapa de carretera.</div>}<p className="border-t border-line px-4 py-2 text-xs text-neutral-500">Ruta calculada sobre la red vial de OpenStreetMap. Verifica restricciones especiales del vehículo antes del despacho.</p></section>;
 }
 
 function Metric({ label, value, good }: { label: string; value: string; good?: boolean }) { return <div className="rounded-xl border border-line bg-white p-3"><p className="text-xs text-neutral-500">{label}</p><p className={`mt-2 font-semibold ${good === false ? "text-rose-700" : good ? "text-emerald-700" : ""}`}>{value}</p></div>; }

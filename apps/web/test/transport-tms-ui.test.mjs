@@ -19,6 +19,7 @@ const pod = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte
 const fleet = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/page.tsx"), "utf8");
 const packing = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/cubicaje/page.tsx"), "utf8");
 const profilePicker = fs.readFileSync(path.resolve(directory, "../components/transport/VehicleProfilePicker.tsx"), "utf8");
+const planningRouteMap = fs.readFileSync(path.resolve(directory, "../components/transport/PlanningRouteMap.tsx"), "utf8");
 const transportOrderTemplate = path.resolve(directory, "../public/plantillas/Plantilla_Pedidos_Transporte.xlsx");
 
 test("Transporte organiza el trabajo por etapas sin navegación redundante", () => {
@@ -118,7 +119,13 @@ test("el planeador evalua consolidacion, capacidad, ruta y alternativas", () => 
   assert.match(planning, /\/transport\/planning\/workbench/);
   assert.match(planning, /\/transport\/planning\/evaluate/);
   assert.match(planning, /\/transport\/planning\/commit/);
-  assert.match(planning, /Mapa esquemático del plan/);
+  assert.match(planning, /Ruta óptima por carretera/);
+  assert.match(planning, /Motor OSRM/);
+  assert.match(planning, /PlanningRouteMap/);
+  assert.match(planningRouteMap, /MapContainer/);
+  assert.match(planningRouteMap, /TileLayer/);
+  assert.match(planningRouteMap, /Polyline/);
+  assert.match(planningRouteMap, /OpenStreetMap contributors/);
   assert.match(planning, /Alternativas tarifarias/);
 });
 
