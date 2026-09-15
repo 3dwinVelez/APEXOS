@@ -41,6 +41,9 @@ async function main() {
     check("local_admin_login", login.ok && Boolean(login.body.token), { status: login.status });
     headers = { authorization: `Bearer ${login.body.token}` };
 
+    const intake = await request("/api/v1/transport/orders/intake", { headers });
+    check("order_intake_mode_available", intake.ok && typeof intake.body.manual_import === "boolean" && Array.isArray(intake.body.sources), { status: intake.status, mode: intake.body.mode, sources: intake.body.sources, manual_import: intake.body.manual_import });
+
     const carrier = await request("/api/v1/transport/carriers", { method: "POST", headers, body: JSON.stringify({ code: `QA-CAR-${runId}`, legal_name: `Transportadora local ${runId}`, tax_id: `TAX-${runId}`, status: "activo", service_levels: ["normal"], operating_zones: ["local"], vehicle_types: ["camion"] }) });
     check("carrier_created", carrier.status === 201 && Boolean(carrier.body.id), { status: carrier.status }); evidence.created.carrier_id = carrier.body.id;
 
@@ -52,6 +55,25 @@ async function main() {
 
     const point = await request("/api/v1/transport/delivery-points", { method: "POST", headers, body: JSON.stringify({ code: `QA-PTO-${runId}`, name: `Destino local ${runId}`, address: "Calle local 100", city: "Bogota", country: "CO", latitude: 4.711, longitude: -74.0721, window_start: "08:00", window_end: "17:00", service_minutes: 30, geofence_radius_m: 150 }) });
     check("delivery_point_created", point.status === 201 && point.body.latitude === 4.711, { status: point.status }); evidence.created.delivery_point_id = point.body.id;
+
+    const excelOrderCode = `QA-XLS-${runId}`;
+    const excelCsv = [
+      "pedido,origen,destino,fecha_disponible,fecha_entrega,peso_kg,volumen_m3,prioridad,nivel_servicio,referencia,temperatura_controlada,unidad_negocio",
+      `${excelOrderCode},${origin.body.code},${point.body.code},${fromNow(1)},${fromNow(10)},850,5.5,alta,normal,CLIENTE-${runId},SI,Consumo masivo`,
+    ].join("\n");
+    const imported = await request("/api/v1/transport/orders/import", { method: "POST", headers, body: JSON.stringify({ csv: excelCsv }) });
+    check("excel_order_imported", imported.ok && imported.body.status === "completed" && imported.body.created === 1 && imported.body.order_ids?.length === 1, { status: imported.status, created: imported.body.created, errors: imported.body.errors });
+    evidence.created.excel_need_id = imported.body.order_ids?.[0];
+    const importedOrder = await request(`/api/v1/transport/orders/${evidence.created.excel_need_id}`, { headers });
+    check("excel_custom_fields_persist_after_reopen", importedOrder.ok && importedOrder.body.code === excelOrderCode && importedOrder.body.metadata?.import_format === "xlsx" && importedOrder.body.metadata?.custom_fields?.temperatura_controlada === "SI" && importedOrder.body.metadata?.custom_fields?.unidad_negocio === "Consumo masivo", { status: importedOrder.status, code: importedOrder.body.code, custom_fields: importedOrder.body.metadata?.custom_fields });
+
+    const invalidImport = await request("/api/v1/transport/orders/import", { method: "POST", headers, body: JSON.stringify({ csv: `pedido,origen,destino,peso_kg,volumen_m3\nQA-XLS-INVALID-${runId},ORIGEN-INEXISTENTE,${point.body.code},10,1` }) });
+    check("excel_validation_blocks_unknown_origin", invalidImport.ok && invalidImport.body.status === "invalid" && invalidImport.body.valid === 0 && invalidImport.body.errors?.length === 1, { status: invalidImport.status, errors: invalidImport.body.errors });
+
+    const synchronized = await request("/api/v1/transport/orders/sync", { method: "POST", headers, body: "{}" });
+    check("modular_order_sync_available", synchronized.ok && Array.isArray(synchronized.body.sources) && typeof synchronized.body.reviewed === "number" && typeof synchronized.body.created === "number" && typeof synchronized.body.existing === "number", { status: synchronized.status, sources: synchronized.body.sources, reviewed: synchronized.body.reviewed, created: synchronized.body.created, existing: synchronized.body.existing });
+    const synchronizedAgain = await request("/api/v1/transport/orders/sync", { method: "POST", headers, body: "{}" });
+    check("modular_order_sync_idempotent", synchronizedAgain.ok && synchronizedAgain.body.created === 0 && synchronizedAgain.body.existing === synchronizedAgain.body.reviewed, { status: synchronizedAgain.status, reviewed: synchronizedAgain.body.reviewed, created: synchronizedAgain.body.created, existing: synchronizedAgain.body.existing });
 
     const rate = await request("/api/v1/transport/rate-cards", { method: "POST", headers, body: JSON.stringify({ code: `QA-TAR-${runId}`, name: `Tarifa certificacion ${runId}`, carrier_id: carrier.body.id, origin_id: origin.body.id, destination_city: "Bogota", service_level: "normal", vehicle_type: "camion", valid_from: fromNow(-24), valid_to: fromNow(24 * 365), currency: "COP", base_rate: 500000, minimum_charge: 600000, price_per_km: 2500, price_per_kg: 25, price_per_m3: 1000, price_per_stop: 50000, fuel_surcharge_pct: 10, tolls_flat: 30000, status: "activa" }) });
     check("rate_v1_activated", rate.status === 201 && rate.body.status === "activa" && rate.body.version === 1, { status: rate.status, version: rate.body.version }); evidence.created.rate_card_v1_id = rate.body.id;
