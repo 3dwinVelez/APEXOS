@@ -84,7 +84,7 @@ test("las pantallas críticas explican la tarea y el siguiente paso en lenguaje 
   assert.match(packing, /Empieza aquí/);
   assert.match(packing, /Todavía no hay una simulación/);
   assert.match(orders, /Paso 1 de 6 · Preparar/);
-  assert.match(orders, /Debes corregir/);
+  assert.match(orders, /Debes completar/);
 });
 
 test("cubicaje respeta las restricciones visuales del Design System", () => {
