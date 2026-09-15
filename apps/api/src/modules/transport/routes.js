@@ -71,6 +71,8 @@ async function transportRoutes(fastify) {
   fastify.get("/transport/needs", { preHandler: requirePermission("transport", "read") }, (request) => tms.listNeeds(request.user?.tenant_id, request.query));
   fastify.post("/transport/needs", { schema: tmsSchemas.needSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.createNeed(request.user?.tenant_id, request.user, request.body)));
   fastify.get("/transport/orders", { preHandler: requirePermission("transport", "read") }, (request) => tms.listNeeds(request.user?.tenant_id, request.query));
+  fastify.get("/transport/orders/intake", { preHandler: requirePermission("transport", "read") }, (request) => tms.getOrderIntake(request.user?.tenant_id));
+  fastify.post("/transport/orders/sync", { preHandler: requirePermission("transport", "write") }, (request) => tms.syncConnectedOrders(request.user?.tenant_id, request.user));
   fastify.post("/transport/orders", { schema: tmsSchemas.needSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.createNeed(request.user?.tenant_id, request.user, request.body)));
   fastify.post("/transport/orders/import", { schema: tmsSchemas.orderImportSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.importOrdersCsv(request.user?.tenant_id, request.user, request.body));
   fastify.get("/transport/orders/:id", { preHandler: requirePermission("transport", "read") }, (request) => tms.getOrder(request.user?.tenant_id, request.params.id));

@@ -64,13 +64,17 @@ test("el monitoreo usa mapa real, refresco automatico, ETA, geocercas y alertas"
   assert.match(monitoring, /Turf\.js/); assert.match(monitoring, /route_deviation_m/); assert.match(liveMap, /route_coordinates/); assert.match(liveMap, /off_route/);
 });
 
-test("las ordenes TMS permiten filtrar, validar CSV, importar y cancelar", () => {
+test("las ordenes TMS conectan modulos activos y conservan ingreso autonomo", () => {
+  assert.match(orders, /\/transport\/orders\/intake/);
+  assert.match(orders, /\/transport\/orders\/sync/);
+  assert.match(orders, /Conexión automática activa/);
+  assert.match(orders, /Pedidos externos/);
+  assert.match(orders, /Seleccionar archivo CSV/);
   assert.match(orders, /\/transport\/orders\/import/);
   assert.match(orders, /dry_run: dryRun/);
   assert.match(orders, /Validar archivo/);
-  assert.match(orders, /Importar pedidos/);
+  assert.match(orders, /Agregar a Transporte/);
   assert.match(orders, /method: "DELETE"/);
-  assert.doesNotMatch(orders, /integrations|webhook|sync ERP/i);
 });
 
 test("las pantallas críticas explican la tarea y el siguiente paso en lenguaje cotidiano", () => {
@@ -91,7 +95,7 @@ test("cubicaje respeta las restricciones visuales del Design System", () => {
 test("pedidos adapta la consulta a móvil", () => {
   assert.match(orders, /md:hidden/);
   assert.match(orders, /hidden overflow-x-auto md:block/);
-  assert.match(orders, /aria-label="Pedidos en formato CSV"/);
+  assert.match(orders, /aria-label="Pedidos para transportar"/);
 });
 
 test("la configuracion TMS gobierna operacion, movil y notificaciones", () => {
