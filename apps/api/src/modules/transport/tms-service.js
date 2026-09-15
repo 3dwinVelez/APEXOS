@@ -1490,7 +1490,7 @@ function parseCsv(text) {
 
   if (!rows.length) return [];
 
-  const aliases = { pedido: "code", codigo_pedido: "code", orden: "code", origen: "origin_code", codigo_origen: "origin_code", destino: "delivery_point_code", punto_entrega: "delivery_point_code", codigo_destino: "delivery_point_code", disponible_desde: "available_at", fecha_disponible: "available_at", entregar_antes_de: "due_at", fecha_entrega: "due_at", peso_kg: "weight_kg", peso: "weight_kg", volumen_m3: "volume_m3", volumen: "volume_m3", prioridad: "priority", nivel_servicio: "service_level", referencia: "source_reference" };
+  const aliases = { pedido: "code", codigo_pedido: "code", orden: "code", origen: "origin_code", codigo_origen: "origin_code", destino: "delivery_point_code", punto_entrega: "delivery_point_code", codigo_destino: "delivery_point_code", disponible_desde: "available_at", fecha_disponible: "available_at", entregar_antes_de: "due_at", fecha_entrega: "due_at", peso_kg: "weight_kg", peso: "weight_kg", volumen_m3: "volume_m3", volumen: "volume_m3", prioridad: "priority", nivel_servicio: "service_level", referencia: "source_reference", pallets: "pallets", paquetes: "packages", valor_carga: "cargo_value", moneda: "currency", tipo_vehiculo: "required_vehicle_type" };
 
   const headers = rows.shift().map((header) => { const normalized = normalizedMatch(header).replace(/\s+/g, "_"); return aliases[normalized] || normalized; });
 
@@ -1701,7 +1701,9 @@ async function importOrdersCsv(tenantId, user, input) {
 
       if (missing.length || !origin || !point) { errors.push({ row: entry.row, missing, ...(origin ? {} : { origin_code: "no_encontrado" }), ...(point ? {} : { delivery_point_code: "no_encontrado" }) }); continue; }
 
-      prepared.push({ ...entry.data, source_type: entry.data.source_type || "csv", origin_id: origin.id, origin_name: origin.name, delivery_point_id: point.id, weight_kg: numberValue(entry.data.weight_kg), volume_m3: numberValue(entry.data.volume_m3), pallets: numberValue(entry.data.pallets), packages: numberValue(entry.data.packages), currency: entry.data.currency || "COP" });
+      const knownFields = new Set([...required, "priority", "service_level", "source_reference", "source_type", "pallets", "packages", "cargo_value", "customer_freight", "currency", "required_vehicle_type", "temperature_min_c", "temperature_max_c"]);
+      const customFields = Object.fromEntries(Object.entries(entry.data).filter(([key, value]) => !knownFields.has(key) && String(value || "").trim()));
+      prepared.push({ ...entry.data, source_type: entry.data.source_type || "excel", origin_id: origin.id, origin_name: origin.name, delivery_point_id: point.id, weight_kg: numberValue(entry.data.weight_kg), volume_m3: numberValue(entry.data.volume_m3), pallets: numberValue(entry.data.pallets), packages: numberValue(entry.data.packages), cargo_value: numberValue(entry.data.cargo_value), currency: entry.data.currency || "COP", metadata: { import_format: "xlsx", custom_fields: customFields } });
 
     }
 

@@ -64,6 +64,15 @@ test("la entrada autonoma entiende encabezados de transporte en español y separ
   assert.deepEqual(rows[0].data, { code: "PED-1", origin_code: "ORI-1", delivery_point_code: "PTO-1", available_at: "2026-09-15", due_at: "2026-09-16", weight_kg: "120", volume_m3: "2.5", source_reference: "CLIENTE-1" });
 });
 
+test("la plantilla admite campos logísticos opcionales con nombres cotidianos", () => {
+  const [row] = parseCsv("pedido,origen,destino,fecha_disponible,fecha_entrega,peso_kg,volumen_m3,paquetes,valor_carga,moneda,tipo_vehiculo,campo_cliente\nPED-2,ORI-1,PTO-1,2026-09-15,2026-09-16,120,2.5,8,950000,COP,furgon,fragil");
+  assert.equal(row.data.packages, "8");
+  assert.equal(row.data.cargo_value, "950000");
+  assert.equal(row.data.currency, "COP");
+  assert.equal(row.data.required_vehicle_type, "furgon");
+  assert.equal(row.data.campo_cliente, "fragil");
+});
+
 test("la entrada de pedidos solo conecta modulos contratados y conserva la carga manual", () => {
   assert.deepEqual(connectedOrderSources(["M-14"]), []);
   assert.deepEqual(transportIntakeMode(["M-14"]), { mode: "standalone", sources: [], manual_import: true });

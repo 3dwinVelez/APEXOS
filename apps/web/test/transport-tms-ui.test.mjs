@@ -19,6 +19,7 @@ const pod = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte
 const fleet = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/page.tsx"), "utf8");
 const packing = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/cubicaje/page.tsx"), "utf8");
 const profilePicker = fs.readFileSync(path.resolve(directory, "../components/transport/VehicleProfilePicker.tsx"), "utf8");
+const transportOrderTemplate = path.resolve(directory, "../public/plantillas/Plantilla_Pedidos_Transporte.xlsx");
 
 test("Transporte organiza el trabajo por etapas sin navegación redundante", () => {
   assert.doesNotMatch(transportLayout, /TransportNav|TabsList|TabLink/);
@@ -64,12 +65,20 @@ test("el monitoreo usa mapa real, refresco automatico, ETA, geocercas y alertas"
   assert.match(monitoring, /Turf\.js/); assert.match(monitoring, /route_deviation_m/); assert.match(liveMap, /route_coordinates/); assert.match(liveMap, /off_route/);
 });
 
-test("las ordenes TMS conectan modulos activos y conservan ingreso autonomo", () => {
+test("las ordenes TMS conectan modulos activos y ofrecen una plantilla Excel guiada", () => {
   assert.match(orders, /\/transport\/orders\/intake/);
   assert.match(orders, /\/transport\/orders\/sync/);
   assert.match(orders, /Conexión automática activa/);
   assert.match(orders, /Pedidos externos/);
-  assert.match(orders, /Seleccionar archivo CSV/);
+  assert.match(orders, /Plantilla_Pedidos_Transporte\.xlsx/);
+  assert.match(orders, /Descargar plantilla Excel/);
+  assert.match(orders, /Seleccionar Excel/);
+  assert.match(orders, /Ver campos y ejemplos/);
+  assert.match(orders, /columnas verdes son obligatorias/);
+  assert.match(orders, /datos personalizados del pedido/);
+  assert.match(orders, /import\("exceljs"\)/);
+  assert.ok(fs.statSync(transportOrderTemplate).size > 5000);
+  assert.doesNotMatch(orders, /<textarea/);
   assert.match(orders, /\/transport\/orders\/import/);
   assert.match(orders, /dry_run: dryRun/);
   assert.match(orders, /Validar archivo/);
@@ -95,7 +104,7 @@ test("cubicaje respeta las restricciones visuales del Design System", () => {
 test("pedidos adapta la consulta a móvil", () => {
   assert.match(orders, /md:hidden/);
   assert.match(orders, /hidden overflow-x-auto md:block/);
-  assert.match(orders, /aria-label="Pedidos para transportar"/);
+  assert.match(orders, /md:grid-cols-3/);
 });
 
 test("la configuracion TMS gobierna operacion, movil y notificaciones", () => {
