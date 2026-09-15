@@ -1,8 +1,11 @@
 # Validación local — claridad operativa de Transporte
 
-Fecha: 2026-09-15  
-Rama: `desarrollo`  
-Commit funcional: `48e74685558f5e65c0b326a18d5f19559c469514`  
+Fecha: 2026-09-15
+
+Rama: `desarrollo`
+
+Commit funcional: `48e74685558f5e65c0b326a18d5f19559c469514`
+
 Ambiente: desarrollo local
 
 ## Alcance
