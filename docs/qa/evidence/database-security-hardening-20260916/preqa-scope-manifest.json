@@ -1,0 +1,32 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "database-security-hardening-20260916",
+  "base_commit": "4edbbafa70072ea4e15606682f3855f7cc13afae",
+  "certified_commit": "553d82f",
+  "change_intent": {
+    "summary": "Endurecer exclusivamente la capa Supabase/PostgreSQL y certificar aislamiento y conectividad.",
+    "modules": ["database", "supabase", "security"]
+  },
+  "allowed_paths": [
+    "apps/api/test/supabase-database-security-hardening.test.js",
+    "supabase/migrations/20260916162822_apexos_database_security_hardening.sql",
+    "scripts/certifications/database-security-hardening-qa.js",
+    "docs/qa/evidence/database-security-hardening-20260916/"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    { "status": "A", "file": "apps/api/test/supabase-database-security-hardening.test.js" },
+    { "status": "A", "file": "supabase/migrations/20260916162822_apexos_database_security_hardening.sql" },
+    { "status": "A", "file": "scripts/certifications/database-security-hardening-qa.js" },
+    { "status": "A", "file": "docs/qa/evidence/database-security-hardening-20260916/qa-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/database-security-hardening-20260916/security-gate.md" },
+    { "status": "A", "file": "docs/qa/evidence/database-security-hardening-20260916/preqa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/database-security-hardening-20260916/preqa-scope-manifest.json" }
+  ],
+  "protected_capabilities": [
+    { "name": "authentication_connectivity", "status": "passed", "evidence": ["qa-certification.json"] },
+    { "name": "tenant_isolation", "status": "passed", "evidence": ["qa-certification.json"] },
+    { "name": "rls_and_client_grants", "status": "passed", "evidence": ["security-gate.md"] },
+    { "name": "platform_availability", "status": "passed", "evidence": ["qa-certification.json"] }
+  ]
+}
