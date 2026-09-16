@@ -1,0 +1,72 @@
+{
+  "generated_at": "2026-09-16T17:09:20.848Z",
+  "environment": "QA",
+  "project_ref": "jbirkghkekuifgfsgquq",
+  "destructive_operations": false,
+  "summary": {
+    "passed": 12,
+    "failed": 0
+  },
+  "checks": [
+    {
+      "name": "admin_login",
+      "status": "passed",
+      "detail": "HTTP 200"
+    },
+    {
+      "name": "tenant_login",
+      "status": "passed",
+      "detail": "HTTP 200"
+    },
+    {
+      "name": "admin_company_visibility",
+      "status": "passed",
+      "detail": "rows=4"
+    },
+    {
+      "name": "tenant_company_visibility",
+      "status": "passed",
+      "detail": "rows=1"
+    },
+    {
+      "name": "cross_tenant_fixture",
+      "status": "passed",
+      "detail": "control company found"
+    },
+    {
+      "name": "cross_tenant_companies",
+      "status": "passed",
+      "detail": "HTTP 200; rows=0"
+    },
+    {
+      "name": "cross_tenant_company_users",
+      "status": "passed",
+      "detail": "HTTP 200; rows=0"
+    },
+    {
+      "name": "cross_tenant_service_orders",
+      "status": "passed",
+      "detail": "HTTP 200; rows=0"
+    },
+    {
+      "name": "anonymous_company_visibility",
+      "status": "passed",
+      "detail": "HTTP 200; rows=0"
+    },
+    {
+      "name": "supabase_auth_burst",
+      "status": "passed",
+      "detail": "50/50 successful in 808 ms"
+    },
+    {
+      "name": "web_login_burst",
+      "status": "passed",
+      "detail": "50/50 successful in 966 ms"
+    },
+    {
+      "name": "api_health_burst",
+      "status": "passed",
+      "detail": "50/50 successful in 1752 ms"
+    }
+  ]
+}
