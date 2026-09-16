@@ -1,8 +1,8 @@
 {
   "scope_schema_version": 2,
   "change_id": "database-security-hardening-20260916",
-  "base_commit": "4edbbafa70072ea4e15606682f3855f7cc13afae",
-  "certified_commit": "553d82f",
+  "base_commit": "d9ebf83fdf4524192721cdcab06d5b39e749cc59",
+  "certified_commit": "a06cb01",
   "change_intent": {
     "summary": "Endurecer exclusivamente la capa Supabase/PostgreSQL y certificar aislamiento y conectividad.",
     "modules": ["database", "supabase", "security"]

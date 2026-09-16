@@ -3,7 +3,7 @@
   "environment": "LOCAL",
   "source_branch": "desarrollo",
   "target_branch": "develop",
-  "commit": "553d82f",
+  "commit": "a06cb01",
   "qa_status": "pending",
   "checks": {
     "functional": { "status": "passed", "evidence": ["qa-certification.json"] },
