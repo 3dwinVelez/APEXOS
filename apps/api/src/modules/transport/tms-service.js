@@ -126,6 +126,23 @@ function numberValue(value, fallback = 0) {
 
 }
 
+const CONNECTED_ORDER_MODULES = Object.freeze({
+  sales: ["m-03", "ventas", "sales"],
+  commercial: ["m-27", "gestion-comercial", "gestion_comercial", "commercial-management"]
+});
+
+function connectedOrderSources(activeModules = []) {
+  const active = new Set((Array.isArray(activeModules) ? activeModules : []).map((value) => String(value).trim().toLowerCase()));
+  return Object.entries(CONNECTED_ORDER_MODULES)
+    .filter(([, aliases]) => aliases.some((alias) => active.has(alias)))
+    .map(([source]) => source);
+}
+
+function transportIntakeMode(activeModules = []) {
+  const sources = connectedOrderSources(activeModules);
+  return { mode: sources.length ? "connected" : "standalone", sources, manual_import: true };
+}
+
 
 
 function assertCoordinatePair(latitude, longitude) {
@@ -1449,6 +1466,10 @@ function parseCsv(text) {
 
   const rows = []; let row = []; let value = ""; let quoted = false;
 
+  const firstLine = String(text).split(/\r?\n/, 1)[0] || "";
+
+  const separator = (firstLine.match(/;/g) || []).length > (firstLine.match(/,/g) || []).length ? ";" : ",";
+
   for (let index = 0; index < String(text).length; index += 1) {
 
     const char = String(text)[index]; const next = String(text)[index + 1];
@@ -1457,7 +1478,7 @@ function parseCsv(text) {
 
     else if (char === '"') quoted = !quoted;
 
-    else if (char === "," && !quoted) { row.push(value.trim()); value = ""; }
+    else if (char === separator && !quoted) { row.push(value.trim()); value = ""; }
 
     else if ((char === "\n" || char === "\r") && !quoted) { if (char === "\r" && next === "\n") index += 1; row.push(value.trim()); if (row.some(Boolean)) rows.push(row); row = []; value = ""; }
 
@@ -1469,10 +1490,109 @@ function parseCsv(text) {
 
   if (!rows.length) return [];
 
-  const headers = rows.shift().map((header) => normalizedMatch(header).replace(/\s+/g, "_"));
+  const aliases = { pedido: "code", codigo_pedido: "code", orden: "code", origen: "origin_code", codigo_origen: "origin_code", destino: "delivery_point_code", punto_entrega: "delivery_point_code", codigo_destino: "delivery_point_code", disponible_desde: "available_at", fecha_disponible: "available_at", entregar_antes_de: "due_at", fecha_entrega: "due_at", peso_kg: "weight_kg", peso: "weight_kg", volumen_m3: "volume_m3", volumen: "volume_m3", prioridad: "priority", nivel_servicio: "service_level", referencia: "source_reference", pallets: "pallets", paquetes: "packages", valor_carga: "cargo_value", moneda: "currency", tipo_vehiculo: "required_vehicle_type" };
+
+  const headers = rows.shift().map((header) => { const normalized = normalizedMatch(header).replace(/\s+/g, "_"); return aliases[normalized] || normalized; });
 
   return rows.map((cells, rowIndex) => ({ row: rowIndex + 2, data: Object.fromEntries(headers.map((header, index) => [header, cells[index] || ""])) }));
 
+}
+
+async function getOrderIntake(tenantId) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const tenant = await prisma.tenant.findUnique({ where: { id: String(tenantId) }, select: { active_modules: true } });
+    return transportIntakeMode(tenant?.active_modules);
+  });
+}
+
+function nextDeliveryDate(date) {
+  const due = new Date(date || Date.now());
+  due.setDate(due.getDate() + 1);
+  return due;
+}
+
+async function ensureIntegratedDeliveryPoint(source, customer) {
+  const code = normalizedCode(`${source === "commercial" ? "GC" : "VT"}-${customer.code || customer.id}`);
+  const current = await prisma.transportDeliveryPoint.findFirst({ where: { code } });
+  const data = {
+    name: customer.trade_name || customer.legal_name || customer.name || `Cliente ${customer.id}`,
+    commercial_customer_id: source === "commercial" ? customer.id : null,
+    customer_party_id: source === "sales" ? customer.id : null,
+    address: customer.address || "Direccion por completar",
+    city: customer.city || "Ciudad por completar",
+    department: customer.department || null,
+    country: customer.country || "CO",
+    metadata: { integration_source: source, customer_id: customer.id }
+  };
+  if (current) return prisma.transportDeliveryPoint.update({ where: { id: current.id }, data });
+  return prisma.transportDeliveryPoint.create({ data: { ...data, code } });
+}
+
+async function createIntegratedNeed(source, order, origin, user) {
+  const point = await ensureIntegratedDeliveryPoint(source, order.customer);
+  const sourceId = String(order.id);
+  const existing = await prisma.transportNeed.findFirst({ where: { source_type: source, source_id: sourceId } });
+  if (existing) return { created: false, order: existing };
+  const sourceReference = order.number || order.order_number;
+  const codeOwner = await prisma.transportNeed.findFirst({ where: { code: normalizedCode(sourceReference) } });
+  const transportCode = codeOwner ? `${sourceReference}-${source === "commercial" ? "GC" : "VT"}-${sourceId}` : sourceReference;
+  const lines = order.lines.map((line) => ({
+    item_id: line.item_id || line.product?.inventory_item_id || null,
+    sku: line.sku || line.product_code || String(line.item_id || line.id),
+    description: line.description || line.product_name || null,
+    quantity: numberValue(line.quantity ?? line.qty),
+    unit: line.unit || "UND",
+    weight_kg: numberValue(line.unit_weight_kg) * numberValue(line.quantity ?? line.qty),
+    volume_m3: numberValue(line.unit_volume_m3) * numberValue(line.quantity ?? line.qty)
+  }));
+  const weight = lines.reduce((sum, line) => sum + line.weight_kg, 0);
+  const volume = lines.reduce((sum, line) => sum + line.volume_m3, 0);
+  const created = await createNeed(String(order.tenant_id), user, {
+    code: transportCode,
+    source_type: source,
+    source_id: sourceId,
+    source_reference: sourceReference,
+    sales_order_id: source === "commercial" ? order.id : null,
+    origin_id: origin?.id,
+    origin_name: origin?.name || "Origen por completar",
+    delivery_point_id: point.id,
+    available_at: order.date || order.order_date || new Date(),
+    due_at: order.due_date || nextDeliveryDate(order.date || order.order_date),
+    weight_kg: weight,
+    volume_m3: volume,
+    packages: lines.reduce((sum, line) => sum + numberValue(line.quantity), 0),
+    cargo_value: numberValue(order.total),
+    currency: order.currency || "COP",
+    metadata: { integration_source: source, integration_status: order.status },
+    lines
+  });
+  return { created: true, order: created };
+}
+
+async function syncConnectedOrders(tenantId, user) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const tenant = await prisma.tenant.findUnique({ where: { id: String(tenantId) }, select: { active_modules: true } });
+    const intake = transportIntakeMode(tenant?.active_modules);
+    const origin = await prisma.transportOrigin.findFirst({ where: { active: true }, orderBy: { id: "asc" } });
+    const candidates = [];
+    if (intake.sources.includes("commercial")) {
+      const orders = await prisma.commercialSalesOrder.findMany({
+        where: { status: { in: ["REGISTERED", "CONFIRMED", "INVOICED"] } },
+        include: { customer: true, lines: { include: { product: { include: { inventory_item: true } } } } }, orderBy: { created_at: "asc" }, take: 200
+      });
+      for (const order of orders) candidates.push({ source: "commercial", order: { ...order, lines: order.lines.map((line) => ({ ...line, unit_weight_kg: line.product?.inventory_item?.weight_kg, unit_volume_m3: line.product?.inventory_item?.volume_m3 })) } });
+    }
+    if (intake.sources.includes("sales")) {
+      const orders = await prisma.transaction.findMany({ where: { type: "sale", status: { notIn: ["cancelled", "cancelada"] } }, include: { party: true, lines: true }, orderBy: { created_at: "asc" }, take: 200 });
+      const itemIds = [...new Set(orders.flatMap((order) => order.lines.map((line) => line.item_id).filter(Boolean)))];
+      const items = itemIds.length ? await prisma.item.findMany({ where: { id: { in: itemIds } } }) : [];
+      const byId = new Map(items.map((item) => [item.id, item]));
+      for (const order of orders) candidates.push({ source: "sales", order: { ...order, customer: order.party, lines: order.lines.map((line) => ({ ...line, sku: byId.get(line.item_id)?.code, unit_weight_kg: byId.get(line.item_id)?.weight_kg, unit_volume_m3: byId.get(line.item_id)?.volume_m3 })) } });
+    }
+    const results = [];
+    for (const candidate of candidates) results.push(await createIntegratedNeed(candidate.source, candidate.order, origin, user));
+    return { ...intake, reviewed: candidates.length, created: results.filter((result) => result.created).length, existing: results.filter((result) => !result.created).length };
+  });
 }
 
 
@@ -1581,7 +1701,9 @@ async function importOrdersCsv(tenantId, user, input) {
 
       if (missing.length || !origin || !point) { errors.push({ row: entry.row, missing, ...(origin ? {} : { origin_code: "no_encontrado" }), ...(point ? {} : { delivery_point_code: "no_encontrado" }) }); continue; }
 
-      prepared.push({ ...entry.data, source_type: entry.data.source_type || "csv", origin_id: origin.id, origin_name: origin.name, delivery_point_id: point.id, weight_kg: numberValue(entry.data.weight_kg), volume_m3: numberValue(entry.data.volume_m3), pallets: numberValue(entry.data.pallets), packages: numberValue(entry.data.packages), currency: entry.data.currency || "COP" });
+      const knownFields = new Set([...required, "priority", "service_level", "source_reference", "source_type", "pallets", "packages", "cargo_value", "customer_freight", "currency", "required_vehicle_type", "temperature_min_c", "temperature_max_c"]);
+      const customFields = Object.fromEntries(Object.entries(entry.data).filter(([key, value]) => !knownFields.has(key) && String(value || "").trim()));
+      prepared.push({ ...entry.data, source_type: entry.data.source_type || "excel", origin_id: origin.id, origin_name: origin.name, delivery_point_id: point.id, weight_kg: numberValue(entry.data.weight_kg), volume_m3: numberValue(entry.data.volume_m3), pallets: numberValue(entry.data.pallets), packages: numberValue(entry.data.packages), cargo_value: numberValue(entry.data.cargo_value), currency: entry.data.currency || "COP", metadata: { import_format: "xlsx", custom_fields: customFields } });
 
     }
 
@@ -2031,10 +2153,10 @@ module.exports = {
 
   createTrip, listTrips, getTrip, assignTrip, transitionTrip, recordTripEvent, registerDeliveryAttempt,
 
-  getOrder, updateOrder, cancelOrder, importOrdersCsv, getOrderTracking, getOrderPod, parseCsv, recordGpsBatch, getTripTracking, recordStopVisit, getLiveMonitoring, listNotifications, sendNotification, listPods, getPod, getPodStats, previewSettlement, settlementLines, remainingDeliveryLines, createSettlement, approveSettlement, getControlTower
+  getOrder, updateOrder, cancelOrder, importOrdersCsv, getOrderIntake, syncConnectedOrders, connectedOrderSources, transportIntakeMode, getOrderTracking, getOrderPod, parseCsv, recordGpsBatch, getTripTracking, recordStopVisit, getLiveMonitoring, listNotifications, sendNotification, listPods, getPod, getPodStats, previewSettlement, settlementLines, remainingDeliveryLines, createSettlement, approveSettlement, getControlTower
 
 };
 
 
 
-for (const name of ["createNeed", "createTrip", "commitPlan", "assignTrip", "transitionTrip", "registerDeliveryAttempt", "createSettlement", "approveSettlement", "updateOrder", "cancelOrder", "importOrdersCsv", "saveTmsConfig", "recordStopVisit"]) module.exports[name] = atomicMutation(module.exports[name]);
+for (const name of ["createNeed", "createTrip", "commitPlan", "assignTrip", "transitionTrip", "registerDeliveryAttempt", "createSettlement", "approveSettlement", "updateOrder", "cancelOrder", "importOrdersCsv", "syncConnectedOrders", "saveTmsConfig", "recordStopVisit"]) module.exports[name] = atomicMutation(module.exports[name]);

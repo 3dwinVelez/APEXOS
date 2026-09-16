@@ -19,14 +19,17 @@ const pod = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte
 const fleet = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/page.tsx"), "utf8");
 const packing = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/cubicaje/page.tsx"), "utf8");
 const profilePicker = fs.readFileSync(path.resolve(directory, "../components/transport/VehicleProfilePicker.tsx"), "utf8");
+const transportOrderTemplate = path.resolve(directory, "../public/plantillas/Plantilla_Pedidos_Transporte.xlsx");
 
-test("Transporte usa un lobby APP sin navegación interna redundante", () => {
+test("Transporte organiza el trabajo por etapas sin navegación redundante", () => {
   assert.doesNotMatch(transportLayout, /TransportNav|TabsList|TabLink/);
   assert.match(transportLayout, /transport-workspace/);
   assert.match(fleet, /apex-workspace-shell/);
   assert.match(fleet, /apex-section-card/);
-  assert.match(fleet, /Herramientas activas de transporte/);
-  assert.match(fleet, /transportActions\.map/);
+  assert.match(fleet, /transportWorkflows\.map/);
+  assert.match(fleet, /1\. Preparar pedidos/);
+  assert.match(fleet, /2\. Ejecutar y entregar/);
+  assert.match(fleet, /3\. Preparar la operación/);
   assert.match(fleet, /\/dashboard\/transporte\/flota/);
   assert.match(packing, /apex-workspace-shell/);
   assert.match(packing, /apex-section-card/);
@@ -34,9 +37,9 @@ test("Transporte usa un lobby APP sin navegación interna redundante", () => {
   assert.match(packing, /Ancho/);
   assert.match(packing, /Alto/);
   assert.match(packing, /aria-modal="true"/);
-  assert.match(packing, /Espacio y vehículo/);
-  assert.match(packing, /Pedidos y viaje/);
-  assert.match(packing, /Productos y restricciones/);
+  assert.match(packing, /Seleccionar vehículo/);
+  assert.match(packing, /Agregar pedidos/);
+  assert.match(packing, /Revisar productos/);
   assert.match(packing, /event\.key === "Escape"/);
   assert.match(packing, /volume_utilization_pct/);
   assert.match(packing, /weight_utilization_pct/);
@@ -62,13 +65,46 @@ test("el monitoreo usa mapa real, refresco automatico, ETA, geocercas y alertas"
   assert.match(monitoring, /Turf\.js/); assert.match(monitoring, /route_deviation_m/); assert.match(liveMap, /route_coordinates/); assert.match(liveMap, /off_route/);
 });
 
-test("las ordenes TMS permiten filtrar, validar CSV, importar y cancelar", () => {
+test("las ordenes TMS conectan modulos activos y ofrecen una plantilla Excel guiada", () => {
+  assert.match(orders, /\/transport\/orders\/intake/);
+  assert.match(orders, /\/transport\/orders\/sync/);
+  assert.match(orders, /Conexión automática activa/);
+  assert.match(orders, /Pedidos externos/);
+  assert.match(orders, /Plantilla_Pedidos_Transporte\.xlsx/);
+  assert.match(orders, /Descargar plantilla Excel/);
+  assert.match(orders, /Seleccionar Excel/);
+  assert.match(orders, /Ver campos y ejemplos/);
+  assert.match(orders, /columnas verdes son obligatorias/);
+  assert.match(orders, /datos personalizados del pedido/);
+  assert.match(orders, /import\("exceljs"\)/);
+  assert.ok(fs.statSync(transportOrderTemplate).size > 5000);
+  assert.doesNotMatch(orders, /<textarea/);
   assert.match(orders, /\/transport\/orders\/import/);
   assert.match(orders, /dry_run: dryRun/);
   assert.match(orders, /Validar archivo/);
-  assert.match(orders, /Importar órdenes/);
+  assert.match(orders, /Agregar a Transporte/);
   assert.match(orders, /method: "DELETE"/);
-  assert.doesNotMatch(orders, /integrations|webhook|sync ERP/i);
+});
+
+test("las pantallas críticas explican la tarea y el siguiente paso en lenguaje cotidiano", () => {
+  assert.match(fleet, /Empieza preparando los pedidos pendientes/);
+  assert.match(operation, /Siguiente paso/);
+  assert.match(operation, /Prepara el primer pedido para comenzar/);
+  assert.match(packing, /Empieza aquí/);
+  assert.match(packing, /Todavía no hay una simulación/);
+  assert.match(orders, /Paso 1 de 6 · Preparar/);
+  assert.match(orders, /Debes completar/);
+});
+
+test("cubicaje respeta las restricciones visuales del Design System", () => {
+  assert.doesNotMatch(packing, /backdrop-blur|shadow-2xl|rounded-2xl/);
+  assert.doesNotMatch(packing, /bg-\[#[0-9a-f]+\]/i);
+});
+
+test("pedidos adapta la consulta a móvil", () => {
+  assert.match(orders, /md:hidden/);
+  assert.match(orders, /hidden overflow-x-auto md:block/);
+  assert.match(orders, /md:grid-cols-3/);
 });
 
 test("la configuracion TMS gobierna operacion, movil y notificaciones", () => {

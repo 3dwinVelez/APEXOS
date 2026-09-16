@@ -1,0 +1,61 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "transport-linear-preqa-20260916",
+  "base_commits": {
+    "develop": "4edbbafa70072ea4e15606682f3855f7cc13afae"
+  },
+  "certified_commit": "f27bb23",
+  "change_intent": {
+    "summary": "Promover a QA exclusivamente el incremento pendiente de Transporte: flujo operativo claro, conexión modular, carga guiada por Excel y corrección de redacción.",
+    "modules": ["transport"]
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/transport/routes.js",
+    "apps/api/src/modules/transport/tms-service.js",
+    "apps/api/test/transport-tms-foundation.test.js",
+    "apps/web/app/dashboard/transporte/cubicaje/page.tsx",
+    "apps/web/app/dashboard/transporte/operacion/page.tsx",
+    "apps/web/app/dashboard/transporte/ordenes/page.tsx",
+    "apps/web/app/dashboard/transporte/page.tsx",
+    "apps/web/components/transport/CargoScene.tsx",
+    "apps/web/components/transport/TransportUI.tsx",
+    "apps/web/public/plantillas/Plantilla_Pedidos_Transporte.xlsx",
+    "apps/web/test/transport-tms-ui.test.mjs",
+    "docs/qa/evidence/transport-linear-20260915/browser-certification.md",
+    "docs/qa/evidence/transport-linear-20260915/local-certification.json",
+    "docs/qa/evidence/transport-linear-20260915/preqa-approval-evidence.json",
+    "docs/qa/evidence/transport-linear-20260915/preqa-scope-manifest.json",
+    "docs/qa/evidence/transport-linear-20260915/regression.md",
+    "docs/qa/evidence/transport-linear-20260915/scope-manifest.json",
+    "docs/qa/evidence/transport-linear-20260915/wording-scope-manifest.json",
+    "scripts/certifications/transport-tms-local.js"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/src/modules/transport/routes.js" },
+    { "status": "M", "file": "apps/api/src/modules/transport/tms-service.js" },
+    { "status": "M", "file": "apps/api/test/transport-tms-foundation.test.js" },
+    { "status": "M", "file": "apps/web/app/dashboard/transporte/cubicaje/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/transporte/operacion/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/transporte/ordenes/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/transporte/page.tsx" },
+    { "status": "M", "file": "apps/web/components/transport/CargoScene.tsx" },
+    { "status": "M", "file": "apps/web/components/transport/TransportUI.tsx" },
+    { "status": "A", "file": "apps/web/public/plantillas/Plantilla_Pedidos_Transporte.xlsx" },
+    { "status": "M", "file": "apps/web/test/transport-tms-ui.test.mjs" },
+    { "status": "A", "file": "docs/qa/evidence/transport-linear-20260915/browser-certification.md" },
+    { "status": "A", "file": "docs/qa/evidence/transport-linear-20260915/local-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/transport-linear-20260915/preqa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/transport-linear-20260915/preqa-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/transport-linear-20260915/regression.md" },
+    { "status": "A", "file": "docs/qa/evidence/transport-linear-20260915/scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/transport-linear-20260915/wording-scope-manifest.json" },
+    { "status": "M", "file": "scripts/certifications/transport-tms-local.js" }
+  ],
+  "protected_capabilities": [
+    { "name": "transport-order-intake-and-module-sync", "status": "passed", "evidence": ["local-certification.json"] },
+    { "name": "transport-planning-packing-operation-pod-settlement", "status": "passed", "evidence": ["local-certification.json", "regression.md"] },
+    { "name": "transport-tenant-and-permission-controls", "status": "passed", "evidence": ["local-certification.json", "regression.md"] },
+    { "name": "transport-twenty-second-usability", "status": "passed", "evidence": ["browser-certification.md"] }
+  ]
+}
