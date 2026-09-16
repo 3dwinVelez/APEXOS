@@ -4,7 +4,7 @@ MODO: RELEASE-GATE
 
 RAMA: desarrollo
 
-COMMIT FUNCIONAL: `cd5b476`
+COMMIT FUNCIONAL: `a06cb01`
 
 ENTORNO: Supabase QA `jbirkghkekuifgfsgquq`
 
