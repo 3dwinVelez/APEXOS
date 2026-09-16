@@ -42,6 +42,7 @@ APTO CON OBSERVACIONES
 - Aislamiento negativo: SCJ obtiene 0 filas de empresas, usuarios y órdenes de otro tenant.
 - Disponibilidad concurrente: 50/50 API, 50/50 login web y 50/50 Supabase Auth.
 - Regresión automatizada: 54/54 pruebas aprobadas.
+- Certificación visible: `admin@apexos.qa` inició sesión en el frontend QA, cargó el dashboard con 28 módulos y abrió Servicios sin cierre de sesión, pantalla vacía ni error de autorización.
 
 ## OBSERVACIONES RESIDUALES
 
