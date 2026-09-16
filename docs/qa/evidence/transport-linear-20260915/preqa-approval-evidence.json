@@ -1,0 +1,31 @@
+{
+  "change_id": "transport-linear-preqa-20260916",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "f27bb23",
+  "qa_status": "pending",
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["local-certification.json", "browser-certification.md"] },
+    "error": { "status": "passed", "evidence": ["regression.md", "local-certification.json"] },
+    "support_scripts": { "status": "passed", "evidence": ["local-certification.json"] },
+    "regression": { "status": "passed", "evidence": ["regression.md"] },
+    "platform_regression": { "status": "passed", "evidence": ["local-certification.json", "regression.md"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/transport-tms-local.js",
+    "evidence": ["local-certification.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/transport-tms-local.js",
+    "evidence": ["local-certification.json", "regression.md"]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "mq1 (solicitante)",
+    "approved_at": "2026-09-16T17:35:00-05:00"
+  }
+}
