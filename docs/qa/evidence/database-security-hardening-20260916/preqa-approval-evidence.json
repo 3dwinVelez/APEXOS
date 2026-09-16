@@ -1,0 +1,32 @@
+{
+  "change_id": "database-security-hardening-20260916",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "553d82f",
+  "qa_status": "pending",
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["qa-certification.json"] },
+    "error": { "status": "passed", "evidence": ["security-gate.md"] },
+    "support_scripts": { "status": "passed", "evidence": ["qa-certification.json"] },
+    "regression": { "status": "passed", "evidence": ["security-gate.md"] },
+    "platform_regression": { "status": "passed", "evidence": ["qa-certification.json"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/database-security-hardening-qa.js",
+    "evidence": ["qa-certification.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/database-security-hardening-qa.js",
+    "evidence": ["qa-certification.json"]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "mq1 (solicitante)",
+    "approved_at": "2026-09-16T17:10:00-05:00"
+  }
+}
+
