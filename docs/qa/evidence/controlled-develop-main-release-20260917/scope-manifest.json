@@ -1797,7 +1797,39 @@
     },
     {
       "status": "A",
+      "file": "docs/qa/evidence/controlled-develop-main-release-20260917/browser-certification-qa.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/controlled-develop-main-release-20260917/database-security-hardening-qa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/controlled-develop-main-release-20260917/legacy-full-system-qa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/controlled-develop-main-release-20260917/legacy-full-system-qa.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/controlled-develop-main-release-20260917/legacy-validator-assessment.md"
+    },
+    {
+      "status": "A",
       "file": "docs/qa/evidence/controlled-develop-main-release-20260917/local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/controlled-develop-main-release-20260917/qa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/controlled-develop-main-release-20260917/qa-environment-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/controlled-develop-main-release-20260917/qa-mass-regression.json"
     },
     {
       "status": "A",
@@ -3139,7 +3171,15 @@
     "docs/qa/evidence/commercial-schema-bootstrap-20260903/qa-approval-evidence.json",
     "docs/qa/evidence/commercial-schema-bootstrap-20260903/support-scripts.md",
     "docs/qa/evidence/complete-desarrollo-20260907/preqa-scope-manifest.json",
+    "docs/qa/evidence/controlled-develop-main-release-20260917/browser-certification-qa.md",
+    "docs/qa/evidence/controlled-develop-main-release-20260917/database-security-hardening-qa.json",
+    "docs/qa/evidence/controlled-develop-main-release-20260917/legacy-full-system-qa.json",
+    "docs/qa/evidence/controlled-develop-main-release-20260917/legacy-full-system-qa.md",
+    "docs/qa/evidence/controlled-develop-main-release-20260917/legacy-validator-assessment.md",
     "docs/qa/evidence/controlled-develop-main-release-20260917/local-certification.json",
+    "docs/qa/evidence/controlled-develop-main-release-20260917/qa-approval-evidence.json",
+    "docs/qa/evidence/controlled-develop-main-release-20260917/qa-environment-certification.json",
+    "docs/qa/evidence/controlled-develop-main-release-20260917/qa-mass-regression.json",
     "docs/qa/evidence/controlled-develop-main-release-20260917/runbook.md",
     "docs/qa/evidence/controlled-develop-main-release-20260917/scope-manifest.json",
     "docs/qa/evidence/database-security-hardening-20260916/preqa-approval-evidence.json",
