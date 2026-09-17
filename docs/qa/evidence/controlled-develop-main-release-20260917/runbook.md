@@ -3,7 +3,7 @@
 ## Fixed inputs
 
 - Production baseline: `main@0abda8c41168642f99da0831e15f940b98232a12`.
-- Functional candidate included by this preparation: `e672786db043d84bbe2e86858a8da4956cf5d4f3`.
+- Functional candidate included by this preparation: `9cbd916975cdb094e59c1884ff8b3c3fddef3a9e`.
 - Promotion path: `desarrollo -> develop -> main`.
 - Deletions authorized: none.
 
@@ -32,6 +32,8 @@ The production branch must be integrated by a normal pull-request merge with `ma
 QA must exercise authenticated browser and API flows for the protected module families: admin, inventory, purchases, sales, invoicing, accounts receivable, accounting, projects, services, HR, transport and brain. The evidence must include NYVORA authorized, unauthorized and other-tenant users; persistence after reload; invalid and delayed responses; platform regression; schema alignment; security and performance.
 
 No local result, HTTP 200 response or existing certificate for an earlier commit constitutes QA approval for this release.
+
+QA remains pending after the earlier migration attempt failed transactionally on a reserved policy alias. The failed transaction is not approval and must not be represented as a partial deployment. Candidate `9cbd916975cdb094e59c1884ff8b3c3fddef3a9e` corrects that alias; the complete migration and certification sequence must be rerun against its exact deployed SHA.
 
 ## Production gate and recovery
 

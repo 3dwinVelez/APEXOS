@@ -53,6 +53,7 @@ test('does not include destructive data or schema operations', () => {
 
 test('quarantine policy uses the private tenant membership helper and rejects malformed tenant ids', () => {
   assert.doesNotMatch(quarantineMigration, /public\.current_tenant_id\s*\(/i);
+  assert.doesNotMatch(quarantineMigration, /evidence_upload_authorizations\s+authorization\b/i);
   assert.match(quarantineMigration, /app_private\.is_company_member\(tenant_id::uuid\)/i);
   assert.match(quarantineMigration, /when tenant_id ~\*/i);
   assert.match(quarantineMigration, /else false/i);

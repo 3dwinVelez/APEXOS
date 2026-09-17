@@ -2,9 +2,9 @@
   "change_id": "controlled-develop-main-release-20260917",
   "environment": "LOCAL",
   "status": "passed",
-  "generated_at": "2026-09-17T14:39:15.771Z",
+  "generated_at": "2026-09-17T14:56:34.779Z",
   "baseline_main_commit": "0abda8c41168642f99da0831e15f940b98232a12",
-  "candidate_commit": "e672786db043d84bbe2e86858a8da4956cf5d4f3",
+  "candidate_commit": "9cbd916975cdb094e59c1884ff8b3c3fddef3a9e",
   "destructive_operations": false,
   "checks": [
     {
@@ -20,22 +20,27 @@
     {
       "name": "contains_1c67344",
       "status": "passed",
-      "detail": "1c6734476e52bfb754840a0849e723e738df218a is contained in e672786db043d84bbe2e86858a8da4956cf5d4f3"
+      "detail": "1c6734476e52bfb754840a0849e723e738df218a is contained in 9cbd916975cdb094e59c1884ff8b3c3fddef3a9e"
     },
     {
       "name": "contains_188b66b",
       "status": "passed",
-      "detail": "188b66b is contained in e672786db043d84bbe2e86858a8da4956cf5d4f3"
+      "detail": "188b66b is contained in 9cbd916975cdb094e59c1884ff8b3c3fddef3a9e"
     },
     {
       "name": "contains_57a406e",
       "status": "passed",
-      "detail": "57a406e is contained in e672786db043d84bbe2e86858a8da4956cf5d4f3"
+      "detail": "57a406e is contained in 9cbd916975cdb094e59c1884ff8b3c3fddef3a9e"
     },
     {
       "name": "contains_e672786",
       "status": "passed",
-      "detail": "e672786db043d84bbe2e86858a8da4956cf5d4f3 is contained in e672786db043d84bbe2e86858a8da4956cf5d4f3"
+      "detail": "e672786db043d84bbe2e86858a8da4956cf5d4f3 is contained in 9cbd916975cdb094e59c1884ff8b3c3fddef3a9e"
+    },
+    {
+      "name": "contains_9cbd916",
+      "status": "passed",
+      "detail": "9cbd916975cdb094e59c1884ff8b3c3fddef3a9e is contained in 9cbd916975cdb094e59c1884ff8b3c3fddef3a9e"
     },
     {
       "name": "no_deletions_against_main",
