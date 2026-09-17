@@ -3,7 +3,7 @@
 ## Fixed inputs
 
 - Production baseline: `main@0abda8c41168642f99da0831e15f940b98232a12`.
-- Functional candidate included by this preparation: `57a406e51b3a88509fa6e0390d6ca105966eed1d`.
+- Functional candidate included by this preparation: `e672786db043d84bbe2e86858a8da4956cf5d4f3`.
 - Promotion path: `desarrollo -> develop -> main`.
 - Deletions authorized: none.
 

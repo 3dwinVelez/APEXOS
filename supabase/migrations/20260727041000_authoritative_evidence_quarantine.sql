@@ -10,7 +10,11 @@ create policy evidence_upload_authorizations_owner_select
   for select to authenticated
   using (
     supabase_user_id = auth.uid()::text
-    and tenant_id = public.current_tenant_id()::text
+    and case
+      when tenant_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+        then app_private.is_company_member(tenant_id::uuid)
+      else false
+    end
   );
 
 revoke insert, update, delete on public.evidence_upload_authorizations from authenticated;
