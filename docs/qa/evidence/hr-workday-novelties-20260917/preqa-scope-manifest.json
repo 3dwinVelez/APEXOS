@@ -4,7 +4,7 @@
   "base_commits": {
     "develop": "e462dc0dfb6c9719d4023f34af36fc4cfbed417a"
   },
-  "certified_commit": "ee27061",
+  "certified_commit": "d704110",
   "change_intent": {
     "summary": "Promover a QA la base de novedades de jornada, entidades laborales, afiliaciones y configuracion laboral parametrizable para Talento Humano.",
     "modules": ["talento-humano", "database"]
