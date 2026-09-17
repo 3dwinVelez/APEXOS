@@ -8,6 +8,10 @@ const migrationPath = path.resolve(
   '../../../supabase/migrations/20260916162822_apexos_database_security_hardening.sql'
 );
 const migration = fs.readFileSync(migrationPath, 'utf8');
+const quarantineMigration = fs.readFileSync(
+  path.resolve(__dirname, '../../../supabase/migrations/20260727041000_authoritative_evidence_quarantine.sql'),
+  'utf8'
+);
 
 test('inventories public tables without mutating their access implicitly', () => {
   assert.match(migration, /n\.nspname = 'public'/i);
@@ -45,4 +49,11 @@ test('hardens mutable and unversioned privileged functions', () => {
 
 test('does not include destructive data or schema operations', () => {
   assert.doesNotMatch(migration, /\b(?:delete\s+from|truncate|drop\s+(?:table|schema)|update\s+[^;]+\s+set)\b/i);
+});
+
+test('quarantine policy uses the private tenant membership helper and rejects malformed tenant ids', () => {
+  assert.doesNotMatch(quarantineMigration, /public\.current_tenant_id\s*\(/i);
+  assert.match(quarantineMigration, /app_private\.is_company_member\(tenant_id::uuid\)/i);
+  assert.match(quarantineMigration, /when tenant_id ~\*/i);
+  assert.match(quarantineMigration, /else false/i);
 });
