@@ -19,6 +19,7 @@
   --text-strong: 23 33 43;
   --text-body: 71 84 103;
   --text-muted: 102 112 133;
+  --text-subtle: 102 112 133;
   --space-page: 1.5rem;
   --space-section: 1rem;
   --radius-control: 0.5rem;
@@ -457,6 +458,7 @@ html.dark {
   --text-strong: 242 245 247;
   --text-body: 202 211 216;
   --text-muted: 155 170 178;
+  --text-subtle: 155 170 178;
 }
 
 * {

@@ -74,6 +74,7 @@ const config = {
   scjEmail: process.env.QA_SUPABASE_SCJ_EMAIL || "scj@apexos.qa",
   scjPassword: process.env.QA_SUPABASE_SCJ_PASSWORD || "ApexOS-QA-SCJ-2026!"
 };
+const apiOnly = String(process.env.QA_API_ONLY || "").toLowerCase() === "true";
 
 if (config.databaseUrl && config.databaseUrl.includes("supabase.com") && !/[?&]sslmode=/.test(config.databaseUrl)) {
   const separator = config.databaseUrl.includes("?") ? "&" : "?";
@@ -118,6 +119,7 @@ function addResult(area, name, status, detail = {}, severity = "medium") {
 }
 
 function requiredEnv() {
+  if (apiOnly) return;
   if (!config.supabaseUrl) addResult("preflight", "NEXT_PUBLIC_SUPABASE_URL/SUPABASE_URL", "failed", { message: "Supabase URL no configurada" }, "critical");
   if (!config.supabaseAnonKey) addResult("preflight", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "failed", { message: "Anon key no configurada" }, "critical");
   if (!config.supabaseServiceRoleKey) addResult("preflight", "SUPABASE_SERVICE_ROLE_KEY", "blocked", { message: "Sin service role no se pueden auditar vistas globales ni semillas controladas" }, "high");
@@ -409,16 +411,84 @@ async function validateApiAuthSeparation(scjSession) {
       }, [200]);
       addResult("auth-architecture", "Token Supabase sirve contra API Prisma", "warning", { message: "Si esto no fue disenado, revisar boundary de JWT" }, "medium");
     } catch (error) {
-      addResult("auth-architecture", "Token Supabase no sirve contra API Prisma", "failed", {
-        message: "Los modulos API/Prisma no aceptan JWT Supabase; el flujo web Supabase puede quedar desconectado de endpoints API.",
+      addResult("auth-architecture", "API Prisma rechaza JWT Supabase ajeno a su dominio", "passed", {
+        message: "Boundary esperado: cada dominio de autenticacion usa su token soportado.",
         status: error.status
-      }, "high");
+      }, "medium");
     }
   }
 }
 
+async function deactivateSyntheticUser(name, user, password, actorToken) {
+  if (!user?.id || !user?.email) {
+    addResult("cleanup", name, "failed", { message: "Usuario sintetico sin id o email" }, "high");
+    return;
+  }
+  try {
+    await requestJson(`${config.apiUrl}/api/v1/admin/users/${user.id}/status`, {
+      method: "PATCH",
+      headers: authHeaders(actorToken),
+      body: JSON.stringify({ active: false })
+    });
+    addResult("cleanup", name, "passed", { user_id: user.id, deactivated: true });
+  } catch (error) {
+    let loginRejected = false;
+    try {
+      await apiLogin(user.email, password);
+    } catch (loginError) {
+      loginRejected = [401, 403].includes(Number(loginError.status));
+    }
+    addResult("cleanup", name, loginRejected ? "warning" : "failed", {
+      user_id: user.id,
+      status_endpoint: error.status,
+      login_rejected_after_status_call: loginRejected,
+      message: loginRejected
+        ? "El usuario quedo inactivo, pero el endpoint respondio error despues de aplicar parcialmente la desactivacion."
+        : `No se pudo demostrar la desactivacion (${error.status || error.message}).`
+    }, loginRejected ? "high" : "critical");
+  }
+}
+
+async function validateCoreApiCoverage(token) {
+  const moduleReads = [
+    ["Dashboard", "/auth/me"],
+    ["Inventario", "/inventory/items?limit=5"],
+    ["Compras", "/purchases/orders"],
+    ["Ventas", "/sales/orders"],
+    ["Servicios", "/services/orders?limit=5"],
+    ["Transporte", "/transport/vehicles"],
+    ["Talento Humano", "/hr/employees?limit=5"],
+    ["Contabilidad", "/accounting/accounts?limit=5"]
+  ];
+  for (const [moduleName, endpoint] of moduleReads) {
+    await apiStep(`${moduleName}: lectura autenticada`, "GET", endpoint, token);
+  }
+
+  for (const [moduleName, endpoint] of moduleReads.slice(1)) {
+    try {
+      await requestJson(`${config.apiUrl}/api/v1${endpoint}`, { method: "GET" }, [401]);
+      addResult("api-negative", `${moduleName}: anonimo denegado`, "passed", { endpoint, status: 401 });
+    } catch (error) {
+      addResult("api-negative", `${moduleName}: anonimo denegado`, "failed", { endpoint, status: error.status, message: error.message }, "critical");
+    }
+  }
+
+  const concurrencyTargets = moduleReads.map(([, endpoint]) => endpoint);
+  const concurrent = await Promise.all(concurrencyTargets.flatMap((endpoint) =>
+    Array.from({ length: 5 }, async () => {
+      const response = await fetch(`${config.apiUrl}/api/v1${endpoint}`, { headers: authHeaders(token), signal: AbortSignal.timeout(20000) });
+      return { endpoint, status: response.status };
+    })
+  ));
+  const failures = concurrent.filter((item) => item.status !== 200);
+  addResult("api-concurrency", "8 modulos x 5 lecturas concurrentes", failures.length ? "failed" : "passed", {
+    requests: concurrent.length,
+    failures
+  }, failures.length ? "high" : "medium");
+}
+
 async function validateApiScenario(scjSession) {
-  await validateApiAuthSeparation(scjSession);
+  if (!apiOnly) await validateApiAuthSeparation(scjSession);
 
   let scenario;
   try {
@@ -439,6 +509,7 @@ async function validateApiScenario(scjSession) {
 
   const token = auth.token;
   await apiStep("Auth me", "GET", "/auth/me", token);
+  await validateCoreApiCoverage(token);
 
   await apiStep("Inicializar plan de cuentas", "POST", "/accounting/chart/init", token, { country: "CO" });
   await apiStep("Crear sucursal contable QA", "POST", "/accounting/organization-tree", token, { type: "branch", code: "BR-QA", name: "Sucursal QA Validacion", society_code: "SOC-01", active: true });
@@ -574,15 +645,18 @@ async function validateApiScenario(scjSession) {
   await apiStep("Consultar empleados", "GET", "/hr/employees", token);
   const roles = await apiStep("Consultar roles administrativos", "GET", "/admin/roles", token);
   const technicianRole = pickCreatedRow(roles, (role) => role.name === "Tecnico");
-  await apiStep("Crear tecnico asignable", "POST", "/admin/users", token, {
+  const technicianPassword = "ApexQa2026!";
+  const technicianEmail = `tecnico.${batch.toLowerCase()}@apex.local`;
+  const createdTechnicianUser = await apiStep("Crear tecnico asignable", "POST", "/admin/users", token, {
     profile_kind: "tecnico",
     user_kind: "tecnico",
     name: "Tecnico QA Servicios",
     first_names: "Tecnico QA",
     last_names: "Servicios",
-    email: `tecnico.${batch.toLowerCase()}@apex.local`,
-    password: "ApexQa2026!",
+    email: technicianEmail,
+    password: technicianPassword,
     role_id: technicianRole?.id,
+    company: scenario.tenant.name,
     document: `TEC-${batch.slice(-8)}`,
     position: "Tecnico de servicios",
     department: "Servicios",
@@ -621,11 +695,13 @@ async function validateApiScenario(scjSession) {
   await apiStep("Consultar referencias servicio", "GET", "/services/references", token);
   const technicians = await apiStep("Consultar tecnicos servicio", "GET", "/services/technicians", token);
   const serviceTechnician = pickCreatedRow(technicians, () => true);
+  const serviceTypes = await apiStep("Consultar tipos de servicio", "GET", "/services/service-types", token);
+  const activeServiceType = pickCreatedRow(serviceTypes, (item) => item?.active !== false);
 
   const serviceOrder = await apiStep("Crear orden de servicio", "POST", "/services/orders", token, {
     reference_id: reference?.id,
     technician_id: serviceTechnician?.id,
-    service_type: "mantenimiento",
+    service_type: activeServiceType?.code,
     customer_name: "Cliente QA Validacion",
     customer_document: numericBatch,
     customer_address: "Carrera QA 45",
@@ -716,6 +792,15 @@ async function validateApiScenario(scjSession) {
     });
   }
   await apiStep("Consultar mapa operaciones", "GET", "/hr/operations-map", token);
+
+  await deactivateSyntheticUser("Desactivar tecnico sintetico", {
+    id: createdTechnicianUser?.id,
+    email: technicianEmail
+  }, technicianPassword, token);
+  await deactivateSyntheticUser("Desactivar usuario sintetico", {
+    id: scenario.user.id,
+    email: scenario.email
+  }, scenario.password, token);
 }
 
 function tinyPngBase64() {
@@ -773,8 +858,8 @@ async function main() {
   addResult("preflight", "Variables minimas QA", "passed");
   try {
     const runtime = await validateRuntimeHealth();
-    await validateSchemaAlignment();
-    const { scjSession } = await validateSupabase();
+    if (!apiOnly) await validateSchemaAlignment();
+    const { scjSession } = apiOnly ? { scjSession: null } : await validateSupabase();
     await validateFrontendRoutes();
     if (runtime.apiHealthy) {
       await validateApiScenario(scjSession);

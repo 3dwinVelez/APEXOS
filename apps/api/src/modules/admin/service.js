@@ -1308,7 +1308,7 @@ async function setUserActive(tenantId, id, active, actorId = null) {
         }
       });
     }
-    const user = await prisma.user.findFirstOrThrow({ where: { id: Number(id), tenant_id: tenantId }, include: { role: true, employee: true } });
+    const user = await prisma.user.findFirstOrThrow({ where: { id: Number(id), tenant_id: tenantId, __includeInactive: true }, include: { role: true, employee: true } });
     await prisma.auditLog.create({
       data: {
         tenant_id: tenantId,
