@@ -42,11 +42,11 @@ create policy service_images_authorized_quarantine_insert
     and (storage.foldername(name))[1] = '_quarantine'
     and exists (
       select 1
-      from public.evidence_upload_authorizations authorization
-      where authorization.quarantine_path = name
-        and authorization.supabase_user_id = auth.uid()::text
-        and authorization.status = 'authorized'
-        and authorization.expires_at > now()
+      from public.evidence_upload_authorizations eua
+      where eua.quarantine_path = name
+        and eua.supabase_user_id = auth.uid()::text
+        and eua.status = 'authorized'
+        and eua.expires_at > now()
     )
   );
 
