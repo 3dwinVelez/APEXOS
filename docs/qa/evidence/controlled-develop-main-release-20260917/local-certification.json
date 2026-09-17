@@ -2,9 +2,9 @@
   "change_id": "controlled-develop-main-release-20260917",
   "environment": "LOCAL",
   "status": "passed",
-  "generated_at": "2026-09-17T03:23:06.691Z",
+  "generated_at": "2026-09-17T14:39:15.771Z",
   "baseline_main_commit": "0abda8c41168642f99da0831e15f940b98232a12",
-  "candidate_commit": "57a406e51b3a88509fa6e0390d6ca105966eed1d",
+  "candidate_commit": "e672786db043d84bbe2e86858a8da4956cf5d4f3",
   "destructive_operations": false,
   "checks": [
     {
@@ -20,17 +20,22 @@
     {
       "name": "contains_1c67344",
       "status": "passed",
-      "detail": "1c6734476e52bfb754840a0849e723e738df218a is contained in 57a406e51b3a88509fa6e0390d6ca105966eed1d"
+      "detail": "1c6734476e52bfb754840a0849e723e738df218a is contained in e672786db043d84bbe2e86858a8da4956cf5d4f3"
     },
     {
       "name": "contains_188b66b",
       "status": "passed",
-      "detail": "188b66b is contained in 57a406e51b3a88509fa6e0390d6ca105966eed1d"
+      "detail": "188b66b is contained in e672786db043d84bbe2e86858a8da4956cf5d4f3"
     },
     {
       "name": "contains_57a406e",
       "status": "passed",
-      "detail": "57a406e is contained in 57a406e51b3a88509fa6e0390d6ca105966eed1d"
+      "detail": "57a406e is contained in e672786db043d84bbe2e86858a8da4956cf5d4f3"
+    },
+    {
+      "name": "contains_e672786",
+      "status": "passed",
+      "detail": "e672786db043d84bbe2e86858a8da4956cf5d4f3 is contained in e672786db043d84bbe2e86858a8da4956cf5d4f3"
     },
     {
       "name": "no_deletions_against_main",
@@ -40,7 +45,7 @@
     {
       "name": "migration_inventory",
       "status": "passed",
-      "detail": "32 migration files inventoried"
+      "detail": "33 migration files inventoried"
     },
     {
       "name": "database_migration_safety",

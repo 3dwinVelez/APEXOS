@@ -7,6 +7,7 @@ const REQUIRED_ANCESTORS = [
   "1c6734476e52bfb754840a0849e723e738df218a",
   "188b66b",
   "57a406e",
+  "e672786db043d84bbe2e86858a8da4956cf5d4f3",
 ];
 
 function git(args) {

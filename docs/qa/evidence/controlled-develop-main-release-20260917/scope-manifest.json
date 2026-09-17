@@ -25,7 +25,7 @@
     "main": "0abda8c41168642f99da0831e15f940b98232a12",
     "develop": "1c6734476e52bfb754840a0849e723e738df218a"
   },
-  "certified_commit": "57a406e51b3a88509fa6e0390d6ca105966eed1d",
+  "certified_commit": "e672786db043d84bbe2e86858a8da4956cf5d4f3",
   "expected_changes": [
     {
       "status": "M",
@@ -2672,6 +2672,10 @@
       "file": "scripts/validate-promotion-scope.js"
     },
     {
+      "status": "M",
+      "file": "supabase/migrations/20260727041000_authoritative_evidence_quarantine.sql"
+    },
+    {
       "status": "A",
       "file": "supabase/migrations/20260902090000_time_punch_idempotency.sql"
     },
@@ -3354,6 +3358,7 @@
     "scripts/validate-database-migration-safety.js",
     "scripts/validate-preqa-promotion-evidence.js",
     "scripts/validate-promotion-scope.js",
+    "supabase/migrations/20260727041000_authoritative_evidence_quarantine.sql",
     "supabase/migrations/20260902090000_time_punch_idempotency.sql",
     "supabase/migrations/20260903100000_commercial_management_module_catalog.sql",
     "supabase/migrations/20260907021723_apex_heart_foundation.sql",
@@ -3393,6 +3398,7 @@
       "apps/api/prisma/migrations/20260907023000_apex_heart_foundation/migration.sql",
       "apps/api/prisma/migrations/20260909170000_apex_heart_report_schedules/migration.sql",
       "apps/api/prisma/migrations/20260917120000_hr_workday_novelties_foundation/migration.sql",
+      "supabase/migrations/20260727041000_authoritative_evidence_quarantine.sql",
       "supabase/migrations/20260902090000_time_punch_idempotency.sql",
       "supabase/migrations/20260903100000_commercial_management_module_catalog.sql",
       "supabase/migrations/20260907021723_apex_heart_foundation.sql",
