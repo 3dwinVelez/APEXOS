@@ -72,7 +72,11 @@ CREATE TABLE IF NOT EXISTS th_jornada_kilometrajes (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS th_jornada_kilometrajes_one_active
-  ON th_jornada_kilometrajes (tenant_id, route_id, employee_id, active)
+  ON th_jornada_kilometrajes (
+    tenant_id,
+    COALESCE(route_id, -1),
+    COALESCE(employee_id, -1)
+  )
   WHERE active = true;
 
 CREATE TABLE IF NOT EXISTS th_entidades_laborales (
@@ -174,6 +178,27 @@ CREATE TABLE IF NOT EXISTS th_conceptos_recargo (
   UNIQUE (tenant_id, company_id, country, code, valid_from)
 );
 
+-- PostgreSQL treats NULL values as distinct in ordinary UNIQUE constraints.
+-- These expression indexes make tenant-wide defaults (company_id IS NULL)
+-- genuinely unique without deleting or rewriting any existing row.
+CREATE UNIQUE INDEX IF NOT EXISTS th_parametros_laborales_scope_unique
+  ON th_parametros_laborales (
+    tenant_id,
+    COALESCE(company_id, ''),
+    country,
+    code,
+    valid_from
+  );
+
+CREATE UNIQUE INDEX IF NOT EXISTS th_conceptos_recargo_scope_unique
+  ON th_conceptos_recargo (
+    tenant_id,
+    COALESCE(company_id, ''),
+    country,
+    code,
+    valid_from
+  );
+
 CREATE TABLE IF NOT EXISTS th_calendario_dias (
   id SERIAL PRIMARY KEY,
   tenant_id TEXT NOT NULL,
@@ -232,7 +257,7 @@ CROSS JOIN (VALUES
   ('JORNADA_ORDINARIA_SEMANAL', 'Jornada ordinaria maxima semanal', 42, 'hour'),
   ('KILOMETRAJE_INUSUAL', 'Umbral de kilometraje inusual', 450, 'km')
 ) AS item(code, name, value, unit)
-ON CONFLICT (tenant_id, company_id, country, code, valid_from) DO NOTHING;
+ON CONFLICT DO NOTHING;
 
 INSERT INTO th_conceptos_recargo (tenant_id, country, code, name, value_type, percent, factor, valid_from, source_note)
 SELECT t.id, 'CO', item.code, item.name, item.value_type, item.percent, item.factor, DATE '2026-09-01', 'Referencia editable para Colombia; validar legalmente antes de produccion.'
@@ -248,4 +273,4 @@ CROSS JOIN (VALUES
   ('HEND', 'Hora extra nocturna dominical/festiva', 'porcentaje_adicional', 155, 2.55),
   ('DESCANSO_OBLIGATORIO', 'Dia de descanso obligatorio distinto al domingo', 'informativo', 0, 0)
 ) AS item(code, name, value_type, percent, factor)
-ON CONFLICT (tenant_id, company_id, country, code, valid_from) DO NOTHING;
+ON CONFLICT DO NOTHING;

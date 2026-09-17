@@ -9,22 +9,29 @@ const migrationPath = path.resolve(
 );
 const migration = fs.readFileSync(migrationPath, 'utf8');
 
-test('quarantines every existing public table that lacks RLS', () => {
+test('inventories public tables without mutating their access implicitly', () => {
   assert.match(migration, /n\.nspname = 'public'/i);
   assert.match(migration, /not c\.relrowsecurity/i);
-  assert.match(migration, /alter table %I\.%I enable row level security/i);
-  assert.match(migration, /revoke all privileges on table %I\.%I from anon, authenticated/i);
+  assert.match(migration, /SECURITY INVENTORY: public\.% has RLS disabled; no privileges were changed/i);
+  assert.doesNotMatch(migration, /alter table %I\.%I enable row level security/i);
+  assert.doesNotMatch(migration, /revoke all privileges on table %I\.%I from anon, authenticated/i);
 });
 
-test('future public tables and functions require explicit client grants', () => {
-  assert.match(
-    migration,
-    /alter default privileges in schema public\s+revoke all privileges on tables from anon, authenticated/is
-  );
-  assert.match(
-    migration,
-    /alter default privileges in schema public\s+revoke execute on functions from public, anon, authenticated/is
-  );
+test('quarantines only the explicit backend-owned allowlist', () => {
+  for (const table of [
+    'apex_heart_configs',
+    'apex_heart_alert_rules',
+    'apex_heart_alerts',
+    'apex_heart_inventory_snapshots',
+    'apex_heart_report_schedules',
+  ]) assert.match(migration, new RegExp(`'${table}'`));
+  assert.match(migration, /alter table public\.%I enable row level security/i);
+  assert.match(migration, /revoke all privileges on table public\.%I from anon, authenticated/i);
+  assert.match(migration, /to_regclass\(format\('public\.%I', relation_name\)\) is not null/i);
+});
+
+test('does not change default privileges for unrelated Data API objects', () => {
+  assert.doesNotMatch(migration, /alter default privileges/i);
 });
 
 test('hardens mutable and unversioned privileged functions', () => {

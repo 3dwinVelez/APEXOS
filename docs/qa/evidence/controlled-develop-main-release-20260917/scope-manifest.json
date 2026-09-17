@@ -1,0 +1,3460 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "controlled-develop-main-release-20260917",
+  "change_intent": {
+    "summary": "Certificar de forma agregada y sin eliminaciones el estado integrado de develop antes de QA y de una eventual promocion controlada a main.",
+    "modules": [
+      "admin",
+      "inventory",
+      "purchases",
+      "sales",
+      "invoicing",
+      "accounts-receivable",
+      "accounting",
+      "projects",
+      "services",
+      "hr",
+      "transport",
+      "brain",
+      "database",
+      "security",
+      "platform"
+    ]
+  },
+  "base_commits": {
+    "main": "0abda8c41168642f99da0831e15f940b98232a12",
+    "develop": "1c6734476e52bfb754840a0849e723e738df218a"
+  },
+  "certified_commit": "57a406e51b3a88509fa6e0390d6ca105966eed1d",
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "AGENTS.md"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/package.json"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260721190000_purchase_tax_retention_reversals/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260721220000_inventory_society_valuation_transit/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260730030000_customer_sales_invoicing_cxc/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260806150000_canonical_party_roles/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260807040000_treasury_banks_payments/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260807090000_treasury_advances_purchase_imports/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260814140000_commercial_management_base/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260814150000_commercial_visit_scheduling/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260814170000_commercial_advisor_masters/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260814190000_commercial_customer_details/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260821193000_item_legacy_code/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260821223000_inventory_adjustments/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260828143000_commercial_visit_masters/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260828170000_commercial_customer_commitments/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260828203000_commercial_visit_timeline_catalog_bridge/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260829100000_commercial_quotations/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260829113000_commercial_daily_budgets/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260831120000_commercial_prospect_visits/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260902090000_hr_time_punch_idempotency/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260904120000_transport_tms_foundation/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260904160000_transport_tms_planning/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260904180000_transport_tms_live_tracking/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260904190000_transport_tms_configuration/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260904200000_transport_tms_notifications/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260907023000_apex_heart_foundation/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260909170000_apex_heart_report_schedules/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260917120000_hr_workday_novelties_foundation/migration.sql"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/prisma/schema.prisma"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/scripts/certifications/apex-heart-report-schedules-local.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/scripts/certifications/collaboration-two-users-local.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/scripts/certifications/hr-landing-qa.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/scripts/certifications/hr-marking-concurrency-qa.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/scripts/certifications/hr-single-active-schedule-qa.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/server.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/core/prisma.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/fabric/crons.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/fabric/queues.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/middleware/rbac.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/accounting/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/accounting/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/accounting/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/accounts-receivable/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/accounts-receivable/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/accounts-receivable/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/admin/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/admin/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/apex-heart/routes.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/apex-heart/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/auth/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/collaboration/hub.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/collaboration/routes.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/commercial-management/advisor-report.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/commercial-management/domain.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/commercial-management/quotation-conversion.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/commercial-management/quotation-report.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/commercial-management/routes.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/commercial-management/salesSource.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/commercial-management/schema.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/commercial-management/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/policy.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/inventory/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/inventory/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/inventory/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/parties/roles.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/purchases/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/purchases/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/purchases/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/sales-invoice/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/sales-invoice/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/sales-invoice/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/sales/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/services/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/services/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/packing-engine.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/packing-profiles.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/packing-service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/packing-worker.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/transport/routes.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/tms-evidence-storage.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/tms-schema.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/tms-service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/treasury/routes.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/treasury/schema.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/treasury/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/security/supabaseAuth.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/accounting-routes-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/admin-role-capabilities.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/apex-heart-domain.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/apex-heart-qa-seed-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/collaboration-hub.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/commercial-advisor-report.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/commercial-document-flow.integration.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/commercial-management-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/commercial-management-domain.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/commercial-migration-chain.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/commercial-quotation-conversion.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/commercial-quotation-report.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/commercial-route-registration.integration.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/high-volume-ux-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-marking-concurrency-certificate.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-marking-concurrency.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-marking-only-rbac.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-monitor-evidence-demand.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-operations-map-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-reports-range.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-single-active-schedule-certificate.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-workday-novelties-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-workday-novelties-policy.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/inventory-adjustments-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/inventory-initial-load.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/inventory-kardex-purchase-order-report-ux.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/inventory-transfer-product-list-ux.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/inventory-transfer-tenancy-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/inventory-valuation-transit.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/item-legacy-code-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/party-roles.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/purchase-invoice-transaction.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/purchase-order-close-pdf.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/purchase-order-entry-grid.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/purchase-receipt-detail-transfer-pdf.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/purchase-return-ui-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/purchases-import-tenancy.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/purchases-inventory-controlled-improvements.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/purchases-invoice-transaction.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/purchases-supplier-flow.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/sales-invoice-import-template.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/sales-invoicing-cxc.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/sales-report-search-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/service-reference-import-atomic.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/service-reference-import-validation.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/supabase-company-context.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/supabase-database-security-hardening.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/tax-master-scope.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/third-party-accounting-masters.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-packing.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-tms-foundation.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/treasury-advances-imports.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/treasury-payments.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/zero-friendly-number-input.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/api/admin/roles/route.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/api/admin/users/route.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/facturas/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/compras/importaciones/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/ordenes/nueva/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/ordenes/recibir/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/compras/proveedores/[id]/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/proveedores/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/compras/reportes/facturas/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/compras/reportes/ordenes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/contabilidad/asientos/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/contabilidad/cuentas-por-pagar/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/contabilidad/iva/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/contabilidad/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/contabilidad/retenciones/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/contabilidad/terceros/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/cxc/documentos/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/cxc/retenciones/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gestion-comercial/agenda/[id]/ejecucion/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gestion-comercial/agenda/Customer360.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gestion-comercial/agenda/CustomerCombobox.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gestion-comercial/agenda/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gestion-comercial/agenda/VisitCustomerForm.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gestion-comercial/CommitmentAlerts.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gestion-comercial/cotizaciones/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gestion-comercial/layout.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gestion-comercial/maestros/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gestion-comercial/maestros/ProductImportPanel.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gestion-comercial/maestros/VisitSettingsCard.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gestion-comercial/mi-dia/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gestion-comercial/OpenQuotationSummary.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gestion-comercial/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gestion-comercial/pedidos/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gestion-comercial/presupuestos/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gestion-comercial/QuotationOrderEditor.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gestion-comercial/reportes/cotizado-vs-pedido/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gestion-comercial/reportes/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gestion-comercial/VisitHistory.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gestion-comercial/VisitOperationsPanel.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/inventario/ajustes/nuevo/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/inventario/ajustes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/bodegas/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/inventario/cargue-inicial/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/inventario/clasificaciones/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/familias/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/inventario/productos/[id]/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/productos/nuevo/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/inventario/productos/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/inventario/reportes/costos/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/inventario/reportes/kardex/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/reportes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/stock/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/inventario/traslados/nuevo/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/inventario/traslados/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/layout.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/reportes/apex-heart/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/reportes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/servicios/referencias/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/talento-humano/configuracion-laboral/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/talento-humano/empleados/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/talento-humano/entidades/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/talento-humano/mallas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/marcacion/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/talento-humano/novedades/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/tesoreria/anticipos/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/tesoreria/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/configuracion/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/cubicaje/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/flota/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/layout.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/maestros/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/monitoreo/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/notificaciones/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/operacion/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/ordenes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/planeacion/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/pod/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/tarifas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/ventas/clientes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/ventas/facturas/[id]/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/ventas/facturas/nueva/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/ventas/facturas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/ventas/ordenes/nueva/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/ventas/ordenes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/ventas/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/ventas/precios/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/ventas/reportes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/globals.css"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/layout.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/login/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/manifest.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/brain/AiExperienceLayer.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/brain/ApexIntelligencePulse.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/commercial-nav.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/compras-nav.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/contabilidad-nav.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/inventory-nav.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/shell/ContextBreadcrumbs.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/shell/DashboardChrome.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/shell/NavigationAccessibility.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/shell/PageTransition.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/RouteAccessGuard.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/Sidebar.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/system/CollaborationPresence.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/system/CommandPalette.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/system/ExperiencePreferences.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/system/FieldProductivity.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/system/LocaleSwitcher.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/system/NotificationCenter.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/system/OfflineFirstStatus.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/system/StandardTableExperience.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/system/ToastCenter.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/system/TraceabilityCenter.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/system/WorldClassToolkit.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/tms-live-map.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/CargoScene.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/packing-types.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/SettlementPreview.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/TransportUI.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/VehicleProfilePicker.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/ui/avatar.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/button.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/card.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/data-table.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/ui/drawer.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/feedback.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/form-controls.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/ui/layout.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/ModalFrame.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/ui/tabs.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/ui/ZeroFriendlyNumberInput.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ventas-nav.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/eslint.config.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/accessProfile.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/api-collections.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/api.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/commercial-report-export.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/commercialDocumentPdf.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/hrScheduleMonitor.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/i18n.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/moduleAccess.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/moduleAccessPolicy.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/modules.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/operationalWorkspace.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/purchaseOrderPdf.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/regionalFormat.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/reportExports.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/salesInvoiceLines.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/serviceReferenceImport.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/supabaseClient.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/transferRemissionPdf.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/next-env.d.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/next.config.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/package.json"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/apex-icon.svg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/plantillas/Plantilla_Cargue_Inicial_Inventario.xlsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/plantillas/Plantilla_Importacion_Facturas_Venta.xlsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/plantillas/Plantilla_Pedidos_Transporte.xlsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/plantillas/Plantilla_Productos_Gestion_Comercial.xlsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/plantillas/plantilla-referencias-servicio.xlsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/sw.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/tailwind.config.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/admin-role-capabilities.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/apex-heart-ui.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/certify-supplier-create-button-visible-local.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/certify-ui-ux-phase-one-local.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/certify-ui-ux-phase-three-accessibility-local.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/certify-ui-ux-phase-three-collaboration-local.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/certify-ui-ux-phase-three-foundation-local.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/certify-ui-ux-phase-three-personalization-local.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/certify-ui-ux-phase-three-toolkit-local.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/certify-ui-ux-phase-three-totp-local.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/certify-ui-ux-phase-two-local.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/commercial-calendar-experience.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/commercial-module-catalog.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/commercial-visit-selection.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/erp-visual-normalization.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-landing-information-architecture.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-marking-only-access.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-monitor-refresh.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-reports-xlsx.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-schedule-monitor.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-workday-novelties-ui.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/inventory-improvements-roadmap.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/login-error-contrast.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/login-phase-zero-ux.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/modal-focus-stability.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/module-access-policy.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/operational-home-redesign.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/phase-one-design-system.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/phase-three-analytics.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/phase-three-collaboration.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/phase-three-personalization.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/phase-three-world-class-foundation.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/phase-three-world-class-toolkit.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/phase-two-intelligent-experience.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/sales-collection-contracts.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/sales-invoice-lines.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/service-reference-import.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/standard-table-migration.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/supplier-create-button-visibility.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-master-access.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-tms-ui.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/tsconfig.json"
+    },
+    {
+      "status": "M",
+      "file": "docs/agents/quality-gates.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/APEX_HEART_IMPLEMENTATION_DIAGNOSIS.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/APEX_OS_REDISENO_INICIO_OPERATIVO_CHECKLIST.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/TALENT_HUMAN_LANDING_REGRESSION_20260824.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/CHANGE_APPROVAL_QA_POLICY.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/design/APEX_OS_POLITICA_DISENO_PRODUCTO.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/design/APEX_OS_TABLE_STANDARDIZATION_CHECKLIST.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/design/APEX_OS_UI_UX_ROADMAP_CHECKLIST.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/project/modulos/compras.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/project/modulos/inventario.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/project/modulos/talento-humano.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/project/modulos/transporte-tms.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/project/modulos/transporte.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/project/modulos/ventas.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/project/talento-humano-implementacion-seguimiento.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/admin-role-capabilities-20260824/admin-create-user-form.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/admin-role-capabilities-20260824/admin-role-user-visible.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/admin-role-capabilities-20260824/browser-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/admin-role-capabilities-20260824/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/admin-role-capabilities-20260824/diagnosis.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/admin-role-capabilities-20260824/error.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/admin-role-capabilities-20260824/functional.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/admin-role-capabilities-20260824/manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/admin-role-capabilities-20260824/platform-regression.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/admin-role-capabilities-20260824/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/admin-role-capabilities-20260824/regression.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/admin-role-capabilities-20260824/support-scripts.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/apex-heart-20260906/error.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/apex-heart-20260906/functional.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/apex-heart-20260906/local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/apex-heart-20260906/platform-regression.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/apex-heart-20260906/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/apex-heart-20260906/qa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/apex-heart-20260906/support-scripts.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/apex-heart-rich-20260907/error.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/apex-heart-rich-20260907/functional.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/apex-heart-rich-20260907/local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/apex-heart-rich-20260907/platform-regression.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/apex-heart-rich-20260907/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/apex-heart-rich-20260907/qa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/apex-heart-rich-20260907/support-scripts.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/apex-heart-ytd-data-20260907/error.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/apex-heart-ytd-data-20260907/functional.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/apex-heart-ytd-data-20260907/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/apex-heart-ytd-data-20260907/qa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/apex-heart-ytd-data-20260907/qa-data-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/apex-heart-ytd-data-20260907/support-scripts.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/brain-insights-module-gating-20260909/browser-diagnosis.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/brain-insights-module-gating-20260909/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/brain-insights-module-gating-20260909/scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-calendar-ux-20260903/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-management-m27-20260901/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-management-m27-20260901/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-management-m27-20260901/platform-regression.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-management-m27-20260901/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-management-m27-20260901/qa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-management-population-20260903/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-management-population-20260903/platform-regression.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-management-population-20260903/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-management-population-20260903/qa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-management-population-20260903/REPORT.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-management-population-20260903/rerun.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-management-population-20260903/run.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-module-catalog-20260903/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-module-catalog-20260903/error.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-module-catalog-20260903/functional.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-module-catalog-20260903/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-module-catalog-20260903/platform-regression.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-module-catalog-20260903/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-module-catalog-20260903/qa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-module-catalog-20260903/support-scripts.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/error.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/functional.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/platform-regression.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/qa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/support-scripts.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-schema-bootstrap-20260903/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-schema-bootstrap-20260903/error.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-schema-bootstrap-20260903/functional.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-schema-bootstrap-20260903/platform-regression.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-schema-bootstrap-20260903/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-schema-bootstrap-20260903/qa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-schema-bootstrap-20260903/support-scripts.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/complete-desarrollo-20260907/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/controlled-develop-main-release-20260917/local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/controlled-develop-main-release-20260917/runbook.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/controlled-develop-main-release-20260917/scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/database-security-hardening-20260916/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/database-security-hardening-20260916/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/database-security-hardening-20260916/qa-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/database-security-hardening-20260916/security-gate.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/dependency-security-20260824/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/dependency-security-20260824/validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-landing-deduplication-20260825/certification-contract.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-landing-deduplication-20260825/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-landing-deduplication-20260825/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-landing-deduplication-20260825/qa-runbook.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-landing-deduplication-20260825/REPORTE.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-module-recovery-20260825/certification-contract.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-module-recovery-20260825/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-module-recovery-20260825/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-module-recovery-20260825/qa-runbook.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-module-recovery-20260825/REPORTE.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-purchases-inventory-20260903/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-purchases-inventory-20260903/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-visual-normalization-20260825/certification-contract.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-visual-normalization-20260825/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-visual-normalization-20260825/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-visual-normalization-20260825/qa-runbook.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-visual-normalization-20260825/REPORTE.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-landing-recovery-20260824/analysis.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-landing-recovery-20260824/browser-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-landing-recovery-20260824/error.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-landing-recovery-20260824/functional.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-landing-recovery-20260824/hr-landing-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-landing-recovery-20260824/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-landing-recovery-20260824/manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-landing-recovery-20260824/platform-regression.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-landing-recovery-20260824/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-landing-recovery-20260824/qa-evidence-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-landing-recovery-20260824/regression.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-landing-recovery-20260824/support-scripts.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-concurrency-20260902/diagnosis.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-concurrency-20260902/error.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-concurrency-20260902/functional.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-concurrency-20260902/local-mass-certification-attempt-1-failed.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-concurrency-20260902/local-mass-certification-attempt-2-failed.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-concurrency-20260902/local-mass-certification-attempt-3-failed.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-concurrency-20260902/local-mass-certification-attempt-4-failed.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-concurrency-20260902/local-mass-certification-attempt-5-failed.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-concurrency-20260902/local-mass-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-concurrency-20260902/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-concurrency-20260902/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-concurrency-20260902/support-scripts.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-only-20260824/browser-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-only-20260824/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-only-20260824/error.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-only-20260824/functional.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-only-20260824/marking-only-ui.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-only-20260824/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-only-20260824/regression.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-only-20260824/support-scripts.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-demand-20260824/browser-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-demand-20260824/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-demand-20260824/diagnosis.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-demand-20260824/error.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-demand-20260824/functional.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-demand-20260824/monitor-evidence-loaded.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-demand-20260824/platform-regression.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-demand-20260824/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-demand-20260824/regression.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-demand-20260824/support-scripts.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-reports-intelligent-filters-20260828/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-reports-intelligent-filters-20260828/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-reports-intelligent-filters-20260828/platform-regression.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-reports-intelligent-filters-20260828/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-reports-intelligent-filters-20260828/qa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-scj-pool-contention-20260910/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-scj-pool-contention-20260910/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-scj-pool-contention-20260910/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-single-active-schedule-20260910/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-single-active-schedule-20260910/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-single-active-schedule-20260910/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-single-active-schedule-20260910/qa-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-workday-novelties-20260917/browser-certification.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-workday-novelties-20260917/local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-workday-novelties-20260917/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-workday-novelties-20260917/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-workday-novelties-20260917/regression.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/inventory-policy-phase23-20260910/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/inventory-policy-phase23-20260910/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/inventory-policy-phase23-20260910/scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/inventory-product-visual-followup-20260825/certification-contract.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/inventory-product-visual-followup-20260825/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/inventory-product-visual-followup-20260825/null-selection-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/inventory-product-visual-followup-20260825/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/inventory-product-visual-followup-20260825/qa-runbook.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/inventory-product-visual-followup-20260825/REPORTE.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/modal-focus-stability-20260909/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/modal-focus-stability-20260909/scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/operational-workspace-20260910/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/operational-workspace-20260910/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/operational-workspace-20260910/scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/public-landing-modernization-20260908/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/purchases-visual-normalization-20260825/certification-contract.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/purchases-visual-normalization-20260825/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/purchases-visual-normalization-20260825/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/purchases-visual-normalization-20260825/qa-runbook.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/purchases-visual-normalization-20260825/REPORTE.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/remove-global-ai-pulse-20260909/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/remove-global-ai-pulse-20260909/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/remove-global-ai-pulse-20260909/scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/service-reference-excel-20260826/certification-contract.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/service-reference-excel-20260826/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/service-reference-excel-20260826/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/service-reference-excel-20260826/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/service-reference-excel-20260826/protected-platform-regression.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/service-reference-excel-20260826/protected-service-master.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/service-reference-excel-20260826/qa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/service-reference-excel-20260826/REPORTE.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/supplier-create-button-visibility-20260909/browser-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/supplier-create-button-visibility-20260909/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/supplier-create-button-visibility-20260909/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/supplier-create-button-visibility-20260909/scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/table-standardization-20260909/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/table-standardization-20260909/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/table-standardization-20260909/scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-linear-20260915/browser-certification.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-linear-20260915/local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-linear-20260915/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-linear-20260915/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-linear-20260915/regression.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-linear-20260915/scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-linear-20260915/wording-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-master-correction-20260825/certification-contract.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-master-correction-20260825/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-master-correction-20260825/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-master-correction-20260825/qa-runbook.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-master-correction-20260825/REPORTE.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-tms-foundation-20260904/local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-tms-foundation-20260904/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-tms-foundation-20260904/REPORTE.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-tms-foundation-20260904/run-20260904145348.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-tms-foundation-20260904/run-20260904150543.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-tms-foundation-20260904/run-20260904153954.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-tms-foundation-20260904/run-20260904154104.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-tms-foundation-20260904/run-20260908023315.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-guide-overlap-20260908/local-browser-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-guide-overlap-20260908/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-one-20260908/browser-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-one-20260908/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-one-20260908/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-one-20260908/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-accessibility-20260909/browser-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-accessibility-20260909/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-analytics-20260909/api-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-analytics-20260909/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-collaboration-20260909/browser-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-collaboration-20260909/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-collaboration-remote-20260909/api-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-collaboration-remote-20260909/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-complete-20260909/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-foundation-20260909/browser-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-foundation-20260909/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-personalization-20260909/browser-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-personalization-20260909/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-promotion-20260909/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-promotion-20260909/scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-toolkit-20260909/browser-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-toolkit-20260909/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-totp-20260909/browser-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-three-totp-20260909/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-two-20260908/browser-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-two-20260908/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-two-20260908/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-two-20260908/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/ui-ux-phase-zero-20260908/local-validation.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/releases/CONTROLLED_PROMOTION_SCOPE_POLICY.md"
+    },
+    {
+      "status": "A",
+      "file": "memory/compras-facturas/MEMORY.md"
+    },
+    {
+      "status": "A",
+      "file": "memory/contabilidad-terceros/MEMORY.md"
+    },
+    {
+      "status": "A",
+      "file": "memory/inventario-valoracion-traslados/MEMORY.md"
+    },
+    {
+      "status": "A",
+      "file": "memory/README.md"
+    },
+    {
+      "status": "A",
+      "file": "memory/tesoreria-pagos/MEMORY.md"
+    },
+    {
+      "status": "M",
+      "file": "package-lock.json"
+    },
+    {
+      "status": "M",
+      "file": "package.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/admin-role-capabilities-qa.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/apex-heart-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/apex-heart-platform-regression-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/apex-heart-qa-data.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/commercial-management-m27-qa.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/commercial-management-population-qa.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/commercial-module-catalog-qa.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/commercial-schema-bootstrap-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/controlled-release-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/database-security-hardening-qa.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/dependency-security.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/erp-module-recovery-qa.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/fixtures/hr-reports-qa-fixture.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-landing-qa.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-marking-only-qa.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-monitor-evidence-demand-qa.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-reports-export-qa.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-workday-novelties-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/service-reference-excel-qa.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/transport-intelligent-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/transport-master-qa.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/transport-tms-local.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/dev-web.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/generate-controlled-release-scope.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/seed-admin.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/seed-apex-heart-demo.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/seed-apex-heart-qa-ytd.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/seed-transport-intelligent-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/test/commercial-management-population-qa.test.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/test/erp-module-recovery-qa-certification.test.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/test/hr-reports-export-qa-certification.test.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/test/service-reference-excel-qa-certification.test.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/test/transport-master-qa-certification.test.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/test/validate-preqa-promotion-evidence.test.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/test/validate-promotion-scope.test.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/validate-database-migration-safety.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/validate-preqa-promotion-evidence.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/validate-promotion-scope.js"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260902090000_time_punch_idempotency.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260903100000_commercial_management_module_catalog.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260907021723_apex_heart_foundation.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260916162822_apexos_database_security_hardening.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260917120000_hr_workday_novelties_foundation.sql"
+    }
+  ],
+  "allowed_paths": [
+    "AGENTS.md",
+    "apps/api/package.json",
+    "apps/api/prisma/migrations/20260721190000_purchase_tax_retention_reversals/migration.sql",
+    "apps/api/prisma/migrations/20260721220000_inventory_society_valuation_transit/migration.sql",
+    "apps/api/prisma/migrations/20260730030000_customer_sales_invoicing_cxc/migration.sql",
+    "apps/api/prisma/migrations/20260806150000_canonical_party_roles/migration.sql",
+    "apps/api/prisma/migrations/20260807040000_treasury_banks_payments/migration.sql",
+    "apps/api/prisma/migrations/20260807090000_treasury_advances_purchase_imports/migration.sql",
+    "apps/api/prisma/migrations/20260814140000_commercial_management_base/migration.sql",
+    "apps/api/prisma/migrations/20260814150000_commercial_visit_scheduling/migration.sql",
+    "apps/api/prisma/migrations/20260814170000_commercial_advisor_masters/migration.sql",
+    "apps/api/prisma/migrations/20260814190000_commercial_customer_details/migration.sql",
+    "apps/api/prisma/migrations/20260821193000_item_legacy_code/migration.sql",
+    "apps/api/prisma/migrations/20260821223000_inventory_adjustments/migration.sql",
+    "apps/api/prisma/migrations/20260828143000_commercial_visit_masters/migration.sql",
+    "apps/api/prisma/migrations/20260828170000_commercial_customer_commitments/migration.sql",
+    "apps/api/prisma/migrations/20260828203000_commercial_visit_timeline_catalog_bridge/migration.sql",
+    "apps/api/prisma/migrations/20260829100000_commercial_quotations/migration.sql",
+    "apps/api/prisma/migrations/20260829113000_commercial_daily_budgets/migration.sql",
+    "apps/api/prisma/migrations/20260831120000_commercial_prospect_visits/migration.sql",
+    "apps/api/prisma/migrations/20260902090000_hr_time_punch_idempotency/migration.sql",
+    "apps/api/prisma/migrations/20260904120000_transport_tms_foundation/migration.sql",
+    "apps/api/prisma/migrations/20260904160000_transport_tms_planning/migration.sql",
+    "apps/api/prisma/migrations/20260904180000_transport_tms_live_tracking/migration.sql",
+    "apps/api/prisma/migrations/20260904190000_transport_tms_configuration/migration.sql",
+    "apps/api/prisma/migrations/20260904200000_transport_tms_notifications/migration.sql",
+    "apps/api/prisma/migrations/20260907023000_apex_heart_foundation/migration.sql",
+    "apps/api/prisma/migrations/20260909170000_apex_heart_report_schedules/migration.sql",
+    "apps/api/prisma/migrations/20260917120000_hr_workday_novelties_foundation/migration.sql",
+    "apps/api/prisma/schema.prisma",
+    "apps/api/scripts/certifications/apex-heart-report-schedules-local.js",
+    "apps/api/scripts/certifications/collaboration-two-users-local.js",
+    "apps/api/scripts/certifications/hr-landing-qa.js",
+    "apps/api/scripts/certifications/hr-marking-concurrency-qa.js",
+    "apps/api/scripts/certifications/hr-single-active-schedule-qa.js",
+    "apps/api/server.js",
+    "apps/api/src/core/prisma.js",
+    "apps/api/src/fabric/crons.js",
+    "apps/api/src/fabric/queues.js",
+    "apps/api/src/middleware/rbac.js",
+    "apps/api/src/modules/accounting/routes.js",
+    "apps/api/src/modules/accounting/schema.js",
+    "apps/api/src/modules/accounting/service.js",
+    "apps/api/src/modules/accounts-receivable/routes.js",
+    "apps/api/src/modules/accounts-receivable/schema.js",
+    "apps/api/src/modules/accounts-receivable/service.js",
+    "apps/api/src/modules/admin/routes.js",
+    "apps/api/src/modules/admin/service.js",
+    "apps/api/src/modules/apex-heart/routes.js",
+    "apps/api/src/modules/apex-heart/service.js",
+    "apps/api/src/modules/auth/service.js",
+    "apps/api/src/modules/collaboration/hub.js",
+    "apps/api/src/modules/collaboration/routes.js",
+    "apps/api/src/modules/commercial-management/advisor-report.js",
+    "apps/api/src/modules/commercial-management/domain.js",
+    "apps/api/src/modules/commercial-management/quotation-conversion.js",
+    "apps/api/src/modules/commercial-management/quotation-report.js",
+    "apps/api/src/modules/commercial-management/routes.js",
+    "apps/api/src/modules/commercial-management/salesSource.js",
+    "apps/api/src/modules/commercial-management/schema.js",
+    "apps/api/src/modules/commercial-management/service.js",
+    "apps/api/src/modules/hr/policy.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/modules/inventory/routes.js",
+    "apps/api/src/modules/inventory/schema.js",
+    "apps/api/src/modules/inventory/service.js",
+    "apps/api/src/modules/parties/roles.js",
+    "apps/api/src/modules/purchases/routes.js",
+    "apps/api/src/modules/purchases/schema.js",
+    "apps/api/src/modules/purchases/service.js",
+    "apps/api/src/modules/sales-invoice/routes.js",
+    "apps/api/src/modules/sales-invoice/schema.js",
+    "apps/api/src/modules/sales-invoice/service.js",
+    "apps/api/src/modules/sales/service.js",
+    "apps/api/src/modules/services/schema.js",
+    "apps/api/src/modules/services/service.js",
+    "apps/api/src/modules/transport/packing-engine.js",
+    "apps/api/src/modules/transport/packing-profiles.js",
+    "apps/api/src/modules/transport/packing-service.js",
+    "apps/api/src/modules/transport/packing-worker.js",
+    "apps/api/src/modules/transport/routes.js",
+    "apps/api/src/modules/transport/tms-evidence-storage.js",
+    "apps/api/src/modules/transport/tms-schema.js",
+    "apps/api/src/modules/transport/tms-service.js",
+    "apps/api/src/modules/treasury/routes.js",
+    "apps/api/src/modules/treasury/schema.js",
+    "apps/api/src/modules/treasury/service.js",
+    "apps/api/src/security/supabaseAuth.js",
+    "apps/api/test/accounting-routes-contract.test.js",
+    "apps/api/test/admin-role-capabilities.test.js",
+    "apps/api/test/apex-heart-domain.test.js",
+    "apps/api/test/apex-heart-qa-seed-contract.test.js",
+    "apps/api/test/collaboration-hub.test.js",
+    "apps/api/test/commercial-advisor-report.test.js",
+    "apps/api/test/commercial-document-flow.integration.test.js",
+    "apps/api/test/commercial-management-contract.test.js",
+    "apps/api/test/commercial-management-domain.test.js",
+    "apps/api/test/commercial-migration-chain.test.js",
+    "apps/api/test/commercial-quotation-conversion.test.js",
+    "apps/api/test/commercial-quotation-report.test.js",
+    "apps/api/test/commercial-route-registration.integration.test.js",
+    "apps/api/test/high-volume-ux-contract.test.js",
+    "apps/api/test/hr-marking-concurrency-certificate.test.js",
+    "apps/api/test/hr-marking-concurrency.test.js",
+    "apps/api/test/hr-marking-only-rbac.test.js",
+    "apps/api/test/hr-monitor-evidence-demand.test.js",
+    "apps/api/test/hr-operations-map-contract.test.js",
+    "apps/api/test/hr-reports-range.test.js",
+    "apps/api/test/hr-single-active-schedule-certificate.test.js",
+    "apps/api/test/hr-workday-novelties-contract.test.js",
+    "apps/api/test/hr-workday-novelties-policy.test.js",
+    "apps/api/test/inventory-adjustments-contract.test.js",
+    "apps/api/test/inventory-initial-load.test.js",
+    "apps/api/test/inventory-kardex-purchase-order-report-ux.test.js",
+    "apps/api/test/inventory-transfer-product-list-ux.test.js",
+    "apps/api/test/inventory-transfer-tenancy-contract.test.js",
+    "apps/api/test/inventory-valuation-transit.test.js",
+    "apps/api/test/item-legacy-code-contract.test.js",
+    "apps/api/test/party-roles.test.js",
+    "apps/api/test/purchase-invoice-transaction.test.js",
+    "apps/api/test/purchase-order-close-pdf.test.js",
+    "apps/api/test/purchase-order-entry-grid.test.js",
+    "apps/api/test/purchase-receipt-detail-transfer-pdf.test.js",
+    "apps/api/test/purchase-return-ui-contract.test.js",
+    "apps/api/test/purchases-import-tenancy.test.js",
+    "apps/api/test/purchases-inventory-controlled-improvements.test.js",
+    "apps/api/test/purchases-invoice-transaction.test.js",
+    "apps/api/test/purchases-supplier-flow.test.js",
+    "apps/api/test/sales-invoice-import-template.test.js",
+    "apps/api/test/sales-invoicing-cxc.test.js",
+    "apps/api/test/sales-report-search-contract.test.js",
+    "apps/api/test/service-reference-import-atomic.test.js",
+    "apps/api/test/service-reference-import-validation.test.js",
+    "apps/api/test/supabase-company-context.test.js",
+    "apps/api/test/supabase-database-security-hardening.test.js",
+    "apps/api/test/tax-master-scope.test.js",
+    "apps/api/test/third-party-accounting-masters.test.js",
+    "apps/api/test/transport-packing.test.js",
+    "apps/api/test/transport-tms-foundation.test.js",
+    "apps/api/test/treasury-advances-imports.test.js",
+    "apps/api/test/treasury-payments.test.js",
+    "apps/api/test/zero-friendly-number-input.test.js",
+    "apps/web/app/api/admin/roles/route.ts",
+    "apps/web/app/api/admin/users/route.ts",
+    "apps/web/app/dashboard/compras/facturas/page.tsx",
+    "apps/web/app/dashboard/compras/importaciones/page.tsx",
+    "apps/web/app/dashboard/compras/ordenes/nueva/page.tsx",
+    "apps/web/app/dashboard/compras/ordenes/recibir/page.tsx",
+    "apps/web/app/dashboard/compras/page.tsx",
+    "apps/web/app/dashboard/compras/proveedores/[id]/page.tsx",
+    "apps/web/app/dashboard/compras/proveedores/page.tsx",
+    "apps/web/app/dashboard/compras/reportes/facturas/page.tsx",
+    "apps/web/app/dashboard/compras/reportes/ordenes/page.tsx",
+    "apps/web/app/dashboard/contabilidad/asientos/page.tsx",
+    "apps/web/app/dashboard/contabilidad/cuentas-por-pagar/page.tsx",
+    "apps/web/app/dashboard/contabilidad/iva/page.tsx",
+    "apps/web/app/dashboard/contabilidad/page.tsx",
+    "apps/web/app/dashboard/contabilidad/retenciones/page.tsx",
+    "apps/web/app/dashboard/contabilidad/terceros/page.tsx",
+    "apps/web/app/dashboard/cxc/documentos/page.tsx",
+    "apps/web/app/dashboard/cxc/retenciones/page.tsx",
+    "apps/web/app/dashboard/gestion-comercial/agenda/[id]/ejecucion/page.tsx",
+    "apps/web/app/dashboard/gestion-comercial/agenda/Customer360.tsx",
+    "apps/web/app/dashboard/gestion-comercial/agenda/CustomerCombobox.tsx",
+    "apps/web/app/dashboard/gestion-comercial/agenda/page.tsx",
+    "apps/web/app/dashboard/gestion-comercial/agenda/VisitCustomerForm.tsx",
+    "apps/web/app/dashboard/gestion-comercial/CommitmentAlerts.tsx",
+    "apps/web/app/dashboard/gestion-comercial/cotizaciones/page.tsx",
+    "apps/web/app/dashboard/gestion-comercial/layout.tsx",
+    "apps/web/app/dashboard/gestion-comercial/maestros/page.tsx",
+    "apps/web/app/dashboard/gestion-comercial/maestros/ProductImportPanel.tsx",
+    "apps/web/app/dashboard/gestion-comercial/maestros/VisitSettingsCard.tsx",
+    "apps/web/app/dashboard/gestion-comercial/mi-dia/page.tsx",
+    "apps/web/app/dashboard/gestion-comercial/OpenQuotationSummary.tsx",
+    "apps/web/app/dashboard/gestion-comercial/page.tsx",
+    "apps/web/app/dashboard/gestion-comercial/pedidos/page.tsx",
+    "apps/web/app/dashboard/gestion-comercial/presupuestos/page.tsx",
+    "apps/web/app/dashboard/gestion-comercial/QuotationOrderEditor.tsx",
+    "apps/web/app/dashboard/gestion-comercial/reportes/cotizado-vs-pedido/page.tsx",
+    "apps/web/app/dashboard/gestion-comercial/reportes/page.tsx",
+    "apps/web/app/dashboard/gestion-comercial/VisitHistory.tsx",
+    "apps/web/app/dashboard/gestion-comercial/VisitOperationsPanel.tsx",
+    "apps/web/app/dashboard/inventario/ajustes/nuevo/page.tsx",
+    "apps/web/app/dashboard/inventario/ajustes/page.tsx",
+    "apps/web/app/dashboard/inventario/bodegas/page.tsx",
+    "apps/web/app/dashboard/inventario/cargue-inicial/page.tsx",
+    "apps/web/app/dashboard/inventario/clasificaciones/page.tsx",
+    "apps/web/app/dashboard/inventario/familias/page.tsx",
+    "apps/web/app/dashboard/inventario/page.tsx",
+    "apps/web/app/dashboard/inventario/productos/[id]/page.tsx",
+    "apps/web/app/dashboard/inventario/productos/nuevo/page.tsx",
+    "apps/web/app/dashboard/inventario/productos/page.tsx",
+    "apps/web/app/dashboard/inventario/reportes/costos/page.tsx",
+    "apps/web/app/dashboard/inventario/reportes/kardex/page.tsx",
+    "apps/web/app/dashboard/inventario/reportes/page.tsx",
+    "apps/web/app/dashboard/inventario/stock/page.tsx",
+    "apps/web/app/dashboard/inventario/traslados/nuevo/page.tsx",
+    "apps/web/app/dashboard/inventario/traslados/page.tsx",
+    "apps/web/app/dashboard/layout.tsx",
+    "apps/web/app/dashboard/page.tsx",
+    "apps/web/app/dashboard/reportes/apex-heart/page.tsx",
+    "apps/web/app/dashboard/reportes/page.tsx",
+    "apps/web/app/dashboard/servicios/referencias/page.tsx",
+    "apps/web/app/dashboard/talento-humano/configuracion-laboral/page.tsx",
+    "apps/web/app/dashboard/talento-humano/empleados/page.tsx",
+    "apps/web/app/dashboard/talento-humano/entidades/page.tsx",
+    "apps/web/app/dashboard/talento-humano/mallas/page.tsx",
+    "apps/web/app/dashboard/talento-humano/marcacion/page.tsx",
+    "apps/web/app/dashboard/talento-humano/novedades/page.tsx",
+    "apps/web/app/dashboard/talento-humano/page.tsx",
+    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "apps/web/app/dashboard/tesoreria/anticipos/page.tsx",
+    "apps/web/app/dashboard/tesoreria/page.tsx",
+    "apps/web/app/dashboard/transporte/configuracion/page.tsx",
+    "apps/web/app/dashboard/transporte/cubicaje/page.tsx",
+    "apps/web/app/dashboard/transporte/flota/page.tsx",
+    "apps/web/app/dashboard/transporte/layout.tsx",
+    "apps/web/app/dashboard/transporte/maestros/page.tsx",
+    "apps/web/app/dashboard/transporte/monitoreo/page.tsx",
+    "apps/web/app/dashboard/transporte/notificaciones/page.tsx",
+    "apps/web/app/dashboard/transporte/operacion/page.tsx",
+    "apps/web/app/dashboard/transporte/ordenes/page.tsx",
+    "apps/web/app/dashboard/transporte/page.tsx",
+    "apps/web/app/dashboard/transporte/planeacion/page.tsx",
+    "apps/web/app/dashboard/transporte/pod/page.tsx",
+    "apps/web/app/dashboard/transporte/tarifas/page.tsx",
+    "apps/web/app/dashboard/ventas/clientes/page.tsx",
+    "apps/web/app/dashboard/ventas/facturas/[id]/page.tsx",
+    "apps/web/app/dashboard/ventas/facturas/nueva/page.tsx",
+    "apps/web/app/dashboard/ventas/facturas/page.tsx",
+    "apps/web/app/dashboard/ventas/ordenes/nueva/page.tsx",
+    "apps/web/app/dashboard/ventas/ordenes/page.tsx",
+    "apps/web/app/dashboard/ventas/page.tsx",
+    "apps/web/app/dashboard/ventas/precios/page.tsx",
+    "apps/web/app/dashboard/ventas/reportes/page.tsx",
+    "apps/web/app/globals.css",
+    "apps/web/app/layout.tsx",
+    "apps/web/app/login/page.tsx",
+    "apps/web/app/manifest.ts",
+    "apps/web/app/page.tsx",
+    "apps/web/components/brain/AiExperienceLayer.tsx",
+    "apps/web/components/brain/ApexIntelligencePulse.tsx",
+    "apps/web/components/commercial-nav.tsx",
+    "apps/web/components/compras-nav.tsx",
+    "apps/web/components/contabilidad-nav.tsx",
+    "apps/web/components/inventory-nav.tsx",
+    "apps/web/components/shell/ContextBreadcrumbs.tsx",
+    "apps/web/components/shell/DashboardChrome.tsx",
+    "apps/web/components/shell/NavigationAccessibility.tsx",
+    "apps/web/components/shell/PageTransition.tsx",
+    "apps/web/components/shell/RouteAccessGuard.tsx",
+    "apps/web/components/shell/Sidebar.tsx",
+    "apps/web/components/system/CollaborationPresence.tsx",
+    "apps/web/components/system/CommandPalette.tsx",
+    "apps/web/components/system/ExperiencePreferences.tsx",
+    "apps/web/components/system/FieldProductivity.tsx",
+    "apps/web/components/system/LocaleSwitcher.tsx",
+    "apps/web/components/system/NotificationCenter.tsx",
+    "apps/web/components/system/OfflineFirstStatus.tsx",
+    "apps/web/components/system/StandardTableExperience.tsx",
+    "apps/web/components/system/ToastCenter.tsx",
+    "apps/web/components/system/TraceabilityCenter.tsx",
+    "apps/web/components/system/WorldClassToolkit.tsx",
+    "apps/web/components/tms-live-map.tsx",
+    "apps/web/components/transport/CargoScene.tsx",
+    "apps/web/components/transport/packing-types.ts",
+    "apps/web/components/transport/SettlementPreview.tsx",
+    "apps/web/components/transport/TransportUI.tsx",
+    "apps/web/components/transport/VehicleProfilePicker.tsx",
+    "apps/web/components/ui/avatar.tsx",
+    "apps/web/components/ui/button.tsx",
+    "apps/web/components/ui/card.tsx",
+    "apps/web/components/ui/data-table.tsx",
+    "apps/web/components/ui/drawer.tsx",
+    "apps/web/components/ui/feedback.tsx",
+    "apps/web/components/ui/form-controls.tsx",
+    "apps/web/components/ui/layout.tsx",
+    "apps/web/components/ui/ModalFrame.tsx",
+    "apps/web/components/ui/tabs.tsx",
+    "apps/web/components/ui/ZeroFriendlyNumberInput.tsx",
+    "apps/web/components/ventas-nav.tsx",
+    "apps/web/eslint.config.mjs",
+    "apps/web/lib/accessProfile.ts",
+    "apps/web/lib/api-collections.ts",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/commercial-report-export.ts",
+    "apps/web/lib/commercialDocumentPdf.ts",
+    "apps/web/lib/hrScheduleMonitor.ts",
+    "apps/web/lib/i18n.tsx",
+    "apps/web/lib/moduleAccess.ts",
+    "apps/web/lib/moduleAccessPolicy.ts",
+    "apps/web/lib/modules.ts",
+    "apps/web/lib/operationalWorkspace.ts",
+    "apps/web/lib/purchaseOrderPdf.ts",
+    "apps/web/lib/regionalFormat.ts",
+    "apps/web/lib/reportExports.ts",
+    "apps/web/lib/salesInvoiceLines.ts",
+    "apps/web/lib/serviceReferenceImport.ts",
+    "apps/web/lib/supabaseClient.ts",
+    "apps/web/lib/transferRemissionPdf.ts",
+    "apps/web/next-env.d.ts",
+    "apps/web/next.config.ts",
+    "apps/web/package.json",
+    "apps/web/public/apex-icon.svg",
+    "apps/web/public/plantillas/Plantilla_Cargue_Inicial_Inventario.xlsx",
+    "apps/web/public/plantillas/Plantilla_Importacion_Facturas_Venta.xlsx",
+    "apps/web/public/plantillas/Plantilla_Pedidos_Transporte.xlsx",
+    "apps/web/public/plantillas/Plantilla_Productos_Gestion_Comercial.xlsx",
+    "apps/web/public/plantillas/plantilla-referencias-servicio.xlsx",
+    "apps/web/public/sw.js",
+    "apps/web/tailwind.config.ts",
+    "apps/web/test/admin-role-capabilities.test.mjs",
+    "apps/web/test/apex-heart-ui.test.mjs",
+    "apps/web/test/certify-supplier-create-button-visible-local.mjs",
+    "apps/web/test/certify-ui-ux-phase-one-local.mjs",
+    "apps/web/test/certify-ui-ux-phase-three-accessibility-local.mjs",
+    "apps/web/test/certify-ui-ux-phase-three-collaboration-local.mjs",
+    "apps/web/test/certify-ui-ux-phase-three-foundation-local.mjs",
+    "apps/web/test/certify-ui-ux-phase-three-personalization-local.mjs",
+    "apps/web/test/certify-ui-ux-phase-three-toolkit-local.mjs",
+    "apps/web/test/certify-ui-ux-phase-three-totp-local.mjs",
+    "apps/web/test/certify-ui-ux-phase-two-local.mjs",
+    "apps/web/test/commercial-calendar-experience.test.mjs",
+    "apps/web/test/commercial-module-catalog.test.mjs",
+    "apps/web/test/commercial-visit-selection.test.mjs",
+    "apps/web/test/erp-visual-normalization.test.mjs",
+    "apps/web/test/hr-landing-information-architecture.test.mjs",
+    "apps/web/test/hr-marking-only-access.test.mjs",
+    "apps/web/test/hr-monitor-refresh.test.mjs",
+    "apps/web/test/hr-reports-xlsx.test.mjs",
+    "apps/web/test/hr-schedule-monitor.test.mjs",
+    "apps/web/test/hr-workday-novelties-ui.test.mjs",
+    "apps/web/test/inventory-improvements-roadmap.test.mjs",
+    "apps/web/test/login-error-contrast.test.mjs",
+    "apps/web/test/login-phase-zero-ux.test.mjs",
+    "apps/web/test/modal-focus-stability.test.mjs",
+    "apps/web/test/module-access-policy.test.mjs",
+    "apps/web/test/operational-home-redesign.test.mjs",
+    "apps/web/test/phase-one-design-system.test.mjs",
+    "apps/web/test/phase-three-analytics.test.mjs",
+    "apps/web/test/phase-three-collaboration.test.mjs",
+    "apps/web/test/phase-three-personalization.test.mjs",
+    "apps/web/test/phase-three-world-class-foundation.test.mjs",
+    "apps/web/test/phase-three-world-class-toolkit.test.mjs",
+    "apps/web/test/phase-two-intelligent-experience.test.mjs",
+    "apps/web/test/sales-collection-contracts.test.mjs",
+    "apps/web/test/sales-invoice-lines.test.mjs",
+    "apps/web/test/service-reference-import.test.mjs",
+    "apps/web/test/standard-table-migration.test.mjs",
+    "apps/web/test/supplier-create-button-visibility.test.mjs",
+    "apps/web/test/transport-master-access.test.mjs",
+    "apps/web/test/transport-tms-ui.test.mjs",
+    "apps/web/tsconfig.json",
+    "docs/agents/quality-gates.md",
+    "docs/APEX_HEART_IMPLEMENTATION_DIAGNOSIS.md",
+    "docs/APEX_OS_REDISENO_INICIO_OPERATIVO_CHECKLIST.md",
+    "docs/audits/TALENT_HUMAN_LANDING_REGRESSION_20260824.md",
+    "docs/CHANGE_APPROVAL_QA_POLICY.md",
+    "docs/design/APEX_OS_POLITICA_DISENO_PRODUCTO.md",
+    "docs/design/APEX_OS_TABLE_STANDARDIZATION_CHECKLIST.md",
+    "docs/design/APEX_OS_UI_UX_ROADMAP_CHECKLIST.md",
+    "docs/project/modulos/compras.md",
+    "docs/project/modulos/inventario.md",
+    "docs/project/modulos/talento-humano.md",
+    "docs/project/modulos/transporte-tms.md",
+    "docs/project/modulos/transporte.md",
+    "docs/project/modulos/ventas.md",
+    "docs/project/talento-humano-implementacion-seguimiento.md",
+    "docs/qa/evidence/admin-role-capabilities-20260824/admin-create-user-form.png",
+    "docs/qa/evidence/admin-role-capabilities-20260824/admin-role-user-visible.png",
+    "docs/qa/evidence/admin-role-capabilities-20260824/browser-certification.json",
+    "docs/qa/evidence/admin-role-capabilities-20260824/certification.json",
+    "docs/qa/evidence/admin-role-capabilities-20260824/diagnosis.md",
+    "docs/qa/evidence/admin-role-capabilities-20260824/error.md",
+    "docs/qa/evidence/admin-role-capabilities-20260824/functional.md",
+    "docs/qa/evidence/admin-role-capabilities-20260824/manifest.json",
+    "docs/qa/evidence/admin-role-capabilities-20260824/platform-regression.json",
+    "docs/qa/evidence/admin-role-capabilities-20260824/preqa-scope-manifest.json",
+    "docs/qa/evidence/admin-role-capabilities-20260824/regression.md",
+    "docs/qa/evidence/admin-role-capabilities-20260824/support-scripts.md",
+    "docs/qa/evidence/apex-heart-20260906/error.md",
+    "docs/qa/evidence/apex-heart-20260906/functional.md",
+    "docs/qa/evidence/apex-heart-20260906/local-certification.json",
+    "docs/qa/evidence/apex-heart-20260906/platform-regression.json",
+    "docs/qa/evidence/apex-heart-20260906/preqa-scope-manifest.json",
+    "docs/qa/evidence/apex-heart-20260906/qa-approval-evidence.json",
+    "docs/qa/evidence/apex-heart-20260906/support-scripts.md",
+    "docs/qa/evidence/apex-heart-rich-20260907/error.md",
+    "docs/qa/evidence/apex-heart-rich-20260907/functional.md",
+    "docs/qa/evidence/apex-heart-rich-20260907/local-certification.json",
+    "docs/qa/evidence/apex-heart-rich-20260907/platform-regression.json",
+    "docs/qa/evidence/apex-heart-rich-20260907/preqa-scope-manifest.json",
+    "docs/qa/evidence/apex-heart-rich-20260907/qa-approval-evidence.json",
+    "docs/qa/evidence/apex-heart-rich-20260907/support-scripts.md",
+    "docs/qa/evidence/apex-heart-ytd-data-20260907/error.md",
+    "docs/qa/evidence/apex-heart-ytd-data-20260907/functional.md",
+    "docs/qa/evidence/apex-heart-ytd-data-20260907/preqa-scope-manifest.json",
+    "docs/qa/evidence/apex-heart-ytd-data-20260907/qa-approval-evidence.json",
+    "docs/qa/evidence/apex-heart-ytd-data-20260907/qa-data-certification.json",
+    "docs/qa/evidence/apex-heart-ytd-data-20260907/support-scripts.md",
+    "docs/qa/evidence/brain-insights-module-gating-20260909/browser-diagnosis.md",
+    "docs/qa/evidence/brain-insights-module-gating-20260909/local-validation.md",
+    "docs/qa/evidence/brain-insights-module-gating-20260909/scope-manifest.json",
+    "docs/qa/evidence/commercial-calendar-ux-20260903/local-validation.md",
+    "docs/qa/evidence/commercial-management-m27-20260901/certification.json",
+    "docs/qa/evidence/commercial-management-m27-20260901/local-validation.md",
+    "docs/qa/evidence/commercial-management-m27-20260901/platform-regression.json",
+    "docs/qa/evidence/commercial-management-m27-20260901/preqa-scope-manifest.json",
+    "docs/qa/evidence/commercial-management-m27-20260901/qa-approval-evidence.json",
+    "docs/qa/evidence/commercial-management-population-20260903/local-validation.md",
+    "docs/qa/evidence/commercial-management-population-20260903/platform-regression.json",
+    "docs/qa/evidence/commercial-management-population-20260903/preqa-scope-manifest.json",
+    "docs/qa/evidence/commercial-management-population-20260903/qa-approval-evidence.json",
+    "docs/qa/evidence/commercial-management-population-20260903/REPORT.md",
+    "docs/qa/evidence/commercial-management-population-20260903/rerun.json",
+    "docs/qa/evidence/commercial-management-population-20260903/run.json",
+    "docs/qa/evidence/commercial-module-catalog-20260903/certification.json",
+    "docs/qa/evidence/commercial-module-catalog-20260903/error.md",
+    "docs/qa/evidence/commercial-module-catalog-20260903/functional.md",
+    "docs/qa/evidence/commercial-module-catalog-20260903/local-validation.md",
+    "docs/qa/evidence/commercial-module-catalog-20260903/platform-regression.json",
+    "docs/qa/evidence/commercial-module-catalog-20260903/preqa-scope-manifest.json",
+    "docs/qa/evidence/commercial-module-catalog-20260903/qa-approval-evidence.json",
+    "docs/qa/evidence/commercial-module-catalog-20260903/support-scripts.md",
+    "docs/qa/evidence/commercial-runtime-dependency-20260903/certification.json",
+    "docs/qa/evidence/commercial-runtime-dependency-20260903/error.md",
+    "docs/qa/evidence/commercial-runtime-dependency-20260903/functional.md",
+    "docs/qa/evidence/commercial-runtime-dependency-20260903/platform-regression.json",
+    "docs/qa/evidence/commercial-runtime-dependency-20260903/preqa-scope-manifest.json",
+    "docs/qa/evidence/commercial-runtime-dependency-20260903/qa-approval-evidence.json",
+    "docs/qa/evidence/commercial-runtime-dependency-20260903/support-scripts.md",
+    "docs/qa/evidence/commercial-schema-bootstrap-20260903/certification.json",
+    "docs/qa/evidence/commercial-schema-bootstrap-20260903/error.md",
+    "docs/qa/evidence/commercial-schema-bootstrap-20260903/functional.md",
+    "docs/qa/evidence/commercial-schema-bootstrap-20260903/platform-regression.json",
+    "docs/qa/evidence/commercial-schema-bootstrap-20260903/preqa-scope-manifest.json",
+    "docs/qa/evidence/commercial-schema-bootstrap-20260903/qa-approval-evidence.json",
+    "docs/qa/evidence/commercial-schema-bootstrap-20260903/support-scripts.md",
+    "docs/qa/evidence/complete-desarrollo-20260907/preqa-scope-manifest.json",
+    "docs/qa/evidence/controlled-develop-main-release-20260917/local-certification.json",
+    "docs/qa/evidence/controlled-develop-main-release-20260917/runbook.md",
+    "docs/qa/evidence/controlled-develop-main-release-20260917/scope-manifest.json",
+    "docs/qa/evidence/database-security-hardening-20260916/preqa-approval-evidence.json",
+    "docs/qa/evidence/database-security-hardening-20260916/preqa-scope-manifest.json",
+    "docs/qa/evidence/database-security-hardening-20260916/qa-certification.json",
+    "docs/qa/evidence/database-security-hardening-20260916/security-gate.md",
+    "docs/qa/evidence/dependency-security-20260824/certification.json",
+    "docs/qa/evidence/dependency-security-20260824/validation.md",
+    "docs/qa/evidence/erp-landing-deduplication-20260825/certification-contract.json",
+    "docs/qa/evidence/erp-landing-deduplication-20260825/local-validation.md",
+    "docs/qa/evidence/erp-landing-deduplication-20260825/preqa-scope-manifest.json",
+    "docs/qa/evidence/erp-landing-deduplication-20260825/qa-runbook.md",
+    "docs/qa/evidence/erp-landing-deduplication-20260825/REPORTE.md",
+    "docs/qa/evidence/erp-module-recovery-20260825/certification-contract.json",
+    "docs/qa/evidence/erp-module-recovery-20260825/local-validation.md",
+    "docs/qa/evidence/erp-module-recovery-20260825/preqa-scope-manifest.json",
+    "docs/qa/evidence/erp-module-recovery-20260825/qa-runbook.md",
+    "docs/qa/evidence/erp-module-recovery-20260825/REPORTE.md",
+    "docs/qa/evidence/erp-purchases-inventory-20260903/local-validation.md",
+    "docs/qa/evidence/erp-purchases-inventory-20260903/preqa-scope-manifest.json",
+    "docs/qa/evidence/erp-visual-normalization-20260825/certification-contract.json",
+    "docs/qa/evidence/erp-visual-normalization-20260825/local-validation.md",
+    "docs/qa/evidence/erp-visual-normalization-20260825/preqa-scope-manifest.json",
+    "docs/qa/evidence/erp-visual-normalization-20260825/qa-runbook.md",
+    "docs/qa/evidence/erp-visual-normalization-20260825/REPORTE.md",
+    "docs/qa/evidence/hr-landing-recovery-20260824/analysis.md",
+    "docs/qa/evidence/hr-landing-recovery-20260824/browser-certification.json",
+    "docs/qa/evidence/hr-landing-recovery-20260824/error.md",
+    "docs/qa/evidence/hr-landing-recovery-20260824/functional.md",
+    "docs/qa/evidence/hr-landing-recovery-20260824/hr-landing-certification.json",
+    "docs/qa/evidence/hr-landing-recovery-20260824/local-validation.md",
+    "docs/qa/evidence/hr-landing-recovery-20260824/manifest.json",
+    "docs/qa/evidence/hr-landing-recovery-20260824/platform-regression.json",
+    "docs/qa/evidence/hr-landing-recovery-20260824/preqa-scope-manifest.json",
+    "docs/qa/evidence/hr-landing-recovery-20260824/qa-evidence-scope-manifest.json",
+    "docs/qa/evidence/hr-landing-recovery-20260824/regression.md",
+    "docs/qa/evidence/hr-landing-recovery-20260824/support-scripts.md",
+    "docs/qa/evidence/hr-marking-concurrency-20260902/diagnosis.md",
+    "docs/qa/evidence/hr-marking-concurrency-20260902/error.md",
+    "docs/qa/evidence/hr-marking-concurrency-20260902/functional.md",
+    "docs/qa/evidence/hr-marking-concurrency-20260902/local-mass-certification-attempt-1-failed.json",
+    "docs/qa/evidence/hr-marking-concurrency-20260902/local-mass-certification-attempt-2-failed.json",
+    "docs/qa/evidence/hr-marking-concurrency-20260902/local-mass-certification-attempt-3-failed.json",
+    "docs/qa/evidence/hr-marking-concurrency-20260902/local-mass-certification-attempt-4-failed.json",
+    "docs/qa/evidence/hr-marking-concurrency-20260902/local-mass-certification-attempt-5-failed.json",
+    "docs/qa/evidence/hr-marking-concurrency-20260902/local-mass-certification.json",
+    "docs/qa/evidence/hr-marking-concurrency-20260902/local-validation.md",
+    "docs/qa/evidence/hr-marking-concurrency-20260902/preqa-scope-manifest.json",
+    "docs/qa/evidence/hr-marking-concurrency-20260902/support-scripts.md",
+    "docs/qa/evidence/hr-marking-only-20260824/browser-certification.json",
+    "docs/qa/evidence/hr-marking-only-20260824/certification.json",
+    "docs/qa/evidence/hr-marking-only-20260824/error.md",
+    "docs/qa/evidence/hr-marking-only-20260824/functional.md",
+    "docs/qa/evidence/hr-marking-only-20260824/marking-only-ui.png",
+    "docs/qa/evidence/hr-marking-only-20260824/preqa-scope-manifest.json",
+    "docs/qa/evidence/hr-marking-only-20260824/regression.md",
+    "docs/qa/evidence/hr-marking-only-20260824/support-scripts.md",
+    "docs/qa/evidence/hr-monitor-evidence-demand-20260824/browser-certification.json",
+    "docs/qa/evidence/hr-monitor-evidence-demand-20260824/certification.json",
+    "docs/qa/evidence/hr-monitor-evidence-demand-20260824/diagnosis.md",
+    "docs/qa/evidence/hr-monitor-evidence-demand-20260824/error.md",
+    "docs/qa/evidence/hr-monitor-evidence-demand-20260824/functional.md",
+    "docs/qa/evidence/hr-monitor-evidence-demand-20260824/monitor-evidence-loaded.png",
+    "docs/qa/evidence/hr-monitor-evidence-demand-20260824/platform-regression.json",
+    "docs/qa/evidence/hr-monitor-evidence-demand-20260824/preqa-scope-manifest.json",
+    "docs/qa/evidence/hr-monitor-evidence-demand-20260824/regression.md",
+    "docs/qa/evidence/hr-monitor-evidence-demand-20260824/support-scripts.md",
+    "docs/qa/evidence/hr-reports-intelligent-filters-20260828/certification.json",
+    "docs/qa/evidence/hr-reports-intelligent-filters-20260828/local-validation.md",
+    "docs/qa/evidence/hr-reports-intelligent-filters-20260828/platform-regression.json",
+    "docs/qa/evidence/hr-reports-intelligent-filters-20260828/preqa-scope-manifest.json",
+    "docs/qa/evidence/hr-reports-intelligent-filters-20260828/qa-approval-evidence.json",
+    "docs/qa/evidence/hr-scj-pool-contention-20260910/local-validation.md",
+    "docs/qa/evidence/hr-scj-pool-contention-20260910/preqa-approval-evidence.json",
+    "docs/qa/evidence/hr-scj-pool-contention-20260910/preqa-scope-manifest.json",
+    "docs/qa/evidence/hr-single-active-schedule-20260910/local-validation.md",
+    "docs/qa/evidence/hr-single-active-schedule-20260910/preqa-approval-evidence.json",
+    "docs/qa/evidence/hr-single-active-schedule-20260910/preqa-scope-manifest.json",
+    "docs/qa/evidence/hr-single-active-schedule-20260910/qa-certification.json",
+    "docs/qa/evidence/hr-workday-novelties-20260917/browser-certification.md",
+    "docs/qa/evidence/hr-workday-novelties-20260917/local-certification.json",
+    "docs/qa/evidence/hr-workday-novelties-20260917/preqa-approval-evidence.json",
+    "docs/qa/evidence/hr-workday-novelties-20260917/preqa-scope-manifest.json",
+    "docs/qa/evidence/hr-workday-novelties-20260917/regression.md",
+    "docs/qa/evidence/inventory-policy-phase23-20260910/local-validation.md",
+    "docs/qa/evidence/inventory-policy-phase23-20260910/preqa-approval-evidence.json",
+    "docs/qa/evidence/inventory-policy-phase23-20260910/scope-manifest.json",
+    "docs/qa/evidence/inventory-product-visual-followup-20260825/certification-contract.json",
+    "docs/qa/evidence/inventory-product-visual-followup-20260825/local-validation.md",
+    "docs/qa/evidence/inventory-product-visual-followup-20260825/null-selection-scope-manifest.json",
+    "docs/qa/evidence/inventory-product-visual-followup-20260825/preqa-scope-manifest.json",
+    "docs/qa/evidence/inventory-product-visual-followup-20260825/qa-runbook.md",
+    "docs/qa/evidence/inventory-product-visual-followup-20260825/REPORTE.md",
+    "docs/qa/evidence/modal-focus-stability-20260909/preqa-approval-evidence.json",
+    "docs/qa/evidence/modal-focus-stability-20260909/scope-manifest.json",
+    "docs/qa/evidence/operational-workspace-20260910/local-validation.md",
+    "docs/qa/evidence/operational-workspace-20260910/preqa-approval-evidence.json",
+    "docs/qa/evidence/operational-workspace-20260910/scope-manifest.json",
+    "docs/qa/evidence/public-landing-modernization-20260908/preqa-scope-manifest.json",
+    "docs/qa/evidence/purchases-visual-normalization-20260825/certification-contract.json",
+    "docs/qa/evidence/purchases-visual-normalization-20260825/local-validation.md",
+    "docs/qa/evidence/purchases-visual-normalization-20260825/preqa-scope-manifest.json",
+    "docs/qa/evidence/purchases-visual-normalization-20260825/qa-runbook.md",
+    "docs/qa/evidence/purchases-visual-normalization-20260825/REPORTE.md",
+    "docs/qa/evidence/remove-global-ai-pulse-20260909/local-validation.md",
+    "docs/qa/evidence/remove-global-ai-pulse-20260909/preqa-approval-evidence.json",
+    "docs/qa/evidence/remove-global-ai-pulse-20260909/scope-manifest.json",
+    "docs/qa/evidence/service-reference-excel-20260826/certification-contract.json",
+    "docs/qa/evidence/service-reference-excel-20260826/certification.json",
+    "docs/qa/evidence/service-reference-excel-20260826/local-validation.md",
+    "docs/qa/evidence/service-reference-excel-20260826/preqa-scope-manifest.json",
+    "docs/qa/evidence/service-reference-excel-20260826/protected-platform-regression.json",
+    "docs/qa/evidence/service-reference-excel-20260826/protected-service-master.json",
+    "docs/qa/evidence/service-reference-excel-20260826/qa-approval-evidence.json",
+    "docs/qa/evidence/service-reference-excel-20260826/REPORTE.md",
+    "docs/qa/evidence/supplier-create-button-visibility-20260909/browser-certification.json",
+    "docs/qa/evidence/supplier-create-button-visibility-20260909/local-validation.md",
+    "docs/qa/evidence/supplier-create-button-visibility-20260909/preqa-approval-evidence.json",
+    "docs/qa/evidence/supplier-create-button-visibility-20260909/scope-manifest.json",
+    "docs/qa/evidence/table-standardization-20260909/local-validation.md",
+    "docs/qa/evidence/table-standardization-20260909/preqa-approval-evidence.json",
+    "docs/qa/evidence/table-standardization-20260909/scope-manifest.json",
+    "docs/qa/evidence/transport-linear-20260915/browser-certification.md",
+    "docs/qa/evidence/transport-linear-20260915/local-certification.json",
+    "docs/qa/evidence/transport-linear-20260915/preqa-approval-evidence.json",
+    "docs/qa/evidence/transport-linear-20260915/preqa-scope-manifest.json",
+    "docs/qa/evidence/transport-linear-20260915/regression.md",
+    "docs/qa/evidence/transport-linear-20260915/scope-manifest.json",
+    "docs/qa/evidence/transport-linear-20260915/wording-scope-manifest.json",
+    "docs/qa/evidence/transport-master-correction-20260825/certification-contract.json",
+    "docs/qa/evidence/transport-master-correction-20260825/local-validation.md",
+    "docs/qa/evidence/transport-master-correction-20260825/preqa-scope-manifest.json",
+    "docs/qa/evidence/transport-master-correction-20260825/qa-runbook.md",
+    "docs/qa/evidence/transport-master-correction-20260825/REPORTE.md",
+    "docs/qa/evidence/transport-tms-foundation-20260904/local-certification.json",
+    "docs/qa/evidence/transport-tms-foundation-20260904/local-validation.md",
+    "docs/qa/evidence/transport-tms-foundation-20260904/REPORTE.md",
+    "docs/qa/evidence/transport-tms-foundation-20260904/run-20260904145348.json",
+    "docs/qa/evidence/transport-tms-foundation-20260904/run-20260904150543.json",
+    "docs/qa/evidence/transport-tms-foundation-20260904/run-20260904153954.json",
+    "docs/qa/evidence/transport-tms-foundation-20260904/run-20260904154104.json",
+    "docs/qa/evidence/transport-tms-foundation-20260904/run-20260908023315.json",
+    "docs/qa/evidence/ui-ux-guide-overlap-20260908/local-browser-certification.json",
+    "docs/qa/evidence/ui-ux-guide-overlap-20260908/local-validation.md",
+    "docs/qa/evidence/ui-ux-phase-one-20260908/browser-certification.json",
+    "docs/qa/evidence/ui-ux-phase-one-20260908/local-validation.md",
+    "docs/qa/evidence/ui-ux-phase-one-20260908/preqa-approval-evidence.json",
+    "docs/qa/evidence/ui-ux-phase-one-20260908/preqa-scope-manifest.json",
+    "docs/qa/evidence/ui-ux-phase-three-accessibility-20260909/browser-certification.json",
+    "docs/qa/evidence/ui-ux-phase-three-accessibility-20260909/local-validation.md",
+    "docs/qa/evidence/ui-ux-phase-three-analytics-20260909/api-certification.json",
+    "docs/qa/evidence/ui-ux-phase-three-analytics-20260909/local-validation.md",
+    "docs/qa/evidence/ui-ux-phase-three-collaboration-20260909/browser-certification.json",
+    "docs/qa/evidence/ui-ux-phase-three-collaboration-20260909/local-validation.md",
+    "docs/qa/evidence/ui-ux-phase-three-collaboration-remote-20260909/api-certification.json",
+    "docs/qa/evidence/ui-ux-phase-three-collaboration-remote-20260909/local-validation.md",
+    "docs/qa/evidence/ui-ux-phase-three-complete-20260909/local-validation.md",
+    "docs/qa/evidence/ui-ux-phase-three-foundation-20260909/browser-certification.json",
+    "docs/qa/evidence/ui-ux-phase-three-foundation-20260909/local-validation.md",
+    "docs/qa/evidence/ui-ux-phase-three-personalization-20260909/browser-certification.json",
+    "docs/qa/evidence/ui-ux-phase-three-personalization-20260909/local-validation.md",
+    "docs/qa/evidence/ui-ux-phase-three-promotion-20260909/preqa-approval-evidence.json",
+    "docs/qa/evidence/ui-ux-phase-three-promotion-20260909/scope-manifest.json",
+    "docs/qa/evidence/ui-ux-phase-three-toolkit-20260909/browser-certification.json",
+    "docs/qa/evidence/ui-ux-phase-three-toolkit-20260909/local-validation.md",
+    "docs/qa/evidence/ui-ux-phase-three-totp-20260909/browser-certification.json",
+    "docs/qa/evidence/ui-ux-phase-three-totp-20260909/local-validation.md",
+    "docs/qa/evidence/ui-ux-phase-two-20260908/browser-certification.json",
+    "docs/qa/evidence/ui-ux-phase-two-20260908/local-validation.md",
+    "docs/qa/evidence/ui-ux-phase-two-20260908/preqa-approval-evidence.json",
+    "docs/qa/evidence/ui-ux-phase-two-20260908/preqa-scope-manifest.json",
+    "docs/qa/evidence/ui-ux-phase-zero-20260908/local-validation.md",
+    "docs/releases/CONTROLLED_PROMOTION_SCOPE_POLICY.md",
+    "memory/compras-facturas/MEMORY.md",
+    "memory/contabilidad-terceros/MEMORY.md",
+    "memory/inventario-valoracion-traslados/MEMORY.md",
+    "memory/README.md",
+    "memory/tesoreria-pagos/MEMORY.md",
+    "package-lock.json",
+    "package.json",
+    "scripts/certifications/admin-role-capabilities-qa.js",
+    "scripts/certifications/apex-heart-local.js",
+    "scripts/certifications/apex-heart-platform-regression-local.js",
+    "scripts/certifications/apex-heart-qa-data.js",
+    "scripts/certifications/commercial-management-m27-qa.js",
+    "scripts/certifications/commercial-management-population-qa.js",
+    "scripts/certifications/commercial-module-catalog-qa.js",
+    "scripts/certifications/commercial-schema-bootstrap-local.js",
+    "scripts/certifications/controlled-release-local.js",
+    "scripts/certifications/database-security-hardening-qa.js",
+    "scripts/certifications/dependency-security.js",
+    "scripts/certifications/erp-module-recovery-qa.js",
+    "scripts/certifications/fixtures/hr-reports-qa-fixture.js",
+    "scripts/certifications/hr-landing-qa.js",
+    "scripts/certifications/hr-marking-only-qa.js",
+    "scripts/certifications/hr-monitor-evidence-demand-qa.js",
+    "scripts/certifications/hr-reports-export-qa.js",
+    "scripts/certifications/hr-workday-novelties-local.js",
+    "scripts/certifications/service-reference-excel-qa.js",
+    "scripts/certifications/transport-intelligent-local.js",
+    "scripts/certifications/transport-master-qa.js",
+    "scripts/certifications/transport-tms-local.js",
+    "scripts/dev-web.js",
+    "scripts/generate-controlled-release-scope.js",
+    "scripts/seed-admin.js",
+    "scripts/seed-apex-heart-demo.js",
+    "scripts/seed-apex-heart-qa-ytd.js",
+    "scripts/seed-transport-intelligent-local.js",
+    "scripts/test/commercial-management-population-qa.test.js",
+    "scripts/test/erp-module-recovery-qa-certification.test.js",
+    "scripts/test/hr-reports-export-qa-certification.test.js",
+    "scripts/test/service-reference-excel-qa-certification.test.js",
+    "scripts/test/transport-master-qa-certification.test.js",
+    "scripts/test/validate-preqa-promotion-evidence.test.js",
+    "scripts/test/validate-promotion-scope.test.js",
+    "scripts/validate-database-migration-safety.js",
+    "scripts/validate-preqa-promotion-evidence.js",
+    "scripts/validate-promotion-scope.js",
+    "supabase/migrations/20260902090000_time_punch_idempotency.sql",
+    "supabase/migrations/20260903100000_commercial_management_module_catalog.sql",
+    "supabase/migrations/20260907021723_apex_heart_foundation.sql",
+    "supabase/migrations/20260916162822_apexos_database_security_hardening.sql",
+    "supabase/migrations/20260917120000_hr_workday_novelties_foundation.sql"
+  ],
+  "allowed_deletions": [],
+  "migration_plan": {
+    "status": "pending_qa_execution",
+    "strategy": "inventory_then_apply_only_pending_in_order",
+    "destructive_operations_authorized": false,
+    "files": [
+      "apps/api/prisma/migrations/20260721190000_purchase_tax_retention_reversals/migration.sql",
+      "apps/api/prisma/migrations/20260721220000_inventory_society_valuation_transit/migration.sql",
+      "apps/api/prisma/migrations/20260730030000_customer_sales_invoicing_cxc/migration.sql",
+      "apps/api/prisma/migrations/20260806150000_canonical_party_roles/migration.sql",
+      "apps/api/prisma/migrations/20260807040000_treasury_banks_payments/migration.sql",
+      "apps/api/prisma/migrations/20260807090000_treasury_advances_purchase_imports/migration.sql",
+      "apps/api/prisma/migrations/20260814140000_commercial_management_base/migration.sql",
+      "apps/api/prisma/migrations/20260814150000_commercial_visit_scheduling/migration.sql",
+      "apps/api/prisma/migrations/20260814170000_commercial_advisor_masters/migration.sql",
+      "apps/api/prisma/migrations/20260814190000_commercial_customer_details/migration.sql",
+      "apps/api/prisma/migrations/20260821193000_item_legacy_code/migration.sql",
+      "apps/api/prisma/migrations/20260821223000_inventory_adjustments/migration.sql",
+      "apps/api/prisma/migrations/20260828143000_commercial_visit_masters/migration.sql",
+      "apps/api/prisma/migrations/20260828170000_commercial_customer_commitments/migration.sql",
+      "apps/api/prisma/migrations/20260828203000_commercial_visit_timeline_catalog_bridge/migration.sql",
+      "apps/api/prisma/migrations/20260829100000_commercial_quotations/migration.sql",
+      "apps/api/prisma/migrations/20260829113000_commercial_daily_budgets/migration.sql",
+      "apps/api/prisma/migrations/20260831120000_commercial_prospect_visits/migration.sql",
+      "apps/api/prisma/migrations/20260902090000_hr_time_punch_idempotency/migration.sql",
+      "apps/api/prisma/migrations/20260904120000_transport_tms_foundation/migration.sql",
+      "apps/api/prisma/migrations/20260904160000_transport_tms_planning/migration.sql",
+      "apps/api/prisma/migrations/20260904180000_transport_tms_live_tracking/migration.sql",
+      "apps/api/prisma/migrations/20260904190000_transport_tms_configuration/migration.sql",
+      "apps/api/prisma/migrations/20260904200000_transport_tms_notifications/migration.sql",
+      "apps/api/prisma/migrations/20260907023000_apex_heart_foundation/migration.sql",
+      "apps/api/prisma/migrations/20260909170000_apex_heart_report_schedules/migration.sql",
+      "apps/api/prisma/migrations/20260917120000_hr_workday_novelties_foundation/migration.sql",
+      "supabase/migrations/20260902090000_time_punch_idempotency.sql",
+      "supabase/migrations/20260903100000_commercial_management_module_catalog.sql",
+      "supabase/migrations/20260907021723_apex_heart_foundation.sql",
+      "supabase/migrations/20260916162822_apexos_database_security_hardening.sql",
+      "supabase/migrations/20260917120000_hr_workday_novelties_foundation.sql"
+    ],
+    "prerequisites": [
+      "verified backup and restore point",
+      "QA schema audit before and after execution",
+      "migration safety validation",
+      "application compatibility and tenant-isolation certification"
+    ]
+  },
+  "rollback_plan": {
+    "status": "prepared_not_executed",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "0abda8c41168642f99da0831e15f940b98232a12",
+    "data_strategy": "forward-fix schema changes; restore data only from a verified backup when an objective integrity trigger is met",
+    "trigger": "data integrity failure, tenant isolation failure, schema mismatch, critical functional regression, or failed production smoke"
+  },
+  "protected_capabilities": [
+    {
+      "name": "release-inventory-has-no-deletions",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "main-history-preservation",
+      "status": "passed",
+      "evidence": [
+        "runbook.md",
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "database-migration-order-and-recovery",
+      "status": "passed",
+      "evidence": [
+        "runbook.md",
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "authentication-authorization-and-tenant-isolation",
+      "status": "passed",
+      "evidence": [
+        "runbook.md"
+      ]
+    },
+    {
+      "name": "platform-critical-module-regression-plan",
+      "status": "passed",
+      "evidence": [
+        "runbook.md"
+      ]
+    }
+  ],
+  "qa_gate": {
+    "status": "pending",
+    "required": true,
+    "note": "This scope manifest does not contain or imply QA approval."
+  }
+}
