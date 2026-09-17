@@ -1,0 +1,28 @@
+{
+  "change_id": "controlled-develop-main-release-20260917",
+  "environment": "QA",
+  "status": "passed",
+  "certified_commit": "8932809b729768df0b81b98eef759ccfb48b512f",
+  "executed_at": "2026-09-17T10:13:57-05:00",
+  "destructive_operations": false,
+  "checks": [
+    { "name": "deployed_health_commit", "status": "passed", "detail": "health reported 8932809b7297" },
+    { "name": "migration_execution", "status": "passed", "detail": "7 controlled migrations from 20260727041000 through 20260917120000 applied" },
+    { "name": "migration_history_alignment", "status": "passed", "detail": "deployed migration list fully aligned" },
+    { "name": "database_lint", "status": "passed", "detail": "0 errors" },
+    { "name": "schema_audit", "status": "passed", "detail": "143 Prisma models; 0 missing tables; 0 missing columns" },
+    { "name": "nyvora_mass_regression", "status": "passed", "detail": "69/69; temporary certification user deactivated" },
+    { "name": "database_security", "status": "passed", "detail": "12/12 including admin, tenant, anonymous, cross-tenant and 50/50 API/web/Auth bursts" },
+    { "name": "authenticated_browser", "status": "passed", "detail": "admin QA session online; dashboard 28 modules; Services loaded with 5 orders; HR loaded" }
+  ],
+  "evidence": [
+    "qa-mass-regression.json",
+    "database-security-hardening-qa.json",
+    "browser-certification-qa.md",
+    "legacy-validator-assessment.md"
+  ],
+  "limitations": [
+    "Production was not modified or tested destructively.",
+    "The inherited QA full-system validator has three fixture/architecture expectation failures classified separately; they are not represented as passed checks."
+  ]
+}
