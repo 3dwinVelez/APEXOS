@@ -3,7 +3,7 @@
   "environment": "LOCAL",
   "source_branch": "desarrollo",
   "target_branch": "develop",
-  "commit": "0000000",
+  "commit": "ee27061",
   "qa_status": "pending",
   "checks": {
     "functional": { "status": "passed", "evidence": ["local-certification.json", "browser-certification.md"] },
