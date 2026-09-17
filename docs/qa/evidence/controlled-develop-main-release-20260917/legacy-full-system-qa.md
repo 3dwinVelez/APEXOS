@@ -1,0 +1,185 @@
+# QA Full System Validation - QA-FULL-20260917150839
+
+- Started: 2026-09-17T15:08:39.723Z
+- Finished: 2026-09-17T15:09:44.965Z
+- API: https://apexos-api-qa-production.up.railway.app
+- Web: https://apexos-web-qa-production.up.railway.app
+- Supabase: https://jbirkghkekuifgfsgquq.supabase.co
+- Summary: 161 OK, 3 FAIL, 0 BLOCKED, 1 WARN
+
+## Created QA Data
+- Tenant: QA Full Validation QA-FULL-20260917150839 (b543a6c5-fc1f-491d-a196-dc05a5d7db7f)
+- User: qa-full-20260917150839@apexos.local (312)
+
+## Findings
+- [WARNING][high] auth-architecture - Admin Supabase no autentica en API Prisma: Frontend usa Supabase Auth, API usa usuarios Prisma. Riesgo de permisos partidos.
+- [FAILED][high] auth-architecture - Token Supabase no sirve contra API Prisma: Los modulos API/Prisma no aceptan JWT Supabase; el flujo web Supabase puede quedar desconectado de endpoints API.
+- [FAILED][high] api-flow - Crear tecnico asignable: HTTP 400
+- [FAILED][high] api-flow - Crear orden de servicio: HTTP 400
+
+## Results
+- [PASSED] preflight - Variables minimas QA
+- [PASSED] api-runtime - Health API local
+- [PASSED] web-runtime - Login frontend local
+- [PASSED] db-prisma - Tablas Prisma esperadas via REST
+- [PASSED] supabase-auth - Login admin global QA
+- [PASSED] supabase-auth - Login admin empresa SCJ QA
+- [PASSED] supabase-rls - Admin global ve empresas plataforma
+- [PASSED] supabase-rls - SCJ ve su empresa
+- [PASSED] supabase-permissions - Modulos SCJ activos
+- [PASSED] supabase-schema - Tabla/vista accesible: companies
+- [PASSED] supabase-schema - Tabla/vista accesible: company_users
+- [PASSED] supabase-schema - Tabla/vista accesible: modules
+- [PASSED] supabase-schema - Tabla/vista accesible: company_modules
+- [PASSED] supabase-schema - Tabla/vista accesible: employees
+- [PASSED] supabase-schema - Tabla/vista accesible: vehicles
+- [PASSED] supabase-schema - Tabla/vista accesible: service_orders
+- [PASSED] supabase-schema - Tabla/vista accesible: service_evidence
+- [PASSED] supabase-schema - Tabla/vista accesible: Project
+- [PASSED] supabase-schema - Tabla/vista accesible: time_punches
+- [PASSED] supabase-schema - Tabla/vista accesible: gps_pings
+- [PASSED] frontend-routes - Cobertura de ventanas estaticas
+- [PASSED] frontend-routes - /
+- [PASSED] frontend-routes - /dashboard
+- [PASSED] frontend-routes - /dashboard/administracion
+- [PASSED] frontend-routes - /dashboard/administracion/suscripciones
+- [PASSED] frontend-routes - /dashboard/apex-ai
+- [PASSED] frontend-routes - /dashboard/compras
+- [PASSED] frontend-routes - /dashboard/compras/facturas
+- [PASSED] frontend-routes - /dashboard/compras/importaciones
+- [PASSED] frontend-routes - /dashboard/compras/ordenes/nueva
+- [PASSED] frontend-routes - /dashboard/compras/ordenes/recibir
+- [PASSED] frontend-routes - /dashboard/compras/proveedores
+- [PASSED] frontend-routes - /dashboard/compras/reportes/facturas
+- [PASSED] frontend-routes - /dashboard/compras/reportes/ordenes
+- [PASSED] frontend-routes - /dashboard/configuracion
+- [PASSED] frontend-routes - /dashboard/contabilidad
+- [PASSED] frontend-routes - /dashboard/contabilidad/asientos
+- [PASSED] frontend-routes - /dashboard/contabilidad/cuentas-por-pagar
+- [PASSED] frontend-routes - /dashboard/contabilidad/estructura
+- [PASSED] frontend-routes - /dashboard/contabilidad/iva
+- [PASSED] frontend-routes - /dashboard/contabilidad/plan-cuentas
+- [PASSED] frontend-routes - /dashboard/contabilidad/reportes
+- [PASSED] frontend-routes - /dashboard/contabilidad/retenciones
+- [PASSED] frontend-routes - /dashboard/contabilidad/terceros
+- [PASSED] frontend-routes - /dashboard/cxc/documentos
+- [PASSED] frontend-routes - /dashboard/cxc/reportes/cartera
+- [PASSED] frontend-routes - /dashboard/cxc/retenciones
+- [PASSED] frontend-routes - /dashboard/facturacion
+- [PASSED] frontend-routes - /dashboard/facturacion/documentos
+- [PASSED] frontend-routes - /dashboard/facturacion/emitir
+- [PASSED] frontend-routes - /dashboard/gestion-comercial
+- [PASSED] frontend-routes - /dashboard/gestion-comercial/agenda
+- [PASSED] frontend-routes - /dashboard/gestion-comercial/cotizaciones
+- [PASSED] frontend-routes - /dashboard/gestion-comercial/maestros
+- [PASSED] frontend-routes - /dashboard/gestion-comercial/mi-dia
+- [PASSED] frontend-routes - /dashboard/gestion-comercial/pedidos
+- [PASSED] frontend-routes - /dashboard/gestion-comercial/presupuestos
+- [PASSED] frontend-routes - /dashboard/gestion-comercial/reportes
+- [PASSED] frontend-routes - /dashboard/gestion-comercial/reportes/cotizado-vs-pedido
+- [PASSED] frontend-routes - /dashboard/inventario
+- [PASSED] frontend-routes - /dashboard/inventario/ajustes
+- [PASSED] frontend-routes - /dashboard/inventario/ajustes/nuevo
+- [PASSED] frontend-routes - /dashboard/inventario/bodegas
+- [PASSED] frontend-routes - /dashboard/inventario/cargue-inicial
+- [PASSED] frontend-routes - /dashboard/inventario/clasificaciones
+- [PASSED] frontend-routes - /dashboard/inventario/familias
+- [PASSED] frontend-routes - /dashboard/inventario/productos
+- [PASSED] frontend-routes - /dashboard/inventario/productos/nuevo
+- [PASSED] frontend-routes - /dashboard/inventario/reportes
+- [PASSED] frontend-routes - /dashboard/inventario/reportes/costos
+- [PASSED] frontend-routes - /dashboard/inventario/reportes/kardex
+- [PASSED] frontend-routes - /dashboard/inventario/stock
+- [PASSED] frontend-routes - /dashboard/inventario/traslados
+- [PASSED] frontend-routes - /dashboard/inventario/traslados/nuevo
+- [PASSED] frontend-routes - /dashboard/inventario/wms
+- [PASSED] frontend-routes - /dashboard/proyectos
+- [PASSED] frontend-routes - /dashboard/reportes
+- [PASSED] frontend-routes - /dashboard/reportes/apex-heart
+- [PASSED] frontend-routes - /dashboard/servicios
+- [PASSED] frontend-routes - /dashboard/servicios/nuevo
+- [PASSED] frontend-routes - /dashboard/servicios/referencias
+- [PASSED] frontend-routes - /dashboard/servicios/reportes
+- [PASSED] frontend-routes - /dashboard/talento-humano
+- [PASSED] frontend-routes - /dashboard/talento-humano/configuracion-laboral
+- [PASSED] frontend-routes - /dashboard/talento-humano/empleados
+- [PASSED] frontend-routes - /dashboard/talento-humano/entidades
+- [PASSED] frontend-routes - /dashboard/talento-humano/mallas
+- [PASSED] frontend-routes - /dashboard/talento-humano/mapa
+- [PASSED] frontend-routes - /dashboard/talento-humano/marcacion
+- [PASSED] frontend-routes - /dashboard/talento-humano/nomina
+- [PASSED] frontend-routes - /dashboard/talento-humano/novedades
+- [PASSED] frontend-routes - /dashboard/talento-humano/reportes
+- [PASSED] frontend-routes - /dashboard/talento-humano/rutas
+- [PASSED] frontend-routes - /dashboard/tesoreria
+- [PASSED] frontend-routes - /dashboard/tesoreria/anticipos
+- [PASSED] frontend-routes - /dashboard/transporte
+- [PASSED] frontend-routes - /dashboard/transporte/configuracion
+- [PASSED] frontend-routes - /dashboard/transporte/cubicaje
+- [PASSED] frontend-routes - /dashboard/transporte/flota
+- [PASSED] frontend-routes - /dashboard/transporte/maestros
+- [PASSED] frontend-routes - /dashboard/transporte/monitoreo
+- [PASSED] frontend-routes - /dashboard/transporte/notificaciones
+- [PASSED] frontend-routes - /dashboard/transporte/operacion
+- [PASSED] frontend-routes - /dashboard/transporte/ordenes
+- [PASSED] frontend-routes - /dashboard/transporte/planeacion
+- [PASSED] frontend-routes - /dashboard/transporte/pod
+- [PASSED] frontend-routes - /dashboard/transporte/tarifas
+- [PASSED] frontend-routes - /dashboard/ventas
+- [PASSED] frontend-routes - /dashboard/ventas/clientes
+- [PASSED] frontend-routes - /dashboard/ventas/facturas
+- [PASSED] frontend-routes - /dashboard/ventas/facturas/nueva
+- [PASSED] frontend-routes - /dashboard/ventas/ordenes
+- [PASSED] frontend-routes - /dashboard/ventas/ordenes/nueva
+- [PASSED] frontend-routes - /dashboard/ventas/precios
+- [PASSED] frontend-routes - /dashboard/ventas/reportes
+- [PASSED] frontend-routes - /login
+- [PASSED] frontend-routes - /onboarding
+- [PASSED] frontend-routes - /register
+- [PASSED] frontend-routes - /servicios/solicitar
+- [WARNING] auth-architecture - Admin Supabase no autentica en API Prisma
+- [FAILED] auth-architecture - Token Supabase no sirve contra API Prisma
+- [PASSED] scenario-seed - Tenant/usuario API QA
+- [PASSED] api-auth - Login usuario tecnico Prisma
+- [PASSED] api-flow - Auth me
+- [PASSED] api-flow - Inicializar plan de cuentas
+- [PASSED] api-flow - Crear sucursal contable QA
+- [PASSED] api-flow - Crear centro de costo QA
+- [PASSED] api-flow - Consultar estructura contable
+- [PASSED] api-flow - Consultar cuentas contables
+- [PASSED] api-flow - Crear familia inventario
+- [PASSED] api-flow - Consultar familias inventario
+- [PASSED] api-flow - Crear bodega
+- [PASSED] api-flow - Consultar bodegas
+- [PASSED] api-flow - Consultar ubicaciones bodega
+- [PASSED] api-flow - Crear producto inventario
+- [PASSED] api-flow - Consultar productos
+- [PASSED] api-flow - Crear proveedor
+- [PASSED] api-flow - Consultar proveedores
+- [PASSED] api-flow - Crear orden de compra
+- [PASSED] api-flow - Consultar ordenes compra
+- [PASSED] api-flow - Aprobar orden de compra
+- [PASSED] api-flow - Recibir orden de compra
+- [PASSED] api-flow - Consultar kardex producto
+- [PASSED] api-flow - Consultar costos inventario
+- [PASSED] api-flow - Config nomina GET
+- [PASSED] api-flow - Config nomina PUT
+- [PASSED] api-flow - Crear empleado operativo
+- [PASSED] api-flow - Consultar empleados
+- [PASSED] api-flow - Consultar roles administrativos
+- [FAILED] api-flow - Crear tecnico asignable
+- [PASSED] api-flow - Crear vehiculo
+- [PASSED] api-flow - Consultar vehiculos
+- [PASSED] api-flow - Crear referencia servicio
+- [PASSED] api-flow - Consultar referencias servicio
+- [PASSED] api-flow - Consultar tecnicos servicio
+- [FAILED] api-flow - Crear orden de servicio
+- [PASSED] api-flow - Consultar ordenes servicio
+- [PASSED] api-flow - Crear proyecto
+- [PASSED] api-flow - Crear compromiso proyecto
+- [PASSED] api-flow - Consultar proyectos
+- [PASSED] api-flow - Crear tipo actividad
+- [PASSED] api-flow - Registrar GPS
+- [PASSED] api-flow - Registrar marcacion
+- [PASSED] api-flow - Registrar actividad operativa con foto
+- [PASSED] api-flow - Consultar mapa operaciones

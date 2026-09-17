@@ -1,0 +1,48 @@
+{
+  "change_id": "controlled-develop-main-release-20260917",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "8932809b729768df0b81b98eef759ccfb48b512f",
+  "decision": "APTO CON OBSERVACIONES",
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["qa-mass-regression.json", "browser-certification-qa.md"] },
+    "error": { "status": "passed", "evidence": ["database-security-hardening-qa.json", "legacy-validator-assessment.md", "legacy-full-system-qa.json"] },
+    "support_scripts": { "status": "passed", "evidence": ["local-certification.json", "qa-environment-certification.json"] },
+    "regression": { "status": "passed", "evidence": ["qa-mass-regression.json", "legacy-validator-assessment.md", "legacy-full-system-qa.md"] },
+    "platform_regression": { "status": "passed", "evidence": ["qa-mass-regression.json", "browser-certification-qa.md", "qa-environment-certification.json"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../apps/api/scripts/certifications/nyvora-mass-regression.js",
+    "evidence": ["qa-mass-regression.json", "qa-environment-certification.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../apps/api/scripts/certifications/nyvora-mass-regression.js",
+    "evidence": ["qa-mass-regression.json", "browser-certification-qa.md"]
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../../apps/api/scripts/certifications/nyvora-mass-regression.js",
+    "evidence": ["qa-mass-regression.json", "database-security-hardening-qa.json"]
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "0abda8c41168642f99da0831e15f940b98232a12",
+    "trigger": "data integrity failure, tenant isolation failure, schema mismatch, critical functional regression, or failed production connectivity smoke"
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "APEXOS QA release gate (evidence review requested by mq1)",
+    "approved_at": "2026-09-17T10:13:57-05:00",
+    "scope": "develop to main for the exact QA-deployed commit"
+  },
+  "observations": [
+    "The inherited full-system validator recorded three failures caused by an unsupported cross-auth expectation and incomplete creation fixtures; they remain documented in legacy-validator-assessment.md.",
+    "Production post-deploy schema, NYVORA and transversal smoke checks remain mandatory and non-destructive."
+  ]
+}
