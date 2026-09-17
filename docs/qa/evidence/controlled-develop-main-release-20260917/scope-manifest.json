@@ -25,7 +25,7 @@
     "main": "0abda8c41168642f99da0831e15f940b98232a12",
     "develop": "1c6734476e52bfb754840a0849e723e738df218a"
   },
-  "certified_commit": "e672786db043d84bbe2e86858a8da4956cf5d4f3",
+  "certified_commit": "9cbd916975cdb094e59c1884ff8b3c3fddef3a9e",
   "expected_changes": [
     {
       "status": "M",

@@ -3,7 +3,7 @@ const path = require("node:path");
 const { execFileSync } = require("node:child_process");
 
 const BASELINE = "0abda8c41168642f99da0831e15f940b98232a12";
-const CERTIFIED_COMMIT = "e672786db043d84bbe2e86858a8da4956cf5d4f3";
+const CERTIFIED_COMMIT = "9cbd916975cdb094e59c1884ff8b3c3fddef3a9e";
 const OUTPUT = "docs/qa/evidence/controlled-develop-main-release-20260917/scope-manifest.json";
 
 function git(args) {
