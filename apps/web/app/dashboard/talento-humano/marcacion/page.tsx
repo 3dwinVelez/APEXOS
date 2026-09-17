@@ -185,6 +185,7 @@ export default function MobilePunchPage() {
   const [extraReason, setExtraReason] = useState("");
   const [extraDetail, setExtraDetail] = useState("");
   const [extraEvidence, setExtraEvidence] = useState<CapturedFile | null>(null);
+  const [dayMileage, setDayMileage] = useState("");
   const [gps, setGps] = useState<GpsFix | null>(null);
   const [gpsUpdatedAt, setGpsUpdatedAt] = useState(0);
   const [gpsStatus, setGpsStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
@@ -415,6 +416,14 @@ export default function MobilePunchPage() {
         setMessage("Cierre fuera de horario: selecciona motivo, escribe el sustento y adjunta evidencia fotografica.");
         return;
       }
+      if (type === "salida" && vehiclePlate) {
+        const normalizedMileage = dayMileage.trim().replace(",", ".");
+        if (!/^\d+(\.\d{1,1})?$/.test(normalizedMileage)) {
+          setMessage("Registra el kilometraje del dia con maximo un decimal antes de cerrar la jornada.");
+          return;
+        }
+        setMessage(`Kilometraje del dia: ${normalizedMileage} km. Confirmando cierre...`);
+      }
       const idempotencyKey = globalThis.crypto?.randomUUID?.() || `hr-punch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const optimisticTime = new Date().toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
       setOptimisticPunches((current) => [
@@ -441,10 +450,12 @@ export default function MobilePunchPage() {
         if (extraReason) payload.extra_reason = extraReason;
         if (closingDetail) payload.extra_detail = closingDetail;
         if (extraEvidence?.base64) payload.extra_evidence = extraEvidence;
+        if (vehiclePlate) payload.kilometraje_dia = dayMileage.trim().replace(",", ".");
       }
       setExtraReason("");
       setExtraDetail("");
       setExtraEvidence(null);
+      if (type === "salida") setDayMileage("");
       enqueuePendingSync("/api/v1/hr/self/time-punches", payload, punchLabels[type].title);
       setPendingSync(readPendingSync());
       void flushPendingSync((items, syncMessage) => {
@@ -695,6 +706,17 @@ export default function MobilePunchPage() {
               </div>
             ) : nextType === "salida" ? (
               <textarea className="mt-3 min-h-24 w-full rounded-md border border-line px-3 py-3 text-base" placeholder="Observacion opcional de cierre" value={extraDetail} onChange={(event) => setExtraDetail(event.target.value)} />
+            ) : null}
+            {nextType === "salida" && vehiclePlate ? (
+              <label className="mt-3 block rounded-md border border-line bg-white p-3">
+                <span className="text-sm font-semibold text-neutral-900">Kilometraje recorrido del dia</span>
+                <span className="mt-1 block text-xs text-neutral-500">Obligatorio para cerrar una jornada con vehiculo. Registra kilometros recorridos, no odometro final.</span>
+                <div className="mt-2 flex items-center gap-2">
+                  <input className="h-12 min-w-0 flex-1 rounded-md border border-line px-3 text-base" inputMode="decimal" placeholder="Ej: 42.5" value={dayMileage} onChange={(event) => setDayMileage(event.target.value)} />
+                  <span className="rounded-md bg-paper px-3 py-3 text-sm font-semibold text-neutral-700">km</span>
+                </div>
+                {dayMileage.trim() ? <span className="mt-2 block text-xs font-semibold text-apex">Kilometraje del dia: {dayMileage.trim().replace(",", ".")} km</span> : null}
+              </label>
             ) : null}
             {gpsRequired ? <button className="mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-md border border-line text-base font-semibold hover:bg-paper" onClick={refreshGps} type="button">
               <RefreshCw className={gpsStatus === "loading" ? "animate-spin" : ""} size={17} />

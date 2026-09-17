@@ -1,9 +1,13 @@
-import { ArrowRight, CalendarDays, Clock3, FileText, MapPinned, Smartphone, WalletCards } from "lucide-react";
+import { ArrowRight, Building2, CalendarDays, Clock3, FileText, MapPinned, Percent, Smartphone, UserRoundCheck, WalletCards } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
 const JOURNEY_ACTIONS = [
-  { title: "Crear y asignar horarios", detail: "Diseña mallas, organiza jornadas y asigna personas.", href: "/dashboard/talento-humano/rutas", icon: <CalendarDays size={19} /> },
+  { title: "Crear y asignar mallas", detail: "Diseña mallas horarias, organiza jornadas y asigna personas.", href: "/dashboard/talento-humano/rutas", icon: <CalendarDays size={19} /> },
+  { title: "Novedades de jornada", detail: "Gestiona alertas, justificaciones y revisión de marcaciones.", href: "/dashboard/talento-humano/novedades", icon: <Clock3 size={19} /> },
+  { title: "Maestro de empleados", detail: "Administra datos laborales y asociación con usuarios APEX.", href: "/dashboard/talento-humano/empleados", icon: <UserRoundCheck size={19} /> },
+  { title: "Entidades y afiliaciones", detail: "Administra EPS, pension, ARL, caja, ICBF y vigencias.", href: "/dashboard/talento-humano/entidades", icon: <Building2 size={19} /> },
+  { title: "Configuración laboral", detail: "Parametriza recargos, horas extra, límites y jornada nocturna.", href: "/dashboard/talento-humano/configuracion-laboral", icon: <Percent size={19} /> },
   { title: "Marcaciones y jornadas", detail: "Registra entradas, salidas, GPS y evidencias.", href: "/dashboard/talento-humano/marcacion", icon: <Smartphone size={19} /> },
   { title: "Monitor de jornada", detail: "Supervisa ubicación, actividad y cumplimiento en vivo.", href: "/dashboard/talento-humano/mapa", icon: <MapPinned size={19} /> },
   { title: "Reportes de tiempo", detail: "Consulta horas laboradas, extras y trazabilidad.", href: "/dashboard/talento-humano/reportes", icon: <FileText size={19} /> }
@@ -24,7 +28,7 @@ export default function TalentPage() {
               <span className="apex-guide-chip">3. Controla y reporta</span>
             </div>
           </div>
-          <Link className="apex-hero-action inline-flex shrink-0 items-center gap-2 px-5 text-sm font-semibold" href="/dashboard/talento-humano/rutas">
+          <Link className="apex-hero-action inline-flex shrink-0 items-center gap-2 px-5 text-sm font-semibold" href="/dashboard/talento-humano/mallas">
             <CalendarDays size={17} /> Abrir mallas horarias
           </Link>
         </div>
@@ -50,7 +54,7 @@ export default function TalentPage() {
                   <p className="mt-1 max-w-2xl text-sm leading-6 text-neutral-600">Todo lo relacionado con planeación de horarios, marcaciones, jornadas, seguimiento y reportes de tiempo.</p>
                 </div>
               </div>
-              <Link className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-apex px-4 text-sm font-semibold text-white transition hover:bg-apex/90" href="/dashboard/talento-humano/rutas">
+              <Link className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-apex px-4 text-sm font-semibold text-white transition hover:bg-apex/90" href="/dashboard/talento-humano/mallas">
                 Gestionar mallas <ArrowRight size={16} />
               </Link>
             </div>

@@ -28,6 +28,8 @@ const punchSchema = {
       accuracy_meters: { type: "number" },
       vehicle_plate: { type: "string" },
       route_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
+      kilometraje_dia: { anyOf: [{ type: "number" }, { type: "string" }] },
+      day_mileage_km: { anyOf: [{ type: "number" }, { type: "string" }] },
       idempotency_key: { type: "string", minLength: 8, maxLength: 120 },
       extra_reason: { type: "string" },
       extra_detail: { type: "string" },
@@ -164,6 +166,25 @@ const employeeSchema = {
       name: { type: "string" },
       code: { type: "string" },
       document: { type: "string" },
+      document_type: { type: "string" },
+      first_name: { type: "string" },
+      middle_name: { type: "string" },
+      last_name: { type: "string" },
+      second_last_name: { type: "string" },
+      birth_date: { type: "string" },
+      email: { type: "string" },
+      phone: { type: "string" },
+      company_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
+      site: { type: "string" },
+      area: { type: "string" },
+      cost_center: { type: "string" },
+      weekly_hours: { type: "number" },
+      currency: { type: "string" },
+      eps_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
+      pension_fund_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
+      arl_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
+      compensation_fund_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
+      icbf_entity_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
       user_type: { type: "string" },
       position: { type: "string" },
       department: { type: "string" },
@@ -175,6 +196,135 @@ const employeeSchema = {
       labor_status: { type: "string" },
       legacy: { type: "object" }
     }
+  }
+};
+
+const employeePatchSchema = {
+  body: {
+    type: "object",
+    properties: employeeSchema.body.properties
+  }
+};
+
+const laborEntitySchema = {
+  body: {
+    type: "object",
+    required: ["entity_type", "internal_code", "nit", "legal_name"],
+    properties: {
+      entity_type: { type: "string" },
+      internal_code: { type: "string" },
+      nit: { type: "string" },
+      verification_digit: { type: "string" },
+      legal_name: { type: "string" },
+      trade_name: { type: "string" },
+      official_code: { type: "string" },
+      active: { type: "boolean" },
+      valid_from: { type: "string" },
+      valid_to: { anyOf: [{ type: "string" }, { type: "null" }] },
+      accounting_party_id: { anyOf: [{ type: "integer" }, { type: "string" }, { type: "null" }] },
+      notes: { type: "string" },
+      metadata: { type: "object" }
+    }
+  }
+};
+
+const laborEntityPatchSchema = {
+  body: {
+    type: "object",
+    properties: laborEntitySchema.body.properties
+  }
+};
+
+const laborEntityLinkSchema = {
+  body: {
+    type: "object",
+    required: ["accounting_party_id"],
+    properties: {
+      accounting_party_id: { anyOf: [{ type: "integer" }, { type: "string" }, { type: "null" }] },
+      unlink: { type: "boolean" },
+      observation: { type: "string" }
+    }
+  }
+};
+
+const employeeAffiliationSchema = {
+  body: {
+    type: "object",
+    required: ["entity_type", "entity_id", "valid_from"],
+    properties: {
+      employee_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
+      entity_type: { type: "string" },
+      entity_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
+      valid_from: { type: "string" },
+      valid_to: { anyOf: [{ type: "string" }, { type: "null" }] },
+      status: { type: "string" },
+      metadata: { type: "object" }
+    }
+  }
+};
+
+const employeeAffiliationPatchSchema = {
+  body: {
+    type: "object",
+    properties: employeeAffiliationSchema.body.properties
+  }
+};
+
+const laborParameterSchema = {
+  body: {
+    type: "object",
+    required: ["code", "name", "value", "unit", "valid_from"],
+    properties: {
+      company_id: { anyOf: [{ type: "string" }, { type: "null" }] },
+      country: { type: "string" },
+      code: { type: "string" },
+      name: { type: "string" },
+      value: { anyOf: [{ type: "number" }, { type: "string" }] },
+      unit: { type: "string" },
+      valid_from: { type: "string" },
+      valid_to: { anyOf: [{ type: "string" }, { type: "null" }] },
+      priority: { type: "integer" },
+      active: { type: "boolean" },
+      source_note: { type: "string" },
+      metadata: { type: "object" }
+    }
+  }
+};
+
+const laborParameterPatchSchema = {
+  body: {
+    type: "object",
+    properties: laborParameterSchema.body.properties
+  }
+};
+
+const surchargeConceptSchema = {
+  body: {
+    type: "object",
+    required: ["code", "name", "value_type", "valid_from"],
+    properties: {
+      company_id: { anyOf: [{ type: "string" }, { type: "null" }] },
+      country: { type: "string" },
+      code: { type: "string" },
+      name: { type: "string" },
+      value_type: { type: "string" },
+      percent: { anyOf: [{ type: "number" }, { type: "string" }, { type: "null" }] },
+      factor: { anyOf: [{ type: "number" }, { type: "string" }, { type: "null" }] },
+      unit: { type: "string" },
+      valid_from: { type: "string" },
+      valid_to: { anyOf: [{ type: "string" }, { type: "null" }] },
+      priority: { type: "integer" },
+      active: { type: "boolean" },
+      source_note: { type: "string" },
+      metadata: { type: "object" }
+    }
+  }
+};
+
+const surchargeConceptPatchSchema = {
+  body: {
+    type: "object",
+    properties: surchargeConceptSchema.body.properties
   }
 };
 
@@ -220,4 +370,24 @@ const preopSubmitSchema = {
   }
 };
 
-module.exports = { scheduleSchema, punchSchema, routeSchema, routeBulkSchema, gpsPingSchema, activityTypeSchema, workActivitySchema, employeeSchema, preopSubmitSchema };
+module.exports = {
+  scheduleSchema,
+  punchSchema,
+  routeSchema,
+  routeBulkSchema,
+  gpsPingSchema,
+  activityTypeSchema,
+  workActivitySchema,
+  employeeSchema,
+  employeePatchSchema,
+  laborEntitySchema,
+  laborEntityPatchSchema,
+  laborEntityLinkSchema,
+  employeeAffiliationSchema,
+  employeeAffiliationPatchSchema,
+  laborParameterSchema,
+  laborParameterPatchSchema,
+  surchargeConceptSchema,
+  surchargeConceptPatchSchema,
+  preopSubmitSchema
+};
