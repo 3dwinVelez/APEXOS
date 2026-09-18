@@ -1,0 +1,37 @@
+{
+  "change_id": "controlled-desarrollo-develop-20260918",
+  "base_commits": {
+    "develop": "09567e2cb557edda4de5fcbd694533d7e46d6fad"
+  },
+  "certified_commit": "0d5caa7f5d04554f1647e3e08ff9f84c3ff69b4d",
+  "allowed_paths": [
+    "apps/api/src/modules/admin/service.js",
+    "apps/api/test/admin-user-status-regression.test.js",
+    "apps/web/app/globals.css",
+    "apps/web/tailwind.config.ts",
+    "apps/web/test/phase-one-design-system.test.mjs",
+    "docs/qa/evidence/core-modules-deep-qa-20260917/",
+    "docs/qa/evidence/controlled-desarrollo-develop-20260918/",
+    "scripts/qa-full-system-validation.js",
+    "scripts/windows/start-apexos-desarrollo.bat",
+    "start-dev.bat"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "authentication-authorization-and-tenant-isolation",
+      "status": "passed",
+      "evidence": [
+        "../core-modules-deep-qa-20260917/QA-FULL-20260917211117.json",
+        "../core-modules-deep-qa-20260917/QA-FULL-20260917211534.json"
+      ]
+    },
+    {
+      "name": "platform-critical-module-regression-plan",
+      "status": "passed",
+      "evidence": [
+        "../core-modules-deep-qa-20260917/certification-summary.json"
+      ]
+    }
+  ]
+}
