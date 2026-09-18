@@ -1,0 +1,55 @@
+{
+  "certification": "hr-marking-concurrency-qa",
+  "environment": "QA",
+  "company": "NYVORA",
+  "run_id": "hr_marking_concurrency_1789755439370",
+  "expected_commit": "6bdd527d710d7067f831ccb9b6fba34bf5d413e5",
+  "deployed_commit": "6bdd527d710d",
+  "levels": [
+    {
+      "concurrency": 20,
+      "requests": 100,
+      "persisted": 80,
+      "errors": 0,
+      "duplicates": 0,
+      "lost": 0,
+      "idempotent_replays": 20,
+      "p50_ms": 2769,
+      "p95_ms": 3312,
+      "p99_ms": 3479,
+      "max_ms": 3479,
+      "route_visibility_today_only": true
+    },
+    {
+      "concurrency": 50,
+      "requests": 250,
+      "persisted": 200,
+      "errors": 0,
+      "duplicates": 0,
+      "lost": 0,
+      "idempotent_replays": 50,
+      "p50_ms": 6140,
+      "p95_ms": 7482,
+      "p99_ms": 7798,
+      "max_ms": 7826,
+      "route_visibility_today_only": true
+    },
+    {
+      "concurrency": 100,
+      "requests": 500,
+      "persisted": 400,
+      "errors": 0,
+      "duplicates": 0,
+      "lost": 0,
+      "idempotent_replays": 100,
+      "p50_ms": 12384,
+      "p95_ms": 14646,
+      "p99_ms": 15184,
+      "max_ms": 15325,
+      "route_visibility_today_only": true
+    }
+  ],
+  "cleanup": "events_and_routes_deleted_certification_identities_deactivated",
+  "status": "passed",
+  "generated_at": "2026-09-18T18:17:19.610Z"
+}
