@@ -3403,7 +3403,13 @@
     "supabase/migrations/20260903100000_commercial_management_module_catalog.sql",
     "supabase/migrations/20260907021723_apex_heart_foundation.sql",
     "supabase/migrations/20260916162822_apexos_database_security_hardening.sql",
-    "supabase/migrations/20260917120000_hr_workday_novelties_foundation.sql"
+    "supabase/migrations/20260917120000_hr_workday_novelties_foundation.sql",
+    "apps/api/test/admin-user-status-regression.test.js",
+    "docs/qa/evidence/controlled-desarrollo-develop-20260918/",
+    "docs/qa/evidence/core-modules-deep-qa-20260917/",
+    "scripts/qa-full-system-validation.js",
+    "scripts/windows/start-apexos-desarrollo.bat",
+    "start-dev.bat"
   ],
   "allowed_deletions": [],
   "migration_plan": {

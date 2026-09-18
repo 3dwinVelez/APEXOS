@@ -3,31 +3,73 @@
   "environment": "QA",
   "source_branch": "develop",
   "target_branch": "main",
-  "commit": "8932809b729768df0b81b98eef759ccfb48b512f",
+  "commit": "04407930c65f7575be3c08e83b9f3109df2b78bc",
   "decision": "APTO CON OBSERVACIONES",
   "checks": {
-    "functional": { "status": "passed", "evidence": ["qa-mass-regression.json", "browser-certification-qa.md"] },
-    "error": { "status": "passed", "evidence": ["database-security-hardening-qa.json", "legacy-validator-assessment.md", "legacy-full-system-qa.json"] },
-    "support_scripts": { "status": "passed", "evidence": ["local-certification.json", "qa-environment-certification.json"] },
-    "regression": { "status": "passed", "evidence": ["qa-mass-regression.json", "legacy-validator-assessment.md", "legacy-full-system-qa.md"] },
-    "platform_regression": { "status": "passed", "evidence": ["qa-mass-regression.json", "browser-certification-qa.md", "qa-environment-certification.json"] }
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "qa-mass-regression.json",
+        "browser-certification-qa.md"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "database-security-hardening-qa.json",
+        "legacy-validator-assessment.md",
+        "legacy-full-system-qa.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "local-certification.json",
+        "qa-environment-certification.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "qa-mass-regression.json",
+        "legacy-validator-assessment.md",
+        "legacy-full-system-qa.md"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "qa-mass-regression.json",
+        "browser-certification-qa.md",
+        "qa-environment-certification.json"
+      ]
+    }
   },
   "certification": {
     "status": "passed",
     "script": "../../../../apps/api/scripts/certifications/nyvora-mass-regression.js",
-    "evidence": ["qa-mass-regression.json", "qa-environment-certification.json"]
+    "evidence": [
+      "qa-mass-regression.json",
+      "qa-environment-certification.json"
+    ]
   },
   "regression_certification": {
     "status": "passed",
     "script": "../../../../apps/api/scripts/certifications/nyvora-mass-regression.js",
-    "evidence": ["qa-mass-regression.json", "browser-certification-qa.md"]
+    "evidence": [
+      "qa-mass-regression.json",
+      "browser-certification-qa.md"
+    ]
   },
   "model_company_certification": {
     "status": "passed",
     "company": "NYVORA",
     "environment": "QA",
     "script": "../../../../apps/api/scripts/certifications/nyvora-mass-regression.js",
-    "evidence": ["qa-mass-regression.json", "database-security-hardening-qa.json"]
+    "evidence": [
+      "qa-mass-regression.json",
+      "database-security-hardening-qa.json"
+    ]
   },
   "rollback_plan": {
     "status": "ready",
