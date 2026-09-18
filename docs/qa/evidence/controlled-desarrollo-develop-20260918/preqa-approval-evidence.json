@@ -1,0 +1,62 @@
+{
+  "change_id": "controlled-desarrollo-develop-20260918",
+  "commit": "0d5caa7f5d04554f1647e3e08ff9f84c3ff69b4d",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../core-modules-deep-qa-20260917/QA-FULL-20260917211117.json",
+        "../core-modules-deep-qa-20260917/QA-FULL-20260917211534.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../core-modules-deep-qa-20260917/assessment.md"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../core-modules-deep-qa-20260917/certification-summary.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../core-modules-deep-qa-20260917/QA-FULL-20260917211117.md",
+        "../core-modules-deep-qa-20260917/QA-FULL-20260917211534.md"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../core-modules-deep-qa-20260917/certification-summary.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/qa-full-system-validation.js",
+    "evidence": [
+      "../core-modules-deep-qa-20260917/certification-summary.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/qa-deterministic-validation.js",
+    "evidence": [
+      "../core-modules-deep-qa-20260917/QA-FULL-20260917211117.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "APEXOS release owner (mq1)",
+    "approved_at": "2026-09-18T12:00:00-05:00"
+  }
+}
