@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 import path from "node:path";
-import { configuredConnectOrigin } from "./lib/security/csp";
+import { configuredConnectOrigin, configuredWebSocketOrigin } from "./lib/security/csp";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     const apiOrigin = configuredConnectOrigin(process.env.NEXT_PUBLIC_API_URL);
+    const wsOrigin = configuredWebSocketOrigin(process.env.NEXT_PUBLIC_WS_URL, process.env.NEXT_PUBLIC_API_URL);
     const scriptSrc = process.env.NODE_ENV === "development"
       ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
       : "script-src 'self' 'unsafe-inline'";
@@ -40,7 +41,7 @@ const nextConfig: NextConfig = {
               scriptSrc,
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https:",
-              `connect-src 'self' https: wss:${apiOrigin ? ` ${apiOrigin}` : ""}`,
+              `connect-src 'self' https: wss:${apiOrigin ? ` ${apiOrigin}` : ""}${wsOrigin ? ` ${wsOrigin}` : ""}`,
               "font-src 'self' data:",
               "frame-ancestors 'none'",
               "base-uri 'self'",
