@@ -19,7 +19,8 @@ const config: Config = {
         "surface-muted": "rgb(var(--surface-muted) / <alpha-value>)",
         "content-strong": "rgb(var(--text-strong) / <alpha-value>)",
         "content-body": "rgb(var(--text-body) / <alpha-value>)",
-        "content-muted": "rgb(var(--text-muted) / <alpha-value>)"
+        "content-muted": "rgb(var(--text-muted) / <alpha-value>)",
+        "content-subtle": "rgb(var(--text-subtle) / <alpha-value>)"
       },
       fontFamily: {
         sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"]

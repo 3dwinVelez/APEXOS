@@ -1,0 +1,38 @@
+{
+  "change_id": "core-modules-deep-qa-20260917",
+  "environment": "QA",
+  "runtime_commit": "8932809b7297",
+  "result": "APTO CON OBSERVACIONES",
+  "modules": ["dashboard", "inventory", "purchases", "sales", "services", "transport", "hr", "accounting"],
+  "first_run": {
+    "id": "QA-FULL-20260917211117",
+    "passed": 161,
+    "failed": 3,
+    "blocked": 0,
+    "warning": 0,
+    "evidence": ["QA-FULL-20260917211117.json", "QA-FULL-20260917211117.md"]
+  },
+  "final_run": {
+    "id": "QA-FULL-20260917211534",
+    "passed": 167,
+    "failed": 0,
+    "blocked": 0,
+    "warning": 2,
+    "concurrent_requests": 40,
+    "evidence": ["QA-FULL-20260917211534.json", "QA-FULL-20260917211534.md"]
+  },
+  "cleanup": {
+    "users_login_rejected": [313, 314, 315, 316],
+    "status": "users_inactive_tenants_pending_quarantine",
+    "production_touched": false
+  },
+  "defects": [
+    {
+      "id": "QA-ADMIN-USER-STATUS-404",
+      "severity": "high",
+      "classification": "product_bug",
+      "status": "fixed_local_pending_qa",
+      "summary": "User status endpoint returns 404 after successfully deactivating the user because the final read excludes inactive rows."
+    }
+  ]
+}

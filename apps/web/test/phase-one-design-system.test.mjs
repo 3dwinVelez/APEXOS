@@ -7,10 +7,11 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
-test("los tokens cubren color tipografía espacio radios y sombras", () => {
+test("los tokens cubren color tipografía espacio radios sombras y jerarquía de texto", () => {
   const css = read("app/globals.css");
   const tailwind = read("tailwind.config.ts");
-  for (const token of ["--color-apex", "--space-page", "--radius-control", "--radius-card", "--shadow-card", "--shadow-overlay"]) assert.match(css, new RegExp(token));
+  for (const token of ["--color-apex", "--text-subtle", "--space-page", "--radius-control", "--radius-card", "--shadow-card", "--shadow-overlay"]) assert.match(css, new RegExp(token));
+  assert.match(tailwind, /"content-subtle":\s*"rgb\(var\(--text-subtle\)/);
   assert.match(tailwind, /borderRadius/);
   assert.match(tailwind, /boxShadow/);
   assert.match(tailwind, /fontFamily/);
@@ -60,11 +61,14 @@ test("formularios extensos usan pasos y los formularios simples dos columnas con
 
 test("tabs resuelven overflow y las notificaciones conservan historial", () => {
   const tabs = read("components/ui/tabs.tsx");
+  const inventoryNav = read("components/inventory-nav.tsx");
   const center = read("components/system/NotificationCenter.tsx");
   const toast = read("components/system/ToastCenter.tsx");
   assert.match(tabs, /overflow-x-auto/);
   assert.match(tabs, /role="tablist"/);
-  assert.match(read("components/inventory-nav.tsx"), /<TabsList/);
+  assert.match(inventoryNav, /role="tablist"/);
+  assert.match(inventoryNav, /sm:grid-cols-4/);
+  assert.match(inventoryNav, /sm:hidden/);
   assert.match(center, /NOTIFICATION_STORAGE_KEY/);
   assert.match(center, /Historial reciente/);
   assert.match(toast, /NOTIFICATION_EVENT/);

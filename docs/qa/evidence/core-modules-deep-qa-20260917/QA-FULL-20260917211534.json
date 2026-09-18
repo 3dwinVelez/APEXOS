@@ -1,0 +1,1658 @@
+{
+  "batch": "QA-FULL-20260917211534",
+  "started_at": "2026-09-17T21:15:34.303Z",
+  "config": {
+    "apiUrl": "https://apexos-api-qa-production.up.railway.app",
+    "webUrl": "https://apexos-web-qa-production.up.railway.app",
+    "supabaseUrl": "",
+    "databaseUrlHost": "missing",
+    "hasAnonKey": false,
+    "hasServiceRoleKey": false
+  },
+  "summary": {
+    "passed": 167,
+    "failed": 0,
+    "blocked": 0,
+    "warning": 2
+  },
+  "results": [
+    {
+      "area": "preflight",
+      "name": "Variables minimas QA",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {}
+    },
+    {
+      "area": "api-runtime",
+      "name": "Health API local",
+      "status": "passed",
+      "severity": "critical",
+      "detail": {
+        "body": {
+          "status": "OK",
+          "version": "2.0",
+          "modules": 17,
+          "commit": "8932809b7297",
+          "service_certification": "products-v2"
+        }
+      }
+    },
+    {
+      "area": "web-runtime",
+      "name": "Login frontend local",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "Cobertura de ventanas estaticas",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "routes": 98
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/administracion",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/administracion/suscripciones",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/apex-ai",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/compras",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/compras/facturas",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/compras/importaciones",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/compras/ordenes/nueva",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/compras/ordenes/recibir",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/compras/proveedores",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/compras/reportes/facturas",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/compras/reportes/ordenes",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/configuracion",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/contabilidad",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/contabilidad/asientos",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/contabilidad/cuentas-por-pagar",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/contabilidad/estructura",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/contabilidad/iva",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/contabilidad/plan-cuentas",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/contabilidad/reportes",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/contabilidad/retenciones",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/contabilidad/terceros",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/cxc/documentos",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/cxc/reportes/cartera",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/cxc/retenciones",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/facturacion",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/facturacion/documentos",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/facturacion/emitir",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/gestion-comercial",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/gestion-comercial/agenda",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/gestion-comercial/cotizaciones",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/gestion-comercial/maestros",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/gestion-comercial/mi-dia",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/gestion-comercial/pedidos",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/gestion-comercial/presupuestos",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/gestion-comercial/reportes",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/gestion-comercial/reportes/cotizado-vs-pedido",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/inventario",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/inventario/ajustes",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/inventario/ajustes/nuevo",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/inventario/bodegas",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/inventario/cargue-inicial",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/inventario/clasificaciones",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/inventario/familias",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/inventario/productos",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/inventario/productos/nuevo",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/inventario/reportes",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/inventario/reportes/costos",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/inventario/reportes/kardex",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/inventario/stock",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/inventario/traslados",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/inventario/traslados/nuevo",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/inventario/wms",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/proyectos",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/reportes",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/reportes/apex-heart",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/servicios",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/servicios/nuevo",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/servicios/referencias",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/servicios/reportes",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/talento-humano",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/talento-humano/configuracion-laboral",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/talento-humano/empleados",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/talento-humano/entidades",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/talento-humano/mallas",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/talento-humano/mapa",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/talento-humano/marcacion",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/talento-humano/nomina",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/talento-humano/novedades",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/talento-humano/reportes",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/talento-humano/rutas",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/tesoreria",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/tesoreria/anticipos",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/transporte",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/transporte/configuracion",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/transporte/cubicaje",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/transporte/flota",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/transporte/maestros",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/transporte/monitoreo",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/transporte/notificaciones",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/transporte/operacion",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/transporte/ordenes",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/transporte/planeacion",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/transporte/pod",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/transporte/tarifas",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/ventas",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/ventas/clientes",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/ventas/facturas",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/ventas/facturas/nueva",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/ventas/ordenes",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/ventas/ordenes/nueva",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/ventas/precios",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/dashboard/ventas/reportes",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/login",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/onboarding",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/register",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "frontend-routes",
+      "name": "/servicios/solicitar",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "area": "scenario-seed",
+      "name": "Tenant/usuario API QA",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "tenant_id": "0713e507-7938-44dd-9516-e60760886962",
+        "email": "qa-full-20260917211534@apexos.local"
+      }
+    },
+    {
+      "area": "api-auth",
+      "name": "Login usuario tecnico Prisma",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "email": "qa-full-20260917211534@apexos.local",
+        "tenant_id": "0713e507-7938-44dd-9516-e60760886962"
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Auth me",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/auth/me",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Dashboard: lectura autenticada",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/auth/me",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Inventario: lectura autenticada",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/inventory/items?limit=5",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Compras: lectura autenticada",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/purchases/orders",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Ventas: lectura autenticada",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/sales/orders",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Servicios: lectura autenticada",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/services/orders?limit=5",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Transporte: lectura autenticada",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/transport/vehicles",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Talento Humano: lectura autenticada",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/hr/employees?limit=5",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Contabilidad: lectura autenticada",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/accounting/accounts?limit=5",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-negative",
+      "name": "Inventario: anonimo denegado",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/inventory/items?limit=5",
+        "status": 401
+      }
+    },
+    {
+      "area": "api-negative",
+      "name": "Compras: anonimo denegado",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/purchases/orders",
+        "status": 401
+      }
+    },
+    {
+      "area": "api-negative",
+      "name": "Ventas: anonimo denegado",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/sales/orders",
+        "status": 401
+      }
+    },
+    {
+      "area": "api-negative",
+      "name": "Servicios: anonimo denegado",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/services/orders?limit=5",
+        "status": 401
+      }
+    },
+    {
+      "area": "api-negative",
+      "name": "Transporte: anonimo denegado",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/transport/vehicles",
+        "status": 401
+      }
+    },
+    {
+      "area": "api-negative",
+      "name": "Talento Humano: anonimo denegado",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/hr/employees?limit=5",
+        "status": 401
+      }
+    },
+    {
+      "area": "api-negative",
+      "name": "Contabilidad: anonimo denegado",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/accounting/accounts?limit=5",
+        "status": 401
+      }
+    },
+    {
+      "area": "api-concurrency",
+      "name": "8 modulos x 5 lecturas concurrentes",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "requests": 40,
+        "failures": []
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Inicializar plan de cuentas",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/accounting/chart/init",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear sucursal contable QA",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/accounting/organization-tree",
+        "status": 201
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear centro de costo QA",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/accounting/organization-tree",
+        "status": 201
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar estructura contable",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/accounting/organization-tree",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar cuentas contables",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/accounting/accounts",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear familia inventario",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/inventory/families",
+        "status": 201
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar familias inventario",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/inventory/families",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear bodega",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/inventory/warehouses",
+        "status": 201
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar bodegas",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/inventory/warehouses",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar ubicaciones bodega",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/inventory/locations",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear producto inventario",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/inventory/items",
+        "status": 201
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar productos",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/inventory/items",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear proveedor",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/purchases/suppliers",
+        "status": 201
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar proveedores",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/purchases/suppliers",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear orden de compra",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/purchases/orders",
+        "status": 201
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar ordenes compra",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/purchases/orders",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Aprobar orden de compra",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/purchases/orders/12/approve",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Recibir orden de compra",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/purchases/orders/12/receive",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar kardex producto",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/inventory/kardex/65",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar costos inventario",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/inventory/costs",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Config nomina GET",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/hr/payroll/config",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Config nomina PUT",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/hr/payroll/config",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear empleado operativo",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/hr/employees",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar empleados",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/hr/employees",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar roles administrativos",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/admin/roles",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear tecnico asignable",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/admin/users",
+        "status": 201
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear vehiculo",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/transport/vehicles",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar vehiculos",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/transport/vehicles",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear referencia servicio",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/services/references",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar referencias servicio",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/services/references",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar tecnicos servicio",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/services/technicians",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar tipos de servicio",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/services/service-types",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear orden de servicio",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/services/orders",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Iniciar servicio",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/services/orders/63/start",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Agregar foto servicio",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/services/orders/63/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar fotos servicio",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/services/orders/63/photos",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Descargar PDF servicio",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/services/orders/63/report-pdf",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar ordenes servicio",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/services/orders",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear proyecto",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/projects",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear compromiso proyecto",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/projects/11/commitments",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar proyectos",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/projects",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Crear tipo actividad",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/hr/activity-types",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Registrar GPS",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/hr/gps/ping",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Registrar marcacion",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/hr/time-punches",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Registrar actividad operativa con foto",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/hr/work-activities",
+        "status": 200
+      }
+    },
+    {
+      "area": "api-flow",
+      "name": "Consultar mapa operaciones",
+      "status": "passed",
+      "severity": "medium",
+      "detail": {
+        "endpoint": "/hr/operations-map",
+        "status": 200
+      }
+    },
+    {
+      "area": "cleanup",
+      "name": "Desactivar tecnico sintetico",
+      "status": "warning",
+      "severity": "high",
+      "detail": {
+        "user_id": 316,
+        "status_endpoint": 404,
+        "login_rejected_after_status_call": true,
+        "message": "El usuario quedo inactivo, pero el endpoint respondio error despues de aplicar parcialmente la desactivacion."
+      }
+    },
+    {
+      "area": "cleanup",
+      "name": "Desactivar usuario sintetico",
+      "status": "warning",
+      "severity": "high",
+      "detail": {
+        "user_id": 315,
+        "status_endpoint": 404,
+        "login_rejected_after_status_call": true,
+        "message": "El usuario quedo inactivo, pero el endpoint respondio error despues de aplicar parcialmente la desactivacion."
+      }
+    }
+  ],
+  "created": [
+    {
+      "type": "Tenant",
+      "id": "0713e507-7938-44dd-9516-e60760886962",
+      "name": "QA Full Validation QA-FULL-20260917211534",
+      "domain": "qa-full-20260917211534.qa.local"
+    },
+    {
+      "type": "User",
+      "id": 315,
+      "email": "qa-full-20260917211534@apexos.local",
+      "tenant_id": "0713e507-7938-44dd-9516-e60760886962",
+      "password_note": "Generated only for this QA scenario"
+    }
+  ],
+  "findings": [
+    {
+      "area": "cleanup",
+      "name": "Desactivar tecnico sintetico",
+      "status": "warning",
+      "severity": "high",
+      "detail": {
+        "user_id": 316,
+        "status_endpoint": 404,
+        "login_rejected_after_status_call": true,
+        "message": "El usuario quedo inactivo, pero el endpoint respondio error despues de aplicar parcialmente la desactivacion."
+      }
+    },
+    {
+      "area": "cleanup",
+      "name": "Desactivar usuario sintetico",
+      "status": "warning",
+      "severity": "high",
+      "detail": {
+        "user_id": 315,
+        "status_endpoint": 404,
+        "login_rejected_after_status_call": true,
+        "message": "El usuario quedo inactivo, pero el endpoint respondio error despues de aplicar parcialmente la desactivacion."
+      }
+    }
+  ],
+  "finished_at": "2026-09-17T21:16:53.753Z"
+}
