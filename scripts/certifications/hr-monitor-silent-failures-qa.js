@@ -120,7 +120,7 @@ async function main() {
     });
     check(result, "route_90_present", Boolean(route90), { id: route90?.id || null, tracking_mode: route90?.tracking_mode || null });
 
-    const clientLog = await request("/admin/platform-logs/client", {
+    const clientLog = await request("/api/v1/admin/platform-logs/client", {
       token: operatorToken,
       method: "POST",
       body: {
@@ -136,7 +136,7 @@ async function main() {
     });
     check(result, "client_log_accepted_for_non_admin", clientLog?.ok === true, clientLog);
 
-    const logs = await request("/admin/platform-logs?limit=10", { token: adminToken });
+    const logs = await request("/api/v1/admin/platform-logs?limit=10", { token: adminToken });
     const recorded = (Array.isArray(logs) ? logs : []).find((log) => log.request_id === REQUEST_ID);
     check(result, "client_log_readable_by_admin", Boolean(recorded && recorded.source === "frontend" && recorded.module === "qa-certification"), {
       source: recorded?.source || null,
