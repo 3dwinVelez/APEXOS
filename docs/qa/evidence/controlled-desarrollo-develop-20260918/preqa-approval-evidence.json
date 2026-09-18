@@ -41,14 +41,14 @@
   },
   "certification": {
     "status": "passed",
-    "script": "../../../scripts/qa-full-system-validation.js",
+    "script": "../../../../scripts/qa-full-system-validation.js",
     "evidence": [
       "../core-modules-deep-qa-20260917/certification-summary.json"
     ]
   },
   "regression_certification": {
     "status": "passed",
-    "script": "../../../scripts/qa-deterministic-validation.js",
+    "script": "../../../../scripts/qa-deterministic-validation.js",
     "evidence": [
       "../core-modules-deep-qa-20260917/QA-FULL-20260917211117.json"
     ]
