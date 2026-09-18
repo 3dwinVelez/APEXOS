@@ -768,25 +768,28 @@ async function createRoute(tenantId, input) {
   validateRouteInput(input);
   return prisma.runWithTenant(tenantId, async () => {
     const employees = await normalizeRouteEmployees(input.employees);
-    await assertRouteAssignmentAvailable(tenantId, {
-      date: input.date,
-      start_time: input.start_time || "08:00",
-      end_time: input.end_time || "17:00",
-      employees
-    });
     const gpsRequired = routeGpsRequiredFromInput(input);
-    return prisma.timeRoute.create({
-      data: {
-        date: startOfDay(input.date),
-        vehicle_plate: input.vehicle_plate || "",
-        employees,
+    return prisma.$transaction(async (tx) => {
+      await lockRouteAssignmentScopes(tx, tenantId, employees, [input.date]);
+      await assertRouteAssignmentAvailable(tenantId, {
+        date: input.date,
         start_time: input.start_time || "08:00",
         end_time: input.end_time || "17:00",
-        tolerance_minutes: input.tolerance_minutes ?? 15,
-        per_diem: 0,
-        notes: routeNotesWithTracking(input.notes || "", gpsRequired),
-        status: input.status || "active"
-      }
+        employees
+      }, tx);
+      return tx.timeRoute.create({
+        data: {
+          date: startOfDay(input.date),
+          vehicle_plate: input.vehicle_plate || "",
+          employees,
+          start_time: input.start_time || "08:00",
+          end_time: input.end_time || "17:00",
+          tolerance_minutes: input.tolerance_minutes ?? 15,
+          per_diem: 0,
+          notes: routeNotesWithTracking(input.notes || "", gpsRequired),
+          status: input.status || "active"
+        }
+      });
     });
   });
 }
@@ -795,27 +798,30 @@ async function updateRoute(tenantId, id, input) {
   validateRouteInput(input);
   return prisma.runWithTenant(tenantId, async () => {
     const employees = await normalizeRouteEmployees(input.employees);
-    await assertRouteAssignmentAvailable(tenantId, {
-      date: input.date,
-      start_time: input.start_time || "08:00",
-      end_time: input.end_time || "17:00",
-      employees,
-      excludeRouteId: Number(id)
-    });
     const gpsRequired = routeGpsRequiredFromInput(input);
-    return prisma.timeRoute.update({
-      where: { id: Number(id) },
-      data: {
-        date: startOfDay(input.date),
-        vehicle_plate: input.vehicle_plate || "",
-        employees,
+    return prisma.$transaction(async (tx) => {
+      await lockRouteAssignmentScopes(tx, tenantId, employees, [input.date]);
+      await assertRouteAssignmentAvailable(tenantId, {
+        date: input.date,
         start_time: input.start_time || "08:00",
         end_time: input.end_time || "17:00",
-        tolerance_minutes: input.tolerance_minutes ?? 15,
-        per_diem: 0,
-        notes: routeNotesWithTracking(input.notes || "", gpsRequired),
-        status: input.status || "active"
-      }
+        employees,
+        excludeRouteId: Number(id)
+      }, tx);
+      return tx.timeRoute.update({
+        where: { id: Number(id) },
+        data: {
+          date: startOfDay(input.date),
+          vehicle_plate: input.vehicle_plate || "",
+          employees,
+          start_time: input.start_time || "08:00",
+          end_time: input.end_time || "17:00",
+          tolerance_minutes: input.tolerance_minutes ?? 15,
+          per_diem: 0,
+          notes: routeNotesWithTracking(input.notes || "", gpsRequired),
+          status: input.status || "active"
+        }
+      });
     });
   });
 }
@@ -852,12 +858,26 @@ function routeEmployeeSet(route) {
   return new Set((Array.isArray(route?.employees) ? route.employees : []).map((item) => normalizeKey(item)));
 }
 
-async function findRouteAssignmentConflicts(tenantId, { date, start_time, end_time, employees = [], excludeRouteId = null }) {
+async function lockRouteAssignmentScopes(db, tenantId, employees, dates) {
+  const scopes = new Set();
+  for (const date of dates) {
+    const day = startOfDay(date).toISOString();
+    for (const employee of employees) {
+      const key = normalizeKey(employee);
+      if (key) scopes.add(`${tenantId}:asignacion:${key}:${day}`);
+    }
+  }
+  for (const scope of scopes) {
+    await db.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${scope}, 0))`;
+  }
+}
+
+async function findRouteAssignmentConflicts(tenantId, { date, start_time, end_time, employees = [], excludeRouteId = null }, db = prisma) {
   const { start, end } = hrPolicy.assertSameDayShift({ startTime: start_time || "08:00", endTime: end_time || "17:00" });
   const employeeKeys = new Set((employees || []).map((employee) => normalizeKey(employee)).filter(Boolean));
   if (!employeeKeys.size) return [];
   const day = startOfDay(date);
-  const routes = await prisma.timeRoute.findMany({
+  const routes = await db.timeRoute.findMany({
     where: {
       tenant_id: tenantId,
       date: { gte: day, lt: endOfDay(day) },
@@ -885,8 +905,8 @@ async function findRouteAssignmentConflicts(tenantId, { date, start_time, end_ti
   return conflicts;
 }
 
-async function assertRouteAssignmentAvailable(tenantId, input) {
-  const conflicts = await findRouteAssignmentConflicts(tenantId, input);
+async function assertRouteAssignmentAvailable(tenantId, input, db = prisma) {
+  const conflicts = await findRouteAssignmentConflicts(tenantId, input, db);
   if (conflicts.length) {
     const error = validationError("Ya existe una malla superpuesta para al menos una persona en la misma fecha.", 409, "MALLA_SOLAPADA");
     error.details = { conflicts };
@@ -951,29 +971,35 @@ async function createRoutesBulk(tenantId, input) {
   if (!dates.length) return { created: 0, routes: [] };
   return prisma.runWithTenant(tenantId, async () => {
     const employees = await normalizeRouteEmployees(input.employees);
-    for (const date of dates) {
-      await assertRouteAssignmentAvailable(tenantId, {
-        date: date.toISOString().slice(0, 10),
-        start_time: input.start_time || "08:00",
-        end_time: input.end_time || "17:00",
-        employees
-      });
-    }
     const gpsRequired = routeGpsRequiredFromInput(input);
-    const routes = await prisma.$transaction(dates.map((date) => prisma.timeRoute.create({
-      data: {
-        date,
-        vehicle_plate: input.vehicle_plate || "",
-        employees,
-        start_time: input.start_time || "08:00",
-        end_time: input.end_time || "17:00",
-        tolerance_minutes: input.tolerance_minutes ?? 15,
-        per_diem: 0,
-        notes: routeNotesWithTracking(input.notes || "", gpsRequired),
-        status: input.status || "active"
+    return prisma.$transaction(async (tx) => {
+      await lockRouteAssignmentScopes(tx, tenantId, employees, dates);
+      for (const date of dates) {
+        await assertRouteAssignmentAvailable(tenantId, {
+          date: date.toISOString().slice(0, 10),
+          start_time: input.start_time || "08:00",
+          end_time: input.end_time || "17:00",
+          employees
+        }, tx);
       }
-    })));
-    return { created: routes.length, routes };
+      const routes = [];
+      for (const date of dates) {
+        routes.push(await tx.timeRoute.create({
+          data: {
+            date,
+            vehicle_plate: input.vehicle_plate || "",
+            employees,
+            start_time: input.start_time || "08:00",
+            end_time: input.end_time || "17:00",
+            tolerance_minutes: input.tolerance_minutes ?? 15,
+            per_diem: 0,
+            notes: routeNotesWithTracking(input.notes || "", gpsRequired),
+            status: input.status || "active"
+          }
+        }));
+      }
+      return { created: routes.length, routes };
+    });
   });
 }
 

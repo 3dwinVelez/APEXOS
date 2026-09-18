@@ -9,9 +9,10 @@ type ModalFrameProps = {
   children: ReactNode;
   onClose: () => void;
   maxWidth?: string;
+  footer?: ReactNode;
 };
 
-export function ModalFrame({ title, children, onClose, maxWidth = "md:max-w-2xl" }: ModalFrameProps) {
+export function ModalFrame({ title, children, onClose, maxWidth = "md:max-w-2xl", footer }: ModalFrameProps) {
   const [mounted, setMounted] = useState(false);
   const titleId = useId();
   const dialogRef = useRef<HTMLElement>(null);
@@ -58,6 +59,7 @@ export function ModalFrame({ title, children, onClose, maxWidth = "md:max-w-2xl"
         <div className="min-w-0 p-3 sm:p-4">
           {children}
         </div>
+        {footer ? <div className="sticky bottom-0 z-10 border-t border-line bg-surface px-3 py-3 sm:px-4">{footer}</div> : null}
       </section>
     </div>,
     document.body

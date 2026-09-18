@@ -174,21 +174,21 @@ function PeoplePicker({
     <div className="rounded-md border border-line bg-paper p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-sm font-semibold">Personas asignadas</p>
-          <p className="mt-1 text-xs text-neutral-500">Busca por nombre, codigo, documento, cargo o area. Ideal para listas grandes.</p>
+          <p className="text-sm font-semibold text-content-strong">Personas asignadas</p>
+          <p className="mt-1 text-xs text-content-muted">Busca por nombre, codigo, documento, cargo o area. Ideal para listas grandes.</p>
         </div>
-        <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-neutral-600">{selected.length} seleccionada(s)</span>
+        <span className="rounded-md bg-surface px-2 py-1 text-xs font-semibold text-content-body">{selected.length} seleccionada(s)</span>
       </div>
       <label className="relative mt-3 block">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
-        <input className="h-11 w-full rounded-md border border-line bg-white pl-9 pr-3 text-sm" placeholder="Buscar persona para agregar..." value={query} onChange={(event) => setQuery(event.target.value)} />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-subtle" size={16} />
+        <input className="h-11 w-full rounded-md border border-line bg-surface pl-9 pr-3 text-sm text-content-body" placeholder="Buscar persona para agregar..." value={query} onChange={(event) => setQuery(event.target.value)} />
       </label>
       <div className="mt-2 flex flex-wrap gap-2">
-        <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-white px-3 text-xs font-semibold hover:bg-paper" onClick={addFiltered} type="button"><UserPlus size={14} /> Agregar filtrados</button>
-        {selected.length ? <button className="inline-flex h-9 items-center rounded-md border border-line bg-white px-3 text-xs font-semibold text-neutral-600 hover:bg-paper" onClick={() => onChange([])} type="button">Limpiar seleccion</button> : null}
+        <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-surface px-3 text-xs font-semibold text-content-body hover:bg-paper" onClick={addFiltered} type="button"><UserPlus size={14} /> Agregar filtrados</button>
+        {selected.length ? <button className="inline-flex h-9 items-center rounded-md border border-line bg-surface px-3 text-xs font-semibold text-content-muted hover:bg-paper" onClick={() => onChange([])} type="button">Limpiar seleccion</button> : null}
       </div>
       {selectedEmployees.length ? (
-        <div className="mt-3 flex max-h-24 flex-wrap gap-2 overflow-y-auto rounded-md bg-white p-2">
+        <div className="mt-3 flex max-h-24 flex-wrap gap-2 overflow-y-auto rounded-md bg-surface p-2">
           {selectedEmployees.map((employee) => {
             const value = employeeValue(employee);
             return (
@@ -200,21 +200,21 @@ function PeoplePicker({
           })}
         </div>
       ) : null}
-      <div className="mt-3 max-h-52 overflow-y-auto rounded-md border border-line bg-white">
+      <div className="mt-3 max-h-52 overflow-y-auto rounded-md border border-line bg-surface">
         {filtered.map((employee) => {
           const value = employeeValue(employee);
           const active = selectedSet.has(value);
           return (
-            <button className={`grid w-full grid-cols-[22px_1fr] gap-2 border-b border-line px-3 py-2 text-left last:border-b-0 hover:bg-paper ${active ? "bg-emerald-50" : ""}`} key={employee.id} onClick={() => toggle(value)} type="button">
+            <button className={`grid w-full grid-cols-[22px_1fr] gap-2 border-b border-line px-3 py-2 text-left last:border-b-0 hover:bg-paper ${active ? "bg-success/10" : ""}`} key={employee.id} onClick={() => toggle(value)} type="button">
               <span className="pt-0.5 text-apex">{active ? <CheckSquare2 size={16} /> : <Square size={16} />}</span>
               <span className="min-w-0">
-                <span className="block truncate text-sm font-semibold">{employeeName(employee)}</span>
-                <span className="mt-0.5 block truncate text-xs text-neutral-500">{employee.code || "Sin codigo"} - {employee.position || employee.user_type || "Sin cargo"} - {employee.department || "Sin area"}</span>
+                <span className="block truncate text-sm font-semibold text-content-strong">{employeeName(employee)}</span>
+                <span className="mt-0.5 block truncate text-xs text-content-muted">{employee.code || "Sin codigo"} - {employee.position || employee.user_type || "Sin cargo"} - {employee.department || "Sin area"}</span>
               </span>
             </button>
           );
         })}
-        {!filtered.length ? <p className="p-4 text-sm text-neutral-500">Sin coincidencias.</p> : null}
+        {!filtered.length ? <p className="p-4 text-sm text-content-muted">Sin coincidencias.</p> : null}
       </div>
     </div>
   );
@@ -223,12 +223,12 @@ function PeoplePicker({
 function FieldHelp({ label, help, children }: { label: string; help: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 flex items-center gap-1 text-sm font-semibold text-neutral-800">
+      <span className="mb-1 flex items-center gap-1 text-sm font-semibold text-content-strong">
         {label}
-        <HelpCircle size={14} className="text-neutral-400" />
+        <HelpCircle size={14} className="text-content-subtle" />
       </span>
       {children}
-      <span className="mt-1 block text-xs leading-5 text-neutral-500">{help}</span>
+      <span className="mt-1 block text-xs leading-5 text-content-muted">{help}</span>
     </label>
   );
 }
@@ -623,36 +623,36 @@ export default function RoutesPlanningPage() {
       </section>
 
       {modal ? (
-        <ModalFrame title={modal === "edit" ? "Editar asignacion de horario" : "Nueva asignacion de horario"} onClose={() => { setModal(null); resetForm(); }} maxWidth="md:max-w-3xl">
-          <div className="rounded-md border border-apex/20 bg-[#146C630D] p-3 md:p-4">
-            <div className="flex items-start gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white text-apex">{scheduleKind === "administrative" ? <Building2 size={17} /> : <Truck size={17} />}</span><div><p className="text-xs font-semibold uppercase tracking-wide text-apex">{modal === "edit" ? "Actualizar jornada" : bulkMode ? `Crear ${bulkCount} horarios` : "Crear un horario"}</p><h2 className="mt-1 text-base font-semibold">{scheduleKind === "administrative" ? "Jornada administrativa o de sede fija" : "Jornada operativa con recurso movil"}</h2><p className="mt-1 text-sm text-neutral-600">Define cuando y donde aplica, luego selecciona las personas de esta jornada.</p></div></div>
+        <ModalFrame title={modal === "edit" ? "Editar asignacion de horario" : "Nueva asignacion de horario"} onClose={() => { if (validationIssues.length) { setValidationIssues([]); return; } setModal(null); resetForm(); }} maxWidth="md:max-w-3xl" footer={<button className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-apex text-sm font-semibold text-white disabled:bg-neutral-300" disabled={savingRoute} onClick={saveRoute} type="button"><Save size={16} /> {savingRoute ? "Guardando..." : modal === "edit" ? "Guardar cambios" : bulkMode ? `Crear ${bulkCount} horario(s)` : "Asignar horario"}</button>}>
+          <div className="rounded-md border border-apex/20 bg-apex/5 p-3 md:p-4">
+            <div className="flex items-start gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-surface text-apex">{scheduleKind === "administrative" ? <Building2 size={17} /> : <Truck size={17} />}</span><div><p className="text-xs font-semibold uppercase tracking-wide text-apex">{modal === "edit" ? "Actualizar jornada" : bulkMode ? `Crear ${bulkCount} horarios` : "Crear un horario"}</p><h2 className="mt-1 text-base font-semibold text-content-strong">{scheduleKind === "administrative" ? "Jornada administrativa o de sede fija" : "Jornada operativa con recurso movil"}</h2><p className="mt-1 text-sm text-content-body">Define cuando y donde aplica, luego selecciona las personas de esta jornada.</p></div></div>
           </div>
           {modal !== "edit" ? (
-            <div className="mt-3 grid gap-2 rounded-md border border-line bg-white p-1.5 sm:grid-cols-2">
-              <button className={`inline-flex h-10 items-center justify-center gap-2 rounded-md text-sm font-semibold ${!bulkMode ? "bg-apex text-white" : "bg-paper text-neutral-700"}`} onClick={() => setBulkMode(false)} type="button"><CalendarDays size={14} /> Un solo dia</button>
-              <button className={`inline-flex h-10 items-center justify-center gap-2 rounded-md text-sm font-semibold ${bulkMode ? "bg-apex text-white" : "bg-paper text-neutral-700"}`} onClick={() => setBulkMode(true)} type="button"><Copy size={14} /> Clonar por rango</button>
+            <div className="mt-3 grid gap-2 rounded-md border border-line bg-surface p-1.5 sm:grid-cols-2">
+              <button className={`inline-flex h-10 items-center justify-center gap-2 rounded-md text-sm font-semibold ${!bulkMode ? "bg-apex text-white" : "bg-paper text-content-body"}`} onClick={() => setBulkMode(false)} type="button"><CalendarDays size={14} /> Un solo dia</button>
+              <button className={`inline-flex h-10 items-center justify-center gap-2 rounded-md text-sm font-semibold ${bulkMode ? "bg-apex text-white" : "bg-paper text-content-body"}`} onClick={() => setBulkMode(true)} type="button"><Copy size={14} /> Clonar por rango</button>
             </div>
           ) : null}
           <div className="mt-3 grid gap-3 md:grid-cols-2">
             <div className="md:col-span-2">
-              <p className="mb-1.5 text-sm font-semibold text-neutral-800">Tipo de asignacion</p>
-              <div className="grid gap-2 rounded-md border border-line bg-white p-1.5 sm:grid-cols-2">
-                <button className={`h-10 rounded-md text-sm font-semibold ${scheduleKind === "administrative" ? "bg-apex text-white" : "bg-paper text-neutral-700"}`} onClick={() => { setScheduleKind("administrative"); setForm((prev) => ({ ...prev, vehicle_plate: "" })); }} type="button">
+              <p className="mb-1.5 text-sm font-semibold text-content-strong">Tipo de asignacion</p>
+              <div className="grid gap-2 rounded-md border border-line bg-surface p-1.5 sm:grid-cols-2">
+                <button className={`h-10 rounded-md text-sm font-semibold ${scheduleKind === "administrative" ? "bg-apex text-white" : "bg-paper text-content-body"}`} onClick={() => { setScheduleKind("administrative"); setForm((prev) => ({ ...prev, vehicle_plate: "" })); }} type="button">
                   Administrativo / sede fija
                 </button>
-                <button className={`h-10 rounded-md text-sm font-semibold ${scheduleKind === "operational" ? "bg-apex text-white" : "bg-paper text-neutral-700"}`} onClick={() => setScheduleKind("operational")} type="button">
+                <button className={`h-10 rounded-md text-sm font-semibold ${scheduleKind === "operational" ? "bg-apex text-white" : "bg-paper text-content-body"}`} onClick={() => setScheduleKind("operational")} type="button">
                   Operativo / recurso movil
                 </button>
               </div>
             </div>
             <div className="md:col-span-2">
-              <p className="mb-1.5 text-sm font-semibold text-neutral-800">Control de marcacion</p>
-              <div className="grid gap-2 rounded-md border border-line bg-white p-1.5 sm:grid-cols-2">
-                <button className={`rounded-md px-3 py-2 text-left text-sm font-semibold ${form.gps_required ? "bg-apex text-white" : "bg-paper text-neutral-700"}`} onClick={() => setForm((prev) => ({ ...prev, gps_required: true }))} type="button">
+              <p className="mb-1.5 text-sm font-semibold text-content-strong">Control de marcacion</p>
+              <div className="grid gap-2 rounded-md border border-line bg-surface p-1.5 sm:grid-cols-2">
+                <button className={`rounded-md px-3 py-2 text-left text-sm font-semibold ${form.gps_required ? "bg-apex text-white" : "bg-paper text-content-body"}`} onClick={() => setForm((prev) => ({ ...prev, gps_required: true }))} type="button">
                   Seguimiento GPS
                   <span className="mt-1 block text-xs font-medium opacity-80">Marcaciones, presencia y actividades con ubicacion.</span>
                 </button>
-                <button className={`rounded-md px-3 py-2 text-left text-sm font-semibold ${!form.gps_required ? "bg-apex text-white" : "bg-paper text-neutral-700"}`} onClick={() => setForm((prev) => ({ ...prev, gps_required: false }))} type="button">
+                <button className={`rounded-md px-3 py-2 text-left text-sm font-semibold ${!form.gps_required ? "bg-apex text-white" : "bg-paper text-content-body"}`} onClick={() => setForm((prev) => ({ ...prev, gps_required: false }))} type="button">
                   Solo marcaciones
                   <span className="mt-1 block text-xs font-medium opacity-80">Control horario sin solicitar ubicacion al usuario.</span>
                 </button>
@@ -667,18 +667,18 @@ export default function RoutesPlanningPage() {
                   <input className="h-10 w-full rounded-md border border-line px-3 text-sm" type="date" value={bulk.end_date} onChange={(event) => setBulk((prev) => ({ ...prev, end_date: event.target.value }))} />
                 </FieldHelp>
                 <div className="md:col-span-2">
-                  <p className="mb-1.5 text-sm font-semibold text-neutral-800">Dias de la semana</p>
+                  <p className="mb-1.5 text-sm font-semibold text-content-strong">Dias de la semana</p>
                   <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-7">
                     {weekdayOptions.map((day) => {
                       const active = bulk.weekdays.includes(day.value);
                       return (
-                        <button className={`h-9 rounded-md border text-sm font-semibold ${active ? "border-apex bg-apex text-white" : "border-line bg-white text-neutral-700 hover:bg-paper"}`} key={day.value} onClick={() => setBulk((prev) => ({ ...prev, weekdays: active ? prev.weekdays.filter((item) => item !== day.value) : [...prev.weekdays, day.value] }))} type="button">
+                        <button className={`h-9 rounded-md border text-sm font-semibold ${active ? "border-apex bg-apex text-white" : "border-line bg-paper text-content-body hover:bg-surface"}`} key={day.value} onClick={() => setBulk((prev) => ({ ...prev, weekdays: active ? prev.weekdays.filter((item) => item !== day.value) : [...prev.weekdays, day.value] }))} type="button">
                           {day.label}
                         </button>
                       );
                     })}
                   </div>
-                  <p className="mt-1.5 text-xs text-neutral-500">Se crearan {bulkCount} bloque(s) de horario para el grupo seleccionado.</p>
+                  <p className="mt-1.5 text-xs text-content-muted">Se crearan {bulkCount} bloque(s) de horario para el grupo seleccionado.</p>
                 </div>
               </>
             ) : (
@@ -688,14 +688,14 @@ export default function RoutesPlanningPage() {
             )}
             {scheduleKind === "administrative" ? (
               <FieldHelp label="Sede administrativa fija" help="Sede, oficina o punto fijo donde aplica la jornada.">
-                <select className="h-10 w-full rounded-md border border-line bg-white px-3 text-sm" value={administrativeSite} onChange={(event) => setAdministrativeSite(event.target.value)}>
+                <select className="h-10 w-full rounded-md border border-line bg-surface px-3 text-sm text-content-body" value={administrativeSite} onChange={(event) => setAdministrativeSite(event.target.value)}>
                   <option value="">Seleccionar sede</option>
                   {administrativeSites.map((site) => <option key={site.code} value={site.code}>{site.code} - {site.name}</option>)}
                 </select>
               </FieldHelp>
             ) : (
               <FieldHelp label="Recurso o vehiculo" help="Opcional para operacion movil. Selecciona placa cuando el horario dependa de transporte o ruta fisica.">
-                <select className="h-10 w-full rounded-md border border-line px-3 text-sm" value={form.vehicle_plate} onChange={(event) => setForm((prev) => ({ ...prev, vehicle_plate: event.target.value }))}>
+                <select className="h-10 w-full rounded-md border border-line bg-surface px-3 text-sm text-content-body" value={form.vehicle_plate} onChange={(event) => setForm((prev) => ({ ...prev, vehicle_plate: event.target.value }))}>
                   <option value="">Sin vehiculo asignado</option>
                   {vehicles.map((vehicle) => <option key={vehicle.id} value={vehicle.plate}>{vehicle.plate} - {vehicle.type || vehicle.model || "Movil"}</option>)}
                 </select>
@@ -714,9 +714,9 @@ export default function RoutesPlanningPage() {
               <textarea className="min-h-[72px] w-full rounded-md border border-line px-3 py-2 text-sm" placeholder="Ej: Turno bodega norte, prioridad recepcion, supervisor asignado..." value={form.notes} onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))} />
             </FieldHelp>
             <div className="rounded-md border border-line bg-paper p-2.5">
-              <p className="flex items-center gap-2 text-xs font-semibold text-neutral-800"><Clock size={14} className="text-apex" /> Resumen</p>
-              <div className="mt-2 space-y-1 text-sm text-neutral-600">
-                <p><span className="font-semibold text-neutral-900">{form.start_time || "--"} - {form.end_time || "--"}</span> con {form.tolerance_minutes || 0} min de tolerancia.</p>
+              <p className="flex items-center gap-2 text-xs font-semibold text-content-strong"><Clock size={14} className="text-apex" /> Resumen</p>
+              <div className="mt-2 space-y-1 text-sm text-content-body">
+                <p><span className="font-semibold text-content-strong">{form.start_time || "--"} - {form.end_time || "--"}</span> con {form.tolerance_minutes || 0} min de tolerancia.</p>
                 <p>{selectedEmployeeCount} persona(s) seleccionada(s).</p>
                 <p>{bulkMode && modal !== "edit" ? `${bulkCount} bloque(s) por crear.` : "1 bloque de horario."}</p>
                 <p>{scheduleKind === "administrative" ? `Sede fija: ${administrativeSite || "sin definir"}.` : form.vehicle_plate ? `Recurso asignado: ${form.vehicle_plate}.` : "Operacion sin vehiculo fijo."}</p>
@@ -727,27 +727,19 @@ export default function RoutesPlanningPage() {
           <div className="mt-3">
             <PeoplePicker employees={employees} selected={form.employees} onChange={(next) => setForm((prev) => ({ ...prev, employees: next }))} />
           </div>
-          <button className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-apex text-sm font-semibold text-white disabled:bg-neutral-300" disabled={savingRoute} onClick={saveRoute} type="button"><Save size={16} /> {savingRoute ? "Guardando..." : modal === "edit" ? "Guardar cambios" : bulkMode ? `Crear ${bulkCount} horario(s)` : "Asignar horario"}</button>
         </ModalFrame>
       ) : null}
 
       {validationIssues.length ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-neutral-950/45 p-4" role="dialog" aria-modal="true" aria-labelledby="schedule-validation-title">
-          <section className="w-full max-w-md rounded-md border border-amber-200 bg-white p-5 shadow-xl">
-            <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-amber-50 text-amber-700"><AlertTriangle size={20} /></span>
-              <div className="min-w-0">
-                <h2 className="text-lg font-semibold text-neutral-950" id="schedule-validation-title">Faltan datos para guardar</h2>
-                <p className="mt-1 text-sm text-neutral-600">Completa puntualmente lo siguiente:</p>
-              </div>
-              <button className="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line text-neutral-600 hover:bg-paper" onClick={() => setValidationIssues([])} type="button" aria-label="Cerrar validacion"><X size={17} /></button>
-            </div>
-            <ul className="mt-4 space-y-2 rounded-md bg-paper p-3 text-sm text-neutral-800">
-              {validationIssues.map((issue) => <li className="flex gap-2" key={issue}><span className="font-bold text-amber-700">•</span><span>{issue}</span></li>)}
-            </ul>
-            <button className="mt-4 h-10 w-full rounded-md bg-apex text-sm font-semibold text-white" onClick={() => setValidationIssues([])} type="button">Entendido</button>
-          </section>
-        </div>
+        <ModalFrame title="Faltan datos para guardar" onClose={() => setValidationIssues([])} maxWidth="md:max-w-md" footer={<button className="h-10 w-full rounded-md bg-apex text-sm font-semibold text-white" onClick={() => setValidationIssues([])} type="button">Entendido</button>}>
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-warning/10 text-warning"><AlertTriangle size={20} /></span>
+            <p className="text-sm text-content-body">Completa puntualmente lo siguiente:</p>
+          </div>
+          <ul className="mt-4 space-y-2 rounded-md bg-paper p-3 text-sm text-content-body">
+            {validationIssues.map((issue) => <li className="flex gap-2" key={issue}><span className="font-bold text-warning">•</span><span>{issue}</span></li>)}
+          </ul>
+        </ModalFrame>
       ) : null}
 
       {selectedRoute ? (
