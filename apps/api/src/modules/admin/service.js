@@ -1485,7 +1485,7 @@ async function listPlatformLogs(tenantId, query = {}) {
 }
 
 async function createClientPlatformLog(tenantId, user, input = {}, requestMeta = {}) {
-  const message = String(input.message || "").trim();
+  const message = String(input.message || "").trim().slice(0, 1000);
   if (!message) throw badRequest("Mensaje requerido para registrar el log.");
   await platformLogs.recordPlatformLog({
     tenant_id: normalizeTenantId(tenantId),

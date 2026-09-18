@@ -1,0 +1,61 @@
+{
+  "change_id": "hr-monitor-silent-failures-20260918",
+  "commit": "797ab885a3357e4e82c7ffe502adc7de66de9165",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "validation-checks.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "validation-checks.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "validation-checks.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-monitor-silent-failures-qa.js",
+    "evidence": [
+      "unit-tests.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-monitor-silent-failures-qa.js",
+    "evidence": [
+      "validation-checks.json",
+      "security-review.md"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "APEXOS release owner (Edwin)",
+    "approved_at": "2026-09-18T20:15:00-05:00"
+  }
+}

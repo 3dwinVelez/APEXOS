@@ -1,0 +1,94 @@
+{
+  "change_id": "hr-monitor-silent-failures-20260918",
+  "environment": "QA",
+  "company": "SCJ",
+  "generated_at": "2026-09-18T20:28:59.327Z",
+  "api_commit": "aa4b95b18ae9",
+  "checks": [
+    {
+      "name": "route_72_tracking_mode_punch_only",
+      "ok": true,
+      "detail": {
+        "tracking_mode": "punch_only",
+        "gps_required": false,
+        "notes": "Sede administrativa: SCJ\nOrigen: scj_hr_controlled_qa_20260910"
+      }
+    },
+    {
+      "name": "route_90_present",
+      "ok": true,
+      "detail": {
+        "id": 90,
+        "tracking_mode": "gps"
+      }
+    },
+    {
+      "name": "client_log_accepted_for_non_admin",
+      "ok": true,
+      "detail": {
+        "ok": true
+      }
+    },
+    {
+      "name": "client_log_readable_by_admin",
+      "ok": true,
+      "detail": {
+        "source": "frontend",
+        "module": "qa-certification",
+        "level": "error",
+        "status_code": 500
+      }
+    },
+    {
+      "name": "operations_map_payload_complete",
+      "ok": true,
+      "detail": {
+        "date": "2026-09-18",
+        "totals": {
+          "routes": 1,
+          "planned_people": 25,
+          "online": 0,
+          "without_gps": 14,
+          "offline": 11
+        },
+        "located_people": 11,
+        "route_72": {
+          "present": true,
+          "pings": 38,
+          "punch_points": 4,
+          "activity_points": 0
+        },
+        "route_90": {
+          "present": false,
+          "pings": 0,
+          "punch_points": 0,
+          "activity_points": 0
+        }
+      }
+    }
+  ],
+  "observations": {
+    "date": "2026-09-18",
+    "totals": {
+      "routes": 1,
+      "planned_people": 25,
+      "online": 0,
+      "without_gps": 14,
+      "offline": 11
+    },
+    "located_people": 11,
+    "route_72": {
+      "present": true,
+      "pings": 38,
+      "punch_points": 4,
+      "activity_points": 0
+    },
+    "route_90": {
+      "present": false,
+      "pings": 0,
+      "punch_points": 0,
+      "activity_points": 0
+    }
+  },
+  "status": "passed"
+}

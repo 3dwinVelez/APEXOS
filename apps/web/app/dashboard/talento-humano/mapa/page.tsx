@@ -4,7 +4,7 @@ import { api } from "@/lib/api";
 import { ArrowLeft, CalendarDays, Clock, ExternalLink, LocateFixed, MapPin, RefreshCw, Route, Satellite, Users } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent } from "react";
 
 type GpsPoint = {
@@ -190,13 +190,32 @@ function pointOffset(point: { latitude: number; longitude: number }, center: { l
   return { x: projected.x - centerProjected.x, y: projected.y - centerProjected.y };
 }
 
-function centerFrom(points: OperatorPoint[]) {
-  const located = points.filter((point) => point.latitude != null && point.longitude != null);
-  if (!located.length) return DEFAULT_CENTER;
+function boundsFrom(points: Array<{ latitude: number | null; longitude: number | null }>) {
+  const located = points
+    .filter((point) => point.latitude != null && point.longitude != null)
+    .map((point) => ({ latitude: Number(point.latitude), longitude: Number(point.longitude) }));
+  if (!located.length) return null;
   return {
-    latitude: located.reduce((sum, point) => sum + Number(point.latitude), 0) / located.length,
-    longitude: located.reduce((sum, point) => sum + Number(point.longitude), 0) / located.length
+    north: Math.max(...located.map((point) => point.latitude)),
+    south: Math.min(...located.map((point) => point.latitude)),
+    east: Math.max(...located.map((point) => point.longitude)),
+    west: Math.min(...located.map((point) => point.longitude))
   };
+}
+
+function boundsCenter(bounds: { north: number; south: number; east: number; west: number }) {
+  return { latitude: (bounds.north + bounds.south) / 2, longitude: (bounds.east + bounds.west) / 2 };
+}
+
+function zoomForBounds(bounds: { north: number; south: number; east: number; west: number }, viewportWidth: number, viewportHeight: number) {
+  const padding = 64;
+  const width = Math.max(viewportWidth - padding * 2, 120);
+  const height = Math.max(viewportHeight - padding * 2, 120);
+  const spanX = ((bounds.east - bounds.west) / 360) * TILE_SIZE;
+  const spanY = project(bounds.south, bounds.west, 0).y - project(bounds.north, bounds.west, 0).y;
+  const zoomX = spanX > 0 ? Math.log2(width / spanX) : 16;
+  const zoomY = spanY > 0 ? Math.log2(height / spanY) : 16;
+  return Math.max(8, Math.min(18, Math.floor(Math.min(zoomX, zoomY))));
 }
 
 function MapTiles({ center, zoom }: { center: { latitude: number; longitude: number }; zoom: number }) {
@@ -316,15 +335,19 @@ export default function LiveGpsMapPage() {
     return true;
   }), [activeWindowSeconds, people, routeId, userName, status]);
   const selected = filteredPeople.find((person) => person.key === selectedKey) || null;
-  const centerTarget = followSelected && selected?.latitude != null && selected.longitude != null
-    ? { latitude: selected.latitude, longitude: selected.longitude }
-    : centerFrom(filteredPeople);
-  const targetLatitude = centerTarget.latitude;
-  const targetLongitude = centerTarget.longitude;
-  const [center, setCenter] = useState(centerTarget);
+  const [center, setCenter] = useState({ ...DEFAULT_CENTER });
+  const mapRef = useRef<HTMLElement | null>(null);
+  const [viewport, setViewport] = useState({ width: 0, height: 0 });
+
   useEffect(() => {
-    setCenter({ latitude: targetLatitude, longitude: targetLongitude });
-  }, [targetLatitude, targetLongitude]);
+    const node = mapRef.current;
+    if (!node) return;
+    const update = () => setViewport({ width: node.clientWidth, height: node.clientHeight });
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
 
   function startPan(event: PointerEvent<HTMLElement>) {
     if (event.target instanceof HTMLElement && event.target.closest("button,a,input,select")) return;
@@ -344,13 +367,40 @@ export default function LiveGpsMapPage() {
     if (drag) event.currentTarget.releasePointerCapture(event.pointerId);
     setDrag(null);
   }
-  const routeTrails = (routeId === "all" ? routes : routes.filter((route) => String(route.id) === routeId)).map((route) => ({
+  const routeTrails = useMemo(() => (routeId === "all" ? routes : routes.filter((route) => String(route.id) === routeId)).map((route) => ({
     ...route,
     punch_points: userName === "all" ? route.punch_points : (route.punch_points || []).filter((mark) => mark.user_name === userName),
     marks_by_user: userName === "all" ? route.marks_by_user : (route.marks_by_user || []).filter((group) => group.user_name === userName)
-  }));
-  const visibleMarks = routeTrails.flatMap((route) => route.punch_points || []);
-  const visibleActivities = routeTrails.flatMap((route) => route.activity_points || []);
+  })), [routeId, routes, userName]);
+  const visibleMarks = useMemo(() => routeTrails.flatMap((route) => route.punch_points || []), [routeTrails]);
+  const visibleActivities = useMemo(() => routeTrails.flatMap((route) => route.activity_points || []), [routeTrails]);
+  const visibleBounds = useMemo(() => boundsFrom([
+    ...filteredPeople,
+    ...visibleMarks,
+    ...visibleActivities,
+    ...routeTrails.flatMap((route) => route.pings || [])
+  ]), [filteredPeople, routeTrails, visibleActivities, visibleMarks]);
+  const boundsKey = visibleBounds
+    ? `${visibleBounds.north.toFixed(5)}|${visibleBounds.south.toFixed(5)}|${visibleBounds.east.toFixed(5)}|${visibleBounds.west.toFixed(5)}`
+    : "";
+  const selectedTarget = selected?.latitude != null && selected.longitude != null
+    ? `${Number(selected.latitude).toFixed(6)}|${Number(selected.longitude).toFixed(6)}`
+    : "";
+
+  // En modo seguimiento sin seleccion se encaja todo lo visible en pantalla; el paneo
+  // manual desactiva el seguimiento y respeta el encuadre del usuario en cada refresco.
+  useEffect(() => {
+    if (!followSelected) return;
+    if (selectedTarget) {
+      const [latitude, longitude] = selectedTarget.split("|").map(Number);
+      setCenter({ latitude, longitude });
+      return;
+    }
+    if (visibleBounds && viewport.width > 0 && viewport.height > 0) {
+      setCenter(boundsCenter(visibleBounds));
+      setZoom(zoomForBounds(visibleBounds, viewport.width, viewport.height));
+    }
+  }, [boundsKey, followSelected, selectedTarget, viewport.height, viewport.width]);
 
   return (
     <div className="-m-4 flex h-[calc(100vh-64px)] flex-col bg-[#0d1b2a] text-neutral-900 md:-m-6">
@@ -449,6 +499,7 @@ export default function LiveGpsMapPage() {
         </aside>
 
         <section
+          ref={mapRef}
           className={`relative min-h-[58vh] overflow-hidden bg-[#dfe8ef] lg:min-h-0 ${drag ? "cursor-grabbing" : "cursor-grab"}`}
           onPointerDown={startPan}
           onPointerMove={movePan}
@@ -538,8 +589,8 @@ export default function LiveGpsMapPage() {
           })}
 
           <div className="absolute left-4 top-4 z-20 flex gap-2">
-            <button className="h-10 rounded-md bg-white px-3 text-sm font-semibold shadow" onClick={() => setZoom((value) => Math.min(value + 1, 18))} type="button">+</button>
-            <button className="h-10 rounded-md bg-white px-3 text-sm font-semibold shadow" onClick={() => setZoom((value) => Math.max(value - 1, 8))} type="button">-</button>
+            <button className="h-10 rounded-md bg-white px-3 text-sm font-semibold shadow" onClick={() => { setFollowSelected(false); setZoom((value) => Math.min(value + 1, 18)); }} type="button">+</button>
+            <button className="h-10 rounded-md bg-white px-3 text-sm font-semibold shadow" onClick={() => { setFollowSelected(false); setZoom((value) => Math.max(value - 1, 8)); }} type="button">-</button>
             <button className={`h-10 rounded-md px-3 text-sm font-semibold shadow ${followSelected ? "bg-apex text-white" : "bg-white text-neutral-800"}`} onClick={() => setFollowSelected((value) => !value)} type="button">
               {followSelected ? "Siguiendo" : "Centrar"}
             </button>
