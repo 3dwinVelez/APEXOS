@@ -1,0 +1,58 @@
+{
+  "change_id": "hr-module-intervention-20260918",
+  "base_commits": {
+    "develop": "89fe23de3dfa917b1529ccaaaca6ec923364db9c",
+    "main": "1d4c0b5aabb32885d91e851bec75fe0aa5427a6d"
+  },
+  "certified_commit": "54462664c2aa7b63ea01db0ea016697310b773b7",
+  "scope_schema_version": 2,
+  "change_intent": {
+    "summary": "Intervencion QA de Talento Humano: ventana de mallas compacta con footer fijo, dialogo de validacion por encima del modal principal, tokens de diseno para modo oscuro, advisory locks de asignacion de mallas por empleado/dia, CSP con origen WebSocket ligado al host del API, y evidencia de certificacion masiva de marcacion 20/50/100 usuarios.",
+    "modules": ["talento-humano", "web-security", "qa-evidence"]
+  },
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
+    { "status": "A", "file": "apps/api/test/hr-route-assignment-lock.test.js" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx" },
+    { "status": "M", "file": "apps/web/components/ui/ModalFrame.tsx" },
+    { "status": "M", "file": "apps/web/lib/security/csp.ts" },
+    { "status": "M", "file": "apps/web/next.config.ts" },
+    { "status": "M", "file": "apps/web/test/offline-csp.test.mjs" },
+    { "status": "M", "file": "docs/qa/evidence/controlled-develop-main-release-20260917/qa-approval-evidence.json" },
+    { "status": "M", "file": "docs/qa/evidence/controlled-develop-main-release-20260917/scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-marking-concurrency-20260918/browser-qa-mallas-20260918.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-marking-concurrency-20260918/mass-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-module-intervention-20260918/scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-module-intervention-20260918/preqa-approval-evidence.json" }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-route-assignment-lock.test.js",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "apps/web/components/ui/ModalFrame.tsx",
+    "apps/web/lib/security/csp.ts",
+    "apps/web/next.config.ts",
+    "apps/web/test/offline-csp.test.mjs",
+    "docs/qa/evidence/controlled-develop-main-release-20260917/qa-approval-evidence.json",
+    "docs/qa/evidence/controlled-develop-main-release-20260917/scope-manifest.json",
+    "docs/qa/evidence/hr-marking-concurrency-20260918/",
+    "docs/qa/evidence/hr-module-intervention-20260918/"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "hr-marking-concurrency-and-route-assignment",
+      "status": "passed",
+      "evidence": [
+        "../hr-marking-concurrency-20260918/mass-certification.json"
+      ]
+    },
+    {
+      "name": "web-csp-and-design-tokens",
+      "status": "passed",
+      "evidence": [
+        "../hr-marking-concurrency-20260918/browser-qa-mallas-20260918.md"
+      ]
+    }
+  ]
+}
