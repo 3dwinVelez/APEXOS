@@ -14,9 +14,7 @@ async function adminRoutes(fastify) {
     preHandler: requirePermission("admin", "read")
   }, async (request) => service.listPlatformLogs(request.user?.tenant_id, request.query || {}));
 
-  fastify.post("/admin/platform-logs/client", {
-    preHandler: requirePermission("admin", "read")
-  }, async (request) => service.createClientPlatformLog(request.user?.tenant_id, request.user, request.body || {}, {
+  fastify.post("/admin/platform-logs/client", async (request) => service.createClientPlatformLog(request.user?.tenant_id, request.user, request.body || {}, {
     ip: request.ip,
     user_agent: request.headers["user-agent"]
   }));

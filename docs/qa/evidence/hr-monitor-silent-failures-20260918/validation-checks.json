@@ -1,0 +1,43 @@
+{
+  "change_id": "hr-monitor-silent-failures-20260918",
+  "environment": "LOCAL",
+  "generated_at": "2026-09-18T00:00:00-05:00",
+  "checks": [
+    {
+      "name": "unit",
+      "command": "node --test apps/api/test/hr-monitor-silent-failures.test.js",
+      "result": "passed",
+      "detail": "7/7 tests"
+    },
+    {
+      "name": "typecheck_web",
+      "command": "npm --workspace apps/web run typecheck",
+      "result": "passed",
+      "detail": "tsc -p tsconfig.typecheck.json --noEmit sin errores"
+    },
+    {
+      "name": "lint",
+      "command": "npm run lint",
+      "result": "passed",
+      "detail": "0 errores; 13 warnings preexistentes en archivos no relacionados (window.location en UserSessionBadge, api.ts, sessionSecurity.ts)"
+    },
+    {
+      "name": "api_full_suite",
+      "command": "node --test apps/api/test/*.test.js",
+      "result": "passed",
+      "detail": "328 tests: 323 pass, 3 fail, 2 skipped. Los 3 fallos (inventory-transfer-product-list-ux, zero-friendly-number-input, offline-bootstrap) son preexistentes: reproducidos identicamente en el baseline develop 6a69fba."
+    },
+    {
+      "name": "web_full_suite",
+      "command": "node --test apps/web/test/*.test.mjs",
+      "result": "passed",
+      "detail": "285 tests: 283 pass, 2 fail. Los 2 fallos (erp-visual-normalization) son preexistentes: reproducidos identicamente en el baseline develop 6a69fba."
+    },
+    {
+      "name": "security_review",
+      "result": "passed",
+      "detail": "docs/qa/evidence/hr-monitor-silent-failures-20260918/security-review.md — sin hallazgos criticos/altos/medios; riesgo residual bajo documentado"
+    }
+  ],
+  "status": "passed"
+}
