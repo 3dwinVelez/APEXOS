@@ -3,7 +3,7 @@
   "environment": "QA",
   "source_branch": "develop",
   "target_branch": "main",
-  "commit": "04407930c65f7575be3c08e83b9f3109df2b78bc",
+  "commit": "7f946097d1cd18130058e49afe3aed8d9673669b",
   "decision": "APTO CON OBSERVACIONES",
   "checks": {
     "functional": {
