@@ -1,0 +1,85 @@
+{
+  "change_id": "hr-module-intervention-20260918",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "6bdd527d710d7067f831ccb9b6fba34bf5d413e5",
+  "decision": "APTO",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "qa-nyvora-mass-regression.json",
+        "browser-certification-qa.md"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "qa-nyvora-mass-regression.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "preqa-approval-evidence.json",
+        "../hr-marking-concurrency-20260918/mass-certification.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "qa-nyvora-mass-regression.json",
+        "qa-marking-concurrency.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "qa-nyvora-mass-regression.json",
+        "qa-marking-concurrency.json",
+        "browser-certification-qa.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../apps/api/scripts/certifications/hr-marking-concurrency-qa.js",
+    "evidence": [
+      "qa-marking-concurrency.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../apps/api/scripts/certifications/nyvora-mass-regression.js",
+    "evidence": [
+      "qa-nyvora-mass-regression.json"
+    ]
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../../apps/api/scripts/certifications/nyvora-mass-regression.js",
+    "evidence": [
+      "qa-nyvora-mass-regression.json"
+    ]
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "1d4c0b5aabb32885d91e851bec75fe0aa5427a6d",
+    "trigger": "data integrity failure, tenant isolation failure, schema mismatch, critical functional regression, or failed production connectivity smoke"
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "APEXOS QA release gate (autorizado por Edwin, release owner)",
+    "approved_at": "2026-09-18T18:30:00-05:00",
+    "scope": "develop to main for the exact QA-deployed commit 6bdd527"
+  },
+  "observations": [
+    "QA fixture: el modulo brain/AI-CORE fue activado en el tenant NYVORA de QA mediante CONFIRM_NYVORA_FIXTURE (procedimiento estandar del runbook de certificacion); la cache de tenant del API (TTL 5 min) sirvio el estado previo durante algunos minutos y se verifico convergencia.",
+    "Los usuarios de certificacion temporales quedaron desactivados al final de cada corrida (cleanup verificado).",
+    "Validaciones del equipo: base de datos QA sana (esquema alineado, 0 huerfanos/duplicados, RLS intacta, advisory locks verificados en vivo) y seguridad intacta (0 hallazgos critical/high/medium; 2 low documentados)."
+  ]
+}
