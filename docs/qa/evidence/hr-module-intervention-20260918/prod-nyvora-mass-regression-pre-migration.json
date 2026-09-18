@@ -1,0 +1,1539 @@
+{
+  "ok": false,
+  "environment": "production",
+  "company": "NYVORA",
+  "run_id": "20260918184417",
+  "commit": "d28eec07acec",
+  "checks": [
+    {
+      "endpoint": "/api/v1/auth/me",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 5127,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "tenant",
+          "user"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/admin/roles",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 8131,
+      "shape": {
+        "type": "array",
+        "count": 82
+      }
+    },
+    {
+      "endpoint": "/api/v1/admin/users",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 4546,
+      "shape": {
+        "type": "array",
+        "count": 100
+      }
+    },
+    {
+      "endpoint": "/api/v1/admin/user-master-data",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 4069,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "document_types",
+          "user_statuses",
+          "user_types",
+          "contract_types",
+          "engagement_types",
+          "session_statuses",
+          "document_statuses",
+          "user_document_types",
+          "areas",
+          "positions",
+          "locations",
+          "cost_centers"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/inventory/items",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3920,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-3g\"}"
+    },
+    {
+      "endpoint": "/api/v1/inventory/families",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3781,
+      "shape": {
+        "type": "array",
+        "count": 1
+      }
+    },
+    {
+      "endpoint": "/api/v1/inventory/warehouses",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3810,
+      "shape": {
+        "type": "array",
+        "count": 1
+      }
+    },
+    {
+      "endpoint": "/api/v1/inventory/locations",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 4257,
+      "shape": {
+        "type": "array",
+        "count": 1
+      }
+    },
+    {
+      "endpoint": "/api/v1/inventory/costs",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3790,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-4a\"}"
+    },
+    {
+      "endpoint": "/api/v1/purchases/suppliers",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3747,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-4h\"}"
+    },
+    {
+      "endpoint": "/api/v1/purchases/orders",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3898,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-4m\"}"
+    },
+    {
+      "endpoint": "/api/v1/purchases/orders/open",
+      "status": 400,
+      "ok": true,
+      "expected": {
+        "status": 400,
+        "code": "REQUIRED_SUPPLIER"
+      },
+      "latency_ms": 3298,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/purchases/vmi-alerts",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 4513,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-52\"}"
+    },
+    {
+      "endpoint": "/api/v1/sales/customers",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 4196,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-5a\"}"
+    },
+    {
+      "endpoint": "/api/v1/sales/orders",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3358,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "endpoint": "/api/v1/sales/invoices",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3820,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-5l\"}"
+    },
+    {
+      "endpoint": "/api/v1/sales/reports/by-customer?date_from=2026-01-01&date_to=2026-12-31",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3789,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-5u\"}"
+    },
+    {
+      "endpoint": "/api/v1/sales/reports/by-item?date_from=2026-01-01&date_to=2026-12-31",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3938,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-62\"}"
+    },
+    {
+      "endpoint": "/api/v1/sales/reports/by-date?date_from=2026-01-01&date_to=2026-12-31",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3785,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-6a\"}"
+    },
+    {
+      "endpoint": "/api/v1/sales/reports/detail?date_from=2026-01-01&date_to=2026-12-31",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3810,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-6f\"}"
+    },
+    {
+      "endpoint": "/api/v1/invoicing/invoices",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3251,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounts-receivable/documents",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3939,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-6t\"}"
+    },
+    {
+      "endpoint": "/api/v1/accounts-receivable/reports/aging",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3783,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-6y\"}"
+    },
+    {
+      "endpoint": "/api/v1/accounts-receivable/retentions",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3809,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-75\"}"
+    },
+    {
+      "endpoint": "/api/v1/accounting/accounts",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3281,
+      "shape": {
+        "type": "array",
+        "count": 28
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/balance-sheet",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3566,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "period",
+          "assets",
+          "liabilities",
+          "equity",
+          "balanced"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/reports/balance-sheet",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3558,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "period",
+          "assets",
+          "liabilities",
+          "equity",
+          "balanced"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/income-statement?period=2026-08",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3565,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "period",
+          "income",
+          "cogs",
+          "gross_profit",
+          "gross_margin_pct",
+          "operating_expenses",
+          "operating_profit",
+          "net_margin_pct"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/reports/income-statement?period=2026-08",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3656,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "period",
+          "income",
+          "cogs",
+          "gross_profit",
+          "gross_margin_pct",
+          "operating_expenses",
+          "operating_profit",
+          "net_margin_pct"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/reports/trial-balance",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3415,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "period",
+          "rows",
+          "totals",
+          "balanced"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/reports/taxes?period=2026-08",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3521,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "period",
+          "taxes",
+          "totals",
+          "dian_ready_fields"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/reports/receivables",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3285,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "kind",
+          "documents",
+          "buckets",
+          "total"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/reports/payables",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 4179,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-8w\"}"
+    },
+    {
+      "endpoint": "/api/v1/accounting/periods",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2848,
+      "shape": {
+        "type": "object",
+        "keys": []
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/organization-tree",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2594,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "societies",
+          "branches",
+          "cost_centers"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/document-masters",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2608,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "document_types",
+          "numbering"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/vat-masters",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2588,
+      "shape": {
+        "type": "array",
+        "count": 6
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/payable-accounts",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3276,
+      "shape": {
+        "type": "array",
+        "count": 3
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/documents",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3918,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-9u\"}"
+    },
+    {
+      "endpoint": "/api/v1/accounting/payables/documents",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3804,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-a1\"}"
+    },
+    {
+      "endpoint": "/api/v1/accounting/payables/open-invoices",
+      "status": 400,
+      "ok": true,
+      "expected": {
+        "status": 400,
+        "code": "REQUIRED_SUPPLIER"
+      },
+      "latency_ms": 3285,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/projects",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3307,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "endpoint": "/api/v1/projects/operational-center",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3413,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "projects",
+          "portfolio",
+          "next_actions"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/services/orders?limit=200",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 6613,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "data",
+          "kpis"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/services/technicians",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3698,
+      "shape": {
+        "type": "array",
+        "count": 21
+      }
+    },
+    {
+      "endpoint": "/api/v1/services/service-types",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2618,
+      "shape": {
+        "type": "array",
+        "count": 3
+      }
+    },
+    {
+      "endpoint": "/api/v1/services/service-stores",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2771,
+      "shape": {
+        "type": "array",
+        "count": 2
+      }
+    },
+    {
+      "endpoint": "/api/v1/services/satisfaction-questions",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2524,
+      "shape": {
+        "type": "array",
+        "count": 3
+      }
+    },
+    {
+      "endpoint": "/api/v1/services/references",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3566,
+      "shape": {
+        "type": "array",
+        "count": 21
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/schedules",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3162,
+      "shape": {
+        "type": "array",
+        "count": 26
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/employees?active=true",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3991,
+      "shape": {
+        "type": "array",
+        "count": 368
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/routes",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 4038,
+      "shape": {
+        "type": "array",
+        "count": 44
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/routes/event-summaries",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 5420,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "generated_at",
+          "routes"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/routes/preop/template",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2707,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "sections",
+          "items"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/routes/preop/metrics",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3271,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "checklists_today",
+          "checklists_pending",
+          "routes_blocked",
+          "critical_vehicle_findings",
+          "drivers_without_route",
+          "average_completion_minutes",
+          "compliance_rate",
+          "approved_with_findings",
+          "findings_by_type",
+          "findings_by_plate",
+          "findings_by_driver"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/operations-map?date=2026-08-13&minutes=30&footprint_days=30",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3923,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-d3\"}"
+    },
+    {
+      "endpoint": "/api/v1/hr/gps/active",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3230,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/gps/history",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3364,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/activity-types",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3941,
+      "shape": {
+        "type": "array",
+        "count": 18
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/attendance?date=2026-08-13",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3953,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-dv\"}"
+    },
+    {
+      "endpoint": "/api/v1/hr/workdays?date=2026-08-13",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 4125,
+      "shape": {
+        "type": "array",
+        "count": 25
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/payroll/config",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2884,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "parameters",
+          "overtime_rates",
+          "concepts"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/payroll",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 4011,
+      "shape": {
+        "type": "array",
+        "count": 100
+      }
+    },
+    {
+      "endpoint": "/api/v1/transport/vehicles",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 4562,
+      "shape": {
+        "type": "array",
+        "count": 25
+      }
+    },
+    {
+      "endpoint": "/api/v1/transport/vehicles/metrics/dashboard",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3692,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "total",
+          "active",
+          "blocked",
+          "pending_validation",
+          "expiring",
+          "reliable_records",
+          "average_score",
+          "by_site",
+          "by_ownership",
+          "vehicles"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/brain/events",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3180,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "data",
+          "total",
+          "page",
+          "pages"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/brain/ecosystem",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 4118,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-f8\"}"
+    },
+    {
+      "endpoint": "/api/v1/brain/insights",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 4193,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-ff\"}"
+    },
+    {
+      "endpoint": "/api/v1/brain/mentor",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 4317,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-fk\"}"
+    }
+  ],
+  "failures": [
+    {
+      "endpoint": "/api/v1/inventory/items",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3920,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-3g\"}"
+    },
+    {
+      "endpoint": "/api/v1/inventory/costs",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3790,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-4a\"}"
+    },
+    {
+      "endpoint": "/api/v1/purchases/suppliers",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3747,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-4h\"}"
+    },
+    {
+      "endpoint": "/api/v1/purchases/orders",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3898,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-4m\"}"
+    },
+    {
+      "endpoint": "/api/v1/purchases/vmi-alerts",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 4513,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-52\"}"
+    },
+    {
+      "endpoint": "/api/v1/sales/customers",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 4196,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-5a\"}"
+    },
+    {
+      "endpoint": "/api/v1/sales/invoices",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3820,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-5l\"}"
+    },
+    {
+      "endpoint": "/api/v1/sales/reports/by-customer?date_from=2026-01-01&date_to=2026-12-31",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3789,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-5u\"}"
+    },
+    {
+      "endpoint": "/api/v1/sales/reports/by-item?date_from=2026-01-01&date_to=2026-12-31",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3938,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-62\"}"
+    },
+    {
+      "endpoint": "/api/v1/sales/reports/by-date?date_from=2026-01-01&date_to=2026-12-31",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3785,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-6a\"}"
+    },
+    {
+      "endpoint": "/api/v1/sales/reports/detail?date_from=2026-01-01&date_to=2026-12-31",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3810,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-6f\"}"
+    },
+    {
+      "endpoint": "/api/v1/accounts-receivable/documents",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3939,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-6t\"}"
+    },
+    {
+      "endpoint": "/api/v1/accounts-receivable/reports/aging",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3783,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-6y\"}"
+    },
+    {
+      "endpoint": "/api/v1/accounts-receivable/retentions",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3809,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-75\"}"
+    },
+    {
+      "endpoint": "/api/v1/accounting/reports/payables",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 4179,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-8w\"}"
+    },
+    {
+      "endpoint": "/api/v1/accounting/documents",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3918,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-9u\"}"
+    },
+    {
+      "endpoint": "/api/v1/accounting/payables/documents",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3804,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-a1\"}"
+    },
+    {
+      "endpoint": "/api/v1/hr/operations-map?date=2026-08-13&minutes=30&footprint_days=30",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3923,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-d3\"}"
+    },
+    {
+      "endpoint": "/api/v1/hr/attendance?date=2026-08-13",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3953,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-dv\"}"
+    },
+    {
+      "endpoint": "/api/v1/brain/ecosystem",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 4118,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-f8\"}"
+    },
+    {
+      "endpoint": "/api/v1/brain/insights",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 4193,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-ff\"}"
+    },
+    {
+      "endpoint": "/api/v1/brain/mentor",
+      "status": 500,
+      "ok": false,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 4317,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      },
+      "detail": "{\"error\":\"Error interno\",\"code\":\"ERROR_INTERNO\",\"request_id\":\"req-fk\"}"
+    }
+  ],
+  "certification_user_id": 217,
+  "certification_user_deactivated": true
+}

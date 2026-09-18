@@ -1,0 +1,1104 @@
+{
+  "ok": true,
+  "environment": "production",
+  "company": "NYVORA",
+  "run_id": "20260918194533",
+  "commit": "d28eec07acec",
+  "checks": [
+    {
+      "endpoint": "/api/v1/auth/me",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 4573,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "tenant",
+          "user"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/admin/roles",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 4590,
+      "shape": {
+        "type": "array",
+        "count": 82
+      }
+    },
+    {
+      "endpoint": "/api/v1/admin/users",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3791,
+      "shape": {
+        "type": "array",
+        "count": 100
+      }
+    },
+    {
+      "endpoint": "/api/v1/admin/user-master-data",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3632,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "document_types",
+          "user_statuses",
+          "user_types",
+          "contract_types",
+          "engagement_types",
+          "session_statuses",
+          "document_statuses",
+          "user_document_types",
+          "areas",
+          "positions",
+          "locations",
+          "cost_centers"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/inventory/items",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2932,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "data",
+          "total",
+          "page",
+          "pages"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/inventory/families",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3175,
+      "shape": {
+        "type": "array",
+        "count": 1
+      }
+    },
+    {
+      "endpoint": "/api/v1/inventory/warehouses",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3402,
+      "shape": {
+        "type": "array",
+        "count": 1
+      }
+    },
+    {
+      "endpoint": "/api/v1/inventory/locations",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3979,
+      "shape": {
+        "type": "array",
+        "count": 1
+      }
+    },
+    {
+      "endpoint": "/api/v1/inventory/costs",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 5182,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "data",
+          "total",
+          "page",
+          "pages",
+          "totals"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/purchases/suppliers",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 4672,
+      "shape": {
+        "type": "array",
+        "count": 2
+      }
+    },
+    {
+      "endpoint": "/api/v1/purchases/orders",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 5818,
+      "shape": {
+        "type": "array",
+        "count": 1
+      }
+    },
+    {
+      "endpoint": "/api/v1/purchases/orders/open",
+      "status": 400,
+      "ok": true,
+      "expected": {
+        "status": 400,
+        "code": "REQUIRED_SUPPLIER"
+      },
+      "latency_ms": 3022,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/purchases/vmi-alerts",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2932,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "endpoint": "/api/v1/sales/customers",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3032,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "endpoint": "/api/v1/sales/orders",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2923,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "endpoint": "/api/v1/sales/invoices",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3512,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "data",
+          "total",
+          "page",
+          "pages"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/sales/reports/by-customer?date_from=2026-01-01&date_to=2026-12-31",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2932,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "date_from",
+          "date_to",
+          "rows",
+          "grand_total"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/sales/reports/by-item?date_from=2026-01-01&date_to=2026-12-31",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3027,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "date_from",
+          "date_to",
+          "rows",
+          "grand_total"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/sales/reports/by-date?date_from=2026-01-01&date_to=2026-12-31",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3050,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "date_from",
+          "date_to",
+          "group_by",
+          "rows",
+          "grand_total"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/sales/reports/detail?date_from=2026-01-01&date_to=2026-12-31",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2924,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "date_from",
+          "date_to",
+          "count",
+          "invoices"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/invoicing/invoices",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2931,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounts-receivable/documents",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2933,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounts-receivable/reports/aging",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2945,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "date",
+          "documents",
+          "buckets",
+          "total"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounts-receivable/retentions",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3037,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/accounts",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2940,
+      "shape": {
+        "type": "array",
+        "count": 28
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/balance-sheet",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3214,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "period",
+          "assets",
+          "liabilities",
+          "equity",
+          "balanced"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/reports/balance-sheet",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3174,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "period",
+          "assets",
+          "liabilities",
+          "equity",
+          "balanced"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/income-statement?period=2026-08",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3148,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "period",
+          "income",
+          "cogs",
+          "gross_profit",
+          "gross_margin_pct",
+          "operating_expenses",
+          "operating_profit",
+          "net_margin_pct"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/reports/income-statement?period=2026-08",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3291,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "period",
+          "income",
+          "cogs",
+          "gross_profit",
+          "gross_margin_pct",
+          "operating_expenses",
+          "operating_profit",
+          "net_margin_pct"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/reports/trial-balance",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3166,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "period",
+          "rows",
+          "totals",
+          "balanced"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/reports/taxes?period=2026-08",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3202,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "period",
+          "taxes",
+          "totals",
+          "dian_ready_fields"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/reports/receivables",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2916,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "kind",
+          "documents",
+          "buckets",
+          "total"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/reports/payables",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3189,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "kind",
+          "documents",
+          "buckets",
+          "total"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/periods",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2451,
+      "shape": {
+        "type": "object",
+        "keys": []
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/organization-tree",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2332,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "societies",
+          "branches",
+          "cost_centers"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/document-masters",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2328,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "document_types",
+          "numbering"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/vat-masters",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2339,
+      "shape": {
+        "type": "array",
+        "count": 6
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/payable-accounts",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2935,
+      "shape": {
+        "type": "array",
+        "count": 3
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/documents",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3757,
+      "shape": {
+        "type": "array",
+        "count": 1
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/payables/documents",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 4718,
+      "shape": {
+        "type": "array",
+        "count": 1
+      }
+    },
+    {
+      "endpoint": "/api/v1/accounting/payables/open-invoices",
+      "status": 400,
+      "ok": true,
+      "expected": {
+        "status": 400,
+        "code": "REQUIRED_SUPPLIER"
+      },
+      "latency_ms": 3122,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "error",
+          "code",
+          "request_id"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/projects",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2912,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "endpoint": "/api/v1/projects/operational-center",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2925,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "projects",
+          "portfolio",
+          "next_actions"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/services/orders?limit=200",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 5785,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "data",
+          "kpis"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/services/technicians",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3277,
+      "shape": {
+        "type": "array",
+        "count": 21
+      }
+    },
+    {
+      "endpoint": "/api/v1/services/service-types",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2334,
+      "shape": {
+        "type": "array",
+        "count": 3
+      }
+    },
+    {
+      "endpoint": "/api/v1/services/service-stores",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2332,
+      "shape": {
+        "type": "array",
+        "count": 2
+      }
+    },
+    {
+      "endpoint": "/api/v1/services/satisfaction-questions",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2326,
+      "shape": {
+        "type": "array",
+        "count": 3
+      }
+    },
+    {
+      "endpoint": "/api/v1/services/references",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3165,
+      "shape": {
+        "type": "array",
+        "count": 21
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/schedules",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3051,
+      "shape": {
+        "type": "array",
+        "count": 26
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/employees?active=true",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3564,
+      "shape": {
+        "type": "array",
+        "count": 368
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/routes",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3863,
+      "shape": {
+        "type": "array",
+        "count": 44
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/routes/event-summaries",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 5355,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "generated_at",
+          "routes"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/routes/preop/template",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2705,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "sections",
+          "items"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/routes/preop/metrics",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3984,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "checklists_today",
+          "checklists_pending",
+          "routes_blocked",
+          "critical_vehicle_findings",
+          "drivers_without_route",
+          "average_completion_minutes",
+          "compliance_rate",
+          "approved_with_findings",
+          "findings_by_type",
+          "findings_by_plate",
+          "findings_by_driver"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/operations-map?date=2026-08-13&minutes=30&footprint_days=30",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3710,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "date",
+          "generated_at",
+          "active_window_minutes",
+          "footprint_window_days",
+          "people",
+          "routes",
+          "totals"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/gps/active",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2898,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/gps/history",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3022,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/activity-types",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3618,
+      "shape": {
+        "type": "array",
+        "count": 18
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/attendance?date=2026-08-13",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3750,
+      "shape": {
+        "type": "array",
+        "count": 17
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/workdays?date=2026-08-13",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3649,
+      "shape": {
+        "type": "array",
+        "count": 25
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/payroll/config",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 2377,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "parameters",
+          "overtime_rates",
+          "concepts"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/hr/payroll",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3523,
+      "shape": {
+        "type": "array",
+        "count": 100
+      }
+    },
+    {
+      "endpoint": "/api/v1/transport/vehicles",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3668,
+      "shape": {
+        "type": "array",
+        "count": 25
+      }
+    },
+    {
+      "endpoint": "/api/v1/transport/vehicles/metrics/dashboard",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3301,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "total",
+          "active",
+          "blocked",
+          "pending_validation",
+          "expiring",
+          "reliable_records",
+          "average_score",
+          "by_site",
+          "by_ownership",
+          "vehicles"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/brain/events",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3109,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "data",
+          "total",
+          "page",
+          "pages"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/brain/ecosystem",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 4590,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "snapshot",
+          "health_score",
+          "insight_count",
+          "critical_count",
+          "generated_at"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/brain/insights",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3817,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "data",
+          "health_score",
+          "snapshot_summary",
+          "generated_at"
+        ]
+      }
+    },
+    {
+      "endpoint": "/api/v1/brain/mentor",
+      "status": 200,
+      "ok": true,
+      "expected": {
+        "status": 200
+      },
+      "latency_ms": 3896,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "module",
+          "title",
+          "message",
+          "steps",
+          "priority_insights"
+        ]
+      }
+    }
+  ],
+  "failures": [],
+  "certification_user_id": 218,
+  "certification_user_deactivated": true
+}
