@@ -300,12 +300,18 @@ function routeEventMetadata(input = {}, routeId = null) {
 
 const ROUTE_TRACKING_PREFIX = "Control de marcacion:";
 
+// Algunas notas de horario quedaron guardadas con el escape literal "\n" en vez de saltos
+// de linea reales; normalizar antes de parsear para no malinterpretar el modo de seguimiento.
+function normalizeRouteNotes(notes = "") {
+  return String(notes || "").replace(/\\n/g, "\n");
+}
+
 function routeGpsRequiredFromInput(input = {}) {
   return input.gps_required !== false && String(input.tracking_mode || "gps") !== "punch_only";
 }
 
 function routeGpsRequired(route = {}) {
-  const notes = String(route.notes || "");
+  const notes = normalizeRouteNotes(route.notes);
   if (notes.split("\n").some((line) => line.trim() === `${ROUTE_TRACKING_PREFIX} punch_only`)) return false;
   return true;
 }
@@ -315,13 +321,13 @@ function routeTrackingMode(route = {}) {
 }
 
 function routeNotesWithTracking(notes = "", gpsRequired = true) {
-  const visibleNotes = String(notes || "").split("\n").filter((line) => !line.trim().startsWith(ROUTE_TRACKING_PREFIX)).join("\n").trim();
+  const visibleNotes = normalizeRouteNotes(notes).split("\n").filter((line) => !line.trim().startsWith(ROUTE_TRACKING_PREFIX)).join("\n").trim();
   const trackingLine = `${ROUTE_TRACKING_PREFIX} ${gpsRequired ? "gps" : "punch_only"}`;
   return [trackingLine, visibleNotes].filter(Boolean).join("\n");
 }
 
 function routeVisibleNotes(notes = "") {
-  return String(notes || "").split("\n").filter((line) => !line.trim().startsWith(ROUTE_TRACKING_PREFIX)).join("\n").trim();
+  return normalizeRouteNotes(notes).split("\n").filter((line) => !line.trim().startsWith(ROUTE_TRACKING_PREFIX)).join("\n").trim();
 }
 
 function routeScopeWhere(routeId = null) {
@@ -569,17 +575,21 @@ async function assertOwnAssignedRoute(tenantId, employee, input = {}) {
     err.code = "HORARIO_AJENO_DENEGADO";
     throw err;
   }
-  if (startOfDay(route.date).getTime() !== startOfDay().getTime()) {
+  const activeRoute = await resolveOwnRouteForToday(tenantId, employee);
+  const today = startOfDay().toISOString().slice(0, 10);
+  const routeDate = startOfDay(route.date).toISOString().slice(0, 10);
+  if (routeDate !== today) {
     const err = new Error("Solo puedes operar el horario asignado para el dia actual.");
     err.statusCode = 409;
     err.code = "HORARIO_FUERA_DEL_DIA";
+    err.details = { route_date: routeDate, today, active_route_id: activeRoute ? Number(activeRoute.id) : null };
     throw err;
   }
-  const activeRoute = await resolveOwnRouteForToday(tenantId, employee);
   if (!activeRoute || Number(activeRoute.id) !== Number(route.id)) {
     const err = new Error("Este horario no es el horario activo del empleado para hoy.");
     err.statusCode = 409;
     err.code = "HORARIO_NO_ACTIVO";
+    err.details = { route_date: routeDate, today, active_route_id: activeRoute ? Number(activeRoute.id) : null };
     throw err;
   }
   return route;
