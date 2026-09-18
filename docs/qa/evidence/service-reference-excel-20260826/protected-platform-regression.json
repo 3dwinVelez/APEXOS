@@ -1,0 +1,52 @@
+{
+  "ok": true,
+  "environment": "QA",
+  "model_company": "NYVORA",
+  "commit": "4a08f995b076",
+  "checks": [
+    "session",
+    "services_orders",
+    "services_references",
+    "hr_employees",
+    "inventory_items",
+    "accounting_accounts"
+  ],
+  "unauthorized_blocked": true,
+  "fixture": {
+    "tenant": {
+      "id": "1d162ffd-bd27-4855-8141-b015388265fc",
+      "name": "NYVORA"
+    },
+    "reference": {
+      "id": 39,
+      "code": "NYV-QA-EVIDENCE",
+      "name": "NYVORA Evidencia Administrativa Certificable"
+    },
+    "users": [
+      {
+        "id": 62,
+        "name": "NYVORA Certificacion Correcciones",
+        "email": "nyvora.qa.correction.authorized@internal.apexos.local",
+        "tenant_id": "1d162ffd-bd27-4855-8141-b015388265fc"
+      },
+      {
+        "id": 63,
+        "name": "NYVORA Control Permiso Limitado",
+        "email": "nyvora.qa.correction.limited@internal.apexos.local",
+        "tenant_id": "1d162ffd-bd27-4855-8141-b015388265fc"
+      },
+      {
+        "id": 64,
+        "name": "NYVORA Tecnico Certificacion",
+        "email": "nyvora.qa.correction.technician@internal.apexos.local",
+        "tenant_id": "1d162ffd-bd27-4855-8141-b015388265fc"
+      },
+      {
+        "id": 65,
+        "name": "NYVORA Control Aislamiento",
+        "email": "nyvora.qa.correction.isolation@internal.apexos.local",
+        "tenant_id": "fd3e2802-16d9-40ad-8813-c52696f05f5f"
+      }
+    ]
+  }
+}

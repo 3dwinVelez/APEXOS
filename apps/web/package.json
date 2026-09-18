@@ -11,7 +11,8 @@
     "start": "next start -p 3001",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
-    "test:offline": "node --experimental-strip-types --test test/offline-storage.test.mjs test/offline-operation-queue.test.mjs test/offline-csp.test.mjs test/offline-panel.test.mjs"
+    "test:offline": "node --experimental-strip-types --test test/offline-storage.test.mjs test/offline-operation-queue.test.mjs test/offline-csp.test.mjs test/offline-panel.test.mjs",
+    "test:hr-landing": "node --test test/hr-landing-information-architecture.test.mjs"
   },
   "dependencies": {
     "@apex-os/types": "2.0.0",
@@ -19,25 +20,32 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dexie": "4.4.4",
+    "eslint-config-next": "^16.3.5",
+    "exceljs": "^4.4.0",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.469.0",
-    "next": "^15.5.22",
+    "next": "^16.3.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.54.2",
+    "react-leaflet": "^5.0.0",
     "recharts": "^2.15.0",
     "tailwind-merge": "^2.6.0",
+    "three": "^0.186.0",
     "zod": "^3.24.1",
     "zustand": "^5.0.2"
   },
   "devDependencies": {
+    "@types/leaflet": "^1.9.22",
     "@types/node": "^22.10.5",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
+    "@types/three": "^0.185.4",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.17.0",
-    "eslint-config-next": "^15.5.22",
     "fake-indexeddb": "6.2.5",
-    "postcss": "^8.5.23",
+    "postcss": "^8.5.26",
+    "puppeteer-core": "^25.9.0",
     "tailwindcss": "^3.4.17",
     "typescript": "5.8.2"
   }

@@ -1,0 +1,78 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-monitor-evidence-demand-preqa-20260824",
+  "change_intent": {
+    "summary": "Recuperar la visualizacion de evidencias bajo demanda en el monitor de mallas sin cargar fotografias durante el refresco periodico",
+    "modules": ["talent-human", "hr-monitor", "rbac", "tenant-isolation"]
+  },
+  "base_commits": {
+    "develop": "273b062ddba2f2c742be2357dc333bbc5fc7085d",
+    "main": "0abda8c41168642f99da0831e15f940b98232a12"
+  },
+  "certified_commit": "d53a0a1b8eb5cbb7c4018cabbeba1bd55a0ceed3",
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/src/modules/hr/routes.js" },
+    { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
+    { "status": "A", "file": "apps/api/test/hr-monitor-evidence-demand.test.js" },
+    { "status": "M", "file": "apps/api/test/hr-operations-map-contract.test.js" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx" },
+    { "status": "M", "file": "apps/web/lib/api.ts" },
+    { "status": "M", "file": "apps/web/lib/hrScheduleMonitor.ts" },
+    { "status": "M", "file": "apps/web/test/hr-monitor-refresh.test.mjs" },
+    { "status": "M", "file": "apps/web/test/hr-schedule-monitor.test.mjs" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-evidence-demand-20260824/browser-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-evidence-demand-20260824/certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-evidence-demand-20260824/diagnosis.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-evidence-demand-20260824/error.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-evidence-demand-20260824/functional.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-evidence-demand-20260824/monitor-evidence-loaded.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-evidence-demand-20260824/platform-regression.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-evidence-demand-20260824/preqa-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-evidence-demand-20260824/regression.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-evidence-demand-20260824/support-scripts.md" },
+    { "status": "M", "file": "package.json" },
+    { "status": "A", "file": "scripts/certifications/hr-monitor-evidence-demand-qa.js" }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-monitor-evidence-demand.test.js",
+    "apps/api/test/hr-operations-map-contract.test.js",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/hrScheduleMonitor.ts",
+    "apps/web/test/hr-monitor-refresh.test.mjs",
+    "apps/web/test/hr-schedule-monitor.test.mjs",
+    "docs/qa/evidence/hr-monitor-evidence-demand-20260824/",
+    "package.json",
+    "scripts/certifications/hr-monitor-evidence-demand-qa.js"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "lightweight_monitor_polling",
+      "status": "passed",
+      "evidence": ["certification.json", "regression.md"]
+    },
+    {
+      "name": "activity_and_punch_evidence_on_demand",
+      "status": "passed",
+      "evidence": ["certification.json", "browser-certification.json", "monitor-evidence-loaded.png"]
+    },
+    {
+      "name": "rbac_and_tenant_isolation",
+      "status": "passed",
+      "evidence": ["certification.json", "error.md"]
+    },
+    {
+      "name": "marking_only_role_isolation",
+      "status": "passed",
+      "evidence": ["certification.json", "regression.md"]
+    },
+    {
+      "name": "adjacent_hr_schedule_and_refresh_regression",
+      "status": "passed",
+      "evidence": ["platform-regression.json", "regression.md"]
+    }
+  ]
+}

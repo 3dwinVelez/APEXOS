@@ -3,6 +3,7 @@ const { getTenantConfig, invalidateTenantCache } = require("../../core/tenantCac
 const { MAX_EVIDENCE_BYTES, assertSafeFile, normalizeFileName, secureStoragePath } = require("../../security/policy");
 const { buildRouteEventSummaries } = require("./routeEventSummaries");
 const { normalizePunchType, processWorkday } = require("./timeLogic");
+const hrPolicy = require("./policy");
 
 const DEFAULT_PARAMS = {
   ordinary_hours_day: 8,
@@ -76,13 +77,28 @@ function endOfDay(value = new Date()) {
   return new Date(date.getTime() + 86400000);
 }
 
+function boundedReportRange(query = {}, { defaultToday = true, maxDays = 92 } = {}) {
+  const fromValue = query.fecha_inicio || query.from || query.date || query.fecha;
+  const toValue = query.fecha_fin || query.to || query.date || query.fecha;
+  if (!fromValue && !toValue && !defaultToday) return null;
+  const start = startOfDay(fromValue || toValue || new Date());
+  const end = endOfDay(toValue || fromValue || new Date());
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    throw validationError("El rango de fechas no es valido.", 400, "INVALID_REPORT_DATE_RANGE");
+  }
+  if (end <= start) throw validationError("La fecha final debe ser igual o posterior a la inicial.", 400, "INVALID_REPORT_DATE_RANGE");
+  if ((end.getTime() - start.getTime()) / 86400000 > maxDays) {
+    throw validationError(`El rango maximo permitido es de ${maxDays} dias.`, 400, "REPORT_DATE_RANGE_TOO_LARGE");
+  }
+  return { start, end };
+}
+
 function timeString(date) {
   return new Intl.DateTimeFormat("es-CO", { timeZone: OPERATING_TIMEZONE, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(date));
 }
 
 function minutesFromTime(value) {
-  if (!value || !/^\d{2}:\d{2}/.test(String(value))) return null;
-  return Number(value.slice(0, 2)) * 60 + Number(value.slice(3, 5));
+  return hrPolicy.minutesFromTime(value);
 }
 
 function validationError(message, statusCode = 400, code = "VALIDATION_ERROR") {
@@ -114,21 +130,57 @@ const monitorEvidenceSelect = {
   metadata: true
 };
 
-function monitorEvidenceSummary(evidence = {}) {
+function monitorEvidenceSummary(evidence = {}, context = {}) {
   const base64 = evidence.base64_data || evidence.base64 || "";
   const fileUrl = evidence.file_url || evidence.url || evidence.metadata?.file_url || "";
   const fileName = evidence.file_name || evidence.name || "";
-  if (!base64 && !fileUrl && !fileName && !evidence.storage_path && !evidence.id) return {};
+  const evidenceId = evidence.id || context.id;
+  const available = Boolean(base64 || fileUrl || fileName || evidence.storage_path || evidenceId);
+  if (!available) return {};
   return {
-    ...(evidence.id ? { id: evidence.id } : {}),
+    ...(evidenceId ? { id: evidenceId } : {}),
+    ...(context.source ? { source: context.source } : {}),
     ...(evidence.evidence_type ? { evidence_type: evidence.evidence_type } : {}),
     ...(fileName ? { file_name: fileName } : {}),
     ...(fileUrl ? { file_url: fileUrl } : {}),
     ...(evidence.mime_type || evidence.type ? { mime_type: evidence.mime_type || evidence.type } : {}),
     ...(evidence.file_size || evidence.size ? { file_size: evidence.file_size || evidence.size } : {}),
     ...(evidence.storage_path ? { storage_path: evidence.storage_path } : {}),
-    has_base64_data: Boolean(base64)
+    has_base64_data: Boolean(base64),
+    available
   };
+}
+
+function monitorEvidencePayload(evidence = {}) {
+  const summary = monitorEvidenceSummary(evidence);
+  const base64 = String(evidence.base64_data || evidence.base64 || "").trim();
+  return {
+    ...summary,
+    ...(base64 ? { base64_data: base64 } : {})
+  };
+}
+
+async function getMonitorEvidence(tenantId, source, id) {
+  const evidenceId = optionalNumericId(id);
+  if (!evidenceId || !["activity", "punch"].includes(String(source))) {
+    throw validationError("Evidencia de monitor invalida.", 400, "EVIDENCIA_MONITOR_INVALIDA");
+  }
+  return prisma.runWithTenant(tenantId, async () => {
+    let evidence;
+    if (source === "activity") {
+      evidence = await prisma.activityEvidence.findFirst({
+        where: { id: evidenceId, tenant_id: tenantId, activity: { tenant_id: tenantId } }
+      });
+    } else {
+      const punch = await prisma.timePunch.findFirst({ where: { id: evidenceId, tenant_id: tenantId } });
+      evidence = punch?.extra_evidence || punch?.metadata?.extra_evidence || null;
+    }
+    const payload = monitorEvidencePayload(evidence || {});
+    if (!payload.base64_data && !payload.file_url) {
+      throw validationError("La evidencia solicitada no existe o no contiene un archivo disponible.", 404, "EVIDENCIA_MONITOR_NO_ENCONTRADA");
+    }
+    return { ...payload, id: evidenceId, source };
+  });
 }
 
 function employeeDisplayName(employee) {
@@ -428,13 +480,13 @@ async function updateSchedule(tenantId, id, input) {
 }
 
 async function listRoutes(tenantId, query = {}) {
-  const day = query.date ? startOfDay(query.date) : null;
+  const range = boundedReportRange(query, { defaultToday: false });
   return prisma.runWithTenant(tenantId, async () => {
     const [rows, employees] = await Promise.all([
       prisma.timeRoute.findMany({
-        where: day ? { date: { gte: day, lt: endOfDay(day) } } : {},
+        where: range ? { date: { gte: range.start, lt: range.end } } : {},
         orderBy: { date: "desc" },
-        take: 100
+        take: range ? 500 : 100
       }),
       prisma.employee.findMany({ where: { active: true }, include: { user: { select: safeUserSelect } }, take: 500 })
     ]);
@@ -459,6 +511,84 @@ async function listRoutes(tenantId, query = {}) {
       metadata: { gps_required: routeGpsRequired(route), tracking_mode: routeTrackingMode(route) }
     }));
   });
+}
+
+function routeAssignedToEmployee(route, employee) {
+  if (!route || !employee) return false;
+  const aliases = new Set(aliasesForEmployee(employee).map(normalizeKey));
+  return (Array.isArray(route.employees) ? route.employees : [])
+    .some((value) => aliases.has(normalizeKey(value)));
+}
+
+function routeIsOperational(route) {
+  return !["closed", "cerrada", "completed", "completada", "cancelled", "cancelada", "inactive", "inactiva"]
+    .includes(String(route?.status || "active").trim().toLowerCase());
+}
+
+async function resolveOwnRouteForToday(tenantId, employee) {
+  const dayStart = startOfDay();
+  const dayEnd = endOfDay(dayStart);
+  const routes = (await listRoutes(tenantId, { date: dayStart.toISOString().slice(0, 10) }))
+    .filter((route) => routeIsOperational(route) && routeAssignedToEmployee(route, employee))
+    .sort((left, right) => Number(right.id) - Number(left.id));
+  if (routes.length <= 1) return routes[0] || null;
+
+  const routeIds = routes.map((route) => Number(route.id));
+  const [activeSession, latestPunch] = await prisma.runWithTenant(tenantId, () => Promise.all([
+    prisma.workSession.findFirst({
+      where: {
+        employee_id: employee.id,
+        route_id: { in: routeIds },
+        date: { gte: dayStart, lt: dayEnd },
+        status: { in: ["activa", "active"] }
+      },
+      orderBy: { updated_at: "desc" },
+      select: { route_id: true }
+    }),
+    prisma.timePunch.findFirst({
+      where: {
+        employee_id: employee.id,
+        route_id: { in: routeIds },
+        date: { gte: dayStart, lt: dayEnd }
+      },
+      orderBy: { punched_at: "desc" },
+      select: { route_id: true }
+    })
+  ]));
+  const selectedId = Number(activeSession?.route_id || latestPunch?.route_id || routes[0].id);
+  return routes.find((route) => Number(route.id) === selectedId) || routes[0];
+}
+
+async function assertOwnAssignedRoute(tenantId, employee, input = {}) {
+  const routeId = operationalRouteNumericId(input);
+  if (!routeId) return null;
+  const route = await prisma.timeRoute.findFirst({ where: { tenant_id: tenantId, id: routeId } });
+  if (!route || !routeAssignedToEmployee(route, employee)) {
+    const err = new Error("El horario indicado no esta asignado al empleado conectado.");
+    err.statusCode = 403;
+    err.code = "HORARIO_AJENO_DENEGADO";
+    throw err;
+  }
+  if (startOfDay(route.date).getTime() !== startOfDay().getTime()) {
+    const err = new Error("Solo puedes operar el horario asignado para el dia actual.");
+    err.statusCode = 409;
+    err.code = "HORARIO_FUERA_DEL_DIA";
+    throw err;
+  }
+  const activeRoute = await resolveOwnRouteForToday(tenantId, employee);
+  if (!activeRoute || Number(activeRoute.id) !== Number(route.id)) {
+    const err = new Error("Este horario no es el horario activo del empleado para hoy.");
+    err.statusCode = 409;
+    err.code = "HORARIO_NO_ACTIVO";
+    throw err;
+  }
+  return route;
+}
+
+async function listOwnRoutes(tenantId, user) {
+  const employee = await getCurrentEmployee(tenantId, user);
+  const route = await resolveOwnRouteForToday(tenantId, employee);
+  return route ? [route] : [];
 }
 
 async function listRouteEventSummaries(tenantId) {
@@ -547,20 +677,42 @@ async function listEmployees(tenantId, query = {}) {
 }
 
 async function createEmployee(tenantId, input) {
+  const fullName = input.name || [input.first_name, input.middle_name, input.last_name, input.second_last_name].filter(Boolean).join(" ").trim();
   return prisma.runWithTenant(tenantId, async () => prisma.employee.create({
     data: {
       code: input.code || `EMP-${Date.now()}`,
       user_type: input.user_type || input.position || "operario",
       position: input.position || input.user_type || "operario",
-      department: input.department || "Operacion",
+      department: input.department || input.area || "Operacion",
       salary_base: Number(input.salary_base || 0),
       salary_type: input.salary_type || "monthly",
       hire_date: input.hire_date ? new Date(input.hire_date) : new Date(),
       contract_type: input.contract_type || "indefinite",
       metadata: {
-        name: input.name || "",
+        name: fullName || "",
         document: input.document || "",
+        document_type: input.document_type || "",
+        first_name: input.first_name || "",
+        middle_name: input.middle_name || "",
+        last_name: input.last_name || "",
+        second_last_name: input.second_last_name || "",
+        birth_date: input.birth_date || "",
+        email: input.email || "",
+        phone: input.phone || "",
         company: input.company || "",
+        company_id: input.company_id || "",
+        site: input.site || "",
+        area: input.area || input.department || "",
+        cost_center: input.cost_center || "",
+        weekly_hours: input.weekly_hours ?? null,
+        currency: input.currency || "COP",
+        social_security: {
+          eps_id: input.eps_id || null,
+          pension_fund_id: input.pension_fund_id || null,
+          arl_id: input.arl_id || null,
+          compensation_fund_id: input.compensation_fund_id || null,
+          icbf_entity_id: input.icbf_entity_id || null
+        },
         labor_status: input.labor_status || "activo",
         user_type: input.user_type || input.position || "operario",
         classification: input.user_type || input.position || "operario",
@@ -571,10 +723,57 @@ async function createEmployee(tenantId, input) {
   }));
 }
 
+async function updateEmployee(tenantId, id, input = {}) {
+  const employeeId = numericId(id);
+  if (!employeeId) throw validationError("Empleado invalido.", 400, "EMPLEADO_INVALIDO");
+  return prisma.runWithTenant(tenantId, async () => {
+    const current = await prisma.employee.findFirst({ where: { tenant_id: tenantId, id: employeeId } });
+    if (!current) throw validationError("Empleado no encontrado.", 404, "EMPLEADO_NO_ENCONTRADO");
+    const metadata = current.metadata && typeof current.metadata === "object" ? current.metadata : {};
+    const fullName = input.name || [input.first_name, input.middle_name, input.last_name, input.second_last_name].filter(Boolean).join(" ").trim();
+    const nextMetadata = {
+      ...metadata,
+      ...(fullName ? { name: fullName } : {}),
+      ...(input.document !== undefined ? { document: input.document || "" } : {}),
+      ...(input.document_type !== undefined ? { document_type: input.document_type || "" } : {}),
+      ...(input.first_name !== undefined ? { first_name: input.first_name || "" } : {}),
+      ...(input.middle_name !== undefined ? { middle_name: input.middle_name || "" } : {}),
+      ...(input.last_name !== undefined ? { last_name: input.last_name || "" } : {}),
+      ...(input.second_last_name !== undefined ? { second_last_name: input.second_last_name || "" } : {}),
+      ...(input.email !== undefined ? { email: input.email || "" } : {}),
+      ...(input.phone !== undefined ? { phone: input.phone || "" } : {}),
+      ...(input.site !== undefined ? { site: input.site || "" } : {}),
+      ...(input.area !== undefined ? { area: input.area || "" } : {}),
+      ...(input.cost_center !== undefined ? { cost_center: input.cost_center || "" } : {}),
+      ...(input.weekly_hours !== undefined ? { weekly_hours: input.weekly_hours === "" || input.weekly_hours == null ? null : Number(input.weekly_hours) } : {}),
+      ...(input.labor_status !== undefined ? { labor_status: input.labor_status || "activo" } : {}),
+      ...(input.currency !== undefined ? { currency: input.currency || "COP" } : {})
+    };
+    return prisma.employee.update({
+      where: { id: employeeId },
+      data: {
+        ...(input.code !== undefined ? { code: input.code || current.code } : {}),
+        ...(input.position !== undefined ? { position: input.position || current.position } : {}),
+        ...(input.department !== undefined || input.area !== undefined ? { department: input.department || input.area || current.department } : {}),
+        ...(input.contract_type !== undefined ? { contract_type: input.contract_type || current.contract_type } : {}),
+        ...(input.active !== undefined ? { active: input.active !== false } : {}),
+        metadata: nextMetadata
+      },
+      include: { user: { select: safeUserSelect } }
+    });
+  });
+}
+
 async function createRoute(tenantId, input) {
   validateRouteInput(input);
   return prisma.runWithTenant(tenantId, async () => {
     const employees = await normalizeRouteEmployees(input.employees);
+    await assertRouteAssignmentAvailable(tenantId, {
+      date: input.date,
+      start_time: input.start_time || "08:00",
+      end_time: input.end_time || "17:00",
+      employees
+    });
     const gpsRequired = routeGpsRequiredFromInput(input);
     return prisma.timeRoute.create({
       data: {
@@ -596,6 +795,13 @@ async function updateRoute(tenantId, id, input) {
   validateRouteInput(input);
   return prisma.runWithTenant(tenantId, async () => {
     const employees = await normalizeRouteEmployees(input.employees);
+    await assertRouteAssignmentAvailable(tenantId, {
+      date: input.date,
+      start_time: input.start_time || "08:00",
+      end_time: input.end_time || "17:00",
+      employees,
+      excludeRouteId: Number(id)
+    });
     const gpsRequired = routeGpsRequiredFromInput(input);
     return prisma.timeRoute.update({
       where: { id: Number(id) },
@@ -619,11 +825,13 @@ function validateRouteInput(input = {}) {
   if (!Array.isArray(input.employees) || !input.employees.filter((item) => String(item || "").trim()).length) {
     throw validationError("Selecciona al menos una persona para asignar el horario.");
   }
-  const start = minutesFromTime(input.start_time || "08:00");
-  const end = minutesFromTime(input.end_time || "17:00");
-  if (start === null || end === null) throw validationError("Define horas validas en formato HH:mm.");
-  if (end === start) throw validationError("La hora de inicio y la hora de fin no pueden ser iguales.");
-  if (Number(input.tolerance_minutes ?? 15) < 0) throw validationError("La tolerancia no puede ser negativa.");
+  try {
+    hrPolicy.assertSameDayShift({ startTime: input.start_time || "08:00", endTime: input.end_time || "17:00" });
+  } catch (error) {
+    throw validationError(error.message, 400, error.code || "HORARIO_INVALIDO");
+  }
+  const tolerance = Number(input.tolerance_minutes ?? 15);
+  if (!Number.isInteger(tolerance) || tolerance < 0) throw validationError("La tolerancia debe ser numerica, entera y no negativa.", 400, "TOLERANCIA_INVALIDA");
 }
 
 async function normalizeRouteEmployees(inputEmployees = []) {
@@ -640,6 +848,82 @@ async function normalizeRouteEmployees(inputEmployees = []) {
   });
 }
 
+function routeEmployeeSet(route) {
+  return new Set((Array.isArray(route?.employees) ? route.employees : []).map((item) => normalizeKey(item)));
+}
+
+async function findRouteAssignmentConflicts(tenantId, { date, start_time, end_time, employees = [], excludeRouteId = null }) {
+  const { start, end } = hrPolicy.assertSameDayShift({ startTime: start_time || "08:00", endTime: end_time || "17:00" });
+  const employeeKeys = new Set((employees || []).map((employee) => normalizeKey(employee)).filter(Boolean));
+  if (!employeeKeys.size) return [];
+  const day = startOfDay(date);
+  const routes = await prisma.timeRoute.findMany({
+    where: {
+      tenant_id: tenantId,
+      date: { gte: day, lt: endOfDay(day) },
+      ...(excludeRouteId ? { id: { not: Number(excludeRouteId) } } : {}),
+      status: { notIn: ["cancelled", "cancelada", "inactive", "inactiva"] }
+    }
+  });
+  const conflicts = [];
+  for (const route of routes) {
+    const routeStart = minutesFromTime(route.start_time || "08:00");
+    const routeEnd = minutesFromTime(route.end_time || "17:00");
+    if (routeStart == null || routeEnd == null || !hrPolicy.rangesOverlap({ start, end }, { start: routeStart, end: routeEnd })) continue;
+    const assigned = routeEmployeeSet(route);
+    const overlappingEmployees = Array.from(employeeKeys).filter((employee) => assigned.has(employee));
+    if (overlappingEmployees.length) {
+      conflicts.push({
+        route_id: route.id,
+        date: day.toISOString().slice(0, 10),
+        start_time: route.start_time,
+        end_time: route.end_time,
+        employees: overlappingEmployees
+      });
+    }
+  }
+  return conflicts;
+}
+
+async function assertRouteAssignmentAvailable(tenantId, input) {
+  const conflicts = await findRouteAssignmentConflicts(tenantId, input);
+  if (conflicts.length) {
+    const error = validationError("Ya existe una malla superpuesta para al menos una persona en la misma fecha.", 409, "MALLA_SOLAPADA");
+    error.details = { conflicts };
+    throw error;
+  }
+}
+
+async function prevalidateRoutes(tenantId, input = {}) {
+  validateRouteInput({ ...input, date: input.date || input.start_date });
+  const dates = input.start_date && input.end_date ? datesForRouteRange(input) : [startOfDay(input.date)];
+  const employees = await normalizeRouteEmployees(input.employees);
+  const results = [];
+  for (const date of dates) {
+    const dateText = date.toISOString().slice(0, 10);
+    const conflicts = await findRouteAssignmentConflicts(tenantId, {
+      date: dateText,
+      start_time: input.start_time || "08:00",
+      end_time: input.end_time || "17:00",
+      employees,
+      excludeRouteId: input.exclude_route_id
+    });
+    results.push({
+      date: dateText,
+      status: conflicts.length ? "conflict" : "ready",
+      conflicts
+    });
+  }
+  return {
+    ok: results.every((item) => item.status === "ready"),
+    dates: results.length,
+    employees: employees.length,
+    created: results.filter((item) => item.status === "ready").length,
+    omitted: results.filter((item) => item.status !== "ready").length,
+    results
+  };
+}
+
 function datesForRouteRange(input) {
   const start = startOfDay(input.start_date);
   const end = startOfDay(input.end_date);
@@ -647,6 +931,9 @@ function datesForRouteRange(input) {
     const error = new Error("La fecha final no puede ser menor que la fecha inicial.");
     error.statusCode = 400;
     throw error;
+  }
+  if (!Array.isArray(input.weekdays) || !input.weekdays.length) {
+    throw validationError("Selecciona al menos un dia de la semana para crear mallas por rango.", 400, "DIAS_RANGO_REQUERIDOS");
   }
   const weekdays = Array.isArray(input.weekdays) && input.weekdays.length
     ? new Set(input.weekdays.map((day) => Number(day)))
@@ -664,6 +951,14 @@ async function createRoutesBulk(tenantId, input) {
   if (!dates.length) return { created: 0, routes: [] };
   return prisma.runWithTenant(tenantId, async () => {
     const employees = await normalizeRouteEmployees(input.employees);
+    for (const date of dates) {
+      await assertRouteAssignmentAvailable(tenantId, {
+        date: date.toISOString().slice(0, 10),
+        start_time: input.start_time || "08:00",
+        end_time: input.end_time || "17:00",
+        employees
+      });
+    }
     const gpsRequired = routeGpsRequiredFromInput(input);
     const routes = await prisma.$transaction(dates.map((date) => prisma.timeRoute.create({
       data: {
@@ -798,14 +1093,14 @@ async function getCurrentEmployee(tenantId, user) {
   });
 }
 
-async function resolveVehicleForRoute(plate) {
+async function resolveVehicleForRoute(plate, db = prisma) {
   if (!plate) return null;
-  return prisma.vehicle.findFirst({ where: { plate } }).catch(() => null);
+  return db.vehicle.findFirst({ where: { plate } }).catch(() => null);
 }
 
-async function ensurePreoperationalChecklist({ tenantId, user, employee, route, punch, input }) {
+async function ensurePreoperationalChecklist({ tenantId, user, employee, route, punch, input, db = prisma }) {
   if (!isDriver(employee) || !route?.vehicle_plate || normalizePunchType(input.type || input.tipo_marca) !== "entrada") return null;
-  const existing = await prisma.routePreoperationalChecklist.findFirst({
+  const existing = await db.routePreoperationalChecklist.findFirst({
     where: {
       route_id: route.id,
       driver_id: employee.id,
@@ -816,8 +1111,8 @@ async function ensurePreoperationalChecklist({ tenantId, user, employee, route, 
   });
   if (existing) return existing;
 
-  const vehicle = await resolveVehicleForRoute(route.vehicle_plate);
-  const checklist = await prisma.routePreoperationalChecklist.create({
+  const vehicle = await resolveVehicleForRoute(route.vehicle_plate, db);
+  const checklist = await db.routePreoperationalChecklist.create({
     data: {
       route_id: route.id,
       punch_id: punch?.id || null,
@@ -846,7 +1141,7 @@ async function ensurePreoperationalChecklist({ tenantId, user, employee, route, 
       }
     }
   });
-  await prisma.routeStartAuthorization.create({
+  await db.routeStartAuthorization.create({
     data: {
       route_id: route.id,
       checklist_id: checklist.id,
@@ -856,7 +1151,7 @@ async function ensurePreoperationalChecklist({ tenantId, user, employee, route, 
       reason: "Checklist preoperacional pendiente"
     }
   });
-  return prisma.routePreoperationalChecklist.findFirst({
+  return db.routePreoperationalChecklist.findFirst({
     where: { id: checklist.id },
     include: { answers: true, evidence: true, findings: true }
   });
@@ -877,6 +1172,12 @@ async function getActivePreoperationalChecklist(tenantId, user, query = {}) {
     });
     return { checklist, template: getPreoperationalTemplate() };
   });
+}
+
+async function getOwnPreoperationalChecklist(tenantId, user, query = {}) {
+  const employee = await getCurrentEmployee(tenantId, user);
+  await prisma.runWithTenant(tenantId, () => assertOwnAssignedRoute(tenantId, employee, query));
+  return getActivePreoperationalChecklist(tenantId, user, { route_id: query.route_id });
 }
 
 function answerIsFailure(answer) {
@@ -1012,6 +1313,24 @@ async function submitPreoperationalChecklist(tenantId, user, id, input) {
     }
     return { checklist: updated, route_authorized: status !== "bloqueado", status, risk_level: riskLevel };
   });
+}
+
+async function submitOwnPreoperationalChecklist(tenantId, user, id, input) {
+  const employee = await getCurrentEmployee(tenantId, user);
+  await prisma.runWithTenant(tenantId, async () => {
+    const checklist = await prisma.routePreoperationalChecklist.findFirst({
+      where: { id: Number(id), driver_id: employee.id },
+      select: { id: true, route_id: true }
+    });
+    if (!checklist) {
+      const err = new Error("El checklist indicado no pertenece al empleado conectado.");
+      err.statusCode = 403;
+      err.code = "CHECKLIST_AJENO_DENEGADO";
+      throw err;
+    }
+    await assertOwnAssignedRoute(tenantId, employee, { route_id: checklist.route_id });
+  });
+  return submitPreoperationalChecklist(tenantId, user, id, input);
 }
 
 async function ensureActivityTypes() {
@@ -1216,6 +1535,15 @@ async function getCurrentWorkSession(tenantId, user, query = {}) {
   });
 }
 
+async function getOwnWorkSession(tenantId, user, query = {}) {
+  const employee = await getCurrentEmployee(tenantId, user);
+  await prisma.runWithTenant(tenantId, () => assertOwnAssignedRoute(tenantId, employee, query));
+  return getCurrentWorkSession(tenantId, user, {
+    date: query.date,
+    route_id: query.route_id
+  });
+}
+
 function buildSessionAlerts(session, activities = []) {
   const alerts = [];
   if (session && !activities.length) alerts.push({ type: "sin_actividades", severity: "warning", message: "Jornada activa sin actividades registradas." });
@@ -1230,17 +1558,17 @@ function buildSessionAlerts(session, activities = []) {
 }
 
 async function listWorkActivities(tenantId, query = {}) {
-  const day = query.date ? startOfDay(query.date) : startOfDay();
+  const range = boundedReportRange(query);
   return prisma.runWithTenant(tenantId, async () => prisma.workActivity.findMany({
     where: {
-      occurred_at: { gte: day, lt: endOfDay(day) },
+      occurred_at: { gte: range.start, lt: range.end },
       ...(query.user_name ? { user_name: query.user_name } : {}),
       ...(query.session_id ? { session_id: Number(query.session_id) } : {}),
       ...(query.activity_type_id ? { activity_type_id: Number(query.activity_type_id) } : {})
     },
     include: { activity_type: true, evidence: true },
     orderBy: { occurred_at: "desc" },
-    take: Math.min(Number(query.limit || 200), 500)
+    take: Math.min(Number(query.limit || 200), 5000)
   }));
 }
 
@@ -1356,6 +1684,12 @@ async function createWorkActivity(tenantId, user, input) {
   });
 }
 
+async function createOwnWorkActivity(tenantId, user, input) {
+  const employee = await getCurrentEmployee(tenantId, user);
+  await prisma.runWithTenant(tenantId, () => assertOwnAssignedRoute(tenantId, employee, input));
+  return createWorkActivity(tenantId, user, ownOperationalInput(input, employee, user));
+}
+
 async function getPreoperationalMetrics(tenantId, query = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const from = query.date ? startOfDay(query.date) : startOfDay();
@@ -1389,6 +1723,7 @@ async function getPreoperationalMetrics(tenantId, query = {}) {
 }
 
 async function createPunch(tenantId, input, user) {
+  const idempotencyKey = String(input.idempotency_key || input.metadata?.idempotency_key || "").trim().slice(0, 120) || null;
   const attemptPunch = async (tx) => {
     const punchedAt = input.punched_at ? new Date(input.punched_at) : new Date();
     const currentEmployee = user?.id ? await tx.employee.findFirst({
@@ -1399,6 +1734,17 @@ async function createPunch(tenantId, input, user) {
     const type = normalizePunchType(input.type || input.tipo_marca);
     const inputRouteId = operationalRouteNumericId(input);
     const route = inputRouteId ? await tx.timeRoute.findFirst({ where: { tenant_id: tenantId, id: inputRouteId } }) : null;
+    const lockScope = `${tenantId}:${employee.id}:${route?.id || inputRouteId || "sin-horario"}:${startOfDay(punchedAt).toISOString()}`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${lockScope}, 0))`;
+    if (idempotencyKey) {
+      const replayedPunch = await tx.timePunch.findFirst({ where: { tenant_id: tenantId, idempotency_key: idempotencyKey } });
+      if (replayedPunch && replayedPunch.employee_id !== employee.id) {
+        throw validationError("La clave de idempotencia ya pertenece a otra marcacion.", 409, "IDEMPOTENCY_KEY_CONFLICT");
+      }
+      if (replayedPunch) {
+        return { ok: true, replayed: true, hora: replayedPunch.time, punch: replayedPunch, next: null };
+      }
+    }
     const preopApproved = isDriver(employee) && route?.vehicle_plate && type === "entrada"
       ? await tx.routePreoperationalChecklist.findFirst({
         where: {
@@ -1411,7 +1757,7 @@ async function createPunch(tenantId, input, user) {
       })
       : null;
     if (isDriver(employee) && route?.vehicle_plate && type === "entrada" && !preopApproved) {
-      const preop = await ensurePreoperationalChecklist({ tenantId, user, employee, route, punch: null, input });
+      const preop = await ensurePreoperationalChecklist({ tenantId, user, employee, route, punch: null, input, db: tx });
       return {
         ok: false,
         preoperational_required: true,
@@ -1439,6 +1785,13 @@ async function createPunch(tenantId, input, user) {
     if (type !== expectedType) {
       throw validationError(`La siguiente marcacion permitida es ${expectedType}.`, 409, "MARCACION_FUERA_DE_SECUENCIA");
     }
+    const routeVehicle = String(route?.vehicle_plate || input.vehicle_plate || "").trim();
+    const mileagePrecision = Number(input.metadata?.mileage_precision ?? input.metadata?.kilometraje_precision ?? 1);
+    const dayMileage = type === "salida" && routeVehicle
+      ? hrPolicy.validateMileage(input.kilometraje_dia ?? input.day_mileage_km ?? input.metadata?.kilometraje_dia, { precision: mileagePrecision })
+      : null;
+    const mileageThreshold = Number(input.metadata?.kilometraje_umbral_inusual ?? input.metadata?.unusual_mileage_threshold_km ?? 450);
+    const mileageUnusual = dayMileage != null && Number.isFinite(mileageThreshold) && dayMileage > mileageThreshold;
     const extraMinutes = type === "salida" && route?.end_time
       ? (() => {
           const colParts = new Intl.DateTimeFormat("en-CA", { timeZone: OPERATING_TIMEZONE, hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(punchedAt);
@@ -1482,7 +1835,7 @@ async function createPunch(tenantId, input, user) {
         latitude: input.latitude,
         longitude: input.longitude,
         accuracy_meters: input.accuracy_meters,
-        vehicle_plate: input.vehicle_plate || "",
+        vehicle_plate: routeVehicle,
         route_id: route?.id || inputRouteId,
         extra_minutes: extraMinutes,
         extra_reason: input.extra_reason,
@@ -1506,10 +1859,50 @@ async function createPunch(tenantId, input, user) {
           employee_code: employee.code || "",
           employee_name: employeeDisplayName(employee) || resolvedUserName,
           user_email: employee.user?.email || user?.email || "",
-          identity_aliases: identityAliases
-        }
+          identity_aliases: identityAliases,
+          ...(dayMileage != null ? {
+            kilometraje_dia: dayMileage,
+            mileage: {
+              value: dayMileage,
+              unit: "km",
+              vehicle_plate: routeVehicle,
+              unusual: mileageUnusual,
+              threshold: mileageThreshold
+            }
+          } : {})
+        },
+        idempotency_key: idempotencyKey
       }
     });
+    if (dayMileage != null) {
+      await tx.$executeRaw`
+        INSERT INTO th_jornada_kilometrajes (
+          tenant_id, employee_id, route_id, punch_id, vehicle_plate, value, unit, reported_by, reported_at, active, metadata
+        )
+        VALUES (
+          ${tenantId}, ${employee.id}, ${route?.id || inputRouteId || null}, ${punch.id}, ${routeVehicle}, ${dayMileage}, 'km', ${user?.id || null}, ${punchedAt}, true,
+          ${JSON.stringify({ source: "time_punch", unusual: mileageUnusual, threshold: mileageThreshold })}::jsonb
+        )
+        ON CONFLICT (tenant_id, route_id, employee_id, active)
+        WHERE active = true
+        DO NOTHING
+      `.catch(() => null);
+      if (mileageUnusual) {
+        await tx.$executeRaw`
+          INSERT INTO th_novedades_jornada (
+            tenant_id, logical_key, employee_id, route_id, date, type_code, status, origin, minutes, hours, requires_review, metadata
+          )
+          VALUES (
+            ${tenantId},
+            ${hrPolicy.noveltyLogicalKey({ tenantId, employeeId: employee.id, date: punchedAt.toISOString().slice(0, 10), routeId: route?.id || inputRouteId, typeCode: "KILOMETRAJE_INCONSISTENTE" })},
+            ${employee.id}, ${route?.id || inputRouteId || null}, ${startOfDay(punchedAt)}, 'KILOMETRAJE_INCONSISTENTE', 'pendiente', 'automatico', 0, 0, false,
+            ${JSON.stringify({ value: dayMileage, unit: "km", threshold: mileageThreshold, vehicle_plate: routeVehicle })}::jsonb
+          )
+          ON CONFLICT (tenant_id, logical_key)
+          DO UPDATE SET updated_at = now(), metadata = EXCLUDED.metadata
+        `.catch(() => null);
+      }
+    }
     if (input.latitude != null && input.longitude != null) {
       await tx.gpsPing.create({
         data: {
@@ -1591,7 +1984,7 @@ async function createPunch(tenantId, input, user) {
         if (Object.keys(data).length) await tx.workSession.update({ where: { id: session.id }, data });
       }
     }
-    const preop = await ensurePreoperationalChecklist({ tenantId, user, employee, route, punch, input });
+    const preop = await ensurePreoperationalChecklist({ tenantId, user, employee, route, punch, input, db: tx });
     return {
       ok: true,
       hora: timeString(punchedAt),
@@ -1606,19 +1999,57 @@ async function createPunch(tenantId, input, user) {
     };
   };
 
-  // Reintenta la transacción ante carreras de secuencia concurrentes.
+  // Reintenta solo fallos transitorios de adquisicion/serializacion de transaccion.
   let lastError = null;
   for (let attempt = 0; attempt < 5; attempt += 1) {
     try {
-      return await prisma.runWithTenant(tenantId, () => prisma.$transaction((tx) => attemptPunch(tx), { timeout: 20000 }));
+      return await prisma.runWithTenant(tenantId, () => prisma.$transaction((tx) => attemptPunch(tx), {
+        maxWait: 10000,
+        timeout: 20000
+      }));
     } catch (error) {
-      const raceCodes = new Set(["MARCACION_FUERA_DE_SECUENCIA", "JORNADA_COMPLETA", "P2034"]);
-      if (!raceCodes.has(error.code || error.name)) throw error;
+      if (error.code === "P2002" && idempotencyKey) {
+        const replayedPunch = await prisma.runWithTenant(tenantId, () => prisma.timePunch.findFirst({
+          where: { tenant_id: tenantId, idempotency_key: idempotencyKey }
+        }));
+        const suppliedEmployeeId = numericId(input.employee_id);
+        if (replayedPunch && suppliedEmployeeId && replayedPunch.employee_id !== suppliedEmployeeId) {
+          throw validationError("La clave de idempotencia ya pertenece a otra marcacion.", 409, "IDEMPOTENCY_KEY_CONFLICT");
+        }
+        if (replayedPunch) return { ok: true, replayed: true, hora: replayedPunch.time, punch: replayedPunch, next: null };
+      }
+      const transientCodes = new Set(["P2024", "P2028", "P2034"]);
+      if (!transientCodes.has(error.code || error.name)) throw error;
       lastError = error;
       if (attempt < 4) await new Promise((resolve) => setTimeout(resolve, 120 * (attempt + 1)));
     }
   }
-  throw lastError;
+  const unavailable = new Error("No fue posible confirmar la marcacion por alta concurrencia. Se reintentara automaticamente.");
+  unavailable.statusCode = 503;
+  unavailable.code = "MARCACION_CONCURRENCIA_TEMPORAL";
+  unavailable.cause = lastError;
+  throw unavailable;
+}
+
+function ownOperationalInput(input, employee, user) {
+  const userName = employeeUserName(employee, user?.name || user?.email || "");
+  return {
+    ...input,
+    employee_id: employee.id,
+    user_name: userName,
+    metadata: {
+      ...(input.metadata || {}),
+      current_user_only: true,
+      supplied_employee_id: undefined,
+      supplied_user_name: undefined
+    }
+  };
+}
+
+async function createOwnPunch(tenantId, user, input) {
+  const employee = await getCurrentEmployee(tenantId, user);
+  await prisma.runWithTenant(tenantId, () => assertOwnAssignedRoute(tenantId, employee, input));
+  return createPunch(tenantId, ownOperationalInput(input, employee, user), user);
 }
 
 async function createGpsPing(tenantId, input) {
@@ -1650,6 +2081,12 @@ async function createGpsPing(tenantId, input) {
       }
     });
   });
+}
+
+async function createOwnGpsPing(tenantId, user, input) {
+  const employee = await getCurrentEmployee(tenantId, user);
+  await prisma.runWithTenant(tenantId, () => assertOwnAssignedRoute(tenantId, employee, input));
+  return createGpsPing(tenantId, ownOperationalInput(input, employee, user));
 }
 
 async function listActiveGps(tenantId, query = {}) {
@@ -1916,7 +2353,7 @@ async function getOperationsMap(tenantId, query = {}) {
           extra_minutes: punch.extra_minutes,
           extra_reason: punch.extra_reason,
           extra_detail: punch.extra_detail,
-          extra_evidence: monitorEvidenceSummary(punch.extra_evidence || {}),
+          extra_evidence: monitorEvidenceSummary(punch.extra_evidence || {}, { id: punch.id, source: "punch" }),
           metadata: punch.metadata || {}
         });
       }
@@ -1957,7 +2394,7 @@ async function getOperationsMap(tenantId, query = {}) {
           extra_minutes: punch.extra_minutes,
           extra_reason: punch.extra_reason,
           extra_detail: punch.extra_detail,
-          extra_evidence: monitorEvidenceSummary(punch.extra_evidence || {}),
+          extra_evidence: monitorEvidenceSummary(punch.extra_evidence || {}, { id: punch.id, source: "punch" }),
           metadata: punch.metadata || {}
         })),
         activity_points: routeActivities.map((activity) => ({
@@ -1972,7 +2409,7 @@ async function getOperationsMap(tenantId, query = {}) {
           vehicle_plate: activity.vehicle_plate,
           route_id: activity.route_id,
           observation: activity.observation,
-          evidence: (activity.evidence || []).map(monitorEvidenceSummary),
+          evidence: (activity.evidence || []).map((evidence) => monitorEvidenceSummary(evidence, { source: "activity" })),
           metadata: activity.metadata || {}
         })),
         marks_by_user: Array.from(marksByUser.entries()).map(([user_name, marks]) => ({ user_name, marks }))
@@ -2018,16 +2455,61 @@ function nextPunchType(punches) {
 }
 
 async function listAttendance(tenantId, query = {}) {
+  const range = boundedReportRange(query);
+  return prisma.runWithTenant(tenantId, async () => {
+    const punches = await prisma.timePunch.findMany({
+      where: {
+        date: { gte: range.start, lt: range.end },
+        ...(query.user_name || query.usuario ? { user_name: query.user_name || query.usuario } : {})
+      },
+      orderBy: [{ user_name: "asc" }, { punched_at: "asc" }]
+    });
+    if (query.flat === "1" || query.legacy === "1") {
+      return punches.map((punch) => ({
+        usuario: punch.user_name,
+        user_name: punch.user_name,
+        placa: punch.vehicle_plate,
+        vehiculo_placa: punch.vehicle_plate,
+        tipo: punch.type,
+        tipo_marca: punch.type,
+        hora: punch.time,
+        fecha: punch.date.toISOString().slice(0, 10),
+        es_extra: punch.extra_minutes > 0,
+        minutos_extra: punch.extra_minutes
+      }));
+    }
+    const grouped = new Map();
+    for (const punch of punches) {
+      const key = `${punch.user_name}::${punch.route_id || "sin_horario"}`;
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key).push(punch);
+    }
+    return Array.from(grouped.values()).map((rows) => ({
+      user_name: rows[0]?.user_name || "",
+      route_id: rows[0]?.route_id || null,
+      last_type: rows[rows.length - 1].type || "sin_marcar",
+      next_type: nextPunchType(rows),
+      punches: rows
+    }));
+  });
+}
+
+async function listOwnAttendance(tenantId, user, query = {}) {
+  const employee = await getCurrentEmployee(tenantId, user);
   const day = query.date || query.fecha ? startOfDay(query.date || query.fecha) : startOfDay();
   const start = query.fecha_inicio ? startOfDay(query.fecha_inicio) : day;
   const end = query.fecha_fin ? endOfDay(query.fecha_fin) : endOfDay(day);
+  const aliases = aliasesForEmployee(employee);
   return prisma.runWithTenant(tenantId, async () => {
     const punches = await prisma.timePunch.findMany({
       where: {
         date: { gte: start, lt: end },
-        ...(query.user_name || query.usuario ? { user_name: query.user_name || query.usuario } : {})
+        OR: [
+          { employee_id: employee.id },
+          ...(aliases.length ? [{ user_name: { in: aliases } }] : [])
+        ]
       },
-      orderBy: [{ user_name: "asc" }, { punched_at: "asc" }]
+      orderBy: [{ punched_at: "asc" }]
     });
     if (query.flat === "1" || query.legacy === "1") {
       return punches.map((punch) => ({
@@ -2094,6 +2576,508 @@ async function listWorkdays(tenantId, query = {}) {
     orderBy: { date: "desc" },
     take: 100
   }));
+}
+
+const LABOR_ENTITY_TYPES = new Set(["EPS", "PENSION", "ARL", "CAJA_COMPENSACION", "ICBF"]);
+
+function normalizeLaborEntityType(value) {
+  const normalized = String(value || "").trim().toUpperCase().replace(/[\s-]+/g, "_");
+  if (normalized === "FONDO_PENSIONES" || normalized === "FONDO_DE_PENSIONES" || normalized === "PENSIONES") return "PENSION";
+  if (normalized === "CAJA" || normalized === "CAJA_COMPENSACION_FAMILIAR") return "CAJA_COMPENSACION";
+  if (!LABOR_ENTITY_TYPES.has(normalized)) throw validationError("Tipo de entidad laboral invalido.", 400, "TIPO_ENTIDAD_LABORAL_INVALIDO");
+  return normalized;
+}
+
+function dateOnly(value, fallback = new Date()) {
+  if (value == null || value === "") return fallback == null ? null : startOfDay(fallback);
+  const date = startOfDay(value);
+  if (Number.isNaN(date.getTime())) throw validationError("Fecha invalida.", 400, "FECHA_INVALIDA");
+  return date;
+}
+
+function normalizeNit(value) {
+  return String(value || "").replace(/[\s.-]/g, "").trim();
+}
+
+async function listLaborEntities(tenantId, query = {}) {
+  const activeFilter = query.active == null ? null : query.active === true || query.active === "true";
+  const typeFilter = query.entity_type || query.type ? normalizeLaborEntityType(query.entity_type || query.type) : null;
+  const search = String(query.search || query.q || "").trim();
+  return prisma.runWithTenant(tenantId, async () => prisma.$queryRaw`
+    SELECT e.*,
+      CASE WHEN e.accounting_party_id IS NULL THEN 'pendiente_enlace_contable' ELSE 'enlazada' END AS accounting_link_status,
+      p.name AS accounting_party_name,
+      p.legal_name AS accounting_party_legal_name,
+      p.tax_id AS accounting_party_tax_id,
+      CASE
+        WHEN e.accounting_party_id IS NULL THEN false
+        WHEN COALESCE(regexp_replace(p.tax_id, '[\\s.-]', '', 'g'), '') = COALESCE(regexp_replace(e.nit, '[\\s.-]', '', 'g'), '') THEN false
+        ELSE true
+      END AS nit_mismatch
+    FROM th_entidades_laborales e
+    LEFT JOIN "Party" p ON p.id = e.accounting_party_id AND p.tenant_id = e.tenant_id
+    WHERE e.tenant_id = ${tenantId}
+      AND (${typeFilter == null} OR e.entity_type = ${typeFilter || ""})
+      AND (${activeFilter == null} OR e.active = ${activeFilter ?? true})
+      AND (${!search} OR (
+        e.internal_code ILIKE ${`%${search}%`}
+        OR e.nit ILIKE ${`%${search}%`}
+        OR e.legal_name ILIKE ${`%${search}%`}
+        OR COALESCE(e.trade_name, '') ILIKE ${`%${search}%`}
+      ))
+    ORDER BY e.entity_type ASC, e.legal_name ASC
+    LIMIT ${Math.min(Number(query.limit || 200), 500)}
+  `);
+}
+
+async function createLaborEntity(tenantId, input = {}, user = {}) {
+  const entityType = normalizeLaborEntityType(input.entity_type || input.type);
+  const validFrom = dateOnly(input.valid_from || new Date());
+  const validTo = input.valid_to ? dateOnly(input.valid_to) : null;
+  if (validTo && validTo < validFrom) throw validationError("La fecha final de vigencia no puede ser anterior a la inicial.", 400, "VIGENCIA_INVALIDA");
+  return prisma.runWithTenant(tenantId, async () => {
+    const party = input.accounting_party_id ? await prisma.party.findFirst({ where: { tenant_id: tenantId, id: Number(input.accounting_party_id), active: true } }) : null;
+    if (input.accounting_party_id && !party) throw validationError("El tercero contable no existe o no esta activo.", 404, "TERCERO_CONTABLE_NO_ENCONTRADO");
+    const nitMismatch = party ? normalizeNit(party.tax_id) !== normalizeNit(input.nit) : false;
+    const rows = await prisma.$queryRaw`
+      INSERT INTO th_entidades_laborales (
+        tenant_id, entity_type, internal_code, nit, verification_digit, legal_name, trade_name, official_code,
+        active, valid_from, valid_to, accounting_party_id, notes, metadata
+      )
+      VALUES (
+        ${tenantId}, ${entityType}, ${String(input.internal_code || "").trim()}, ${String(input.nit || "").trim()},
+        ${input.verification_digit || null}, ${String(input.legal_name || "").trim()}, ${input.trade_name || null}, ${input.official_code || null},
+        ${input.active !== false}, ${validFrom}, ${validTo}, ${party?.id || null}, ${input.notes || null},
+        ${JSON.stringify({ ...(input.metadata || {}), audit: [{ action: "created", user_id: user?.id || null, at: new Date().toISOString() }], nit_mismatch: nitMismatch })}::jsonb
+      )
+      RETURNING *
+    `;
+    return { ...rows[0], accounting_link_status: party ? "enlazada" : "pendiente_enlace_contable", nit_mismatch: nitMismatch };
+  });
+}
+
+async function updateLaborEntity(tenantId, id, input = {}, user = {}) {
+  const entityId = numericId(id);
+  if (!entityId) throw validationError("Entidad laboral invalida.", 400, "ENTIDAD_LABORAL_INVALIDA");
+  return prisma.runWithTenant(tenantId, async () => {
+    const currentRows = await prisma.$queryRaw`SELECT * FROM th_entidades_laborales WHERE tenant_id = ${tenantId} AND id = ${entityId} LIMIT 1`;
+    const current = currentRows[0];
+    if (!current) throw validationError("Entidad laboral no encontrada.", 404, "ENTIDAD_LABORAL_NO_ENCONTRADA");
+    const entityType = input.entity_type || input.type ? normalizeLaborEntityType(input.entity_type || input.type) : current.entity_type;
+    const validFrom = input.valid_from !== undefined ? dateOnly(input.valid_from) : current.valid_from;
+    const validTo = input.valid_to !== undefined ? (input.valid_to ? dateOnly(input.valid_to) : null) : current.valid_to;
+    if (validTo && validTo < validFrom) throw validationError("La fecha final de vigencia no puede ser anterior a la inicial.", 400, "VIGENCIA_INVALIDA");
+    const metadata = current.metadata && typeof current.metadata === "object" ? current.metadata : {};
+    const rows = await prisma.$queryRaw`
+      UPDATE th_entidades_laborales
+      SET entity_type = ${entityType},
+          internal_code = ${input.internal_code !== undefined ? String(input.internal_code).trim() : current.internal_code},
+          nit = ${input.nit !== undefined ? String(input.nit).trim() : current.nit},
+          verification_digit = ${input.verification_digit !== undefined ? input.verification_digit || null : current.verification_digit},
+          legal_name = ${input.legal_name !== undefined ? String(input.legal_name).trim() : current.legal_name},
+          trade_name = ${input.trade_name !== undefined ? input.trade_name || null : current.trade_name},
+          official_code = ${input.official_code !== undefined ? input.official_code || null : current.official_code},
+          active = ${input.active !== undefined ? input.active !== false : current.active},
+          valid_from = ${validFrom},
+          valid_to = ${validTo},
+          notes = ${input.notes !== undefined ? input.notes || null : current.notes},
+          metadata = ${JSON.stringify({
+            ...metadata,
+            ...(input.metadata || {}),
+            audit: [...(Array.isArray(metadata.audit) ? metadata.audit : []), { action: "updated", user_id: user?.id || null, at: new Date().toISOString() }]
+          })}::jsonb,
+          updated_at = now()
+      WHERE tenant_id = ${tenantId} AND id = ${entityId}
+      RETURNING *
+    `;
+    return rows[0];
+  });
+}
+
+async function linkLaborEntityAccountingParty(tenantId, id, input = {}, user = {}) {
+  const entityId = numericId(id);
+  if (!entityId) throw validationError("Entidad laboral invalida.", 400, "ENTIDAD_LABORAL_INVALIDA");
+  return prisma.runWithTenant(tenantId, async () => {
+    const currentRows = await prisma.$queryRaw`SELECT * FROM th_entidades_laborales WHERE tenant_id = ${tenantId} AND id = ${entityId} LIMIT 1`;
+    const current = currentRows[0];
+    if (!current) throw validationError("Entidad laboral no encontrada.", 404, "ENTIDAD_LABORAL_NO_ENCONTRADA");
+    const partyId = input.unlink ? null : numericId(input.accounting_party_id);
+    if (!input.unlink && !partyId) throw validationError("Selecciona un tercero contable valido.", 400, "TERCERO_CONTABLE_INVALIDO");
+    const party = partyId ? await prisma.party.findFirst({ where: { tenant_id: tenantId, id: partyId, active: true } }) : null;
+    if (partyId && !party) throw validationError("El tercero contable no existe o no esta activo.", 404, "TERCERO_CONTABLE_NO_ENCONTRADO");
+    const nitMismatch = party ? normalizeNit(party.tax_id) !== normalizeNit(current.nit) : false;
+    const metadata = current.metadata && typeof current.metadata === "object" ? current.metadata : {};
+    const rows = await prisma.$queryRaw`
+      UPDATE th_entidades_laborales
+      SET accounting_party_id = ${party?.id || null},
+          metadata = ${JSON.stringify({
+            ...metadata,
+            nit_mismatch: nitMismatch,
+            audit: [...(Array.isArray(metadata.audit) ? metadata.audit : []), {
+              action: party ? "linked_accounting_party" : "unlinked_accounting_party",
+              user_id: user?.id || null,
+              at: new Date().toISOString(),
+              party_id: party?.id || null,
+              observation: input.observation || ""
+            }]
+          })}::jsonb,
+          updated_at = now()
+      WHERE tenant_id = ${tenantId} AND id = ${entityId}
+      RETURNING *
+    `;
+    return {
+      ...rows[0],
+      accounting_link_status: party ? "enlazada" : "pendiente_enlace_contable",
+      accounting_party_name: party?.legal_name || party?.name || null,
+      accounting_party_tax_id: party?.tax_id || null,
+      nit_mismatch: nitMismatch
+    };
+  });
+}
+
+async function listEmployeeAffiliations(tenantId, employeeId, query = {}) {
+  const employee = numericId(employeeId || query.employee_id);
+  if (!employee) throw validationError("Empleado invalido.", 400, "EMPLEADO_INVALIDO");
+  const activeOnly = query.active == null ? null : query.active === true || query.active === "true";
+  return prisma.runWithTenant(tenantId, async () => prisma.$queryRaw`
+    SELECT a.*, e.entity_type AS entity_entity_type, e.legal_name AS entity_legal_name, e.nit AS entity_nit, e.internal_code AS entity_internal_code
+    FROM th_empleado_afiliaciones a
+    INNER JOIN th_entidades_laborales e ON e.id = a.entity_id AND e.tenant_id = a.tenant_id
+    WHERE a.tenant_id = ${tenantId}
+      AND a.employee_id = ${employee}
+      AND (${activeOnly == null} OR a.status = ${activeOnly ? "activa" : "inactiva"})
+    ORDER BY a.entity_type ASC, a.valid_from DESC
+  `);
+}
+
+async function assertAffiliationDoesNotOverlap(tenantId, { employeeId, entityType, validFrom, validTo, excludeId = null }) {
+  const conflicts = await prisma.$queryRaw`
+    SELECT id
+    FROM th_empleado_afiliaciones
+    WHERE tenant_id = ${tenantId}
+      AND employee_id = ${employeeId}
+      AND entity_type = ${entityType}
+      AND (${excludeId == null} OR id <> ${excludeId || 0})
+      AND daterange(valid_from, COALESCE(valid_to, 'infinity'::date), '[]') && daterange(${validFrom}, COALESCE(${validTo}, 'infinity'::date), '[]')
+    LIMIT 1
+  `;
+  if (conflicts.length) throw validationError("Ya existe una afiliacion superpuesta del mismo tipo para este empleado.", 409, "AFILIACION_SUPERPUESTA");
+}
+
+async function createEmployeeAffiliation(tenantId, employeeId, input = {}) {
+  const employee = numericId(employeeId || input.employee_id);
+  const entityId = numericId(input.entity_id);
+  if (!employee) throw validationError("Empleado invalido.", 400, "EMPLEADO_INVALIDO");
+  if (!entityId) throw validationError("Entidad laboral invalida.", 400, "ENTIDAD_LABORAL_INVALIDA");
+  const entityType = normalizeLaborEntityType(input.entity_type);
+  const validFrom = dateOnly(input.valid_from);
+  const validTo = input.valid_to ? dateOnly(input.valid_to) : null;
+  if (validTo && validTo < validFrom) throw validationError("La fecha final de afiliacion no puede ser anterior a la inicial.", 400, "VIGENCIA_INVALIDA");
+  return prisma.runWithTenant(tenantId, async () => {
+    const [employeeRow, entityRows] = await Promise.all([
+      prisma.employee.findFirst({ where: { tenant_id: tenantId, id: employee, active: true } }),
+      prisma.$queryRaw`SELECT * FROM th_entidades_laborales WHERE tenant_id = ${tenantId} AND id = ${entityId} AND active = true LIMIT 1`
+    ]);
+    if (!employeeRow) throw validationError("Empleado no encontrado o inactivo.", 404, "EMPLEADO_NO_ENCONTRADO");
+    const entity = entityRows[0];
+    if (!entity) throw validationError("Entidad laboral no encontrada o inactiva.", 404, "ENTIDAD_LABORAL_NO_ENCONTRADA");
+    if (entity.entity_type !== entityType) throw validationError("El tipo de afiliacion no coincide con el tipo de entidad.", 400, "TIPO_AFILIACION_INCONSISTENTE");
+    await assertAffiliationDoesNotOverlap(tenantId, { employeeId: employee, entityType, validFrom, validTo });
+    const rows = await prisma.$queryRaw`
+      INSERT INTO th_empleado_afiliaciones (tenant_id, employee_id, entity_type, entity_id, valid_from, valid_to, status, metadata)
+      VALUES (${tenantId}, ${employee}, ${entityType}, ${entityId}, ${validFrom}, ${validTo}, ${input.status || "activa"}, ${JSON.stringify(input.metadata || {})}::jsonb)
+      RETURNING *
+    `;
+    return rows[0];
+  });
+}
+
+async function updateEmployeeAffiliation(tenantId, id, input = {}) {
+  const affiliationId = numericId(id);
+  if (!affiliationId) throw validationError("Afiliacion invalida.", 400, "AFILIACION_INVALIDA");
+  return prisma.runWithTenant(tenantId, async () => {
+    const currentRows = await prisma.$queryRaw`SELECT * FROM th_empleado_afiliaciones WHERE tenant_id = ${tenantId} AND id = ${affiliationId} LIMIT 1`;
+    const current = currentRows[0];
+    if (!current) throw validationError("Afiliacion no encontrada.", 404, "AFILIACION_NO_ENCONTRADA");
+    const entityType = input.entity_type ? normalizeLaborEntityType(input.entity_type) : current.entity_type;
+    const entityId = input.entity_id !== undefined ? numericId(input.entity_id) : current.entity_id;
+    const validFrom = input.valid_from !== undefined ? dateOnly(input.valid_from) : current.valid_from;
+    const validTo = input.valid_to !== undefined ? (input.valid_to ? dateOnly(input.valid_to) : null) : current.valid_to;
+    if (validTo && validTo < validFrom) throw validationError("La fecha final de afiliacion no puede ser anterior a la inicial.", 400, "VIGENCIA_INVALIDA");
+    const entityRows = await prisma.$queryRaw`SELECT * FROM th_entidades_laborales WHERE tenant_id = ${tenantId} AND id = ${entityId} AND active = true LIMIT 1`;
+    const entity = entityRows[0];
+    if (!entity) throw validationError("Entidad laboral no encontrada o inactiva.", 404, "ENTIDAD_LABORAL_NO_ENCONTRADA");
+    if (entity.entity_type !== entityType) throw validationError("El tipo de afiliacion no coincide con el tipo de entidad.", 400, "TIPO_AFILIACION_INCONSISTENTE");
+    await assertAffiliationDoesNotOverlap(tenantId, { employeeId: current.employee_id, entityType, validFrom, validTo, excludeId: affiliationId });
+    const metadata = current.metadata && typeof current.metadata === "object" ? current.metadata : {};
+    const rows = await prisma.$queryRaw`
+      UPDATE th_empleado_afiliaciones
+      SET entity_type = ${entityType},
+          entity_id = ${entityId},
+          valid_from = ${validFrom},
+          valid_to = ${validTo},
+          status = ${input.status || current.status},
+          metadata = ${JSON.stringify({ ...metadata, ...(input.metadata || {}) })}::jsonb
+      WHERE tenant_id = ${tenantId} AND id = ${affiliationId}
+      RETURNING *
+    `;
+    return rows[0];
+  });
+}
+
+async function listNoveltyTypes(tenantId, query = {}) {
+  return prisma.runWithTenant(tenantId, async () => prisma.$queryRaw`
+    SELECT code, name, description, category, severity, origin, requires_justification, requires_approval, affects_payroll, active, valid_from, valid_to
+    FROM th_tipos_novedad
+    WHERE tenant_id = ${tenantId}
+      AND (${query.active == null} OR active = ${query.active === "true" || query.active === true})
+    ORDER BY category ASC, name ASC
+  `.catch(() => []));
+}
+
+async function listWorkdayNovelties(tenantId, query = {}) {
+  const range = boundedReportRange(query, { defaultToday: false, maxDays: 366 });
+  return prisma.runWithTenant(tenantId, async () => prisma.$queryRaw`
+    SELECT n.*, e.code AS employee_code, e.metadata AS employee_metadata
+    FROM th_novedades_jornada n
+    LEFT JOIN "Employee" e ON e.id = n.employee_id AND e.tenant_id = n.tenant_id
+    WHERE n.tenant_id = ${tenantId}
+      AND (${range == null} OR (n.date >= ${range?.start || new Date(0)} AND n.date < ${range?.end || new Date(0)}))
+      AND (${query.status == null} OR n.status = ${query.status || ""})
+      AND (${query.type == null} OR n.type_code = ${query.type || ""})
+    ORDER BY n.updated_at DESC
+    LIMIT ${Math.min(Number(query.limit || 100), 500)}
+  `.catch(() => []));
+}
+
+async function getLaborConfiguration(tenantId, query = {}) {
+  const effectiveDate = startOfDay(query.date || new Date());
+  const country = String(query.country || "CO").toUpperCase();
+  return prisma.runWithTenant(tenantId, async () => {
+    if (query.all === "1" || query.all === "true" || query.all === true) {
+      const [parameters, concepts, calendars] = await Promise.all([
+        prisma.$queryRaw`
+          SELECT *
+          FROM th_parametros_laborales
+          WHERE tenant_id = ${tenantId}
+            AND country = ${country}
+          ORDER BY code ASC, valid_from DESC, priority DESC
+        `.catch(() => []),
+        prisma.$queryRaw`
+          SELECT *
+          FROM th_conceptos_recargo
+          WHERE tenant_id = ${tenantId}
+            AND country = ${country}
+          ORDER BY code ASC, valid_from DESC, priority DESC
+        `.catch(() => []),
+        prisma.$queryRaw`
+          SELECT date, name, day_type, country, territory, source
+          FROM th_calendario_dias
+          WHERE tenant_id = ${tenantId}
+            AND country = ${country}
+          ORDER BY date DESC
+          LIMIT ${Math.min(Number(query.calendar_limit || 100), 500)}
+        `.catch(() => [])
+      ]);
+      return { country, mode: "all", parameters, concepts, calendars };
+    }
+    const [parameters, concepts, calendars] = await Promise.all([
+      prisma.$queryRaw`
+        SELECT code, name, value, unit, country, valid_from, valid_to, priority, active, source_note
+        FROM th_parametros_laborales
+        WHERE tenant_id = ${tenantId}
+          AND country = ${country}
+          AND active = true
+          AND valid_from <= ${effectiveDate}
+          AND (valid_to IS NULL OR valid_to >= ${effectiveDate})
+        ORDER BY code ASC, priority DESC
+      `.catch(() => []),
+      prisma.$queryRaw`
+        SELECT code, name, value_type, factor, percent, country, valid_from, valid_to, active, source_note
+        FROM th_conceptos_recargo
+        WHERE tenant_id = ${tenantId}
+          AND country = ${country}
+          AND active = true
+          AND valid_from <= ${effectiveDate}
+          AND (valid_to IS NULL OR valid_to >= ${effectiveDate})
+        ORDER BY code ASC, valid_from DESC
+      `.catch(() => []),
+      prisma.$queryRaw`
+        SELECT date, name, day_type, country, territory, source
+        FROM th_calendario_dias
+        WHERE tenant_id = ${tenantId}
+          AND country = ${country}
+          AND date >= ${startOfDay(query.from || effectiveDate)}
+          AND date < ${endOfDay(query.to || effectiveDate)}
+        ORDER BY date ASC
+      `.catch(() => [])
+    ]);
+    return { country, effective_date: effectiveDate.toISOString().slice(0, 10), parameters, concepts, calendars };
+  });
+}
+
+function normalizeLaborCode(value) {
+  const code = String(value || "").trim().toUpperCase().replace(/[\s-]+/g, "_");
+  if (!code) throw validationError("El codigo es obligatorio.", 400, "CODIGO_LABORAL_REQUERIDO");
+  return code;
+}
+
+function decimalOrNull(value) {
+  if (value == null || value === "") return null;
+  const number = Number(value);
+  if (!Number.isFinite(number)) throw validationError("El valor numerico no es valido.", 400, "VALOR_NUMERICO_INVALIDO");
+  return number;
+}
+
+async function assertNoLaborValidityOverlap(table, tenantId, { companyId, country, code, validFrom, validTo, excludeId = null }) {
+  const rows = table === "parameters"
+    ? await prisma.$queryRaw`
+      SELECT id FROM th_parametros_laborales
+      WHERE tenant_id = ${tenantId}
+        AND COALESCE(company_id, '') = COALESCE(${companyId || null}, '')
+        AND country = ${country}
+        AND code = ${code}
+        AND (${excludeId == null} OR id <> ${excludeId || 0})
+        AND daterange(valid_from, COALESCE(valid_to, 'infinity'::date), '[]') && daterange(${validFrom}, COALESCE(${validTo}, 'infinity'::date), '[]')
+      LIMIT 1
+    `
+    : await prisma.$queryRaw`
+      SELECT id FROM th_conceptos_recargo
+      WHERE tenant_id = ${tenantId}
+        AND COALESCE(company_id, '') = COALESCE(${companyId || null}, '')
+        AND country = ${country}
+        AND code = ${code}
+        AND (${excludeId == null} OR id <> ${excludeId || 0})
+        AND daterange(valid_from, COALESCE(valid_to, 'infinity'::date), '[]') && daterange(${validFrom}, COALESCE(${validTo}, 'infinity'::date), '[]')
+      LIMIT 1
+    `;
+  if (rows.length) throw validationError("Ya existe una vigencia superpuesta para el mismo codigo, empresa y pais.", 409, "VIGENCIA_LABORAL_SUPERPUESTA");
+}
+
+async function createLaborParameter(tenantId, input = {}, user = {}) {
+  const country = String(input.country || "CO").toUpperCase();
+  const code = normalizeLaborCode(input.code);
+  const validFrom = dateOnly(input.valid_from);
+  const validTo = input.valid_to ? dateOnly(input.valid_to) : null;
+  if (validTo && validTo < validFrom) throw validationError("La fecha final no puede ser anterior a la inicial.", 400, "VIGENCIA_INVALIDA");
+  const value = decimalOrNull(input.value);
+  if (value == null) throw validationError("El valor del parametro es obligatorio.", 400, "VALOR_PARAMETRO_REQUERIDO");
+  return prisma.runWithTenant(tenantId, async () => {
+    await assertNoLaborValidityOverlap("parameters", tenantId, { companyId: input.company_id || null, country, code, validFrom, validTo });
+    const rows = await prisma.$queryRaw`
+      INSERT INTO th_parametros_laborales (
+        tenant_id, company_id, country, code, name, value, unit, valid_from, valid_to, priority, active, source_note, metadata, created_by
+      )
+      VALUES (
+        ${tenantId}, ${input.company_id || null}, ${country}, ${code}, ${String(input.name || "").trim()}, ${value}, ${String(input.unit || "").trim()},
+        ${validFrom}, ${validTo}, ${Number(input.priority || 100)}, ${input.active !== false}, ${input.source_note || null},
+        ${JSON.stringify(input.metadata || {})}::jsonb, ${user?.id || null}
+      )
+      RETURNING *
+    `;
+    return rows[0];
+  });
+}
+
+async function updateLaborParameter(tenantId, id, input = {}) {
+  const parameterId = numericId(id);
+  if (!parameterId) throw validationError("Parametro laboral invalido.", 400, "PARAMETRO_LABORAL_INVALIDO");
+  return prisma.runWithTenant(tenantId, async () => {
+    const currentRows = await prisma.$queryRaw`SELECT * FROM th_parametros_laborales WHERE tenant_id = ${tenantId} AND id = ${parameterId} LIMIT 1`;
+    const current = currentRows[0];
+    if (!current) throw validationError("Parametro laboral no encontrado.", 404, "PARAMETRO_LABORAL_NO_ENCONTRADO");
+    const country = input.country ? String(input.country).toUpperCase() : current.country;
+    const code = input.code ? normalizeLaborCode(input.code) : current.code;
+    const companyId = input.company_id !== undefined ? input.company_id || null : current.company_id;
+    const validFrom = input.valid_from !== undefined ? dateOnly(input.valid_from) : current.valid_from;
+    const validTo = input.valid_to !== undefined ? (input.valid_to ? dateOnly(input.valid_to) : null) : current.valid_to;
+    if (validTo && validTo < validFrom) throw validationError("La fecha final no puede ser anterior a la inicial.", 400, "VIGENCIA_INVALIDA");
+    await assertNoLaborValidityOverlap("parameters", tenantId, { companyId, country, code, validFrom, validTo, excludeId: parameterId });
+    const rows = await prisma.$queryRaw`
+      UPDATE th_parametros_laborales
+      SET company_id = ${companyId},
+          country = ${country},
+          code = ${code},
+          name = ${input.name !== undefined ? String(input.name).trim() : current.name},
+          value = ${input.value !== undefined ? decimalOrNull(input.value) : current.value},
+          unit = ${input.unit !== undefined ? String(input.unit).trim() : current.unit},
+          valid_from = ${validFrom},
+          valid_to = ${validTo},
+          priority = ${input.priority !== undefined ? Number(input.priority) : current.priority},
+          active = ${input.active !== undefined ? input.active !== false : current.active},
+          source_note = ${input.source_note !== undefined ? input.source_note || null : current.source_note},
+          metadata = ${JSON.stringify({ ...(current.metadata || {}), ...(input.metadata || {}) })}::jsonb
+      WHERE tenant_id = ${tenantId} AND id = ${parameterId}
+      RETURNING *
+    `;
+    return rows[0];
+  });
+}
+
+async function createSurchargeConcept(tenantId, input = {}) {
+  const country = String(input.country || "CO").toUpperCase();
+  const code = normalizeLaborCode(input.code);
+  const valueType = String(input.value_type || "").trim();
+  if (!["porcentaje_adicional", "factor_total", "informativo"].includes(valueType)) {
+    throw validationError("Tipo de valor invalido.", 400, "TIPO_VALOR_RECARGO_INVALIDO");
+  }
+  const validFrom = dateOnly(input.valid_from);
+  const validTo = input.valid_to ? dateOnly(input.valid_to) : null;
+  if (validTo && validTo < validFrom) throw validationError("La fecha final no puede ser anterior a la inicial.", 400, "VIGENCIA_INVALIDA");
+  return prisma.runWithTenant(tenantId, async () => {
+    await assertNoLaborValidityOverlap("concepts", tenantId, { companyId: input.company_id || null, country, code, validFrom, validTo });
+    const rows = await prisma.$queryRaw`
+      INSERT INTO th_conceptos_recargo (
+        tenant_id, company_id, country, code, name, value_type, percent, factor, unit, valid_from, valid_to, priority, active, source_note, metadata
+      )
+      VALUES (
+        ${tenantId}, ${input.company_id || null}, ${country}, ${code}, ${String(input.name || "").trim()}, ${valueType},
+        ${decimalOrNull(input.percent)}, ${decimalOrNull(input.factor)}, ${input.unit || "hour"}, ${validFrom}, ${validTo},
+        ${Number(input.priority || 100)}, ${input.active !== false}, ${input.source_note || null}, ${JSON.stringify(input.metadata || {})}::jsonb
+      )
+      RETURNING *
+    `;
+    return rows[0];
+  });
+}
+
+async function updateSurchargeConcept(tenantId, id, input = {}) {
+  const conceptId = numericId(id);
+  if (!conceptId) throw validationError("Concepto laboral invalido.", 400, "CONCEPTO_LABORAL_INVALIDO");
+  return prisma.runWithTenant(tenantId, async () => {
+    const currentRows = await prisma.$queryRaw`SELECT * FROM th_conceptos_recargo WHERE tenant_id = ${tenantId} AND id = ${conceptId} LIMIT 1`;
+    const current = currentRows[0];
+    if (!current) throw validationError("Concepto laboral no encontrado.", 404, "CONCEPTO_LABORAL_NO_ENCONTRADO");
+    const country = input.country ? String(input.country).toUpperCase() : current.country;
+    const code = input.code ? normalizeLaborCode(input.code) : current.code;
+    const companyId = input.company_id !== undefined ? input.company_id || null : current.company_id;
+    const valueType = input.value_type !== undefined ? String(input.value_type || "").trim() : current.value_type;
+    if (!["porcentaje_adicional", "factor_total", "informativo"].includes(valueType)) throw validationError("Tipo de valor invalido.", 400, "TIPO_VALOR_RECARGO_INVALIDO");
+    const validFrom = input.valid_from !== undefined ? dateOnly(input.valid_from) : current.valid_from;
+    const validTo = input.valid_to !== undefined ? (input.valid_to ? dateOnly(input.valid_to) : null) : current.valid_to;
+    if (validTo && validTo < validFrom) throw validationError("La fecha final no puede ser anterior a la inicial.", 400, "VIGENCIA_INVALIDA");
+    await assertNoLaborValidityOverlap("concepts", tenantId, { companyId, country, code, validFrom, validTo, excludeId: conceptId });
+    const rows = await prisma.$queryRaw`
+      UPDATE th_conceptos_recargo
+      SET company_id = ${companyId},
+          country = ${country},
+          code = ${code},
+          name = ${input.name !== undefined ? String(input.name).trim() : current.name},
+          value_type = ${valueType},
+          percent = ${input.percent !== undefined ? decimalOrNull(input.percent) : current.percent},
+          factor = ${input.factor !== undefined ? decimalOrNull(input.factor) : current.factor},
+          unit = ${input.unit !== undefined ? input.unit || "hour" : current.unit},
+          valid_from = ${validFrom},
+          valid_to = ${validTo},
+          priority = ${input.priority !== undefined ? Number(input.priority) : current.priority},
+          active = ${input.active !== undefined ? input.active !== false : current.active},
+          source_note = ${input.source_note !== undefined ? input.source_note || null : current.source_note},
+          metadata = ${JSON.stringify({ ...(current.metadata || {}), ...(input.metadata || {}) })}::jsonb
+      WHERE tenant_id = ${tenantId} AND id = ${conceptId}
+      RETURNING *
+    `;
+    return rows[0];
+  });
 }
 
 function periodFromRange(input = {}) {
@@ -2228,30 +3212,55 @@ module.exports = {
   listEmployees,
   getCurrentEmployee,
   createEmployee,
+  updateEmployee,
+  listLaborEntities,
+  createLaborEntity,
+  updateLaborEntity,
+  linkLaborEntityAccountingParty,
+  listEmployeeAffiliations,
+  createEmployeeAffiliation,
+  updateEmployeeAffiliation,
   listRoutes,
+  listOwnRoutes,
   listRouteEventSummaries,
   createRoute,
   updateRoute,
   createRoutesBulk,
+  prevalidateRoutes,
   getPreoperationalTemplate,
   getActivePreoperationalChecklist,
+  getOwnPreoperationalChecklist,
   submitPreoperationalChecklist,
+  submitOwnPreoperationalChecklist,
   getPreoperationalMetrics,
   getRouteTracking,
   getOperationsMap,
+  getMonitorEvidence,
   createPunch,
+  createOwnPunch,
   createGpsPing,
+  createOwnGpsPing,
   listActivityTypes,
   createActivityType,
   updateActivityType,
   getCurrentWorkSession,
+  getOwnWorkSession,
   listWorkActivities,
   createWorkActivity,
+  createOwnWorkActivity,
   listActiveGps,
   listGpsHistory,
   listAttendance,
+  listOwnAttendance,
   processDay,
   listWorkdays,
+  listNoveltyTypes,
+  listWorkdayNovelties,
+  getLaborConfiguration,
+  createLaborParameter,
+  updateLaborParameter,
+  createSurchargeConcept,
+  updateSurchargeConcept,
   processPayrollRange,
   listPayroll
 };

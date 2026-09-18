@@ -2,7 +2,8 @@ import { assertActiveSession, clearSession, emitAppAlert, keepSessionAlive, setP
 import { clearSupabaseFetchCache, getSupabaseAccessToken, supabaseAuth, supabaseFetch } from "./supabaseClient";
 import { getServiceImageUrl, uploadServiceImageData } from "./supabaseStorage";
 import { API_BASE_URL } from "./apiBaseUrl";
-import { scheduleMonitorPunchEvidence, scheduleTrackingMode } from "./hrScheduleMonitor";
+import { scheduleMonitorPunchEvidence, scheduleMonitorPunchEvidenceSummary, scheduleTrackingMode } from "./hrScheduleMonitor";
+import { validateServiceReferenceImport } from "./serviceReferenceImport";
 
 const API_URL = API_BASE_URL;
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
@@ -99,10 +100,12 @@ const fallbackActivityTypes = [
 type ActivityTypeLike = { id?: number | string; code?: string; name?: string; description?: string | null; active?: boolean; sort_order?: number; metadata?: AnyRow };
 
 const tenantModuleCodesByPermissionModule: Record<string, string[]> = {
+  apex_heart: ["M-28", "reportes", "apex_heart"],
   accounting: ["M-07", "contabilidad", "finance", "accounting"],
   admin: ["M-22", "administracion", "administracion_apex", "admin"],
   brain: ["AI-CORE", "apex-ai", "apex_ai", "brain"],
   hr: ["M-17", "talento-humano", "talento_humano", "hr"],
+  time_tracking: ["M-17", "talento-humano", "talento_humano", "hr", "time_tracking", "marcaciones"],
   inventory: ["M-01", "inventario", "inventory"],
   invoicing: ["M-04", "facturacion", "invoicing"],
   payroll: ["M-17", "nomina", "payroll"],
@@ -283,14 +286,18 @@ export async function authorizedJson<T>(input: string, options: RequestInit = {}
       const message = requestErrorMessage(input, response.status, detail);
       alertRequestFailure(input, response.status, detail);
       reportClientFailure(input, response.status, detail, String(options.method || "GET"));
-      throw new Error(message);
+      throw Object.assign(new Error(message), { status: response.status, retryable: true });
     }
     const body = await response.json().catch(() => ({ error: response.statusText }));
     const detail = body.error || body.message || response.statusText;
     const message = requestErrorMessage(input, response.status, detail);
     alertRequestFailure(input, response.status, detail);
     reportClientFailure(input, response.status, detail, String(options.method || "GET"));
-    throw new Error(message);
+    throw Object.assign(new Error(message), {
+      status: response.status,
+      code: typeof body.code === "string" ? body.code : "",
+      retryable: response.status === 408 || response.status === 429
+    });
   }
   return response.json() as Promise<T>;
 }
@@ -365,7 +372,7 @@ const adminPermissionCatalog = [
   { key: "servicios", label: "Servicios", group: "operacion", module: "services", submodule: "orders", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import", "attach", "download", "execute", "reports"] },
   { key: "servicios_correcciones", label: "Edicion especial de ordenes", group: "operacion", module: "services.orders", submodule: "order-corrections", actions: ["edit_any_state"], allowPhysicalDelete: false },
   { key: "talento_humano", label: "Talento humano", group: "administracion", module: "hr", submodule: "hr", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "export", "import", "sensitive", "reports"] },
-  { key: "marcaciones", label: "Marcaciones y jornadas", group: "operacion", module: "hr", submodule: "time", actions: ["access", "view", "create", "edit", "approve", "reject", "export", "reports"] },
+  { key: "marcaciones", label: "Marcaciones y jornadas", group: "operacion", module: "time_tracking", submodule: "time", actions: ["access", "view", "create", "edit", "approve", "reject", "export", "reports"] },
   { key: "proyectos", label: "Proyectos", group: "gestion", module: "projects", submodule: "projects", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "export", "attach", "download", "reports"] },
   { key: "contabilidad", label: "Contabilidad", group: "finanzas", module: "accounting", submodule: "accounting", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import", "sensitive", "reports", "configure"] },
   { key: "facturacion", label: "Facturacion", group: "finanzas", module: "invoicing", submodule: "billing", actions: ["access", "view", "create", "edit", "approve", "reject", "void", "export", "download", "sensitive"] },
@@ -435,7 +442,7 @@ function mergeAdminPermissions(overrides: Record<string, Record<string, boolean>
 function defaultAdminRoles(activeModules = getStoredTenantActiveModules()) {
   const catalog = filteredAdminPermissionCatalog(activeModules);
   const all = Object.fromEntries(catalog.map((item) => [item.key, protectPhysicalDeleteDefaults(item.actions)]));
-  const shared = { scopes: { locations: [], areas: [], cost_centers: [], processes: [] }, restrictions: { locations: [], areas: [], cost_centers: [], processes: [] }, can_delegate: false, sensitive: false };
+  const shared = { access_profile: "standard", scopes: { locations: [], areas: [], cost_centers: [], processes: [] }, restrictions: { locations: [], areas: [], cost_centers: [], processes: [] }, can_delegate: false, sensitive: false };
   return [
     { id: 1, name: "Administrador de empresa", description: "Administra usuarios, roles y operacion de la empresa.", active: true, is_system: true, hierarchy_level: 90, role_type: "admin_empresa", scope: "company", permissions: all, ...shared },
     { id: 2, name: "Supervisor operativo", description: "Supervisa ejecucion diaria y evidencias operativas.", active: true, is_system: false, hierarchy_level: 60, role_type: "supervisor", scope: "area", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true, reports: true }, marcaciones: { access: true, view: true, create: true, edit: true, approve: true, reject: true, export: true, reports: true }, servicios: { access: true, view: true, create: true, edit: true, approve: true, attach: true, download: true, reports: true }, transporte: { access: true, view: true, edit: true, reports: true } }, activeModules), ...shared },
@@ -443,7 +450,8 @@ function defaultAdminRoles(activeModules = getStoredTenantActiveModules()) {
     { id: 4, name: "Auditor", description: "Consulta auditoria, reportes y documentos sensibles.", active: true, is_system: false, hierarchy_level: 65, role_type: "auditor", scope: "company", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true, reports: true }, auditoria: { access: true, view: true, export: true, download: true, reports: true, sensitive: true }, reportes: { access: true, view: true, export: true, download: true, reports: true, sensitive: true }, documentos: { access: true, view: true, download: true, sensitive: true } }, activeModules), ...shared, sensitive: true },
     { id: 5, name: "Soporte tecnico", description: "Soporte de configuracion y diagnostico.", active: true, is_system: false, hierarchy_level: 75, role_type: "soporte", scope: "company", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true, reports: true }, usuarios: { access: true, view: true, edit: true }, roles: { access: true, view: true }, configuracion: { access: true, view: true, edit: true, configure: true }, auditoria: { access: true, view: true, reports: true }, notificaciones: { access: true, view: true, create: true, edit: true }, ia: { access: true, view: true, execute: true } }, activeModules), ...shared },
     { id: 6, name: "Tecnico", description: "Ejecuta exclusivamente servicios activos asignados.", active: true, is_system: true, hierarchy_level: 35, role_type: "operativo", scope: "assigned", permissions: mergeAdminPermissions({ servicios: { access: true, view: true, edit: true, attach: true, download: true } }, activeModules), ...shared },
-    { id: 7, name: "Empleado", description: "Consulta operativa y registra jornada.", active: true, is_system: false, hierarchy_level: 20, role_type: "operativo", scope: "location", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true }, marcaciones: { access: true, view: true, create: true }, documentos: { access: true, view: true, download: true } }, activeModules), ...shared }
+    { id: 7, name: "Empleado", description: "Consulta operativa y registra jornada.", active: true, is_system: false, hierarchy_level: 20, role_type: "operativo", scope: "location", permissions: mergeAdminPermissions({ dashboard: { access: true, view: true }, marcaciones: { access: true, view: true, create: true }, documentos: { access: true, view: true, download: true } }, activeModules), ...shared },
+    { id: 8, name: "Empleado marcaciones", description: "Registra exclusivamente su propia jornada.", active: true, is_system: false, hierarchy_level: 15, role_type: "operativo", scope: "self", permissions: mergeAdminPermissions({ marcaciones: { access: true, view: true, create: true } }, activeModules), ...shared, access_profile: "marking_only" }
   ];
 }
 
@@ -583,6 +591,7 @@ function roleFromCatalogItem(item: {
     is_system: Boolean(metadata.is_system),
     hierarchy_level: Number(metadata.hierarchy_level || item.sort_order || 10),
     role_type: String(metadata.role_type || "custom"),
+    access_profile: String(metadata.access_profile || "standard"),
     scope: String(metadata.scope || "company"),
     scopes: metadata.scopes as AdminRole["scopes"] || { locations: [], areas: [], cost_centers: [], processes: [] },
     restrictions: metadata.restrictions as AdminRole["restrictions"] || { locations: [], areas: [], cost_centers: [], processes: [] },
@@ -661,12 +670,12 @@ async function loadSupabaseAdminRoles() {
   return roles;
 }
 
-async function saveSupabaseAdminRole(role: AdminRole) {
+async function saveSupabaseAdminRole(role: AdminRole, operation: "create" | "edit" = "edit") {
   const membership = await currentSupabaseCompanyUser();
   if (!membership?.company_id) throw new Error("No se encontro una empresa activa para guardar el rol.");
   const serverResult = await nextAdminRolesRequest<{ role?: AdminRole & { code?: string } }>({
     method: "POST",
-    body: JSON.stringify({ company_id: membership.company_id, role })
+    body: JSON.stringify({ company_id: membership.company_id, operation, role })
   });
   forgetDeletedAdminRole(role, membership.company_id);
   if (serverResult.role) return { ...role, ...serverResult.role };
@@ -687,6 +696,7 @@ async function saveSupabaseAdminRole(role: AdminRole) {
         role_numeric_id: role.id,
         role_name: role.name,
         role_type: role.role_type || "custom",
+        access_profile: role.access_profile || "standard",
         scope: role.scope || "company",
         scopes: role.scopes || { locations: [], areas: [], cost_centers: [], processes: [] },
         restrictions: role.restrictions || { locations: [], areas: [], cost_centers: [], processes: [] },
@@ -1829,6 +1839,24 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   const active = search.get("active");
   const method = String(options.method || "GET").toUpperCase();
 
+  const monitorEvidenceMatch = pathname.match(/^\/api\/v1\/hr\/monitor-evidence\/(activity|punch)\/([^/]+)$/);
+  if (monitorEvidenceMatch && method === "GET") {
+    const companyId = await currentSupabaseCompanyId();
+    const source = monitorEvidenceMatch[1];
+    const id = monitorEvidenceMatch[2];
+    if (source === "activity") {
+      const rows = await supabaseFetch<Array<{ id: string; metadata?: AnyRow }>>(`/rest/v1/gps_pings?select=id,metadata&company_id=eq.${encodeURIComponent(companyId)}&id=eq.${encodeURIComponent(id)}&source=eq.work_activity&limit=1`);
+      const row = rows[0];
+      const base64 = String(row?.metadata?.photo || "").trim();
+      if (!base64) throw new Error("La evidencia de la actividad no esta disponible.");
+      return { id, source, base64_data: base64, file_name: String(row?.metadata?.photo_name || "evidencia.jpg"), available: true } as T;
+    }
+    const rows = await supabaseFetch<Array<{ id: string; extra_evidence?: AnyRow; metadata?: AnyRow }>>(`/rest/v1/time_punches?select=id,extra_evidence,metadata&company_id=eq.${encodeURIComponent(companyId)}&id=eq.${encodeURIComponent(id)}&limit=1`);
+    const evidence = scheduleMonitorPunchEvidence(rows[0] || {});
+    if (!evidence.base64_data && !evidence.file_url) throw new Error("La evidencia de la marcacion no esta disponible.");
+    return { id, source, ...evidence, available: true } as T;
+  }
+
   if (pathname === "/api/v1/hr/activity-types") {
     const masterData = await loadSupabaseUserMasterData().catch(() => defaultUserMasterData());
     const activityTypes = Array.isArray((masterData as AnyRow).activity_types) ? (masterData as AnyRow).activity_types as ActivityTypeLike[] : [];
@@ -1912,6 +1940,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       }
     }
     const extraEvidence = normalizePunchExtraEvidence(body.extra_evidence);
+    const idempotencyKey = String(body.idempotency_key || body.metadata?.idempotency_key || "").trim().slice(0, 120) || null;
     const row = {
       company_id: employee.company_id,
       employee_id: identity.employee_id,
@@ -1928,6 +1957,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       extra_minutes: extraMinutes,
       extra_reason: body.extra_reason || null,
       extra_detail: body.extra_detail || null,
+      idempotency_key: idempotencyKey,
       ...(extraEvidence ? { extra_evidence: extraEvidence } : {}),
       metadata: {
         ...(body.metadata || {}),
@@ -1942,19 +1972,19 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     };
     let inserted: Array<Record<string, unknown>>;
     try {
-      inserted = await supabaseFetch<Array<Record<string, unknown>>>("/rest/v1/time_punches?select=*", {
+      inserted = await supabaseFetch<Array<Record<string, unknown>>>("/rest/v1/time_punches?on_conflict=company_id,idempotency_key&select=*", {
         method: "POST",
         body: JSON.stringify(row),
-        headers: { Prefer: "return=representation" }
+        headers: { Prefer: "return=representation,resolution=merge-duplicates" }
       });
     } catch (error) {
       if (!String(error).includes("extra_evidence")) throw error;
       const fallbackRow = { ...row };
       delete fallbackRow.extra_evidence;
-      inserted = await supabaseFetch<Array<Record<string, unknown>>>("/rest/v1/time_punches?select=*", {
+      inserted = await supabaseFetch<Array<Record<string, unknown>>>("/rest/v1/time_punches?on_conflict=company_id,idempotency_key&select=*", {
         method: "POST",
         body: JSON.stringify(fallbackRow),
-        headers: { Prefer: "return=representation" }
+        headers: { Prefer: "return=representation,resolution=merge-duplicates" }
       });
     }
     const punchIdentityFilter = identity.employee_id
@@ -1981,12 +2011,14 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
 
   if (pathname === "/api/v1/hr/work-activities" && method === "GET") {
     const companyId = await currentSupabaseCompanyId();
-    const limit = Math.min(Number(search.get("limit") || 500), 1000);
+    const limit = Math.min(Number(search.get("limit") || 1000), 5000);
     const userName = search.get("user_name") || search.get("usuario") || "";
     const date = search.get("date") || search.get("fecha") || "";
+    const from = search.get("fecha_inicio") || search.get("from") || date;
+    const to = search.get("fecha_fin") || search.get("to") || date;
     const userFilter = userName ? `&user_name=eq.${encodeURIComponent(userName)}` : "";
-    const dateFilter = date
-      ? `&captured_at=gte.${encodeURIComponent(`${date}T00:00:00-05:00`)}&captured_at=lt.${encodeURIComponent(`${date}T23:59:59-05:00`)}`
+    const dateFilter = from || to
+      ? `&captured_at=gte.${encodeURIComponent(`${from || to}T00:00:00-05:00`)}&captured_at=lt.${encodeURIComponent(`${adjacentLocalDate(to || from, 1)}T00:00:00-05:00`)}`
       : "";
     const rows = await supabaseFetch<Array<{
       id: string;
@@ -2124,6 +2156,11 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   if (pathname === "/api/v1/hr/attendance") {
     const companyId = await currentSupabaseCompanyId();
     const day = search.get("date") || search.get("fecha") || localDate();
+    const from = search.get("fecha_inicio") || search.get("from") || day;
+    const to = search.get("fecha_fin") || search.get("to") || day;
+    const punchDateFilter = from === to
+      ? `punch_date=eq.${encodeURIComponent(from)}`
+      : `punch_date=gte.${encodeURIComponent(from)}&punch_date=lte.${encodeURIComponent(to)}`;
     const punches = await supabaseFetch<Array<{
       id: string;
       employee_id?: string;
@@ -2144,7 +2181,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       extra_detail?: string;
       extra_evidence?: AnyRow;
       metadata?: AnyRow;
-    }>>(`/rest/v1/time_punches?select=id,employee_id,user_id,user_name,punch_type,punch_date,punch_time,punched_at,route_id,vehicle_id,vehicle_plate,latitude,longitude,accuracy_meters,extra_minutes,extra_reason,extra_detail,extra_evidence,metadata&company_id=eq.${encodeURIComponent(companyId)}&punch_date=eq.${encodeURIComponent(day)}&order=punched_at.asc&limit=500`);
+    }>>(`/rest/v1/time_punches?select=id,employee_id,user_id,user_name,punch_type,punch_date,punch_time,punched_at,route_id,vehicle_id,vehicle_plate,latitude,longitude,accuracy_meters,extra_minutes,extra_reason,extra_detail,extra_evidence,metadata&company_id=eq.${encodeURIComponent(companyId)}&${punchDateFilter}&order=punched_at.asc&limit=5000`);
     const grouped = new Map<string, Array<{
       id: string;
       employee_id?: string;
@@ -2312,7 +2349,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
           vehicle_plate: route.vehicle_plate || "",
           route_id: route.id,
           observation: String(activity.metadata?.observation || ""),
-          evidence: activity.metadata?.photo ? [{ base64_data: String(activity.metadata.photo), file_name: String(activity.metadata?.photo_name || "evidencia.jpg") }] : [],
+          evidence: activity.metadata?.photo ? [{ id: activity.id, file_name: String(activity.metadata?.photo_name || "evidencia.jpg"), has_base64_data: true, available: true }] : [],
           metadata: activity.metadata || {}
         }));
       const routePunches = punches
@@ -2331,7 +2368,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
           extra_minutes: punch.extra_minutes || 0,
           extra_reason: punch.extra_reason || "",
           extra_detail: punch.extra_detail || "",
-          extra_evidence: scheduleMonitorPunchEvidence(punch),
+          extra_evidence: scheduleMonitorPunchEvidenceSummary(punch),
           metadata: punch.metadata || {}
         }));
       const userNames = Array.from(new Set([...routePunches.map((punch) => punch.user_name), ...routeActivities.map((activity) => activity.user_name)]));
@@ -2441,6 +2478,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       first_name?: string;
       last_name?: string;
       document_number?: string;
+      phone?: string;
       email?: string;
       position?: string;
       department?: string;
@@ -2681,6 +2719,12 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
 
   if (pathname === "/api/v1/hr/routes") {
     const companyId = await currentSupabaseCompanyId();
+    const day = search.get("date") || search.get("fecha") || "";
+    const from = search.get("fecha_inicio") || search.get("from") || day;
+    const to = search.get("fecha_fin") || search.get("to") || day;
+    const dateFilter = from || to
+      ? `&route_date=gte.${encodeURIComponent(from || to)}&route_date=lte.${encodeURIComponent(to || from)}`
+      : "";
     const routes = await supabaseFetch<Array<{
       id: string;
       code?: string;
@@ -2692,7 +2736,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       status?: string;
       notes?: string;
       metadata?: AnyRow;
-    }>>(`/rest/v1/operational_routes?select=id,code,route_date,vehicle_plate,start_time,end_time,tolerance_minutes,status,notes,metadata&company_id=eq.${encodeURIComponent(companyId)}&order=route_date.desc&limit=120`);
+    }>>(`/rest/v1/operational_routes?select=id,code,route_date,vehicle_plate,start_time,end_time,tolerance_minutes,status,notes,metadata&company_id=eq.${encodeURIComponent(companyId)}${dateFilter}&order=route_date.desc&limit=500`);
     const assignments = await supabaseFetch<Array<{
       route_id: string;
       employee_id?: string;
@@ -2756,8 +2800,13 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   if (pathname === "/api/v1/services/references/import" && method === "POST") {
     if (technicianSession()) throw new Error("El tecnico no puede importar referencias.");
     const body = JSON.parse(String(options.body || "{}")) as { rows?: AnyRow[] };
+    const validation = validateServiceReferenceImport((body.rows || []).map((row, index) => ({ ...row, __row: index + 2 })));
+    if (validation.issues.length) {
+      const summary = validation.issues.slice(0, 10).map((issue) => `fila ${issue.row}, ${issue.field}: ${issue.message}`).join("; ");
+      throw new Error(`Corrige la plantilla antes de importar: ${summary}${validation.issues.length > 10 ? `; y ${validation.issues.length - 10} error(es) mas` : ""}`);
+    }
     const grouped = new Map<string, AnyRow>();
-    for (const row of body.rows || []) {
+    for (const row of validation.rows) {
       const code = String(row.code || "").trim().toUpperCase();
       if (!code || !String(row.name || "").trim()) continue;
       const current = grouped.get(code) || { ...row, code, parts: [], manuals: [] };
@@ -2782,17 +2831,12 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const result = { created: 0, updated: 0, skipped: 0, references: [] as AnyRow[] };
     const companyId = await currentSupabaseCompanyId();
     for (const row of grouped.values()) {
-      try {
-        const existing = await supabaseFetch<Array<{ id: string }>>(
-          `/rest/v1/service_references?select=id&company_id=eq.${encodeURIComponent(companyId)}&code=eq.${encodeURIComponent(String(row.code))}&limit=1`
-        );
-        const saved = await saveSupabaseServiceReference(row, existing[0]?.id);
-        result[existing[0] ? "updated" : "created"] += 1;
-        result.references.push(saved);
-      } catch (error) {
-        safeDevLog(`No fue posible importar la referencia ${String(row.code)}.`, error);
-        result.skipped += 1;
-      }
+      const existing = await supabaseFetch<Array<{ id: string }>>(
+        `/rest/v1/service_references?select=id&company_id=eq.${encodeURIComponent(companyId)}&code=eq.${encodeURIComponent(String(row.code))}&limit=1`
+      );
+      const saved = await saveSupabaseServiceReference(row, existing[0]?.id);
+      result[existing[0] ? "updated" : "created"] += 1;
+      result.references.push(saved);
     }
     return result as T;
   }
@@ -3725,6 +3769,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         is_system: false,
         hierarchy_level: Number(body.hierarchy_level || 10),
         role_type: body.role_type || "custom",
+        access_profile: body.access_profile || "standard",
         scope: body.scope || "company",
         scopes: body.scopes || { locations: [], areas: [], cost_centers: [], processes: [] },
         restrictions: body.restrictions || { locations: [], areas: [], cost_centers: [], processes: [] },
@@ -3732,7 +3777,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         sensitive: Boolean(body.sensitive),
         permissions: filterAdminPermissions(body.permissions || emptyAdminPermissions())
       };
-      const persisted = await saveSupabaseAdminRole(role);
+      const persisted = await saveSupabaseAdminRole(role, "create");
       const next = [...roles, persisted];
       saveStoredAdminRoles(next);
       return persisted as T;
@@ -3766,6 +3811,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       active: pathname.endsWith("/status") ? Boolean(body.active ?? body.activo) : (body.active !== false && body.activo !== false),
       hierarchy_level: Number(body.hierarchy_level || role.hierarchy_level || 10),
       role_type: body.role_type || role.role_type || "custom",
+      access_profile: body.access_profile || role.access_profile || "standard",
       scope: body.scope || role.scope || "company",
       scopes: body.scopes || role.scopes || { locations: [], areas: [], cost_centers: [], processes: [] },
       restrictions: body.restrictions || role.restrictions || { locations: [], areas: [], cost_centers: [], processes: [] },
@@ -3908,19 +3954,11 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   const adminUserAccessMatch = pathname.match(/^\/api\/v1\/admin\/users\/([^/]+)\/access$/);
   if (adminUserAccessMatch) {
     const body = JSON.parse(String(options.body || "{}"));
-    let accessError = "";
-    const nextApiOk = await nextAdminUsersRequest({
+    const result = await nextAdminUsersRequest({
       method: "PATCH",
       body: JSON.stringify({ employee_id: adminUserAccessMatch[1], action: "access", ...body })
-    }).then(() => true).catch((error) => {
-      safeDevLog("No fue posible actualizar acceso via Next API.", error);
-      accessError = error instanceof Error ? error.message : String(error || "");
-      return false;
     });
-    if (!nextApiOk) {
-      throw new Error(accessError || "No fue posible sincronizar el acceso del usuario con la membresia de empresa.");
-    }
-    return supabaseApiFallback(`/api/v1/admin/users`) as T;
+    return result as T;
   }
 
   if (pathname === "/api/v1/admin/users") {
@@ -3934,7 +3972,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         const response = await fetch("/api/admin/users", {
           method: "POST",
           headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ ...body, role_name: role.name, role_permissions: role.permissions, role_type: role.role_type, role_scope: role.scope })
+          body: JSON.stringify({ ...body, role_name: role.name, role_permissions: role.permissions, role_type: role.role_type, role_scope: role.scope, access_profile: role.access_profile })
         });
         if (response.ok) {
           const created = await response.json() as { user_id: string; employee?: AnyRow };
@@ -3988,14 +4026,19 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       last_name?: string;
       email?: string;
       document_number?: string;
+      phone?: string;
       position?: string;
       department?: string;
       status?: string;
       user_type?: string;
       metadata?: AnyRow;
-    }>>("/rest/v1/employees?select=id,company_id,user_id,first_name,last_name,email,document_number,position,department,status,user_type,metadata&order=created_at.desc&limit=250");
+    }>>("/rest/v1/employees?select=id,company_id,user_id,first_name,last_name,email,document_number,phone,position,department,hire_date,status,user_type,metadata&order=created_at.desc&limit=250");
     return employees.map((employee) => {
       const name = fullName(employee);
+      const metadata = employee.metadata || {};
+      const access = metadata.access && typeof metadata.access === "object" ? metadata.access as AnyRow : {};
+      const employment = metadata.employment && typeof metadata.employment === "object" ? metadata.employment as AnyRow : {};
+      const operational = metadata.operational && typeof metadata.operational === "object" ? metadata.operational as AnyRow : {};
       const roleId = Number(employee.metadata?.role_id || (employee.user_type === "conductor" ? 2 : 1));
       const role = roles.find((item) => item.id === roleId) || roles[0];
       return {
@@ -4010,14 +4053,36 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
         active: employee.status === "active",
         code: String(employee.metadata?.code || employee.document_number || employee.id.slice(0, 8)),
         document: employee.document_number || String(employee.metadata?.document || ""),
-        company: "SCJ",
+        company: String(metadata.company || ""),
+        first_names: employee.first_name || "",
+        last_names: employee.last_name || "",
+        document_type: String(metadata.document_type || "CC"),
+        phone: employee.phone || "",
         position: employee.position || employee.user_type || "",
         department: employee.department || "",
-        salary_base: 0,
+        salary_base: Number(employment.salary_base || 0),
         labor_status: employee.status || "active",
-        operational_classification: employee.user_type || employee.position || "operario",
-        base_site: "Sede Demo SCJ",
-        site: String(employee.metadata?.access && typeof employee.metadata.access === "object" ? (employee.metadata.access as AnyRow).site || "Sede Demo SCJ" : "Sede Demo SCJ"),
+        user_status: String(metadata.user_status || (employee.status === "active" ? "activo" : "inactivo")),
+        access_email: String(access.email || employee.email || ""),
+        site: String(access.site || ""),
+        area: String(access.area || employee.department || ""),
+        require_password_change: Boolean(access.require_password_change),
+        session_status: String(access.session_status || "sin_sesion"),
+        ...metadata,
+        ...employment,
+        operational_classification: String(operational.classification || employee.user_type || employee.position || "operario"),
+        can_punch_time: Boolean(operational.can_punch_time),
+        can_receive_services: Boolean(operational.can_receive_services),
+        can_be_assigned_routes: Boolean(operational.can_be_assigned_routes),
+        can_manage_inventory: Boolean(operational.can_manage_inventory),
+        can_approve_documents: Boolean(operational.can_approve_documents),
+        can_authorize_exceptions: Boolean(operational.can_authorize_exceptions),
+        driver_license: String(operational.driver_license || ""),
+        license_category: String(operational.license_category || ""),
+        license_expires_at: String(operational.license_expires_at || ""),
+        operational_restrictions: String(operational.restrictions || ""),
+        base_site: String(operational.base_site || access.site || ""),
+        operation_zone: String(operational.zone || ""),
         documents: Array.isArray(employee.metadata?.documents) ? employee.metadata.documents : []
       };
     }) as T;
@@ -4029,22 +4094,16 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const employeeId = adminUserMatch[1];
     const roles = await loadSupabaseAdminRoles().catch(() => storedAdminRoles());
     const role = roles.find((item) => item.id === Number(body.role_id));
-    const nextApiOk = await nextAdminUsersRequest({
+    const result = await nextAdminUsersRequest({
       method: "PATCH",
       body: JSON.stringify({
         employee_id: employeeId,
         action: pathname.endsWith("/status") ? "status" : "update",
         ...body,
-        ...(role ? { role_name: role.name, role_permissions: role.permissions, role_type: role.role_type, role_scope: role.scope } : {})
+        ...(role ? { role_name: role.name, role_permissions: role.permissions, role_type: role.role_type, role_scope: role.scope, access_profile: role.access_profile } : {})
       })
-    }).then(() => true).catch((error) => {
-      safeDevLog("No fue posible actualizar usuario via Next API.", error);
-      return false;
     });
-    if (!nextApiOk) {
-      throw new Error("No fue posible sincronizar el usuario con roles, permisos y membresia de empresa.");
-    }
-    return supabaseApiFallback(`/api/v1/admin/users`) as T;
+    return result as T;
   }
 
   return null;
@@ -4058,7 +4117,7 @@ export async function api<T>(path: string, options: RequestInit = {}, retried = 
     const scope = writeCacheScope(path);
     clearApiReadCaches(scope);
   }
-  const requestKey = method === "GET" && !retried ? `${isSupabaseSession() ? "supabase" : "api"}:${companyScope}:${path}` : "";
+  const requestKey = method === "GET" && !retried && !bypassReadCache ? `${isSupabaseSession() ? "supabase" : "api"}:${companyScope}:${path}` : "";
   const cacheKey = requestKey && !bypassReadCache ? requestKey : "";
   if (cacheKey) {
     const completed = completedGetRequests.get(cacheKey);
@@ -4097,6 +4156,57 @@ export async function api<T>(path: string, options: RequestInit = {}, retried = 
     .finally(() => inFlightGetRequests.delete(requestKey));
   return request;
 }
+
+export type ApexHeartRule = {
+  id: number; code: string; name: string; metric: string; operator: "gt" | "lt";
+  warning_threshold: number; critical_threshold: number; enabled: boolean;
+  cooldown_hours: number; recipients?: string[];
+  action_label?: string; action_href?: string;
+};
+
+export type ApexHeartDashboard = {
+  period: { from: string; to: string; days: number };
+  data_status: { invoices: number; products: number; receivables: number; payables: number; inventory_snapshots: number; freshness: string };
+  metrics: Record<string, number>;
+  products: Array<{ item_id: number; code: string; name: string; category: string; revenue: number; cost: number; gross_profit: number; margin_pct: number; gmroi: number; inventory_days: number; inventory_value: number; revenue_share_pct: number; cumulative_pct: number; abc_class: string; score: number }>;
+  categories: Array<{ category: string; revenue: number; gross_profit: number; cost: number; units: number; inventory_value: number; margin_pct: number; inventory_days: number; gmroi: number }>;
+  monthly: Array<{ period: string; revenue: number; gross_profit: number; margin_pct: number }>;
+  purchase_trend: Array<{ period: string; sales: number; purchases: number; purchase_sales_ratio_pct: number }>;
+  receivable_aging: Array<{ bucket: string; value: number; documents: number }>;
+  payable_aging: Array<{ bucket: string; value: number; documents: number }>;
+  inventory_health: Array<{ status: string; products: number; value: number }>;
+  inventory_trend: Array<{ period: string; value: number }>;
+  invoice_details: Array<{ invoice_id: number; number: string; date: string; customer: string; item_id: number | null; product: string; category: string; quantity: number; revenue: number; cost: number; gross_profit: number; margin_pct: number }>;
+  computed_alerts: Array<{ code: string; title: string; message: string; severity: string; metric_value: number; threshold: number; action_label?: string; action_href?: string }>;
+  alerts: Array<{ id: number; title: string; message: string; severity: string; status: string; action_label?: string; action_href?: string }>;
+  rules: ApexHeartRule[];
+  config: Record<string, number | boolean | string[]>;
+};
+
+export function getApexHeartDashboard(from: string, to: string) {
+  return api<ApexHeartDashboard>(`/api/v1/apex-heart/dashboard?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+}
+
+export function evaluateApexHeartAlerts(from: string, to: string) {
+  return api<{ created_or_updated: number }>("/api/v1/apex-heart/alerts/evaluate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ from, to }) });
+}
+
+export function updateApexHeartConfig(config: Record<string, number | boolean | string[]>) {
+  return api("/api/v1/apex-heart/config", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(config) });
+}
+
+export function updateApexHeartRule(id: number, rule: Partial<ApexHeartRule>) {
+  return api(`/api/v1/apex-heart/alert-rules/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rule) });
+}
+
+export function acknowledgeApexHeartAlert(id: number) {
+  return api(`/api/v1/apex-heart/alerts/${id}/acknowledge`, { method: "POST" });
+}
+
+export type ApexHeartReportSchedule = { id: number; name: string; view: string; frequency: "weekly" | "monthly"; weekday?: number | null; month_day?: number | null; send_hour: number; timezone: string; recipients: string[]; enabled: boolean; next_run_at: string; last_run_at?: string | null };
+export function listApexHeartReportSchedules() { return api<ApexHeartReportSchedule[]>("/api/v1/apex-heart/report-schedules"); }
+export function saveApexHeartReportSchedule(input: Omit<ApexHeartReportSchedule, "id" | "next_run_at" | "last_run_at">) { return api<ApexHeartReportSchedule>("/api/v1/apex-heart/report-schedules", { method: "POST", body: JSON.stringify(input) }); }
+export function deleteApexHeartReportSchedule(id: number) { return api(`/api/v1/apex-heart/report-schedules/${id}`, { method: "DELETE" }); }
 
 async function apiInternal<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
   assertActiveSession();
@@ -4137,7 +4247,7 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
     response = await fetchWithTimeout(`${API_URL}${path}`, {
       ...options,
       headers: {
-        ...(options.body ? { "Content-Type": "application/json" } : {}),
+        ...(options.body && !(typeof FormData !== "undefined" && options.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(supabaseSession && companyId ? { "x-company-id": companyId } : {}),
         ...options.headers

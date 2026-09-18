@@ -1,0 +1,46 @@
+{
+  "change_id": "inventory-policy-phase23-20260910",
+  "commit": "378115efbd962d27877870d807606d853e2761bc",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "manue",
+    "approved_at": "2026-09-10T00:00:00-05:00"
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/validate-preqa-promotion-evidence.js",
+    "evidence": ["local-validation.md"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/validate-promotion-scope.js",
+    "evidence": ["local-validation.md"]
+  }
+}

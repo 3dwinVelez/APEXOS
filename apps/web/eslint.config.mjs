@@ -1,26 +1,25 @@
-import { FlatCompat } from "@eslint/eslintrc";
-import { dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { defineConfig, globalIgnores } from "eslint/config";
+import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
+import nextTypescript from "eslint-config-next/typescript";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname
-});
-
-const eslintConfig = [
+const eslintConfig = defineConfig([
+  ...nextCoreWebVitals,
+  ...nextTypescript,
   {
-    ignores: [
-      ".next/**",
-      ".next-dev/**",
-      ".next-*/**",
-      "next-env.d.ts",
-      "tsconfig.tsbuildinfo",
-      "node_modules/**"
-    ]
+    rules: {
+      "react-hooks/immutability": "off",
+      "react-hooks/purity": "off",
+      "react-hooks/set-state-in-effect": "off"
+    }
   },
-  ...compat.extends("next/core-web-vitals", "next/typescript")
-];
+  globalIgnores([
+    ".next/**",
+    ".next-dev/**",
+    ".next-*/**",
+    "next-env.d.ts",
+    "tsconfig.tsbuildinfo",
+    "node_modules/**"
+  ])
+]);
 
 export default eslintConfig;

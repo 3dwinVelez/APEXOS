@@ -1,0 +1,20 @@
+{
+  "certification": "erp-visual-normalization-qa",
+  "environment": "QA",
+  "status": "ready_not_executed",
+  "reason": "La candidata debe desplegarse en QA para recorrerla con perfiles autenticados.",
+  "script": "../../../../apps/web/test/erp-visual-normalization.test.mjs",
+  "required_checks": [
+    "deployed_commit",
+    "inventory_active_actions_only",
+    "accounting_active_actions_only",
+    "treasury_payment_bank_report_tabs",
+    "sales_active_actions_only",
+    "customer_form_labels_and_submit",
+    "sales_order_labels_and_submit",
+    "reload_and_persistence",
+    "readonly_visibility",
+    "platform_regression"
+  ],
+  "functional_approval": "pending_requester"
+}

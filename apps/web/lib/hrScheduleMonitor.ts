@@ -15,9 +15,12 @@ export function scheduleMonitorDate(value?: string | null, fallback = localCalen
 }
 
 export type ScheduleMonitorEvidence = {
+  id?: string | number;
   base64_data?: string;
   file_name?: string;
   file_url?: string;
+  has_base64_data?: boolean;
+  available?: boolean;
 };
 
 export function scheduleMonitorPunchEvidence(row: {
@@ -27,7 +30,7 @@ export function scheduleMonitorPunchEvidence(row: {
     photo?: unknown;
     photo_name?: unknown;
   } | null;
-}) {
+}): ScheduleMonitorEvidence {
   const evidence = (row.extra_evidence || row.metadata?.extra_evidence || {}) as Record<string, unknown>;
   const base64 = String(evidence.base64_data || evidence.base64 || row.metadata?.photo || "").trim();
   const fileUrl = String(evidence.file_url || "").trim();
@@ -38,6 +41,18 @@ export function scheduleMonitorPunchEvidence(row: {
     ...(base64 ? { base64_data: base64 } : {}),
     ...(fileUrl ? { file_url: fileUrl } : {}),
     file_name: fileName || "evidencia.jpg"
+  };
+}
+
+export function scheduleMonitorPunchEvidenceSummary(row: Parameters<typeof scheduleMonitorPunchEvidence>[0] & { id?: string | number }) {
+  const evidence = scheduleMonitorPunchEvidence(row);
+  if (!evidence.base64_data && !evidence.file_url) return {};
+  return {
+    ...(row.id != null ? { id: row.id } : {}),
+    ...(evidence.file_name ? { file_name: evidence.file_name } : {}),
+    ...(evidence.file_url ? { file_url: evidence.file_url } : {}),
+    has_base64_data: Boolean(evidence.base64_data),
+    available: true
   };
 }
 

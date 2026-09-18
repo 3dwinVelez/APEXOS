@@ -1,0 +1,17 @@
+{
+  "change_id": "admin-role-capabilities-20260824",
+  "environment": "QA_LOCAL_ISOLATED",
+  "company": "NYVORA",
+  "runtime_commit": "ac63bf0e23e6b06c4b516301c30921a0c604ea4c",
+  "executed_at": "2026-08-24T16:40:00-05:00",
+  "checks": [
+    { "name": "custom_company_administrator_login", "status": "passed", "detail": "El rol admin_empresa con nombre personalizado inició sesión y mostró Administración APEX" },
+    { "name": "administrator_user_list", "status": "passed", "detail": "El usuario administrador certificado quedó visible y filtrable en la tabla de Nyvora" },
+    { "name": "administrator_create_user_form", "status": "passed", "detail": "El formulario mostró datos principales, empresa, sede, rol, estado y clave temporal" },
+    { "name": "marking_role_assignable", "status": "passed", "detail": "El rol QA Marcaciones certificado quedó disponible en el selector de rol" },
+    { "name": "browser_console", "status": "passed", "detail": "0 errores de consola" },
+    { "name": "synthetic_fixture_cleanup", "status": "passed", "detail": "Pestaña cerrada, credencial temporal y base de datos local eliminadas" }
+  ],
+  "evidence": ["admin-role-user-visible.png", "admin-create-user-form.png"],
+  "status": "passed"
+}

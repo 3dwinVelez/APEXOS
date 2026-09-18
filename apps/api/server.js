@@ -29,7 +29,8 @@ const MODULES = [
   "offline",
   "transport",
   "sales-invoice",
-  "accounts-receivable"
+  "accounts-receivable",
+  "treasury"
 ];
 const DEFAULT_ALLOWED_ORIGINS = ["http://localhost:3001", "http://127.0.0.1:3001"];
 
@@ -271,6 +272,9 @@ async function build() {
   registerRoutes("transport", require("./src/modules/transport/routes"), { prefix: "/api/v1" });
   registerRoutes("sales-invoice", require("./src/modules/sales-invoice/routes"), { prefix: "/api/v1" });
   registerRoutes("accounts-receivable", require("./src/modules/accounts-receivable/routes"), { prefix: "/api/v1" });
+  registerRoutes("treasury", require("./src/modules/treasury/routes"), { prefix: "/api/v1" });
+  registerRoutes("commercial-management", require("./src/modules/commercial-management/routes"), { prefix: "/api/v1" });
+  registerRoutes("apex-heart", require("./src/modules/apex-heart/routes"), { prefix: "/api/v1" });
   bootLog("Registered API modules");
 
   bootLog("Registering brain websocket route");
@@ -285,6 +289,7 @@ async function build() {
     connection.socket.on("close", () => wsManager.removeClient(tenantId, connection.socket));
   });
   bootLog("Registered brain websocket route");
+  registerRoutes("collaboration-websocket", require("./src/modules/collaboration/routes"));
 
   const { isRedisDisabled } = require("./src/fabric/redisConfig");
   bootLog("Starting background workers");
@@ -357,6 +362,9 @@ async function build() {
     if (code === "P2025") return reply.code(404).send({ error: "No encontrado", code: "NO_ENCONTRADO", request_id: requestId });
     if (error.statusCode && error.statusCode >= 400 && error.statusCode < 500) {
       return reply.code(error.statusCode).send({ error: error.message, code: error.code || "VALIDACION", request_id: requestId });
+    }
+    if (error.statusCode === 503 && error.code === "MARCACION_CONCURRENCIA_TEMPORAL") {
+      return reply.code(503).send({ error: error.message, code: error.code, request_id: requestId });
     }
     if (error.statusCode === 400) return reply.code(400).send({ error: error.message, code: "VALIDACION", request_id: requestId });
     if (error.statusCode === 429) return reply.code(429).send({ error: "Demasiadas solicitudes", code: "LIMITE_SOLICITUDES", request_id: requestId });

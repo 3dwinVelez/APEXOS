@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { CxcNav } from "@/components/cxc-nav";
+import { ZeroFriendlyNumberInput } from "@/components/ui/ZeroFriendlyNumberInput";
 
-type Retention = { id: number; code: string; description: string; account_code: string; percent: number; concept?: string; active: boolean };
+type Retention = { id: number; code: string; description: string; account_code: string; percent: number; concept?: string; retention_type: string; minimum_base: number; base_type: string; active: boolean };
 
 export default function RetencionesPage() {
   const [retenciones, setRetenciones] = useState<Retention[]>([]);
@@ -12,7 +13,7 @@ export default function RetencionesPage() {
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ code: "", description: "", account_code: "2365", percent: 2.5, concept: "", active: true });
+  const [form, setForm] = useState({ code: "", description: "", account_code: "135515", percent: 2.5, concept: "", retention_type: "retefuente", minimum_base: 0, base_type: "subtotal", scope: "sales", active: true });
 
   function load() {
     setLoading(true);
@@ -45,7 +46,7 @@ export default function RetencionesPage() {
       });
       setOk(`Retención ${res.code} creada`);
       setShowForm(false);
-      setForm({ code: "", description: "", account_code: "2365", percent: 2.5, concept: "", active: true });
+      setForm({ code: "", description: "", account_code: "135515", percent: 2.5, concept: "", retention_type: "retefuente", minimum_base: 0, base_type: "subtotal", scope: "sales", active: true });
       load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error");
@@ -73,7 +74,17 @@ export default function RetencionesPage() {
             <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Código *" value={form.code} onChange={(e) => setForm((p) => ({ ...p, code: e.target.value.toUpperCase() }))} required />
             <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Descripción *" value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} required />
             <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Cuenta contable *" value={form.account_code} onChange={(e) => setForm((p) => ({ ...p, account_code: e.target.value }))} required />
-            <input className="h-10 rounded-md border border-line px-3 text-sm" type="number" step="0.01" placeholder="Porcentaje *" value={form.percent} onChange={(e) => setForm((p) => ({ ...p, percent: Number(e.target.value) }))} required />
+            <select className="h-10 rounded-md border border-line px-3 text-sm" value={form.retention_type} onChange={(e) => setForm((p) => ({ ...p, retention_type: e.target.value }))}>
+              <option value="retefuente">ReteFuente</option>
+              <option value="reteiva">ReteIVA</option>
+              <option value="reteica">ReteICA</option>
+            </select>
+            <ZeroFriendlyNumberInput className="h-10 rounded-md border border-line px-3 text-sm" step="0.01" placeholder="Porcentaje *" value={form.percent} onValueChange={(value) => setForm((p) => ({ ...p, percent: value }))} required />
+            <ZeroFriendlyNumberInput className="h-10 rounded-md border border-line px-3 text-sm" min={0} step="0.01" placeholder="Base minima" value={form.minimum_base} onValueChange={(value) => setForm((p) => ({ ...p, minimum_base: value }))} />
+            <select className="h-10 rounded-md border border-line px-3 text-sm" value={form.base_type} onChange={(e) => setForm((p) => ({ ...p, base_type: e.target.value }))}>
+              <option value="subtotal">Base subtotal</option>
+              <option value="iva">Base IVA</option>
+            </select>
             <input className="h-10 rounded-md border border-line px-3 text-sm" placeholder="Concepto (opcional)" value={form.concept} onChange={(e) => setForm((p) => ({ ...p, concept: e.target.value }))} />
           </div>
           <button className="h-10 rounded-md bg-apex px-4 text-sm text-white" type="submit">Guardar</button>
@@ -88,6 +99,7 @@ export default function RetencionesPage() {
               <th className="py-2 pr-4 font-medium">Descripción</th>
               <th className="py-2 pr-4 font-medium">Cuenta</th>
               <th className="py-2 pr-4 font-medium">%</th>
+              <th className="py-2 pr-4 font-medium">Tipo / base minima</th>
               <th className="py-2 pr-4 font-medium">Concepto</th>
               <th className="py-2 pr-4 font-medium">Activo</th>
             </tr>
@@ -99,6 +111,7 @@ export default function RetencionesPage() {
                 <td className="py-2 pr-4">{r.description}</td>
                 <td className="py-2 pr-4 font-mono">{r.account_code}</td>
                 <td className="py-2 pr-4">{r.percent}%</td>
+                <td className="py-2 pr-4">{r.retention_type} · ${Number(r.minimum_base || 0).toLocaleString()}</td>
                 <td className="py-2 pr-4">{r.concept || "—"}</td>
                 <td className="py-2 pr-4">{r.active ? "✓" : "✗"}</td>
               </tr>

@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { getGpsFix, type GpsFix } from "@/lib/gps";
 import { scheduleGpsRequired } from "@/lib/hrScheduleMonitor";
 import { publishHrMonitorRefresh } from "@/lib/hrMonitorRefresh";
+import { isMarkingOnlyAccess } from "@/lib/accessProfile";
 import { SignatureCapture } from "@/components/operations/SignatureCapture";
 import { PhotoCapture, type CapturedFile } from "@/components/operations/PhotoCapture";
 import { AlertTriangle, ArrowLeft, CheckCircle2, ExternalLink, MapPin, Navigation, Plus, RefreshCw, Truck, X } from "lucide-react";
@@ -13,11 +14,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 type Employee = { id: number | string; user_id?: string; code: string; document_number?: string; user_type?: string; position?: string; metadata: { name: string; user_type?: string; code?: string; identity_aliases?: string[] }; user: { name: string; email?: string } };
 type Attendance = { user_name: string; route_id?: number | string | null; next_type: string | null; punches: Array<{ id: number; type: string; time: string; vehicle_plate: string }> };
 type AttendancePunch = Attendance["punches"][number];
-type TimeRoute = { id: number | string; code?: string; display_id?: string; source_route_id?: number | string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string; gps_required?: boolean; tracking_mode?: string; metadata?: Record<string, unknown> };
-type OperationPunch = { id: number | string; user_name: string; type: string; time?: string; punched_at?: string; vehicle_plate?: string; route_id?: number | string | null };
-type OperationActivity = { id: number | string; user_name: string; type: string; time?: string; occurred_at?: string; observation?: string; latitude?: number; longitude?: number; accuracy_meters?: number; evidence?: Array<{ base64_data?: string; file_name?: string }> };
-type OperationRoute = TimeRoute & { punch_points?: OperationPunch[]; activity_points?: OperationActivity[] };
-type OperationsMap = { routes: OperationRoute[] };
+type TimeRoute = { id: number | string; date?: string; code?: string; display_id?: string; source_route_id?: number | string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string; gps_required?: boolean; tracking_mode?: string; metadata?: Record<string, unknown> };
 type PreopItem = { section: string; item_key: string; label: string; severity: string; blocks_route: boolean; evidence_required: boolean };
 type PreopChecklist = { id: number; route_id?: number; plate: string; checklist_status: string; risk_level: string };
 type PreopTemplate = { sections: string[]; items: PreopItem[] };
@@ -71,6 +68,11 @@ function enqueuePendingSync(path: string, payload: unknown, label: string) {
   return item;
 }
 
+function permanentSyncFailure(error: unknown) {
+  const status = Number((error as { status?: number })?.status || 0);
+  return status >= 400 && status < 500 && ![408, 429].includes(status);
+}
+
 async function flushPendingSync(onUpdate?: (items: PendingSyncItem[], message?: string) => void) {
   if (typeof window === "undefined" || pendingSyncInFlight) return false;
   let queue = readPendingSync();
@@ -90,7 +92,14 @@ async function flushPendingSync(onUpdate?: (items: PendingSyncItem[], message?: 
         changed = true;
         publishHrMonitorRefresh({ source: "mobile-sync" });
         onUpdate?.(queue, queue.length ? `${item.label} sincronizado. Quedan ${queue.length} registro(s) por confirmar.` : `${item.label} sincronizado. El monitor ya puede actualizarse.`);
-      } catch {
+      } catch (error) {
+        if (permanentSyncFailure(error)) {
+          queue = queue.slice(1);
+          writePendingSync(queue);
+          changed = true;
+          onUpdate?.(queue, `${item.label} no fue aceptado: ${error instanceof Error ? error.message : "validacion permanente"}. Revisa el horario y vuelve a intentar.`);
+          continue;
+        }
         const next = { ...item, attempts: item.attempts + 1 };
         queue = [next, ...queue.slice(1)];
         writePendingSync(queue);
@@ -171,12 +180,12 @@ function routeSyncMetadata(route: TimeRoute | null | undefined) {
 export default function MobilePunchPage() {
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [routes, setRoutes] = useState<TimeRoute[]>([]);
-  const [operationsMap, setOperationsMap] = useState<OperationsMap | null>(null);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [message, setMessage] = useState("");
   const [extraReason, setExtraReason] = useState("");
   const [extraDetail, setExtraDetail] = useState("");
   const [extraEvidence, setExtraEvidence] = useState<CapturedFile | null>(null);
+  const [dayMileage, setDayMileage] = useState("");
   const [gps, setGps] = useState<GpsFix | null>(null);
   const [gpsUpdatedAt, setGpsUpdatedAt] = useState(0);
   const [gpsStatus, setGpsStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
@@ -189,7 +198,7 @@ export default function MobilePunchPage() {
   const [fuelLevel, setFuelLevel] = useState("");
   const [signature, setSignature] = useState<CapturedFile | null>(null);
   const [session, setSession] = useState<WorkSession | null>(null);
-  const [optimisticPunches, setOptimisticPunches] = useState<Array<AttendancePunch & { route_id?: number | string | null }>>([]);
+  const [optimisticPunches, setOptimisticPunches] = useState<Array<AttendancePunch & { route_id?: number | string | null; idempotency_key?: string }>>([]);
   const [optimisticActivities, setOptimisticActivities] = useState<WorkActivity[]>([]);
   const [activityTypes, setActivityTypes] = useState<ActivityType[]>([]);
   const [activityModal, setActivityModal] = useState(false);
@@ -199,24 +208,28 @@ export default function MobilePunchPage() {
   const [activitySaving, setActivitySaving] = useState(false);
   const [activityMessage, setActivityMessage] = useState("");
   const [markingType, setMarkingType] = useState<string | null>(null);
-  const [selectedRouteId, setSelectedRouteId] = useState("");
   const [pendingSync, setPendingSync] = useState<PendingSyncItem[]>([]);
 
   const load = useCallback(async () => {
     const [me, routeData, attendanceData, typesData, sessionData] = await Promise.all([
-      api<Employee>("/api/v1/hr/me").catch(() => null),
-      api<TimeRoute[]>("/api/v1/hr/routes").catch(() => []),
-      api<Attendance[]>("/api/v1/hr/attendance").catch(() => []),
-      api<ActivityType[]>("/api/v1/hr/activity-types").catch(() => []),
-      api<WorkSession>("/api/v1/hr/work-sessions/current").catch(() => null)
+      api<Employee>("/api/v1/hr/self").catch(() => null),
+      api<TimeRoute[]>("/api/v1/hr/self/routes").catch(() => []),
+      api<Attendance[]>("/api/v1/hr/self/attendance").catch(() => []),
+      api<ActivityType[]>("/api/v1/hr/self/activity-types").catch(() => []),
+      api<WorkSession>("/api/v1/hr/self/work-session").catch(() => null)
     ]);
     setEmployee(me);
-    setRoutes(routeData);
+    setRoutes(routeData.filter((item) => !item.date || String(item.date).slice(0, 10) === todayBogota()));
     setAttendance(attendanceData);
+    const pendingPunchKeys = new Set(readPendingSync()
+      .filter((item) => item.path.endsWith("/time-punches"))
+      .map((item) => String((item.payload as { idempotency_key?: string })?.idempotency_key || ""))
+      .filter(Boolean));
+    setOptimisticPunches((current) => current.filter((punch) => punch.idempotency_key && pendingPunchKeys.has(punch.idempotency_key)));
     setActivityTypes(typesData);
     setSession(sessionData);
     if (typesData[0]) setActivityTypeId((current) => current || String(typesData[0].id));
-    const active = await api<{ checklist: PreopChecklist | null; template: PreopTemplate }>("/api/v1/hr/routes/preop/active").catch(() => null);
+    const active = await api<{ checklist: PreopChecklist | null; template: PreopTemplate }>("/api/v1/hr/self/preop/active").catch(() => null);
     if (active?.checklist) {
       setPreop(active.checklist);
       setPreopTemplate(active.template);
@@ -255,6 +268,7 @@ export default function MobilePunchPage() {
   const userName = !isGenericIdentityAlias(employee?.code) ? employee?.code || employeeName(employee) || "" : employeeName(employee) || employee?.user?.email || String(employee?.id || "");
   const aliases = employeeAliases(employee);
   const assignedRoutes = useMemo(() => routes.filter((item) => {
+    if (item.date && String(item.date).slice(0, 10) !== todayBogota()) return false;
     const routeEmployees = [...(item.employees || []), ...(item.employee_ids || []), ...(item.employee_names || [])];
     return routeEmployees.some((emp) => {
       const empKey = normalizeKey(emp);
@@ -262,37 +276,18 @@ export default function MobilePunchPage() {
     });
   }), [aliases, employee, routes, userName]);
   const activeSessionRouteId = session?.session?.route_id ? String(session.session.route_id) : "";
-  const route = assignedRoutes.find((item) => String(item.id) === String(selectedRouteId || activeSessionRouteId))
-    || (assignedRoutes.length === 1 ? assignedRoutes[0] : null);
+  const route = assignedRoutes.find((item) => String(item.id) === activeSessionRouteId)
+    || assignedRoutes[0]
+    || null;
   const gpsRequired = scheduleGpsRequired(route);
-  const routeRequired = assignedRoutes.length > 1 && !route;
-  const operationRoute = operationsMap?.routes?.find((item) => String(item.id) === String(route?.id || ""));
-  const userMatches = useCallback((value: unknown) => {
-    const key = normalizeKey(String(value || ""));
-    return Boolean(key && (aliases.includes(key) || key === normalizeKey(userName) || key === normalizeKey(employeeName(employee))));
-  }, [aliases, employee, userName]);
   const attendanceForRoute = attendance.find((item) => {
     const identityMatch = aliases.includes(normalizeKey(item.user_name)) || item.user_name === userName || item.user_name === employeeName(employee);
     const routeMatch = route ? String(item.route_id || "") === String(route.id) : true;
     return identityMatch && routeMatch;
   });
-  const operationPunches = (operationRoute?.punch_points || [])
-    .filter((punch) => userMatches(punch.user_name))
-    .sort((left, right) => String(left.punched_at || left.time || "").localeCompare(String(right.punched_at || right.time || "")))
-    .map((punch) => ({
-      id: Number(punch.id) || Date.parse(String(punch.punched_at || punch.time || "")) || 0,
-      type: punch.type,
-      time: punch.time || (punch.punched_at ? new Date(punch.punched_at).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }) : ""),
-      vehicle_plate: punch.vehicle_plate || route?.vehicle_plate || ""
-    }));
-  const fallbackNextType = (() => {
-    const lastType = operationPunches[operationPunches.length - 1]?.type;
-    if (!lastType) return "entrada";
-    const currentIndex = punchOrder.indexOf(lastType);
-    return currentIndex >= 0 && currentIndex < punchOrder.length - 1 ? punchOrder[currentIndex + 1] : null;
-  })();
+  const fallbackNextType = "entrada";
   const optimisticPunchesForRoute = optimisticPunches.filter((punch) => String(punch.route_id || "") === String(route?.id || ""));
-  const mergedPunches = [...(attendanceForRoute?.punches || []), ...operationPunches, ...optimisticPunchesForRoute]
+  const mergedPunches = [...(attendanceForRoute?.punches || []), ...optimisticPunchesForRoute]
     .reduce<AttendancePunch[]>((acc, punch) => {
       if (!punch.type || acc.some((item) => item.type === punch.type)) return acc;
       acc.push(punch);
@@ -309,19 +304,9 @@ export default function MobilePunchPage() {
     next_type: mergedPunches.length ? nextPunchForTypes(mergedPunches.map((punch) => punch.type)) : (attendanceForRoute?.next_type || fallbackNextType),
     punches: mergedPunches
   };
-  const operationActivities = (operationRoute?.activity_points || []).filter((activity) => userMatches(activity.user_name));
   const sessionActivities = [
     ...optimisticActivities,
-    ...(session?.activities?.length ? session.activities : operationActivities.map((activity) => ({
-    id: Number(activity.id) || Date.parse(String(activity.occurred_at || activity.time || "")) || 0,
-    activity_type_name: activity.type,
-    observation: activity.observation || "",
-    occurred_at: activity.occurred_at || activity.time || new Date().toISOString(),
-    latitude: activity.latitude ?? null,
-    longitude: activity.longitude ?? null,
-    accuracy_meters: activity.accuracy_meters ?? null,
-    evidence: activity.evidence || []
-    })))
+    ...(session?.activities || [])
   ];
   const doneTypes = new Set(currentAttendance.punches.map((punch) => punch.type) || []);
   const nextType = currentAttendance.next_type;
@@ -346,7 +331,7 @@ export default function MobilePunchPage() {
         setGps(fix);
         setGpsUpdatedAt(Date.now());
         setGpsStatus("ok");
-        api("/api/v1/hr/gps/ping", {
+        api("/api/v1/hr/self/gps/ping", {
           method: "POST",
           body: JSON.stringify({
             user_name: userName,
@@ -371,27 +356,11 @@ export default function MobilePunchPage() {
   }, [employee, gpsRequired, route, userName, vehiclePlate]);
 
   useEffect(() => {
-    if (!selectedRouteId && activeSessionRouteId) {
-      setSelectedRouteId(activeSessionRouteId);
-      return;
-    }
-    if (selectedRouteId && !assignedRoutes.some((item) => String(item.id) === String(selectedRouteId))) {
-      setSelectedRouteId("");
-      return;
-    }
-    if (!selectedRouteId && assignedRoutes.length === 1) setSelectedRouteId(String(assignedRoutes[0].id));
-  }, [activeSessionRouteId, assignedRoutes, selectedRouteId]);
-
-  useEffect(() => {
     if (!route?.id) return;
     let mounted = true;
-    Promise.all([
-      api<WorkSession>(`/api/v1/hr/work-sessions/current?route_id=${encodeURIComponent(String(route.id))}`).catch(() => null),
-      api<OperationsMap>(`/api/v1/hr/operations-map?date=${todayBogota()}&minutes=30&footprint_days=30`).catch(() => null)
-    ]).then(([sessionData, operationsData]) => {
+    api<WorkSession>(`/api/v1/hr/self/work-session?route_id=${encodeURIComponent(String(route.id))}`).catch(() => null).then((sessionData) => {
       if (!mounted) return;
       if (sessionData) setSession(sessionData);
-      setOperationsMap(operationsData);
     });
     return () => {
       mounted = false;
@@ -409,7 +378,7 @@ export default function MobilePunchPage() {
       setGpsStatus("ok");
       setGpsUpdatedAt(Date.now());
       if (userName) {
-        void api("/api/v1/hr/gps/ping", {
+        void api("/api/v1/hr/self/gps/ping", {
           method: "POST",
           body: JSON.stringify({
             user_name: userName,
@@ -447,12 +416,21 @@ export default function MobilePunchPage() {
         setMessage("Cierre fuera de horario: selecciona motivo, escribe el sustento y adjunta evidencia fotografica.");
         return;
       }
+      if (type === "salida" && vehiclePlate) {
+        const normalizedMileage = dayMileage.trim().replace(",", ".");
+        if (!/^\d+(\.\d{1,1})?$/.test(normalizedMileage)) {
+          setMessage("Registra el kilometraje del dia con maximo un decimal antes de cerrar la jornada.");
+          return;
+        }
+        setMessage(`Kilometraje del dia: ${normalizedMileage} km. Confirmando cierre...`);
+      }
+      const idempotencyKey = globalThis.crypto?.randomUUID?.() || `hr-punch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const optimisticTime = new Date().toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
       setOptimisticPunches((current) => [
         ...current.filter((punch) => !(String(punch.route_id || "") === String(route?.id || "") && punch.type === type)),
-        { id: Date.now(), type, time: optimisticTime, vehicle_plate: vehiclePlate, route_id: route?.id || null }
+        { id: Date.now(), type, time: optimisticTime, vehicle_plate: vehiclePlate, route_id: route?.id || null, idempotency_key: idempotencyKey }
       ].slice(-20));
-      setMessage(`${punchLabels[type].title} registrado. Sincronizando en segundo plano...`);
+      setMessage(`${punchLabels[type].title} pendiente de confirmar. Sincronizando...`);
       setMarkingType(null);
       const payload: Record<string, unknown> = {
         employee_id: employee.id,
@@ -464,18 +442,21 @@ export default function MobilePunchPage() {
         accuracy_meters: fix?.accuracy_meters,
         vehicle_plate: vehiclePlate,
         route_id: route?.id,
-        metadata: { source: "apexos-mobile", current_user_only: true, gps_required: gpsRequired, tracking_mode: gpsRequired ? "gps" : "punch_only", ...routeSyncMetadata(route) }
+        idempotency_key: idempotencyKey,
+        metadata: { source: "apexos-mobile", current_user_only: true, idempotency_key: idempotencyKey, gps_required: gpsRequired, tracking_mode: gpsRequired ? "gps" : "punch_only", ...routeSyncMetadata(route) }
       };
       if (type === "salida") {
         const closingDetail = extraDetail.trim();
         if (extraReason) payload.extra_reason = extraReason;
         if (closingDetail) payload.extra_detail = closingDetail;
         if (extraEvidence?.base64) payload.extra_evidence = extraEvidence;
+        if (vehiclePlate) payload.kilometraje_dia = dayMileage.trim().replace(",", ".");
       }
       setExtraReason("");
       setExtraDetail("");
       setExtraEvidence(null);
-      enqueuePendingSync("/api/v1/hr/time-punches", payload, punchLabels[type].title);
+      if (type === "salida") setDayMileage("");
+      enqueuePendingSync("/api/v1/hr/self/time-punches", payload, punchLabels[type].title);
       setPendingSync(readPendingSync());
       void flushPendingSync((items, syncMessage) => {
         setPendingSync(items);
@@ -579,7 +560,7 @@ export default function MobilePunchPage() {
         ...routeSyncMetadata(route)
       }
     };
-    enqueuePendingSync("/api/v1/hr/work-activities", activityPayload, "Actividad");
+    enqueuePendingSync("/api/v1/hr/self/work-activities", activityPayload, "Actividad");
     setPendingSync(readPendingSync());
     void flushPendingSync((items, syncMessage) => {
       setPendingSync(items);
@@ -615,7 +596,7 @@ export default function MobilePunchPage() {
       setPreopMessage("La declaracion responsable requiere firma digital.");
       return;
     }
-    const result = await api<{ status: string; route_authorized: boolean }>(`/api/v1/hr/routes/preop/${preop.id}/submit`, {
+    const result = await api<{ status: string; route_authorized: boolean }>(`/api/v1/hr/self/preop/${preop.id}/submit`, {
       method: "POST",
       body: JSON.stringify({
         mileage_initial: Number(mileageInitial || 0),
@@ -646,7 +627,7 @@ export default function MobilePunchPage() {
   return (
     <div className="mx-auto max-w-md space-y-4 pb-32 md:pb-8">
       <header className="sticky top-0 z-20 -mx-3 border-b border-line bg-paper/95 px-3 py-3 backdrop-blur sm:-mx-4 sm:px-4 md:static md:mx-0 md:border-0 md:bg-transparent md:px-0">
-        <Link className="mb-3 inline-flex h-11 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-medium text-neutral-600 hover:text-apex md:border-0 md:bg-transparent md:px-0" href="/dashboard/talento-humano"><ArrowLeft size={18} /> Control de horarios</Link>
+        {!isMarkingOnlyAccess() ? <Link className="mb-3 inline-flex h-11 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-medium text-neutral-600 hover:text-apex md:border-0 md:bg-transparent md:px-0" href="/dashboard/talento-humano"><ArrowLeft size={18} /> Control de horarios</Link> : null}
         <p className="text-sm font-medium text-apex">Marcacion movil</p>
         <h1 className="text-2xl font-semibold">Mi jornada</h1>
       </header>
@@ -673,21 +654,11 @@ export default function MobilePunchPage() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase text-neutral-500">Horario asignado</p>
-                <h2 className="mt-1 text-lg font-semibold">{route ? `Horario ${route.id}` : assignedRoutes.length ? "Selecciona un horario" : "Sin horario asignado"}</h2>
-                <p className="mt-1 text-sm text-neutral-600">{route ? `${route.start_time || "--"} - ${route.end_time || "--"}${route.vehicle_plate ? ` · ${route.vehicle_plate}` : ""} · ${gpsRequired ? "GPS activo" : "solo marcaciones"}` : assignedRoutes.length ? "Debes elegir sobre cual horario vas a registrar marcaciones y actividades." : "Consulta con administracion para asignar una jornada antes de marcar."}</p>
+                <h2 className="mt-1 text-lg font-semibold">{route ? `Horario ${route.id}` : "Sin horario asignado"}</h2>
+                <p className="mt-1 text-sm text-neutral-600">{route ? `${route.start_time || "--"} - ${route.end_time || "--"}${route.vehicle_plate ? ` · ${route.vehicle_plate}` : ""} · ${gpsRequired ? "GPS activo" : "solo marcaciones"}` : "Consulta con administracion para asignar una jornada antes de marcar."}</p>
               </div>
               <span className={`rounded-md px-2 py-1 text-xs font-semibold ${route ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>{assignedRoutes.length} asignado(s)</span>
             </div>
-            {assignedRoutes.length > 1 ? (
-              <select className="mt-3 h-12 w-full rounded-md border border-line bg-white px-3 text-base" value={selectedRouteId} onChange={(event) => setSelectedRouteId(event.target.value)}>
-                <option value="">Selecciona horario para marcar</option>
-                {assignedRoutes.map((item) => (
-                  <option key={String(item.id)} value={String(item.id)}>
-                    Horario {item.id} - {item.start_time || "--"} a {item.end_time || "--"}{item.vehicle_plate ? ` - ${item.vehicle_plate}` : ""}
-                  </option>
-                ))}
-              </select>
-            ) : null}
           </section>
 
           <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
@@ -735,6 +706,17 @@ export default function MobilePunchPage() {
               </div>
             ) : nextType === "salida" ? (
               <textarea className="mt-3 min-h-24 w-full rounded-md border border-line px-3 py-3 text-base" placeholder="Observacion opcional de cierre" value={extraDetail} onChange={(event) => setExtraDetail(event.target.value)} />
+            ) : null}
+            {nextType === "salida" && vehiclePlate ? (
+              <label className="mt-3 block rounded-md border border-line bg-white p-3">
+                <span className="text-sm font-semibold text-neutral-900">Kilometraje recorrido del dia</span>
+                <span className="mt-1 block text-xs text-neutral-500">Obligatorio para cerrar una jornada con vehiculo. Registra kilometros recorridos, no odometro final.</span>
+                <div className="mt-2 flex items-center gap-2">
+                  <input className="h-12 min-w-0 flex-1 rounded-md border border-line px-3 text-base" inputMode="decimal" placeholder="Ej: 42.5" value={dayMileage} onChange={(event) => setDayMileage(event.target.value)} />
+                  <span className="rounded-md bg-paper px-3 py-3 text-sm font-semibold text-neutral-700">km</span>
+                </div>
+                {dayMileage.trim() ? <span className="mt-2 block text-xs font-semibold text-apex">Kilometraje del dia: {dayMileage.trim().replace(",", ".")} km</span> : null}
+              </label>
             ) : null}
             {gpsRequired ? <button className="mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-md border border-line text-base font-semibold hover:bg-paper" onClick={refreshGps} type="button">
               <RefreshCw className={gpsStatus === "loading" ? "animate-spin" : ""} size={17} />
@@ -807,7 +789,7 @@ export default function MobilePunchPage() {
       {view === "marcar" ? <div className="fixed inset-x-0 bottom-0 z-50 border-t border-line bg-white/95 px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur md:hidden">
         <button
           className={`h-14 w-full rounded-md text-base font-semibold text-white shadow-sm ${nextType ? punchLabels[nextType]?.color : "bg-apex"} disabled:bg-neutral-300`}
-          disabled={!employee || !route || routeRequired || !nextType || Boolean(markingType)}
+          disabled={!employee || !route || !nextType || Boolean(markingType)}
           onClick={() => nextType && mark(nextType)}
           type="button"
         >

@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { asCollection } from "@/lib/api-collections";
 import { VentasNav } from "@/components/ventas-nav";
+import { EmptyState } from "@/components/ui/feedback";
+import { ShoppingCart } from "lucide-react";
+import Link from "next/link";
 
 type SaleOrder = { id: number; number: string; status: string; total: number; party: { name: string } };
 
@@ -11,8 +15,8 @@ export default function OrdenesVentaPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    api<SaleOrder[]>("/api/v1/sales/orders")
-      .then((rows) => setOrders(rows || []))
+    api<unknown>("/api/v1/sales/orders")
+      .then((response) => setOrders(asCollection<SaleOrder>(response, ["orders"])))
       .catch((err) => setError(err instanceof Error ? err.message : "Error cargando órdenes"));
   }, []);
 
@@ -22,13 +26,19 @@ export default function OrdenesVentaPage() {
       <VentasNav />
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
       <section className="rounded-md border border-line bg-white p-4">
-        <div className="space-y-2 text-sm">
+        {orders.length ? <div className="space-y-2 text-sm">
           {orders.map((o) => (
             <div key={o.id} className="rounded-md border border-line px-3 py-2">
               {o.number} · {o.status} · ${o.total} · {o.party.name || "Sin cliente"}
             </div>
           ))}
-        </div>
+        </div> : <EmptyState
+          className="border-0"
+          description="Crea la primera orden para iniciar el flujo de despacho, facturación y cobro."
+          icon={<ShoppingCart size={22} />}
+          primaryAction={<Link className="rounded-md bg-apex px-4 py-2 text-sm font-semibold text-white" href="/dashboard/ventas/ordenes/nueva">Crear primera orden</Link>}
+          title="Aún no tienes órdenes de venta"
+        />}
       </section>
     </div>
   );

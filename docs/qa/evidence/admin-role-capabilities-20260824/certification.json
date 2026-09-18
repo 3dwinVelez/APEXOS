@@ -1,0 +1,134 @@
+{
+  "change_id": "admin-role-capabilities-20260824",
+  "environment": "QA_LOCAL_ISOLATED",
+  "company": "NYVORA",
+  "generated_at": "2026-08-24T21:21:45.447Z",
+  "runtime_commit": "ac63bf0e23e6b06c4b516301c30921a0c604ea4c",
+  "checks": [
+    {
+      "name": "administrator_lists_users",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "count": 40
+      }
+    },
+    {
+      "name": "administrator_creates_user",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "user_id": 44
+      }
+    },
+    {
+      "name": "administrator_creates_role",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "role_id": 60
+      }
+    },
+    {
+      "name": "user_manager_creates_user",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "user_id": 45
+      }
+    },
+    {
+      "name": "user_manager_cannot_create_roles",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "CAPACIDAD_ROL_DENEGADA"
+      }
+    },
+    {
+      "name": "support_reads_users",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "support_edits_user",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "support_cannot_create_users",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "CAPACIDAD_ROL_DENEGADA"
+      }
+    },
+    {
+      "name": "role_manager_reads_roles",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "count": 57
+      }
+    },
+    {
+      "name": "role_manager_creates_role",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "role_id": 61
+      }
+    },
+    {
+      "name": "role_manager_cannot_create_users",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "CAPACIDAD_ROL_DENEGADA"
+      }
+    },
+    {
+      "name": "readonly_lists_users",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "readonly_cannot_create_users",
+      "ok": true,
+      "detail": {
+        "code": "CAPACIDAD_ROL_DENEGADA"
+      }
+    },
+    {
+      "name": "marking_role_cannot_list_users",
+      "ok": true,
+      "detail": {
+        "code": "CAPACIDAD_ROL_DENEGADA"
+      }
+    },
+    {
+      "name": "administrator_cannot_edit_other_tenant",
+      "ok": true,
+      "detail": {
+        "status": 404
+      }
+    },
+    {
+      "name": "inactive_user_cannot_login",
+      "ok": true,
+      "detail": {
+        "status": 401
+      }
+    }
+  ],
+  "status": "passed",
+  "fixture": {
+    "tenant_id": "602543aa-2155-46c1-809b-7131dd1f0c6f",
+    "admin_user_id": 38,
+    "created_user_id": 44
+  }
+}

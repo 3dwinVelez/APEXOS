@@ -55,6 +55,7 @@ const moduleCodeBySlug: Record<string, string> = {
   "facturacion-electronica": "facturacion_electronica",
   "configuracion-inicial": "configuracion_inicial",
   inventario: "inventario",
+  reportes: "apex_heart",
   "planeacion-demanda": "planeacion_demanda",
   "punto-de-venta": "punto_de_venta",
   presupuestos: "presupuestos",
@@ -76,6 +77,7 @@ const permissionModulesBySlug: Record<string, string[]> = {
   contabilidad: ["accounting"],
   facturacion: ["invoicing"],
   inventario: ["inventory", "wms"],
+  reportes: ["admin", "brain", "apex_heart"],
   proyectos: ["projects"],
   servicios: ["services"],
   "talento-humano": ["hr", "time_tracking", "payroll"],
@@ -94,6 +96,7 @@ const legacyPermissionKeysBySlug: Record<string, string[]> = {
   contabilidad: ["contabilidad"],
   facturacion: ["facturacion"],
   inventario: ["inventarios", "wms"],
+  reportes: ["reportes", "dashboard"],
   proyectos: ["proyectos"],
   servicios: ["servicios"],
   "talento-humano": ["talento_humano", "marcaciones", "nomina"],
@@ -241,9 +244,17 @@ function permissionCandidates(module: ApexModule) {
 
 function hasAdministrativeRole() {
   if (typeof window === "undefined") return false;
+  let roleType = "";
+  try {
+    const metadata = JSON.parse(localStorage.getItem("role_metadata") || "{}");
+    roleType = String(metadata?.role_type || "");
+  } catch {
+    roleType = "";
+  }
   return isAdministrativeRole([
     localStorage.getItem("role_name"),
-    localStorage.getItem("apexos_company_role")
+    localStorage.getItem("apexos_company_role"),
+    roleType
   ]);
 }
 

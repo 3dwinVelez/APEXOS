@@ -1,0 +1,54 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "inventory-policy-phase23-20260910",
+  "base_commits": {
+    "develop": "79a420225e3ae390636038918eba71c954d858b4"
+  },
+  "certified_commit": "378115efbd962d27877870d807606d853e2761bc",
+  "change_intent": {
+    "summary": "Promover a QA la política de diseño de producto y los avances de fases 2 y 3 de Inventarios: navegación por dominios, WMS oculto de superficies visibles y creación de producto más clara.",
+    "modules": ["design-policy", "inventory", "web-shell", "product-master"]
+  },
+  "allowed_paths": [
+    "apps/web/app/dashboard/inventario/page.tsx",
+    "apps/web/app/dashboard/inventario/productos/nuevo/page.tsx",
+    "apps/web/components/brain/AiExperienceLayer.tsx",
+    "apps/web/components/inventory-nav.tsx",
+    "apps/web/test/erp-visual-normalization.test.mjs",
+    "apps/web/test/inventory-improvements-roadmap.test.mjs",
+    "docs/design/APEX_OS_POLITICA_DISENO_PRODUCTO.md",
+    "docs/qa/evidence/inventory-policy-phase23-20260910/local-validation.md",
+    "docs/qa/evidence/inventory-policy-phase23-20260910/preqa-approval-evidence.json",
+    "docs/qa/evidence/inventory-policy-phase23-20260910/scope-manifest.json"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    { "status": "M", "file": "apps/web/app/dashboard/inventario/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/inventario/productos/nuevo/page.tsx" },
+    { "status": "M", "file": "apps/web/components/brain/AiExperienceLayer.tsx" },
+    { "status": "M", "file": "apps/web/components/inventory-nav.tsx" },
+    { "status": "M", "file": "apps/web/test/erp-visual-normalization.test.mjs" },
+    { "status": "A", "file": "apps/web/test/inventory-improvements-roadmap.test.mjs" },
+    { "status": "A", "file": "docs/design/APEX_OS_POLITICA_DISENO_PRODUCTO.md" },
+    { "status": "A", "file": "docs/qa/evidence/inventory-policy-phase23-20260910/local-validation.md" },
+    { "status": "A", "file": "docs/qa/evidence/inventory-policy-phase23-20260910/preqa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/inventory-policy-phase23-20260910/scope-manifest.json" }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "design-policy-continuity",
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    {
+      "name": "inventory-navigation",
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    {
+      "name": "inventory-product-creation",
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    }
+  ]
+}

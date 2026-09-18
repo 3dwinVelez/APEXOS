@@ -8,7 +8,8 @@ if (isRedisDisabled()) {
     connection: null,
     auditQueue: noopQueue,
     brainQueue: noopQueue,
-    stockQueue: noopQueue
+    stockQueue: noopQueue,
+    emailQueue: noopQueue
   };
   return;
 }

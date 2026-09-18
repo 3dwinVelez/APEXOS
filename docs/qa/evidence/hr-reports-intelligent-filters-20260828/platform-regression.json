@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "environment": "QA",
+  "model_company": "NYVORA",
+  "runtime_commit": "unknown",
+  "commit_binding": {
+    "functional_commit": "4cb658180b761c348ee8c770d6033dfd450fd420",
+    "api_deployment_id": "5bbba219-4a94-42e3-8038-b391a065ab8b",
+    "web_deployment_id": "daa0f576-7206-47a1-ba17-41d0f6f41baf",
+    "proof": "active Railway CLI deployments contain the functional commit by Git ancestry"
+  },
+  "checks": [
+    "session",
+    "services_orders",
+    "services_references",
+    "hr_employees",
+    "inventory_items",
+    "accounting_accounts"
+  ],
+  "unauthorized_blocked": true,
+  "fixture_credentials_recorded": false,
+  "certified_at": "2026-08-29T13:12:00.000Z"
+}

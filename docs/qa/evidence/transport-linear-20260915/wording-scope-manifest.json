@@ -1,0 +1,25 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "transport-connected-wording-20260915",
+  "base_commits": {
+    "desarrollo": "41aef57"
+  },
+  "base_commit": "41aef57",
+  "certified_commit": "def8467",
+  "change_intent": {
+    "summary": "Corregir concordancia y espaciado de la fuente modular mostrada en la entrada de pedidos de Transporte.",
+    "modules": ["transport"]
+  },
+  "allowed_paths": [
+    "apps/web/app/dashboard/transporte/ordenes/page.tsx",
+    "docs/qa/evidence/transport-linear-20260915/wording-scope-manifest.json"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    { "status": "M", "file": "apps/web/app/dashboard/transporte/ordenes/page.tsx" },
+    { "status": "A", "file": "docs/qa/evidence/transport-linear-20260915/wording-scope-manifest.json" }
+  ],
+  "protected_capabilities": [
+    { "name": "transport-order-intake-clarity", "status": "passed", "evidence": ["browser-certification.md", "regression.md"] }
+  ]
+}

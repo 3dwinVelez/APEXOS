@@ -1,0 +1,54 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "transport-master-correction-preqa-20260825",
+  "change_intent": {
+    "summary": "Corregir exclusivamente acceso RBAC, consulta de retirados y certificacion del maestro de Transporte",
+    "modules": ["transport", "promotion-governance"]
+  },
+  "base_commits": {
+    "develop": "51d41e98b69fcddf9eec3b68961277c040e403eb",
+    "main": "0abda8c41168642f99da0831e15f940b98232a12"
+  },
+  "certified_commit": "d06c98afd6dcbf74be4b76fc8127dc37184faa3e",
+  "expected_changes": [
+    { "status": "M", "file": "apps/web/app/dashboard/transporte/page.tsx" },
+    { "status": "A", "file": "apps/web/test/transport-master-access.test.mjs" },
+    { "status": "A", "file": "docs/qa/evidence/transport-master-correction-20260825/REPORTE.md" },
+    { "status": "A", "file": "docs/qa/evidence/transport-master-correction-20260825/certification-contract.json" },
+    { "status": "A", "file": "docs/qa/evidence/transport-master-correction-20260825/local-validation.md" },
+    { "status": "A", "file": "docs/qa/evidence/transport-master-correction-20260825/preqa-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/transport-master-correction-20260825/qa-runbook.md" },
+    { "status": "A", "file": "scripts/certifications/transport-master-qa.js" },
+    { "status": "A", "file": "scripts/test/transport-master-qa-certification.test.js" }
+  ],
+  "allowed_paths": [
+    "apps/web/app/dashboard/transporte/page.tsx",
+    "apps/web/test/transport-master-access.test.mjs",
+    "docs/qa/evidence/transport-master-correction-20260825/",
+    "scripts/certifications/transport-master-qa.js",
+    "scripts/test/transport-master-qa-certification.test.js"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "transport_rbac_ui",
+      "status": "passed",
+      "evidence": ["REPORTE.md", "local-validation.md"]
+    },
+    {
+      "name": "transport_retired_vehicle_visibility",
+      "status": "passed",
+      "evidence": ["REPORTE.md", "local-validation.md"]
+    },
+    {
+      "name": "transport_qa_certification_contract",
+      "status": "passed",
+      "evidence": ["certification-contract.json", "local-validation.md"]
+    },
+    {
+      "name": "cross_module_scope_isolation",
+      "status": "passed",
+      "evidence": ["REPORTE.md", "local-validation.md"]
+    }
+  ]
+}

@@ -1,0 +1,507 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "erp-module-controlled-recovery-preqa-20260825",
+  "change_intent": {
+    "summary": "Recuperar puntualmente las versiones mas recientes de Compras, Inventario, Tesoreria, Ventas y Contabilidad, incluyendo solo la dependencia CxC indispensable",
+    "modules": [
+      "purchases",
+      "inventory",
+      "treasury",
+      "sales",
+      "accounting",
+      "accounts-receivable-dependency",
+      "promotion-governance"
+    ]
+  },
+  "base_commits": {
+    "develop": "9b4f46d6d7a602b39628933adeb5da9499795b34",
+    "main": "0abda8c41168642f99da0831e15f940b98232a12"
+  },
+  "certified_commit": "dfa9048",
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260730030000_customer_sales_invoicing_cxc/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260806150000_canonical_party_roles/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260807040000_treasury_banks_payments/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260807090000_treasury_advances_purchase_imports/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260821193000_item_legacy_code/migration.sql"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/prisma/schema.prisma"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/server.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/core/prisma.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/accounting/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/accounting/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/accounting/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/accounts-receivable/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/accounts-receivable/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/accounts-receivable/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/inventory/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/inventory/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/inventory/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/parties/roles.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/purchases/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/purchases/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/purchases/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/sales-invoice/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/sales-invoice/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/sales-invoice/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/sales/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/treasury/routes.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/treasury/schema.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/treasury/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/accounting-routes-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/high-volume-ux-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/inventory-initial-load.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/inventory-kardex-purchase-order-report-ux.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/inventory-transfer-product-list-ux.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/inventory-transfer-tenancy-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/inventory-valuation-transit.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/item-legacy-code-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/party-roles.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/purchase-order-close-pdf.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/purchase-order-entry-grid.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/purchase-receipt-detail-transfer-pdf.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/purchase-return-ui-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/purchases-import-tenancy.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/purchases-invoice-transaction.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/purchases-supplier-flow.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/sales-invoicing-cxc.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/sales-report-search-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/tax-master-scope.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/third-party-accounting-masters.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/treasury-advances-imports.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/treasury-payments.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/zero-friendly-number-input.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/facturas/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/compras/importaciones/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/ordenes/nueva/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/ordenes/recibir/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/proveedores/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/compras/reportes/ordenes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/contabilidad/asientos/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/contabilidad/cuentas-por-pagar/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/contabilidad/iva/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/contabilidad/retenciones/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/contabilidad/terceros/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/cxc/documentos/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/cxc/retenciones/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/bodegas/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/inventario/cargue-inicial/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/productos/nuevo/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/inventario/productos/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/reportes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/stock/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/inventario/traslados/nuevo/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/inventario/traslados/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/tesoreria/anticipos/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/tesoreria/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/ventas/clientes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/ventas/facturas/[id]/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/ventas/facturas/nueva/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/ventas/facturas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/ventas/ordenes/nueva/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/ventas/ordenes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/ventas/reportes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/compras-nav.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/contabilidad-nav.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/inventory-nav.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/ui/ZeroFriendlyNumberInput.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/api-collections.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/api.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/purchaseOrderPdf.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/salesInvoiceLines.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/transferRemissionPdf.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/plantillas/Plantilla_Cargue_Inicial_Inventario.xlsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/sales-collection-contracts.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/sales-invoice-lines.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-module-recovery-20260825/REPORTE.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-module-recovery-20260825/certification-contract.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-module-recovery-20260825/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-module-recovery-20260825/qa-runbook.md"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/erp-module-recovery-qa.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/test/erp-module-recovery-qa-certification.test.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/erp-module-recovery-20260825/preqa-scope-manifest.json"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/prisma/migrations/20260730030000_customer_sales_invoicing_cxc/",
+    "apps/api/prisma/migrations/20260806150000_canonical_party_roles/",
+    "apps/api/prisma/migrations/20260807040000_treasury_banks_payments/",
+    "apps/api/prisma/migrations/20260807090000_treasury_advances_purchase_imports/",
+    "apps/api/prisma/migrations/20260821193000_item_legacy_code/",
+    "apps/api/prisma/schema.prisma",
+    "apps/api/server.js",
+    "apps/api/src/core/prisma.js",
+    "apps/api/src/modules/accounting/",
+    "apps/api/src/modules/accounts-receivable/",
+    "apps/api/src/modules/inventory/",
+    "apps/api/src/modules/parties/roles.js",
+    "apps/api/src/modules/purchases/",
+    "apps/api/src/modules/sales-invoice/",
+    "apps/api/src/modules/sales/service.js",
+    "apps/api/src/modules/treasury/",
+    "apps/api/test/",
+    "apps/web/app/dashboard/compras/",
+    "apps/web/app/dashboard/contabilidad/",
+    "apps/web/app/dashboard/cxc/documentos/",
+    "apps/web/app/dashboard/cxc/retenciones/",
+    "apps/web/app/dashboard/inventario/",
+    "apps/web/app/dashboard/tesoreria/",
+    "apps/web/app/dashboard/ventas/",
+    "apps/web/components/compras-nav.tsx",
+    "apps/web/components/contabilidad-nav.tsx",
+    "apps/web/components/inventory-nav.tsx",
+    "apps/web/components/ui/ZeroFriendlyNumberInput.tsx",
+    "apps/web/lib/api-collections.ts",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/purchaseOrderPdf.ts",
+    "apps/web/lib/salesInvoiceLines.ts",
+    "apps/web/lib/transferRemissionPdf.ts",
+    "apps/web/public/plantillas/Plantilla_Cargue_Inicial_Inventario.xlsx",
+    "apps/web/test/sales-collection-contracts.test.mjs",
+    "apps/web/test/sales-invoice-lines.test.mjs",
+    "docs/qa/evidence/erp-module-recovery-20260825/",
+    "scripts/certifications/erp-module-recovery-qa.js",
+    "scripts/test/erp-module-recovery-qa-certification.test.js"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "erp_module_versions_recovered",
+      "status": "passed",
+      "evidence": [
+        "REPORTE.md",
+        "local-validation.md"
+      ]
+    },
+    {
+      "name": "cxc_integrated_dependency_preserved",
+      "status": "passed",
+      "evidence": [
+        "REPORTE.md",
+        "local-validation.md"
+      ]
+    },
+    {
+      "name": "no_deletions_and_cross_module_isolation",
+      "status": "passed",
+      "evidence": [
+        "REPORTE.md",
+        "local-validation.md"
+      ]
+    },
+    {
+      "name": "qa_certification_contract_versioned",
+      "status": "passed",
+      "evidence": [
+        "certification-contract.json",
+        "qa-runbook.md"
+      ]
+    }
+  ]
+}

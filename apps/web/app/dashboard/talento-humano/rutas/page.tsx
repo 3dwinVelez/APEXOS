@@ -15,7 +15,7 @@ type TimeRoute = { id: number | string; code?: string; display_id?: number | str
 type MasterOption = { code: string; name: string; active?: boolean; sort_order?: number };
 type UserMasterData = { locations?: MasterOption[] };
 type OperatorPoint = { key: string; user_name: string; name: string; route_id: number | string; online?: boolean; last_punch_type?: string; last_activity_type?: string; last_activity_time?: string };
-type MonitorEvidence = { base64_data?: string; file_name?: string; file_url?: string; has_base64_data?: boolean };
+type MonitorEvidence = { id?: number | string; source?: "activity" | "punch"; base64_data?: string; file_name?: string; file_url?: string; has_base64_data?: boolean; available?: boolean };
 type PunchPoint = { id: number | string; user_name: string; type: string; time?: string; punched_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; extra_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: MonitorEvidence };
 type ActivityPoint = { id: number | string; user_name: string; type: string; time?: string; occurred_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; observation?: string; evidence?: MonitorEvidence[] };
 type RouteEventSummary = { route_id: number | string; punch_count: number; activity_count: number; evidence_count: number; closed_count: number; event_count: number; last_event_at?: string | null };
@@ -258,6 +258,9 @@ export default function RoutesPlanningPage() {
   const [kindFilter, setKindFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
+  const [loadedEvidence, setLoadedEvidence] = useState<Record<string, MonitorEvidence>>({});
+  const [loadingEvidence, setLoadingEvidence] = useState<Record<string, boolean>>({});
+  const [evidenceErrors, setEvidenceErrors] = useState<Record<string, string>>({});
 
   const loadRoutes = useCallback(async () => {
     let latest: TimeRoute[] | null = null;
@@ -350,9 +353,29 @@ export default function RoutesPlanningPage() {
 
   function openRouteMonitor(route: RouteMonitor) {
     const targetDate = scheduleMonitorDate(route.date);
+    setLoadedEvidence({});
+    setLoadingEvidence({});
+    setEvidenceErrors({});
     setSelectedRouteId(String(route.id));
     setMonitorDate(targetDate);
     loadMonitor(targetDate);
+  }
+
+  async function loadTimelineEvidence(event: { id: string; kind: "marca" | "actividad"; evidence?: MonitorEvidence[] }) {
+    const summary = event.evidence?.[0];
+    if (summary?.id == null || loadingEvidence[event.id]) return;
+    const source = event.kind === "marca" ? "punch" : "activity";
+    setLoadingEvidence((current) => ({ ...current, [event.id]: true }));
+    setEvidenceErrors((current) => ({ ...current, [event.id]: "" }));
+    try {
+      const evidence = await api<MonitorEvidence>(`/api/v1/hr/monitor-evidence/${source}/${encodeURIComponent(String(summary.id))}`, { cache: "no-store" });
+      if (!evidence.base64_data && !evidence.file_url) throw new Error("La evidencia no contiene un archivo visible.");
+      setLoadedEvidence((current) => ({ ...current, [event.id]: evidence }));
+    } catch (error) {
+      setEvidenceErrors((current) => ({ ...current, [event.id]: error instanceof Error ? error.message : "No fue posible cargar la evidencia." }));
+    } finally {
+      setLoadingEvidence((current) => ({ ...current, [event.id]: false }));
+    }
   }
 
   async function openCreateModal(route?: RouteMonitor) {
@@ -770,7 +793,10 @@ export default function RoutesPlanningPage() {
                   <Link className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href="/dashboard/talento-humano/mapa"><Navigation size={16} /> Mapa</Link>
                 </div>
                 <div className="space-y-3">
-                  {selectedTimeline.map((event, index) => (
+                  {selectedTimeline.map((event, index) => {
+                    const evidence = loadedEvidence[event.id] || event.evidence?.[0];
+                    const canLoadEvidence = Boolean(event.evidence?.[0]?.available && event.evidence?.[0]?.id != null);
+                    return (
                     <article className="grid gap-3 rounded-md border border-line p-3 md:grid-cols-[44px_1fr_180px]" key={event.id}>
                       <span className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white ${event.kind === "marca" ? "bg-apex" : "bg-emerald-600"}`}>{index + 1}</span>
                       <div className="min-w-0">
@@ -783,10 +809,12 @@ export default function RoutesPlanningPage() {
                         {event.latitude != null && event.longitude != null ? <p className="mt-2 text-xs text-neutral-500">GPS {Number(event.latitude).toFixed(5)}, {Number(event.longitude).toFixed(5)} - {Math.round(Number(event.accuracy_meters || 0))}m</p> : null}
                       </div>
                       <div>
-                        {event.evidence?.[0]?.base64_data ? <Image alt="Evidencia" className="h-32 w-full rounded-md object-cover" height={320} src={event.evidence[0].base64_data} unoptimized width={640} /> : event.evidence?.[0]?.file_url ? <a className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href={event.evidence[0].file_url} target="_blank" rel="noreferrer"><Camera size={16} /> Ver evidencia</a> : event.evidence?.[0]?.has_base64_data ? <p className="rounded-md bg-emerald-50 p-3 text-xs font-semibold text-emerald-700"><Camera className="mr-1 inline" size={14} /> Evidencia fotografica registrada</p> : <p className="rounded-md bg-paper p-3 text-xs font-semibold text-neutral-500">Sin evidencia fotografica</p>}
+                        {evidence?.base64_data ? <Image alt={`Evidencia de ${event.title}`} className="h-32 w-full rounded-md object-cover" height={320} src={evidence.base64_data} unoptimized width={640} /> : evidence?.file_url ? <a className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href={evidence.file_url} target="_blank" rel="noreferrer"><Camera size={16} /> Ver evidencia</a> : canLoadEvidence ? <button className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-apex/30 bg-apex/5 px-3 text-sm font-semibold text-apex hover:bg-apex/10 disabled:cursor-wait disabled:opacity-70" disabled={Boolean(loadingEvidence[event.id])} onClick={() => void loadTimelineEvidence(event)} type="button">{loadingEvidence[event.id] ? <RefreshCw className="animate-spin" size={16} /> : <Camera size={16} />}{loadingEvidence[event.id] ? "Cargando..." : evidenceErrors[event.id] ? "Reintentar evidencia" : "Cargar evidencia"}</button> : <p className="rounded-md bg-paper p-3 text-xs font-semibold text-neutral-500">Sin evidencia fotografica</p>}
+                        {evidenceErrors[event.id] ? <p className="mt-2 text-xs font-medium text-red-600" role="alert">{evidenceErrors[event.id]}</p> : null}
                       </div>
                     </article>
-                  ))}
+                    );
+                  })}
                   {!selectedTimeline.length ? <p className="rounded-md bg-paper p-4 text-sm text-neutral-500">Este horario aun no tiene marcaciones ni actividades.</p> : null}
                 </div>
               </section>

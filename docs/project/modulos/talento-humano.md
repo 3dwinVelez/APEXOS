@@ -1,5 +1,16 @@
 # Modulo Talento Humano
 
+## Intervencion de marcaciones masivas 2026-09-02
+
+- `GET /api/v1/hr/self/time-routes` ignora rangos suministrados por el cliente y entrega exclusivamente los horarios asignados al usuario para la fecha operativa actual de `America/Bogota`. La pantalla movil aplica el mismo filtro defensivo.
+- Las operaciones autocontenidas de marcacion, actividad y sesion rechazan con `HORARIO_FUERA_DEL_DIA` cualquier horario que no corresponda al dia operativo actual, aunque el usuario lo haya tenido asignado historicamente.
+- Cada marcacion movil genera una `idempotency_key`. Prisma y el respaldo Supabase mantienen unicidad por tenant/empresa para que un reintento de red devuelva la marca existente y no inserte duplicados.
+- La secuencia de marcacion se serializa mediante un bloqueo transaccional por tenant, empleado, horario y dia. Personas diferentes no comparten el bloqueo y conservan concurrencia real. No se usa aislamiento global `Serializable`, porque sus bloqueos de predicado generaban abortos cruzados durante las pruebas masivas.
+- La transaccion admite hasta 10 segundos para adquirir conexion, conserva un limite de ejecucion de 20 segundos y reintenta solo fallos transitorios de pool o serializacion. Las reglas funcionales `4xx` no se reintentan.
+- El endpoint autocontenido de marcaciones admite hasta 600 solicitudes por minuto para soportar la rafaga certificada de 100 usuarios; autenticacion y las demas rutas conservan sus limites restrictivos.
+- La cola movil conserva errores transitorios para sincronizacion posterior y descarta solicitudes rechazadas permanentemente, evitando que una marca invalida bloquee las siguientes.
+- La certificacion masiva versionada usa Nyvora en QA, valida el SHA desplegado y ejecuta niveles de 20, 50 y 100 usuarios con cuatro marcas, reenvio idempotente, persistencia, ausencia de perdidas/duplicados y limpieza controlada.
+
 ## Cambios aplicados
 
 - La entrada principal se simplifico como centro operativo de lectura rapida, con encabezado compacto, dos acciones prioritarias y cuatro indicadores esenciales.
@@ -52,6 +63,10 @@
   - `node scripts/seed-hr-map-demo.js`
   - `node scripts/validate-hr-map-demo.js`
 - Los controles blancos ubicados sobre encabezados y paneles oscuros conservan su tratamiento inverso al alternar el tema, evitando perdida de contraste en el acceso a Marcacion y en los filtros del mapa.
+- Reportes de tiempo consulta `attendance`, actividades y horarios con el mismo rango inclusivo aplicado por el usuario; el backend y el fallback Supabase limitan el rango a 92 dias para evitar consultas sin cota.
+- Los filtros de reportes incluyen rangos rapidos (hoy, ultimos 7/30 dias y mes actual), empleado por identidad estable, jornadas completas/incompletas, solo horas extra y busqueda tolerante a tildes por persona, documento, rol, ruta, vehiculo o actividad.
+- La trazabilidad del reporte solo asocia actividades de la misma fecha operativa de la jornada, incluso cuando coinciden identificadores de ruta reutilizados en otros dias.
+- La descarga de reportes exige el permiso fino `hr:export` y usa un archivo `.xlsx` real con hojas Resumen, Jornadas y Trazabilidad, cabeceras visibles, autofiltros, panel congelado, fechas y horas numericas ordenadas; CSV deja de ser el formato de salida de esta pantalla.
 - **2026-07-23 — Route Tracking ahora busca por metadata route_id.** La función `getRouteTracking` en `service.js` solo buscaba punches/pings GPS por `route_id` numérico directo. Las marcaciones desde móvil que guardan el route_id en `metadata.display_route_id` (por compatibilidad Supabase) quedaban huérfanas del seguimiento de ruta. Se reemplazó `route_id: Number(id)` por `...routeScopeWhere(id)`, una función ya existente que busca tanto por route_id directo como por `metadata.display_route_id`, `route_code`, `legacy_route_id` y `source_route_id`.
 - **2026-07-23 — Script de validación integral HR.** Se agregó `scripts/validate-hr-flow.js` con 50 pruebas que cubren: creación de usuarios con empleados vinculados (conductor/operario), horarios, rutas, marcaciones completas con y sin checklist preoperacional, actividades post-cierre, monitor Operations Map, Route Tracking, Attendance, Work Sessions, procesamiento de jornada, y 6 edge cases de validación.
 - **2026-07-23 — Documentación de auditoría.** Se agregó `docs/audits/HR_ROUTE_TRACKING_METADATA_FIX_20260723.md` con el detalle del bug, corrección y resultados de validación.
@@ -83,6 +98,9 @@ Talento Humano debe separar operacion diaria, configuracion y seguimiento. Marca
 - Confirmar que el modo Historico muestra rutas cerradas con sus 4 marcaciones por usuario, recorrido conectado y detalle clicable de cada marca.
 - Confirmar que el escenario `MAP-101` contiene una ruta historica cerrada con 2 tecnicos y 8 marcaciones georreferenciadas.
 - Confirmar que el escenario `MAP-202` conserva la ultima huella de una persona sin senal activa.
+- Confirmar que cambiar Desde/Hasta consulta y muestra todas las jornadas del rango, incluye el dia final y rechaza rangos invertidos o superiores a 92 dias.
+- Confirmar que los filtros rapidos, empleado, estado de jornada, solo extras y busqueda combinada producen el mismo subconjunto visible que se descarga.
+- Abrir el `.xlsx` descargado y comprobar Resumen, Jornadas y Trazabilidad, autofiltros, fila congelada, formatos de fecha/horas y ausencia de eventos pertenecientes a otra fecha.
 - Crear ruta sin mezclar el listado principal con formularios abiertos.
 # Talento humano
 

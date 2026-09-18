@@ -1,0 +1,46 @@
+{
+  "change_id": "operational-workspace-20260910",
+  "commit": "a9c0cb0acdcc5b58d3c3fd650552a18786b4f74e",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "manue",
+    "approved_at": "2026-09-10T00:00:00-05:00"
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/transport-intelligent-local.js",
+    "evidence": ["local-validation.md"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/validate-promotion-scope.js",
+    "evidence": ["local-validation.md"]
+  }
+}

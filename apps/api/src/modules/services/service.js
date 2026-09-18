@@ -1244,80 +1244,110 @@ async function updateReference(tenantId, user, id, input) {
   });
 }
 
-function normalizeBulkRows(rows = []) {
+const REFERENCE_IMPORT_CATEGORIES = new Set(["muebles", "colchones", "electrodomesticos", "cocina", "oficina", "decoracion", "iluminacion", "textiles", "otros"]);
+
+function validateReferenceImportRows(rows = []) {
+  if (!Array.isArray(rows) || !rows.length) throw appError(400, "EMPTY_REFERENCE_IMPORT", "La plantilla no contiene referencias para importar");
+  if (rows.length > 2000) throw appError(400, "REFERENCE_IMPORT_LIMIT", "La plantilla admite maximo 2.000 filas");
   const grouped = new Map();
-  for (const row of rows) {
+  const problems = [];
+  rows.forEach((row, index) => {
+    const rowNumber = index + 2;
     const code = String(row.code || "").trim().toUpperCase();
     const name = String(row.name || "").trim();
-    if (!code || !name) continue;
+    const category = String(row.category || "").trim().toLowerCase();
+    const description = String(row.description || "").trim();
+    const estimatedMinutes = Number(row.estimated_minutes);
+    const brand = String(row.brand || "").trim();
+    const model = String(row.model || "").trim();
+    const partName = String(row.part_name || "").trim();
+    const partQuantity = Number(row.part_quantity);
+    const partUnit = String(row.part_unit || "").trim().toLowerCase();
+    const partDescription = String(row.part_description || "").trim();
+    const manualTitle = String(row.manual_title || "").trim();
+    const manualUrl = String(row.manual_url || "").trim();
+    const manualNotes = String(row.manual_notes || "").trim();
+    const active = row.active;
+    if (!/^[A-Z0-9][A-Z0-9._-]{1,39}$/.test(code)) problems.push(`fila ${rowNumber}: codigo invalido`);
+    if (name.length < 2 || name.length > 160) problems.push(`fila ${rowNumber}: nombre invalido`);
+    if (!REFERENCE_IMPORT_CATEGORIES.has(category)) problems.push(`fila ${rowNumber}: categoria invalida`);
+    if (!Number.isInteger(estimatedMinutes) || estimatedMinutes < 1 || estimatedMinutes > 1440) problems.push(`fila ${rowNumber}: minutos_estimados invalido`);
+    if (typeof active !== "boolean") problems.push(`fila ${rowNumber}: activa debe ser SI o NO en la plantilla`);
+    if (partName.length < 2 || partName.length > 160) problems.push(`fila ${rowNumber}: pieza invalida`);
+    if (!Number.isFinite(partQuantity) || partQuantity <= 0 || partQuantity > 999999) problems.push(`fila ${rowNumber}: cantidad_pieza invalida`);
+    if (!partUnit || partUnit.length > 20) problems.push(`fila ${rowNumber}: unidad_pieza invalida`);
+    if ((manualTitle && !manualUrl) || (!manualTitle && manualUrl)) problems.push(`fila ${rowNumber}: titulo y URL del manual deben diligenciarse juntos`);
+    if (manualUrl) {
+      try {
+        const parsed = new URL(manualUrl);
+        if (!["http:", "https:"].includes(parsed.protocol)) throw new Error("protocol");
+      } catch {
+        problems.push(`fila ${rowNumber}: url_manual invalida`);
+      }
+    }
+    if (problems.length && problems.at(-1)?.startsWith(`fila ${rowNumber}:`)) return;
     const existing = grouped.get(code) || {
       code,
       name,
-      category: row.category || "muebles",
-      description: row.description || "",
-      estimated_minutes: Number(row.estimated_minutes || 60),
-      brand: row.brand || "",
-      model: row.model || "",
-      active: !(row.active === false || String(row.active).toLowerCase() === "false"),
+      category,
+      description,
+      estimated_minutes: estimatedMinutes,
+      brand,
+      model,
+      active,
       parts: [],
-      manuals: []
+      manuals: [],
+      source_row: rowNumber,
+      signature: JSON.stringify([name, category, description, estimatedMinutes, brand, model, active]),
+      part_names: new Set(),
+      manual_urls: new Set()
     };
-    if (row.part_name) {
-      existing.parts.push({
-        name: row.part_name,
-        quantity: Number(row.part_quantity || 1),
-        unit: row.part_unit || "und",
-        description: row.part_description || ""
-      });
-    }
-    if (row.manual_url || row.manual_title) {
-      existing.manuals.push({
-        title: row.manual_title || "Manual",
-        file_name: row.manual_title || "manual",
-        file_url: row.manual_url || "",
-        notes: row.manual_notes || ""
-      });
+    const signature = JSON.stringify([name, category, description, estimatedMinutes, brand, model, active]);
+    if (existing.signature !== signature) problems.push(`fila ${rowNumber}: los datos generales no coinciden con la fila ${existing.source_row} del codigo ${code}`);
+    const normalizedPart = partName.toLowerCase();
+    if (existing.part_names.has(normalizedPart)) problems.push(`fila ${rowNumber}: la pieza esta repetida para ${code}`);
+    existing.part_names.add(normalizedPart);
+    existing.parts.push({ name: partName, quantity: partQuantity, unit: partUnit, description: partDescription });
+    if (manualUrl) {
+      const normalizedManual = manualUrl.toLowerCase();
+      if (existing.manual_urls.has(normalizedManual)) problems.push(`fila ${rowNumber}: el manual esta repetido para ${code}`);
+      existing.manual_urls.add(normalizedManual);
+      existing.manuals.push({ title: manualTitle, file_name: manualTitle, file_url: manualUrl, notes: manualNotes });
     }
     grouped.set(code, existing);
-  }
-  return Array.from(grouped.values()).map((row) => ({
-    ...row,
-    parts: row.parts.length ? row.parts : [{ name: "Validacion general", quantity: 1, unit: "und", description: "" }]
-  }));
+  });
+  if (grouped.size > 500) problems.push("la plantilla admite maximo 500 referencias distintas");
+  if (problems.length) throw appError(400, "INVALID_REFERENCE_IMPORT", `Corrige la plantilla antes de importar: ${problems.slice(0, 20).join("; ")}${problems.length > 20 ? `; y ${problems.length - 20} error(es) mas` : ""}`);
+  return Array.from(grouped.values()).map(({ signature, source_row, part_names, manual_urls, ...row }) => row);
 }
 
 async function bulkImportReferences(tenantId, user, input) {
   assertAdministrativeServiceUser(user);
-  const rows = normalizeBulkRows(input.rows || []);
-  if (!rows.length) throw appError(400, "EMPTY_REFERENCE_IMPORT", "La plantilla no contiene referencias validas");
-  return prisma.runWithTenant(tenantId, async () => {
+  const rows = validateReferenceImportRows(input.rows || []);
+  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
     const result = { created: 0, updated: 0, skipped: 0, references: [] };
-    for (const row of rows.slice(0, 500)) {
-      const current = await prisma.serviceReference.findFirst({ where: { code: row.code }, select: { id: true, metadata: true } });
-      try {
-        if (current) {
-          await prisma.serviceReferencePart.deleteMany({ where: { reference_id: current.id } });
-          const updated = await prisma.serviceReference.update({
-            where: { id: current.id },
-            data: referenceData(tenantId, row, current.metadata || {}),
-            include: referenceInclude()
-          });
-          result.updated += 1;
-          result.references.push(referenceDto(updated));
-        } else {
-          const created = await prisma.serviceReference.create({
-            data: referenceData(tenantId, row),
-            include: referenceInclude()
-          });
-          result.created += 1;
-          result.references.push(referenceDto(created));
-        }
-      } catch {
-        result.skipped += 1;
+    for (const row of rows) {
+      const current = await tx.serviceReference.findFirst({ where: { tenant_id: tenantId, code: row.code }, select: { id: true, metadata: true } });
+      if (current) {
+        await tx.serviceReferencePart.deleteMany({ where: { tenant_id: tenantId, reference_id: current.id } });
+        const updated = await tx.serviceReference.update({
+          where: { id: current.id },
+          data: referenceData(tenantId, row, current.metadata || {}),
+          include: referenceInclude()
+        });
+        result.updated += 1;
+        result.references.push(referenceDto(updated));
+      } else {
+        const created = await tx.serviceReference.create({
+          data: { ...referenceData(tenantId, row), tenant_id: tenantId },
+          include: referenceInclude()
+        });
+        result.created += 1;
+        result.references.push(referenceDto(created));
       }
     }
     return result;
-  });
+  }));
 }
 
 async function startOrder(tenantId, user, id, input = {}) {
@@ -1592,6 +1622,7 @@ module.exports = {
   createReference,
   updateReference,
   bulkImportReferences,
+  validateReferenceImportRows,
   startOrder,
   moveToInspection,
   moveToExecution,

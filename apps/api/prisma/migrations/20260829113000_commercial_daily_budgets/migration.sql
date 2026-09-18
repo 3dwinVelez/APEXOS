@@ -1,0 +1,12 @@
+ALTER TABLE "commercial_advisor_budgets" ADD COLUMN "budget_type" TEXT NOT NULL DEFAULT 'MONTHLY';
+ALTER TABLE "commercial_advisor_budgets" ADD COLUMN "budget_date" TIMESTAMP(3);
+UPDATE "commercial_advisor_budgets" b SET "budget_date" = p."start_date" FROM "commercial_periods" p WHERE p."id" = b."period_id";
+ALTER TABLE "commercial_advisor_budgets" ALTER COLUMN "budget_date" SET NOT NULL;
+DROP INDEX "commercial_advisor_budgets_tenant_id_period_id_advisor_id_key";
+CREATE UNIQUE INDEX "commercial_advisor_budgets_scope_key" ON "commercial_advisor_budgets"("tenant_id", "period_id", "advisor_id", "budget_type", "budget_date");
+ALTER TABLE "commercial_customer_budgets" ADD COLUMN "budget_type" TEXT NOT NULL DEFAULT 'MONTHLY';
+ALTER TABLE "commercial_customer_budgets" ADD COLUMN "budget_date" TIMESTAMP(3);
+UPDATE "commercial_customer_budgets" b SET "budget_date" = p."start_date" FROM "commercial_periods" p WHERE p."id" = b."period_id";
+ALTER TABLE "commercial_customer_budgets" ALTER COLUMN "budget_date" SET NOT NULL;
+DROP INDEX "commercial_customer_budgets_tenant_id_period_id_customer_id_key";
+CREATE UNIQUE INDEX "commercial_customer_budgets_scope_key" ON "commercial_customer_budgets"("tenant_id", "period_id", "customer_id", "budget_type", "budget_date");

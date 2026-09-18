@@ -1,0 +1,50 @@
+{
+  "change_id": "remove-global-ai-pulse-to-develop-20260909",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "0810f16",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": ["../../../../apps/web/test/phase-two-intelligent-experience.test.mjs"]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "local-validation.md",
+        "../../../../apps/web/test/phase-two-intelligent-experience.test.mjs"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": ["local-validation.md"]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../apps/web/test/phase-two-intelligent-experience.test.mjs",
+    "evidence": ["local-validation.md"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../apps/web/test/phase-two-intelligent-experience.test.mjs",
+    "evidence": ["local-validation.md"]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Solicitante autorizado de APEXOS en tarea Codex",
+    "approved_at": "2026-09-09T16:30:00-05:00",
+    "main_release": "not_authorized"
+  }
+}

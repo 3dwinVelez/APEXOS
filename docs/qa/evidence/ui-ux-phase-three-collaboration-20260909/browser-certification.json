@@ -1,0 +1,34 @@
+{
+  "certification": "ui-ux-phase-three-collaboration-local",
+  "environment": "LOCAL",
+  "baseUrl": "http://127.0.0.1:3001",
+  "generatedAt": "2026-09-09T16:21:31.089Z",
+  "status": "passed",
+  "checks": [
+    {
+      "name": "presence_panel_available",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "privacy_notice_visible",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "second_session_detected",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "concurrent_edit_warning",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "session_leave_propagated",
+      "passed": true,
+      "detail": {}
+    }
+  ]
+}

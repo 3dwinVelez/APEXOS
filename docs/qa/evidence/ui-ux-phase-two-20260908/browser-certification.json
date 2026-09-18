@@ -1,0 +1,82 @@
+{
+  "certification": "ui-ux-phase-two-local",
+  "environment": "LOCAL",
+  "baseUrl": "http://127.0.0.1:3001",
+  "generatedAt": "2026-09-09T01:15:07.348Z",
+  "status": "passed",
+  "checks": [
+    {
+      "name": "authenticated_dashboard",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "role_context_dashboard",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "command_palette_keyboard",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "command_palette_search",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "advanced_breadcrumbs",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "traceability_control",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "locale_en",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "locale_pt",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "locale_es",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "offline_status",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "apex_ai_operational",
+      "passed": true,
+      "detail": {
+        "url": "http://127.0.0.1:3001/dashboard/apex-ai",
+        "excerpt": "apex os\n\nbuscar modulos\ninicio\ninventario\ncompras\nventas\nfacturación\npunto de venta\ncartera y cxc\ncontabilidad\ntesorería\ncostos\npresupuestos\nproducción\nrecetas y listas de materiales\ncalidad\ntransporte\ndevoluciones\ncomercio exterior\ntalento humano\nactivos y mantenimiento\nproyectos\ncrm\nplaneación de demanda\nadministración apex\nfacturación electrónica\nconfiguración inicial\nsuscripciones\nservicios\ngestión comercial\napex heart\napex ai core\nde\n\ndemo@apex.local\n\ndemo apex - apex_admin\n\nsesion activa\nmi cuenta\nen línea\nidioma\nes\nen\npt\ntrazabilidad\ncentro de comandos\nctrl k\napex ai core\n\napex ai core "
+      }
+    },
+    {
+      "name": "mobile_no_overflow:/dashboard",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "mobile_no_overflow:/dashboard/inventario/productos",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "mobile_no_overflow:/dashboard/apex-ai",
+      "passed": true,
+      "detail": {}
+    }
+  ]
+}

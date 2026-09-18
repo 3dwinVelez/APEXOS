@@ -4,7 +4,7 @@ const bcrypt = require("bcrypt");
 const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
-const ALL_MODULES = Array.from({ length: 26 }, (_, index) => `M-${String(index + 1).padStart(2, "0")}`);
+const ALL_MODULES = [...Array.from({ length: 28 }, (_, index) => `M-${String(index + 1).padStart(2, "0")}`), "AI-CORE", "apex_heart", "reportes"];
 const TECHNICIAN_PASSWORD = "Tecnico2026!";
 
 async function main() {

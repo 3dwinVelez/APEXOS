@@ -4,6 +4,8 @@ import { FormEvent, useEffect, useState } from "react";
 import { Layers3, Save } from "lucide-react";
 import { api } from "@/lib/api";
 import { InventoryNav } from "@/components/inventory-nav";
+import { Button } from "@/components/ui/button";
+import { showToast } from "@/components/system/ToastCenter";
 
 type Account = { id: number; code: string; name: string; active: boolean; allows_tx: boolean };
 type Society = { code: string; name: string; active: boolean };
@@ -82,6 +84,7 @@ export default function InventoryFamiliesPage() {
 
   async function save(event: FormEvent) {
     event.preventDefault();
+    if (saving) return;
     setSaving(true);
     setError("");
     setOk("");
@@ -93,8 +96,11 @@ export default function InventoryFamiliesPage() {
       setFamilies(rows);
       setDraft({ ...EMPTY_DRAFT, society_code: draft.society_code, branch_code: draft.branch_code });
       setOk("Familia guardada");
+      showToast({ tone: "success", title: "Familia guardada", description: `${draft.code.toUpperCase()} quedó disponible para clasificar productos.` });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo guardar la familia");
+      const detail = err instanceof Error ? err.message : "No se pudo guardar la familia";
+      setError(detail);
+      showToast({ tone: "error", title: "No se pudo guardar la familia", description: detail });
     } finally {
       setSaving(false);
     }
@@ -112,8 +118,8 @@ export default function InventoryFamiliesPage() {
         <p className="mt-1 text-sm text-neutral-600">Parametriza las cuentas que compras, inventario y ventas usaran por naturaleza de producto.</p>
       </header>
       <InventoryNav />
-      {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
-      {ok ? <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{ok}</p> : null}
+      {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">{error}</p> : null}
+      {ok ? <p aria-live="polite" className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700" role="status">{ok}</p> : null}
 
       <form className="rounded-md border border-line bg-white p-4" onSubmit={save}>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -155,9 +161,7 @@ export default function InventoryFamiliesPage() {
           <AccountSelect label="Cuenta salida manual" value={draft.accounting.manual_out_account_code} onChange={(value) => setAccounting("manual_out_account_code", value)} options={accountOptions} />
         </div>
         <div className="mt-4 flex justify-end">
-          <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white disabled:opacity-60" disabled={saving} type="submit">
-            <Save size={16} /> Guardar familia
-          </button>
+          <Button loading={saving} type="submit"><Save size={16} /> {saving ? "Guardando familia…" : "Guardar familia"}</Button>
         </div>
       </form>
 

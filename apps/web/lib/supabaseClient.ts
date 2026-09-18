@@ -222,6 +222,15 @@ export async function supabaseFetch<T>(path: string, options: SupabaseFetchOptio
 }
 
 export const supabaseAuth = {
+  enrollTotp(friendly_name = "APEX OS") {
+    return supabaseFetch<{ id: string; totp: { qr_code: string; secret: string; uri: string } }>("/auth/v1/factors", { method: "POST", body: JSON.stringify({ factor_type: "totp", friendly_name }) });
+  },
+  challengeTotp(factorId: string) {
+    return supabaseFetch<{ id: string }>(`/auth/v1/factors/${encodeURIComponent(factorId)}/challenge`, { method: "POST", body: "{}" });
+  },
+  verifyTotp(factorId: string, challengeId: string, code: string) {
+    return supabaseFetch(`/auth/v1/factors/${encodeURIComponent(factorId)}/verify`, { method: "POST", body: JSON.stringify({ challenge_id: challengeId, code }) });
+  },
   signInWithPassword(email: string, password: string) {
     return supabaseFetch<{ access_token: string; refresh_token: string; user: { id: string; email?: string } }>("/auth/v1/token?grant_type=password", {
       method: "POST",

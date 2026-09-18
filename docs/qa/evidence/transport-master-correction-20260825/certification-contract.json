@@ -1,0 +1,31 @@
+{
+  "certification": "transport-master-qa",
+  "environment": "QA",
+  "status": "ready_not_executed",
+  "reason": "La promocion a develop fue autorizada; falta reconstruir el candidato puntual, desplegarlo y ejecutar la certificacion web.",
+  "script": "../../../../scripts/certifications/transport-master-qa.js",
+  "required_checks": [
+    "deployed_commit",
+    "admin_login",
+    "readonly_login",
+    "other_tenant_login",
+    "authentication_required",
+    "readonly_can_list",
+    "vehicle_created_and_plate_normalized",
+    "readonly_write_denied",
+    "required_fields_rejected",
+    "inconsistent_dates_rejected",
+    "duplicate_vin_rejected",
+    "vehicle_updated",
+    "document_uploaded",
+    "document_versioned",
+    "detail_documents_and_audit",
+    "planning_contract",
+    "dashboard_metrics_include_vehicle",
+    "cross_tenant_detail_denied",
+    "vehicle_soft_retired",
+    "retired_excluded_by_default",
+    "retired_available_for_filter"
+  ],
+  "functional_approval": "pending_requester"
+}

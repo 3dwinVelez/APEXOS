@@ -56,6 +56,24 @@ test("el permiso de catalogo para corregir servicios se traduce al permiso RBAC"
   );
 });
 
+test("el perfil Supabase de marcaciones no hereda permisos generales de RRHH", () => {
+  const blueprint = roleBlueprint("member", {
+    metadata: {
+      role_id: 8,
+      role_name: "Empleado marcaciones",
+      access_profile: "marking_only",
+      permissions: { marcaciones: { access: true, view: true, create: true } }
+    }
+  });
+  assert.equal(blueprint.name, "Supabase Marking 8");
+  assert.deepEqual(blueprint.permissions, [
+    { module: "time_tracking", action: "read" },
+    { module: "time_tracking", action: "write" }
+  ]);
+  assert.ok(!blueprint.permissions.some((permission) => permission.module === "hr"));
+  assert.ok(!blueprint.permissions.some((permission) => permission.module === "services"));
+});
+
 test("un rol especial recibe solo el permiso explicito y no un comodin administrativo", () => {
   const blueprint = roleBlueprint("member", {
     metadata: {

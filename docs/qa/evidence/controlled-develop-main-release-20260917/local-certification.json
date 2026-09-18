@@ -1,0 +1,76 @@
+{
+  "change_id": "controlled-develop-main-release-20260917",
+  "environment": "LOCAL",
+  "status": "passed",
+  "generated_at": "2026-09-17T14:56:34.779Z",
+  "baseline_main_commit": "0abda8c41168642f99da0831e15f940b98232a12",
+  "candidate_commit": "9cbd916975cdb094e59c1884ff8b3c3fddef3a9e",
+  "destructive_operations": false,
+  "checks": [
+    {
+      "name": "branch_is_desarrollo",
+      "status": "passed",
+      "detail": "desarrollo"
+    },
+    {
+      "name": "main_baseline_exists",
+      "status": "passed",
+      "detail": "0abda8c41168642f99da0831e15f940b98232a12"
+    },
+    {
+      "name": "contains_1c67344",
+      "status": "passed",
+      "detail": "1c6734476e52bfb754840a0849e723e738df218a is contained in 9cbd916975cdb094e59c1884ff8b3c3fddef3a9e"
+    },
+    {
+      "name": "contains_188b66b",
+      "status": "passed",
+      "detail": "188b66b is contained in 9cbd916975cdb094e59c1884ff8b3c3fddef3a9e"
+    },
+    {
+      "name": "contains_57a406e",
+      "status": "passed",
+      "detail": "57a406e is contained in 9cbd916975cdb094e59c1884ff8b3c3fddef3a9e"
+    },
+    {
+      "name": "contains_e672786",
+      "status": "passed",
+      "detail": "e672786db043d84bbe2e86858a8da4956cf5d4f3 is contained in 9cbd916975cdb094e59c1884ff8b3c3fddef3a9e"
+    },
+    {
+      "name": "contains_9cbd916",
+      "status": "passed",
+      "detail": "9cbd916975cdb094e59c1884ff8b3c3fddef3a9e is contained in 9cbd916975cdb094e59c1884ff8b3c3fddef3a9e"
+    },
+    {
+      "name": "no_deletions_against_main",
+      "status": "passed",
+      "detail": "0 deletions"
+    },
+    {
+      "name": "migration_inventory",
+      "status": "passed",
+      "detail": "33 migration files inventoried"
+    },
+    {
+      "name": "database_migration_safety",
+      "status": "passed",
+      "detail": "database migration safety validator passed"
+    },
+    {
+      "name": "protected_local_regression",
+      "status": "passed",
+      "detail": "14 protected test files passed sequentially"
+    },
+    {
+      "name": "dependency_security_audit",
+      "status": "passed",
+      "detail": "npm audit passed at high threshold"
+    }
+  ],
+  "limitations": [
+    "This certificate is local pre-QA evidence only.",
+    "It does not approve develop to main or prove remote database state.",
+    "QA authentication, tenant isolation, browser flows, schema alignment and rollback rehearsal remain mandatory."
+  ]
+}

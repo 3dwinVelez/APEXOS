@@ -1,0 +1,36 @@
+{
+  "change_id": "hr-workday-novelties-preqa-20260917",
+  "environment": "LOCAL",
+  "status": "passed",
+  "executed_at": "2026-09-17T00:00:00-05:00",
+  "commands": [
+    {
+      "name": "api-policy-and-contract-tests",
+      "command": "node --test apps/api/test/hr-workday-novelties-contract.test.js apps/api/test/hr-workday-novelties-policy.test.js",
+      "result": "passed",
+      "summary": "10 tests passed"
+    },
+    {
+      "name": "web-hr-ui-tests",
+      "command": "node --test apps/web/test/hr-workday-novelties-ui.test.mjs apps/web/test/hr-landing-information-architecture.test.mjs",
+      "result": "passed",
+      "summary": "10 tests passed"
+    },
+    {
+      "name": "api-syntax-checks",
+      "command": "node --check apps/api/src/modules/hr/service.js && node --check apps/api/src/modules/hr/routes.js && node --check apps/api/src/modules/hr/schema.js",
+      "result": "passed",
+      "summary": "No syntax errors"
+    },
+    {
+      "name": "browser-smoke",
+      "command": "Invoke-WebRequest http://127.0.0.1:3001/dashboard/talento-humano/configuracion-laboral",
+      "result": "passed",
+      "summary": "HTTP 200"
+    }
+  ],
+  "notes": [
+    "The API endpoint smoke without a session returned TOKEN_INVALIDO as expected because it requires authenticated access.",
+    "The local database migration was applied manually to the Docker PostgreSQL instance because an older unrelated failed Prisma migration exists in the local migration history."
+  ]
+}

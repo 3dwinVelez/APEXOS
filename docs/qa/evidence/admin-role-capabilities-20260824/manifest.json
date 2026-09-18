@@ -1,0 +1,42 @@
+{
+  "change_id": "admin-role-capabilities-20260824",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "ac63bf0e23e6b06c4b516301c30921a0c604ea4c",
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["functional.md", "certification.json", "browser-certification.json"] },
+    "error": { "status": "passed", "evidence": ["error.md", "certification.json"] },
+    "support_scripts": { "status": "passed", "evidence": ["support-scripts.md"] },
+    "regression": { "status": "passed", "evidence": ["regression.md"] },
+    "platform_regression": { "status": "passed", "evidence": ["platform-regression.json"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/admin-role-capabilities-qa.js",
+    "evidence": ["certification.json", "browser-certification.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/platform-regression-qa.js",
+    "evidence": ["platform-regression.json"]
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../../scripts/certifications/admin-role-capabilities-qa.js",
+    "evidence": ["certification.json", "browser-certification.json"]
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "0abda8c41168642f99da0831e15f940b98232a12",
+    "trigger": "cualquier falla de creación o edición de usuarios, matriz de roles, aislamiento de tenant o capacidad protegida al considerar una promoción posterior"
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "Validación y promoción autorizadas por el solicitante únicamente hasta develop",
+    "approved_at": "2026-08-24T16:44:13-05:00"
+  }
+}

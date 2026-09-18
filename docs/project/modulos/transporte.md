@@ -20,7 +20,7 @@
 
 Transporte debe comportarse como maestro confiable de flota: comparacion y consulta rapida primero, captura y mantenimiento en ficha separada. La vista principal debe reducir ruido visual, priorizar excepciones documentales y permitir que cualquier persona entienda que vehiculo necesita atencion. La ficha debe explicar que completar y mostrar primero solo los datos esenciales para crear un vehiculo.
 
-No debe incluir checklist preoperacional, inicio de ruta, despacho ni asignacion activa; Planeacion consume estos datos y decide si puede iniciar una ruta.
+La ficha de Flota no debe incluir checklist preoperacional, inicio de ruta, despacho ni asignacion activa. Esas responsabilidades pertenecen al dominio operacional TMS, que consume el maestro de vehiculos y mantiene viajes, paradas y eventos separados de las jornadas de Talento Humano.
 
 ## Validaciones esperadas
 
@@ -37,3 +37,11 @@ No debe incluir checklist preoperacional, inicio de ruta, despacho ni asignacion
 - El payload de Planeacion tambien entrega conductor autorizado cuando exista: id, nombre, documento y codigo.
 - El dashboard inicial consulta `/api/v1/transport/vehicles/metrics/dashboard` para mostrar salud documental y score promedio de flota.
 - IA APEX y reportes pueden usar los mismos datos sin duplicar logica operativa.
+
+## Operacion TMS local
+
+- `/dashboard/transporte/operacion` presenta torre, necesidades, viajes, paradas, entrega y liquidacion.
+- `/dashboard/transporte/maestros` administra transportadoras, conductores logisticos y puntos de entrega.
+- El flujo inicial soporta necesidad completa o incompleta, planificacion manual, asignacion con validacion de capacidad y documentos, despacho, eventos, POD, liquidacion y cierre.
+- `TimeRoute` sigue representando una jornada de Talento Humano; `TransportTrip` representa el movimiento logistico de mercancia.
+- La especificacion funcional ampliada se mantiene en `docs/project/modulos/transporte-tms.md`.

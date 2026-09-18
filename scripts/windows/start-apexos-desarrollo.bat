@@ -1,5 +1,7 @@
 @echo off
 setlocal
+title APEXOS - Desarrollo (starter controlado)
+cd /d "%~dp0"
 
 set "SCRIPT_DIR=%~dp0"
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%start-apexos-desarrollo.ps1" %*

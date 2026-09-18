@@ -1,0 +1,40 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "commercial-runtime-dependency-20260903",
+  "change_intent": {
+    "summary": "Instalar prom-client en el workspace API para eliminar MODULE_NOT_FOUND del contenedor QA",
+    "modules": ["commercial-management", "api-runtime", "observability", "promotion-governance"]
+  },
+  "base_commits": {
+    "desarrollo": "500e3e83fafef81ef8fd045869f86683e5df056d",
+    "develop": "85e0d183f8f3774d6dfd2ec89e720a0e94e5f8fd",
+    "main": "0abda8c41168642f99da0831e15f940b98232a12"
+  },
+  "certified_commit": "ee38534915a9b7eec9cd34ab33abf4d0ca1d044a",
+  "certification_status": "passed",
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/package.json" },
+    { "status": "M", "file": "apps/api/test/commercial-route-registration.integration.test.js" },
+    { "status": "M", "file": "package-lock.json" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/error.md" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/functional.md" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/platform-regression.json" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/preqa-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/qa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/support-scripts.md" }
+  ],
+  "allowed_paths": [
+    "apps/api/package.json",
+    "apps/api/test/commercial-route-registration.integration.test.js",
+    "package-lock.json",
+    "docs/qa/evidence/commercial-runtime-dependency-20260903/"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    { "name": "api_runtime_metrics_dependency", "status": "passed", "evidence": ["certification.json", "error.md"] },
+    { "name": "commercial_visits_and_commitments_routes", "status": "passed", "evidence": ["certification.json", "functional.md"] },
+    { "name": "commercial_rbac_and_tenant_isolation", "status": "passed", "evidence": ["certification.json", "platform-regression.json"] },
+    { "name": "commercial_frontend_contracts", "status": "passed", "evidence": ["certification.json", "platform-regression.json"] }
+  ]
+}

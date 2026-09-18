@@ -1,0 +1,18 @@
+{
+  "certification": "erp-landing-deduplication-qa",
+  "environment": "QA",
+  "status": "ready_not_executed",
+  "reason": "La candidata debe desplegarse en develop para verificar el commit exacto con sesión autenticada.",
+  "script": "../../../../apps/web/test/erp-visual-normalization.test.mjs",
+  "required_checks": [
+    "deployed_commit",
+    "inventory_single_action_layer",
+    "accounting_single_action_layer",
+    "sales_single_action_layer",
+    "treasury_single_advance_link",
+    "inner_navigation_preserved",
+    "authorized_navigation",
+    "unauthorized_visibility"
+  ],
+  "functional_approval": "pending_requester"
+}

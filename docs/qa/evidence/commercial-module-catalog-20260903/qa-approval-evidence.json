@@ -1,0 +1,21 @@
+{
+  "change_id": "commercial-module-catalog-20260903",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "8762b020bc1711386f6eb4e3d20ced75f619c807",
+  "authorization_scope": "promotion_to_remote_develop_only",
+  "main_promotion_authorized": false,
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["functional.md", "certification.json"] },
+    "error": { "status": "passed", "evidence": ["error.md", "certification.json"] },
+    "support_scripts": { "status": "passed", "evidence": ["support-scripts.md"] },
+    "regression": { "status": "passed", "evidence": ["platform-regression.json"] },
+    "platform_regression": { "status": "passed", "evidence": ["platform-regression.json"] }
+  },
+  "certification": { "status": "passed", "script": "../../../../scripts/certifications/commercial-module-catalog-qa.js", "evidence": ["certification.json"] },
+  "regression_certification": { "status": "passed", "script": "../../../../scripts/certifications/commercial-module-catalog-qa.js", "evidence": ["platform-regression.json"] },
+  "model_company_certification": { "status": "passed", "company": "NYVORA", "environment": "QA", "script": "../../../../scripts/certifications/commercial-module-catalog-qa.js", "evidence": ["certification.json"] },
+  "rollback_plan": { "status": "ready", "strategy": "controlled_revert", "previous_main_commit": "0abda8c41168642f99da0831e15f940b98232a12", "trigger": "cualquier regresion del catalogo tenant, aislamiento, RBAC o activacion administrativa; no autoriza main" },
+  "approval": { "status": "approved", "scope": "promotion_to_remote_develop_for_functional_qa", "approved_by": "Solicitante autorizado de APEXOS en tarea Codex", "approved_at": "2026-09-03T10:55:00-05:00", "main_release": "not_authorized" }
+}

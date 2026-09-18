@@ -10,7 +10,11 @@ create policy evidence_upload_authorizations_owner_select
   for select to authenticated
   using (
     supabase_user_id = auth.uid()::text
-    and tenant_id = public.current_tenant_id()::text
+    and case
+      when tenant_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+        then app_private.is_company_member(tenant_id::uuid)
+      else false
+    end
   );
 
 revoke insert, update, delete on public.evidence_upload_authorizations from authenticated;
@@ -38,11 +42,11 @@ create policy service_images_authorized_quarantine_insert
     and (storage.foldername(name))[1] = '_quarantine'
     and exists (
       select 1
-      from public.evidence_upload_authorizations authorization
-      where authorization.quarantine_path = name
-        and authorization.supabase_user_id = auth.uid()::text
-        and authorization.status = 'authorized'
-        and authorization.expires_at > now()
+      from public.evidence_upload_authorizations eua
+      where eua.quarantine_path = name
+        and eua.supabase_user_id = auth.uid()::text
+        and eua.status = 'authorized'
+        and eua.expires_at > now()
     )
   );
 

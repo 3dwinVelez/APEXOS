@@ -1,4 +1,4 @@
-type ReportValue = string | number | null | undefined;
+type ReportValue = string | number | boolean | Date | null | undefined;
 
 export type ReportColumn<T> = {
   key: keyof T;
@@ -9,6 +9,21 @@ export type ReportColumn<T> = {
 export type ReportSheet = {
   name: string;
   columns: Array<{ key: string; label: string; width?: number }>;
+  rows: Array<Record<string, ReportValue>>;
+};
+
+export type XlsxReportColumn = {
+  key: string;
+  label: string;
+  width?: number;
+  numberFormat?: string;
+};
+
+export type XlsxReportSheet = {
+  name: string;
+  title: string;
+  subtitle?: string;
+  columns: XlsxReportColumn[];
   rows: Array<Record<string, ReportValue>>;
 };
 
@@ -46,6 +61,82 @@ export function downloadExcelWorkbook(filename: string, sheets: ReportSheet[]) {
   }).join("");
   const workbook = `<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Styles><Style ss:ID="Default" ss:Name="Normal"><Alignment ss:Vertical="Top"/><Font ss:FontName="Calibri" ss:Size="11"/></Style><Style ss:ID="Header"><Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#146C63" ss:Pattern="Solid"/><Alignment ss:Vertical="Center" ss:WrapText="1"/></Style></Styles>${worksheets}</Workbook>`;
   downloadBlob(filename, new Blob(["\ufeff", workbook], { type: "application/vnd.ms-excel;charset=utf-8" }));
+}
+
+export async function buildXlsxWorkbook(sheets: XlsxReportSheet[]) {
+  const ExcelJSImport = await import("exceljs");
+  const ExcelJS = ExcelJSImport.default || ExcelJSImport;
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = "APEXOS";
+  workbook.company = "APEXOS";
+  workbook.created = new Date();
+  workbook.modified = new Date();
+
+  for (const sheetDefinition of sheets) {
+    const worksheet = workbook.addWorksheet(safeSheetName(sheetDefinition.name), {
+      views: [{ state: "frozen", ySplit: 5, showGridLines: false }]
+    });
+    const lastColumn = Math.max(1, sheetDefinition.columns.length);
+    worksheet.mergeCells(1, 1, 1, lastColumn);
+    worksheet.getCell(1, 1).value = sheetDefinition.title;
+    worksheet.getCell(1, 1).font = { name: "Aptos Display", size: 18, bold: true, color: { argb: "FFFFFFFF" } };
+    worksheet.getCell(1, 1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF123F38" } };
+    worksheet.getCell(1, 1).alignment = { vertical: "middle" };
+    worksheet.getRow(1).height = 32;
+
+    worksheet.mergeCells(2, 1, 2, lastColumn);
+    worksheet.getCell(2, 1).value = sheetDefinition.subtitle || "Generado desde APEXOS";
+    worksheet.getCell(2, 1).font = { name: "Aptos", size: 10, color: { argb: "FF47615C" } };
+    worksheet.getCell(2, 1).alignment = { vertical: "middle", wrapText: true };
+    worksheet.getRow(2).height = 25;
+
+    worksheet.columns = sheetDefinition.columns.map((column) => ({
+      key: column.key,
+      width: Math.max(10, Math.min(48, Math.round((column.width || 120) / 7)))
+    }));
+    const tableRows = sheetDefinition.rows.map((row) => sheetDefinition.columns.map((column) => row[column.key] ?? ""));
+    if (tableRows.length) {
+      worksheet.addTable({
+        name: `Apexos${safeSheetName(sheetDefinition.name).replace(/[^A-Za-z0-9]/g, "")}Table`,
+        ref: "A5",
+        headerRow: true,
+        totalsRow: false,
+        style: { theme: "TableStyleMedium2", showRowStripes: true, showFirstColumn: false, showLastColumn: false },
+        columns: sheetDefinition.columns.map((column) => ({ name: column.label, filterButton: true })),
+        rows: tableRows
+      });
+    } else {
+      worksheet.getRow(5).values = sheetDefinition.columns.map((column) => column.label);
+      worksheet.autoFilter = { from: { row: 5, column: 1 }, to: { row: 5, column: lastColumn } };
+    }
+
+    const header = worksheet.getRow(5);
+    header.height = 28;
+    header.font = { name: "Aptos", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
+    header.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF146C63" } };
+    header.alignment = { vertical: "middle", wrapText: true };
+    for (let index = 0; index < sheetDefinition.columns.length; index += 1) {
+      const column = worksheet.getColumn(index + 1);
+      const definition = sheetDefinition.columns[index];
+      if (definition.numberFormat) column.numFmt = definition.numberFormat;
+      column.alignment = { vertical: "top", wrapText: definition.width != null && definition.width >= 180 };
+    }
+    for (let rowNumber = 6; rowNumber <= worksheet.rowCount; rowNumber += 1) {
+      worksheet.getRow(rowNumber).height = 20;
+      worksheet.getRow(rowNumber).font = { name: "Aptos", size: 10, color: { argb: "FF1F2937" } };
+    }
+    worksheet.pageSetup = { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0 };
+    worksheet.headerFooter.oddFooter = "APEXOS | &D &T | Pagina &P de &N";
+  }
+
+  return workbook.xlsx.writeBuffer();
+}
+
+export async function downloadXlsxWorkbook(filename: string, sheets: XlsxReportSheet[]) {
+  const buffer = await buildXlsxWorkbook(sheets);
+  downloadBlob(filename.endsWith(".xlsx") ? filename : `${filename}.xlsx`, new Blob([new Uint8Array(buffer)], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  }));
 }
 
 function pdfEscape(value: ReportValue) {

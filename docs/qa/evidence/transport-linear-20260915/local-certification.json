@@ -1,0 +1,42 @@
+{
+  "certification": "transport-tms-local",
+  "environment": "LOCAL_DESARROLLO",
+  "run_id": "20260915192346",
+  "status": "passed",
+  "checks_total": 31,
+  "checks_passed": 31,
+  "flow": [
+    "authentication_and_tenant_access",
+    "module_aware_order_intake",
+    "excel_import_with_spanish_headers",
+    "custom_fields_persist_after_reopen",
+    "invalid_excel_row_is_blocked",
+    "connected_order_sync_is_idempotent",
+    "carrier_origin_driver_destination_masters",
+    "rate_card_versioning",
+    "documentally_eligible_vehicle",
+    "incomplete_need_validation",
+    "complete_need_creation",
+    "route_capacity_and_rate_evaluation",
+    "trip_planning_and_assignment",
+    "loading_dispatch_and_transit",
+    "invalid_state_transition_blocked",
+    "delivery_evidence_upload",
+    "delivery_and_pod",
+    "settlement_approval_and_trip_close"
+  ],
+  "created_ids": {
+    "carrier_id": 9,
+    "origin_id": 6,
+    "driver_id": 9,
+    "delivery_point_id": 9,
+    "excel_need_id": 14,
+    "vehicle_id": 59,
+    "need_id": 16,
+    "trip_id": 6,
+    "pod_id": 6,
+    "settlement_id": 6
+  },
+  "cleanup": "masters_and_rate_inactivated_and_vehicle_retired; transactional_trace_preserved",
+  "finished_at": "2026-09-15T19:23:50.146Z"
+}

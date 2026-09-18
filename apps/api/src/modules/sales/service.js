@@ -1,4 +1,5 @@
 const prisma = require("../../core/prisma");
+const { hasPartyRole, partyRoleWhere, withPartyRoles, presentPartyForRole } = require("../parties/roles");
 
 function appError(statusCode, code, message) {
   const error = new Error(message);
@@ -16,8 +17,17 @@ async function createCustomer(tenantId, userId, data) {
   if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw appError(400, "INVALID_EMAIL", "Formato de email invalido");
   return prisma.runWithTenant(tenantId, async () => {
     if (tax_id) {
-      const duplicate = await prisma.party.findFirst({ where: { tax_id, type: "customer" } });
-      if (duplicate) throw appError(409, "DUPLICATE_TAX_ID", `Ya existe un cliente con el NIT/CC ${tax_id}`);
+      const existing = await prisma.party.findFirst({ where: { tax_id } });
+      if (existing) {
+        if (hasPartyRole(existing, "customer")) throw appError(409, "DUPLICATE_TAX_ID", `Ya existe un cliente con el NIT/CC ${tax_id}`);
+        const promoted = await prisma.party.update({
+          where: { id: existing.id },
+          data: {
+            metadata: withPartyRoles({ ...(existing.metadata || {}), ...(metadata || {}), customer_credit_limit: credit_limit, customer_credit_days: credit_days }, ["customer"])
+          }
+        });
+        return presentPartyForRole(promoted, "customer");
+      }
     }
     return prisma.party.create({
       data: {
@@ -35,7 +45,7 @@ async function createCustomer(tenantId, userId, data) {
         segment,
         balance: 0,
         active: true,
-        metadata
+        metadata: withPartyRoles({ ...metadata, customer_credit_limit: credit_limit, customer_credit_days: credit_days }, ["customer"])
       }
     });
   });
@@ -46,8 +56,9 @@ async function createSaleOrder(tenantId, userId, data) {
   if (!Array.isArray(lines) || lines.length === 0) throw appError(400, "NO_LINES", "La orden debe tener al menos una linea");
 
   return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
-    const customer = await tx.party.findFirst({ where: { id: customer_id, type: "customer", active: true } });
-    if (!customer) throw appError(404, "CUSTOMER_NOT_FOUND", "Cliente no encontrado");
+    const party = await tx.party.findFirst({ where: { id: customer_id, active: true, AND: [partyRoleWhere("customer")] } });
+    if (!party) throw appError(404, "CUSTOMER_NOT_FOUND", "Cliente no encontrado");
+    const customer = presentPartyForRole(party, "customer");
 
     const enrichedLines = [];
     for (const line of lines) {
@@ -82,7 +93,7 @@ async function createSaleOrder(tenantId, userId, data) {
     const total = subtotal + taxTotal;
     const count = await tx.transaction.count({ where: { type: "sale" } });
     const number = `SO-${String(count + 1).padStart(6, "0")}`;
-    const warning = customer.credit_limit > 0 && customer.balance + total > customer.credit_limit
+    const warning = customer.credit_limit > 0 && customer.receivable_balance + total > customer.credit_limit
       ? "El cliente superaria su limite de credito"
       : null;
 
@@ -110,12 +121,15 @@ async function createSaleOrder(tenantId, userId, data) {
 }
 
 async function listCustomers(tenantId, query = {}) {
-  return prisma.runWithTenant(tenantId, () => prisma.party.findMany({
-    where: { type: "customer", active: true },
+  return prisma.runWithTenant(tenantId, async () => {
+    const customers = await prisma.party.findMany({
+    where: { active: true, AND: [partyRoleWhere("customer")] },
     orderBy: { name: "asc" },
     skip: Math.max(Number(query.offset || 0), 0),
     take: Math.min(Number(query.limit || 100), 200)
-  }));
+    });
+    return customers.map((customer) => presentPartyForRole(customer, "customer"));
+  });
 }
 
 async function listSaleOrders(tenantId, query = {}) {

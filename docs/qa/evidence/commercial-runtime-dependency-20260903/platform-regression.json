@@ -1,0 +1,17 @@
+{
+  "change_id": "commercial-runtime-dependency-20260903",
+  "status": "passed",
+  "environment": "QA_LOCAL",
+  "model_company": "NYVORA",
+  "certified_commit": "ee38534915a9b7eec9cd34ab33abf4d0ca1d044a",
+  "checks": [
+    "api_runtime_dependency",
+    "commercial_routes_registered",
+    "commercial_service_flow",
+    "commercial_web_contracts",
+    "commercial_rbac",
+    "tenant_isolation",
+    "prisma_schema"
+  ],
+  "unrelated_net_diff": "none"
+}

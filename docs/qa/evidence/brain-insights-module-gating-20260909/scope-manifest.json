@@ -1,0 +1,25 @@
+{
+  "change_id": "brain-insights-module-gating-20260909",
+  "base_commits": {
+    "develop": "fff118a36ab45e211e66948f321541c1c969d6f0",
+    "main": "0abda8c41168642f99da0831e15f940b98232a12"
+  },
+  "certified_commit": "95b3ecd073accc843a753627d59dae2d21cb420a",
+  "allowed_paths": [
+    "apps/web/components/brain/ApexIntelligencePulse.tsx",
+    "docs/qa/evidence/brain-insights-module-gating-20260909/"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "apex_ai_brain_insights_gating",
+      "status": "passed",
+      "evidence": ["local-validation.md", "browser-diagnosis.md"]
+    },
+    {
+      "name": "dashboard_adjacent_flows",
+      "status": "passed",
+      "evidence": ["browser-diagnosis.md"]
+    }
+  ]
+}

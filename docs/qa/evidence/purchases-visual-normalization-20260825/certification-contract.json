@@ -1,0 +1,17 @@
+{
+  "certification": "purchases-visual-normalization-qa",
+  "environment": "QA",
+  "status": "ready_not_executed",
+  "reason": "La candidata requiere despliegue en develop y recorrido con un rol autorizado para Compras.",
+  "script": "../../../../apps/web/test/erp-visual-normalization.test.mjs",
+  "required_checks": [
+    "deployed_commit",
+    "purchases_single_action_layer",
+    "purchase_order_active_tabs",
+    "purchase_order_save_approve_reload",
+    "supplier_directory_create_edit_reload",
+    "receiving_invoice_import_report_navigation",
+    "unauthorized_visibility"
+  ],
+  "functional_approval": "pending_requester"
+}

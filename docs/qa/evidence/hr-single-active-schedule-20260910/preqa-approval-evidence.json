@@ -1,0 +1,32 @@
+{
+  "change_id": "hr-single-active-schedule-20260910",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "a3ee972e3a5334873fd1e5c50dcdba3ab24c9378",
+  "qa_status": "pending",
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["local-validation.md"] },
+    "error": { "status": "passed", "evidence": ["local-validation.md"] },
+    "support_scripts": { "status": "passed", "evidence": ["local-validation.md"] },
+    "regression": { "status": "passed", "evidence": ["local-validation.md", "../../../../apps/api/test/hr-marking-concurrency.test.js", "../../../../apps/web/test/hr-marking-only-access.test.mjs"] },
+    "platform_regression": { "status": "passed", "evidence": ["local-validation.md"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../apps/api/scripts/certifications/hr-single-active-schedule-qa.js",
+    "evidence": ["local-validation.md"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../apps/api/test/hr-marking-concurrency.test.js",
+    "evidence": ["local-validation.md"]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Solicitante autorizado de APEXOS en tarea Codex",
+    "approved_at": "2026-09-10T13:48:37-05:00",
+    "main_release": "not_authorized"
+  }
+}

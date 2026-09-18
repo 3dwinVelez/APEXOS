@@ -2,7 +2,8 @@
 
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { ArrowLeft, BookOpen, ChevronRight, Clock3, Download, Filter, Layers3, Plus, RotateCcw, Save, Search, SlidersHorizontal, Sparkles, Upload } from "lucide-react";
+import { SERVICE_REFERENCE_COLUMNS, SERVICE_REFERENCE_SHEET, ServiceReferenceImportIssue, ServiceReferenceImportRow, rowsFromWorksheet, validateServiceReferenceImport } from "@/lib/serviceReferenceImport";
+import { AlertCircle, ArrowLeft, BookOpen, CheckCircle2, ChevronRight, Clock3, Download, Filter, Layers3, Plus, RotateCcw, Save, Search, SlidersHorizontal, Sparkles, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
@@ -26,7 +27,6 @@ type ServiceReference = {
 const categories = ["muebles", "colchones", "electrodomesticos", "cocina", "oficina", "decoracion", "iluminacion", "textiles", "otros"];
 const emptyPart = { name: "", quantity: 1, unit: "und", description: "" };
 const emptyForm = { code: "", name: "", category: "muebles", description: "", estimated_minutes: 60, brand: "", model: "", active: true, parts: [emptyPart] as Part[], manuals: [] as Manual[] };
-const csvHeaders = "code,name,category,description,estimated_minutes,brand,model,part_name,part_quantity,part_unit,part_description,manual_title,manual_url,manual_notes";
 
 function readFile(file: File): Promise<Manual> {
   return new Promise((resolve, reject) => {
@@ -44,51 +44,11 @@ function readFile(file: File): Promise<Manual> {
   });
 }
 
-function parseCsvLine(line: string) {
-  const cells: string[] = [];
-  let current = "";
-  let quoted = false;
-  for (let index = 0; index < line.length; index += 1) {
-    const char = line[index];
-    if (char === '"' && line[index + 1] === '"') {
-      current += '"';
-      index += 1;
-    } else if (char === '"') {
-      quoted = !quoted;
-    } else if (char === "," && !quoted) {
-      cells.push(current.trim());
-      current = "";
-    } else {
-      current += char;
-    }
-  }
-  cells.push(current.trim());
-  return cells;
-}
-
-function parseCsv(text: string) {
-  const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-  if (lines.length < 2) return [];
-  const headers = parseCsvLine(lines[0]).map((header) => header.trim());
-  return lines.slice(1).map((line) => {
-    const cells = parseCsvLine(line);
-    return Object.fromEntries(headers.map((header, index) => [header, cells[index] || ""]));
-  });
-}
-
 function downloadTemplate() {
-  const example = [
-    csvHeaders,
-    "REF-001,Sofa modular,muebles,Montaje sofa modular,90,APEX,SM-2026,Estructura,1,und,Verificar tornilleria,Manual montaje,https://ejemplo.com/manual.pdf,Usar antes de inspeccion",
-    "REF-001,Sofa modular,muebles,Montaje sofa modular,90,APEX,SM-2026,Cojineria,3,und,Validar costuras,,,"
-  ].join("\n");
-  const blob = new Blob([example], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
-  link.href = url;
-  link.download = "plantilla-referencias-servicio.csv";
+  link.href = "/plantillas/plantilla-referencias-servicio.xlsx";
+  link.download = "plantilla-referencias-servicio.xlsx";
   link.click();
-  URL.revokeObjectURL(url);
 }
 
 function manualHref(manual: Manual) {
@@ -108,7 +68,11 @@ export default function ServiceReferencesPage() {
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [showImport, setShowImport] = useState(false);
-  const [importRows, setImportRows] = useState<Record<string, string>[]>([]);
+  const [importRows, setImportRows] = useState<ServiceReferenceImportRow[]>([]);
+  const [importIssues, setImportIssues] = useState<ServiceReferenceImportIssue[]>([]);
+  const [importFileName, setImportFileName] = useState("");
+  const [importReferenceCount, setImportReferenceCount] = useState(0);
+  const [readingFile, setReadingFile] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyForm);
 
@@ -239,18 +203,45 @@ export default function ServiceReferencesPage() {
     }
   }
 
-  async function onCsv(event: ChangeEvent<HTMLInputElement>) {
+  async function onExcel(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
-    const text = await file.text();
-    const rows = parseCsv(text);
-    setImportRows(rows);
-    setShowImport(true);
-    event.target.value = "";
+    setReadingFile(true);
+    setError("");
+    setMessage("");
+    try {
+      if (!file.name.toLocaleLowerCase().endsWith(".xlsx")) throw new Error("Selecciona un archivo Excel con extension .xlsx.");
+      if (file.size > 5 * 1024 * 1024) throw new Error("El archivo supera el limite de 5 MB.");
+      const ExcelJS = await import("exceljs");
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(await file.arrayBuffer());
+      const worksheet = workbook.getWorksheet(SERVICE_REFERENCE_SHEET);
+      if (!worksheet) throw new Error(`No se encontro la hoja "${SERVICE_REFERENCE_SHEET}". Descarga una plantilla nueva.`);
+      const values = Array.from({ length: Math.max(worksheet.actualRowCount, 1) }, (_, rowIndex) => {
+        const row = worksheet.getRow(rowIndex + 1);
+        return SERVICE_REFERENCE_COLUMNS.map((_, columnIndex) => row.getCell(columnIndex + 1).value);
+      });
+      const extracted = rowsFromWorksheet(values);
+      const validation = extracted.issues.length ? { rows: [], issues: extracted.issues, referenceCount: 0 } : validateServiceReferenceImport(extracted.rows);
+      setImportRows(validation.rows);
+      setImportIssues(validation.issues);
+      setImportReferenceCount(validation.referenceCount);
+      setImportFileName(file.name);
+      setShowImport(true);
+    } catch (err) {
+      setImportRows([]);
+      setImportIssues([]);
+      setImportReferenceCount(0);
+      setImportFileName("");
+      setError(err instanceof Error ? err.message : "No fue posible leer el archivo Excel.");
+    } finally {
+      setReadingFile(false);
+      event.target.value = "";
+    }
   }
 
-  async function importCsv() {
-    if (!importRows.length) return;
+  async function importExcel() {
+    if (!importRows.length || importIssues.length) return;
     setSaving(true);
     setError("");
     try {
@@ -261,6 +252,9 @@ export default function ServiceReferencesPage() {
       setMessage(`Carga masiva lista: ${result.created} creadas, ${result.updated} actualizadas, ${result.skipped} omitidas.`);
       setShowImport(false);
       setImportRows([]);
+      setImportIssues([]);
+      setImportReferenceCount(0);
+      setImportFileName("");
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible importar la plantilla.");
@@ -276,7 +270,7 @@ export default function ServiceReferencesPage() {
           <Link className="mb-2 inline-flex h-9 items-center gap-2 rounded-md border border-line bg-white px-3 text-xs font-medium text-neutral-600 hover:text-apex md:border-0 md:bg-transparent md:px-0" href="/dashboard/servicios"><ArrowLeft size={15} /> Volver a servicios</Link>
           <p className="text-xs font-medium text-apex">Servicios</p>
           <h1 className="text-xl font-semibold md:text-2xl">Referencias de servicio</h1>
-          <p className="mt-1 max-w-3xl text-xs text-neutral-600 md:text-sm">Maestro tecnico para modelos, listas de piezas, tiempos, manuales, guias y carga masiva por CSV.</p>
+          <p className="mt-1 max-w-3xl text-xs text-neutral-600 md:text-sm">Maestro tecnico para modelos, listas de piezas, tiempos, manuales, guias y carga masiva por Excel.</p>
         </div>
       </header>
 
@@ -296,8 +290,8 @@ export default function ServiceReferencesPage() {
             <button className="apex-hero-action col-span-2 inline-flex items-center justify-center gap-2 px-4 text-sm font-semibold sm:col-span-1" onClick={reset} type="button"><Plus size={17} /> Nueva referencia</button>
             <button className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10" onClick={downloadTemplate} type="button"><Download size={16} /> Plantilla</button>
             <label className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-md border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/10">
-              <Upload size={16} /> Importar
-              <input className="hidden" type="file" accept=".csv,text/csv" onChange={onCsv} />
+              <Upload size={16} /> {readingFile ? "Validando..." : "Importar"}
+              <input className="hidden" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" disabled={readingFile} onChange={onExcel} />
             </label>
           </div>
         </div>
@@ -443,10 +437,10 @@ export default function ServiceReferencesPage() {
 
       <div className="fixed inset-x-0 bottom-0 z-50 grid grid-cols-[1fr_56px_56px] gap-2 border-t border-line bg-white/95 p-3 pb-[calc(env(safe-area-inset-bottom)+12px)] backdrop-blur md:hidden">
         <button className="inline-flex h-14 min-w-0 items-center justify-center gap-2 rounded-md bg-apex px-3 text-base font-semibold text-white shadow-sm" onClick={reset} type="button"><Plus className="shrink-0" size={18} /> <span className="truncate">Nueva referencia</span></button>
-        <button aria-label="Descargar plantilla CSV" className="inline-flex h-14 w-14 items-center justify-center rounded-md border border-line bg-white" onClick={downloadTemplate} type="button"><Download size={20} /></button>
-        <label aria-label="Importar referencias CSV" className="inline-flex h-14 w-14 cursor-pointer items-center justify-center rounded-md border border-line bg-white">
+        <button aria-label="Descargar plantilla Excel" className="inline-flex h-14 w-14 items-center justify-center rounded-md border border-line bg-white" onClick={downloadTemplate} type="button"><Download size={20} /></button>
+        <label aria-label="Importar referencias desde Excel" className="inline-flex h-14 w-14 cursor-pointer items-center justify-center rounded-md border border-line bg-white">
           <Upload size={20} />
-          <input className="hidden" type="file" accept=".csv,text/csv" onChange={onCsv} />
+          <input className="hidden" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" disabled={readingFile} onChange={onExcel} />
         </label>
       </div>
 
@@ -516,32 +510,42 @@ export default function ServiceReferencesPage() {
       ) : null}
 
       {showImport ? (
-        <ModalFrame title="Carga masiva de referencias" onClose={() => setShowImport(false)} maxWidth="max-w-4xl">
+        <ModalFrame title="Importar referencias desde Excel" onClose={() => setShowImport(false)} maxWidth="max-w-4xl">
           <div className="space-y-4">
-            <p className="text-sm text-neutral-600">Usa la plantilla CSV. Varias filas con el mismo codigo se agrupan como una referencia con varias piezas.</p>
+            <p className="text-sm text-neutral-600">Completa la hoja <strong>Referencias</strong>. Las hojas Instrucciones y Ejemplo explican cada campo. Varias filas con el mismo codigo forman una referencia con varias piezas.</p>
             <div className="grid gap-2 sm:flex sm:flex-wrap">
               <button className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={downloadTemplate} type="button"><Download size={16} /> Descargar plantilla</button>
               <label className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white">
-                <Upload size={16} /> Seleccionar CSV
-                <input className="hidden" type="file" accept=".csv,text/csv" onChange={onCsv} />
+                <Upload size={16} /> Seleccionar Excel
+                <input className="hidden" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={onExcel} />
               </label>
             </div>
-            <div className="rounded-md border border-line bg-paper p-3 text-sm text-neutral-700">{importRows.length} fila(s) listas para importar.</div>
-            <div className="max-h-72 overflow-auto rounded-md border border-line">
-              <table className="w-full min-w-[720px] text-sm">
-                <tbody>
-                  {importRows.slice(0, 8).map((row, index) => (
-                    <tr className="border-b border-line" key={index}>
-                      <td className="px-3 py-2 font-mono text-xs">{row.code}</td>
-                      <td className="px-3 py-2">{row.name}</td>
-                      <td className="px-3 py-2">{row.part_name}</td>
-                      <td className="px-3 py-2">{row.manual_title || row.manual_url}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className={`rounded-md border p-3 text-sm ${importIssues.length ? "border-amber-300 bg-amber-50 text-amber-950" : "border-emerald-200 bg-emerald-50 text-emerald-900"}`}>
+              <div className="flex items-start gap-2">
+                {importIssues.length ? <AlertCircle className="mt-0.5 shrink-0" size={17} /> : <CheckCircle2 className="mt-0.5 shrink-0" size={17} />}
+                <div>
+                  <p className="font-semibold">{importIssues.length ? `Corrige ${importIssues.length} dato(s) antes de importar` : "Archivo validado y listo para importar"}</p>
+                  <p className="mt-0.5 text-xs opacity-80">{importFileName} · {importRows.length} fila(s) · {importReferenceCount} referencia(s)</p>
+                </div>
+              </div>
             </div>
-            <button className="h-11 w-full rounded-md bg-apex text-sm font-semibold text-white disabled:opacity-60" disabled={!importRows.length || saving} onClick={importCsv} type="button">Importar referencias</button>
+            {importIssues.length ? (
+              <div className="max-h-64 overflow-auto rounded-md border border-amber-200" role="alert" aria-label="Errores de la plantilla">
+                <table className="w-full min-w-[620px] text-sm">
+                  <thead className="sticky top-0 bg-amber-50 text-left text-xs text-amber-950"><tr><th className="px-3 py-2">Fila</th><th className="px-3 py-2">Campo</th><th className="px-3 py-2">Correccion requerida</th></tr></thead>
+                  <tbody>{importIssues.slice(0, 100).map((issue, index) => <tr className="border-t border-amber-100" key={`${issue.row}-${issue.field}-${index}`}><td className="px-3 py-2 font-mono">{issue.row}</td><td className="px-3 py-2 font-medium">{issue.field}</td><td className="px-3 py-2">{issue.message}</td></tr>)}</tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="max-h-72 overflow-auto rounded-md border border-line">
+                <table className="w-full min-w-[720px] text-sm">
+                  <thead className="sticky top-0 bg-paper text-left text-xs text-neutral-600"><tr><th className="px-3 py-2">Codigo</th><th className="px-3 py-2">Referencia</th><th className="px-3 py-2">Pieza</th><th className="px-3 py-2">Manual</th></tr></thead>
+                  <tbody>{importRows.slice(0, 20).map((row, index) => <tr className="border-t border-line" key={index}><td className="px-3 py-2 font-mono text-xs">{row.code}</td><td className="px-3 py-2">{row.name}</td><td className="px-3 py-2">{row.part_name}</td><td className="px-3 py-2">{row.manual_title || "—"}</td></tr>)}</tbody>
+                </table>
+              </div>
+            )}
+            <p className="text-xs text-neutral-500">La plataforma no guardara ninguna referencia mientras exista un error en el archivo.</p>
+            <button className="h-11 w-full rounded-md bg-apex text-sm font-semibold text-white disabled:opacity-60" disabled={!importRows.length || Boolean(importIssues.length) || saving} onClick={importExcel} type="button">{saving ? "Importando..." : `Importar ${importReferenceCount} referencia(s)`}</button>
           </div>
         </ModalFrame>
       ) : null}

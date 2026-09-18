@@ -1,0 +1,20 @@
+{
+  "certification": "erp-module-recovery-qa",
+  "environment": "QA",
+  "status": "ready_not_executed",
+  "reason": "El commit candidato aun no esta desplegado en QA y faltan credenciales certificables para los tres perfiles.",
+  "script": "../../../../scripts/certifications/erp-module-recovery-qa.js",
+  "required_checks": [
+    "deployed_commit",
+    "admin_login",
+    "readonly_login",
+    "other_tenant_login",
+    "authenticated_reads_for_all_recovered_contracts",
+    "readonly_write_denied_for_all_five_modules",
+    "cross_tenant_detail_denied_for_all_five_modules",
+    "browser_create_edit_reload_persistence",
+    "qa_schema_alignment",
+    "platform_regression"
+  ],
+  "functional_approval": "pending_requester"
+}

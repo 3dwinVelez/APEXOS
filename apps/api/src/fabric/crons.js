@@ -28,6 +28,14 @@ function start() {
     runOnce("scheduleDailyAnalysis", () => require("../modules/brain/brain").scheduleDailyAnalysis());
   });
 
+  cron.schedule("30 5 * * *", () => {
+    runOnce("refreshApexHeart", () => require("../modules/apex-heart/service").refreshAllTenants());
+  });
+
+  cron.schedule("5 * * * *", () => {
+    runOnce("sendApexHeartReports", () => require("../modules/apex-heart/service").runDueReportSchedules());
+  });
+
   cron.schedule("0 2 * * *", () => {
     runOnce("processBilling", async () => {
       const admin = require("../modules/admin/service");

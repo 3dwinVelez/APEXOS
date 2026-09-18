@@ -1,0 +1,57 @@
+{
+  "ok": true,
+  "fixture_tag": "QA-CM-STABILITY-V1",
+  "environment": "QA develop",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "api_commit": "1a414a8a8cb8",
+  "company": {
+    "id": "c56bc5df-c807-4deb-83f8-fbb4751be613",
+    "name": "Cliente Piloto QA"
+  },
+  "technical_user": "qa.commercial.population@apexos.invalid",
+  "generated_at": "2026-09-03T20:30:26.153Z",
+  "expected_minimums": {
+    "zones": 4,
+    "categories": 4,
+    "reasons": 4,
+    "results": 4,
+    "advisors": 5,
+    "customers": 20,
+    "products": 16,
+    "visits": 20,
+    "commitments": 20,
+    "quotations": 10,
+    "orders": 6
+  },
+  "actual": {
+    "zones": 4,
+    "categories": 4,
+    "reasons": 4,
+    "results": 4,
+    "advisors": 5,
+    "customers": 20,
+    "products": 16,
+    "visits": 21,
+    "commitments": 20,
+    "quotations": 10,
+    "orders": 6
+  },
+  "workflows": [
+    "catalogos",
+    "clientes",
+    "productos",
+    "presupuestos",
+    "agenda",
+    "solapamiento",
+    "inicio_y_cierre",
+    "reprogramacion",
+    "compromisos",
+    "cotizaciones",
+    "conversion_a_pedido",
+    "estados_de_pedido",
+    "reportes",
+    "dashboard",
+    "rbac",
+    "aislamiento_tenant"
+  ]
+}

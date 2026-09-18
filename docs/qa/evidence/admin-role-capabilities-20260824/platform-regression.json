@@ -1,0 +1,15 @@
+{
+  "change_id": "admin-role-capabilities-20260824",
+  "runtime_commit": "ac63bf0e23e6b06c4b516301c30921a0c604ea4c",
+  "status": "passed",
+  "checks": {
+    "full_test_suite": { "status": "passed", "passed": 292, "failed": 0 },
+    "focused_role_tests": { "status": "passed", "passed": 14, "failed": 0 },
+    "certified_role_flow": { "status": "passed", "passed": 16, "failed": 0 },
+    "typescript": { "status": "passed" },
+    "eslint": { "status": "passed", "errors": 0 },
+    "next_build": { "status": "passed", "routes": 63 },
+    "dependency_audit": { "status": "passed", "total": 0, "high": 0, "critical": 0 },
+    "browser_console": { "status": "passed", "errors": 0 }
+  }
+}

@@ -10,15 +10,15 @@ echo.
 echo Iniciando starter controlado de la rama desarrollo...
 echo.
 
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\windows\start-apexos-desarrollo.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\windows\start-apexos-desarrollo.ps1" %*
+set "EXIT_CODE=%ERRORLEVEL%"
 
-if errorlevel 1 (
+if not "%EXIT_CODE%"=="0" (
     echo.
     echo ERROR: No fue posible iniciar APEX OS en local.
     echo Revisa el mensaje anterior, corrige el prerequisito indicado y vuelve a ejecutar este archivo.
     echo.
     pause
-    exit /b 1
 )
 
-endlocal
+exit /b %EXIT_CODE%

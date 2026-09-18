@@ -3,7 +3,7 @@ import test from "node:test";
 
 process.env.TZ = "America/Bogota";
 
-const { localCalendarDate, scheduleGpsRequired, scheduleMonitorDate, scheduleMonitorPunchEvidence, scheduleTrackingMode } = await import(
+const { localCalendarDate, scheduleGpsRequired, scheduleMonitorDate, scheduleMonitorPunchEvidence, scheduleMonitorPunchEvidenceSummary, scheduleTrackingMode } = await import(
   "../lib/hrScheduleMonitor.ts"
 );
 
@@ -32,6 +32,18 @@ test("normaliza evidencia de marcaciones para el monitor de horarios", () => {
   }), {
     base64_data: "data:image/png;base64,xyz",
     file_name: "offline.png"
+  });
+});
+
+test("resume la evidencia sin transportar la foto hasta que el administrador la solicite", () => {
+  assert.deepEqual(scheduleMonitorPunchEvidenceSummary({
+    id: "punch-17",
+    extra_evidence: { base64_data: "data:image/jpeg;base64,abc", file_name: "salida.jpg" }
+  }), {
+    id: "punch-17",
+    file_name: "salida.jpg",
+    has_base64_data: true,
+    available: true
   });
 });
 

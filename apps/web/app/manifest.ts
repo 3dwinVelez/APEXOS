@@ -1,0 +1,2 @@
+import type { MetadataRoute } from "next";
+export default function manifest(): MetadataRoute.Manifest { return { name: "APEX OS", short_name: "APEX", description: "Sistema operativo empresarial", start_url: "/dashboard", display: "standalone", background_color: "#071018", theme_color: "#14b8a6", orientation: "any", icons: [{ src: "/apex-icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" }] }; }

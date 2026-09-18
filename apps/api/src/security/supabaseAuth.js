@@ -9,7 +9,8 @@ const authCache = new Map();
 const authInFlight = new Map();
 
 const permissionModuleAliases = {
-  servicios_correcciones: "services.orders"
+  servicios_correcciones: "services.orders",
+  marcaciones: "time_tracking"
 };
 
 function normalizeRolePermissions(value) {
@@ -42,6 +43,7 @@ function employeeRoleContext(employee) {
   return {
     id: String(metadata.role_id || access.role_id || "").trim(),
     name: String(metadata.role_name || access.role_name || "").trim(),
+    accessProfile: String(metadata.access_profile || access.access_profile || "").trim().toLowerCase(),
     permissions: unique
   };
 }
@@ -91,6 +93,21 @@ function roleBlueprint(companyRole, employee) {
       permissions: [{ module: "*", action: "*" }]
     };
   }
+  const employeeRole = employeeRoleContext(employee);
+  const markingOnly = employeeRole.accessProfile === "marking_only"
+    || employeeRole.name.trim().toLowerCase() === "empleado marcaciones";
+  if (markingOnly) {
+    const identity = (employeeRole.id || "marking-only").replace(/[^a-z0-9_-]+/gi, "-").slice(0, 48);
+    return {
+      name: `Supabase Marking ${identity}`,
+      description: "Empleado con acceso exclusivo a sus propias marcaciones.",
+      managed: true,
+      permissions: [
+        { module: "time_tracking", action: "read" },
+        { module: "time_tracking", action: "write" }
+      ]
+    };
+  }
   if (["viewer", "consulta", "read_only"].includes(normalized)) {
     return {
       name: "Supabase Viewer",
@@ -123,7 +140,6 @@ function roleBlueprint(companyRole, employee) {
       { module: "purchases", action: "write" }
     ]
   };
-  const employeeRole = employeeRoleContext(employee);
   const specialPermissions = employeeRole.permissions.filter((permission) => permission.module === "services.orders" && permission.action === "edit_any_state");
   if (!specialPermissions.length) return base;
   const identity = (employeeRole.id || employeeRole.name || "member").replace(/[^a-z0-9_-]+/gi, "-").slice(0, 48);

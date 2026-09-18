@@ -121,6 +121,8 @@ model Party {
   credit_limit Float         @default(0)
   credit_days  Int           @default(0)
   balance      Float         @default(0)
+  receivable_balance Float    @default(0)
+  payable_balance    Float    @default(0)
   rating       Float         @default(0)
   active       Boolean       @default(true)
   metadata     Json          @default("{}")
@@ -151,6 +153,7 @@ model Item {
   tenant_id     String
   type          String
   code          String
+  legacy_code   String?
   name          String
   description   String?
   category_id   Int?
@@ -177,11 +180,16 @@ model Item {
   updated_at    DateTime          @updatedAt
   locations     ItemLocation[]
   bom_lines     BOMLine[]
-  movements     Movement[]
-  costs         ProductCost[]
-  salesInvoiceLines SalesInvoiceLine[]
+    movements     Movement[]
+    costs         ProductCost[]
+    valuations    SkuValuation[]
+    transfer_lines WarehouseTransferLine[]
+    adjustment_lines InventoryAdjustmentLine[]
+    salesInvoiceLines SalesInvoiceLine[]
+    commercial_products CommercialProduct[]
 
   @@unique([tenant_id, code])
+  @@index([tenant_id, legacy_code])
   @@index([tenant_id, type])
   @@index([tenant_id, family_code])
   @@index([tenant_id, society_code, branch_code])
@@ -234,7 +242,8 @@ model ProductCost {
   id               Int      @id @default(autoincrement())
   tenant_id        String
   item_id          Int
-  item             Item     @relation(fields: [item_id], references: [id])
+    item             Item     @relation(fields: [item_id], references: [id])
+    society_code     String?
   costing_method   String   @default("weighted_average")
   quantity_balance Float    @default(0)
   value_balance    Float    @default(0)
@@ -257,6 +266,7 @@ model Category {
   parent_id Int?
   type      String @default("item")
   items     Item[]
+  commercial_products CommercialProduct[]
 
   @@unique([tenant_id, name, type])
   @@index([tenant_id])
@@ -324,6 +334,68 @@ model ItemLocation {
   @@index([tenant_id])
 }
 
+model SkuValuation {
+    id               Int      @id @default(autoincrement())
+    tenant_id        String
+    society_code     String
+    item_id          Int
+    item             Item     @relation(fields: [item_id], references: [id])
+    quantity_balance Float    @default(0)
+    value_balance    Float    @default(0)
+    average_cost     Float    @default(0)
+    version          Int      @default(0)
+    updated_at       DateTime @updatedAt
+    created_at       DateTime @default(now())
+
+  @@map("inv_sku_valuations")
+  @@unique([tenant_id, society_code, item_id])
+    @@index([tenant_id, society_code, item_id])
+  }
+
+model WarehouseTransfer {
+    id                   Int       @id @default(autoincrement())
+    tenant_id            String
+    number               String
+    society_code         String
+    origin_place_id      Int
+    destination_place_id Int
+    transit_location_id  Int?
+    status               String    @default("draft")
+    reason               String?
+    correlation_id       String?
+    idempotency_key      String?
+    created_by           Int?
+    dispatched_by        Int?
+    received_by          Int?
+    dispatched_at        DateTime?
+    received_at          DateTime?
+    created_at           DateTime  @default(now())
+    updated_at           DateTime  @updatedAt
+    lines                WarehouseTransferLine[]
+
+    @@map("inv_warehouse_transfers")
+    @@unique([tenant_id, number])
+    @@unique([tenant_id, idempotency_key])
+    @@index([tenant_id, society_code, status])
+  }
+
+model WarehouseTransferLine {
+    id          Int               @id @default(autoincrement())
+    tenant_id   String
+    transfer_id Int
+    transfer    WarehouseTransfer @relation(fields: [transfer_id], references: [id], onDelete: Cascade)
+    item_id     Int
+    item        Item              @relation(fields: [item_id], references: [id])
+    qty         Float
+    unit_cost   Float             @default(0)
+    lot         String?
+    created_at  DateTime          @default(now())
+
+    @@map("inv_warehouse_transfer_lines")
+    @@index([tenant_id, transfer_id])
+    @@index([tenant_id, item_id])
+  }
+
 model Transaction {
   id            Int               @id @default(autoincrement())
   tenant_id     String
@@ -361,6 +433,47 @@ model Transaction {
   @@index([tenant_id, type, created_at])
 }
 
+model InventoryAdjustment {
+    id                     Int       @id @default(autoincrement())
+    tenant_id              String
+    number                 String
+    document_type          String
+    society_code           String
+    warehouse_id           Int
+    posting_date           DateTime
+    reason                 String
+    status                 String    @default("posted")
+    accounting_document_id Int?
+    idempotency_key        String?
+    created_by             Int?
+    created_at             DateTime  @default(now())
+    updated_at             DateTime  @updatedAt
+    lines                  InventoryAdjustmentLine[]
+
+    @@map("inv_adjustments")
+    @@unique([tenant_id, number])
+    @@unique([tenant_id, idempotency_key])
+    @@index([tenant_id, posting_date, document_type])
+    @@index([tenant_id, warehouse_id])
+}
+
+model InventoryAdjustmentLine {
+    id            Int                 @id @default(autoincrement())
+    tenant_id     String
+    adjustment_id Int
+    adjustment    InventoryAdjustment @relation(fields: [adjustment_id], references: [id], onDelete: Cascade)
+    item_id       Int
+    item          Item                @relation(fields: [item_id], references: [id])
+    qty           Float
+    unit_cost     Float
+    total         Float
+    created_at    DateTime            @default(now())
+
+    @@map("inv_adjustment_lines")
+    @@index([tenant_id, adjustment_id])
+    @@index([tenant_id, item_id])
+}
+
 model TransactionLine {
   id             Int         @id @default(autoincrement())
   transaction_id Int
@@ -387,7 +500,15 @@ model Movement {
   item           Item?        @relation(fields: [item_id], references: [id])
   from_location  Int?
   to_location    Int?
-  transaction_id Int?
+    transaction_id Int?
+    purchase_order_line_id Int?
+    society_code   String?
+    source_type    String?
+    source_id      Int?
+    status         String       @default("posted")
+    correlation_id String?
+    idempotency_key String?
+    effective_at   DateTime     @default(now())
   transaction    Transaction? @relation(fields: [transaction_id], references: [id])
   qty            Float
   cost           Float        @default(0)
@@ -397,8 +518,10 @@ model Movement {
   created_at     DateTime     @default(now())
 
   @@index([tenant_id, item_id, created_at])
-  @@index([tenant_id, type, created_at])
-}
+    @@index([tenant_id, type, created_at])
+    @@unique([tenant_id, idempotency_key])
+    @@index([tenant_id, society_code, item_id, effective_at])
+  }
 
 model Resource {
   id          Int         @id @default(autoincrement())
@@ -557,6 +680,11 @@ model CntCabdoc {
   header_text     String
   society_code    String
   status          String      @default("posted")
+  referenced_document_id Int?
+  is_reversal     Boolean     @default(false)
+  is_cancelled    Boolean     @default(false)
+  cancelled_by    Int?
+  cancelled_at    DateTime?
   total_debit     Float       @default(0)
   total_credit    Float       @default(0)
   created_by      Int?
@@ -587,6 +715,11 @@ model CntCuedoc {
   debit             Float     @default(0)
   credit            Float     @default(0)
   description       String
+  tax_type          String?
+  tax_code          String?
+  tax_base          Float     @default(0)
+  tax_rate          Float     @default(0)
+  tax_amount        Float     @default(0)
   ledger_entry_id   Int?
   created_at        DateTime  @default(now())
 
@@ -616,6 +749,8 @@ model CxpCabdoc {
   associated_account_code String
   subtotal                Float       @default(0)
   tax_total               Float       @default(0)
+  gross_total             Float       @default(0)
+  retention_total         Float       @default(0)
   total                   Float       @default(0)
   applied_total           Float       @default(0)
   balance                 Float       @default(0)
@@ -670,6 +805,11 @@ model CxpCuedoc {
   vat_account_code  String?
   vat_percent       Float     @default(0)
   vat_amount        Float     @default(0)
+  tax_type          String?
+  tax_code          String?
+  tax_base          Float     @default(0)
+  tax_rate          Float     @default(0)
+  tax_amount        Float     @default(0)
   description       String
   amount            Float     @default(0)
   total             Float     @default(0)
@@ -1352,6 +1492,508 @@ model VehicleMasterAuditLog {
   @@index([tenant_id, plate])
 }
 
+model TransportTmsConfig {
+  id                    Int      @id @default(autoincrement())
+  tenant_id             String   @unique
+  timezone              String   @default("America/Bogota")
+  default_currency      String   @default("COP")
+  distance_unit         String   @default("km")
+  weight_unit           String   @default("kg")
+  road_factor           Float    @default(1.2)
+  gps_interval_seconds  Int      @default(30)
+  gps_retention_days    Int      @default(90)
+  mobile_config         Json     @default("{}")
+  notification_config   Json     @default("{}")
+  metadata              Json     @default("{}")
+  updated_by            Int?
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  @@index([tenant_id, updated_at])
+}
+
+model TransportCarrier {
+  id              Int               @id @default(autoincrement())
+  tenant_id       String
+  code            String
+  legal_name      String
+  trade_name      String?
+  tax_id          String?
+  supplier_id     Int?
+  phone           String?
+  email           String?
+  status          String            @default("activo")
+  service_levels  Json              @default("[]")
+  operating_zones Json              @default("[]")
+  vehicle_types   Json              @default("[]")
+  score           Float             @default(0)
+  metadata        Json              @default("{}")
+  active          Boolean           @default(true)
+  created_at      DateTime          @default(now())
+  updated_at      DateTime          @updatedAt
+  drivers         TransportDriver[]
+  trips           TransportTrip[]
+  rate_cards      TransportRateCard[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, status, active])
+  @@index([tenant_id, tax_id])
+}
+
+model TransportOrigin {
+  id                Int                 @id @default(autoincrement())
+  tenant_id         String
+  code              String
+  name              String
+  address           String
+  city              String
+  department        String?
+  country           String              @default("CO")
+  latitude          Float
+  longitude         Float
+  timezone          String              @default("America/Bogota")
+  operation_start   String?
+  operation_end     String?
+  service_minutes   Int                 @default(60)
+  metadata          Json                @default("{}")
+  active            Boolean             @default(true)
+  created_at        DateTime            @default(now())
+  updated_at        DateTime            @updatedAt
+  needs             TransportNeed[]
+  trips             TransportTrip[]
+  rate_cards        TransportRateCard[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, city, active])
+}
+
+model TransportRateCard {
+  id                   Int               @id @default(autoincrement())
+  tenant_id            String
+  code                 String
+  version              Int               @default(1)
+  name                 String
+  status               String            @default("borrador")
+  carrier_id           Int?
+  carrier              TransportCarrier? @relation(fields: [carrier_id], references: [id], onDelete: Restrict)
+  origin_id            Int?
+  origin               TransportOrigin?  @relation(fields: [origin_id], references: [id], onDelete: Restrict)
+  destination_city     String?
+  destination_department String?
+  service_level        String?
+  vehicle_type         String?
+  valid_from           DateTime
+  valid_to             DateTime
+  currency             String            @default("COP")
+  base_rate            Decimal           @default(0) @db.Decimal(18, 2)
+  minimum_charge       Decimal           @default(0) @db.Decimal(18, 2)
+  price_per_km         Decimal           @default(0) @db.Decimal(18, 4)
+  price_per_kg         Decimal           @default(0) @db.Decimal(18, 4)
+  price_per_m3         Decimal           @default(0) @db.Decimal(18, 4)
+  price_per_stop       Decimal           @default(0) @db.Decimal(18, 2)
+  fuel_surcharge_pct   Decimal           @default(0) @db.Decimal(7, 4)
+  tolls_flat           Decimal           @default(0) @db.Decimal(18, 2)
+  priority             Int               @default(100)
+  metadata             Json              @default("{}")
+  active               Boolean           @default(true)
+  created_by           Int?
+  created_at           DateTime          @default(now())
+  updated_at           DateTime          @updatedAt
+
+  @@unique([tenant_id, code, version])
+  @@index([tenant_id, status, valid_from, valid_to], map: "TransportRateCard_tenant_status_valid_idx")
+  @@index([tenant_id, carrier_id, active], map: "TransportRateCard_tenant_carrier_active_idx")
+  @@index([tenant_id, origin_id, destination_city], map: "TransportRateCard_tenant_origin_destination_idx")
+}
+
+model TransportDriver {
+  id                 Int                @id @default(autoincrement())
+  tenant_id          String
+  code               String
+  document           String
+  name               String
+  phone              String?
+  employee_id        Int?
+  carrier_id         Int?
+  carrier            TransportCarrier?  @relation(fields: [carrier_id], references: [id], onDelete: Restrict)
+  license_number     String?
+  license_category   String?
+  license_expires_at DateTime?
+  certifications     Json               @default("[]")
+  status             String             @default("disponible")
+  metadata           Json               @default("{}")
+  active             Boolean            @default(true)
+  created_at         DateTime           @default(now())
+  updated_at         DateTime           @updatedAt
+  trips               TransportTrip[]
+  gps_positions       TransportGpsPosition[]
+
+  @@unique([tenant_id, code])
+  @@unique([tenant_id, document])
+  @@index([tenant_id, carrier_id, status])
+  @@index([tenant_id, employee_id])
+}
+
+model TransportDeliveryPoint {
+  id                   Int             @id @default(autoincrement())
+  tenant_id            String
+  code                 String
+  name                 String
+  customer_party_id    Int?
+  commercial_customer_id Int?
+  address              String
+  city                 String
+  department           String?
+  country              String          @default("CO")
+  latitude             Float?
+  longitude            Float?
+  timezone             String          @default("America/Bogota")
+  window_start         String?
+  window_end           String?
+  receiving_days       Json            @default("[]")
+  service_minutes      Int             @default(30)
+  access_restrictions  String?
+  appointment_required Boolean         @default(false)
+  geofence_radius_m    Int             @default(150)
+  instructions         String?
+  metadata             Json            @default("{}")
+  active               Boolean         @default(true)
+  created_at           DateTime        @default(now())
+  updated_at           DateTime        @updatedAt
+  needs                TransportNeed[]
+  stops                TransportStop[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, customer_party_id, active])
+  @@index([tenant_id, commercial_customer_id, active], map: "TransportDeliveryPoint_commercial_customer_active_idx")
+  @@index([tenant_id, city, active])
+}
+
+model TransportNeed {
+  id                    Int                 @id @default(autoincrement())
+  tenant_id             String
+  code                  String
+  source_type           String
+  source_id             String?
+  source_reference      String?
+  sales_order_id        Int?
+  origin_place_id       Int?
+  origin_id             Int?
+  origin                TransportOrigin?    @relation(fields: [origin_id], references: [id], onDelete: Restrict)
+  origin_name           String
+  delivery_point_id     Int
+  delivery_point        TransportDeliveryPoint @relation(fields: [delivery_point_id], references: [id], onDelete: Restrict)
+  available_at          DateTime
+  due_at                DateTime
+  priority              String              @default("normal")
+  service_level         String              @default("normal")
+  weight_kg             Float
+  volume_m3             Float
+  pallets               Float               @default(0)
+  packages              Int                 @default(0)
+  temperature_min_c     Float?
+  temperature_max_c     Float?
+  required_vehicle_type String?
+  cargo_value           Decimal             @default(0) @db.Decimal(18, 2)
+  customer_freight      Decimal             @default(0) @db.Decimal(18, 2)
+  currency              String              @default("COP")
+  status                String              @default("pendiente")
+  validation_errors     Json                @default("[]")
+  metadata              Json                @default("{}")
+  created_by            Int?
+  created_at            DateTime            @default(now())
+  updated_at            DateTime            @updatedAt
+  lines                 TransportNeedLine[]
+  trip_links            TransportTripNeed[]
+  stops                 TransportStop[]
+  attempts              TransportDeliveryAttempt[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, status, due_at])
+  @@index([tenant_id, source_type, source_id])
+  @@index([tenant_id, delivery_point_id, due_at])
+  @@index([tenant_id, origin_id, status])
+}
+
+model TransportNeedLine {
+  id             Int           @id @default(autoincrement())
+  tenant_id      String
+  need_id        Int
+  need           TransportNeed @relation(fields: [need_id], references: [id], onDelete: Restrict)
+  item_id        Int?
+  sku            String
+  description    String?
+  quantity       Decimal       @db.Decimal(18, 4)
+  unit           String
+  weight_kg      Float         @default(0)
+  volume_m3      Float         @default(0)
+  pallets        Float         @default(0)
+  metadata       Json          @default("{}")
+
+  @@index([tenant_id, need_id])
+  @@index([tenant_id, item_id])
+}
+
+model TransportTrip {
+  id                 Int                    @id @default(autoincrement())
+  tenant_id          String
+  code               String
+  status             String                 @default("borrador")
+  origin_place_id    Int?
+  origin_id          Int?
+  origin             TransportOrigin?       @relation(fields: [origin_id], references: [id], onDelete: Restrict)
+  origin_name        String
+  carrier_id         Int?
+  carrier            TransportCarrier?      @relation(fields: [carrier_id], references: [id], onDelete: Restrict)
+  vehicle_id         Int?
+  vehicle_plate      String?
+  driver_id          Int?
+  driver             TransportDriver?       @relation(fields: [driver_id], references: [id], onDelete: Restrict)
+  planned_departure  DateTime?
+  actual_departure   DateTime?
+  planned_arrival    DateTime?
+  actual_arrival     DateTime?
+  planned_distance_km Float                  @default(0)
+  planned_duration_minutes Int               @default(0)
+  total_weight_kg    Float                   @default(0)
+  total_volume_m3    Float                   @default(0)
+  total_pallets      Float                   @default(0)
+  estimated_cost     Decimal                 @default(0) @db.Decimal(18, 2)
+  committed_cost     Decimal                 @default(0) @db.Decimal(18, 2)
+  actual_cost        Decimal                 @default(0) @db.Decimal(18, 2)
+  currency           String                  @default("COP")
+  service_level      String                  @default("normal")
+  version            Int                     @default(1)
+  metadata           Json                    @default("{}")
+  created_by         Int?
+  created_at         DateTime                @default(now())
+  updated_at         DateTime                @updatedAt
+  needs              TransportTripNeed[]
+  stops              TransportStop[]
+  events             TransportTripEvent[]
+  attempts           TransportDeliveryAttempt[]
+  settlements        TransportSettlement[]
+  gps_positions      TransportGpsPosition[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, status, planned_departure])
+  @@index([tenant_id, carrier_id, status])
+  @@index([tenant_id, vehicle_id, status])
+  @@index([tenant_id, origin_id, status])
+}
+
+model TransportTripNeed {
+  id         Int           @id @default(autoincrement())
+  tenant_id  String
+  trip_id    Int
+  trip       TransportTrip @relation(fields: [trip_id], references: [id], onDelete: Restrict)
+  need_id    Int
+  need       TransportNeed @relation(fields: [need_id], references: [id], onDelete: Restrict)
+  created_at DateTime      @default(now())
+
+  @@unique([trip_id, need_id])
+  @@index([tenant_id, trip_id])
+  @@index([tenant_id, need_id])
+}
+
+model TransportStop {
+  id                 Int                    @id @default(autoincrement())
+  tenant_id          String
+  trip_id            Int
+  trip               TransportTrip          @relation(fields: [trip_id], references: [id], onDelete: Restrict)
+  need_id            Int?
+  need               TransportNeed?         @relation(fields: [need_id], references: [id], onDelete: Restrict)
+  delivery_point_id  Int?
+  delivery_point     TransportDeliveryPoint? @relation(fields: [delivery_point_id], references: [id], onDelete: Restrict)
+  sequence           Int
+  stop_type          String                 @default("entrega")
+  status             String                 @default("pendiente")
+  planned_arrival    DateTime?
+  actual_arrival     DateTime?
+  service_started_at DateTime?
+  completed_at       DateTime?
+  address_snapshot   String?
+  latitude           Float?
+  longitude          Float?
+  instructions       String?
+  metadata           Json                   @default("{}")
+  events             TransportTripEvent[]
+  attempts           TransportDeliveryAttempt[]
+  gps_positions      TransportGpsPosition[]
+
+  @@unique([trip_id, sequence])
+  @@index([tenant_id, trip_id, status])
+  @@index([tenant_id, delivery_point_id])
+}
+
+model TransportGpsPosition {
+  id              BigInt           @id @default(autoincrement())
+  tenant_id       String
+  trip_id         Int
+  trip            TransportTrip    @relation(fields: [trip_id], references: [id], onDelete: Restrict)
+  stop_id         Int?
+  stop            TransportStop?   @relation(fields: [stop_id], references: [id], onDelete: Restrict)
+  driver_id       Int?
+  driver          TransportDriver? @relation(fields: [driver_id], references: [id], onDelete: Restrict)
+  device_id       String
+  client_event_id String
+  recorded_at     DateTime
+  received_at     DateTime          @default(now())
+  latitude        Float
+  longitude       Float
+  accuracy_m      Float?
+  altitude_m      Float?
+  speed_kph       Float?
+  heading         Float?
+  battery_pct     Float?
+  is_mocked       Boolean           @default(false)
+  metadata        Json              @default("{}")
+
+  @@unique([tenant_id, device_id, client_event_id])
+  @@index([tenant_id, trip_id, recorded_at(sort: Desc)])
+  @@index([tenant_id, driver_id, recorded_at(sort: Desc)])
+  @@index([tenant_id, recorded_at(sort: Desc)])
+}
+
+model TransportNotification {
+  id           BigInt    @id @default(autoincrement())
+  tenant_id    String
+  channel      String
+  event_type   String
+  recipient    String
+  subject      String?
+  body         String
+  status       String    @default("pendiente")
+  trip_id      Int?
+  need_id      Int?
+  attempt_id   Int?
+  provider_ref String?
+  error        String?
+  metadata     Json      @default("{}")
+  created_by   Int?
+  sent_at      DateTime?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  @@index([tenant_id, status, created_at(sort: Desc)])
+  @@index([tenant_id, trip_id, created_at(sort: Desc)])
+  @@index([tenant_id, need_id, created_at(sort: Desc)])
+}
+
+model TransportTripEvent {
+  id          BigInt         @id @default(autoincrement())
+  tenant_id   String
+  trip_id     Int
+  trip        TransportTrip  @relation(fields: [trip_id], references: [id], onDelete: Restrict)
+  stop_id     Int?
+  stop        TransportStop? @relation(fields: [stop_id], references: [id], onDelete: Restrict)
+  event_type  String
+  occurred_at DateTime       @default(now())
+  source      String         @default("usuario")
+  latitude    Float?
+  longitude   Float?
+  actor_id    Int?
+  device_id   String?
+  observation String?
+  data        Json           @default("{}")
+  created_at  DateTime       @default(now())
+
+  @@index([tenant_id, trip_id, occurred_at])
+  @@index([tenant_id, stop_id, occurred_at])
+  @@index([tenant_id, event_type, occurred_at])
+}
+
+model TransportDeliveryAttempt {
+  id               Int           @id @default(autoincrement())
+  tenant_id        String
+  trip_id          Int
+  trip             TransportTrip @relation(fields: [trip_id], references: [id], onDelete: Restrict)
+  stop_id          Int
+  stop             TransportStop @relation(fields: [stop_id], references: [id], onDelete: Restrict)
+  need_id          Int?
+  need             TransportNeed? @relation(fields: [need_id], references: [id], onDelete: Restrict)
+  attempt_number   Int
+  result           String
+  cause_code       String?
+  responsible      String?
+  evidence         Json           @default("[]")
+  delivered_lines Json           @default("[]")
+  additional_cost  Decimal        @default(0) @db.Decimal(18, 2)
+  recoverable      Boolean        @default(false)
+  next_attempt_at  DateTime?
+  approved_by      Int?
+  occurred_at      DateTime       @default(now())
+  observations     String?
+  pod              TransportPod?
+  created_at       DateTime       @default(now())
+
+  @@unique([stop_id, attempt_number])
+  @@index([tenant_id, trip_id, occurred_at])
+  @@index([tenant_id, result, occurred_at])
+}
+
+model TransportPod {
+  id                Int                      @id @default(autoincrement())
+  tenant_id         String
+  attempt_id        Int                      @unique
+  attempt           TransportDeliveryAttempt @relation(fields: [attempt_id], references: [id], onDelete: Restrict)
+  received_at       DateTime
+  receiver_name     String
+  receiver_document String?
+  signature         String?
+  photos            Json                     @default("[]")
+  latitude          Float?
+  longitude         Float?
+  observations      String?
+  created_by        Int?
+  created_at        DateTime                 @default(now())
+
+  @@index([tenant_id, received_at])
+}
+
+model TransportSettlement {
+  id             Int                       @id @default(autoincrement())
+  tenant_id      String
+  code           String
+  trip_id        Int
+  trip           TransportTrip             @relation(fields: [trip_id], references: [id], onDelete: Restrict)
+  status         String                    @default("borrador")
+  estimated_cost Decimal                   @default(0) @db.Decimal(18, 2)
+  committed_cost Decimal                   @default(0) @db.Decimal(18, 2)
+  liquidated_cost Decimal                  @default(0) @db.Decimal(18, 2)
+  currency       String                    @default("COP")
+  approved_by    Int?
+  approved_at    DateTime?
+  metadata       Json                      @default("{}")
+  created_by     Int?
+  created_at     DateTime                  @default(now())
+  updated_at     DateTime                  @updatedAt
+  lines          TransportSettlementLine[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, trip_id, status])
+}
+
+model TransportSettlementLine {
+  id           Int                 @id @default(autoincrement())
+  tenant_id    String
+  settlement_id Int
+  settlement   TransportSettlement @relation(fields: [settlement_id], references: [id], onDelete: Restrict)
+  concept      String
+  quantity     Decimal             @default(1) @db.Decimal(18, 4)
+  unit_rate    Decimal             @default(0) @db.Decimal(18, 2)
+  total        Decimal             @default(0) @db.Decimal(18, 2)
+  source       String?
+  support      Json                @default("{}")
+  recoverable  Boolean             @default(false)
+  approved_by  Int?
+  metadata     Json                @default("{}")
+  created_at   DateTime            @default(now())
+
+  @@index([tenant_id, settlement_id])
+  @@index([tenant_id, concept])
+}
+
 model TimePunch {
   id                Int       @id @default(autoincrement())
   tenant_id         String
@@ -1372,8 +2014,10 @@ model TimePunch {
   extra_detail      String?
   extra_evidence     Json      @default("{}")
   metadata          Json      @default("{}")
+  idempotency_key   String?
   created_at        DateTime  @default(now())
 
+  @@unique([tenant_id, idempotency_key])
   @@index([tenant_id, employee_id, date])
   @@index([tenant_id, user_name, date])
   @@index([tenant_id, date, punched_at])
@@ -1715,6 +2359,19 @@ model SalesInvoice {
   total             Float              @default(0)
   balance           Float              @default(0)
   status            String             @default("draft")
+  document_kind     String             @default("invoice")
+  document_class    String             @default("FV")
+  source_order_id   Int?
+  referenced_invoice_id Int?
+  accounting_document_id Int?
+  import_batch_id   String?
+  retentions        Json               @default("[]")
+  is_reversal       Boolean            @default(false)
+  is_cancelled      Boolean            @default(false)
+  posted_by         Int?
+  posted_at         DateTime?
+  cancelled_by      Int?
+  cancelled_at      DateTime?
   header_text       String             @default("")
   society_code      String             @default("")
   branch_code       String             @default("")
@@ -1731,6 +2388,9 @@ model SalesInvoice {
   @@index([tenant_id, customer_id])
   @@index([tenant_id, date])
   @@index([tenant_id, status])
+  @@index([tenant_id, source_order_id])
+  @@index([tenant_id, referenced_invoice_id])
+  @@index([tenant_id, import_batch_id])
 }
 
 model SalesInvoiceLine {
@@ -1754,6 +2414,8 @@ model SalesInvoiceLine {
   place                   Place?       @relation(fields: [place_id], references: [id])
   customer_invoice_number String?
   cost_value              Float        @default(0)
+  movement_id             Int?
+  source_order_line_id    Int?
   created_at              DateTime     @default(now())
 
   @@map("sales_invoice_lines")
@@ -1788,6 +2450,11 @@ model CxcCabdoc {
   balance                 Float       @default(0)
   status                  String      @default("open")
   accounting_document_id  Int?
+  referenced_document_id  Int?
+  is_reversal             Boolean      @default(false)
+  is_cancelled            Boolean      @default(false)
+  cancelled_by            Int?
+  cancelled_at            DateTime?
   created_by              Int?
   created_at              DateTime    @default(now())
   updated_at              DateTime    @updatedAt
@@ -1801,6 +2468,7 @@ model CxcCabdoc {
   @@index([tenant_id, posting_date])
   @@index([tenant_id, due_date])
   @@index([tenant_id, document_class])
+  @@index([tenant_id, referenced_document_id])
 }
 
 model CxcCuedoc {
@@ -1820,6 +2488,11 @@ model CxcCuedoc {
   retention_code    String?
   retention_percent Float     @default(0)
   retention_amount  Float     @default(0)
+  tax_type           String?
+  tax_code           String?
+  tax_base           Float     @default(0)
+  tax_rate           Float     @default(0)
+  tax_amount         Float     @default(0)
   created_at        DateTime  @default(now())
 
   @@map("cxc_cuedoc")
@@ -1839,6 +2512,12 @@ model CxcPayment {
   date          DateTime  @default(now())
   reference     String?
   account_id    Int?
+  group_id      String?
+  accounting_document_id Int?
+  status        String     @default("posted")
+  reversed_payment_id Int?
+  cancelled_by  Int?
+  cancelled_at  DateTime?
   notes         String?
   created_by    Int?
   created_at    DateTime  @default(now())
@@ -1846,6 +2525,7 @@ model CxcPayment {
   @@map("cxc_payments")
   @@index([tenant_id, cabdoc_id])
   @@index([tenant_id, customer_id, date])
+  @@index([tenant_id, group_id])
 }
 
 // === MAESTRO DE RETENCIONES ===
@@ -1857,12 +2537,16 @@ model RetentionMaster {
   account_code String
   percent      Float
   concept      String?
+  scope        String   @default("sales")
+  retention_type String @default("retefuente")
+  minimum_base Float    @default(0)
+  base_type    String   @default("subtotal")
   active       Boolean  @default(true)
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
 
   @@map("retention_masters")
-  @@unique([tenant_id, code])
+  @@unique([tenant_id, scope, code])
   @@index([tenant_id, active])
 }
 
@@ -1897,6 +2581,190 @@ model Payment {
   created_at     DateTime     @default(now())
 
   @@index([tenant_id, type, date])
+}
+
+model TreasuryBank {
+  id           Int      @id @default(autoincrement())
+  tenant_id    String
+  code         String
+  name         String
+  account_id   Int
+  account_code String
+  active       Boolean  @default(true)
+  created_by   Int?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  payments     TreasuryPayment[]
+  advances     TreasuryAdvance[]
+
+  @@map("treasury_banks")
+  @@unique([tenant_id, code])
+  @@index([tenant_id, active, name])
+}
+
+model TreasuryAdvance {
+  id                              Int      @id @default(autoincrement())
+  tenant_id                       String
+  direction                       String
+  document_type                   String
+  document_number                 Int
+  number                          String
+  posting_date                    DateTime
+  party_id                        Int
+  party_tax_id                    String?
+  bank_id                         Int
+  bank                            TreasuryBank @relation(fields: [bank_id], references: [id])
+  society_code                    String
+  account_id                      Int
+  account_code                    String
+  original_amount                 Float
+  applied_amount                  Float    @default(0)
+  balance                         Float
+  reference                       String?
+  notes                           String?
+  status                          String   @default("open")
+  accounting_document_id          Int
+  reversal_accounting_document_id Int?
+  cancelled_by                    Int?
+  cancelled_at                    DateTime?
+  created_by                      Int?
+  created_at                      DateTime @default(now())
+  applications                    TreasuryAdvanceApplication[]
+
+  @@map("treasury_advances")
+  @@unique([tenant_id, document_type, document_number])
+  @@unique([tenant_id, number])
+  @@index([tenant_id, direction, party_id, status])
+  @@index([tenant_id, posting_date])
+}
+
+model TreasuryAdvanceApplication {
+  id                     Int      @id @default(autoincrement())
+  tenant_id              String
+  advance_id             Int
+  advance                TreasuryAdvance @relation(fields: [advance_id], references: [id])
+  source_type            String
+  source_id              Int
+  source_number          String
+  document_type          String
+  document_number        Int
+  number                 String
+  posting_date           DateTime
+  amount                 Float
+  advance_balance_before Float
+  advance_balance_after  Float
+  source_balance_before  Float
+  source_balance_after   Float
+  status                 String   @default("posted")
+  accounting_document_id Int
+  reversal_document_id   Int?
+  cancelled_by           Int?
+  cancelled_at           DateTime?
+  created_by             Int?
+  created_at             DateTime @default(now())
+
+  @@map("treasury_advance_applications")
+  @@unique([tenant_id, number])
+  @@index([tenant_id, advance_id, status])
+  @@index([tenant_id, source_type, source_id])
+}
+
+model TreasuryPayment {
+  id                              Int      @id @default(autoincrement())
+  tenant_id                       String
+  direction                       String
+  document_type                   String
+  document_number                 Int
+  number                          String
+  posting_date                    DateTime
+  party_id                        Int
+  party_tax_id                    String?
+  bank_id                         Int
+  bank                            TreasuryBank @relation(fields: [bank_id], references: [id])
+  society_code                    String
+  amount                          Float
+  reference                       String?
+  notes                           String?
+  status                          String   @default("posted")
+  accounting_document_id          Int
+  reversal_accounting_document_id Int?
+  cancelled_by                    Int?
+  cancelled_at                    DateTime?
+  created_by                      Int?
+  created_at                      DateTime @default(now())
+  applications                    TreasuryPaymentApplication[]
+
+  @@map("treasury_payments")
+  @@unique([tenant_id, document_type, document_number])
+  @@unique([tenant_id, number])
+  @@index([tenant_id, direction, posting_date])
+  @@index([tenant_id, party_id, posting_date])
+  @@index([tenant_id, bank_id, posting_date])
+  @@index([tenant_id, status])
+}
+
+model TreasuryPaymentApplication {
+  id             Int      @id @default(autoincrement())
+  tenant_id      String
+  payment_id     Int
+  payment        TreasuryPayment @relation(fields: [payment_id], references: [id], onDelete: Cascade)
+  source_type    String
+  source_id      Int
+  source_number  String
+  amount         Float
+  balance_before Float
+  balance_after  Float
+  created_at     DateTime @default(now())
+
+  @@map("treasury_payment_applications")
+  @@unique([tenant_id, payment_id, source_type, source_id])
+  @@index([tenant_id, source_type, source_id])
+}
+
+model PurchaseImport {
+  id                Int      @id @default(autoincrement())
+  tenant_id         String
+  purchase_order_id Int
+  number            String
+  status            String   @default("draft")
+  allocation_method String   @default("value")
+  estimated_total   Float    @default(0)
+  actual_total      Float    @default(0)
+  costs_confirmed_at DateTime?
+  costs_confirmed_by Int?
+  received_at       DateTime?
+  created_by        Int?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+  costs             PurchaseImportCost[]
+
+  @@map("pur_imports")
+  @@unique([tenant_id, purchase_order_id])
+  @@unique([tenant_id, number])
+  @@index([tenant_id, status, created_at])
+}
+
+model PurchaseImportCost {
+  id                   Int      @id @default(autoincrement())
+  tenant_id            String
+  import_id             Int
+  import                PurchaseImport @relation(fields: [import_id], references: [id], onDelete: Cascade)
+  concept               String
+  supplier_id           Int
+  classification        String
+  estimated_amount      Float
+  actual_amount         Float?
+  account_code          String
+  clearing_account_code String
+  cxp_cabdoc_id         Int?
+  status                String   @default("estimated")
+  created_by            Int?
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  @@map("pur_import_costs")
+  @@index([tenant_id, import_id, supplier_id])
+  @@index([tenant_id, cxp_cabdoc_id])
 }
 
 model Subscription {
@@ -1948,6 +2816,119 @@ model BrainMetric {
   created_at DateTime @default(now())
 
   @@index([tenant_id, metric, period])
+}
+
+// === APEX HEART: CONTROL GERENCIAL TRANSVERSAL ===
+model ApexHeartConfig {
+  id                    Int      @id @default(autoincrement())
+  tenant_id             String   @unique
+  annual_financing_rate Float    @default(14.42)
+  lost_portfolio_rate   Float    @default(5)
+  holding_rate          Float    @default(25)
+  order_cost            Float    @default(50000)
+  lead_time_days        Int      @default(14)
+  safety_stock_days     Int      @default(1)
+  inventory_target_days Int      @default(60)
+  alert_email_enabled   Boolean  @default(true)
+  alert_in_app_enabled  Boolean  @default(true)
+  recipients            Json     @default("[\"owner\",\"admin\"]")
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  @@map("apex_heart_configs")
+}
+
+model ApexHeartAlertRule {
+  id                Int      @id @default(autoincrement())
+  tenant_id         String
+  code              String
+  name              String
+  description       String?
+  metric            String
+  operator          String
+  warning_threshold Float
+  critical_threshold Float
+  severity          String   @default("warning")
+  enabled           Boolean  @default(true)
+  cooldown_hours    Int      @default(24)
+  action_label      String?
+  action_href       String?
+  recipients        Json     @default("[\"owner\",\"admin\"]")
+  created_by        Int?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  @@map("apex_heart_alert_rules")
+  @@unique([tenant_id, code])
+  @@index([tenant_id, enabled])
+  @@index([tenant_id, metric])
+}
+
+model ApexHeartAlert {
+  id             Int       @id @default(autoincrement())
+  tenant_id      String
+  rule_id        Int?
+  fingerprint    String
+  metric         String
+  metric_value   Float
+  threshold      Float
+  severity       String
+  status         String    @default("open")
+  title          String
+  message        String
+  action_label   String?
+  action_href    String?
+  context        Json      @default("{}")
+  detected_at    DateTime  @default(now())
+  acknowledged_at DateTime?
+  acknowledged_by Int?
+  resolved_at    DateTime?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  @@map("apex_heart_alerts")
+  @@unique([tenant_id, fingerprint])
+  @@index([tenant_id, status, severity])
+  @@index([tenant_id, detected_at])
+}
+
+model ApexHeartInventorySnapshot {
+  id          Int      @id @default(autoincrement())
+  tenant_id   String
+  snapshot_date DateTime
+  item_id     Int
+  quantity    Float    @default(0)
+  unit_cost   Float    @default(0)
+  value       Float    @default(0)
+  source      String   @default("system")
+  created_at  DateTime @default(now())
+
+  @@map("apex_heart_inventory_snapshots")
+  @@unique([tenant_id, snapshot_date, item_id])
+  @@index([tenant_id, snapshot_date])
+  @@index([tenant_id, item_id, snapshot_date])
+}
+
+model ApexHeartReportSchedule {
+  id          Int      @id @default(autoincrement())
+  tenant_id   String
+  name        String
+  view        String   @default("pulse")
+  frequency   String   @default("weekly")
+  weekday     Int?
+  month_day   Int?
+  send_hour   Int      @default(8)
+  timezone    String   @default("America/Bogota")
+  recipients Json     @default("[]")
+  enabled     Boolean  @default(true)
+  next_run_at DateTime
+  last_run_at DateTime?
+  created_by  Int?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("apex_heart_report_schedules")
+  @@index([tenant_id, enabled, next_run_at])
 }
 
 model Workflow {
@@ -2058,3 +3039,412 @@ model EInvoice {
   @@index([tenant_id, created_at])
 }
 
+
+
+model CommercialAdvisor {
+  id                  Int                        @id @default(autoincrement())
+  tenant_id           String
+  code                String
+  name                String
+  email               String?
+  phone               String?
+  zone                String?
+  zone_id             Int?
+  zone_master         CommercialZone?             @relation(fields: [zone_id], references: [id])
+  user_id             Int?
+  supervisor_user_id  Int?
+  active              Boolean                    @default(true)
+  external_advisor_id String?
+  created_at          DateTime                   @default(now())
+  updated_at          DateTime                   @updatedAt
+  customers           CommercialCustomer[]
+  advisor_budgets     CommercialAdvisorBudget[]
+  customer_budgets    CommercialCustomerBudget[]
+  visits              CommercialVisit[]
+  orders              CommercialSalesOrder[]
+  commitments         CommercialCustomerCommitment[]
+  quotations          CommercialQuotation[]
+
+  @@unique([tenant_id, code])
+  @@unique([tenant_id, user_id])
+  @@index([tenant_id, supervisor_user_id, active])
+  @@index([tenant_id, zone_id, active])
+  @@map("commercial_advisors")
+}
+
+model CommercialCustomer {
+  id                   Int                        @id @default(autoincrement())
+  tenant_id            String
+  code                 String
+  legal_name           String
+  trade_name           String?
+  identification_type  String?
+  identification       String?
+  contact_name         String?
+  contact_position     String?
+  phone                String?
+  whatsapp             String?
+  email                String?
+  address              String?
+  city                 String?
+  department           String?
+  notes                String?
+  zone                 String?
+  advisor_id           Int
+  advisor              CommercialAdvisor          @relation(fields: [advisor_id], references: [id])
+  segment              String                     @default("C")
+  category_id          Int?
+  category             CommercialCustomerCategory? @relation(fields: [category_id], references: [id])
+  status               String                     @default("ACTIVE")
+  visit_frequency_days Int                        @default(30)
+  credit_capacity      Decimal                    @default(0) @db.Decimal(18, 2)
+  last_purchase_at     DateTime?
+  last_visit_at        DateTime?
+  external_customer_id String?
+  created_at           DateTime                   @default(now())
+  updated_at           DateTime                   @updatedAt
+  budgets              CommercialCustomerBudget[]
+  visits               CommercialVisit[]
+  orders               CommercialSalesOrder[]
+  commitments          CommercialCustomerCommitment[]
+  quotations           CommercialQuotation[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, advisor_id, status])
+  @@index([tenant_id, category_id, status])
+  @@map("commercial_customers")
+}
+
+model CommercialCustomerCommitment {
+  id           Int                @id @default(autoincrement())
+  tenant_id    String
+  customer_id  Int
+  customer     CommercialCustomer @relation(fields: [customer_id], references: [id])
+  advisor_id   Int
+  advisor      CommercialAdvisor  @relation(fields: [advisor_id], references: [id])
+  visit_id     Int?
+  description  String
+  due_date     DateTime
+  status       String             @default("PENDING")
+  completed_at DateTime?
+  created_by   Int?
+  created_at   DateTime           @default(now())
+  updated_at   DateTime           @updatedAt
+
+  @@index([tenant_id, advisor_id, status, due_date])
+  @@index([tenant_id, customer_id, status])
+  @@map("commercial_customer_commitments")
+}
+
+model CommercialZone {
+  id          Int                 @id @default(autoincrement())
+  tenant_id   String
+  code        String
+  name        String
+  description String?
+  city        String?
+  department  String?
+  active      Boolean             @default(true)
+  created_at  DateTime            @default(now())
+  updated_at  DateTime            @updatedAt
+  advisors    CommercialAdvisor[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, active, name])
+  @@map("commercial_zones")
+}
+
+model CommercialCustomerCategory {
+  id          Int                  @id @default(autoincrement())
+  tenant_id   String
+  code        String
+  name        String
+  description String?
+  active      Boolean              @default(true)
+  created_at  DateTime             @default(now())
+  updated_at  DateTime             @updatedAt
+  customers   CommercialCustomer[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, active, name])
+  @@map("commercial_customer_categories")
+}
+
+model CommercialPeriod {
+  id               Int                        @id @default(autoincrement())
+  tenant_id        String
+  name             String
+  start_date       DateTime
+  end_date         DateTime
+  status           String                     @default("DRAFT")
+  created_at       DateTime                   @default(now())
+  updated_at       DateTime                   @updatedAt
+  advisor_budgets  CommercialAdvisorBudget[]
+  customer_budgets CommercialCustomerBudget[]
+
+  @@unique([tenant_id, name])
+  @@index([tenant_id, status, start_date, end_date])
+  @@map("commercial_periods")
+}
+
+model CommercialAdvisorBudget {
+  id            Int               @id @default(autoincrement())
+  tenant_id     String
+  period_id     Int
+  period        CommercialPeriod  @relation(fields: [period_id], references: [id])
+  advisor_id    Int
+  advisor       CommercialAdvisor @relation(fields: [advisor_id], references: [id])
+  budget_amount Decimal           @db.Decimal(18, 2)
+  budget_type   String            @default("MONTHLY")
+  budget_date   DateTime
+  created_at    DateTime          @default(now())
+  updated_at    DateTime          @updatedAt
+
+  @@unique([tenant_id, period_id, advisor_id, budget_type, budget_date])
+  @@map("commercial_advisor_budgets")
+}
+
+model CommercialCustomerBudget {
+  id            Int                @id @default(autoincrement())
+  tenant_id     String
+  period_id     Int
+  period        CommercialPeriod   @relation(fields: [period_id], references: [id])
+  customer_id   Int
+  customer      CommercialCustomer @relation(fields: [customer_id], references: [id])
+  advisor_id    Int
+  advisor       CommercialAdvisor  @relation(fields: [advisor_id], references: [id])
+  budget_amount Decimal            @db.Decimal(18, 2)
+  budget_type   String             @default("MONTHLY")
+  budget_date   DateTime
+  created_at    DateTime           @default(now())
+  updated_at    DateTime           @updatedAt
+
+  @@unique([tenant_id, period_id, customer_id, budget_type, budget_date])
+  @@index([tenant_id, period_id, advisor_id])
+  @@map("commercial_customer_budgets")
+}
+
+model CommercialVisit {
+  id                 Int                    @id @default(autoincrement())
+  tenant_id          String
+  advisor_id         Int
+  advisor            CommercialAdvisor      @relation(fields: [advisor_id], references: [id])
+  customer_id        Int?
+  customer           CommercialCustomer?    @relation(fields: [customer_id], references: [id])
+  visit_date         DateTime
+  scheduled_end_at   DateTime?
+  planned_duration_minutes Int @default(60)
+  visit_type         String                 @default("IN_PERSON")
+  status             String                 @default("SCHEDULED")
+  started_at         DateTime?
+  completed_at       DateTime?
+  result_code        String?
+  reason_id          Int?
+  reason             CommercialVisitReason? @relation(fields: [reason_id], references: [id])
+  result_id          Int?
+  result             CommercialVisitResult? @relation(fields: [result_id], references: [id])
+  notes              String?
+  outcome_notes      String?
+  reschedule_reason  String?
+  rescheduled_from_id Int?
+  rescheduled_from   CommercialVisit?       @relation("CommercialVisitRescheduling", fields: [rescheduled_from_id], references: [id])
+  rescheduled_visits CommercialVisit[]      @relation("CommercialVisitRescheduling")
+  follow_up_required Boolean                @default(false)
+  follow_up_date     DateTime?
+  created_by         Int?
+  created_at         DateTime               @default(now())
+  updated_at         DateTime               @updatedAt
+  orders             CommercialSalesOrder[]
+  events             CommercialVisitEvent[]
+  quotations         CommercialQuotation[]
+
+  @@index([tenant_id, advisor_id, visit_date])
+  @@index([tenant_id, advisor_id, status, visit_date])
+  @@index([rescheduled_from_id])
+  @@index([tenant_id, customer_id, visit_date])
+  @@index([reason_id])
+  @@index([result_id])
+  @@map("commercial_visits")
+}
+
+model CommercialVisitEvent {
+  id            Int             @id @default(autoincrement())
+  tenant_id     String
+  visit_id      Int
+  visit         CommercialVisit @relation(fields: [visit_id], references: [id])
+  event_type    String
+  event_at      DateTime        @default(now())
+  scheduled_for DateTime?
+  details       Json            @default("{}")
+  created_by    Int?
+
+  @@index([tenant_id, visit_id, event_at])
+  @@map("commercial_visit_events")
+}
+
+model CommercialSettings {
+  id                             Int      @id @default(autoincrement())
+  tenant_id                      String   @unique
+  default_visit_duration_minutes Int      @default(60)
+  default_quote_validity_days    Int      @default(15)
+  created_at                     DateTime @default(now())
+  updated_at                     DateTime @updatedAt
+
+  @@map("commercial_settings")
+}
+
+model CommercialVisitReason {
+  id          Int               @id @default(autoincrement())
+  tenant_id   String
+  code        String
+  name        String
+  description String?
+  active      Boolean           @default(true)
+  created_at  DateTime          @default(now())
+  updated_at  DateTime          @updatedAt
+  visits      CommercialVisit[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, active, name])
+  @@map("commercial_visit_reasons")
+}
+
+model CommercialVisitResult {
+  id                   Int               @id @default(autoincrement())
+  tenant_id            String
+  code                 String
+  name                 String
+  description          String?
+  counts_as_effective  Boolean           @default(false)
+  requires_observation Boolean           @default(true)
+  active               Boolean           @default(true)
+  created_at            DateTime          @default(now())
+  updated_at            DateTime          @updatedAt
+  visits                CommercialVisit[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, active, name])
+  @@map("commercial_visit_results")
+}
+
+model CommercialProduct {
+  id                  Int                        @id @default(autoincrement())
+  tenant_id           String
+  code                String
+  name                String
+  category            String?
+  classification_id   Int?
+  classification      Category?                   @relation(fields: [classification_id], references: [id])
+  subcategory         String?
+  line                String?
+  unit                String                      @default("UND")
+  source_type         String                      @default("LOCAL")
+  inventory_item_id   Int?
+  inventory_item      Item?                       @relation(fields: [inventory_item_id], references: [id])
+  unit_price          Decimal                    @db.Decimal(18, 2)
+  active              Boolean                    @default(true)
+  external_product_id String?
+  created_at          DateTime                   @default(now())
+  updated_at          DateTime                   @updatedAt
+  order_lines         CommercialSalesOrderLine[]
+  quote_lines         CommercialQuotationLine[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, active, name])
+  @@unique([tenant_id, inventory_item_id])
+  @@index([tenant_id, source_type, active])
+  @@map("commercial_products")
+}
+
+model CommercialSalesOrder {
+  id                      Int                        @id @default(autoincrement())
+  tenant_id               String
+  order_number            String
+  customer_id             Int
+  customer                CommercialCustomer         @relation(fields: [customer_id], references: [id])
+  advisor_id              Int
+  advisor                 CommercialAdvisor          @relation(fields: [advisor_id], references: [id])
+  visit_id                Int?
+  visit                   CommercialVisit?           @relation(fields: [visit_id], references: [id])
+  quotation_id            Int?                        @unique
+  quotation               CommercialQuotation?       @relation(fields: [quotation_id], references: [id])
+  order_date              DateTime                   @default(now())
+  status                  String                     @default("DRAFT")
+  subtotal                Decimal                    @db.Decimal(18, 2)
+  discount                Decimal                    @default(0) @db.Decimal(18, 2)
+  total                   Decimal                    @db.Decimal(18, 2)
+  notes                   String?
+  external_sales_order_id String?
+  created_by              Int?
+  created_at              DateTime                   @default(now())
+  updated_at              DateTime                   @updatedAt
+  lines                   CommercialSalesOrderLine[]
+
+  @@unique([tenant_id, order_number])
+  @@index([tenant_id, advisor_id, order_date])
+  @@index([tenant_id, customer_id, status])
+  @@map("commercial_sales_orders")
+}
+
+model CommercialQuotation {
+  id               Int                         @id @default(autoincrement())
+  tenant_id        String
+  quotation_number String
+  customer_id      Int
+  customer         CommercialCustomer          @relation(fields: [customer_id], references: [id])
+  advisor_id       Int
+  advisor          CommercialAdvisor           @relation(fields: [advisor_id], references: [id])
+  visit_id         Int?
+  visit            CommercialVisit?            @relation(fields: [visit_id], references: [id])
+  quotation_date   DateTime                    @default(now())
+  valid_until      DateTime
+  status           String                      @default("OPEN")
+  subtotal         Decimal                     @db.Decimal(18, 2)
+  discount         Decimal                     @default(0) @db.Decimal(18, 2)
+  total            Decimal                     @db.Decimal(18, 2)
+  notes            String?
+  created_by       Int?
+  created_at       DateTime                    @default(now())
+  updated_at       DateTime                    @updatedAt
+  lines            CommercialQuotationLine[]
+  sales_order      CommercialSalesOrder?
+
+  @@unique([tenant_id, quotation_number])
+  @@index([tenant_id, advisor_id, status, valid_until])
+  @@index([tenant_id, customer_id, quotation_date])
+  @@map("commercial_quotations")
+}
+
+model CommercialQuotationLine {
+  id             Int                   @id @default(autoincrement())
+  quotation_id   Int
+  quotation      CommercialQuotation   @relation(fields: [quotation_id], references: [id], onDelete: Cascade)
+  product_id     Int
+  product        CommercialProduct     @relation(fields: [product_id], references: [id])
+  product_code   String
+  product_name   String
+  quantity       Decimal               @db.Decimal(18, 4)
+  unit_price     Decimal               @db.Decimal(18, 2)
+  discount       Decimal               @default(0) @db.Decimal(18, 2)
+  line_total     Decimal               @db.Decimal(18, 2)
+
+  @@index([quotation_id])
+  @@map("commercial_quotation_lines")
+}
+
+model CommercialSalesOrderLine {
+  id             Int                  @id @default(autoincrement())
+  sales_order_id Int
+  sales_order    CommercialSalesOrder @relation(fields: [sales_order_id], references: [id], onDelete: Cascade)
+  product_id     Int
+  product        CommercialProduct    @relation(fields: [product_id], references: [id])
+  product_code   String
+  product_name   String
+  quantity       Decimal              @db.Decimal(18, 4)
+  unit_price     Decimal              @db.Decimal(18, 2)
+  discount       Decimal              @default(0) @db.Decimal(18, 2)
+  line_total     Decimal              @db.Decimal(18, 2)
+
+  @@index([sales_order_id])
+  @@map("commercial_sales_order_lines")
+}

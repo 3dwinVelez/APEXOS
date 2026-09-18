@@ -1,0 +1,18 @@
+{
+  "ok": true,
+  "environment": "QA",
+  "model_company": "NYVORA",
+  "commit": "9747fb6db5eb",
+  "checks": {
+    "deployed_api_commit": "passed",
+    "talent_landing_http": "passed",
+    "business_domain_grouping": "passed",
+    "journey_action_order": "passed",
+    "routes_visible": "passed",
+    "payroll_separated": "passed",
+    "transport_not_mixed": "passed",
+    "authorized_nyvora_session": "passed",
+    "limited_nyvora_session": "passed",
+    "unauthorized_hr_blocked": "passed"
+  }
+}

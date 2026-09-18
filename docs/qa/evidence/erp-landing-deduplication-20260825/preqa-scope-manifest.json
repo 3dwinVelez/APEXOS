@@ -1,0 +1,42 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "erp-landing-deduplication-preqa-20260825",
+  "change_intent": {
+    "summary": "Eliminar accesos visuales repetidos en las portadas ERP sin alterar capacidades activas",
+    "modules": ["inventory-ui", "accounting-ui", "treasury-ui", "sales-ui", "promotion-governance"]
+  },
+  "base_commits": {
+    "develop": "a6c4089dbb0ea1bbfd7196c3fd6188ee35dc95b6",
+    "main": "0abda8c41168642f99da0831e15f940b98232a12"
+  },
+  "certified_commit": "e88b837",
+  "expected_changes": [
+    { "status": "M", "file": "apps/web/app/dashboard/contabilidad/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/inventario/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/tesoreria/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/ventas/page.tsx" },
+    { "status": "M", "file": "apps/web/test/erp-visual-normalization.test.mjs" },
+    { "status": "A", "file": "docs/qa/evidence/erp-landing-deduplication-20260825/REPORTE.md" },
+    { "status": "A", "file": "docs/qa/evidence/erp-landing-deduplication-20260825/certification-contract.json" },
+    { "status": "A", "file": "docs/qa/evidence/erp-landing-deduplication-20260825/local-validation.md" },
+    { "status": "A", "file": "docs/qa/evidence/erp-landing-deduplication-20260825/preqa-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/erp-landing-deduplication-20260825/qa-runbook.md" }
+  ],
+  "allowed_paths": [
+    "apps/web/app/dashboard/contabilidad/page.tsx",
+    "apps/web/app/dashboard/inventario/page.tsx",
+    "apps/web/app/dashboard/tesoreria/page.tsx",
+    "apps/web/app/dashboard/ventas/page.tsx",
+    "apps/web/test/erp-visual-normalization.test.mjs",
+    "docs/qa/evidence/erp-landing-deduplication-20260825/"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    { "name": "active_module_navigation", "status": "passed", "evidence": ["REPORTE.md", "local-validation.md"] },
+    { "name": "inventory_actions", "status": "passed", "evidence": ["REPORTE.md", "local-validation.md"] },
+    { "name": "accounting_actions", "status": "passed", "evidence": ["REPORTE.md", "local-validation.md"] },
+    { "name": "treasury_tabs_and_advance", "status": "passed", "evidence": ["REPORTE.md", "local-validation.md"] },
+    { "name": "sales_actions", "status": "passed", "evidence": ["REPORTE.md", "local-validation.md"] },
+    { "name": "cross_module_scope_isolation", "status": "passed", "evidence": ["REPORTE.md", "local-validation.md"] }
+  ]
+}

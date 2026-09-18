@@ -169,25 +169,27 @@ const referenceBulkImportSchema = {
       rows: {
         type: "array",
         minItems: 1,
+        maxItems: 2000,
         items: {
           type: "object",
+          additionalProperties: false,
           required: ["code", "name"],
           properties: {
-            code: { type: "string" },
-            name: { type: "string" },
-            category: { type: "string" },
-            description: { type: "string" },
-            estimated_minutes: { type: "integer" },
-            brand: { type: "string" },
-            model: { type: "string" },
+            code: { type: "string", minLength: 2, maxLength: 40, pattern: "^[A-Za-z0-9][A-Za-z0-9._-]+$" },
+            name: { type: "string", minLength: 2, maxLength: 160 },
+            category: { type: "string", enum: ["muebles", "colchones", "electrodomesticos", "cocina", "oficina", "decoracion", "iluminacion", "textiles", "otros"] },
+            description: { type: "string", maxLength: 1000 },
+            estimated_minutes: { type: "integer", minimum: 1, maximum: 1440 },
+            brand: { type: "string", maxLength: 120 },
+            model: { type: "string", maxLength: 120 },
             active: { type: "boolean" },
-            part_name: { type: "string" },
-            part_quantity: { type: "number" },
-            part_unit: { type: "string" },
-            part_description: { type: "string" },
-            manual_title: { type: "string" },
-            manual_url: { type: "string" },
-            manual_notes: { type: "string" }
+            part_name: { type: "string", minLength: 2, maxLength: 160 },
+            part_quantity: { type: "number", exclusiveMinimum: 0, maximum: 999999 },
+            part_unit: { type: "string", minLength: 1, maxLength: 20 },
+            part_description: { type: "string", maxLength: 500 },
+            manual_title: { type: "string", maxLength: 160 },
+            manual_url: { type: "string", maxLength: 1000 },
+            manual_notes: { type: "string", maxLength: 500 }
           }
         }
       }

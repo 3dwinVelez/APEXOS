@@ -1,0 +1,31 @@
+{
+  "change_id": "hr-workday-novelties-preqa-20260917",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "d704110",
+  "qa_status": "pending",
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["local-certification.json", "browser-certification.md"] },
+    "error": { "status": "passed", "evidence": ["regression.md", "local-certification.json"] },
+    "support_scripts": { "status": "passed", "evidence": ["local-certification.json"] },
+    "regression": { "status": "passed", "evidence": ["regression.md"] },
+    "platform_regression": { "status": "passed", "evidence": ["local-certification.json", "regression.md"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-workday-novelties-local.js",
+    "evidence": ["local-certification.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-workday-novelties-local.js",
+    "evidence": ["local-certification.json", "regression.md"]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "manue (solicitante)",
+    "approved_at": "2026-09-17T00:00:00-05:00"
+  }
+}

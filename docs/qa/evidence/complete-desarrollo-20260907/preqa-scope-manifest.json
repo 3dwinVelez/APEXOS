@@ -1,0 +1,510 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "complete-desarrollo-preqa-20260907",
+  "change_intent": {
+    "summary": "Promover la integracion completa autorizada de desarrollo a develop, incluyendo UX fase 0, ERP, Transporte TMS, Apex Heart y Gestion Comercial.",
+    "modules": [
+      "phase-zero-ux",
+      "inventory",
+      "purchases",
+      "sales",
+      "transport-tms",
+      "apex-heart",
+      "commercial-management",
+      "api",
+      "database-migrations",
+      "promotion-governance"
+    ]
+  },
+  "base_commits": {
+    "develop": "5c2b43e"
+  },
+  "certified_commit": "a32dfdb",
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/package.json"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260721190000_purchase_tax_retention_reversals/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260721220000_inventory_society_valuation_transit/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260904120000_transport_tms_foundation/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260904160000_transport_tms_planning/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260904180000_transport_tms_live_tracking/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260904190000_transport_tms_configuration/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260904200000_transport_tms_notifications/migration.sql"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/prisma/schema.prisma"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/core/prisma.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/transport/routes.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/tms-evidence-storage.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/tms-schema.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/tms-service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/commercial-route-registration.integration.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-tms-foundation.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/ordenes/nueva/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/proveedores/[id]/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/gestion-comercial/agenda/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gestion-comercial/layout.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/gestion-comercial/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/ajustes/nuevo/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/bodegas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/cargue-inicial/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/clasificaciones/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/familias/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/productos/nuevo/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/productos/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/stock/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/traslados/nuevo/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/configuracion/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/layout.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/maestros/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/monitoreo/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/notificaciones/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/operacion/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/ordenes/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/planeacion/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/pod/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/tarifas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/ventas/ordenes/nueva/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/ventas/ordenes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/globals.css"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/layout.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/login/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/brain/AiExperienceLayer.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/commercial-nav.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/RouteAccessGuard.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/Sidebar.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/system/ToastCenter.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/tms-live-map.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport-nav.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/feedback.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/package.json"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/commercial-calendar-experience.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/login-phase-zero-ux.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-tms-ui.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/design/APEX_OS_UI_UX_ROADMAP_CHECKLIST.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/project/modulos/transporte-tms.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/project/modulos/transporte.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-calendar-ux-20260903/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-management-population-20260903/REPORT.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-management-population-20260903/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-management-population-20260903/platform-regression.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-management-population-20260903/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-management-population-20260903/qa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-management-population-20260903/rerun.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-management-population-20260903/run.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/error.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/functional.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/platform-regression.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/qa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/commercial-runtime-dependency-20260903/support-scripts.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-tms-foundation-20260904/REPORTE.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-tms-foundation-20260904/local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-tms-foundation-20260904/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-tms-foundation-20260904/run-20260904145348.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-tms-foundation-20260904/run-20260904150543.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-tms-foundation-20260904/run-20260904153954.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-tms-foundation-20260904/run-20260904154104.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-tms-foundation-20260904/run-20260908023315.json"
+    },
+    {
+      "status": "M",
+      "file": "package-lock.json"
+    },
+    {
+      "status": "M",
+      "file": "package.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/commercial-management-population-qa.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/transport-tms-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/test/commercial-management-population-qa.test.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/complete-desarrollo-20260907/preqa-scope-manifest.json"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/package.json",
+    "apps/api/prisma/migrations/20260721190000_purchase_tax_retention_reversals/migration.sql",
+    "apps/api/prisma/migrations/20260721220000_inventory_society_valuation_transit/migration.sql",
+    "apps/api/prisma/migrations/20260904120000_transport_tms_foundation/migration.sql",
+    "apps/api/prisma/migrations/20260904160000_transport_tms_planning/migration.sql",
+    "apps/api/prisma/migrations/20260904180000_transport_tms_live_tracking/migration.sql",
+    "apps/api/prisma/migrations/20260904190000_transport_tms_configuration/migration.sql",
+    "apps/api/prisma/migrations/20260904200000_transport_tms_notifications/migration.sql",
+    "apps/api/prisma/schema.prisma",
+    "apps/api/src/core/prisma.js",
+    "apps/api/src/modules/transport/routes.js",
+    "apps/api/src/modules/transport/tms-evidence-storage.js",
+    "apps/api/src/modules/transport/tms-schema.js",
+    "apps/api/src/modules/transport/tms-service.js",
+    "apps/api/test/commercial-route-registration.integration.test.js",
+    "apps/api/test/transport-tms-foundation.test.js",
+    "apps/web/app/dashboard/compras/ordenes/nueva/page.tsx",
+    "apps/web/app/dashboard/compras/proveedores/[id]/page.tsx",
+    "apps/web/app/dashboard/gestion-comercial/agenda/page.tsx",
+    "apps/web/app/dashboard/gestion-comercial/layout.tsx",
+    "apps/web/app/dashboard/gestion-comercial/page.tsx",
+    "apps/web/app/dashboard/inventario/ajustes/nuevo/page.tsx",
+    "apps/web/app/dashboard/inventario/bodegas/page.tsx",
+    "apps/web/app/dashboard/inventario/cargue-inicial/page.tsx",
+    "apps/web/app/dashboard/inventario/clasificaciones/page.tsx",
+    "apps/web/app/dashboard/inventario/familias/page.tsx",
+    "apps/web/app/dashboard/inventario/productos/nuevo/page.tsx",
+    "apps/web/app/dashboard/inventario/productos/page.tsx",
+    "apps/web/app/dashboard/inventario/stock/page.tsx",
+    "apps/web/app/dashboard/inventario/traslados/nuevo/page.tsx",
+    "apps/web/app/dashboard/transporte/configuracion/page.tsx",
+    "apps/web/app/dashboard/transporte/layout.tsx",
+    "apps/web/app/dashboard/transporte/maestros/page.tsx",
+    "apps/web/app/dashboard/transporte/monitoreo/page.tsx",
+    "apps/web/app/dashboard/transporte/notificaciones/page.tsx",
+    "apps/web/app/dashboard/transporte/operacion/page.tsx",
+    "apps/web/app/dashboard/transporte/ordenes/page.tsx",
+    "apps/web/app/dashboard/transporte/planeacion/page.tsx",
+    "apps/web/app/dashboard/transporte/pod/page.tsx",
+    "apps/web/app/dashboard/transporte/tarifas/page.tsx",
+    "apps/web/app/dashboard/ventas/ordenes/nueva/page.tsx",
+    "apps/web/app/dashboard/ventas/ordenes/page.tsx",
+    "apps/web/app/globals.css",
+    "apps/web/app/layout.tsx",
+    "apps/web/app/login/page.tsx",
+    "apps/web/components/brain/AiExperienceLayer.tsx",
+    "apps/web/components/commercial-nav.tsx",
+    "apps/web/components/shell/RouteAccessGuard.tsx",
+    "apps/web/components/shell/Sidebar.tsx",
+    "apps/web/components/system/ToastCenter.tsx",
+    "apps/web/components/tms-live-map.tsx",
+    "apps/web/components/transport-nav.tsx",
+    "apps/web/components/ui/feedback.tsx",
+    "apps/web/package.json",
+    "apps/web/test/commercial-calendar-experience.test.mjs",
+    "apps/web/test/login-phase-zero-ux.test.mjs",
+    "apps/web/test/transport-tms-ui.test.mjs",
+    "docs/design/APEX_OS_UI_UX_ROADMAP_CHECKLIST.md",
+    "docs/project/modulos/transporte-tms.md",
+    "docs/project/modulos/transporte.md",
+    "docs/qa/evidence/commercial-calendar-ux-20260903/local-validation.md",
+    "docs/qa/evidence/commercial-management-population-20260903/REPORT.md",
+    "docs/qa/evidence/commercial-management-population-20260903/local-validation.md",
+    "docs/qa/evidence/commercial-management-population-20260903/platform-regression.json",
+    "docs/qa/evidence/commercial-management-population-20260903/preqa-scope-manifest.json",
+    "docs/qa/evidence/commercial-management-population-20260903/qa-approval-evidence.json",
+    "docs/qa/evidence/commercial-management-population-20260903/rerun.json",
+    "docs/qa/evidence/commercial-management-population-20260903/run.json",
+    "docs/qa/evidence/commercial-runtime-dependency-20260903/certification.json",
+    "docs/qa/evidence/commercial-runtime-dependency-20260903/error.md",
+    "docs/qa/evidence/commercial-runtime-dependency-20260903/functional.md",
+    "docs/qa/evidence/commercial-runtime-dependency-20260903/platform-regression.json",
+    "docs/qa/evidence/commercial-runtime-dependency-20260903/preqa-scope-manifest.json",
+    "docs/qa/evidence/commercial-runtime-dependency-20260903/qa-approval-evidence.json",
+    "docs/qa/evidence/commercial-runtime-dependency-20260903/support-scripts.md",
+    "docs/qa/evidence/transport-tms-foundation-20260904/REPORTE.md",
+    "docs/qa/evidence/transport-tms-foundation-20260904/local-certification.json",
+    "docs/qa/evidence/transport-tms-foundation-20260904/local-validation.md",
+    "docs/qa/evidence/transport-tms-foundation-20260904/run-20260904145348.json",
+    "docs/qa/evidence/transport-tms-foundation-20260904/run-20260904150543.json",
+    "docs/qa/evidence/transport-tms-foundation-20260904/run-20260904153954.json",
+    "docs/qa/evidence/transport-tms-foundation-20260904/run-20260904154104.json",
+    "docs/qa/evidence/transport-tms-foundation-20260904/run-20260908023315.json",
+    "package-lock.json",
+    "package.json",
+    "scripts/certifications/commercial-management-population-qa.js",
+    "scripts/certifications/transport-tms-local.js",
+    "scripts/test/commercial-management-population-qa.test.js",
+    "docs/qa/evidence/complete-desarrollo-20260907/preqa-scope-manifest.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "phase_zero_ux",
+      "status": "passed",
+      "evidence": [
+        "../transport-tms-foundation-20260904/run-20260908023315.json"
+      ]
+    },
+    {
+      "name": "transport_tms_end_to_end",
+      "status": "passed",
+      "evidence": [
+        "../transport-tms-foundation-20260904/run-20260908023315.json"
+      ]
+    },
+    {
+      "name": "apex_heart",
+      "status": "passed",
+      "evidence": [
+        "../apex-heart-rich-20260907/local-certification.json"
+      ]
+    },
+    {
+      "name": "apex_heart_platform_regression",
+      "status": "passed",
+      "evidence": [
+        "../apex-heart-rich-20260907/platform-regression.json"
+      ]
+    },
+    {
+      "name": "commercial_management",
+      "status": "passed",
+      "evidence": [
+        "../commercial-management-population-20260903/rerun.json"
+      ]
+    }
+  ]
+}

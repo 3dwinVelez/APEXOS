@@ -1,0 +1,65 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "remove-global-ai-pulse-to-develop-20260909",
+  "change_intent": {
+    "summary": "Retirar la franja global de señal inteligente prioritaria de todos los módulos del dashboard.",
+    "modules": [
+      "dashboard-shell",
+      "apex-ai-ui",
+      "promotion-governance"
+    ]
+  },
+  "base_commits": {
+    "develop": "03da3d48f3748d9637b7f3047e1e232bfac92740"
+  },
+  "certified_commit": "0810f16",
+  "certification_status": "local_passed_qa_pending",
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/DashboardChrome.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/phase-two-intelligent-experience.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/remove-global-ai-pulse-20260909/local-validation.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/remove-global-ai-pulse-20260909/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/remove-global-ai-pulse-20260909/scope-manifest.json"
+    }
+  ],
+  "allowed_paths": [
+    "apps/web/components/shell/DashboardChrome.tsx",
+    "apps/web/test/phase-two-intelligent-experience.test.mjs",
+    "docs/qa/evidence/remove-global-ai-pulse-20260909/local-validation.md",
+    "docs/qa/evidence/remove-global-ai-pulse-20260909/preqa-approval-evidence.json",
+    "docs/qa/evidence/remove-global-ai-pulse-20260909/scope-manifest.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "dashboard_modules_without_global_ai_pulse",
+      "status": "passed",
+      "evidence": [
+        "local-validation.md",
+        "../../../../apps/web/test/phase-two-intelligent-experience.test.mjs"
+      ]
+    },
+    {
+      "name": "phase_two_global_dashboard_capabilities",
+      "status": "passed",
+      "evidence": [
+        "local-validation.md",
+        "../../../../apps/web/test/phase-two-intelligent-experience.test.mjs"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "certification": "inventory-product-visual-followup-qa",
+  "environment": "QA",
+  "status": "ready_not_executed",
+  "reason": "La candidata debe desplegarse en develop para recorrer el commit exacto con sesión autenticada.",
+  "script": "../../../../apps/web/test/erp-visual-normalization.test.mjs",
+  "required_checks": [
+    "deployed_commit",
+    "compact_product_form",
+    "active_product_fields",
+    "create_reload_persistence",
+    "directory_edit_reload",
+    "traceability_tab",
+    "authorized_navigation",
+    "unauthorized_visibility"
+  ],
+  "functional_approval": "pending_requester"
+}

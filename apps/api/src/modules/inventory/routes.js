@@ -11,6 +11,10 @@ async function inventoryRoutes(fastify) {
     preHandler: requirePermission("inventory", "read")
   }, async (request) => service.listItems(request.user?.tenant_id, request.query));
 
+  fastify.get("/inventory/classifications", { preHandler: requirePermission("inventory", "read") }, async (request) => service.listClassificationMasters(request.user?.tenant_id));
+  fastify.post("/inventory/classifications", { schema: schemas.classificationMasterSchema, preHandler: requirePermission("inventory", "write") }, async (request, reply) => reply.code(201).send(await service.saveClassificationMaster(request.user?.tenant_id, request.body)));
+  fastify.put("/inventory/classifications/:id", { schema: schemas.classificationMasterSchema, preHandler: requirePermission("inventory", "write") }, async (request) => service.saveClassificationMaster(request.user?.tenant_id, request.body, Number(request.params.id)));
+
   fastify.get("/inventory/families", {
     preHandler: requirePermission("inventory", "read")
   }, async (request) => service.listFamilies(request.user?.tenant_id, request.query));
@@ -22,6 +26,24 @@ async function inventoryRoutes(fastify) {
   fastify.get("/inventory/locations", {
     preHandler: requirePermission("inventory", "read")
   }, async (request) => service.listWarehouseLocations(request.user?.tenant_id));
+
+  fastify.post("/inventory/initial-load/validate", {
+    preHandler: requirePermission("inventory", "write")
+  }, async (request, reply) => {
+    const file = await request.file();
+    if (!file) return reply.code(400).send({ code: "INITIAL_LOAD_FILE_REQUIRED", message: "Seleccione la plantilla .xlsx" });
+    if (!String(file.filename || "").toLowerCase().endsWith(".xlsx")) throw Object.assign(new Error("Solo se admite la plantilla .xlsx"), { statusCode: 415, code: "INVALID_INITIAL_LOAD_FORMAT" });
+    return service.validateInitialInventoryWorkbook(request.user?.tenant_id, await file.toBuffer());
+  });
+
+  fastify.post("/inventory/initial-load", {
+    preHandler: requirePermission("inventory", "approve")
+  }, async (request, reply) => {
+    const file = await request.file();
+    if (!file) return reply.code(400).send({ code: "INITIAL_LOAD_FILE_REQUIRED", message: "Seleccione la plantilla .xlsx" });
+    if (!String(file.filename || "").toLowerCase().endsWith(".xlsx")) return reply.code(415).send({ code: "INVALID_INITIAL_LOAD_FORMAT", message: "Solo se admite la plantilla .xlsx" });
+    return reply.code(201).send(await service.postInitialInventoryWorkbook(request.user?.tenant_id, request.user.id, await file.toBuffer()));
+  });
 
   fastify.post("/inventory/families", {
     schema: schemas.familySchema,
@@ -68,10 +90,19 @@ async function inventoryRoutes(fastify) {
     preHandler: requirePermission("inventory", "write")
   }, async (request) => service.updateItem(request.user?.tenant_id, Number(request.params.id), request.body));
 
+  fastify.post("/inventory/sales-prices", {
+    schema: schemas.salesPriceBulkSchema,
+    preHandler: requirePermission("sales", "write")
+  }, async (request) => service.updateSalesPrices(request.user?.tenant_id, request.user.id, request.body.prices));
+
   fastify.post("/inventory/adjust", {
     schema: schemas.adjustStockSchema,
     preHandler: requirePermission("inventory", "approve")
   }, async (request) => service.adjustStock(request.user?.tenant_id, request.user.id, request.body));
+
+  fastify.get("/inventory/adjustments", { preHandler: requirePermission("inventory", "read") }, async (request) => service.listInventoryAdjustments(request.user?.tenant_id, request.query));
+  fastify.get("/inventory/adjustments/:id", { preHandler: requirePermission("inventory", "read") }, async (request) => service.getInventoryAdjustment(request.user?.tenant_id, request.params.id));
+  fastify.post("/inventory/adjustments", { schema: schemas.inventoryAdjustmentSchema, preHandler: requirePermission("inventory", "approve") }, async (request, reply) => reply.code(201).send(await service.createInventoryAdjustment(request.user?.tenant_id, request.user.id, request.body)));
 
   fastify.get("/inventory/costs", {
     preHandler: requirePermission("inventory", "read")
@@ -84,6 +115,27 @@ async function inventoryRoutes(fastify) {
   fastify.post("/inventory/slotting/run", {
     preHandler: requirePermission("inventory", "approve")
   }, async (request) => service.runSlotting(request.user?.tenant_id, request.body.place_id || null));
+
+  fastify.get("/inventory/transfers", {
+    preHandler: requirePermission("inventory", "read")
+  }, async (request) => service.listWarehouseTransfers(request.user?.tenant_id, request.query));
+
+  fastify.get("/inventory/transfers/:id", {
+    preHandler: requirePermission("inventory", "read")
+  }, async (request) => service.getWarehouseTransfer(request.user?.tenant_id, Number(request.params.id)));
+
+  fastify.post("/inventory/transfers", {
+    schema: schemas.warehouseTransferSchema,
+    preHandler: requirePermission("inventory", "write")
+  }, async (request, reply) => reply.code(201).send(await service.createWarehouseTransfer(request.user?.tenant_id, request.user.id, request.body)));
+
+  fastify.post("/inventory/transfers/:id/dispatch", {
+    preHandler: requirePermission("inventory", "approve")
+  }, async (request) => service.dispatchWarehouseTransfer(request.user?.tenant_id, request.user.id, Number(request.params.id)));
+
+  fastify.post("/inventory/transfers/:id/receive", {
+    preHandler: requirePermission("inventory", "approve")
+  }, async (request) => service.receiveWarehouseTransfer(request.user?.tenant_id, request.user.id, Number(request.params.id)));
 }
 
 module.exports = inventoryRoutes;

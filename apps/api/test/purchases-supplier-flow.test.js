@@ -95,3 +95,47 @@ test("supplier partial update does not require name", async () => {
     loaded.restore();
   }
 });
+
+test("supplier creation promotes an existing customer without overwriting canonical identity", async () => {
+  let updateData;
+  const existingCustomer = {
+    id: 43,
+    type: "customer",
+    name: "Identidad Canonica",
+    tax_id: "900123",
+    credit_limit: 5000,
+    credit_days: 15,
+    balance: 100,
+    metadata: { role_flags: { customer: true } },
+    active: true
+  };
+  const fakePrisma = {
+    runWithTenant: (_tenantId, callback) => callback(),
+    party: {
+      findFirst: async () => existingCustomer,
+      update: async ({ data }) => {
+        updateData = data;
+        return { ...existingCustomer, ...data };
+      }
+    }
+  };
+  const loaded = loadPurchasesService(fakePrisma);
+
+  try {
+    const supplier = await loaded.service.createSupplier("tenant-1", 7, {
+      name: "Nombre digitado desde compras",
+      tax_id: existingCustomer.tax_id,
+      credit_limit: 8000,
+      credit_days: 45
+    });
+    assert.equal(updateData.name, undefined);
+    assert.equal(updateData.credit_limit, undefined);
+    assert.equal(updateData.metadata.role_flags.customer, true);
+    assert.equal(updateData.metadata.role_flags.supplier, true);
+    assert.equal(supplier.name, existingCustomer.name);
+    assert.equal(supplier.credit_limit, 8000);
+    assert.equal(supplier.credit_days, 45);
+  } finally {
+    loaded.restore();
+  }
+});

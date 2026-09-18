@@ -3,6 +3,9 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { PlatformAlerts } from "@/components/system/PlatformAlerts";
 import { SessionLifecycle } from "@/components/system/SessionLifecycle";
+import { ToastCenter } from "@/components/system/ToastCenter";
+import { I18nProvider } from "@/lib/i18n";
+import { NavigationAccessibility } from "@/components/shell/NavigationAccessibility";
 
 export const metadata: Metadata = {
   title: "APEX OS",
@@ -16,9 +19,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Script src="/scripts/theme-init.js" strategy="beforeInteractive" />
       </head>
       <body>
-        <SessionLifecycle />
-        <PlatformAlerts />
-        {children}
+        <I18nProvider>
+          <NavigationAccessibility />
+          <SessionLifecycle />
+          <PlatformAlerts />
+          <ToastCenter />
+          {children}
+        </I18nProvider>
       </body>
     </html>
   );

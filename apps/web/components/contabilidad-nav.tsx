@@ -8,7 +8,11 @@ const ITEMS = [
   { href: "/dashboard/contabilidad/plan-cuentas", label: "Plan de cuentas" },
   { href: "/dashboard/contabilidad/asientos", label: "Asientos" },
   { href: "/dashboard/contabilidad/cuentas-por-pagar", label: "Cuentas por pagar" },
+  { href: "/dashboard/cxc/documentos", label: "Cuentas por cobrar" },
+  { href: "/dashboard/tesoreria", label: "Tesorería" },
   { href: "/dashboard/contabilidad/terceros", label: "Terceros" },
+  { href: "/dashboard/contabilidad/iva", label: "IVA" },
+  { href: "/dashboard/contabilidad/retenciones", label: "Retenciones" },
   { href: "/dashboard/contabilidad/estructura", label: "Estructura" },
   { href: "/dashboard/contabilidad/reportes", label: "Reportes" }
 ];
@@ -16,7 +20,7 @@ const ITEMS = [
 export function ContabilidadNav() {
   const pathname = usePathname();
   return (
-    <nav className="mb-4 flex flex-wrap gap-2">
+    <nav aria-label="Navegación de contabilidad" className="mb-4 flex flex-wrap gap-2">
       {ITEMS.map((item) => {
         const active = pathname === item.href;
         return (

@@ -1,0 +1,32 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-landing-recovery-qa-evidence-20260824",
+  "change_intent": {
+    "summary": "Adjuntar exclusivamente la certificación QA del ordenamiento recuperado de Talento Humano",
+    "modules": ["talent-human-qa-evidence"]
+  },
+  "base_commits": {
+    "develop": "9747fb6db5ebfe15b4c2983395192c030a84bf84",
+    "main": "0abda8c41168642f99da0831e15f940b98232a12"
+  },
+  "certified_commit": "c0c1cea929a21fc588c3ada94453be373daf5739",
+  "expected_changes": [
+    { "status": "A", "file": "docs/qa/evidence/hr-landing-recovery-20260824/browser-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-landing-recovery-20260824/error.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-landing-recovery-20260824/functional.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-landing-recovery-20260824/hr-landing-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-landing-recovery-20260824/manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-landing-recovery-20260824/platform-regression.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-landing-recovery-20260824/qa-evidence-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-landing-recovery-20260824/regression.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-landing-recovery-20260824/support-scripts.md" }
+  ],
+  "allowed_paths": ["docs/qa/evidence/hr-landing-recovery-20260824/"],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    { "name": "hr_landing_information_architecture", "status": "passed", "evidence": ["functional.md", "browser-certification.json"] },
+    { "name": "hr_journey_navigation", "status": "passed", "evidence": ["hr-landing-certification.json", "browser-certification.json"] },
+    { "name": "hr_permissions", "status": "passed", "evidence": ["error.md", "browser-certification.json"] },
+    { "name": "platform_regression", "status": "passed", "evidence": ["platform-regression.json", "regression.md"] }
+  ]
+}

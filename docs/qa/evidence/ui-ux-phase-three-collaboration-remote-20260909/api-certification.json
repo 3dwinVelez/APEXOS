@@ -1,0 +1,24 @@
+{
+  "certification": "collaboration-two-users-local",
+  "environment": "LOCAL",
+  "generatedAt": "2026-09-09T17:21:35.776Z",
+  "status": "passed",
+  "checks": [
+    {
+      "name": "tenant_available",
+      "passed": true
+    },
+    {
+      "name": "two_authenticated_users",
+      "passed": true
+    },
+    {
+      "name": "remote_edit_propagated",
+      "passed": true
+    },
+    {
+      "name": "payload_sanitized",
+      "passed": true
+    }
+  ]
+}
