@@ -1,0 +1,20 @@
+{
+  "change_id": "hr-monitor-silent-failures-20260918",
+  "environment": "LOCAL",
+  "generated_at": "2026-09-18T00:00:00-05:00",
+  "suite": "apps/api/test/hr-monitor-silent-failures.test.js",
+  "runner": "node --test (Node.js v22.23.1)",
+  "tests": 7,
+  "pass": 7,
+  "fail": 0,
+  "cases": [
+    "listRoutes reconoce punch_only aunque las notas tengan escape \\n literal",
+    "listRoutes sigue reconociendo punch_only con saltos de linea reales",
+    "listRoutes reporta gps para horarios sin marcador punch_only",
+    "createOwnPunch con horario de ayer expone la ruta activa de hoy en el detalle 409",
+    "createOwnPunch con horario de hoy que no es el activo expone la ruta activa en el detalle 409",
+    "createClientPlatformLog trunca el mensaje a 1000 caracteres",
+    "createClientPlatformLog rechaza mensajes vacios"
+  ],
+  "status": "passed"
+}
