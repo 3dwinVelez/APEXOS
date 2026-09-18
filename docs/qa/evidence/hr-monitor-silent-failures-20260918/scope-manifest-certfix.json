@@ -1,0 +1,40 @@
+{
+  "change_id": "hr-monitor-silent-failures-certfix-20260918",
+  "base_commits": {
+    "develop": "aa4b95b18ae9568e2c492e4c31432314ff217e11",
+    "main": "78564f649b17632cb1a0d770077328e6e942406c"
+  },
+  "certified_commit": "8191fc30723fa9548b46f27a12890d54c69008b0",
+  "scope_schema_version": 2,
+  "change_intent": {
+    "summary": "Correccion puntual del script de certificacion QA de la intervencion hr-monitor-silent-failures-20260918: llamaba /admin/platform-logs sin el prefijo /api/v1 con el que se registran las rutas del modulo admin, por lo que los controles de telemetria de cliente obtenian 404 contra el ambiente QA remoto. Con el prefijo corregido la certificacion end-to-end puede ejecutarse completa en develop.",
+    "modules": ["qa"]
+  },
+  "expected_changes": [
+    { "status": "M", "file": "scripts/certifications/hr-monitor-silent-failures-qa.js" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-silent-failures-20260918/scope-manifest-certfix.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-silent-failures-20260918/preqa-approval-evidence-certfix.json" }
+  ],
+  "allowed_paths": [
+    "scripts/certifications/hr-monitor-silent-failures-qa.js",
+    "docs/qa/evidence/hr-monitor-silent-failures-20260918/"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "hr-monitoring-and-route-tracking",
+      "status": "passed",
+      "evidence": [
+        "unit-tests.json",
+        "validation-checks.json"
+      ]
+    },
+    {
+      "name": "client-telemetry-authorization-and-redaction",
+      "status": "passed",
+      "evidence": [
+        "security-review.md"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "change_id": "hr-monitor-silent-failures-certfix-20260918",
+  "commit": "8191fc30723fa9548b46f27a12890d54c69008b0",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "validation-checks.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "validation-checks.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "validation-checks.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-monitor-silent-failures-qa.js",
+    "evidence": [
+      "validation-checks.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-monitor-silent-failures-qa.js",
+    "evidence": [
+      "unit-tests.json",
+      "security-review.md"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "APEXOS release owner (Edwin)",
+    "approved_at": "2026-09-18T21:00:00-05:00"
+  }
+}
