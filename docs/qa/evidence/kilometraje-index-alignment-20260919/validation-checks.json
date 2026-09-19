@@ -1,0 +1,100 @@
+{
+  "change_id": "kilometraje-index-alignment-20260919",
+  "generated_at": "2026-09-19T18:40:00-05:00",
+  "environment": "LOCAL",
+  "branch": "desarrollo",
+  "commit": "e07e6552e17f3f140cd0950ccc49a9dcb2b0ce68",
+  "checks": [
+    {
+      "id": "VC-01",
+      "name": "qa_index_shape_drift_confirmed",
+      "status": "passed",
+      "detail": "pg_indexes en QA devuelve th_jornada_kilometrajes_one_active en forma de columnas planas (tenant_id, route_id, employee_id, active) aunque _prisma_migrations registra 20260917120000_hr_workday_novelties_foundation como aplicada (finished_at 2026-09-17T02:22:03.677Z, rolled_back_at null). Local y produccion si tienen la forma canonica con COALESCE.",
+      "evidence": ["index-shape-verification.json"]
+    },
+    {
+      "id": "VC-02",
+      "name": "migration_is_idempotent_and_environment_aware",
+      "status": "passed",
+      "detail": "El bloque DO lee indexdef y solo ejecuta DDL cuando la definicion vigente no contiene COALESCE. Probado en local en ambas ramas: con indice canonico no cambia nada; con indice forzado a la forma plana lo restaura a la canonica.",
+      "evidence": ["index-shape-verification.json"]
+    },
+    {
+      "id": "VC-03",
+      "name": "qa_recreation_is_safe",
+      "status": "passed",
+      "detail": "Pre-chequeo de solo lectura en QA: cero duplicados bajo la clave canonica (tenant_id, COALESCE(route_id,-1), COALESCE(employee_id,-1)) y 5 renglones activos sin nulos en route_id ni employee_id. Recrear el indice no puede fallar por colision ni perder cobertura.",
+      "evidence": ["index-shape-verification.json"]
+    },
+    {
+      "id": "VC-04",
+      "name": "no_prisma_model_can_reintroduce_drift",
+      "status": "passed",
+      "detail": "th_jornada_kilometrajes no existe en apps/api/prisma/schema.prisma; la tabla se gestiona solo por migraciones SQL. prisma validate pasa y ningun db push puede volver a crear el indice con otra forma.",
+      "evidence": ["index-shape-verification.json"]
+    },
+    {
+      "id": "VC-05",
+      "name": "migration_safety_guard_passes",
+      "status": "passed",
+      "detail": "node scripts/validate-database-migration-safety.js -> 'database migration safety: PASS'. El guard solo inspecciona las cuatro migraciones ya existentes, asi que la nueva carpeta no lo rompe ni lo debilita.",
+      "evidence": ["index-shape-verification.json"]
+    },
+    {
+      "id": "VC-06",
+      "name": "marking_flow_certified_with_canonical_index",
+      "status": "passed",
+      "detail": "Simulacro de Medellin re-ejecutado en local sobre la base con el indice canonico: 18/18 controles, 10 marcadores concurrentes, 40 marcaciones, 0 errores de servidor, 0 codigos PostgreSQL silenciosos, 4 salidas vehiculares con kilometraje en 200 y las 4 marcaciones trazadas por persona con coordenadas distintas en las 5 rutas.",
+      "evidence": ["local-simulation-certification.json", "local-fixture.json"]
+    },
+    {
+      "id": "VC-07",
+      "name": "no_runtime_code_change",
+      "status": "passed",
+      "detail": "El alcance no toca codigo de runtime: agrega una migracion SQL, ajusta la URL del mapa operativo en el script de certificacion y corrige la documentacion de credenciales. La correccion portable del servicio HR (3e05795) ya esta en produccion y sigue siendo independiente de la forma del indice.",
+      "evidence": ["index-shape-verification.json", "unit-tests.txt"]
+    },
+    {
+      "id": "VC-08",
+      "name": "hr_regression_battery_green",
+      "status": "passed",
+      "detail": "61/61 en la bateria HR + nyvora-hr-monitor-dynamic-certificate + runtime-schema-health, incluidos los 4 casos de hr-marking-kilometraje-conflict que fijan la escritura portable de kilometraje.",
+      "evidence": ["unit-tests.txt"]
+    },
+    {
+      "id": "VC-09",
+      "name": "platform_regression_no_new_failures",
+      "status": "passed",
+      "detail": "Suite completa apps/api: 337 tests, 331 pass, 4 fail, 2 skipped. Tres fallas (inventario, offline-bootstrap, control numerico IVA) son preexistentes y ajenas a HR. La cuarta (sobrecosto de decision local, security-authorization-revocation) es sensible a tiempos bajo carga paralela y pasa 4/4 en aislamiento.",
+      "evidence": ["unit-tests.txt"]
+    },
+    {
+      "id": "VC-10",
+      "name": "certification_script_no_longer_polluted_by_history",
+      "status": "passed",
+      "detail": "operations-map aplica punch_limit/ping_limit de 300 en ventana en vivo y trunca en silencio las marcaciones mas antiguas del tenant. Como el simulacro reusa el tenant SCJ, las corridas acumuladas del mismo dia (320 marcaciones hoy en local) hacian fallar every_marker_traces_four_marks por datos ajenos a la corrida. El script ahora pide limites explicitos (punch_limit=2000, ping_limit=2000, activity_limit=1000).",
+      "evidence": ["local-simulation-certification.json", "unit-tests.txt"]
+    },
+    {
+      "id": "VC-11",
+      "name": "stale_qa_credentials_documented",
+      "status": "passed",
+      "detail": "GUIA_PROYECTO.md ya no publica las claves QA de admin@apexos.qa y scj@apexos.qa (rotadas: no validan contra el hash almacenado y el 401 se confunde con lockout del authGuard). Se documenta el estado, se remite al responsable del proyecto y se aclara que los scripts de certificacion crean y desactivan su propio admin.",
+      "evidence": ["index-shape-verification.json"]
+    },
+    {
+      "id": "VC-12",
+      "name": "qa_index_alignment_pending_remote_execution",
+      "status": "pending",
+      "detail": "La migracion debe aplicarse en QA despues del push a develop y verificarse por indexdef. Produccion ya es canonico: la migracion seria un no-op y su aplicacion queda sujeta a autorizacion independiente solo para alinear el historial de _prisma_migrations.",
+      "evidence": ["index-shape-verification.json"]
+    },
+    {
+      "id": "VC-13",
+      "name": "live_map_truncation_above_300_punches_is_a_open_finding",
+      "status": "pending",
+      "detail": "Hallazgo de capacidad, no bloqueador de este alcance: con el default de ventana en vivo (punch_limit 300) un tenant que supere 300 marcaciones en el dia pierde en silencio las mas antiguas en el mapa operativo, sin ninguna senal en la respuesta. El limite es configurable por query y el presupuesto responde al estandar de rendimiento, pero la ausencia de un indicador de truncamiento visible es una novedad propia que requiere un ciclo dedicado (backend + frontend + certificacion).",
+      "evidence": ["local-simulation-certification.json", "index-shape-verification.json"]
+    }
+  ]
+}

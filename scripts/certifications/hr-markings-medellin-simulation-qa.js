@@ -331,7 +331,9 @@ async function main() {
 
     // Verificacion del mapa: cada ruta (2 personas) debe trazar, por persona, 4 marcaciones
     // con coordenadas distintas (no un solo punto). marks_by_user se indexa por nombre visible.
-    const operations = await expectStatus(`/api/v1/hr/operations-map?date=${TODAY}&minutes=30&footprint_days=1`, { token: adminToken, actor: "admin", step: "operations-map" }, 200);
+    // Limites explicitos al maximo: el default de ventana en vivo (300) truncaria las marcaciones
+    // mas antiguas del tenant cuando hay corridas previas acumuladas el mismo dia.
+    const operations = await expectStatus(`/api/v1/hr/operations-map?date=${TODAY}&minutes=30&footprint_days=1&ping_limit=2000&punch_limit=2000&activity_limit=1000`, { token: adminToken, actor: "admin", step: "operations-map" }, 200);
     const mapTraces = [];
     for (const schedule of SCHEDULES) {
       const route = createdRoutes.find((item) => item.vehicle_plate === schedule.vehiclePlate && (item.notes || "").includes(schedule.municipality));

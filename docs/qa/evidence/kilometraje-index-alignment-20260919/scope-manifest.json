@@ -1,0 +1,114 @@
+{
+  "change_id": "kilometraje-index-alignment-20260919",
+  "base_commits": {
+    "develop": "715d69abcbc68c0dc2a6f56f3c64923b3ec19d62",
+    "main": "fd8c9f363ce495a9a1dc6957942aafd624a02e39"
+  },
+  "certified_commit": "e07e6552e17f3f140cd0950ccc49a9dcb2b0ce68",
+  "scope_schema_version": 2,
+  "change_intent": {
+    "summary": "Cierre del caso de marcaciones: se elimina la deriva de forma del indice unico parcial th_jornada_kilometrajes_one_active. QA lo tenia en columnas planas pese a registrar como aplicada la migracion canonica 20260917120000, que es lo que hacia no portable cualquier resolucion de conflicto sobre la clave y provoco los 42P10 al marcar salida vehicular con kilometraje. Se agrega la migracion 20260919130000_align_kilometraje_unique_index_shape, un bloque DO idempotente y consciente del ambiente que solo recrea el indice cuando la definicion vigente no usa COALESCE (no-op en local y en produccion, correctivo en QA). Alcance: una migracion SQL, el ajuste de limites explicitos del mapa operativo en el script de certificacion de marcaciones y la correccion de las credenciales QA rotadas en GUIA_PROYECTO.md, mas la evidencia versionada. Sin cambios de codigo de runtime, sin cambios de esquema Prisma, sin cambios de frontend.",
+    "modules": ["talento-humano", "hr", "marcaciones", "base-de-datos", "qa-certification", "documentacion"]
+  },
+  "release_mechanics": "Merge normal de desarrollo -> develop con develop como primer padre. Las 23 entradas D del inventario son fantasma: corresponden a artefactos de evidencia QA que solo existen en develop (docs/qa/evidence/hr-markings-medellin-20260919/qa-* y docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-*), generados durante las promociones anteriores y nunca presentes en desarrollo. El diff de dos puntos que evalua la puerta los reporta como eliminaciones, pero el merge union los preserva intactos en el arbol de develop. No existe ninguna eliminacion real de codigo ni de evidencia en este alcance. La migracion es aditiva e idempotente; en QA se aplica con prisma migrate deploy despues del push y se verifica por indexdef.",
+  "expected_changes": [
+    { "status": "M", "file": "GUIA_PROYECTO.md" },
+    { "status": "A", "file": "apps/api/prisma/migrations/20260919130000_align_kilometraje_unique_index_shape/migration.sql" },
+    { "status": "M", "file": "scripts/certifications/hr-markings-medellin-simulation-qa.js" },
+    { "status": "A", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/index-shape-verification.json" },
+    { "status": "A", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/local-fixture.json" },
+    { "status": "A", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/local-simulation-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/preqa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/unit-tests.txt" },
+    { "status": "A", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/validation-checks.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-markings-medellin-20260919/browser-qa-evidence.md" },
+    { "status": "D", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-06-marcacion-bello-a-jornada-cerrada.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-07-marcacion-bello-a-historial-4-marcas.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-08-mapa-qa-ruta-282-bello-polilneas.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-09-mapa-qa-ruta-284-envigado-polilneas.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-10-monitor-qa-horario-282-cerrado.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-approval-evidence.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-certification-failed-prefix-f04add4.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-certification.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-fixture.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-nyvora-hr-monitor.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-markings-medellin-20260919/scope-manifest-release.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/browser-qa-evidence.md" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-01-mallas-lista-kpi.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-02-monitor-drawer-viewport.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-03-lightbox-evidencia-ampliada.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-04-mapa-ruta-entre-marcaciones.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-05-monitor-historico-scrolltop.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-approval-evidence.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-certification.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-fixture.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-nyvora-hr-monitor.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/scope-manifest-release.json" }
+  ],
+  "allowed_paths": [
+    "GUIA_PROYECTO.md",
+    "apps/api/prisma/migrations/20260919130000_align_kilometraje_unique_index_shape/migration.sql",
+    "scripts/certifications/hr-markings-medellin-simulation-qa.js",
+    "docs/qa/evidence/kilometraje-index-alignment-20260919/",
+    "docs/qa/evidence/hr-markings-medellin-20260919/",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/"
+  ],
+  "allowed_deletions": [
+    "docs/qa/evidence/hr-markings-medellin-20260919/browser-qa-evidence.md",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-06-marcacion-bello-a-jornada-cerrada.png",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-07-marcacion-bello-a-historial-4-marcas.png",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-08-mapa-qa-ruta-282-bello-polilneas.png",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-09-mapa-qa-ruta-284-envigado-polilneas.png",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-10-monitor-qa-horario-282-cerrado.png",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-approval-evidence.json",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-certification-failed-prefix-f04add4.json",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-certification.json",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-fixture.json",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-nyvora-hr-monitor.json",
+    "docs/qa/evidence/hr-markings-medellin-20260919/scope-manifest-release.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/browser-qa-evidence.md",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-01-mallas-lista-kpi.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-02-monitor-drawer-viewport.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-03-lightbox-evidencia-ampliada.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-04-mapa-ruta-entre-marcaciones.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-05-monitor-historico-scrolltop.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-approval-evidence.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-certification.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-fixture.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-nyvora-hr-monitor.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/scope-manifest-release.json"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "hr-marking-vehicle-exit-with-mileage",
+      "status": "passed",
+      "evidence": ["local-simulation-certification.json", "index-shape-verification.json", "unit-tests.txt"]
+    },
+    {
+      "name": "hr-monitoring-and-route-tracking",
+      "status": "passed",
+      "evidence": ["local-simulation-certification.json", "unit-tests.txt"]
+    },
+    {
+      "name": "tenant_isolation_and_permissions",
+      "status": "passed",
+      "evidence": ["local-simulation-certification.json", "validation-checks.json"]
+    },
+    {
+      "name": "no_silent_failure_on_marking",
+      "status": "passed",
+      "evidence": ["unit-tests.txt", "validation-checks.json", "local-simulation-certification.json"]
+    },
+    {
+      "name": "database_migration_safety_and_reversibility",
+      "status": "passed",
+      "evidence": ["index-shape-verification.json", "validation-checks.json"]
+    },
+    {
+      "name": "adjacent_platform_regression",
+      "status": "passed",
+      "evidence": ["unit-tests.txt", "validation-checks.json"]
+    }
+  ]
+}

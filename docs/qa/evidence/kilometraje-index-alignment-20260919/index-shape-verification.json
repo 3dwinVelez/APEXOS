@@ -1,0 +1,50 @@
+{
+  "change_id": "kilometraje-index-alignment-20260919",
+  "generated_at": "2026-09-19T18:35:00-05:00",
+  "subject": "th_jornada_kilometrajes_one_active",
+  "canonical_definition": "CREATE UNIQUE INDEX th_jornada_kilometrajes_one_active ON th_jornada_kilometrajes (tenant_id, COALESCE(route_id, -1), COALESCE(employee_id, -1)) WHERE active = true",
+  "canonical_source": "apps/api/prisma/migrations/20260917120000_hr_workday_novelties_foundation/migration.sql:74",
+  "drift": {
+    "description": "QA tenia el indice en forma de columnas planas pese a tener registrada como aplicada la migracion canonica 20260917120000 (finished_at 2026-09-17T02:22:03.677Z, rolled_back_at null), es decir el indice fue reemplazado fuera de banda. Local y produccion si tienen la forma canonica.",
+    "consequence": "Cualquier resolucion de conflicto sobre la clave deja de ser portable entre ambientes: fue la causa raiz de los 42P10 al marcar salida vehicular con kilometraje en QA, que la transaccion abortada convertia en 25P02 y el endpoint en 500 ERROR_INTERNO."
+  },
+  "environment_states": {
+    "local_before": "CREATE UNIQUE INDEX th_jornada_kilometrajes_one_active ON public.th_jornada_kilometrajes USING btree (tenant_id, COALESCE(route_id, '-1'::integer), COALESCE(employee_id, '-1'::integer)) WHERE (active = true)",
+    "qa_before": "CREATE UNIQUE INDEX th_jornada_kilometrajes_one_active ON public.th_jornada_kilometrajes USING btree (tenant_id, route_id, employee_id, active) WHERE (active = true)",
+    "production_before": "CREATE UNIQUE INDEX th_jornada_kilometrajes_one_active ON public.th_jornada_kilometrajes USING btree (tenant_id, COALESCE(route_id, '-1'::integer), COALESCE(employee_id, '-1'::integer)) WHERE (active = true)"
+  },
+  "migration": {
+    "path": "apps/api/prisma/migrations/20260919130000_align_kilometraje_unique_index_shape/migration.sql",
+    "strategy": "Bloque DO idempotente y consciente del ambiente: lee indexdef desde pg_indexes y solo recrea el indice cuando la definicion vigente no contiene COALESCE. Donde la forma ya es canonica no ejecuta ningun DDL.",
+    "ddl": [
+      "DROP INDEX IF EXISTS th_jornada_kilometrajes_one_active",
+      "CREATE UNIQUE INDEX th_jornada_kilometrajes_one_active ON th_jornada_kilometrajes (tenant_id, COALESCE(route_id, -1), COALESCE(employee_id, -1)) WHERE active = true"
+    ],
+    "remote_migration_status": {
+      "local": "SQL ejecutado dos veces contra la base local de desarrollo (localhost:55432) para probar ambas ramas del bloque",
+      "qa": "PENDIENTE: se aplica despues del push a develop, con autorizacion expresa del usuario para cerrar el caso",
+      "production": "NO APLICADA: el indice productivo ya es canonico, por lo que la migracion seria un no-op. Queda pendiente de autorizacion independiente solo para mantener consistente el historial de _prisma_migrations."
+    }
+  },
+  "local_idempotency_proof": {
+    "canonical_input_noop": {
+      "indexdef_before": "CREATE UNIQUE INDEX th_jornada_kilometrajes_one_active ON public.th_jornada_kilometrajes USING btree (tenant_id, COALESCE(route_id, '-1'::integer), COALESCE(employee_id, '-1'::integer)) WHERE (active = true)",
+      "indexdef_after": "CREATE UNIQUE INDEX th_jornada_kilometrajes_one_active ON public.th_jornada_kilometrajes USING btree (tenant_id, COALESCE(route_id, '-1'::integer), COALESCE(employee_id, '-1'::integer)) WHERE (active = true)",
+      "result": "sin cambio: la rama de no-op queda demostrada"
+    },
+    "plain_input_corrective": {
+      "indexdef_forced": "CREATE UNIQUE INDEX th_jornada_kilometrajes_one_active ON public.th_jornada_kilometrajes USING btree (tenant_id, route_id, employee_id, active) WHERE (active = true)",
+      "indexdef_after_migration": "CREATE UNIQUE INDEX th_jornada_kilometrajes_one_active ON public.th_jornada_kilometrajes USING btree (tenant_id, COALESCE(route_id, '-1'::integer), COALESCE(employee_id, '-1'::integer)) WHERE (active = true)",
+      "result": "la forma plana (la que tenia QA) se restaura a la canonica: la rama correctiva queda demostrada"
+    }
+  },
+  "qa_preflight_readonly": {
+    "duplicates_under_canonical_key": [],
+    "active_rows": { "total": 5, "route_id_null": 0, "employee_id_null": 0 },
+    "conclusion": "Recrear el indice en QA no puede fallar por duplicados ni por nulos: no existen dos renglones activos que colapsen bajo la clave canonica."
+  },
+  "schema_prisma": "th_jornada_kilometrajes no esta modelada en apps/api/prisma/schema.prisma (se gestiona solo por migraciones SQL), por lo que ningun db push puede reintroducir la deriva.",
+  "migration_safety_guard": "node scripts/validate-database-migration-safety.js -> database migration safety: PASS",
+  "prisma_validate": "The schema at apps/api/prisma/schema.prisma is valid",
+  "runtime_code_impact": "Ninguno. La correccion portable del servicio HR (lock de asesoria + SELECT + UPDATE/INSERT, commit 3e05795) ya esta en produccion y no depende de la forma del indice; esta migracion elimina la deriva para que ningun codigo futuro vuelva a romperse por ambiente."
+}
