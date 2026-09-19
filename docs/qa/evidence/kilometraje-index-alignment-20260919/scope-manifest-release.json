@@ -1,0 +1,92 @@
+{
+  "change_id": "kilometraje-index-alignment-release-20260919",
+  "base_commits": {
+    "develop": "9afe9a3d774c0768b74910a4dba82b0a23ac5d24",
+    "main": "fd8c9f363ce495a9a1dc6957942aafd624a02e39"
+  },
+  "certified_commit": "7d6e8d1a3e6e96f0008d8cb064b9e3be8a561e59",
+  "scope_schema_version": 2,
+  "source_branch": "develop",
+  "target_branch": "main",
+  "change_intent": {
+    "summary": "Release a produccion del cierre del caso de marcaciones: elimina la deriva de forma del indice unico parcial th_jornada_kilometrajes_one_active, causa raiz de los 42P10 al marcar salida vehicular con kilometraje. Incluye la migracion 20260919130000_align_kilometraje_unique_index_shape (bloque DO idempotente y consciente del ambiente: solo recrea el indice cuando la definicion vigente no usa COALESCE), el ajuste de limites explicitos del mapa operativo en el script de certificacion de marcaciones y la correccion de las credenciales QA rotadas en GUIA_PROYECTO.md, mas la evidencia versionada local y QA. En produccion el indice ya tiene la forma canonica, por lo que la migracion es un no-op de DDL. Sin cambios de codigo de runtime, sin cambios de esquema Prisma, sin cambios de frontend.",
+    "modules": ["talento-humano", "hr", "marcaciones", "base-de-datos", "qa-certification", "documentacion"]
+  },
+  "release_mechanics": "Merge normal de develop -> main con main como primer padre. Las 4 entradas D del inventario son fantasma: corresponden a artefactos de contabilidad de releases productivos anteriores que solo existen en main (docs/qa/evidence/hr-module-intervention-20260918/prod-* y docs/qa/evidence/hr-monitor-silent-failures-20260918/prod-nyvora-hr-monitor.json) y que por la convencion forward-only no se retrointegran a desarrollo ni a develop. El merge union los preserva intactos en el arbol de main. No existe ninguna eliminacion real de codigo ni de evidencia en este release. La entrada R que reporta git es solo deteccion de similitud entre el JSON productivo antiguo y el nuevo JSON de certificacion NYVORA en QA: son archivos independientes.",
+  "expected_changes": [
+    { "status": "A", "file": "apps/api/prisma/migrations/20260919130000_align_kilometraje_unique_index_shape/migration.sql" },
+    { "status": "M", "file": "GUIA_PROYECTO.md" },
+    { "status": "M", "file": "scripts/certifications/hr-markings-medellin-simulation-qa.js" },
+    { "status": "A", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/index-shape-verification.json" },
+    { "status": "A", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/local-fixture.json" },
+    { "status": "A", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/local-simulation-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/preqa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-fixture-deactivation.json" },
+    { "status": "A", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-fixture.json" },
+    { "status": "A", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-index-alignment-verification.json" },
+    { "status": "A", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-nyvora-hr-monitor.json" },
+    { "status": "A", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/scope-manifest-release.json" },
+    { "status": "A", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/unit-tests.txt" },
+    { "status": "A", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/validation-checks.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression-pre-migration.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-module-intervention-20260918/prod-schema-alignment-20260918.md" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-silent-failures-20260918/prod-nyvora-hr-monitor.json" }
+  ],
+  "allowed_paths": [
+    "apps/api/prisma/migrations/20260919130000_align_kilometraje_unique_index_shape/migration.sql",
+    "GUIA_PROYECTO.md",
+    "scripts/certifications/hr-markings-medellin-simulation-qa.js",
+    "docs/qa/evidence/kilometraje-index-alignment-20260919/",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression-pre-migration.json",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression.json",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-schema-alignment-20260918.md",
+    "docs/qa/evidence/hr-monitor-silent-failures-20260918/prod-nyvora-hr-monitor.json"
+  ],
+  "allowed_deletions": [
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression-pre-migration.json",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression.json",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-schema-alignment-20260918.md",
+    "docs/qa/evidence/hr-monitor-silent-failures-20260918/prod-nyvora-hr-monitor.json"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "hr-marking-vehicle-exit-with-mileage",
+      "status": "passed",
+      "evidence": ["qa-certification.json", "qa-index-alignment-verification.json", "local-simulation-certification.json", "unit-tests.txt"]
+    },
+    {
+      "name": "hr-monitoring-and-route-tracking",
+      "status": "passed",
+      "evidence": ["qa-certification.json", "qa-nyvora-hr-monitor.json", "local-simulation-certification.json"]
+    },
+    {
+      "name": "tenant_isolation_and_permissions",
+      "status": "passed",
+      "evidence": ["qa-certification.json", "validation-checks.json"]
+    },
+    {
+      "name": "no_silent_failure_on_marking",
+      "status": "passed",
+      "evidence": ["qa-certification.json", "unit-tests.txt", "validation-checks.json"]
+    },
+    {
+      "name": "database_migration_safety_and_reversibility",
+      "status": "passed",
+      "evidence": ["index-shape-verification.json", "qa-index-alignment-verification.json", "validation-checks.json"]
+    },
+    {
+      "name": "model_company_nyvora_hr_monitor",
+      "status": "passed",
+      "evidence": ["qa-nyvora-hr-monitor.json"]
+    },
+    {
+      "name": "adjacent_platform_regression",
+      "status": "passed",
+      "evidence": ["unit-tests.txt", "validation-checks.json"]
+    }
+  ]
+}

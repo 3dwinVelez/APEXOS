@@ -1,0 +1,722 @@
+{
+  "change_id": "hr-markings-medellin-20260919",
+  "environment": "LOCAL",
+  "company": "SCJ",
+  "generated_at": "2026-09-19T18:18:45.366Z",
+  "api_commit": "unknown",
+  "api_url": "http://127.0.0.1:3100",
+  "simulation": {
+    "concurrent_markers": 10,
+    "schedules": 5,
+    "metropolitan_area": "Valle de Aburra (Medellin)"
+  },
+  "checks": [
+    {
+      "name": "health_ok",
+      "ok": true,
+      "detail": {
+        "commit": "unknown"
+      }
+    },
+    {
+      "name": "ten_concurrent_markers_executed",
+      "ok": true,
+      "detail": {
+        "markers": 10
+      }
+    },
+    {
+      "name": "all_entries_accepted",
+      "ok": true,
+      "detail": {
+        "entrada_statuses": [
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200
+        ]
+      }
+    },
+    {
+      "name": "all_lunch_breaks_accepted",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "all_activities_accepted",
+      "ok": true,
+      "detail": {
+        "activity_statuses": [
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200
+        ]
+      }
+    },
+    {
+      "name": "all_exits_accepted",
+      "ok": true,
+      "detail": {
+        "salida_statuses": [
+          {
+            "actor": "qa.med.medellin.A.20260919181844@scj.test/Medellin",
+            "status": 200,
+            "code": null
+          },
+          {
+            "actor": "qa.med.medellin.B.20260919181844@scj.test/Medellin",
+            "status": 200,
+            "code": null
+          },
+          {
+            "actor": "qa.med.bello.A.20260919181844@scj.test/Bello",
+            "status": 200,
+            "code": null
+          },
+          {
+            "actor": "qa.med.bello.B.20260919181844@scj.test/Bello",
+            "status": 200,
+            "code": null
+          },
+          {
+            "actor": "qa.med.itagui.A.20260919181844@scj.test/Itagui",
+            "status": 200,
+            "code": null
+          },
+          {
+            "actor": "qa.med.itagui.B.20260919181844@scj.test/Itagui",
+            "status": 200,
+            "code": null
+          },
+          {
+            "actor": "qa.med.envigado.A.20260919181844@scj.test/Envigado",
+            "status": 200,
+            "code": null
+          },
+          {
+            "actor": "qa.med.envigado.B.20260919181844@scj.test/Envigado",
+            "status": 200,
+            "code": null
+          },
+          {
+            "actor": "qa.med.sabaneta.A.20260919181844@scj.test/Sabaneta",
+            "status": 200,
+            "code": null
+          },
+          {
+            "actor": "qa.med.sabaneta.B.20260919181844@scj.test/Sabaneta",
+            "status": 200,
+            "code": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "no_server_errors",
+      "ok": true,
+      "detail": {
+        "server_errors": []
+      }
+    },
+    {
+      "name": "no_postgres_silent_errors",
+      "ok": true,
+      "detail": {
+        "codes": []
+      }
+    },
+    {
+      "name": "no_concurrency_throttling",
+      "ok": true,
+      "detail": {
+        "throttled": []
+      }
+    },
+    {
+      "name": "vehicle_exits_record_mileage",
+      "ok": true,
+      "detail": {
+        "vehicle_salidas": [
+          {
+            "actor": "qa.med.bello.A.20260919181844@scj.test/Bello",
+            "status": 200,
+            "code": null,
+            "error": null
+          },
+          {
+            "actor": "qa.med.bello.B.20260919181844@scj.test/Bello",
+            "status": 200,
+            "code": null,
+            "error": null
+          },
+          {
+            "actor": "qa.med.envigado.A.20260919181844@scj.test/Envigado",
+            "status": 200,
+            "code": null,
+            "error": null
+          },
+          {
+            "actor": "qa.med.envigado.B.20260919181844@scj.test/Envigado",
+            "status": 200,
+            "code": null,
+            "error": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "every_route_present_in_operations_map",
+      "ok": true,
+      "detail": {
+        "missing": []
+      }
+    },
+    {
+      "name": "every_marker_traces_four_marks",
+      "ok": true,
+      "detail": {
+        "traces": [
+          {
+            "municipality": "Medellin",
+            "users": 2,
+            "by_user": [
+              {
+                "user_name": "Operario Medellin B 20260919181844",
+                "marks": 4,
+                "distinct_coords": 4
+              },
+              {
+                "user_name": "Operario Medellin A 20260919181844",
+                "marks": 4,
+                "distinct_coords": 4
+              }
+            ]
+          },
+          {
+            "municipality": "Bello",
+            "users": 2,
+            "by_user": [
+              {
+                "user_name": "Operario Bello B 20260919181844",
+                "marks": 4,
+                "distinct_coords": 4
+              },
+              {
+                "user_name": "Operario Bello A 20260919181844",
+                "marks": 4,
+                "distinct_coords": 4
+              }
+            ]
+          },
+          {
+            "municipality": "Itagui",
+            "users": 2,
+            "by_user": [
+              {
+                "user_name": "Operario Itagui B 20260919181844",
+                "marks": 4,
+                "distinct_coords": 4
+              },
+              {
+                "user_name": "Operario Itagui A 20260919181844",
+                "marks": 4,
+                "distinct_coords": 4
+              }
+            ]
+          },
+          {
+            "municipality": "Envigado",
+            "users": 2,
+            "by_user": [
+              {
+                "user_name": "Operario Envigado B 20260919181844",
+                "marks": 4,
+                "distinct_coords": 4
+              },
+              {
+                "user_name": "Operario Envigado A 20260919181844",
+                "marks": 4,
+                "distinct_coords": 4
+              }
+            ]
+          },
+          {
+            "municipality": "Sabaneta",
+            "users": 2,
+            "by_user": [
+              {
+                "user_name": "Operario Sabaneta A 20260919181844",
+                "marks": 4,
+                "distinct_coords": 4
+              },
+              {
+                "user_name": "Operario Sabaneta B 20260919181844",
+                "marks": 4,
+                "distinct_coords": 4
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "every_marker_has_distinct_coordinates",
+      "ok": true,
+      "detail": {
+        "single_point": []
+      }
+    },
+    {
+      "name": "every_route_has_eight_located_punch_points",
+      "ok": true,
+      "detail": {
+        "located": [
+          {
+            "municipality": "Medellin",
+            "located_punch_points": 8
+          },
+          {
+            "municipality": "Bello",
+            "located_punch_points": 8
+          },
+          {
+            "municipality": "Itagui",
+            "located_punch_points": 8
+          },
+          {
+            "municipality": "Envigado",
+            "located_punch_points": 8
+          },
+          {
+            "municipality": "Sabaneta",
+            "located_punch_points": 8
+          }
+        ]
+      }
+    },
+    {
+      "name": "distinct_destinations_per_schedule",
+      "ok": true,
+      "detail": {
+        "centroids": [
+          {
+            "municipality": "Medellin",
+            "lat": 6.2462,
+            "lng": -75.5749
+          },
+          {
+            "municipality": "Bello",
+            "lat": 6.3422,
+            "lng": -75.554
+          },
+          {
+            "municipality": "Itagui",
+            "lat": 6.1792,
+            "lng": -75.5992
+          },
+          {
+            "municipality": "Envigado",
+            "lat": 6.166,
+            "lng": -75.5851
+          },
+          {
+            "municipality": "Sabaneta",
+            "lat": 6.1506,
+            "lng": -75.6157
+          }
+        ]
+      }
+    },
+    {
+      "name": "overtime_recorded_on_late_exits",
+      "ok": true,
+      "detail": {
+        "rows": 10,
+        "with_extra": 10
+      }
+    },
+    {
+      "name": "idempotent_double_tap_no_conflict",
+      "ok": true,
+      "detail": {
+        "tapA": 200,
+        "tapB": 200,
+        "codeA": null,
+        "codeB": null
+      }
+    },
+    {
+      "name": "out_of_order_sequence_controlled_409",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "MARCACION_FUERA_DE_SECUENCIA"
+      }
+    }
+  ],
+  "fixture": {
+    "tenant_id": "001346eb-ba7f-4103-b032-73a219f1333e",
+    "admin_user_id": 390,
+    "routes": [
+      {
+        "id": 269,
+        "vehicle_plate": "",
+        "employees": [
+          "qa.med.medellin.A.20260919181844@scj.test",
+          "qa.med.medellin.B.20260919181844@scj.test"
+        ]
+      },
+      {
+        "id": 270,
+        "vehicle_plate": "SIMBLL01",
+        "employees": [
+          "qa.med.bello.A.20260919181844@scj.test",
+          "qa.med.bello.B.20260919181844@scj.test"
+        ]
+      },
+      {
+        "id": 271,
+        "vehicle_plate": "",
+        "employees": [
+          "qa.med.itagui.A.20260919181844@scj.test",
+          "qa.med.itagui.B.20260919181844@scj.test"
+        ]
+      },
+      {
+        "id": 272,
+        "vehicle_plate": "SIMENV01",
+        "employees": [
+          "qa.med.envigado.A.20260919181844@scj.test",
+          "qa.med.envigado.B.20260919181844@scj.test"
+        ]
+      },
+      {
+        "id": 273,
+        "vehicle_plate": "",
+        "employees": [
+          "qa.med.sabaneta.A.20260919181844@scj.test",
+          "qa.med.sabaneta.B.20260919181844@scj.test"
+        ]
+      }
+    ],
+    "markers": [
+      {
+        "email": "qa.med.medellin.A.20260919181844@scj.test",
+        "municipality": "Medellin",
+        "route_id": 269,
+        "route_type": "administrative"
+      },
+      {
+        "email": "qa.med.medellin.B.20260919181844@scj.test",
+        "municipality": "Medellin",
+        "route_id": 269,
+        "route_type": "administrative"
+      },
+      {
+        "email": "qa.med.bello.A.20260919181844@scj.test",
+        "municipality": "Bello",
+        "route_id": 270,
+        "route_type": "vehicle"
+      },
+      {
+        "email": "qa.med.bello.B.20260919181844@scj.test",
+        "municipality": "Bello",
+        "route_id": 270,
+        "route_type": "vehicle"
+      },
+      {
+        "email": "qa.med.itagui.A.20260919181844@scj.test",
+        "municipality": "Itagui",
+        "route_id": 271,
+        "route_type": "administrative"
+      },
+      {
+        "email": "qa.med.itagui.B.20260919181844@scj.test",
+        "municipality": "Itagui",
+        "route_id": 271,
+        "route_type": "administrative"
+      },
+      {
+        "email": "qa.med.envigado.A.20260919181844@scj.test",
+        "municipality": "Envigado",
+        "route_id": 272,
+        "route_type": "vehicle"
+      },
+      {
+        "email": "qa.med.envigado.B.20260919181844@scj.test",
+        "municipality": "Envigado",
+        "route_id": 272,
+        "route_type": "vehicle"
+      },
+      {
+        "email": "qa.med.sabaneta.A.20260919181844@scj.test",
+        "municipality": "Sabaneta",
+        "route_id": 273,
+        "route_type": "administrative"
+      },
+      {
+        "email": "qa.med.sabaneta.B.20260919181844@scj.test",
+        "municipality": "Sabaneta",
+        "route_id": 273,
+        "route_type": "administrative"
+      }
+    ]
+  },
+  "aggregates": {
+    "total_requests": 64,
+    "punch_requests": 40,
+    "by_status": {
+      "200": 63,
+      "429": 1
+    },
+    "server_errors": 0,
+    "pg_error_codes": [],
+    "concurrency_wall_ms": 7283,
+    "punch_latency_ms": {
+      "min": 835,
+      "median": 1396,
+      "max": 2478
+    },
+    "vehicle_salida_statuses": [
+      {
+        "actor": "qa.med.bello.A.20260919181844@scj.test/Bello",
+        "status": 200,
+        "code": null
+      },
+      {
+        "actor": "qa.med.bello.B.20260919181844@scj.test/Bello",
+        "status": 200,
+        "code": null
+      },
+      {
+        "actor": "qa.med.envigado.A.20260919181844@scj.test/Envigado",
+        "status": 200,
+        "code": null
+      },
+      {
+        "actor": "qa.med.envigado.B.20260919181844@scj.test/Envigado",
+        "status": 200,
+        "code": null
+      }
+    ]
+  },
+  "observations": {
+    "map_traces": [
+      {
+        "municipality": "Medellin",
+        "route_id": 269,
+        "present": true,
+        "users": 2,
+        "by_user": [
+          {
+            "user_name": "Operario Medellin B 20260919181844",
+            "marks": 4,
+            "distinct_coords": 4
+          },
+          {
+            "user_name": "Operario Medellin A 20260919181844",
+            "marks": 4,
+            "distinct_coords": 4
+          }
+        ],
+        "located_punch_points": 8,
+        "marks_by_user_keys": [
+          "Operario Medellin B 20260919181844",
+          "Operario Medellin A 20260919181844"
+        ]
+      },
+      {
+        "municipality": "Bello",
+        "route_id": 270,
+        "present": true,
+        "users": 2,
+        "by_user": [
+          {
+            "user_name": "Operario Bello B 20260919181844",
+            "marks": 4,
+            "distinct_coords": 4
+          },
+          {
+            "user_name": "Operario Bello A 20260919181844",
+            "marks": 4,
+            "distinct_coords": 4
+          }
+        ],
+        "located_punch_points": 8,
+        "marks_by_user_keys": [
+          "Operario Bello B 20260919181844",
+          "Operario Bello A 20260919181844"
+        ]
+      },
+      {
+        "municipality": "Itagui",
+        "route_id": 271,
+        "present": true,
+        "users": 2,
+        "by_user": [
+          {
+            "user_name": "Operario Itagui B 20260919181844",
+            "marks": 4,
+            "distinct_coords": 4
+          },
+          {
+            "user_name": "Operario Itagui A 20260919181844",
+            "marks": 4,
+            "distinct_coords": 4
+          }
+        ],
+        "located_punch_points": 8,
+        "marks_by_user_keys": [
+          "Operario Itagui B 20260919181844",
+          "Operario Itagui A 20260919181844"
+        ]
+      },
+      {
+        "municipality": "Envigado",
+        "route_id": 272,
+        "present": true,
+        "users": 2,
+        "by_user": [
+          {
+            "user_name": "Operario Envigado B 20260919181844",
+            "marks": 4,
+            "distinct_coords": 4
+          },
+          {
+            "user_name": "Operario Envigado A 20260919181844",
+            "marks": 4,
+            "distinct_coords": 4
+          }
+        ],
+        "located_punch_points": 8,
+        "marks_by_user_keys": [
+          "Operario Envigado B 20260919181844",
+          "Operario Envigado A 20260919181844"
+        ]
+      },
+      {
+        "municipality": "Sabaneta",
+        "route_id": 273,
+        "present": true,
+        "users": 2,
+        "by_user": [
+          {
+            "user_name": "Operario Sabaneta A 20260919181844",
+            "marks": 4,
+            "distinct_coords": 4
+          },
+          {
+            "user_name": "Operario Sabaneta B 20260919181844",
+            "marks": 4,
+            "distinct_coords": 4
+          }
+        ],
+        "located_punch_points": 8,
+        "marks_by_user_keys": [
+          "Operario Sabaneta A 20260919181844",
+          "Operario Sabaneta B 20260919181844"
+        ]
+      }
+    ],
+    "municipality_centroids": [
+      {
+        "municipality": "Medellin",
+        "lat": 6.2462,
+        "lng": -75.5749
+      },
+      {
+        "municipality": "Bello",
+        "lat": 6.3422,
+        "lng": -75.554
+      },
+      {
+        "municipality": "Itagui",
+        "lat": 6.1792,
+        "lng": -75.5992
+      },
+      {
+        "municipality": "Envigado",
+        "lat": 6.166,
+        "lng": -75.5851
+      },
+      {
+        "municipality": "Sabaneta",
+        "lat": 6.1506,
+        "lng": -75.6157
+      }
+    ],
+    "overtime": {
+      "rows": 10,
+      "with_extra": 10,
+      "sample_minutes": [
+        135,
+        135,
+        135,
+        135,
+        135,
+        135,
+        135,
+        135,
+        135,
+        135
+      ]
+    },
+    "idempotency_probe": {
+      "tapA": {
+        "status": 200,
+        "code": null
+      },
+      "tapB": {
+        "status": 200,
+        "code": null,
+        "replayed": true
+      }
+    },
+    "sequence_probe": {
+      "status": 409,
+      "code": "MARCACION_FUERA_DE_SECUENCIA"
+    },
+    "concurrency": {
+      "wall_ms": 7283,
+      "markers": 10,
+      "note": "10 jornadas completas ejecutadas en paralelo (Promise.all), locks advisory por empleado/ruta/dia."
+    }
+  },
+  "status": "passed",
+  "request_log_summary": {
+    "total": 69,
+    "by_status": {
+      "200": 63,
+      "429": 1
+    },
+    "failures": [
+      {
+        "actor": "qa.med.sabaneta.B.20260919181844@scj.test/Sabaneta",
+        "step": "login-intento-1",
+        "status": 429,
+        "code": "VALIDACION",
+        "error": "Rate limit exceeded, retry in 38 seconds"
+      },
+      {
+        "actor": "probe",
+        "step": "out-of-order",
+        "status": 409,
+        "code": "MARCACION_FUERA_DE_SECUENCIA",
+        "error": "La siguiente marcacion permitida es inicio_almuerzo."
+      }
+    ]
+  }
+}
