@@ -8,14 +8,15 @@ test("combina marcaciones, actividades, evidencias y cierres por horario", () =>
     punchGroups: [{ route_id: 21, _count: { _all: 3 }, _max: { punched_at: new Date("2026-08-10T15:00:00Z") } }],
     activityGroups: [{ route_id: 21, _count: { _all: 2 }, _max: { occurred_at: new Date("2026-08-10T16:00:00Z") } }],
     closedGroups: [{ route_id: 21, _count: { _all: 1 } }],
-    evidenceRows: [{ activity: { route_id: 21 } }, { activity: { route_id: 21 } }]
+    evidenceRows: [{ activity: { route_id: 21 } }, { activity: { route_id: 21 } }],
+    punchEvidenceRows: [{ route_id: 21, extra_evidence: { base64_data: "x", file_name: "entrada.png" } }]
   });
 
   assert.deepEqual(rows[0], {
     route_id: 21,
     punch_count: 3,
     activity_count: 2,
-    evidence_count: 2,
+    evidence_count: 3,
     closed_count: 1,
     event_count: 5,
     last_event_at: "2026-08-10T16:00:00.000Z"
@@ -76,4 +77,21 @@ test("prioriza la ruta explicita en metadata para eventos historicos", () => {
   assert.equal(rows[0].event_count, 0);
   assert.equal(rows[1].event_count, 1);
   assert.equal(rows[1].closed_count, 1);
+});
+
+test("cuenta evidencias de marcaciones visibles e ignora las vacias", () => {
+  const [row] = buildRouteEventSummaries({
+    routeContexts: [{ route_id: 30 }],
+    punchEvidenceRows: [
+      { route_id: 30, extra_evidence: { base64_data: "x", file_name: "entrada.png" } },
+      { route_id: 30, extra_evidence: { file_url: "https://storage.example/photo.png" } },
+      { route_id: 30, extra_evidence: [{ base64_data: "x" }, { file_name: "extra.png" }] },
+      { route_id: 30, extra_evidence: { name: "solo-metadata" } },
+      { route_id: 30, extra_evidence: null },
+      { route_id: 30, extra_evidence: {} }
+    ],
+    evidenceRows: [{ activity: { route_id: 30 } }]
+  });
+
+  assert.equal(row.evidence_count, 5);
 });

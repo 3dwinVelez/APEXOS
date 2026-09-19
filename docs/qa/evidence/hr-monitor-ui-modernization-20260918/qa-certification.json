@@ -1,0 +1,514 @@
+{
+  "change_id": "hr-monitor-ui-modernization-20260918",
+  "environment": "QA",
+  "company": "SCJ",
+  "generated_at": "2026-09-19T04:59:18.359Z",
+  "api_commit": "a45aa6cfe733",
+  "checks": [
+    {
+      "name": "operations_map_route_present",
+      "ok": true,
+      "detail": {
+        "route_id": 271
+      }
+    },
+    {
+      "name": "operations_map_marks_by_user_complete",
+      "ok": true,
+      "detail": {
+        "marks": [
+          {
+            "id": 1289,
+            "user_name": "Operario marcaciones 20260919045913",
+            "type": "entrada",
+            "time": "06:10",
+            "punched_at": "2026-09-18T11:10:00.000Z",
+            "latitude": 4.711,
+            "longitude": -74.0721,
+            "accuracy_meters": 8,
+            "vehicle_plate": "",
+            "route_id": 271,
+            "extra_minutes": 0,
+            "extra_reason": null,
+            "extra_detail": null,
+            "extra_evidence": {
+              "id": 1289,
+              "source": "punch",
+              "file_name": "entrada-20260919045913.png",
+              "mime_type": "image/png",
+              "file_size": 68,
+              "storage_path": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/overtime-extensions/367/1789793971488-entrada-20260919045913.png",
+              "has_base64_data": true,
+              "available": true
+            },
+            "metadata": {
+              "route_code": "271",
+              "user_email": "qa.monitor.marks.20260919045913@scj.test",
+              "employee_code": "QA-MM-20260919045913",
+              "employee_name": "Operario marcaciones 20260919045913",
+              "legacy_route_id": "",
+              "source_route_id": "",
+              "display_route_id": "271",
+              "identity_aliases": [
+                "367",
+                "QA-MM-20260919045913",
+                "Operario marcaciones 20260919045913",
+                "QAMM20260919045913",
+                "qa.monitor.marks.20260919045913@scj.test"
+              ],
+              "current_user_only": true,
+              "supplied_user_name": "QA-MM-20260919045913"
+            }
+          },
+          {
+            "id": 1290,
+            "user_name": "Operario marcaciones 20260919045913",
+            "type": "inicio_almuerzo",
+            "time": "12:02",
+            "punched_at": "2026-09-18T17:02:00.000Z",
+            "latitude": 4.712,
+            "longitude": -74.0732,
+            "accuracy_meters": 10,
+            "vehicle_plate": "",
+            "route_id": 271,
+            "extra_minutes": 0,
+            "extra_reason": null,
+            "extra_detail": null,
+            "extra_evidence": {
+              "id": 1290,
+              "source": "punch",
+              "has_base64_data": false,
+              "available": true
+            },
+            "metadata": {
+              "route_code": "271",
+              "user_email": "qa.monitor.marks.20260919045913@scj.test",
+              "employee_code": "QA-MM-20260919045913",
+              "employee_name": "Operario marcaciones 20260919045913",
+              "legacy_route_id": "",
+              "source_route_id": "",
+              "display_route_id": "271",
+              "identity_aliases": [
+                "367",
+                "QA-MM-20260919045913",
+                "Operario marcaciones 20260919045913",
+                "QAMM20260919045913",
+                "qa.monitor.marks.20260919045913@scj.test"
+              ],
+              "current_user_only": true,
+              "supplied_user_name": "QA-MM-20260919045913"
+            }
+          },
+          {
+            "id": 1291,
+            "user_name": "Operario marcaciones 20260919045913",
+            "type": "fin_almuerzo",
+            "time": "12:59",
+            "punched_at": "2026-09-18T17:59:00.000Z",
+            "latitude": 4.712,
+            "longitude": -74.0732,
+            "accuracy_meters": 10,
+            "vehicle_plate": "",
+            "route_id": 271,
+            "extra_minutes": 0,
+            "extra_reason": null,
+            "extra_detail": null,
+            "extra_evidence": {
+              "id": 1291,
+              "source": "punch",
+              "has_base64_data": false,
+              "available": true
+            },
+            "metadata": {
+              "route_code": "271",
+              "user_email": "qa.monitor.marks.20260919045913@scj.test",
+              "employee_code": "QA-MM-20260919045913",
+              "employee_name": "Operario marcaciones 20260919045913",
+              "legacy_route_id": "",
+              "source_route_id": "",
+              "display_route_id": "271",
+              "identity_aliases": [
+                "367",
+                "QA-MM-20260919045913",
+                "Operario marcaciones 20260919045913",
+                "QAMM20260919045913",
+                "qa.monitor.marks.20260919045913@scj.test"
+              ],
+              "current_user_only": true,
+              "supplied_user_name": "QA-MM-20260919045913"
+            }
+          },
+          {
+            "id": 1292,
+            "user_name": "Operario marcaciones 20260919045913",
+            "type": "salida",
+            "time": "16:05",
+            "punched_at": "2026-09-18T21:05:00.000Z",
+            "latitude": 4.713,
+            "longitude": -74.074,
+            "accuracy_meters": 6,
+            "vehicle_plate": "",
+            "route_id": 271,
+            "extra_minutes": 0,
+            "extra_reason": "certificacion_qa",
+            "extra_detail": "Prueba controlada de evidencia de salida",
+            "extra_evidence": {
+              "id": 1292,
+              "source": "punch",
+              "file_name": "salida-20260919045913.png",
+              "mime_type": "image/png",
+              "file_size": 68,
+              "storage_path": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/overtime-extensions/367/1789793978458-salida-20260919045913.png",
+              "has_base64_data": true,
+              "available": true
+            },
+            "metadata": {
+              "route_code": "271",
+              "user_email": "qa.monitor.marks.20260919045913@scj.test",
+              "employee_code": "QA-MM-20260919045913",
+              "employee_name": "Operario marcaciones 20260919045913",
+              "legacy_route_id": "",
+              "source_route_id": "",
+              "display_route_id": "271",
+              "identity_aliases": [
+                "367",
+                "QA-MM-20260919045913",
+                "Operario marcaciones 20260919045913",
+                "QAMM20260919045913",
+                "qa.monitor.marks.20260919045913@scj.test"
+              ],
+              "current_user_only": true,
+              "supplied_user_name": "QA-MM-20260919045913"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "operations_map_punch_points_complete",
+      "ok": true,
+      "detail": {
+        "count": 4
+      }
+    },
+    {
+      "name": "operations_map_activity_points_present",
+      "ok": true,
+      "detail": {
+        "count": 1
+      }
+    },
+    {
+      "name": "operations_map_people_include_both_operators",
+      "ok": true,
+      "detail": {
+        "marking": {
+          "online": true,
+          "last_punch_type": "salida",
+          "has_gps": true
+        },
+        "silent": {
+          "online": false,
+          "last_punch_type": "sin_marcar",
+          "has_gps": false
+        }
+      }
+    },
+    {
+      "name": "operations_map_person_without_marks",
+      "ok": true,
+      "detail": {
+        "last_punch_type": "sin_marcar"
+      }
+    },
+    {
+      "name": "operations_map_evidence_summaries",
+      "ok": true,
+      "detail": {
+        "entrada": {
+          "id": 1289,
+          "source": "punch",
+          "file_name": "entrada-20260919045913.png",
+          "mime_type": "image/png",
+          "file_size": 68,
+          "storage_path": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/overtime-extensions/367/1789793971488-entrada-20260919045913.png",
+          "has_base64_data": true,
+          "available": true
+        },
+        "salida": {
+          "id": 1292,
+          "source": "punch",
+          "file_name": "salida-20260919045913.png",
+          "mime_type": "image/png",
+          "file_size": 68,
+          "storage_path": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/overtime-extensions/367/1789793978458-salida-20260919045913.png",
+          "has_base64_data": true,
+          "available": true
+        },
+        "activity": {
+          "id": 86,
+          "source": "activity",
+          "evidence_type": "photo",
+          "file_name": "activity-20260919045913.png",
+          "mime_type": "image/png",
+          "file_size": 68,
+          "storage_path": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/344/users/457/activities/86/1789793976859-activity-20260919045913.png",
+          "has_base64_data": false,
+          "available": true
+        }
+      }
+    },
+    {
+      "name": "batch_counts_consistent",
+      "ok": true,
+      "detail": {
+        "punches": 4,
+        "punch_evidence": 2,
+        "activities": 1,
+        "activity_evidence": 1
+      }
+    },
+    {
+      "name": "batch_punch_evidence_renders",
+      "ok": true,
+      "detail": {
+        "with_base64": 2,
+        "total": 4
+      }
+    },
+    {
+      "name": "batch_activity_evidence_renders",
+      "ok": true,
+      "detail": {
+        "with_base64": 1,
+        "total": 1
+      }
+    },
+    {
+      "name": "marking_only_role_denied_batch",
+      "ok": true,
+      "detail": {
+        "code": "PERMISO_DENEGADO"
+      }
+    },
+    {
+      "name": "invalid_route_id_controlled",
+      "ok": true,
+      "detail": {
+        "code": "EVIDENCIA_MONITOR_RUTA_INVALIDA"
+      }
+    },
+    {
+      "name": "route_summary_counts_all_evidence",
+      "ok": true,
+      "detail": {
+        "route_id": 271,
+        "evidence_count": 3
+      }
+    },
+    {
+      "name": "cross_tenant_batch_isolated",
+      "ok": true,
+      "detail": {
+        "other_tenant_id": "1afcb48f-39eb-4b59-af90-05e67d54593a",
+        "punch_evidence": 0,
+        "activity_evidence": 0
+      }
+    }
+  ],
+  "fixture": {
+    "tenant_id": "cbbf3627-4336-4f23-95c6-1077414bcd17",
+    "route_id": 271,
+    "marking_user_id": 457,
+    "silent_user_id": 458,
+    "admin_user_id": 459
+  },
+  "observations": {
+    "date": "2026-09-18",
+    "route": {
+      "id": 271,
+      "start_time": "06:00",
+      "end_time": "18:00",
+      "tolerance_minutes": 15,
+      "employees": [
+        "qa.monitor.marks.20260919045913@scj.test",
+        "qa.monitor.silent.20260919045913@scj.test"
+      ]
+    },
+    "totals": {
+      "routes": 3,
+      "planned_people": 29,
+      "online": 1,
+      "without_gps": 15,
+      "offline": 13
+    },
+    "marks_by_user": [
+      {
+        "id": 1289,
+        "user_name": "Operario marcaciones 20260919045913",
+        "type": "entrada",
+        "time": "06:10",
+        "punched_at": "2026-09-18T11:10:00.000Z",
+        "latitude": 4.711,
+        "longitude": -74.0721,
+        "accuracy_meters": 8,
+        "vehicle_plate": "",
+        "route_id": 271,
+        "extra_minutes": 0,
+        "extra_reason": null,
+        "extra_detail": null,
+        "extra_evidence": {
+          "id": 1289,
+          "source": "punch",
+          "file_name": "entrada-20260919045913.png",
+          "mime_type": "image/png",
+          "file_size": 68,
+          "storage_path": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/overtime-extensions/367/1789793971488-entrada-20260919045913.png",
+          "has_base64_data": true,
+          "available": true
+        },
+        "metadata": {
+          "route_code": "271",
+          "user_email": "qa.monitor.marks.20260919045913@scj.test",
+          "employee_code": "QA-MM-20260919045913",
+          "employee_name": "Operario marcaciones 20260919045913",
+          "legacy_route_id": "",
+          "source_route_id": "",
+          "display_route_id": "271",
+          "identity_aliases": [
+            "367",
+            "QA-MM-20260919045913",
+            "Operario marcaciones 20260919045913",
+            "QAMM20260919045913",
+            "qa.monitor.marks.20260919045913@scj.test"
+          ],
+          "current_user_only": true,
+          "supplied_user_name": "QA-MM-20260919045913"
+        }
+      },
+      {
+        "id": 1290,
+        "user_name": "Operario marcaciones 20260919045913",
+        "type": "inicio_almuerzo",
+        "time": "12:02",
+        "punched_at": "2026-09-18T17:02:00.000Z",
+        "latitude": 4.712,
+        "longitude": -74.0732,
+        "accuracy_meters": 10,
+        "vehicle_plate": "",
+        "route_id": 271,
+        "extra_minutes": 0,
+        "extra_reason": null,
+        "extra_detail": null,
+        "extra_evidence": {
+          "id": 1290,
+          "source": "punch",
+          "has_base64_data": false,
+          "available": true
+        },
+        "metadata": {
+          "route_code": "271",
+          "user_email": "qa.monitor.marks.20260919045913@scj.test",
+          "employee_code": "QA-MM-20260919045913",
+          "employee_name": "Operario marcaciones 20260919045913",
+          "legacy_route_id": "",
+          "source_route_id": "",
+          "display_route_id": "271",
+          "identity_aliases": [
+            "367",
+            "QA-MM-20260919045913",
+            "Operario marcaciones 20260919045913",
+            "QAMM20260919045913",
+            "qa.monitor.marks.20260919045913@scj.test"
+          ],
+          "current_user_only": true,
+          "supplied_user_name": "QA-MM-20260919045913"
+        }
+      },
+      {
+        "id": 1291,
+        "user_name": "Operario marcaciones 20260919045913",
+        "type": "fin_almuerzo",
+        "time": "12:59",
+        "punched_at": "2026-09-18T17:59:00.000Z",
+        "latitude": 4.712,
+        "longitude": -74.0732,
+        "accuracy_meters": 10,
+        "vehicle_plate": "",
+        "route_id": 271,
+        "extra_minutes": 0,
+        "extra_reason": null,
+        "extra_detail": null,
+        "extra_evidence": {
+          "id": 1291,
+          "source": "punch",
+          "has_base64_data": false,
+          "available": true
+        },
+        "metadata": {
+          "route_code": "271",
+          "user_email": "qa.monitor.marks.20260919045913@scj.test",
+          "employee_code": "QA-MM-20260919045913",
+          "employee_name": "Operario marcaciones 20260919045913",
+          "legacy_route_id": "",
+          "source_route_id": "",
+          "display_route_id": "271",
+          "identity_aliases": [
+            "367",
+            "QA-MM-20260919045913",
+            "Operario marcaciones 20260919045913",
+            "QAMM20260919045913",
+            "qa.monitor.marks.20260919045913@scj.test"
+          ],
+          "current_user_only": true,
+          "supplied_user_name": "QA-MM-20260919045913"
+        }
+      },
+      {
+        "id": 1292,
+        "user_name": "Operario marcaciones 20260919045913",
+        "type": "salida",
+        "time": "16:05",
+        "punched_at": "2026-09-18T21:05:00.000Z",
+        "latitude": 4.713,
+        "longitude": -74.074,
+        "accuracy_meters": 6,
+        "vehicle_plate": "",
+        "route_id": 271,
+        "extra_minutes": 0,
+        "extra_reason": "certificacion_qa",
+        "extra_detail": "Prueba controlada de evidencia de salida",
+        "extra_evidence": {
+          "id": 1292,
+          "source": "punch",
+          "file_name": "salida-20260919045913.png",
+          "mime_type": "image/png",
+          "file_size": 68,
+          "storage_path": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/overtime-extensions/367/1789793978458-salida-20260919045913.png",
+          "has_base64_data": true,
+          "available": true
+        },
+        "metadata": {
+          "route_code": "271",
+          "user_email": "qa.monitor.marks.20260919045913@scj.test",
+          "employee_code": "QA-MM-20260919045913",
+          "employee_name": "Operario marcaciones 20260919045913",
+          "legacy_route_id": "",
+          "source_route_id": "",
+          "display_route_id": "271",
+          "identity_aliases": [
+            "367",
+            "QA-MM-20260919045913",
+            "Operario marcaciones 20260919045913",
+            "QAMM20260919045913",
+            "qa.monitor.marks.20260919045913@scj.test"
+          ],
+          "current_user_only": true,
+          "supplied_user_name": "QA-MM-20260919045913"
+        }
+      }
+    ],
+    "exclusions": "Ruta sin placa: el flujo de kilometraje de salida (th_jornada_kilometrajes) se excluye por hallazgo preexistente 42P10 en el ON CONFLICT de createPunch, fuera del alcance de este cambio."
+  },
+  "status": "passed"
+}

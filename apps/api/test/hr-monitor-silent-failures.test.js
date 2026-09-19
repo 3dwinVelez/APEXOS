@@ -26,7 +26,16 @@ const HR_SERVICE = "../src/modules/hr/service";
 const ADMIN_SERVICE = "../src/modules/admin/service";
 
 function todayIso() {
-  return new Date().toISOString().slice(0, 10);
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Bogota",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(new Date()).reduce((acc, part) => {
+    acc[part.type] = part.value;
+    return acc;
+  }, {});
+  return `${parts.year}-${parts.month}-${parts.day}`;
 }
 
 const EMPLOYEE = { id: 5, code: "E5", user: { id: "u1", name: "Operario", email: "op@scj.com" } };

@@ -1,0 +1,65 @@
+{
+  "change_id": "hr-monitor-ui-modernization-20260918",
+  "commit": "c92969e16d205f39a0aea583b4f26509e6a1b1eb",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "certification.json",
+        "01-lista-horarios.png",
+        "02b-monitor-equipo-y-timeline.png",
+        "03-lightbox-evidencia.png"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "certification.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "validation-checks.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "validation-checks.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "validation-checks.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-monitor-ui-modernization-qa.js",
+    "evidence": [
+      "certification.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-monitor-ui-modernization-qa.js",
+    "evidence": [
+      "unit-tests.txt",
+      "validation-checks.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "APEXOS release owner (Edwin)",
+    "approved_at": "2026-09-18T21:30:00-05:00"
+  }
+}

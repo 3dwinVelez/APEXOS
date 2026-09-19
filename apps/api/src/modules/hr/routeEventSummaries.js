@@ -38,7 +38,7 @@ function matchesUnlinked(route, row, occurredAt) {
   return rowAliases(row).some((alias) => assigned.has(alias));
 }
 
-function buildRouteEventSummaries({ routeContexts = [], punchGroups = [], activityGroups = [], closedGroups = [], evidenceRows = [], unlinkedPunches = [], unlinkedActivities = [] }) {
+function buildRouteEventSummaries({ routeContexts = [], punchGroups = [], activityGroups = [], closedGroups = [], evidenceRows = [], punchEvidenceRows = [], unlinkedPunches = [], unlinkedActivities = [] }) {
   const byRoute = (rows) => new Map(rows.map((row) => [Number(row.route_id), row]));
   const punchesByRoute = byRoute(punchGroups);
   const activitiesByRoute = byRoute(activityGroups);
@@ -47,6 +47,14 @@ function buildRouteEventSummaries({ routeContexts = [], punchGroups = [], activi
   for (const row of evidenceRows) {
     const routeId = Number(row.activity?.route_id);
     if (routeId) evidenceByRoute.set(routeId, (evidenceByRoute.get(routeId) || 0) + 1);
+  }
+  const punchEvidenceByRoute = new Map();
+  for (const row of punchEvidenceRows) {
+    const routeId = Number(row.route_id);
+    if (!routeId) continue;
+    const items = Array.isArray(row.extra_evidence) ? row.extra_evidence : [row.extra_evidence];
+    const visible = items.filter((item) => item && (item.base64_data || item.base64 || item.file_url || item.file_name || item.storage_path)).length;
+    punchEvidenceByRoute.set(routeId, (punchEvidenceByRoute.get(routeId) || 0) + visible);
   }
 
   return routeContexts.map((route) => {
@@ -65,7 +73,7 @@ function buildRouteEventSummaries({ routeContexts = [], punchGroups = [], activi
       route_id: routeId,
       punch_count: punchCount,
       activity_count: activityCount,
-      evidence_count: (evidenceByRoute.get(Number(routeId)) || 0) + fallbackActivities.reduce((sum, row) => sum + Number(row._count?.evidence || 0), 0),
+      evidence_count: (evidenceByRoute.get(Number(routeId)) || 0) + (punchEvidenceByRoute.get(Number(routeId)) || 0) + fallbackActivities.reduce((sum, row) => sum + Number(row._count?.evidence || 0), 0),
       closed_count: Number(closedByRoute.get(Number(routeId))?._count?._all || 0) + fallbackPunches.filter((row) => row.type === "salida").length,
       event_count: punchCount + activityCount,
       last_event_at: timestamps.length ? new Date(Math.max(...timestamps)).toISOString() : null

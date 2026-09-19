@@ -2,26 +2,30 @@
 
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
+import { Badge, Skeleton } from "@/components/ui/feedback";
 import { localCalendarDate, scheduleGpsRequired, scheduleMonitorDate, scheduleTrackingMode } from "@/lib/hrScheduleMonitor";
 import { subscribeHrMonitorRefresh } from "@/lib/hrMonitorRefresh";
-import { AlertTriangle, ArrowLeft, Building2, CalendarDays, Camera, CheckSquare2, Clock, Copy, Edit3, Filter, HelpCircle, Navigation, Plus, RefreshCw, RotateCcw, Save, Search, Square, Truck, UserPlus, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Building2, CalendarDays, Camera, CheckCircle2, CheckSquare2, Clock, Copy, Edit3, Filter, HelpCircle, ImageOff, LogIn, LogOut, MapPin, Navigation, PlayCircle, Plus, RefreshCw, RotateCcw, Save, Search, Square, Timer, Truck, UserPlus, Utensils, UtensilsCrossed, X, ZoomIn } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Employee = { id: number | string; code: string; user_type?: string; position: string; department: string; metadata: { name: string; document: string; user_type?: string }; user: { name: string } };
 type Vehicle = { id: number | string; plate: string; type: string; model: string };
 type TimeRoute = { id: number | string; code?: string; display_id?: number | string; date: string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string; status: string; tolerance_minutes?: number; notes?: string; gps_required?: boolean; tracking_mode?: string; metadata?: Record<string, unknown> };
 type MasterOption = { code: string; name: string; active?: boolean; sort_order?: number };
 type UserMasterData = { locations?: MasterOption[] };
-type OperatorPoint = { key: string; user_name: string; name: string; route_id: number | string; online?: boolean; last_punch_type?: string; last_activity_type?: string; last_activity_time?: string };
+type OperatorPoint = { key: string; user_name: string; name: string; route_id: number | string; online?: boolean; status?: string; latitude?: number | null; longitude?: number | null; age_seconds?: number | null; last_punch_type?: string; last_punch_time?: string; last_activity_type?: string; last_activity_time?: string };
 type MonitorEvidence = { id?: number | string; source?: "activity" | "punch"; base64_data?: string; file_name?: string; file_url?: string; has_base64_data?: boolean; available?: boolean };
 type PunchPoint = { id: number | string; user_name: string; type: string; time?: string; punched_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; extra_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: MonitorEvidence };
 type ActivityPoint = { id: number | string; user_name: string; type: string; time?: string; occurred_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; observation?: string; evidence?: MonitorEvidence[] };
 type RouteEventSummary = { route_id: number | string; punch_count: number; activity_count: number; evidence_count: number; closed_count: number; event_count: number; last_event_at?: string | null };
 type RouteEventSummaryResponse = { generated_at: string; routes: RouteEventSummary[] };
-type RouteMonitor = TimeRoute & RouteEventSummary & { placa?: string; assigned_count?: number; online_count?: number; with_gps_count?: number; punch_points?: PunchPoint[]; activity_points?: ActivityPoint[] };
+type MonitorMark = { id: number | string; type: string; time?: string };
+type MonitorMarksByUser = { user_name: string; marks: MonitorMark[] };
+type RouteMonitor = TimeRoute & RouteEventSummary & { placa?: string; assigned_count?: number; online_count?: number; with_gps_count?: number; punch_points?: PunchPoint[]; activity_points?: ActivityPoint[]; marks_by_user?: MonitorMarksByUser[] };
 type OperationsMap = { date: string; generated_at: string; people: OperatorPoint[]; routes: RouteMonitor[]; totals: { routes: number; planned_people: number; online: number; without_gps: number; offline: number } };
+type MonitorEvidenceBatch = { route_id: number | string; generated_at: string; punch_evidence: Record<string, MonitorEvidence>; activity_evidence: Record<string, MonitorEvidence[]>; counts: { punches: number; punch_evidence: number; activities: number; activity_evidence: number } };
 
 const punchNames: Record<string, string> = { entrada: "Entrada", inicio_almuerzo: "Almuerzo", fin_almuerzo: "Retorno", salida: "Cierre" };
 const weekdayOptions = [
@@ -44,6 +48,95 @@ function formatHour(value?: string | null) {
   if (/^\d{2}:\d{2}/.test(value)) return value.slice(0, 5);
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "--" : date.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
+}
+
+type TimelineEvent = {
+  kind: "marca" | "actividad";
+  id: string;
+  user_name: string;
+  type: string;
+  title: string;
+  at: string;
+  time: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  accuracy_meters?: number | null;
+  observation: string;
+  evidence: MonitorEvidence[];
+};
+
+const punchSequence = ["entrada", "inicio_almuerzo", "fin_almuerzo", "salida"];
+const punchShortNames: Record<string, string> = { entrada: "Entrada", inicio_almuerzo: "Almuerzo", fin_almuerzo: "Retorno", salida: "Cierre" };
+
+function punchIconFor(type: string) {
+  switch (type) {
+    case "entrada": return LogIn;
+    case "inicio_almuerzo": return Utensils;
+    case "fin_almuerzo": return UtensilsCrossed;
+    case "salida": return LogOut;
+    default: return Clock;
+  }
+}
+
+function punchIconClassName(type: string) {
+  switch (type) {
+    case "entrada": return "bg-apex";
+    case "inicio_almuerzo": return "bg-amber-500";
+    case "fin_almuerzo": return "bg-amber-600";
+    case "salida": return "bg-neutral-500";
+    default: return "bg-apex";
+  }
+}
+
+function minutesFromTime(value?: string | null) {
+  if (!value) return null;
+  const match = String(value).match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return null;
+  return Number(match[1]) * 60 + Number(match[2]);
+}
+
+function punchPunctuality(event: TimelineEvent, route: RouteMonitor) {
+  if (event.kind !== "marca") return null;
+  const minutes = minutesFromTime(event.time);
+  const tolerance = Math.max(0, Number(route.tolerance_minutes ?? 15));
+  if (event.type === "entrada") {
+    const expected = minutesFromTime(route.start_time);
+    if (minutes == null || expected == null) return null;
+    const diff = minutes - expected;
+    if (diff <= 0) return { label: diff === 0 ? "En punto" : `Anticipado ${Math.abs(diff)} min`, tone: "success" as const, icon: CheckCircle2 };
+    if (diff <= tolerance) return { label: `Dentro de tolerancia (+${diff} min)`, tone: "info" as const, icon: Clock };
+    return { label: `Tarde ${diff} min`, tone: "warning" as const, icon: AlertTriangle };
+  }
+  if (event.type === "salida") {
+    const expected = minutesFromTime(route.end_time);
+    if (minutes == null || expected == null) return null;
+    const diff = expected - minutes;
+    if (diff <= 0) return { label: "Cierre a tiempo", tone: "success" as const, icon: CheckCircle2 };
+    if (diff <= tolerance) return { label: `Cierre anticipado ${diff} min`, tone: "info" as const, icon: Clock };
+    return { label: `Salida temprana ${diff} min`, tone: "warning" as const, icon: AlertTriangle };
+  }
+  return null;
+}
+
+function personMonitorMarks(route: RouteMonitor, person: OperatorPoint) {
+  const normalized = (value?: string | null) => String(value || "").trim().toLowerCase();
+  const names = new Set([normalized(person.user_name), normalized(person.name)].filter(Boolean));
+  const marks = (route.marks_by_user || []).filter((entry) => names.has(normalized(entry.user_name))).flatMap((entry) => entry.marks);
+  const byType = new Map<string, MonitorMark>();
+  for (const mark of marks) if (!byType.has(mark.type)) byType.set(mark.type, mark);
+  return byType;
+}
+
+function personStatusBadge(person: OperatorPoint) {
+  if (person.online) return { label: "En vivo", tone: "success" as const };
+  if (person.status === "Ultima marca") return { label: "Ultima marca", tone: "info" as const };
+  if (person.status === "Sin GPS") return { label: "Sin GPS", tone: "neutral" as const };
+  return { label: "Sin senal", tone: "neutral" as const };
+}
+
+function safeEvidenceUrl(value?: string | null) {
+  const trimmed = String(value || "").trim();
+  return /^https?:\/\//i.test(trimmed) ? trimmed : "";
 }
 
 function routeLabel(route: RouteMonitor) {
@@ -258,9 +351,12 @@ export default function RoutesPlanningPage() {
   const [kindFilter, setKindFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
-  const [loadedEvidence, setLoadedEvidence] = useState<Record<string, MonitorEvidence>>({});
+  const [loadedEvidence, setLoadedEvidence] = useState<Record<string, MonitorEvidence[]>>({});
   const [loadingEvidence, setLoadingEvidence] = useState<Record<string, boolean>>({});
   const [evidenceErrors, setEvidenceErrors] = useState<Record<string, string>>({});
+  const [loadingBatch, setLoadingBatch] = useState(false);
+  const [lightbox, setLightbox] = useState<MonitorEvidence | null>(null);
+  const batchLoadedRef = useRef(false);
 
   const loadRoutes = useCallback(async () => {
     let latest: TimeRoute[] | null = null;
@@ -356,12 +452,14 @@ export default function RoutesPlanningPage() {
     setLoadedEvidence({});
     setLoadingEvidence({});
     setEvidenceErrors({});
+    setLightbox(null);
+    batchLoadedRef.current = false;
     setSelectedRouteId(String(route.id));
     setMonitorDate(targetDate);
     loadMonitor(targetDate);
   }
 
-  async function loadTimelineEvidence(event: { id: string; kind: "marca" | "actividad"; evidence?: MonitorEvidence[] }) {
+  const loadTimelineEvidence = useCallback(async (event: TimelineEvent) => {
     const summary = event.evidence?.[0];
     if (summary?.id == null || loadingEvidence[event.id]) return;
     const source = event.kind === "marca" ? "punch" : "activity";
@@ -370,13 +468,28 @@ export default function RoutesPlanningPage() {
     try {
       const evidence = await api<MonitorEvidence>(`/api/v1/hr/monitor-evidence/${source}/${encodeURIComponent(String(summary.id))}`, { cache: "no-store" });
       if (!evidence.base64_data && !evidence.file_url) throw new Error("La evidencia no contiene un archivo visible.");
-      setLoadedEvidence((current) => ({ ...current, [event.id]: evidence }));
+      setLoadedEvidence((current) => ({ ...current, [event.id]: [evidence] }));
     } catch (error) {
       setEvidenceErrors((current) => ({ ...current, [event.id]: error instanceof Error ? error.message : "No fue posible cargar la evidencia." }));
     } finally {
       setLoadingEvidence((current) => ({ ...current, [event.id]: false }));
     }
-  }
+  }, [loadingEvidence]);
+
+  const loadRouteEvidenceBatch = useCallback(async (routeId: number | string) => {
+    setLoadingBatch(true);
+    try {
+      const batch = await api<MonitorEvidenceBatch>(`/api/v1/hr/monitor-evidence/route/${encodeURIComponent(String(routeId))}`, { cache: "no-store" });
+      const merged: Record<string, MonitorEvidence[]> = {};
+      for (const [id, payload] of Object.entries(batch.punch_evidence || {})) merged[`punch-${id}`] = [payload];
+      for (const [id, items] of Object.entries(batch.activity_evidence || {})) merged[`activity-${id}`] = items;
+      setLoadedEvidence((current) => ({ ...current, ...merged }));
+    } catch {
+      // La carga individual por evento sigue disponible como respaldo.
+    } finally {
+      setLoadingBatch(false);
+    }
+  }, []);
 
   async function openCreateModal(route?: RouteMonitor) {
     loadReferenceData();
@@ -501,10 +614,26 @@ export default function RoutesPlanningPage() {
   const selectedTimeline = useMemo(() => {
     if (!selectedRoute) return [];
     return [
-      ...(selectedRoute.punch_points || []).map((event) => ({ kind: "marca" as const, id: `punch-${event.id}`, user_name: event.user_name, title: punchNames[event.type] || event.type, at: event.punched_at, time: event.time || event.punched_at, latitude: event.latitude, longitude: event.longitude, accuracy_meters: event.accuracy_meters, observation: event.extra_minutes ? `${event.extra_minutes} minuto(s) extra · ${event.extra_reason || "extension"}${event.extra_detail ? ` · ${event.extra_detail}` : ""}` : "", evidence: event.extra_evidence?.base64_data || event.extra_evidence?.file_url || event.extra_evidence?.has_base64_data ? [event.extra_evidence] : [] })),
-      ...(selectedRoute.activity_points || []).map((event) => ({ kind: "actividad" as const, id: `activity-${event.id}`, user_name: event.user_name, title: event.type, at: event.occurred_at, time: event.time || event.occurred_at, latitude: event.latitude, longitude: event.longitude, accuracy_meters: event.accuracy_meters, observation: event.observation || "", evidence: event.evidence || [] }))
+      ...(selectedRoute.punch_points || []).map((event) => ({ kind: "marca" as const, id: `punch-${event.id}`, user_name: event.user_name, type: event.type, title: punchNames[event.type] || event.type, at: event.punched_at, time: event.time || event.punched_at, latitude: event.latitude, longitude: event.longitude, accuracy_meters: event.accuracy_meters, observation: event.extra_minutes ? `${event.extra_minutes} minuto(s) extra · ${event.extra_reason || "extension"}${event.extra_detail ? ` · ${event.extra_detail}` : ""}` : "", evidence: event.extra_evidence?.base64_data || event.extra_evidence?.file_url || event.extra_evidence?.has_base64_data ? [event.extra_evidence] : [] })),
+      ...(selectedRoute.activity_points || []).map((event) => ({ kind: "actividad" as const, id: `activity-${event.id}`, user_name: event.user_name, type: event.type, title: event.type, at: event.occurred_at, time: event.time || event.occurred_at, latitude: event.latitude, longitude: event.longitude, accuracy_meters: event.accuracy_meters, observation: event.observation || "", evidence: event.evidence || [] }))
     ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
   }, [selectedRoute]);
+
+  useEffect(() => {
+    if (!selectedRoute || batchLoadedRef.current) return;
+    batchLoadedRef.current = true;
+    void loadRouteEvidenceBatch(selectedRoute.id);
+  }, [loadRouteEvidenceBatch, selectedRoute]);
+
+  useEffect(() => {
+    if (loadingBatch || !selectedRoute) return;
+    for (const event of selectedTimeline) {
+      const summary = event.evidence?.[0];
+      if (summary?.available && summary.id != null && !loadedEvidence[event.id] && !loadingEvidence[event.id] && !evidenceErrors[event.id]) {
+        void loadTimelineEvidence(event);
+      }
+    }
+  }, [evidenceErrors, loadTimelineEvidence, loadedEvidence, loadingBatch, loadingEvidence, selectedRoute, selectedTimeline]);
   const routeCoverage = monitorRoutes.length ? Math.round((monitorRoutes.filter((route) => routeEventCount(route) > 0).length / monitorRoutes.length) * 100) : 0;
   const administrativeRoutes = monitorRoutes.filter((route) => !route.vehicle_plate && !route.placa).length;
   const operationalRoutes = monitorRoutes.length - administrativeRoutes;
@@ -743,75 +872,163 @@ export default function RoutesPlanningPage() {
       ) : null}
 
       {selectedRoute ? (
-        <div className="fixed inset-0 z-50 bg-neutral-950/40">
-          <aside className="ml-auto flex h-full w-full max-w-5xl flex-col overflow-hidden bg-white shadow-xl">
+        <div className="fixed inset-0 z-50 bg-neutral-950/40" onClick={() => setSelectedRouteId("")}>
+          <aside className="ml-auto flex h-full w-full max-w-5xl flex-col overflow-hidden bg-paper shadow-xl" role="dialog" aria-modal="true" aria-label="Monitor administrativo" onClick={(event) => event.stopPropagation()}>
             <header className="border-b border-line p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-apex">Monitor administrativo</p>
-                  <h2 className="text-2xl font-semibold">{routeLabel(selectedRoute)}</h2>
-                  <p className="mt-1 text-sm text-neutral-600">{formatHour(selectedRoute.start_time)} - {formatHour(selectedRoute.end_time)} - {(selectedRoute.assigned_count ?? routeEmployeeValues(selectedRoute).length ?? 0)} persona(s)</p>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-semibold text-apex">Monitor administrativo</p>
+                    {(() => { const displayState = routeDisplayState(selectedRoute); return <Badge tone={displayState.status === "closed" ? "neutral" : displayState.status === "cancelled" ? "error" : "success"}>{displayState.label}</Badge>; })()}
+                  </div>
+                  <h2 className="mt-1 text-2xl font-semibold text-content-strong">{routeLabel(selectedRoute)}</h2>
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-content-muted">
+                    <span className="inline-flex items-center gap-1.5"><Clock size={14} /> {formatHour(selectedRoute.start_time)} - {formatHour(selectedRoute.end_time)}</span>
+                    <span className="inline-flex items-center gap-1.5"><Timer size={14} /> Tolerancia {selectedRoute.tolerance_minutes ?? 15} min</span>
+                    <span>{selectedRoute.assigned_count ?? routeEmployeeValues(selectedRoute).length ?? 0} persona(s)</span>
+                    <span>{scheduleGpsRequired(selectedRoute) ? "Seguimiento GPS" : "Solo marcaciones"}</span>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => { loadRoutes(); loadEventSummaries(); loadMonitor(); }} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={16} /> Actualizar</button>
                   <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => openEditModal(selectedRoute)} type="button"><Edit3 size={16} /> Editar</button>
-                  <button className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-line" onClick={() => setSelectedRouteId("")} type="button" aria-label="Cerrar"><X size={18} /></button>
+                  <Link className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href="/dashboard/talento-humano/mapa"><Navigation size={16} /> Mapa</Link>
+                  <button className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-line hover:bg-paper" onClick={() => setSelectedRouteId("")} type="button" aria-label="Cerrar"><X size={18} /></button>
                 </div>
               </div>
             </header>
-            <div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[320px_1fr]">
+            <div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[340px_1fr]">
               <section className="border-b border-line p-4 lg:border-b-0 lg:border-r">
-                <h3 className="text-sm font-semibold uppercase text-neutral-500">Personas asignadas</h3>
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-content-muted">Equipo asignado</h3>
+                  <span className="text-xs font-semibold text-content-muted">{selectedPeople.filter((person) => person.online).length}/{selectedPeople.length} en vivo</span>
+                </div>
                 <div className="mt-3 space-y-2">
-                  {(selectedPeople.length ? selectedPeople : routeEmployeeNames(selectedRoute).map((name) => ({ key: String(name), name, user_name: String(name), route_id: selectedRoute.id } as OperatorPoint))).map((person) => (
-                    <div className="rounded-md border border-line p-3" key={person.key}>
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="truncate font-semibold">{person.name || person.user_name}</p>
-                          <p className="mt-1 text-xs text-neutral-500">{person.last_punch_type ? `Ultima marca: ${punchNames[person.last_punch_type] || person.last_punch_type}` : "Sin marca registrada"}</p>
+                  {(selectedPeople.length ? selectedPeople : routeEmployeeNames(selectedRoute).map((name) => ({ key: String(name), name, user_name: String(name), route_id: selectedRoute.id } as OperatorPoint))).map((person) => {
+                    const marks = personMonitorMarks(selectedRoute, person);
+                    const status = personStatusBadge(person);
+                    const initials = String(person.name || person.user_name).split(/\s+/).filter(Boolean).map((word) => word[0]).slice(0, 2).join("").toUpperCase();
+                    return (
+                      <article className="rounded-md border border-line bg-surface p-3" key={person.key}>
+                        <div className="flex items-start gap-3">
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-apex/10 text-sm font-bold text-apex">{initials}</span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="truncate font-semibold text-content-strong">{person.name || person.user_name}</p>
+                              <Badge tone={status.tone}>{status.label}</Badge>
+                            </div>
+                            <p className="mt-0.5 text-xs text-content-muted">
+                              {person.last_punch_type && person.last_punch_type !== "sin_marcar" ? `Ultima marca: ${punchShortNames[person.last_punch_type] || person.last_punch_type}${person.last_punch_time ? ` · ${person.last_punch_time}` : ""}` : "Sin marca registrada"}
+                            </p>
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {punchSequence.map((type) => {
+                                const mark = marks.get(type);
+                                return (
+                                  <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${mark ? "bg-success/10 text-content-strong" : "bg-surface-muted text-content-subtle"}`} key={type} title={mark ? `Marcada a las ${formatHour(mark.time)}` : "Pendiente"}>
+                                    {mark ? <CheckCircle2 size={10} /> : null}{punchShortNames[type]}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                            {person.last_activity_type ? <p className="mt-2 text-xs text-content-muted">{person.last_activity_type} - {person.last_activity_time || "--"}</p> : null}
+                            {person.latitude != null && person.longitude != null ? (
+                              <p className="mt-1 text-xs text-content-muted"><MapPin className="inline" size={11} /> {Number(person.latitude).toFixed(5)}, {Number(person.longitude).toFixed(5)}{person.age_seconds != null ? ` · hace ${Math.max(0, Math.round(Number(person.age_seconds) / 60))} min` : ""}</p>
+                            ) : null}
+                          </div>
                         </div>
-                        <span className={`rounded-md px-2 py-1 text-xs font-semibold ${person.online ? "bg-emerald-50 text-emerald-700" : "bg-paper text-neutral-600"}`}>{person.online ? "En vivo" : "Sin senal"}</span>
-                      </div>
-                      {person.last_activity_type ? <p className="mt-2 text-xs text-neutral-600">{person.last_activity_type} - {person.last_activity_time || "--"}</p> : null}
-                    </div>
-                  ))}
+                      </article>
+                    );
+                  })}
+                  {!selectedPeople.length ? <p className="rounded-md bg-surface-muted p-3 text-sm text-content-muted">Sin personas asignadas a esta jornada.</p> : null}
                 </div>
               </section>
               <section className="p-4">
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <h3 className="text-base font-semibold">Trazabilidad cronologica</h3>
-                    <p className="mt-1 text-sm text-neutral-600">Marcaciones y actividades individuales con GPS y evidencia.</p>
+                    <h3 className="text-base font-semibold text-content-strong">Trazabilidad cronologica</h3>
+                    <p className="mt-1 text-sm text-content-muted">Marcaciones y actividades con hora, GPS, tolerancia y evidencia fotografica.</p>
                   </div>
-                  <Link className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href="/dashboard/talento-humano/mapa"><Navigation size={16} /> Mapa</Link>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge tone="neutral">{selectedTimeline.filter((event) => event.kind === "marca").length} marcaciones</Badge>
+                    <Badge tone="info">{selectedTimeline.filter((event) => event.kind === "actividad").length} actividades</Badge>
+                    <Badge tone="success">{selectedTimeline.reduce((sum, event) => sum + (loadedEvidence[event.id]?.length ? loadedEvidence[event.id] : event.evidence || []).filter((item) => item.base64_data || safeEvidenceUrl(item.file_url)).length, 0)} evidencias</Badge>
+                    {loadingBatch ? <Badge tone="neutral"><RefreshCw className="animate-spin" size={12} /> Cargando evidencias</Badge> : null}
+                  </div>
                 </div>
-                <div className="space-y-3">
-                  {selectedTimeline.map((event, index) => {
-                    const evidence = loadedEvidence[event.id] || event.evidence?.[0];
-                    const canLoadEvidence = Boolean(event.evidence?.[0]?.available && event.evidence?.[0]?.id != null);
-                    return (
-                    <article className="grid gap-3 rounded-md border border-line p-3 md:grid-cols-[44px_1fr_180px]" key={event.id}>
-                      <span className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white ${event.kind === "marca" ? "bg-apex" : "bg-emerald-600"}`}>{index + 1}</span>
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-semibold">{event.title}</p>
-                          <span className="rounded-md bg-paper px-2 py-1 text-xs font-semibold text-neutral-600">{event.kind === "marca" ? "Marcacion" : "Actividad"}</span>
-                        </div>
-                        <p className="mt-1 text-sm text-neutral-600">{event.user_name} - {formatHour(event.time)}</p>
-                        {event.observation ? <p className="mt-2 text-sm text-neutral-700">{event.observation}</p> : null}
-                        {event.latitude != null && event.longitude != null ? <p className="mt-2 text-xs text-neutral-500">GPS {Number(event.latitude).toFixed(5)}, {Number(event.longitude).toFixed(5)} - {Math.round(Number(event.accuracy_meters || 0))}m</p> : null}
-                      </div>
-                      <div>
-                        {evidence?.base64_data ? <Image alt={`Evidencia de ${event.title}`} className="h-32 w-full rounded-md object-cover" height={320} src={evidence.base64_data} unoptimized width={640} /> : evidence?.file_url ? <a className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href={evidence.file_url} target="_blank" rel="noreferrer"><Camera size={16} /> Ver evidencia</a> : canLoadEvidence ? <button className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-apex/30 bg-apex/5 px-3 text-sm font-semibold text-apex hover:bg-apex/10 disabled:cursor-wait disabled:opacity-70" disabled={Boolean(loadingEvidence[event.id])} onClick={() => void loadTimelineEvidence(event)} type="button">{loadingEvidence[event.id] ? <RefreshCw className="animate-spin" size={16} /> : <Camera size={16} />}{loadingEvidence[event.id] ? "Cargando..." : evidenceErrors[event.id] ? "Reintentar evidencia" : "Cargar evidencia"}</button> : <p className="rounded-md bg-paper p-3 text-xs font-semibold text-neutral-500">Sin evidencia fotografica</p>}
-                        {evidenceErrors[event.id] ? <p className="mt-2 text-xs font-medium text-red-600" role="alert">{evidenceErrors[event.id]}</p> : null}
-                      </div>
-                    </article>
-                    );
-                  })}
-                  {!selectedTimeline.length ? <p className="rounded-md bg-paper p-4 text-sm text-neutral-500">Este horario aun no tiene marcaciones ni actividades.</p> : null}
-                </div>
+                {!selectedTimeline.length ? (
+                  <p className="rounded-md bg-surface-muted p-4 text-sm text-content-muted">Este horario aun no tiene marcaciones ni actividades.</p>
+                ) : (
+                  <ol className="relative space-y-3 before:absolute before:bottom-6 before:left-[21px] before:top-6 before:w-px before:bg-line">
+                    {selectedTimeline.map((event) => {
+                      const punctuality = punchPunctuality(event, selectedRoute);
+                      const PunctualityIcon = punctuality?.icon || Clock;
+                      const EventIcon = event.kind === "marca" ? punchIconFor(event.type) : PlayCircle;
+                      const iconClassName = event.kind === "marca" ? punchIconClassName(event.type) : "bg-emerald-600";
+                      const items = (loadedEvidence[event.id]?.length ? loadedEvidence[event.id] : event.evidence || []) as MonitorEvidence[];
+                      const visibleItems = items.filter((item) => item.base64_data || safeEvidenceUrl(item.file_url));
+                      const canLoadEvidence = Boolean(event.evidence?.[0]?.available && event.evidence?.[0]?.id != null);
+                      return (
+                        <li className="relative pl-14" key={event.id}>
+                          <span className={`absolute left-0 top-1 flex h-11 w-11 items-center justify-center rounded-full text-white ring-4 ring-paper ${iconClassName}`}><EventIcon size={18} /></span>
+                          <article className="rounded-md border border-line bg-surface p-3">
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <p className="font-semibold text-content-strong">{event.title}</p>
+                                  <Badge tone={event.kind === "marca" ? "neutral" : "info"}>{event.kind === "marca" ? "Marcacion" : "Actividad"}</Badge>
+                                  {punctuality ? <Badge tone={punctuality.tone}><PunctualityIcon size={12} /> {punctuality.label}</Badge> : null}
+                                </div>
+                                <p className="mt-1 text-sm text-content-muted">{event.user_name} · <span className="font-semibold text-content-body">{formatHour(event.time)}</span></p>
+                                {event.observation ? <p className="mt-1.5 text-sm text-content-body">{event.observation}</p> : null}
+                                {event.latitude != null && event.longitude != null ? (
+                                  <p className="mt-1.5 flex items-center gap-1.5 text-xs text-content-muted"><MapPin size={12} /> {Number(event.latitude).toFixed(5)}, {Number(event.longitude).toFixed(5)} · precision ±{Math.round(Number(event.accuracy_meters || 0))} m</p>
+                                ) : null}
+                              </div>
+                            </div>
+                            <div className="mt-3">
+                              {visibleItems.length ? (
+                                <div className="flex flex-wrap gap-2">
+                                  {visibleItems.slice(0, 4).map((item, itemIndex) => item.base64_data ? (
+                                    <button className="group relative h-24 w-24 overflow-hidden rounded-md border border-line" key={`${String(item.id || "img")}-${itemIndex}`} onClick={() => setLightbox(item)} type="button" title={item.file_name || "Ampliar evidencia"}>
+                                      <Image alt={item.file_name || `Evidencia de ${event.title}`} className="h-full w-full object-cover transition duration-200 group-hover:scale-105" height={96} src={item.base64_data} unoptimized width={96} />
+                                      <span className="absolute inset-0 flex items-center justify-center bg-neutral-950/0 text-white opacity-0 transition group-hover:bg-neutral-950/30 group-hover:opacity-100"><ZoomIn size={18} /></span>
+                                    </button>
+                                  ) : safeEvidenceUrl(item.file_url) ? (
+                                    <a className="inline-flex h-24 w-24 items-center justify-center gap-1.5 rounded-md border border-line bg-paper px-2 text-center text-xs font-semibold text-content-body hover:border-apex" href={safeEvidenceUrl(item.file_url)} target="_blank" rel="noreferrer" key={`${String(item.id || "url")}-${itemIndex}`} title={item.file_name || "Ver evidencia"}><Camera size={16} /> Ver</a>
+                                  ) : null)}
+                                  {visibleItems.length > 4 ? <span className="self-center text-xs font-semibold text-content-muted">+{visibleItems.length - 4} mas</span> : null}
+                                </div>
+                              ) : loadingEvidence[event.id] ? (
+                                <div className="flex items-center gap-3 text-sm text-content-muted"><Skeleton className="h-24 w-24" /> Cargando evidencia...</div>
+                              ) : canLoadEvidence ? (
+                                <button className="inline-flex h-9 items-center gap-2 rounded-md border border-apex/30 bg-apex/5 px-3 text-sm font-semibold text-apex hover:bg-apex/10" onClick={() => void loadTimelineEvidence(event)} type="button"><Camera size={15} /> {evidenceErrors[event.id] ? "Reintentar evidencia" : "Cargar evidencia"}</button>
+                              ) : (
+                                <p className="inline-flex items-center gap-2 rounded-md bg-surface-muted px-3 py-2 text-xs font-semibold text-content-subtle"><ImageOff size={14} /> Sin evidencia fotografica</p>
+                              )}
+                              {evidenceErrors[event.id] ? <p className="mt-2 text-xs font-medium text-red-600" role="alert">{evidenceErrors[event.id]}</p> : null}
+                            </div>
+                          </article>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                )}
               </section>
             </div>
           </aside>
+          {lightbox ? (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-neutral-950/80 p-4" onClick={() => setLightbox(null)} role="dialog" aria-modal="true" aria-label="Evidencia ampliada">
+              <div className="max-h-full max-w-3xl overflow-hidden rounded-md bg-paper" onClick={(event) => event.stopPropagation()}>
+                <div className="flex items-center justify-between gap-3 border-b border-line p-3">
+                  <p className="truncate text-sm font-semibold text-content-strong">{lightbox.file_name || "Evidencia fotografica"}</p>
+                  <button className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line hover:bg-paper" onClick={() => setLightbox(null)} type="button" aria-label="Cerrar evidencia"><X size={16} /></button>
+                </div>
+                <div className="max-h-[70vh] overflow-auto p-3">
+                  <Image alt={lightbox.file_name || "Evidencia ampliada"} className="h-auto w-auto max-w-full rounded-md" height={720} src={lightbox.base64_data || ""} unoptimized width={1280} />
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
