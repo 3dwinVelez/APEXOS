@@ -1,7 +1,7 @@
 {
   "change_id": "hr-monitor-ui-modernization-20260918",
   "base_commits": {
-    "develop": "cda3974c976a6777ff4bd1eef0b2696c293d36ed",
+    "develop": "99ea19910579a92a35e40013d0fdf33c10418136",
     "main": "e79a3639feb4b2f0c571ae24956c803942a6ed0b"
   },
   "certified_commit": "c92969e16d205f39a0aea583b4f26509e6a1b1eb",
