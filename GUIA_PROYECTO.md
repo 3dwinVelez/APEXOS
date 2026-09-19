@@ -248,13 +248,17 @@ El arranque web de desarrollo usa `.next-dev` y el build usa `.next`. Esto evita
 7. Antes de cerrar cambios importantes, ejecutar typecheck, validacion de assets y build del frontend.
 
 
+Credenciales QA: las claves de estos usuarios fueron rotadas y la version documentada aqui ya no valida contra el hash almacenado en la base QA (falla con 401 VALIDACION, no es lockout del authGuard). Solicitar las claves vigentes al responsable del proyecto antes de intentar el login manual.
+
 Super usuario admin
 Correo: admin@apexos.qa
-Clave: ApexOS-QA-Admin-2026!
+Clave: rotada, no documentada en el repositorio.
 Acceso: admin global APEX OS, panel de empresas/suscripciones y owner de empresas QA.
 
 Usuario empresa SCJ
 Correo: scj@apexos.qa
-Clave: ApexOS-QA-SCJ-2026!
+Clave: rotada, no documentada en el repositorio.
 Acceso: empresa SCJ como admin.
 Módulos habilitados: talento_humano, servicios, transporte, configuracion, administracion_apex.
+
+Los scripts de certificacion (`scripts/certifications/*`) no dependen de estas claves: crean y luego desactivan su propio usuario admin en el tenant objetivo y registran el correo generado en la evidencia, por lo que siguen funcionando mientras la rotacion no se resuelva.
