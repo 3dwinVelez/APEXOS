@@ -54,6 +54,7 @@ function splitDayNightSegments({ startTime, endTime, nightWindows = DEFAULT_NIGH
 function validateMileage(value, { precision = 1 } = {}) {
   if (value === "" || value == null) {
     const error = new Error("El kilometraje del dia es obligatorio.");
+    error.statusCode = 400;
     error.code = "KILOMETRAJE_REQUERIDO";
     throw error;
   }
@@ -62,12 +63,14 @@ function validateMileage(value, { precision = 1 } = {}) {
   const pattern = decimals > 0 ? new RegExp(`^\\d+(\\.\\d{1,${decimals}})?$`) : /^\d+$/;
   if (!pattern.test(text)) {
     const error = new Error("El kilometraje debe ser numerico, positivo y sin separadores invalidos.");
+    error.statusCode = 400;
     error.code = "KILOMETRAJE_INVALIDO";
     throw error;
   }
   const number = Number(text);
   if (!Number.isFinite(number) || number < 0) {
     const error = new Error("El kilometraje no puede ser negativo.");
+    error.statusCode = 400;
     error.code = "KILOMETRAJE_INVALIDO";
     throw error;
   }
