@@ -7,28 +7,21 @@
   "certified_commit": "c92969e16d205f39a0aea583b4f26509e6a1b1eb",
   "scope_schema_version": 2,
   "change_intent": {
-    "summary": "Modernizar la presentacion del monitor de mallas horarias: drawer con chips de marcacion por persona, badges KPI, timeline con puntualidad/GPS/evidencias fotograficas en miniatura con lightbox, y endpoint batch GET /hr/monitor-evidence/route/:routeId que entrega todas las evidencias de la ruta en una peticion con aislamiento de tenant y permiso hr:read.",
+    "summary": "Modernizar la presentacion del monitor de mallas horarias: drawer con chips de marcacion por persona, badges KPI, timeline con puntualidad/GPS/evidencias fotograficas en miniatura con lightbox, y endpoint batch GET /hr/monitor-evidence/route/:routeId que entrega todas las evidencias de la ruta en una peticion con aislamiento de tenant y permiso hr:read. Segunda tanda: el resumen de rutas cuenta tambien las evidencias de marcaciones (TimePunch.extra_evidence) en el KPI, y se estabiliza la prueba de fecha de hr-monitor-silent-failures con zona America/Bogota.",
     "modules": ["talento-humano", "hr", "qa-certification"]
   },
   "expected_changes": [
-    { "status": "M", "file": "apps/api/src/modules/hr/routes.js" },
-    { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
     { "status": "M", "file": "apps/api/src/modules/hr/routeEventSummaries.js" },
-    { "status": "M", "file": "apps/api/test/hr-monitor-evidence-demand.test.js" },
+    { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
     { "status": "M", "file": "apps/api/test/hr-monitor-silent-failures.test.js" },
     { "status": "M", "file": "apps/api/test/hr-route-event-summaries.test.js" },
-    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx" },
-    { "status": "A", "file": "scripts/certifications/hr-monitor-ui-modernization-qa.js" },
-    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/01-lista-horarios.png" },
-    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/02b-monitor-equipo-y-timeline.png" },
-    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/03-lightbox-evidencia.png" },
-    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/certification.json" },
-    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/fixture.json" },
-    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/security-review.md" },
-    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/unit-tests.txt" },
-    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/validation-checks.json" },
-    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/scope-manifest.json" },
-    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/preqa-approval-evidence.json" }
+    { "status": "M", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/certification.json" },
+    { "status": "M", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/fixture.json" },
+    { "status": "M", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/preqa-approval-evidence.json" },
+    { "status": "M", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/scope-manifest.json" },
+    { "status": "M", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/unit-tests.txt" },
+    { "status": "M", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/validation-checks.json" },
+    { "status": "M", "file": "scripts/certifications/hr-monitor-ui-modernization-qa.js" }
   ],
   "allowed_paths": [
     "apps/api/src/modules/hr/routes.js",
