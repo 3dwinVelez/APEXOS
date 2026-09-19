@@ -73,3 +73,66 @@ test("rechaza origen o identificador invalido antes de consultar datos", async (
   await assert.rejects(service.getMonitorEvidence("nyvora", "activity", "abc"), (error) => error.statusCode === 400);
   assert.equal(db.calls.length, 0);
 });
+
+function batchDatabase() {
+  const calls = [];
+  return {
+    calls,
+    runWithTenant: async (tenantId, callback) => {
+      calls.push({ model: "tenant", tenantId });
+      return callback();
+    },
+    timePunch: {
+      findMany: async (args) => {
+        calls.push({ model: "timePunch", args });
+        if (args.where.tenant_id !== "nyvora") return [];
+        return [
+          { id: 21, route_id: 5, extra_evidence: { name: "salida.png", base64: "data:image/png;base64,punch" } },
+          { id: 22, route_id: 5, extra_evidence: null, metadata: {} }
+        ];
+      }
+    },
+    workActivity: {
+      findMany: async (args) => {
+        calls.push({ model: "workActivity", args });
+        if (args.where.tenant_id !== "nyvora") return [];
+        return [
+          { id: 9, route_id: 5, evidence: [{ id: 17, file_name: "actividad.png", base64_data: "data:image/png;base64,activity" }] },
+          { id: 10, route_id: 5, evidence: [] }
+        ];
+      }
+    }
+  };
+}
+
+test("carga en lote la evidencia de marcaciones y actividades de una ruta", async () => {
+  const db = batchDatabase();
+  const result = await serviceWith(db).getMonitorEvidenceBatch("nyvora", 5);
+  assert.equal(result.route_id, 5);
+  assert.equal(result.punch_evidence["21"].base64_data, "data:image/png;base64,punch");
+  assert.equal(result.punch_evidence["21"].source, "punch");
+  assert.deepEqual(result.punch_evidence["22"], { id: 22, source: "punch" });
+  assert.equal(result.activity_evidence["9"][0].base64_data, "data:image/png;base64,activity");
+  assert.equal(result.activity_evidence["9"][0].source, "activity");
+  assert.deepEqual(result.activity_evidence["10"], []);
+  assert.deepEqual(result.counts, { punches: 2, punch_evidence: 1, activities: 2, activity_evidence: 1 });
+  const punchQuery = db.calls.find((call) => call.model === "timePunch").args;
+  const activityQuery = db.calls.find((call) => call.model === "workActivity").args;
+  assert.deepEqual(punchQuery.where, { route_id: 5, tenant_id: "nyvora" });
+  assert.deepEqual(activityQuery.where, { route_id: 5, tenant_id: "nyvora" });
+});
+
+test("el lote de evidencias no expone datos de otro tenant", async () => {
+  const db = batchDatabase();
+  const result = await serviceWith(db).getMonitorEvidenceBatch("otro-tenant", 5);
+  assert.deepEqual(result.punch_evidence, {});
+  assert.deepEqual(result.activity_evidence, {});
+  assert.equal(result.counts.punches, 0);
+  assert.equal(result.counts.activities, 0);
+});
+
+test("rechaza identificador de ruta invalido antes de consultar datos", async () => {
+  const db = batchDatabase();
+  await assert.rejects(serviceWith(db).getMonitorEvidenceBatch("nyvora", "abc"), (error) => error.statusCode === 400 && error.code === "EVIDENCIA_MONITOR_RUTA_INVALIDA");
+  assert.equal(db.calls.length, 0);
+});

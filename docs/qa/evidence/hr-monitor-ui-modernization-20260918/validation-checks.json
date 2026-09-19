@@ -1,0 +1,14 @@
+{
+  "change_id": "hr-monitor-ui-modernization-20260918",
+  "generated_at": "2026-09-18T21:30:00.000Z",
+  "environment": "LOCAL",
+  "checks": [
+    { "name": "api_unit_tests", "command": "node --test apps/api/test/hr-monitor-evidence-demand.test.js apps/api/test/hr-operations-map-contract.test.js apps/api/test/hr-monitor-silent-failures.test.js", "result": "pass", "detail": "16/16 tests pass" },
+    { "name": "web_typecheck", "command": "npm --workspace apps/web run typecheck", "result": "pass", "detail": "tsc -p tsconfig.typecheck.json --noEmit sin errores" },
+    { "name": "lint", "command": "npm run lint", "result": "pass", "detail": "0 errores; 13 warnings preexistentes en otros modulos (ninguno en apps/web/app/dashboard/talento-humano/rutas/page.tsx)" },
+    { "name": "performance_guard", "command": "npm run performance:guard", "result": "pass", "detail": "report=qa-root-cause-2026-07-27T01-06-02-427Z.json targets=17 failures=0" },
+    { "name": "e2e_certification", "command": "node scripts/certifications/hr-monitor-ui-modernization-qa.js --env-file .env --api-url http://127.0.0.1:3000 --environment local --fixture-output docs/qa/evidence/hr-monitor-ui-modernization-20260918/fixture.json", "result": "pass", "detail": "13 controles: contrato operations-map (ruta, marks_by_user, punch_points, activity_points, personas, sin marcar, resumenes de evidencia), batch de evidencias (conteos, base64 de marcaciones y actividades), RBAC 403 rol solo marcacion, 400 ruta invalida, aislamiento cross-tenant" },
+    { "name": "browser_evidence", "result": "pass", "detail": "Capturas en docs/qa/evidence/hr-monitor-ui-modernization-20260918/: 01-lista-horarios.png, 02b-monitor-equipo-y-timeline.png, 03-lightbox-evidencia.png. Flujo completo verificado en navegador: abrir monitor, chips de marcacion por persona, badges de puntualidad, GPS con precision, 3 evidencias cargadas en batch, lightbox, persona sin marcar." }
+  ],
+  "status": "passed"
+}

@@ -183,6 +183,47 @@ async function getMonitorEvidence(tenantId, source, id) {
   });
 }
 
+async function getMonitorEvidenceBatch(tenantId, routeId) {
+  const routeNumericId = optionalNumericId(routeId);
+  if (!routeNumericId) {
+    throw validationError("Identificador de ruta invalido para las evidencias del monitor.", 400, "EVIDENCIA_MONITOR_RUTA_INVALIDA");
+  }
+  return prisma.runWithTenant(tenantId, async () => {
+    const [punches, activities] = await Promise.all([
+      prisma.timePunch.findMany({
+        where: { route_id: routeNumericId, tenant_id: tenantId },
+        orderBy: { punched_at: "asc" }
+      }),
+      prisma.workActivity.findMany({
+        where: { route_id: routeNumericId, tenant_id: tenantId },
+        include: { evidence: true },
+        orderBy: { occurred_at: "asc" }
+      })
+    ]);
+    const punchEvidence = {};
+    for (const punch of punches) {
+      const source = punch.extra_evidence || punch.metadata?.extra_evidence || {};
+      punchEvidence[String(punch.id)] = { ...monitorEvidencePayload(source), id: punch.id, source: "punch" };
+    }
+    const activityEvidence = {};
+    for (const activity of activities) {
+      activityEvidence[String(activity.id)] = (activity.evidence || []).map((evidence) => ({ ...monitorEvidencePayload(evidence), id: evidence.id, source: "activity" }));
+    }
+    return {
+      route_id: routeNumericId,
+      generated_at: new Date().toISOString(),
+      punch_evidence: punchEvidence,
+      activity_evidence: activityEvidence,
+      counts: {
+        punches: punches.length,
+        punch_evidence: Object.values(punchEvidence).filter((payload) => payload.base64_data || payload.file_url).length,
+        activities: activities.length,
+        activity_evidence: Object.values(activityEvidence).reduce((sum, items) => sum + items.filter((item) => item.base64_data || item.file_url).length, 0)
+      }
+    };
+  });
+}
+
 function employeeDisplayName(employee) {
   const metadataName = String(employee?.metadata?.name || "").trim();
   const genericMetadata = isGenericEmployeeAlias(metadataName);
@@ -3272,6 +3313,7 @@ module.exports = {
   getRouteTracking,
   getOperationsMap,
   getMonitorEvidence,
+  getMonitorEvidenceBatch,
   createPunch,
   createOwnPunch,
   createGpsPing,

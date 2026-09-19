@@ -1,0 +1,13 @@
+{
+  "environment": "LOCAL",
+  "api_url": "http://127.0.0.1:3000",
+  "admin_email": "qa.monitor.admin.20260918212423@scj.test",
+  "admin_password": "Qa-Monitor-77f9f5dbbc95#26",
+  "tenant_id": "001346eb-ba7f-4103-b032-73a219f1333e",
+  "route_id": 211,
+  "marking_email": "qa.monitor.marks.20260918212423@scj.test",
+  "silent_email": "qa.monitor.silent.20260918212423@scj.test",
+  "password": "Qa-Monitor-77f9f5dbbc95#26",
+  "date": "2026-09-18",
+  "generated_at": "2026-09-18T21:24:27.628Z"
+}

@@ -1,0 +1,106 @@
+TAP version 13
+# Subtest: carga la evidencia completa de actividad solo al solicitarla
+ok 1 - carga la evidencia completa de actividad solo al solicitarla
+  ---
+  duration_ms: 117.0679
+  type: 'test'
+  ...
+# Subtest: carga evidencia de marcacion sin exponer otro tenant
+ok 2 - carga evidencia de marcacion sin exponer otro tenant
+  ---
+  duration_ms: 3.5806
+  type: 'test'
+  ...
+# Subtest: rechaza origen o identificador invalido antes de consultar datos
+ok 3 - rechaza origen o identificador invalido antes de consultar datos
+  ---
+  duration_ms: 5.2095
+  type: 'test'
+  ...
+# Subtest: carga en lote la evidencia de marcaciones y actividades de una ruta
+ok 4 - carga en lote la evidencia de marcaciones y actividades de una ruta
+  ---
+  duration_ms: 6.4287
+  type: 'test'
+  ...
+# Subtest: el lote de evidencias no expone datos de otro tenant
+ok 5 - el lote de evidencias no expone datos de otro tenant
+  ---
+  duration_ms: 3.6943
+  type: 'test'
+  ...
+# Subtest: rechaza identificador de ruta invalido antes de consultar datos
+ok 6 - rechaza identificador de ruta invalido antes de consultar datos
+  ---
+  duration_ms: 2.1692
+  type: 'test'
+  ...
+# Subtest: listRoutes reconoce punch_only aunque las notas tengan escape \\n literal
+ok 7 - listRoutes reconoce punch_only aunque las notas tengan escape \\n literal
+  ---
+  duration_ms: 96.8802
+  type: 'test'
+  ...
+# Subtest: listRoutes sigue reconociendo punch_only con saltos de linea reales
+ok 8 - listRoutes sigue reconociendo punch_only con saltos de linea reales
+  ---
+  duration_ms: 3.2475
+  type: 'test'
+  ...
+# Subtest: listRoutes reporta gps para horarios sin marcador punch_only
+ok 9 - listRoutes reporta gps para horarios sin marcador punch_only
+  ---
+  duration_ms: 6.4123
+  type: 'test'
+  ...
+# Subtest: createOwnPunch con horario de ayer expone la ruta activa de hoy en el detalle 409
+ok 10 - createOwnPunch con horario de ayer expone la ruta activa de hoy en el detalle 409
+  ---
+  duration_ms: 11.7548
+  type: 'test'
+  ...
+# Subtest: createOwnPunch con horario de hoy que no es el activo expone la ruta activa en el detalle 409
+ok 11 - createOwnPunch con horario de hoy que no es el activo expone la ruta activa en el detalle 409
+  ---
+  duration_ms: 9.1646
+  type: 'test'
+  ...
+# Subtest: createClientPlatformLog trunca el mensaje a 1000 caracteres
+ok 12 - createClientPlatformLog trunca el mensaje a 1000 caracteres
+  ---
+  duration_ms: 33.4791
+  type: 'test'
+  ...
+# Subtest: createClientPlatformLog rechaza mensajes vacios
+ok 13 - createClientPlatformLog rechaza mensajes vacios
+  ---
+  duration_ms: 5.7961
+  type: 'test'
+  ...
+# Subtest: operations-map no transporta evidencia fotografica completa en cada refresco
+ok 14 - operations-map no transporta evidencia fotografica completa en cada refresco
+  ---
+  duration_ms: 12.5661
+  type: 'test'
+  ...
+# Subtest: la evidencia completa se consulta bajo demanda con permiso HR y aislamiento de tenant
+ok 15 - la evidencia completa se consulta bajo demanda con permiso HR y aislamiento de tenant
+  ---
+  duration_ms: 0.5935
+  type: 'test'
+  ...
+# Subtest: el listado dinamico usa agregados ligeros para todas las rutas
+ok 16 - el listado dinamico usa agregados ligeros para todas las rutas
+  ---
+  duration_ms: 0.5498
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 554.0094
