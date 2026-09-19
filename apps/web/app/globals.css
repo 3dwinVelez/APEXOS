@@ -559,7 +559,9 @@ textarea {
 
 @keyframes apexPageEnter {
   from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  /* Terminar en none: una transform residual (aunque sea identidad) crea un
+     containing block que rompe los position:fixed descendentes. */
+  to { opacity: 1; transform: none; }
 }
 
 @keyframes apexDialogEnter {

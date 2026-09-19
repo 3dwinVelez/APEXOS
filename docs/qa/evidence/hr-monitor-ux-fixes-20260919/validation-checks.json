@@ -1,0 +1,61 @@
+{
+  "change_id": "hr-monitor-ux-fixes-20260919",
+  "environment": "LOCAL",
+  "generated_at": "2026-09-19T13:55:00-05:00",
+  "static_checks": {
+    "typecheck": { "command": "npm run typecheck (apps/web)", "status": "passed" },
+    "lint": { "command": "npm run lint (apps/web)", "status": "passed", "note": "1 warning preexistente en mapa/page.tsx useEffect dep 'visibleBounds', no introducida por este cambio" },
+    "build": { "command": "npm run build (apps/web)", "status": "passed", "exit_code": 0 },
+    "unit_tests": { "command": "node --experimental-strip-types --test test/*.test.mjs (apps/web)", "status": "passed", "tests": 285, "pass": 285, "fail": 0, "evidence": "unit-tests.txt" }
+  },
+  "browser_checks": {
+    "tool": "browser-use MCP sobre web local (next start -p 3001) contra API local (127.0.0.1:3000)",
+    "fixture": { "admin_email": "qa.ux.admin.20260919134820@scj.test", "route_id": 219, "old_route_id": 220, "date": "2026-09-19", "old_date": "2026-09-16" },
+    "console_errors": 0,
+    "assertions": [
+      {
+        "defect": "2 - drawer de horario antiguo anclado al viewport",
+        "check": "aside[aria-label='Monitor de horario'] overlay position:fixed, top 0, alto == viewport (537px) y NO alto del documento (8768px)",
+        "result": "passed",
+        "measured": { "position": "fixed", "asideTop": 0, "asideHeight": 537, "viewportH": 537, "docHeight": 8768 }
+      },
+      {
+        "defect": "2 - monitor historico abre con marcaciones visibles sin devolver el scroll",
+        "check": "Horario 220 (2026-09-16): fecha del monitor auto-fijada, ningun elemento con scrollTop>0, Entrada y Cierre presentes",
+        "result": "passed",
+        "measured": { "header": "Horario 220", "dateValue": "2026-09-16", "scrollTopNonZero": [], "hasEntrada": true, "hasCierre": true }
+      },
+      {
+        "defect": "1 - lightbox amplia la evidencia y permite navegar",
+        "check": "div[aria-label='Evidencia ampliada'] position:fixed z-index 110, img visible y ampliada (object-contain), contador '1 / 3', botones anterior/siguiente/cerrar, ArrowRight avanza a '2 / 3', Escape cierra solo el lightbox",
+        "result": "passed",
+        "measured": { "position": "fixed", "zIndex": "110", "imgVisible": true, "imgRendered": { "w": 542, "h": 376 }, "counter": "1 / 3", "afterArrowRight": "2 / 3", "buttons": ["Evidencia anterior", "Evidencia siguiente", "Cerrar evidencia"], "escapeClosesLightboxOnly": true }
+      },
+      {
+        "defect": "3 - distribucion compacta y moderna del monitor de mallas",
+        "check": "H1 contextual 'Monitor de mallas horarias' + eyebrow 'Monitor operativo', grilla KPI de 6 tarjetas (Horarios/Activos/Personas/Adm-Op/Seguimiento/Sin personas), drawer con cabecera compacta, navegacion de fecha y tira de badges KPI, dos columnas con scroll independiente",
+        "result": "passed",
+        "measured": { "kpiTiles": ["HORARIOS 24", "ACTIVOS 17", "PERSONAS 57", "ADM / OP 14 / 10", "SEGUIMIENTO 92%", "SIN PERSONAS 0"], "drawerKpiStrip": ["4 marcaciones", "1 actividades", "3 evidencias", "1/2 en vivo"], "dateNavigator": true }
+      },
+      {
+        "defect": "4 - linea entre puntos de marcacion en el mapa",
+        "check": "svg polyline con stroke de la paleta (#16a34a) y >=2 pares de coordenadas conectando las marcaciones ordenadas por punched_at; leyenda 'Ruta entre marcaciones' presente",
+        "result": "passed",
+        "measured": { "trailPolylines": 4, "paletteTrails": 4, "pointsPerTrail": 4, "sampleStroke": "#16a34a", "sampleDash": "10 8", "legendPresent": true }
+      },
+      {
+        "defect": "1-3 - causa raiz CSS del containing block residual",
+        "check": "el CSS servido contiene @keyframes apexPageEnter terminado en transform:none",
+        "result": "passed",
+        "measured": { "cssFile": "/_next/static/chunks/2cfpwpkr55vhk.css", "keyframeFixPresent": true }
+      }
+    ],
+    "screenshots": [
+      "01-mallas-lista-kpi.png",
+      "02-monitor-drawer-viewport.png",
+      "03-lightbox-evidencia-ampliada.png",
+      "04-monitor-historico-scrolltop.png",
+      "05-mapa-ruta-entre-marcaciones.png"
+    ]
+  }
+}

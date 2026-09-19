@@ -5,10 +5,12 @@ import { ModalFrame } from "@/components/ui/ModalFrame";
 import { Badge, Skeleton } from "@/components/ui/feedback";
 import { localCalendarDate, scheduleGpsRequired, scheduleMonitorDate, scheduleTrackingMode } from "@/lib/hrScheduleMonitor";
 import { subscribeHrMonitorRefresh } from "@/lib/hrMonitorRefresh";
-import { AlertTriangle, ArrowLeft, Building2, CalendarDays, Camera, CheckCircle2, CheckSquare2, Clock, Copy, Edit3, Filter, HelpCircle, ImageOff, LogIn, LogOut, MapPin, Navigation, PlayCircle, Plus, RefreshCw, RotateCcw, Save, Search, Square, Timer, Truck, UserPlus, Utensils, UtensilsCrossed, X, ZoomIn } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Building2, CalendarDays, Camera, CheckCircle2, CheckSquare2, ChevronLeft, ChevronRight, Clock, Copy, Edit3, Filter, HelpCircle, ImageOff, LogIn, LogOut, MapPin, Navigation, PlayCircle, Plus, RefreshCw, RotateCcw, Save, Search, Square, Timer, Truck, UserPlus, Utensils, UtensilsCrossed, X, ZoomIn } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 type Employee = { id: number | string; code: string; user_type?: string; position: string; department: string; metadata: { name: string; document: string; user_type?: string }; user: { name: string } };
 type Vehicle = { id: number | string; plate: string; type: string; model: string };
@@ -184,10 +186,10 @@ function routeEventCount(route: RouteMonitor | TimeRoute) {
 function routeDisplayState(route: RouteMonitor | TimeRoute) {
   const events = routeEventCount(route);
   const status = routeDerivedStatus(route);
-  if (status === "closed") return { status, label: "Cerrado", className: "bg-neutral-100 text-neutral-700" };
-  if (status === "cancelled") return { status, label: "Cancelado", className: "bg-rose-50 text-rose-700" };
-  if (events) return { status, label: "En seguimiento", className: "bg-emerald-50 text-emerald-700" };
-  return { status, label: "Sin eventos", className: "bg-amber-50 text-amber-800" };
+  if (status === "closed") return { status, label: "Cerrado", className: "bg-surface-muted text-content-body" };
+  if (status === "cancelled") return { status, label: "Cancelado", className: "bg-error/10 text-content-strong" };
+  if (events) return { status, label: "En seguimiento", className: "bg-success/10 text-content-strong" };
+  return { status, label: "Sin eventos", className: "bg-warning/10 text-content-strong" };
 }
 
 function employeeSearchText(employee: Employee) {
@@ -326,6 +328,17 @@ function FieldHelp({ label, help, children }: { label: string; help: string; chi
   );
 }
 
+function KpiTile({ hint, label, tone = "default", value }: { hint?: string; label: string; tone?: "default" | "info" | "success" | "warning"; value: string | number }) {
+  const toneClassName = tone === "success" ? "text-emerald-600" : tone === "warning" ? "text-amber-600" : tone === "info" ? "text-apex" : "text-content-strong";
+  return (
+    <div className="rounded-md border border-line bg-surface p-3">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-content-muted">{label}</p>
+      <p className={`mt-1 text-xl font-semibold leading-6 ${toneClassName}`}>{value}</p>
+      {hint ? <p className="mt-0.5 truncate text-xs text-content-muted">{hint}</p> : null}
+    </div>
+  );
+}
+
 export default function RoutesPlanningPage() {
   const initialDate = localCalendarDate();
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -355,8 +368,13 @@ export default function RoutesPlanningPage() {
   const [loadingEvidence, setLoadingEvidence] = useState<Record<string, boolean>>({});
   const [evidenceErrors, setEvidenceErrors] = useState<Record<string, string>>({});
   const [loadingBatch, setLoadingBatch] = useState(false);
-  const [lightbox, setLightbox] = useState<MonitorEvidence | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [mounted, setMounted] = useState(false);
   const batchLoadedRef = useRef(false);
+  const pathname = usePathname();
+  const drawerBodyRef = useRef<HTMLDivElement | null>(null);
+  const peopleScrollRef = useRef<HTMLDivElement | null>(null);
+  const timelineScrollRef = useRef<HTMLDivElement | null>(null);
 
   const loadRoutes = useCallback(async () => {
     let latest: TimeRoute[] | null = null;
@@ -452,11 +470,22 @@ export default function RoutesPlanningPage() {
     setLoadedEvidence({});
     setLoadingEvidence({});
     setEvidenceErrors({});
-    setLightbox(null);
+    setLightboxIndex(null);
     batchLoadedRef.current = false;
     setSelectedRouteId(String(route.id));
     setMonitorDate(targetDate);
     loadMonitor(targetDate);
+  }
+
+  function changeMonitorDateTo(value: string) {
+    if (!value || value === monitorDate) return;
+    setLightboxIndex(null);
+    setMonitorDate(value);
+    loadMonitor(value);
+  }
+
+  function changeMonitorDate(deltaDays: number) {
+    changeMonitorDateTo(addDays(monitorDate, deltaDays));
   }
 
   const loadTimelineEvidence = useCallback(async (event: TimelineEvent) => {
@@ -634,6 +663,47 @@ export default function RoutesPlanningPage() {
       }
     }
   }, [evidenceErrors, loadTimelineEvidence, loadedEvidence, loadingBatch, loadingEvidence, selectedRoute, selectedTimeline]);
+
+  const lightboxItems = useMemo(() => selectedTimeline.flatMap((event) => {
+    const items = (loadedEvidence[event.id]?.length ? loadedEvidence[event.id] : event.evidence || []) as MonitorEvidence[];
+    return items.filter((item) => Boolean(item.base64_data));
+  }), [loadedEvidence, selectedTimeline]);
+  const evidenceCount = useMemo(() => selectedTimeline.reduce((sum, event) => {
+    const items = (loadedEvidence[event.id]?.length ? loadedEvidence[event.id] : event.evidence || []) as MonitorEvidence[];
+    return sum + items.filter((item) => item.base64_data || safeEvidenceUrl(item.file_url)).length;
+  }, 0), [loadedEvidence, selectedTimeline]);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  // Al cambiar de horario o de dia el monitor debe volver al inicio: antes el
+  // drawer quedaba scrolled a media pagina y las marcaciones no se veian.
+  useEffect(() => {
+    setLightboxIndex(null);
+    if (drawerBodyRef.current) drawerBodyRef.current.scrollTop = 0;
+    if (peopleScrollRef.current) peopleScrollRef.current.scrollTop = 0;
+    if (timelineScrollRef.current) timelineScrollRef.current.scrollTop = 0;
+  }, [monitorDate, selectedRouteId]);
+
+  useEffect(() => {
+    if (!selectedRoute) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        if (lightboxIndex != null) setLightboxIndex(null);
+        else setSelectedRouteId("");
+        return;
+      }
+      if (lightboxIndex == null || lightboxItems.length < 2) return;
+      if (event.key === "ArrowLeft") setLightboxIndex((current) => (current == null ? current : (current - 1 + lightboxItems.length) % lightboxItems.length));
+      if (event.key === "ArrowRight") setLightboxIndex((current) => (current == null ? current : (current + 1) % lightboxItems.length));
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [lightboxIndex, lightboxItems.length, selectedRoute]);
   const routeCoverage = monitorRoutes.length ? Math.round((monitorRoutes.filter((route) => routeEventCount(route) > 0).length / monitorRoutes.length) * 100) : 0;
   const administrativeRoutes = monitorRoutes.filter((route) => !route.vehicle_plate && !route.placa).length;
   const operationalRoutes = monitorRoutes.length - administrativeRoutes;
@@ -656,45 +726,51 @@ export default function RoutesPlanningPage() {
     setDateFilter("");
   }
 
+  const onMallasPath = Boolean(pathname?.startsWith("/dashboard/talento-humano/mallas"));
+
   return (
     <div className="space-y-5 pb-20 md:pb-6">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Link className="mb-2 inline-flex items-center gap-2 text-sm font-medium text-neutral-600 hover:text-apex" href="/dashboard/talento-humano"><ArrowLeft size={16} /> Talento Humano</Link>
-          <p className="text-sm font-medium text-apex">Administracion de jornadas</p>
-          <h1 className="mt-1 text-3xl font-semibold">Asignar horarios</h1>
-          <p className="mt-2 max-w-3xl text-sm text-neutral-600">Consulta, compara y asigna jornadas administrativas u operativas sin mezclar la planeacion con el seguimiento en campo.</p>
+          <Link className="mb-2 inline-flex items-center gap-2 text-sm font-medium text-content-muted hover:text-apex" href="/dashboard/talento-humano"><ArrowLeft size={16} /> Talento Humano</Link>
+          <p className="text-sm font-medium text-apex">{onMallasPath ? "Monitor operativo" : "Administracion de jornadas"}</p>
+          <h1 className="mt-1 text-2xl font-semibold md:text-3xl">{onMallasPath ? "Monitor de mallas horarias" : "Asignar horarios"}</h1>
+          <p className="mt-2 max-w-3xl text-sm text-content-muted">{onMallasPath ? "Abre una malla para seguir en vivo sus marcaciones, actividades, GPS y evidencias fotograficas en una vista compacta." : "Consulta, compara y asigna jornadas administrativas u operativas sin mezclar la planeacion con el seguimiento en campo."}</p>
         </div>
-        <button className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white md:h-10 md:w-auto" onClick={() => openCreateModal()} type="button">
+        <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white md:h-10 md:w-auto" onClick={() => openCreateModal()} type="button">
           <Plus size={16} /> Nuevo horario
         </button>
       </header>
 
       {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-900">{message}</div> : null}
 
-      <section className="overflow-hidden rounded-md border border-line bg-white">
+      <section className="overflow-hidden rounded-md border border-line bg-surface">
         <div className="border-b border-line p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <div className="flex items-center gap-2"><CalendarDays size={18} className="text-apex" /><h2 className="text-lg font-semibold">Consulta de horarios</h2></div>
-              <p className="mt-1 text-sm text-neutral-600">Compara fecha, jornada, personas y estado antes de abrir o editar un horario.</p>
+              <div className="flex items-center gap-2"><CalendarDays size={18} className="text-apex" /><h2 className="text-lg font-semibold">{onMallasPath ? "Mallas horarias" : "Consulta de horarios"}</h2></div>
+              <p className="mt-1 text-sm text-content-muted">{onMallasPath ? "Abre una malla para ver su equipo, marcaciones y evidencias del dia." : "Compara fecha, jornada, personas y estado antes de abrir o editar un horario."}</p>
             </div>
-            <div className="flex flex-wrap items-center justify-end gap-2 text-xs font-semibold text-neutral-600">
-              <span className="rounded-md border border-line px-3 py-1.5">{filteredRoutes.length} de {monitorRoutes.length}</span>
-              <span className="rounded-md bg-emerald-50 px-3 py-1.5 text-emerald-700">{activeRoutes.length} activos</span>
-              <span className="rounded-md bg-paper px-3 py-1.5">{totalAssigned} personas</span>
-              <span className="rounded-md bg-paper px-3 py-1.5">{administrativeRoutes}/{operationalRoutes} adm/op</span>
-              <span className={`rounded-md px-3 py-1.5 ${routesWithoutPeople ? "bg-amber-50 text-amber-800" : "bg-paper text-neutral-600"}`}>{routeCoverage}% seguimiento</span>
-              <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => { loadRoutes(); loadEventSummaries(); if (selectedRouteId) loadMonitor(); }} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={16} /> Actualizar</button>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <span className="rounded-md border border-line bg-paper px-3 py-1.5 text-xs font-semibold text-content-muted">{filteredRoutes.length} de {monitorRoutes.length} visibles</span>
+              <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={() => { loadRoutes(); loadEventSummaries(); if (selectedRouteId) loadMonitor(); }} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={16} /> Actualizar</button>
             </div>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
+            <KpiTile hint="En el listado actual" label="Horarios" value={monitorRoutes.length} />
+            <KpiTile hint="Sin cerrar ni cancelar" label="Activos" tone="success" value={activeRoutes.length} />
+            <KpiTile hint="Asignadas en total" label="Personas" value={totalAssigned} />
+            <KpiTile hint="Por tipo de jornada" label="Adm / Op" value={`${administrativeRoutes} / ${operationalRoutes}`} />
+            <KpiTile hint="Horarios con eventos" label="Seguimiento" tone={routeCoverage >= 70 ? "success" : routeCoverage > 0 ? "warning" : "default"} value={`${routeCoverage}%`} />
+            <KpiTile hint={routesWithoutPeople ? "Requieren asignacion" : "Todas con equipo"} label="Sin personas" tone={routesWithoutPeople ? "warning" : "default"} value={routesWithoutPeople} />
           </div>
           <div className="mt-4 grid gap-2 lg:grid-cols-[minmax(240px,1fr)_180px_180px_170px]">
-            <label className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} /><input className="h-10 w-full rounded-md border border-line pl-9 pr-3 text-sm" placeholder="Buscar persona, sede, placa o estado" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
-            <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={kindFilter} onChange={(event) => setKindFilter(event.target.value)}><option value="">Todos los tipos</option><option value="administrative">Administrativos</option><option value="operational">Operativos</option></select>
-            <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="">Todos los estados</option><option value="active">Activos</option><option value="closed">Cerrados</option><option value="cancelled">Cancelados</option></select>
-            <input aria-label="Filtrar por fecha" className="h-10 rounded-md border border-line bg-white px-3 text-sm" type="date" value={dateFilter} onChange={(event) => setDateFilter(event.target.value)} />
+            <label className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-subtle" size={16} /><input className="h-10 w-full rounded-md border border-line bg-paper pl-9 pr-3 text-sm" placeholder="Buscar persona, sede, placa o estado" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
+            <select className="h-10 rounded-md border border-line bg-paper px-3 text-sm" value={kindFilter} onChange={(event) => setKindFilter(event.target.value)}><option value="">Todos los tipos</option><option value="administrative">Administrativos</option><option value="operational">Operativos</option></select>
+            <select className="h-10 rounded-md border border-line bg-paper px-3 text-sm" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="">Todos los estados</option><option value="active">Activos</option><option value="closed">Cerrados</option><option value="cancelled">Cancelados</option></select>
+            <input aria-label="Filtrar por fecha" className="h-10 rounded-md border border-line bg-paper px-3 text-sm" type="date" value={dateFilter} onChange={(event) => setDateFilter(event.target.value)} />
           </div>
-          {activeFilters ? <button className="mt-3 inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold text-neutral-700 hover:bg-paper" onClick={clearFilters} type="button"><RotateCcw size={15} /> Limpiar {activeFilters} filtro(s)</button> : null}
+          {activeFilters ? <button className="mt-3 inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold text-content-body hover:bg-paper" onClick={clearFilters} type="button"><RotateCcw size={15} /> Limpiar {activeFilters} filtro(s)</button> : null}
         </div>
 
         <div className="grid gap-3 p-3 md:hidden">
@@ -706,21 +782,21 @@ export default function RoutesPlanningPage() {
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="font-semibold">{route.vehicle_plate || route.placa || administrativeSiteFromNotes(route.notes || "") || "Jornada administrativa"}</p>
-                    <p className="mt-1 text-xs text-neutral-500">{inputDate(route.date)} · {formatHour(route.start_time)} - {formatHour(route.end_time)}</p>
+                    <p className="mt-1 text-xs text-content-muted">{inputDate(route.date)} · {formatHour(route.start_time)} - {formatHour(route.end_time)}</p>
                   </div>
                   <span className={`rounded-md px-2 py-1 text-xs font-semibold ${displayState.className}`}>{displayState.label}</span>
                 </div>
-                  <p className="mt-3 max-h-10 overflow-hidden text-sm text-neutral-600">{routeEmployeeNames(route).join(", ") || "Sin personas asignadas"}</p>
-                <div className="mt-3 flex flex-wrap gap-2 text-xs text-neutral-600">
-                  <span className="rounded-md bg-white px-2 py-1">{route.start_time || "--"} - {route.end_time || "--"}</span>
-                  <span className="rounded-md bg-white px-2 py-1">{route.assigned_count ?? routeEmployeeValues(route).length ?? 0} persona(s)</span>
-                  <span className="rounded-md bg-white px-2 py-1">{events} evento(s)</span>
-                  <span className="rounded-md bg-white px-2 py-1">{scheduleGpsRequired(route) ? "GPS" : "Sin GPS"}</span>
-                  <span className="rounded-md bg-white px-2 py-1">{route.evidence_count || 0} evidencia(s)</span>
+                  <p className="mt-3 max-h-10 overflow-hidden text-sm text-content-muted">{routeEmployeeNames(route).join(", ") || "Sin personas asignadas"}</p>
+                <div className="mt-3 flex flex-wrap gap-2 text-xs text-content-muted">
+                  <span className="rounded-md bg-paper px-2 py-1">{route.start_time || "--"} - {route.end_time || "--"}</span>
+                  <span className="rounded-md bg-paper px-2 py-1">{route.assigned_count ?? routeEmployeeValues(route).length ?? 0} persona(s)</span>
+                  <span className="rounded-md bg-paper px-2 py-1">{events} evento(s)</span>
+                  <span className="rounded-md bg-paper px-2 py-1">{scheduleGpsRequired(route) ? "GPS" : "Sin GPS"}</span>
+                  <span className="rounded-md bg-paper px-2 py-1">{route.evidence_count || 0} evidencia(s)</span>
                 </div>
                 <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                  <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold hover:bg-paper" onClick={() => openRouteMonitor(route)} type="button"><Navigation size={15} /> Abrir</button>
-                  <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold hover:bg-paper" onClick={() => openEditModal(route)} type="button"><Edit3 size={15} /> Editar</button>
+                  <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={() => openRouteMonitor(route)} type="button"><Navigation size={15} /> Abrir</button>
+                  <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={() => openEditModal(route)} type="button"><Edit3 size={15} /> Editar</button>
                   <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white" onClick={() => openCreateModal(route)} type="button"><Copy size={15} /> Clonar</button>
                 </div>
               </article>
@@ -729,26 +805,26 @@ export default function RoutesPlanningPage() {
         </div>
 
         <div className="hidden overflow-x-auto md:block">
-          <table className="w-full min-w-[1160px] border-collapse text-left text-sm">
-            <thead className="bg-paper text-xs uppercase tracking-wide text-neutral-500"><tr><th className="px-4 py-3">ID horario</th><th className="px-4 py-3">Fecha y jornada</th><th className="px-4 py-3">Tipo y ubicacion</th><th className="px-4 py-3">Personas</th><th className="px-4 py-3">Estado</th><th className="px-4 py-3 text-right">Acciones</th></tr></thead>
+          <table className="w-full min-w-[980px] border-collapse text-left text-sm">
+            <thead className="bg-paper text-xs uppercase tracking-wide text-content-muted"><tr><th className="px-4 py-3">ID horario</th><th className="px-4 py-3">Fecha y jornada</th><th className="px-4 py-3">Tipo y ubicacion</th><th className="px-4 py-3">Personas</th><th className="px-4 py-3">Estado</th><th className="px-4 py-3 text-right">Acciones</th></tr></thead>
             <tbody className="divide-y divide-line">
               {filteredRoutes.map((route) => {
                 const events = routeEventCount(route);
                 const operational = Boolean(route.vehicle_plate || route.placa);
                 const displayState = routeDisplayState(route);
                 return <tr className="hover:bg-paper/70" key={String(route.id)}>
-                  <td className="px-4 py-3"><p className="font-semibold text-apex">{route.display_id || route.code || route.id}</p><p className="mt-1 text-xs text-neutral-500">Horario</p></td>
-                  <td className="px-4 py-3"><p className="font-semibold">{inputDate(route.date)}</p><p className="mt-1 text-xs text-neutral-500">{formatHour(route.start_time)} - {formatHour(route.end_time)} · {route.tolerance_minutes ?? 15} min tolerancia · {scheduleGpsRequired(route) ? "GPS" : "sin GPS"}</p></td>
-                  <td className="px-4 py-3"><p className="flex items-center gap-2 font-semibold">{operational ? <Truck className="text-apex" size={15} /> : <Building2 className="text-apex" size={15} />}{operational ? "Operativa" : "Administrativa"}</p><p className="mt-1 text-xs text-neutral-500">{operational ? routeLabel(route) : administrativeSiteFromNotes(route.notes || "") || "Sin sede definida"}</p></td>
-                  <td className="px-4 py-3"><p className="font-semibold">{route.assigned_count ?? routeEmployeeValues(route).length ?? 0} persona(s)</p><p className="mt-1 max-w-72 truncate text-xs text-neutral-500">{routeEmployeeNames(route).join(", ") || "Sin personas asignadas"}</p></td>
-                  <td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${displayState.className}`}>{displayState.label}</span><p className="mt-1 text-xs capitalize text-neutral-500">{displayState.status} · {events} evento(s)</p></td>
-                  <td className="px-4 py-3"><div className="flex justify-end gap-2"><button className="h-9 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => openRouteMonitor(route)} type="button">Abrir</button><button className="h-9 rounded-md border border-line px-3 text-xs font-semibold hover:bg-paper" onClick={() => openEditModal(route)} type="button">Editar</button><button className="h-9 rounded-md border border-apex px-3 text-xs font-semibold text-apex hover:bg-paper" onClick={() => openCreateModal(route)} type="button">Clonar</button></div></td>
+                  <td className="px-4 py-3"><p className="font-semibold text-apex">{route.display_id || route.code || route.id}</p><p className="mt-1 text-xs text-content-muted">Horario</p></td>
+                  <td className="px-4 py-3"><p className="font-semibold">{inputDate(route.date)}</p><p className="mt-1 text-xs text-content-muted">{formatHour(route.start_time)} - {formatHour(route.end_time)} · {route.tolerance_minutes ?? 15} min tolerancia · {scheduleGpsRequired(route) ? "GPS" : "sin GPS"}</p></td>
+                  <td className="px-4 py-3"><p className="flex items-center gap-2 font-semibold">{operational ? <Truck className="text-apex" size={15} /> : <Building2 className="text-apex" size={15} />}{operational ? "Operativa" : "Administrativa"}</p><p className="mt-1 text-xs text-content-muted">{operational ? routeLabel(route) : administrativeSiteFromNotes(route.notes || "") || "Sin sede definida"}</p></td>
+                  <td className="px-4 py-3"><p className="font-semibold">{route.assigned_count ?? routeEmployeeValues(route).length ?? 0} persona(s)</p><p className="mt-1 max-w-72 truncate text-xs text-content-muted">{routeEmployeeNames(route).join(", ") || "Sin personas asignadas"}</p></td>
+                  <td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${displayState.className}`}>{displayState.label}</span><p className="mt-1 text-xs capitalize text-content-muted">{displayState.status} · {events} evento(s)</p></td>
+                  <td className="px-4 py-3"><div className="flex justify-end gap-2"><button className="h-9 rounded-md border border-line bg-paper px-3 text-xs font-semibold hover:bg-surface-muted" onClick={() => openRouteMonitor(route)} type="button">Abrir</button><button className="h-9 rounded-md border border-line bg-paper px-3 text-xs font-semibold hover:bg-surface-muted" onClick={() => openEditModal(route)} type="button">Editar</button><button className="h-9 rounded-md border border-apex px-3 text-xs font-semibold text-apex hover:bg-paper" onClick={() => openCreateModal(route)} type="button">Clonar</button></div></td>
                 </tr>;
               })}
             </tbody>
           </table>
         </div>
-        {!filteredRoutes.length ? <div className="p-10 text-center"><Filter className="mx-auto text-neutral-300" size={28} /><p className="mt-3 text-sm font-semibold">No hay horarios con estos filtros</p><p className="mt-1 text-sm text-neutral-500">Limpia los filtros o crea una nueva asignacion.</p></div> : null}
+        {!filteredRoutes.length ? <div className="p-10 text-center"><Filter className="mx-auto text-content-subtle" size={28} /><p className="mt-3 text-sm font-semibold">No hay horarios con estos filtros</p><p className="mt-1 text-sm text-content-muted">Limpia los filtros o crea una nueva asignacion.</p></div> : null}
       </section>
 
       {modal ? (
@@ -871,34 +947,49 @@ export default function RoutesPlanningPage() {
         </ModalFrame>
       ) : null}
 
-      {selectedRoute ? (
-        <div className="fixed inset-0 z-50 bg-neutral-950/40" onClick={() => setSelectedRouteId("")}>
-          <aside className="ml-auto flex h-full w-full max-w-5xl flex-col overflow-hidden bg-paper shadow-xl" role="dialog" aria-modal="true" aria-label="Monitor administrativo" onClick={(event) => event.stopPropagation()}>
-            <header className="border-b border-line p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm font-semibold text-apex">Monitor administrativo</p>
-                    {(() => { const displayState = routeDisplayState(selectedRoute); return <Badge tone={displayState.status === "closed" ? "neutral" : displayState.status === "cancelled" ? "error" : "success"}>{displayState.label}</Badge>; })()}
-                  </div>
-                  <h2 className="mt-1 text-2xl font-semibold text-content-strong">{routeLabel(selectedRoute)}</h2>
-                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-content-muted">
-                    <span className="inline-flex items-center gap-1.5"><Clock size={14} /> {formatHour(selectedRoute.start_time)} - {formatHour(selectedRoute.end_time)}</span>
-                    <span className="inline-flex items-center gap-1.5"><Timer size={14} /> Tolerancia {selectedRoute.tolerance_minutes ?? 15} min</span>
-                    <span>{selectedRoute.assigned_count ?? routeEmployeeValues(selectedRoute).length ?? 0} persona(s)</span>
-                    <span>{scheduleGpsRequired(selectedRoute) ? "Seguimiento GPS" : "Solo marcaciones"}</span>
+      {selectedRoute ? createPortal(
+        <div className="fixed inset-0 z-[70] bg-neutral-950/50" onClick={() => setSelectedRouteId("")}>
+          <aside aria-label="Monitor de horario" aria-modal="true" className="ml-auto flex h-full w-full max-w-6xl flex-col overflow-hidden bg-paper shadow-2xl" onClick={(event) => event.stopPropagation()} role="dialog">
+            <header className="border-b border-line bg-surface px-4 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-apex/10 text-apex">{selectedRoute.vehicle_plate || selectedRoute.placa ? <Truck size={20} /> : <Building2 size={20} />}</span>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="truncate text-lg font-semibold text-content-strong">{routeLabel(selectedRoute)}</h2>
+                      {(() => { const displayState = routeDisplayState(selectedRoute); return <Badge tone={displayState.status === "closed" ? "neutral" : displayState.status === "cancelled" ? "error" : "success"}>{displayState.label}</Badge>; })()}
+                    </div>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-content-muted">
+                      <span className="inline-flex items-center gap-1"><Clock size={13} /> {formatHour(selectedRoute.start_time)} - {formatHour(selectedRoute.end_time)}</span>
+                      <span className="inline-flex items-center gap-1"><Timer size={13} /> Tolerancia {selectedRoute.tolerance_minutes ?? 15} min</span>
+                      <span>{selectedRoute.assigned_count ?? routeEmployeeValues(selectedRoute).length ?? 0} persona(s)</span>
+                      <span>{scheduleGpsRequired(selectedRoute) ? "Seguimiento GPS" : "Solo marcaciones"}</span>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => { loadRoutes(); loadEventSummaries(); loadMonitor(); }} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={16} /> Actualizar</button>
-                  <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => openEditModal(selectedRoute)} type="button"><Edit3 size={16} /> Editar</button>
-                  <Link className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href="/dashboard/talento-humano/mapa"><Navigation size={16} /> Mapa</Link>
-                  <button className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-line hover:bg-paper" onClick={() => setSelectedRouteId("")} type="button" aria-label="Cerrar"><X size={18} /></button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-1 rounded-md border border-line bg-paper px-1.5 py-1">
+                    <button aria-label="Dia anterior" className="flex h-7 w-7 items-center justify-center rounded-md text-content-muted hover:bg-surface-muted hover:text-content-strong" onClick={() => changeMonitorDate(-1)} type="button"><ChevronLeft size={16} /></button>
+                    <input aria-label="Fecha del monitor" className="h-7 bg-transparent text-xs font-semibold text-content-body outline-none" onChange={(event) => changeMonitorDateTo(event.target.value)} type="date" value={monitorDate} />
+                    <button aria-label="Dia siguiente" className="flex h-7 w-7 items-center justify-center rounded-md text-content-muted hover:bg-surface-muted hover:text-content-strong" onClick={() => changeMonitorDate(1)} type="button"><ChevronRight size={16} /></button>
+                  </div>
+                  <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={() => { loadRoutes(); loadEventSummaries(); loadMonitor(); }} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={15} /> Actualizar</button>
+                  <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={() => openEditModal(selectedRoute)} type="button"><Edit3 size={15} /> Editar</button>
+                  <Link className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" href="/dashboard/talento-humano/mapa"><Navigation size={15} /> Mapa</Link>
+                  <button aria-label="Cerrar monitor" className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-line bg-paper hover:bg-surface-muted" onClick={() => setSelectedRouteId("")} type="button"><X size={17} /></button>
                 </div>
               </div>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Badge className="gap-1.5" tone="neutral"><Clock size={12} /> {selectedTimeline.filter((event) => event.kind === "marca").length} marcaciones</Badge>
+                <Badge className="gap-1.5" tone="info"><PlayCircle size={12} /> {selectedTimeline.filter((event) => event.kind === "actividad").length} actividades</Badge>
+                <Badge className="gap-1.5" tone="success"><Camera size={12} /> {evidenceCount} evidencias</Badge>
+                <Badge className="gap-1.5" tone={selectedPeople.some((person) => person.online) ? "success" : "neutral"}><Navigation size={12} /> {selectedPeople.filter((person) => person.online).length}/{selectedPeople.length} en vivo</Badge>
+                {loadingBatch ? <Badge className="gap-1.5" tone="neutral"><RefreshCw className="animate-spin" size={12} /> Cargando evidencias</Badge> : null}
+                {monitorDate !== scheduleMonitorDate(selectedRoute.date) ? <Badge className="gap-1.5" tone="warning"><CalendarDays size={12} /> El horario es del {scheduleMonitorDate(selectedRoute.date)}</Badge> : null}
+              </div>
             </header>
-            <div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[340px_1fr]">
-              <section className="border-b border-line p-4 lg:border-b-0 lg:border-r">
+            <div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[320px_1fr] lg:overflow-hidden" ref={drawerBodyRef}>
+              <section className="border-b border-line p-4 lg:min-h-0 lg:overflow-y-auto lg:border-b-0 lg:border-r" ref={peopleScrollRef}>
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-content-muted">Equipo asignado</h3>
                   <span className="text-xs font-semibold text-content-muted">{selectedPeople.filter((person) => person.online).length}/{selectedPeople.length} en vivo</span>
@@ -942,21 +1033,22 @@ export default function RoutesPlanningPage() {
                   {!selectedPeople.length ? <p className="rounded-md bg-surface-muted p-3 text-sm text-content-muted">Sin personas asignadas a esta jornada.</p> : null}
                 </div>
               </section>
-              <section className="p-4">
-                <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <h3 className="text-base font-semibold text-content-strong">Trazabilidad cronologica</h3>
-                    <p className="mt-1 text-sm text-content-muted">Marcaciones y actividades con hora, GPS, tolerancia y evidencia fotografica.</p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge tone="neutral">{selectedTimeline.filter((event) => event.kind === "marca").length} marcaciones</Badge>
-                    <Badge tone="info">{selectedTimeline.filter((event) => event.kind === "actividad").length} actividades</Badge>
-                    <Badge tone="success">{selectedTimeline.reduce((sum, event) => sum + (loadedEvidence[event.id]?.length ? loadedEvidence[event.id] : event.evidence || []).filter((item) => item.base64_data || safeEvidenceUrl(item.file_url)).length, 0)} evidencias</Badge>
-                    {loadingBatch ? <Badge tone="neutral"><RefreshCw className="animate-spin" size={12} /> Cargando evidencias</Badge> : null}
-                  </div>
+              <section className="p-4 lg:min-h-0 lg:overflow-y-auto" ref={timelineScrollRef}>
+                <div className="mb-4">
+                  <h3 className="text-base font-semibold text-content-strong">Trazabilidad cronologica</h3>
+                  <p className="mt-1 text-sm text-content-muted">Marcaciones y actividades con hora, GPS, tolerancia y evidencia fotografica.</p>
                 </div>
                 {!selectedTimeline.length ? (
-                  <p className="rounded-md bg-surface-muted p-4 text-sm text-content-muted">Este horario aun no tiene marcaciones ni actividades.</p>
+                  <div className="flex min-h-[260px] flex-col items-center justify-center rounded-md border border-dashed border-line bg-surface p-6 text-center">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-muted text-content-subtle"><CalendarDays size={22} /></span>
+                    <p className="mt-3 text-sm font-semibold text-content-strong">Sin eventos en el dia consultado</p>
+                    <p className="mt-1 max-w-md text-sm text-content-muted">{monitorDate !== scheduleMonitorDate(selectedRoute.date) ? `Estas viendo ${monitorDate}, pero este horario corresponde a ${scheduleMonitorDate(selectedRoute.date)}. Vuelve al dia del horario para ver sus marcaciones.` : "Este horario aun no registra marcaciones ni actividades. Cuando el equipo marque en campo, los eventos apareceran aqui en tiempo real."}</p>
+                    <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                      <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={() => changeMonitorDate(-1)} type="button"><ChevronLeft size={15} /> Dia anterior</button>
+                      {monitorDate !== scheduleMonitorDate(selectedRoute.date) ? <button className="inline-flex h-9 items-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white" onClick={() => changeMonitorDateTo(scheduleMonitorDate(selectedRoute.date))} type="button"><CalendarDays size={15} /> Ir al dia del horario</button> : null}
+                      <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={() => changeMonitorDate(1)} type="button">Dia siguiente <ChevronRight size={15} /></button>
+                    </div>
+                  </div>
                 ) : (
                   <ol className="relative space-y-3 before:absolute before:bottom-6 before:left-[21px] before:top-6 before:w-px before:bg-line">
                     {selectedTimeline.map((event) => {
@@ -989,14 +1081,16 @@ export default function RoutesPlanningPage() {
                               {visibleItems.length ? (
                                 <div className="flex flex-wrap gap-2">
                                   {visibleItems.slice(0, 4).map((item, itemIndex) => item.base64_data ? (
-                                    <button className="group relative h-24 w-24 overflow-hidden rounded-md border border-line" key={`${String(item.id || "img")}-${itemIndex}`} onClick={() => setLightbox(item)} type="button" title={item.file_name || "Ampliar evidencia"}>
+                                    <button className="group relative h-24 w-24 overflow-hidden rounded-md border border-line" key={`${String(item.id || "img")}-${itemIndex}`} onClick={() => setLightboxIndex(Math.max(0, lightboxItems.indexOf(item)))} type="button" title={item.file_name || "Ampliar evidencia"}>
                                       <Image alt={item.file_name || `Evidencia de ${event.title}`} className="h-full w-full object-cover transition duration-200 group-hover:scale-105" height={96} src={item.base64_data} unoptimized width={96} />
                                       <span className="absolute inset-0 flex items-center justify-center bg-neutral-950/0 text-white opacity-0 transition group-hover:bg-neutral-950/30 group-hover:opacity-100"><ZoomIn size={18} /></span>
                                     </button>
                                   ) : safeEvidenceUrl(item.file_url) ? (
                                     <a className="inline-flex h-24 w-24 items-center justify-center gap-1.5 rounded-md border border-line bg-paper px-2 text-center text-xs font-semibold text-content-body hover:border-apex" href={safeEvidenceUrl(item.file_url)} target="_blank" rel="noreferrer" key={`${String(item.id || "url")}-${itemIndex}`} title={item.file_name || "Ver evidencia"}><Camera size={16} /> Ver</a>
                                   ) : null)}
-                                  {visibleItems.length > 4 ? <span className="self-center text-xs font-semibold text-content-muted">+{visibleItems.length - 4} mas</span> : null}
+                                  {visibleItems.length > 4 ? (
+                                    <button className="inline-flex h-24 w-16 items-center justify-center rounded-md border border-dashed border-line bg-paper text-xs font-semibold text-content-muted hover:border-apex hover:text-apex" onClick={() => { const next = visibleItems.slice(4).find((entry) => entry.base64_data); if (next) setLightboxIndex(Math.max(0, lightboxItems.indexOf(next))); }} type="button">+{visibleItems.length - 4} mas</button>
+                                  ) : null}
                                 </div>
                               ) : loadingEvidence[event.id] ? (
                                 <div className="flex items-center gap-3 text-sm text-content-muted"><Skeleton className="h-24 w-24" /> Cargando evidencia...</div>
@@ -1016,25 +1110,40 @@ export default function RoutesPlanningPage() {
               </section>
             </div>
           </aside>
-          {lightbox ? (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-neutral-950/80 p-4" onClick={() => setLightbox(null)} role="dialog" aria-modal="true" aria-label="Evidencia ampliada">
-              <div className="max-h-full max-w-3xl overflow-hidden rounded-md bg-paper" onClick={(event) => event.stopPropagation()}>
-                <div className="flex items-center justify-between gap-3 border-b border-line p-3">
-                  <p className="truncate text-sm font-semibold text-content-strong">{lightbox.file_name || "Evidencia fotografica"}</p>
-                  <button className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line hover:bg-paper" onClick={() => setLightbox(null)} type="button" aria-label="Cerrar evidencia"><X size={16} /></button>
-                </div>
-                <div className="max-h-[70vh] overflow-auto p-3">
-                  <Image alt={lightbox.file_name || "Evidencia ampliada"} className="h-auto w-auto max-w-full rounded-md" height={720} src={lightbox.base64_data || ""} unoptimized width={1280} />
-                </div>
-              </div>
-            </div>
-          ) : null}
-        </div>
+        </div>,
+        document.body
       ) : null}
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-white/95 p-3 backdrop-blur md:hidden">
-        <button className="h-14 w-full rounded-md bg-apex text-base font-semibold text-white" onClick={() => openCreateModal()} type="button">Nuevo horario</button>
-      </div>
+      {selectedRoute && lightboxIndex != null && lightboxItems[lightboxIndex] ? createPortal(
+        <div aria-label="Evidencia ampliada" aria-modal="true" className="fixed inset-0 z-[110] flex items-center justify-center bg-neutral-950/85 p-4" onClick={() => setLightboxIndex(null)} role="dialog">
+          <div className="w-full max-w-4xl overflow-hidden rounded-md bg-paper shadow-2xl" onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-center justify-between gap-3 border-b border-line bg-surface px-3 py-2">
+              <p className="truncate text-sm font-semibold text-content-strong">{lightboxItems[lightboxIndex].file_name || "Evidencia fotografica"}</p>
+              <div className="flex shrink-0 items-center gap-1.5">
+                {lightboxItems.length > 1 ? (
+                  <>
+                    <span className="mr-1 text-xs font-semibold text-content-muted">{lightboxIndex + 1} / {lightboxItems.length}</span>
+                    <button aria-label="Evidencia anterior" className="flex h-8 w-8 items-center justify-center rounded-md border border-line hover:bg-surface-muted" onClick={() => setLightboxIndex((current) => (current == null ? current : (current - 1 + lightboxItems.length) % lightboxItems.length))} type="button"><ChevronLeft size={16} /></button>
+                    <button aria-label="Evidencia siguiente" className="flex h-8 w-8 items-center justify-center rounded-md border border-line hover:bg-surface-muted" onClick={() => setLightboxIndex((current) => (current == null ? current : (current + 1) % lightboxItems.length))} type="button"><ChevronRight size={16} /></button>
+                  </>
+                ) : null}
+                <button aria-label="Cerrar evidencia" className="flex h-8 w-8 items-center justify-center rounded-md border border-line hover:bg-surface-muted" onClick={() => setLightboxIndex(null)} type="button"><X size={15} /></button>
+              </div>
+            </div>
+            <div className="relative h-[70vh] max-h-[calc(100vh-7rem)] bg-neutral-950">
+              <Image alt={lightboxItems[lightboxIndex].file_name || "Evidencia ampliada"} className="object-contain" fill sizes="(max-width: 1024px) 100vw, 896px" src={lightboxItems[lightboxIndex].base64_data || ""} unoptimized />
+            </div>
+          </div>
+        </div>,
+        document.body
+      ) : null}
+
+      {mounted ? createPortal(
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 p-3 backdrop-blur md:hidden">
+          <button className="h-14 w-full rounded-md bg-apex text-base font-semibold text-white" onClick={() => openCreateModal()} type="button">Nuevo horario</button>
+        </div>,
+        document.body
+      ) : null}
     </div>
   );
 }
