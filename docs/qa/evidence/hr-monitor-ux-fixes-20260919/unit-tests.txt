@@ -1,0 +1,1792 @@
+TAP version 13
+# (node:22464) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/mq1/Documents/Proyectos/APEXOS-worktrees/desarrollo-controlled-promotion/apps/web/lib/moduleAccessPolicy.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS-worktrees\\desarrollo-controlled-promotion\\apps\\web\\package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: admin empresa personalizado conserva gestion de usuarios y roles
+ok 1 - admin empresa personalizado conserva gestion de usuarios y roles
+  ---
+  duration_ms: 6.5327
+  type: 'test'
+  ...
+# Subtest: soporte no hereda creacion de usuarios por permisos administrativos ajenos
+ok 2 - soporte no hereda creacion de usuarios por permisos administrativos ajenos
+  ---
+  duration_ms: 12.1839
+  type: 'test'
+  ...
+# Subtest: las rutas Supabase verifican matriz y operacion solicitada
+ok 3 - las rutas Supabase verifican matriz y operacion solicitada
+  ---
+  duration_ms: 5.1175
+  type: 'test'
+  ...
+# (node:21552) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/mq1/Documents/Proyectos/APEXOS-worktrees/desarrollo-controlled-promotion/apps/web/lib/adminUserCredentialSync.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS-worktrees\\desarrollo-controlled-promotion\\apps\\web\\package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: sincroniza correo y clave con Supabase Auth
+ok 4 - sincroniza correo y clave con Supabase Auth
+  ---
+  duration_ms: 34.1847
+  type: 'test'
+  ...
+# Subtest: no modifica Auth cuando las credenciales no cambian
+ok 5 - no modifica Auth cuando las credenciales no cambian
+  ---
+  duration_ms: 0.8603
+  type: 'test'
+  ...
+# Subtest: el formulario exige confirmacion explicita y el endpoint repara vinculos Auth
+ok 6 - el formulario exige confirmacion explicita y el endpoint repara vinculos Auth
+  ---
+  duration_ms: 2.2749
+  type: 'test'
+  ...
+# Subtest: Apex Heart está registrado como M-28 y visible en Reportes
+ok 7 - Apex Heart está registrado como M-28 y visible en Reportes
+  ---
+  duration_ms: 38.2786
+  type: 'test'
+  ...
+# Subtest: Prisma es el único owner estructural de Apex Heart y Supabase valida el contrato
+ok 8 - Prisma es el único owner estructural de Apex Heart y Supabase valida el contrato
+  ---
+  duration_ms: 7.4124
+  type: 'test'
+  ...
+# Subtest: el proxy operativo reenvia la empresa seleccionada al backend
+ok 9 - el proxy operativo reenvia la empresa seleccionada al backend
+  ---
+  duration_ms: 3.9022
+  type: 'test'
+  ...
+# Subtest: el calendario comercial se abre como ventana accesible y conserva vistas dinámicas
+ok 10 - el calendario comercial se abre como ventana accesible y conserva vistas dinámicas
+  ---
+  duration_ms: 128.3269
+  type: 'test'
+  ...
+# Subtest: los eventos usan etiquetas inteligentes y agrupación lineal por fecha
+ok 11 - los eventos usan etiquetas inteligentes y agrupación lineal por fecha
+  ---
+  duration_ms: 44.5115
+  type: 'test'
+  ...
+# Subtest: la agenda evita recargar maestros por cada navegación del calendario
+ok 12 - la agenda evita recargar maestros por cada navegación del calendario
+  ---
+  duration_ms: 1.2076
+  type: 'test'
+  ...
+# Subtest: Gestión Comercial comparte navegación homogénea en todas sus pantallas
+ok 13 - Gestión Comercial comparte navegación homogénea en todas sus pantallas
+  ---
+  duration_ms: 7.6621
+  type: 'test'
+  ...
+# Subtest: M-27 se publica en el catalogo tenant y se inicializa para planes y empresas
+ok 14 - M-27 se publica en el catalogo tenant y se inicializa para planes y empresas
+  ---
+  duration_ms: 85.6293
+  type: 'test'
+  ...
+# Subtest: Administracion consulta el catalogo completo y permite habilitar M-27 por empresa
+ok 15 - Administracion consulta el catalogo completo y permite habilitar M-27 por empresa
+  ---
+  duration_ms: 91.5005
+  type: 'test'
+  ...
+# Subtest: paneles limitan a top 10 sin filtros y muestran todas las coincidencias al filtrar
+ok 16 - paneles limitan a top 10 sin filtros y muestran todas las coincidencias al filtrar
+  ---
+  duration_ms: 254.3986
+  type: 'test'
+  ...
+# Subtest: presupuestos separa configuración y ejecución con filtros compartidos
+ok 17 - presupuestos separa configuración y ejecución con filtros compartidos
+  ---
+  duration_ms: 25.8302
+  type: 'test'
+  ...
+# Subtest: agenda busca cliente con texto, Enter y lista desplegable inteligente
+ok 18 - agenda busca cliente con texto, Enter y lista desplegable inteligente
+  ---
+  duration_ms: 8.6081
+  type: 'test'
+  ...
+# Subtest: reportes enlaza comparativo cotizado pedido con filtros y cantidades originales
+ok 19 - reportes enlaza comparativo cotizado pedido con filtros y cantidades originales
+  ---
+  duration_ms: 3.4624
+  type: 'test'
+  ...
+# Subtest: agenda comparte el todo de compromisos y lo refresca tras guardar una visita
+ok 20 - agenda comparte el todo de compromisos y lo refresca tras guardar una visita
+  ---
+  duration_ms: 16.6708
+  type: 'test'
+  ...
+# Subtest: inicio muestra alertas y permite chulear compromisos sin ocultar fallos
+ok 21 - inicio muestra alertas y permite chulear compromisos sin ocultar fallos
+  ---
+  duration_ms: 2.5672
+  type: 'test'
+  ...
+# Subtest: acciones de visita distinguen gestion, ejecucion e historial de solo consulta
+ok 22 - acciones de visita distinguen gestion, ejecucion e historial de solo consulta
+  ---
+  duration_ms: 3.7198
+  type: 'test'
+  ...
+# Subtest: conversion editable compartida e historial adaptado al contenido
+ok 23 - conversion editable compartida e historial adaptado al contenido
+  ---
+  duration_ms: 12.5939
+  type: 'test'
+  ...
+# Subtest: doble clic abre historial por ID y permite regresar desde documentos
+ok 24 - doble clic abre historial por ID y permite regresar desde documentos
+  ---
+  duration_ms: 15.0445
+  type: 'test'
+  ...
+# Subtest: cada visita remonta su detalle por ID y consulta datos operativos sin cache
+ok 25 - cada visita remonta su detalle por ID y consulta datos operativos sin cache
+  ---
+  duration_ms: 4.4095
+  type: 'test'
+  ...
+# Subtest: no-store tambien evita reutilizar solicitudes GET en curso
+ok 26 - no-store tambien evita reutilizar solicitudes GET en curso
+  ---
+  duration_ms: 13.4009
+  type: 'test'
+  ...
+# Subtest: prospeccion sin cliente y calendario con historial completo
+ok 27 - prospeccion sin cliente y calendario con historial completo
+  ---
+  duration_ms: 3.5473
+  type: 'test'
+  ...
+# Subtest: pendientes en tabla con cancelacion justificada y resultado comercial
+ok 28 - pendientes en tabla con cancelacion justificada y resultado comercial
+  ---
+  duration_ms: 9.5727
+  type: 'test'
+  ...
+# Subtest: la negociacion captura productos por codigo y conserva nombre y precio del maestro
+ok 29 - la negociacion captura productos por codigo y conserva nombre y precio del maestro
+  ---
+  duration_ms: 3.0193
+  type: 'test'
+  ...
+# Subtest: la consulta de pedidos filtra, abre detalle con doble clic y descarga PDF
+ok 30 - la consulta de pedidos filtra, abre detalle con doble clic y descarga PDF
+  ---
+  duration_ms: 6.9429
+  type: 'test'
+  ...
+# Subtest: el inicio compacto enlaza una consulta completa de cotizaciones
+ok 31 - el inicio compacto enlaza una consulta completa de cotizaciones
+  ---
+  duration_ms: 2.6585
+  type: 'test'
+  ...
+# Subtest: el control muestra finalizacion y duracion real de cada visita
+ok 32 - el control muestra finalizacion y duracion real de cada visita
+  ---
+  duration_ms: 1.5172
+  type: 'test'
+  ...
+# Subtest: el pedido abre la cotizacion de origen con doble clic
+ok 33 - el pedido abre la cotizacion de origen con doble clic
+  ---
+  duration_ms: 2.0895
+  type: 'test'
+  ...
+# Subtest: la cotizacion abre el pedido generado con doble clic
+ok 34 - la cotizacion abre el pedido generado con doble clic
+  ---
+  duration_ms: 1.5196
+  type: 'test'
+  ...
+# Subtest: presupuestos permite crear y comparar contra pedidos realizados
+ok 35 - presupuestos permite crear y comparar contra pedidos realizados
+  ---
+  duration_ms: 1.0971
+  type: 'test'
+  ...
+# Subtest: presupuesto suma registrados y conserva filtros de fecha, asesor y cliente
+ok 36 - presupuesto suma registrados y conserva filtros de fecha, asesor y cliente
+  ---
+  duration_ms: 2.2688
+  type: 'test'
+  ...
+# Subtest: Mi día, disponibilidad previa y exportaciones gerenciales estan disponibles
+ok 37 - Mi día, disponibilidad previa y exportaciones gerenciales estan disponibles
+  ---
+  duration_ms: 1.6432
+  type: 'test'
+  ...
+# Subtest: Gestión Comercial se publica como M-27 en la navegación lateral
+ok 38 - Gestión Comercial se publica como M-27 en la navegación lateral
+  ---
+  duration_ms: 2.5454
+  type: 'test'
+  ...
+# Subtest: los accesos ERP muestran únicamente herramientas activas y usan el sistema visual APEXOS
+ok 39 - los accesos ERP muestran únicamente herramientas activas y usan el sistema visual APEXOS
+  ---
+  duration_ms: 32.3874
+  type: 'test'
+  ...
+# Subtest: la navegación diferencia acciones de alta y maestros fiscales activos
+ok 40 - la navegación diferencia acciones de alta y maestros fiscales activos
+  ---
+  duration_ms: 4.0291
+  type: 'test'
+  ...
+# Subtest: los formularios comerciales tienen etiquetas visibles y conservan sus contratos
+ok 41 - los formularios comerciales tienen etiquetas visibles y conservan sus contratos
+  ---
+  duration_ms: 3.3789
+  type: 'test'
+  ...
+# Subtest: tesorería conserva pagos bancos reportes y anticipos con una jerarquía compacta
+ok 42 - tesorería conserva pagos bancos reportes y anticipos con una jerarquía compacta
+  ---
+  duration_ms: 8.2672
+  type: 'test'
+  ...
+# Subtest: el formulario de productos conserva sus funciones y elimina paneles de relleno
+ok 43 - el formulario de productos conserva sus funciones y elimina paneles de relleno
+  ---
+  duration_ms: 15.6903
+  type: 'test'
+  ...
+# Subtest: las portadas ERP ofrecen una sola capa de acceso por función
+ok 44 - las portadas ERP ofrecen una sola capa de acceso por función
+  ---
+  duration_ms: 8.6896
+  type: 'test'
+  ...
+# Subtest: compras elimina relleno y duplicidad sin retirar operaciones activas
+ok 45 - compras elimina relleno y duplicidad sin retirar operaciones activas
+  ---
+  duration_ms: 32.16
+  type: 'test'
+  ...
+# Subtest: la portada agrupa Talento Humano en mallas horarias y nomina
+ok 46 - la portada agrupa Talento Humano en mallas horarias y nomina
+  ---
+  duration_ms: 5.6613
+  type: 'test'
+  ...
+# Subtest: mallas conserva acceso a planeacion, marcaciones, monitor y reportes
+ok 47 - mallas conserva acceso a planeacion, marcaciones, monitor y reportes
+  ---
+  duration_ms: 0.4848
+  type: 'test'
+  ...
+# Subtest: la portada no mezcla vehiculos ni depende de consultas operativas
+ok 48 - la portada no mezcla vehiculos ni depende de consultas operativas
+  ---
+  duration_ms: 3.0677
+  type: 'test'
+  ...
+# Subtest: los paneles respetan el fondo tematico sin degradados blancos forzados
+ok 49 - los paneles respetan el fondo tematico sin degradados blancos forzados
+  ---
+  duration_ms: 1.2139
+  type: 'test'
+  ...
+# Subtest: el login redirige el perfil exclusivo directamente a marcaciones
+ok 50 - el login redirige el perfil exclusivo directamente a marcaciones
+  ---
+  duration_ms: 17.4625
+  type: 'test'
+  ...
+# Subtest: el guard bloquea cualquier ruta distinta a la pantalla de marcacion
+ok 51 - el guard bloquea cualquier ruta distinta a la pantalla de marcacion
+  ---
+  duration_ms: 2.0596
+  type: 'test'
+  ...
+# Subtest: el chrome exclusivo no renderiza sidebar, navegacion movil ni IA
+ok 52 - el chrome exclusivo no renderiza sidebar, navegacion movil ni IA
+  ---
+  duration_ms: 2.4919
+  type: 'test'
+  ...
+# Subtest: la pantalla usa exclusivamente endpoints autocontenidos self
+ok 53 - la pantalla usa exclusivamente endpoints autocontenidos self
+  ---
+  duration_ms: 3.3182
+  type: 'test'
+  ...
+# Subtest: la pantalla limita horarios al dia de Bogota y usa marcaciones idempotentes
+ok 54 - la pantalla limita horarios al dia de Bogota y usa marcaciones idempotentes
+  ---
+  duration_ms: 9.1247
+  type: 'test'
+  ...
+# Subtest: el perfil exclusivo se conserva al crear roles y usuarios Supabase
+ok 55 - el perfil exclusivo se conserva al crear roles y usuarios Supabase
+  ---
+  duration_ms: 26.3555
+  type: 'test'
+  ...
+# Subtest: la marcacion movil emite refresh inmediato para monitores abiertos
+ok 56 - la marcacion movil emite refresh inmediato para monitores abiertos
+  ---
+  duration_ms: 22.1901
+  type: 'test'
+  ...
+# Subtest: el monitor de horarios escucha refresh local y actualiza resúmenes cada 5 segundos
+ok 57 - el monitor de horarios escucha refresh local y actualiza resúmenes cada 5 segundos
+  ---
+  duration_ms: 4.0322
+  type: 'test'
+  ...
+# Subtest: la carga de horarios reintenta respuestas vacias transitorias y conserva el ultimo estado valido
+ok 58 - la carga de horarios reintenta respuestas vacias transitorias y conserva el ultimo estado valido
+  ---
+  duration_ms: 4.2537
+  type: 'test'
+  ...
+# Subtest: el listado de horarios carga al montar sin esperar catalogos secundarios
+ok 59 - el listado de horarios carga al montar sin esperar catalogos secundarios
+  ---
+  duration_ms: 7.2501
+  type: 'test'
+  ...
+# Subtest: el monitor solicita estado operativo fresco y conserva evidencia resumida
+ok 60 - el monitor solicita estado operativo fresco y conserva evidencia resumida
+  ---
+  duration_ms: 23.5955
+  type: 'test'
+  ...
+# (node:22480) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/mq1/Documents/Proyectos/APEXOS-worktrees/desarrollo-controlled-promotion/apps/web/lib/reportExports.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS-worktrees\\desarrollo-controlled-promotion\\apps\\web\\package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: el reporte genera un XLSX real, ordenado y filtrable
+ok 61 - el reporte genera un XLSX real, ordenado y filtrable
+  ---
+  duration_ms: 945.5923
+  type: 'test'
+  ...
+# Subtest: la pantalla aplica rango al origen, filtros inteligentes y descarga xlsx
+ok 62 - la pantalla aplica rango al origen, filtros inteligentes y descarga xlsx
+  ---
+  duration_ms: 16.6294
+  type: 'test'
+  ...
+# (node:12868) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/mq1/Documents/Proyectos/APEXOS-worktrees/desarrollo-controlled-promotion/apps/web/lib/hrScheduleMonitor.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS-worktrees\\desarrollo-controlled-promotion\\apps\\web\\package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: usa la fecha calendario local cuando UTC ya avanzo al dia siguiente
+ok 63 - usa la fecha calendario local cuando UTC ya avanzo al dia siguiente
+  ---
+  duration_ms: 23.3469
+  type: 'test'
+  ...
+# Subtest: consulta el monitor con la fecha del horario seleccionado
+ok 64 - consulta el monitor con la fecha del horario seleccionado
+  ---
+  duration_ms: 6.6394
+  type: 'test'
+  ...
+# Subtest: normaliza evidencia de marcaciones para el monitor de horarios
+ok 65 - normaliza evidencia de marcaciones para el monitor de horarios
+  ---
+  duration_ms: 12.4889
+  type: 'test'
+  ...
+# Subtest: resume la evidencia sin transportar la foto hasta que el administrador la solicite
+ok 66 - resume la evidencia sin transportar la foto hasta que el administrador la solicite
+  ---
+  duration_ms: 6.619
+  type: 'test'
+  ...
+# Subtest: mantiene GPS por defecto y permite horarios solo con marcacion
+ok 67 - mantiene GPS por defecto y permite horarios solo con marcacion
+  ---
+  duration_ms: 3.2599
+  type: 'test'
+  ...
+# Subtest: talent landing exposes novelties, employees and mallas navigation
+ok 68 - talent landing exposes novelties, employees and mallas navigation
+  ---
+  duration_ms: 43.6173
+  type: 'test'
+  ...
+# Subtest: mobile closing flow requires day mileage when the schedule has a vehicle
+ok 69 - mobile closing flow requires day mileage when the schedule has a vehicle
+  ---
+  duration_ms: 23.5695
+  type: 'test'
+  ...
+# Subtest: new talent pages consume talento humano API aliases
+ok 70 - new talent pages consume talento humano API aliases
+  ---
+  duration_ms: 2.036
+  type: 'test'
+  ...
+# Subtest: employee master exposes view and edit actions per row
+ok 71 - employee master exposes view and edit actions per row
+  ---
+  duration_ms: 1.1938
+  type: 'test'
+  ...
+# Subtest: labor entities page exposes entity CRUD and employee affiliations
+ok 72 - labor entities page exposes entity CRUD and employee affiliations
+  ---
+  duration_ms: 4.847
+  type: 'test'
+  ...
+# Subtest: labor configuration page edits night range, overtime limits and surcharge concepts
+ok 73 - labor configuration page edits night range, overtime limits and surcharge concepts
+  ---
+  duration_ms: 1.5257
+  type: 'test'
+  ...
+# Subtest: inventario organiza navegación por dominios sin fila extensa ni WMS visible
+ok 74 - inventario organiza navegación por dominios sin fila extensa ni WMS visible
+  ---
+  duration_ms: 8.8159
+  type: 'test'
+  ...
+# Subtest: portada de inventario no ofrece WMS ni duplica la navegación secundaria
+ok 75 - portada de inventario no ofrece WMS ni duplica la navegación secundaria
+  ---
+  duration_ms: 19.2817
+  type: 'test'
+  ...
+# Subtest: APEX AI no apunta a WMS oculto dentro de inventario
+ok 76 - APEX AI no apunta a WMS oculto dentro de inventario
+  ---
+  duration_ms: 2.3684
+  type: 'test'
+  ...
+# Subtest: nuevo producto no duplica directorio ni trazabilidad como navegación interna
+ok 77 - nuevo producto no duplica directorio ni trazabilidad como navegación interna
+  ---
+  duration_ms: 2.1241
+  type: 'test'
+  ...
+# Subtest: formulario de producto separa inventariables de servicios y no inventariables
+ok 78 - formulario de producto separa inventariables de servicios y no inventariables
+  ---
+  duration_ms: 5.1162
+  type: 'test'
+  ...
+# Subtest: formulario de producto usa agrupación operacional de fase 3
+ok 79 - formulario de producto usa agrupación operacional de fase 3
+  ---
+  duration_ms: 12.7264
+  type: 'test'
+  ...
+# (node:18652) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/mq1/Documents/Proyectos/APEXOS-worktrees/desarrollo-controlled-promotion/apps/web/lib/latam.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS-worktrees\\desarrollo-controlled-promotion\\apps\\web\\package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: uses safe fiscal defaults when a supplier has no country yet
+ok 80 - uses safe fiscal defaults when a supplier has no country yet
+  ---
+  duration_ms: 10.1135
+  type: 'test'
+  ...
+# Subtest: keeps country-specific supplier configuration
+ok 81 - keeps country-specific supplier configuration
+  ---
+  duration_ms: 1.1455
+  type: 'test'
+  ...
+# Subtest: local login replaces stale company context with the authenticated tenant
+ok 82 - local login replaces stale company context with the authenticated tenant
+  ---
+  duration_ms: 19.0745
+  type: 'test'
+  ...
+# Subtest: login usa una clase dedicada para errores de autenticacion
+ok 83 - login usa una clase dedicada para errores de autenticacion
+  ---
+  duration_ms: 3.8061
+  type: 'test'
+  ...
+# Subtest: mensaje de error del login tiene contraste propio en tema claro y oscuro
+ok 84 - mensaje de error del login tiene contraste propio en tema claro y oscuro
+  ---
+  duration_ms: 7.6552
+  type: 'test'
+  ...
+# Subtest: el login conserva el flujo de autenticacion y mejora seguridad visual y accesibilidad
+ok 85 - el login conserva el flujo de autenticacion y mejora seguridad visual y accesibilidad
+  ---
+  duration_ms: 9.0683
+  type: 'test'
+  ...
+# Subtest: el login define superficies diferenciadas para tema claro y oscuro
+ok 86 - el login define superficies diferenciadas para tema claro y oscuro
+  ---
+  duration_ms: 1.4783
+  type: 'test'
+  ...
+# Subtest: la portada pública comparte el lenguaje visual moderno y adaptable del login
+ok 87 - la portada pública comparte el lenguaje visual moderno y adaptable del login
+  ---
+  duration_ms: 1.378
+  type: 'test'
+  ...
+# Subtest: la onda del login tiene movimiento suave y respeta reduced motion
+ok 88 - la onda del login tiene movimiento suave y respeta reduced motion
+  ---
+  duration_ms: 1.655
+  type: 'test'
+  ...
+# Subtest: la guia APEX AI es contextual y sus controles no propagan navegacion
+ok 89 - la guia APEX AI es contextual y sus controles no propagan navegacion
+  ---
+  duration_ms: 12.5748
+  type: 'test'
+  ...
+# Subtest: los permisos usan skeleton y EmptyState admite icono y dos acciones
+ok 90 - los permisos usan skeleton y EmptyState admite icono y dos acciones
+  ---
+  duration_ms: 2.4292
+  type: 'test'
+  ...
+# Subtest: el feedback global ofrece toast accesible, cierre y reintento
+ok 91 - el feedback global ofrece toast accesible, cierre y reintento
+  ---
+  duration_ms: 9.1698
+  type: 'test'
+  ...
+# Subtest: los ajustes de inventario bloquean doble envío y reintentan con la misma idempotencia
+ok 92 - los ajustes de inventario bloquean doble envío y reintentan con la misma idempotencia
+  ---
+  duration_ms: 3.1291
+  type: 'test'
+  ...
+# Subtest: los traslados bloquean doble envío y reutilizan la idempotencia al reintentar
+ok 93 - los traslados bloquean doble envío y reutilizan la idempotencia al reintentar
+  ---
+  duration_ms: 2.3679
+  type: 'test'
+  ...
+# Subtest: el cargue inicial informa validación y contabilización, con bloqueo y reintento
+ok 94 - el cargue inicial informa validación y contabilización, con bloqueo y reintento
+  ---
+  duration_ms: 7.315
+  type: 'test'
+  ...
+# Subtest: el maestro de productos bloquea guardados simultáneos y comunica el resultado
+ok 95 - el maestro de productos bloquea guardados simultáneos y comunica el resultado
+  ---
+  duration_ms: 2.9011
+  type: 'test'
+  ...
+# Subtest: los maestros secundarios de inventario bloquean duplicados y notifican resultados
+ok 96 - los maestros secundarios de inventario bloquean duplicados y notifican resultados
+  ---
+  duration_ms: 16.4634
+  type: 'test'
+  ...
+# Subtest: compras y transporte ofrecen estados vacíos accionables
+ok 97 - compras y transporte ofrecen estados vacíos accionables
+  ---
+  duration_ms: 3.945
+  type: 'test'
+  ...
+# Subtest: el sidebar colapsado ofrece tooltips visuales y navegación accesible
+ok 98 - el sidebar colapsado ofrece tooltips visuales y navegación accesible
+  ---
+  duration_ms: 2.0838
+  type: 'test'
+  ...
+# Subtest: la base visual cumple contraste AA y preferencias de foco y movimiento
+ok 99 - la base visual cumple contraste AA y preferencias de foco y movimiento
+  ---
+  duration_ms: 11.491
+  type: 'test'
+  ...
+# Subtest: los flujos prioritarios anuncian errores y confirmaciones
+ok 100 - los flujos prioritarios anuncian errores y confirmaciones
+  ---
+  duration_ms: 14.9613
+  type: 'test'
+  ...
+# Subtest: stock identifica filtros y anuncia errores y resultados accesiblemente
+ok 101 - stock identifica filtros y anuncia errores y resultados accesiblemente
+  ---
+  duration_ms: 1.2341
+  type: 'test'
+  ...
+# Subtest: el ciclo de foco del modal no se reinicia cuando cambia onClose
+ok 102 - el ciclo de foco del modal no se reinicia cuando cambia onClose
+  ---
+  duration_ms: 5.9671
+  type: 'test'
+  ...
+# Subtest: auth/me recibe la empresa seleccionada
+ok 103 - auth/me recibe la empresa seleccionada
+  ---
+  duration_ms: 15.4108
+  type: 'test'
+  ...
+# Subtest: la empresa se persiste antes de refrescar el contexto RBAC
+ok 104 - la empresa se persiste antes de refrescar el contexto RBAC
+  ---
+  duration_ms: 1.0923
+  type: 'test'
+  ...
+# (node:14860) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/mq1/Documents/Proyectos/APEXOS-worktrees/desarrollo-controlled-promotion/apps/web/lib/moduleAccessPolicy.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS-worktrees\\desarrollo-controlled-promotion\\apps\\web\\package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: recognizes platform and company administrator role variants
+ok 105 - recognizes platform and company administrator role variants
+  ---
+  duration_ms: 12.9547
+  type: 'test'
+  ...
+# Subtest: evaluates user and role administration from the configured permission matrix
+ok 106 - evaluates user and role administration from the configured permission matrix
+  ---
+  duration_ms: 1.6506
+  type: 'test'
+  ...
+# Subtest: platform administrator keeps company modules and platform administration
+ok 107 - platform administrator keeps company modules and platform administration
+  ---
+  duration_ms: 15.2325
+  type: 'test'
+  ...
+# Subtest: the Nyvora visual gate covers every operational module in the certified route sweep
+ok 108 - the Nyvora visual gate covers every operational module in the certified route sweep
+  ---
+  duration_ms: 7.8544
+  type: 'test'
+  ...
+# (node:13888) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/mq1/Documents/Proyectos/APEXOS-worktrees/desarrollo-controlled-promotion/apps/web/lib/security/csp.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS-worktrees\\desarrollo-controlled-promotion\\apps\\web\\package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: normaliza API http local a origen
+ok 109 - normaliza API http local a origen
+  ---
+  duration_ms: 3.0352
+  type: 'test'
+  ...
+# Subtest: acepta origen https sin ruta
+ok 110 - acepta origen https sin ruta
+  ---
+  duration_ms: 0.7958
+  type: 'test'
+  ...
+# Subtest: omite mismo origen porque self ya lo cubre
+ok 111 - omite mismo origen porque self ya lo cubre
+  ---
+  duration_ms: 1.5299
+  type: 'test'
+  ...
+# Subtest: conserva origen diferente
+ok 112 - conserva origen diferente
+  ---
+  duration_ms: 5.8005
+  type: 'test'
+  ...
+# Subtest: ausente o invalida queda cerrada
+ok 113 - ausente o invalida queda cerrada
+  ---
+  duration_ms: 1.1334
+  type: 'test'
+  ...
+# Subtest: rechaza esquemas y credenciales peligrosos
+ok 114 - rechaza esquemas y credenciales peligrosos
+  ---
+  duration_ms: 1.0309
+  type: 'test'
+  ...
+# Subtest: deriva ws del api cuando no hay ws url explicita
+ok 115 - deriva ws del api cuando no hay ws url explicita
+  ---
+  duration_ms: 1.6027
+  type: 'test'
+  ...
+# Subtest: permite ws explicito contra el mismo host del api
+ok 116 - permite ws explicito contra el mismo host del api
+  ---
+  duration_ms: 1.0043
+  type: 'test'
+  ...
+# Subtest: rechaza ws con host distinto al api
+ok 117 - rechaza ws con host distinto al api
+  ---
+  duration_ms: 2.6366
+  type: 'test'
+  ...
+# Subtest: wss queda cubierto por el scheme-source global
+ok 118 - wss queda cubierto por el scheme-source global
+  ---
+  duration_ms: 2.7643
+  type: 'test'
+  ...
+# Subtest: ws sin api o con valores invalidos queda cerrado
+ok 119 - ws sin api o con valores invalidos queda cerrado
+  ---
+  duration_ms: 1.2317
+  type: 'test'
+  ...
+# (node:3200) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/mq1/Documents/Proyectos/APEXOS-worktrees/desarrollo-controlled-promotion/apps/web/lib/offline/context.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS-worktrees\\desarrollo-controlled-promotion\\apps\\web\\package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: crea, consulta y persiste una operacion sintetica
+ok 120 - crea, consulta y persiste una operacion sintetica
+  ---
+  duration_ms: 1056.3729
+  type: 'test'
+  ...
+# Subtest: asigna secuencia monotona y devuelve la siguiente operacion ejecutable
+ok 121 - asigna secuencia monotona y devuelve la siguiente operacion ejecutable
+  ---
+  duration_ms: 225.8957
+  type: 'test'
+  ...
+# Subtest: evita duplicados por operationId, idempotencia, doble clic y concurrencia
+ok 122 - evita duplicados por operationId, idempotencia, doble clic y concurrencia
+  ---
+  duration_ms: 118.6143
+  type: 'test'
+  ...
+# Subtest: valida transiciones y mantiene confirmadas inmutables
+ok 123 - valida transiciones y mantiene confirmadas inmutables
+  ---
+  duration_ms: 143.3012
+  type: 'test'
+  ...
+# Subtest: modela bloqueo, conflicto y descarte sin resolver conflictos reales
+ok 124 - modela bloqueo, conflicto y descarte sin resolver conflictos reales
+  ---
+  duration_ms: 215.8244
+  type: 'test'
+  ...
+# Subtest: clasifica reintentos, aplica backoff y bloquea al superar el maximo
+ok 125 - clasifica reintentos, aplica backoff y bloquea al superar el maximo
+  ---
+  duration_ms: 202.593
+  type: 'test'
+  ...
+# Subtest: recupera PROCESSING interrumpido despues del timeout al reabrir
+ok 126 - recupera PROCESSING interrumpido despues del timeout al reabrir
+  ---
+  duration_ms: 193.9029
+  type: 'test'
+  ...
+# Subtest: valida dependencias inexistentes, propias, bloqueadas y orden causal
+ok 127 - valida dependencias inexistentes, propias, bloqueadas y orden causal
+  ---
+  duration_ms: 496.2598
+  type: 'test'
+  ...
+# Subtest: rechaza tipos productivos, payloads secretos, UUID y contexto invalidos
+ok 128 - rechaza tipos productivos, payloads secretos, UUID y contexto invalidos
+  ---
+  duration_ms: 79.7242
+  type: 'test'
+  ...
+# Subtest: aplica limites de cantidad, payload y total sin sobrescribir pendientes
+ok 129 - aplica limites de cantidad, payload y total sin sobrescribir pendientes
+  ---
+  duration_ms: 151.0721
+  type: 'test'
+  ...
+# Subtest: limpia confirmadas antiguas y conserva operaciones pendientes
+ok 130 - limpia confirmadas antiguas y conserva operaciones pendientes
+  ---
+  duration_ms: 190.0585
+  type: 'test'
+  ...
+# Subtest: una transaccion abortada no crea operacion ni consume secuencia
+ok 131 - una transaccion abortada no crea operacion ni consume secuencia
+  ---
+  duration_ms: 111.26
+  type: 'test'
+  ...
+# Subtest: clasifica cuota local excedida sin insertar trabajo parcial
+ok 132 - clasifica cuota local excedida sin insertar trabajo parcial
+  ---
+  duration_ms: 63.3012
+  type: 'test'
+  ...
+# Subtest: migrar una base v2 conserva el snapshot y agrega solo tablas de cola
+ok 133 - migrar una base v2 conserva el snapshot y agrega solo tablas de cola
+  ---
+  duration_ms: 89.0965
+  type: 'test'
+  ...
+# Subtest: fallo de migracion conserva la base v2 y puede reintentarse
+ok 134 - fallo de migracion conserva la base v2 y puede reintentarse
+  ---
+  duration_ms: 205.0345
+  type: 'test'
+  ...
+# Subtest: aisla colas por usuario y detecta registros o metadata manipulados
+ok 135 - aisla colas por usuario y detecta registros o metadata manipulados
+  ---
+  duration_ms: 247.9049
+  type: 'test'
+  ...
+# Subtest: modela logout seguro sin cambiar el logout productivo
+ok 136 - modela logout seguro sin cambiar el logout productivo
+  ---
+  duration_ms: 1.6865
+  type: 'test'
+  ...
+# Subtest: almacenamiento restringido degrada con error controlado
+ok 137 - almacenamiento restringido degrada con error controlado
+  ---
+  duration_ms: 51.0152
+  type: 'test'
+  ...
+# Subtest: panel abre detalle mediante el servicio abstracto de consulta
+ok 138 - panel abre detalle mediante el servicio abstracto de consulta
+  ---
+  duration_ms: 9.1781
+  type: 'test'
+  ...
+# Subtest: panel presenta lectura local, actividad, checklist, expiracion y fecha
+ok 139 - panel presenta lectura local, actividad, checklist, expiracion y fecha
+  ---
+  duration_ms: 0.5708
+  type: 'test'
+  ...
+# Subtest: panel no incorpora controles operativos offline
+ok 140 - panel no incorpora controles operativos offline
+  ---
+  duration_ms: 1.2952
+  type: 'test'
+  ...
+# (node:11688) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/mq1/Documents/Proyectos/APEXOS-worktrees/desarrollo-controlled-promotion/apps/web/lib/offline/access.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS-worktrees\\desarrollo-controlled-promotion\\apps\\web\\package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: crea, abre, cierra y elimina una base por contexto
+ok 141 - crea, abre, cierra y elimina una base por contexto
+  ---
+  duration_ms: 480.2647
+  type: 'test'
+  ...
+# Another connection wants to delete database 'apexos-offline-v2-9f86d081884c7d659a2feaa0-6d8c40e6f1b9865f2666cec2-42ff4c8d72b9a0443aa81e4b'. Closing db now to resume the delete request.
+# Subtest: hidrata y consulta ordenes, actividades, checklist, catalogo y metadata
+ok 142 - hidrata y consulta ordenes, actividades, checklist, catalogo y metadata
+  ---
+  duration_ms: 160.7568
+  type: 'test'
+  ...
+# Subtest: conserva el mismo item de checklist cuando pertenece a ordenes distintas
+ok 143 - conserva el mismo item de checklist cuando pertenece a ordenes distintas
+  ---
+  duration_ms: 236.878
+  type: 'test'
+  ...
+# Another connection wants to delete database 'apexos-offline-v2-9f86d081884c7d659a2feaa0-6d8c40e6f1b9865f2666cec2-42ff4c8d72b9a0443aa81e4b'. Closing db now to resume the delete request.
+# Subtest: persiste tras cerrar y reabrir el navegador simulado
+ok 144 - persiste tras cerrar y reabrir el navegador simulado
+  ---
+  duration_ms: 230.9439
+  type: 'test'
+  ...
+# Another connection wants to delete database 'apexos-offline-v2-9f86d081884c7d659a2feaa0-6d8c40e6f1b9865f2666cec2-42ff4c8d72b9a0443aa81e4b'. Closing db now to resume the delete request.
+# Subtest: dos pestanas del mismo contexto consultan el mismo snapshot
+ok 145 - dos pestanas del mismo contexto consultan el mismo snapshot
+  ---
+  duration_ms: 229.1986
+  type: 'test'
+  ...
+# Another connection wants to delete database 'apexos-offline-v2-9f86d081884c7d659a2feaa0-6d8c40e6f1b9865f2666cec2-42ff4c8d72b9a0443aa81e4b'. Closing db now to resume the delete request.
+# Subtest: aumenta snapshot por serverVersion y rechaza una revision inferior
+ok 146 - aumenta snapshot por serverVersion y rechaza una revision inferior
+  ---
+  duration_ms: 331.1075
+  type: 'test'
+  ...
+# Another connection wants to delete database 'apexos-offline-v2-9f86d081884c7d659a2feaa0-6d8c40e6f1b9865f2666cec2-42ff4c8d72b9a0443aa81e4b'. Closing db now to resume the delete request.
+# Subtest: rechaza snapshot de otra empresa, usuario o esquema
+ok 147 - rechaza snapshot de otra empresa, usuario o esquema
+  ---
+  duration_ms: 88.074
+  type: 'test'
+  ...
+# Another connection wants to delete database 'apexos-offline-v2-9f86d081884c7d659a2feaa0-6d8c40e6f1b9865f2666cec2-42ff4c8d72b9a0443aa81e4b'. Closing db now to resume the delete request.
+# Subtest: rechaza campos prohibidos y crea solo tablas autorizadas hasta Fase 4
+ok 148 - rechaza campos prohibidos y crea solo tablas autorizadas hasta Fase 4
+  ---
+  duration_ms: 98.3259
+  type: 'test'
+  ...
+# Another connection wants to delete database 'apexos-offline-v2-9f86d081884c7d659a2feaa0-6d8c40e6f1b9865f2666cec2-42ff4c8d72b9a0443aa81e4b'. Closing db now to resume the delete request.
+# Subtest: marca datos expirados como no vigentes y los limpia por contexto
+ok 149 - marca datos expirados como no vigentes y los limpia por contexto
+  ---
+  duration_ms: 147.4236
+  type: 'test'
+  ...
+# Another connection wants to delete database 'apexos-offline-v2-9f86d081884c7d659a2feaa0-6d8c40e6f1b9865f2666cec2-42ff4c8d72b9a0443aa81e4b'. Closing db now to resume the delete request.
+# Another connection wants to delete database 'apexos-offline-v2-9f86d081884c7d659a2feaa0-13618f5e64eda77e2c7b4d9f-42ff4c8d72b9a0443aa81e4b'. Closing db now to resume the delete request.
+# Another connection wants to delete database 'apexos-offline-v2-3f3ef786b34d6dd716e1812c-6d8c40e6f1b9865f2666cec2-42ff4c8d72b9a0443aa81e4b'. Closing db now to resume the delete request.
+# Subtest: limpia por usuario, empresa, ambiente y de forma total
+ok 150 - limpia por usuario, empresa, ambiente y de forma total
+  ---
+  duration_ms: 398.2704
+  type: 'test'
+  ...
+# Another connection wants to delete database 'apexos-offline-v2-9f86d081884c7d659a2feaa0-6d8c40e6f1b9865f2666cec2-42ff4c8d72b9a0443aa81e4b'. Closing db now to resume the delete request.
+# Subtest: regenera installationId despues de eliminacion manual
+ok 151 - regenera installationId despues de eliminacion manual
+  ---
+  duration_ms: 203.4111
+  type: 'test'
+  ...
+# Another connection wants to delete database 'apexos-offline-v2-9f86d081884c7d659a2feaa0-6d8c40e6f1b9865f2666cec2-42ff4c8d72b9a0443aa81e4b'. Closing db now to resume the delete request.
+# Subtest: rechaza un registro local manipulado con contexto ajeno
+ok 152 - rechaza un registro local manipulado con contexto ajeno
+  ---
+  duration_ms: 243.9048
+  type: 'test'
+  ...
+# Another connection wants to delete database 'apexos-offline-v2-9f86d081884c7d659a2feaa0-6d8c40e6f1b9865f2666cec2-42ff4c8d72b9a0443aa81e4b'. Closing db now to resume the delete request.
+# Subtest: migra v1 a v3 conservando datos, retencion y estado de schema
+ok 153 - migra v1 a v3 conservando datos, retencion y estado de schema
+  ---
+  duration_ms: 239.0779
+  type: 'test'
+  ...
+# Subtest: aborta de forma controlada una migracion fallida sin bucle
+ok 154 - aborta de forma controlada una migracion fallida sin bucle
+  ---
+  duration_ms: 48.9121
+  type: 'test'
+  ...
+# Another connection wants to delete database 'apexos-offline-v2-9f86d081884c7d659a2feaa0-6d8c40e6f1b9865f2666cec2-42ff4c8d72b9a0443aa81e4b'. Closing db now to resume the delete request.
+# Subtest: una transaccion abortada conserva el snapshot anterior
+ok 155 - una transaccion abortada conserva el snapshot anterior
+  ---
+  duration_ms: 123.3956
+  type: 'test'
+  ...
+# Subtest: clasifica cuota insuficiente, almacenamiento restringido y bloqueo
+ok 156 - clasifica cuota insuficiente, almacenamiento restringido y bloqueo
+  ---
+  duration_ms: 97.871
+  type: 'test'
+  ...
+# Subtest: flag apagada no carga Dexie, no abre base y no realiza fetch
+ok 157 - flag apagada no carga Dexie, no abre base y no realiza fetch
+  ---
+  duration_ms: 2.4509
+  type: 'test'
+  ...
+# Subtest: contexto manipulado o IndexedDB fallido degrada al flujo conectado
+ok 158 - contexto manipulado o IndexedDB fallido degrada al flujo conectado
+  ---
+  duration_ms: 1.5651
+  type: 'test'
+  ...
+# Another connection wants to delete database 'apexos-offline-v2-9f86d081884c7d659a2feaa0-6d8c40e6f1b9865f2666cec2-42ff4c8d72b9a0443aa81e4b'. Closing db now to resume the delete request.
+# Subtest: contrato bootstrap valido hidrata la base correcta y queda solo lectura
+ok 159 - contrato bootstrap valido hidrata la base correcta y queda solo lectura
+  ---
+  duration_ms: 107.9437
+  type: 'test'
+  ...
+# Subtest: cliente rechaza usuario, empresa, ambiente, schema y expiracion incompatibles
+ok 160 - cliente rechaza usuario, empresa, ambiente, schema y expiracion incompatibles
+  ---
+  duration_ms: 16.7243
+  type: 'test'
+  ...
+# Another connection wants to delete database 'apexos-offline-v2-9f86d081884c7d659a2feaa0-6d8c40e6f1b9865f2666cec2-42ff4c8d72b9a0443aa81e4b'. Closing db now to resume the delete request.
+# Subtest: snapshot bootstrap inferior no reemplaza revision local superior
+ok 161 - snapshot bootstrap inferior no reemplaza revision local superior
+  ---
+  duration_ms: 91.2512
+  type: 'test'
+  ...
+# Subtest: logout explicito elimina descriptor y base del contexto autorizado
+ok 162 - logout explicito elimina descriptor y base del contexto autorizado
+  ---
+  duration_ms: 78.5092
+  type: 'test'
+  ...
+# Subtest: dashboard usa el enfoque operativo aprobado
+ok 163 - dashboard usa el enfoque operativo aprobado
+  ---
+  duration_ms: 44.4373
+  type: 'test'
+  ...
+# Subtest: dashboard ya no depende de KPIs ni graficas para la pantalla inicial
+ok 164 - dashboard ya no depende de KPIs ni graficas para la pantalla inicial
+  ---
+  duration_ms: 6.2706
+  type: 'test'
+  ...
+# Subtest: acciones frecuentes salen de rutas existentes y modulos habilitados
+ok 165 - acciones frecuentes salen de rutas existentes y modulos habilitados
+  ---
+  duration_ms: 7.1138
+  type: 'test'
+  ...
+# Subtest: acciones frecuentes se priorizan por rol operativo
+ok 166 - acciones frecuentes se priorizan por rol operativo
+  ---
+  duration_ms: 2.5623
+  type: 'test'
+  ...
+# Subtest: mis modulos se limita a permisos y suscripcion
+ok 167 - mis modulos se limita a permisos y suscripcion
+  ---
+  duration_ms: 2.4968
+  type: 'test'
+  ...
+# Subtest: actividad reciente usa la traza real local y no datos inventados
+ok 168 - actividad reciente usa la traza real local y no datos inventados
+  ---
+  duration_ms: 0.8334
+  type: 'test'
+  ...
+# Subtest: dashboard cubre estados de carga error y vacio
+ok 169 - dashboard cubre estados de carga error y vacio
+  ---
+  duration_ms: 3.546
+  type: 'test'
+  ...
+# Subtest: sidebar agrupa modulos por dominios funcionales
+ok 170 - sidebar agrupa modulos por dominios funcionales
+  ---
+  duration_ms: 34.1142
+  type: 'test'
+  ...
+# Subtest: busqueda lateral es por modulos y funciones
+ok 171 - busqueda lateral es por modulos y funciones
+  ---
+  duration_ms: 3.5717
+  type: 'test'
+  ...
+# Subtest: paleta de comandos respeta modulos habilitados
+ok 172 - paleta de comandos respeta modulos habilitados
+  ---
+  duration_ms: 4.0625
+  type: 'test'
+  ...
+# Subtest: barra superior conserva lo esencial y agrupa herramientas secundarias
+ok 173 - barra superior conserva lo esencial y agrupa herramientas secundarias
+  ---
+  duration_ms: 3.2993
+  type: 'test'
+  ...
+# Subtest: chrome no muestra el banner global de AI en ningun modulo
+ok 174 - chrome no muestra el banner global de AI en ningun modulo
+  ---
+  duration_ms: 1.9745
+  type: 'test'
+  ...
+# Subtest: los tokens cubren color tipografía espacio radios sombras y jerarquía de texto
+ok 175 - los tokens cubren color tipografía espacio radios sombras y jerarquía de texto
+  ---
+  duration_ms: 65.3486
+  type: 'test'
+  ...
+# Subtest: los controles comparten validación accesible
+ok 176 - los controles comparten validación accesible
+  ---
+  duration_ms: 7.7105
+  type: 'test'
+  ...
+# Subtest: la biblioteca incluye superficies y overlays estandarizados
+ok 177 - la biblioteca incluye superficies y overlays estandarizados
+  ---
+  duration_ms: 6.0891
+  type: 'test'
+  ...
+# Subtest: DataTable ofrece selección orden filtros paginación y columnas persistentes
+ok 178 - DataTable ofrece selección orden filtros paginación y columnas persistentes
+  ---
+  duration_ms: 15.8408
+  type: 'test'
+  ...
+# Subtest: formularios extensos usan pasos y los formularios simples dos columnas con onBlur
+ok 179 - formularios extensos usan pasos y los formularios simples dos columnas con onBlur
+  ---
+  duration_ms: 33.0897
+  type: 'test'
+  ...
+# Subtest: tabs resuelven overflow y las notificaciones conservan historial
+ok 180 - tabs resuelven overflow y las notificaciones conservan historial
+  ---
+  duration_ms: 2.6189
+  type: 'test'
+  ...
+# Subtest: Apex Heart abre vistas analíticas enlazadas por URL
+ok 181 - Apex Heart abre vistas analíticas enlazadas por URL
+  ---
+  duration_ms: 9.6382
+  type: 'test'
+  ...
+# Subtest: el análisis de producto permite drill-down al registro operativo
+ok 182 - el análisis de producto permite drill-down al registro operativo
+  ---
+  duration_ms: 0.9436
+  type: 'test'
+  ...
+# Subtest: los reportes programados tienen gestión persistente y entrega auditable
+ok 183 - los reportes programados tienen gestión persistente y entrega auditable
+  ---
+  duration_ms: 35.1531
+  type: 'test'
+  ...
+# Subtest: la presencia se aísla por empresa y sesión de navegador
+ok 184 - la presencia se aísla por empresa y sesión de navegador
+  ---
+  duration_ms: 16.8799
+  type: 'test'
+  ...
+# Subtest: la colaboración comunica presencia, edición y salida
+ok 185 - la colaboración comunica presencia, edición y salida
+  ---
+  duration_ms: 11.3601
+  type: 'test'
+  ...
+# Subtest: el canal no transmite contenido de formularios y expira sesiones
+ok 186 - el canal no transmite contenido de formularios y expira sesiones
+  ---
+  duration_ms: 1.7802
+  type: 'test'
+  ...
+# Subtest: la presencia está disponible globalmente en el dashboard
+ok 187 - la presencia está disponible globalmente en el dashboard
+  ---
+  duration_ms: 1.7001
+  type: 'test'
+  ...
+# Subtest: la presencia remota autentica después del handshake y no expone tokens en URL
+ok 188 - la presencia remota autentica después del handshake y no expone tokens en URL
+  ---
+  duration_ms: 17.8339
+  type: 'test'
+  ...
+# Subtest: las preferencias se aíslan por usuario y persisten densidad y fuente
+ok 189 - las preferencias se aíslan por usuario y persisten densidad y fuente
+  ---
+  duration_ms: 7.3696
+  type: 'test'
+  ...
+# Subtest: el panel integra tema favoritos y vistas con estado accesible
+ok 190 - el panel integra tema favoritos y vistas con estado accesible
+  ---
+  duration_ms: 6.5807
+  type: 'test'
+  ...
+# Subtest: densidad y escala tipográfica tienen reglas globales
+ok 191 - densidad y escala tipográfica tienen reglas globales
+  ---
+  duration_ms: 11.9719
+  type: 'test'
+  ...
+# Subtest: el panel está disponible globalmente en el dashboard
+ok 192 - el panel está disponible globalmente en el dashboard
+  ---
+  duration_ms: 2.4554
+  type: 'test'
+  ...
+# Subtest: la navegación global ofrece salto al contenido y anuncios de ruta
+ok 193 - la navegación global ofrece salto al contenido y anuncios de ruta
+  ---
+  duration_ms: 9.852
+  type: 'test'
+  ...
+# Subtest: las transiciones de página y diálogo respetan movimiento reducido
+ok 194 - las transiciones de página y diálogo respetan movimiento reducido
+  ---
+  duration_ms: 33.5322
+  type: 'test'
+  ...
+# Subtest: la paleta expone combobox, listbox y devuelve el foco al cerrarse
+ok 195 - la paleta expone combobox, listbox y devuelve el foco al cerrarse
+  ---
+  duration_ms: 2.3559
+  type: 'test'
+  ...
+# Subtest: el onboarding guarda progreso por usuario y enlaza recorridos
+ok 196 - el onboarding guarda progreso por usuario y enlaza recorridos
+  ---
+  duration_ms: 25.5397
+  type: 'test'
+  ...
+# Subtest: el centro muestra confianza y acciones productivas accesibles
+ok 197 - el centro muestra confianza y acciones productivas accesibles
+  ---
+  duration_ms: 2.5857
+  type: 'test'
+  ...
+# Subtest: 2FA usa enrolamiento desafío y verificación TOTP reales
+ok 198 - 2FA usa enrolamiento desafío y verificación TOTP reales
+  ---
+  duration_ms: 5.1004
+  type: 'test'
+  ...
+# Subtest: la aplicación registra PWA e instalación diferida
+ok 199 - la aplicación registra PWA e instalación diferida
+  ---
+  duration_ms: 4.2502
+  type: 'test'
+  ...
+# Subtest: las tablas compartidas reducen render y fijan encabezados
+ok 200 - las tablas compartidas reducen render y fijan encabezados
+  ---
+  duration_ms: 16.1815
+  type: 'test'
+  ...
+# Subtest: productividad ofrece formatos regionales sugerencias y undo redo funcional
+ok 201 - productividad ofrece formatos regionales sugerencias y undo redo funcional
+  ---
+  duration_ms: 5.0854
+  type: 'test'
+  ...
+# Subtest: command palette ofrece atajo global, búsqueda y acciones rápidas
+ok 202 - command palette ofrece atajo global, búsqueda y acciones rápidas
+  ---
+  duration_ms: 13.8315
+  type: 'test'
+  ...
+# Subtest: dashboard adapta el inicio al trabajo operativo
+ok 203 - dashboard adapta el inicio al trabajo operativo
+  ---
+  duration_ms: 19.4054
+  type: 'test'
+  ...
+# Subtest: APEX AI prioriza anomalías, oportunidades y acciones por módulo
+ok 204 - APEX AI prioriza anomalías, oportunidades y acciones por módulo
+  ---
+  duration_ms: 1.5856
+  type: 'test'
+  ...
+# Subtest: breadcrumbs y trazabilidad conectan el recorrido entre módulos
+ok 205 - breadcrumbs y trazabilidad conectan el recorrido entre módulos
+  ---
+  duration_ms: 2.2097
+  type: 'test'
+  ...
+# Subtest: estado offline-first comunica conectividad y conserva la infraestructura operativa
+ok 206 - estado offline-first comunica conectividad y conserva la infraestructura operativa
+  ---
+  duration_ms: 6.7354
+  type: 'test'
+  ...
+# Subtest: internacionalización permite ES EN PT y persiste preferencia
+ok 207 - internacionalización permite ES EN PT y persiste preferencia
+  ---
+  duration_ms: 3.9718
+  type: 'test'
+  ...
+# Subtest: DashboardChrome integra las capacidades globales sin insertar señales sobre todos los módulos
+ok 208 - DashboardChrome integra las capacidades globales sin insertar señales sobre todos los módulos
+  ---
+  duration_ms: 7.5781
+  type: 'test'
+  ...
+# Subtest: tablas operativas heredadas reciben contador, columnas y persistencia sin tocar editores
+ok 209 - tablas operativas heredadas reciben contador, columnas y persistencia sin tocar editores
+  ---
+  duration_ms: 28.5066
+  type: 'test'
+  ...
+# Subtest: el formulario presenta un progreso compacto y accesible
+ok 210 - el formulario presenta un progreso compacto y accesible
+  ---
+  duration_ms: 37.3698
+  type: 'test'
+  ...
+# Subtest: cada producto conserva controles claros e independientes
+ok 211 - cada producto conserva controles claros e independientes
+  ---
+  duration_ms: 1.3541
+  type: 'test'
+  ...
+# Subtest: la estructura móvil evita anchos fijos para campos y acciones
+ok 212 - la estructura móvil evita anchos fijos para campos y acciones
+  ---
+  duration_ms: 1.4617
+  type: 'test'
+  ...
+# Subtest: la solicitud publica conserva contraste aunque el panel use tema oscuro
+ok 213 - la solicitud publica conserva contraste aunque el panel use tema oscuro
+  ---
+  duration_ms: 8.5598
+  type: 'test'
+  ...
+# (node:22316) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/mq1/Documents/Proyectos/APEXOS-worktrees/desarrollo-controlled-promotion/apps/web/lib/rolePermissions.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS-worktrees\\desarrollo-controlled-promotion\\apps\\web\\package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: recognizes special service correction permission from flattened permissions
+ok 214 - recognizes special service correction permission from flattened permissions
+  ---
+  duration_ms: 3.6553
+  type: 'test'
+  ...
+# Subtest: recovers special correction visibility for APEX_ADMIN when flattened permissions are missing
+ok 215 - recovers special correction visibility for APEX_ADMIN when flattened permissions are missing
+  ---
+  duration_ms: 2.2734
+  type: 'test'
+  ...
+# Subtest: does not grant special correction visibility to ordinary roles without permission
+ok 216 - does not grant special correction visibility to ordinary roles without permission
+  ---
+  duration_ms: 0.9573
+  type: 'test'
+  ...
+# Subtest: reads special correction permission from stored role metadata fallback
+ok 217 - reads special correction permission from stored role metadata fallback
+  ---
+  duration_ms: 1.7578
+  type: 'test'
+  ...
+# (node:10132) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/mq1/Documents/Proyectos/APEXOS-worktrees/desarrollo-controlled-promotion/apps/web/lib/api-collections.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS-worktrees\\desarrollo-controlled-promotion\\apps\\web\\package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: acepta colecciones directas y contratos envueltos usados por ventas
+ok 218 - acepta colecciones directas y contratos envueltos usados por ventas
+  ---
+  duration_ms: 21.3082
+  type: 'test'
+  ...
+# Subtest: un contrato inesperado nunca llega como objeto a una llamada map
+ok 219 - un contrato inesperado nunca llega como objeto a una llamada map
+  ---
+  duration_ms: 13.3406
+  type: 'test'
+  ...
+# Subtest: extrae recursos de detalle envueltos sin alterar objetos canonicos
+ok 220 - extrae recursos de detalle envueltos sin alterar objetos canonicos
+  ---
+  duration_ms: 1.2761
+  type: 'test'
+  ...
+# Subtest: las pantallas de ventas normalizan respuestas antes de renderizar colecciones
+ok 221 - las pantallas de ventas normalizan respuestas antes de renderizar colecciones
+  ---
+  duration_ms: 9.6278
+  type: 'test'
+  ...
+# (node:12972) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/mq1/Documents/Proyectos/APEXOS-worktrees/desarrollo-controlled-promotion/apps/web/lib/salesInvoiceLines.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS-worktrees\\desarrollo-controlled-promotion\\apps\\web\\package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: la factura de venta inicia con diez filas vacias
+ok 222 - la factura de venta inicia con diez filas vacias
+  ---
+  duration_ms: 6.7849
+  type: 'test'
+  ...
+# Subtest: las filas existentes se conservan y solo se completa el minimo
+ok 223 - las filas existentes se conservan y solo se completa el minimo
+  ---
+  duration_ms: 2.8163
+  type: 'test'
+  ...
+# Subtest: la simulacion y emision excluyen filas totalmente vacias
+ok 224 - la simulacion y emision excluyen filas totalmente vacias
+  ---
+  duration_ms: 14.7303
+  type: 'test'
+  ...
+# Subtest: un codigo digitado se considera una fila iniciada para mostrar validacion
+ok 225 - un codigo digitado se considera una fila iniciada para mostrar validacion
+  ---
+  duration_ms: 0.9807
+  type: 'test'
+  ...
+# (node:15628) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/mq1/Documents/Proyectos/APEXOS-worktrees/desarrollo-controlled-promotion/apps/web/lib/serviceCorrectionForm.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS-worktrees\\desarrollo-controlled-promotion\\apps\\web\\package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: explica todos los requisitos que antes mantenian el boton bloqueado
+ok 226 - explica todos los requisitos que antes mantenian el boton bloqueado
+  ---
+  duration_ms: 12.082
+  type: 'test'
+  ...
+# Subtest: el motivo otro exige una justificacion reforzada
+ok 227 - el motivo otro exige una justificacion reforzada
+  ---
+  duration_ms: 0.643
+  type: 'test'
+  ...
+# Subtest: valida novedades, estados, piezas, evidencias y cierre administrativo
+ok 228 - valida novedades, estados, piezas, evidencias y cierre administrativo
+  ---
+  duration_ms: 0.5311
+  type: 'test'
+  ...
+# Subtest: un formulario completo queda listo para guardar y aplicar
+ok 229 - un formulario completo queda listo para guardar y aplicar
+  ---
+  duration_ms: 1.2289
+  type: 'test'
+  ...
+# Subtest: el monitor combina la fuente Supabase solo para sesiones Supabase
+ok 230 - el monitor combina la fuente Supabase solo para sesiones Supabase
+  ---
+  duration_ms: 5.753
+  type: 'test'
+  ...
+# Subtest: el monitor refresca periodicamente y al recuperar el foco
+ok 231 - el monitor refresca periodicamente y al recuperar el foco
+  ---
+  duration_ms: 1.1065
+  type: 'test'
+  ...
+# Subtest: el endpoint local exige identidad y membresia Supabase antes de consultar PostgreSQL
+ok 232 - el endpoint local exige identidad y membresia Supabase antes de consultar PostgreSQL
+  ---
+  duration_ms: 1.2935
+  type: 'test'
+  ...
+# Subtest: un error de acceso no se presenta como una lista de campos faltantes
+ok 233 - un error de acceso no se presenta como una lista de campos faltantes
+  ---
+  duration_ms: 1.6313
+  type: 'test'
+  ...
+# Subtest: la solicitud externa usa la empresa autenticada y no un nombre almacenado obsoleto
+ok 234 - la solicitud externa usa la empresa autenticada y no un nombre almacenado obsoleto
+  ---
+  duration_ms: 1.5965
+  type: 'test'
+  ...
+# Subtest: normaliza colecciones antes de seleccionar solicitudes en el detalle
+ok 235 - normaliza colecciones antes de seleccionar solicitudes en el detalle
+  ---
+  duration_ms: 5.1247
+  type: 'test'
+  ...
+# Subtest: la encuesta tolera contratos vacios o envueltos
+ok 236 - la encuesta tolera contratos vacios o envueltos
+  ---
+  duration_ms: 14.1854
+  type: 'test'
+  ...
+# Subtest: la edicion representa cada articulo como una solicitud independiente
+ok 237 - la edicion representa cada articulo como una solicitud independiente
+  ---
+  duration_ms: 33.4508
+  type: 'test'
+  ...
+# Subtest: el modal limita su ancho al viewport y bloquea el desbordamiento horizontal
+ok 238 - el modal limita su ancho al viewport y bloquea el desbordamiento horizontal
+  ---
+  duration_ms: 0.3351
+  type: 'test'
+  ...
+# Subtest: la edicion tolera maestros envueltos y ordenes historicas sin colecciones
+ok 239 - la edicion tolera maestros envueltos y ordenes historicas sin colecciones
+  ---
+  duration_ms: 0.9998
+  type: 'test'
+  ...
+# Subtest: cada solicitud controla su propio panel de inspeccion y ejecucion
+ok 240 - cada solicitud controla su propio panel de inspeccion y ejecucion
+  ---
+  duration_ms: 6.4219
+  type: 'test'
+  ...
+# Subtest: la solicitud solo se finaliza desde ejecucion con ambas evidencias
+ok 241 - la solicitud solo se finaliza desde ejecucion con ambas evidencias
+  ---
+  duration_ms: 0.8334
+  type: 'test'
+  ...
+# Subtest: al terminar una solicitud se selecciona la siguiente pendiente
+ok 242 - al terminar una solicitud se selecciona la siguiente pendiente
+  ---
+  duration_ms: 1.5902
+  type: 'test'
+  ...
+# Subtest: la evidencia visible y el contador pertenecen a la solicitud seleccionada
+ok 243 - la evidencia visible y el contador pertenecen a la solicitud seleccionada
+  ---
+  duration_ms: 2.2012
+  type: 'test'
+  ...
+# Subtest: el inicio de la primera solicitud tambien inicia la orden
+ok 244 - el inicio de la primera solicitud tambien inicia la orden
+  ---
+  duration_ms: 2.1225
+  type: 'test'
+  ...
+# Subtest: las solicitudes externas no quedan bloqueadas por la marca legacy
+ok 245 - las solicitudes externas no quedan bloqueadas por la marca legacy
+  ---
+  duration_ms: 2.1938
+  type: 'test'
+  ...
+# Subtest: una solicitud bloqueada se puede reanudar
+ok 246 - una solicitud bloqueada se puede reanudar
+  ---
+  duration_ms: 1.4298
+  type: 'test'
+  ...
+# Subtest: el editor de roles expone el permiso unico de edicion especial
+ok 247 - el editor de roles expone el permiso unico de edicion especial
+  ---
+  duration_ms: 35.9887
+  type: 'test'
+  ...
+# Subtest: el panel administrativo exige permiso explicito y no usa bypass por nombre
+ok 248 - el panel administrativo exige permiso explicito y no usa bypass por nombre
+  ---
+  duration_ms: 13.8344
+  type: 'test'
+  ...
+# Subtest: el monitor expone la correccion especial y abre el panel directamente
+ok 249 - el monitor expone la correccion especial y abre el panel directamente
+  ---
+  duration_ms: 12.0833
+  type: 'test'
+  ...
+# Subtest: al guardar un rol se propagan sus permisos a los usuarios asignados
+ok 250 - al guardar un rol se propagan sus permisos a los usuarios asignados
+  ---
+  duration_ms: 5.3744
+  type: 'test'
+  ...
+# Subtest: el detalle de servicio divide componentes pesados y usa ancho operativo
+ok 251 - el detalle de servicio divide componentes pesados y usa ancho operativo
+  ---
+  duration_ms: 6.836
+  type: 'test'
+  ...
+# Subtest: la vista agrupa soportes, novedades e inspeccion por solicitud
+ok 252 - la vista agrupa soportes, novedades e inspeccion por solicitud
+  ---
+  duration_ms: 9.5763
+  type: 'test'
+  ...
+# Subtest: los soportes sin item se conservan como generales
+ok 253 - los soportes sin item se conservan como generales
+  ---
+  duration_ms: 1.0082
+  type: 'test'
+  ...
+# Subtest: las ordenes heredadas no duplican sus soportes generales
+ok 254 - las ordenes heredadas no duplican sus soportes generales
+  ---
+  duration_ms: 0.9097
+  type: 'test'
+  ...
+# Subtest: una orden heredada de una solicitud conserva soportes historicos sin clave
+ok 255 - una orden heredada de una solicitud conserva soportes historicos sin clave
+  ---
+  duration_ms: 0.9229
+  type: 'test'
+  ...
+# Subtest: la deduplicacion de evidencia se limita a cada solicitud externa
+ok 256 - la deduplicacion de evidencia se limita a cada solicitud externa
+  ---
+  duration_ms: 1.0688
+  type: 'test'
+  ...
+# Subtest: el reporte PDF usa los mismos grupos por referencia
+ok 257 - el reporte PDF usa los mismos grupos por referencia
+  ---
+  duration_ms: 3.7408
+  type: 'test'
+  ...
+# (node:21912) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/mq1/Documents/Proyectos/APEXOS-worktrees/desarrollo-controlled-promotion/apps/web/lib/serviceReferenceImport.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS-worktrees\\desarrollo-controlled-promotion\\apps\\web\\package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: extrae las columnas oficiales de la hoja Referencias
+ok 258 - extrae las columnas oficiales de la hoja Referencias
+  ---
+  duration_ms: 25.0347
+  type: 'test'
+  ...
+# Subtest: rechaza plantillas alteradas antes de preparar datos
+ok 259 - rechaza plantillas alteradas antes de preparar datos
+  ---
+  duration_ms: 2.4573
+  type: 'test'
+  ...
+# Subtest: normaliza un Excel valido y agrupa sus filas por referencia
+ok 260 - normaliza un Excel valido y agrupa sus filas por referencia
+  ---
+  duration_ms: 5.2514
+  type: 'test'
+  ...
+# Subtest: informa fila y campo y bloquea el lote completo cuando hay errores
+ok 261 - informa fila y campo y bloquea el lote completo cuando hay errores
+  ---
+  duration_ms: 18.043
+  type: 'test'
+  ...
+# Subtest: el adaptador estándar cubre todos los listados del dashboard desde el shell
+ok 262 - el adaptador estándar cubre todos los listados del dashboard desde el shell
+  ---
+  duration_ms: 27.3172
+  type: 'test'
+  ...
+# Subtest: preserva tablas inteligentes, formularios, diálogos y detalles
+ok 263 - preserva tablas inteligentes, formularios, diálogos y detalles
+  ---
+  duration_ms: 51.4964
+  type: 'test'
+  ...
+# Subtest: ofrece contador y configuración persistente de columnas
+ok 264 - ofrece contador y configuración persistente de columnas
+  ---
+  duration_ms: 2.1028
+  type: 'test'
+  ...
+# Subtest: el botón de nuevo proveedor conserva fondo visible con tokens RGB
+ok 265 - el botón de nuevo proveedor conserva fondo visible con tokens RGB
+  ---
+  duration_ms: 11.8777
+  type: 'test'
+  ...
+# Subtest: Transporte carga retirados para que el filtro sea funcional
+ok 266 - Transporte carga retirados para que el filtro sea funcional
+  ---
+  duration_ms: 22.9489
+  type: 'test'
+  ...
+# Subtest: Transporte alinea lectura y escritura de UI con RBAC
+ok 267 - Transporte alinea lectura y escritura de UI con RBAC
+  ---
+  duration_ms: 8.8302
+  type: 'test'
+  ...
+# Subtest: la falta de HR no bloquea la consulta de flota
+ok 268 - la falta de HR no bloquea la consulta de flota
+  ---
+  duration_ms: 1.7173
+  type: 'test'
+  ...
+# Subtest: los errores de permisos no se presentan como conectividad
+ok 269 - los errores de permisos no se presentan como conectividad
+  ---
+  duration_ms: 1.9912
+  type: 'test'
+  ...
+# Subtest: Transporte organiza el trabajo por etapas sin navegación redundante
+ok 270 - Transporte organiza el trabajo por etapas sin navegación redundante
+  ---
+  duration_ms: 15.3887
+  type: 'test'
+  ...
+# Subtest: Transporte separa flota, operacion y maestros TMS
+ok 271 - Transporte separa flota, operacion y maestros TMS
+  ---
+  duration_ms: 0.8179
+  type: 'test'
+  ...
+# Subtest: POD expone KPIs, filtros y evidencia
+ok 272 - POD expone KPIs, filtros y evidencia
+  ---
+  duration_ms: 0.832
+  type: 'test'
+  ...
+# Subtest: la operacion carga foto y firma POD como archivos
+ok 273 - la operacion carga foto y firma POD como archivos
+  ---
+  duration_ms: 9.4447
+  type: 'test'
+  ...
+# Subtest: entrega y novedades cubren lineas parciales, reintentos e historial
+ok 274 - entrega y novedades cubren lineas parciales, reintentos e historial
+  ---
+  duration_ms: 1.3611
+  type: 'test'
+  ...
+# Subtest: notificaciones TMS expone envio manual e historial durable
+ok 275 - notificaciones TMS expone envio manual e historial durable
+  ---
+  duration_ms: 1.1454
+  type: 'test'
+  ...
+# Subtest: el monitoreo usa mapa real, refresco automatico, ETA, geocercas y alertas
+ok 276 - el monitoreo usa mapa real, refresco automatico, ETA, geocercas y alertas
+  ---
+  duration_ms: 0.5516
+  type: 'test'
+  ...
+# Subtest: las ordenes TMS conectan modulos activos y ofrecen una plantilla Excel guiada
+ok 277 - las ordenes TMS conectan modulos activos y ofrecen una plantilla Excel guiada
+  ---
+  duration_ms: 1.4229
+  type: 'test'
+  ...
+# Subtest: las pantallas críticas explican la tarea y el siguiente paso en lenguaje cotidiano
+ok 278 - las pantallas críticas explican la tarea y el siguiente paso en lenguaje cotidiano
+  ---
+  duration_ms: 2.3371
+  type: 'test'
+  ...
+# Subtest: cubicaje respeta las restricciones visuales del Design System
+ok 279 - cubicaje respeta las restricciones visuales del Design System
+  ---
+  duration_ms: 11.0279
+  type: 'test'
+  ...
+# Subtest: pedidos adapta la consulta a móvil
+ok 280 - pedidos adapta la consulta a móvil
+  ---
+  duration_ms: 2.0134
+  type: 'test'
+  ...
+# Subtest: la configuracion TMS gobierna operacion, movil y notificaciones
+ok 281 - la configuracion TMS gobierna operacion, movil y notificaciones
+  ---
+  duration_ms: 3.9581
+  type: 'test'
+  ...
+# Subtest: el planeador evalua consolidacion, capacidad, ruta y alternativas
+ok 282 - el planeador evalua consolidacion, capacidad, ruta y alternativas
+  ---
+  duration_ms: 0.2956
+  type: 'test'
+  ...
+# Subtest: los tarifarios exponen vigencias, versiones y componentes de costo
+ok 283 - los tarifarios exponen vigencias, versiones y componentes de costo
+  ---
+  duration_ms: 0.717
+  type: 'test'
+  ...
+# Subtest: la torre cubre demanda, viaje, entrega y liquidacion
+ok 284 - la torre cubre demanda, viaje, entrega y liquidacion
+  ---
+  duration_ms: 0.8731
+  type: 'test'
+  ...
+# Subtest: los maestros consumen contratos tenant-first del TMS
+ok 285 - los maestros consumen contratos tenant-first del TMS
+  ---
+  duration_ms: 0.6029
+  type: 'test'
+  ...
+1..285
+# tests 285
+# suites 0
+# pass 285
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 28199.5338

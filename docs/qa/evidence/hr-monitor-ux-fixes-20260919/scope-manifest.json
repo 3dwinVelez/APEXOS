@@ -1,0 +1,67 @@
+{
+  "change_id": "hr-monitor-ux-fixes-20260919",
+  "base_commits": {
+    "develop": "5dc8443b1dee4f939396764409da0f4f40266114",
+    "main": "5e73c5e59976ed7d7671e73383f390be2c2c3eb8"
+  },
+  "certified_commit": "ea89a202dcd82d06fbddc1cde5dffb2ae5b90d2a",
+  "scope_schema_version": 2,
+  "change_intent": {
+    "summary": "Corregir cuatro defectos de UX reportados por el usuario funcional en el monitor de mallas horarias: (1) el lightbox no ampliaba la evidencia porque apexPageEnter dejaba un transform residual que creaba un containing block y rompia los position:fixed descendientes; (2) los horarios antiguos abrian el drawer fuera del viewport obligando a devolver el scroll; (3) la vista del monitor era ajigantada, mal distribuida y poco intuitiva; (4) el mapa no dibujaba la linea entre puntos de marcacion porque RouteTrail descartaba decimales serializados como string y recortaba el viewBox. Adicionalmente se alinean dos pruebas obsoletas de erp-visual-normalization (productos y proveedores) que fallaban de forma preexistente. No hay cambios de esquema, migraciones ni logica de backend.",
+    "modules": ["talento-humano", "hr", "web-ux", "qa-certification", "erp-visual-tests"]
+  },
+  "expected_changes": [
+    { "status": "M", "file": "apps/web/app/globals.css" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/mapa/page.tsx" },
+    { "status": "M", "file": "apps/web/test/erp-visual-normalization.test.mjs" },
+    { "status": "A", "file": "scripts/certifications/hr-monitor-ux-fixes-qa.js" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/01-mallas-lista-kpi.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/02-monitor-drawer-viewport.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/03-lightbox-evidencia-ampliada.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/04-monitor-historico-scrolltop.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/05-mapa-ruta-entre-marcaciones.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/fixture.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/unit-tests.txt" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/validation-checks.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/preqa-approval-evidence.json" }
+  ],
+  "allowed_paths": [
+    "apps/web/app/globals.css",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "apps/web/app/dashboard/talento-humano/mapa/page.tsx",
+    "apps/web/test/erp-visual-normalization.test.mjs",
+    "scripts/certifications/hr-monitor-ux-fixes-qa.js",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "tenant_isolation_and_permissions",
+      "status": "passed",
+      "evidence": ["certification.json"]
+    },
+    {
+      "name": "hr-monitoring-and-route-tracking",
+      "status": "passed",
+      "evidence": ["certification.json", "unit-tests.txt"]
+    },
+    {
+      "name": "monitor-ux-defects-fixed",
+      "status": "passed",
+      "evidence": ["validation-checks.json", "01-mallas-lista-kpi.png", "02-monitor-drawer-viewport.png", "03-lightbox-evidencia-ampliada.png", "04-monitor-historico-scrolltop.png", "05-mapa-ruta-entre-marcaciones.png"]
+    },
+    {
+      "name": "adjacent_platform_regression",
+      "status": "passed",
+      "evidence": ["validation-checks.json", "unit-tests.txt"]
+    },
+    {
+      "name": "dark_and_light_theme_contract",
+      "status": "passed",
+      "evidence": ["validation-checks.json", "01-mallas-lista-kpi.png", "02-monitor-drawer-viewport.png"]
+    }
+  ]
+}
