@@ -2726,6 +2726,54 @@
     {
       "status": "A",
       "file": "supabase/migrations/20260917120000_hr_workday_novelties_foundation.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/admin-user-status-regression.test.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/controlled-desarrollo-develop-20260918/scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/controlled-desarrollo-develop-20260918/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/core-modules-deep-qa-20260917/QA-FULL-20260917211117.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/core-modules-deep-qa-20260917/QA-FULL-20260917211117.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/core-modules-deep-qa-20260917/QA-FULL-20260917211534.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/core-modules-deep-qa-20260917/QA-FULL-20260917211534.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/core-modules-deep-qa-20260917/assessment.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/core-modules-deep-qa-20260917/certification-summary.json"
+    },
+    {
+      "status": "M",
+      "file": "scripts/qa-full-system-validation.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/windows/start-apexos-desarrollo.bat"
+    },
+    {
+      "status": "M",
+      "file": "start-dev.bat"
     }
   ],
   "allowed_paths": [
@@ -3403,7 +3451,13 @@
     "supabase/migrations/20260903100000_commercial_management_module_catalog.sql",
     "supabase/migrations/20260907021723_apex_heart_foundation.sql",
     "supabase/migrations/20260916162822_apexos_database_security_hardening.sql",
-    "supabase/migrations/20260917120000_hr_workday_novelties_foundation.sql"
+    "supabase/migrations/20260917120000_hr_workday_novelties_foundation.sql",
+    "apps/api/test/admin-user-status-regression.test.js",
+    "docs/qa/evidence/controlled-desarrollo-develop-20260918/",
+    "docs/qa/evidence/core-modules-deep-qa-20260917/",
+    "scripts/qa-full-system-validation.js",
+    "scripts/windows/start-apexos-desarrollo.bat",
+    "start-dev.bat"
   ],
   "allowed_deletions": [],
   "migration_plan": {

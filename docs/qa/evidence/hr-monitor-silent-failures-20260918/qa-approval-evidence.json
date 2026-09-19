@@ -1,0 +1,88 @@
+{
+  "change_id": "hr-monitor-silent-failures-release-20260918",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "aa4b95b18ae9568e2c492e4c31432314ff217e11",
+  "decision": "APTO",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "qa-certification.json",
+        "browser-qa-mapa-20260918.md"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "qa-certification.json",
+        "unit-tests.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "preqa-approval-evidence.json",
+        "validation-checks.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "qa-nyvora-hr-monitor.json",
+        "unit-tests.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "qa-nyvora-hr-monitor.json",
+        "qa-certification.json",
+        "browser-qa-mapa-20260918.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-monitor-silent-failures-qa.js",
+    "evidence": [
+      "qa-certification.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../apps/api/scripts/certifications/nyvora-hr-monitor-dynamic.js",
+    "evidence": [
+      "qa-nyvora-hr-monitor.json"
+    ]
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../../apps/api/scripts/certifications/nyvora-hr-monitor-dynamic.js",
+    "evidence": [
+      "qa-nyvora-hr-monitor.json"
+    ]
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "78564f649b17632cb1a0d770077328e6e942406c",
+    "trigger": "data integrity failure, tenant isolation failure, schema mismatch, critical functional regression, or failed production connectivity smoke"
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "APEXOS QA release gate (autorizado por Edwin, release owner)",
+    "approved_at": "2026-09-18T21:45:00-05:00",
+    "scope": "develop to main for the exact QA-deployed commit aa4b95b"
+  },
+  "observations": [
+    "Certificacion SCJ QA 5/5 contra el API desplegado (commit aa4b95b18ae9): ruta 72 reconocida punch_only con gps_required=false tras normalizar notas con \\n literal, telemetria de cliente aceptada sin permiso de admin y legible por admin con redaccion, y payload completo del operations-map con 38 pings reales.",
+    "Verificacion en navegador del mapa QA: 15/15 marcadores (personas y marcaciones) dentro del contenedor visible con zoom auto-ajustado por bounds (zoom 8); 0 errores de consola.",
+    "Certificacion de empresa modelo NYVORA en QA aprobada: ruta dinamica 266 con 4 marcaciones, actividad con evidencia fotografica y cierre de jornada (event_count 5); usuario de certificacion desactivado al final de la corrida.",
+    "Unit tests 7/7, typecheck y lint limpios, suite API y web con solo fallos preexistentes verificados contra la linea base.",
+    "Revisada la seguridad: rate-limit global 200/min por tenant cubre el endpoint de telemetria, el listado de logs permanece exclusivo de admin, los detalles 409 solo exponen datos de la propia ruta del empleado."
+  ]
+}

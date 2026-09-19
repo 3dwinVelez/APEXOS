@@ -1,0 +1,63 @@
+{
+  "change_id": "hr-monitor-silent-failures-release-20260918",
+  "base_commits": {
+    "develop": "0a23f32aa484f0882c8ee2013a76e085cb37f6bd",
+    "main": "78564f649b17632cb1a0d770077328e6e942406c"
+  },
+  "certified_commit": "aa4b95b18ae9568e2c492e4c31432314ff217e11",
+  "scope_schema_version": 2,
+  "change_intent": {
+    "summary": "Liberacion controlada develop -> main de la intervencion hr-monitor-silent-failures-20260918: correccion de los fallos silenciosos del monitor de Talento Humano (notas de horario con \\n literal que hacian rutas punch_only tratarse como GPS, 409 de marcacion sin detalle de ruta activa, telemetria de cliente bloqueada por permiso de admin, y mapa centrado en el promedio que dejaba todos los marcadores fuera de pantalla), con su correccion puntual del prefijo /api/v1 en la certificacion, la certificacion SCJ QA 5/5, la certificacion de empresa modelo NYVORA en QA y la verificacion en navegador.",
+    "modules": ["hr", "admin", "web", "qa"]
+  },
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/src/modules/admin/routes.js" },
+    { "status": "M", "file": "apps/api/src/modules/admin/service.js" },
+    { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
+    { "status": "A", "file": "apps/api/test/hr-monitor-silent-failures.test.js" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/mapa/page.tsx" },
+    { "status": "A", "file": "scripts/certifications/hr-monitor-silent-failures-qa.js" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-silent-failures-20260918/scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-silent-failures-20260918/preqa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-silent-failures-20260918/unit-tests.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-silent-failures-20260918/validation-checks.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-silent-failures-20260918/security-review.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-silent-failures-20260918/scope-manifest-certfix.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-silent-failures-20260918/preqa-approval-evidence-certfix.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-silent-failures-20260918/qa-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-silent-failures-20260918/browser-qa-mapa-20260918.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-silent-failures-20260918/qa-nyvora-hr-monitor.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-silent-failures-20260918/qa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-silent-failures-20260918/scope-manifest-release.json" }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/admin/routes.js",
+    "apps/api/src/modules/admin/service.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-monitor-silent-failures.test.js",
+    "apps/web/app/dashboard/talento-humano/mapa/page.tsx",
+    "scripts/certifications/hr-monitor-silent-failures-qa.js",
+    "docs/qa/evidence/hr-monitor-silent-failures-20260918/"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "hr-monitoring-and-route-tracking",
+      "status": "passed",
+      "evidence": [
+        "unit-tests.json",
+        "validation-checks.json",
+        "qa-certification.json",
+        "qa-nyvora-hr-monitor.json"
+      ]
+    },
+    {
+      "name": "client-telemetry-authorization-and-redaction",
+      "status": "passed",
+      "evidence": [
+        "security-review.md",
+        "qa-certification.json"
+      ]
+    }
+  ]
+}
