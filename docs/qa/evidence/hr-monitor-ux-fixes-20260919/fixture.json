@@ -1,0 +1,16 @@
+{
+  "environment": "LOCAL",
+  "api_url": "http://127.0.0.1:3000",
+  "web_url": null,
+  "admin_email": "qa.ux.admin.20260919134820@scj.test",
+  "admin_password": "Qa-Ux-f1689abbd698#26",
+  "tenant_id": "001346eb-ba7f-4103-b032-73a219f1333e",
+  "route_id": 219,
+  "old_route_id": 220,
+  "marking_email": "qa.ux.marks.20260919134820@scj.test",
+  "silent_email": "qa.ux.silent.20260919134820@scj.test",
+  "password": "Qa-Ux-f1689abbd698#26",
+  "date": "2026-09-19",
+  "old_date": "2026-09-16",
+  "generated_at": "2026-09-19T13:48:30.544Z"
+}

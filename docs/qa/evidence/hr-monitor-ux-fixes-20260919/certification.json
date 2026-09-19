@@ -1,0 +1,227 @@
+{
+  "change_id": "hr-monitor-ux-fixes-20260919",
+  "environment": "LOCAL",
+  "company": "SCJ",
+  "generated_at": "2026-09-19T13:48:20.856Z",
+  "api_commit": "unknown",
+  "api_url": "http://127.0.0.1:3000",
+  "web_url": null,
+  "checks": [
+    {
+      "name": "operations_map_route_present",
+      "ok": true,
+      "detail": {
+        "route_id": 219
+      }
+    },
+    {
+      "name": "trail_marks_located",
+      "ok": true,
+      "detail": {
+        "marks": 4,
+        "user_names": [
+          "Operario UX 20260919134820"
+        ]
+      }
+    },
+    {
+      "name": "trail_marks_chronological",
+      "ok": true,
+      "detail": {
+        "punched_at": [
+          "2026-09-19T11:10:00.000Z",
+          "2026-09-19T17:02:00.000Z",
+          "2026-09-19T17:59:00.000Z",
+          "2026-09-19T21:05:00.000Z"
+        ]
+      }
+    },
+    {
+      "name": "trail_marks_distinct_coordinates",
+      "ok": true,
+      "detail": {
+        "distinct": 4,
+        "coordinates": [
+          [
+            4.711,
+            -74.0721
+          ],
+          [
+            4.7148,
+            -74.0691
+          ],
+          [
+            4.7152,
+            -74.0688
+          ],
+          [
+            4.7189,
+            -74.0655
+          ]
+        ]
+      }
+    },
+    {
+      "name": "trail_punch_points_have_coordinates",
+      "ok": true,
+      "detail": {
+        "count": 4
+      }
+    },
+    {
+      "name": "old_date_route_present_with_marks",
+      "ok": true,
+      "detail": {
+        "route_id": 220,
+        "marks": 2,
+        "date": "2026-09-16"
+      }
+    },
+    {
+      "name": "lightbox_multiple_evidence_renders",
+      "ok": true,
+      "detail": {
+        "with_base64": 2,
+        "total": 4
+      }
+    },
+    {
+      "name": "lightbox_activity_evidence_renders",
+      "ok": true,
+      "detail": {
+        "with_base64": 1,
+        "total": 1
+      }
+    },
+    {
+      "name": "evidence_summaries_available",
+      "ok": true,
+      "detail": {
+        "entrada": {
+          "id": 1046,
+          "source": "punch",
+          "file_name": "entrada-20260919134820.png",
+          "mime_type": "image/png",
+          "file_size": 68,
+          "storage_path": "company/001346eb-ba7f-4103-b032-73a219f1333e/hr/overtime-extensions/391/1789825708360-entrada-20260919134820.png",
+          "has_base64_data": true,
+          "available": true
+        },
+        "salida": {
+          "id": 1049,
+          "source": "punch",
+          "file_name": "salida-20260919134820.png",
+          "mime_type": "image/png",
+          "file_size": 68,
+          "storage_path": "company/001346eb-ba7f-4103-b032-73a219f1333e/hr/overtime-extensions/391/1789825709719-salida-20260919134820.png",
+          "has_base64_data": true,
+          "available": true
+        },
+        "activity": {
+          "id": 28,
+          "source": "activity",
+          "evidence_type": "photo",
+          "file_name": "activity-20260919134820.png",
+          "mime_type": "image/png",
+          "file_size": 68,
+          "storage_path": "company/001346eb-ba7f-4103-b032-73a219f1333e/hr/work-sessions/217/users/284/activities/28/1789825709469-activity-20260919134820.png",
+          "has_base64_data": false,
+          "available": true
+        }
+      }
+    },
+    {
+      "name": "monitor_people_include_both_operators",
+      "ok": true,
+      "detail": {
+        "marking": {
+          "online": true,
+          "last_punch_type": "salida",
+          "has_gps": true
+        },
+        "silent": {
+          "online": false,
+          "last_punch_type": "sin_marcar"
+        }
+      }
+    },
+    {
+      "name": "monitor_person_without_marks",
+      "ok": true,
+      "detail": {
+        "last_punch_type": "sin_marcar"
+      }
+    },
+    {
+      "name": "marking_only_role_denied_batch",
+      "ok": true,
+      "detail": {
+        "code": "PERMISO_DENEGADO"
+      }
+    },
+    {
+      "name": "invalid_route_id_controlled",
+      "ok": true,
+      "detail": {
+        "code": "EVIDENCIA_MONITOR_RUTA_INVALIDA"
+      }
+    },
+    {
+      "name": "route_summary_counts_all_evidence",
+      "ok": true,
+      "detail": {
+        "route_id": 219,
+        "evidence_count": 3
+      }
+    },
+    {
+      "name": "cross_tenant_batch_isolated",
+      "ok": true,
+      "detail": {
+        "other_tenant_id": "0680a61f-2855-4bf7-a137-c29a55afd9ac",
+        "punch_evidence": 0,
+        "activity_evidence": 0
+      }
+    }
+  ],
+  "fixture": {
+    "tenant_id": "001346eb-ba7f-4103-b032-73a219f1333e",
+    "route_id": 219,
+    "old_route_id": 220,
+    "marking_user_id": 284,
+    "silent_user_id": 285,
+    "admin_user_id": 286
+  },
+  "observations": {
+    "date": "2026-09-19",
+    "old_date": "2026-09-16",
+    "route": {
+      "id": 219,
+      "start_time": "06:00",
+      "end_time": "18:00",
+      "tolerance_minutes": 15,
+      "employees": [
+        "qa.ux.marks.20260919134820@scj.test",
+        "qa.ux.silent.20260919134820@scj.test"
+      ]
+    },
+    "old_route": {
+      "id": 220,
+      "date": "2026-09-16"
+    },
+    "trail": {
+      "marks": 4,
+      "distinct_coordinates": 4,
+      "chronological": true
+    },
+    "totals": {
+      "routes": 4,
+      "planned_people": 8,
+      "online": 4,
+      "without_gps": 4,
+      "offline": 0
+    },
+    "exclusions": "Rutas sin placa: el flujo de kilometraje de salida (th_jornada_kilometrajes) se excluye por hallazgo preexistente 42P10 en el ON CONFLICT de createPunch, fuera del alcance de este cambio."
+  },
+  "status": "passed"
+}

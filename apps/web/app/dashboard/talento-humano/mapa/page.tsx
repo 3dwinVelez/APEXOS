@@ -125,6 +125,7 @@ const punchTone: Record<string, string> = {
   fin_almuerzo: "bg-sky-500",
   salida: "bg-violet-500"
 };
+const TRAIL_PALETTE = ["#16a34a", "#f97316", "#8b5cf6", "#0f766e", "#db2777", "#ca8a04"];
 
 function today() {
   return new Date().toISOString().slice(0, 10);
@@ -248,15 +249,34 @@ function MapTiles({ center, zoom }: { center: { latitude: number; longitude: num
   );
 }
 
-function RouteTrail({ points, center, zoom, color = "#0ea5e9", dashed = false }: { points: Array<{ latitude: number; longitude: number }>; center: { latitude: number; longitude: number }; zoom: number; color?: string; dashed?: boolean }) {
-  const valid = points.filter((point) => Number.isFinite(point.latitude) && Number.isFinite(point.longitude));
+function RouteTrail({ points, center, zoom, color = "#0ea5e9", dashed = false }: { points: Array<{ latitude: number | string | null; longitude: number | string | null }>; center: { latitude: number; longitude: number }; zoom: number; color?: string; dashed?: boolean }) {
+  // La API puede serializar decimales como string; sin coercion Number.isFinite
+  // descarta todos los puntos y la ruta nunca se dibuja.
+  const valid = points
+    .map((point) => ({ latitude: Number(point.latitude), longitude: Number(point.longitude) }))
+    .filter((point) => Number.isFinite(point.latitude) && Number.isFinite(point.longitude));
   if (valid.length < 2) return null;
-  const coords = valid.map((point) => {
+  const CLAMP = 15000;
+  const offsets = valid.map((point) => {
     const offset = pointOffset(point, center, zoom);
-    return `${1000 + offset.x},${600 + offset.y}`;
+    return { x: Math.max(-CLAMP, Math.min(CLAMP, offset.x)), y: Math.max(-CLAMP, Math.min(CLAMP, offset.y)) };
   });
+  const minX = Math.min(...offsets.map((offset) => offset.x));
+  const maxX = Math.max(...offsets.map((offset) => offset.x));
+  const minY = Math.min(...offsets.map((offset) => offset.y));
+  const maxY = Math.max(...offsets.map((offset) => offset.y));
+  const pad = 10;
+  const width = maxX - minX + pad * 2;
+  const height = maxY - minY + pad * 2;
+  const coords = offsets.map((offset) => `${(offset.x - minX + pad).toFixed(1)},${(offset.y - minY + pad).toFixed(1)}`);
   return (
-    <svg className="pointer-events-none absolute left-1/2 top-1/2 h-[1200px] w-[2000px] -translate-x-1/2 -translate-y-1/2" viewBox="0 0 2000 1200">
+    <svg
+      className="pointer-events-none absolute"
+      height={height.toFixed(1)}
+      style={{ left: `calc(50% + ${(minX - pad).toFixed(1)}px)`, top: `calc(50% + ${(minY - pad).toFixed(1)}px)` }}
+      viewBox={`0 0 ${width.toFixed(1)} ${height.toFixed(1)}`}
+      width={width.toFixed(1)}
+    >
       <polyline fill="none" points={coords.join(" ")} stroke={color} strokeDasharray={dashed ? "10 8" : undefined} strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" />
     </svg>
   );
@@ -509,7 +529,7 @@ export default function LiveGpsMapPage() {
           <MapTiles center={center} zoom={zoom} />
           {routeTrails.map((route) => <RouteTrail center={center} key={`gps-${route.id}`} points={route.pings || []} zoom={zoom} />)}
           {routeTrails.flatMap((route) => (route.marks_by_user || []).map((group, index) => (
-            <RouteTrail center={center} color={["#16a34a", "#f97316", "#8b5cf6", "#0f766e"][index % 4]} dashed key={`marks-${route.id}-${group.user_name}`} points={group.marks || []} zoom={zoom} />
+            <RouteTrail center={center} color={TRAIL_PALETTE[index % TRAIL_PALETTE.length]} dashed key={`marks-${route.id}-${group.user_name}`} points={[...(group.marks || [])].sort((a, b) => new Date(a.punched_at || 0).getTime() - new Date(b.punched_at || 0).getTime())} zoom={zoom} />
           )))}
 
           {filteredPeople.filter((person) => person.latitude != null && person.longitude != null).map((person) => {
@@ -612,6 +632,10 @@ export default function LiveGpsMapPage() {
               <LegendDot className="bg-sky-500" label="Retorno" />
               <LegendDot className="bg-violet-500" label="Cierre" />
             </div>
+            <p className="mt-2 flex items-center gap-2 text-neutral-600">
+              <svg className="h-2 w-7 shrink-0" viewBox="0 0 28 8"><line stroke="#16a34a" strokeDasharray="6 4" strokeLinecap="round" strokeWidth="3" x1="2" x2="26" y1="4" y2="4" /></svg>
+              Ruta entre marcaciones
+            </p>
           </div>
 
           {selected ? (
