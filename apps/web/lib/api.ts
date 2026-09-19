@@ -4285,7 +4285,7 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
       const message = requestErrorMessage(path, response.status, detail);
       alertRequestFailure(path, response.status, detail);
       reportClientFailure(path, response.status, detail, String(options.method || "GET"));
-      throw new Error(message);
+      throw Object.assign(new Error(message), { status: response.status, retryable: true });
     }
 
     const body = await response.json().catch(() => ({ error: response.statusText }));
@@ -4293,7 +4293,11 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
     const message = requestErrorMessage(path, response.status, detail);
     alertRequestFailure(path, response.status, detail);
     reportClientFailure(path, response.status, detail, String(options.method || "GET"));
-    throw new Error(message);
+    throw Object.assign(new Error(message), {
+      status: response.status,
+      code: typeof body.code === "string" ? body.code : "",
+      retryable: response.status === 408 || response.status === 429
+    });
   }
   touchSession();
   const body = await response.json() as T;

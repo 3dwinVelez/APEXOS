@@ -1964,10 +1964,10 @@ async function createPunch(tenantId, input, user) {
           ${tenantId}, ${employee.id}, ${route?.id || inputRouteId || null}, ${punch.id}, ${routeVehicle}, ${dayMileage}, 'km', ${user?.id || null}, ${punchedAt}, true,
           ${JSON.stringify({ source: "time_punch", unusual: mileageUnusual, threshold: mileageThreshold })}::jsonb
         )
-        ON CONFLICT (tenant_id, route_id, employee_id, active)
+        ON CONFLICT (tenant_id, COALESCE(route_id, -1), COALESCE(employee_id, -1))
         WHERE active = true
         DO NOTHING
-      `.catch(() => null);
+      `;
       if (mileageUnusual) {
         await tx.$executeRaw`
           INSERT INTO th_novedades_jornada (

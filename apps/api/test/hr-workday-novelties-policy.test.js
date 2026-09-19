@@ -30,6 +30,24 @@ test("validates closing mileage as positive decimal kilometers", () => {
   assert.throws(() => validateMileage(""), /obligatorio/i);
 });
 
+test("FM-08: los errores de kilometraje son 400 con codigo, no 500 genericos", () => {
+  const cases = [
+    { value: "", code: "KILOMETRAJE_REQUERIDO" },
+    { value: "42.55", code: "KILOMETRAJE_INVALIDO" },
+    { value: "-1", code: "KILOMETRAJE_INVALIDO" }
+  ];
+  for (const item of cases) {
+    assert.throws(
+      () => validateMileage(item.value),
+      (error) => {
+        assert.equal(error.statusCode, 400, `statusCode debe ser 400 para ${JSON.stringify(item.value)}`);
+        assert.equal(error.code, item.code, `codigo esperado ${item.code}`);
+        return true;
+      }
+    );
+  }
+});
+
 test("builds an idempotent novelty key from tenant, employee, date, route and type", () => {
   assert.equal(
     noveltyLogicalKey({ tenantId: "tenant-a", employeeId: 7, date: "2026-09-17T12:00:00Z", routeId: 99, typeCode: "KILOMETRAJE_INCONSISTENTE" }),

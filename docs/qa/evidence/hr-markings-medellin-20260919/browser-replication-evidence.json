@@ -1,0 +1,118 @@
+{
+  "change_id": "hr-markings-medellin-20260919",
+  "evidence_type": "browser_replication",
+  "environment": "LOCAL",
+  "web_url": "http://127.0.0.1:3001",
+  "api_url": "http://127.0.0.1:3000",
+  "date": "2026-09-19",
+  "run_id": "20260919161017",
+  "sessions": [
+    {
+      "role": "admin",
+      "email": "qa.med.admin.20260919161017@scj.test",
+      "screen": "/dashboard/talento-humano/mapa",
+      "mode": "historico",
+      "console_errors": 0,
+      "console_notes": "unico 401 en consola corresponde a una sonda deliberada del operador sin cabecera Authorization; no es un fallo de la aplicacion",
+      "failed_app_requests": 0
+    },
+    {
+      "role": "empleado marcaciones",
+      "email": "qa.med.bello.A.20260919161017@scj.test",
+      "screen": "/dashboard/talento-humano/marcacion",
+      "console_errors": 0,
+      "failed_app_requests": 0,
+      "rendered_state": {
+        "horario": "Horario 253",
+        "detalle": "06:00 - 14:00 · SIMBLL01 · GPS activo",
+        "estado": "Jornada cerrada - Este horario ya tiene salida registrada.",
+        "pasos": [
+          "Inicio jornada Registrado correctamente",
+          "Salida almuerzo Registrado correctamente",
+          "Retorno almuerzo Registrado correctamente",
+          "Fin jornada Registrado correctamente",
+          "Jornada completa"
+        ],
+        "historial": ["Inicio jornada 06:05", "Salida almuerzo 10:00", "Retorno almuerzo 10:45", "Fin jornada 16:30"],
+        "bloqueos": 0
+      }
+    }
+  ],
+  "map_traces_dom": {
+    "route_id": 253,
+    "zoom": 13,
+    "center": [6.345, -75.553],
+    "mark_buttons": 8,
+    "distinct_mark_screen_positions": 5,
+    "per_user_trail_points": [4, 4],
+    "note": "las posiciones compartidas entre usuarios corresponden a destinos comunes reales (almuerzo en bodega); cada traza individual tiene 4 puntos distintos"
+  },
+  "map_traces_api_from_browser": [
+    {
+      "route_id": 252,
+      "municipality": "Medellin",
+      "plate": "",
+      "located_punch_points": 8,
+      "users": [
+        { "user": "Operario Medellin B 20260919161017", "marks": 4, "distinct_coords": 4 },
+        { "user": "Operario Medellin A 20260919161017", "marks": 4, "distinct_coords": 4 }
+      ]
+    },
+    {
+      "route_id": 253,
+      "municipality": "Bello",
+      "plate": "SIMBLL01",
+      "located_punch_points": 8,
+      "users": [
+        { "user": "Operario Bello A 20260919161017", "marks": 4, "distinct_coords": 4 },
+        { "user": "Operario Bello B 20260919161017", "marks": 4, "distinct_coords": 4 }
+      ]
+    },
+    {
+      "route_id": 254,
+      "municipality": "Itagui",
+      "plate": "",
+      "located_punch_points": 8,
+      "users": [
+        { "user": "Operario Itagui B 20260919161017", "marks": 4, "distinct_coords": 4 },
+        { "user": "Operario Itagui A 20260919161017", "marks": 4, "distinct_coords": 4 }
+      ]
+    },
+    {
+      "route_id": 255,
+      "municipality": "Envigado",
+      "plate": "SIMENV01",
+      "located_punch_points": 8,
+      "users": [
+        { "user": "Operario Envigado A 20260919161017", "marks": 4, "distinct_coords": 4 },
+        { "user": "Operario Envigado B 20260919161017", "marks": 4, "distinct_coords": 4 }
+      ]
+    },
+    {
+      "route_id": 256,
+      "municipality": "Sabaneta",
+      "plate": "",
+      "located_punch_points": 8,
+      "users": [
+        { "user": "Operario Sabaneta B 20260919161017", "marks": 4, "distinct_coords": 4 },
+        { "user": "Operario Sabaneta A 20260919161017", "marks": 4, "distinct_coords": 4 }
+      ]
+    },
+    {
+      "route_id": 257,
+      "municipality": "Medellin",
+      "plate": "",
+      "located_punch_points": 1,
+      "users": [{ "user": "Sonda Idempotencia 20260919161017", "marks": 1, "distinct_coords": 1 }],
+      "note": "horario de la sonda de idempotencia: una unica marcacion por diseno"
+    }
+  ],
+  "screenshots": [
+    "browser-map-route-253-bello.png",
+    "browser-map-route-255-envigado.png",
+    "browser-marcacion-bello-a.png",
+    "browser-marcacion-bello-a-historial.png"
+  ],
+  "framing_note": "las capturas del mapa ocultan temporalmente el panel lateral y amplian la seccion del mapa solo para encuadre; los datos renderizados no se modifican",
+  "status": "passed"
+}

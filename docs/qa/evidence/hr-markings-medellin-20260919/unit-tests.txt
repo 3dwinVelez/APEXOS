@@ -1,0 +1,29 @@
+=== APEXOS hr-markings-medellin-20260919 unit/regression battery (desarrollo) ===
+date: 2026-09-19T11:34:03-05:00
+
+--- apps/api: node --test test/hr-*.test.js (14 suites hr) ---
+# tests 57
+# suites 0
+# pass 57
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2556.2225
+
+--- apps/web: node --test test/*.test.mjs ---
+# tests 288
+# suites 0
+# pass 288
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 29921.1169
+
+--- apps/web: tsc typecheck ---
+typecheck exit 0
+
+--- apps/web: eslint ---
+✖ 13 problems (0 errors, 13 warnings)
+

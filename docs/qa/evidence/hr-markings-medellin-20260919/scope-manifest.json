@@ -1,0 +1,106 @@
+{
+  "change_id": "hr-markings-medellin-20260919",
+  "base_commits": {
+    "develop": "0fa0f337d118df13ccd0d79ac781b8869ab8f668",
+    "main": "0ea4739d54db7a550e70879857866d3ef2f4e197"
+  },
+  "certified_commit": "6d64a524e3678f7f67626c6e5b465b9d2e349d0c",
+  "scope_schema_version": 2,
+  "change_intent": {
+    "summary": "Certificar y corregir el modulo de rutas y marcaciones tras el simulacro funcional del area metropolitana de Medellin (5 municipios, 2 personas por horario, 10 marcadores concurrentes, 4 marcaciones con destinos distintos por persona trazadas en el mapa, horas extras y novedades diversas). Se corrigen tres causas de bloqueos reportados por operarios: (FM-01) el upsert de kilometraje_dia en createPunch usaba un ON CONFLICT imposible de coincidir con el indice parcial real, lo que abortaba la transaccion con 42P10/25P02 y devolvia 500 en toda salida de ruta con vehiculo, con rebote infinito del cliente; (FM-02) apiInternal descartaba status/code de las respuestas de error y la pantalla de marcacion reintentaba sin fin fallas permanentes; (FM-08) validateMileage lanzaba errores sin statusCode que el manejador convertia en 500 generico reintentable. No hay cambios de esquema ni migraciones.",
+    "modules": ["hr", "talento-humano", "web-api-client", "qa-certification"]
+  },
+  "release_mechanics": "Merge union de desarrollo en develop (desarrollo no reemplaza el arbol de develop). Los 11 D del inventario son artefactos de QA exclusivos de develop del release hr-monitor-ux-fixes-20260919 (qa-*.png, qa-certification.json, qa-fixture.json, qa-nyvora-hr-monitor.json, qa-approval-evidence.json, scope-manifest-release.json, browser-qa-evidence.md); el merge union los preserva en develop, igual que en el release anterior la contabilidad de produccion exclusiva de main.",
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/src/modules/hr/policy.js" },
+    { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
+    { "status": "M", "file": "apps/api/test/hr-workday-novelties-policy.test.js" },
+    { "status": "M", "file": "apps/web/lib/api.ts" },
+    { "status": "A", "file": "apps/api/test/hr-marking-kilometraje-conflict.test.js" },
+    { "status": "A", "file": "apps/web/test/api-error-classification.test.mjs" },
+    { "status": "A", "file": "scripts/certifications/hr-markings-medellin-simulation-qa.js" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/browser-fixture.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/browser-marcacion-bello-a-historial.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/browser-marcacion-bello-a.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/browser-map-route-253-bello.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/browser-map-route-255-envigado.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/browser-replication-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/preqa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/simulation-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/unit-tests.txt" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/validation-checks.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/browser-qa-evidence.md" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-01-mallas-lista-kpi.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-02-monitor-drawer-viewport.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-03-lightbox-evidencia-ampliada.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-04-mapa-ruta-entre-marcaciones.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-05-monitor-historico-scrolltop.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-approval-evidence.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-certification.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-fixture.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-nyvora-hr-monitor.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/scope-manifest-release.json" }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/hr/policy.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-workday-novelties-policy.test.js",
+    "apps/api/test/hr-marking-kilometraje-conflict.test.js",
+    "apps/web/lib/api.ts",
+    "apps/web/test/api-error-classification.test.mjs",
+    "scripts/certifications/hr-markings-medellin-simulation-qa.js",
+    "docs/qa/evidence/hr-markings-medellin-20260919/",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/browser-qa-evidence.md",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-01-mallas-lista-kpi.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-02-monitor-drawer-viewport.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-03-lightbox-evidencia-ampliada.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-04-mapa-ruta-entre-marcaciones.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-05-monitor-historico-scrolltop.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-approval-evidence.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-certification.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-fixture.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-nyvora-hr-monitor.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/scope-manifest-release.json"
+  ],
+  "allowed_deletions": [
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/browser-qa-evidence.md",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-01-mallas-lista-kpi.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-02-monitor-drawer-viewport.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-03-lightbox-evidencia-ampliada.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-04-mapa-ruta-entre-marcaciones.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-05-monitor-historico-scrolltop.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-approval-evidence.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-certification.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-fixture.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-nyvora-hr-monitor.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/scope-manifest-release.json"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "hr-marking-flow-and-concurrency",
+      "status": "passed",
+      "evidence": ["simulation-certification.json", "unit-tests.txt", "validation-checks.json"]
+    },
+    {
+      "name": "tenant_isolation_and_permissions",
+      "status": "passed",
+      "evidence": ["simulation-certification.json", "unit-tests.txt"]
+    },
+    {
+      "name": "map-route-tracing-distinct-destinations",
+      "status": "passed",
+      "evidence": ["simulation-certification.json", "browser-replication-evidence.json", "browser-map-route-253-bello.png", "browser-map-route-255-envigado.png"]
+    },
+    {
+      "name": "marking-only-profile-experience",
+      "status": "passed",
+      "evidence": ["browser-replication-evidence.json", "browser-marcacion-bello-a.png", "browser-marcacion-bello-a-historial.png", "unit-tests.txt"]
+    },
+    {
+      "name": "adjacent_platform_regression",
+      "status": "passed",
+      "evidence": ["unit-tests.txt", "validation-checks.json"]
+    }
+  ]
+}
