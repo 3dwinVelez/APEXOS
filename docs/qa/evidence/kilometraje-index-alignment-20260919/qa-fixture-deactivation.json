@@ -1,0 +1,76 @@
+{
+  "change_id": "kilometraje-index-alignment-20260919",
+  "environment": "QA",
+  "generated_at": "2026-09-19T18:52:00Z",
+  "tenant_id": "cbbf3627-4336-4f23-95c6-1077414bcd17",
+  "company": "SCJ",
+  "subject": "Desactivacion del fixture del simulacro de marcaciones de Medellin",
+  "reason": "El fixture se creo para certificar el modulo de rutas y marcaciones. Terminada la certificacion QA sobre el commit 7d6e8d1a3e6e, los usuarios y empleados de prueba deben quedar inactivos para no contaminar el monitor de mallas horarias ni el listado de empleados del tenant QA.",
+  "runs_covered": [
+    {
+      "run_id": "20260919170415",
+      "origin": "Corrida previa del simulacro (ciclo anterior)",
+      "users": ["qa.med.admin.20260919170415@scj.test"]
+    },
+    {
+      "run_id": "20260919173138",
+      "origin": "Corrida de certificacion QA del ciclo anterior (commit 5607ff62d19e)",
+      "users": [
+        "qa.med.admin.20260919173138@scj.test",
+        "qa.med.medellin.a.20260919173138@scj.test",
+        "qa.med.medellin.b.20260919173138@scj.test",
+        "qa.med.bello.a.20260919173138@scj.test",
+        "qa.med.bello.b.20260919173138@scj.test",
+        "qa.med.itagui.a.20260919173138@scj.test",
+        "qa.med.itagui.b.20260919173138@scj.test",
+        "qa.med.envigado.a.20260919173138@scj.test",
+        "qa.med.envigado.b.20260919173138@scj.test",
+        "qa.med.sabaneta.a.20260919173138@scj.test",
+        "qa.med.sabaneta.b.20260919173138@scj.test",
+        "qa.med.probe.20260919173138@scj.test"
+      ]
+    },
+    {
+      "run_id": "20260919183413",
+      "origin": "Corrida de recertificacion QA de este ciclo (commit 7d6e8d1a3e6e)",
+      "users": [
+        "qa.med.admin.20260919183413@scj.test",
+        "qa.med.medellin.a.20260919183413@scj.test",
+        "qa.med.medellin.b.20260919183413@scj.test",
+        "qa.med.bello.a.20260919183413@scj.test",
+        "qa.med.bello.b.20260919183413@scj.test",
+        "qa.med.itagui.a.20260919183413@scj.test",
+        "qa.med.itagui.b.20260919183413@scj.test",
+        "qa.med.envigado.a.20260919183413@scj.test",
+        "qa.med.envigado.b.20260919183413@scj.test",
+        "qa.med.sabaneta.a.20260919183413@scj.test",
+        "qa.med.sabaneta.b.20260919183413@scj.test",
+        "qa.med.probe.20260919183413@scj.test"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "action": "UPDATE \"User\" SET active = false WHERE id = ANY(<ids fixture>) AND active = true",
+      "rows_affected": 25,
+      "note": "Los otros 10 usuarios de fixture del tenant ya estaban inactivos (corridas anteriores y usuario de la certificacion NYVORA)."
+    },
+    {
+      "action": "UPDATE \"Employee\" SET active = false WHERE user_id = ANY(<ids fixture>) AND active = true",
+      "rows_affected": 25,
+      "note": "Se desactivan tambien los empleados vinculados para que no sigan apareciendo como personal asignable en el monitor de mallas ni en los listados de talento humano."
+    }
+  ],
+  "verification": {
+    "fixture_users_total": 35,
+    "fixture_users_active_after": 0,
+    "fixture_employees_active_after": 0,
+    "query": "SELECT count(*) FROM \"User\" WHERE (email LIKE 'qa.med.%@scj.test' OR email LIKE 'qa.nyvora%' OR email LIKE 'cert.%@nyvora.test') AND active = true -> 0"
+  },
+  "preserved_data": {
+    "description": "Las marcaciones, rutas, kilometrajes y evidencias generadas por el simulacro se conservan en QA como trazabilidad de la certificacion. Solo se desactivaron los usuarios y sus empleados; no se borro ningun registro.",
+    "routes_created": [289, 290, 291, 292, 293],
+    "punches_created": 40
+  },
+  "connection_note": "La desactivacion se ejecuto contra el pooler transaccional de Supabase QA (puerto 6543, pgbouncer=true, connection_limit=1) porque el pool de sesion (puerto 5432, pool_size 15) estaba saturado por los servicios desplegados en Railway y devolvia FATAL EMAXCONNSESSION. runWithTenant solo usa AsyncLocalStorage, sin estado de sesion SQL, por lo que el modo transaccional es seguro para esta operacion."
+}
