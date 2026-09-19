@@ -1,0 +1,116 @@
+{
+  "change_id": "kilometraje-index-alignment-20260919",
+  "commit": "9afe9a3d774c0768b74910a4dba82b0a23ac5d24",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "api_commit": "7d6e8d1a3e6e",
+  "decision": "APTO PARA PRODUCCION",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "qa-certification.json",
+        "qa-index-alignment-verification.json",
+        "index-shape-verification.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "qa-certification.json",
+        "unit-tests.txt",
+        "validation-checks.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "qa-fixture.json",
+        "qa-fixture-deactivation.json",
+        "local-fixture.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "validation-checks.json",
+        "qa-certification.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "local-simulation-certification.json",
+        "qa-nyvora-hr-monitor.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-markings-medellin-simulation-qa.js",
+    "evidence": [
+      "qa-certification.json",
+      "qa-fixture.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-markings-medellin-simulation-qa.js",
+    "evidence": [
+      "qa-certification.json",
+      "qa-index-alignment-verification.json",
+      "unit-tests.txt"
+    ]
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../../apps/api/scripts/certifications/nyvora-hr-monitor-dynamic.js",
+    "evidence": [
+      "qa-nyvora-hr-monitor.json"
+    ]
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "fd8c9f363ce495a9a1dc6957942aafd624a02e39",
+    "trigger": "Cualquier 500 ERROR_INTERNO, 42P10 o 25P02 al marcar en produccion, cualquier marcacion rechazada sin causa operativa, o cualquier falla del indice th_jornada_kilometrajes_one_active tras el despliegue. Procedimiento: revertir el merge de main con un commit de revert (nunca reset --hard) y, si hiciera falta, restaurar manualmente la definicion anterior del indice en produccion. La migracion es un no-op de DDL en produccion porque el indice ya usa COALESCE, asi que el revert no requiere tocar la base.",
+    "notes": "Produccion tiene el indice en forma canonica verificada por indexdef antes del release. La migracion solo registraria la fila en _prisma_migrations. El codigo de runtime no cambia en este release: la escritura portable de kilometraje (3e05795) ya esta desplegada en produccion desde fd8c9f3."
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "APEXOS release owner (Edwin)",
+    "approved_at": "2026-09-19T19:05:00Z",
+    "authorization_basis": "Instruccion expresa del usuario: 'procede con tus sugerencias para cerrar el caso', sobre los tres pendientes reportados (alinear el indice de QA con la forma canonica, desactivar el fixture del simulacro y corregir las credenciales QA rotadas documentadas) y la autorizacion previa 'actualiza las 3 ramas de ser necesario'. La promocion develop -> main queda sujeta a las puertas qa:promotion:scope y qa:approval:evidence."
+  },
+  "qa_summary": {
+    "simulation_controls": 18,
+    "simulation_controls_passed": 18,
+    "markers": 10,
+    "punch_requests": 40,
+    "by_status": { "200": 63, "429": 1 },
+    "server_errors": 0,
+    "pg_error_codes": [],
+    "vehicle_salidas_all_200": true,
+    "map_traces": "5 rutas del area metropolitana de Medellin (Medellin, Bello, Itagui, Envigado, Sabaneta), 2 personas por horario, 4 marcaciones por persona con 4 coordenadas distintas y 8 puntos localizados por ruta",
+    "punch_latency_ms": { "min": 1364, "median": 1660, "max": 2173 },
+    "nyvora": "ok:true sobre el commit 7d6e8d1a3e6e, usuario de certificacion desactivado"
+  },
+  "observations": [
+    "El indice th_jornada_kilometrajes_one_active de QA quedo en la forma canonica COALESCE y la migracion 20260919130000 figura aplicada (finished_at 2026-09-19T18:29:58.867Z, rolled_back_at null). Pre-chequeo y re-chequeo de solo lectura: cero duplicados bajo la clave canonica y 5 renglones activos sin nulos.",
+    "En produccion la migracion es un no-op de DDL: el indexdef vigente ya contiene COALESCE, verificado por consulta de solo lectura.",
+    "La aplicacion automatica de la migracion en QA ocurrio durante el despliegue del servicio API desde develop. Ese comando de inicio esta configurado en Railway y no esta versionado en el repositorio (el Dockerfile termina en CMD node server.js y no hay workflow que ejecute migraciones). Se recomienda documentarlo: hoy una migracion no idempotente se aplicaria en QA sin control manual visible.",
+    "El fixture del simulacro quedo desactivado: 25 usuarios y 25 empleados puestos en active=false, 0 usuarios y 0 empleados de fixture activos en QA. Las marcaciones, rutas y evidencias se conservan como trazabilidad; no se borro ningun registro.",
+    "Las credenciales QA rotadas de admin@apexos.qa y scj@apexos.qa dejaron de publicarse en GUIA_PROYECTO.md. El 401 que producen se confunde con lockout del authGuard y ya costo horas de diagnostico; los scripts de certificacion crean y desactivan su propio admin.",
+    "El pool de sesion de Supabase QA (pool_size 15) se satura con los servicios desplegados en Railway y devuelve FATAL EMAXCONNSESSION. Las operaciones de certificacion y limpieza se ejecutaron por el pooler transaccional (6543, pgbouncer=true, connection_limit=1), que es seguro porque runWithTenant solo usa AsyncLocalStorage.",
+    "Este release no cambia codigo de runtime ni frontend, por lo que la replica de navegador del ciclo anterior (docs/qa/evidence/hr-markings-medellin-20260919/browser-qa-evidence.md, 0 mensajes de consola y 82 peticiones 200/204) sigue siendo la evidencia de UI vigente; la recertificacion funcional QA 18/18 sobre 7d6e8d1a3e6e cubre la misma superficie de API que usa el navegador.",
+    "Las 3 fallas preexistentes de la suite completa de apps/api (inventario, offline-bootstrap, control numerico IVA) se mantienen y son ajenas a HR. La cuarta (sobrecosto de decision local, security-authorization-revocation) es un flake de tiempos bajo carga paralela que pasa 4/4 en aislamiento.",
+    "Hallazgo abierto no bloqueador: con el default de ventana en vivo (punch_limit 300) un tenant que supere 300 marcaciones en el dia pierde en silencio las mas antiguas en el mapa operativo, sin senal de truncamiento en la respuesta. Requiere un ciclo dedicado con cambio en backend y frontend.",
+    "Pendiente de autorizacion independiente: nada. La aplicacion de la migracion en produccion ocurrira con el despliegue del servicio y es un no-op de DDL."
+  ]
+}
