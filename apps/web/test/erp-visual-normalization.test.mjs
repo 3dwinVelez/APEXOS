@@ -68,10 +68,10 @@ test("tesorería conserva pagos bancos reportes y anticipos con una jerarquía c
 test("el formulario de productos conserva sus funciones y elimina paneles de relleno", () => {
   const product = read("apps/web/app/dashboard/inventario/productos/nuevo/page.tsx");
 
-  for (const label of ["Datos básicos", "Valores y existencias", "Opciones operativas", "Crear producto", "Directorio", "Trazabilidad"]) {
+  for (const label of ["Identificación", "Clasificación y organización", "Configuración", "Crear producto", "Directorio", "Trazabilidad"]) {
     assert.match(product, new RegExp(label));
   }
-  for (const field of ["Sociedad", "Sucursal", "Nombre", "Tipo", "Unidad", "Familia", "Impuesto", "Costo unitario", "Precio venta", "Stock minimo", "Stock maximo", "Peso kg", "Volumen m3", "Notas operativas"]) {
+  for (const field of ["Sociedad", "Sucursal", "Nombre", "Tipo de registro", "Unidad", "Familia", "Impuesto", "Se calcula con los movimientos", "Se configura en Ventas", "Stock mínimo", "Stock máximo", "Peso kg", "Volumen m3", "Notas operativas"]) {
     assert.ok(product.includes(field), field);
   }
   assert.match(product, /"\/api\/v1\/inventory\/items"/);
@@ -117,6 +117,6 @@ test("compras elimina relleno y duplicidad sin retirar operaciones activas", () 
   for (const marker of ["Crear OC", "Ordenes", "Trazabilidad", "Guardar borrador", "Crear y aprobar", "/api/v1/purchases/orders"]) assert.match(order, new RegExp(marker.replaceAll("/", "\\/")));
   assert.doesNotMatch(order, /Centro de control|Plantillas rapidas|Pegar Excel|label="Importar"|assistantPanel/);
 
-  for (const marker of ["Directorio", "Alta rapida", "Desempeno", "Guardar proveedor", "/api/v1/purchases/suppliers"]) assert.match(suppliers, new RegExp(marker.replaceAll("/", "\\/")));
+  for (const marker of ["Directorio", "Nuevo proveedor", "Crear proveedor", "Proveedor creado", "Categorias", "/api/v1/purchases/suppliers"]) assert.match(suppliers, new RegExp(marker.replaceAll("/", "\\/")));
   assert.doesNotMatch(suppliers, /Centro de control|Acciones conectadas|Proveedor local|Servicio logistico|assistantPanel/);
 });
