@@ -4,7 +4,7 @@
     "develop": "cda3974c976a6777ff4bd1eef0b2696c293d36ed",
     "main": "e79a3639feb4b2f0c571ae24956c803942a6ed0b"
   },
-  "certified_commit": "4d90f414a26a27707a528d6181754e4609d9d7ea",
+  "certified_commit": "c92969e16d205f39a0aea583b4f26509e6a1b1eb",
   "scope_schema_version": 2,
   "change_intent": {
     "summary": "Modernizar la presentacion del monitor de mallas horarias: drawer con chips de marcacion por persona, badges KPI, timeline con puntualidad/GPS/evidencias fotograficas en miniatura con lightbox, y endpoint batch GET /hr/monitor-evidence/route/:routeId que entrega todas las evidencias de la ruta en una peticion con aislamiento de tenant y permiso hr:read.",
@@ -13,7 +13,10 @@
   "expected_changes": [
     { "status": "M", "file": "apps/api/src/modules/hr/routes.js" },
     { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
+    { "status": "M", "file": "apps/api/src/modules/hr/routeEventSummaries.js" },
     { "status": "M", "file": "apps/api/test/hr-monitor-evidence-demand.test.js" },
+    { "status": "M", "file": "apps/api/test/hr-monitor-silent-failures.test.js" },
+    { "status": "M", "file": "apps/api/test/hr-route-event-summaries.test.js" },
     { "status": "M", "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx" },
     { "status": "A", "file": "scripts/certifications/hr-monitor-ui-modernization-qa.js" },
     { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/01-lista-horarios.png" },
@@ -30,7 +33,10 @@
   "allowed_paths": [
     "apps/api/src/modules/hr/routes.js",
     "apps/api/src/modules/hr/service.js",
+    "apps/api/src/modules/hr/routeEventSummaries.js",
     "apps/api/test/hr-monitor-evidence-demand.test.js",
+    "apps/api/test/hr-monitor-silent-failures.test.js",
+    "apps/api/test/hr-route-event-summaries.test.js",
     "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
     "scripts/certifications/hr-monitor-ui-modernization-qa.js",
     "docs/qa/evidence/hr-monitor-ui-modernization-20260918/"
