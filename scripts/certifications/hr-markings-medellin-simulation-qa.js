@@ -19,6 +19,7 @@ const prisma = require("../../apps/api/src/core/prisma");
 const admin = require("../../apps/api/src/modules/admin/service");
 
 const API_URL = String(args["api-url"] || "http://127.0.0.1:3000").replace(/\/$/, "");
+const ENVIRONMENT = /railway\.app|supabase\./.test(API_URL) ? "QA" : "LOCAL";
 const OUTPUT = path.resolve(String(args.output || "docs/qa/evidence/hr-markings-medellin-20260919/simulation-certification.json"));
 const FIXTURE_OUTPUT = args["fixture-output"] ? path.resolve(String(args["fixture-output"])) : "";
 const RUN_ID = new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
@@ -192,7 +193,7 @@ async function main() {
 
   const result = {
     change_id: "hr-markings-medellin-20260919",
-    environment: "LOCAL",
+    environment: ENVIRONMENT,
     company: "SCJ",
     generated_at: new Date().toISOString(),
     api_commit: health.payload.commit || "unknown",
@@ -416,7 +417,7 @@ async function main() {
     if (FIXTURE_OUTPUT && result.status === "passed") {
       fs.mkdirSync(path.dirname(FIXTURE_OUTPUT), { recursive: true });
       fs.writeFileSync(FIXTURE_OUTPUT, `${JSON.stringify({
-        environment: "LOCAL", api_url: API_URL, admin_email: `qa.med.admin.${RUN_ID}@scj.test`, admin_password: PASSWORD,
+        environment: ENVIRONMENT, api_url: API_URL, admin_email: `qa.med.admin.${RUN_ID}@scj.test`, admin_password: PASSWORD,
         tenant_id: tenant.id, password: PASSWORD, date: TODAY, run_id: RUN_ID,
         routes: createdRoutes.map((route) => route.id), generated_at: new Date().toISOString()
       }, null, 2)}\n`);
