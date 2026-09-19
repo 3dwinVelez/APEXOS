@@ -1,0 +1,43 @@
+# Regresion de la alineacion del indice th_jornada_kilometrajes_one_active (commit desarrollo e07e655)
+# Fecha: 2026-09-19
+
+$ node --test test/hr-*.test.js test/nyvora-hr-monitor-dynamic-certificate.test.js test/runtime-schema-health.test.js
+# tests 61
+# pass 61
+# fail 0
+# skipped 0
+
+$ node --test test/hr-marking-kilometraje-conflict.test.js
+ok 1 - FM-01: la salida vehicular sin renglon activo inserta kilometraje sin depender del indice
+ok 2 - FM-01: con renglon activo previo la salida actualiza el kilometraje en lugar de duplicar
+ok 3 - FM-01: un fallo real del escritura de kilometraje se propaga y no envenena la transaccion en silencio
+ok 4 - FM-01: el servicio resuelve kilometraje sin ON CONFLICT y sin tragar errores
+# tests 4
+# pass 4
+# fail 0
+
+# Suite completa apps/api (rama desarrollo, con la migracion de alineacion)
+$ node --test test/*.test.js
+not ok 123 - inventario ofrece lista de productos filtrable y exportable
+not ok 37 - test\\offline-bootstrap.test.js
+not ok 205 - el calculo local de decision tiene sobrecosto despreciable
+not ok 337 - compras ventas IVA y retenciones reutilizan el control numerico
+# tests 337
+# pass 331
+# fail 4
+# skipped 2
+
+# Analisis de las 4 fallas:
+# - inventario (lista filtrable/exportable), offline-bootstrap y control numerico IVA son
+#   preexistentes y ajenos a HR: se reproducen identicas en la linea base de develop.
+# - 'el calculo local de decision tiene sobrecosto despreciable' (security-authorization-revocation)
+#   es sensible a tiempos bajo carga paralela: en aislamiento pasa 4/4.
+
+$ node --test test/security-authorization-revocation.test.js
+ok 4 - el calculo local de decision tiene sobrecosto despreciable
+# tests 4
+# pass 4
+# fail 0
+
+# Este cambio no toca codigo de runtime: agrega una migracion SQL idempotente, ajusta la
+# URL del mapa en el script de certificacion y corrige GUIA_PROYECTO.md.

@@ -1,0 +1,83 @@
+{
+  "change_id": "kilometraje-index-alignment-20260919",
+  "commit": "e07e6552e17f3f140cd0950ccc49a9dcb2b0ce68",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "local-simulation-certification.json",
+        "index-shape-verification.json",
+        "validation-checks.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "validation-checks.json",
+        "index-shape-verification.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "local-fixture.json",
+        "validation-checks.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "validation-checks.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "local-simulation-certification.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-markings-medellin-simulation-qa.js",
+    "evidence": [
+      "local-simulation-certification.json",
+      "local-fixture.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-markings-medellin-simulation-qa.js",
+    "evidence": [
+      "unit-tests.txt",
+      "validation-checks.json",
+      "index-shape-verification.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "APEXOS release owner (Edwin)",
+    "approved_at": "2026-09-19T18:45:00-05:00",
+    "authorization_basis": "Instruccion expresa del usuario: 'procede con tus sugerencias para cerrar el caso', sobre el pendiente reportado 'Alinear el indice th_jornada_kilometrajes_one_active de QA con la forma COALESCE de la migracion canonica (migracion remota: necesita autorizacion expresa)'. Esa instruccion autoriza la migracion remota en QA y el cierre de los otros dos pendientes (desactivar el fixture del simulacro y corregir las credenciales QA rotadas en GUIA_PROYECTO.md). La cadena desarrollo -> develop -> main queda sujeta a las puertas qa:promotion:scope, qa:preqa:evidence y qa:approval:evidence."
+  },
+  "observations": [
+    "La migracion 20260919130000 es aditiva, idempotente y consciente del ambiente: solo recrea el indice cuando la definicion vigente no contiene COALESCE. En local y en produccion es un no-op; en QA es correctiva.",
+    "Ambas ramas del bloque DO quedaron demostradas en local: con indice canonico no cambia nada y con indice forzado a la forma plana lo restaura a la canonica.",
+    "Pre-chequeo de solo lectura en QA antes de solicitar la aplicacion: cero duplicados bajo la clave canonica y 5 renglones activos sin nulos en route_id ni employee_id.",
+    "El alcance no toca codigo de runtime. La correccion portable del servicio HR (3e05795, ya en produccion) sigue siendo independiente de la forma del indice; esta migracion elimina la deriva para que ningun codigo futuro vuelva a romperse por ambiente.",
+    "El simulacro de Medellin se re-certifico en local sobre la base con indice canonico: 18/18 controles, 10 marcadores concurrentes, 40 marcaciones, 0 errores de servidor, 0 codigos PostgreSQL silenciosos y 4 salidas vehiculares con kilometraje en 200.",
+    "Las 3 fallas preexistentes de la suite completa de apps/api (inventario, offline-bootstrap, control numerico IVA) se mantienen; la cuarta (sobrecosto de decision local) es un flake de tiempos bajo carga paralela que pasa 4/4 en aislamiento.",
+    "Ajuste del script de certificacion: operations-map trunca en silencio a punch_limit 300 en ventana en vivo y el simulacro reusa el tenant SCJ, por lo que las corridas acumuladas del mismo dia (320 marcaciones hoy en local) hacian fallar every_marker_traces_four_marks por datos ajenos a la corrida. Ahora pide limites explicitos.",
+    "GUIA_PROYECTO.md deja de publicar las claves QA rotadas de admin@apexos.qa y scj@apexos.qa y documenta que los scripts de certificacion crean y desactivan su propio admin.",
+    "Pendiente de autorizacion independiente: aplicar la migracion en produccion. Alli el indice ya es canonico, asi que seria un no-op; solo serviria para alinear el historial de _prisma_migrations.",
+    "Hallazgo abierto no bloqueador (VC-13): un tenant con mas de 300 marcaciones en el dia pierde en silencio las mas antiguas en el mapa operativo sin ninguna senal de truncamiento en la respuesta. Requiere un ciclo dedicado con cambio en backend y frontend."
+  ]
+}
