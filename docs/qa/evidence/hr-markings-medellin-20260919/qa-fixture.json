@@ -1,0 +1,19 @@
+{
+  "environment": "QA",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "admin_email": "qa.med.admin.20260919173138@scj.test",
+  "admin_password": "Qa-Med-d114d957cc00#26",
+  "tenant_id": "cbbf3627-4336-4f23-95c6-1077414bcd17",
+  "password": "Qa-Med-d114d957cc00#26",
+  "date": "2026-09-19",
+  "run_id": "20260919173138",
+  "routes": [
+    281,
+    282,
+    283,
+    284,
+    285,
+    286
+  ],
+  "generated_at": "2026-09-19T17:33:51.798Z"
+}

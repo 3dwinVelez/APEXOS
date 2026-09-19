@@ -1,0 +1,76 @@
+{
+  "change_id": "hr-kilometraje-index-agnostic-20260919",
+  "commit": "3e057955e2fa02e6245e3607496644eee84f7d1a",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "local-simulation-certification.json",
+        "kilometraje-write-verification.json",
+        "validation-checks.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "validation-checks.json",
+        "kilometraje-write-verification.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "local-fixture.json",
+        "validation-checks.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "validation-checks.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "local-simulation-certification.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-markings-medellin-simulation-qa.js",
+    "evidence": [
+      "local-simulation-certification.json",
+      "local-fixture.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-markings-medellin-simulation-qa.js",
+    "evidence": [
+      "unit-tests.txt",
+      "validation-checks.json",
+      "kilometraje-write-verification.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "APEXOS release owner (Edwin)",
+    "approved_at": "2026-09-19T12:40:00-05:00",
+    "authorization_basis": "Instruccion expresa del usuario en el simulacro de Medellin: 'lo que encuentres con novedad no esperes al diagnostico, corrige en el camino y actualiza las 3 ramas de ser necesario'. La certificacion QA del simulacro fallo all_exits_accepted con 4 salidas vehiculares en 500 ERROR_INTERNO, se diagnostico la deriva de forma del indice th_jornada_kilometrajes_one_active y se corrigio en codigo (FM-01 v2). Se autoriza el despliegue del candidato en QA para revalidar el simulacro; la cadena desarrollo -> develop -> main queda sujeta a las puertas qa:promotion:scope, qa:preqa:evidence y qa:approval:evidence."
+  },
+  "observations": [
+    "Correccion portable: no se ejecuto ninguna migracion remota. Alinear el indice de QA con la forma COALESCE canonica requiere autorizacion expresa independiente y queda como pendiente recomendado, no como bloqueador.",
+    "Las 3 fallas de la suite completa de apps/api (inventario, offline-bootstrap, control numerico IVA) son preexistentes y se reproducen identicas en la linea base de develop ec43164.",
+    "El simulacro local con la correccion escribio 4 renglones activos de kilometraje (rutas 259 Bello y 261 Envigado) y aprobo los 18 controles, incluido vehicle_exits_record_mileage."
+  ]
+}

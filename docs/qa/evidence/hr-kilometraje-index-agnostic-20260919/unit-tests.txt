@@ -1,0 +1,36 @@
+# Regresion de la correccion FM-01 v2 (commit desarrollo 3e05795)
+# Fecha: 2026-09-19
+
+$ node --test test/hr-*.test.js test/nyvora-hr-monitor-dynamic-certificate.test.js test/runtime-schema-health.test.js
+# tests 61
+# pass 61
+# fail 0
+# skipped 0
+# duration_ms 3139.2568
+
+$ node --test test/hr-marking-kilometraje-conflict.test.js
+ok 1 - FM-01: la salida vehicular sin renglon activo inserta kilometraje sin depender del indice
+ok 2 - FM-01: con renglon activo previo la salida actualiza el kilometraje en lugar de duplicar
+ok 3 - FM-01: un fallo real del escritura de kilometraje se propaga y no envenena la transaccion en silencio
+ok 4 - FM-01: el servicio resuelve kilometraje sin ON CONFLICT y sin tragar errores
+# tests 4
+# pass 4
+# fail 0
+
+# Suite completa apps/api (rama desarrollo, con la correccion)
+$ node --test test/*.test.js
+# tests 337
+# pass 332
+# fail 3
+# skipped 2
+not ok 123 - inventario ofrece lista de productos filtrable y exportable
+not ok 37 - test\\offline-bootstrap.test.js
+not ok 337 - compras ventas IVA y retenciones reutilizan el control numerico
+
+# Las 3 fallas anteriores son preexistentes y ajenas al modulo HR: se reproducen
+# identicas en la linea base de develop (worktree develop-ui-v3-promotion, HEAD ec43164):
+$ node --test test/inventory-transfer-product-list-ux.test.js test/offline-bootstrap.test.js test/zero-friendly-number-input.test.js
+not ok 2 - inventario ofrece lista de productos filtrable y exportable
+not ok 2 - test/offline-bootstrap.test.js
+not ok 5 - compras ventas IVA y retenciones reutilizan el control numerico
+# tests 5 / # pass 2 / # fail 3 (identico en ambas ramas)

@@ -1956,18 +1956,39 @@ async function createPunch(tenantId, input, user) {
       }
     });
     if (dayMileage != null) {
-      await tx.$executeRaw`
-        INSERT INTO th_jornada_kilometrajes (
-          tenant_id, employee_id, route_id, punch_id, vehicle_plate, value, unit, reported_by, reported_at, active, metadata
-        )
-        VALUES (
-          ${tenantId}, ${employee.id}, ${route?.id || inputRouteId || null}, ${punch.id}, ${routeVehicle}, ${dayMileage}, 'km', ${user?.id || null}, ${punchedAt}, true,
-          ${JSON.stringify({ source: "time_punch", unusual: mileageUnusual, threshold: mileageThreshold })}::jsonb
-        )
-        ON CONFLICT (tenant_id, route_id, employee_id, active)
-        WHERE active = true
-        DO NOTHING
-      `.catch(() => null);
+      const mileageRouteId = route?.id || inputRouteId || null;
+      const mileageMetadata = JSON.stringify({ source: "time_punch", unusual: mileageUnusual, threshold: mileageThreshold });
+      // El indice unico parcial de th_jornada_kilometrajes difiere entre ambientes
+      // (columnas planas vs COALESCE), por lo que el upsert no puede inferirlo con
+      // ON CONFLICT; se serializa el renglon activo con lock y se resuelve select/update/insert.
+      const mileageLockScope = `${tenantId}:kilometraje:${mileageRouteId ?? "sin-ruta"}:${employee.id}`;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${mileageLockScope}, 0))`;
+      const activeMileage = await tx.$queryRaw`
+        SELECT id FROM th_jornada_kilometrajes
+        WHERE tenant_id = ${tenantId}
+          AND COALESCE(route_id, -1) = COALESCE(${mileageRouteId}::int, -1)
+          AND COALESCE(employee_id, -1) = ${employee.id}
+          AND active = true
+        LIMIT 1
+      `;
+      if (activeMileage.length) {
+        await tx.$executeRaw`
+          UPDATE th_jornada_kilometrajes
+          SET punch_id = ${punch.id}, vehicle_plate = ${routeVehicle}, value = ${dayMileage}, unit = 'km',
+              reported_by = ${user?.id || null}, reported_at = ${punchedAt}, metadata = ${mileageMetadata}::jsonb
+          WHERE id = ${activeMileage[0].id}
+        `;
+      } else {
+        await tx.$executeRaw`
+          INSERT INTO th_jornada_kilometrajes (
+            tenant_id, employee_id, route_id, punch_id, vehicle_plate, value, unit, reported_by, reported_at, active, metadata
+          )
+          VALUES (
+            ${tenantId}, ${employee.id}, ${mileageRouteId}, ${punch.id}, ${routeVehicle}, ${dayMileage}, 'km', ${user?.id || null}, ${punchedAt}, true,
+            ${mileageMetadata}::jsonb
+          )
+        `;
+      }
       if (mileageUnusual) {
         await tx.$executeRaw`
           INSERT INTO th_novedades_jornada (
