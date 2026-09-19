@@ -1,0 +1,90 @@
+{
+  "change_id": "hr-monitor-ui-modernization-20260918",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "a45aa6cfe733cdf0a75e1d46ce7b8d95b9e88c1b",
+  "decision": "APTO",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "qa-certification.json",
+        "browser-qa-evidence.md",
+        "qa-monitor-drawer.png",
+        "qa-lista-horarios-kpi-evidencia.png"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "qa-certification.json",
+        "unit-tests.txt"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "preqa-approval-evidence.json",
+        "validation-checks.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "qa-nyvora-hr-monitor.json",
+        "unit-tests.txt"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "qa-nyvora-hr-monitor.json",
+        "qa-certification.json",
+        "browser-qa-evidence.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-monitor-ui-modernization-qa.js",
+    "evidence": [
+      "qa-certification.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../apps/api/scripts/certifications/nyvora-hr-monitor-dynamic.js",
+    "evidence": [
+      "qa-nyvora-hr-monitor.json"
+    ]
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../../apps/api/scripts/certifications/nyvora-hr-monitor-dynamic.js",
+    "evidence": [
+      "qa-nyvora-hr-monitor.json"
+    ]
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "e79a3639feb4b2f0c571ae24956c803942a6ed0b",
+    "trigger": "data integrity failure, tenant isolation failure, schema mismatch, critical functional regression, or failed production connectivity smoke"
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "APEXOS QA release gate (autorizado por Edwin, release owner)",
+    "approved_at": "2026-09-19T05:20:00-05:00",
+    "scope": "develop to main for the exact QA-deployed commit a45aa6c"
+  },
+  "observations": [
+    "Certificacion SCJ QA 14/14 contra el API desplegado (commit a45aa6cfe733): contrato operations-map, batch de evidencias con base64 de marcaciones y actividades, RBAC 403 para rol solo marcacion, 400 ruta invalida, aislamiento cross-tenant y resumen de ruta que cuenta todas las evidencias (evidence_count >= 3) — correccion del KPI del listado.",
+    "Verificacion en navegador QA con filtro 18/09/2026: tarjetas del listado muestran '3 evidencia(s)' (antes '1'), drawer del monitor con chips por persona, timeline con puntualidad/GPS y 3 miniaturas base64; 0 errores de consola.",
+    "Certificacion de empresa modelo NYVORA en QA aprobada contra a45aa6c: ruta dinamica 272 con 4 marcaciones, actividad con evidencia fotografica y cierre (event_count 5); usuario de certificacion desactivado al final.",
+    "Unit tests 21/21 en las 4 suites de hr-monitor (incluida la estabilizacion de fecha en zona America/Bogota), lint 0 errores, typecheck y performance guard verdes.",
+    "Hallazgo preexistente excluido del alcance y documentado en certification.json: bug 42P10 en el ON CONFLICT de th_jornada_kilometrajes dentro de createPunch (en main desde d704110); la certificacion lo esquiva con ruta sin placa. Recomendado corregir en un cambio separado."
+  ]
+}
