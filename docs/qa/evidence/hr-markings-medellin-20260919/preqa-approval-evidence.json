@@ -1,0 +1,74 @@
+{
+  "change_id": "hr-markings-medellin-20260919",
+  "commit": "6d64a524e3678f7f67626c6e5b465b9d2e349d0c",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "simulation-certification.json",
+        "validation-checks.json",
+        "browser-replication-evidence.json",
+        "browser-map-route-253-bello.png",
+        "browser-map-route-255-envigado.png",
+        "browser-marcacion-bello-a.png",
+        "browser-marcacion-bello-a-historial.png"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "simulation-certification.json",
+        "validation-checks.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "validation-checks.json",
+        "browser-fixture.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "validation-checks.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "validation-checks.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-markings-medellin-simulation-qa.js",
+    "evidence": [
+      "simulation-certification.json",
+      "browser-fixture.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-markings-medellin-simulation-qa.js",
+    "evidence": [
+      "unit-tests.txt",
+      "validation-checks.json",
+      "browser-replication-evidence.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "APEXOS release owner (Edwin)",
+    "approved_at": "2026-09-19T11:40:00-05:00",
+    "authorization_basis": "Instruccion expresa del usuario en el simulacro de Medellin: 'lo que encuentres con novedad no esperes al diagnostico, corrige en el camino y actualiza las 3 ramas de ser necesario'. Corrigieron tres novedades (FM-01, FM-02, FM-08), por lo que la cadena desarrollo -> develop -> main queda autorizada sujeta a las puertas qa:promotion:scope, qa:preqa:evidence y qa:approval:evidence."
+  }
+}

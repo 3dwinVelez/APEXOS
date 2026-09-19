@@ -1,0 +1,100 @@
+{
+  "change_id": "hr-markings-medellin-20260919",
+  "environment": "LOCAL",
+  "generated_at": "2026-09-19T11:35:00-05:00",
+  "checks": [
+    {
+      "id": "VC-01",
+      "name": "suite_api_hr_regresion",
+      "command": "cd apps/api && node --test test/hr-*.test.js (14 suites)",
+      "result": "passed",
+      "detail": "57/57 pruebas, 0 fallos"
+    },
+    {
+      "id": "VC-02",
+      "name": "suite_web_estatica",
+      "command": "cd apps/web && node --test test/*.test.mjs",
+      "result": "passed",
+      "detail": "288/288 pruebas, 0 fallos"
+    },
+    {
+      "id": "VC-03",
+      "name": "web_typecheck",
+      "command": "cd apps/web && npx tsc -p tsconfig.typecheck.json --noEmit",
+      "result": "passed",
+      "detail": "exit 0"
+    },
+    {
+      "id": "VC-04",
+      "name": "web_lint",
+      "command": "cd apps/web && npx eslint .",
+      "result": "passed",
+      "detail": "0 errores, 13 warnings preexistentes"
+    },
+    {
+      "id": "VC-05",
+      "name": "fm01_kilometraje_on_conflict",
+      "result": "passed",
+      "detail": "createPunch de salida en ruta con vehiculo ya no aborta la transaccion: el upsert de kilometraje usa ON CONFLICT (tenant_id, COALESCE(route_id,-1), COALESCE(employee_id,-1)) WHERE active = true, alineado con el indice parcial real; antes producia 42P10 -> 25P02 -> 500 y rebote infinito del cliente",
+      "evidence": ["simulation-certification.json", "../../../../apps/api/test/hr-marking-kilometraje-conflict.test.js"]
+    },
+    {
+      "id": "VC-06",
+      "name": "fm02_clasificacion_de_errores_cliente",
+      "result": "passed",
+      "detail": "apiInternal propaga status/code/retryable en 4xx y 5xx; permanentSyncFailure de la pantalla de marcacion dequeue fallas permanentes en lugar de reintentarlas sin fin",
+      "evidence": ["../../../../apps/web/test/api-error-classification.test.mjs"]
+    },
+    {
+      "id": "VC-07",
+      "name": "fm08_kilometraje_400_no_500",
+      "result": "passed",
+      "detail": "validateMileage lanza errores con statusCode 400 y codigo estable; el manejador de Fastify ya no los convierte en 500 generico reintentable",
+      "evidence": ["../../../../apps/api/test/hr-workday-novelties-policy.test.js"]
+    },
+    {
+      "id": "VC-08",
+      "name": "simulacro_concurrencia_10_marcadores",
+      "command": "node scripts/certifications/hr-markings-medellin-simulation-qa.js",
+      "result": "passed",
+      "detail": "18/18 chequeos; 64 peticiones (63x200, 1x429 de login respetado y reintentado); 0 errores de servidor; 0 codigos PG silenciosos; pared de concurrencia 3956 ms; latencia de marcacion min 324 / mediana 729 / max 1209 ms",
+      "evidence": ["simulation-certification.json"]
+    },
+    {
+      "id": "VC-09",
+      "name": "trazas_de_mapa_por_horario",
+      "result": "passed",
+      "detail": "5 horarios del area metropolitana (Medellin, Bello, Itagui, Envigado, Sabaneta) con 2 personas cada uno; cada persona traza 4 marcaciones en 4 coordenadas distintas; 8 punch_points localizados por horario; centroides municipales distintos entre horarios",
+      "evidence": ["simulation-certification.json", "browser-replication-evidence.json", "browser-map-route-253-bello.png", "browser-map-route-255-envigado.png"]
+    },
+    {
+      "id": "VC-10",
+      "name": "replica_navegador_admin_mapa",
+      "result": "passed",
+      "detail": "sesion admin en /dashboard/talento-humano/mapa modo historico: polilineas por usuario visibles, 8 botones de marcacion en ruta 253, trazas de 4 puntos por usuario en DOM, 0 errores de consola de la aplicacion y 0 peticiones fallidas",
+      "evidence": ["browser-replication-evidence.json", "browser-map-route-253-bello.png", "browser-map-route-255-envigado.png"]
+    },
+    {
+      "id": "VC-11",
+      "name": "replica_navegador_perfil_marcaciones",
+      "result": "passed",
+      "detail": "sesion de Operario Bello A en /dashboard/talento-humano/marcacion: jornada completa con 4 pasos Registrado correctamente, estado Jornada cerrada, historial 06:05/10:00/10:45/16:30 con SIMBLL01, sin bloqueos ni errores de consola",
+      "evidence": ["browser-replication-evidence.json", "browser-marcacion-bello-a.png", "browser-marcacion-bello-a-historial.png"]
+    },
+    {
+      "id": "VC-12",
+      "name": "idempotencia_y_secuencia",
+      "result": "passed",
+      "detail": "reintento con misma idempotency_key responde replayed sin duplicar; marcacion fuera de orden (salida antes de entrada) rechazada con 409",
+      "evidence": ["simulation-certification.json"]
+    },
+    {
+      "id": "VC-13",
+      "name": "horas_extras_y_novedades",
+      "result": "passed",
+      "detail": "salidas 16:30 sobre horario 06:00-14:00 con tolerancia 15 min exigen y aceptan justificacion de hora extra; novedades de kilometraje y eventos diversos registrados por horario",
+      "evidence": ["simulation-certification.json"]
+    }
+  ],
+  "status": "passed"
+}
