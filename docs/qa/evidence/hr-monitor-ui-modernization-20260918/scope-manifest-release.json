@@ -1,0 +1,88 @@
+{
+  "change_id": "hr-monitor-ui-modernization-release-20260918",
+  "base_commits": {
+    "develop": "a45aa6cfe733cdf0a75e1d46ce7b8d95b9e88c1b",
+    "main": "e79a3639feb4b2f0c571ae24956c803942a6ed0b"
+  },
+  "certified_commit": "c92969e16d205f39a0aea583b4f26509e6a1b1eb",
+  "scope_schema_version": 2,
+  "change_intent": {
+    "summary": "Liberacion controlada develop -> main de la modernizacion del monitor de mallas horarias: drawer redisenado con chips de marcacion por persona, timeline con puntualidad/GPS, evidencias fotograficas en miniatura con lightbox y badges KPI, endpoint batch GET /hr/monitor-evidence/route/:routeId con aislamiento de tenant y permiso hr:read, conteo de evidencias de marcaciones (TimePunch.extra_evidence) en el resumen de rutas, y prueba de fecha estabilizada con zona America/Bogota. Certificacion SCJ QA 14/14 contra el commit desplegado, certificacion de empresa modelo NYVORA en QA y verificacion funcional en navegador sin errores de consola.",
+    "modules": ["talento-humano", "hr", "qa-certification"]
+  },
+  "release_mechanics": "Merge normal con main como primer padre (nunca reemplazar el arbol de main por el de develop). Los 4 D del inventario son archivos de contabilidad de produccion exclusivos de main (hr-module-intervention-20260918 y prod-nyvora-hr-monitor.json); el merge union los preserva en el arbol de main.",
+  "expected_changes": [
+    { "status": "D", "file": "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression-pre-migration.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-module-intervention-20260918/prod-schema-alignment-20260918.md" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-silent-failures-20260918/prod-nyvora-hr-monitor.json" },
+    { "status": "M", "file": "apps/api/src/modules/hr/routeEventSummaries.js" },
+    { "status": "M", "file": "apps/api/src/modules/hr/routes.js" },
+    { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
+    { "status": "M", "file": "apps/api/test/hr-monitor-evidence-demand.test.js" },
+    { "status": "M", "file": "apps/api/test/hr-monitor-silent-failures.test.js" },
+    { "status": "M", "file": "apps/api/test/hr-route-event-summaries.test.js" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/01-lista-horarios.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/02b-monitor-equipo-y-timeline.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/03-lightbox-evidencia.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/browser-qa-evidence.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/fixture.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/preqa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/qa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/qa-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/qa-lista-horarios-kpi-evidencia.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/qa-monitor-drawer.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/qa-nyvora-hr-monitor.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/scope-manifest-release.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/security-review.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/unit-tests.txt" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ui-modernization-20260918/validation-checks.json" },
+    { "status": "A", "file": "scripts/certifications/hr-monitor-ui-modernization-qa.js" }
+  ],
+  "allowed_paths": [
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression-pre-migration.json",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression.json",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-schema-alignment-20260918.md",
+    "docs/qa/evidence/hr-monitor-silent-failures-20260918/prod-nyvora-hr-monitor.json",
+    "apps/api/src/modules/hr/routeEventSummaries.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-monitor-evidence-demand.test.js",
+    "apps/api/test/hr-monitor-silent-failures.test.js",
+    "apps/api/test/hr-route-event-summaries.test.js",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "scripts/certifications/hr-monitor-ui-modernization-qa.js",
+    "docs/qa/evidence/hr-monitor-ui-modernization-20260918/"
+  ],
+  "allowed_deletions": [
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression-pre-migration.json",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression.json",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-schema-alignment-20260918.md",
+    "docs/qa/evidence/hr-monitor-silent-failures-20260918/prod-nyvora-hr-monitor.json"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "hr-monitoring-and-route-tracking",
+      "status": "passed",
+      "evidence": ["certification.json", "qa-certification.json", "unit-tests.txt", "browser-qa-evidence.md"]
+    },
+    {
+      "name": "tenant_isolation_and_permissions",
+      "status": "passed",
+      "evidence": ["certification.json", "qa-certification.json", "security-review.md"]
+    },
+    {
+      "name": "adjacent_platform_regression",
+      "status": "passed",
+      "evidence": ["validation-checks.json", "qa-nyvora-hr-monitor.json"]
+    },
+    {
+      "name": "dark_and_light_theme_contract",
+      "status": "passed",
+      "evidence": ["01-lista-horarios.png", "02b-monitor-equipo-y-timeline.png", "03-lightbox-evidencia.png"]
+    }
+  ]
+}
