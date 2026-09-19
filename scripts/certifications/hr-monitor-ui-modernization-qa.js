@@ -203,6 +203,10 @@ async function main() {
     const invalid = await request("/api/v1/hr/monitor-evidence/route/abc", { token: adminToken, expected: 400 });
     check(result, "invalid_route_id_controlled", invalid.code === "EVIDENCIA_MONITOR_RUTA_INVALIDA", { code: invalid.code });
 
+    const summaries = await request("/api/v1/hr/routes/event-summaries", { token: adminToken });
+    const summaryRow = (summaries.routes || []).find((row) => Number(row.route_id) === Number(route.id));
+    check(result, "route_summary_counts_all_evidence", summaryRow && summaryRow.evidence_count >= 3, { route_id: route.id, evidence_count: summaryRow?.evidence_count ?? null });
+
     const otherTenant = await prisma.tenant.findFirst({ where: { id: { not: tenant.id } } });
     if (otherTenant) {
       const isolated = await hr.getMonitorEvidenceBatch(otherTenant.id, route.id);

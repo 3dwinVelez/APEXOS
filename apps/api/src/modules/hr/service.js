@@ -672,7 +672,7 @@ async function listRouteEventSummaries(tenantId) {
       return { gte: from, lt: endOfDay(from) };
     });
 
-    const [punchGroups, activityGroups, closedGroups, evidenceRows, unlinkedPunches, unlinkedActivities] = await Promise.all([
+    const [punchGroups, activityGroups, closedGroups, evidenceRows, punchEvidenceRows, unlinkedPunches, unlinkedActivities] = await Promise.all([
       prisma.timePunch.groupBy({
         by: ["route_id"],
         where: { route_id: { in: routeIds } },
@@ -695,6 +695,10 @@ async function listRouteEventSummaries(tenantId) {
         select: { activity: { select: { route_id: true } } }
       }),
       prisma.timePunch.findMany({
+        where: { route_id: { in: routeIds } },
+        select: { route_id: true, extra_evidence: true }
+      }),
+      prisma.timePunch.findMany({
         where: { route_id: null, OR: dateWindows.map((date) => ({ date })) },
         select: { employee_id: true, user_name: true, type: true, punched_at: true, date: true, metadata: true },
         orderBy: { punched_at: "desc" },
@@ -710,7 +714,7 @@ async function listRouteEventSummaries(tenantId) {
 
     return {
       generated_at: new Date().toISOString(),
-      routes: buildRouteEventSummaries({ routeContexts, punchGroups, activityGroups, closedGroups, evidenceRows, unlinkedPunches, unlinkedActivities })
+      routes: buildRouteEventSummaries({ routeContexts, punchGroups, activityGroups, closedGroups, evidenceRows, punchEvidenceRows, unlinkedPunches, unlinkedActivities })
     };
   });
 }
