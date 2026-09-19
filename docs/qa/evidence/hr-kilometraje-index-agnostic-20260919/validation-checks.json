@@ -1,0 +1,100 @@
+{
+  "change_id": "hr-kilometraje-index-agnostic-20260919",
+  "generated_at": "2026-09-19T12:35:00-05:00",
+  "environment": "LOCAL",
+  "branch": "desarrollo",
+  "commit": "3e057955e2fa02e6245e3607496644eee84f7d1a",
+  "checks": [
+    {
+      "id": "VC-01",
+      "name": "root_cause_confirmed_index_shape_drift",
+      "status": "passed",
+      "detail": "pg_indexes confirma que th_jornada_kilometrajes_one_active usa expresiones COALESCE en local/produccion y columnas planas (tenant_id, route_id, employee_id, active) en QA. Con columnas planas, ON CONFLICT (tenant_id, COALESCE(route_id,-1), COALESCE(employee_id,-1)) no infiere indice y PostgreSQL responde 42P10.",
+      "evidence": ["kilometraje-write-verification.json"]
+    },
+    {
+      "id": "VC-02",
+      "name": "no_on_conflict_on_kilometraje",
+      "status": "passed",
+      "detail": "El bloque de kilometraje de createPunch ya no contiene ninguna clausula ON CONFLICT sobre th_jornada_kilometrajes; la escritura es independiente de la forma del indice.",
+      "evidence": ["unit-tests.txt"]
+    },
+    {
+      "id": "VC-03",
+      "name": "advisory_lock_scope_stable",
+      "status": "passed",
+      "detail": "pg_advisory_xact_lock(hashtextextended('<tenant>:kilometraje:<route|sin-ruta>:<employee>', 0)) serializa los escritores del mismo renglon logico; el alcance se valida como parametro enlazado en la prueba de regresion.",
+      "evidence": ["unit-tests.txt"]
+    },
+    {
+      "id": "VC-04",
+      "name": "insert_path_without_active_row",
+      "status": "passed",
+      "detail": "Sin renglon activo se ejecuta SELECT ... active = true seguido de INSERT INTO th_jornada_kilometrajes.",
+      "evidence": ["unit-tests.txt"]
+    },
+    {
+      "id": "VC-05",
+      "name": "update_path_with_active_row",
+      "status": "passed",
+      "detail": "Con renglon activo previo (id 500 en la prueba) se ejecuta UPDATE ... WHERE id = ? y no se inserta un duplicado.",
+      "evidence": ["unit-tests.txt"]
+    },
+    {
+      "id": "VC-06",
+      "name": "errors_propagate_no_silent_swallow",
+      "status": "passed",
+      "detail": "Un fallo real del raw de kilometraje se propaga (createPunch rechaza) y ya no existe .catch(() => null) que enmascare el error y deje la transaccion abortada en silencio.",
+      "evidence": ["unit-tests.txt"]
+    },
+    {
+      "id": "VC-07",
+      "name": "local_end_to_end_simulation",
+      "status": "passed",
+      "detail": "Simulacro de Medellin contra la API local en :3100 con la correccion: 18 controles aprobados, 69 peticiones, 10 marcadores concurrentes, incluido vehicle_exits_record_mileage.",
+      "evidence": ["local-simulation-certification.json", "local-fixture.json"]
+    },
+    {
+      "id": "VC-08",
+      "name": "local_database_rows_written",
+      "status": "passed",
+      "detail": "4 renglones activos escritos en th_jornada_kilometrajes para las rutas vehiculares 259 (Bello, SIMBLL01) y 261 (Envigado, SIMENV01), dos marcadores por horario, sin duplicados.",
+      "evidence": ["kilometraje-write-verification.json"]
+    },
+    {
+      "id": "VC-09",
+      "name": "hr_regression_battery",
+      "status": "passed",
+      "detail": "61/61 pruebas verdes del conjunto HR (marcaciones, concurrencia, RBAC de solo marcacion, monitor, mapa de operaciones, novedades de jornada, resumen de eventos de ruta, certificados NYVORA y salud de esquema).",
+      "evidence": ["unit-tests.txt"]
+    },
+    {
+      "id": "VC-10",
+      "name": "full_api_suite_no_new_failures",
+      "status": "passed",
+      "detail": "Suite completa apps/api: 337 pruebas, 332 aprobadas, 2 omitidas, 3 fallas. Las 3 fallas (inventario, offline-bootstrap, control numerico IVA) se reproducen identicas en la linea base de develop ec43164, por lo que son preexistentes y ajenas al modulo HR.",
+      "evidence": ["unit-tests.txt"]
+    },
+    {
+      "id": "VC-11",
+      "name": "no_remote_migration_required",
+      "status": "passed",
+      "detail": "La correccion es solo de codigo y portable entre ambas formas de indice; no se ejecuto ninguna migracion remota (requeriria autorizacion expresa independiente que no fue concedida).",
+      "evidence": ["kilometraje-write-verification.json"]
+    },
+    {
+      "id": "VC-12",
+      "name": "tenant_isolation_preserved",
+      "status": "passed",
+      "detail": "El lock y el SELECT filtran por tenant_id y el raw se ejecuta dentro de prisma.runWithTenant/$transaction del tenant de la marcacion; el simulacro valida aislamiento cross-tenant en las peticiones de monitor.",
+      "evidence": ["local-simulation-certification.json"]
+    },
+    {
+      "id": "VC-13",
+      "name": "qa_revalidation_pending",
+      "status": "pending",
+      "detail": "La certificacion del simulacro contra QA quedara en evidencia del lado de develop una vez el despliegue de QA incluya este commit; la corrida previa contra f04add495e52 fallo all_exits_accepted y debe sobrescribirse con una corrida aprobada.",
+      "evidence": ["kilometraje-write-verification.json"]
+    }
+  ]
+}

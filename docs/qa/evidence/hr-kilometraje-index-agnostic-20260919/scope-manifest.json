@@ -1,0 +1,92 @@
+{
+  "change_id": "hr-kilometraje-index-agnostic-20260919",
+  "base_commits": {
+    "develop": "ec43164dcdae7fe35915a031978268b2b1e2f632",
+    "main": "0ea4739d54db7a550e70879857866d3ef2f4e197"
+  },
+  "certified_commit": "3e057955e2fa02e6245e3607496644eee84f7d1a",
+  "scope_schema_version": 2,
+  "change_intent": {
+    "summary": "Correccion FM-01 (v2) del cierre de jornada vehicular con kilometraje: el indice unico parcial th_jornada_kilometrajes_one_active tiene forma distinta por ambiente (expresiones COALESCE en local/produccion, columnas planas en QA), por lo que ningun ON CONFLICT es portable. En QA el upsert inferia mal el objetivo de conflicto, PostgreSQL devolvia 42P10, la transaccion quedaba abortada (25P02) y la salida con kilometraje terminaba en 500 ERROR_INTERNO: es la causa de los bloqueos reportados al marcar. Se reemplaza el upsert por lock de asesoria por renglon logico + SELECT del renglon activo + UPDATE/INSERT, que no depende de la forma del indice, y se elimina el .catch(() => null) que enmascaraba el fallo. Alcance: apps/api (servicio HR y su prueba de regresion) mas la evidencia versionada de la correccion. Sin migraciones, sin cambios de esquema, sin cambios de frontend.",
+    "modules": ["talento-humano", "hr", "marcaciones", "qa-certification"]
+  },
+  "release_mechanics": "Merge normal de desarrollo -> develop con develop como primer padre. Las 11 entradas D del inventario son artefactos de evidencia QA exclusivos de develop (docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-* y su scope-manifest-release.json) generados durante la promocion anterior; el merge union los preserva en el arbol de develop. No existe ninguna eliminacion real de codigo ni de evidencia en este alcance.",
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
+    { "status": "M", "file": "apps/api/test/hr-marking-kilometraje-conflict.test.js" },
+    { "status": "A", "file": "docs/qa/evidence/hr-kilometraje-index-agnostic-20260919/kilometraje-write-verification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-kilometraje-index-agnostic-20260919/local-fixture.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-kilometraje-index-agnostic-20260919/local-simulation-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-kilometraje-index-agnostic-20260919/preqa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-kilometraje-index-agnostic-20260919/scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-kilometraje-index-agnostic-20260919/unit-tests.txt" },
+    { "status": "A", "file": "docs/qa/evidence/hr-kilometraje-index-agnostic-20260919/validation-checks.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/browser-qa-evidence.md" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-01-mallas-lista-kpi.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-02-monitor-drawer-viewport.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-03-lightbox-evidencia-ampliada.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-04-mapa-ruta-entre-marcaciones.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-05-monitor-historico-scrolltop.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-approval-evidence.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-certification.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-fixture.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-nyvora-hr-monitor.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/scope-manifest-release.json" }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-marking-kilometraje-conflict.test.js",
+    "docs/qa/evidence/hr-kilometraje-index-agnostic-20260919/",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/browser-qa-evidence.md",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-01-mallas-lista-kpi.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-02-monitor-drawer-viewport.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-03-lightbox-evidencia-ampliada.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-04-mapa-ruta-entre-marcaciones.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-05-monitor-historico-scrolltop.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-approval-evidence.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-certification.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-fixture.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-nyvora-hr-monitor.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/scope-manifest-release.json"
+  ],
+  "allowed_deletions": [
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/browser-qa-evidence.md",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-01-mallas-lista-kpi.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-02-monitor-drawer-viewport.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-03-lightbox-evidencia-ampliada.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-04-mapa-ruta-entre-marcaciones.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-05-monitor-historico-scrolltop.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-approval-evidence.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-certification.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-fixture.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-nyvora-hr-monitor.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/scope-manifest-release.json"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "hr-marking-vehicle-exit-with-mileage",
+      "status": "passed",
+      "evidence": ["local-simulation-certification.json", "kilometraje-write-verification.json", "unit-tests.txt"]
+    },
+    {
+      "name": "hr-monitoring-and-route-tracking",
+      "status": "passed",
+      "evidence": ["local-simulation-certification.json", "unit-tests.txt"]
+    },
+    {
+      "name": "tenant_isolation_and_permissions",
+      "status": "passed",
+      "evidence": ["local-simulation-certification.json", "validation-checks.json"]
+    },
+    {
+      "name": "no_silent_failure_on_marking",
+      "status": "passed",
+      "evidence": ["unit-tests.txt", "validation-checks.json"]
+    },
+    {
+      "name": "adjacent_platform_regression",
+      "status": "passed",
+      "evidence": ["unit-tests.txt", "validation-checks.json"]
+    }
+  ]
+}

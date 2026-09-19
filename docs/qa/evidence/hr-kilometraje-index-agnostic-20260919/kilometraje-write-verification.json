@@ -1,0 +1,42 @@
+{
+  "verification_id": "km-index-shape-drift-20260919",
+  "purpose": "Documentar la causa raiz de los 500 ERROR_INTERNO al cerrar jornada vehicular con kilometraje y verificar que la escritura corregida no depende de la forma del indice unico parcial.",
+  "defect_reference": "FM-01 (v2)",
+  "commit_fixed": "3e05795",
+  "index_shape_by_environment": {
+    "local": {
+      "indexname": "th_jornada_kilometrajes_one_active",
+      "indexdef": "CREATE UNIQUE INDEX th_jornada_kilometrajes_one_active ON public.th_jornada_kilometrajes USING btree (tenant_id, COALESCE(route_id, '-1'::integer), COALESCE(employee_id, '-1'::integer)) WHERE (active = true)",
+      "source": "apps/api/prisma/migrations/20260917120000_hr_workday_novelties_foundation/migration.sql"
+    },
+    "qa": {
+      "indexname": "th_jornada_kilometrajes_one_active",
+      "indexdef": "CREATE UNIQUE INDEX th_jornada_kilometrajes_one_active ON public.th_jornada_kilometrajes USING btree (tenant_id, route_id, employee_id, active) WHERE (active = true)",
+      "source": "lectura de solo lectura de pg_indexes contra el pooler de Supabase QA (2026-09-19)"
+    },
+    "conclusion": "El mismo nombre de indice tiene forma distinta por ambiente: expresiones COALESCE en local/produccion y columnas planas en QA. Ningun ON CONFLICT es portable, porque PostgreSQL 42P10 cuando la clausula de conflicto no coincide con un indice unico real. El error aborta la transaccion (25P02) y el cierre de jornada se revierte con 500 ERROR_INTERNO."
+  },
+  "corrected_write_strategy": {
+    "mechanism": "pg_advisory_xact_lock(hashtextextended('<tenant>:kilometraje:<route|sin-ruta>:<employee>', 0)) + SELECT del renglon activo + UPDATE si existe o INSERT si no existe",
+    "index_dependency": "ninguna: no se usa ON CONFLICT, por lo que la forma del indice parcial deja de importar",
+    "concurrency": "el lock de asesoria serializa los escritores del mismo renglon logico dentro de la transaccion; el indice parcial sigue garantizando la unicidad a nivel de base de datos",
+    "error_handling": "el raw ya no se envuelve en .catch(() => null); cualquier fallo real se propaga y revierte la transaccion de forma visible"
+  },
+  "local_write_verification": {
+    "api": "http://127.0.0.1:3100 (rama desarrollo, commit 3e05795)",
+    "rows_written": [
+      { "id": 19, "route_id": 259, "employee_id": 479, "value": "42.5", "vehicle_plate": "SIMBLL01", "active": true },
+      { "id": 18, "route_id": 259, "employee_id": 480, "value": "42.5", "vehicle_plate": "SIMBLL01", "active": true },
+      { "id": 17, "route_id": 261, "employee_id": 483, "value": "38.2", "vehicle_plate": "SIMENV01", "active": true },
+      { "id": 16, "route_id": 261, "employee_id": 484, "value": "38.2", "vehicle_plate": "SIMENV01", "active": true }
+    ],
+    "note": "Rutas vehiculares del simulacro local (Bello SIMBLL01 y Envigado SIMENV01), dos marcadores por horario; un unico renglon activo por (tenant, route, employee), sin duplicados.",
+    "certification": "local-simulation-certification.json (18 controles aprobados, incluido vehicle_exits_record_mileage)"
+  },
+  "qa_pre_fix_state": {
+    "api_commit": "f04add495e52",
+    "kilometraje_row_count": 1,
+    "symptom": "4 salidas vehiculares (Bello y Envigado) respondieron 500 ERROR_INTERNO; all_exits_accepted en false en la certificacion QA previa (docs/qa/evidence/hr-markings-medellin-20260919/qa-certification.json)."
+  },
+  "remote_migration_status": "NO ejecutada. Alinear el indice de QA requiere una migracion remota, que necesita autorizacion expresa independiente y no fue concedida; la correccion es de codigo y portable entre ambas formas de indice."
+}

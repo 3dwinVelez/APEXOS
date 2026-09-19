@@ -1,0 +1,19 @@
+{
+  "environment": "LOCAL",
+  "api_url": "http://127.0.0.1:3100",
+  "admin_email": "qa.med.admin.20260919171839@scj.test",
+  "admin_password": "Qa-Med-7bb4e6f5946f#26",
+  "tenant_id": "001346eb-ba7f-4103-b032-73a219f1333e",
+  "password": "Qa-Med-7bb4e6f5946f#26",
+  "date": "2026-09-19",
+  "run_id": "20260919171839",
+  "routes": [
+    258,
+    259,
+    260,
+    261,
+    262,
+    263
+  ],
+  "generated_at": "2026-09-19T17:19:58.506Z"
+}
