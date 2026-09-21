@@ -1,0 +1,29 @@
+{
+  "change_id": "hr-phase-b-mallas-cierre-20260921",
+  "generated_at": "2026-09-21T09:00:00-05:00",
+  "environment": "LOCAL",
+  "checks": [
+    { "name": "certificacion_marcacion_diferida_sin_senal", "command": "npm run certify:hr-offline-deferred-marking:local", "result": "passed", "detail": "35/35 controles, status=passed", "evidence": "../hr-offline-deferred-marking-20260921/local-certification.json" },
+    { "name": "certificacion_integridad_horarios_y_cierre_diagnostico", "command": "npm run certify:hr-schedule-write-integrity:local", "result": "passed", "detail": "21/21 controles, 11 peticiones, by_status {200:9,400:1,409:1}, 0 errores de servidor; Bloque D completo (indice de asignaciones, prevalidacion antes de escribir, 409 con details, cliente preserva details, formulario prevalida y etiqueta)", "evidence": "../hr-schedule-write-integrity-20260920/local-simulation-certification.json" },
+    { "name": "evidencia_navegador_bloqueo_cliente", "command": "browser-use MCP sobre stack local (API 3201, web 3005)", "result": "passed", "detail": "Creacion de malla exitosa; picker etiqueta 'Ya tiene malla 08:00-17:00 en esta fecha'; segundo guardado bloqueado en cliente con issues detallados y banner rosa; red muestra POST /hr/routes/prevalidate sin POST /hr/routes posterior", "evidence": "../mallas-conflict-ux-20260921/browser-blocked-save.png" },
+    { "name": "suite_web_completa", "command": "npx node --test apps/web/test/", "result": "passed", "detail": "333 tests, 333 pass, 0 fail", "evidence": "unit-tests.txt" },
+    { "name": "contratos_hr_web", "command": "npm --workspace apps/web run test:hr-schedule", "result": "passed", "detail": "50 tests, 50 pass, 0 fail", "evidence": "unit-tests.txt" },
+    { "name": "suite_api_completa", "command": "npx node --test apps/api/test/", "result": "passed_with_preexisting_baseline", "detail": "348 tests, 343 pass, 3 fail, 2 skipped. Las 3 fallas son el conjunto preexistente ajeno a hr: inventario lista de productos (inventory-transfer-product-list-ux), offline-bootstrap (REDIS_URL), compras ventas IVA control numerico (zero-friendly-number-input). Cero regresiones atribuibles al cambio.", "evidence": "unit-tests.txt" },
+    { "name": "lint_web", "command": "npm --workspace apps/web run lint", "result": "passed", "detail": "0 errores, 13 warnings preexistentes", "evidence": "unit-tests.txt" },
+    { "name": "typecheck_web", "command": "npm --workspace apps/web run typecheck", "result": "passed", "detail": "tsc --noEmit exit 0", "evidence": "unit-tests.txt" },
+    { "name": "prisma_validate", "command": "npm run prisma:validate", "result": "passed", "detail": "schema valido; migracion 20260921000000_gps_inactivo_sin_senal_novelty_type es de datos e idempotente", "evidence": "unit-tests.txt" }
+  ],
+  "out_of_scope_findings": [
+    {
+      "name": "qa_deterministic_validation_409_mismo_dia",
+      "severity": "preexistente",
+      "detail": "El 409 DUPLICADO del qa:deterministic-validation en re-ejecuciones del mismo dia es un bug del modulo contable: la numeracion EM no persiste en tenant config (read-modify-write concurrente del blob config con la numeracion CP la pisa), cada run re-emite EM-000001 y choca con el indice unico cntCabdoc(tenant_id, document_type, document_number). Verificado con datos: tenant demo tiene EM count=1 y accounting_numbering solo contiene CP. No es regresion de este cambio (ramas P2002 del setErrorHandler intactas; el diff no toca numeracion contable). Debe abrirse como incidencia aparte del modulo comercial/contable."
+    }
+  ],
+  "cleanup": {
+    "local_fixtures": "ruta 333 cancelada, empleado UIC-1789996932249 y usuario ui.check desactivados en base local",
+    "servers": "API 3201 y web 3005 detenidos",
+    "scratch": "archivos temporales borrados",
+    "remote_writes": "ninguna escritura en QA, produccion o Supabase remoto"
+  }
+}

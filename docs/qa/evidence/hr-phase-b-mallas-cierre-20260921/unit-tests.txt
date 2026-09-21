@@ -1,0 +1,66 @@
+=== WEB TESTS 2026-09-21T08:47:31-05:00 ===
+✔ pedidos adapta la consulta a móvil (0.3101ms)
+✔ la configuracion TMS gobierna operacion, movil y notificaciones (0.2254ms)
+✔ el planeador evalua consolidacion, capacidad, ruta y alternativas (0.1814ms)
+✔ los tarifarios exponen vigencias, versiones y componentes de costo (0.5941ms)
+✔ la torre cubre demanda, viaje, entrega y liquidacion (4.1006ms)
+✔ los maestros consumen contratos tenant-first del TMS (0.4107ms)
+ℹ tests 333
+ℹ suites 0
+ℹ pass 333
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7533.3439
+=== API TESTS ===
+      at TestContext.<anonymous> (C:\Users\mq1\Documents\Proyectos\APEXOS-worktrees\desarrollo-controlled-promotion\apps\api\test\zero-friendly-number-input.test.js:27:36)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '"use client";\r\nimport Link from "next/link";\r\nimport { FormEvent,useEffect,useMemo,useState } from "react";\r\nimport { Eye,Plus,Search,Settings2 } from "lucide-react";\r\nimport { api } from "@/lib/api";\r\nimport { ComprasNav } from "@/components/compras-nav";\r\nimport { ModalFrame } from "@/components/ui/ModalFrame";\r\nimport { LATAM_COUNTRIES } from "@/lib/latam";\r\ntype Master={code:string;description:string;active:boolean;days?:number};type Location={dane_code:string;city:string;department:string;active:boolean};type Masters={document_types:Master[];locations:Location[];supplier_categories:Master[];payment_terms:Master[]};type Supplier={id:number;name:string;tax_id?:string;city?:string;email?:string;phone?:string;metadata?:{verification_digit?:number;category?:string}};\r\nconst emptyMasters:Masters={document_types:[],locations:[],supplier_categories:[],payment_terms:[]};const emptyForm={name:"",document_type:"31",tax_id:"",country:"CO",dane_code:"",category_code:"GENERAL",payment_term_code:"AP30",email:"",phone:"",address:"",contact_name:"",contact_phone:"",contact_email:"",notes:""};\r\nfunction dv(value:string){const digits=value.replace(/\\D/g,"");if(!digits)return "";const weights=[71,67,59,53,47,43,41,37,29,23,19,17,13,7,3];const rest=digits.padStart(15,"0").slice(-15).split("").reduce((sum,n,index)=>sum+Number(n)*weights[index],0)%11;return String(rest>1?11-rest:rest)}\r\nexport default function Page(){const [rows,setRows]=useState<Supplier[]>([]),[masters,setMasters]=useState<Masters>(emptyMasters),[query,setQuery]=useState(""),[error,setError]=useState(""),[ok,setOk]=useState(""),[saving,setSaving]=useState(false),[createOpen,setCreateOpen]=useState(false),[categoryOpen,setCategoryOpen]=useState(false);const [form,setForm]=useState(emptyForm),[category,setCategory]=useState({code:"",description:"",active:true});async function load(){const [a,b]=await Promise.all([api<Supplier[]>("/api/v1/purchases/suppliers"),api<Masters>("/api/v1/accounting/third-party-masters")]);setRows(a||[]);setMasters(b||emptyMasters)}useEffect(()=>{void load().catch(e=>setError(e instanceof Error?e.message:"No se pudo cargar"))},[]);const filtered=useMemo(()=>{const n=query.toLowerCase().trim();return n?rows.filter(r=>[r.name,r.tax_id,r.city,r.email,r.metadata?.category].some(v=>String(v||"").toLowerCase().includes(n))):rows},[query,rows]);async function create(e:FormEvent){e.preventDefault();setSaving(true);setError("");try{const term=masters.payment_terms.find(r=>r.code===form.payment_term_code);await api("/api/v1/purchases/suppliers",{method:"POST",body:JSON.stringify({name:form.name,tax_id:form.tax_id,country:form.country,address:form.address,email:form.email||undefined,phone:form.phone||undefined,credit_days:Number(term?.days||0),metadata:{document_type:form.document_type,dane_code:form.dane_code,category_code:form.category_code,payment_term_code:form.payment_term_code,notes:form.notes,purchase_order_contact:{name:form.contact_name,phone:form.contact_phone,email:form.contact_email}}})});setCreateOpen(false);setForm(emptyForm);setOk("Proveedor creado");await load()}catch(e){setError(e instanceof Error?e.message:"No se pudo crear")}finally{setSaving(false)}}async function saveCategory(e:FormEvent){e.preventDefault();setSaving(true);try{setMasters(await api<Masters>("/api/v1/accounting/third-party-masters/supplier-categories",{method:"POST",body:JSON.stringify(category)}));setCategory({code:"",description:"",active:true});setOk("Categoria guardada")}catch(e){setError(e instanceof Error?e.message:"No se pudo guardar")}finally{setSaving(false)}}return <div className="space-y-5"><header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between"><div><p className="text-sm font-medium text-apex">Compras</p><h1 className="text-3xl font-semibold">Proveedores</h1><p className="text-sm text-neutral-600">Directorio de consulta; la edición se realiza desde la ficha individual.</p></div><div className="flex gap-2"><button className="btn-secondary" onClick={()=>setCategoryOpen(true)}><Settings2 size={16}/> Categorias</button><button className="btn-primary" onClick={()=>setCreateOpen(true)}><Plus size={16}/> Nuevo proveedor</button></div></header><ComprasNav/>{error?<Message tone="red">{error}</Message>:null}{ok?<Message tone="green">{ok}</Message>:null}<section className="rounded-md border border-line bg-white"><div className="border-b border-line p-4"><label className="relative block max-w-xl"><Search className="absolute left-3 top-3 text-neutral-400" size={16}/><input className="control pl-9" placeholder="Buscar por nombre, NIT, ciudad, correo o categoria" value={query} onChange={e=>setQuery(e.target.value)}/></label></div><div className="overflow-x-auto"><table className="w-full min-w-[850px] text-sm"><thead><tr className="border-b bg-paper text-left"><th className="p-3">Proveedor</th><th>NIT / DV</th><th>Ciudad</th><th>Categoria</th><th>Contacto</th><th className="pr-3 text-right">Accion</th></tr></thead><tbody>{filtered.map(r=><tr className="border-b" key={r.id}><td className="p-3 font-medium">{r.name}</td><td>{r.tax_id||"--"}{r.metadata?.verification_digit!==undefined?`-${r.metadata.verification_digit}`:""}</td><td>{r.city||"--"}</td><td>{r.metadata?.category||"General"}</td><td>{r.email||r.phone||"--"}</td><td className="pr-3 text-right"><Link className="btn-secondary" href={`/dashboard/compras/proveedores/${r.id}`}><Eye size={15}/> Ver información</Link></td></tr>)}{!filtered.length?<tr><td className="p-8 text-center text-neutral-500" colSpan={6}>No hay resultados.</td></tr>:null}</tbody></table></div></section>{createOpen?<ModalFrame title="Crear proveedor" onClose={()=>setCreateOpen(false)} maxWidth="md:max-w-5xl"><form className="space-y-4" onSubmit={create}><div className="grid gap-3 md:grid-cols-3"><F label="Nombre o razon social"><input className="control" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} required/></F><F label="Tipo de documento"><select className="control" value={form.document_type} onChange={e=>setForm({...form,document_type:e.target.value})}>{masters.document_types.filter(active).map(r=><option key={r.code} value={r.code}>{r.code} - {r.description}</option>)}</select></F><F label="Numero / DV"><div className="flex gap-2"><input className="control" value={form.tax_id} onChange={e=>setForm({...form,tax_id:e.target.value.replace(/\\D/g,"")})}/><span className="rounded border border-line bg-paper px-3 py-2 font-mono">{dv(form.tax_id)||"-"}</span></div></F><F label="Pais"><select className="control" value={form.country} onChange={e=>setForm({...form,country:e.target.value})}>{LATAM_COUNTRIES.map(r=><option key={r.code} value={r.code}>{r.name}</option>)}</select></F><F label="Ciudad"><select className="control" value={form.dane_code} onChange={e=>setForm({...form,dane_code:e.target.value})} required><option value="">Seleccionar</option>{masters.locations.filter(active).map(r=><option key={r.dane_code} value={r.dane_code}>{r.city} - {r.department}</option>)}</select></F><F label="Categoria"><select className="control" value={form.category_code} onChange={e=>setForm({...form,category_code:e.target.value})}>{masters.supplier_categories.filter(active).map(r=><option key={r.code} value={r.code}>{r.description}</option>)}</select></F><F label="Condicion de pago"><select className="control" value={form.payment_term_code} onChange={e=>setForm({...form,payment_term_code:e.target.value})}>{masters.payment_terms.filter(active).map(r=><option key={r.code} value={r.code}>{r.code} - {r.description}</option>)}</select></F><F label="Correo"><input className="control" type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})}/></F><F label="Telefono"><input className="control" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})}/></F><F label="Contacto para OC"><input className="control" value={form.contact_name} onChange={e=>setForm({...form,contact_name:e.target.value})}/></F><F label="Telefono contacto"><input className="control" value={form.contact_phone} onChange={e=>setForm({...form,contact_phone:e.target.value})}/></F><F label="Correo contacto"><input className="control" type="email" value={form.contact_email} onChange={e=>setForm({...form,contact_email:e.target.value})}/></F><F label="Direccion"><input className="control" value={form.address} onChange={e=>setForm({...form,address:e.target.value})}/></F><F label="Notas"><input className="control" value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})}/></F></div><Actions saving={saving} cancel={()=>setCreateOpen(false)}/></form></ModalFrame>:null}{categoryOpen?<ModalFrame title="Categorias de proveedores" onClose={()=>setCategoryOpen(false)} maxWidth="md:max-w-2xl"><form className="grid gap-3 md:grid-cols-[160px_1fr_auto]" onSubmit={saveCategory}><F label="Codigo"><input className="control uppercase" value={category.code} onChange={e=>setCategory({...category,code:e.target.value.toUpperCase()})} required/></F><F label="Nombre"><input className="control" value={category.description} onChange={e=>setCategory({...category,description:e.target.value})} required/></F><button className="btn-primary mt-6" disabled={saving}>Guardar</button></form><div className="mt-4 divide-y rounded border border-line">{masters.supplier_categories.map(r=><button className="flex w-full justify-between p-3 text-sm" key={r.code} onClick={()=>setCategory({code:r.code,description:r.description,active:r.active!==false})}><span><b>{r.code}</b> {r.description}</span><span>{r.active!==false?"Activa":"Inactiva"}</span></button>)}</div></ModalFrame>:null}</div>}\r\nfunction active(row:{active:boolean}){return row.active!==false}function F({label,children}:{label:string;children:React.ReactNode}){return <label className="text-sm"><span className="mb-1 block text-neutral-600">{label}</span>{children}</label>}function Actions({saving,cancel}:{saving:boolean;cancel:()=>void}){return <div className="flex justify-end gap-'... 466 more characters,
+    expected: /ZeroFriendlyNumberInput/,
+    operator: 'match',
+    diff: 'simple'
+  }
+=== WEB HR CONTRACTS ===
+# tests 50
+# suites 0
+# pass 50
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 744.6465
+=== LINT ===
+  127:9  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+✖ 13 problems (0 errors, 13 warnings)
+
+=== TYPECHECK ===
+> @apex-os/web@2.0.0 typecheck
+> tsc -p tsconfig.typecheck.json --noEmit
+
+=== PRISMA VALIDATE ===
+Environment variables loaded from .env
+Prisma schema loaded from apps\api\prisma\schema.prisma
+The schema at apps\api\prisma\schema.prisma is valid 🚀
+=== API SUMMARY (re-run completo) ===
+ℹ tests 348
+ℹ pass 343
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 2
+fallas (conjunto preexistente ajeno a hr):
+✖ inventario ofrece lista de productos filtrable y exportable (19.3399ms)
+✖ apps\api\test\offline-bootstrap.test.js (1072.0142ms)
+✖ compras ventas IVA y retenciones reutilizan el control numerico (22.3548ms)
+✖ failing tests:
+✖ inventario ofrece lista de productos filtrable y exportable (19.3399ms)
+✖ apps\api\test\offline-bootstrap.test.js (1072.0142ms)
+✖ compras ventas IVA y retenciones reutilizan el control numerico (22.3548ms)
