@@ -198,7 +198,12 @@ function shouldBlockHrWriteFallback(path: string, method: string) {
   // escritura rechazada cayera al respaldo Supabase, el horario quedaria huerfano en
   // operational_routes y la pantalla reportaria exito sin mostrarlo nunca.
   const hrRouteDetailWrite = /^\/api\/v1\/hr\/routes\/[^/]+$/.test(pathname);
-  return method !== "GET" && (criticalWritePaths.has(pathname) || hrRouteDetailWrite);
+  // Las escrituras self-service del operario (marcaciones, actividades y ping GPS) solo existen
+  // en la API operativa, que es la que aplica la regla del dia por punched_at y registra la
+  // novedad GPS_INACTIVO_SIN_SENAL. Si un 409/422 cayera al respaldo, la pantalla mostraria
+  // exito sin marcacion real y la cola offline perderia el motivo que debe mostrar al operario.
+  const hrSelfServiceWrite = pathname.startsWith("/api/v1/hr/self/");
+  return method !== "GET" && (criticalWritePaths.has(pathname) || hrRouteDetailWrite || hrSelfServiceWrite);
 }
 
 async function refreshSessionToken() {
@@ -302,6 +307,7 @@ export async function authorizedJson<T>(input: string, options: RequestInit = {}
     throw Object.assign(new Error(message), {
       status: response.status,
       code: typeof body.code === "string" ? body.code : "",
+      details: body.details && typeof body.details === "object" ? body.details : undefined,
       retryable: response.status === 408 || response.status === 429
     });
   }
@@ -4302,6 +4308,7 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
     throw Object.assign(new Error(message), {
       status: response.status,
       code: typeof body.code === "string" ? body.code : "",
+      details: body.details && typeof body.details === "object" ? body.details : undefined,
       retryable: response.status === 408 || response.status === 429
     });
   }

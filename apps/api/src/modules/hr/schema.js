@@ -23,9 +23,9 @@ const punchSchema = {
       user_name: { type: "string" },
       type: { type: "string" },
       punched_at: { type: "string" },
-      latitude: { type: "number" },
-      longitude: { type: "number" },
-      accuracy_meters: { type: "number" },
+      latitude: { type: ["number", "null"] },
+      longitude: { type: ["number", "null"] },
+      accuracy_meters: { type: ["number", "null"] },
       vehicle_plate: { type: "string" },
       route_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
       kilometraje_dia: { anyOf: [{ type: "number" }, { type: "string" }] },
@@ -93,6 +93,20 @@ const routeBulkSchema = {
   }
 };
 
+// La prevalidacion recibe la misma forma que el guardado: un solo dia (date) o un rango
+// (start_date/end_date). Exigir el rango aqui dejaba fuera el payload de creacion simple.
+const routePrevalidateSchema = {
+  body: {
+    type: "object",
+    required: ["employees"],
+    properties: {
+      ...routeBulkSchema.body.properties,
+      date: { type: "string" }
+    },
+    anyOf: [{ required: ["date"] }, { required: ["start_date", "end_date"] }]
+  }
+};
+
 const gpsPingSchema = {
   body: {
     type: "object",
@@ -102,9 +116,9 @@ const gpsPingSchema = {
       user_name: { type: "string" },
       vehicle_plate: { type: "string" },
       route_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
-      latitude: { type: "number" },
-      longitude: { type: "number" },
-      accuracy_meters: { type: "number" },
+      latitude: { type: ["number", "null"] },
+      longitude: { type: ["number", "null"] },
+      accuracy_meters: { type: ["number", "null"] },
       source: { type: "string" },
       captured_at: { type: "string" },
       metadata: { type: "object" }
@@ -134,9 +148,9 @@ const workActivitySchema = {
       activity_type_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
       employee_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
       occurred_at: { type: "string" },
-      latitude: { type: "number" },
-      longitude: { type: "number" },
-      accuracy_meters: { type: "number" },
+      latitude: { type: ["number", "null"] },
+      longitude: { type: ["number", "null"] },
+      accuracy_meters: { type: ["number", "null"] },
       approximate_address: { type: "string" },
       observation: { type: "string" },
       gps_required: { type: "boolean" },
@@ -375,6 +389,7 @@ module.exports = {
   punchSchema,
   routeSchema,
   routeBulkSchema,
+  routePrevalidateSchema,
   gpsPingSchema,
   activityTypeSchema,
   workActivitySchema,
