@@ -1,0 +1,91 @@
+{
+  "environment": "QA",
+  "web_url": "https://apexos-web-qa-production.up.railway.app",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "api_health_commit": "2be1ce5aa0dd",
+  "run_id": "20260921-lote3-browser",
+  "date": "2026-09-21",
+  "tenant_name": "SCJ (QA)",
+  "tenant_id": "cbbf3627-4336-4f23-95c6-1077414bcd17",
+  "admin_role": "APEX_ADMIN",
+  "admin_role_id": 13,
+  "temp_admins": [
+    {
+      "user_id": 515,
+      "email": "qa.lote3.1790006276283@scj.test",
+      "purpose": "sonda HTTP autenticada de solo lectura del contrato de truncamiento",
+      "status_after_cleanup": "active=false"
+    },
+    {
+      "user_id": 516,
+      "email": "qa.lote3.browser.1790006383657@scj.test",
+      "purpose": "sesion de navegador (replica funcional de las senales de truncamiento)",
+      "status_after_cleanup": "active=false"
+    }
+  ],
+  "admin_password": "no persistida; usuarios desactivados al terminar",
+  "qa_data_volume": {
+    "scj_routes_today": 2,
+    "scj_routes_total": 109,
+    "note": "109 horarios en SCJ QA: el resumen de eventos (tope 100) queda truncado de forma natural, lo que dispara el banner ambar sin fabricar fixtures."
+  },
+  "truncation_contract_observed": {
+    "event_summaries": {
+      "status": 200,
+      "truncation": { "truncated": true, "limit": 100, "returned": 100, "hint": "El resumen cubre las 100 rutas mas recientes; acota el rango de fechas en el listado de horarios para revisar rutas antiguas." }
+    },
+    "operations_map": {
+      "status": 200,
+      "truncation": { "truncated": false, "collections": [], "hint": "" },
+      "note": "hoy 2 rutas, bajo los limites de ping/punch/actividad: sin recorte y sin banner (correcto, sin falsos positivos)"
+    },
+    "routes_limit_clamp": {
+      "limit_9999_date_today": { "status": 200, "returned": 2, "note": "el servidor acota el limite sin error" },
+      "limit_500_full_year": { "status": 200, "returned": 109, "note": "tope 500 respetado, devuelve todo el rango" }
+    }
+  },
+  "browser_observations": {
+    "rutas_banner": {
+      "expected": "banner ambar role=status con el hint de event-summaries cuando truncation.truncated=true",
+      "observed": "div[role=status] border-amber-300 bg-amber-50 con texto 'El resumen cubre las 100 rutas mas recientes; acota el rango de fechas en el listado de horarios para revisar rutas antiguas.'",
+      "screenshot": "qa-01-banner-truncamiento-rutas.png"
+    },
+    "rutas_network": {
+      "expected": "el cliente pide /hr/routes?limit=500 y /hr/routes/event-summaries",
+      "observed": "GET /api/v1/hr/routes?limit=500 [200] y GET /api/v1/hr/routes/event-summaries [200] con refresco de 5s"
+    },
+    "mapa": {
+      "expected": "renderiza sin regresion y SIN banner ambar (operations.truncation.truncated=false)",
+      "observed": "2 rutas / 27 equipo / 0 en linea / 25 sin GPS, mapa cargado, 'Rastreo en vivo activo'; cero banners ambar",
+      "screenshot": "qa-02-mapa-sin-regresion.png"
+    },
+    "bundle_parity": {
+      "chunks_scanned": 14,
+      "needles_found": {
+        "horarios mas recientes del tenant": true,
+        "El mapa del dia esta truncado": true,
+        "amplia ping_limit/punch_limit/activity_limit": true,
+        "El resumen de eventos cubre solo las rutas mas recientes": true
+      }
+    }
+  },
+  "accounting_qa_scope": {
+    "em_documents_created_in_qa": 0,
+    "reason": "las entradas de mercancia son escrituras contables dificiles de revertir en el tenant demo compartido; la certificacion autoritativa es LOCAL (script versionado + 6 unit tests)",
+    "scj_qa_accounting_numbering": "ausente (el incidente era del tenant demo local); no hay estado QA que migrar"
+  },
+  "nyvora_certification_artifacts": {
+    "route_id": 303,
+    "punch_ids": [1462, 1463, 1464, 1465],
+    "activity_id": 124,
+    "evidence_id": 124,
+    "certification_user_deactivated": true,
+    "note": "Quedan en QA como artefacto de certificacion, igual que rutas 301/288/300 de releases anteriores."
+  },
+  "cleanup_executed": {
+    "admin_user_515": "active=false (desactivacion verificada)",
+    "admin_user_516": "active=false (desactivacion verificada)",
+    "deletions": "ninguna; solo desactivaciones"
+  },
+  "secrets_policy": "Las contrasenas de los admins temporales no se persisten en ningun archivo de evidencia; solo existieron en un archivo temporal local fuera del repositorio, ya eliminado."
+}
