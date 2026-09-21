@@ -86,3 +86,35 @@ export function scheduleSameDayShiftIssue(startTime?: string | null, endTime?: s
   if (end <= start) return "La hora final debe ser estrictamente posterior a la hora inicial dentro de la misma fecha.";
   return "";
 }
+
+export type ScheduleTruncationSignal = {
+  truncated?: boolean;
+  limit?: number;
+  returned?: number;
+  hint?: string;
+  collections?: { collection: string; limit: number; returned: number }[];
+};
+
+// Los topes de lectura del backend recortan datos en silencio; estas avisos hacen el
+// recorte visible para que la pantalla no muestre un dia incompleto como si estuviera completo.
+export function scheduleTruncationNotices(input: {
+  routesCount?: number;
+  routesLimit?: number;
+  summaries?: ScheduleTruncationSignal | null;
+  operations?: ScheduleTruncationSignal | null;
+}): string[] {
+  const notices: string[] = [];
+  const routesLimit = Number(input.routesLimit || 0);
+  const routesCount = Number(input.routesCount || 0);
+  if (routesLimit > 0 && routesCount >= routesLimit) {
+    notices.push(`La lista muestra los ${routesCount} horarios mas recientes del tenant; acota el rango de fechas para revisar el historial antiguo.`);
+  }
+  if (input.summaries?.truncated) {
+    notices.push(input.summaries.hint || "El resumen de eventos cubre solo las rutas mas recientes.");
+  }
+  if (input.operations?.truncated) {
+    const collections = (input.operations.collections || []).map((item) => item.collection).filter(Boolean).join(", ");
+    notices.push(`El mapa del dia esta truncado${collections ? ` (${collections})` : ""}: ${input.operations.hint || "amplia ping_limit/punch_limit/activity_limit o acota la fecha."}`);
+  }
+  return notices;
+}

@@ -1,0 +1,79 @@
+{
+  "change_id": "lote3-hr-accounting-numbering-20260921",
+  "commit": "2de21b0bd728db154f24313dee66a40733d79d69",
+  "commit_note": "2de21b0 es el HEAD funcional que contiene exactamente el cambio certificado: fix(accounting) bb1796a (numeracion atomica auto-sanada EM/AJ/AE/AS) + feat(hr) 2de21b0 (lote 3: topes gobernados y truncamiento visible), con sus dos certificaciones locales versionadas y evidencia. Este archivo y preqa-scope-manifest.json viajan en el commit docs siguiente, que es el candidato de la promocion; 2de21b0 es su ancestro directo.",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "accounting-numbering-local-certification.json",
+        "hr-monitor-read-truncation-local-certification.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "accounting-numbering-local-certification.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "validation-checks.json",
+        "unit-tests.txt"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "hr-monitor-read-truncation-local-certification.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "validation-checks.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/accounting-numbering-integrity-local.js",
+    "evidence": [
+      "accounting-numbering-local-certification.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-monitor-read-truncation-local.js",
+    "evidence": [
+      "hr-monitor-read-truncation-local-certification.json",
+      "unit-tests.txt",
+      "validation-checks.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "APEXOS release owner (Edwin)",
+    "approved_at": "2026-09-21T10:45:00-05:00",
+    "authorization_basis": "Instruccion expresa del release owner del 2026-09-21: 'termina los pendientes con el equipo y alinea todas la ramas en su ultima version funcional y revisada'. Esta aprobacion habilita el despliegue del candidato a QA para certificacion funcional de navegador (scope promotion_to_develop_for_qa); NO acredita por si sola el funcionamiento en QA y qa_status permanece pending hasta la certificacion de navegador en QA con el commit desplegado, requisito de la puerta develop -> main segun docs/CHANGE_APPROVAL_QA_POLICY.md."
+  },
+  "observations": [
+    "Certificacion LOCAL 1 (incidente de contabilidad): scripts/certifications/accounting-numbering-integrity-local.js -> 16/16 controles, status=passed. Reproduce el incidente EM (config revertido a next_number=1 con 5 entradas ya emitidas) y prueba que reserveAccountingDocumentNumber reserva EM-000006 (no EM-000001), que respeta un next_number configurado mayor, que honra el formato legacy en objeto {EM:{next_number:7}}, que AJ y AE/AS auto-sanan igual, y que se adquiere el candado advisory tenant:accounting-numbering antes de reservar. Aserciones de codigo: 4 sitios cnt_cabdoc llaman al helper y mergeNumbering delega en normalizeAccountingNumberingRows.",
+    "Certificacion LOCAL 2 (lote 3 HR, en vivo): scripts/certifications/hr-monitor-read-truncation-local.js -> 12/12 controles, status=passed. Arranca la API Fastify contra la base local, autentica un admin temporal del tenant SCJ y verifica el contrato en vivo: GET /api/v1/hr/operations-map y GET /api/v1/hr/routes/event-summaries devuelven el campo aditivo truncation (event-summaries con limit=100), GET /api/v1/hr/routes?limit=500 responde 200. Aserciones de codigo: listRoutes clamp 50..500, listRouteEventSummaries consulta SUMMARY_LIMIT+1, hrScheduleMonitor exporta scheduleTruncationNotices y ScheduleTruncationSignal, y rutas/page.tsx y mapa/page.tsx pintan banner ambar role=status.",
+    "Suites: apps/api 87/87 (hr-* + accounting-* + third-party + service-order-number), apps/web hr-schedule-monitor 14/14, typecheck exit 0, lint 0 errores (1 warning react-hooks/exhaustive-deps preexistente en mapa/page.tsx:426, ajeno al cambio), prisma validate OK. Capturados en unit-tests.txt y validation-checks.json.",
+    "Falla preexistente ajena: apps/api/test/zero-friendly-number-input.test.js falla porque proveedores/page.tsx no usa ZeroFriendlyNumberInput; el fallo existe en el baseline HEAD (grep 0 coincidencias) y esa pagina web no se toco en este release. No es regresion.",
+    "Campos de respuesta aditivos: truncation se agrega a event-summaries y operations-map sin cambiar la forma existente; los clientes que no lo leen siguen funcionando. listRoutes conserva su forma de arreglo y agrega gobierno del limite via query.limit.",
+    "Los caminos CxC/CxP (cxcCabdoc/cxpCabdoc) no se modifican: ya tenian candado advisory y deteccion de duplicado propia; el incidente era exclusivo de cnt_cabdoc (EM/AJ/AE/AS y el creador generico).",
+    "Sin migraciones de esquema en este release. Fixtures locales: las certificaciones crean un admin temporal que se desactiva al terminar (cleanup deactivate-only); no se escribio en QA, produccion ni Supabase remoto.",
+    "Archivos prohibidos excluidos de los commits: apps/web/next-env.d.ts, apps/web/tsconfig.json (artefactos locales generados), docs/qa/evidence/core-modules-deep-qa-20260917/QA-FULL-*.md y reports/qa/QA-DETERMINISTIC-DET-*.json. Permanecen sin estadear en el arbol de trabajo.",
+    "Pendiente para develop -> main (no bloquea el pre-QA): certificacion de navegador/plataforma en vivo sobre QA con el commit exacto desplegado, certificacion NYVORA y aprobacion QA explicita segun docs/CHANGE_APPROVAL_QA_POLICY.md."
+  ]
+}

@@ -624,12 +624,15 @@ async function updateSchedule(tenantId, id, input) {
 
 async function listRoutes(tenantId, query = {}) {
   const range = boundedReportRange(query, { defaultToday: false });
+  // Tope gobernado: sin rango el listado general puede pedir hasta 500 filas explicitas
+  // (query.limit); el frontend compara rows.length contra el limite para avisar truncamiento.
+  const limit = Math.min(Math.max(Number(query.limit) || (range ? 500 : 100), 50), 500);
   return prisma.runWithTenant(tenantId, async () => {
     const [rows, employees] = await Promise.all([
       prisma.timeRoute.findMany({
         where: range ? { date: { gte: range.start, lt: range.end } } : {},
         orderBy: { date: "desc" },
-        take: range ? 500 : 100
+        take: limit
       }),
       prisma.employee.findMany({ where: { active: true }, include: { user: { select: safeUserSelect } }, take: 500 })
     ]);
@@ -780,16 +783,29 @@ async function listOwnRoutes(tenantId, user) {
 
 async function listRouteEventSummaries(tenantId) {
   return prisma.runWithTenant(tenantId, async () => {
-    const [routes, employees] = await Promise.all([
+    const SUMMARY_LIMIT = 100;
+    const [summaryRows, employees] = await Promise.all([
       prisma.timeRoute.findMany({
         select: { id: true, date: true, employees: true },
         orderBy: { date: "desc" },
-        take: 100
+        take: SUMMARY_LIMIT + 1
       }),
       prisma.employee.findMany({ where: { active: true }, include: { user: { select: safeUserSelect } }, take: 500 })
     ]);
+    // Senal explicita de truncamiento: sin ella la pantalla muestra 100 rutas como si
+    // fueran todas. Se consulta limite+1 solo para detectar el desborde.
+    const summaryTruncated = summaryRows.length > SUMMARY_LIMIT;
+    const routes = summaryTruncated ? summaryRows.slice(0, SUMMARY_LIMIT) : summaryRows;
+    const truncation = {
+      truncated: summaryTruncated,
+      limit: SUMMARY_LIMIT,
+      returned: routes.length,
+      hint: summaryTruncated
+        ? "El resumen cubre las 100 rutas mas recientes; acota el rango de fechas en el listado de horarios para revisar rutas antiguas."
+        : ""
+    };
     const routeIds = routes.map((route) => route.id);
-    if (!routeIds.length) return { generated_at: new Date().toISOString(), routes: [] };
+    if (!routeIds.length) return { generated_at: new Date().toISOString(), routes: [], truncation };
 
     const employeeByAlias = new Map();
     for (const employee of employees) {
@@ -850,7 +866,8 @@ async function listRouteEventSummaries(tenantId) {
 
     return {
       generated_at: new Date().toISOString(),
-      routes: buildRouteEventSummaries({ routeContexts, punchGroups, activityGroups, closedGroups, evidenceRows, punchEvidenceRows, unlinkedPunches, unlinkedActivities })
+      routes: buildRouteEventSummaries({ routeContexts, punchGroups, activityGroups, closedGroups, evidenceRows, punchEvidenceRows, unlinkedPunches, unlinkedActivities }),
+      truncation
     };
   });
 }
