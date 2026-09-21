@@ -1,0 +1,43 @@
+{
+  "change_id": "lote3-hr-accounting-numbering-20260921",
+  "environment": "PROD",
+  "release_commit_main": "2934eee476df7d1bd982452c3f82b0157791e4fd",
+  "previous_main_commit": "fd8f2ec1a33bf1acfcf5751462da9125c0cbd8d5",
+  "verified_at": "2026-09-21T11:15:00-05:00",
+  "deploy_verification": {
+    "api_health": {
+      "url": "https://apexos-api-prod-production.up.railway.app/health",
+      "observed_commit": "2934eee476df",
+      "status": "OK",
+      "modules": 17,
+      "note": "despliegue automatico de Railway desde main; sondeado hasta observar el commit del release (intento 7, ~2 min tras el push)"
+    },
+    "web_bundle_parity": {
+      "url": "https://apexos-web-prod-production.up.railway.app/dashboard/talento-humano/rutas",
+      "method": "literales de codigo en chunks JS servidos por prod (14 chunks escaneados desde la pagina de rutas)",
+      "literals_found": [
+        "horarios mas recientes del tenant",
+        "El mapa del dia esta truncado",
+        "amplia ping_limit/punch_limit/activity_limit",
+        "El resumen de eventos cubre solo las rutas mas recientes"
+      ],
+      "interpretation": "el bundle productivo contiene las senales visibles de truncamiento del lote 3 HR; el navegador de produccion ejercita exactamente el codigo promocionado"
+    },
+    "endpoints_smoke": {
+      "GET /api/v1/hr/routes?limit=500": "401 TOKEN_INVALIDO sin auth (ruta existe y esta protegida por RBAC)",
+      "GET /api/v1/hr/routes/event-summaries": "401 TOKEN_INVALIDO sin auth (ruta existe y esta protegida por RBAC)",
+      "GET /api/v1/hr/operations-map?date=2026-09-21": "401 TOKEN_INVALIDO sin auth (ruta existe y esta protegida por RBAC)"
+    }
+  },
+  "database_verification_readonly": {
+    "method": "no se requirio sonda a la base productiva: este release NO incluye migraciones de esquema ni de datos",
+    "migrations_in_release": [],
+    "interpretation": "el cierre contable es logica de aplicacion (reserva auto-reparable max(configurado, MAX(document_number)+1) bajo candado advisory pg_advisory_xact_lock) y el lote 3 HR es aditivo en lectura (topes y bloque truncation); por tanto no hay migracion remota que ejecutar en este despliegue. Nota de continuidad: la migracion de datos 20260921000000_gps_inactivo_sin_senal_novelty_type del release anterior (hr-phase-b-mallas-cierre-20260921) sigue pendiente en el ledger productivo sin riesgo funcional (recordHrNovelty auto-siembra el catalogo por tenant); aplicarla con prisma migrate deploy via session pooler sigue siendo opcional y requiere autorizacion expresa independiente del release owner."
+  },
+  "cleanup": "Ningun fixture ni usuario temporal fue creado en produccion durante esta verificacion; todas las consultas fueron HTTP de solo lectura (health, chunks estaticos y smokes sin autenticar que esperan 401).",
+  "rollback": {
+    "strategy": "controlled_revert",
+    "previous_main_commit": "fd8f2ec1a33bf1acfcf5751462da9125c0cbd8d5",
+    "trigger": "ver rollback_plan.trigger en qa-approval-evidence.json del mismo directorio de evidencia (docs/qa/evidence/lote3-hr-accounting-numbering-20260921/)"
+  }
+}
