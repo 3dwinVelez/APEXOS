@@ -1,0 +1,55 @@
+{
+  "environment": "QA",
+  "web_url": "https://apexos-web-qa-production.up.railway.app",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "api_health_commit": "7d6e8d1a3e6e",
+  "run_id": "20260921031726",
+  "date": "2026-09-20",
+  "tenant_name": "SCJ (QA)",
+  "tenant_id": "cbbf3627-4336-4f23-95c6-1077414bcd17",
+  "tenant_note": "El id del tenant SCJ en QA es distinto del local 001346eb-ba7f-4103-b032-73a219f1333e.",
+  "admin_user_id": 509,
+  "admin_email": "qa.hrw.web.20260921031726@scj.test",
+  "admin_role": "APEX_ADMIN",
+  "admin_password": "no persistida; usuario desactivado al terminar",
+  "person_used": {
+    "code": "QA-ADM-001",
+    "name": "QA Administrativo Uno",
+    "site": "SEDE-PRINCIPAL",
+    "route_type": "administrativo",
+    "gps_active": true
+  },
+  "schedule_created": {
+    "time_route_id": 299,
+    "window": "09:00-13:00",
+    "date": "2026-09-20",
+    "status_at_certification": "active",
+    "employees": ["QA-ADM-001"]
+  },
+  "negative_cases": [
+    {
+      "case": "jornada_que_cruza_medianoche",
+      "window": "20:35-05:00",
+      "expected": "bloqueo en cliente, cero POST, panel de validacion visible",
+      "observed": "96 peticiones todas GET, cero POST; modal abierto con 'Faltan datos para guardar'"
+    },
+    {
+      "case": "solapamiento",
+      "window": "11:00-12:00",
+      "expected": "POST /api/v1/hr/routes 409 visible en banner rosa role=alert, modal abierto, sin registro nuevo",
+      "observed": "409 con banner rosa y toast de plataforma; ninguna fila creada"
+    }
+  ],
+  "cleanup_executed": {
+    "time_route_299": "status=inactive (1 fila)",
+    "admin_user": "User qa.hrw.web.% -> active=false (1 fila)",
+    "verified_after_cleanup": {
+      "active_temp_admins": 0,
+      "orphan_hor_operational_routes": 0,
+      "operational_routes_total": 18,
+      "route_assignments_total": 61
+    },
+    "deletions": "ninguna; solo desactivaciones"
+  },
+  "secrets_policy": "La contrasena del admin temporal no se persiste en ningun archivo de evidencia."
+}

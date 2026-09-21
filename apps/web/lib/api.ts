@@ -190,9 +190,15 @@ function shouldBlockHrWriteFallback(path: string, method: string) {
   const criticalWritePaths = new Set([
     "/api/v1/hr/gps/ping",
     "/api/v1/hr/time-punches",
-    "/api/v1/hr/work-activities"
+    "/api/v1/hr/work-activities",
+    "/api/v1/hr/routes",
+    "/api/v1/hr/routes/bulk"
   ]);
-  return method !== "GET" && criticalWritePaths.has(pathname);
+  // El monitor lee las mallas horarias desde la API operativa (TimeRoute). Si una
+  // escritura rechazada cayera al respaldo Supabase, el horario quedaria huerfano en
+  // operational_routes y la pantalla reportaria exito sin mostrarlo nunca.
+  const hrRouteDetailWrite = /^\/api\/v1\/hr\/routes\/[^/]+$/.test(pathname);
+  return method !== "GET" && (criticalWritePaths.has(pathname) || hrRouteDetailWrite);
 }
 
 async function refreshSessionToken() {
@@ -4228,7 +4234,7 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
     }
   }
 
-  if (supabaseSession && !preferOperationalApi) {
+  if (supabaseSession && !preferOperationalApi && !shouldBlockHrWriteFallback(path, method)) {
     const fallback = await supabaseApiFallback<T>(path, options);
     if (fallback !== null) {
       touchSession();

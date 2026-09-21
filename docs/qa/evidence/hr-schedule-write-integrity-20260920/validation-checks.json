@@ -1,0 +1,94 @@
+{
+  "change_id": "hr-schedule-write-integrity-20260920",
+  "generated_at": "2026-09-20T22:05:00-05:00",
+  "environment": "LOCAL",
+  "branch": "desarrollo",
+  "commit": "3f92b351a2fbaff76c93837d7fa1f600bdf8d9bf",
+  "commit_note": "Los cambios funcionales certificados estan en el arbol de trabajo de desarrollo sobre este HEAD, pendientes de commit por el responsable. El commit evaluado definitivo se fijara al hacer commit y debera usarse en las puertas qa:promotion:scope y qa:preqa:evidence.",
+  "checks": [
+    {
+      "id": "VC-01",
+      "name": "overnight_shift_rejected_and_no_horario_created",
+      "status": "passed",
+      "detail": "Flujo real por HTTP contra la API local: POST /api/v1/hr/routes con jornada 20:35->05:00 (la reportada en QA) responde 400 con codigo HORARIO_CRUZA_MEDIANOCHE. Verificado en base: cero TimeRoute para esa persona/fecha antes y despues de la solicitud. La regla de negocio assertSameDayShift (apps/api/src/modules/hr/policy.js:14-28) NO fue modificada: las jornadas que cruzan medianoche siguen sin soporte por decision del dueno del producto.",
+      "evidence": ["local-simulation-certification.json"]
+    },
+    {
+      "id": "VC-02",
+      "name": "client_predicate_blocks_overnight_before_request",
+      "status": "passed",
+      "detail": "El predicado puro exportado scheduleSameDayShiftIssue (apps/web/lib/hrScheduleMonitor.ts) es espejo fiel de la regla API: para 20:35->05:00 devuelve exactamente el mismo mensaje que assertSameDayShift ('La hora final debe ser estrictamente posterior a la hora inicial dentro de la misma fecha.'), para 08:00->17:00 y 15:50->16:00 devuelve '' (validas), normaliza HH:mm:ss y exige formato valido. saveRoute (rutas/page.tsx) lo incorpora a la lista issues, que corta ANTES de setSavingRoute(true) y de cualquier api(); se elimino la comprobacion debil end_time===start_time. Afirmado en vivo (import del .ts) y por asercion de codigo.",
+      "evidence": ["local-simulation-certification.json", "unit-tests.txt"]
+    },
+    {
+      "id": "VC-03",
+      "name": "overlapping_assignment_rejected_and_no_horario_created",
+      "status": "passed",
+      "detail": "Se crea por API una malla base valida 08:00-17:00 para una persona (200, id asignado). El intento solapado 15:50-16:00 para la misma persona y fecha responde 409 MALLA_SOLAPADA (assertRouteAssignmentAvailable, service.js:963-970). Verificado en base: el conteo de TimeRoute para esa persona/fecha queda en 1 (solo la base); la escritura rechazada no creo horario adicional.",
+      "evidence": ["local-simulation-certification.json"]
+    },
+    {
+      "id": "VC-04",
+      "name": "positive_control_monitor_reads_what_api_writes",
+      "status": "passed",
+      "detail": "Control positivo: un horario VALIDO 09:00-13:00 creado por POST /api/v1/hr/routes (200, id) es (a) devuelto por GET /api/v1/hr/routes?date=<hoy>, (b) visible en GET /api/v1/hr/operations-map?date=<hoy> dentro de payload.routes, y (c) persistido en la tabla TimeRoute con status active y horas correctas. Esto demuestra que el monitor lee exactamente lo que la API escribe (Prisma TimeRoute), que es la mitad del split-brain que se creia rota.",
+      "evidence": ["local-simulation-certification.json"]
+    },
+    {
+      "id": "VC-05",
+      "name": "split_brain_closed_guard_covers_all_hr_route_writes",
+      "status": "passed",
+      "detail": "Asercion de codigo sobre apps/web/lib/api.ts: shouldBlockHrWriteFallback ahora cubre /api/v1/hr/routes, /api/v1/hr/routes/bulk y el detalle /api/v1/hr/routes/<id> (regex ^/api/v1/hr/routes/[^/]+$) para todo metodo distinto de GET. Las DOS ramas de respaldo de apiInternal lo consultan: la preventiva (linea ~4237, 'supabaseSession && !preferOperationalApi && !shouldBlockHrWriteFallback(path, method)') y la de respuesta no-OK (linea ~4281, 'supabaseSession && !shouldBlockHrWriteFallback(path, method)'). Por tanto una escritura de horario rechazada nunca puede alcanzar supabaseApiFallback y no puede generar filas huerfanas en operational_routes/route_assignments. Las lecturas GET del monitor conservan su respaldo (el guard solo bloquea method !== GET).",
+      "evidence": ["local-simulation-certification.json", "unit-tests.txt"]
+    },
+    {
+      "id": "VC-06",
+      "name": "orphan_absence_proof_level_declared",
+      "status": "passed",
+      "detail": "Nivel de prueba declarado sin sobreafirmar: la imposibilidad de huerfanos en operational_routes se demuestra a NIVEL DE CODIGO (el guard impide que supabaseApiFallback sea invocado para escrituras /api/v1/hr/routes* no-GET en ambas ramas), NO por consulta en vivo a Supabase. operational_routes/route_assignments son tablas exclusivas de Supabase; el ambiente es local y no se hacen escrituras ni consultas remotas a QA/produccion. En vivo se demuestra que las escrituras rechazadas no crean TimeRoute (la tabla que el monitor lee) y que el control positivo si queda visible.",
+      "evidence": ["local-simulation-certification.json"]
+    },
+    {
+      "id": "VC-07",
+      "name": "error_banner_not_painted_as_success",
+      "status": "passed",
+      "detail": "La pantalla ya no pinta un error como exito: nuevo estado messageTone ('success'|'error'); el banner usa paleta rosa (border-rose-200 bg-rose-50 text-rose-900) y role='alert' cuando messageTone==='error', y emerald/role='status' en exito. El catch de saveRoute fija setMessageTone('error') dentro del bloque catch (antes del finally). Afirmado por asercion de codigo y cubierto por hr-route-write-fallback.test.mjs.",
+      "evidence": ["local-simulation-certification.json", "unit-tests.txt"]
+    },
+    {
+      "id": "VC-08",
+      "name": "hr_regression_battery_green",
+      "status": "passed",
+      "detail": "Regresion HR en verde: apps/web HR 40/40 (8 archivos), test:hr-schedule 16/16, apps/api HR 58/58 (11+3 archivos, incluidas hr-route-assignment-lock, hr-operations-map-contract, hr-single-active-schedule-certificate, hr-workday-novelties-policy/contract, hr-marking-*). Suite completa apps/web *.test.mjs 299/299 (api.ts es modulo compartido). typecheck exit 0, lint 0 errors (13 warnings preexistentes).",
+      "evidence": ["unit-tests.txt"]
+    },
+    {
+      "id": "VC-09",
+      "name": "platform_regression_no_new_failures",
+      "status": "passed",
+      "detail": "Suite completa apps/api: 337 tests, 332 pass, 3 fail, 2 skipped. Las 3 fallas son EXACTAMENTE el conjunto preexistente y ajeno a HR (inventory-transfer-product-list-ux, offline-bootstrap, zero-friendly-number-input); viven en apps/api, que este diff no toca, y se reproducen identicas sin el cambio. El flake de tiempos 'el calculo local de decision tiene sobrecosto despreciable' (security-authorization-revocation) PASO en esta corrida (ok 205). Cero fallas HR, cero regresiones atribuibles al cambio (diff frontend-only).",
+      "evidence": ["unit-tests.txt"]
+    },
+    {
+      "id": "VC-10",
+      "name": "no_backend_rule_changed",
+      "status": "passed",
+      "detail": "El arreglo es exclusivamente de cliente/capa de presentacion y de la guarda de respaldo: no se modifico apps/api. assertSameDayShift y assertRouteAssignmentAvailable siguen rigiendo igual; la certificacion lo confirma al observar los mismos codigos 400 HORARIO_CRUZA_MEDIANOCHE y 409 MALLA_SOLAPADA que produjo el servidor de QA en el diagnostico.",
+      "evidence": ["local-simulation-certification.json", "unit-tests.txt"]
+    },
+    {
+      "id": "VC-11",
+      "name": "local_only_no_remote_writes",
+      "status": "passed",
+      "detail": "Toda la certificacion se ejecuto en local: API Fastify en 127.0.0.1:3199 contra PostgreSQL local (55432/apexos), tenant SCJ, admin temporal creado y desactivado al terminar, y las 2 rutas creadas quedan en status inactive (mejor esfuerzo, solo local). El script rechaza cualquier api-url que no sea localhost/127.0.0.1. No se escribio en QA ni en produccion ni en Supabase remoto.",
+      "evidence": ["local-simulation-certification.json", "local-fixture.json"]
+    },
+    {
+      "id": "VC-12",
+      "name": "browser_qa_certification_pending_remote_execution",
+      "status": "pending",
+      "detail": "Pendiente para la compuerta develop->main (no bloquea el pre-QA desarrollo->develop): la politica exige certificacion de navegador/plataforma en vivo sobre QA con el commit exacto desplegado (reproducir la novedad desde la interfaz real, abrir/editar/guardar/reabrir/recargar, y los negativos visibles). Esta certificacion local cubre el flujo real por HTTP+base y las guardas de codigo; la replica en navegador sobre QA se hara tras el despliegue del candidato.",
+      "evidence": ["local-simulation-certification.json"]
+    }
+  ]
+}
