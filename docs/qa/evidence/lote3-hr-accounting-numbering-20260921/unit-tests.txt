@@ -1,0 +1,35 @@
+# Validacion unitaria y de contrato — lote3 HR + numeracion contable
+# generado: 2026-09-21T15:39:58Z
+# rama: desarrollo  HEAD: 2de21b0bd728db154f24313dee66a40733d79d69
+
+=== API: suites hr-* + accounting-* + third-party + service-order-number (DISABLE_REDIS=true) ===
+ℹ tests 87
+ℹ pass 87
+ℹ fail 0
+
+=== API: certificacion numeracion contable (16 controles) ===
+CERTIFICACION NUMERACION CONTABLE APROBADA: 16 controles, status=passed
+
+=== WEB: typecheck (tsc -p tsconfig.typecheck.json --noEmit) ===
+> @apex-os/web@2.0.0 typecheck
+> tsc -p tsconfig.typecheck.json --noEmit
+
+typecheck_exit=0
+
+=== WEB: suite hr-schedule-monitor ===
+ℹ tests 14
+ℹ pass 14
+ℹ fail 0
+
+=== WEB: lint archivos cambiados ===
+  426:6  warning  React Hook useEffect has a missing dependency: 'visibleBounds'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+✖ 1 problem (0 errors, 1 warning)
+
+lint_exit=0
+
+=== PRISMA validate ===
+The schema at prisma\schema.prisma is valid 🚀
+
+=== API: certificacion en vivo lectura monitor / truncamiento (12 controles) ===
+CERTIFICACION LECTURA MONITOR APROBADA: 12 controles, status=passed

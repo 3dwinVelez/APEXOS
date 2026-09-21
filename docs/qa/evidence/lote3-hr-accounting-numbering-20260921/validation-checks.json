@@ -1,0 +1,80 @@
+{
+  "change_id": "lote3-hr-accounting-numbering-20260921",
+  "environment": "LOCAL",
+  "generated_at": "2026-09-21T15:40:00Z",
+  "branch": "desarrollo",
+  "functional_head_at_generation": "2de21b0bd728db154f24313dee66a40733d79d69",
+  "checks": [
+    {
+      "name": "api_unit_and_contract_suites",
+      "command": "DISABLE_REDIS=true node --test test/hr-*.test.js test/accounting-*.test.js test/third-party-accounting-masters.test.js test/service-order-number-regression.test.js",
+      "cwd": "apps/api",
+      "tests": 87,
+      "pass": 87,
+      "fail": 0,
+      "status": "passed"
+    },
+    {
+      "name": "accounting_numbering_local_certification",
+      "command": "node scripts/certifications/accounting-numbering-integrity-local.js",
+      "controls": 16,
+      "status": "passed",
+      "evidence": "accounting-numbering-local-certification.json"
+    },
+    {
+      "name": "hr_monitor_read_truncation_local_certification",
+      "command": "node scripts/certifications/hr-monitor-read-truncation-local.js",
+      "controls": 12,
+      "status": "passed",
+      "level": "live (API Fastify local + HTTP autenticado) + code-level + suites unitarios",
+      "evidence": "hr-monitor-read-truncation-local-certification.json"
+    },
+    {
+      "name": "web_typecheck",
+      "command": "npm run typecheck (tsc -p tsconfig.typecheck.json --noEmit)",
+      "cwd": "apps/web",
+      "exit": 0,
+      "status": "passed"
+    },
+    {
+      "name": "web_hr_schedule_monitor_suite",
+      "command": "node --test test/hr-schedule-monitor.test.mjs",
+      "cwd": "apps/web",
+      "tests": 14,
+      "pass": 14,
+      "fail": 0,
+      "status": "passed"
+    },
+    {
+      "name": "web_lint_changed_files",
+      "command": "eslint app/dashboard/talento-humano/rutas/page.tsx app/dashboard/talento-humano/mapa/page.tsx lib/hrScheduleMonitor.ts test/hr-schedule-monitor.test.mjs",
+      "cwd": "apps/web",
+      "errors": 0,
+      "warnings": 1,
+      "warning_note": "react-hooks/exhaustive-deps preexistente en mapa/page.tsx:426 (useEffect visibleBounds), ajeno a este cambio",
+      "exit": 0,
+      "status": "passed"
+    },
+    {
+      "name": "prisma_validate",
+      "command": "prisma validate",
+      "cwd": "apps/api",
+      "status": "passed",
+      "note": "esquema sin cambios en este release; validado con DATABASE_URL local"
+    }
+  ],
+  "preexisting_unrelated_failures": [
+    {
+      "suite": "apps/api/test/zero-friendly-number-input.test.js",
+      "reason": "asserts apps/web/app/dashboard/compras/proveedores/page.tsx uses ZeroFriendlyNumberInput; the page uses plain control inputs. Failure exists on HEAD baseline (grep count 0) and is unrelated to hr/accounting numbering changes; that web page was not touched in this release."
+    }
+  ],
+  "forbidden_files_excluded_from_commits": [
+    "apps/web/next-env.d.ts",
+    "apps/web/tsconfig.json",
+    "docs/qa/evidence/core-modules-deep-qa-20260917/QA-FULL-20260917211117.md",
+    "docs/qa/evidence/core-modules-deep-qa-20260917/QA-FULL-20260917211534.md",
+    "reports/qa/QA-DETERMINISTIC-DET-20260921054108.json"
+  ],
+  "status": "passed"
+}
