@@ -1,0 +1,41 @@
+{
+  "change_id": "hr-phase-b-mallas-cierre-20260921",
+  "environment": "PROD",
+  "release_commit_main": "a2146553260fc4a9c64c40f5ebd5178c2b7d174b",
+  "previous_main_commit": "462a7ffbf22a6677e7691bb26a276da35dad0f06",
+  "verified_at": "2026-09-21T09:55:00-05:00",
+  "deploy_verification": {
+    "api_health": {
+      "url": "https://apexos-api-prod-production.up.railway.app/health",
+      "observed_commit": "a2146553260f",
+      "status": "OK",
+      "modules": 17
+    },
+    "web_bundle_parity": {
+      "url": "https://apexos-web-prod-production.up.railway.app/dashboard/talento-humano/rutas",
+      "method": "literales de codigo en chunks (los hashes de chunk pueden diferir entre QA y prod con Turbopack; en este release el chunk fue identico: 2piyh6a2na8ju.js)",
+      "literals_found": [
+        "hr/routes/prevalidate",
+        "Ya tiene malla",
+        "hr/routes/assignments",
+        "Malla superpuesta"
+      ]
+    },
+    "endpoints_smoke": {
+      "GET /api/v1/hr/routes/assignments?date=2026-09-21": "401 TOKEN_INVALIDO sin auth (ruta existe y esta protegida por RBAC)",
+      "POST /api/v1/hr/routes/prevalidate (body vacio)": "400 FST_ERR_VALIDATION (schema anyOf date|start_date+end_date activo; la validacion de body corre antes del preHandler de auth, comportamiento estandar de Fastify, sin fuga de datos)"
+    }
+  },
+  "database_verification_readonly": {
+    "method": "Prisma $queryRawUnsafe via session pooler aws-1-sa-east-1:5432 (PostgREST service_role no tiene grants sobre th_tipos_novedad ni _prisma_migrations en prod)",
+    "gps_inactivo_sin_senal_rows": 0,
+    "ledger_20260921": [],
+    "interpretation": "Produccion NO auto-aplica migraciones en el deploy (comportamiento verificado desde 2026-09-19 y distinto del servicio QA). La migracion de datos 20260921000000_gps_inactivo_sin_senal_novelty_type queda pendiente en el ledger productivo. NO hay riesgo funcional: recordHrNovelty (apps/api/src/modules/hr/service.js) auto-siembra el catalogo de tipos por tenant con INSERT ... WHERE NOT EXISTS antes de crear la novedad, camino cubierto por la certificacion local 35/35. Aplicar la migracion en prod (prisma migrate deploy via session pooler) es opcional, solo alinearia el ledger, y requiere autorizacion expresa independiente del release owner."
+  },
+  "cleanup": "Ningun fixture ni usuario temporal fue creado en produccion durante esta verificacion; todas las consultas a la base fueron de solo lectura.",
+  "rollback": {
+    "strategy": "controlled_revert",
+    "previous_main_commit": "462a7ffbf22a6677e7691bb26a276da35dad0f06",
+    "trigger": "ver rollback_plan.trigger en qa-approval-evidence.json del mismo directorio de evidencia"
+  }
+}
