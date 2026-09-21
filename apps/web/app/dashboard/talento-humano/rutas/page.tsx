@@ -3,7 +3,8 @@
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { Badge, Skeleton } from "@/components/ui/feedback";
-import { localCalendarDate, scheduleGpsRequired, scheduleMonitorDate, scheduleSameDayShiftIssue, scheduleTrackingMode } from "@/lib/hrScheduleMonitor";
+import { localCalendarDate, scheduleGpsRequired, scheduleMonitorDate, scheduleSameDayShiftIssue, scheduleTruncationNotices, scheduleTrackingMode } from "@/lib/hrScheduleMonitor";
+import type { ScheduleTruncationSignal } from "@/lib/hrScheduleMonitor";
 import { subscribeHrMonitorRefresh } from "@/lib/hrMonitorRefresh";
 import { AlertTriangle, ArrowLeft, Building2, CalendarDays, Camera, CheckCircle2, CheckSquare2, ChevronLeft, ChevronRight, Clock, Copy, Edit3, Filter, HelpCircle, ImageOff, LogIn, LogOut, MapPin, Navigation, PlayCircle, Plus, RefreshCw, RotateCcw, Save, Search, Square, Timer, Truck, UserPlus, Utensils, UtensilsCrossed, X, ZoomIn } from "lucide-react";
 import Link from "next/link";
@@ -22,14 +23,15 @@ type MonitorEvidence = { id?: number | string; source?: "activity" | "punch"; ba
 type PunchPoint = { id: number | string; user_name: string; type: string; time?: string; punched_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; extra_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: MonitorEvidence };
 type ActivityPoint = { id: number | string; user_name: string; type: string; time?: string; occurred_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; observation?: string; evidence?: MonitorEvidence[] };
 type RouteEventSummary = { route_id: number | string; punch_count: number; activity_count: number; evidence_count: number; closed_count: number; event_count: number; last_event_at?: string | null };
-type RouteEventSummaryResponse = { generated_at: string; routes: RouteEventSummary[] };
+type RouteEventSummaryResponse = { generated_at: string; routes: RouteEventSummary[]; truncation?: ScheduleTruncationSignal };
 type MonitorMark = { id: number | string; type: string; time?: string };
 type MonitorMarksByUser = { user_name: string; marks: MonitorMark[] };
 type RouteMonitor = TimeRoute & RouteEventSummary & { placa?: string; assigned_count?: number; online_count?: number; with_gps_count?: number; punch_points?: PunchPoint[]; activity_points?: ActivityPoint[]; marks_by_user?: MonitorMarksByUser[] };
-type OperationsMap = { date: string; generated_at: string; people: OperatorPoint[]; routes: RouteMonitor[]; totals: { routes: number; planned_people: number; online: number; without_gps: number; offline: number } };
+type OperationsMap = { date: string; generated_at: string; people: OperatorPoint[]; routes: RouteMonitor[]; truncation?: ScheduleTruncationSignal; totals: { routes: number; planned_people: number; online: number; without_gps: number; offline: number } };
 type MonitorEvidenceBatch = { route_id: number | string; generated_at: string; punch_evidence: Record<string, MonitorEvidence>; activity_evidence: Record<string, MonitorEvidence[]>; counts: { punches: number; punch_evidence: number; activities: number; activity_evidence: number } };
 
 const punchNames: Record<string, string> = { entrada: "Entrada", inicio_almuerzo: "Almuerzo", fin_almuerzo: "Retorno", salida: "Cierre" };
+const ROUTES_LIST_LIMIT = 500;
 const weekdayOptions = [
   { value: 1, label: "Lun" },
   { value: 2, label: "Mar" },
@@ -372,6 +374,7 @@ export default function RoutesPlanningPage() {
   const [administrativeSites, setAdministrativeSites] = useState<MasterOption[]>([]);
   const [routes, setRoutes] = useState<TimeRoute[]>([]);
   const [eventSummaries, setEventSummaries] = useState<RouteEventSummary[]>([]);
+  const [summariesTruncation, setSummariesTruncation] = useState<ScheduleTruncationSignal | null>(null);
   const [operations, setOperations] = useState<OperationsMap | null>(null);
   const [monitorDate, setMonitorDate] = useState(initialDate);
   const [selectedRouteId, setSelectedRouteId] = useState("");
@@ -406,7 +409,7 @@ export default function RoutesPlanningPage() {
   const loadRoutes = useCallback(async () => {
     let latest: TimeRoute[] | null = null;
     for (let attempt = 0; attempt < 3; attempt += 1) {
-      const data = await api<TimeRoute[]>("/api/v1/hr/routes", { cache: "no-store" }).catch(() => null);
+      const data = await api<TimeRoute[]>(`/api/v1/hr/routes?limit=${ROUTES_LIST_LIMIT}`, { cache: "no-store" }).catch(() => null);
       if (Array.isArray(data)) {
         latest = data;
         if (data.length) {
@@ -462,6 +465,7 @@ export default function RoutesPlanningPage() {
     try {
       const data = await api<RouteEventSummaryResponse>("/api/v1/hr/routes/event-summaries", { cache: "no-store" });
       setEventSummaries(data.routes || []);
+      setSummariesTruncation(data.truncation || null);
     } catch {
       // Preserve the latest valid counters until the next short refresh.
     }
@@ -709,6 +713,7 @@ export default function RoutesPlanningPage() {
   }
 
   const totalAssigned = useMemo(() => routes.reduce((sum, route) => sum + (routeEmployeeValues(route).length || 0), 0), [routes]);
+  const truncationNotices = useMemo(() => scheduleTruncationNotices({ routesCount: routes.length, routesLimit: ROUTES_LIST_LIMIT, summaries: summariesTruncation, operations: operations?.truncation }), [operations?.truncation, routes.length, summariesTruncation]);
   const selectedEmployeeCount = form.employees.length;
   const bulkCount = bulkMode ? rangePreview(bulk.start_date, bulk.end_date, bulk.weekdays) : 1;
   const monitorRoutes: RouteMonitor[] = useMemo(() => {
@@ -857,6 +862,14 @@ export default function RoutesPlanningPage() {
             <input aria-label="Filtrar por fecha" className="h-10 rounded-md border border-line bg-paper px-3 text-sm" type="date" value={dateFilter} onChange={(event) => setDateFilter(event.target.value)} />
           </div>
           {activeFilters ? <button className="mt-3 inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold text-content-body hover:bg-paper" onClick={clearFilters} type="button"><RotateCcw size={15} /> Limpiar {activeFilters} filtro(s)</button> : null}
+          {truncationNotices.length ? (
+            <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status">
+              <AlertTriangle className="mt-0.5 shrink-0" size={16} />
+              <ul className="list-disc space-y-0.5 pl-4">
+                {truncationNotices.map((notice) => <li key={notice}>{notice}</li>)}
+              </ul>
+            </div>
+          ) : null}
         </div>
 
         <div className="grid gap-3 p-3 md:hidden">

@@ -3,7 +3,7 @@ import test from "node:test";
 
 process.env.TZ = "America/Bogota";
 
-const { localCalendarDate, scheduleGpsRequired, scheduleMonitorDate, scheduleMonitorPunchEvidence, scheduleMonitorPunchEvidenceSummary, scheduleSameDayShiftIssue, scheduleTrackingMode } = await import(
+const { localCalendarDate, scheduleGpsRequired, scheduleMonitorDate, scheduleMonitorPunchEvidence, scheduleMonitorPunchEvidenceSummary, scheduleSameDayShiftIssue, scheduleTrackingMode, scheduleTruncationNotices } = await import(
   "../lib/hrScheduleMonitor.ts"
 );
 
@@ -84,4 +84,41 @@ test("pide horas validas cuando el campo viene vacio o mal formado", () => {
   assert.equal(scheduleSameDayShiftIssue("8:00", "17:00"), "Define horas validas en formato HH:mm.");
   assert.equal(scheduleSameDayShiftIssue("08:00", "25:00"), "Define horas validas en formato HH:mm.");
   assert.equal(scheduleSameDayShiftIssue(null, undefined), "Define horas validas en formato HH:mm.");
+});
+
+test("avisa cuando la lista de horarios toca el tope del listado", () => {
+  const notices = scheduleTruncationNotices({ routesCount: 500, routesLimit: 500 });
+  assert.equal(notices.length, 1);
+  assert.ok(notices[0].includes("500 horarios mas recientes"));
+  assert.ok(notices[0].includes("acota el rango de fechas"));
+  assert.deepEqual(scheduleTruncationNotices({ routesCount: 499, routesLimit: 500 }), []);
+  assert.deepEqual(scheduleTruncationNotices({ routesCount: 100, routesLimit: 0 }), []);
+});
+
+test("propaga la senal de truncamiento del resumen de eventos", () => {
+  const notices = scheduleTruncationNotices({ summaries: { truncated: true, limit: 100, returned: 100, hint: "El resumen cubre las 100 rutas mas recientes; acota el rango de fechas." } });
+  assert.deepEqual(notices, ["El resumen cubre las 100 rutas mas recientes; acota el rango de fechas."]);
+  assert.deepEqual(scheduleTruncationNotices({ summaries: { truncated: false, hint: "" } }), []);
+});
+
+test("hace visible el truncamiento del mapa con las colecciones recortadas", () => {
+  const notices = scheduleTruncationNotices({
+    operations: { truncated: true, collections: [{ collection: "punches", limit: 300, returned: 300 }, { collection: "pings", limit: 300, returned: 300 }], hint: "amplie limites" }
+  });
+  assert.equal(notices.length, 1);
+  assert.ok(notices[0].includes("El mapa del dia esta truncado (punches, pings)"));
+  assert.ok(notices[0].includes("amplie limites"));
+  assert.deepEqual(scheduleTruncationNotices({ operations: { truncated: false, collections: [] } }), []);
+});
+
+test("combina los tres avisos de truncamiento sin duplicar", () => {
+  const notices = scheduleTruncationNotices({
+    routesCount: 500,
+    routesLimit: 500,
+    summaries: { truncated: true, hint: "resumen recortado" },
+    operations: { truncated: true, collections: [], hint: "mapa recortado" }
+  });
+  assert.equal(notices.length, 3);
+  assert.ok(notices[1].includes("resumen recortado"));
+  assert.ok(notices[2].includes("mapa recortado"));
 });

@@ -1,6 +1,8 @@
 "use client";
 
 import { api } from "@/lib/api";
+import { scheduleTruncationNotices } from "@/lib/hrScheduleMonitor";
+import type { ScheduleTruncationSignal } from "@/lib/hrScheduleMonitor";
 import { ArrowLeft, CalendarDays, Clock, ExternalLink, LocateFixed, MapPin, RefreshCw, Route, Satellite, Users } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -97,6 +99,7 @@ type OperationsMap = {
   active_window_minutes: number;
   people: OperatorPoint[];
   routes: RouteSummary[];
+  truncation?: ScheduleTruncationSignal;
   totals: { routes: number; planned_people: number; online: number; without_gps: number; offline: number };
 };
 
@@ -458,6 +461,11 @@ export default function LiveGpsMapPage() {
         </div>
       </header>
       {message ? <div className="z-20 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-900">{message}</div> : null}
+      {data?.truncation?.truncated ? (
+        <div className="z-20 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-900" role="status">
+          {scheduleTruncationNotices({ operations: data.truncation }).join(" ")}
+        </div>
+      ) : null}
 
       <main className="min-h-0 flex-1 lg:grid lg:grid-cols-[280px_1fr] xl:grid-cols-[320px_1fr]">
         <aside className="z-10 flex max-h-[35vh] flex-col overflow-hidden border-b border-white/10 bg-[#0d1b2a] text-white lg:max-h-none lg:border-b-0 lg:border-r">
