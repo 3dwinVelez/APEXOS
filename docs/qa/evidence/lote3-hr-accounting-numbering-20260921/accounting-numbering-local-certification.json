@@ -1,0 +1,161 @@
+{
+  "change_id": "accounting-numbering-integrity-20260921",
+  "certification": "accounting-numbering-integrity-local",
+  "environment": "LOCAL",
+  "generated_at": "2026-09-21T15:34:02.066Z",
+  "scope": {
+    "defect": "numeracion EM perdida por read-modify-write del accounting_numbering completo; config revertido a next_number obsoleto => P2002/409 determinista en entradas de mercancia.",
+    "fix": "reserva atomica auto-sanada (candado advisory + max(configurado, MAX(document_number)+1)) y normalizacion legacy del formato objeto, aplicada a los 4 sitios cnt_cabdoc.",
+    "proven_by_simulated_incident": [
+      "config EM next_number=1 con 5 entradas ya emitidas reserva EM-000006 (no EM-000001)",
+      "config EM next_number mayor al emitido se respeta",
+      "formato legacy {EM:{next_number:7}} se honra en vez de resembrarse a 1",
+      "AJ y AE/AS auto-sanan igual que EM",
+      "se adquiere el candado advisory de numeracion del tenant antes de reservar"
+    ],
+    "proven_by_code_level_assertion": [
+      "reserveAccountingDocumentNumber usa pg_advisory_xact_lock(hashtextextended($1,0)) y cnt_cabdoc.aggregate _max.document_number",
+      "los 4 sitios cnt_cabdoc llaman a reserveAccountingDocumentNumber",
+      "mergeNumbering delega en normalizeAccountingNumberingRows (acepta arreglo y objeto legacy)"
+    ],
+    "proven_by_versioned_unit_suite": "apps/api/test/accounting-numbering.test.js (6 controles)"
+  },
+  "checks": [
+    {
+      "name": "aggregate_scoped_by_document_type",
+      "ok": true,
+      "detail": {
+        "where": {
+          "document_type": "EM"
+        }
+      }
+    },
+    {
+      "name": "em_self_heals_against_emitted_max",
+      "ok": true,
+      "detail": {
+        "document_number": 6,
+        "full_number": "EM-000006"
+      }
+    },
+    {
+      "name": "em_persist_repairs_next_number",
+      "ok": true,
+      "detail": {
+        "next_number": 7
+      }
+    },
+    {
+      "name": "aggregate_scoped_by_document_type",
+      "ok": true,
+      "detail": {
+        "where": {
+          "document_type": "EM"
+        }
+      }
+    },
+    {
+      "name": "em_respects_higher_configured_number",
+      "ok": true,
+      "detail": {
+        "document_number": 10
+      }
+    },
+    {
+      "name": "aggregate_scoped_by_document_type",
+      "ok": true,
+      "detail": {
+        "where": {
+          "document_type": "EM"
+        }
+      }
+    },
+    {
+      "name": "em_honors_legacy_object_format",
+      "ok": true,
+      "detail": {
+        "document_number": 7
+      }
+    },
+    {
+      "name": "em_acquires_advisory_lock",
+      "ok": true,
+      "detail": {
+        "locks": [
+          {
+            "sql": "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+            "key": "tenant-cert:accounting-numbering"
+          }
+        ]
+      }
+    },
+    {
+      "name": "aggregate_scoped_by_document_type",
+      "ok": true,
+      "detail": {
+        "where": {
+          "document_type": "AJ"
+        }
+      }
+    },
+    {
+      "name": "aj_self_heals_against_emitted_max",
+      "ok": true,
+      "detail": {
+        "document_number": 4
+      }
+    },
+    {
+      "name": "aggregate_scoped_by_document_type",
+      "ok": true,
+      "detail": {
+        "where": {
+          "document_type": "AE"
+        }
+      }
+    },
+    {
+      "name": "ae_self_heals_and_honors_legacy",
+      "ok": true,
+      "detail": {
+        "document_number": 9
+      }
+    },
+    {
+      "name": "reserve_helper_uses_advisory_lock_and_max",
+      "ok": true,
+      "detail": {
+        "helper": true,
+        "lock": true,
+        "aggregate": true,
+        "self_heal": true
+      }
+    },
+    {
+      "name": "four_cntcabdoc_sites_reserve",
+      "ok": true,
+      "detail": {
+        "reserve_call_sites": 4
+      }
+    },
+    {
+      "name": "merge_numbering_normalizes_legacy",
+      "ok": true,
+      "detail": {
+        "merge_uses_normalizer": true,
+        "normalizer_defined": true
+      }
+    },
+    {
+      "name": "versioned_unit_suite_passes",
+      "ok": true,
+      "detail": {
+        "exit": 0,
+        "pass": 6,
+        "fail": 0
+      }
+    }
+  ],
+  "status": "passed",
+  "finished_at": "2026-09-21T15:34:02.417Z"
+}

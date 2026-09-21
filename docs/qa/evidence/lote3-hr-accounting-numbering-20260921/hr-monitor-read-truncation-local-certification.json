@@ -1,0 +1,146 @@
+{
+  "change_id": "hr-monitor-read-truncation-20260921",
+  "certification": "hr-monitor-read-truncation-local",
+  "environment": "LOCAL",
+  "company": "SCJ",
+  "generated_at": "2026-09-21T15:35:18.125Z",
+  "api_commit": "unknown",
+  "api_url": "http://127.0.0.1:3198",
+  "scope": {
+    "defect": "lecturas del monitor sin tope gobernado y truncamiento silencioso de operations-map; el usuario no veia que la API recorto el dia.",
+    "fix": "limites gobernados (listRoutes 50..500, event-summaries limite+1) y campo aditivo truncation en event-summaries/operations-map, con avisos legibles y banner ambar en rutas y mapa.",
+    "proven_by_live_execution": [
+      "GET /api/v1/hr/routes/operations-map devuelve truncation en vivo",
+      "GET /api/v1/hr/routes/event-summaries devuelve truncation{truncated,limit,returned,hint} en vivo",
+      "GET /api/v1/hr/routes?limit=... responde 200 (tope gobernado observable)"
+    ],
+    "proven_by_code_level_assertion": [
+      "listRoutes clamp Math.min(Math.max(...,50),500)",
+      "listRouteEventSummaries consulta SUMMARY_LIMIT+1 y devuelve truncation",
+      "hrScheduleMonitor exporta scheduleTruncationNotices",
+      "rutas/page.tsx y mapa/page.tsx importan el helper y pintan banner role=status"
+    ],
+    "proven_by_versioned_unit_suite": [
+      "apps/api/test/hr-list-truncation.test.js (4 controles)",
+      "apps/web/test/hr-schedule-monitor.test.mjs (suite HR)"
+    ]
+  },
+  "checks": [
+    {
+      "name": "health_ok",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "commit": "unknown"
+      }
+    },
+    {
+      "name": "operations_map_serves_truncation_contract",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "truncation": {
+          "truncated": false,
+          "collections": [],
+          "hint": ""
+        }
+      }
+    },
+    {
+      "name": "event_summaries_serve_truncation_contract",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "truncation": {
+          "truncated": true,
+          "limit": 100,
+          "returned": 100,
+          "hint": "El resumen cubre las 100 rutas mas recientes; acota el rango de fechas en el listado de horarios para revisar rutas antiguas."
+        }
+      }
+    },
+    {
+      "name": "event_summaries_limit_is_100",
+      "ok": true,
+      "detail": {
+        "limit": 100
+      }
+    },
+    {
+      "name": "routes_list_governed_limit_200",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "list_routes_clamps_limit",
+      "ok": true,
+      "detail": {
+        "clamp_present": true
+      }
+    },
+    {
+      "name": "event_summaries_fetches_limit_plus_one",
+      "ok": true,
+      "detail": {
+        "plus_one": true
+      }
+    },
+    {
+      "name": "monitor_exports_truncation_helper",
+      "ok": true,
+      "detail": {
+        "helper": true,
+        "type": true
+      }
+    },
+    {
+      "name": "rutas_page_wires_banner",
+      "ok": true,
+      "detail": {
+        "helper": true,
+        "banner": true,
+        "role_status": true
+      }
+    },
+    {
+      "name": "mapa_page_wires_banner",
+      "ok": true,
+      "detail": {
+        "helper": true,
+        "conditional": true
+      }
+    },
+    {
+      "name": "api_unit_suite_passes",
+      "ok": true,
+      "detail": {
+        "exit": 0,
+        "pass": "4",
+        "fail": "0"
+      }
+    },
+    {
+      "name": "web_unit_suite_passes",
+      "ok": true,
+      "detail": {
+        "exit": 0,
+        "pass": "14",
+        "fail": "0"
+      }
+    }
+  ],
+  "status": "passed",
+  "fixture": {
+    "tenant_id": "001346eb-ba7f-4103-b032-73a219f1333e",
+    "admin_user_id": 429,
+    "admin_email": "qa.l3hr.admin.20260921153518@scj.test",
+    "admin_role": "APEX_ADMIN",
+    "operating_date": "2026-09-21"
+  },
+  "cleanup": {
+    "admin_deactivated": true
+  },
+  "finished_at": "2026-09-21T15:35:23.993Z"
+}

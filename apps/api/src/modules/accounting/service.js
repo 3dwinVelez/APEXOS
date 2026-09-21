@@ -247,6 +247,28 @@ function mergeByCode(defaults, custom, key) {
   return Array.from(rows.values()).sort((a, b) => normalizeCode(a[key]).localeCompare(normalizeCode(b[key])));
 }
 
+function normalizeAccountingNumberingRows(value) {
+  const toRow = (documentType, source) => {
+    const base = source && typeof source === "object" ? source : { next_number: Number(source) || 1 };
+    const document_type = normalizeAccountingDocumentType(documentType);
+    if (!document_type) return null;
+    return {
+      ...base,
+      document_type,
+      prefix: normalizeCode(base.prefix || document_type),
+      next_number: Number(base.next_number) || 1,
+      active: base.active !== false
+    };
+  };
+  if (Array.isArray(value)) {
+    return value.map((row) => toRow(row?.document_type, row)).filter(Boolean);
+  }
+  if (value && typeof value === "object") {
+    return Object.entries(value).map(([documentType, row]) => toRow(documentType, row)).filter(Boolean);
+  }
+  return [];
+}
+
 function mergeNumbering(defaultTypes, custom) {
   const rows = new Map();
   for (const type of defaultTypes) {
@@ -258,11 +280,29 @@ function mergeNumbering(defaultTypes, custom) {
       source: "Sistema"
     });
   }
-  for (const row of custom || []) {
-    const code = normalizeAccountingDocumentType(row.document_type);
-    if (code) rows.set(code, { ...rows.get(code), ...row, document_type: code, prefix: normalizeCode(row.prefix || code), next_number: Number(row.next_number) || 1 });
+  for (const row of normalizeAccountingNumberingRows(custom)) {
+    rows.set(row.document_type, { ...rows.get(row.document_type), ...row });
   }
   return Array.from(rows.values()).sort((a, b) => normalizeCode(a.document_type).localeCompare(normalizeCode(b.document_type)));
+}
+
+// Regla de negocio: la numeracion por tipo de documento se reserva de forma atomica y
+// auto-sanada. Otros modulos reescriben Tenant.config completo desde cache y pueden
+// revertir accounting_numbering a un next_number obsoleto; sin este maximo contra el
+// mayor document_number ya emitido, la entrada de mercancia colisiona (P2002/409) de
+// forma determinista. El candado advisory serializa las reservas del mismo tenant.
+async function reserveAccountingDocumentNumber(tx, tenantId, documentType, numbering) {
+  await tx.$executeRawUnsafe(
+    "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+    `${tenantId}:accounting-numbering`
+  );
+  const configured = Number(numbering.next_number) || 1;
+  const aggregate = await tx.cntCabdoc.aggregate({
+    where: { document_type: documentType },
+    _max: { document_number: true }
+  });
+  const emitted = Number(aggregate?._max?.document_number) || 0;
+  return Math.max(configured, emitted + 1);
 }
 
 function parseDueTerm(value) {
@@ -903,7 +943,7 @@ async function createAccountingDocument(tenantId, userId, data) {
     }
     const numbering = freshMasters.numbering.find((item) => item.document_type === documentType && item.active !== false);
     if (!numbering) throw appError(400, "NUMBERING_NOT_IN_MASTER", "El tipo de documento no tiene numeracion activa");
-    const documentNumber = Number(numbering.next_number) || 1;
+    const documentNumber = await reserveAccountingDocumentNumber(tx, tenantId, documentType, numbering);
     const prefix = normalizeCode(numbering.prefix || documentType);
     const fullNumber = `${prefix}-${String(documentNumber).padStart(6, "0")}`;
 
@@ -1963,7 +2003,7 @@ async function createGoodsReceiptDocumentTx(tx, tenantId, userId, data) {
   const documentTypes = mergeByCode(DEFAULT_ACCOUNTING_DOCUMENT_TYPES, accounting.accounting_document_types, "code").map((row) => ({ ...row, code: normalizeAccountingDocumentType(row.code) }));
   const numbering = mergeNumbering(documentTypes, accounting.accounting_numbering).find((row) => row.document_type === documentType && row.active !== false);
   if (!numbering) throw appError(400, "NUMBERING_NOT_IN_MASTER", "La entrada de mercancia no tiene numeracion contable activa");
-  const documentNumber = Number(numbering.next_number) || 1;
+  const documentNumber = await reserveAccountingDocumentNumber(tx, tenantId, documentType, numbering);
   const prefix = normalizeCode(numbering.prefix || documentType);
   const fullNumber = `${prefix}-${String(documentNumber).padStart(6, "0")}`;
   const lines = Array.isArray(data.lines) ? data.lines.filter((line) => round(line.amount) > 0) : [];
@@ -2036,7 +2076,7 @@ async function createInitialInventoryDocumentTx(tx, tenantId, userId, data) {
   }
   const total = round([...grouped.values()].reduce((sum, row) => sum + row.amount, 0));
   if (total <= 0) throw appError(422, "EMPTY_INITIAL_LOAD_ACCOUNTING", "El cargue inicial no tiene valor para contabilizar");
-  const documentNumber = Number(numbering.next_number) || 1;
+  const documentNumber = await reserveAccountingDocumentNumber(tx, tenantId, documentType, numbering);
   const prefix = normalizeCode(numbering.prefix || documentType);
   const fullNumber = `${prefix}-${String(documentNumber).padStart(6, "0")}`;
   const cabdoc = await tx.cntCabdoc.create({ data: { document_type: documentType, document_number: documentNumber, full_number: fullNumber, posting_date: postingDate, reference: data.reference, header_text: "Cargue inicial de inventario", society_code: normalizeCode(data.society_code), total_debit: total, total_credit: total, created_by: userId || null } });
@@ -2063,9 +2103,9 @@ async function createInventoryAdjustmentDocumentTx(tx, tenantId, userId, data) {
   const tenant = await tx.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
   const config = tenant?.config && typeof tenant.config === "object" ? tenant.config : {};
   const accounting = config.accounting && typeof config.accounting === "object" ? config.accounting : {};
-  const customNumbering = Array.isArray(accounting.accounting_numbering) ? accounting.accounting_numbering : [];
-  const numbering = customNumbering.find((row) => normalizeAccountingDocumentType(row.document_type) === documentType && row.active !== false) || { document_type: documentType, prefix: documentType, next_number: 1, active: true, source: "Sistema" };
-  const documentNumber = Number(numbering.next_number) || 1;
+  const customNumbering = normalizeAccountingNumberingRows(accounting.accounting_numbering);
+  const numbering = customNumbering.find((row) => row.document_type === documentType && row.active !== false) || { document_type: documentType, prefix: documentType, next_number: 1, active: true, source: "Sistema" };
+  const documentNumber = await reserveAccountingDocumentNumber(tx, tenantId, documentType, numbering);
   const prefix = normalizeCode(numbering.prefix || documentType);
   const fullNumber = `${prefix}-${String(documentNumber).padStart(6, "0")}`;
   let internalParty = await tx.party.findFirst({ where: { type: "internal", metadata: { path: ["system_code"], equals: "INVENTORY_ADJUSTMENT" }, __includeInactive: true } });
