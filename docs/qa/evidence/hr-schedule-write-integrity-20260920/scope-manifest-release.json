@@ -1,0 +1,138 @@
+{
+  "change_id": "hr-schedule-write-integrity-20260920",
+  "scope_schema_version": 2,
+  "base_commits": {
+    "main": "b780f5941a03a171c79c63cb2651e4dcdc5fc1ab"
+  },
+  "certified_commit": "c87e09d27b05fa419d094889b4c0ded3df781486",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "change_intent": {
+    "summary": "Release a produccion del cierre del split-brain de horarios del 'Monitor de mallas horarias / Asignar horarios'. En QA la pantalla reportaba 'Horario asignado correctamente.' pero el horario nunca aparecia: el monitor lee las mallas desde la API operativa (GET /api/v1/hr/routes -> Prisma TimeRoute), mientras que la escritura POST /api/v1/hr/routes era rechazada por la API (400 HORARIO_CRUZA_MEDIANOCHE para jornadas que cruzan medianoche, 409 MALLA_SOLAPADA para asignaciones solapadas) y apiInternal caia en silencio al respaldo supabaseApiFallback, que escribia en operational_routes/route_assignments: tablas que el monitor nunca lee, dejando el horario huerfano con exito aparente. El arreglo es exclusivo de cliente (apps/web): (1) shouldBlockHrWriteFallback en apps/web/lib/api.ts bloquea toda escritura no-GET de /api/v1/hr/routes, /api/v1/hr/routes/bulk y /api/v1/hr/routes/<id> en las DOS ramas de respaldo de apiInternal (preventiva y de respuesta no-OK); (2) nuevo predicado puro scheduleSameDayShiftIssue en apps/web/lib/hrScheduleMonitor.ts, espejo de assertSameDayShift, que el formulario de rutas incorpora a la lista issues para cortar ANTES de setSavingRoute(true) y de cualquier api(); (3) nuevo estado messageTone para que el banner pinte los errores en rosa con role='alert' en lugar de siempre verde. Decision del dueno del producto: las jornadas que cruzan medianoche siguen SIN soporte; NO se modifico ninguna regla de negocio del backend (apps/api intacto, frontend-only). Incluye el script de certificacion end-to-end local versionado y la evidencia local, pre-QA y QA (replica de navegador sobre el bundle desplegado + certificacion NYVORA en QA).",
+    "modules": [
+      "talento-humano",
+      "hr",
+      "mallas-horarias",
+      "frontend",
+      "qa-certification"
+    ]
+  },
+  "release_mechanics": "Merge normal de develop -> main con main como primer padre. El candidato final de la promocion NO es c87e09d sino el commit de evidencia inmediatamente siguiente (su padre es c87e09d27b05fa419d094889b4c0ded3df781486), que solo agrega los 5 archivos de QA de docs/qa/evidence/hr-schedule-write-integrity-20260920/ (browser-qa-evidence.md, qa-fixture.json, qa-nyvora-hr-monitor.json, qa-approval-evidence.json y este scope-manifest-release.json); por eso esas 5 entradas A forman parte del inventario exacto y el diff neto origin/main..candidato las contiene. Las 4 entradas D del inventario son fantasma: corresponden a artefactos de contabilidad de releases productivos anteriores que solo existen en main (docs/qa/evidence/hr-module-intervention-20260918/prod-* y docs/qa/evidence/hr-monitor-silent-failures-20260918/prod-nyvora-hr-monitor.json), generados durante promociones anteriores y nunca presentes en develop por la convencion forward-only. El diff de dos puntos que evalua la puerta los reporta como eliminaciones, pero el merge union los preserva intactos en el arbol de main; es la misma convencion documentada en docs/qa/evidence/kilometraje-index-alignment-20260919/scope-manifest-release.json. No existe ninguna eliminacion real de codigo ni de evidencia en este release. Cambio frontend-only: apps/api no se toca, por lo que el servicio API de produccion NO requiere reconstruccion funcional; el build web productivo se regenerara con el guard de respaldo, el predicado de jornada del mismo dia y el banner con tono de error.",
+  "expected_changes": [
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx" },
+    { "status": "M", "file": "apps/web/lib/api.ts" },
+    { "status": "M", "file": "apps/web/lib/hrScheduleMonitor.ts" },
+    { "status": "M", "file": "apps/web/package.json" },
+    { "status": "A", "file": "apps/web/test/hr-route-write-fallback.test.mjs" },
+    { "status": "M", "file": "apps/web/test/hr-schedule-monitor.test.mjs" },
+    { "status": "D", "file": "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression-pre-migration.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-module-intervention-20260918/prod-schema-alignment-20260918.md" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-silent-failures-20260918/prod-nyvora-hr-monitor.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-schedule-write-integrity-20260920/browser-qa-evidence.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-schedule-write-integrity-20260920/local-fixture.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-schedule-write-integrity-20260920/local-simulation-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-schedule-write-integrity-20260920/preqa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-schedule-write-integrity-20260920/qa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-schedule-write-integrity-20260920/qa-fixture.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-schedule-write-integrity-20260920/qa-nyvora-hr-monitor.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-schedule-write-integrity-20260920/scope-manifest-release.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-schedule-write-integrity-20260920/scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-schedule-write-integrity-20260920/unit-tests.txt" },
+    { "status": "A", "file": "docs/qa/evidence/hr-schedule-write-integrity-20260920/validation-checks.json" },
+    { "status": "M", "file": "package.json" },
+    { "status": "A", "file": "scripts/certifications/hr-schedule-write-integrity-local.js" }
+  ],
+  "allowed_paths": [
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/hrScheduleMonitor.ts",
+    "apps/web/package.json",
+    "apps/web/test/hr-route-write-fallback.test.mjs",
+    "apps/web/test/hr-schedule-monitor.test.mjs",
+    "package.json",
+    "scripts/certifications/hr-schedule-write-integrity-local.js",
+    "docs/qa/evidence/hr-schedule-write-integrity-20260920/",
+    "docs/qa/evidence/hr-module-intervention-20260918/",
+    "docs/qa/evidence/hr-monitor-silent-failures-20260918/"
+  ],
+  "allowed_deletions": [
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression-pre-migration.json",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression.json",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-schema-alignment-20260918.md",
+    "docs/qa/evidence/hr-monitor-silent-failures-20260918/prod-nyvora-hr-monitor.json"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "hr-schedule-write-integrity",
+      "status": "passed",
+      "evidence": [
+        "browser-qa-evidence.md",
+        "local-simulation-certification.json",
+        "validation-checks.json"
+      ]
+    },
+    {
+      "name": "hr-same-day-shift-rule",
+      "status": "passed",
+      "evidence": [
+        "browser-qa-evidence.md",
+        "local-simulation-certification.json",
+        "unit-tests.txt"
+      ]
+    },
+    {
+      "name": "hr-route-assignment-no-overlap",
+      "status": "passed",
+      "evidence": [
+        "browser-qa-evidence.md",
+        "local-simulation-certification.json",
+        "unit-tests.txt"
+      ]
+    },
+    {
+      "name": "hr-monitoring-and-route-tracking",
+      "status": "passed",
+      "evidence": [
+        "browser-qa-evidence.md",
+        "qa-nyvora-hr-monitor.json",
+        "local-simulation-certification.json"
+      ]
+    },
+    {
+      "name": "no-silent-failure-on-hr-write",
+      "status": "passed",
+      "evidence": [
+        "browser-qa-evidence.md",
+        "local-simulation-certification.json",
+        "validation-checks.json",
+        "unit-tests.txt"
+      ]
+    },
+    {
+      "name": "tenant-isolation-and-rbac-hr-write",
+      "status": "passed",
+      "evidence": [
+        "local-simulation-certification.json",
+        "validation-checks.json",
+        "qa-fixture.json"
+      ]
+    },
+    {
+      "name": "model-company-nyvora-hr-monitor",
+      "status": "passed",
+      "evidence": [
+        "qa-nyvora-hr-monitor.json"
+      ]
+    },
+    {
+      "name": "adjacent-hr-regression",
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "validation-checks.json",
+        "qa-nyvora-hr-monitor.json"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "change_id": "hr-schedule-write-integrity-20260920",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "c87e09d27b05fa419d094889b4c0ded3df781486",
+  "decision": "APTO",
+  "qa_summary": "Cierre del split-brain de horarios del 'Monitor de mallas horarias / Asignar horarios', cambio frontend-only en apps/web. Certificacion end-to-end HTTP ejecutada en LOCAL con el script versionado (15/15 controles, 8 peticiones, 0 errores de servidor). Certificacion en QA mediante replica funcional de navegador (Chromium, MCP browser-use) sobre el bundle desplegado, con prueba de paridad de chunks: (1) jornada 20:35->05:00 bloqueada en el cliente antes de cualquier request (96 peticiones, todas GET, cero POST) con panel de validacion visible y modal abierto; (2) control positivo 09:00->13:00 con exactamente un POST /api/v1/hr/routes 200, banner verde role=status 'Horario asignado correctamente.', TimeRoute 299 persistido y visible en la lista del monitor; (3) intento solapado 11:00->12:00 con POST 409 mostrado en banner rosa role=alert mas toast de plataforma, modal abierto para corregir y cero registros nuevos. Consola: un unico error, el 409 deliberado; cero errores silenciosos. Integridad de base QA de solo lectura antes/despues: 0 huerfanos HOR-* en operational_routes, 18 operational_routes y 61 route_assignments sin variacion, 0 filas con route_date 2026-09-20: ni los rechazos ni el exito escribieron en el respaldo Supabase. NYVORA (empresa modelo) en QA aprobada contra la API desplegada (commit 7d6e8d1a3e6e): ruta dinamica 300, before 0 -> after punch_count 4, activity_count 1, evidence_count 1, closed_count 1, event_count 5; usuario de certificacion 510 desactivado al terminar. Fixture de navegador limpiado: TimeRoute 299 inactive, admin temporal 509 desactivado, sin borrados. Regresion local: apps/web HR 40/40, test:hr-schedule 16/16, suite completa apps/web 299/299, apps/api HR 58/58; suite completa apps/api con las 3 fallas preexistentes ajenas a HR.",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "browser-qa-evidence.md",
+        "local-simulation-certification.json",
+        "validation-checks.json",
+        "qa-fixture.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "browser-qa-evidence.md",
+        "local-simulation-certification.json",
+        "unit-tests.txt"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "qa-fixture.json",
+        "local-fixture.json",
+        "validation-checks.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "qa-nyvora-hr-monitor.json",
+        "validation-checks.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "qa-nyvora-hr-monitor.json",
+        "browser-qa-evidence.md",
+        "local-simulation-certification.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-schedule-write-integrity-local.js",
+    "evidence": [
+      "local-simulation-certification.json",
+      "local-fixture.json",
+      "browser-qa-evidence.md"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-schedule-write-integrity-local.js",
+    "evidence": [
+      "unit-tests.txt",
+      "validation-checks.json",
+      "qa-nyvora-hr-monitor.json",
+      "browser-qa-evidence.md"
+    ]
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../../apps/api/scripts/certifications/nyvora-hr-monitor-dynamic.js",
+    "evidence": [
+      "qa-nyvora-hr-monitor.json"
+    ]
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "b780f5941a03a171c79c63cb2651e4dcdc5fc1ab",
+    "trigger": "reintroduccion del exito aparente en asignacion de horarios (banner verde con horario huerfano), nuevas escrituras de /api/v1/hr/routes* cayendo al respaldo Supabase (huerfanos HOR-* en operational_routes/route_assignments), bloqueo cliente falso-positivo que impida asignar jornadas validas del mismo dia, regresion critica en el monitor de mallas o en la plataforma NYVORA certificada, o fallo del smoke de conectividad productiva tras el despliegue"
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "APEXOS QA release gate (autorizado por Edwin, release owner)",
+    "approved_at": "2026-09-20T22:35:00-05:00",
+    "scope": "develop to main for the exact QA-verified build c87e09d27b05fa419d094889b4c0ded3df781486: cierre del split-brain de horarios (guard shouldBlockHrWriteFallback en apps/web/lib/api.ts, predicado scheduleSameDayShiftIssue en apps/web/lib/hrScheduleMonitor.ts, banner con messageTone en la pantalla de rutas), script de certificacion local versionado y evidencia local + QA. Cambio frontend-only: apps/api no se toca.",
+    "authorization_basis": "Instruccion literal del release owner: 'procede con cerrar esta atualizacion en las 3 ramas para garantizar que el equipo cumpla con el recorreido sin arriesgar otras funciones'. La cadena desarrollo -> develop -> main queda autorizada sujeta a las puertas qa:promotion:scope, qa:preqa:evidence y qa:approval:evidence; el release owner ejecuta personalmente las puertas y la promocion."
+  },
+  "observations": [
+    "Nivel de prueba declarado sin sobreafirmar: la certificacion end-to-end HTTP (script versionado scripts/certifications/hr-schedule-write-integrity-local.js) se ejecuto en LOCAL porque el script rechaza cualquier api-url que no sea localhost/127.0.0.1; NO se ejecuto contra QA. La certificacion en QA es la replica funcional de navegador documentada en browser-qa-evidence.md, ejecutada por el release owner sobre el bundle realmente desplegado en https://apexos-web-qa-production.up.railway.app, con prueba de paridad de chunks (1cd0m38ffetfm.js contiene el guard minificado eo(e,t) con el set de escrituras HR y el regex de /api/v1/hr/routes/<id>; 3jdmo249igp4j.js contiene el banner con messageTone rosa/verde y role alert/status).",
+    "API QA no redesplegada: este release es frontend-only (apps/web), por lo que el servicio API de QA conserva el commit 7d6e8d1a3e6e en /health, que es identico al backend del tip de develop (c87e09d no modifica apps/api). Por eso la certificacion NYVORA contra QA con EXPECTED_COMMIT=7d6e8d1a3e6e es valida para este release: certifica el backend exactamente igual al que se promociona.",
+    "NYVORA (empresa modelo) en QA aprobada de verdad, ejecutada en esta corrida: ok=true, commit 7d6e8d1a3e6e, run_id 1789961427894, fecha 2026-09-20, ruta dinamica 300, before event_count 0 -> after punch_count 4 / activity_count 1 / evidence_count 1 / closed_count 1 / event_count 5. Conexion via pooler transaccional de Supabase QA (puerto 6543, pgbouncer=true, connection_limit=1) con DISABLE_REDIS=true; el pooler de sesion 5432 responde FATAL EMAXCONNSESSION porque pool_size 15 ya esta saturado por los servicios de Railway. Usuario de certificacion 510 desactivado al terminar (certification_user_deactivated=true). La ruta 300 y sus marcaciones quedan en QA como artefacto de certificacion, igual que la ruta 288 del release anterior.",
+    "Replica de navegador en QA (3 casos): jornada que cruza medianoche 20:35->05:00 bloqueada EN EL CLIENTE (96 peticiones, todas GET, cero POST) con panel 'Faltan datos para guardar' y modal abierto; control positivo 09:00->13:00 con un unico POST 200, banner verde role=status y TimeRoute 299 visible en el monitor; solapamiento 11:00->12:00 con POST 409 en banner rosa role=alert mas toast de plataforma, modal abierto y cero registros. Consola: un unico error (el 409 deliberado), cero errores silenciosos.",
+    "Integridad del split-brain verificada en base QA de solo lectura antes y despues del recorrido: huerfanos HOR-* en public.operational_routes = 0, operational_routes = 18 (semillas demo intactas), route_assignments = 61, filas con route_date 2026-09-20 = 0. Ni los rechazos 400/409 ni el exito 200 escribieron en las tablas del respaldo Supabase.",
+    "Limpieza del fixture QA ejecutada sin borrados: TimeRoute 299 -> status=inactive (1 fila), User qa.hrw.web.% -> active=false (1 fila); verificado 0 admins temporales activos. La contrasena del admin temporal no se persistio en ninguna evidencia.",
+    "Hallazgo abierto no bloqueante confirmado EN VIVO en QA: la tabla de consulta de horarios renderizo exactamente 100 filas, lo que confirma el tope take: 100 de listRoutes cuando no se pasa rango de fechas. Ya estaba documentado en releases anteriores; no lo introduce ni lo agrava este cambio.",
+    "Hallazgo abierto no bloqueante documentado en releases anteriores: truncamiento silencioso de operations-map por encima de 300 marcaciones/dia. Ajeno a este diff (frontend de asignacion de horarios); se mantiene como pendiente de roadmap.",
+    "Regresion local (del candidato funcional 6feac73, ancestro directo de c87e09d): apps/web HR 40/40, test:hr-schedule 16/16, suite completa apps/web *.test.mjs 299/299, apps/api HR 58/58, typecheck exit 0, lint 0 errors. Suite completa apps/api: 332/337 pass con las 3 fallas preexistentes ajenas a HR (inventory-transfer-product-list-ux, offline-bootstrap, zero-friendly-number-input) mas 2 skipped; cero regresiones atribuibles a un diff frontend-only.",
+    "Decision del dueno del producto preservada: las jornadas que cruzan medianoche siguen SIN soporte; no se modifico ninguna regla de negocio del backend. El arreglo es exclusivo de cliente: guard de respaldo, predicado espejo de assertSameDayShift y banner con tono de error.",
+    "Mecanica del release: el candidato final de la promocion develop -> main sera el commit de evidencia cuyo padre es c87e09d; ese commit solo agrega los 5 archivos de QA de este directorio, por lo que el inventario del scope-manifest-release.json (23 entradas) los incluye. Las 4 entradas D del diff origin/main..candidato son fantasma (artefactos prod-* que solo existen en main) y el merge union los preserva."
+  ]
+}
