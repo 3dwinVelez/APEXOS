@@ -3,23 +3,26 @@
   "certification": "hr-schedule-write-integrity-local",
   "environment": "LOCAL",
   "company": "SCJ",
-  "generated_at": "2026-09-21T02:39:50.340Z",
+  "generated_at": "2026-09-21T13:17:19.291Z",
   "api_commit": "unknown",
   "api_url": "http://127.0.0.1:3199",
-  "operating_date": "2026-09-20",
+  "operating_date": "2026-09-21",
   "scope": {
     "defect": "split-brain de horarios: escritura rechazada por la API caia al respaldo Supabase (operational_routes) que el monitor nunca lee; exito aparente sin horario visible.",
     "product_decision": "Las jornadas que cruzan medianoche siguen SIN soporte. No se cambio ninguna regla de negocio del backend.",
     "proven_by_live_execution": [
       "400 HORARIO_CRUZA_MEDIANOCHE y ningun TimeRoute creado",
       "409 MALLA_SOLAPADA y ningun TimeRoute adicional creado",
-      "horario valido creado por la API, devuelto por GET /api/v1/hr/routes y visible en operations-map, persistido en TimeRoute"
+      "horario valido creado por la API, devuelto por GET /api/v1/hr/routes y visible en operations-map, persistido en TimeRoute",
+      "GET /api/v1/hr/routes/assignments indexa las mallas del dia y POST /api/v1/hr/routes/prevalidate nombra persona y horario en conflicto antes de escribir"
     ],
     "proven_by_code_level_assertion": [
       "shouldBlockHrWriteFallback cubre /api/v1/hr/routes, /api/v1/hr/routes/bulk y /api/v1/hr/routes/<id> para todo metodo distinto de GET",
       "AMBAS ramas de respaldo de apiInternal (pre-vuelo y !response.ok) consultan el guard",
       "el formulario de rutas bloquea la medianoche antes de setSavingRoute(true) y de cualquier api()",
       "el banner de mensajes pinta los errores en rosa con role=alert",
+      "api.ts propaga body.details en ambas ramas 4xx y saveRoute prevalida contra /hr/routes/prevalidate antes de escribir, pintando los conflictos como issues y en el banner",
+      "PeoplePicker marca con aviso ambar a quien ya tiene malla en la fecha elegida usando el indice /hr/routes/assignments",
       "ausencia de huerfanos en operational_routes (tabla exclusiva de Supabase): el guard impide que supabaseApiFallback sea invocado para estas escrituras; NO se consulta Supabase en vivo"
     ]
   },
@@ -106,7 +109,17 @@
         "status": 409,
         "code": "MALLA_SOLAPADA",
         "error": "Ya existe una malla superpuesta para al menos una persona en la misma fecha.",
-        "conflicts": null
+        "conflicts": [
+          {
+            "route_id": 326,
+            "date": "2026-09-21",
+            "start_time": "08:00",
+            "end_time": "17:00",
+            "employees": [
+              "qa.hrw.juliana.20260921131719@scj.test"
+            ]
+          }
+        ]
       }
     },
     {
@@ -122,7 +135,7 @@
       "ok": true,
       "detail": {
         "status": 200,
-        "id": 276,
+        "id": 327,
         "code": null
       }
     },
@@ -134,7 +147,7 @@
         "found": true,
         "h_inicio": "09:00",
         "h_fin": "13:00",
-        "placa": "QAHRW023950"
+        "placa": "QAHRW131719"
       }
     },
     {
@@ -151,12 +164,12 @@
       "name": "valid_route_persisted_in_timmeroute_table",
       "ok": true,
       "detail": {
-        "id": 276,
+        "id": 327,
         "status": "active",
         "start_time": "09:00",
         "end_time": "13:00",
         "employees": [
-          "qa.hrw.control.20260921023950@scj.test"
+          "qa.hrw.control.20260921131719@scj.test"
         ]
       }
     },
@@ -167,32 +180,115 @@
         "overnight_routes": 0,
         "overlap_person_routes": 1
       }
+    },
+    {
+      "name": "assignments_index_reports_day_mallas",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "rows": 2,
+        "base": {
+          "employees": [
+            "qa.hrw.juliana.20260921131719@scj.test"
+          ],
+          "start_time": "08:00",
+          "end_time": "17:00",
+          "status": "active"
+        },
+        "control": {
+          "employees": [
+            "qa.hrw.control.20260921131719@scj.test"
+          ]
+        }
+      }
+    },
+    {
+      "name": "prevalidate_names_conflict_before_write",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "ok": false,
+        "conflicts": [
+          {
+            "route_id": 326,
+            "date": "2026-09-21",
+            "start_time": "08:00",
+            "end_time": "17:00",
+            "employees": [
+              "qa.hrw.juliana.20260921131719@scj.test"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "prevalidate_passes_free_window",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "ok": true
+      }
+    },
+    {
+      "name": "overlap_409_carries_actionable_details",
+      "ok": true,
+      "detail": {
+        "conflicts": [
+          {
+            "route_id": 326,
+            "date": "2026-09-21",
+            "start_time": "08:00",
+            "end_time": "17:00",
+            "employees": [
+              "qa.hrw.juliana.20260921131719@scj.test"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "client_preserves_error_details",
+      "ok": true,
+      "detail": {
+        "occurrences": 2
+      }
+    },
+    {
+      "name": "form_prevalidates_and_labels_assigned_people",
+      "ok": true,
+      "detail": {
+        "prevalidate_call": true,
+        "issues_with_detail": true,
+        "banner_with_detail": true,
+        "assignments_fetch": true,
+        "picker_label": true
+      }
     }
   ],
   "fixture": {
     "tenant_id": "001346eb-ba7f-4103-b032-73a219f1333e",
-    "admin_user_id": 404,
-    "admin_email": "qa.hrw.admin.20260921023950@scj.test",
+    "admin_user_id": 425,
+    "admin_email": "qa.hrw.admin.20260921131719@scj.test",
     "admin_role": "APEX_ADMIN",
-    "operating_date": "2026-09-20",
+    "operating_date": "2026-09-21",
     "persons": {
-      "overnight": "qa.hrw.nocturna.20260921023950@scj.test",
-      "overlap": "qa.hrw.juliana.20260921023950@scj.test",
-      "control": "qa.hrw.control.20260921023950@scj.test"
+      "overnight": "qa.hrw.nocturna.20260921131719@scj.test",
+      "overlap": "qa.hrw.juliana.20260921131719@scj.test",
+      "control": "qa.hrw.control.20260921131719@scj.test"
     },
-    "control_plate": "QAHRW023950"
+    "control_plate": "QAHRW131719"
   },
   "aggregates": {
-    "total_requests": 8,
+    "total_requests": 11,
     "by_status": {
-      "200": 6,
+      "200": 9,
       "400": 1,
       "409": 1
     },
     "server_errors": 0,
     "created_route_ids": [
-      275,
-      276
+      326,
+      327
     ],
     "rejected_writes": [
       {
@@ -208,6 +304,11 @@
     ]
   },
   "observations": {
+    "diagnostic_closure": {
+      "level": "code-level + live",
+      "live_proven": "GET /api/v1/hr/routes/assignments indexa las mallas del dia con la misma ventana y filtro que el 409; POST /hr/routes/prevalidate nombra persona y horario en conflicto antes de escribir y pasa en ventana libre; el 409 viaja con details.conflicts.",
+      "code_proven": "api.ts propaga body.details en ambas ramas 4xx; saveRoute prevalida antes de cualquier POST y pinta los conflictos como issues y en el banner; PeoplePicker marca con aviso ambar a quien ya tiene malla en la fecha elegida."
+    },
     "split_brain_closure": {
       "level": "code-level + live",
       "live_proven": "Las dos escrituras rechazadas (400 medianoche, 409 solapada) no crearon TimeRoute; el control positivo si queda en TimeRoute y es leido por GET /api/v1/hr/routes y operations-map.",
@@ -217,9 +318,9 @@
   },
   "status": "passed",
   "request_log_summary": {
-    "total": 8,
+    "total": 11,
     "by_status": {
-      "200": 6,
+      "200": 9,
       "400": 1,
       "409": 1
     },
@@ -269,14 +370,35 @@
       {
         "step": "list-read",
         "method": "GET",
-        "pathname": "/api/v1/hr/routes?date=2026-09-20",
+        "pathname": "/api/v1/hr/routes?date=2026-09-21",
         "status": 200,
         "code": null
       },
       {
         "step": "operations-map",
         "method": "GET",
-        "pathname": "/api/v1/hr/operations-map?date=2026-09-20&minutes=30&footprint_days=1&ping_limit=2000&punch_limit=2000&activity_limit=1000",
+        "pathname": "/api/v1/hr/operations-map?date=2026-09-21&minutes=30&footprint_days=1&ping_limit=2000&punch_limit=2000&activity_limit=1000",
+        "status": 200,
+        "code": null
+      },
+      {
+        "step": "assignments-index",
+        "method": "GET",
+        "pathname": "/api/v1/hr/routes/assignments?date=2026-09-21",
+        "status": 200,
+        "code": null
+      },
+      {
+        "step": "prevalidate-conflict",
+        "method": "POST",
+        "pathname": "/api/v1/hr/routes/prevalidate",
+        "status": 200,
+        "code": null
+      },
+      {
+        "step": "prevalidate-free",
+        "method": "POST",
+        "pathname": "/api/v1/hr/routes/prevalidate",
         "status": 200,
         "code": null
       }
@@ -286,5 +408,5 @@
     "admin_deactivated": true,
     "routes_deactivated": 2
   },
-  "finished_at": "2026-09-21T02:39:56.416Z"
+  "finished_at": "2026-09-21T13:17:24.545Z"
 }

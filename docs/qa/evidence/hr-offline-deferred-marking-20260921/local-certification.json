@@ -1,0 +1,761 @@
+{
+  "change_id": "hr-offline-deferred-marking-20260921",
+  "certification": "hr-offline-deferred-marking-local",
+  "environment": "LOCAL",
+  "company": "SCJ",
+  "generated_at": "2026-09-21T13:17:59.106Z",
+  "api_commit": "unknown",
+  "api_url": "http://127.0.0.1:3198",
+  "operating_timezone": "America/Bogota",
+  "operating_date": "2026-09-21",
+  "scope": {
+    "scenario": "El operario abre la jornada, pierde senal y sigue marcando: la marcacion conserva su fecha y hora reales, se encola en el equipo, admite GPS obligatorio sin fix dejando novedad, y al recuperar senal se sincroniza sin que la regla del dia la rechace.",
+    "deferred_window_hours": 24,
+    "future_tolerance_minutes": 15,
+    "proven_by_live_execution": [
+      "marcacion diferida aceptada y persistida con el punched_at declarado por el cliente, no con la hora del flush",
+      "novedad GPS_INACTIVO_SIN_SENAL creada en th_novedades_jornada y visible por GET /api/v1/hr/novelties",
+      "tipo de novedad GPS_INACTIVO_SIN_SENAL presente en GET /api/v1/hr/novelty-types",
+      "marcacion diferida fuera de la ventana rechazada con 409 MARCACION_DIFERIDA_EXPIRADA y sin escribir",
+      "marcacion en el futuro rechazada con 409 MARCACION_EN_EL_FUTURO y sin escribir",
+      "marcacion contra una ruta de otro dia rechazada con 409 HORARIO_FUERA_DEL_DIA",
+      "marcacion del dia en curso contra una ruta no activa rechazada con 409 HORARIO_NO_ACTIVO",
+      "correccion administrativa fuera del dia deja novedad AJUSTE_MANUAL_MARCACION",
+      "la correccion administrativa escribe sobre el empleado declarado en el payload y no sobre el admin que la ejecuta (defecto preexistente corregido)",
+      "marcacion self-service del dia en curso NO deja AJUSTE_MANUAL_MARCACION",
+      "actividad con GPS obligatorio y sin coordenadas rechazada con 422 GPS_OBLIGATORIO_SIN_UBICACION",
+      "actividad sin senal aceptada con occurred_at declarado y novedad GPS_INACTIVO_SIN_SENAL",
+      "GET /api/v1/hr/self/routes devuelve solo el horario del dia en curso aunque haya varios asignados",
+      "GET /api/v1/hr/operations-map expone el payload de truncamiento",
+      "reintento con la misma idempotency_key no duplica la marcacion"
+    ],
+    "proven_by_code_level_assertion": [
+      "decideOfflineMarking importado EN VIVO desde apps/web/lib/hrOfflineMarking.ts: sin senal permite marcar y declara gpsUnavailable; con PERMISSION_DENIED bloquea",
+      "la pantalla captura markedAt antes de cualquier await y lo envia como punched_at",
+      "sin senal se reutiliza un fix GPS en cache de menos de 25 s en marcacion y en actividad",
+      "shouldBlockHrWriteFallback cubre /api/v1/hr/self/* para todo metodo distinto de GET",
+      "el backend fija ownScope por la ruta invocada, no por el payload"
+    ],
+    "not_certified_here": [
+      "comportamiento real de un navegador en modo avion (IndexedDB, navigator.onLine, geolocation): requiere certificacion en dispositivo",
+      "Background Sync / Service Worker: la cola se vacia por listeners online y por reapertura de la pantalla",
+      "despliegue en QA y produccion: esta certificacion es exclusivamente local"
+    ]
+  },
+  "checks": [
+    {
+      "name": "health_ok",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "commit": "unknown"
+      }
+    },
+    {
+      "name": "admin_actor_has_employee_row_precondition",
+      "ok": true,
+      "detail": {
+        "admin_employee_id": 550,
+        "operator_employee_id": 551
+      }
+    },
+    {
+      "name": "offline_decision_allows_marking_without_signal",
+      "ok": true,
+      "detail": {
+        "offline": {
+          "allowed": true,
+          "gpsUnavailable": true,
+          "reason": "sin_senal",
+          "userMessage": "Sin senal: la marcacion quedo guardada con su fecha y hora reales y se sincronizara al recuperar senal. Se registrara la novedad \"GPS inactivo por falta de senal\"."
+        },
+        "offline_reason": "sin_senal"
+      }
+    },
+    {
+      "name": "denied_permission_is_the_only_blocking_cause",
+      "ok": true,
+      "detail": {
+        "denied": {
+          "allowed": false,
+          "gpsUnavailable": false,
+          "reason": "permiso_ubicacion_denegado",
+          "userMessage": "El GPS es obligatorio y negaste el permiso de ubicacion. Habilitalo en el navegador para poder marcar."
+        },
+        "timeout": {
+          "allowed": true,
+          "gpsUnavailable": true,
+          "reason": "gps_sin_fix_timeout",
+          "userMessage": "No fue posible obtener el GPS (timeout): la marcacion quedo guardada con su fecha y hora reales y se sincronizara al recuperar senal. Se registrara la novedad \"GPS inactivo por falta de senal\"."
+        },
+        "with_fix": {
+          "allowed": true,
+          "gpsUnavailable": false,
+          "reason": "",
+          "userMessage": ""
+        },
+        "gps_optional": {
+          "allowed": true,
+          "gpsUnavailable": false,
+          "reason": "",
+          "userMessage": ""
+        }
+      }
+    },
+    {
+      "name": "gps_failure_cause_classifies_wrapped_and_raw_errors",
+      "ok": true,
+      "detail": {
+        "wrapped": "TIMEOUT",
+        "raw_1": "PERMISSION_DENIED",
+        "raw_3": "TIMEOUT",
+        "unknown": "UNKNOWN"
+      }
+    },
+    {
+      "name": "novelty_metadata_contract_matches_backend_reader",
+      "ok": true,
+      "detail": {
+        "metadata": {
+          "gps_unavailable": true,
+          "gps_unavailable_reason": "sin_senal",
+          "queued_at": "2026-09-21T04:59:00.000Z"
+        }
+      }
+    },
+    {
+      "name": "marking_captures_real_click_time_before_any_await",
+      "ok": true,
+      "detail": {
+        "marked_at_index": 481,
+        "first_await_index": 823
+      }
+    },
+    {
+      "name": "marking_and_activity_reuse_recent_gps_cache_offline",
+      "ok": true,
+      "detail": {
+        "marking_reuses_cache": true,
+        "activity_reuses_cache": true,
+        "activity_declares_occurred_at": true
+      }
+    },
+    {
+      "name": "offline_queue_never_falls_back_to_supabase_for_self_service",
+      "ok": true,
+      "detail": {
+        "guard_covers_self_service": true,
+        "both_branches_guarded": true
+      }
+    },
+    {
+      "name": "backend_scope_is_fixed_by_route_not_by_payload",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "self_routes_returns_only_current_day_shift",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "returned": [
+          {
+            "id": 332,
+            "date": "2026-09-21T05:00:00.000Z"
+          }
+        ],
+        "expected_id": 332,
+        "assigned_days": [
+          "2026-09-20",
+          "2026-09-19",
+          "2026-09-21"
+        ]
+      }
+    },
+    {
+      "name": "deferred_marking_accepted",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null,
+        "error": null,
+        "payload_ok": true
+      }
+    },
+    {
+      "name": "deferred_marking_keeps_declared_real_time",
+      "ok": true,
+      "detail": {
+        "declared": "2026-09-21T04:59:00.000Z",
+        "persisted": "2026-09-21T04:59:00.000Z",
+        "persisted_date": "2026-09-20",
+        "expected_day": "2026-09-20",
+        "route_id": 328,
+        "expected_route_id": 328,
+        "latitude": null,
+        "longitude": null,
+        "crosses_midnight": true,
+        "age_hours_at_sync": 8.32
+      }
+    },
+    {
+      "name": "gps_unavailable_novelty_created",
+      "ok": true,
+      "detail": {
+        "before": 0,
+        "after": 1,
+        "created": [
+          {
+            "id": 14,
+            "logical_key": "001346eb-ba7f-4103-b032-73a219f1333e:551:2026-09-20:328:GPS_INACTIVO_SIN_SENAL:entrada:23:59"
+          }
+        ]
+      }
+    },
+    {
+      "name": "gps_unavailable_novelty_carries_signal_context",
+      "ok": true,
+      "detail": {
+        "type_code": "GPS_INACTIVO_SIN_SENAL",
+        "employee_id": 551,
+        "route_id": 328,
+        "requires_review": true,
+        "status": "pendiente",
+        "metadata": {
+          "reason": "sin_senal",
+          "source": "marcacion_sin_senal",
+          "marked_at": "2026-09-21T04:59:00.000Z",
+          "queued_at": "2026-09-21T04:59:00.000Z"
+        },
+        "expected_logical_key": "001346eb-ba7f-4103-b032-73a219f1333e:551:2026-09-20:328:GPS_INACTIVO_SIN_SENAL:entrada:23:59"
+      }
+    },
+    {
+      "name": "gps_novelty_visible_to_supervisor_via_api",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "returned": 1
+      }
+    },
+    {
+      "name": "gps_novelty_type_is_catalogued",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "returned": 22,
+        "present": true
+      }
+    },
+    {
+      "name": "offline_flush_retry_does_not_duplicate",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null,
+        "punches": 1,
+        "novelties": 1
+      }
+    },
+    {
+      "name": "stale_deferred_marking_rejected",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "MARCACION_DIFERIDA_EXPIRADA",
+        "error": "La marcacion diferida supero las 24 horas permitidas y debe corregirla un administrador.",
+        "age_hours": 30
+      }
+    },
+    {
+      "name": "stale_deferred_marking_writes_nothing",
+      "ok": true,
+      "detail": {
+        "before": 1,
+        "after": 1
+      }
+    },
+    {
+      "name": "future_marking_rejected",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "MARCACION_EN_EL_FUTURO",
+        "error": "La marcacion tiene una fecha y hora posteriores al momento actual.",
+        "tolerance_minutes": 15
+      }
+    },
+    {
+      "name": "future_marking_writes_nothing",
+      "ok": true,
+      "detail": {
+        "punches": 0
+      }
+    },
+    {
+      "name": "marking_against_other_day_route_rejected",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "HORARIO_FUERA_DEL_DIA",
+        "error": "Solo puedes operar el horario asignado para el dia de la marcacion.",
+        "route_day": "2026-09-19",
+        "marking_day": "2026-09-21",
+        "expected_day": "2026-09-21"
+      }
+    },
+    {
+      "name": "marking_against_non_active_shift_rejected",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "HORARIO_NO_ACTIVO",
+        "error": "Este horario no es el horario activo del empleado para hoy.",
+        "attempted_route": 331,
+        "active_route": 332
+      }
+    },
+    {
+      "name": "admin_out_of_day_correction_accepted",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null,
+        "error": null
+      }
+    },
+    {
+      "name": "admin_correction_lands_on_declared_employee_not_on_admin",
+      "ok": true,
+      "detail": {
+        "punch_employee_id": 552,
+        "declared_employee_id": 552,
+        "admin_employee_id": 550,
+        "admin_own_punches": 0,
+        "persisted_punched_at": "2026-09-20T07:17:59.079Z"
+      }
+    },
+    {
+      "name": "admin_out_of_day_correction_leaves_audit_novelty",
+      "ok": true,
+      "detail": {
+        "before": 0,
+        "after": 1,
+        "created": [
+          {
+            "id": 15,
+            "status": "pendiente",
+            "metadata": {
+              "detail": "Ajuste administrativo de la certificacion 20260921131759",
+              "reason": "correccion_qa",
+              "source": "correccion_administrativa",
+              "marked_at": "2026-09-20T07:17:59.079Z",
+              "recorded_at": "2026-09-21T13:18:05.575Z",
+              "corrected_by": 426
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "admin_adjustment_novelty_names_the_corrector",
+      "ok": true,
+      "detail": {
+        "metadata": {
+          "detail": "Ajuste administrativo de la certificacion 20260921131759",
+          "reason": "correccion_qa",
+          "source": "correccion_administrativa",
+          "marked_at": "2026-09-20T07:17:59.079Z",
+          "recorded_at": "2026-09-21T13:18:05.575Z",
+          "corrected_by": 426
+        }
+      }
+    },
+    {
+      "name": "self_service_current_day_marking_leaves_no_adjustment_novelty",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null,
+        "adjustments": 0
+      }
+    },
+    {
+      "name": "activity_with_required_gps_and_no_fix_rejected",
+      "ok": true,
+      "detail": {
+        "status": 422,
+        "code": "GPS_OBLIGATORIO_SIN_UBICACION",
+        "error": "GPS obligatorio para registrar actividad."
+      }
+    },
+    {
+      "name": "offline_activity_accepted_with_novelty",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null,
+        "error": null,
+        "novelties_before": 1,
+        "novelties_after": 2,
+        "created": [
+          {
+            "id": 16,
+            "logical_key": "001346eb-ba7f-4103-b032-73a219f1333e:551:2026-09-20:328:GPS_INACTIVO_SIN_SENAL:actividad-121:23:59"
+          }
+        ]
+      }
+    },
+    {
+      "name": "offline_activity_keeps_declared_occurred_at",
+      "ok": true,
+      "detail": {
+        "declared": "2026-09-21T04:59:00.000Z",
+        "persisted": "2026-09-21T04:59:00.000Z",
+        "activity_id": 121,
+        "route_id": 328,
+        "latitude": 0,
+        "longitude": 0,
+        "gps_skipped": true,
+        "tracking_mode": "punch_only"
+      }
+    },
+    {
+      "name": "operations_map_exposes_truncation_signal",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "truncation": {
+          "truncated": false,
+          "collections": [],
+          "hint": ""
+        },
+        "totals_truncated": false
+      }
+    },
+    {
+      "name": "operations_map_truncation_is_not_always_on",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "truncated": false,
+        "collections": []
+      }
+    },
+    {
+      "name": "no_server_errors_during_certification",
+      "ok": true,
+      "detail": {
+        "server_errors": 0
+      }
+    }
+  ],
+  "fixture": {
+    "tenant_id": "001346eb-ba7f-4103-b032-73a219f1333e",
+    "run_id": "20260921131759",
+    "admin_user_id": 426,
+    "admin_email": "qa.odm.admin.20260921131759@scj.test",
+    "operator_user_id": 427,
+    "operator_email": "qa.odm.operario.20260921131759@scj.test",
+    "operator_employee_id": 551,
+    "operator_code": "QAODM21131759",
+    "adjustment_employee_id": 552,
+    "dates": {
+      "today": "2026-09-21",
+      "deferred": "2026-09-20",
+      "admin_adjustment": "2026-09-20",
+      "out_of_day_route": "2026-09-19"
+    },
+    "routes": {
+      "deferred": 328,
+      "out_of_day": 329,
+      "adjustment": 330,
+      "inactive_morning": 331,
+      "active_afternoon": 332
+    }
+  },
+  "aggregates": {
+    "total_requests": 24,
+    "by_status": {
+      "200": 19,
+      "409": 4,
+      "422": 1
+    },
+    "server_errors": 0,
+    "created_route_ids": [
+      328,
+      329,
+      330,
+      331,
+      332
+    ],
+    "created_employee_ids": [
+      551,
+      552,
+      550
+    ],
+    "rejected_writes": [
+      {
+        "step": "deferred-punch-stale-reject",
+        "status": 409,
+        "code": "MARCACION_DIFERIDA_EXPIRADA"
+      },
+      {
+        "step": "deferred-punch-future-reject",
+        "status": 409,
+        "code": "MARCACION_EN_EL_FUTURO"
+      },
+      {
+        "step": "out-of-day-route-reject",
+        "status": 409,
+        "code": "HORARIO_FUERA_DEL_DIA"
+      },
+      {
+        "step": "inactive-route-reject",
+        "status": 409,
+        "code": "HORARIO_NO_ACTIVO"
+      },
+      {
+        "step": "activity-gps-required-no-coords",
+        "status": 422,
+        "code": "GPS_OBLIGATORIO_SIN_UBICACION"
+      }
+    ]
+  },
+  "observations": {
+    "deferred_window": {
+      "default_hours": 24,
+      "env_override": "HR_DEFERRED_MARKING_MAX_AGE_HOURS (1..72)",
+      "future_tolerance_minutes": 15,
+      "cross_midnight_exercised": true,
+      "deferred_instant": "2026-09-21T04:59:00.000Z",
+      "deferred_day": "2026-09-20",
+      "today": "2026-09-21",
+      "age_hours_at_sync": 8.32,
+      "note": "La corrida ejercito el cruce de medianoche real: la marcacion es del dia anterior y se sincroniza hoy."
+    },
+    "admin_path": {
+      "note": "La ruta administrativa POST /api/v1/hr/time-punches no pasa por assertOwnAssignedRoute: puede corregir cualquier fecha y por eso deja la novedad AJUSTE_MANUAL_MARCACION. La ventana diferida de 24 h aplica solo al self-service, que es la cola offline del operario.",
+      "scope_fixed_by": "options.scope === 'own', fijado por la ruta invocada y no por el payload"
+    },
+    "gps_novelty_catalog": {
+      "note": "El tipo GPS_INACTIVO_SIN_SENAL se asegura en tiempo de ejecucion (INSERT ... WHERE NOT EXISTS) ademas de la migracion 20260921000000, porque los tenants creados despues de una migracion de siembra no la reciben."
+    },
+    "deferred_activity_session": {
+      "defect": "createWorkActivity no le pasaba date a findCurrentWorkSession ni a ensureWorkSessionFromPunches, que ya estaban parametrizadas: ambas resolbian contra hoy.",
+      "impact": "Una actividad registrada sin senal durante la jornada y sincronizada al dia siguiente moria con 422 JORNADA_ACTIVA_REQUERIDA y se perdia, aunque la marcacion diferida de esa misma jornada si se aceptara.",
+      "fix": "La sesion se resuelve contra el dia del occurred_at declarado. Para una actividad del dia en curso el comportamiento es identico al anterior.",
+      "bounded_by": "createOwnWorkActivity pasa por assertOwnAssignedRoute, asi que occurred_at queda dentro de la misma ventana diferida de 24 h y de la regla del dia que las marcaciones."
+    },
+    "work_activity_coordinates": {
+      "finding_abierto": "WorkActivity.latitude/longitude son Float NO nulables y el servicio guarda 0 como centinela de sin-GPS (gpsSkipped ? 0 : Number(...)).",
+      "risk": "Un consumidor que plotee la coordenada sin mirar metadata.gps_skipped dibuja un punto fantasma en (0,0). TimePunch si admite NULL y ya queda corregido.",
+      "decision": "Se declara como hallazgo abierto y no se corrige aqui: volver nulables esas columnas es una migracion de esquema con impacto mas alla del alcance de este cambio. La senal honesta a consumir es metadata.gps_skipped / tracking_mode, que esta certificacion verifica."
+    },
+    "labor_configuration_date_cast": {
+      "finding_abierto": "getLaborConfiguration compara th_calendario_dias.date y th_conceptos_recargo.valid_to contra TIMESTAMPTZ de startOfDay/endOfDay con la sesion en UTC, el mismo patron que hacia invisibles las novedades por fecha.",
+      "impact_probable": "El calendario laboral pierde el primer dia del rango y los conceptos de recargo vigentes hasta hoy pueden quedar excluidos.",
+      "decision": "Se declara y no se corrige en este cambio: pertenece a la pantalla de configuracion laboral, fuera del alcance de la marcacion sin senal. Requiere su propia certificacion."
+    },
+    "null_coordinates_boundary_defect": {
+      "defect": "Fastify corre ajv con coerceTypes: un `latitude: null` declarado como type \"number\" se coercia a 0. La marcacion sin senal se persistia en (0,0) en vez de NULL.",
+      "impact": [
+        "el mapa de operaciones ploteaba un punto fantasma en el golfo de Guinea para una marcacion que no tiene GPS",
+        "el guard del servicio `input.latitude == null` nunca se cumplia por HTTP, asi que el 422 GPS_OBLIGATORIO_SIN_UBICACION no disparaba y la actividad quedaba guardada con coordenadas inventadas"
+      ],
+      "fix": "punchSchema, workActivitySchema y gpsPingSchema declaran latitude/longitude/accuracy_meters como anyOf [number, null], que es la convencion ya usada en el archivo.",
+      "why_unit_tests_missed_it": "Las pruebas unitarias llaman al servicio directamente y no atraviesan la validacion HTTP de Fastify; solo una certificacion extremo a extremo por HTTP podia verlo.",
+      "asserted_by": "deferred_marking_keeps_declared_real_time (latitude/longitude == null, lo que excluye 0) y offline_activity_keeps_declared_occurred_at"
+    }
+  },
+  "status": "passed",
+  "request_log_summary": {
+    "total": 24,
+    "by_status": {
+      "200": 19,
+      "409": 4,
+      "422": 1
+    },
+    "entries": [
+      {
+        "step": "health",
+        "method": "GET",
+        "pathname": "/health",
+        "status": 200,
+        "code": null
+      },
+      {
+        "step": "login-admin",
+        "method": "POST",
+        "pathname": "/api/v1/auth/login",
+        "status": 200,
+        "code": null
+      },
+      {
+        "step": "login-operario",
+        "method": "POST",
+        "pathname": "/api/v1/auth/login",
+        "status": 200,
+        "code": null
+      },
+      {
+        "step": "deferred-route",
+        "method": "POST",
+        "pathname": "/api/v1/hr/routes",
+        "status": 200,
+        "code": null
+      },
+      {
+        "step": "out-of-day-route",
+        "method": "POST",
+        "pathname": "/api/v1/hr/routes",
+        "status": 200,
+        "code": null
+      },
+      {
+        "step": "adjustment-route",
+        "method": "POST",
+        "pathname": "/api/v1/hr/routes",
+        "status": 200,
+        "code": null
+      },
+      {
+        "step": "no-active-morning",
+        "method": "POST",
+        "pathname": "/api/v1/hr/routes",
+        "status": 200,
+        "code": null
+      },
+      {
+        "step": "no-active-afternoon",
+        "method": "POST",
+        "pathname": "/api/v1/hr/routes",
+        "status": 200,
+        "code": null
+      },
+      {
+        "step": "self-routes-only-today",
+        "method": "GET",
+        "pathname": "/api/v1/hr/self/routes",
+        "status": 200,
+        "code": null
+      },
+      {
+        "step": "deferred-punch-accept",
+        "method": "POST",
+        "pathname": "/api/v1/hr/self/time-punches",
+        "status": 200,
+        "code": null
+      },
+      {
+        "step": "novelties-read",
+        "method": "GET",
+        "pathname": "/api/v1/hr/novelties?date=2026-09-20&type=GPS_INACTIVO_SIN_SENAL&limit=500",
+        "status": 200,
+        "code": null
+      },
+      {
+        "step": "novelty-types-read",
+        "method": "GET",
+        "pathname": "/api/v1/hr/novelty-types?limit=500",
+        "status": 200,
+        "code": null
+      },
+      {
+        "step": "deferred-punch-replay",
+        "method": "POST",
+        "pathname": "/api/v1/hr/self/time-punches",
+        "status": 200,
+        "code": null
+      },
+      {
+        "step": "deferred-punch-stale-reject",
+        "method": "POST",
+        "pathname": "/api/v1/hr/self/time-punches",
+        "status": 409,
+        "code": "MARCACION_DIFERIDA_EXPIRADA"
+      },
+      {
+        "step": "deferred-punch-future-reject",
+        "method": "POST",
+        "pathname": "/api/v1/hr/self/time-punches",
+        "status": 409,
+        "code": "MARCACION_EN_EL_FUTURO"
+      },
+      {
+        "step": "out-of-day-route-reject",
+        "method": "POST",
+        "pathname": "/api/v1/hr/self/time-punches",
+        "status": 409,
+        "code": "HORARIO_FUERA_DEL_DIA"
+      },
+      {
+        "step": "inactive-route-reject",
+        "method": "POST",
+        "pathname": "/api/v1/hr/self/time-punches",
+        "status": 409,
+        "code": "HORARIO_NO_ACTIVO"
+      },
+      {
+        "step": "admin-adjustment-out-of-day",
+        "method": "POST",
+        "pathname": "/api/v1/hr/time-punches",
+        "status": 200,
+        "code": null
+      },
+      {
+        "step": "own-today-punch",
+        "method": "POST",
+        "pathname": "/api/v1/hr/self/time-punches",
+        "status": 200,
+        "code": null
+      },
+      {
+        "step": "activity-types",
+        "method": "GET",
+        "pathname": "/api/v1/hr/self/activity-types",
+        "status": 200,
+        "code": null
+      },
+      {
+        "step": "activity-gps-required-no-coords",
+        "method": "POST",
+        "pathname": "/api/v1/hr/self/work-activities",
+        "status": 422,
+        "code": "GPS_OBLIGATORIO_SIN_UBICACION"
+      },
+      {
+        "step": "activity-offline-accepted",
+        "method": "POST",
+        "pathname": "/api/v1/hr/self/work-activities",
+        "status": 200,
+        "code": null
+      },
+      {
+        "step": "operations-map-truncation",
+        "method": "GET",
+        "pathname": "/api/v1/hr/operations-map?date=2026-09-21&minutes=30&footprint_days=1&ping_limit=100&punch_limit=100&activity_limit=100",
+        "status": 200,
+        "code": null
+      },
+      {
+        "step": "operations-map-wide",
+        "method": "GET",
+        "pathname": "/api/v1/hr/operations-map?date=2026-09-21&minutes=30&footprint_days=1&ping_limit=2000&punch_limit=2000&activity_limit=2000",
+        "status": 200,
+        "code": null
+      }
+    ]
+  },
+  "cleanup": {
+    "punches": 3,
+    "novelties": 3,
+    "activities": 1,
+    "routes_deactivated": 5,
+    "employees_deactivated": 3,
+    "admin_deactivated": true,
+    "operator_deactivated": true,
+    "note": "Limpieza selectiva por employee_id y route_id de esta corrida, en la base local. No toca QA ni produccion."
+  },
+  "finished_at": "2026-09-21T13:18:06.261Z"
+}

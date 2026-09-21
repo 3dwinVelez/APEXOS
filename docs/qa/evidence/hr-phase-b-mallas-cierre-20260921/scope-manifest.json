@@ -1,0 +1,393 @@
+{
+  "change_id": "hr-phase-b-mallas-cierre-20260921",
+  "scope_schema_version": 2,
+  "base_commits": {
+    "develop": "1481ff4fce47ef87f5c9764ff6b1b08e41aa8a33",
+    "main": "462a7ffbf22a6677e7691bb26a276da35dad0f06"
+  },
+  "certified_commit": "601f1f2a3ce1ac4fcb1205a9be0271fb4b8f28e9",
+  "certified_commit_note": "601f1f2 es el commit funcional certificado (Fase B + cierre diagnostico de mallas, con certificaciones 35/35 y 21/21 y evidencia). Este manifiesto y preqa-approval-evidence.json viajan en el commit docs inmediatamente siguiente, que es el candidato evaluado por la puerta; 601f1f2 es su ancestro. Las 35 entradas D son fantasma: evidencia QA exclusiva de develop que el diff de dos puntos reporta como eliminacion pero que el merge union preserva intacta en develop; estan declaradas una a una en allowed_deletions.",
+  "change_intent": {
+    "summary": "Fase B de talento humano (modulo hr), dos cierres: (1) Marcacion diferida sin senal: con horario abierto y sin senal, la pagina del operario guarda la marcacion/actividad en memoria local conservando la hora real, notifica al usuario que la huella y actividad se sincronizaran al recuperar senal (ventana diferida de 24h), y genera la novedad automatica GPS_INACTIVO_SIN_SENAL (migracion de datos idempotente que se aplica en el arranque del servicio). La regla del dia usa punched_at: solo se muestra y permite registrar el horario del dia actual, nunca de otros dias. (2) Cierre diagnostico del 409 MALLA_SOLAPADA: el rechazo por solapamiento es la regla legitima operando sobre datos reales, pero bloqueaba a ciegas; se cierran 4 fugas de diagnostico: prevalidacion antes de escribir (POST /hr/routes/prevalidate con schema propio routePrevalidateSchema que acepta dia unico o rango), nuevo indice GET /hr/routes/assignments con el mismo ventaneo y filtro de estado que findRouteAssignmentConflicts, setErrorHandler de server.js serializa error.details en 4xx, api.ts preserva details en las dos ramas, y el formulario de rutas etiqueta en el picker a quien ya tiene malla ese dia y bloquea el guardado en cliente con detalle accionable (persona, horas, fecha, id). Reglas de negocio intactas: el 409 y el 400 de medianoche siguen operando igual; solo cambia el diagnostico. Fuera de alcance: el bug preexistente de numeracion contable EM del qa:deterministic-validation (modulo comercial, incidencia aparte).",
+    "modules": [
+      "talento-humano",
+      "hr",
+      "mallas-horarias",
+      "marcacion",
+      "frontend",
+      "backend",
+      "qa-certification"
+    ]
+  },
+  "release_mechanics": "Merge normal de desarrollo -> develop con develop como primer padre. Las 35 entradas D del inventario son fantasma (evidencia QA exclusiva de develop generada en promociones anteriores, nunca presente en desarrollo); el merge las preserva. La migracion 20260921000000 es de datos e idempotente (INSERT ... WHERE NOT EXISTS) y se aplica automaticamente en el arranque del servicio en QA y produccion, sin ejecucion manual remota. Cambios de API limitados al modulo hr y al setErrorHandler (ramas 4xx/P2002/P2025 intactas en comportamiento; solo se agrega details). Suite de API conserva su linea base (3 fallas preexistentes ajenas a hr). Fixtures locales de la validacion de navegador desactivados (ruta 333 cancelada, empleado/usuario UIC inactivos); no se escribio en QA ni produccion.",
+  "allowed_paths": [
+    "apps/api/server.js",
+    "apps/api/src/modules/hr/",
+    "apps/api/prisma/migrations/20260921000000_gps_inactivo_sin_senal_novelty_type/",
+    "apps/api/test/hr-date-assignments.test.js",
+    "apps/api/test/hr-deferred-marking-offline.test.js",
+    "apps/web/app/dashboard/talento-humano/",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/gps.ts",
+    "apps/web/lib/hrOfflineEvidence.ts",
+    "apps/web/lib/hrOfflineMarking.ts",
+    "apps/web/package.json",
+    "apps/web/test/hr-offline-marking.test.mjs",
+    "apps/web/test/hr-route-write-fallback.test.mjs",
+    "package.json",
+    "scripts/certifications/hr-offline-deferred-marking-local.js",
+    "scripts/certifications/hr-schedule-write-integrity-local.js",
+    "docs/qa/evidence/hr-offline-deferred-marking-20260921/",
+    "docs/qa/evidence/mallas-conflict-ux-20260921/",
+    "docs/qa/evidence/hr-schedule-write-integrity-20260920/",
+    "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/",
+    "docs/qa/evidence/hr-markings-medellin-20260919/",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/",
+    "docs/qa/evidence/kilometraje-index-alignment-20260919/"
+  ],
+  "allowed_deletions": [
+    "docs/qa/evidence/hr-markings-medellin-20260919/browser-qa-evidence.md",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-06-marcacion-bello-a-jornada-cerrada.png",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-07-marcacion-bello-a-historial-4-marcas.png",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-08-mapa-qa-ruta-282-bello-polilneas.png",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-09-mapa-qa-ruta-284-envigado-polilneas.png",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-10-monitor-qa-horario-282-cerrado.png",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-approval-evidence.json",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-certification-failed-prefix-f04add4.json",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-certification.json",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-fixture.json",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-nyvora-hr-monitor.json",
+    "docs/qa/evidence/hr-markings-medellin-20260919/scope-manifest-release.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/browser-qa-evidence.md",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-01-mallas-lista-kpi.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-02-monitor-drawer-viewport.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-03-lightbox-evidencia-ampliada.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-04-mapa-ruta-entre-marcaciones.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-05-monitor-historico-scrolltop.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-approval-evidence.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-certification.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-fixture.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-nyvora-hr-monitor.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/scope-manifest-release.json",
+    "docs/qa/evidence/hr-schedule-write-integrity-20260920/browser-qa-evidence.md",
+    "docs/qa/evidence/hr-schedule-write-integrity-20260920/qa-approval-evidence.json",
+    "docs/qa/evidence/hr-schedule-write-integrity-20260920/qa-fixture.json",
+    "docs/qa/evidence/hr-schedule-write-integrity-20260920/qa-nyvora-hr-monitor.json",
+    "docs/qa/evidence/hr-schedule-write-integrity-20260920/scope-manifest-release.json",
+    "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-approval-evidence.json",
+    "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-certification.json",
+    "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-fixture-deactivation.json",
+    "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-fixture.json",
+    "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-index-alignment-verification.json",
+    "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-nyvora-hr-monitor.json",
+    "docs/qa/evidence/kilometraje-index-alignment-20260919/scope-manifest-release.json"
+  ],
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260921000000_gps_inactivo_sin_senal_novelty_type/migration.sql"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/server.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-date-assignments.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-deferred-marking-offline.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/marcacion/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/api.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/gps.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/hrOfflineEvidence.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/hrOfflineMarking.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/package.json"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-offline-marking.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-route-write-fallback.test.mjs"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-markings-medellin-20260919/browser-qa-evidence.md"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-06-marcacion-bello-a-jornada-cerrada.png"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-07-marcacion-bello-a-historial-4-marcas.png"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-08-mapa-qa-ruta-282-bello-polilneas.png"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-09-mapa-qa-ruta-284-envigado-polilneas.png"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-10-monitor-qa-horario-282-cerrado.png"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-approval-evidence.json"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-certification-failed-prefix-f04add4.json"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-certification.json"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-fixture.json"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-nyvora-hr-monitor.json"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-markings-medellin-20260919/scope-manifest-release.json"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/browser-qa-evidence.md"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-01-mallas-lista-kpi.png"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-02-monitor-drawer-viewport.png"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-03-lightbox-evidencia-ampliada.png"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-04-mapa-ruta-entre-marcaciones.png"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-05-monitor-historico-scrolltop.png"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-approval-evidence.json"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-certification.json"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-fixture.json"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-nyvora-hr-monitor.json"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/scope-manifest-release.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-offline-deferred-marking-20260921/local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-offline-deferred-marking-20260921/local-fixture.json"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-schedule-write-integrity-20260920/browser-qa-evidence.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/qa/evidence/hr-schedule-write-integrity-20260920/local-fixture.json"
+    },
+    {
+      "status": "M",
+      "file": "docs/qa/evidence/hr-schedule-write-integrity-20260920/local-simulation-certification.json"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-schedule-write-integrity-20260920/qa-approval-evidence.json"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-schedule-write-integrity-20260920/qa-fixture.json"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-schedule-write-integrity-20260920/qa-nyvora-hr-monitor.json"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-schedule-write-integrity-20260920/scope-manifest-release.json"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-approval-evidence.json"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-certification.json"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-fixture-deactivation.json"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-fixture.json"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-index-alignment-verification.json"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-nyvora-hr-monitor.json"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/scope-manifest-release.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/mallas-conflict-ux-20260921/browser-blocked-save.png"
+    },
+    {
+      "status": "M",
+      "file": "package.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-offline-deferred-marking-local.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-schedule-write-integrity-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/unit-tests.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/validation-checks.json"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "marcacion_diferida_sin_senal",
+      "status": "passed",
+      "evidence": [
+        "../hr-offline-deferred-marking-20260921/local-certification.json",
+        "../hr-offline-deferred-marking-20260921/local-fixture.json"
+      ]
+    },
+    {
+      "name": "regla_solo_horario_del_dia",
+      "status": "passed",
+      "evidence": [
+        "../hr-offline-deferred-marking-20260921/local-certification.json"
+      ]
+    },
+    {
+      "name": "novedad_gps_inactivo_sin_senal",
+      "status": "passed",
+      "evidence": [
+        "../hr-offline-deferred-marking-20260921/local-certification.json"
+      ]
+    },
+    {
+      "name": "cierre_diagnostico_malla_solapada",
+      "status": "passed",
+      "evidence": [
+        "../hr-schedule-write-integrity-20260920/local-simulation-certification.json",
+        "../mallas-conflict-ux-20260921/browser-blocked-save.png"
+      ]
+    },
+    {
+      "name": "integridad_escritura_horarios_sin_split_brain",
+      "status": "passed",
+      "evidence": [
+        "../hr-schedule-write-integrity-20260920/local-simulation-certification.json"
+      ]
+    },
+    {
+      "name": "rbac_y_aislamiento_tenant",
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt"
+      ]
+    },
+    {
+      "name": "regresion_plataforma",
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "validation-checks.json"
+      ]
+    }
+  ]
+}

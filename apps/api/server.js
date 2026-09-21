@@ -361,7 +361,10 @@ async function build() {
     if (code === "P2002") return reply.code(409).send({ error: "Registro duplicado", code: "DUPLICADO", request_id: requestId });
     if (code === "P2025") return reply.code(404).send({ error: "No encontrado", code: "NO_ENCONTRADO", request_id: requestId });
     if (error.statusCode && error.statusCode >= 400 && error.statusCode < 500) {
-      return reply.code(error.statusCode).send({ error: error.message, code: error.code || "VALIDACION", request_id: requestId });
+      // details lleva diagnostico estructurado generado por el servidor (p. ej. los
+      // conflictos de MALLA_SOLAPADA): sin esto el cliente solo recibe una frase generica.
+      const details = error.details && typeof error.details === "object" && !Array.isArray(error.details) ? error.details : undefined;
+      return reply.code(error.statusCode).send({ error: error.message, code: error.code || "VALIDACION", request_id: requestId, ...(details ? { details } : {}) });
     }
     if (error.statusCode === 503 && error.code === "MARCACION_CONCURRENCIA_TEMPORAL") {
       return reply.code(503).send({ error: error.message, code: error.code, request_id: requestId });
