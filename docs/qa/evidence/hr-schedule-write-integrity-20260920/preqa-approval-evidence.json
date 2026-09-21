@@ -1,0 +1,82 @@
+{
+  "change_id": "hr-schedule-write-integrity-20260920",
+  "commit": "6feac730713138bd2cc8904b82f009bdb4057dfe",
+  "commit_note": "6feac73 es el commit funcional que contiene exactamente el cambio certificado (fix de cliente + script de certificacion + evidencia local). Este archivo de evidencia viaja en el commit docs siguiente, que es el candidato de la promocion; 6feac73 es su ancestro directo.",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "local-simulation-certification.json",
+        "validation-checks.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "local-simulation-certification.json",
+        "unit-tests.txt"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "local-fixture.json",
+        "validation-checks.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "validation-checks.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "local-simulation-certification.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-schedule-write-integrity-local.js",
+    "evidence": [
+      "local-simulation-certification.json",
+      "local-fixture.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-schedule-write-integrity-local.js",
+    "evidence": [
+      "unit-tests.txt",
+      "validation-checks.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "APEXOS release owner (Edwin)",
+    "approved_at": "2026-09-20T22:10:00-05:00",
+    "authorization_basis": "Instruccion del release owner al experto QA de disenar y ejecutar una certificacion end-to-end versionada del cierre del split-brain de horarios en ambiente LOCAL y producir la evidencia para la compuerta pre-QA desarrollo -> develop. Esta aprobacion habilita UNICAMENTE el despliegue del candidato a QA para ejecucion funcional (scope promotion_to_develop_for_qa); NO acredita funcionamiento en QA, NO autoriza develop -> main y NO autoriza produccion. El release owner ejecuta personalmente las puertas qa:promotion:scope y qa:preqa:evidence tras revisar el arbol de trabajo; el agente no promociona ni despliega. qa_status permanece pending hasta la certificacion de navegador en QA con el commit desplegado."
+  },
+  "observations": [
+    "Certificacion LOCAL end-to-end ejecutada con el script versionado scripts/certifications/hr-schedule-write-integrity-local.js: 15/15 controles, 8 peticiones HTTP, 0 errores de servidor. API Fastify levantada en 127.0.0.1:3199 contra PostgreSQL local (55432/apexos), tenant SCJ.",
+    "Jornada que cruza medianoche (20:35->05:00): la API responde 400 HORARIO_CRUZA_MEDIANOCHE y NO crea TimeRoute (verificado en base antes/despues). El predicado cliente scheduleSameDayShiftIssue la bloquea antes del request y devuelve exactamente el mismo mensaje que assertSameDayShift. Las jornadas que cruzan medianoche siguen SIN soporte por decision del dueno del producto; no se cambio ninguna regla del backend.",
+    "Asignacion solapada (misma persona, misma fecha, 15:50->16:00 sobre base 08:00-17:00): la API responde 409 MALLA_SOLAPADA y NO crea horario adicional (conteo TimeRoute queda en 1).",
+    "Control positivo: horario valido 09:00-13:00 creado por POST /api/v1/hr/routes es devuelto por GET /api/v1/hr/routes?date, visible en GET /api/v1/hr/operations-map?date y persistido en TimeRoute (status active). Esto prueba que el monitor lee lo que la API escribe.",
+    "Split-brain cerrado: shouldBlockHrWriteFallback cubre /api/v1/hr/routes, /bulk y /<id> para todo metodo != GET, y las DOS ramas de respaldo de apiInternal (preventiva ~4237 y no-OK ~4281) lo consultan; una escritura rechazada ya no puede caer a supabaseApiFallback. Las lecturas GET del monitor conservan su respaldo.",
+    "Nivel de prueba declarado sin sobreafirmar: la ausencia de huerfanos en operational_routes/route_assignments (tablas exclusivas de Supabase) se demuestra a NIVEL DE CODIGO (el guard impide invocar el respaldo para estas escrituras), NO por consulta en vivo a Supabase. En vivo se demuestra que las escrituras rechazadas no crean TimeRoute y que el control positivo si queda visible. No se hizo ninguna escritura ni consulta remota a QA/produccion/Supabase.",
+    "Regresion: apps/web HR 40/40, test:hr-schedule 16/16, suite completa apps/web *.test.mjs 299/299, apps/api HR 58/58. typecheck exit 0, lint 0 errors (13 warnings preexistentes).",
+    "Suite completa apps/api: 337 tests, 332 pass, 3 fail, 2 skipped. Las 3 fallas son el conjunto preexistente y ajeno a HR (inventory-transfer-product-list-ux, offline-bootstrap, zero-friendly-number-input), en apps/api que este diff no toca. El flake de tiempos 'el calculo local de decision tiene sobrecosto despreciable' (security-authorization-revocation) PASO en esta corrida. Cero regresiones atribuibles al cambio (diff frontend-only).",
+    "banner de mensajes: nuevo estado messageTone; los errores se pintan en rosa con role='alert' en vez de siempre verde/emerald, y el catch fija setMessageTone('error').",
+    "Pendiente para develop -> main (no bloquea el pre-QA): certificacion de navegador/plataforma en vivo sobre QA con el commit exacto desplegado (reproducir la novedad desde la interfaz real, abrir/editar/guardar/reabrir/recargar y negativos visibles), segun docs/CHANGE_APPROVAL_QA_POLICY.md.",
+    "Limpieza local: admin temporal desactivado y las 2 rutas creadas quedaron en status inactive (solo local). El script rechaza cualquier api-url que no sea localhost/127.0.0.1."
+  ]
+}

@@ -66,3 +66,23 @@ export function scheduleGpsRequired(route: { gps_required?: unknown; tracking_mo
 export function scheduleTrackingMode(gpsRequired: boolean) {
   return gpsRequired ? "gps" : "punch_only";
 }
+
+// Espejo de minutesFromTime en apps/api/src/modules/hr/policy.js: acepta HH:mm y
+// HH:mm:ss, y devuelve null cuando la hora no es valida.
+function scheduleMinutesFromTime(value?: string | null) {
+  if (!value || !/^\d{2}:\d{2}/.test(String(value))) return null;
+  const hours = Number(String(value).slice(0, 2));
+  const minutes = Number(String(value).slice(3, 5));
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+  return hours * 60 + minutes;
+}
+
+// Regla de negocio: los horarios que cruzan medianoche no estan soportados. Devuelve
+// "" cuando la jornada es valida o el mensaje que la pantalla debe mostrar al usuario.
+export function scheduleSameDayShiftIssue(startTime?: string | null, endTime?: string | null) {
+  const start = scheduleMinutesFromTime(startTime);
+  const end = scheduleMinutesFromTime(endTime);
+  if (start == null || end == null) return "Define horas validas en formato HH:mm.";
+  if (end <= start) return "La hora final debe ser estrictamente posterior a la hora inicial dentro de la misma fecha.";
+  return "";
+}

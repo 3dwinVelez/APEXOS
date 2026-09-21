@@ -3,7 +3,7 @@
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { Badge, Skeleton } from "@/components/ui/feedback";
-import { localCalendarDate, scheduleGpsRequired, scheduleMonitorDate, scheduleTrackingMode } from "@/lib/hrScheduleMonitor";
+import { localCalendarDate, scheduleGpsRequired, scheduleMonitorDate, scheduleSameDayShiftIssue, scheduleTrackingMode } from "@/lib/hrScheduleMonitor";
 import { subscribeHrMonitorRefresh } from "@/lib/hrMonitorRefresh";
 import { AlertTriangle, ArrowLeft, Building2, CalendarDays, Camera, CheckCircle2, CheckSquare2, ChevronLeft, ChevronRight, Clock, Copy, Edit3, Filter, HelpCircle, ImageOff, LogIn, LogOut, MapPin, Navigation, PlayCircle, Plus, RefreshCw, RotateCcw, Save, Search, Square, Timer, Truck, UserPlus, Utensils, UtensilsCrossed, X, ZoomIn } from "lucide-react";
 import Link from "next/link";
@@ -350,6 +350,7 @@ export default function RoutesPlanningPage() {
   const [monitorDate, setMonitorDate] = useState(initialDate);
   const [selectedRouteId, setSelectedRouteId] = useState("");
   const [message, setMessage] = useState("");
+  const [messageTone, setMessageTone] = useState<"success" | "error">("success");
   const [modal, setModal] = useState<"route" | "edit" | null>(null);
   const [editingRoute, setEditingRoute] = useState<RouteMonitor | null>(null);
   const [loadingMonitor, setLoadingMonitor] = useState(false);
@@ -591,7 +592,12 @@ export default function RoutesPlanningPage() {
     if (scheduleKind === "administrative" && !administrativeSite) issues.push("Selecciona una sede administrativa.");
     if (!form.start_time) issues.push("Diligencia la hora de inicio.");
     if (!form.end_time) issues.push("Diligencia la hora de fin.");
-    if (form.start_time && form.end_time && form.end_time === form.start_time) issues.push("La hora de inicio y la hora de fin no pueden ser iguales.");
+    // Los horarios que cruzan medianoche no estan soportados: la API los rechaza con
+    // HORARIO_CRUZA_MEDIANOCHE. Se valida aqui para no enviar la solicitud en vano.
+    if (form.start_time && form.end_time) {
+      const sameDayIssue = scheduleSameDayShiftIssue(form.start_time, form.end_time);
+      if (sameDayIssue) issues.push(sameDayIssue);
+    }
     if (!Number.isFinite(form.tolerance_minutes) || form.tolerance_minutes < 0) issues.push("La tolerancia debe ser un numero igual o mayor que cero.");
     if (!form.employees.length) issues.push("Selecciona al menos una persona para el horario.");
     if (issues.length) {
@@ -604,12 +610,15 @@ export default function RoutesPlanningPage() {
       if (modal === "edit" && editingRoute) {
         await api<TimeRoute>(`/api/v1/hr/routes/${editingRoute.id}`, { method: "PATCH", body: JSON.stringify(routePayload(editingRoute.status || "active")) });
         setMessage("Horario actualizado correctamente.");
+        setMessageTone("success");
       } else if (bulkMode) {
         const result = await api<{ created: number }>("/api/v1/hr/routes/bulk", { method: "POST", body: JSON.stringify({ ...routePayload("active"), start_date: bulk.start_date, end_date: bulk.end_date, weekdays: bulk.weekdays }) });
         setMessage(`${result.created || 0} horario(s) asignado(s) correctamente.`);
+        setMessageTone("success");
       } else {
         await api<TimeRoute>("/api/v1/hr/routes", { method: "POST", body: JSON.stringify(routePayload("active")) });
         setMessage("Horario asignado correctamente.");
+        setMessageTone("success");
       }
       setMonitorDate(savedMonitorDate);
       resetForm();
@@ -617,6 +626,7 @@ export default function RoutesPlanningPage() {
       await Promise.all([loadRoutes(), loadReferenceData(), loadEventSummaries(), loadMonitor(savedMonitorDate)]);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No fue posible guardar el horario.");
+      setMessageTone("error");
     } finally {
       setSavingRoute(false);
     }
@@ -742,7 +752,7 @@ export default function RoutesPlanningPage() {
         </button>
       </header>
 
-      {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-900">{message}</div> : null}
+      {message ? <div className={`rounded-md border p-4 text-sm font-medium ${messageTone === "error" ? "border-rose-200 bg-rose-50 text-rose-900" : "border-emerald-200 bg-emerald-50 text-emerald-900"}`} role={messageTone === "error" ? "alert" : "status"}>{message}</div> : null}
 
       <section className="overflow-hidden rounded-md border border-line bg-surface">
         <div className="border-b border-line p-4">

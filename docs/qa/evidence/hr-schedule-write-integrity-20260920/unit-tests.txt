@@ -1,0 +1,93 @@
+# Certificacion de integridad de escritura de horarios (cierre del split-brain) - change_id hr-schedule-write-integrity-20260920
+# Fecha: 2026-09-20
+# Ambiente: LOCAL (worktree desarrollo), PostgreSQL local localhost:55432/apexos, API Fastify levantada en 127.0.0.1:3199
+# Rama: desarrollo   HEAD: 3f92b351a2fbaff76c93837d7fa1f600bdf8d9bf
+# Alcance del diff: SOLO apps/web (frontend) + scripts/certifications + evidencia. NO se toca apps/api (runtime backend intacto).
+
+# ---------------------------------------------------------------------------
+# 1) CERTIFICACION END-TO-END (script versionado, flujo real por HTTP + base)
+# ---------------------------------------------------------------------------
+$ node scripts/certifications/hr-schedule-write-integrity-local.js
+#   (alias npm: certify:hr-schedule-write-integrity:local)
+CERTIFICACION INTEGRIDAD HORARIOS APROBADA: 15 controles, 8 peticiones, status=passed
+# checks 15 / ok 15 / fail 0   server_errors 0
+# Controles: health_ok, client_predicate_mirrors_api_rule, fallback_guard_blocks_all_hr_route_writes,
+#   both_fallback_branches_consult_guard, routes_form_blocks_midnight_before_request,
+#   error_banner_not_painted_as_success, overnight_shift_rejected_400 (400 HORARIO_CRUZA_MEDIANOCHE),
+#   overnight_shift_creates_no_horario, overlapping_assignment_rejected_409 (409 MALLA_SOLAPADA),
+#   overlap_creates_no_extra_horario, valid_route_created_via_api, valid_route_returned_by_list,
+#   valid_route_visible_in_operations_map, valid_route_persisted_in_timmeroute_table,
+#   rejected_writes_produced_no_orphan_timmeroute
+# Evidencia: local-simulation-certification.json, local-fixture.json
+
+# ---------------------------------------------------------------------------
+# 2) SUITE apps/web HR (modulos tocados por el diff: api.ts, hrScheduleMonitor.ts, rutas/page.tsx)
+# ---------------------------------------------------------------------------
+$ node --test test/hr-schedule-monitor.test.mjs test/hr-route-write-fallback.test.mjs test/hr-landing-information-architecture.test.mjs test/hr-marking-only-access.test.mjs test/hr-monitor-refresh.test.mjs test/hr-reports-xlsx.test.mjs test/hr-workday-novelties-ui.test.mjs test/nyvora-visual-route-gate.test.mjs
+# tests 40
+# pass 40
+# fail 0
+# skipped 0
+
+$ npm --workspace apps/web run test:hr-schedule
+# tests 16
+# pass 16
+# fail 0
+# (hr-schedule-monitor.test.mjs extendido + hr-route-write-fallback.test.mjs nuevo)
+
+# ---------------------------------------------------------------------------
+# 3) SUITE COMPLETA apps/web (*.test.mjs) - api.ts es modulo compartido; regresion amplia
+# ---------------------------------------------------------------------------
+$ node --test test/*.test.mjs
+# tests 299
+# pass 299
+# fail 0
+# skipped 0
+
+# ---------------------------------------------------------------------------
+# 4) SUITE apps/api HR-relacionada (regresion de capacidades HR protegidas)
+# ---------------------------------------------------------------------------
+$ node --test apps/api/test/hr-route-assignment-lock.test.js apps/api/test/hr-route-event-summaries.test.js apps/api/test/hr-operations-map-contract.test.js apps/api/test/hr-single-active-schedule-certificate.test.js apps/api/test/hr-workday-novelties-policy.test.js apps/api/test/hr-workday-novelties-contract.test.js apps/api/test/hr-reports-range.test.js apps/api/test/hr-monitor-silent-failures.test.js apps/api/test/hr-monitor-evidence-demand.test.js apps/api/test/hr-marking-only-rbac.test.js apps/api/test/hr-marking-kilometraje-conflict.test.js
+# tests 48
+# pass 48
+# fail 0
+
+$ node --test apps/api/test/hr-marking-concurrency.test.js apps/api/test/hr-marking-concurrency-certificate.test.js apps/api/test/nyvora-hr-monitor-dynamic-certificate.test.js
+# tests 10
+# pass 10
+# fail 0
+# Total HR apps/api: 58/58 pass
+
+# ---------------------------------------------------------------------------
+# 5) TYPECHECK y LINT apps/web
+# ---------------------------------------------------------------------------
+$ npm --workspace apps/web run typecheck
+# exit 0 (sin errores)
+
+$ npm --workspace apps/web run lint
+# 13 problems (0 errors, 13 warnings)
+# exit 0 - los 13 warnings son preexistentes (no-unused-vars, react-hooks/exhaustive-deps,
+# no-location-assign-relative-destination); ninguno introducido por este cambio.
+
+# ---------------------------------------------------------------------------
+# 6) SUITE COMPLETA apps/api - linea base de fallas preexistentes (NO HR)
+# ---------------------------------------------------------------------------
+$ node --test apps/api/test/*.test.js
+not ok 123 - inventario ofrece lista de productos filtrable y exportable        (inventory-transfer-product-list-ux.test.js)
+not ok 37 - apps\api\test\offline-bootstrap.test.js                              (offline-bootstrap.test.js)
+not ok 337 - compras ventas IVA y retenciones reutilizan el control numerico     (zero-friendly-number-input.test.js)
+# tests 337
+# pass 332
+# fail 3
+# skipped 2
+
+# Analisis de fallas (preexistentes vs regresiones):
+# - Las 3 fallas son EXACTAMENTE el conjunto preexistente documentado y son AJENAS a HR:
+#   inventory-transfer-product-list-ux (inventario), offline-bootstrap (offline) y
+#   zero-friendly-number-input (compras/ventas/IVA). Viven en apps/api, que este diff NO toca.
+# - El flake de tiempos 'el calculo local de decision tiene sobrecosto despreciable'
+#   (security-authorization-revocation) PASO en esta corrida (ok 205), a diferencia de la
+#   corrida base de develop donde fallo bajo carga paralela; confirma su naturaleza de flake.
+# - CERO fallas en pruebas HR. CERO regresiones atribuibles al cambio (diff frontend-only).
+# - Linea base: como el diff no modifica apps/api, el resultado de la suite de API es
+#   independiente del cambio; las 3 fallas se reproducen identicas sin el diff aplicado.

@@ -1,0 +1,290 @@
+{
+  "change_id": "hr-schedule-write-integrity-20260920",
+  "certification": "hr-schedule-write-integrity-local",
+  "environment": "LOCAL",
+  "company": "SCJ",
+  "generated_at": "2026-09-21T02:39:50.340Z",
+  "api_commit": "unknown",
+  "api_url": "http://127.0.0.1:3199",
+  "operating_date": "2026-09-20",
+  "scope": {
+    "defect": "split-brain de horarios: escritura rechazada por la API caia al respaldo Supabase (operational_routes) que el monitor nunca lee; exito aparente sin horario visible.",
+    "product_decision": "Las jornadas que cruzan medianoche siguen SIN soporte. No se cambio ninguna regla de negocio del backend.",
+    "proven_by_live_execution": [
+      "400 HORARIO_CRUZA_MEDIANOCHE y ningun TimeRoute creado",
+      "409 MALLA_SOLAPADA y ningun TimeRoute adicional creado",
+      "horario valido creado por la API, devuelto por GET /api/v1/hr/routes y visible en operations-map, persistido en TimeRoute"
+    ],
+    "proven_by_code_level_assertion": [
+      "shouldBlockHrWriteFallback cubre /api/v1/hr/routes, /api/v1/hr/routes/bulk y /api/v1/hr/routes/<id> para todo metodo distinto de GET",
+      "AMBAS ramas de respaldo de apiInternal (pre-vuelo y !response.ok) consultan el guard",
+      "el formulario de rutas bloquea la medianoche antes de setSavingRoute(true) y de cualquier api()",
+      "el banner de mensajes pinta los errores en rosa con role=alert",
+      "ausencia de huerfanos en operational_routes (tabla exclusiva de Supabase): el guard impide que supabaseApiFallback sea invocado para estas escrituras; NO se consulta Supabase en vivo"
+    ]
+  },
+  "checks": [
+    {
+      "name": "health_ok",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "commit": "unknown"
+      }
+    },
+    {
+      "name": "client_predicate_mirrors_api_rule",
+      "ok": true,
+      "detail": {
+        "api_code": "HORARIO_CRUZA_MEDIANOCHE",
+        "api_message": "La hora final debe ser estrictamente posterior a la hora inicial dentro de la misma fecha.",
+        "client_message": "La hora final debe ser estrictamente posterior a la hora inicial dentro de la misma fecha.",
+        "valid_same_day": "",
+        "valid_overlap_window": "",
+        "equal_hours": "La hora final debe ser estrictamente posterior a la hora inicial dentro de la misma fecha.",
+        "hms_valid": "",
+        "malformed": "Define horas validas en formato HH:mm."
+      }
+    },
+    {
+      "name": "fallback_guard_blocks_all_hr_route_writes",
+      "ok": true,
+      "detail": {
+        "has_collection_path": true,
+        "has_bulk_path": true,
+        "has_detail_regex": true,
+        "blocks_non_get_only": true
+      }
+    },
+    {
+      "name": "both_fallback_branches_consult_guard",
+      "ok": true,
+      "detail": {
+        "preflight_guarded": true,
+        "not_ok_guarded": true
+      }
+    },
+    {
+      "name": "routes_form_blocks_midnight_before_request",
+      "ok": true,
+      "detail": {
+        "predicate_feeds_issues": true,
+        "issues_abort_before_saving": true,
+        "weak_equality_removed": true
+      }
+    },
+    {
+      "name": "error_banner_not_painted_as_success",
+      "ok": true,
+      "detail": {
+        "tone_state_present": true,
+        "rose_palette": true,
+        "alert_role": true
+      }
+    },
+    {
+      "name": "overnight_shift_rejected_400",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "HORARIO_CRUZA_MEDIANOCHE",
+        "error": "La hora final debe ser estrictamente posterior a la hora inicial dentro de la misma fecha."
+      }
+    },
+    {
+      "name": "overnight_shift_creates_no_horario",
+      "ok": true,
+      "detail": {
+        "before": 0,
+        "after": 0
+      }
+    },
+    {
+      "name": "overlapping_assignment_rejected_409",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "MALLA_SOLAPADA",
+        "error": "Ya existe una malla superpuesta para al menos una persona en la misma fecha.",
+        "conflicts": null
+      }
+    },
+    {
+      "name": "overlap_creates_no_extra_horario",
+      "ok": true,
+      "detail": {
+        "after_base": 1,
+        "after_reject": 1
+      }
+    },
+    {
+      "name": "valid_route_created_via_api",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "id": 276,
+        "code": null
+      }
+    },
+    {
+      "name": "valid_route_returned_by_list",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "found": true,
+        "h_inicio": "09:00",
+        "h_fin": "13:00",
+        "placa": "QAHRW023950"
+      }
+    },
+    {
+      "name": "valid_route_visible_in_operations_map",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "present": true,
+        "start_time": "09:00",
+        "end_time": "13:00"
+      }
+    },
+    {
+      "name": "valid_route_persisted_in_timmeroute_table",
+      "ok": true,
+      "detail": {
+        "id": 276,
+        "status": "active",
+        "start_time": "09:00",
+        "end_time": "13:00",
+        "employees": [
+          "qa.hrw.control.20260921023950@scj.test"
+        ]
+      }
+    },
+    {
+      "name": "rejected_writes_produced_no_orphan_timmeroute",
+      "ok": true,
+      "detail": {
+        "overnight_routes": 0,
+        "overlap_person_routes": 1
+      }
+    }
+  ],
+  "fixture": {
+    "tenant_id": "001346eb-ba7f-4103-b032-73a219f1333e",
+    "admin_user_id": 404,
+    "admin_email": "qa.hrw.admin.20260921023950@scj.test",
+    "admin_role": "APEX_ADMIN",
+    "operating_date": "2026-09-20",
+    "persons": {
+      "overnight": "qa.hrw.nocturna.20260921023950@scj.test",
+      "overlap": "qa.hrw.juliana.20260921023950@scj.test",
+      "control": "qa.hrw.control.20260921023950@scj.test"
+    },
+    "control_plate": "QAHRW023950"
+  },
+  "aggregates": {
+    "total_requests": 8,
+    "by_status": {
+      "200": 6,
+      "400": 1,
+      "409": 1
+    },
+    "server_errors": 0,
+    "created_route_ids": [
+      275,
+      276
+    ],
+    "rejected_writes": [
+      {
+        "step": "overnight-reject",
+        "status": 400,
+        "code": "HORARIO_CRUZA_MEDIANOCHE"
+      },
+      {
+        "step": "overlap-reject",
+        "status": 409,
+        "code": "MALLA_SOLAPADA"
+      }
+    ]
+  },
+  "observations": {
+    "split_brain_closure": {
+      "level": "code-level + live",
+      "live_proven": "Las dos escrituras rechazadas (400 medianoche, 409 solapada) no crearon TimeRoute; el control positivo si queda en TimeRoute y es leido por GET /api/v1/hr/routes y operations-map.",
+      "code_proven": "shouldBlockHrWriteFallback cubre /api/v1/hr/routes, /bulk y /<id> para todo metodo != GET, y ambas ramas de respaldo de apiInternal lo consultan; por tanto supabaseApiFallback nunca es invocado para estas escrituras y no puede generar filas huerfanas en operational_routes.",
+      "not_live_proven": "operational_routes/route_assignments son tablas exclusivas de Supabase. No se consultan ni se escriben en vivo (ambiente local, sin writes remotos). Su imposibilidad de huerfanos se demuestra por la ausencia de invocacion del respaldo (codigo), no por una consulta a Supabase."
+    }
+  },
+  "status": "passed",
+  "request_log_summary": {
+    "total": 8,
+    "by_status": {
+      "200": 6,
+      "400": 1,
+      "409": 1
+    },
+    "entries": [
+      {
+        "step": "health",
+        "method": "GET",
+        "pathname": "/health",
+        "status": 200,
+        "code": null
+      },
+      {
+        "step": "login",
+        "method": "POST",
+        "pathname": "/api/v1/auth/login",
+        "status": 200,
+        "code": null
+      },
+      {
+        "step": "overnight-reject",
+        "method": "POST",
+        "pathname": "/api/v1/hr/routes",
+        "status": 400,
+        "code": "HORARIO_CRUZA_MEDIANOCHE"
+      },
+      {
+        "step": "overlap-base",
+        "method": "POST",
+        "pathname": "/api/v1/hr/routes",
+        "status": 200,
+        "code": null
+      },
+      {
+        "step": "overlap-reject",
+        "method": "POST",
+        "pathname": "/api/v1/hr/routes",
+        "status": 409,
+        "code": "MALLA_SOLAPADA"
+      },
+      {
+        "step": "control-create",
+        "method": "POST",
+        "pathname": "/api/v1/hr/routes",
+        "status": 200,
+        "code": null
+      },
+      {
+        "step": "list-read",
+        "method": "GET",
+        "pathname": "/api/v1/hr/routes?date=2026-09-20",
+        "status": 200,
+        "code": null
+      },
+      {
+        "step": "operations-map",
+        "method": "GET",
+        "pathname": "/api/v1/hr/operations-map?date=2026-09-20&minutes=30&footprint_days=1&ping_limit=2000&punch_limit=2000&activity_limit=1000",
+        "status": 200,
+        "code": null
+      }
+    ]
+  },
+  "cleanup": {
+    "admin_deactivated": true,
+    "routes_deactivated": 2
+  },
+  "finished_at": "2026-09-21T02:39:56.416Z"
+}
