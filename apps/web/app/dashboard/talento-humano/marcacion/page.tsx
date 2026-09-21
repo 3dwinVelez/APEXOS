@@ -5,9 +5,36 @@ import { getGpsFix, type GpsFix } from "@/lib/gps";
 import { scheduleGpsRequired } from "@/lib/hrScheduleMonitor";
 import { publishHrMonitorRefresh } from "@/lib/hrMonitorRefresh";
 import { isMarkingOnlyAccess } from "@/lib/accessProfile";
+import {
+  buildHrOfflineSnapshot,
+  classifySyncFailure,
+  decideOfflineMarking,
+  degradeUntilPersisted,
+  degradedScheduleNotice,
+  evidenceRefMarker,
+  evidenceRefOf,
+  gpsFailureCause,
+  gpsUnavailableMetadata,
+  inlineEvidenceBytes,
+  payloadByteLength,
+  requestOutcome,
+  resolveDegradedSchedule,
+  syncFailureReason,
+  type GpsFailureCause,
+  type HrOfflineSnapshot,
+  type RequestOutcome,
+  type ScheduleSource
+} from "@/lib/hrOfflineMarking";
+import {
+  deleteHrOfflineEvidence,
+  getHrOfflineEvidence,
+  newHrOfflineEvidenceRef,
+  pruneHrOfflineEvidence,
+  putHrOfflineEvidence
+} from "@/lib/hrOfflineEvidence";
 import { SignatureCapture } from "@/components/operations/SignatureCapture";
 import { PhotoCapture, type CapturedFile } from "@/components/operations/PhotoCapture";
-import { AlertTriangle, ArrowLeft, CheckCircle2, ExternalLink, MapPin, Navigation, Plus, RefreshCw, Truck, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, ExternalLink, MapPin, Navigation, Plus, RefreshCw, Truck, WifiOff, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -22,7 +49,20 @@ type PreopAnswer = { answer: string; observations: string; evidence: CapturedFil
 type ActivityType = { id: number | string; code?: string; name: string; active: boolean };
 type WorkActivity = { id: number; activity_type_name: string; observation: string; occurred_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; evidence?: Array<{ base64_data?: string; file_name?: string }> };
 type WorkSession = { id: number; active: boolean; session: { id: number; status: string; started_at: string; closed_at?: string; route_id?: number | string | null } | null; activities: WorkActivity[]; alerts: Array<{ type: string; severity: string; message: string }> };
-type PendingSyncItem = { id: string; path: string; payload: unknown; created_at: string; attempts: number; label: string };
+type PendingSyncItem = {
+  id: string;
+  path: string;
+  payload: unknown;
+  created_at: string;
+  attempts: number;
+  label: string;
+  status?: "queued" | "blocked";
+  blocked_reason?: string;
+  blocked_code?: string;
+  evidence_refs?: string[];
+  evidence_dropped?: boolean;
+};
+type MessageTone = "success" | "error" | "pending";
 
 const overtimeReasons = [
   ["entrega_cliente_extendida", "Entrega extendida por solicitud del cliente"],
@@ -45,7 +85,20 @@ const punchLabels: Record<string, { title: string; desc: string; color: string }
   salida: { title: "Fin jornada", desc: "Registra tu cierre del dia", color: "bg-violet-600" }
 };
 const pendingSyncKey = "apexos_hr_mobile_pending_sync";
+const hrSnapshotKey = "apexos_hr_mobile_snapshot";
+const pendingSyncLimit = 50;
+const evidencePayloadKeys = ["photo", "extra_evidence"] as const;
 let pendingSyncInFlight = false;
+
+const messageToneStyles: Record<MessageTone, { className: string; role: "alert" | "status" }> = {
+  error: { className: "border-rose-200 bg-rose-50 text-rose-900", role: "alert" },
+  pending: { className: "border-amber-200 bg-amber-50 text-amber-950", role: "status" },
+  success: { className: "border-emerald-200 bg-emerald-50 text-emerald-900", role: "status" }
+};
+
+function isBlockedItem(item: PendingSyncItem) {
+  return item.status === "blocked";
+}
 
 function readPendingSync() {
   if (typeof window === "undefined") return [] as PendingSyncItem[];
@@ -57,15 +110,142 @@ function readPendingSync() {
   }
 }
 
-function writePendingSync(items: PendingSyncItem[]) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(pendingSyncKey, JSON.stringify(items.slice(-50)));
+function readHrSnapshot(): HrOfflineSnapshot | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const parsed = JSON.parse(localStorage.getItem(hrSnapshotKey) || "null") as HrOfflineSnapshot | null;
+    return parsed && Array.isArray(parsed.routes) ? parsed : null;
+  } catch {
+    return null;
+  }
 }
 
-function enqueuePendingSync(path: string, payload: unknown, label: string) {
-  const item: PendingSyncItem = { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, path, payload, created_at: new Date().toISOString(), attempts: 0, label };
-  writePendingSync([...readPendingSync(), item]);
-  return item;
+function writeHrSnapshot(snapshot: HrOfflineSnapshot) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(hrSnapshotKey, JSON.stringify(snapshot));
+  } catch {
+    // El snapshot es una mejora de arranque en frio; si no cabe, no debe romper la marcacion.
+  }
+}
+
+function stripInlineEvidence(item: PendingSyncItem): PendingSyncItem {
+  const payload = { ...(item.payload as Record<string, unknown>) };
+  for (const key of evidencePayloadKeys) delete payload[key];
+  return {
+    ...item,
+    payload,
+    evidence_dropped: true,
+    status: "blocked",
+    blocked_reason: "El dispositivo se quedo sin espacio local y la foto de evidencia fue descartada. Vuelve a tomar el registro con la foto.",
+    blocked_code: "EVIDENCIA_DESCARTADA_POR_CUOTA"
+  };
+}
+
+// setItem lanza QuotaExceededError cuando la cola crece (las fotos en base64 son grandes).
+// La degradacion la decide degradeUntilPersisted; aqui solo queda el pegamento con localStorage.
+function writePendingSync(items: PendingSyncItem[]): { items: PendingSyncItem[]; notice: string } {
+  if (typeof window === "undefined") return { items, notice: "" };
+  const result = degradeUntilPersisted<PendingSyncItem>({
+    items,
+    limit: pendingSyncLimit,
+    serialize: (entries) => JSON.stringify(entries),
+    persist: (serialized) => {
+      try {
+        localStorage.setItem(pendingSyncKey, serialized);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    stripEvidence: stripInlineEvidence,
+    photoBytesOf: (item) => inlineEvidenceBytes(item.payload)
+  });
+  if (!result.persisted) {
+    return { items: result.items, notice: "El almacenamiento local del dispositivo esta lleno y no fue posible guardar la marcacion pendiente. Sincroniza con senal antes de cerrar la app." };
+  }
+  return { items: result.items, notice: quotaNotice(result.stripped, result.dropped, result.items) };
+}
+
+function quotaNotice(stripped: string[], dropped: string[], current: PendingSyncItem[]) {
+  const parts: string[] = [];
+  if (stripped.length) parts.push(`${stripped.length} registro(s) quedaron bloqueados sin su foto por falta de espacio local.`);
+  if (dropped.length) parts.push(`${dropped.length} registro(s) antiguo(s) fueron descartados para liberar espacio.`);
+  if (!parts.length) return "";
+  parts.push(current.filter((item) => !isBlockedItem(item)).length
+    ? "El resto de la cola sigue pendiente de sincronizar."
+    : "Revisa la cola bloqueada antes de continuar.");
+  return parts.join(" ");
+}
+
+function evidenceRefsOf(item: PendingSyncItem) {
+  const payload = (item.payload || {}) as Record<string, unknown>;
+  const fromPayload = evidencePayloadKeys
+    .map((key) => evidenceRefOf(payload[key]))
+    .filter((ref): ref is string => Boolean(ref));
+  return Array.from(new Set([...(item.evidence_refs || []), ...fromPayload]));
+}
+
+async function externalizeEvidence(payload: Record<string, unknown>) {
+  const result: Record<string, unknown> = { ...payload };
+  const refs: string[] = [];
+  for (const key of evidencePayloadKeys) {
+    const photo = result[key] as CapturedFile | undefined;
+    if (!photo?.base64) continue;
+    const ref = newHrOfflineEvidenceRef(key);
+    const stored = await putHrOfflineEvidence(ref, { base64: photo.base64, size: photo.size, type: photo.type, name: photo.name });
+    // Sin IndexedDB la evidencia sigue inline: la politica de cuota la protege de todos modos.
+    if (stored) {
+      result[key] = evidenceRefMarker(ref);
+      refs.push(ref);
+    }
+  }
+  return { payload: result, refs };
+}
+
+async function rehydrateEvidence(payload: unknown) {
+  const result = { ...(payload as Record<string, unknown>) };
+  for (const key of evidencePayloadKeys) {
+    const ref = evidenceRefOf(result[key]);
+    if (!ref) continue;
+    const photo = await getHrOfflineEvidence(ref);
+    if (!photo) throw new Error("La evidencia guardada en este dispositivo ya no esta disponible.");
+    result[key] = photo;
+  }
+  return result;
+}
+
+async function cleanupEvidence(item: PendingSyncItem) {
+  await Promise.all(evidenceRefsOf(item).map((ref) => deleteHrOfflineEvidence(ref)));
+}
+
+async function enqueuePendingSync(path: string, payload: Record<string, unknown>, label: string) {
+  const prepared = await externalizeEvidence(payload);
+  const item: PendingSyncItem = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    path,
+    payload: prepared.payload,
+    created_at: new Date().toISOString(),
+    attempts: 0,
+    label,
+    status: "queued",
+    evidence_refs: prepared.refs
+  };
+  const written = writePendingSync([...readPendingSync(), item]);
+  return { item, items: written.items, notice: written.notice };
+}
+
+function blockPendingSync(items: PendingSyncItem[], id: string, reason: string, code = "") {
+  return items.map((item) => (item.id === id ? { ...item, status: "blocked" as const, blocked_reason: reason, blocked_code: code } : item));
+}
+
+function discardPendingSync(id: string) {
+  const items = readPendingSync();
+  const target = items.find((item) => item.id === id);
+  const queue = items.filter((item) => item.id !== id);
+  writePendingSync(queue);
+  if (target) void cleanupEvidence(target);
+  return queue;
 }
 
 function permanentSyncFailure(error: unknown) {
@@ -73,37 +253,62 @@ function permanentSyncFailure(error: unknown) {
   return status >= 400 && status < 500 && ![408, 429].includes(status);
 }
 
-async function flushPendingSync(onUpdate?: (items: PendingSyncItem[], message?: string) => void) {
+async function settle<T>(promise: Promise<T>, fallback: T): Promise<RequestOutcome<T>> {
+  try {
+    return requestOutcome(true, await promise);
+  } catch {
+    return requestOutcome(false, fallback);
+  }
+}
+
+type SyncUpdate = (items: PendingSyncItem[], message?: string, tone?: MessageTone) => void;
+
+async function flushPendingSync(onUpdate?: SyncUpdate) {
   if (typeof window === "undefined" || pendingSyncInFlight) return false;
   let queue = readPendingSync();
   if (!queue.length) {
     onUpdate?.([], "");
     return false;
   }
+  // Sin senal no hay nada que intentar: se evita quemar el timeout de red en cada intervalo.
+  if (navigator.onLine === false) return false;
   pendingSyncInFlight = true;
   let changed = false;
   try {
-    while (queue.length) {
-      const item = queue[0];
+    for (;;) {
+      const index = queue.findIndex((item) => !isBlockedItem(item));
+      if (index < 0) break;
+      const item = queue[index];
+      let outbound: unknown;
       try {
-        await api(item.path, { method: "POST", body: JSON.stringify(item.payload) });
-        queue = queue.slice(1);
-        writePendingSync(queue);
+        outbound = await rehydrateEvidence(item.payload);
+      } catch (error) {
+        const failure = classifySyncFailure(error);
+        queue = writePendingSync(blockPendingSync(queue, item.id, syncFailureReason(failure))).items;
         changed = true;
+        onUpdate?.(queue, `${item.label} quedo bloqueado: ${syncFailureReason(failure)}`, "error");
+        continue;
+      }
+      try {
+        await api(item.path, { method: "POST", body: JSON.stringify(outbound) });
+        queue = writePendingSync(queue.filter((entry) => entry.id !== item.id)).items;
+        changed = true;
+        void cleanupEvidence(item);
         publishHrMonitorRefresh({ source: "mobile-sync" });
-        onUpdate?.(queue, queue.length ? `${item.label} sincronizado. Quedan ${queue.length} registro(s) por confirmar.` : `${item.label} sincronizado. El monitor ya puede actualizarse.`);
+        onUpdate?.(queue, queue.filter((entry) => !isBlockedItem(entry)).length
+          ? `${item.label} sincronizado. Quedan ${queue.filter((entry) => !isBlockedItem(entry)).length} registro(s) por confirmar.`
+          : `${item.label} sincronizado. El monitor ya puede actualizarse.`, "success");
       } catch (error) {
         if (permanentSyncFailure(error)) {
-          queue = queue.slice(1);
-          writePendingSync(queue);
+          const failure = classifySyncFailure(error);
+          queue = writePendingSync(blockPendingSync(queue, item.id, syncFailureReason(failure), failure.code)).items;
           changed = true;
-          onUpdate?.(queue, `${item.label} no fue aceptado: ${error instanceof Error ? error.message : "validacion permanente"}. Revisa el horario y vuelve a intentar.`);
+          onUpdate?.(queue, `${item.label} no fue aceptado: ${syncFailureReason(failure)}`, "error");
           continue;
         }
         const next = { ...item, attempts: item.attempts + 1 };
-        queue = [next, ...queue.slice(1)];
-        writePendingSync(queue);
-        onUpdate?.(queue, `${item.label} pendiente de confirmar. Se reintentara automaticamente.`);
+        queue = writePendingSync(queue.map((entry) => (entry.id === item.id ? next : entry))).items;
+        onUpdate?.(queue, `${item.label} pendiente de confirmar. Se reintentara automaticamente.`, "pending");
         break;
       }
     }
@@ -111,6 +316,10 @@ async function flushPendingSync(onUpdate?: (items: PendingSyncItem[], message?: 
     pendingSyncInFlight = false;
   }
   return changed;
+}
+
+function offlineQueueWeight(items: PendingSyncItem[]) {
+  return items.reduce((total, item) => total + payloadByteLength(item.payload), 0);
 }
 
 function employeeName(employee: Employee | null) {
@@ -209,25 +418,57 @@ export default function MobilePunchPage() {
   const [activityMessage, setActivityMessage] = useState("");
   const [markingType, setMarkingType] = useState<string | null>(null);
   const [pendingSync, setPendingSync] = useState<PendingSyncItem[]>([]);
+  const [messageTone, setMessageTone] = useState<MessageTone>("success");
+  const [online, setOnline] = useState(true);
+  const [gpsCause, setGpsCause] = useState<GpsFailureCause | null>(null);
+  const [scheduleSource, setScheduleSource] = useState<ScheduleSource>("live");
+  const [scheduleNotice, setScheduleNotice] = useState("");
+
+  function notify(text: string, tone: MessageTone = "success") {
+    setMessage(text);
+    setMessageTone(tone);
+  }
 
   const load = useCallback(async () => {
-    const [me, routeData, attendanceData, typesData, sessionData] = await Promise.all([
-      api<Employee>("/api/v1/hr/self").catch(() => null),
-      api<TimeRoute[]>("/api/v1/hr/self/routes").catch(() => []),
-      api<Attendance[]>("/api/v1/hr/self/attendance").catch(() => []),
-      api<ActivityType[]>("/api/v1/hr/self/activity-types").catch(() => []),
-      api<WorkSession>("/api/v1/hr/self/work-session").catch(() => null)
+    const [meResult, routesResult, attendanceResult, typesResult, sessionResult] = await Promise.all([
+      settle<Employee | null>(api<Employee>("/api/v1/hr/self"), null),
+      settle<TimeRoute[]>(api<TimeRoute[]>("/api/v1/hr/self/routes"), []),
+      settle<Attendance[]>(api<Attendance[]>("/api/v1/hr/self/attendance"), []),
+      settle<ActivityType[]>(api<ActivityType[]>("/api/v1/hr/self/activity-types"), []),
+      settle<WorkSession | null>(api<WorkSession>("/api/v1/hr/self/work-session"), null)
     ]);
-    setEmployee(me);
-    setRoutes(routeData.filter((item) => !item.date || String(item.date).slice(0, 10) === todayBogota()));
-    setAttendance(attendanceData);
+    const today = todayBogota();
+    const dayRoutes = routesResult.value.filter((item) => !item.date || String(item.date).slice(0, 10) === today);
+    const snapshot = buildHrOfflineSnapshot({
+      previous: readHrSnapshot(),
+      self: meResult,
+      routes: { ok: routesResult.ok, value: dayRoutes },
+      activityTypes: typesResult,
+      takenAt: new Date().toISOString(),
+      takenDay: today
+    });
+    if (snapshot) writeHrSnapshot(snapshot);
+    const resolved = resolveDegradedSchedule<TimeRoute>({
+      routesOk: routesResult.ok,
+      liveRoutes: dayRoutes,
+      snapshot,
+      today
+    });
+    const typesData = typesResult.ok || typesResult.value.length
+      ? typesResult.value
+      : ((snapshot?.activity_types || []) as ActivityType[]);
+    setEmployee(meResult.ok ? meResult.value : ((snapshot?.self || null) as Employee | null));
+    setRoutes(resolved.routes);
+    setScheduleSource(resolved.source);
+    setScheduleNotice(resolved.source === "live" ? "" : degradedScheduleNotice(resolved, today));
+    setAttendance(attendanceResult.value);
     const pendingPunchKeys = new Set(readPendingSync()
       .filter((item) => item.path.endsWith("/time-punches"))
       .map((item) => String((item.payload as { idempotency_key?: string })?.idempotency_key || ""))
       .filter(Boolean));
     setOptimisticPunches((current) => current.filter((punch) => punch.idempotency_key && pendingPunchKeys.has(punch.idempotency_key)));
     setActivityTypes(typesData);
-    setSession(sessionData);
+    setSession(sessionResult.value);
     if (typesData[0]) setActivityTypeId((current) => current || String(typesData[0].id));
     const active = await api<{ checklist: PreopChecklist | null; template: PreopTemplate }>("/api/v1/hr/self/preop/active").catch(() => null);
     if (active?.checklist) {
@@ -242,25 +483,45 @@ export default function MobilePunchPage() {
   }, [load]);
 
   useEffect(() => {
-    setPendingSync(readPendingSync());
+    const initialQueue = readPendingSync();
+    setPendingSync(initialQueue);
+    setOnline(typeof navigator === "undefined" ? true : navigator.onLine !== false);
+    // Los blobs cuya marcacion ya no esta en la cola son huerfanos de sesiones interrumpidas.
+    void pruneHrOfflineEvidence(initialQueue.flatMap(evidenceRefsOf));
     let mounted = true;
     const sync = () => {
-      flushPendingSync((items, syncMessage) => {
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        if (mounted) setPendingSync(readPendingSync());
+        return;
+      }
+      flushPendingSync((items, syncMessage, tone) => {
         if (!mounted) return;
         setPendingSync(items);
-        if (syncMessage) setMessage(syncMessage);
+        if (syncMessage) notify(syncMessage, tone || "pending");
       }).then((changed) => {
         if (changed && mounted) load().catch(() => undefined);
       }).catch(() => undefined);
     };
+    const goOnline = () => {
+      if (!mounted) return;
+      setOnline(true);
+      // Al recuperar senal el horario vuelve a ser la fuente de verdad: se recarga y se vacia la cola.
+      load().catch(() => undefined);
+      sync();
+    };
+    const goOffline = () => {
+      if (mounted) setOnline(false);
+    };
     sync();
     const timer = window.setInterval(sync, 12000);
-    window.addEventListener("online", sync);
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
     window.addEventListener("focus", sync);
     return () => {
       mounted = false;
       window.clearInterval(timer);
-      window.removeEventListener("online", sync);
+      window.removeEventListener("online", goOnline);
+      window.removeEventListener("offline", goOffline);
       window.removeEventListener("focus", sync);
     };
   }, [load]);
@@ -319,18 +580,22 @@ export default function MobilePunchPage() {
     const now = new Date();
     return now.getHours() * 60 + now.getMinutes() > hour * 60 + minute;
   })();
+  const pendingQueued = pendingSync.filter((item) => !isBlockedItem(item));
+  const pendingBlocked = pendingSync.filter(isBlockedItem);
+  const pendingWeightKb = Math.max(1, Math.round(offlineQueueWeight(pendingQueued) / 1024));
 
   useEffect(() => {
     if (!employee || !userName || !gpsRequired) return;
     let mounted = true;
     const timer = window.setInterval(async () => {
-      if (document.hidden || !mounted) return;
+      if (document.hidden || !mounted || navigator.onLine === false) return;
       try {
         const fix = await getGpsFix(8000);
         if (!mounted) return;
         setGps(fix);
         setGpsUpdatedAt(Date.now());
         setGpsStatus("ok");
+        setGpsCause(null);
         api("/api/v1/hr/self/gps/ping", {
           method: "POST",
           body: JSON.stringify({
@@ -345,8 +610,10 @@ export default function MobilePunchPage() {
         }).catch(() => {
           if (mounted) setGpsStatus("error");
         });
-      } catch {
-        if (mounted) setGpsStatus("error");
+      } catch (error) {
+        if (!mounted) return;
+        setGpsCause(gpsFailureCause(error));
+        setGpsStatus("error");
       }
     }, 30000);
     return () => {
@@ -367,15 +634,16 @@ export default function MobilePunchPage() {
     };
   }, [route?.id]);
 
-  async function refreshGps() {
-    if (!gpsRequired) return null;
+  async function refreshGps(): Promise<{ fix: GpsFix | null; cause: GpsFailureCause | null }> {
+    if (!gpsRequired) return { fix: null, cause: null };
     // Use cached GPS if less than 25s old — avoids blocking the UI
-    if (gps && Date.now() - gpsUpdatedAt < 25000) return gps;
+    if (gps && Date.now() - gpsUpdatedAt < 25000) return { fix: gps, cause: null };
     setGpsStatus("loading");
     try {
       const fix = await getGpsFix();
       setGps(fix);
       setGpsStatus("ok");
+      setGpsCause(null);
       setGpsUpdatedAt(Date.now());
       if (userName) {
         void api("/api/v1/hr/self/gps/ping", {
@@ -390,60 +658,90 @@ export default function MobilePunchPage() {
             source: "mobile_presence"
           })
         }).catch(() => {
-          setMessage("GPS capturado, pero no fue posible sincronizar la presencia en vivo. La marcacion guardara la ubicacion al registrarse.");
+          notify("GPS capturado, pero no fue posible sincronizar la presencia en vivo. La marcacion guardara la ubicacion al registrarse.", "pending");
         });
       }
-      return fix;
+      return { fix, cause: null };
     } catch (error) {
+      const cause = gpsFailureCause(error);
       setGpsStatus("error");
-      setMessage(error instanceof Error ? error.message : "GPS no disponible.");
-      return null;
+      setGpsCause(cause);
+      return { fix: null, cause };
     }
   }
 
   async function mark(type: string) {
     if (!employee || markingType) return;
     if (!route) {
-      setMessage(assignedRoutes.length ? "Selecciona el horario sobre el que vas a marcar." : "No tienes horario asignado para marcar.");
+      notify(scheduleNotice || (assignedRoutes.length ? "Selecciona el horario sobre el que vas a marcar." : "No tienes horario asignado para marcar."), "error");
       return;
     }
+    // El backend evalua la regla del dia contra punched_at, no contra la hora del flush: una
+    // marcacion de las 22:40 sincronizada a las 07:00 se rechazaria con HORARIO_FUERA_DEL_DIA.
+    const markedAt = new Date();
     setMarkingType(type);
-    setMessage("");
+    notify("");
     try {
-      const fix = gpsRequired ? await refreshGps() : null;
-      if (gpsRequired && !fix) return;
+      const isOnline = typeof navigator === "undefined" ? true : navigator.onLine !== false;
+      let fix: GpsFix | null = null;
+      let cause: GpsFailureCause | null = null;
+      if (gpsRequired) {
+        if (isOnline) {
+          const result = await refreshGps();
+          fix = result.fix;
+          cause = result.cause;
+        } else if (gps && Date.now() - gpsUpdatedAt < 25000) {
+          // Sin senal no se pide un fix nuevo (bloquearia al operario hasta 13 s), pero un
+          // fix reciente sigue siendo mejor que marcar la novedad de GPS inactivo.
+          fix = gps;
+        }
+      }
+      const decision = decideOfflineMarking({ online: isOnline, gpsRequired, hasFix: Boolean(fix), cause });
+      if (!decision.allowed) {
+        notify(decision.userMessage, "error");
+        return;
+      }
       if (type === "salida" && isClosingLate && (!extraReason || !extraDetail.trim() || !extraEvidence)) {
-        setMessage("Cierre fuera de horario: selecciona motivo, escribe el sustento y adjunta evidencia fotografica.");
+        notify("Cierre fuera de horario: selecciona motivo, escribe el sustento y adjunta evidencia fotografica.", "error");
         return;
       }
       if (type === "salida" && vehiclePlate) {
         const normalizedMileage = dayMileage.trim().replace(",", ".");
         if (!/^\d+(\.\d{1,1})?$/.test(normalizedMileage)) {
-          setMessage("Registra el kilometraje del dia con maximo un decimal antes de cerrar la jornada.");
+          notify("Registra el kilometraje del dia con maximo un decimal antes de cerrar la jornada.", "error");
           return;
         }
-        setMessage(`Kilometraje del dia: ${normalizedMileage} km. Confirmando cierre...`);
+        notify(`Kilometraje del dia: ${normalizedMileage} km. Confirmando cierre...`, "pending");
       }
       const idempotencyKey = globalThis.crypto?.randomUUID?.() || `hr-punch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      const optimisticTime = new Date().toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
+      const optimisticTime = markedAt.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
       setOptimisticPunches((current) => [
         ...current.filter((punch) => !(String(punch.route_id || "") === String(route?.id || "") && punch.type === type)),
-        { id: Date.now(), type, time: optimisticTime, vehicle_plate: vehiclePlate, route_id: route?.id || null, idempotency_key: idempotencyKey }
+        { id: markedAt.getTime(), type, time: optimisticTime, vehicle_plate: vehiclePlate, route_id: route?.id || null, idempotency_key: idempotencyKey }
       ].slice(-20));
-      setMessage(`${punchLabels[type].title} pendiente de confirmar. Sincronizando...`);
       setMarkingType(null);
+      const queuedAt = new Date().toISOString();
       const payload: Record<string, unknown> = {
         employee_id: employee.id,
         user_name: userName,
         type,
-        punched_at: new Date().toISOString(),
+        punched_at: markedAt.toISOString(),
         latitude: fix?.latitude,
         longitude: fix?.longitude,
         accuracy_meters: fix?.accuracy_meters,
         vehicle_plate: vehiclePlate,
         route_id: route?.id,
         idempotency_key: idempotencyKey,
-        metadata: { source: "apexos-mobile", current_user_only: true, idempotency_key: idempotencyKey, gps_required: gpsRequired, tracking_mode: gpsRequired ? "gps" : "punch_only", ...routeSyncMetadata(route) }
+        metadata: {
+          source: "apexos-mobile",
+          current_user_only: true,
+          idempotency_key: idempotencyKey,
+          gps_required: gpsRequired,
+          tracking_mode: gpsRequired ? "gps" : "punch_only",
+          offline: !isOnline,
+          ...gpsUnavailableMetadata({ gpsUnavailable: decision.gpsUnavailable, reason: decision.reason, queuedAt }),
+          ...routeSyncMetadata(route)
+        }
       };
       if (type === "salida") {
         const closingDetail = extraDetail.trim();
@@ -456,21 +754,24 @@ export default function MobilePunchPage() {
       setExtraDetail("");
       setExtraEvidence(null);
       if (type === "salida") setDayMileage("");
-      enqueuePendingSync("/api/v1/hr/self/time-punches", payload, punchLabels[type].title);
+      const queued = await enqueuePendingSync("/api/v1/hr/self/time-punches", payload, punchLabels[type].title);
       setPendingSync(readPendingSync());
-      void flushPendingSync((items, syncMessage) => {
+      if (queued.notice) notify(queued.notice, "error");
+      else if (decision.gpsUnavailable) notify(`${punchLabels[type].title} ${decision.userMessage}`, "pending");
+      else notify(`${punchLabels[type].title} pendiente de confirmar. Sincronizando...`, "pending");
+      void flushPendingSync((items, syncMessage, tone) => {
         setPendingSync(items);
-        if (syncMessage) setMessage(syncMessage);
+        if (syncMessage) notify(syncMessage, tone || "pending");
       }).then((changed) => {
         if (changed) {
           publishHrMonitorRefresh({ source: "mobile-punch", route_id: route?.id || null, date: todayBogota() });
           window.setTimeout(() => load().catch(() => undefined), 600);
         }
       }).catch((error) => {
-        setMessage(error instanceof Error ? `Marcacion pendiente de confirmar: ${error.message}` : "Marcacion pendiente de confirmar.");
+        notify(error instanceof Error ? `Marcacion pendiente de confirmar: ${error.message}` : "Marcacion pendiente de confirmar.", "pending");
       });
     } catch (error) {
-      setMessage(error instanceof Error ? `La marcacion quedo pendiente de confirmar: ${error.message}` : "La marcacion quedo pendiente de confirmar.");
+      notify(error instanceof Error ? `La marcacion quedo pendiente de confirmar: ${error.message}` : "La marcacion quedo pendiente de confirmar.", "error");
     } finally {
       setMarkingType(null);
     }
@@ -479,16 +780,16 @@ export default function MobilePunchPage() {
   async function openActivityModal() {
     setActivityMessage("");
     if (!sessionActive) {
-      setMessage("Marca Entrada antes de registrar actividades.");
+      notify("Marca Entrada antes de registrar actividades.", "error");
       await load();
       return;
     }
     if (!route) {
-      setMessage(assignedRoutes.length ? "Selecciona el horario antes de registrar actividades." : "No tienes horario asignado para registrar actividades.");
+      notify(scheduleNotice || (assignedRoutes.length ? "Selecciona el horario antes de registrar actividades." : "No tienes horario asignado para registrar actividades."), "error");
       return;
     }
     setActivityModal(true);
-    if (gpsRequired && !gps) {
+    if (gpsRequired && !gps && (typeof navigator === "undefined" || navigator.onLine !== false)) {
       void refreshGps();
     }
   }
@@ -501,7 +802,7 @@ export default function MobilePunchPage() {
       return;
     }
     if (!route) {
-      setActivityMessage(assignedRoutes.length ? "Selecciona el horario antes de guardar la actividad." : "No tienes horario asignado.");
+      setActivityMessage(scheduleNotice || (assignedRoutes.length ? "Selecciona el horario antes de guardar la actividad." : "No tienes horario asignado."));
       return;
     }
     if (!activityTypeId) {
@@ -512,18 +813,33 @@ export default function MobilePunchPage() {
       setActivityMessage("Toma o adjunta una foto de evidencia para continuar.");
       return;
     }
-    const fix = gpsRequired ? await refreshGps() : null;
-    if (gpsRequired && !fix) {
-      setActivityMessage("GPS obligatorio. Habilita la ubicacion del navegador y reintenta.");
+    const occurredAt = new Date();
+    const isOnline = typeof navigator === "undefined" ? true : navigator.onLine !== false;
+    let fix: GpsFix | null = null;
+    let cause: GpsFailureCause | null = null;
+    if (gpsRequired) {
+      if (isOnline) {
+        const result = await refreshGps();
+        fix = result.fix;
+        cause = result.cause;
+      } else if (gps && Date.now() - gpsUpdatedAt < 25000) {
+        // Sin senal no se pide un fix nuevo (bloquearia al operario hasta 13 s), pero un
+        // fix reciente sigue siendo mejor que marcar la novedad de GPS inactivo.
+        fix = gps;
+      }
+    }
+    const decision = decideOfflineMarking({ online: isOnline, gpsRequired, hasFix: Boolean(fix), cause });
+    if (!decision.allowed) {
+      setActivityMessage(decision.userMessage);
       return;
     }
     setActivitySaving(true);
     const selectedActivityType = activityTypes.find((item) => String(item.id) === String(activityTypeId) || String(item.code || "") === String(activityTypeId));
     const pendingActivity: WorkActivity = {
-      id: Date.now(),
+      id: occurredAt.getTime(),
       activity_type_name: selectedActivityType?.name || "Actividad operativa",
       observation: activityObservation.trim(),
-      occurred_at: new Date().toISOString(),
+      occurred_at: occurredAt.toISOString(),
       latitude: fix?.latitude ?? null,
       longitude: fix?.longitude ?? null,
       accuracy_meters: fix?.accuracy_meters ?? null,
@@ -536,11 +852,12 @@ export default function MobilePunchPage() {
     setActivityPhoto(null);
     setActivityModal(false);
     setActivitySaving(false);
-    setMessage("Actividad registrada. Sincronizando evidencia en segundo plano...");
-    const activityPayload = {
+    const queuedAt = new Date().toISOString();
+    const activityPayload: Record<string, unknown> = {
       activity_type_id: activityTypeId,
       employee_id: employee?.id,
       user_name: userName,
+      occurred_at: occurredAt.toISOString(),
       latitude: fix?.latitude,
       longitude: fix?.longitude,
       accuracy_meters: fix?.accuracy_meters,
@@ -557,14 +874,19 @@ export default function MobilePunchPage() {
         tracking_mode: gpsRequired ? "gps" : "punch_only",
         activity_type_code: selectedActivityType?.code || activityTypeId,
         activity_type_name: selectedActivityType?.name || "",
+        offline: !isOnline,
+        ...gpsUnavailableMetadata({ gpsUnavailable: decision.gpsUnavailable, reason: decision.reason, queuedAt }),
         ...routeSyncMetadata(route)
       }
     };
-    enqueuePendingSync("/api/v1/hr/self/work-activities", activityPayload, "Actividad");
+    const queued = await enqueuePendingSync("/api/v1/hr/self/work-activities", activityPayload, "Actividad");
     setPendingSync(readPendingSync());
-    void flushPendingSync((items, syncMessage) => {
+    if (queued.notice) notify(queued.notice, "error");
+    else if (decision.gpsUnavailable) notify(`Actividad ${decision.userMessage}`, "pending");
+    else notify("Actividad registrada. Sincronizando evidencia en segundo plano...", "pending");
+    void flushPendingSync((items, syncMessage, tone) => {
       setPendingSync(items);
-      if (syncMessage) setMessage(syncMessage);
+      if (syncMessage) notify(syncMessage, tone || "pending");
     }).then((changed) => {
       if (changed) {
         publishHrMonitorRefresh({ source: "mobile-activity", route_id: route?.id || null, date: todayBogota() });
@@ -616,7 +938,10 @@ export default function MobilePunchPage() {
         })
       })
     });
-    setMessage(result.route_authorized ? "Checklist aprobado. Operacion vehicular habilitada." : "Operacion vehicular bloqueada por novedad critica.");
+    notify(
+      result.route_authorized ? "Checklist aprobado. Operacion vehicular habilitada." : "Operacion vehicular bloqueada por novedad critica.",
+      result.route_authorized ? "success" : "error"
+    );
     setPreop(null);
     await load();
     if (result.route_authorized && nextType === "entrada") {
@@ -632,10 +957,36 @@ export default function MobilePunchPage() {
         <h1 className="text-2xl font-semibold">Mi jornada</h1>
       </header>
 
-      {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-900">{message}</div> : null}
-      {pendingSync.length ? (
-        <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-950">
-          {pendingSync.length} registro(s) pendiente(s) de sincronizar. El monitor se actualizara cuando esta cola quede en cero.
+      {message ? <div className={`rounded-md border p-4 text-sm font-medium ${messageToneStyles[messageTone].className}`} role={messageToneStyles[messageTone].role}>{message}</div> : null}
+      {!online ? (
+        <div className="rounded-md border border-amber-300 bg-amber-50 p-4 text-sm font-semibold text-amber-950" role="status">
+          <WifiOff className="mr-2 inline" size={16} /> Sin senal. Puedes seguir marcando: cada marcacion se guarda en este dispositivo con su fecha y hora reales y se sincronizara automaticamente al recuperar conexion.
+        </div>
+      ) : null}
+      {scheduleNotice ? (
+        <div className={`rounded-md border p-4 text-sm font-semibold ${scheduleSource === "snapshot" ? "border-sky-200 bg-sky-50 text-sky-900" : "border-rose-200 bg-rose-50 text-rose-900"}`} role={scheduleSource === "snapshot" ? "status" : "alert"}>
+          {scheduleNotice}
+        </div>
+      ) : null}
+      {pendingQueued.length ? (
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-950" role="status">
+          {pendingQueued.length} registro(s) pendiente(s) de sincronizar (~{pendingWeightKb} KB guardados en este dispositivo). El monitor se actualizara cuando esta cola quede en cero.
+        </div>
+      ) : null}
+      {pendingBlocked.length ? (
+        <div className="rounded-md border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-900" role="alert">
+          <p className="flex items-center gap-2"><AlertTriangle size={16} /> {pendingBlocked.length} registro(s) bloqueado(s): el servidor los rechazo y no se reintentaran solos.</p>
+          <ul className="mt-2 space-y-2">
+            {pendingBlocked.map((item) => (
+              <li className="rounded-md border border-rose-200 bg-white p-2" key={item.id}>
+                <p className="text-sm font-semibold">{item.label} · {new Date(item.created_at).toLocaleString("es-CO")}</p>
+                <p className="mt-1 text-xs font-medium text-rose-800">{item.blocked_reason || "Rechazado por el servidor."}</p>
+                <button className="mt-2 h-10 rounded-md border border-rose-300 px-3 text-xs font-semibold text-rose-900 hover:bg-rose-100" onClick={() => setPendingSync(discardPendingSync(item.id))} type="button">
+                  Descartar registro
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
       ) : null}
 
@@ -657,7 +1008,7 @@ export default function MobilePunchPage() {
                 <h2 className="mt-1 text-lg font-semibold">{route ? `Horario ${route.id}` : "Sin horario asignado"}</h2>
                 <p className="mt-1 text-sm text-neutral-600">{route ? `${route.start_time || "--"} - ${route.end_time || "--"}${route.vehicle_plate ? ` · ${route.vehicle_plate}` : ""} · ${gpsRequired ? "GPS activo" : "solo marcaciones"}` : "Consulta con administracion para asignar una jornada antes de marcar."}</p>
               </div>
-              <span className={`rounded-md px-2 py-1 text-xs font-semibold ${route ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>{assignedRoutes.length} asignado(s)</span>
+              <span className={`rounded-md px-2 py-1 text-xs font-semibold ${route ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>{scheduleSource === "snapshot" ? "Guardado en el equipo" : `${assignedRoutes.length} asignado(s)`}</span>
             </div>
           </section>
 
@@ -722,7 +1073,13 @@ export default function MobilePunchPage() {
               <RefreshCw className={gpsStatus === "loading" ? "animate-spin" : ""} size={17} />
               {gpsStatus === "loading" ? "Obteniendo GPS..." : gpsStatus === "ok" && gps ? `GPS activo (${Math.round(gps.accuracy_meters || 0)}m)` : "Activar GPS obligatorio"}
             </button> : <p className="mt-3 rounded-md bg-paper p-3 text-sm font-semibold text-neutral-600">Este horario permite marcar sin GPS.</p>}
-            {gpsStatus === "error" ? <p className="mt-2 text-xs font-semibold text-red-700">GPS obligatorio para marcar. Habilita ubicacion en el navegador.</p> : null}
+            {gpsStatus === "error" ? (
+              <p className={`mt-2 rounded-md p-2 text-xs font-semibold ${gpsCause === "PERMISSION_DENIED" ? "bg-rose-50 text-rose-800" : "bg-amber-50 text-amber-900"}`}>
+                {gpsCause === "PERMISSION_DENIED"
+                  ? "GPS obligatorio y permiso de ubicacion denegado. Habilitalo en el navegador para poder marcar."
+                  : "Sin fix de GPS. Puedes marcar igual: la marcacion se guardara con su hora real y quedara la novedad GPS inactivo por falta de senal."}
+              </p>
+            ) : null}
             {gpsRequired && gps ? (
               <div className="mt-3 overflow-hidden rounded-md border border-line bg-white">
                 <iframe className="h-40 w-full border-0 sm:h-44" src={osmEmbedUrl(gps)} title="Mi ubicacion GPS" loading="lazy" />
@@ -868,7 +1225,7 @@ export default function MobilePunchPage() {
               <div>
                 <p className="text-sm font-semibold text-apex">Trazabilidad operativa</p>
                 <h2 className="text-xl font-semibold">Registrar actividad</h2>
-                <p className="mt-1 text-sm text-neutral-600">{gpsRequired ? "GPS y foto son obligatorios. Observacion opcional." : "Foto obligatoria. Observacion opcional."}</p>
+                <p className="mt-1 text-sm text-neutral-600">{gpsRequired ? "GPS y foto son obligatorios. Sin senal se guarda igual con tu hora real y novedad de GPS inactivo." : "Foto obligatoria. Observacion opcional."}</p>
               </div>
               <button className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-line" onClick={() => setActivityModal(false)} type="button" aria-label="Cerrar"><X size={18} /></button>
             </div>

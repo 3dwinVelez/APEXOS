@@ -203,6 +203,27 @@ function employeeSearchText(employee: Employee) {
   ].filter(Boolean).join(" ").toLowerCase();
 }
 
+type DayAssignment = { route_id: number | string; date: string; start_time: string; end_time: string; status: string; vehicle_plate?: string; employees: string[] };
+type RouteConflict = { route_id?: number | string; date?: string; start_time?: string; end_time?: string; employees?: string[] };
+
+function conflictLines(conflicts: RouteConflict[]) {
+  return conflicts.map((conflict) => {
+    const who = (conflict.employees || []).join(", ") || "Una persona seleccionada";
+    return `${who} ya tiene malla ${formatHour(conflict.start_time)}-${formatHour(conflict.end_time)} el ${conflict.date || "mismo dia"} (horario ${conflict.route_id ?? "sin id"}).`;
+  });
+}
+
+function conflictsFromError(error: unknown): RouteConflict[] {
+  const details = (error as { details?: { conflicts?: RouteConflict[] } } | null)?.details;
+  return Array.isArray(details?.conflicts) ? details.conflicts : [];
+}
+
+function employeeAliasKeys(employee: Employee) {
+  return [employeeValue(employee), employeeName(employee), employee.code]
+    .filter(Boolean)
+    .map((value) => String(value).trim().toLowerCase());
+}
+
 function inputDate(value?: string | null) {
   if (!value) return localCalendarDate();
   if (/^\d{4}-\d{2}-\d{2}/.test(value)) return value.slice(0, 10);
@@ -240,11 +261,13 @@ function administrativeSiteFromNotes(value = "") {
 function PeoplePicker({
   employees,
   selected,
-  onChange
+  onChange,
+  dayAssignmentLabel
 }: {
   employees: Employee[];
   selected: string[];
   onChange: (next: string[]) => void;
+  dayAssignmentLabel?: (employee: Employee) => string;
 }) {
   const [query, setQuery] = useState("");
   const selectedSet = useMemo(() => new Set(selected), [selected]);
@@ -299,12 +322,14 @@ function PeoplePicker({
         {filtered.map((employee) => {
           const value = employeeValue(employee);
           const active = selectedSet.has(value);
+          const assignmentLabel = !active && dayAssignmentLabel ? dayAssignmentLabel(employee) : "";
           return (
             <button className={`grid w-full grid-cols-[22px_1fr] gap-2 border-b border-line px-3 py-2 text-left last:border-b-0 hover:bg-paper ${active ? "bg-success/10" : ""}`} key={employee.id} onClick={() => toggle(value)} type="button">
               <span className="pt-0.5 text-apex">{active ? <CheckSquare2 size={16} /> : <Square size={16} />}</span>
               <span className="min-w-0">
                 <span className="block truncate text-sm font-semibold text-content-strong">{employeeName(employee)}</span>
                 <span className="mt-0.5 block truncate text-xs text-content-muted">{employee.code || "Sin codigo"} - {employee.position || employee.user_type || "Sin cargo"} - {employee.department || "Sin area"}</span>
+                {assignmentLabel ? <span className="mt-0.5 block truncate text-[11px] font-semibold text-warning">Ya tiene malla {assignmentLabel} en esta fecha</span> : null}
               </span>
             </button>
           );
@@ -342,6 +367,7 @@ function KpiTile({ hint, label, tone = "default", value }: { hint?: string; labe
 export default function RoutesPlanningPage() {
   const initialDate = localCalendarDate();
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [dayAssignments, setDayAssignments] = useState<DayAssignment[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [administrativeSites, setAdministrativeSites] = useState<MasterOption[]>([]);
   const [routes, setRoutes] = useState<TimeRoute[]>([]);
@@ -405,6 +431,20 @@ export default function RoutesPlanningPage() {
     setAdministrativeSites(activeSites);
     setAdministrativeSite((current) => activeSites.some((site) => site.code === current) ? current : activeSites[0]?.code || "");
   }, []);
+
+  const loadDayAssignments = useCallback(async (date: string) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      setDayAssignments([]);
+      return;
+    }
+    const rows = await api<DayAssignment[]>(`/api/v1/hr/routes/assignments?date=${encodeURIComponent(date)}`).catch(() => [] as DayAssignment[]);
+    setDayAssignments(Array.isArray(rows) ? rows : []);
+  }, []);
+
+  useEffect(() => {
+    if (!modal) return;
+    void loadDayAssignments(form.date);
+  }, [form.date, loadDayAssignments, modal]);
 
   const loadMonitor = useCallback(async (targetDate = monitorDate) => {
     setLoadingMonitor(true);
@@ -611,25 +651,61 @@ export default function RoutesPlanningPage() {
         await api<TimeRoute>(`/api/v1/hr/routes/${editingRoute.id}`, { method: "PATCH", body: JSON.stringify(routePayload(editingRoute.status || "active")) });
         setMessage("Horario actualizado correctamente.");
         setMessageTone("success");
-      } else if (bulkMode) {
-        const result = await api<{ created: number }>("/api/v1/hr/routes/bulk", { method: "POST", body: JSON.stringify({ ...routePayload("active"), start_date: bulk.start_date, end_date: bulk.end_date, weekdays: bulk.weekdays }) });
-        setMessage(`${result.created || 0} horario(s) asignado(s) correctamente.`);
-        setMessageTone("success");
       } else {
-        await api<TimeRoute>("/api/v1/hr/routes", { method: "POST", body: JSON.stringify(routePayload("active")) });
-        setMessage("Horario asignado correctamente.");
-        setMessageTone("success");
+        const payload = bulkMode
+          ? { ...routePayload("active"), start_date: bulk.start_date, end_date: bulk.end_date, weekdays: bulk.weekdays }
+          : routePayload("active");
+        // Prevalidar contra el servidor antes de escribir: el 409 MALLA_SOLAPADA es una
+        // regla legitima, pero sin este paso el operario solo veia una frase generica y
+        // no sabia que persona ni que malla existente bloqueaba el guardado.
+        const prevalidation = await api<{ ok: boolean; results: Array<{ date: string; status: string; conflicts: RouteConflict[] }> }>(
+          "/api/v1/hr/routes/prevalidate",
+          { method: "POST", body: JSON.stringify(payload) }
+        );
+        const conflicts = (prevalidation.results || []).flatMap((item) => (item.conflicts || []).map((conflict) => ({ ...conflict, date: conflict.date || item.date })));
+        if (!prevalidation.ok && conflicts.length) {
+          setValidationIssues(conflictLines(conflicts).map((line) => `Malla superpuesta: ${line} Quita esas personas del horario o ajusta las horas.`));
+          setMessage("El horario no se guardo: hay personas con malla superpuesta en la misma fecha.");
+          setMessageTone("error");
+          return;
+        }
+        if (bulkMode) {
+          const result = await api<{ created: number }>("/api/v1/hr/routes/bulk", { method: "POST", body: JSON.stringify(payload) });
+          setMessage(`${result.created || 0} horario(s) asignado(s) correctamente.`);
+          setMessageTone("success");
+        } else {
+          await api<TimeRoute>("/api/v1/hr/routes", { method: "POST", body: JSON.stringify(payload) });
+          setMessage("Horario asignado correctamente.");
+          setMessageTone("success");
+        }
       }
       setMonitorDate(savedMonitorDate);
       resetForm();
       setModal(null);
       await Promise.all([loadRoutes(), loadReferenceData(), loadEventSummaries(), loadMonitor(savedMonitorDate)]);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "No fue posible guardar el horario.");
+      const baseMessage = error instanceof Error ? error.message : "No fue posible guardar el horario.";
+      const lines = conflictLines(conflictsFromError(error));
+      setMessage(lines.length ? `${baseMessage} ${lines.join(" ")}` : baseMessage);
       setMessageTone("error");
     } finally {
       setSavingRoute(false);
     }
+  }
+
+  const assignmentByPerson = useMemo(() => {
+    const map = new Map<string, DayAssignment>();
+    for (const assignment of dayAssignments) {
+      for (const person of assignment.employees || []) {
+        const key = String(person || "").trim().toLowerCase();
+        if (key && !map.has(key)) map.set(key, assignment);
+      }
+    }
+    return map;
+  }, [dayAssignments]);
+
+  function dayAssignmentFor(employee: Employee) {
+    return employeeAliasKeys(employee).map((key) => assignmentByPerson.get(key)).find(Boolean) || null;
   }
 
   const totalAssigned = useMemo(() => routes.reduce((sum, route) => sum + (routeEmployeeValues(route).length || 0), 0), [routes]);
@@ -940,7 +1016,7 @@ export default function RoutesPlanningPage() {
             </div>
           </div>
           <div className="mt-3">
-            <PeoplePicker employees={employees} selected={form.employees} onChange={(next) => setForm((prev) => ({ ...prev, employees: next }))} />
+            <PeoplePicker dayAssignmentLabel={(employee) => { const assignment = dayAssignmentFor(employee); return assignment ? `${formatHour(assignment.start_time)}-${formatHour(assignment.end_time)}` : ""; }} employees={employees} selected={form.employees} onChange={(next) => setForm((prev) => ({ ...prev, employees: next }))} />
           </div>
         </ModalFrame>
       ) : null}

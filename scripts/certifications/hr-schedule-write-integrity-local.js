@@ -85,13 +85,16 @@ const result = {
     proven_by_live_execution: [
       "400 HORARIO_CRUZA_MEDIANOCHE y ningun TimeRoute creado",
       "409 MALLA_SOLAPADA y ningun TimeRoute adicional creado",
-      "horario valido creado por la API, devuelto por GET /api/v1/hr/routes y visible en operations-map, persistido en TimeRoute"
+      "horario valido creado por la API, devuelto por GET /api/v1/hr/routes y visible en operations-map, persistido en TimeRoute",
+      "GET /api/v1/hr/routes/assignments indexa las mallas del dia y POST /api/v1/hr/routes/prevalidate nombra persona y horario en conflicto antes de escribir"
     ],
     proven_by_code_level_assertion: [
       "shouldBlockHrWriteFallback cubre /api/v1/hr/routes, /api/v1/hr/routes/bulk y /api/v1/hr/routes/<id> para todo metodo distinto de GET",
       "AMBAS ramas de respaldo de apiInternal (pre-vuelo y !response.ok) consultan el guard",
       "el formulario de rutas bloquea la medianoche antes de setSavingRoute(true) y de cualquier api()",
       "el banner de mensajes pinta los errores en rosa con role=alert",
+      "api.ts propaga body.details en ambas ramas 4xx y saveRoute prevalida contra /hr/routes/prevalidate antes de escribir, pintando los conflictos como issues y en el banner",
+      "PeoplePicker marca con aviso ambar a quien ya tiene malla en la fecha elegida usando el indice /hr/routes/assignments",
       "ausencia de huerfanos en operational_routes (tabla exclusiva de Supabase): el guard impide que supabaseApiFallback sea invocado para estas escrituras; NO se consulta Supabase en vivo"
     ]
   },
@@ -356,6 +359,71 @@ async function main() {
     const orphanOvernight = await countRoutesForPerson(tenant.id, OVERNIGHT_PERSON, TODAY);
     const orphanOverlapExtra = overlapCountAfterReject; // debe seguir en 1 (solo la base valida)
     check("rejected_writes_produced_no_orphan_timmeroute", orphanOvernight === 0 && orphanOverlapExtra === 1, { overnight_routes: orphanOvernight, overlap_person_routes: orphanOverlapExtra });
+
+    // =====================================================================
+    // BLOQUE D - Cierre de fugas de diagnostico del 409 MALLA_SOLAPADA
+    // El 409 es regla legitima; la fuga era operar a ciegas: sin prevalidacion,
+    // sin detalle en el banner y sin aviso de quien ya tiene malla ese dia.
+    // =====================================================================
+
+    // D1. Indice de asignaciones del dia: lo que el selector muestra como "ya tiene malla".
+    const assignments = await capture(`/api/v1/hr/routes/assignments?date=${TODAY}`, { token: adminToken, actor: "admin", step: "assignments-index" });
+    const assignmentRows = Array.isArray(assignments.payload) ? assignments.payload : [];
+    const assignmentOfBase = assignmentRows.find((row) => Number(row.route_id) === Number(overlapBase.payload.id));
+    const assignmentOfControl = assignmentRows.find((row) => Number(row.route_id) === Number(controlId));
+    check("assignments_index_reports_day_mallas", assignments.status === 200 && Boolean(assignmentOfBase) && Boolean(assignmentOfControl), {
+      status: assignments.status,
+      rows: assignmentRows.length,
+      base: assignmentOfBase ? { employees: assignmentOfBase.employees, start_time: assignmentOfBase.start_time, end_time: assignmentOfBase.end_time, status: assignmentOfBase.status } : null,
+      control: assignmentOfControl ? { employees: assignmentOfControl.employees } : null
+    });
+
+    // D2. Prevalidacion: el formulario la llama antes de escribir y debe nombrar el conflicto.
+    const prevalidation = await capture("/api/v1/hr/routes/prevalidate", {
+      token: adminToken, method: "POST", actor: "admin", step: "prevalidate-conflict",
+      body: { date: TODAY, employees: [OVERLAP_PERSON], start_time: "15:50", end_time: "16:00" }
+    });
+    const preConflict = (prevalidation.payload?.results || [])[0];
+    const prevalidateFree = await capture("/api/v1/hr/routes/prevalidate", {
+      token: adminToken, method: "POST", actor: "admin", step: "prevalidate-free",
+      body: { date: TODAY, employees: [OVERLAP_PERSON], start_time: "18:00", end_time: "20:00" }
+    });
+    check("prevalidate_names_conflict_before_write", prevalidation.status === 200 && prevalidation.payload?.ok === false
+      && Array.isArray(preConflict?.conflicts) && preConflict.conflicts.length === 1
+      && (preConflict.conflicts[0].employees || []).includes(OVERLAP_PERSON)
+      && Number(preConflict.conflicts[0].route_id) === Number(overlapBase.payload.id), {
+      status: prevalidation.status, ok: prevalidation.payload?.ok, conflicts: preConflict?.conflicts || null
+    });
+    check("prevalidate_passes_free_window", prevalidateFree.status === 200 && prevalidateFree.payload?.ok === true, { status: prevalidateFree.status, ok: prevalidateFree.payload?.ok });
+
+    // D3. El 409 viaja con detalle accionable y el cliente ya no lo descarta.
+    check("overlap_409_carries_actionable_details", Array.isArray(overlap.payload?.details?.conflicts) && overlap.payload.details.conflicts.length === 1
+      && (overlap.payload.details.conflicts[0].employees || []).includes(OVERLAP_PERSON), { conflicts: overlap.payload?.details?.conflicts || null });
+    check("client_preserves_error_details", (readSource(WEB_API_TS).match(/details: body\.details && typeof body\.details === "object" \? body\.details : undefined,/g) || []).length === 2, {
+      occurrences: (readSource(WEB_API_TS).match(/details: body\.details && typeof body\.details === "object" \? body\.details : undefined,/g) || []).length
+    });
+
+    // D4. El formulario prevalida, detalla el 409 y marca quien ya tiene malla.
+    check("form_prevalidates_and_labels_assigned_people", [
+      pageSource.includes('"/api/v1/hr/routes/prevalidate"'),
+      /setValidationIssues\(conflictLines\(conflicts\)/.test(pageSource),
+      /conflictLines\(conflictsFromError\(error\)\)/.test(pageSource),
+      pageSource.includes("/api/v1/hr/routes/assignments?date="),
+      pageSource.includes("dayAssignmentLabel={(employee) =>"),
+      pageSource.includes("Ya tiene malla {assignmentLabel} en esta fecha")
+    ].every(Boolean), {
+      prevalidate_call: pageSource.includes('"/api/v1/hr/routes/prevalidate"'),
+      issues_with_detail: /setValidationIssues\(conflictLines\(conflicts\)/.test(pageSource),
+      banner_with_detail: /conflictLines\(conflictsFromError\(error\)\)/.test(pageSource),
+      assignments_fetch: pageSource.includes("/api/v1/hr/routes/assignments?date="),
+      picker_label: pageSource.includes("dayAssignmentLabel={(employee) =>")
+    });
+
+    result.observations.diagnostic_closure = {
+      level: "code-level + live",
+      live_proven: "GET /api/v1/hr/routes/assignments indexa las mallas del dia con la misma ventana y filtro que el 409; POST /hr/routes/prevalidate nombra persona y horario en conflicto antes de escribir y pasa en ventana libre; el 409 viaja con details.conflicts.",
+      code_proven: "api.ts propaga body.details en ambas ramas 4xx; saveRoute prevalida antes de cualquier POST y pinta los conflictos como issues y en el banner; PeoplePicker marca con aviso ambar a quien ya tiene malla en la fecha elegida."
+    };
 
     result.observations.split_brain_closure = {
       level: "code-level + live",

@@ -92,3 +92,34 @@ test("el formulario de horarios bloquea la medianoche antes de enviar la solicit
   assert.match(saveRoute, /"\/api\/v1\/hr\/routes\/bulk", \{ method: "POST"/);
   assert.doesNotMatch(saveRoute, /form\.end_time === form\.start_time/);
 });
+
+// Fuga cerrada 2026-09-21: el 409 MALLA_SOLAPADA es regla legitima, pero el modulo dejaba
+// al operario a ciegas: el formulario no prevalidaba, el banner descartaba details.conflicts
+// y el selector no avisaba quien ya tenia malla. Con la malla del dia ya cargada en
+// produccion, cualquier intento moria en una frase generica sin diagnostico.
+
+test("el formulario prevalida contra el servidor antes de escribir y detalla el conflicto", () => {
+  const routes = read("../app/dashboard/talento-humano/rutas/page.tsx");
+  const start = routes.indexOf("async function saveRoute()");
+  const saveRoute = routes.slice(start, routes.indexOf("const totalAssigned", start));
+  const prevalidateAt = saveRoute.indexOf('"/api/v1/hr/routes/prevalidate"');
+  const postAt = saveRoute.indexOf('api<TimeRoute>("/api/v1/hr/routes", { method: "POST"');
+  const bulkAt = saveRoute.indexOf('"/api/v1/hr/routes/bulk", { method: "POST"');
+  assert.ok(prevalidateAt >= 0, "saveRoute debe prevalidar contra /hr/routes/prevalidate");
+  assert.ok(prevalidateAt < postAt && prevalidateAt < bulkAt, "la prevalidacion debe ocurrir antes de cualquier escritura");
+  assert.match(saveRoute, /setValidationIssues\(conflictLines\(conflicts\)/, "los conflictos deben pintarse como issues accionables");
+  assert.match(saveRoute, /conflictLines\(conflictsFromError\(error\)\)/, "el 409 de carrera debe conservar el detalle en el banner");
+});
+
+test("el selector de personas avisa quien ya tiene malla en la fecha elegida", () => {
+  const routes = read("../app/dashboard/talento-humano/rutas/page.tsx");
+  assert.match(routes, /\/api\/v1\/hr\/routes\/assignments\?date=/, "el formulario debe cargar el indice de asignaciones del dia");
+  assert.match(routes, /dayAssignmentLabel=\{\(employee\) =>/, "PeoplePicker debe recibir el aviso por persona");
+  assert.match(routes, /Ya tiene malla \{assignmentLabel\} en esta fecha/, "la fila debe mostrar la malla existente");
+});
+
+test("el cliente conserva los detalles estructurados del error para pintar el conflicto", () => {
+  const api = read("../lib/api.ts");
+  const occurrences = api.match(/details: body\.details && typeof body\.details === "object" \? body\.details : undefined,/g) || [];
+  assert.equal(occurrences.length, 2, "ambas ramas 4xx deben propagar body.details");
+});

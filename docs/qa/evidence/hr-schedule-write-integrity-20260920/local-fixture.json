@@ -1,21 +1,21 @@
 {
   "environment": "LOCAL",
   "api_url": "http://127.0.0.1:3199",
-  "run_id": "20260921023950",
-  "operating_date": "2026-09-20",
+  "run_id": "20260921131719",
+  "operating_date": "2026-09-21",
   "tenant_id": "001346eb-ba7f-4103-b032-73a219f1333e",
-  "admin_email": "qa.hrw.admin.20260921023950@scj.test",
+  "admin_email": "qa.hrw.admin.20260921131719@scj.test",
   "admin_credential": "no persistida: la contrasena se genera por corrida, solo se usa para el login de esta certificacion y el usuario queda inactivo al terminar.",
   "persons": {
-    "overnight": "qa.hrw.nocturna.20260921023950@scj.test",
-    "overlap": "qa.hrw.juliana.20260921023950@scj.test",
-    "control": "qa.hrw.control.20260921023950@scj.test"
+    "overnight": "qa.hrw.nocturna.20260921131719@scj.test",
+    "overlap": "qa.hrw.juliana.20260921131719@scj.test",
+    "control": "qa.hrw.control.20260921131719@scj.test"
   },
-  "control_plate": "QAHRW023950",
+  "control_plate": "QAHRW131719",
   "created_route_ids": [
-    275,
-    276
+    326,
+    327
   ],
-  "generated_at": "2026-09-21T02:39:56.416Z",
+  "generated_at": "2026-09-21T13:17:24.545Z",
   "note": "Fixture local desactivado al terminar (admin inactivo, rutas en status inactive). No toca QA ni produccion."
 }

@@ -1,0 +1,81 @@
+{
+  "change_id": "hr-phase-b-mallas-cierre-20260921",
+  "commit": "601f1f2a3ce1ac4fcb1205a9be0271fb4b8f28e9",
+  "commit_note": "601f1f2 es el commit funcional que contiene exactamente el cambio certificado (Fase B de marcacion diferida sin senal + cierre diagnostico del 409 MALLA_SOLAPADA, con sus dos certificaciones versionadas y evidencia). Este archivo de evidencia viaja en el commit docs siguiente, que es el candidato de la promocion; 601f1f2 es su ancestro directo.",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../hr-offline-deferred-marking-20260921/local-certification.json",
+        "../hr-schedule-write-integrity-20260920/local-simulation-certification.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../hr-schedule-write-integrity-20260920/local-simulation-certification.json",
+        "../mallas-conflict-ux-20260921/browser-blocked-save.png"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../hr-offline-deferred-marking-20260921/local-fixture.json",
+        "../hr-schedule-write-integrity-20260920/local-fixture.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "validation-checks.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "validation-checks.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-offline-deferred-marking-local.js",
+    "evidence": [
+      "../hr-offline-deferred-marking-20260921/local-certification.json",
+      "../hr-offline-deferred-marking-20260921/local-fixture.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-schedule-write-integrity-local.js",
+    "evidence": [
+      "../hr-schedule-write-integrity-20260920/local-simulation-certification.json",
+      "unit-tests.txt",
+      "validation-checks.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "APEXOS release owner (Edwin)",
+    "approved_at": "2026-09-21T09:05:00-05:00",
+    "authorization_basis": "Instruccion expresa del release owner del 2026-09-21: 'procede con el cierre y lleva las correciones hasta el main de manera correcta'. Esta aprobacion habilita el despliegue del candidato a QA para certificacion funcional de navegador (scope promotion_to_develop_for_qa); NO acredita por si sola el funcionamiento en QA y qa_status permanece pending hasta la certificacion de navegador en QA con el commit desplegado, requisito de la puerta develop -> main segun docs/CHANGE_APPROVAL_QA_POLICY.md."
+  },
+  "observations": [
+    "Certificacion LOCAL end-to-end 1: scripts/certifications/hr-offline-deferred-marking-local.js -> 35/35 controles, status=passed (marcacion diferida sin senal con hora real conservada, novedad GPS_INACTIVO_SIN_SENAL, regla del dia por punched_at, sincronizacion al recuperar senal).",
+    "Certificacion LOCAL end-to-end 2: scripts/certifications/hr-schedule-write-integrity-local.js -> 21/21 controles, 11 peticiones, status=passed, incluyendo el Bloque D de cierre diagnostico: el indice de asignaciones reporta las mallas del dia, la prevalidacion nombra el conflicto ANTES de escribir, el 409 MALLA_SOLAPADA lleva details accionables, el cliente los preserva y el formulario prevalida y etiqueta a las personas ya asignadas.",
+    "Evidencia de navegador (apps locales, API 3201 / web 3005): creacion de malla exitosa; al reabrir el modal el picker muestra 'Ya tiene malla 08:00-17:00 en esta fecha'; el segundo guardado con persona en conflicto queda bloqueado en cliente con issues detallados y banner rosa, y la red muestra POST /hr/routes/prevalidate sin ningun POST /hr/routes posterior. Captura: ../mallas-conflict-ux-20260921/browser-blocked-save.png.",
+    "Diagnostico del reporte del dueno del producto (monitor de produccion con 409 MALLA_SOLAPADA): la regla de solapamiento es legitima y opera sobre datos reales (prod con >=100 mallas/451 personas en el dia); el defecto real era la ceguera de diagnostico, cerrada con las 4 fugas arriba. No se modifico ninguna regla de negocio del backend.",
+    "Migracion 20260921000000_gps_inactivo_sin_senal_novelty_type: datos, idempotente (INSERT ... WHERE NOT EXISTS por tenant), se aplica en el arranque del servicio en QA y produccion sin ejecucion manual remota.",
+    "Regresion: suites completas apps/web y apps/api, contratos hr, lint, typecheck y prisma validate capturados en unit-tests.txt y resumidos en validation-checks.json. Las 3 fallas de apps/api son el conjunto preexistente ajeno a hr (offline-bootstrap REDIS_URL, inventory-transfer-product-list-ux, zero-friendly-number-input).",
+    "Hallazgo fuera de alcance reportado al release owner: el 409 DUPLICADO del qa:deterministic-validation en re-ejecuciones del mismo dia es un bug preexistente del modulo contable (la numeracion EM no persiste en tenant config por read-modify-write concurrente del blob config; cada run re-emite EM-000001 y choca con el indice unico de cntCabdoc). No es regresion de este cambio y debe abrirse como incidencia aparte.",
+    "Limpieza local: fixtures de la validacion de navegador desactivados (ruta 333 cancelada, empleado y usuario UIC inactivos), servidores detenidos, scratch borrado. No se escribio en QA ni en produccion ni en Supabase remoto.",
+    "Pendiente para develop -> main (no bloquea el pre-QA): certificacion de navegador/plataforma en vivo sobre QA con el commit exacto desplegado, certificacion NYVORA y aprobacion QA explicita segun docs/CHANGE_APPROVAL_QA_POLICY.md."
+  ]
+}

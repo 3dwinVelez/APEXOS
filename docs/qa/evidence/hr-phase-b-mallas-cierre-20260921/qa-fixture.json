@@ -1,0 +1,74 @@
+{
+  "environment": "QA",
+  "web_url": "https://apexos-web-qa-production.up.railway.app",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "api_health_commit": "6c06412e89ad",
+  "run_id": "20260921-phaseb-browser",
+  "date": "2026-09-21",
+  "tenant_name": "SCJ (QA)",
+  "tenant_id": "cbbf3627-4336-4f23-95c6-1077414bcd17",
+  "admin_user_id": 512,
+  "admin_email": "qa.phaseb.1789999085131@scj.test",
+  "admin_role": "APEX_ADMIN",
+  "admin_role_id": 13,
+  "admin_password": "no persistida; usuario desactivado al terminar",
+  "preexisting_conflict_used": {
+    "time_route_id": 74,
+    "window": "08:00-17:00",
+    "date": "2026-09-21",
+    "people_count": 27,
+    "status": "active",
+    "note": "Dato real preexistente de QA (incluye a Administrador SCJ QA). No fue modificado en ningun momento."
+  },
+  "person_used_positive_control": {
+    "code": "QA-ADM-001",
+    "name": "QA Administrativo Uno",
+    "site": "SEDE-PRINCIPAL",
+    "route_type": "administrativo",
+    "gps_active": true
+  },
+  "schedule_created": {
+    "time_route_id": 302,
+    "window": "09:00-13:00",
+    "date": "2026-09-21",
+    "employees": ["QA-ADM-001"],
+    "status_at_certification": "active",
+    "status_after_cleanup": "inactive"
+  },
+  "negative_cases": [
+    {
+      "case": "solapamiento_detectado_en_cliente",
+      "window": "09:00-13:00",
+      "person": "Administrador SCJ QA",
+      "expected": "POST /prevalidate informa conflicto; cero POST /hr/routes; panel con detalle nombre/horario/fecha; banner rosa; modal abierto",
+      "observed": "issue 'Malla superpuesta: administrador scj qa ya tiene malla 08:00-17:00 el 2026-09-21 (horario 74). Quita esas personas del horario o ajusta las horas.'; banner 'El horario no se guardo: hay personas con malla superpuesta en la misma fecha.'; solo POST /prevalidate en red; base sin filas nuevas (unicamente horario 74)"
+    }
+  ],
+  "positive_case": {
+    "expected": "POST /prevalidate 200 conflicts:[]; exactamente un POST /api/v1/hr/routes 200; banner verde 'Horario asignado correctamente.'; TimeRoute persistido y legible",
+    "observed": "prevalidate 200 {ok:true, dates:1, employees:1, created:1, omitted:0, conflicts:[]}; POST /hr/routes 200 crea TimeRoute 302; banner verde presente; verificacion en base: rutas del dia = [74 (08:00-17:00), 302 (09:00-13:00)]",
+    "quirk": "el dialogo conservaba el panel de issues obsoleto del envio bloqueado anterior y se cerro con 'Entendido'; el exito (POST 200 + banner) fue capturado en vivo por interceptor de red"
+  },
+  "nyvora_certification_artifacts": {
+    "route_id": 301,
+    "punch_ids": [1457, 1458, 1459, 1460],
+    "activity_id": 123,
+    "evidence_id": 123,
+    "certification_user_id": 513,
+    "certification_user_deactivated": true,
+    "note": "Quedan en QA como artefacto de certificacion, igual que rutas 288/300 de releases anteriores."
+  },
+  "data_migration_verified": {
+    "migration": "20260921000000_gps_inactivo_sin_senal_novelty_type",
+    "table": "th_tipos_novedad",
+    "rows_for_tenant": 1,
+    "code": "GPS_INACTIVO_SIN_SENAL",
+    "applied_by": "arranque automatico del servicio API QA (migracion idempotente)"
+  },
+  "cleanup_executed": {
+    "time_route_302": "status=inactive (PATCH 200 verificado)",
+    "admin_user_512": "active=false (PATCH 200 verificado)",
+    "deletions": "ninguna; solo desactivaciones"
+  },
+  "secrets_policy": "La contrasena del admin temporal no se persiste en ningun archivo de evidencia; solo existio en un archivo temporal local fuera del repositorio."
+}

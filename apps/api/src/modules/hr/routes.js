@@ -45,7 +45,8 @@ async function hrRoutes(fastify) {
 
   fastify.get("/hr/routes", { preHandler: requirePermission("hr", "read") }, (request) => service.listRoutes(request.user?.tenant_id, request.query));
   fastify.get("/hr/routes/event-summaries", { preHandler: requirePermission("hr", "read") }, (request) => service.listRouteEventSummaries(request.user?.tenant_id));
-  fastify.post("/hr/routes/prevalidate", { schema: schemas.routeBulkSchema, preHandler: requirePermission("hr", "write") }, (request) => service.prevalidateRoutes(request.user?.tenant_id, request.body));
+  fastify.post("/hr/routes/prevalidate", { schema: schemas.routePrevalidateSchema, preHandler: requirePermission("hr", "write") }, (request) => service.prevalidateRoutes(request.user?.tenant_id, request.body));
+  fastify.get("/hr/routes/assignments", { preHandler: requirePermission("hr", "read") }, (request) => service.listDateAssignments(request.user?.tenant_id, request.query));
   fastify.post("/hr/routes", { schema: schemas.routeSchema, preHandler: requirePermission("hr", "write") }, (request) => service.createRoute(request.user?.tenant_id, request.body));
   fastify.post("/hr/routes/bulk", { schema: schemas.routeBulkSchema, preHandler: requirePermission("hr", "write") }, (request) => service.createRoutesBulk(request.user?.tenant_id, request.body));
   fastify.patch("/hr/routes/:id", { schema: schemas.routeSchema, preHandler: requirePermission("hr", "write") }, (request) => service.updateRoute(request.user?.tenant_id, request.params.id, request.body));
@@ -93,7 +94,8 @@ async function hrRoutes(fastify) {
   fastify.patch("/talento-humano/entidades/:id", { schema: schemas.laborEntityPatchSchema, preHandler: requirePermission("hr", "write") }, (request) => service.updateLaborEntity(request.user?.tenant_id, request.params.id, request.body, request.user));
   fastify.post("/talento-humano/entidades/:id/vincular-tercero", { schema: schemas.laborEntityLinkSchema, preHandler: requirePermission("hr", "write") }, (request) => service.linkLaborEntityAccountingParty(request.user?.tenant_id, request.params.id, request.body, request.user));
   fastify.get("/talento-humano/mallas", { preHandler: requirePermission("hr", "read") }, (request) => service.listRoutes(request.user?.tenant_id, request.query));
-  fastify.post("/talento-humano/mallas/prevalidar", { schema: schemas.routeBulkSchema, preHandler: requirePermission("hr", "write") }, (request) => service.prevalidateRoutes(request.user?.tenant_id, request.body));
+  fastify.post("/talento-humano/mallas/prevalidar", { schema: schemas.routePrevalidateSchema, preHandler: requirePermission("hr", "write") }, (request) => service.prevalidateRoutes(request.user?.tenant_id, request.body));
+  fastify.get("/talento-humano/mallas/asignaciones", { preHandler: requirePermission("hr", "read") }, (request) => service.listDateAssignments(request.user?.tenant_id, request.query));
   fastify.post("/talento-humano/mallas", { schema: schemas.routeSchema, preHandler: requirePermission("hr", "write") }, (request) => service.createRoute(request.user?.tenant_id, request.body));
   fastify.post("/talento-humano/mallas/crear-lote", { schema: schemas.routeBulkSchema, preHandler: requirePermission("hr", "write") }, (request) => service.createRoutesBulk(request.user?.tenant_id, request.body));
   fastify.get("/talento-humano/novedades/tipos", { preHandler: requirePermission("hr", "read") }, (request) => service.listNoveltyTypes(request.user?.tenant_id, request.query));

@@ -341,6 +341,102 @@ function routeEventMetadata(input = {}, routeId = null) {
 
 const ROUTE_TRACKING_PREFIX = "Control de marcacion:";
 
+const GPS_UNAVAILABLE_NOVELTY_CODE = "GPS_INACTIVO_SIN_SENAL";
+
+// El operario marca sin senal: la marcacion se acepta con su hora real y se deja la
+// novedad para que el supervisor sepa que no existe traza GPS que validar.
+function gpsUnavailableFromInput(input = {}) {
+  const flag = input.metadata?.gps_unavailable ?? input.gps_unavailable;
+  if (flag !== true && flag !== "true") return null;
+  return {
+    reason: String(input.metadata?.gps_unavailable_reason || input.gps_unavailable_reason || "sin_senal").slice(0, 120),
+    queued_at: String(input.metadata?.queued_at || "").slice(0, 40)
+  };
+}
+
+async function recordHrNovelty(tx, { tenantId, employeeId, routeId, moment, segment, typeCode, catalog, requiresReview, metadata }) {
+  const at = moment instanceof Date && !Number.isNaN(moment.getTime()) ? moment : new Date();
+  const day = startOfDay(at);
+  if (catalog) {
+    // Los tenants creados despues de la migracion de sembrado no tienen el catalogo de
+    // tipos; se asegura aqui para que la novedad sea clasificable en cualquier tenant.
+    await tx.$executeRaw`
+      INSERT INTO th_tipos_novedad (tenant_id, code, name, description, category, severity, origin, requires_justification, requires_approval, affects_payroll)
+      SELECT ${tenantId}, ${catalog.code}, ${catalog.name}, ${catalog.description}, ${catalog.category}, ${catalog.severity}, 'automatico', false, false, false
+      WHERE NOT EXISTS (
+        SELECT 1 FROM th_tipos_novedad x WHERE x.tenant_id = ${tenantId} AND x.code = ${catalog.code}
+      )
+    `.catch(() => null);
+  }
+  await tx.$executeRaw`
+    INSERT INTO th_novedades_jornada (
+      tenant_id, logical_key, employee_id, route_id, date, type_code, status, origin, minutes, hours, requires_review, metadata
+    )
+    VALUES (
+      ${tenantId},
+      ${hrPolicy.noveltyLogicalKey({ tenantId, employeeId, date: day.toISOString().slice(0, 10), routeId, typeCode, segment: segment || "dia" })},
+      ${employeeId}, ${routeId || null}, ${day}, ${typeCode}, 'pendiente', 'automatico', 0, 0, ${requiresReview === true},
+      ${JSON.stringify(metadata || {})}::jsonb
+    )
+    ON CONFLICT (tenant_id, logical_key)
+    DO UPDATE SET updated_at = now(), metadata = EXCLUDED.metadata
+  `.catch(() => null);
+}
+
+const GPS_UNAVAILABLE_NOVELTY_CATALOG = {
+  code: GPS_UNAVAILABLE_NOVELTY_CODE,
+  name: "GPS inactivo por falta de senal",
+  description: "El operario marco sin senal: la marcacion conserva su hora real pero no hay traza GPS que validar.",
+  category: "gps",
+  severity: "media"
+};
+
+async function recordGpsUnavailableNovelty(tx, { tenantId, employeeId, routeId, moment, segment, detail }) {
+  const at = moment instanceof Date && !Number.isNaN(moment.getTime()) ? moment : new Date();
+  await recordHrNovelty(tx, {
+    tenantId,
+    employeeId,
+    routeId,
+    moment: at,
+    segment,
+    typeCode: GPS_UNAVAILABLE_NOVELTY_CODE,
+    catalog: GPS_UNAVAILABLE_NOVELTY_CATALOG,
+    requiresReview: true,
+    metadata: {
+      reason: detail?.reason || "sin_senal",
+      queued_at: detail?.queued_at || null,
+      marked_at: at.toISOString(),
+      source: "marcacion_sin_senal"
+    }
+  });
+}
+
+const MANUAL_ADJUSTMENT_NOVELTY_CODE = "AJUSTE_MANUAL_MARCACION";
+
+// La ruta administrativa puede marcar en cualquier fecha; sin esta novedad esa
+// correccion quedaba invisible para el supervisor.
+async function recordManualAdjustmentNovelty(tx, { tenantId, employeeId, routeId, moment, segment, detail }) {
+  const at = moment instanceof Date && !Number.isNaN(moment.getTime()) ? moment : new Date();
+  await recordHrNovelty(tx, {
+    tenantId,
+    employeeId,
+    routeId,
+    moment: at,
+    segment,
+    typeCode: MANUAL_ADJUSTMENT_NOVELTY_CODE,
+    catalog: null,
+    requiresReview: true,
+    metadata: {
+      reason: String(detail?.reason || "").slice(0, 300),
+      detail: String(detail?.detail || "").slice(0, 500),
+      corrected_by: detail?.userId || null,
+      marked_at: at.toISOString(),
+      recorded_at: new Date().toISOString(),
+      source: "correccion_administrativa"
+    }
+  });
+}
+
 // Algunas notas de horario quedaron guardadas con el escape literal "\n" en vez de saltos
 // de linea reales; normalizar antes de parsear para no malinterpretar el modo de seguimiento.
 function normalizeRouteNotes(notes = "") {
@@ -606,6 +702,40 @@ async function resolveOwnRouteForToday(tenantId, employee) {
   return routes.find((route) => Number(route.id) === selectedId) || routes[0];
 }
 
+// Una marcacion encolada sin senal llega despues de su instante real y puede cruzar
+// medianoche antes de sincronizarse. La regla del dia se evalua contra el timestamp
+// declarado por el cliente, acotado por esta ventana para que no sirva de coladero
+// para marcar en dias arbitrarios. El default cubre el caso real: el operario pierde
+// senal durante la jornada y sincroniza a la manana siguiente.
+const DEFERRED_MARKING_MAX_AGE_HOURS = Math.max(1, Math.min(Number(process.env.HR_DEFERRED_MARKING_MAX_AGE_HOURS || 24), 72));
+const DEFERRED_MARKING_FUTURE_TOLERANCE_MINUTES = 15;
+
+function markingReferenceMoment(input = {}) {
+  const raw = input.punched_at || input.occurred_at || input.recorded_at || input.captured_at;
+  if (!raw) return null;
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function assertDeferredMarkingWindow(moment, now) {
+  const futureLimit = now.getTime() + DEFERRED_MARKING_FUTURE_TOLERANCE_MINUTES * 60000;
+  if (moment.getTime() > futureLimit) {
+    const err = new Error("La marcacion tiene una fecha y hora posteriores al momento actual.");
+    err.statusCode = 409;
+    err.code = "MARCACION_EN_EL_FUTURO";
+    err.details = { marked_at: moment.toISOString(), now: now.toISOString() };
+    throw err;
+  }
+  const ageHours = (now.getTime() - moment.getTime()) / 3600000;
+  if (ageHours > DEFERRED_MARKING_MAX_AGE_HOURS) {
+    const err = new Error(`La marcacion diferida supero las ${DEFERRED_MARKING_MAX_AGE_HOURS} horas permitidas y debe corregirla un administrador.`);
+    err.statusCode = 409;
+    err.code = "MARCACION_DIFERIDA_EXPIRADA";
+    err.details = { marked_at: moment.toISOString(), now: now.toISOString(), max_age_hours: DEFERRED_MARKING_MAX_AGE_HOURS };
+    throw err;
+  }
+}
+
 async function assertOwnAssignedRoute(tenantId, employee, input = {}) {
   const routeId = operationalRouteNumericId(input);
   if (!routeId) return null;
@@ -616,21 +746,27 @@ async function assertOwnAssignedRoute(tenantId, employee, input = {}) {
     err.code = "HORARIO_AJENO_DENEGADO";
     throw err;
   }
+  const now = new Date();
+  const deferredMoment = markingReferenceMoment(input);
+  if (deferredMoment) assertDeferredMarkingWindow(deferredMoment, now);
   const activeRoute = await resolveOwnRouteForToday(tenantId, employee);
-  const today = startOfDay().toISOString().slice(0, 10);
+  const today = startOfDay(now).toISOString().slice(0, 10);
+  const expectedDay = startOfDay(deferredMoment || now).toISOString().slice(0, 10);
   const routeDate = startOfDay(route.date).toISOString().slice(0, 10);
-  if (routeDate !== today) {
-    const err = new Error("Solo puedes operar el horario asignado para el dia actual.");
+  if (routeDate !== expectedDay) {
+    const err = new Error("Solo puedes operar el horario asignado para el dia de la marcacion.");
     err.statusCode = 409;
     err.code = "HORARIO_FUERA_DEL_DIA";
-    err.details = { route_date: routeDate, today, active_route_id: activeRoute ? Number(activeRoute.id) : null };
+    err.details = { route_date: routeDate, expected_day: expectedDay, today, active_route_id: activeRoute ? Number(activeRoute.id) : null };
     throw err;
   }
-  if (!activeRoute || Number(activeRoute.id) !== Number(route.id)) {
+  // El horario activo solo tiene sentido cuando se marca el dia en curso; una marcacion
+  // diferida de un dia anterior ya cerrado se valida contra la ruta de ese dia.
+  if (expectedDay === today && (!activeRoute || Number(activeRoute.id) !== Number(route.id))) {
     const err = new Error("Este horario no es el horario activo del empleado para hoy.");
     err.statusCode = 409;
     err.code = "HORARIO_NO_ACTIVO";
-    err.details = { route_date: routeDate, today, active_route_id: activeRoute ? Number(activeRoute.id) : null };
+    err.details = { route_date: routeDate, expected_day: expectedDay, today, active_route_id: activeRoute ? Number(activeRoute.id) : null };
     throw err;
   }
   return route;
@@ -997,6 +1133,36 @@ async function prevalidateRoutes(tenantId, input = {}) {
     omitted: results.filter((item) => item.status !== "ready").length,
     results
   };
+}
+
+async function listDateAssignments(tenantId, query = {}) {
+  const dateText = String(query.date || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateText)) {
+    throw validationError("La fecha consultada debe tener formato YYYY-MM-DD.", 400, "FECHA_INVALIDA");
+  }
+  const day = startOfDay(dateText);
+  // Mismo ventaneo y filtro de estado que findRouteAssignmentConflicts: lo que aqui se
+  // informa como "ya tiene malla" debe coincidir exactamente con lo que luego bloquearia
+  // el 409 MALLA_SOLAPADA, o el formulario avisaria de mas o de menos.
+  const routes = await prisma.runWithTenant(tenantId, () => prisma.timeRoute.findMany({
+    where: {
+      tenant_id: tenantId,
+      date: { gte: day, lt: endOfDay(day) },
+      status: { notIn: ["cancelled", "cancelada", "inactive", "inactiva"] }
+    },
+    select: { id: true, employees: true, start_time: true, end_time: true, status: true, vehicle_plate: true },
+    orderBy: { id: "asc" },
+    take: 2000
+  }));
+  return routes.map((route) => ({
+    route_id: route.id,
+    date: dateText,
+    start_time: route.start_time,
+    end_time: route.end_time,
+    status: route.status,
+    vehicle_plate: route.vehicle_plate,
+    employees: Array.isArray(route.employees) ? route.employees : []
+  }));
 }
 
 function datesForRouteRange(input) {
@@ -1656,9 +1822,14 @@ async function listWorkActivities(tenantId, query = {}) {
 async function createWorkActivity(tenantId, user, input) {
   return prisma.runWithTenant(tenantId, async () => {
     const gpsSkipped = input.gps_required === false || input.gps_skipped === true || input.latitude == null || input.longitude == null;
-    if (!gpsSkipped && (input.latitude == null || input.longitude == null)) {
+    const gpsUnavailable = gpsUnavailableFromInput(input);
+    // gpsSkipped ya es verdadero cuando faltan las coordenadas, asi que la comprobacion
+    // anterior nunca disparaba. Se exige GPS solo cuando el llamador lo declara requerido
+    // y se admite la excepcion de marcacion sin senal, que deja novedad.
+    if (input.gps_required === true && (input.latitude == null || input.longitude == null) && !gpsUnavailable) {
       const err = new Error("GPS obligatorio para registrar actividad.");
       err.statusCode = 422;
+      err.code = "GPS_OBLIGATORIO_SIN_UBICACION";
       throw err;
     }
     if (!input.photo?.base64) {
@@ -1675,8 +1846,15 @@ async function createWorkActivity(tenantId, user, input) {
     const requestAliases = inputIdentityAliases(input);
     const explicitUserName = String(input.user_name || "").trim();
     const userName = (!isGenericEmployeeAlias(explicitUserName) && explicitUserName) || employeeUserName(employee, user?.name || user?.email || "");
-    const session = await findCurrentWorkSession({ employee, userName, routeId: inputRouteId })
-      || await ensureWorkSessionFromPunches({ employee, userName, routeId: inputRouteId, vehiclePlate: input.vehicle_plate || "", extraAliases: requestAliases });
+    // findCurrentWorkSession y ensureWorkSessionFromPunches ya aceptan date, pero aqui no se
+    // les pasaba: resolvian siempre contra hoy. Una actividad registrada sin senal durante la
+    // jornada y sincronizada al dia siguiente moria con 422 JORNADA_ACTIVA_REQUERIDA aunque la
+    // marcacion diferida de esa misma jornada si se aceptara. La sesion se busca en el dia en
+    // que la actividad ocurrio de verdad.
+    const occurredAt = input.occurred_at ? new Date(input.occurred_at) : new Date();
+    const sessionDay = Number.isNaN(occurredAt.getTime()) ? new Date() : occurredAt;
+    const session = await findCurrentWorkSession({ employee, userName, routeId: inputRouteId, date: sessionDay })
+      || await ensureWorkSessionFromPunches({ employee, userName, routeId: inputRouteId, vehiclePlate: input.vehicle_plate || "", extraAliases: requestAliases, date: sessionDay });
     if (!session) {
       const err = new Error("No hay jornada activa. Marca Entrada antes de registrar actividades.");
       err.statusCode = 422;
@@ -1718,6 +1896,17 @@ async function createWorkActivity(tenantId, user, input) {
         }
       }
     });
+    if (gpsUnavailable) {
+      const persistedOccurredAt = activity.occurred_at instanceof Date ? activity.occurred_at : new Date(activity.occurred_at);
+      await recordGpsUnavailableNovelty(prisma, {
+        tenantId,
+        employeeId: activity.employee_id,
+        routeId: activity.route_id || null,
+        moment: persistedOccurredAt,
+        segment: `actividad-${activity.id}:${timeString(persistedOccurredAt).slice(0, 5)}`,
+        detail: gpsUnavailable
+      });
+    }
     const fileName = normalizeFileName(input.photo.name || `actividad-${activity.id}.jpg`);
     const uploaderKey = String(user?.id || session.employee_id || "operador").replace(/[^a-zA-Z0-9_-]/g, "");
     await prisma.activityEvidence.create({
@@ -1803,7 +1992,10 @@ async function getPreoperationalMetrics(tenantId, query = {}) {
   });
 }
 
-async function createPunch(tenantId, input, user) {
+async function createPunch(tenantId, input, user, options = {}) {
+  // El ambito lo fija el servidor, no el payload: un cliente de la ruta administrativa
+  // no puede declararse self-service para esquivar la novedad de ajuste manual.
+  const ownScope = options.scope === "own";
   const idempotencyKey = String(input.idempotency_key || input.metadata?.idempotency_key || "").trim().slice(0, 120) || null;
   const attemptPunch = async (tx) => {
     const punchedAt = input.punched_at ? new Date(input.punched_at) : new Date();
@@ -1811,7 +2003,21 @@ async function createPunch(tenantId, input, user) {
       where: { tenant_id: tenantId, OR: [{ user_id: user.id }, { user: { email: user.email || "" } }] },
       include: { user: { select: { name: true, email: true } } }
     }) : null;
-    const employee = currentEmployee || await resolveEmployeeForPunch(tenantId, input);
+    // El ambito self-service queda anclado al usuario autenticado: es lo que impide marcar
+    // por otra persona. En la ruta administrativa el destino lo declara el payload; si alli
+    // tambien se impusiera el empleado del admin, la correccion caia sobre el admin y la
+    // novedad AJUSTE_MANUAL_MARCACION senalaba a la persona equivocada. Solo se honra un
+    // employee_id que exista: si no existe se conserva la cadena de respaldo anterior.
+    const declaredEmployeeId = !ownScope && input.employee_id != null && input.employee_id !== ""
+      ? Number(input.employee_id)
+      : null;
+    const declaredEmployee = Number.isInteger(declaredEmployeeId)
+      ? await tx.employee.findFirst({
+        where: { tenant_id: tenantId, id: declaredEmployeeId },
+        include: { user: { select: { name: true, email: true } } }
+      })
+      : null;
+    const employee = declaredEmployee || currentEmployee || await resolveEmployeeForPunch(tenantId, input);
     const type = normalizePunchType(input.type || input.tipo_marca);
     const inputRouteId = operationalRouteNumericId(input);
     const route = inputRouteId ? await tx.timeRoute.findFirst({ where: { tenant_id: tenantId, id: inputRouteId } }) : null;
@@ -1955,6 +2161,27 @@ async function createPunch(tenantId, input, user) {
         idempotency_key: idempotencyKey
       }
     });
+    const gpsUnavailable = gpsUnavailableFromInput(input);
+    if (gpsUnavailable) {
+      await recordGpsUnavailableNovelty(tx, {
+        tenantId,
+        employeeId: employee.id,
+        routeId: route?.id || inputRouteId || null,
+        moment: punchedAt,
+        segment: `${type}:${timeString(punchedAt).slice(0, 5)}`,
+        detail: gpsUnavailable
+      });
+    }
+    if (!ownScope && startOfDay(punchedAt).toISOString().slice(0, 10) !== startOfDay().toISOString().slice(0, 10)) {
+      await recordManualAdjustmentNovelty(tx, {
+        tenantId,
+        employeeId: employee.id,
+        routeId: route?.id || inputRouteId || null,
+        moment: punchedAt,
+        segment: `${type}:${timeString(punchedAt).slice(0, 5)}`,
+        detail: { reason: input.extra_reason, detail: input.extra_detail, userId: user?.id || null }
+      });
+    }
     if (dayMileage != null) {
       const mileageRouteId = route?.id || inputRouteId || null;
       const mileageMetadata = JSON.stringify({ source: "time_punch", unusual: mileageUnusual, threshold: mileageThreshold });
@@ -2151,7 +2378,7 @@ function ownOperationalInput(input, employee, user) {
 async function createOwnPunch(tenantId, user, input) {
   const employee = await getCurrentEmployee(tenantId, user);
   await prisma.runWithTenant(tenantId, () => assertOwnAssignedRoute(tenantId, employee, input));
-  return createPunch(tenantId, ownOperationalInput(input, employee, user), user);
+  return createPunch(tenantId, ownOperationalInput(input, employee, user), user, { scope: "own" });
 }
 
 async function createGpsPing(tenantId, input) {
@@ -2518,6 +2745,19 @@ async function getOperationsMap(tenantId, query = {}) {
       };
     });
 
+    // El mapa recorta por limites duros; sin esta senal la pantalla muestra un dia
+    // incompleto como si estuviera completo.
+    const truncationLimits = [
+      { key: "routes", limit: 200, count: routes.length },
+      { key: "people", limit: 500, count: employees.length },
+      { key: "pings", limit: pingLimit, count: pings.length },
+      { key: "punches", limit: punchLimit, count: punches.length },
+      { key: "activities", limit: activityLimit, count: activities.length }
+    ];
+    const truncatedCollections = truncationLimits
+      .filter((item) => item.count >= item.limit)
+      .map((item) => ({ collection: item.key, limit: item.limit, returned: item.count }));
+
     return {
       date: day.toISOString().slice(0, 10),
       generated_at: new Date().toISOString(),
@@ -2525,12 +2765,20 @@ async function getOperationsMap(tenantId, query = {}) {
       footprint_window_days: footprintDays,
       people,
       routes: routeSummaries,
+      truncation: {
+        truncated: truncatedCollections.length > 0,
+        collections: truncatedCollections,
+        hint: truncatedCollections.length
+          ? "El dia tiene mas registros que el limite de la ventana; amplie ping_limit/punch_limit/activity_limit o acote la fecha."
+          : ""
+      },
       totals: {
         routes: routes.length,
         planned_people: people.length,
         online: people.filter((person) => person.online).length,
         without_gps: people.filter((person) => person.latitude == null || person.longitude == null).length,
-        offline: people.filter((person) => person.latitude != null && person.longitude != null && !person.online).length
+        offline: people.filter((person) => person.latitude != null && person.longitude != null && !person.online).length,
+        truncated: truncatedCollections.length > 0
       }
     };
   });
@@ -2939,12 +3187,20 @@ async function listNoveltyTypes(tenantId, query = {}) {
 
 async function listWorkdayNovelties(tenantId, query = {}) {
   const range = boundedReportRange(query, { defaultToday: false, maxDays: 366 });
+  // th_novedades_jornada.date es DATE y la sesion de Postgres corre en UTC: comparar ese DATE
+  // contra el TIMESTAMPTZ de startOfDay castea la fila a medianoche UTC, cinco horas despues
+  // del inicio del dia operativo, y un filtro por un solo dia no devolvia ninguna novedad.
+  // Se acota con claves YYYY-MM-DD del dia operativo, que es el tipo real de la columna.
+  // El centinela evita que el cast ::date reciba una cadena vacia cuando no hay rango.
+  const operatingDayKey = (value) => startOfDay(value).toISOString().slice(0, 10);
+  const startKey = range ? operatingDayKey(range.start) : "1970-01-01";
+  const endKey = range ? operatingDayKey(range.end) : "1970-01-01";
   return prisma.runWithTenant(tenantId, async () => prisma.$queryRaw`
     SELECT n.*, e.code AS employee_code, e.metadata AS employee_metadata
     FROM th_novedades_jornada n
     LEFT JOIN "Employee" e ON e.id = n.employee_id AND e.tenant_id = n.tenant_id
     WHERE n.tenant_id = ${tenantId}
-      AND (${range == null} OR (n.date >= ${range?.start || new Date(0)} AND n.date < ${range?.end || new Date(0)}))
+      AND (${range == null} OR (n.date >= ${startKey}::date AND n.date < ${endKey}::date))
       AND (${query.status == null} OR n.status = ${query.status || ""})
       AND (${query.type == null} OR n.type_code = ${query.type || ""})
     ORDER BY n.updated_at DESC
@@ -3329,6 +3585,7 @@ module.exports = {
   updateRoute,
   createRoutesBulk,
   prevalidateRoutes,
+  listDateAssignments,
   getPreoperationalTemplate,
   getActivePreoperationalChecklist,
   getOwnPreoperationalChecklist,

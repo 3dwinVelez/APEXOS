@@ -1,0 +1,106 @@
+{
+  "change_id": "hr-phase-b-mallas-cierre-20260921",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "6c06412e89ad1dc978316a30d5f359e73d74c824",
+  "decision": "APTO",
+  "qa_summary": "Release a produccion de la Fase B de Talento Humano y del cierre diagnostico del 409 MALLA_SOLAPADA, verificado sobre el build QA desplegado (API /health commit 6c06412e89ad). Fase B: marcacion diferida sin senal (cola offline en el dispositivo con notificacion 'se notificara apenas tenga senal' y reenvio con evidencia), regla de dia por punched_at (solo el horario del dia actual permite marcar, sin horarios de otros dias), novedad GPS_INACTIVO_SIN_SENAL con migracion de datos idempotente verificada en QA (1 fila th_tipos_novedad). Cierre del 409: prevalidacion POST /api/v1/hr/routes/prevalidate antes de escribir, GET /api/v1/hr/routes/assignments para el aviso ambar del selector, detalle del conflicto con nombre/horario/fecha en panel y banner rosa, y serializacion de error.details en el manejador de errores de Fastify. Certificacion LOCAL end-to-end con script versionado hr-offline-deferred-marking-local.js (35/35 controles) y regresion con hr-schedule-write-integrity-local.js (21/21). Replica funcional de navegador en QA (Chromium, MCP browser-use) con prueba de paridad de chunk: (1) aviso ambar 'Ya tiene malla 08:00-17:00 en esta fecha' sobre conflicto real de QA (horario 74, 27 personas); (2) guardado solapado bloqueado EN EL CLIENTE con detalle exacto y cero POST /hr/routes, verificado en base (solo horario 74); (3) control positivo 09:00-13:00 QA-ADM-001 con prevalidate 200 conflicts:[], un unico POST /api/v1/hr/routes 200 creando TimeRoute 302, banner verde 'Horario asignado correctamente.' y persistencia verificada en base. NYVORA (empresa modelo) en QA aprobada contra la API desplegada (commit 6c06412e89ad): ruta dinamica 301, before 0 -> after punch_count 4 / activity_count 1 / evidence_count 1 / closed_count 1 / event_count 5; usuario de certificacion 513 desactivado. Fixture de navegador limpiado sin borrados: TimeRoute 302 inactive, admin temporal 512 desactivado. Regresion local: apps/web 333/333, HR contracts 50/50, apps/api 343/348 con las 3 fallas preexistentes ajenas a HR; typecheck exit 0; lint 0 errors; prisma validate valido.",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "browser-qa-evidence.md",
+        "qa-fixture.json",
+        "../hr-offline-deferred-marking-20260921/local-certification.json",
+        "validation-checks.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "browser-qa-evidence.md",
+        "qa-fixture.json",
+        "validation-checks.json",
+        "unit-tests.txt"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "qa-fixture.json",
+        "../hr-offline-deferred-marking-20260921/local-fixture.json",
+        "validation-checks.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "qa-nyvora-hr-monitor.json",
+        "../hr-schedule-write-integrity-20260920/local-simulation-certification.json",
+        "validation-checks.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "qa-nyvora-hr-monitor.json",
+        "browser-qa-evidence.md",
+        "unit-tests.txt"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-offline-deferred-marking-local.js",
+    "evidence": [
+      "../hr-offline-deferred-marking-20260921/local-certification.json",
+      "../hr-offline-deferred-marking-20260921/local-fixture.json",
+      "browser-qa-evidence.md"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-schedule-write-integrity-local.js",
+    "evidence": [
+      "../hr-schedule-write-integrity-20260920/local-simulation-certification.json",
+      "unit-tests.txt",
+      "qa-nyvora-hr-monitor.json",
+      "browser-qa-evidence.md"
+    ]
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../../apps/api/scripts/certifications/nyvora-hr-monitor-dynamic.js",
+    "evidence": [
+      "qa-nyvora-hr-monitor.json"
+    ]
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "462a7ffbf22a6677e7691bb26a276da35dad0f06",
+    "trigger": "regresion critica en el monitor de mallas horarias o en la asignacion de horarios (bloqueo falso-positivo de jornadas validas, exito aparente sin persistencia), falla en el flujo de marcacion del operario (marcaciones del dia no guardadas, cola offline que corrompe o duplica registros, regla de dia que rechaza marcaciones legitimas), error del arranque del servicio API por la migracion de th_tipos_novedad, regresion en la plataforma NYVORA certificada, o fallo del smoke de conectividad productiva tras el despliegue"
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "APEXOS QA release gate (autorizado por Edwin, release owner)",
+    "approved_at": "2026-09-21T09:35:00-05:00",
+    "scope": "develop to main for the exact QA-verified build 6c06412e89ad1dc978316a30d5f359e73d74c824: Fase B de Talento Humano (marcacion diferida sin senal, regla de dia por punched_at, novedad GPS_INACTIVO_SIN_SENAL con migracion de datos idempotente) y cierre diagnostico del 409 MALLA_SOLAPADA (prevalidacion de conflictos, endpoint de asignaciones del dia, detalle del conflicto en panel y banner, serializacion de error.details), con sus tests, scripts de certificacion versionados y evidencia local + pre-QA + QA.",
+    "authorization_basis": "Instruccion literal del release owner: 'procede con el cierre y lleva las correciones hasta el main de manera correcta'. La cadena desarrollo -> develop -> main queda autorizada sujeta a las puertas qa:promotion:scope, qa:preqa:evidence y qa:approval:evidence; el release owner ejecuta personalmente las puertas y la promocion."
+  },
+  "observations": [
+    "Nivel de prueba declarado sin sobreafirmar: las certificaciones end-to-end HTTP (hr-offline-deferred-marking-local.js 35/35 y hr-schedule-write-integrity-local.js 21/21) se ejecutaron en LOCAL porque ambos scripts rechazan cualquier api-url que no sea localhost/127.0.0.1. La certificacion en QA es la replica funcional de navegador documentada en browser-qa-evidence.md sobre el bundle realmente desplegado, con prueba de paridad de chunk (2piyh6a2na8ju.js contiene hr/routes/prevalidate, 'Ya tiene malla' y hr/routes/assignments), mas la certificacion NYVORA HTTP contra la API QA desplegada con CERTIFICATION_EXPECTED_COMMIT=6c06412e89ad.",
+    "El 409 MALLA_SOLAPADA reportado por el dueno del producto en produccion fue diagnosticado como regla legitima sobre datos reales (horario 74 de QA cubre 08:00-17:00 con 27 personas): el sistema NO permitia crear horarios sobre personas ya asignadas y solo mostraba el 409 crudo. El cierre no elimina la regla: la explica (nombre, horario y fecha del conflicto), la detecta antes de escribir (prevalidate + aviso ambar del selector) y serializa error.details para todos los 4xx de la plataforma.",
+    "NYVORA en QA aprobada de verdad en esta corrida: ok=true, commit 6c06412e89ad, run_id 20260921085915, ruta dinamica 301, before event_count 0 -> after punch_count 4 / activity_count 1 / evidence_count 1 / closed_count 1 / event_count 5. Conexion via pooler de Supabase QA con DISABLE_REDIS=true. Usuario de certificacion 513 desactivado al terminar.",
+    "Migracion de datos 20260921000000_gps_inactivo_sin_senal_novelty_type verificada en QA: 1 fila GPS_INACTIVO_SIN_SENAL en th_tipos_novedad para SCJ QA, aplicada por el arranque automatico del servicio. Es idempotente (INSERT ... WHERE NOT EXISTS) y se aplicara igual en produccion al desplegar.",
+    "Control positivo en QA con prueba doble (red + base): prevalidate 200 conflicts:[], un unico POST /api/v1/hr/routes 200 creando TimeRoute 302 (09:00-13:00, QA-ADM-001), banner verde 'Horario asignado correctamente.' y verificacion PostgREST de la persistencia. Quirk cosmetico declarado: el dialogo conservaba el panel de issues obsoleto del envio bloqueado anterior; el exito fue capturado en vivo por interceptor de red. No afecta la decision.",
+    "Limpieza del fixture QA ejecutada sin borrados: TimeRoute 302 -> status=inactive, User 512 -> active=false (PATCH 200 verificados). La contrasena del admin temporal nunca se persistio en evidencia versionada. El horario 74 preexistente quedo intacto.",
+    "Regresion local del candidato funcional 601f1f2 (ancestro directo de 6c06412): apps/web 333/333, HR contracts 50/50, apps/api 348 tests con 343 pass y las 3 fallas preexistentes ajenas a HR (inventory-transfer-product-list-ux, offline-bootstrap, zero-friendly-number-input) mas 2 skipped; typecheck exit 0; lint 0 errors (13 warnings preexistentes); prisma validate valido. Cero regresiones atribuibles al cambio.",
+    "Hallazgo fuera de alcance declarado (no bloquea este release): bug deterministico de contabilidad en la numeracion de entradas de mercancia (EM) — accounting_numbering del tenant demo perdio el contador EM por read-modify-write del config completo, causando P2002/409 reproducible en la validacion deterministica. Ajeno al modulo HR; queda documentado en validation-checks.json para abrirse como incidente separado.",
+    "Mecanica del release: el candidato final de la promocion develop -> main es el commit de evidencia cuyo padre es 6c06412e89ad1dc978316a30d5f359e73d74c824; ese commit solo agrega los 8 archivos de QA de este directorio (browser-qa-evidence.md, qa-fixture.json, qa-nyvora-hr-monitor.json, qa-approval-evidence.json, este scope-manifest-release.json y las 3 capturas qa-01/02/03), por lo que el inventario exacto del scope-manifest-release.json (40 entradas) los incluye. Las 4 entradas D del diff origin/main..candidato son fantasma (artefactos prod-* que solo existen en main, convencion forward-only) y el merge union los preserva."
+  ]
+}
