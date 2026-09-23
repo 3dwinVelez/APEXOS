@@ -193,6 +193,65 @@ function requireAdminCapability(resource, action) {
   return requireAnyAdminCapability([{ resource, action }]);
 }
 
+const PHYSICAL_DELETE_ACTION = "delete_physical_records";
+
+const PHYSICAL_DELETE_LEGACY_KEYS = {
+  hr: ["talento_humano", "talento-humano", "hr", "marcaciones"],
+  users: ["usuarios", "admin", "administracion"]
+};
+
+function hasPhysicalDeleteGrant(role, resourceKey) {
+  if (!role) return false;
+  const legacyKeys = PHYSICAL_DELETE_LEGACY_KEYS[resourceKey] || [resourceKey];
+  const legacy = legacyPermissionContext(role);
+  if (legacy && legacyKeys.some((key) => legacy[key]?.[PHYSICAL_DELETE_ACTION] === true)) return true;
+
+  const permissions = Array.isArray(role.permissions) ? role.permissions : [];
+  const modules = new Set(["*", resourceKey, ...legacyKeys]);
+  return permissions.some((permission) => (
+    modules.has(String(permission.module || "").trim())
+    && (permission.action === PHYSICAL_DELETE_ACTION || permission.action === "*")
+  ));
+}
+
+function requirePhysicalDeleteGrant(resourceKey) {
+  return async function physicalDeleteMiddleware(request, reply) {
+    return measurePhase("authorization", async () => {
+      const role = request.user.role;
+      if (!role) return reply.code(401).send({ error: "No autenticado", code: "NO_AUTENTICADO" });
+      if (!tenantHasModule(request.tenant, resourceKey)) {
+        return reply.code(403).send({
+          error: "Modulo no habilitado para esta empresa",
+          code: "MODULO_NO_HABILITADO",
+          details: { module: resourceKey }
+        });
+      }
+      if (!hasPhysicalDeleteGrant(role, resourceKey)) {
+        return reply.code(403).send({
+          error: "La eliminacion definitiva requiere el permiso especial de borrado fisico, que no se entrega por defecto.",
+          code: "PERMISO_BORRADO_FISICO_DENEGADO",
+          details: { module: resourceKey, action: PHYSICAL_DELETE_ACTION }
+        });
+      }
+      const scopeViolation = roleScopeViolation(role, request);
+      if (scopeViolation) {
+        return reply.code(403).send({
+          error: "Fuera del alcance permitido para el rol",
+          code: "ALCANCE_ROL_DENEGADO",
+          details: { module: resourceKey, action: PHYSICAL_DELETE_ACTION, scope: scopeViolation }
+        });
+      }
+      request.rbacScope = {
+        role_id: role.id,
+        role_name: role.name,
+        scope: role.metadata?.scope || "company",
+        scopes: role.metadata?.scopes || {},
+        restrictions: role.metadata?.restrictions || {}
+      };
+    });
+  };
+}
+
 function permissionMiddleware(module, action, allowAdministrativeBypass) {
   return async function rbacMiddleware(request, reply) {
     return measurePhase("authorization", async () => {
@@ -329,7 +388,9 @@ module.exports = {
   requireAnyPermission,
   requireAdminCapability,
   requireAnyAdminCapability,
+  requirePhysicalDeleteGrant,
   hasAdminCapability,
+  hasPhysicalDeleteGrant,
   isAdministrativeRole,
   checkSoD,
   tenantHasModule

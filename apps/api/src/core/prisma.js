@@ -49,7 +49,7 @@ const PHYSICAL_DELETE_ALLOWED = new Set([
   "WorkActivity", "ActivityEvidence", "ServicePhoto", "ServiceIncident", "EvidenceUploadAuthorization", "AuthorizationSession",
   "SensorReading", "BrainEvent", "BrainMetric",
   "ApexHeartAlert", "ApexHeartInventorySnapshot",
-  "RoutePreoperationalChecklistAnswer", "RoutePreoperationalChecklistEvidence",
+  "RoutePreoperationalChecklist", "RoutePreoperationalChecklistAnswer", "RoutePreoperationalChecklistEvidence",
   "RoutePreoperationalFinding", "RouteStartAuthorization", "RouteBlockEvent",
   "ItemLocation", "ServiceReferencePart", "TimeRoute"
 ]);

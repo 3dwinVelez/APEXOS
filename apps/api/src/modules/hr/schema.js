@@ -107,6 +107,22 @@ const routePrevalidateSchema = {
   }
 };
 
+// La eliminacion definitiva exige motivo explicito y confirmacion consciente del alcance real
+// (registros operativos del dia conservan su route_id como historial desacoplado).
+const routeDeleteSchema = {
+  body: {
+    type: "object",
+    required: ["reason", "confirmed"],
+    properties: {
+      reason: { type: "string", minLength: 12, maxLength: 500 },
+      confirmed: { type: "boolean", const: true },
+      expected_employees: { type: "integer", minimum: 0 },
+      expected_date: { type: "string" },
+      acknowledge_trace: { type: "boolean" }
+    }
+  }
+};
+
 const gpsPingSchema = {
   body: {
     type: "object",
@@ -390,6 +406,7 @@ module.exports = {
   routeSchema,
   routeBulkSchema,
   routePrevalidateSchema,
+  routeDeleteSchema,
   gpsPingSchema,
   activityTypeSchema,
   workActivitySchema,
