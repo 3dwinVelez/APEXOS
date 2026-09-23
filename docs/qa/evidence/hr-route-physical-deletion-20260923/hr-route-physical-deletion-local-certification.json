@@ -1,0 +1,604 @@
+{
+  "change_id": "hr-route-physical-deletion-20260923",
+  "certification": "hr-route-physical-deletion-local",
+  "environment": "LOCAL",
+  "database_url_host": "postgresql://***@localhost:55432/apexos",
+  "generated_at": "2026-09-23T16:46:46.340Z",
+  "api_commit": "unknown",
+  "api_url": "http://127.0.0.1:3199",
+  "operating_date": "2026-09-23",
+  "scope": {
+    "capability": "Eliminacion definitiva y controlada de mallas/horarios (TimeRoute) bajo permiso especial delete_physical_records, con vista previa de impacto, motivo, confirmacion, reconocimiento de traza y auditoria; monitor de horarios como ventana emergente con validacion por usuario y buscador Ctrl+K con funciones de todos los modulos.",
+    "proven_by_live_execution": [
+      "GET /api/v1/hr/routes/:id/deletion-impact responde impacto + permissions.can_physical_delete segun el rol",
+      "DELETE /api/v1/hr/routes/:id aplica el borrado fisico completo (malla + checklist preoperacional + autorizaciones + bloqueos) y conserva la traza",
+      "DELETE sin el permiso especial responde 403 PERMISO_BORRADO_FISICO_DENEGADO",
+      "DELETE con checklist preoperacional sin cerrar responde 409 ROUTE_DELETE_BLOCKED_OPEN_CHECKLIST",
+      "DELETE con vista previa obsoleta responde 409 ROUTE_DELETE_STALE_PREVIEW",
+      "DELETE sin reconocer la traza responde 409 ROUTE_DELETE_TRACE_NOT_ACKNOWLEDGED",
+      "DELETE cross-tenant responde 404 ROUTE_NOT_FOUND y la malla ajena sigue viva",
+      "DELETE en empresa sin modulo hr responde 403 MODULO_NO_HABILITADO",
+      "DELETE con rol superadministrador (permiso *:*) aplica el mismo contrato",
+      "La traza operativa (marcaciones, GPS, sesiones, actividades, jornales) sobrevive al borrado y queda desacoplada",
+      "audit_log registra route.physical_deletion.applied con actor, motivo y detalle de borrado"
+    ],
+    "proven_by_code_level_assertion": [
+      "rbac.js define hasPhysicalDeleteGrant/requirePhysicalDeleteGrant y los codigos de denegacion",
+      "hr/routes.js expone el par deletion-impact + DELETE con requirePhysicalDeleteGrant en las dos rutas (hr y talento-humano)",
+      "hr/service.js valida motivo, confirmacion, vista previa y traza antes de borrar en transaccion",
+      "prisma.js permite el borrado fisico de TimeRoute y su arbol preoperacional",
+      "rutas/page.tsx abre el monitor como ventana emergente accesible y valida por usuario",
+      "CommandPalette.tsx + moduleFunctions.ts cubren las funciones de todos los modulos"
+    ],
+    "proven_by_versioned_unit_suite": [
+      "apps/api/test/hr-route-physical-deletion.test.js (11 controles)",
+      "apps/api/test/hr-route-physical-deletion-contract.test.js (7 controles)",
+      "apps/web/test/hr-monitor-modal-per-user.test.mjs (8 controles)",
+      "apps/web/test/command-palette-module-functions.test.mjs (9 controles)"
+    ]
+  },
+  "checks": [
+    {
+      "name": "health_ok",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "commit": "unknown"
+      }
+    },
+    {
+      "name": "fixture_tenants_resolved",
+      "ok": true,
+      "detail": {
+        "con_permiso_y_sin_permiso": {
+          "id": "1dde4f04-b528-4fe2-8a78-1a5e89079e7d",
+          "name": "Puebla Operaciones"
+        },
+        "superadmin": {
+          "id": "704411f9-606f-4786-b0c5-a0c3cad73033",
+          "name": "Demo APEX"
+        },
+        "sin_modulo_hr": {
+          "id": "c34729b8-70a7-457b-8d06-30dc1cd2ba69",
+          "name": "Prueba APEX",
+          "modules": [
+            "m-01",
+            "m-03",
+            "m-04",
+            "m-05",
+            "m-07",
+            "m-22"
+          ]
+        }
+      }
+    },
+    {
+      "name": "fixture_superadmin_role_present",
+      "ok": true,
+      "detail": {
+        "tenant": "Demo APEX",
+        "roles": 18
+      }
+    },
+    {
+      "name": "fixture_roles_created",
+      "ok": true,
+      "detail": {
+        "con_permiso_especial": "QA Borrado Malla 20260923164646",
+        "sin_permiso_especial": "QA Operador Malla 20260923164646",
+        "empresa_sin_modulo": "QA Sin Modulo 20260923164646"
+      }
+    },
+    {
+      "name": "fixture_users_can_login",
+      "ok": true,
+      "detail": {
+        "logins": 4
+      }
+    },
+    {
+      "name": "fixture_routes_seeded",
+      "ok": true,
+      "detail": {
+        "route_a": 36,
+        "route_b": 37,
+        "route_c": 38
+      }
+    },
+    {
+      "name": "preview_reports_special_grant",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "permissions": {
+          "can_physical_delete": true
+        }
+      }
+    },
+    {
+      "name": "preview_blocks_open_checklist",
+      "ok": true,
+      "detail": {
+        "can_delete": false,
+        "blocker": "ROUTE_DELETE_BLOCKED_OPEN_CHECKLIST",
+        "checklist_ids": [
+          4
+        ]
+      }
+    },
+    {
+      "name": "preview_quantifies_deletion",
+      "ok": true,
+      "detail": {
+        "will_delete": {
+          "checklists": 1,
+          "checklist_statuses": [
+            "en_proceso"
+          ],
+          "checklist_answers": 1,
+          "checklist_evidence": 1,
+          "checklist_findings": 1,
+          "start_authorizations": 1,
+          "block_events": 1,
+          "total": 6
+        }
+      }
+    },
+    {
+      "name": "preview_preserves_operational_trace",
+      "ok": true,
+      "detail": {
+        "preserved_trace": {
+          "time_punches": 1,
+          "gps_pings": 1,
+          "work_sessions": 1,
+          "work_activities": 1,
+          "processed_workdays": 1,
+          "total": 5
+        }
+      }
+    },
+    {
+      "name": "preview_returns_route_snapshot",
+      "ok": true,
+      "detail": {
+        "route": {
+          "id": 36,
+          "date": "2026-09-23",
+          "vehicle_plate": "QAA4646",
+          "status": "active",
+          "start_time": "06:00",
+          "end_time": "16:00",
+          "tolerance_minutes": 15,
+          "employees": [
+            {
+              "name": "QA A titular"
+            },
+            {
+              "name": "QA A acompanante"
+            }
+          ],
+          "employee_count": 2
+        },
+        "route_id": 36
+      }
+    },
+    {
+      "name": "preview_hides_grant_without_permission",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "permissions": {
+          "can_physical_delete": false
+        }
+      }
+    },
+    {
+      "name": "preview_unblocks_after_checklist_closed",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "can_delete": true,
+        "blockers": 0
+      }
+    },
+    {
+      "name": "delete_requires_special_permission",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "PERMISO_BORRADO_FISICO_DENEGADO"
+      }
+    },
+    {
+      "name": "delete_requires_reason_and_confirmation",
+      "ok": true,
+      "detail": {
+        "sin_motivo": 400,
+        "motivo_corto": 400,
+        "sin_confirmacion": 400
+      }
+    },
+    {
+      "name": "delete_detects_stale_preview",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "ROUTE_DELETE_STALE_PREVIEW",
+        "details": {
+          "expected_employees": 99,
+          "current_employees": 2
+        }
+      }
+    },
+    {
+      "name": "delete_requires_trace_acknowledgement",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "ROUTE_DELETE_TRACE_NOT_ACKNOWLEDGED",
+        "preserved_trace": {
+          "time_punches": 1,
+          "gps_pings": 1,
+          "work_sessions": 1,
+          "work_activities": 1,
+          "processed_workdays": 1,
+          "total": 5
+        }
+      }
+    },
+    {
+      "name": "cross_tenant_hidden_as_not_found",
+      "ok": true,
+      "detail": {
+        "preview_ajena": 404,
+        "delete_ajena": 404,
+        "delete_inversa": 404
+      }
+    },
+    {
+      "name": "cross_tenant_targets_stay_alive",
+      "ok": true,
+      "detail": {
+        "route_b_p": 1,
+        "route_c_d": 1
+      }
+    },
+    {
+      "name": "module_gate_blocks_without_hr_module",
+      "ok": true,
+      "detail": {
+        "delete": {
+          "status": 403,
+          "code": "MODULO_NO_HABILITADO"
+        },
+        "preview": {
+          "status": 403,
+          "code": "MODULO_NO_HABILITADO"
+        },
+        "tenant_modules": [
+          "m-01",
+          "m-03",
+          "m-04",
+          "m-05",
+          "m-07",
+          "m-22"
+        ]
+      }
+    },
+    {
+      "name": "delete_applies_with_special_permission",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "deleted": {
+          "checklists": 1,
+          "checklist_answers": 1,
+          "checklist_evidence": 1,
+          "checklist_findings": 1,
+          "start_authorizations": 1,
+          "block_events": 1,
+          "total": 6
+        },
+        "preserved_trace": {
+          "time_punches": 1,
+          "gps_pings": 1,
+          "work_sessions": 1,
+          "work_activities": 1,
+          "processed_workdays": 1,
+          "total": 5
+        },
+        "approved_by": {
+          "id": 59,
+          "name": "usuario_sin_nombre",
+          "role": "QA Borrado Malla 20260923164646"
+        }
+      }
+    },
+    {
+      "name": "deleted_rows_are_gone_and_trace_survives",
+      "ok": true,
+      "detail": {
+        "route": 0,
+        "checklists": 0,
+        "answers": 0,
+        "start_authorizations": 0,
+        "block_events": 0,
+        "time_punches": 1,
+        "gps_pings": 1,
+        "work_sessions": 1,
+        "work_activities": 1,
+        "processed_workdays": 1,
+        "findings": 0
+      }
+    },
+    {
+      "name": "deleted_route_preview_is_404",
+      "ok": true,
+      "detail": {
+        "status": 404,
+        "code": "ROUTE_NOT_FOUND"
+      }
+    },
+    {
+      "name": "deletion_is_audited_with_actor_and_reason",
+      "ok": true,
+      "detail": {
+        "audit_id": "215",
+        "user_id": 59,
+        "module": "hr",
+        "old_value": {
+          "route": {
+            "id": 36,
+            "date": "2026-09-23",
+            "status": "active",
+            "end_time": "16:00",
+            "employees": [
+              {
+                "name": "QA A titular"
+              },
+              {
+                "name": "QA A acompanante"
+              }
+            ],
+            "start_time": "06:00",
+            "vehicle_plate": "QAA4646",
+            "employee_count": 2,
+            "tolerance_minutes": 15
+          },
+          "reason": "Certificacion QA 20260923164646: malla de prueba eliminada de forma controlada y trazable",
+          "deleted": {
+            "total": 6,
+            "checklists": 1,
+            "block_events": 1,
+            "checklist_answers": 1,
+            "checklist_evidence": 1,
+            "checklist_findings": 1,
+            "start_authorizations": 1
+          },
+          "preserved_trace": {
+            "total": 5,
+            "gps_pings": 1,
+            "time_punches": 1,
+            "work_sessions": 1,
+            "work_activities": 1,
+            "processed_workdays": 1
+          }
+        },
+        "new_value": {
+          "actor": {
+            "id": 59,
+            "name": "usuario_sin_nombre",
+            "role": "QA Borrado Malla 20260923164646"
+          },
+          "deleted_at": "2026-09-23T16:46:51.511Z",
+          "request_id": "req-k"
+        }
+      }
+    },
+    {
+      "name": "delete_minimal_route_without_acknowledgement",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "deleted": {
+          "checklists": 0,
+          "checklist_answers": 0,
+          "checklist_evidence": 0,
+          "checklist_findings": 0,
+          "start_authorizations": 0,
+          "block_events": 0,
+          "total": 0
+        },
+        "preserved_trace": {
+          "time_punches": 0,
+          "gps_pings": 0,
+          "work_sessions": 0,
+          "work_activities": 0,
+          "processed_workdays": 0,
+          "total": 0
+        }
+      }
+    },
+    {
+      "name": "alias_route_serves_impact_preview",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "permissions": {
+          "can_physical_delete": true
+        }
+      }
+    },
+    {
+      "name": "superadmin_wildcard_grant_applies",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "approved_by": {
+          "id": 61,
+          "name": "usuario_sin_nombre",
+          "role": "APEX_ADMIN"
+        }
+      }
+    },
+    {
+      "name": "rbac_defines_special_delete_gate",
+      "ok": true,
+      "detail": {
+        "action": true,
+        "legacy_keys": true
+      }
+    },
+    {
+      "name": "hr_routes_gate_delete_with_special_permission",
+      "ok": true,
+      "detail": {
+        "grants": 2
+      }
+    },
+    {
+      "name": "hr_service_validates_before_physical_delete",
+      "ok": true,
+      "detail": {
+        "blocked": true,
+        "audited": true
+      }
+    },
+    {
+      "name": "route_delete_schema_demands_reason_and_confirmation",
+      "ok": true,
+      "detail": {
+        "schema": true
+      }
+    },
+    {
+      "name": "prisma_allows_physical_delete_of_route_tree",
+      "ok": true,
+      "detail": {
+        "allowed_set": true
+      }
+    },
+    {
+      "name": "monitor_is_accessible_modal_with_per_user_validation",
+      "ok": true,
+      "detail": {
+        "modal": true,
+        "per_user": true
+      }
+    },
+    {
+      "name": "delete_ui_reviews_impact_and_confirms_trace",
+      "ok": true,
+      "detail": {
+        "grant_hint": true,
+        "trace_ack": true
+      }
+    },
+    {
+      "name": "palette_covers_functions_of_all_modules",
+      "ok": true,
+      "detail": {
+        "function_entries": 67,
+        "crear_mallas": true,
+        "ver_monitor": true
+      }
+    },
+    {
+      "name": "api_unit_suite_passes",
+      "ok": true,
+      "detail": {
+        "exit": 0,
+        "pass": "11",
+        "fail": "0"
+      }
+    },
+    {
+      "name": "api_contract_suite_passes",
+      "ok": true,
+      "detail": {
+        "exit": 0,
+        "pass": "7",
+        "fail": "0"
+      }
+    },
+    {
+      "name": "web_suites_pass",
+      "ok": true,
+      "detail": {
+        "exit": 0,
+        "pass": "17",
+        "fail": "0"
+      }
+    }
+  ],
+  "status": "passed",
+  "stale_leftovers_purged": {
+    "routes": 0,
+    "users": 0,
+    "employees": 0,
+    "roles": 0,
+    "errors": []
+  },
+  "fixture": {
+    "tenants": {
+      "con_permiso": {
+        "id": "1dde4f04-b528-4fe2-8a78-1a5e89079e7d",
+        "name": "Puebla Operaciones",
+        "role": "QA Borrado Malla 20260923164646",
+        "user_id": 59
+      },
+      "superadmin": {
+        "id": "704411f9-606f-4786-b0c5-a0c3cad73033",
+        "name": "Demo APEX",
+        "role": "APEX_ADMIN",
+        "user_id": 61
+      },
+      "sin_modulo": {
+        "id": "c34729b8-70a7-457b-8d06-30dc1cd2ba69",
+        "name": "Prueba APEX",
+        "role": "QA Sin Modulo 20260923164646",
+        "user_id": 62
+      }
+    },
+    "operating_date": "2026-09-23",
+    "routes": {
+      "a_completa": {
+        "tenant": "Puebla Operaciones",
+        "route_id": 36,
+        "checklist_con_hijos": 6,
+        "traza_operativa": 5
+      },
+      "b_minima": {
+        "tenant": "Puebla Operaciones",
+        "route_id": 37
+      },
+      "c_superadmin": {
+        "tenant": "Demo APEX",
+        "route_id": 38
+      }
+    }
+  },
+  "versioned_suites": {
+    "apps/api/test/hr-route-physical-deletion.test.js": {
+      "pass": 11,
+      "fail": 0
+    },
+    "apps/api/test/hr-route-physical-deletion-contract.test.js": {
+      "pass": 7,
+      "fail": 0
+    },
+    "apps/web/test/hr-monitor-modal-per-user.test.mjs + command-palette-module-functions.test.mjs": {
+      "pass": 17,
+      "fail": 0
+    }
+  },
+  "cleanup": {
+    "routes_purged": 3,
+    "employees_deactivated": 5,
+    "users_deactivated": 4,
+    "roles_deactivated": 3,
+    "errors": []
+  },
+  "finished_at": "2026-09-23T16:46:52.549Z"
+}

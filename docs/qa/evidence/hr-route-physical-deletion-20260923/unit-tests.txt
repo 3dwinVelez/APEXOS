@@ -1,0 +1,71 @@
+# Validacion unitaria y de contrato — hr-route-physical-deletion-20260923
+# generado: 2026-09-23T16:58:00Z
+# rama: desarrollo  HEAD: 3d36ca6c1494bc7bb555fc0b396fb6d804a7c19f
+
+=== API: suites hr-* + accounting-* + third-party + service-order-number (DISABLE_REDIS=true) ===
+ℹ tests 105
+ℹ pass 105
+ℹ fail 0
+
+=== API: suites del cambio (borrado fisico de malla) ===
+apps/api/test/hr-route-physical-deletion.test.js
+ℹ tests 11
+ℹ pass 11
+ℹ fail 0
+
+apps/api/test/hr-route-physical-deletion-contract.test.js
+ℹ tests 7
+ℹ pass 7
+ℹ fail 0
+
+=== API: lint ===
+apps/api no declara configuracion ESLint (eslint v9 exige eslint.config.js y el repo no lo incluye para la API;
+el lint del repositorio es web-only: raiz "npm --workspace apps/web run lint"). No existe puerta de lint de API
+que este cambio pueda romper; no aplica.
+
+=== WEB: typecheck (tsc -p tsconfig.typecheck.json --noEmit) ===
+> @apex-os/web@2.0.0 typecheck
+> tsc -p tsconfig.typecheck.json --noEmit
+
+typecheck_exit=0
+
+=== WEB: suites intervenidas (monitor modal + validacion por usuario + buscador global) ===
+apps/web/test/hr-monitor-modal-per-user.test.mjs
+ℹ tests 8
+ℹ pass 8
+ℹ fail 0
+
+apps/web/test/command-palette-module-functions.test.mjs
+ℹ tests 9
+ℹ pass 9
+ℹ fail 0
+
+=== WEB: regresion del monitor (suite preexistente) ===
+apps/web/test/hr-schedule-monitor.test.mjs
+ℹ tests 14
+ℹ pass 14
+ℹ fail 0
+
+=== WEB: suite completa (node --test test/*.test.mjs — 56 archivos) ===
+ℹ tests 354
+ℹ pass 354
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+
+=== WEB: lint archivos cambiados ===
+app/dashboard/talento-humano/rutas/page.tsx
+components/system/CommandPalette.tsx
+lib/moduleFunctions.ts
+test/hr-monitor-modal-per-user.test.mjs
+test/command-palette-module-functions.test.mjs
+
+✖ 0 problems (0 errors, 0 warnings)
+
+lint_exit=0
+
+=== PRISMA validate ===
+The schema at prisma\schema.prisma is valid 🚀
+
+=== Certificacion en vivo (API Fastify propia + Postgres local, 38 controles) ===
+CERTIFICACION BORRADO FISICO DE MALLA APROBADA: 38 controles, status=passed

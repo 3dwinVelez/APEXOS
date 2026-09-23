@@ -1,0 +1,109 @@
+{
+  "change_id": "hr-route-physical-deletion-20260923",
+  "environment": "LOCAL",
+  "generated_at": "2026-09-23T16:58:00Z",
+  "branch": "desarrollo",
+  "functional_head_at_generation": "3d36ca6c1494bc7bb555fc0b396fb6d804a7c19f",
+  "checks": [
+    {
+      "name": "api_unit_and_contract_suites",
+      "command": "DISABLE_REDIS=true node --test test/hr-*.test.js test/accounting-*.test.js test/third-party-accounting-masters.test.js test/service-order-number-regression.test.js",
+      "cwd": "apps/api",
+      "tests": 105,
+      "pass": 105,
+      "fail": 0,
+      "status": "passed"
+    },
+    {
+      "name": "api_change_deletion_suites",
+      "command": "DISABLE_REDIS=true node --test test/hr-route-physical-deletion.test.js test/hr-route-physical-deletion-contract.test.js",
+      "cwd": "apps/api",
+      "tests": 18,
+      "pass": 18,
+      "fail": 0,
+      "detail": "hr-route-physical-deletion.test.js 11/11 + hr-route-physical-deletion-contract.test.js 7/7",
+      "status": "passed"
+    },
+    {
+      "name": "hr_route_physical_deletion_local_certification",
+      "command": "node scripts/certifications/hr-route-physical-deletion-local.js",
+      "controls": 38,
+      "status": "passed",
+      "level": "live (API Fastify propia en 127.0.0.1:3199 + Postgres local 55432, HTTP autenticado multi-tenant) + code-level + suites unitarios",
+      "evidence": "hr-route-physical-deletion-local-certification.json"
+    },
+    {
+      "name": "web_typecheck",
+      "command": "npm run typecheck (tsc -p tsconfig.typecheck.json --noEmit)",
+      "cwd": "apps/web",
+      "exit": 0,
+      "status": "passed"
+    },
+    {
+      "name": "web_intervened_suites",
+      "command": "node --test test/hr-monitor-modal-per-user.test.mjs test/command-palette-module-functions.test.mjs",
+      "cwd": "apps/web",
+      "tests": 17,
+      "pass": 17,
+      "fail": 0,
+      "detail": "hr-monitor-modal-per-user.test.mjs 8/8 + command-palette-module-functions.test.mjs 9/9",
+      "status": "passed"
+    },
+    {
+      "name": "web_hr_schedule_monitor_suite",
+      "command": "node --test test/hr-schedule-monitor.test.mjs",
+      "cwd": "apps/web",
+      "tests": 14,
+      "pass": 14,
+      "fail": 0,
+      "status": "passed"
+    },
+    {
+      "name": "web_full_suite",
+      "command": "node --test test/*.test.mjs (56 archivos)",
+      "cwd": "apps/web",
+      "tests": 354,
+      "pass": 354,
+      "fail": 0,
+      "status": "passed"
+    },
+    {
+      "name": "web_lint_changed_files",
+      "command": "eslint app/dashboard/talento-humano/rutas/page.tsx components/system/CommandPalette.tsx lib/moduleFunctions.ts test/hr-monitor-modal-per-user.test.mjs test/command-palette-module-functions.test.mjs",
+      "cwd": "apps/web",
+      "errors": 0,
+      "warnings": 0,
+      "exit": 0,
+      "status": "passed"
+    },
+    {
+      "name": "api_lint",
+      "status": "not_applicable",
+      "note": "apps/api no declara configuracion ESLint (eslint v9 exige eslint.config.js; el repo no lo incluye para la API). El lint del repositorio es web-only (raiz: npm --workspace apps/web run lint). No existe puerta de lint de API."
+    },
+    {
+      "name": "prisma_validate",
+      "command": "prisma validate",
+      "cwd": "apps/api",
+      "status": "passed",
+      "note": "esquema sin cambios en este release; validado con DATABASE_URL local (localhost:55432)"
+    }
+  ],
+  "preexisting_unrelated_failures": [
+    {
+      "suite": "apps/web/test/certify-*-local.mjs (9 harnesses puppeteer)",
+      "reason": "No forman parte del suite estandar: el glob test/*.test.mjs no los incluye (se llaman certify-*-local.mjs, no *.test.mjs) y la suite completa (354/354) no los ejecuta. Son harnesses de navegador en vivo que apuntan al contenedor docker infra-web-1 (http://127.0.0.1:3001), construido antes de esta intervencion y sin bind-mount de fuentes, por lo que sirven un arbol de codigo anterior. Prueba de ejecucion: certify-ui-ux-phase-one-local.mjs falla en la asercion products_datatable (selector [aria-label=\"Tabla de datos\"] en un listado de productos), pantalla que el diff del candidato no toca (0 archivos de productos/compras en el diff). No es regresion de este cambio."
+    }
+  ],
+  "forbidden_files_excluded_from_commits": [
+    "apps/web/next-env.d.ts",
+    "apps/web/tsconfig.json",
+    ".agents/",
+    ".codex-worktrees/",
+    "apps/web/AGENTS.md",
+    "apps/web/CLAUDE.md",
+    "apps/web/.next-qa3101/",
+    "reports/**"
+  ],
+  "status": "passed"
+}
