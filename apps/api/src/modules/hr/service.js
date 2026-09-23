@@ -1034,6 +1034,209 @@ async function updateRoute(tenantId, id, input) {
   });
 }
 
+// Borrado fisico controlado de horarios. Exige el permiso especial
+// delete_physical_records, que no se entrega por defecto (Manual de Administrador NYVORA).
+const ROUTE_DELETE_BLOCKING_STATUSES = ["pendiente", "en_proceso"];
+const ROUTE_DELETE_REASON_MIN = 12;
+
+function routeDeletionActor(user = {}) {
+  const role = user?.role || {};
+  return {
+    id: optionalNumericId(user?.id) || null,
+    name: String(user?.name || user?.email || "").trim() || "usuario_sin_nombre",
+    role: String(role.name || "").trim() || "sin_rol"
+  };
+}
+
+function routeDeletionFailure(message, code, details = {}, statusCode = 409) {
+  const error = validationError(message, statusCode, code);
+  error.details = details;
+  return error;
+}
+
+async function findRouteForDeletion(db, id) {
+  const routeId = optionalNumericId(id);
+  if (!routeId) return null;
+  return db.timeRoute.findFirst({ where: { id: routeId } });
+}
+
+function routeDeletionSummary(route) {
+  const employees = Array.isArray(route.employees) ? route.employees : [];
+  return {
+    id: route.id,
+    date: new Date(route.date).toISOString().slice(0, 10),
+    vehicle_plate: route.vehicle_plate,
+    status: route.status,
+    start_time: route.start_time,
+    end_time: route.end_time,
+    tolerance_minutes: route.tolerance_minutes,
+    employees,
+    employee_count: employees.length
+  };
+}
+
+async function collectRouteDeletionImpact(db, route) {
+  const routeId = route.id;
+  const routeScope = routeScopeWhere(routeId);
+  const checklists = await db.routePreoperationalChecklist.findMany({
+    where: { route_id: routeId },
+    select: { id: true, checklist_status: true }
+  });
+  const checklistIds = checklists.map((item) => item.id);
+  const checklistScope = checklistIds.length ? { checklist_id: { in: checklistIds } } : null;
+  const [answers, evidence, findings, startAuthorizations, blockEvents, timePunches, gpsPings, workSessions, workActivities, processedWorkdays] = await Promise.all([
+    checklistScope ? db.routePreoperationalChecklistAnswer.count({ where: checklistScope }) : 0,
+    checklistScope ? db.routePreoperationalChecklistEvidence.count({ where: checklistScope }) : 0,
+    db.routePreoperationalFinding.count({
+      where: checklistScope ? { OR: [checklistScope, { route_id: routeId }] } : { route_id: routeId }
+    }),
+    db.routeStartAuthorization.count({ where: { route_id: routeId } }),
+    db.routeBlockEvent.count({ where: { route_id: routeId } }),
+    db.timePunch.count({ where: routeScope }),
+    db.gpsPing.count({ where: routeScope }),
+    db.workSession.count({ where: routeScope }),
+    db.workActivity.count({ where: routeScope }),
+    // ProcessedWorkday no expone metadata, se cuenta por route_id directo
+    db.processedWorkday.count({ where: { route_id: routeId } })
+  ]);
+
+  const openChecklists = checklists.filter((item) => ROUTE_DELETE_BLOCKING_STATUSES.includes(String(item.checklist_status || "").trim()));
+  const blockers = openChecklists.length
+    ? [{
+      code: "ROUTE_DELETE_BLOCKED_OPEN_CHECKLIST",
+      message: `El horario tiene ${openChecklists.length} checklist(s) preoperacional(es) sin cerrar. Cierralas antes de eliminar el horario.`,
+      detail: { checklist_ids: openChecklists.map((item) => item.id), statuses: [...new Set(openChecklists.map((item) => item.checklist_status))] }
+    }]
+    : [];
+
+  const preservedTrace = {
+    time_punches: timePunches,
+    gps_pings: gpsPings,
+    work_sessions: workSessions,
+    work_activities: workActivities,
+    processed_workdays: processedWorkdays,
+    total: timePunches + gpsPings + workSessions + workActivities + processedWorkdays
+  };
+
+  return {
+    route_id: routeId,
+    blockers,
+    can_delete: blockers.length === 0,
+    will_delete: {
+      checklists: checklists.length,
+      checklist_statuses: [...new Set(checklists.map((item) => String(item.checklist_status || "").trim()))],
+      checklist_answers: answers,
+      checklist_evidence: evidence,
+      checklist_findings: findings,
+      start_authorizations: startAuthorizations,
+      block_events: blockEvents,
+      total: checklists.length + answers + evidence + findings + startAuthorizations + blockEvents
+    },
+    preserved_trace: preservedTrace,
+    requires_trace_acknowledgement: preservedTrace.total > 0
+  };
+}
+
+async function routeDeletionImpact(tenantId, id) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const route = await findRouteForDeletion(prisma, id);
+    if (!route) {
+      throw routeDeletionFailure("El horario no existe o pertenece a otra empresa.", "ROUTE_NOT_FOUND", { route_id: optionalNumericId(id) }, 404);
+    }
+    const impact = await collectRouteDeletionImpact(prisma, route);
+    return { ...impact, route: routeDeletionSummary(route) };
+  });
+}
+
+async function deleteRoute(tenantId, id, input = {}, context = {}) {
+  const reason = String(input.reason || "").trim();
+  if (reason.length < ROUTE_DELETE_REASON_MIN) {
+    throw validationError(`El motivo de la eliminacion es obligatorio (minimo ${ROUTE_DELETE_REASON_MIN} caracteres).`, 400, "ROUTE_DELETE_REASON_REQUIRED");
+  }
+  if (input.confirmed !== true) {
+    throw validationError("La eliminacion definitiva requiere confirmacion explicita del responsable.", 400, "ROUTE_DELETE_NOT_CONFIRMED");
+  }
+  const actor = routeDeletionActor(context.actor);
+
+  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
+    const route = await findRouteForDeletion(tx, id);
+    if (!route) {
+      throw routeDeletionFailure("El horario no existe o pertenece a otra empresa.", "ROUTE_NOT_FOUND", { route_id: optionalNumericId(id) }, 404);
+    }
+    const impact = await collectRouteDeletionImpact(tx, route);
+    if (!impact.can_delete) throw routeDeletionFailure(impact.blockers[0].message, impact.blockers[0].code, impact.blockers[0].detail);
+
+    const snapshot = routeDeletionSummary(route);
+    if (input.expected_employees != null && Number(input.expected_employees) !== snapshot.employee_count) {
+      throw routeDeletionFailure(
+        "El horario cambio desde que se reviso el impacto. Vuelve a validar antes de eliminar.",
+        "ROUTE_DELETE_STALE_PREVIEW",
+        { expected_employees: Number(input.expected_employees), current_employees: snapshot.employee_count }
+      );
+    }
+
+    if (impact.requires_trace_acknowledgement && input.acknowledge_trace !== true) {
+      throw routeDeletionFailure(
+        `El horario conserva ${impact.preserved_trace.total} registro(s) operativo(s) del dia (marcaciones, GPS, sesiones, actividades o jornales) que quedaran desacoplados como historial. Confirma que lo entiendes para continuar.`,
+        "ROUTE_DELETE_TRACE_NOT_ACKNOWLEDGED",
+        { preserved_trace: impact.preserved_trace }
+      );
+    }
+
+    const checklistIds = (await tx.routePreoperationalChecklist.findMany({ where: { route_id: route.id }, select: { id: true } })).map((item) => item.id);
+    const checklistScope = checklistIds.length ? { checklist_id: { in: checklistIds } } : null;
+    let deleted = { checklists: 0, checklist_answers: 0, checklist_evidence: 0, checklist_findings: 0, start_authorizations: 0, block_events: 0, total: 0 };
+
+    if (checklistScope) {
+      const [answers, evidence, findings] = await Promise.all([
+        tx.routePreoperationalChecklistAnswer.deleteMany({ where: { ...checklistScope, tenant_id: tenantId } }),
+        tx.routePreoperationalChecklistEvidence.deleteMany({ where: { ...checklistScope, tenant_id: tenantId } }),
+        tx.routePreoperationalFinding.deleteMany({ where: { tenant_id: tenantId, OR: [checklistScope, { route_id: route.id }] } })
+      ]);
+      deleted.checklist_answers = answers.count;
+      deleted.checklist_evidence = evidence.count;
+      deleted.checklist_findings = findings.count;
+    }
+
+    const [checklists, startAuthorizations, blockEvents] = await Promise.all([
+      tx.routePreoperationalChecklist.deleteMany({ where: { route_id: route.id, tenant_id: tenantId } }),
+      tx.routeStartAuthorization.deleteMany({ where: { route_id: route.id, tenant_id: tenantId } }),
+      tx.routeBlockEvent.deleteMany({ where: { route_id: route.id, tenant_id: tenantId } })
+    ]);
+    deleted.checklists = checklists.count;
+    deleted.start_authorizations = startAuthorizations.count;
+    deleted.block_events = blockEvents.count;
+    deleted.total = deleted.checklists + deleted.checklist_answers + deleted.checklist_evidence + deleted.checklist_findings + deleted.start_authorizations + deleted.block_events;
+
+    await tx.timeRoute.delete({ where: { id: route.id } });
+
+    await tx.auditLog.create({
+      data: {
+        user_id: actor.id,
+        session_id: context.session_id || null,
+        action: "route.physical_deletion.applied",
+        module: "hr",
+        entity: "TimeRoute",
+        entity_id: String(route.id),
+        old_value: { route: snapshot, reason, deleted, preserved_trace: impact.preserved_trace },
+        new_value: { deleted_at: new Date().toISOString(), actor, request_id: context.request_id || null },
+        ip: context.ip || null,
+        user_agent: context.user_agent || null
+      }
+    });
+
+    return {
+      ok: true,
+      route_id: route.id,
+      route: snapshot,
+      reason,
+      deleted,
+      preserved_trace: impact.preserved_trace,
+      approved_by: actor
+    };
+  }, { maxWait: 5_000, timeout: 20_000 }));
+}
+
 function validateRouteInput(input = {}) {
   if (!input.date) throw validationError("La fecha del horario es obligatoria.");
   if (!Array.isArray(input.employees) || !input.employees.filter((item) => String(item || "").trim()).length) {
@@ -3602,6 +3805,8 @@ module.exports = {
   updateRoute,
   createRoutesBulk,
   prevalidateRoutes,
+  routeDeletionImpact,
+  deleteRoute,
   listDateAssignments,
   getPreoperationalTemplate,
   getActivePreoperationalChecklist,
