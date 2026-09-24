@@ -1,0 +1,53 @@
+# Validacion unitaria y de contrato — hr-punch-declared-employee-20260924
+# generado: 2026-09-24T11:35:00Z
+# rama: desarrollo  HEAD funcional certificado: 0d8fd2ca8c733cb2802b13bcaf47527ccebfea37
+
+=== API: suites hr-* + accounting-* + third-party + service-order-number (DISABLE_REDIS=true) ===
+comando: cd apps/api && DISABLE_REDIS=true node --test test/hr-*.test.js test/accounting-*.test.js test/third-party-accounting-masters.test.js test/service-order-number-regression.test.js
+ℹ tests 111
+ℹ pass 111
+ℹ fail 0
+
+Las 111 incluyen la suite nueva del cambio:
+apps/api/test/hr-marking-declared-employee.test.js
+✔ la correccion administrativa con empleado valido marca a ese empleado y genera el ajuste
+✔ un employee_id inexistente en el tenant falla explicitamente sin escribir nada
+✔ un employee_id con formato invalido (UUID) falla explicitamente sin escribir nada
+✔ el ambito self-service ignora un employee_id declarado y marca al usuario conectado
+✔ la correccion administrativa sin employee_id conserva el respaldo sobre el propio usuario
+✔ el servicio declara el rechazo explicito del empleado no resuelto
+ℹ tests 6
+ℹ pass 6
+ℹ fail 0
+
+Regresion previa conservada: las 105 pruebas del release hr-route-physical-deletion-20260923
+(105/105 en aquel release) siguen pasando dentro de las 111 actuales; el diff funcional de este
+cambio no toca ningun otro modulo (solo apps/api/src/modules/hr/service.js).
+
+=== API: lint ===
+apps/api no declara configuracion ESLint (eslint v9 exige eslint.config.js y el repo no lo incluye para la API);
+el lint del repositorio es web-only: raiz "npm --workspace apps/web run lint". No existe puerta de lint de API
+que este cambio pueda romper; no aplica.
+
+=== WEB ===
+El diff de este cambio (apps/api/src/modules/hr/service.js + pruebas + scripts de certificacion + evidencia)
+contiene cero archivos de apps/web. El estado web certificado en el release predecesor
+(hr-route-physical-deletion-20260923: suite completa 354/354, 56 archivos, typecheck exit 0) rige sin cambios:
+ningun archivo web ha cambiado desde 3d36ca6 (verificado con git diff --name-status 3d36ca6..HEAD -- apps/web:
+sin salida). No se reejecuta la suite web porque no existe delta web que certificar.
+
+=== Prisma ===
+comando: cd apps/api && DATABASE_URL=<local 55432> npx prisma validate
+exit=0
+"The schema at prisma\schema.prisma is valid"
+
+=== Certificacion local versionada del cambio ===
+comando: bash scripts/certifications/run-punch-declared-employee-local.sh
+21 controles, status=passed (evidence: local-certification.json)
+Cubre en vivo la matriz completa de errores operativos de marcacion: empleado inexistente 404
+EMPLEADO_NO_ENCONTRADO sin escrituras (regresion del redireccion silencioso), identificador malformado 422,
+secuencia 409 MARCACION_FUERA_DE_SECUENCIA, jornada completa 409 JORNADA_COMPLETA, idempotencia replay
+200 + conflicto 409 IDEMPOTENCY_KEY_CONFLICT, permisos 403 PERMISO_DENEGADO, modulo 403 MODULO_NO_HABILITADO,
+aislamiento cross-tenant 404 sin fugas, sin ningun 5xx (21 requests).
+
+total: 111/111 API + 21/21 certificacion local + prisma validate OK
