@@ -1,0 +1,246 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-route-physical-deletion-20260923",
+  "change_intent": {
+    "summary": "Promover a main la intervencion de Talento Humano ya integrada en develop: monitor de horarios en ventana emergente con validacion por usuario, eliminacion fisica controlada de horario bajo permiso especial, y buscador global Ctrl+K que cubre las funciones de todos los modulos. Sin cambios de esquema ni migraciones.",
+    "modules": [
+      "hr",
+      "web-shell",
+      "rbac"
+    ]
+  },
+  "base_commits": {
+    "main": "3bf0247485a53362d4214f4c5db4b271ffb7cad2",
+    "develop": "78b0e5e9aa6352f1e6041e6faf8ec7231a4122e4"
+  },
+  "certified_commit": "78b0e5e9aa6352f1e6041e6faf8ec7231a4122e4",
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": ".qoder/skills/apexos-backend/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": ".qoder/skills/apexos-db-nube/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": ".qoder/skills/apexos-frontend/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": ".qoder/skills/apexos-git-guardian/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": ".qoder/skills/apexos-performance/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": ".qoder/skills/apexos-qa/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": ".qoder/skills/apexos-seguridad/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": ".qoder/skills/equipo-apexos/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/core/prisma.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/middleware/rbac.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-route-physical-deletion-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-route-physical-deletion.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/CommandPalette.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/moduleFunctions.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/command-palette-module-functions.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-monitor-modal-per-user.test.mjs"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression-pre-migration.json"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression.json"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-module-intervention-20260918/prod-schema-alignment-20260918.md"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-monitor-silent-failures-20260918/prod-nyvora-hr-monitor.json"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/prod-release-verification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-physical-deletion-20260923/hr-route-physical-deletion-local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-physical-deletion-20260923/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-physical-deletion-20260923/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-physical-deletion-20260923/unit-tests.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-physical-deletion-20260923/validation-checks.json"
+    },
+    {
+      "status": "D",
+      "file": "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/prod-release-verification.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-route-physical-deletion-local.js"
+    }
+  ],
+  "allowed_paths": [
+    ".qoder/skills/apexos-backend/SKILL.md",
+    ".qoder/skills/apexos-db-nube/SKILL.md",
+    ".qoder/skills/apexos-frontend/SKILL.md",
+    ".qoder/skills/apexos-git-guardian/SKILL.md",
+    ".qoder/skills/apexos-performance/SKILL.md",
+    ".qoder/skills/apexos-qa/SKILL.md",
+    ".qoder/skills/apexos-seguridad/SKILL.md",
+    ".qoder/skills/equipo-apexos/SKILL.md",
+    "apps/api/src/core/prisma.js",
+    "apps/api/src/middleware/rbac.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-route-physical-deletion-contract.test.js",
+    "apps/api/test/hr-route-physical-deletion.test.js",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "apps/web/components/system/CommandPalette.tsx",
+    "apps/web/lib/moduleFunctions.ts",
+    "apps/web/test/command-palette-module-functions.test.mjs",
+    "apps/web/test/hr-monitor-modal-per-user.test.mjs",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression-pre-migration.json",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression.json",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-schema-alignment-20260918.md",
+    "docs/qa/evidence/hr-monitor-silent-failures-20260918/prod-nyvora-hr-monitor.json",
+    "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/prod-release-verification.json",
+    "docs/qa/evidence/hr-route-physical-deletion-20260923/hr-route-physical-deletion-local-certification.json",
+    "docs/qa/evidence/hr-route-physical-deletion-20260923/preqa-approval-evidence.json",
+    "docs/qa/evidence/hr-route-physical-deletion-20260923/preqa-scope-manifest.json",
+    "docs/qa/evidence/hr-route-physical-deletion-20260923/unit-tests.txt",
+    "docs/qa/evidence/hr-route-physical-deletion-20260923/validation-checks.json",
+    "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/prod-release-verification.json",
+    "scripts/certifications/hr-route-physical-deletion-local.js"
+  ],
+  "allowed_deletions": [
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression-pre-migration.json",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression.json",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-schema-alignment-20260918.md",
+    "docs/qa/evidence/hr-monitor-silent-failures-20260918/prod-nyvora-hr-monitor.json",
+    "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/prod-release-verification.json",
+    "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/prod-release-verification.json"
+  ],
+  "migration_plan": {
+    "status": "not_applicable",
+    "strategy": "no_schema_changes",
+    "destructive_operations_authorized": false,
+    "files": [],
+    "note": "El cambio no introduce migraciones: schema.prisma y las 40 migraciones versionadas son identicas entre develop y main."
+  },
+  "rollback_plan": {
+    "status": "prepared_not_executed",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "3bf0247485a53362d4214f4c5db4b271ffb7cad2",
+    "trigger": "data integrity failure, tenant isolation failure, schema mismatch, critical functional regression, or failed production smoke"
+  },
+  "protected_capabilities": [
+    {
+      "name": "monitor_horario_ventana_emergente_y_validacion_por_usuario",
+      "status": "passed",
+      "evidence": [
+        "hr-route-physical-deletion-local-certification.json",
+        "unit-tests.txt"
+      ]
+    },
+    {
+      "name": "borrado_fisico_controlado_bajo_permiso_especial",
+      "status": "passed",
+      "evidence": [
+        "hr-route-physical-deletion-local-certification.json",
+        "validation-checks.json"
+      ]
+    },
+    {
+      "name": "rbac_y_aislamiento_tenant",
+      "status": "passed",
+      "evidence": [
+        "hr-route-physical-deletion-local-certification.json"
+      ]
+    },
+    {
+      "name": "buscador_global_de_funciones_ctrl_k",
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt"
+      ]
+    },
+    {
+      "name": "regresion_plataforma",
+      "status": "passed",
+      "evidence": [
+        "validation-checks.json"
+      ]
+    }
+  ],
+  "qa_gate": {
+    "status": "blocked",
+    "required": true,
+    "note": "La certificacion funcional de QA sobre el commit desplegado NO fue ejecutada y la aprobacion funcional explicita no existe. Este manifiesto de alcance no contiene ni implica aprobacion de QA y no autoriza por si solo la promocion a main."
+  }
+}
