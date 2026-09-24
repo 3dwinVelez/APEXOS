@@ -52,7 +52,9 @@ const API_URL = String(args["api-url"] || process.env.QA_API_URL || `https://${Q
 const REQUEST_TIMEOUT_MS = Number(args["request-timeout-ms"] || 30000);
 const RUN_ID = new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
 const TODAY = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
-const ROUTE_DATE = new Date(`${TODAY}T00:00:00.000Z`);
+// La malla debe caer dentro del dia operativo de Bogota: el monitor filtra con
+// startOfDay(-05:00), asi que una medianoche UTC quedaria 5 horas fuera del rango.
+const ROUTE_DATE = new Date(`${TODAY}T00:00:00-05:00`);
 const OUTPUT = path.resolve(String(args.output || `docs/qa/evidence/${CERT_ID}/qa-certification.json`));
 const REASON = `Certificacion QA ${RUN_ID}: malla de prueba eliminada de forma controlada y trazable`;
 const HR_CODES = ["m-17", "talento-humano", "talento_humano", "hr"];
@@ -60,7 +62,7 @@ const PHYSICAL_DELETE_ACTION = "delete_physical_records";
 const ROUTE_NOTE_PREFIX = "QA certification ";
 const STALE_CODE_PREFIX = "QA-DEL-";
 const STALE_EMAIL_PREFIX = "qa.delroute.";
-const STALE_ROLE_PREFIXES = ["QA Borrado Malla", "QA Operador Malla", "QA Sin Modulo"];
+const STALE_ROLE_PREFIXES = ["QA Borrado Malla", "QA Operador Malla", "QA Sin Modulo", "QA Marcador Malla", "QA Conductor Malla"];
 const PASSWORD = `Qa-DelR-${crypto.randomBytes(6).toString("hex")}#26`;
 
 function fail(message) {
@@ -314,13 +316,17 @@ async function main() {
 
     // ---- Monitor: la malla de prueba aparece con sus eventos atribuidos por usuario ----
     const listRoutes = await capture(`/api/v1/hr/routes?date=${TODAY}`, { token: tokenG });
-    const listed = (listRoutes.payload?.routes || listRoutes.payload?.data || []).find((item) => Number(item.id) === Number(routeA.routeId));
+    // /hr/routes devuelve un array puro (sin envoltorio {routes|data}).
+    const listedRoutes = Array.isArray(listRoutes.payload) ? listRoutes.payload : (listRoutes.payload?.routes || listRoutes.payload?.data || []);
+    const listed = listedRoutes.find((item) => Number(item.id) === Number(routeA.routeId));
     check("qa_monitor_listroutes_includes_route", listRoutes.status === 200 && Boolean(listed), {
       status: listRoutes.status, employee_count: listed?.employee_count ?? listed?.employees?.length ?? null
     });
     const summaries = await capture("/api/v1/hr/routes/event-summaries", { token: tokenG });
     const summary = (summaries.payload?.routes || []).find((row) => Number(row.route_id) === Number(routeA.routeId));
-    check("qa_monitor_event_summaries_report_events", summaries.status === 200 && Number(summary?.event_count || 0) >= 4, {
+    // event_count solo agrega marcaciones + actividades: el fixture A trae 2 punches
+    // y 1 actividad (pings y sesiones no cuentan como eventos del resumen).
+    check("qa_monitor_event_summaries_report_events", summaries.status === 200 && Number(summary?.event_count || 0) >= 3, {
       status: summaries.status, event_count: summary?.event_count ?? null, evidence_count: summary?.evidence_count ?? null
     });
     const operations = await capture(`/api/v1/hr/operations-map?date=${TODAY}&minutes=30&footprint_days=30`, { token: tokenG });
@@ -341,23 +347,100 @@ async function main() {
 
     // ---- Captura de errores operativos en marcaciones ----
     // Queja prioritaria de usuarios: al marcar salen muchos errores. Esta seccion ejercita
-    // CADA camino de error documentado de createPunch por HTTP contra la API de QA y
-    // verifica que todo negativo devuelva codigo estructurado (nada de 5xx ni 200 mudos).
-    const routeD = await seedRoute(prisma, nyvora.id, "D", {});
-    cleanup.routes.push({ tenantId: nyvora.id, id: routeD.routeId });
+    // CADA camino de error documentado de createPunch por HTTP contra la API de QA con
+    // marcadores reales (ficha propia + endpoint /hr/self/time-punches) y verifica que
+    // todo negativo devuelva codigo estructurado (nada de 5xx ni 200 mudos).
+    const markerRole = await admin.createRole(nyvora.id, {
+      name: `QA Marcador Malla ${RUN_ID}`,
+      description: "Rol temporal de marcacion operativa (se desactiva al final).",
+      permissions: { marcaciones: { view: true, edit: true } }
+    });
+    cleanup.roles.push({ tenantId: nyvora.id, id: markerRole.id });
+    const conductorRole = await admin.createRole(nyvora.id, {
+      name: `QA Conductor Malla ${RUN_ID}`,
+      description: "Rol temporal de conductor con marcacion operativa (se desactiva al final).",
+      permissions: { marcaciones: { view: true, edit: true } }
+    });
+    cleanup.roles.push({ tenantId: nyvora.id, id: conductorRole.id });
+    // "marcaciones" equivale a time_tracking read+write en el catalogo de permisos:
+    // alcanza para el endpoint propio de marcacion pero NO para el administrativo de hr.
+    const markerShape = (label, roleId, slug) => ({
+      name: `QA Marcador ${label} ${RUN_ID}`,
+      first_names: "QA",
+      last_names: `Marcador ${label} ${RUN_ID}`,
+      email: `${STALE_EMAIL_PREFIX}${slug}.${RUN_ID}@apex.test`,
+      password: PASSWORD,
+      role_id: roleId,
+      company: "QA",
+      document: `QAM${label}${RUN_ID}`.slice(0, 20),
+      code: `${STALE_CODE_PREFIX}${slug}-${RUN_ID.slice(-10)}`.slice(0, 24),
+      department: "QA",
+      position: "Marcador de certificacion",
+      operational_classification: "operativo",
+      can_punch_time: true,
+      can_be_assigned_routes: true,
+      require_password_change: false
+    });
+    const markerA = await admin.createUser(nyvora.id, markerShape("MA", markerRole.id, "ma"));
+    const markerB = await admin.createUser(nyvora.id, markerShape("MB", markerRole.id, "mb"));
+    const markerC = await admin.createUser(nyvora.id, markerShape("MC", markerRole.id, "mc"));
+    const markerD = await admin.createUser(nyvora.id, markerShape("MD", conductorRole.id, "md"));
+    cleanup.users.push(...[markerA, markerB, markerC, markerD].map((user) => ({ tenantId: nyvora.id, id: user.id })));
+    const markerFicha = (user) => prisma.runWithTenant(nyvora.id, () => prisma.employee.findFirst({ where: { user_id: user.id, tenant_id: nyvora.id }, select: { id: true, code: true } }));
+    const fichaA = await markerFicha(markerA);
+    const fichaB = await markerFicha(markerB);
+    const fichaC = await markerFicha(markerC);
+    const fichaD = await markerFicha(markerD);
+    check("qa_marker_fichas_present", [fichaA, fichaB, fichaC, fichaD].every((ficha) => ficha && Number.isInteger(ficha.id)), {
+      fichas: { a: fichaA?.id ?? null, b: fichaB?.id ?? null, c: fichaC?.id ?? null, d: fichaD?.id ?? null }
+    });
+    // createUser deja la ficha como "empleado": el marcador D necesita tipo conductor
+    // para que la compuerta preoperacional de entrada aplique sobre su malla.
+    await prisma.runWithTenant(nyvora.id, () => prisma.employee.update({
+      where: { id: fichaD.id },
+      data: { user_type: "conductor", position: "Conductor de certificacion" }
+    }));
+    const tokenMA = await loginAs(markerA, "ma");
+    const tokenMB = await loginAs(markerB, "mb");
+    const tokenMC = await loginAs(markerC, "mc");
+    const tokenMD = await loginAs(markerD, "md");
+    check("qa_marker_users_can_login", Boolean(tokenMA && tokenMB && tokenMC && tokenMD), { logins: 4 });
+
+    const markerEmail = (slug) => `${STALE_EMAIL_PREFIX}${slug}.${RUN_ID}@apex.test`;
+    const routeD = await seedRoute(prisma, nyvora.id, "D", {}, {
+      vehicle_plate: "",
+      employees: [markerEmail("ma"), markerEmail("mb"), markerEmail("mc")],
+      end_time: "00:00",
+      tolerance_minutes: 0
+    });
+    // E se siembra DESPUES de D: con dos mallas activas el mismo dia, la malla vigente del
+    // marcador A es la de id mayor (E), lo que permite certificar HORARIO_NO_ACTIVO contra D.
+    const routeE = await seedRoute(prisma, nyvora.id, "E", {}, { employees: [markerEmail("ma")] });
+    // Malla con placa para el conductor D: dispara la compuerta preoperacional de entrada.
+    const routeF = await seedRoute(prisma, nyvora.id, "F", {}, { employees: [markerEmail("md")] });
+    cleanup.routes.push({ tenantId: nyvora.id, id: routeD.routeId }, { tenantId: nyvora.id, id: routeE.routeId }, { tenantId: nyvora.id, id: routeF.routeId });
+
     const YESTERDAY = new Date(new Date(`${TODAY}T12:00:00-05:00`).getTime() - 86400000)
       .toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
-    const punchUserA = `qa-punch-${RUN_ID}-a`;
-    const punchUserB = `qa-punch-${RUN_ID}-b`;
-    const punchUserC = `qa-punch-${RUN_ID}-c`;
-    const punchBody = (userName, type, punchedAt, extra = {}) => ({
-      user_name: userName,
-      type,
-      punched_at: punchedAt,
-      route_id: routeD.routeId,
-      ...extra
-    });
-    const punch = (body) => capture("/api/v1/hr/time-punches", { token: tokenG, method: "POST", body });
+    const bogotaParts = (moment) => Object.fromEntries(
+      new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Bogota", year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"
+      }).formatToParts(moment).map((part) => [part.type, part.value])
+    );
+    const isoBogota = (moment) => {
+      const parts = bogotaParts(moment);
+      return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}-05:00`;
+    };
+    const bogotaMinutesOf = (moment) => {
+      const parts = bogotaParts(moment);
+      return Number(parts.hour) * 60 + Number(parts.minute);
+    };
+    const bogotaDayOf = (moment) => {
+      const parts = bogotaParts(moment);
+      return `${parts.year}-${parts.month}-${parts.day}`;
+    };
+    const selfPunch = (token, body) => capture("/api/v1/hr/self/time-punches", { token, method: "POST", body });
     const overtimeEvidenceBase64 = "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////2wBDAf//////////////////////////////////////////////////////////////////////////////////////wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAX/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAH/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oACAEBAAEFAqf/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oACAEDAQE/ASP/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oACAECAQE/ASP/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oACAEBAAY/Aqf/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oACAEBAAE/IV//2gAMAwEAAgADAAAAEP/EABQRAQAAAAAAAAAAAAAAAAAAABD/2gAIAQMBAT8QH//EABQRAQAAAAAAAAAAAAAAAAAAABD/2gAIAQIBAT8QH//EABQQAQAAAAAAAAAAAAAAAAAAABD/2gAIAQEAAT8QH//Z";
     const overtimeEvidence = {
       base64: overtimeEvidenceBase64,
@@ -366,134 +449,261 @@ async function main() {
       size: Buffer.from(overtimeEvidenceBase64, "base64").length
     };
     const negativeResponses = [];
+    const t0 = new Date();
+    // Nota de borde: si la corrida inicia a menos de ~2 min de la medianoche de Bogota,
+    // t0+120s cruza de dia y los controles de secuencia/hora extra fallan por fecha. Riesgo
+    // aceptado y documentado; fuera de esa ventana todos los momentos son deterministas.
+    const at = (offsetMs) => new Date(t0.getTime() + offsetMs);
+    const cSalidaMoment = at(120000);
+    const expectedExtra = bogotaMinutesOf(cSalidaMoment);
+    const aBody = (extra = {}) => ({ user_name: markerEmail("ma"), type: "entrada", punched_at: isoBogota(new Date()), ...extra });
+    const bBody = (type, moment, extra = {}) => ({ user_name: markerEmail("mb"), type, punched_at: isoBogota(moment), route_id: routeD.routeId, ...extra });
+    const cBody = (type, moment, extra = {}) => ({ user_name: markerEmail("mc"), type, punched_at: isoBogota(moment), route_id: routeD.routeId, ...extra });
 
-    const schemaEmpty = await punch({});
+    // Autenticacion y esquema: sin token -> 401; cuerpo invalido -> 400 (esquema antes de RBAC).
+    const unauthorized = await capture("/api/v1/hr/self/time-punches", { method: "POST", body: { user_name: "qa", type: "entrada" } });
+    check("qa_punch_unauthorized_401", unauthorized.status === 401, { status: unauthorized.status });
+    const schemaEmpty = await selfPunch(tokenMC, {});
     negativeResponses.push(schemaEmpty);
     check("qa_punch_schema_validation_400", schemaEmpty.status === 400, { status: schemaEmpty.status, code: schemaEmpty.payload?.code ?? null });
+    const adminEndpointAsMarker = await capture("/api/v1/hr/time-punches", { token: tokenMC, method: "POST", body: { user_name: "qa", type: "entrada" } });
+    negativeResponses.push(adminEndpointAsMarker);
+    check("qa_punch_rbac_blocks_hr_admin_endpoint", adminEndpointAsMarker.status === 403 && adminEndpointAsMarker.payload?.code === "PERMISO_DENEGADO", {
+      status: adminEndpointAsMarker.status, code: adminEndpointAsMarker.payload?.code ?? null
+    });
 
-    // Usuario C: fuera de secuencia primero (salida sin entrada), luego jornada completa.
-    const cSalidaFirst = await punch(punchBody(punchUserC, "salida", `${TODAY}T15:00:00-05:00`, { kilometraje_dia: 120 }));
+    // Marcador A: malla ajena, malla no vigente, futuro, diferida expirada y fuera del dia.
+    const foreignRoute = await selfPunch(tokenMA, aBody({ route_id: routeB.routeId }));
+    negativeResponses.push(foreignRoute);
+    check("qa_punch_foreign_route_denied_403", foreignRoute.status === 403 && foreignRoute.payload?.code === "HORARIO_AJENO_DENEGADO", {
+      status: foreignRoute.status, code: foreignRoute.payload?.code ?? null
+    });
+    const inactiveRoute = await selfPunch(tokenMA, aBody({ route_id: routeD.routeId, punched_at: isoBogota(t0) }));
+    negativeResponses.push(inactiveRoute);
+    check("qa_punch_inactive_route_rejected_409", inactiveRoute.status === 409 && inactiveRoute.payload?.code === "HORARIO_NO_ACTIVO", {
+      status: inactiveRoute.status, code: inactiveRoute.payload?.code ?? null
+    });
+    // +60 min y no +20: la tolerancia futura del servidor es fija (15 min) y el reloj local
+    // puede venir atrasado frente al servidor de QA; 60 min cubre hasta 45 min de desfase.
+    const futurePunch = await selfPunch(tokenMA, aBody({ route_id: routeE.routeId, punched_at: isoBogota(new Date(Date.now() + 60 * 60000)) }));
+    negativeResponses.push(futurePunch);
+    check("qa_punch_future_timestamp_rejected_409", futurePunch.status === 409 && futurePunch.payload?.code === "MARCACION_EN_EL_FUTURO", {
+      status: futurePunch.status, code: futurePunch.payload?.code ?? null
+    });
+    const expiredDeferred = await selfPunch(tokenMA, aBody({ route_id: routeE.routeId, punched_at: isoBogota(new Date(Date.now() - 73 * 3600000)) }));
+    negativeResponses.push(expiredDeferred);
+    check("qa_punch_expired_deferred_rejected_409", expiredDeferred.status === 409 && expiredDeferred.payload?.code === "MARCACION_DIFERIDA_EXPIRADA", {
+      status: expiredDeferred.status, code: expiredDeferred.payload?.code ?? null
+    });
+    // Momento de otro dia dentro de la ventana diferida (max 24 h): si aun no pasan 30 min
+    // del dia, now-30min cae en ayer; el resto del dia se usa ayer 23:59:59.999, que
+    // siempre queda a menos de 24 h del momento actual.
+    const nowMinus30 = new Date(Date.now() - 30 * 60000);
+    const offdayMoment = bogotaDayOf(nowMinus30) !== TODAY ? nowMinus30 : new Date(new Date(`${TODAY}T00:00:00-05:00`).getTime() - 1);
+    const offdayPunch = await selfPunch(tokenMA, aBody({ route_id: routeE.routeId, punched_at: isoBogota(offdayMoment) }));
+    negativeResponses.push(offdayPunch);
+    check("qa_punch_offday_rejected_409", offdayPunch.status === 409 && offdayPunch.payload?.code === "HORARIO_FUERA_DEL_DIA", {
+      status: offdayPunch.status, code: offdayPunch.payload?.code ?? null
+    });
+
+    // Conductor D: la compuerta preoperacional bloquea la entrada sin checklist aprobado.
+    // Respuesta estructurada 200 con ok=false (no es un error de negocio: es una compuerta).
+    const mdEntrada = await selfPunch(tokenMD, { user_name: markerEmail("md"), type: "entrada", punched_at: isoBogota(t0), route_id: routeF.routeId });
+    check("qa_punch_driver_preop_gate_blocks_entry", mdEntrada.status === 200 && mdEntrada.payload?.ok === false
+      && mdEntrada.payload?.preoperational_required === true && mdEntrada.payload?.route_authorized === false, {
+      status: mdEntrada.status, ok: mdEntrada.payload?.ok ?? null,
+      preoperational_required: mdEntrada.payload?.preoperational_required ?? null,
+      route_authorized: mdEntrada.payload?.route_authorized ?? null
+    });
+
+    // Marcador C: secuencia completa del dia con hora extra justificada al final.
+    const cSalidaFirst = await selfPunch(tokenMC, cBody("salida", cSalidaMoment));
     negativeResponses.push(cSalidaFirst);
     check("qa_punch_out_of_sequence_409", cSalidaFirst.status === 409 && cSalidaFirst.payload?.code === "MARCACION_FUERA_DE_SECUENCIA", {
       status: cSalidaFirst.status, code: cSalidaFirst.payload?.code ?? null
     });
-    const cEntrada = await punch(punchBody(punchUserC, "entrada", `${TODAY}T06:05:00-05:00`, { latitude: 4.6533, longitude: -74.0836 }));
-    check("qa_punch_entrada_ok_after_rejected_attempt", cEntrada.status === 200 && cEntrada.payload?.ok === true, {
+    const cEntrada = await selfPunch(tokenMC, cBody("entrada", t0, { metadata: { gps_unavailable: true } }));
+    check("qa_punch_entrada_ok_after_gps_unavailable", cEntrada.status === 200 && cEntrada.payload?.ok === true, {
       status: cEntrada.status, code: cEntrada.payload?.code ?? null
     });
-    const cInicio = await punch(punchBody(punchUserC, "inicio_almuerzo", `${TODAY}T12:00:00-05:00`));
-    const cFin = await punch(punchBody(punchUserC, "fin_almuerzo", `${TODAY}T13:00:00-05:00`));
+    const cInicio = await selfPunch(tokenMC, cBody("inicio_almuerzo", at(40000)));
+    const cFin = await selfPunch(tokenMC, cBody("fin_almuerzo", at(80000)));
     check("qa_punch_almuerzo_sequence_ok", cInicio.status === 200 && cFin.status === 200, {
       inicio: cInicio.status, fin: cFin.status
     });
-    const cSalidaNoReason = await punch(punchBody(punchUserC, "salida", `${TODAY}T18:30:00-05:00`, { kilometraje_dia: 120 }));
+    // La malla D termina 00:00 sin tolerancia: la salida siempre genera hora extra y los
+    // minutos esperados son exactamente los minutos del dia de Bogota de la marcacion.
+    const cSalidaNoReason = await selfPunch(tokenMC, cBody("salida", cSalidaMoment));
     negativeResponses.push(cSalidaNoReason);
     check("qa_punch_overtime_requires_justification_422", cSalidaNoReason.status === 422 && cSalidaNoReason.payload?.code === "JUSTIFICACION_HORA_EXTRA_REQUERIDA"
-      && Number(cSalidaNoReason.payload?.details?.extra_minutes) === 135, {
-      status: cSalidaNoReason.status, code: cSalidaNoReason.payload?.code ?? null, details: cSalidaNoReason.payload?.details ?? null
+      && Number(cSalidaNoReason.payload?.details?.extra_minutes) === expectedExtra, {
+      status: cSalidaNoReason.status, code: cSalidaNoReason.payload?.code ?? null,
+      extra_minutes: cSalidaNoReason.payload?.details?.extra_minutes ?? null, expected_extra_minutes: expectedExtra
     });
-    const cSalidaNoEvidence = await punch(punchBody(punchUserC, "salida", `${TODAY}T18:30:00-05:00`, {
-      kilometraje_dia: 120, extra_reason: "Cierre de ruta extendida por novedad operativa", extra_detail: "Cliente solicito entrega fuera de horario"
+    const cSalidaNoEvidence = await selfPunch(tokenMC, cBody("salida", cSalidaMoment, {
+      extra_reason: "Cierre de ruta extendida por novedad operativa", extra_detail: "Cliente solicito entrega fuera de horario"
     }));
     negativeResponses.push(cSalidaNoEvidence);
     check("qa_punch_overtime_requires_evidence_422", cSalidaNoEvidence.status === 422 && cSalidaNoEvidence.payload?.code === "EVIDENCIA_HORA_EXTRA_REQUERIDA", {
       status: cSalidaNoEvidence.status, code: cSalidaNoEvidence.payload?.code ?? null
     });
-    const cSalidaOk = await punch(punchBody(punchUserC, "salida", `${TODAY}T18:30:00-05:00`, {
-      kilometraje_dia: 120,
+    const cSalidaOk = await selfPunch(tokenMC, cBody("salida", cSalidaMoment, {
       extra_reason: "Cierre de ruta extendida por novedad operativa",
       extra_detail: "Cliente solicito entrega fuera de horario",
       extra_evidence: overtimeEvidence
     }));
     check("qa_punch_overtime_success_reports_minutes", cSalidaOk.status === 200 && cSalidaOk.payload?.ok === true
-      && Number(cSalidaOk.payload?.minutos_extra) === 135 && cSalidaOk.payload?.es_extra === true, {
-      status: cSalidaOk.status, minutos_extra: cSalidaOk.payload?.minutos_extra ?? null, es_extra: cSalidaOk.payload?.es_extra ?? null
+      && Number(cSalidaOk.payload?.minutos_extra) === expectedExtra && cSalidaOk.payload?.es_extra === true, {
+      status: cSalidaOk.status, minutos_extra: cSalidaOk.payload?.minutos_extra ?? null,
+      es_extra: cSalidaOk.payload?.es_extra ?? null, expected_extra_minutes: expectedExtra
     });
-    const cJornadaCompleta = await punch(punchBody(punchUserC, "entrada", `${TODAY}T19:00:00-05:00`));
+    const cJornadaCompleta = await selfPunch(tokenMC, cBody("entrada", at(150000)));
     negativeResponses.push(cJornadaCompleta);
     check("qa_punch_completed_day_409", cJornadaCompleta.status === 409 && cJornadaCompleta.payload?.code === "JORNADA_COMPLETA", {
       status: cJornadaCompleta.status, code: cJornadaCompleta.payload?.code ?? null
     });
 
-    // Usuario B: idempotencia y ajuste manual en fecha pasada.
+    // Marcador B: idempotencia (primer intento, replay y conflicto) y kilometrajes.
     const idemKeyB = `qa-punch-${RUN_ID}-b-entrada`;
-    const bEntradaToday = await punch(punchBody(punchUserB, "entrada", `${TODAY}T06:10:00-05:00`, { idempotency_key: idemKeyB }));
-    check("qa_punch_idempotent_first_attempt_ok", bEntradaToday.status === 200 && bEntradaToday.payload?.ok === true, {
-      status: bEntradaToday.status, code: bEntradaToday.payload?.code ?? null
+    const bEntrada = await selfPunch(tokenMB, bBody("entrada", t0, { idempotency_key: idemKeyB }));
+    check("qa_punch_idempotent_first_attempt_ok", bEntrada.status === 200 && bEntrada.payload?.ok === true, {
+      status: bEntrada.status, code: bEntrada.payload?.code ?? null
     });
-    const bYesterday = await punch(punchBody(punchUserB, "entrada", `${YESTERDAY}T07:00:00-05:00`));
-    check("qa_punch_past_date_records_manual_adjustment", bYesterday.status === 200 && bYesterday.payload?.ok === true, {
-      status: bYesterday.status, code: bYesterday.payload?.code ?? null
+    const bReplay = await selfPunch(tokenMB, bBody("entrada", t0, { idempotency_key: idemKeyB }));
+    check("qa_punch_idempotent_replay_returns_same_punch", bReplay.status === 200 && bReplay.payload?.replayed === true
+      && bReplay.payload?.punch?.id === bEntrada.payload?.punch?.id, {
+      status: bReplay.status, replayed: bReplay.payload?.replayed ?? null,
+      first_punch_id: bEntrada.payload?.punch?.id ?? null, replay_punch_id: bReplay.payload?.punch?.id ?? null
     });
-
-    // Usuario A: GPS sin senal, kilometrajes invalidos y umbral inusual.
-    const aEntrada = await punch(punchBody(punchUserA, "entrada", `${TODAY}T06:00:00-05:00`, { metadata: { gps_unavailable: true } }));
-    check("qa_punch_gps_unavailable_accepted_with_novelty", aEntrada.status === 200 && aEntrada.payload?.ok === true, {
-      status: aEntrada.status, code: aEntrada.payload?.code ?? null
+    const bInicio = await selfPunch(tokenMB, bBody("inicio_almuerzo", at(40000)));
+    const bFin = await selfPunch(tokenMB, bBody("fin_almuerzo", at(80000)));
+    check("qa_punch_almuerzo_b_ok", bInicio.status === 200 && bFin.status === 200, { inicio: bInicio.status, fin: bFin.status });
+    // La malla D no tiene placa: el kilometraje solo se valida cuando la marcacion
+    // declara placa (QAB999), lo que aisla el error de kilometraje del resto de compuertas.
+    const bSalidaNoKm = await selfPunch(tokenMB, bBody("salida", cSalidaMoment, {
+      vehicle_plate: "QAB999", kilometraje_dia: "",
+      extra_reason: "Cierre de ruta extendida por novedad operativa",
+      extra_detail: "Cliente solicito entrega fuera de horario",
+      extra_evidence: overtimeEvidence
+    }));
+    negativeResponses.push(bSalidaNoKm);
+    check("qa_punch_mileage_required_400", bSalidaNoKm.status === 400 && bSalidaNoKm.payload?.code === "KILOMETRAJE_REQUERIDO", {
+      status: bSalidaNoKm.status, code: bSalidaNoKm.payload?.code ?? null
     });
-    const aInicio = await punch(punchBody(punchUserA, "inicio_almuerzo", `${TODAY}T12:00:00-05:00`));
-    const aFin = await punch(punchBody(punchUserA, "fin_almuerzo", `${TODAY}T12:30:00-05:00`));
-    check("qa_punch_almuerzo_a_ok", aInicio.status === 200 && aFin.status === 200, { inicio: aInicio.status, fin: aFin.status });
-    const aSalidaNoKm = await punch(punchBody(punchUserA, "salida", `${TODAY}T15:00:00-05:00`, { kilometraje_dia: "" }));
-    negativeResponses.push(aSalidaNoKm);
-    check("qa_punch_mileage_required_400", aSalidaNoKm.status === 400 && aSalidaNoKm.payload?.code === "KILOMETRAJE_REQUERIDO", {
-      status: aSalidaNoKm.status, code: aSalidaNoKm.payload?.code ?? null
+    const bSalidaBadKm = await selfPunch(tokenMB, bBody("salida", cSalidaMoment, {
+      vehicle_plate: "QAB999", kilometraje_dia: "abc",
+      extra_reason: "Cierre de ruta extendida por novedad operativa",
+      extra_detail: "Cliente solicito entrega fuera de horario",
+      extra_evidence: overtimeEvidence
+    }));
+    negativeResponses.push(bSalidaBadKm);
+    check("qa_punch_mileage_invalid_400", bSalidaBadKm.status === 400 && bSalidaBadKm.payload?.code === "KILOMETRAJE_INVALIDO", {
+      status: bSalidaBadKm.status, code: bSalidaBadKm.payload?.code ?? null
     });
-    const aSalidaBadKm = await punch(punchBody(punchUserA, "salida", `${TODAY}T15:00:00-05:00`, { kilometraje_dia: "abc" }));
-    negativeResponses.push(aSalidaBadKm);
-    check("qa_punch_mileage_invalid_400", aSalidaBadKm.status === 400 && aSalidaBadKm.payload?.code === "KILOMETRAJE_INVALIDO", {
-      status: aSalidaBadKm.status, code: aSalidaBadKm.payload?.code ?? null
+    const bSalidaUnusual = await selfPunch(tokenMB, bBody("salida", cSalidaMoment, {
+      vehicle_plate: "QAB999", kilometraje_dia: 480,
+      extra_reason: "Cierre de ruta extendida por novedad operativa",
+      extra_detail: "Cliente solicito entrega fuera de horario",
+      extra_evidence: overtimeEvidence
+    }));
+    check("qa_punch_unusual_mileage_accepted_with_novelty", bSalidaUnusual.status === 200 && bSalidaUnusual.payload?.ok === true, {
+      status: bSalidaUnusual.status, code: bSalidaUnusual.payload?.code ?? null, kilometraje_dia: 480
     });
-    const aSalidaUnusual = await punch(punchBody(punchUserA, "salida", `${TODAY}T15:00:00-05:00`, { kilometraje_dia: 480 }));
-    check("qa_punch_unusual_mileage_accepted_with_novelty", aSalidaUnusual.status === 200 && aSalidaUnusual.payload?.ok === true, {
-      status: aSalidaUnusual.status, code: aSalidaUnusual.payload?.code ?? null
-    });
-    const aIdemConflict = await punch(punchBody(punchUserA, "entrada", `${TODAY}T06:00:00-05:00`, { idempotency_key: idemKeyB }));
+    const aIdemConflict = await selfPunch(tokenMA, aBody({ route_id: routeE.routeId, punched_at: isoBogota(t0), idempotency_key: idemKeyB }));
     negativeResponses.push(aIdemConflict);
     check("qa_punch_idempotency_conflict_409", aIdemConflict.status === 409 && aIdemConflict.payload?.code === "IDEMPOTENCY_KEY_CONFLICT", {
       status: aIdemConflict.status, code: aIdemConflict.payload?.code ?? null
     });
-    const aJornadaCompleta = await punch(punchBody(punchUserA, "entrada", `${TODAY}T15:30:00-05:00`));
-    negativeResponses.push(aJornadaCompleta);
-    check("qa_punch_completed_day_a_409", aJornadaCompleta.status === 409 && aJornadaCompleta.payload?.code === "JORNADA_COMPLETA", {
-      status: aJornadaCompleta.status, code: aJornadaCompleta.payload?.code ?? null
+
+    // Ajuste administrativo en fecha pasada. La cuenta administrativa de QA vive en
+    // Supabase Auth (mismo grant de la app web) pero su usuario local pertenece a otro
+    // tenant, asi que el camino feliz lo emite un operador del tenant NYVORA con permiso
+    // de edicion de Talento Humano (tokenB). El admin de QA participa solo del camino de
+    // error: declarar una ficha de otro tenant debe fallar con EMPLEADO_NO_ENCONTRADO —
+    // antes el servicio redirigia en silencio la correccion a la propia ficha del admin y
+    // la novedad AJUSTE_MANUAL_MARCACION quedaba sobre la persona equivocada sin error
+    // visible. Ese fallo silencioso es exactamente la clase de error que los operadores
+    // reportan al marcar, y esta certificacion debe capturarlo.
+    const adminGrant = await supabasePasswordGrant(
+      String(process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "").trim().replace(/\/$/, ""),
+      String(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "").trim(),
+      String(process.env.QA_LOGIN_EMAIL || ""),
+      String(process.env.QA_LOGIN_PASSWORD || "")
+    );
+    const tokenAdmin = adminGrant.access_token;
+    check("qa_punch_admin_token_available", adminGrant.status === 200 && Boolean(tokenAdmin), {
+      status: adminGrant.status, transport_error: adminGrant.transportError
+    });
+    const ajusteCode = `qa-punch-${RUN_ID}-ajuste`;
+    // tenant_id explicito: el PrismaPromise es lazy y al devolverlo desde un callback
+    // sincrono la consulta se ejecuta fuera del contexto ALS de runWithTenant.
+    const ajusteEmployee = await prisma.runWithTenant(nyvora.id, () => prisma.employee.create({
+      data: { tenant_id: nyvora.id, code: ajusteCode, position: "Operario QA", department: "QA", salary_base: 1000000, hire_date: ROUTE_DATE }
+    }));
+    const ajustePunch = await capture("/api/v1/hr/time-punches", {
+      token: tokenB, method: "POST",
+      body: { employee_id: ajusteEmployee.id, user_name: ajusteCode, type: "entrada", punched_at: `${YESTERDAY}T07:00:00-05:00`, route_id: routeD.routeId }
+    });
+    check("qa_punch_past_date_records_manual_adjustment", ajustePunch.status === 200 && ajustePunch.payload?.ok === true, {
+      status: ajustePunch.status, code: ajustePunch.payload?.code ?? null, employee_id: ajusteEmployee.id
+    });
+    const foreignEmployeePunch = await capture("/api/v1/hr/time-punches", {
+      token: tokenAdmin, method: "POST",
+      body: { employee_id: ajusteEmployee.id, user_name: ajusteCode, type: "entrada", punched_at: `${YESTERDAY}T07:30:00-05:00`, route_id: routeD.routeId }
+    });
+    negativeResponses.push(foreignEmployeePunch);
+    check("qa_punch_foreign_employee_rejected", foreignEmployeePunch.status === 404 && foreignEmployeePunch.payload?.code === "EMPLEADO_NO_ENCONTRADO", {
+      status: foreignEmployeePunch.status, code: foreignEmployeePunch.payload?.code ?? null,
+      admin_tenant_isolation: "el admin de QA pertenece a otro tenant y no puede declarar fichas de NYVORA"
+    });
+    const garbageEmployeePunch = await capture("/api/v1/hr/time-punches", {
+      token: tokenAdmin, method: "POST",
+      body: { employee_id: "3f2b8c1e-9d4a-4c1b-8f2e-6a1b2c3d4e5f", user_name: ajusteCode, type: "entrada", punched_at: `${YESTERDAY}T07:45:00-05:00`, route_id: routeD.routeId }
+    });
+    negativeResponses.push(garbageEmployeePunch);
+    check("qa_punch_garbage_employee_id_rejected", garbageEmployeePunch.status === 422 && garbageEmployeePunch.payload?.code === "EMPLEADO_NO_ENCONTRADO", {
+      status: garbageEmployeePunch.status, code: garbageEmployeePunch.payload?.code ?? null
     });
 
     // Novedades registradas por los caminos de error (se leen por codigo y empleado).
-    const noveltiesOf = async (type, from, to, userName) => {
+    const noveltiesOf = async (type, from, to, employeeCode) => {
       const response = await capture(`/api/v1/hr/novelties?type=${encodeURIComponent(type)}&from=${from}&to=${to}`, { token: tokenG });
       const rows = Array.isArray(response.payload) ? response.payload : (response.payload?.novelties || response.payload?.rows || []);
-      return { status: response.status, rows, mine: rows.filter((row) => String(row.employee_code || "") === userName) };
+      return { status: response.status, rows, mine: rows.filter((row) => String(row.employee_code || "") === employeeCode) };
     };
-    const gpsNovelty = await noveltiesOf("GPS_INACTIVO_SIN_SENAL", TODAY, TODAY, punchUserA);
+    const gpsNovelty = await noveltiesOf("GPS_INACTIVO_SIN_SENAL", TODAY, TODAY, fichaC?.code || "");
     check("qa_novelty_gps_unavailable_recorded", gpsNovelty.status === 200 && gpsNovelty.mine.length >= 1, {
-      status: gpsNovelty.status, found: gpsNovelty.mine.length
+      status: gpsNovelty.status, found: gpsNovelty.mine.length, employee_code: fichaC?.code ?? null
     });
-    const unusualNovelty = await noveltiesOf("KILOMETRAJE_INCONSISTENTE", TODAY, TODAY, punchUserA);
+    const unusualNovelty = await noveltiesOf("KILOMETRAJE_INCONSISTENTE", TODAY, TODAY, fichaB?.code || "");
     check("qa_novelty_unusual_mileage_recorded", unusualNovelty.status === 200 && unusualNovelty.mine.length >= 1, {
-      status: unusualNovelty.status, found: unusualNovelty.mine.length
+      status: unusualNovelty.status, found: unusualNovelty.mine.length, employee_code: fichaB?.code ?? null
     });
-    const manualNovelty = await noveltiesOf("AJUSTE_MANUAL_MARCACION", YESTERDAY, TODAY, punchUserB);
+    const manualNovelty = await noveltiesOf("AJUSTE_MANUAL_MARCACION", YESTERDAY, TODAY, ajusteCode);
     check("qa_novelty_manual_adjustment_recorded", manualNovelty.status === 200 && manualNovelty.mine.length >= 1, {
-      status: manualNovelty.status, found: manualNovelty.mine.length
+      status: manualNovelty.status, found: manualNovelty.mine.length, employee_code: ajusteCode
     });
 
-    // Sin fallas silenciosas: solo las marcaciones validas existen y todas las que fueron
-    // rechazadas con error de negocio dejaron codigo estructurado (ningun 5xx, ningun 200 vacio).
+    // Sin fallas silenciosas: solo las marcaciones validas existen (C: 4, B: 4 hoy; ajuste: 1
+    // ayer; el replay no crea fila, los rechazos y la compuerta preoperacional dejan la malla
+    // sin filas nuevas) y todo negativo devolvio codigo estructurado (ningun 5xx ni 200 mudo).
     const trackingToday = await capture(`/api/v1/hr/routes/${routeD.routeId}/tracking?date=${TODAY}`, { token: tokenG });
     const trackingYesterday = await capture(`/api/v1/hr/routes/${routeD.routeId}/tracking?date=${YESTERDAY}`, { token: tokenG });
     const todayCount = Array.isArray(trackingToday.payload?.punches) ? trackingToday.payload.punches.length : -1;
     const yesterdayCount = Array.isArray(trackingYesterday.payload?.punches) ? trackingYesterday.payload.punches.length : -1;
     check("qa_punch_no_silent_failures_row_count", trackingToday.status === 200 && trackingYesterday.status === 200
-      && todayCount === 9 && yesterdayCount === 1, {
-      today_status: trackingToday.status, today_punches: todayCount, yesterday_status: trackingYesterday.status, yesterday_punches: yesterdayCount
+      && todayCount === 8 && yesterdayCount === 1, {
+      today_status: trackingToday.status, today_punches: todayCount,
+      yesterday_status: trackingYesterday.status, yesterday_punches: yesterdayCount
     });
     check("qa_punch_negatives_carry_structured_codes", negativeResponses.every((response) => response.status >= 400 && response.status < 500
       && (Boolean(response.payload?.code) || Boolean(response.payload?.message))), {
       codes: negativeResponses.map((response) => ({ status: response.status, code: response.payload?.code ?? null }))
     });
     result.observations.punch_errors = {
+      marker_users: [markerA.id, markerB.id, markerC.id, markerD.id],
       negative_codes: negativeResponses.map((response) => ({ status: response.status, code: response.payload?.code ?? null })),
+      preop_gate: { status: mdEntrada.status, preoperational_required: mdEntrada.payload?.preoperational_required ?? null },
       today_punches: todayCount, yesterday_punches: yesterdayCount,
       overtime_minutes: Number(cSalidaOk.payload?.minutos_extra) || null,
       novelty_rows: {
@@ -503,15 +713,17 @@ async function main() {
       }
     };
 
-    // Limpieza selectiva de esta seccion: los empleados auto-creados por las marcaciones
-    // quedan fuera del alcance del purge por ruta, y las tablas de novedades/kilometrajes
-    // no tienen FK hacia Employee, asi que se depuran por SQL explicito.
-    for (const who of [punchUserA, punchUserB, punchUserC]) {
-      const emp = await prisma.runWithTenant(nyvora.id, () => prisma.employee.findFirst({ where: { code: who }, select: { id: true } }));
-      if (emp) await purgePunchEmployeeById(prisma, nyvora.id, emp.id);
+    // Limpieza selectiva de esta seccion: primero las mallas (sus FK cubren punches,
+    // sesiones, actividades y el checklist en borrador de la compuerta preoperacional) y
+    // luego las fichas por id, con SQL explicito para novedades y kilometrajes que no
+    // tienen FK hacia Employee.
+    for (const route of [routeD, routeE, routeF]) {
+      await purgeRouteFixture(prisma, nyvora.id, route.routeId);
     }
-    await purgeRouteFixture(prisma, nyvora.id, routeD.routeId);
-    cleanup.routes = cleanup.routes.filter((route) => route.id !== routeD.routeId);
+    for (const ficha of [fichaA, fichaB, fichaC, fichaD, ajusteEmployee]) {
+      if (ficha) await purgePunchEmployeeById(prisma, nyvora.id, ficha.id);
+    }
+    cleanup.routes = cleanup.routes.filter((route) => ![routeD.routeId, routeE.routeId, routeF.routeId].includes(route.id));
 
     // ---- Vista previa de impacto ----
     const previewBlocked = await capture(`/api/v1/hr/routes/${routeA.routeId}/deletion-impact`, { token: tokenG });
@@ -662,7 +874,7 @@ async function main() {
   }
 }
 
-async function seedRoute(prisma, tenantId, label, { withOpenChecklist = false, withTrace = false } = {}) {
+async function seedRoute(prisma, tenantId, label, { withOpenChecklist = false, withTrace = false } = {}, overrides = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const suffix = `${RUN_ID.slice(-6)}-${label}`;
     const route = await prisma.timeRoute.create({
@@ -674,7 +886,8 @@ async function seedRoute(prisma, tenantId, label, { withOpenChecklist = false, w
         end_time: "16:00",
         tolerance_minutes: 15,
         status: "active",
-        notes: `${ROUTE_NOTE_PREFIX}${CERT_ID} run ${RUN_ID} ${label}`
+        notes: `${ROUTE_NOTE_PREFIX}${CERT_ID} run ${RUN_ID} ${label}`,
+        ...overrides
       }
     });
     const fixture = { tenantId, routeId: route.id, employeeIds: [] };
@@ -790,7 +1003,7 @@ async function purgeStale(prisma, admin, tenants) {
       }
       const staleEmployees = await prisma.employee.findMany({ where: { code: { startsWith: STALE_CODE_PREFIX } }, select: { id: true } });
       for (const employee of staleEmployees) {
-        try { await prisma.employee.delete({ where: { id: employee.id } }); purged.employees += 1; } catch (error) { purged.errors.push(`employee ${employee.id}: ${error.message}`); }
+        try { await purgePunchEmployeeById(prisma, tenant.id, employee.id); purged.employees += 1; } catch (error) { purged.errors.push(`employee ${employee.id}: ${error.message}`); }
       }
       // Empleados auto-creados por secciones de marcaciones de corridas interrumpidas.
       const stalePunchEmployees = await prisma.employee.findMany({

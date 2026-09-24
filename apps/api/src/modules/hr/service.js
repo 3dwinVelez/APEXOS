@@ -2224,19 +2224,26 @@ async function createPunch(tenantId, input, user, options = {}) {
       include: { user: { select: { name: true, email: true } } }
     }) : null;
     // El ambito self-service queda anclado al usuario autenticado: es lo que impide marcar
-    // por otra persona. En la ruta administrativa el destino lo declara el payload; si alli
-    // tambien se impusiera el empleado del admin, la correccion caia sobre el admin y la
-    // novedad AJUSTE_MANUAL_MARCACION senalaba a la persona equivocada. Solo se honra un
-    // employee_id que exista: si no existe se conserva la cadena de respaldo anterior.
+    // por otra persona. En la ruta administrativa el destino lo declara el payload: un
+    // employee_id que no existe en el tenant del solicitante era redirigido en silencio a la
+    // propia ficha del admin, dejando la correccion y la novedad AJUSTE_MANUAL_MARCACION
+    // sobre la persona equivocada sin error visible. Ahora falla explicitamente para que el
+    // error se capture en el punto de origen en lugar de corromper el destino de la marca.
     const declaredEmployeeId = !ownScope && input.employee_id != null && input.employee_id !== ""
       ? Number(input.employee_id)
       : null;
-    const declaredEmployee = Number.isInteger(declaredEmployeeId)
+    if (declaredEmployeeId != null && !Number.isInteger(declaredEmployeeId)) {
+      throw validationError(`El empleado declarado no es un identificador valido: ${input.employee_id}.`, 422, "EMPLEADO_NO_ENCONTRADO");
+    }
+    const declaredEmployee = declaredEmployeeId != null
       ? await tx.employee.findFirst({
         where: { tenant_id: tenantId, id: declaredEmployeeId },
         include: { user: { select: { name: true, email: true } } }
       })
       : null;
+    if (declaredEmployeeId != null && !declaredEmployee) {
+      throw validationError(`El empleado ${input.employee_id} no existe o no pertenece a tu organizacion.`, 404, "EMPLEADO_NO_ENCONTRADO");
+    }
     const employee = declaredEmployee || currentEmployee || await resolveEmployeeForPunch(tenantId, input);
     const type = normalizePunchType(input.type || input.tipo_marca);
     const inputRouteId = operationalRouteNumericId(input);
