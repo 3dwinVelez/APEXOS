@@ -12,10 +12,13 @@
 //
 // Modos:
 //   --preflight  Verifica solo ambiente: /health, commit desplegado, login administrativo
-//                (QA_LOGIN_EMAIL/QA_LOGIN_PASSWORD) y lectura de endpoints clave. No crea
-//                ni borra fixtures.
+//                (QA_LOGIN_EMAIL/QA_LOGIN_PASSWORD) vía grant de contraseña de Supabase
+//                Auth (la cuenta admin de QA vive en auth.users; /api/v1/auth/login solo
+//                cubre usuarios Prisma) y lectura de endpoints clave. No crea ni borra
+//                fixtures.
 //   (sin flags)  Certificacion completa: fixtures NYVORA + borrado fisico real de una malla
-//                de prueba + aislamiento multi-tenant + auditoria + limpieza selectiva.
+//                de prueba + aislamiento multi-tenant + auditoria + captura de errores
+//                operativos en marcaciones + limpieza selectiva.
 //
 // Uso:
 //   QA_API_URL=https://apexos-api-qa-production.up.railway.app \
@@ -114,6 +117,26 @@ async function capture(pathname, { token = "", method = "GET", body } = {}) {
   return { status, payload, transportError, latency_ms: Date.now() - started };
 }
 
+async function supabasePasswordGrant(supabaseUrl, anonKey, email, password) {
+  const started = Date.now();
+  let status = 0;
+  let payload = {};
+  let transportError = null;
+  try {
+    const res = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
+      method: "POST",
+      headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+    });
+    status = res.status;
+    payload = await res.json().catch(() => ({}));
+  } catch (error) {
+    transportError = error.message;
+  }
+  return { status, payload, transportError, access_token: payload?.access_token || "", latency_ms: Date.now() - started };
+}
+
 function writeEvidence() {
   fs.mkdirSync(path.dirname(OUTPUT), { recursive: true });
   fs.writeFileSync(OUTPUT, `${JSON.stringify(result, (_key, value) => (typeof value === "bigint" ? value.toString() : value), 2)}\n`);
@@ -140,9 +163,21 @@ async function main() {
     const email = String(args["login-email"] || process.env.QA_LOGIN_EMAIL || "").trim();
     const password = String(args["login-password"] || process.env.QA_LOGIN_PASSWORD || "");
     check("qa_login_credentials_present", Boolean(email && password), { email_provided: Boolean(email), password_provided: Boolean(password) });
-    const login = await capture("/api/v1/auth/login", { method: "POST", body: { email, password } });
-    const token = login.payload?.token || login.payload?.access_token || "";
-    check("qa_admin_login_ok", login.status === 200 && Boolean(token), { status: login.status, code: login.payload?.code ?? null });
+    // La cuenta administrativa de QA vive en Supabase Auth; /api/v1/auth/login solo
+    // autentica por bcrypt contra usuarios Prisma, asi que el token se obtiene con el
+    // mismo grant de contrasena que usa la app web QA contra Supabase.
+    const supabaseUrl = String(args["supabase-url"] || process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "").trim().replace(/\/$/, "");
+    const supabaseAnonKey = String(args["supabase-anon-key"] || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "").trim();
+    check("qa_supabase_config_present", Boolean(supabaseUrl && supabaseAnonKey) && supabaseUrl.includes(QA_SUPABASE_PROJECT_REF), {
+      url_provided: Boolean(supabaseUrl), url_is_qa_project: supabaseUrl.includes(QA_SUPABASE_PROJECT_REF),
+      anon_key_provided: Boolean(supabaseAnonKey)
+    });
+    const grant = await supabasePasswordGrant(supabaseUrl, supabaseAnonKey, email, password);
+    check("qa_admin_login_ok", grant.status === 200 && Boolean(grant.access_token), {
+      status: grant.status, has_access_token: Boolean(grant.access_token),
+      transport_error: grant.transportError, latency_ms: grant.latency_ms
+    });
+    const token = grant.access_token;
     const me = await capture("/api/v1/auth/me", { token });
     check("qa_session_ok", me.status === 200, { status: me.status, transport_error: me.transportError });
     const routes = await capture("/api/v1/hr/routes?limit=5", { token });
@@ -303,6 +338,180 @@ async function main() {
       marks_by_user: marksByUser.map((entry) => ({ user_name: entry.user_name, marks: entry.marks?.length ?? 0 })),
       punch_points: monitoredRoute?.punch_points?.length ?? null
     };
+
+    // ---- Captura de errores operativos en marcaciones ----
+    // Queja prioritaria de usuarios: al marcar salen muchos errores. Esta seccion ejercita
+    // CADA camino de error documentado de createPunch por HTTP contra la API de QA y
+    // verifica que todo negativo devuelva codigo estructurado (nada de 5xx ni 200 mudos).
+    const routeD = await seedRoute(prisma, nyvora.id, "D", {});
+    cleanup.routes.push({ tenantId: nyvora.id, id: routeD.routeId });
+    const YESTERDAY = new Date(new Date(`${TODAY}T12:00:00-05:00`).getTime() - 86400000)
+      .toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
+    const punchUserA = `qa-punch-${RUN_ID}-a`;
+    const punchUserB = `qa-punch-${RUN_ID}-b`;
+    const punchUserC = `qa-punch-${RUN_ID}-c`;
+    const punchBody = (userName, type, punchedAt, extra = {}) => ({
+      user_name: userName,
+      type,
+      punched_at: punchedAt,
+      route_id: routeD.routeId,
+      ...extra
+    });
+    const punch = (body) => capture("/api/v1/hr/time-punches", { token: tokenG, method: "POST", body });
+    const overtimeEvidenceBase64 = "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////2wBDAf//////////////////////////////////////////////////////////////////////////////////////wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAX/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAH/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oACAEBAAEFAqf/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oACAEDAQE/ASP/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oACAECAQE/ASP/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oACAEBAAY/Aqf/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oACAEBAAE/IV//2gAMAwEAAgADAAAAEP/EABQRAQAAAAAAAAAAAAAAAAAAABD/2gAIAQMBAT8QH//EABQRAQAAAAAAAAAAAAAAAAAAABD/2gAIAQIBAT8QH//EABQQAQAAAAAAAAAAAAAAAAAAABD/2gAIAQEAAT8QH//Z";
+    const overtimeEvidence = {
+      base64: overtimeEvidenceBase64,
+      name: "qa-hora-extra.jpg",
+      type: "image/jpeg",
+      size: Buffer.from(overtimeEvidenceBase64, "base64").length
+    };
+    const negativeResponses = [];
+
+    const schemaEmpty = await punch({});
+    negativeResponses.push(schemaEmpty);
+    check("qa_punch_schema_validation_400", schemaEmpty.status === 400, { status: schemaEmpty.status, code: schemaEmpty.payload?.code ?? null });
+
+    // Usuario C: fuera de secuencia primero (salida sin entrada), luego jornada completa.
+    const cSalidaFirst = await punch(punchBody(punchUserC, "salida", `${TODAY}T15:00:00-05:00`, { kilometraje_dia: 120 }));
+    negativeResponses.push(cSalidaFirst);
+    check("qa_punch_out_of_sequence_409", cSalidaFirst.status === 409 && cSalidaFirst.payload?.code === "MARCACION_FUERA_DE_SECUENCIA", {
+      status: cSalidaFirst.status, code: cSalidaFirst.payload?.code ?? null
+    });
+    const cEntrada = await punch(punchBody(punchUserC, "entrada", `${TODAY}T06:05:00-05:00`, { latitude: 4.6533, longitude: -74.0836 }));
+    check("qa_punch_entrada_ok_after_rejected_attempt", cEntrada.status === 200 && cEntrada.payload?.ok === true, {
+      status: cEntrada.status, code: cEntrada.payload?.code ?? null
+    });
+    const cInicio = await punch(punchBody(punchUserC, "inicio_almuerzo", `${TODAY}T12:00:00-05:00`));
+    const cFin = await punch(punchBody(punchUserC, "fin_almuerzo", `${TODAY}T13:00:00-05:00`));
+    check("qa_punch_almuerzo_sequence_ok", cInicio.status === 200 && cFin.status === 200, {
+      inicio: cInicio.status, fin: cFin.status
+    });
+    const cSalidaNoReason = await punch(punchBody(punchUserC, "salida", `${TODAY}T18:30:00-05:00`, { kilometraje_dia: 120 }));
+    negativeResponses.push(cSalidaNoReason);
+    check("qa_punch_overtime_requires_justification_422", cSalidaNoReason.status === 422 && cSalidaNoReason.payload?.code === "JUSTIFICACION_HORA_EXTRA_REQUERIDA"
+      && Number(cSalidaNoReason.payload?.details?.extra_minutes) === 135, {
+      status: cSalidaNoReason.status, code: cSalidaNoReason.payload?.code ?? null, details: cSalidaNoReason.payload?.details ?? null
+    });
+    const cSalidaNoEvidence = await punch(punchBody(punchUserC, "salida", `${TODAY}T18:30:00-05:00`, {
+      kilometraje_dia: 120, extra_reason: "Cierre de ruta extendida por novedad operativa", extra_detail: "Cliente solicito entrega fuera de horario"
+    }));
+    negativeResponses.push(cSalidaNoEvidence);
+    check("qa_punch_overtime_requires_evidence_422", cSalidaNoEvidence.status === 422 && cSalidaNoEvidence.payload?.code === "EVIDENCIA_HORA_EXTRA_REQUERIDA", {
+      status: cSalidaNoEvidence.status, code: cSalidaNoEvidence.payload?.code ?? null
+    });
+    const cSalidaOk = await punch(punchBody(punchUserC, "salida", `${TODAY}T18:30:00-05:00`, {
+      kilometraje_dia: 120,
+      extra_reason: "Cierre de ruta extendida por novedad operativa",
+      extra_detail: "Cliente solicito entrega fuera de horario",
+      extra_evidence: overtimeEvidence
+    }));
+    check("qa_punch_overtime_success_reports_minutes", cSalidaOk.status === 200 && cSalidaOk.payload?.ok === true
+      && Number(cSalidaOk.payload?.minutos_extra) === 135 && cSalidaOk.payload?.es_extra === true, {
+      status: cSalidaOk.status, minutos_extra: cSalidaOk.payload?.minutos_extra ?? null, es_extra: cSalidaOk.payload?.es_extra ?? null
+    });
+    const cJornadaCompleta = await punch(punchBody(punchUserC, "entrada", `${TODAY}T19:00:00-05:00`));
+    negativeResponses.push(cJornadaCompleta);
+    check("qa_punch_completed_day_409", cJornadaCompleta.status === 409 && cJornadaCompleta.payload?.code === "JORNADA_COMPLETA", {
+      status: cJornadaCompleta.status, code: cJornadaCompleta.payload?.code ?? null
+    });
+
+    // Usuario B: idempotencia y ajuste manual en fecha pasada.
+    const idemKeyB = `qa-punch-${RUN_ID}-b-entrada`;
+    const bEntradaToday = await punch(punchBody(punchUserB, "entrada", `${TODAY}T06:10:00-05:00`, { idempotency_key: idemKeyB }));
+    check("qa_punch_idempotent_first_attempt_ok", bEntradaToday.status === 200 && bEntradaToday.payload?.ok === true, {
+      status: bEntradaToday.status, code: bEntradaToday.payload?.code ?? null
+    });
+    const bYesterday = await punch(punchBody(punchUserB, "entrada", `${YESTERDAY}T07:00:00-05:00`));
+    check("qa_punch_past_date_records_manual_adjustment", bYesterday.status === 200 && bYesterday.payload?.ok === true, {
+      status: bYesterday.status, code: bYesterday.payload?.code ?? null
+    });
+
+    // Usuario A: GPS sin senal, kilometrajes invalidos y umbral inusual.
+    const aEntrada = await punch(punchBody(punchUserA, "entrada", `${TODAY}T06:00:00-05:00`, { metadata: { gps_unavailable: true } }));
+    check("qa_punch_gps_unavailable_accepted_with_novelty", aEntrada.status === 200 && aEntrada.payload?.ok === true, {
+      status: aEntrada.status, code: aEntrada.payload?.code ?? null
+    });
+    const aInicio = await punch(punchBody(punchUserA, "inicio_almuerzo", `${TODAY}T12:00:00-05:00`));
+    const aFin = await punch(punchBody(punchUserA, "fin_almuerzo", `${TODAY}T12:30:00-05:00`));
+    check("qa_punch_almuerzo_a_ok", aInicio.status === 200 && aFin.status === 200, { inicio: aInicio.status, fin: aFin.status });
+    const aSalidaNoKm = await punch(punchBody(punchUserA, "salida", `${TODAY}T15:00:00-05:00`, { kilometraje_dia: "" }));
+    negativeResponses.push(aSalidaNoKm);
+    check("qa_punch_mileage_required_400", aSalidaNoKm.status === 400 && aSalidaNoKm.payload?.code === "KILOMETRAJE_REQUERIDO", {
+      status: aSalidaNoKm.status, code: aSalidaNoKm.payload?.code ?? null
+    });
+    const aSalidaBadKm = await punch(punchBody(punchUserA, "salida", `${TODAY}T15:00:00-05:00`, { kilometraje_dia: "abc" }));
+    negativeResponses.push(aSalidaBadKm);
+    check("qa_punch_mileage_invalid_400", aSalidaBadKm.status === 400 && aSalidaBadKm.payload?.code === "KILOMETRAJE_INVALIDO", {
+      status: aSalidaBadKm.status, code: aSalidaBadKm.payload?.code ?? null
+    });
+    const aSalidaUnusual = await punch(punchBody(punchUserA, "salida", `${TODAY}T15:00:00-05:00`, { kilometraje_dia: 480 }));
+    check("qa_punch_unusual_mileage_accepted_with_novelty", aSalidaUnusual.status === 200 && aSalidaUnusual.payload?.ok === true, {
+      status: aSalidaUnusual.status, code: aSalidaUnusual.payload?.code ?? null
+    });
+    const aIdemConflict = await punch(punchBody(punchUserA, "entrada", `${TODAY}T06:00:00-05:00`, { idempotency_key: idemKeyB }));
+    negativeResponses.push(aIdemConflict);
+    check("qa_punch_idempotency_conflict_409", aIdemConflict.status === 409 && aIdemConflict.payload?.code === "IDEMPOTENCY_KEY_CONFLICT", {
+      status: aIdemConflict.status, code: aIdemConflict.payload?.code ?? null
+    });
+    const aJornadaCompleta = await punch(punchBody(punchUserA, "entrada", `${TODAY}T15:30:00-05:00`));
+    negativeResponses.push(aJornadaCompleta);
+    check("qa_punch_completed_day_a_409", aJornadaCompleta.status === 409 && aJornadaCompleta.payload?.code === "JORNADA_COMPLETA", {
+      status: aJornadaCompleta.status, code: aJornadaCompleta.payload?.code ?? null
+    });
+
+    // Novedades registradas por los caminos de error (se leen por codigo y empleado).
+    const noveltiesOf = async (type, from, to, userName) => {
+      const response = await capture(`/api/v1/hr/novelties?type=${encodeURIComponent(type)}&from=${from}&to=${to}`, { token: tokenG });
+      const rows = Array.isArray(response.payload) ? response.payload : (response.payload?.novelties || response.payload?.rows || []);
+      return { status: response.status, rows, mine: rows.filter((row) => String(row.employee_code || "") === userName) };
+    };
+    const gpsNovelty = await noveltiesOf("GPS_INACTIVO_SIN_SENAL", TODAY, TODAY, punchUserA);
+    check("qa_novelty_gps_unavailable_recorded", gpsNovelty.status === 200 && gpsNovelty.mine.length >= 1, {
+      status: gpsNovelty.status, found: gpsNovelty.mine.length
+    });
+    const unusualNovelty = await noveltiesOf("KILOMETRAJE_INCONSISTENTE", TODAY, TODAY, punchUserA);
+    check("qa_novelty_unusual_mileage_recorded", unusualNovelty.status === 200 && unusualNovelty.mine.length >= 1, {
+      status: unusualNovelty.status, found: unusualNovelty.mine.length
+    });
+    const manualNovelty = await noveltiesOf("AJUSTE_MANUAL_MARCACION", YESTERDAY, TODAY, punchUserB);
+    check("qa_novelty_manual_adjustment_recorded", manualNovelty.status === 200 && manualNovelty.mine.length >= 1, {
+      status: manualNovelty.status, found: manualNovelty.mine.length
+    });
+
+    // Sin fallas silenciosas: solo las marcaciones validas existen y todas las que fueron
+    // rechazadas con error de negocio dejaron codigo estructurado (ningun 5xx, ningun 200 vacio).
+    const trackingToday = await capture(`/api/v1/hr/routes/${routeD.routeId}/tracking?date=${TODAY}`, { token: tokenG });
+    const trackingYesterday = await capture(`/api/v1/hr/routes/${routeD.routeId}/tracking?date=${YESTERDAY}`, { token: tokenG });
+    const todayCount = Array.isArray(trackingToday.payload?.punches) ? trackingToday.payload.punches.length : -1;
+    const yesterdayCount = Array.isArray(trackingYesterday.payload?.punches) ? trackingYesterday.payload.punches.length : -1;
+    check("qa_punch_no_silent_failures_row_count", trackingToday.status === 200 && trackingYesterday.status === 200
+      && todayCount === 9 && yesterdayCount === 1, {
+      today_status: trackingToday.status, today_punches: todayCount, yesterday_status: trackingYesterday.status, yesterday_punches: yesterdayCount
+    });
+    check("qa_punch_negatives_carry_structured_codes", negativeResponses.every((response) => response.status >= 400 && response.status < 500
+      && (Boolean(response.payload?.code) || Boolean(response.payload?.message))), {
+      codes: negativeResponses.map((response) => ({ status: response.status, code: response.payload?.code ?? null }))
+    });
+    result.observations.punch_errors = {
+      negative_codes: negativeResponses.map((response) => ({ status: response.status, code: response.payload?.code ?? null })),
+      today_punches: todayCount, yesterday_punches: yesterdayCount,
+      overtime_minutes: Number(cSalidaOk.payload?.minutos_extra) || null,
+      novelty_rows: {
+        gps_inactivo_sin_senal: gpsNovelty.mine.length,
+        kilometraje_inconsistente: unusualNovelty.mine.length,
+        ajuste_manual_marcacion: manualNovelty.mine.length
+      }
+    };
+
+    // Limpieza selectiva de esta seccion: los empleados auto-creados por las marcaciones
+    // quedan fuera del alcance del purge por ruta, y las tablas de novedades/kilometrajes
+    // no tienen FK hacia Employee, asi que se depuran por SQL explicito.
+    for (const who of [punchUserA, punchUserB, punchUserC]) {
+      const emp = await prisma.runWithTenant(nyvora.id, () => prisma.employee.findFirst({ where: { code: who }, select: { id: true } }));
+      if (emp) await purgePunchEmployeeById(prisma, nyvora.id, emp.id);
+    }
+    await purgeRouteFixture(prisma, nyvora.id, routeD.routeId);
+    cleanup.routes = cleanup.routes.filter((route) => route.id !== routeD.routeId);
 
     // ---- Vista previa de impacto ----
     const previewBlocked = await capture(`/api/v1/hr/routes/${routeA.routeId}/deletion-impact`, { token: tokenG });
@@ -556,6 +765,17 @@ async function purgeRouteFixture(prisma, tenantId, routeId) {
   });
 }
 
+async function purgePunchEmployeeById(prisma, tenantId, employeeId) {
+  if (!tenantId || !employeeId) return;
+  await prisma.runWithTenant(tenantId, async () => {
+    // th_novedades_jornada y th_jornada_kilometrajes no tienen FK hacia Employee:
+    // sin este borrado explicito las filas del fixture quedarian huerfanas.
+    await prisma.$executeRaw`DELETE FROM th_novedades_jornada WHERE tenant_id = ${tenantId} AND employee_id = ${employeeId}`;
+    await prisma.$executeRaw`DELETE FROM th_jornada_kilometrajes WHERE tenant_id = ${tenantId} AND employee_id = ${employeeId}`;
+    await prisma.employee.deleteMany({ where: { id: employeeId, tenant_id: tenantId } });
+  });
+}
+
 async function purgeStale(prisma, admin, tenants) {
   const purged = { routes: 0, users: 0, employees: 0, roles: 0, errors: [] };
   for (const tenant of tenants) {
@@ -571,6 +791,14 @@ async function purgeStale(prisma, admin, tenants) {
       const staleEmployees = await prisma.employee.findMany({ where: { code: { startsWith: STALE_CODE_PREFIX } }, select: { id: true } });
       for (const employee of staleEmployees) {
         try { await prisma.employee.delete({ where: { id: employee.id } }); purged.employees += 1; } catch (error) { purged.errors.push(`employee ${employee.id}: ${error.message}`); }
+      }
+      // Empleados auto-creados por secciones de marcaciones de corridas interrumpidas.
+      const stalePunchEmployees = await prisma.employee.findMany({
+        where: { code: { startsWith: "qa-punch-" }, NOT: { code: { contains: RUN_ID } } },
+        select: { id: true }
+      });
+      for (const employee of stalePunchEmployees) {
+        try { await purgePunchEmployeeById(prisma, tenant.id, employee.id); purged.employees += 1; } catch (error) { purged.errors.push(`punch employee ${employee.id}: ${error.message}`); }
       }
       const staleUsers = await prisma.user.findMany({ where: { email: { startsWith: STALE_EMAIL_PREFIX } }, select: { id: true } });
       for (const user of staleUsers) {
