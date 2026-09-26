@@ -16,9 +16,12 @@ type ServiceScope = {
   companyIds: string[];
   technicianEmployeeId?: string;
   technicianOnly: boolean;
+  authorized: boolean;
 };
 
 const ACTIVE_SERVICE_ORDER_STATUS_FILTER = "status=in.(pendiente,en_curso,inspeccion,ejecucion)";
+const ALLOWED_SERVICE_ORDER_STATUSES = new Set(["agendado", "pendiente", "en_curso", "inspeccion", "ejecucion", "cerrada", "no_ejecutada", "cancelada"]);
+const MAX_RELATED_PAGES = 20;
 
 function jsonError(message: string, status = 400) {
   return NextResponse.json({ message }, { status });
@@ -78,15 +81,37 @@ function localPrisma() {
 }
 
 async function localMonitorOrders(request: NextRequest, companyName: string) {
-  const limit = Math.min(Math.max(Number(request.nextUrl.searchParams.get("limit") || 200), 1), 300);
+  const limit = boundedInteger(request.nextUrl.searchParams.get("limit"), 100, 1, 200);
+  const offset = boundedInteger(request.nextUrl.searchParams.get("offset"), 0, 0, 1_000_000);
+  const q = String(request.nextUrl.searchParams.get("q") || "").trim().slice(0, 160);
+  const status = String(request.nextUrl.searchParams.get("status") || "").trim();
+  const dateFrom = String(request.nextUrl.searchParams.get("date_from") || "").trim();
+  const dateTo = String(request.nextUrl.searchParams.get("date_to") || "").trim();
   const prisma = localPrisma();
   const tenant = await prisma.tenant.findFirst({
     where: { name: { equals: companyName, mode: "insensitive" }, active: true },
     select: { id: true }
   });
-  if (!tenant) return [];
-  return prisma.serviceOrder.findMany({
-    where: { tenant_id: tenant.id },
+  if (!tenant) return { data: [], total: 0, offset, limit };
+  const where = {
+    tenant_id: tenant.id,
+    ...(status ? { status } : {}),
+    ...(dateFrom || dateTo ? { scheduled_date: {
+      ...(dateFrom ? { gte: new Date(`${dateFrom}T00:00:00Z`) } : {}),
+      ...(dateTo ? { lt: new Date(`${nextUtcDay(dateTo)}T00:00:00Z`) } : {})
+    } } : {}),
+    ...(q ? { OR: [
+      { number: { contains: q, mode: "insensitive" as const } },
+      { customer_name: { contains: q, mode: "insensitive" as const } },
+      { customer_address: { contains: q, mode: "insensitive" as const } },
+      { customer_phone: { contains: q, mode: "insensitive" as const } },
+      { invoice_number: { contains: q, mode: "insensitive" as const } },
+      { reference: { is: { code: { contains: q, mode: "insensitive" as const } } } },
+      { reference: { is: { name: { contains: q, mode: "insensitive" as const } } } }
+    ] } : {})
+  };
+  const [data, total] = await Promise.all([prisma.serviceOrder.findMany({
+    where,
     include: {
       reference: { include: { parts: true } },
       items: { include: { reference: { include: { parts: true } }, photos: true, incidents: true }, orderBy: { display_order: "asc" } },
@@ -94,8 +119,10 @@ async function localMonitorOrders(request: NextRequest, companyName: string) {
       incidents: true
     },
     orderBy: { created_at: "desc" },
+    skip: offset,
     take: limit
-  });
+  }), prisma.serviceOrder.count({ where })]);
+  return { data, total, offset, limit };
 }
 
 function supabaseConfig() {
@@ -116,6 +143,10 @@ function referenceLabel(reference?: { code?: string; name?: string } | null) {
 }
 
 async function supabaseRequest<T>(requestPath: string, init: RequestInit = {}) {
+  return (await supabaseResponse<T>(requestPath, init)).data;
+}
+
+async function supabaseResponse<T>(requestPath: string, init: RequestInit = {}) {
   const config = supabaseConfig();
   if (!config.url || !config.anonKey || !config.serviceRoleKey) {
     const missing = [
@@ -136,10 +167,14 @@ async function supabaseRequest<T>(requestPath: string, init: RequestInit = {}) {
   });
   const body = response.status === 204 ? null : await response.json().catch(() => null);
   if (!response.ok) {
-    const detail = body?.message || body?.error_description || body?.error || response.statusText;
-    throw new Error(`Supabase ${response.status}: ${detail}`);
+    throw new Error(`SUPABASE_REQUEST_FAILED:${response.status}`);
   }
-  return body as T;
+  const contentRange = response.headers.get("content-range") || "";
+  const totalValue = contentRange.split("/")[1];
+  return {
+    data: body as T,
+    total: totalValue && totalValue !== "*" ? Number(totalValue) : undefined
+  };
 }
 
 async function currentAuthUserId(request: NextRequest) {
@@ -201,34 +236,18 @@ function serviceTechnicianEmployee(employee: { user_type?: string; metadata?: An
 }
 
 async function resolveCompanyIds(request: NextRequest, memberships: UserCompany[]) {
-  const { publicCompanyId } = supabaseConfig();
   const requestedCompanyId = request.nextUrl.searchParams.get("company_id")?.trim() || "";
-  const companyName = request.nextUrl.searchParams.get("empresa")?.trim() || "SCJ";
   const membershipCompanyIds = Array.from(new Set(memberships.map((item) => item.company_id).filter((id) => isUuid(id))));
-  if (membershipCompanyIds.length) return membershipCompanyIds;
-
-  const value = encodeURIComponent(companyName);
-  const filter = `or=(name.ilike.*${value}*,legal_name.ilike.*${value}*,tax_id.eq.${value})&`;
-  const companies = await supabaseRequest<Array<{ id: string }>>(
-    `/rest/v1/companies?select=id&${filter}status=eq.active&order=created_at.asc&limit=5`
-  );
-
-  if (requestedCompanyId && isUuid(requestedCompanyId)) return [requestedCompanyId];
-  if (publicCompanyId && isUuid(publicCompanyId)) return [publicCompanyId];
-  if (companies[0]?.id) return [companies[0].id];
-
-  const fallbackCompanies = await supabaseRequest<Array<{ id: string }>>(
-    "/rest/v1/companies?select=id&status=eq.active&order=created_at.asc&limit=1"
-  );
-  return fallbackCompanies[0]?.id ? [fallbackCompanies[0].id] : [];
+  if (!requestedCompanyId) return membershipCompanyIds;
+  return membershipCompanyIds.includes(requestedCompanyId) ? [requestedCompanyId] : [];
 }
 
 async function resolveServiceScope(request: NextRequest, userId: string, memberships: UserCompany[]): Promise<ServiceScope> {
   const companyIds = await resolveCompanyIds(request, memberships);
-  if (!userId || !companyIds.length) return { companyIds, technicianOnly: false };
+  if (!userId || !companyIds.length) return { companyIds, technicianOnly: false, authorized: false };
   const companyIdSet = new Set(companyIds);
   if (memberships.some((membership) => companyIdSet.has(membership.company_id) && isAdminCompanyRole(membership.role))) {
-    return { companyIds, technicianOnly: false };
+    return { companyIds, technicianOnly: false, authorized: true };
   }
   const companyFilter = compactInFilter(companyIds);
   const employees = await supabaseRequest<Array<{
@@ -240,16 +259,74 @@ async function resolveServiceScope(request: NextRequest, userId: string, members
     `/rest/v1/employees?select=id,company_id,user_type,metadata&user_id=eq.${encodeURIComponent(userId)}&company_id=in.(${companyFilter})&status=eq.active&limit=20`
   ).catch(() => []);
   const technician = employees.find(serviceTechnicianEmployee);
-  if (!technician?.id) return { companyIds, technicianOnly: false };
+  if (!technician?.id) return { companyIds, technicianOnly: false, authorized: false };
   return {
     companyIds: technician.company_id && isUuid(technician.company_id) ? [technician.company_id] : companyIds,
     technicianEmployeeId: technician.id,
-    technicianOnly: true
+    technicianOnly: true,
+    authorized: true
   };
 }
 
 function compactInFilter(values: Array<string | undefined>) {
   return values.filter(Boolean).map((value) => encodeURIComponent(String(value))).join(",");
+}
+
+function boundedInteger(value: string | null, fallback: number, minimum: number, maximum: number) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed)) return fallback;
+  return Math.min(Math.max(parsed, minimum), maximum);
+}
+
+function validDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+function nextUtcDay(value: string) {
+  const date = new Date(`${value}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + 1);
+  return date.toISOString().slice(0, 10);
+}
+
+function postgrestSearchValue(value: string) {
+  return `"*${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}*"`;
+}
+
+function chunks<T>(values: T[], size: number) {
+  const result: T[][] = [];
+  for (let index = 0; index < values.length; index += size) result.push(values.slice(index, index + size));
+  return result;
+}
+
+async function relatedRowsForOrders<T>(
+  table: string,
+  select: string,
+  orderIds: string[],
+  warnings: string[]
+) {
+  const rows: T[] = [];
+  try {
+    for (const orderIdBatch of chunks(orderIds, 50)) {
+      let offset = 0;
+      while (true) {
+        const page = await supabaseRequest<T[]>(
+          `/rest/v1/${table}?select=${select}&order_id=in.(${compactInFilter(orderIdBatch)})&order=created_at.asc&offset=${offset}&limit=500`
+        );
+        rows.push(...page);
+        if (page.length < 500) break;
+        offset += page.length;
+        if (offset >= 500 * MAX_RELATED_PAGES) {
+          warnings.push(`Se alcanzo el limite seguro de ${table === "service_evidence" ? "evidencias" : "novedades"}. Refina la consulta.`);
+          break;
+        }
+      }
+    }
+  } catch {
+    warnings.push(`No fue posible completar ${table === "service_evidence" ? "las evidencias" : "las novedades"}. Reintenta la consulta.`);
+  }
+  return rows;
 }
 
 function kpisForOrders(orders: Array<{ status?: string }>) {
@@ -278,6 +355,13 @@ export async function GET(request: NextRequest) {
     if (!request.headers.get("authorization")) {
       return jsonError("Sesion requerida para consultar el monitor de servicios.", 401);
     }
+    const requestedDateFrom = String(request.nextUrl.searchParams.get("date_from") || "").trim();
+    const requestedDateTo = String(request.nextUrl.searchParams.get("date_to") || "").trim();
+    const requestedStatus = String(request.nextUrl.searchParams.get("status") || "").trim();
+    if (requestedDateFrom && !validDate(requestedDateFrom)) return jsonError("date_from debe usar el formato YYYY-MM-DD.");
+    if (requestedDateTo && !validDate(requestedDateTo)) return jsonError("date_to debe usar el formato YYYY-MM-DD.");
+    if (requestedDateFrom && requestedDateTo && requestedDateFrom > requestedDateTo) return jsonError("date_from no puede ser posterior a date_to.");
+    if (requestedStatus && !ALLOWED_SERVICE_ORDER_STATUSES.has(requestedStatus)) return jsonError("El estado solicitado no es valido.");
     if (localDatabase()) {
       const userId = await currentAuthUserId(request);
       if (!userId) return jsonError("La sesion local no corresponde a una identidad Supabase valida.", 401);
@@ -292,8 +376,8 @@ export async function GET(request: NextRequest) {
       );
       const companyName = String(companies[0]?.name || "").trim();
       if (!companyName) return jsonError("No se encontro la empresa autorizada para consultar ordenes.", 404);
-      const orders = await localMonitorOrders(request, companyName);
-      const mapped = orders.map((order) => ({
+      const result = await localMonitorOrders(request, companyName);
+      const mapped = result.data.map((order) => ({
         ...order,
         status: effectiveServiceOrderStatus({
           status: order.status,
@@ -302,18 +386,73 @@ export async function GET(request: NextRequest) {
             : {}
         })
       }));
-      return NextResponse.json({ data: mapped, kpis: kpisForOrders(mapped) });
+      const nextOffset = result.offset + mapped.length;
+      const hasMore = nextOffset < result.total;
+      return NextResponse.json({
+        data: mapped,
+        total: result.total,
+        has_more: hasMore,
+        next_offset: hasMore ? nextOffset : null,
+        warnings: [],
+        kpis: kpisForOrders(mapped)
+      });
     }
     const userId = await currentAuthUserId(request);
+    if (!userId) return jsonError("La sesion no es valida para consultar el monitor de servicios.", 401);
     const memberships = await userCompaniesForUser(userId);
+    if (!memberships.length) return jsonError("El usuario no tiene acceso a empresas habilitadas para este monitor.", 403);
     const scope = await resolveServiceScope(request, userId, memberships);
-    if (!scope.companyIds.length) return jsonError("No se encontro una empresa activa para consultar ordenes.", 404);
+    if (!scope.authorized || !scope.companyIds.length) return jsonError("El usuario no tiene permiso para consultar este monitor.", 403);
 
-    const limit = Math.min(Math.max(Number(request.nextUrl.searchParams.get("limit") || 200), 1), 300);
+    const limit = boundedInteger(request.nextUrl.searchParams.get("limit"), 100, 1, 200);
+    const offset = boundedInteger(request.nextUrl.searchParams.get("offset"), 0, 0, 10_000);
+    const q = String(request.nextUrl.searchParams.get("q") || "").trim().slice(0, 160);
+    const status = String(request.nextUrl.searchParams.get("status") || "").trim();
+    const dateFrom = String(request.nextUrl.searchParams.get("date_from") || "").trim();
+    const dateTo = String(request.nextUrl.searchParams.get("date_to") || "").trim();
+    if (dateFrom && !validDate(dateFrom)) return jsonError("date_from debe usar el formato YYYY-MM-DD.");
+    if (dateTo && !validDate(dateTo)) return jsonError("date_to debe usar el formato YYYY-MM-DD.");
+    if (dateFrom && dateTo && dateFrom > dateTo) return jsonError("date_from no puede ser posterior a date_to.");
+    if (status && !ALLOWED_SERVICE_ORDER_STATUSES.has(status)) return jsonError("El estado solicitado no es valido.");
+
     const companyFilter = compactInFilter(scope.companyIds);
     const technicianFilter = scope.technicianEmployeeId ? `&technician_employee_id=eq.${encodeURIComponent(scope.technicianEmployeeId)}` : "";
     const statusFilter = scope.technicianOnly ? `&${ACTIVE_SERVICE_ORDER_STATUS_FILTER}` : "";
-    const orders = await supabaseRequest<Array<{
+    const warnings: string[] = [];
+    const requestedStatusFilter = status && !scope.technicianOnly ? `&status=eq.${encodeURIComponent(status)}` : "";
+    const dateFilter = `${dateFrom ? `&scheduled_date=gte.${encodeURIComponent(dateFrom)}` : ""}${dateTo ? `&scheduled_date=lt.${encodeURIComponent(nextUtcDay(dateTo))}` : ""}`;
+    let referenceIdsForSearch: string[] = [];
+    if (q) {
+      try {
+        const search = encodeURIComponent(postgrestSearchValue(q));
+        const references = await supabaseRequest<Array<{ id: string }>>(
+          `/rest/v1/service_references?select=id&company_id=in.(${companyFilter})&or=(code.ilike.${search},name.ilike.${search},brand.ilike.${search},model.ilike.${search})&limit=500`
+        );
+        referenceIdsForSearch = references.map((reference) => reference.id);
+      } catch {
+        warnings.push("No fue posible ampliar la busqueda por referencia. Reintenta la consulta.");
+      }
+    }
+    const search = q ? encodeURIComponent(postgrestSearchValue(q)) : "";
+    const searchableFields = [
+      "number",
+      "customer_name",
+      "customer_address",
+      "customer_phone",
+      "invoice_number",
+      "metadata->>customer_document",
+      "metadata->>customer_phone_secondary",
+      "metadata->>customer_neighborhood",
+      "metadata->>external_reference_code",
+      "metadata->>external_reference_name",
+      "metadata->>external_reference_label",
+      "metadata->>product_reference",
+      "metadata->>product_description"
+    ];
+    const searchTerms = q ? searchableFields.map((field) => `${field}.ilike.${search}`) : [];
+    if (referenceIdsForSearch.length) searchTerms.push(`reference_id.in.(${compactInFilter(referenceIdsForSearch)})`);
+    const searchFilter = searchTerms.length ? `&or=(${searchTerms.join(",")})` : "";
+    const ordersResponse = await supabaseResponse<Array<{
       id: string;
       company_id: string;
       number: string;
@@ -331,7 +470,11 @@ export async function GET(request: NextRequest) {
       created_at?: string;
       notes?: string;
       metadata?: AnyRow;
-    }>>(`/rest/v1/service_orders?select=id,company_id,number,reference_id,technician_employee_id,service_type,status,customer_name,customer_address,customer_phone,invoice_number,scheduled_date,started_at,closed_at,created_at,notes,metadata&company_id=in.(${companyFilter})${technicianFilter}${statusFilter}&order=created_at.desc&limit=${limit}`);
+    }>>(`/rest/v1/service_orders?select=id,company_id,number,reference_id,technician_employee_id,service_type,status,customer_name,customer_address,customer_phone,invoice_number,scheduled_date,started_at,closed_at,created_at,notes,metadata&company_id=in.(${companyFilter})${technicianFilter}${statusFilter}${requestedStatusFilter}${dateFilter}${searchFilter}&order=created_at.desc&offset=${offset}&limit=${limit}`, {
+      headers: { Prefer: "count=exact" }
+    });
+    const orders = ordersResponse.data;
+    const total = ordersResponse.total ?? offset + orders.length;
 
     const referenceIds = compactInFilter(orders.map((order) => order.reference_id));
     const technicianIds = compactInFilter(orders.map((order) => order.technician_employee_id));
@@ -341,10 +484,10 @@ export async function GET(request: NextRequest) {
         ? supabaseRequest<Array<{ id: string; code: string; name: string; category?: string; brand?: string; model?: string }>>(`/rest/v1/service_references?select=id,code,name,category,brand,model&company_id=in.(${companyFilter})&id=in.(${referenceIds})&limit=300`).catch(() => [])
         : Promise.resolve([]),
       orderIds
-        ? supabaseRequest<Array<{ id: string; order_id: string; type?: string; description?: string; action?: string }>>(`/rest/v1/service_incidents?select=id,order_id,type,description,action&order_id=in.(${orderIds})&limit=500`).catch(() => [])
+        ? relatedRowsForOrders<{ id: string; order_id: string; type?: string; description?: string; action?: string; created_at?: string }>("service_incidents", "id,order_id,type,description,action,created_at", orders.map((order) => order.id), warnings)
         : Promise.resolve([]),
       orderIds
-        ? supabaseRequest<Array<{ id: string; order_id: string; evidence_type?: string; metadata?: AnyRow; created_at?: string }>>(`/rest/v1/service_evidence?select=id,order_id,evidence_type,metadata,created_at&order_id=in.(${orderIds})&limit=500`).catch(() => [])
+        ? relatedRowsForOrders<{ id: string; order_id: string; evidence_type?: string; metadata?: AnyRow; created_at?: string }>("service_evidence", "id,order_id,evidence_type,metadata,created_at", orders.map((order) => order.id), warnings)
         : Promise.resolve([]),
       technicianIds
         ? supabaseRequest<Array<{ id: string; first_name?: string; last_name?: string; email?: string; metadata?: AnyRow }>>(`/rest/v1/employees?select=id,first_name,last_name,email,metadata&company_id=in.(${companyFilter})&id=in.(${technicianIds})&limit=300`).catch(() => [])
@@ -412,8 +555,20 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json({ data: mapped, kpis: kpisForOrders(mapped) });
+    const nextOffset = offset + mapped.length;
+    const hasMore = nextOffset < total;
+    return NextResponse.json({
+      data: mapped,
+      total,
+      has_more: hasMore,
+      next_offset: hasMore ? nextOffset : null,
+      warnings,
+      kpis: kpisForOrders(mapped)
+    });
   } catch (error) {
-    return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible consultar ordenes de servicios." }, { status: 500 });
+    const status = error instanceof Error && error.message.startsWith("SUPABASE_REQUEST_FAILED:")
+      ? Number(error.message.split(":")[1]) || 500
+      : 500;
+    return NextResponse.json({ message: "No fue posible consultar las ordenes de servicio.", code: "SERVICE_MONITOR_UNAVAILABLE" }, { status: status >= 400 && status < 500 ? 502 : status });
   }
 }
