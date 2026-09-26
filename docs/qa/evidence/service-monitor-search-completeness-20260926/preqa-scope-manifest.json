@@ -5,7 +5,7 @@
     "develop": "7e7f6ed72be2574465e6ad0a2ea084dac54ad9d6",
     "main": "3bf0247485a53362d4214f4c5db4b271ffb7cad2"
   },
-  "certified_commit": "029e3babca531f5a190378f42a322a927929a13c",
+  "certified_commit": "029e3ba203b7b3a44444aab7b8f35661b1c3909a",
   "change_intent": {
     "summary": "Eliminar el truncamiento silencioso del monitor de ordenes de servicio, modernizar su busqueda y rango de fechas, hacer visible cualquier parcialidad y cerrar controles de autorizacion de la ruta Supabase.",
     "modules": [
