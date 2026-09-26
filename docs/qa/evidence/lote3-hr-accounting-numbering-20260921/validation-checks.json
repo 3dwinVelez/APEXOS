@@ -76,5 +76,6 @@
     "docs/qa/evidence/core-modules-deep-qa-20260917/QA-FULL-20260917211534.md",
     "reports/qa/QA-DETERMINISTIC-DET-20260921054108.json"
   ],
+  "post_release_supplementary_evidence": "supplementary-validation-20260926.json (re-ejecución post-fix de qa:deterministic-validation 15/15 con vector EM real y performance:guard 17 objetivos/0 fallas, ejecutadas el 2026-09-26)",
   "status": "passed"
 }

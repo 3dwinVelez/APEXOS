@@ -1,0 +1,67 @@
+{
+  "change_id": "lote3-hr-accounting-numbering-20260921",
+  "kind": "post_release_supplementary_checks",
+  "environment": "LOCAL",
+  "generated_at": "2026-09-26T16:20:00Z",
+  "purpose": "Cerrar los niveles de prueba declarados-sin-ejecutar del release: (1) re-ejecución real del vector original del incidente contable EM (qa:deterministic-validation) tras el fix de numeración atómica, y (2) performance:guard exigido por docs/PERFORMANCE_ENGINEERING_STANDARD.md para todo release QA/producción.",
+  "branch_heads_at_execution": {
+    "desarrollo": "433cea305bf3e875ba41d3840baf4f8bed93c6ee",
+    "develop": "62b8cb075b71ca6af237512fa32457f51d646f8b",
+    "main": "3bf0247485a53362d4214f4c5db4b271ffb7cad2"
+  },
+  "checks": [
+    {
+      "name": "qa_deterministic_validation_post_fix",
+      "command": "DISABLE_REDIS=true npm run qa:deterministic-validation",
+      "status": "passed",
+      "final_run": {
+        "worktree": "desarrollo-controlled-promotion",
+        "head": "433cea305bf3e875ba41d3840baf4f8bed93c6ee",
+        "report_file": "reports/qa/QA-DETERMINISTIC-DET-20260926160605.json",
+        "report_note": "Artefacto local NO commiteado según política (reports/qa excluido de commits, igual que QA-DETERMINISTIC-DET-20260921054108.json). El resumen se transcribe aquí.",
+        "summary": { "passed": 15, "failed": 0 },
+        "exit": 0
+      },
+      "em_reproduction_vector": {
+        "description": "El paso 'Orden de compra y recepcion' crea una entrada de mercancía (EM) real contra Postgres local (tenant demo) vía API Fastify in-process. Es el mismo vector que antes del fix producía el 409/P2002 determinista por colisión de numeración cuando el tenant ya tenía documentos EM.",
+        "consecutive_runs_2026_09_26": [
+          { "created_at_utc": "2026-09-26T15:53:58Z", "document": "EM-000002", "result": "api+supabase OK; build web falló por quirk de entorno del worktree develop (ver environment_quirk)" },
+          { "created_at_utc": "2026-09-26T16:02:02Z", "document": "EM-000003", "result": "api+supabase OK; mismo quirk de entorno en build web" },
+          { "created_at_utc": "2026-09-26T16:06:40Z", "document": "EM-000004", "result": "corrida completa 15/15 OK en worktree desarrollo, reporte JSON escrito" }
+        ],
+        "db_verification": {
+          "query": "SELECT document_type, full_number, count(*) FROM cnt_cabdoc GROUP BY 1,2 HAVING count(*)>1",
+          "result": "0 filas duplicadas",
+          "em_sequence": ["EM-000001 (2026-09-21)", "EM-000002", "EM-000003", "EM-000004 (2026-09-26)"]
+        },
+        "conclusion": "La numeración atómica por tipo de documento quedó probada en vivo contra el vector determinista original: múltiples corridas consecutivas con documentos EM preexistentes generan numeración secuencial sin colisión P2002/409 DUPLICADO."
+      },
+      "environment_quirk": {
+        "description": "En el worktree develop-ui-v3-promotion, `next build` falla con 'Can't resolve lucide-react' pese a que lucide-react@0.469.0 existe en node_modules raíz y un `npm install` de sincronización no lo resolvió. El mismo código compila sin cambios en el worktree desarrollo (build OK, rutas críticas compiladas OK). Es un quirk de resolución de dependencias de ese worktree en Windows, no una regresión de producto; la corrida completa oficial se hizo en desarrollo."
+      }
+    },
+    {
+      "name": "performance_guard_release",
+      "command": "npm run performance:guard",
+      "cwd": "develop-ui-v3-promotion (ejecutado dos veces, resultado idéntico)",
+      "baseline_report": "reports/performance/qa-root-cause-2026-07-27T01-06-02-427Z.json",
+      "targets_evaluated": 17,
+      "failures": 0,
+      "exit": 0,
+      "status": "passed",
+      "budgets": {
+        "frontend_document_p95_ms": 1000,
+        "api_p95_ms": 1000,
+        "supabase_rest_p95_ms": 700,
+        "concurrency": 10
+      },
+      "scope_note": "El guard evalúa la línea base versionada más reciente (2026-07-27) según el contrato del estándar. No se generó una línea base nueva de carga para este release (qa:root-cause dispara concurrencia hasta 100 contra QA web, infraestructura compartida); queda como opción ejecutable con autorización. La superficie de lectura HR cambiada en este release está cubierta además por la certificación hr-monitor-read-truncation-local (12 controles, nivel live local)."
+    }
+  ],
+  "policy_compliance": {
+    "writes": "Solo tenant demo local (Postgres localhost:55432) y lecturas a Supabase QA; sin escrituras remotas, sin deploys, sin migraciones.",
+    "forbidden_files": "reports/qa/QA-DETERMINISTIC-DET-20260926160605.json NO se stagea ni commitea.",
+    "promotion": "Este commit es documentación QA sobre develop; no re-promociona a main ni altera el flujo desarrollo -> develop -> main."
+  },
+  "status": "passed"
+}
