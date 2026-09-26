@@ -1,6 +1,6 @@
 {
   "change_id": "service-monitor-search-completeness-20260926",
-  "commit": "ee28c53a4dc55e7b39a0495b581a3c8379d91231",
+  "commit": "e4b5577e055d5f4eb5985757771cefdbf8026939",
   "environment": "LOCAL",
   "source_branch": "desarrollo",
   "target_branch": "develop",
