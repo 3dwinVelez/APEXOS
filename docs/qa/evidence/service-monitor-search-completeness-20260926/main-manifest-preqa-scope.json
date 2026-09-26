@@ -1,0 +1,23 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "service-monitor-main-manifest-preqa-20260926",
+  "base_commits": { "develop": "a39ff59bf265ea2d3e979f71ea3d56c4082fa35d" },
+  "certified_commit": "c70f8240adafc18f023b605f688aeac988ee41f1",
+  "change_intent": {
+    "summary": "Versionar en develop el inventario exacto de la promocion controlada a main.",
+    "modules": ["services", "qa-certification", "release-governance"]
+  },
+  "allowed_paths": [
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/main-scope-manifest.json",
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/main-manifest-preqa-scope.json"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/main-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/main-manifest-preqa-scope.json" }
+  ],
+  "protected_capabilities": [
+    { "name": "qa_approval", "status": "passed", "evidence": ["qa-approval-evidence.json"] },
+    { "name": "main_scope_inventory", "status": "passed", "evidence": ["main-scope-manifest.json"] }
+  ]
+}
