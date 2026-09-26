@@ -1,0 +1,30 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "service-monitor-qa-evidence-20260926",
+  "base_commits": { "develop": "f984666807e819b6daef0fac6601c718ccaf5201" },
+  "certified_commit": "9fd64a2fdfc5945ef94f0670a226474ec2a84155",
+  "change_intent": {
+    "summary": "Versionar exclusivamente la evidencia aprobada de certificacion funcional, transversal y de seguridad del monitor.",
+    "modules": ["services", "qa-certification", "security"]
+  },
+  "allowed_paths": [
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/qa-certification.json",
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/platform-regression.json",
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/security-gate.json",
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/qa-approval-evidence.json",
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/qa-evidence-scope-manifest.json"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/qa-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/platform-regression.json" },
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/security-gate.json" },
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/qa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/qa-evidence-scope-manifest.json" }
+  ],
+  "protected_capabilities": [
+    { "name": "monitor_functional_qa", "status": "passed", "evidence": ["qa-certification.json"] },
+    { "name": "rbac_y_aislamiento_multiempresa", "status": "passed", "evidence": ["security-gate.json", "qa-certification.json"] },
+    { "name": "platform_regression", "status": "passed", "evidence": ["platform-regression.json"] }
+  ]
+}
