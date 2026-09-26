@@ -21,7 +21,8 @@
     "apps/web/app/dashboard/servicios/page.tsx",
     "apps/web/test/service-monitor-live-refresh.test.mjs",
     "scripts/certifications/service-monitor-search-completeness-local.js",
-    "docs/qa/evidence/service-monitor-search-completeness-20260926/"
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/",
+    "scripts/certifications/service-monitor-search-completeness-qa.js"
   ],
   "allowed_deletions": [],
   "expected_changes": [
@@ -60,6 +61,10 @@
     {
       "status": "A",
       "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/service-monitor-search-completeness-qa.js"
     }
   ],
   "protected_capabilities": [
