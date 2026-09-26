@@ -62,6 +62,8 @@ test("el endpoint rechaza sesiones invalidas, usuarios sin membresia y acceso fu
   assert.match(routeSource, /if \(!userId\) return jsonError\("La sesion no es valida para consultar el monitor de servicios\.", 401\)/);
   assert.match(routeSource, /if \(!memberships\.length\) return jsonError\("El usuario no tiene acceso a empresas habilitadas para este monitor\.", 403\)/);
   assert.match(routeSource, /activeMemberships\.filter\(\(membership\) => membership\.company_id === requestedCompanyId\)/);
+  assert.match(routeSource, /function canonicalCompanyId/);
+  assert.match(routeSource, /requestedCompanyValue \? \[\] : activeMemberships/);
   assert.match(routeSource, /administrativeCompanyIds\.length/);
   assert.match(routeSource, /companyIds: administrativeCompanyIds, technicianOnly: false, authorized: true/);
   assert.match(routeSource, /role=in\.\(owner,admin\)/);

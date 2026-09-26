@@ -149,7 +149,12 @@ function supabaseConfig() {
 }
 
 function isUuid(value: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i.test(value);
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
+function canonicalCompanyId(value: unknown) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return isUuid(normalized) ? normalized : "";
 }
 
 function referenceLabel(reference?: { code?: string; name?: string } | null) {
@@ -250,11 +255,14 @@ function serviceTechnicianEmployee(employee: { user_type?: string; metadata?: An
 }
 
 async function resolveServiceScope(request: NextRequest, userId: string, memberships: UserCompany[]): Promise<ServiceScope> {
-  const requestedCompanyId = request.nextUrl.searchParams.get("company_id")?.trim() || "";
-  const activeMemberships = memberships.filter((membership) => isUuid(membership.company_id));
+  const requestedCompanyValue = request.nextUrl.searchParams.get("company_id")?.trim() || "";
+  const requestedCompanyId = canonicalCompanyId(requestedCompanyValue);
+  const activeMemberships = memberships
+    .map((membership) => ({ ...membership, company_id: canonicalCompanyId(membership.company_id) }))
+    .filter((membership) => Boolean(membership.company_id));
   const eligibleMemberships = requestedCompanyId
     ? activeMemberships.filter((membership) => membership.company_id === requestedCompanyId)
-    : activeMemberships;
+    : requestedCompanyValue ? [] : activeMemberships;
   const administrativeCompanyIds = Array.from(new Set(
     eligibleMemberships.filter((membership) => isAdminCompanyRole(membership.role)).map((membership) => membership.company_id)
   ));
