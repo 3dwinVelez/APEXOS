@@ -1,0 +1,18 @@
+{
+  "gate": "service-monitor-security",
+  "status": "passed",
+  "environment": "QA",
+  "commit": "f984666807e819b6daef0fac6601c718ccaf5201",
+  "generated_at": "2026-09-26T20:44:00Z",
+  "checks": {
+    "anonymous_access": "rejected_401",
+    "member_without_operational_role": "rejected_403",
+    "cross_tenant_access": "rejected_403",
+    "authorized_owner": "allowed_200",
+    "invalid_company_identifier": "rejected_before_scope_expansion",
+    "credentials_in_evidence": false,
+    "service_role_exposed_to_client": false
+  },
+  "evidence": ["qa-certification.json"],
+  "residual_risk": "low"
+}

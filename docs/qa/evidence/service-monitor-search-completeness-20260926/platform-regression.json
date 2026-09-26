@@ -1,0 +1,21 @@
+{
+  "certification": "platform-regression-qa",
+  "status": "passed",
+  "environment": "QA",
+  "api_commit": "daafd603827c8eac3ac8fc9085aa13342e55a217",
+  "web_commit": "f984666807e819b6daef0fac6601c718ccaf5201",
+  "generated_at": "2026-09-26T20:44:00Z",
+  "model_company": "NYVORA",
+  "execution": "Railway QA service environment",
+  "checks": [
+    "session",
+    "services_orders",
+    "services_references",
+    "hr_employees",
+    "inventory_items",
+    "accounting_accounts",
+    "unauthorized_blocked"
+  ],
+  "credentials_recorded": false,
+  "note": "La API no cambio en esta intervencion; se certifico el commit API activo junto con el commit web candidato."
+}
