@@ -1,0 +1,40 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "service-monitor-search-completeness-20260926",
+  "base_commits": {
+    "develop": "daafd603827c8eac3ac8fc9085aa13342e55a217",
+    "main": "3bf0247485a53362d4214f4c5db4b271ffb7cad2"
+  },
+  "certified_commit": "0d173b0d8ecbe4e18f3084340ad0acf4a79a429e",
+  "change_intent": {
+    "summary": "Eliminar el truncamiento silencioso del monitor de ordenes de servicio, modernizar su busqueda y rango de fechas, hacer visible cualquier parcialidad y cerrar controles de autorizacion de la ruta Supabase.",
+    "modules": ["services", "web", "supabase-read", "rbac", "qa-certification"]
+  },
+  "allowed_paths": [
+    "apps/web/app/api/services/monitor-orders/route.ts",
+    "apps/web/app/dashboard/servicios/page.tsx",
+    "apps/web/test/service-monitor-live-refresh.test.mjs",
+    "scripts/certifications/service-monitor-search-completeness-local.js",
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    { "status": "M", "file": "apps/web/app/api/services/monitor-orders/route.ts" },
+    { "status": "M", "file": "apps/web/app/dashboard/servicios/page.tsx" },
+    { "status": "M", "file": "apps/web/test/service-monitor-live-refresh.test.mjs" },
+    { "status": "A", "file": "scripts/certifications/service-monitor-search-completeness-local.js" },
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/local-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/unit-tests.txt" },
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/validation-checks.json" },
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/preqa-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/preqa-approval-evidence.json" }
+  ],
+  "protected_capabilities": [
+    { "name": "busqueda_de_orden_historica_sin_truncamiento", "status": "passed", "evidence": ["local-certification.json", "validation-checks.json"] },
+    { "name": "filtros_y_rango_de_fecha_programada", "status": "passed", "evidence": ["local-certification.json", "unit-tests.txt"] },
+    { "name": "evidencia_y_novedades_sin_falla_silenciosa", "status": "passed", "evidence": ["local-certification.json", "unit-tests.txt"] },
+    { "name": "rbac_y_aislamiento_multiempresa", "status": "passed", "evidence": ["local-certification.json", "validation-checks.json"] },
+    { "name": "creacion_inicio_correccion_y_detalle_de_ordenes", "status": "passed", "evidence": ["unit-tests.txt"] },
+    { "name": "rendimiento_y_limites_de_consulta", "status": "passed", "evidence": ["validation-checks.json", "unit-tests.txt"] }
+  ]
+}
