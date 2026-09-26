@@ -251,6 +251,17 @@ async function resolveServiceScope(request: NextRequest, userId: string, members
     return { companyIds: administrativeCompanyIds, technicianOnly: false, authorized: true };
   }
   const companyIds = Array.from(new Set(eligibleMemberships.map((membership) => membership.company_id)));
+  const confirmedAdministrativeMemberships = await supabaseRequest<UserCompany[]>(
+    `/rest/v1/company_users?select=company_id,role&user_id=eq.${encodeURIComponent(userId)}&company_id=in.(${compactInFilter(companyIds)})&status=eq.active&role=in.(owner,admin)&limit=20`
+  ).catch(() => []);
+  const confirmedAdministrativeCompanyIds = Array.from(new Set(
+    confirmedAdministrativeMemberships
+      .filter((membership) => companyIds.includes(membership.company_id) && isAdminCompanyRole(membership.role))
+      .map((membership) => membership.company_id)
+  ));
+  if (confirmedAdministrativeCompanyIds.length) {
+    return { companyIds: confirmedAdministrativeCompanyIds, technicianOnly: false, authorized: true };
+  }
   const companyFilter = compactInFilter(companyIds);
   const employees = await supabaseRequest<Array<{
     id: string;
