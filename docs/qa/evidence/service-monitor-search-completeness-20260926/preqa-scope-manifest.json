@@ -2,10 +2,10 @@
   "scope_schema_version": 2,
   "change_id": "service-monitor-search-completeness-20260926",
   "base_commits": {
-    "develop": "50ca2364558ef7165c6321354cc8d6efa1b3353a",
+    "develop": "7e7f6ed72be2574465e6ad0a2ea084dac54ad9d6",
     "main": "3bf0247485a53362d4214f4c5db4b271ffb7cad2"
   },
-  "certified_commit": "e4b5577e055d5f4eb5985757771cefdbf8026939",
+  "certified_commit": "029e3babca531f5a190378f42a322a927929a13c",
   "change_intent": {
     "summary": "Eliminar el truncamiento silencioso del monitor de ordenes de servicio, modernizar su busqueda y rango de fechas, hacer visible cualquier parcialidad y cerrar controles de autorizacion de la ruta Supabase.",
     "modules": [
@@ -19,6 +19,7 @@
   "allowed_paths": [
     "apps/web/app/api/services/monitor-orders/route.ts",
     "apps/web/test/service-monitor-live-refresh.test.mjs",
+    "scripts/certifications/service-monitor-search-completeness-qa.js",
     "docs/qa/evidence/service-monitor-search-completeness-20260926/local-certification.json",
     "docs/qa/evidence/service-monitor-search-completeness-20260926/preqa-scope-manifest.json",
     "docs/qa/evidence/service-monitor-search-completeness-20260926/preqa-approval-evidence.json"
@@ -32,6 +33,10 @@
     {
       "status": "M",
       "file": "apps/web/test/service-monitor-live-refresh.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/service-monitor-search-completeness-qa.js"
     },
     {
       "status": "M",
