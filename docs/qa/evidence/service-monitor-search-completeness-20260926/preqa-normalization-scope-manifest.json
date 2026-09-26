@@ -1,0 +1,40 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "service-monitor-company-id-normalization-20260926",
+  "base_commits": {
+    "develop": "c9fd91f41578aff227883ef5344f1984e27cd2bd"
+  },
+  "certified_commit": "c24c0058662e7e6a60967e30d7e8a2141094ab2c",
+  "change_intent": {
+    "summary": "Normalizar identificadores canonicos de empresa sin restringir versiones UUID y conservar el rechazo de entradas invalidas.",
+    "modules": ["services", "web", "rbac", "qa-certification"]
+  },
+  "allowed_paths": [
+    "apps/web/app/api/services/monitor-orders/route.ts",
+    "apps/web/test/service-monitor-live-refresh.test.mjs",
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/preqa-normalization-scope-manifest.json"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    { "status": "M", "file": "apps/web/app/api/services/monitor-orders/route.ts" },
+    { "status": "M", "file": "apps/web/test/service-monitor-live-refresh.test.mjs" },
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/preqa-normalization-scope-manifest.json" }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "rbac_y_aislamiento_multiempresa",
+      "status": "passed",
+      "evidence": ["local-certification.json", "validation-checks.json", "unit-tests.txt"]
+    },
+    {
+      "name": "busqueda_de_orden_historica_sin_truncamiento",
+      "status": "passed",
+      "evidence": ["local-certification.json", "unit-tests.txt"]
+    },
+    {
+      "name": "filtros_y_rango_de_fecha_programada",
+      "status": "passed",
+      "evidence": ["local-certification.json", "unit-tests.txt"]
+    }
+  ]
+}
