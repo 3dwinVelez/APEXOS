@@ -2,7 +2,7 @@
   "scope_schema_version": 2,
   "change_id": "service-monitor-search-completeness-20260926",
   "base_commits": {
-    "develop": "7e7f6ed72be2574465e6ad0a2ea084dac54ad9d6",
+    "develop": "8624fc6c699a154888ed82c31dc844f9fa7b2c0b",
     "main": "3bf0247485a53362d4214f4c5db4b271ffb7cad2"
   },
   "certified_commit": "c3ceaa3bad5cf234b93f79dc7c5c17a7538cb51a",
@@ -28,27 +28,7 @@
   "expected_changes": [
     {
       "status": "M",
-      "file": "apps/web/app/api/services/monitor-orders/route.ts"
-    },
-    {
-      "status": "M",
-      "file": "apps/web/test/service-monitor-live-refresh.test.mjs"
-    },
-    {
-      "status": "M",
-      "file": "scripts/certifications/service-monitor-search-completeness-qa.js"
-    },
-    {
-      "status": "M",
-      "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/local-certification.json"
-    },
-    {
-      "status": "M",
       "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/preqa-scope-manifest.json"
-    },
-    {
-      "status": "M",
-      "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/preqa-approval-evidence.json"
     }
   ],
   "protected_capabilities": [
