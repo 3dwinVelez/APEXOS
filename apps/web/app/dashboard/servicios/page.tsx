@@ -77,6 +77,20 @@ type ServiceOrder = {
   items?: ServiceOrderItem[];
 };
 type OrdersResponse = { data: ServiceOrder[] };
+type MonitorOrdersResponse = OrdersResponse & {
+  total?: number;
+  has_more?: boolean;
+  next_offset?: number | null;
+  warnings?: string[];
+};
+type MonitorQuery = {
+  q?: string;
+  status?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  offset?: number;
+  limit?: number;
+};
 type AuthContext = { tenant?: { name?: string } };
 type ServiceOrderExcelRow = {
   orden: string;
@@ -462,15 +476,23 @@ function mergeOrders(orders: ServiceOrder[]) {
   return Array.from(byId.values()).sort(newestFirst);
 }
 
-async function loadSupabaseMonitorOrders() {
-  if (typeof window === "undefined") return [];
-  if (localStorage.getItem("auth_provider") !== "supabase") return [];
+async function loadSupabaseMonitorOrders(filters: MonitorQuery): Promise<MonitorOrdersResponse | null> {
+  if (typeof window === "undefined") return null;
+  if (localStorage.getItem("auth_provider") !== "supabase") return null;
   const token = localStorage.getItem("token") || "";
-  if (!token) return [];
+  if (!token) return null;
   const companyName = localStorage.getItem("apexos_company_name") || localStorage.getItem("company_name") || "SCJ";
   const companyId = localStorage.getItem("apexos_company_id") || "";
-  const query = new URLSearchParams({ empresa: companyName, limit: "200" });
+  const query = new URLSearchParams({
+    empresa: companyName,
+    offset: String(filters.offset || 0),
+    limit: String(filters.limit || 50)
+  });
   if (companyId) query.set("company_id", companyId);
+  if (filters.q) query.set("q", filters.q);
+  if (filters.status) query.set("status", filters.status);
+  if (filters.dateFrom) query.set("date_from", filters.dateFrom);
+  if (filters.dateTo) query.set("date_to", filters.dateTo);
   const response = await fetch(`/api/services/monitor-orders?${query.toString()}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
@@ -478,8 +500,12 @@ async function loadSupabaseMonitorOrders() {
     const body = await response.json().catch(() => ({})) as { message?: string };
     throw new Error(body.message || "No fue posible consultar el monitor de servicios.");
   }
-  const body = await response.json() as OrdersResponse;
-  return Array.isArray(body.data) ? body.data : [];
+  const body = await response.json() as MonitorOrdersResponse;
+  return {
+    ...body,
+    data: Array.isArray(body.data) ? body.data : [],
+    warnings: Array.isArray(body.warnings) ? body.warnings : []
+  };
 }
 
 export default function ServicesPage() {
@@ -491,6 +517,9 @@ export default function ServicesPage() {
   const [serviceStores, setServiceStores] = useState<ServiceStore[]>([]);
   const [status, setStatus] = useState("");
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [dateScope, setDateScope] = useState("");
   const [evidenceScope, setEvidenceScope] = useState("");
   const [requestScope, setRequestScope] = useState("");
@@ -506,6 +535,13 @@ export default function ServicesPage() {
   const [savingEdit, setSavingEdit] = useState(false);
   const [editError, setEditError] = useState("");
   const [refreshingOrders, setRefreshingOrders] = useState(false);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [ordersError, setOrdersError] = useState("");
+  const [ordersTotal, setOrdersTotal] = useState(0);
+  const [hasMoreOrders, setHasMoreOrders] = useState(false);
+  const [nextOffset, setNextOffset] = useState<number | null>(null);
+  const [monitorWarnings, setMonitorWarnings] = useState<string[]>([]);
   const [lastRefreshAt, setLastRefreshAt] = useState<Date | null>(null);
   const [validationIssues, setValidationIssues] = useState<string[]>([]);
   const [handledExternalKey, setHandledExternalKey] = useState("");
@@ -526,32 +562,58 @@ export default function ServicesPage() {
     return () => { active = false; };
   }, []);
 
-  async function load() {
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedQuery(query.trim()), 350);
+    return () => window.clearTimeout(timer);
+  }, [query]);
+
+  const invalidDateRange = Boolean(dateFrom && dateTo && dateFrom > dateTo);
+
+  const load = useCallback(async (offset = 0, append = false) => {
+    if (invalidDateRange) {
+      setOrdersError("La fecha desde no puede ser posterior a la fecha hasta.");
+      return false;
+    }
     try {
       setMessage("");
+      setOrdersError("");
+      if (append) setLoadingMore(true);
+      else setLoadingOrders(true);
       const [monitorResult, apiResult] = await Promise.allSettled([
-        loadSupabaseMonitorOrders(),
+        loadSupabaseMonitorOrders({ q: debouncedQuery, status, dateFrom, dateTo, offset, limit: 50 }),
         api<OrdersResponse>("/api/v1/services/orders?limit=200")
       ]);
-      const monitorOrders = monitorResult.status === "fulfilled" ? monitorResult.value : [];
+      const monitorResponse = monitorResult.status === "fulfilled" ? monitorResult.value : null;
       const apiOrders = apiResult.status === "fulfilled" ? apiResult.value.data || [] : [];
       if (monitorResult.status === "rejected" && apiResult.status === "rejected") {
         throw apiResult.reason || monitorResult.reason;
       }
-      setOrders(mergeOrders([...monitorOrders, ...apiOrders].map(normalizeServiceOrder)).map(effectiveOrder));
+      const received = monitorResponse?.data || apiOrders;
+      const normalized = received.map(normalizeServiceOrder).map(effectiveOrder);
+      setOrders((current) => append ? mergeOrders([...current, ...normalized]) : mergeOrders(normalized));
+      const fallbackWarning = monitorResult.status === "rejected"
+        ? ["La consulta avanzada no estuvo disponible; se muestran datos de respaldo que pueden ser parciales."]
+        : [];
+      setMonitorWarnings([...(monitorResponse?.warnings || []), ...fallbackWarning]);
+      setOrdersTotal(monitorResponse?.total ?? normalized.length);
+      setHasMoreOrders(Boolean(monitorResponse?.has_more));
+      setNextOffset(typeof monitorResponse?.next_offset === "number" ? monitorResponse.next_offset : null);
       setLastRefreshAt(new Date());
       return true;
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "No fue posible cargar servicios.");
-      setOrders([]);
+      setOrdersError(error instanceof Error ? error.message : "No fue posible cargar servicios.");
+      if (!append) setOrders([]);
       return false;
+    } finally {
+      setLoadingOrders(false);
+      setLoadingMore(false);
     }
-  }
+  }, [dateFrom, dateTo, debouncedQuery, invalidDateRange, status]);
 
   async function refreshOrders() {
     if (refreshingOrders) return;
     setRefreshingOrders(true);
-    const refreshed = await load();
+    const refreshed = await load(0, false);
     if (refreshed) setMessage("Datos del monitor actualizados correctamente.");
     setRefreshingOrders(false);
   }
@@ -585,24 +647,27 @@ export default function ServicesPage() {
     const isTechnician = isServiceTechnicianSession();
     setTechnicianMode(isTechnician);
     setCanCorrectAnyState(!isTechnician && hasStoredRolePermission("services.orders", "edit_any_state"));
-    load();
     if (!isTechnician) loadMasters();
+  }, []);
+
+  useEffect(() => {
+    void load(0, false);
     const refreshTimer = window.setInterval(() => {
-      if (document.visibilityState === "visible") void load();
-    }, 5_000);
-    const refreshOnFocus = () => { void load(); };
+      if (document.visibilityState === "visible") void load(0, false);
+    }, 30_000);
+    const refreshOnFocus = () => { void load(0, false); };
     window.addEventListener("focus", refreshOnFocus);
     return () => {
       window.clearInterval(refreshTimer);
       window.removeEventListener("focus", refreshOnFocus);
     };
-  }, []);
+  }, [load]);
 
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
     const today = new Date().toISOString().slice(0, 10);
     return orders.filter((order) => {
-      const matchesTerm = !term || [order.number, order.customer_name, order.customer_address, order.customer_phone, order.metadata?.customer_phone_secondary, order.reference?.code, order.reference?.name, order.service_type, technicianSearchText(order)]
+      const matchesTerm = !term || [order.number, order.customer_name, order.customer_address, order.customer_phone, order.metadata?.customer_phone_secondary, order.metadata?.customer_document, order.metadata?.customer_neighborhood, order.invoice_number, order.notes, order.reference?.code, order.reference?.name, order.metadata?.external_reference_code, order.metadata?.external_reference_name, order.metadata?.external_reference_label, order.metadata?.product_reference, order.metadata?.product_description, order.service_type, technicianSearchText(order)]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(term))
       const isExternalRequest = order.status === "agendado" || order.metadata?.public_request === true || order.metadata?.requires_admin_completion === true;
@@ -617,13 +682,16 @@ export default function ServicesPage() {
         (dateScope === "overdue" && isOverdue(order)) ||
         (dateScope === "upcoming" && Boolean(order.scheduled_date) && order.scheduled_date.slice(0, 10) > today) ||
         (dateScope === "unscheduled" && !order.scheduled_date);
+      const scheduledDate = order.scheduled_date?.slice(0, 10) || "";
+      const matchesDateRange = (!dateFrom || (scheduledDate && scheduledDate >= dateFrom))
+        && (!dateTo || (scheduledDate && scheduledDate <= dateTo));
       const matchesEvidence =
         !evidenceScope ||
         (evidenceScope === "with_evidence" && order.photos.length > 0) ||
         (evidenceScope === "without_evidence" && order.photos.length === 0) ||
         (evidenceScope === "with_incidents" && order.incidents.length > 0);
       const matchesRequestScope = !requestScope || (requestScope === "external" && isExternalRequest);
-      return matchesTerm && matchesTechnician && (!status || order.status === status) && matchesDate && matchesEvidence && matchesRequestScope && (!serviceType || order.service_type === serviceType);
+      return matchesTerm && matchesTechnician && (!status || order.status === status) && matchesDate && matchesDateRange && matchesEvidence && matchesRequestScope && (!serviceType || order.service_type === serviceType);
     }).sort((a, b) => {
       if (sortBy === "newest") return newestFirst(a, b);
       if (sortBy === "date_asc") return (a.scheduled_date || "9999").localeCompare(b.scheduled_date || "9999");
@@ -631,7 +699,7 @@ export default function ServicesPage() {
       if (sortBy === "order") return orderSequence(b.number) - orderSequence(a.number) || b.number.localeCompare(a.number);
       return priorityScore(a) - priorityScore(b) || newestFirst(a, b);
     });
-  }, [dateScope, evidenceScope, orders, query, requestScope, serviceType, sortBy, status, technicianFilter]);
+  }, [dateFrom, dateScope, dateTo, evidenceScope, orders, query, requestScope, serviceType, sortBy, status, technicianFilter]);
 
   const serviceTypes = useMemo(() => [...new Set(orders.map((order) => order.service_type).filter(Boolean))].sort(), [orders]);
   const editableServiceTypes = serviceTypesCatalog.length ? serviceTypesCatalog : serviceTypes.map((type) => ({ code: type, label: statusLabel[type] || type }));
@@ -653,7 +721,7 @@ export default function ServicesPage() {
     acc[order.status] = (acc[order.status] || 0) + 1;
     return acc;
   }, {}), [orders]);
-  const activeFilters = [status, dateScope, evidenceScope, requestScope, serviceType, technicianFilter].filter(Boolean).length + (query.trim() ? 1 : 0);
+  const activeFilters = [status, dateScope, dateFrom, dateTo, evidenceScope, requestScope, serviceType, technicianFilter].filter(Boolean).length + (query.trim() ? 1 : 0);
   const externalRequestHref = externalRequestCompany
     ? `/servicios/solicitar?empresa=${encodeURIComponent(externalRequestCompany)}`
     : "#";
@@ -662,6 +730,8 @@ export default function ServicesPage() {
     setQuery("");
     setStatus("");
     setDateScope("");
+    setDateFrom("");
+    setDateTo("");
     setEvidenceScope("");
     setRequestScope("");
     setServiceType("");
@@ -905,6 +975,13 @@ export default function ServicesPage() {
       </section>
 
       {message ? <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{message}</div> : null}
+      {ordersError ? <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-900">{ordersError}</div> : null}
+      {monitorWarnings.length ? (
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          <p className="font-semibold">La consulta devolvio advertencias</p>
+          <ul className="mt-1 list-disc space-y-1 pl-5">{monitorWarnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>
+        </div>
+      ) : null}
 
       <section className="min-w-0 space-y-4">
         <aside className="apex-section-card min-w-0 p-3 sm:p-4">
@@ -964,7 +1041,7 @@ export default function ServicesPage() {
 
             <div className="relative min-w-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={17} />
-              <input className="h-12 w-full rounded-md border border-line bg-paper pl-10 pr-3 text-base outline-none transition focus:border-apex focus:bg-white md:text-sm" placeholder="Buscar por orden, cliente, telefono, direccion o referencia" value={query} onChange={(event) => setQuery(event.target.value)} />
+              <input aria-label="Buscar ordenes de servicio" className="h-12 w-full rounded-md border border-line bg-paper pl-10 pr-3 text-base outline-none transition focus:border-apex focus:bg-white md:text-sm" placeholder="Orden, cliente, documento, telefono, factura, direccion o producto" value={query} onChange={(event) => setQuery(event.target.value)} />
             </div>
 
             <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
@@ -975,6 +1052,18 @@ export default function ServicesPage() {
                 </button>
               ))}
             </div>
+
+            <fieldset className="mt-3 grid gap-2 rounded-md border border-line bg-paper/40 p-3 sm:grid-cols-2">
+              <legend className="px-1 text-xs font-semibold text-neutral-600">Rango de fecha programada</legend>
+              <label className="grid gap-1 text-xs font-medium text-neutral-600">
+                Desde
+                <input className="h-11 rounded-md border border-line bg-white px-3 text-sm" max={dateTo || undefined} type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} />
+              </label>
+              <label className="grid gap-1 text-xs font-medium text-neutral-600">
+                Hasta
+                <input className="h-11 rounded-md border border-line bg-white px-3 text-sm" min={dateFrom || undefined} type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} />
+              </label>
+            </fieldset>
 
             <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
               <label className="relative">
@@ -1022,7 +1111,7 @@ export default function ServicesPage() {
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div>
               <h2 className="font-semibold">Ordenes de servicio</h2>
-              <p className="text-sm text-neutral-500">{filtered.length} de {orders.length} orden(es) visibles</p>
+              <p className="text-sm text-neutral-500">{filtered.length} visible(s) · {orders.length} cargada(s) de {ordersTotal} resultado(s)</p>
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2">
               <p className="hidden text-xs font-medium text-neutral-500 md:block">Selecciona una orden para consultar o continuar el servicio.</p>
@@ -1032,6 +1121,8 @@ export default function ServicesPage() {
               </button>
             </div>
           </div>
+
+          {loadingOrders ? <div aria-live="polite" className="mb-3 rounded-md border border-line bg-paper p-4 text-sm font-medium text-neutral-600">Consultando ordenes...</div> : null}
 
           <div className="grid gap-3 md:hidden">
             {filtered.map((order) => (
@@ -1180,6 +1271,13 @@ export default function ServicesPage() {
               {activeFilters ? <button className="mt-4 inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white" onClick={clearFilters} type="button"><RotateCcw size={15} /> Limpiar filtros</button> : null}
             </div>
           )}
+          {hasMoreOrders && nextOffset !== null ? (
+            <div className="mt-4 flex justify-center">
+              <button className="inline-flex h-11 items-center gap-2 rounded-md border border-apex bg-white px-5 text-sm font-semibold text-apex transition hover:bg-apex/5 disabled:cursor-wait disabled:opacity-60" disabled={loadingMore} onClick={() => void load(nextOffset, true)} type="button">
+                {loadingMore ? "Cargando..." : "Cargar mas ordenes"}
+              </button>
+            </div>
+          ) : null}
           </div>
         </section>
       </section>

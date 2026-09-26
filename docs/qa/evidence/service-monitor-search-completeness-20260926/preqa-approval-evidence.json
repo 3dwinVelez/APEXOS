@@ -1,0 +1,34 @@
+{
+  "change_id": "service-monitor-search-completeness-20260926",
+  "commit": "0d173b0d8ecbe4e18f3084340ad0acf4a79a429e",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["local-certification.json", "unit-tests.txt"] },
+    "error": { "status": "passed", "evidence": ["local-certification.json", "validation-checks.json"] },
+    "support_scripts": { "status": "passed", "evidence": ["local-certification.json", "unit-tests.txt"] },
+    "regression": { "status": "passed", "evidence": ["unit-tests.txt"] },
+    "platform_regression": { "status": "passed", "evidence": ["unit-tests.txt", "validation-checks.json"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/service-monitor-search-completeness-local.js",
+    "evidence": ["local-certification.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/service-monitor-search-completeness-local.js",
+    "evidence": ["local-certification.json", "unit-tests.txt", "validation-checks.json"]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "APEXOS release owner (user request 2026-09-26)",
+    "approved_at": "2026-09-26T14:25:00-05:00",
+    "authorization_basis": "El usuario solicito explicitamente validar profundamente, corregir, modernizar filtros, alinear desarrollo/develop/main en sus remotos y garantizar despliegue en Railway. Esta aprobacion permite publicar desarrollo y desplegar el candidato en QA; no sustituye la certificacion funcional QA requerida antes de main.",
+    "approved_actions": ["push desarrollo", "promocion desarrollo a develop", "despliegue Railway QA", "certificacion funcional QA"],
+    "pending_authorizations": []
+  }
+}
