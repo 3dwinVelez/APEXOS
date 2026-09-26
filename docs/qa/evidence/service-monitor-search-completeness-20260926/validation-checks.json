@@ -1,0 +1,18 @@
+{
+  "change_id": "service-monitor-search-completeness-20260926",
+  "commit": "0d173b0d8ecbe4e18f3084340ad0acf4a79a429e",
+  "environment": "LOCAL",
+  "checks": {
+    "root_cause_production_read_only": {
+      "status": "passed",
+      "detail": "La orden OS-00005 existe en public.service_orders. Tiene 241 ordenes posteriores; el monitor anterior solo cargaba 200 antes de filtrar. Total observado para la empresa: 246."
+    },
+    "functional": { "status": "passed", "evidence": ["local-certification.json", "unit-tests.txt"] },
+    "security": { "status": "passed", "detail": "Se exige identidad valida, membresia, empresa autorizada y rol admin/owner o tecnico asignado antes de usar service_role; errores sanitizados." },
+    "tenant_isolation": { "status": "passed", "detail": "company_id solicitado se intersecta estrictamente con company_users activo; se eliminaron fallbacks a empresa publica o primera empresa." },
+    "performance": { "status": "passed", "detail": "Pagina maxima 200, offset maximo 10000, relaciones limitadas a 20 paginas, polling reducido de 5s a 30s; performance guard 17/17." },
+    "build": { "status": "passed", "detail": "Next.js production build completo, 108 paginas." },
+    "qa_browser": { "status": "pending", "detail": "Debe ejecutarse en Railway QA sobre el SHA exacto promovido antes de develop -> main." },
+    "railway_deployment": { "status": "pending", "detail": "No desplegado todavia; requiere promotion scope y pre-QA gate aprobados." }
+  }
+}

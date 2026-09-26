@@ -1,0 +1,12 @@
+Commit funcional: 0d173b0d8ecbe4e18f3084340ad0acf4a79a429e
+Fecha: 2026-09-26
+
+PASS node --test test/service-monitor-live-refresh.test.mjs test/service-order-edit-modal-responsive.test.mjs test/service-order-special-edit.test.mjs test/service-order-detail-contract-normalization.test.mjs
+22 pruebas aprobadas, 0 fallidas.
+
+PASS npm run typecheck (apps/web)
+PASS npm run lint (apps/web): 0 errores; 13 advertencias preexistentes fuera de los archivos intervenidos.
+PASS npm run build (apps/web): compilacion Next.js, TypeScript y 108 paginas completadas.
+PASS npm run performance:guard: 17 objetivos, 0 fallas.
+
+La certificacion reproducible se encuentra en local-certification.json y se genera con scripts/certifications/service-monitor-search-completeness-local.js.
