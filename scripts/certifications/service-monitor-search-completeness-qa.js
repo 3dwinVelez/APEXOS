@@ -89,10 +89,13 @@ function chromePath() {
 
     const historical = await monitor(adminToken, `limit=20&q=OS-00001&company_id=${nyvora.id}`);
     check("historical_order_found", historical.status === 200 && historical.body.data.some((row) => row.number === "OS-00001"), { status: historical.status, message: historical.body?.message, total: historical.body?.total, numbers: historical.body?.data?.map((row) => row.number), diagnostics: historical.diagnostics });
+    const historicalOrder = historical.body.data.find((row) => row.number === "OS-00001");
+    const historicalDate = String(historicalOrder?.scheduled_date || historicalOrder?.created_at || "").slice(0, 10);
+    assert.match(historicalDate, /^\d{4}-\d{2}-\d{2}$/, "La orden historica debe tener una fecha certificable");
     const paged = await monitor(adminToken, "limit=1&offset=0");
     check("server_pagination", paged.status === 200 && paged.body.data.length === 1 && paged.body.total >= 2 && paged.body.has_more === true, { total: paged.body.total });
-    const range = await monitor(adminToken, "limit=20&date_from=2026-08-21&date_to=2026-08-22&q=OS-00001");
-    check("configurable_date_range", range.status === 200 && range.body.data.some((row) => row.number === "OS-00001"), { total: range.body.total });
+    const range = await monitor(adminToken, `limit=20&date_from=${historicalDate}&date_to=${historicalDate}&q=OS-00001`);
+    check("configurable_date_range", range.status === 200 && range.body.data.some((row) => row.number === "OS-00001"), { total: range.body.total, date: historicalDate });
     const invalid = await monitor(adminToken, "status=estado_invalido");
     check("invalid_filter_rejected", invalid.status === 400, { status: invalid.status });
 
