@@ -15,7 +15,13 @@
     "apps/web/app/dashboard/servicios/page.tsx",
     "apps/web/test/service-monitor-live-refresh.test.mjs",
     "scripts/certifications/service-monitor-search-completeness-local.js",
-    "docs/qa/evidence/service-monitor-search-completeness-20260926/"
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/",
+    "docs/qa/evidence/hr-markings-medellin-20260919/",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/",
+    "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/",
+    "docs/qa/evidence/hr-schedule-write-integrity-20260920/",
+    "docs/qa/evidence/kilometraje-index-alignment-20260919/",
+    "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/"
   ],
   "allowed_deletions": [
     "docs/qa/evidence/hr-markings-medellin-20260919/browser-qa-evidence.md",
