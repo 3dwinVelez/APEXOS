@@ -17,14 +17,28 @@ type ServiceScope = {
   technicianEmployeeId?: string;
   technicianOnly: boolean;
   authorized: boolean;
+  diagnostic: {
+    reason: string;
+    memberships: number;
+    eligibleMemberships: number;
+    administrativeMemberships: number;
+    confirmedAdministrativeMemberships: number;
+  };
 };
 
+const MONITOR_RELEASE = "service-monitor-scope-v3";
 const ACTIVE_SERVICE_ORDER_STATUS_FILTER = "status=in.(pendiente,en_curso,inspeccion,ejecucion)";
 const ALLOWED_SERVICE_ORDER_STATUSES = new Set(["agendado", "pendiente", "en_curso", "inspeccion", "ejecucion", "cerrada", "no_ejecutada", "cancelada"]);
 const MAX_RELATED_PAGES = 20;
 
-function jsonError(message: string, status = 400) {
-  return NextResponse.json({ message }, { status });
+function monitorResponse<T>(body: T, init?: ResponseInit) {
+  const response = NextResponse.json(body, init);
+  response.headers.set("X-Apexos-Monitor-Release", MONITOR_RELEASE);
+  return response;
+}
+
+function jsonError(message: string, status = 400, headers?: Record<string, string>) {
+  return monitorResponse({ message }, { status, headers });
 }
 
 function rootEnv() {
@@ -245,10 +259,16 @@ async function resolveServiceScope(request: NextRequest, userId: string, members
     eligibleMemberships.filter((membership) => isAdminCompanyRole(membership.role)).map((membership) => membership.company_id)
   ));
   if (!userId || !eligibleMemberships.length) {
-    return { companyIds: [], technicianOnly: false, authorized: false };
+    return {
+      companyIds: [], technicianOnly: false, authorized: false,
+      diagnostic: { reason: "no-eligible-membership", memberships: memberships.length, eligibleMemberships: eligibleMemberships.length, administrativeMemberships: administrativeCompanyIds.length, confirmedAdministrativeMemberships: 0 }
+    };
   }
   if (administrativeCompanyIds.length) {
-    return { companyIds: administrativeCompanyIds, technicianOnly: false, authorized: true };
+    return {
+      companyIds: administrativeCompanyIds, technicianOnly: false, authorized: true,
+      diagnostic: { reason: "administrative-membership", memberships: memberships.length, eligibleMemberships: eligibleMemberships.length, administrativeMemberships: administrativeCompanyIds.length, confirmedAdministrativeMemberships: 0 }
+    };
   }
   const companyIds = Array.from(new Set(eligibleMemberships.map((membership) => membership.company_id)));
   const confirmedAdministrativeMemberships = await supabaseRequest<UserCompany[]>(
@@ -260,7 +280,10 @@ async function resolveServiceScope(request: NextRequest, userId: string, members
       .map((membership) => membership.company_id)
   ));
   if (confirmedAdministrativeCompanyIds.length) {
-    return { companyIds: confirmedAdministrativeCompanyIds, technicianOnly: false, authorized: true };
+    return {
+      companyIds: confirmedAdministrativeCompanyIds, technicianOnly: false, authorized: true,
+      diagnostic: { reason: "confirmed-administrative-membership", memberships: memberships.length, eligibleMemberships: eligibleMemberships.length, administrativeMemberships: administrativeCompanyIds.length, confirmedAdministrativeMemberships: confirmedAdministrativeCompanyIds.length }
+    };
   }
   const companyFilter = compactInFilter(companyIds);
   const employees = await supabaseRequest<Array<{
@@ -272,12 +295,16 @@ async function resolveServiceScope(request: NextRequest, userId: string, members
     `/rest/v1/employees?select=id,company_id,user_type,metadata&user_id=eq.${encodeURIComponent(userId)}&company_id=in.(${companyFilter})&status=eq.active&limit=20`
   ).catch(() => []);
   const technician = employees.find(serviceTechnicianEmployee);
-  if (!technician?.id) return { companyIds, technicianOnly: false, authorized: false };
+  if (!technician?.id) return {
+    companyIds, technicianOnly: false, authorized: false,
+    diagnostic: { reason: "operational-role-required", memberships: memberships.length, eligibleMemberships: eligibleMemberships.length, administrativeMemberships: administrativeCompanyIds.length, confirmedAdministrativeMemberships: confirmedAdministrativeCompanyIds.length }
+  };
   return {
     companyIds: technician.company_id && isUuid(technician.company_id) ? [technician.company_id] : companyIds,
     technicianEmployeeId: technician.id,
     technicianOnly: true,
-    authorized: true
+    authorized: true,
+    diagnostic: { reason: "technician-membership", memberships: memberships.length, eligibleMemberships: eligibleMemberships.length, administrativeMemberships: administrativeCompanyIds.length, confirmedAdministrativeMemberships: confirmedAdministrativeCompanyIds.length }
   };
 }
 
@@ -401,7 +428,7 @@ export async function GET(request: NextRequest) {
       }));
       const nextOffset = result.offset + mapped.length;
       const hasMore = nextOffset < result.total;
-      return NextResponse.json({
+      return monitorResponse({
         data: mapped,
         total: result.total,
         has_more: hasMore,
@@ -415,7 +442,13 @@ export async function GET(request: NextRequest) {
     const memberships = await userCompaniesForUser(userId);
     if (!memberships.length) return jsonError("El usuario no tiene acceso a empresas habilitadas para este monitor.", 403);
     const scope = await resolveServiceScope(request, userId, memberships);
-    if (!scope.authorized || !scope.companyIds.length) return jsonError("El usuario no tiene permiso para consultar este monitor.", 403);
+    if (!scope.authorized || !scope.companyIds.length) return jsonError("El usuario no tiene permiso para consultar este monitor.", 403, {
+      "X-Apexos-Scope-Reason": scope.diagnostic.reason,
+      "X-Apexos-Scope-Memberships": String(scope.diagnostic.memberships),
+      "X-Apexos-Scope-Eligible": String(scope.diagnostic.eligibleMemberships),
+      "X-Apexos-Scope-Administrative": String(scope.diagnostic.administrativeMemberships),
+      "X-Apexos-Scope-Confirmed-Administrative": String(scope.diagnostic.confirmedAdministrativeMemberships)
+    });
 
     const limit = boundedInteger(request.nextUrl.searchParams.get("limit"), 100, 1, 200);
     const offset = boundedInteger(request.nextUrl.searchParams.get("offset"), 0, 0, 10_000);
@@ -570,7 +603,7 @@ export async function GET(request: NextRequest) {
 
     const nextOffset = offset + mapped.length;
     const hasMore = nextOffset < total;
-    return NextResponse.json({
+    return monitorResponse({
       data: mapped,
       total,
       has_more: hasMore,

@@ -63,10 +63,12 @@ test("el endpoint rechaza sesiones invalidas, usuarios sin membresia y acceso fu
   assert.match(routeSource, /if \(!memberships\.length\) return jsonError\("El usuario no tiene acceso a empresas habilitadas para este monitor\.", 403\)/);
   assert.match(routeSource, /activeMemberships\.filter\(\(membership\) => membership\.company_id === requestedCompanyId\)/);
   assert.match(routeSource, /administrativeCompanyIds\.length/);
-  assert.match(routeSource, /return \{ companyIds: administrativeCompanyIds, technicianOnly: false, authorized: true \}/);
+  assert.match(routeSource, /companyIds: administrativeCompanyIds, technicianOnly: false, authorized: true/);
   assert.match(routeSource, /role=in\.\(owner,admin\)/);
   assert.match(routeSource, /confirmedAdministrativeCompanyIds/);
-  assert.match(routeSource, /if \(!scope\.authorized \|\| !scope\.companyIds\.length\) return jsonError\("El usuario no tiene permiso para consultar este monitor\.", 403\)/);
+  assert.match(routeSource, /X-Apexos-Monitor-Release/);
+  assert.match(routeSource, /X-Apexos-Scope-Reason/);
+  assert.match(routeSource, /if \(!scope\.authorized \|\| !scope\.companyIds\.length\) return jsonError\("El usuario no tiene permiso para consultar este monitor\.", 403/);
   assert.match(routeSource, /technicianOnly: true,[\s\S]*authorized: true/);
   assert.doesNotMatch(routeSource, /fallbackCompanies/);
 });
