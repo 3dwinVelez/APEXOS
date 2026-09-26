@@ -1,0 +1,59 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "service-monitor-search-completeness-main-20260926",
+  "base_commits": { "main": "3bf0247485a53362d4214f4c5db4b271ffb7cad2" },
+  "certified_commit": "1c659ecaab0d7b6de7a8fb5ff747609092b07de0",
+  "qa_source_commit": "f984666807e819b6daef0fac6601c718ccaf5201",
+  "change_intent": {
+    "summary": "Promover exclusivamente la correccion de completitud, autorizacion, paginacion y filtros del monitor de servicios con su evidencia certificada.",
+    "modules": ["services", "web", "rbac", "supabase-read", "qa-certification"]
+  },
+  "allowed_paths": [
+    "apps/web/app/api/services/monitor-orders/route.ts",
+    "apps/web/app/dashboard/servicios/page.tsx",
+    "apps/web/test/service-monitor-live-refresh.test.mjs",
+    "scripts/certifications/service-monitor-search-completeness-local.js",
+    "scripts/certifications/service-monitor-search-completeness-qa.js",
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/local-certification.json",
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/platform-regression.json",
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/preqa-approval-evidence.json",
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/preqa-date-fixture-scope-manifest.json",
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/preqa-normalization-scope-manifest.json",
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/preqa-scope-manifest.json",
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/qa-approval-evidence.json",
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/qa-certification.json",
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/qa-evidence-scope-manifest.json",
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/security-gate.json",
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/unit-tests.txt",
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/validation-checks.json",
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/main-scope-manifest.json"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    { "status": "M", "file": "apps/web/app/api/services/monitor-orders/route.ts" },
+    { "status": "M", "file": "apps/web/app/dashboard/servicios/page.tsx" },
+    { "status": "M", "file": "apps/web/test/service-monitor-live-refresh.test.mjs" },
+    { "status": "A", "file": "scripts/certifications/service-monitor-search-completeness-local.js" },
+    { "status": "A", "file": "scripts/certifications/service-monitor-search-completeness-qa.js" },
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/local-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/platform-regression.json" },
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/preqa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/preqa-date-fixture-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/preqa-normalization-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/preqa-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/qa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/qa-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/qa-evidence-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/security-gate.json" },
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/unit-tests.txt" },
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/validation-checks.json" },
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/main-scope-manifest.json" }
+  ],
+  "protected_capabilities": [
+    { "name": "busqueda_historica_y_completitud", "status": "passed", "evidence": ["qa-certification.json"] },
+    { "name": "paginacion_y_rango_configurable", "status": "passed", "evidence": ["qa-certification.json"] },
+    { "name": "rbac_y_aislamiento_multiempresa", "status": "passed", "evidence": ["security-gate.json", "qa-certification.json"] },
+    { "name": "regresion_transversal", "status": "passed", "evidence": ["platform-regression.json"] },
+    { "name": "creacion_inicio_correccion_y_detalle_de_ordenes", "status": "passed", "evidence": ["platform-regression.json", "unit-tests.txt"] }
+  ]
+}
