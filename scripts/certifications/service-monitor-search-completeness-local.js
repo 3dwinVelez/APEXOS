@@ -30,7 +30,7 @@ check("server_side_search_and_pagination", /Prefer: "count=exact"/.test(route) &
 check("configurable_date_range", /date_from/.test(route) && /date_to/.test(route) && /Rango de fecha programada/.test(page), { route: path.relative(root, routePath), page: path.relative(root, pagePath) });
 check("invalid_session_denied", /if \(!userId\).*401/.test(route), { expected: "401 before service-role data access" });
 check("membership_and_role_denied", /if \(!memberships\.length\).*403/.test(route) && /!scope\.authorized/.test(route), { expected: "403 without membership or operational role" });
-check("cross_tenant_company_rejected", /membershipCompanyIds\.includes\(requestedCompanyId\)/.test(route) && !/fallbackCompanies/.test(route), { expected: "requested company must belong to authenticated user" });
+check("cross_tenant_company_rejected", /activeMemberships\.filter\(\(membership\) => membership\.company_id === requestedCompanyId\)/.test(route) && !/fallbackCompanies/.test(route), { expected: "requested company must belong to authenticated user" });
 check("related_data_is_bounded_and_visible", /MAX_RELATED_PAGES/.test(route) && /warnings/.test(route) && /La consulta devolvio advertencias/.test(page), { expected: "bounded pagination with visible partial-data signal" });
 check("errors_are_sanitized", /SERVICE_MONITOR_UNAVAILABLE/.test(route) && !/body\?\.message \|\| body\?\.error_description/.test(route), { expected: "generic client error" });
 
