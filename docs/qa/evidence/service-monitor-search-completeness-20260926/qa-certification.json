@@ -1,0 +1,98 @@
+{
+  "certification": "service-monitor-search-completeness-qa",
+  "status": "passed",
+  "environment": "QA",
+  "commit": "f984666807e819b6daef0fac6601c718ccaf5201",
+  "company": "NYVORA",
+  "generated_at": "2026-09-26T20:41:20.481Z",
+  "checks": [
+    {
+      "name": "auth_membership_consistent",
+      "status": "passed",
+      "detail": {
+        "auth_status": 200,
+        "user_match": true,
+        "memberships": [
+          {
+            "company_id": "5f713e65-a3c1-414b-9260-a411a5a2e2bd",
+            "role": "owner",
+            "status": "active"
+          }
+        ]
+      }
+    },
+    {
+      "name": "anonymous_rejected",
+      "status": "passed",
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "member_without_operational_role_rejected",
+      "status": "passed",
+      "detail": {
+        "status": 403
+      }
+    },
+    {
+      "name": "cross_tenant_rejected",
+      "status": "passed",
+      "detail": {
+        "status": 403
+      }
+    },
+    {
+      "name": "historical_order_found",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "total": 1,
+        "numbers": [
+          "OS-00001"
+        ],
+        "diagnostics": {
+          "release": "service-monitor-scope-v3",
+          "reason": null,
+          "memberships": null,
+          "eligible": null,
+          "administrative": null,
+          "confirmed_administrative": null
+        }
+      }
+    },
+    {
+      "name": "server_pagination",
+      "status": "passed",
+      "detail": {
+        "total": 2
+      }
+    },
+    {
+      "name": "configurable_date_range",
+      "status": "passed",
+      "detail": {
+        "total": 1,
+        "date": "2026-08-23"
+      }
+    },
+    {
+      "name": "invalid_filter_rejected",
+      "status": "passed",
+      "detail": {
+        "status": 400
+      }
+    },
+    {
+      "name": "browser_real_flow",
+      "status": "passed",
+      "detail": {
+        "page": "/dashboard/servicios",
+        "search": "controlled historical order",
+        "date_inputs": 2
+      }
+    }
+  ],
+  "credentials_recorded": false,
+  "cleanup": "completed"
+}
