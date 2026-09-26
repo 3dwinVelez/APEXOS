@@ -42,8 +42,19 @@ async function token(email) {
   return (await response.json()).access_token;
 }
 async function monitor(accessToken, query = "") {
-  const response = await fetch(`${webUrl}/api/services/monitor-orders?${query}`, { headers: accessToken ? { authorization: `Bearer ${accessToken}` } : {} });
-  return { status: response.status, body: await response.json().catch(() => null) };
+  const response = await fetch(`${webUrl}/api/services/monitor-orders?${query}${query ? "&" : ""}_cert=${runId}`, { headers: accessToken ? { authorization: `Bearer ${accessToken}`, "cache-control": "no-cache" } : { "cache-control": "no-cache" } });
+  return {
+    status: response.status,
+    body: await response.json().catch(() => null),
+    diagnostics: {
+      release: response.headers.get("x-apexos-monitor-release"),
+      reason: response.headers.get("x-apexos-scope-reason"),
+      memberships: response.headers.get("x-apexos-scope-memberships"),
+      eligible: response.headers.get("x-apexos-scope-eligible"),
+      administrative: response.headers.get("x-apexos-scope-administrative"),
+      confirmed_administrative: response.headers.get("x-apexos-scope-confirmed-administrative")
+    }
+  };
 }
 function chromePath() {
   const candidates = [process.env.CHROME_PATH, "C:/Program Files/Google/Chrome/Application/chrome.exe", "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe"];
@@ -77,7 +88,7 @@ function chromePath() {
     check("cross_tenant_rejected", crossTenant.status === 403, { status: crossTenant.status });
 
     const historical = await monitor(adminToken, `limit=20&q=OS-00001&company_id=${nyvora.id}`);
-    check("historical_order_found", historical.status === 200 && historical.body.data.some((row) => row.number === "OS-00001"), { status: historical.status, message: historical.body?.message, total: historical.body?.total, numbers: historical.body?.data?.map((row) => row.number) });
+    check("historical_order_found", historical.status === 200 && historical.body.data.some((row) => row.number === "OS-00001"), { status: historical.status, message: historical.body?.message, total: historical.body?.total, numbers: historical.body?.data?.map((row) => row.number), diagnostics: historical.diagnostics });
     const paged = await monitor(adminToken, "limit=1&offset=0");
     check("server_pagination", paged.status === 200 && paged.body.data.length === 1 && paged.body.total >= 2 && paged.body.has_more === true, { total: paged.body.total });
     const range = await monitor(adminToken, "limit=20&date_from=2026-08-21&date_to=2026-08-22&q=OS-00001");
