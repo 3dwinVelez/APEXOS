@@ -235,20 +235,22 @@ function serviceTechnicianEmployee(employee: { user_type?: string; metadata?: An
     || operational.can_receive_services === true;
 }
 
-async function resolveCompanyIds(request: NextRequest, memberships: UserCompany[]) {
-  const requestedCompanyId = request.nextUrl.searchParams.get("company_id")?.trim() || "";
-  const membershipCompanyIds = Array.from(new Set(memberships.map((item) => item.company_id).filter((id) => isUuid(id))));
-  if (!requestedCompanyId) return membershipCompanyIds;
-  return membershipCompanyIds.includes(requestedCompanyId) ? [requestedCompanyId] : [];
-}
-
 async function resolveServiceScope(request: NextRequest, userId: string, memberships: UserCompany[]): Promise<ServiceScope> {
-  const companyIds = await resolveCompanyIds(request, memberships);
-  if (!userId || !companyIds.length) return { companyIds, technicianOnly: false, authorized: false };
-  const companyIdSet = new Set(companyIds);
-  if (memberships.some((membership) => companyIdSet.has(membership.company_id) && isAdminCompanyRole(membership.role))) {
-    return { companyIds, technicianOnly: false, authorized: true };
+  const requestedCompanyId = request.nextUrl.searchParams.get("company_id")?.trim() || "";
+  const activeMemberships = memberships.filter((membership) => isUuid(membership.company_id));
+  const eligibleMemberships = requestedCompanyId
+    ? activeMemberships.filter((membership) => membership.company_id === requestedCompanyId)
+    : activeMemberships;
+  const administrativeCompanyIds = Array.from(new Set(
+    eligibleMemberships.filter((membership) => isAdminCompanyRole(membership.role)).map((membership) => membership.company_id)
+  ));
+  if (!userId || !eligibleMemberships.length) {
+    return { companyIds: [], technicianOnly: false, authorized: false };
   }
+  if (administrativeCompanyIds.length) {
+    return { companyIds: administrativeCompanyIds, technicianOnly: false, authorized: true };
+  }
+  const companyIds = Array.from(new Set(eligibleMemberships.map((membership) => membership.company_id)));
   const companyFilter = compactInFilter(companyIds);
   const employees = await supabaseRequest<Array<{
     id: string;
