@@ -1,0 +1,7 @@
+{
+  "change_id": "hr-route-qa-explicit-grant-20260928",
+  "command": "node --check scripts/certifications/hr-route-physical-deletion-qa.js",
+  "status": "passed",
+  "validated_at": "2026-09-28T13:15:00-05:00",
+  "notes": "La correccion modifica solo el fixture del segundo tenant; el codigo funcional permanece certificado por local-certification.json."
+}

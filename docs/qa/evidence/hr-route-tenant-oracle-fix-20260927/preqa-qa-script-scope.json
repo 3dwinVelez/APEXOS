@@ -1,0 +1,30 @@
+{
+  "change_id": "hr-route-qa-explicit-grant-20260928",
+  "scope_schema_version": 2,
+  "base_commits": {
+    "develop": "b584239b0f8d661148a7e834ddab12d85a455365"
+  },
+  "certified_commit": "a02ab4d",
+  "change_intent": {
+    "summary": "Corrige exclusivamente el fixture de certificacion QA del alias de mallas para usar una concesion explicita de borrado fisico, sin alterar codigo de aplicacion.",
+    "modules": ["talento-humano", "hr", "qa-certification"]
+  },
+  "expected_changes": [
+    { "status": "A", "file": "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/preqa-qa-script-adjustment.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/preqa-qa-script-scope.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/qa-script-validation.json" },
+    { "status": "M", "file": "scripts/certifications/hr-route-physical-deletion-qa.js" }
+  ],
+  "allowed_paths": [
+    "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/preqa-qa-script-adjustment.json",
+    "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/preqa-qa-script-scope.json",
+    "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/qa-script-validation.json",
+    "scripts/certifications/hr-route-physical-deletion-qa.js"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    { "name": "cross_tenant_route_concealment", "status": "passed", "evidence": ["local-certification.json"] },
+    { "name": "physical_delete_permission", "status": "passed", "evidence": ["local-certification.json"] },
+    { "name": "qa_fixture_cleanup", "status": "passed", "evidence": ["local-certification.json"] }
+  ]
+}
