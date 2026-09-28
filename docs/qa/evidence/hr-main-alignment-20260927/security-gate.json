@@ -1,0 +1,21 @@
+{
+  "change_id": "hr-main-alignment-20260927",
+  "mode": "RELEASE-GATE",
+  "candidate_commit": "04edde30523a0dc976caaf902ae293a40dbeadd2",
+  "result": "APTO CON OBSERVACIONES",
+  "summary": { "critical": 0, "high": 0, "medium": 0, "low": 0, "info": 2 },
+  "surfaces": ["authentication", "authorization", "multi-tenancy", "API inputs", "audit trail", "frontend module access"],
+  "validated_controls": [
+    "El borrado fisico exige delete_physical_records y vuelve a autorizar en el servidor.",
+    "El recurso se resuelve dentro del tenant y una malla ajena responde como no encontrada.",
+    "Motivo, confirmacion, vista previa vigente y reconocimiento de traza son obligatorios.",
+    "La operacion deja audit_log y conserva marcaciones, GPS, sesiones, actividades y jornales.",
+    "Las funciones del buscador solo aparecen cuando talento-humano esta habilitado.",
+    "La marcacion administrativa rechaza employee_id inexistente o malformado sin escribir datos."
+  ],
+  "observations": [
+    "npm audit reporta seis vulnerabilidades moderadas preexistentes y ninguna alta o critica.",
+    "La autorizacion de seguridad no sustituye la certificacion funcional obligatoria en QA."
+  ],
+  "promotion_security_decision": "AUTORIZABLE DESDE SEGURIDAD"
+}

@@ -1,0 +1,21 @@
+{
+  "change_id": "hr-main-alignment-20260927",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "candidate_commit": "04edde30523a0dc976caaf902ae293a40dbeadd2",
+  "qa_deployed_commit": "daafd603827c",
+  "status": "blocked",
+  "preflight": {
+    "health": "passed",
+    "deployed_commit_match": "passed_for_daafd603827c",
+    "authenticated_login": "blocked",
+    "reason": "QA_LOGIN_EMAIL y QA_LOGIN_PASSWORD no estan configurados en los archivos ambientales disponibles."
+  },
+  "historical_evidence": {
+    "develop_local_certifications": "passed",
+    "qa_certification": "failed",
+    "failed_check": "qa_novelty_manual_adjustment_recorded"
+  },
+  "required_next_step": "Configurar credenciales QA autorizadas, desplegar o identificar el commit candidato exacto en QA y ejecutar la certificacion E2E completa, navegador y regresion transversal antes de main."
+}

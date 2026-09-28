@@ -1,0 +1,18 @@
+{
+  "change_id": "hr-main-alignment-20260927",
+  "environment": "LOCAL",
+  "candidate_commit": "04edde30523a0dc976caaf902ae293a40dbeadd2",
+  "base_main_commit": "182db487a568dd47013781698e3f976c0c3fc92d",
+  "source_develop_commit": "6f988e085b014dc0360942f2a2d1245ffc82b077",
+  "qa_deployed_commit": "daafd603827c",
+  "generated_at": "2026-09-27T00:00:00-05:00",
+  "checks": {
+    "hr_tests": { "status": "passed", "passed": 184, "failed": 0 },
+    "typecheck": { "status": "passed" },
+    "lint": { "status": "passed_with_warnings", "errors": 0, "warnings": 13, "classification": "preexisting" },
+    "production_build": { "status": "passed", "routes_generated": 108 },
+    "prisma_validate": { "status": "passed", "database_connection_used": false },
+    "dependency_audit": { "status": "observed", "critical": 0, "high": 0, "moderate": 6, "introduced_by_change": false }
+  },
+  "status": "passed"
+}
