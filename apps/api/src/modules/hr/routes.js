@@ -19,6 +19,12 @@ async function routeDeletionImpactForRequest(request) {
   return { ...impact, permissions: { can_physical_delete: hasPhysicalDeleteGrant(request.user?.role, "hr") } };
 }
 
+// Resolver primero el recurso dentro del tenant evita revelar su existencia a
+// otro tenant mediante una diferencia 403/404 en el guard de borrado fisico.
+async function requireOwnedRouteForDeletion(request) {
+  await service.routeDeletionImpact(request.user?.tenant_id, request.params.id);
+}
+
 async function hrRoutes(fastify) {
   fastify.addHook("preHandler", fastify.authenticate);
   fastify.addHook("preHandler", tenancy);
@@ -67,7 +73,7 @@ async function hrRoutes(fastify) {
   fastify.post("/hr/routes/bulk", { schema: schemas.routeBulkSchema, preHandler: requirePermission("hr", "write") }, (request) => service.createRoutesBulk(request.user?.tenant_id, request.body));
   fastify.patch("/hr/routes/:id", { schema: schemas.routeSchema, preHandler: requirePermission("hr", "write") }, (request) => service.updateRoute(request.user?.tenant_id, request.params.id, request.body));
   fastify.get("/hr/routes/:id/deletion-impact", { preHandler: requirePermission("hr", "read") }, routeDeletionImpactForRequest);
-  fastify.delete("/hr/routes/:id", { schema: schemas.routeDeleteSchema, preHandler: requirePhysicalDeleteGrant("hr") }, (request) => service.deleteRoute(request.user?.tenant_id, request.params.id, request.body || {}, { actor: request.user, ...requestContext(request) }));
+  fastify.delete("/hr/routes/:id", { schema: schemas.routeDeleteSchema, preHandler: [requireOwnedRouteForDeletion, requirePhysicalDeleteGrant("hr")] }, (request) => service.deleteRoute(request.user?.tenant_id, request.params.id, request.body || {}, { actor: request.user, ...requestContext(request) }));
   fastify.get("/hr/routes/preop/template", { preHandler: requirePermission("hr", "read") }, () => service.getPreoperationalTemplate());
   fastify.get("/hr/routes/preop/active", { preHandler: requirePermission("hr", "read") }, (request) => service.getActivePreoperationalChecklist(request.user?.tenant_id, request.user, request.query));
   fastify.get("/hr/routes/preop/metrics", { preHandler: requirePermission("hr", "read") }, (request) => service.getPreoperationalMetrics(request.user?.tenant_id, request.query));
@@ -117,7 +123,7 @@ async function hrRoutes(fastify) {
   fastify.post("/talento-humano/mallas", { schema: schemas.routeSchema, preHandler: requirePermission("hr", "write") }, (request) => service.createRoute(request.user?.tenant_id, request.body));
   fastify.post("/talento-humano/mallas/crear-lote", { schema: schemas.routeBulkSchema, preHandler: requirePermission("hr", "write") }, (request) => service.createRoutesBulk(request.user?.tenant_id, request.body));
   fastify.get("/talento-humano/mallas/:id/deletion-impact", { preHandler: requirePermission("hr", "read") }, routeDeletionImpactForRequest);
-  fastify.delete("/talento-humano/mallas/:id", { schema: schemas.routeDeleteSchema, preHandler: requirePhysicalDeleteGrant("hr") }, (request) => service.deleteRoute(request.user?.tenant_id, request.params.id, request.body || {}, { actor: request.user, ...requestContext(request) }));
+  fastify.delete("/talento-humano/mallas/:id", { schema: schemas.routeDeleteSchema, preHandler: [requireOwnedRouteForDeletion, requirePhysicalDeleteGrant("hr")] }, (request) => service.deleteRoute(request.user?.tenant_id, request.params.id, request.body || {}, { actor: request.user, ...requestContext(request) }));
   fastify.get("/talento-humano/novedades/tipos", { preHandler: requirePermission("hr", "read") }, (request) => service.listNoveltyTypes(request.user?.tenant_id, request.query));
   fastify.get("/talento-humano/novedades", { preHandler: requirePermission("hr", "read") }, (request) => service.listWorkdayNovelties(request.user?.tenant_id, request.query));
   fastify.get("/talento-humano/configuracion-laboral", { preHandler: requirePermission("hr", "read") }, (request) => service.getLaborConfiguration(request.user?.tenant_id, request.query));

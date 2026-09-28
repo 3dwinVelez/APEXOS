@@ -22,9 +22,21 @@ test("la vista previa del impacto solo informa y el DELETE vuelve a autorizar", 
   assert.match(routesSource, /async function routeDeletionImpactForRequest/);
   assert.match(routesSource, /permissions: \{ can_physical_delete: hasPhysicalDeleteGrant\(request\.user\?\.role, "hr"\) \}/);
   assert.match(routesSource, /fastify\.get\("\/hr\/routes\/:id\/deletion-impact", \{ preHandler: requirePermission\("hr", "read"\) \}, routeDeletionImpactForRequest\)/);
-  assert.match(routesSource, /fastify\.delete\("\/hr\/routes\/:id", \{ schema: schemas\.routeDeleteSchema, preHandler: requirePhysicalDeleteGrant\("hr"\) \}/);
+  assert.match(routesSource, /fastify\.delete\("\/hr\/routes\/:id", \{ schema: schemas\.routeDeleteSchema, preHandler: \[requireOwnedRouteForDeletion, requirePhysicalDeleteGrant\("hr"\)\] \}/);
   assert.match(routesSource, /fastify\.get\("\/talento-humano\/mallas\/:id\/deletion-impact", \{ preHandler: requirePermission\("hr", "read"\) \}, routeDeletionImpactForRequest\)/);
-  assert.match(routesSource, /fastify\.delete\("\/talento-humano\/mallas\/:id", \{ schema: schemas\.routeDeleteSchema, preHandler: requirePhysicalDeleteGrant\("hr"\) \}/);
+  assert.match(routesSource, /fastify\.delete\("\/talento-humano\/mallas\/:id", \{ schema: schemas\.routeDeleteSchema, preHandler: \[requireOwnedRouteForDeletion, requirePhysicalDeleteGrant\("hr"\)\] \}/);
+});
+
+test("el DELETE oculta rutas ajenas antes de evaluar el permiso fisico", () => {
+  assert.match(routesSource, /async function requireOwnedRouteForDeletion\(request\) \{\s*await service\.routeDeletionImpact\(request\.user\?\.tenant_id, request\.params\.id\);\s*\}/);
+  const protectedDeleteRoutes = routesSource.match(/fastify\.delete\("\/(?:hr\/routes|talento-humano\/mallas)\/:id"[^\n]+/g) || [];
+  assert.equal(protectedDeleteRoutes.length, 2);
+  for (const route of protectedDeleteRoutes) {
+    assert.ok(
+      route.indexOf("requireOwnedRouteForDeletion") < route.indexOf('requirePhysicalDeleteGrant("hr")'),
+      "la pertenencia al tenant debe comprobarse antes del permiso especial",
+    );
+  }
 });
 
 test("el esquema del borrado exige motivo y confirmacion explicita", () => {
