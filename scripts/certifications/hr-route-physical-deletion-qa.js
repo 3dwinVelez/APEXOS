@@ -237,11 +237,12 @@ async function main() {
       permissions: { talento_humano: { view: true, edit: true } }
     });
     cleanup.roles.push({ tenantId: nyvora.id, id: plainRole.id });
-    const otherRoles = await admin.listRoles(otherTenant.id, {}, "APEX_ADMIN");
-    const otherAdminRole = otherRoles.find((role) => String(role.name || "").trim().toUpperCase() === "APEX_ADMIN");
-    check("qa_other_tenant_superadmin_role_present", Boolean(otherAdminRole), {
-      tenant: otherTenant.name, roles: otherRoles.length
+    const otherGrantRole = await admin.createRole(otherTenant.id, {
+      name: `QA Borrado Malla Otro Tenant ${RUN_ID}`,
+      description: "Rol temporal de certificacion del alias con permiso especial de borrado fisico (se desactiva al final).",
+      permissions: { talento_humano: { view: true, [PHYSICAL_DELETE_ACTION]: true } }
     });
+    cleanup.roles.push({ tenantId: otherTenant.id, id: otherGrantRole.id });
     check("qa_roles_created", Boolean(grantRole.id && plainRole.id), {
       con_permiso_especial: grantRole.name, sin_permiso_especial: plainRole.name
     });
@@ -267,7 +268,7 @@ async function main() {
     cleanup.users.push({ tenantId: nyvora.id, id: userG.id });
     const userB = await admin.createUser(nyvora.id, userShape("SinPermiso", plainRole.id, "b"));
     cleanup.users.push({ tenantId: nyvora.id, id: userB.id });
-    const userX = await admin.createUser(otherTenant.id, userShape("OtroTenant", otherAdminRole.id, "x"));
+    const userX = await admin.createUser(otherTenant.id, userShape("OtroTenant", otherGrantRole.id, "x"));
     cleanup.users.push({ tenantId: otherTenant.id, id: userX.id });
     for (const [tenantId, user] of [[nyvora.id, userG], [nyvora.id, userB], [otherTenant.id, userX]]) {
       if (user.employee_id) cleanup.employees.push({ tenantId, id: user.employee_id });
@@ -294,7 +295,7 @@ async function main() {
         user_with_permission_id: userG.id,
         user_without_permission_id: userB.id
       },
-      other_tenant: { tenant_id: otherTenant.id, role: otherAdminRole.name, user_id: userX.id },
+      other_tenant: { tenant_id: otherTenant.id, role: otherGrantRole.name, user_id: userX.id },
       operating_date: TODAY,
       credentials: "redacted"
     };
@@ -839,15 +840,15 @@ async function main() {
       status: minimalDelete.status, deleted: minimalDelete.payload?.deleted ?? null
     });
 
-    // ---- Ruta alternativa /talento-humano/mallas con rol superadministrador del otro tenant ----
+    // ---- Ruta alternativa /talento-humano/mallas con concesion explicita en el otro tenant ----
     const aliasPreview = await capture(`/api/v1/talento-humano/mallas/${routeC.routeId}/deletion-impact`, { token: tokenX });
     check("qa_alias_route_serves_impact_preview", aliasPreview.status === 200 && aliasPreview.payload?.permissions?.can_physical_delete === true
       && aliasPreview.payload?.can_delete === true, { status: aliasPreview.status, permissions: aliasPreview.payload?.permissions ?? null });
     const aliasDelete = await capture(`/api/v1/talento-humano/mallas/${routeC.routeId}`, {
       token: tokenX, method: "DELETE", body: { reason: REASON, confirmed: true, expected_employees: 2, expected_date: TODAY }
     });
-    check("qa_superadmin_wildcard_grant_applies", aliasDelete.status === 200 && aliasDelete.payload?.ok === true
-      && aliasDelete.payload?.deleted?.total === 0 && aliasDelete.payload?.approved_by?.role === otherAdminRole.name, {
+    check("qa_alias_explicit_grant_applies", aliasDelete.status === 200 && aliasDelete.payload?.ok === true
+      && aliasDelete.payload?.deleted?.total === 0 && aliasDelete.payload?.approved_by?.role === otherGrantRole.name, {
       status: aliasDelete.status, approved_by: aliasDelete.payload?.approved_by ?? null
     });
 
