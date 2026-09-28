@@ -1,0 +1,81 @@
+{
+  "change_id": "main-develop-alignment-20260928",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "c65b314888ffa7eb09c3c4e0fc474f62aa6d96b3",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../service-monitor-search-completeness-20260926/qa-certification.json",
+        "../hr-route-physical-deletion-20260923/qa-scope-manifest.json",
+        "../hr-punch-declared-employee-20260924/local-certification.json",
+        "../hr-route-tenant-oracle-fix-20260927/local-certification.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../service-monitor-search-completeness-20260926/security-gate.json",
+        "../service-monitor-search-completeness-20260926/qa-certification.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../service-monitor-search-completeness-20260926/unit-tests.txt",
+        "../service-monitor-search-completeness-20260926/validation-checks.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../service-monitor-search-completeness-20260926/platform-regression.json",
+        "../service-monitor-search-completeness-20260926/qa-certification.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../service-monitor-search-completeness-20260926/platform-regression.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/service-monitor-search-completeness-qa.js",
+    "evidence": [
+      "../service-monitor-search-completeness-20260926/qa-certification.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/platform-regression-qa.js",
+    "evidence": [
+      "../service-monitor-search-completeness-20260926/platform-regression.json"
+    ]
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../../scripts/certifications/service-monitor-search-completeness-qa.js",
+    "evidence": [
+      "../service-monitor-search-completeness-20260926/qa-certification.json"
+    ]
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "182db487a568dd47013781698e3f976c0c3fc92d",
+    "trigger": "cualquier falla funcional, de autorizacion, aislamiento tenant, regresion o deploy corrupto en produccion tras la alineacion main<-develop"
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_main_for_branch_alignment_develop_to_main",
+    "approved_by": "Edwin (lead APEXOS) - autorizacion expresa en tarea de alineacion de ambientes",
+    "approved_at": "2026-09-28T13:40:00-05:00",
+    "authorization_basis": "El usuario autorizo expresamente alinear desarrollo/develop/main reutilizando las certificaciones QA existentes en develop y promover a main sin destruir funciones."
+  }
+}

@@ -1,0 +1,318 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "main-develop-alignment-main-20260928",
+  "base_commits": {
+    "main": "182db487a568dd47013781698e3f976c0c3fc92d"
+  },
+  "certified_commit": "c65b314888ffa7eb09c3c4e0fc474f62aa6d96b3",
+  "qa_source_commit": "c65b314888ffa7eb09c3c4e0fc474f62aa6d96b3",
+  "change_intent": {
+    "summary": "Alinear main con develop tomando la version mas reciente de cada funcion (HR borrado fisico, marcacion con empleado declarado, monitor modal por usuario, moduleFunctions/command palette, HR tenant oracle fix, skills del equipo) y preservando la evidencia productiva exclusiva de main, sin eliminar funciones ni reescribir historial.",
+    "modules": [
+      "services",
+      "hr",
+      "web",
+      "rbac",
+      "qa-certification",
+      "platform-tooling"
+    ]
+  },
+  "allowed_paths": [
+    ".qoder/skills/apexos-backend/SKILL.md",
+    ".qoder/skills/apexos-db-nube/SKILL.md",
+    ".qoder/skills/apexos-frontend/SKILL.md",
+    ".qoder/skills/apexos-git-guardian/SKILL.md",
+    ".qoder/skills/apexos-performance/SKILL.md",
+    ".qoder/skills/apexos-qa/SKILL.md",
+    ".qoder/skills/apexos-seguridad/SKILL.md",
+    ".qoder/skills/equipo-apexos/SKILL.md",
+    "apps/api/src/core/prisma.js",
+    "apps/api/src/middleware/rbac.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-marking-declared-employee.test.js",
+    "apps/api/test/hr-route-physical-deletion-contract.test.js",
+    "apps/api/test/hr-route-physical-deletion.test.js",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "apps/web/components/system/CommandPalette.tsx",
+    "apps/web/lib/moduleFunctions.ts",
+    "apps/web/test/command-palette-module-functions.test.mjs",
+    "apps/web/test/hr-monitor-modal-per-user.test.mjs",
+    "docs/qa/evidence/hr-punch-declared-employee-20260924/local-certification.json",
+    "docs/qa/evidence/hr-punch-declared-employee-20260924/preqa-approval-evidence.json",
+    "docs/qa/evidence/hr-punch-declared-employee-20260924/preqa-scope-manifest.json",
+    "docs/qa/evidence/hr-punch-declared-employee-20260924/unit-tests.txt",
+    "docs/qa/evidence/hr-punch-declared-employee-20260924/validation-checks.json",
+    "docs/qa/evidence/hr-route-physical-deletion-20260923/hr-route-physical-deletion-local-certification.json",
+    "docs/qa/evidence/hr-route-physical-deletion-20260923/preqa-approval-evidence.json",
+    "docs/qa/evidence/hr-route-physical-deletion-20260923/preqa-scope-manifest.json",
+    "docs/qa/evidence/hr-route-physical-deletion-20260923/qa-certification-failed-run7-78b0e5e9aa63.json",
+    "docs/qa/evidence/hr-route-physical-deletion-20260923/qa-scope-manifest.json",
+    "docs/qa/evidence/hr-route-physical-deletion-20260923/unit-tests.txt",
+    "docs/qa/evidence/hr-route-physical-deletion-20260923/validation-checks.json",
+    "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/local-certification.json",
+    "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/preqa-approval-evidence.json",
+    "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/preqa-qa-script-adjustment.json",
+    "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/preqa-qa-script-scope.json",
+    "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/preqa-scope-manifest.json",
+    "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/qa-script-validation.json",
+    "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/supplementary-validation-20260926.json",
+    "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/validation-checks.json",
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/main-manifest-preqa-scope.json",
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/preqa-approval-evidence.json",
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/preqa-scope-manifest.json",
+    "scripts/certifications/hr-punch-declared-employee-local.js",
+    "scripts/certifications/hr-route-physical-deletion-local.js",
+    "scripts/certifications/hr-route-physical-deletion-qa.js",
+    "scripts/certifications/run-punch-declared-employee-local.sh",
+    "scripts/certifications/run-qa-cert.sh",
+    "docs/qa/evidence/main-develop-alignment-20260928/main-scope-manifest.json",
+    "docs/qa/evidence/main-develop-alignment-20260928/qa-approval-evidence.json"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": ".qoder/skills/apexos-backend/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": ".qoder/skills/apexos-db-nube/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": ".qoder/skills/apexos-frontend/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": ".qoder/skills/apexos-git-guardian/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": ".qoder/skills/apexos-performance/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": ".qoder/skills/apexos-qa/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": ".qoder/skills/apexos-seguridad/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": ".qoder/skills/equipo-apexos/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/core/prisma.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/middleware/rbac.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-marking-declared-employee.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-route-physical-deletion-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-route-physical-deletion.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/CommandPalette.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/moduleFunctions.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/command-palette-module-functions.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-monitor-modal-per-user.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-punch-declared-employee-20260924/local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-punch-declared-employee-20260924/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-punch-declared-employee-20260924/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-punch-declared-employee-20260924/unit-tests.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-punch-declared-employee-20260924/validation-checks.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-physical-deletion-20260923/hr-route-physical-deletion-local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-physical-deletion-20260923/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-physical-deletion-20260923/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-physical-deletion-20260923/qa-certification-failed-run7-78b0e5e9aa63.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-physical-deletion-20260923/qa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-physical-deletion-20260923/unit-tests.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-physical-deletion-20260923/validation-checks.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/preqa-qa-script-adjustment.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/preqa-qa-script-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/qa-script-validation.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/supplementary-validation-20260926.json"
+    },
+    {
+      "status": "M",
+      "file": "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/validation-checks.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/main-manifest-preqa-scope.json"
+    },
+    {
+      "status": "M",
+      "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/preqa-approval-evidence.json"
+    },
+    {
+      "status": "M",
+      "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-punch-declared-employee-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-route-physical-deletion-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-route-physical-deletion-qa.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/run-punch-declared-employee-local.sh"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/run-qa-cert.sh"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/main-develop-alignment-20260928/main-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/main-develop-alignment-20260928/qa-approval-evidence.json"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "monitor_servicios_busqueda_y_autorizacion",
+      "status": "passed",
+      "evidence": [
+        "../service-monitor-search-completeness-20260926/qa-certification.json",
+        "../service-monitor-search-completeness-20260926/security-gate.json"
+      ]
+    },
+    {
+      "name": "hr_borrado_fisico_de_rutas",
+      "status": "passed",
+      "evidence": [
+        "../hr-route-physical-deletion-20260923/qa-scope-manifest.json"
+      ]
+    },
+    {
+      "name": "hr_marcacion_con_empleado_declarado",
+      "status": "passed",
+      "evidence": [
+        "../hr-punch-declared-employee-20260924/local-certification.json"
+      ]
+    },
+    {
+      "name": "hr_aislamiento_tenant_oracle",
+      "status": "passed",
+      "evidence": [
+        "../hr-route-tenant-oracle-fix-20260927/local-certification.json"
+      ]
+    },
+    {
+      "name": "regresion_transversal_plataforma",
+      "status": "passed",
+      "evidence": [
+        "../service-monitor-search-completeness-20260926/platform-regression.json"
+      ]
+    }
+  ]
+}
