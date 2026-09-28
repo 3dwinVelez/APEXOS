@@ -2,9 +2,9 @@
   "change_id": "hr-route-physical-deletion-20260923",
   "certification": "hr-route-physical-deletion-local",
   "environment": "LOCAL",
-  "database_url_host": "postgresql://***@localhost:55432/apexos",
-  "generated_at": "2026-09-28T04:30:18.101Z",
-  "api_commit": "de626572fac2",
+  "database_url_host": "postgresql://***@localhost:55432/apexos?schema=public",
+  "generated_at": "2026-09-28T04:54:49.551Z",
+  "api_commit": "a23a8e3",
   "api_url": "http://127.0.0.1:3199",
   "operating_date": "2026-09-27",
   "scope": {
@@ -43,7 +43,7 @@
       "ok": true,
       "detail": {
         "status": 200,
-        "commit": "de626572fac2"
+        "commit": "a23a8e3"
       }
     },
     {
@@ -51,15 +51,15 @@
       "ok": true,
       "detail": {
         "con_permiso_y_sin_permiso": {
-          "id": "96885e41-48f1-48f2-b772-cb83d7d95bc4",
+          "id": "6b314b95-5c78-4ccd-895f-cc78ef112a56",
           "name": "Puebla Operaciones"
         },
         "superadmin": {
-          "id": "c01e54a3-7ad1-417a-8db6-10b8fab89d11",
+          "id": "7f3e324b-bbae-4fb8-8e00-5d08b916497f",
           "name": "Demo APEX"
         },
         "sin_modulo_hr": {
-          "id": "cf99179f-8801-46bb-9cfa-6b634a2c06c7",
+          "id": "c511fdf9-a0ae-4c8c-b483-4cbdaf7eef75",
           "name": "Empresa Prueba Sin HR",
           "modules": [
             "m-01"
@@ -79,9 +79,9 @@
       "name": "fixture_roles_created",
       "ok": true,
       "detail": {
-        "con_permiso_especial": "QA Borrado Malla 20260928043018",
-        "sin_permiso_especial": "QA Operador Malla 20260928043018",
-        "empresa_sin_modulo": "QA Sin Modulo 20260928043018"
+        "con_permiso_especial": "QA Borrado Malla 20260928045449",
+        "sin_permiso_especial": "QA Operador Malla 20260928045449",
+        "empresa_sin_modulo": "QA Sin Modulo 20260928045449"
       }
     },
     {
@@ -95,9 +95,9 @@
       "name": "fixture_routes_seeded",
       "ok": true,
       "detail": {
-        "route_a": 20,
-        "route_b": 21,
-        "route_c": 22
+        "route_a": 11,
+        "route_b": 12,
+        "route_c": 13
       }
     },
     {
@@ -117,7 +117,7 @@
         "can_delete": false,
         "blocker": "ROUTE_DELETE_BLOCKED_OPEN_CHECKLIST",
         "checklist_ids": [
-          4
+          1
         ]
       }
     },
@@ -158,9 +158,9 @@
       "ok": true,
       "detail": {
         "route": {
-          "id": 20,
+          "id": 11,
           "date": "2026-09-27",
-          "vehicle_plate": "QAA3018",
+          "vehicle_plate": "QAA5449",
           "status": "active",
           "start_time": "06:00",
           "end_time": "16:00",
@@ -175,7 +175,7 @@
           ],
           "employee_count": 2
         },
-        "route_id": 20
+        "route_id": 11
       }
     },
     {
@@ -299,9 +299,9 @@
           "total": 5
         },
         "approved_by": {
-          "id": 46,
+          "id": 34,
           "name": "usuario_sin_nombre",
-          "role": "QA Borrado Malla 20260928043018"
+          "role": "QA Borrado Malla 20260928045449"
         }
       }
     },
@@ -334,12 +334,12 @@
       "name": "deletion_is_audited_with_actor_and_reason",
       "ok": true,
       "detail": {
-        "audit_id": "96",
-        "user_id": 46,
+        "audit_id": "22",
+        "user_id": 34,
         "module": "hr",
         "old_value": {
           "route": {
-            "id": 20,
+            "id": 11,
             "date": "2026-09-27",
             "status": "active",
             "end_time": "16:00",
@@ -352,11 +352,11 @@
               }
             ],
             "start_time": "06:00",
-            "vehicle_plate": "QAA3018",
+            "vehicle_plate": "QAA5449",
             "employee_count": 2,
             "tolerance_minutes": 15
           },
-          "reason": "Certificacion QA 20260928043018: malla de prueba eliminada de forma controlada y trazable",
+          "reason": "Certificacion QA 20260928045449: malla de prueba eliminada de forma controlada y trazable",
           "deleted": {
             "total": 6,
             "checklists": 1,
@@ -377,11 +377,11 @@
         },
         "new_value": {
           "actor": {
-            "id": 46,
+            "id": 34,
             "name": "usuario_sin_nombre",
-            "role": "QA Borrado Malla 20260928043018"
+            "role": "QA Borrado Malla 20260928045449"
           },
-          "deleted_at": "2026-09-28T04:30:35.730Z",
+          "deleted_at": "2026-09-28T04:55:11.191Z",
           "request_id": "req-k"
         }
       }
@@ -426,7 +426,7 @@
       "detail": {
         "status": 200,
         "approved_by": {
-          "id": 48,
+          "id": 36,
           "name": "usuario_sin_nombre",
           "role": "APEX_ADMIN"
         }
@@ -533,39 +533,39 @@
   "fixture": {
     "tenants": {
       "con_permiso": {
-        "id": "96885e41-48f1-48f2-b772-cb83d7d95bc4",
+        "id": "6b314b95-5c78-4ccd-895f-cc78ef112a56",
         "name": "Puebla Operaciones",
-        "role": "QA Borrado Malla 20260928043018",
-        "user_id": 46
+        "role": "QA Borrado Malla 20260928045449",
+        "user_id": 34
       },
       "superadmin": {
-        "id": "c01e54a3-7ad1-417a-8db6-10b8fab89d11",
+        "id": "7f3e324b-bbae-4fb8-8e00-5d08b916497f",
         "name": "Demo APEX",
         "role": "APEX_ADMIN",
-        "user_id": 48
+        "user_id": 36
       },
       "sin_modulo": {
-        "id": "cf99179f-8801-46bb-9cfa-6b634a2c06c7",
+        "id": "c511fdf9-a0ae-4c8c-b483-4cbdaf7eef75",
         "name": "Empresa Prueba Sin HR",
-        "role": "QA Sin Modulo 20260928043018",
-        "user_id": 49
+        "role": "QA Sin Modulo 20260928045449",
+        "user_id": 37
       }
     },
     "operating_date": "2026-09-27",
     "routes": {
       "a_completa": {
         "tenant": "Puebla Operaciones",
-        "route_id": 20,
+        "route_id": 11,
         "checklist_con_hijos": 6,
         "traza_operativa": 5
       },
       "b_minima": {
         "tenant": "Puebla Operaciones",
-        "route_id": 21
+        "route_id": 12
       },
       "c_superadmin": {
         "tenant": "Demo APEX",
-        "route_id": 22
+        "route_id": 13
       }
     }
   },
@@ -590,5 +590,5 @@
     "roles_deactivated": 3,
     "errors": []
   },
-  "finished_at": "2026-09-28T04:30:39.407Z"
+  "finished_at": "2026-09-28T04:55:13.081Z"
 }
