@@ -22,9 +22,9 @@ test("la vista previa del impacto solo informa y el DELETE vuelve a autorizar", 
   assert.match(routesSource, /async function routeDeletionImpactForRequest/);
   assert.match(routesSource, /permissions: \{ can_physical_delete: hasPhysicalDeleteGrant\(request\.user\?\.role, "hr"\) \}/);
   assert.match(routesSource, /fastify\.get\("\/hr\/routes\/:id\/deletion-impact", \{ preHandler: requirePermission\("hr", "read"\) \}, routeDeletionImpactForRequest\)/);
-  assert.match(routesSource, /fastify\.delete\("\/hr\/routes\/:id", \{ schema: schemas\.routeDeleteSchema, preHandler: \[requireOwnedRouteForDeletion, requirePhysicalDeleteGrant\("hr"\)\] \}/);
+  assert.match(routesSource, /fastify\.delete\("\/hr\/routes\/:id", \{ schema: schemas\.routeDeleteSchema, preHandler: \[requireHrModuleEnabled, requireOwnedRouteForDeletion, requirePhysicalDeleteGrant\("hr"\)\] \}/);
   assert.match(routesSource, /fastify\.get\("\/talento-humano\/mallas\/:id\/deletion-impact", \{ preHandler: requirePermission\("hr", "read"\) \}, routeDeletionImpactForRequest\)/);
-  assert.match(routesSource, /fastify\.delete\("\/talento-humano\/mallas\/:id", \{ schema: schemas\.routeDeleteSchema, preHandler: \[requireOwnedRouteForDeletion, requirePhysicalDeleteGrant\("hr"\)\] \}/);
+  assert.match(routesSource, /fastify\.delete\("\/talento-humano\/mallas\/:id", \{ schema: schemas\.routeDeleteSchema, preHandler: \[requireHrModuleEnabled, requireOwnedRouteForDeletion, requirePhysicalDeleteGrant\("hr"\)\] \}/);
 });
 
 test("el DELETE oculta rutas ajenas antes de evaluar el permiso fisico", () => {
@@ -33,8 +33,9 @@ test("el DELETE oculta rutas ajenas antes de evaluar el permiso fisico", () => {
   assert.equal(protectedDeleteRoutes.length, 2);
   for (const route of protectedDeleteRoutes) {
     assert.ok(
-      route.indexOf("requireOwnedRouteForDeletion") < route.indexOf('requirePhysicalDeleteGrant("hr")'),
-      "la pertenencia al tenant debe comprobarse antes del permiso especial",
+      route.indexOf("requireHrModuleEnabled") < route.indexOf("requireOwnedRouteForDeletion")
+        && route.indexOf("requireOwnedRouteForDeletion") < route.indexOf('requirePhysicalDeleteGrant("hr")'),
+      "el modulo se valida primero y la pertenencia al tenant antes del permiso especial",
     );
   }
 });

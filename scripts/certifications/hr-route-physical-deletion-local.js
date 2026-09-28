@@ -115,7 +115,7 @@ const result = {
     ],
     proven_by_versioned_unit_suite: [
       "apps/api/test/hr-route-physical-deletion.test.js (11 controles)",
-      "apps/api/test/hr-route-physical-deletion-contract.test.js (7 controles)",
+      "apps/api/test/hr-route-physical-deletion-contract.test.js (8 controles)",
       "apps/web/test/hr-monitor-modal-per-user.test.mjs (8 controles)",
       "apps/web/test/command-palette-module-functions.test.mjs (9 controles)"
     ]
@@ -660,7 +660,7 @@ async function main() {
     });
     const apiContract = spawnSync(process.execPath, ["--test", "test/hr-route-physical-deletion-contract.test.js"], { cwd: API, encoding: "utf8", env: { ...process.env, DISABLE_REDIS: "true" } });
     const apiContractOut = `${apiContract.stdout || ""}${apiContract.stderr || ""}`;
-    check("api_contract_suite_passes", apiContract.status === 0 && /(?:#|ℹ)\s+fail\s+0/.test(apiContractOut) && /(?:#|ℹ)\s+pass\s+7/.test(apiContractOut), {
+    check("api_contract_suite_passes", apiContract.status === 0 && /(?:#|ℹ)\s+fail\s+0/.test(apiContractOut) && /(?:#|ℹ)\s+pass\s+8/.test(apiContractOut), {
       exit: apiContract.status, pass: (apiContractOut.match(/(?:#|ℹ)\s+pass\s+(\d+)/) || [])[1], fail: (apiContractOut.match(/(?:#|ℹ)\s+fail\s+(\d+)/) || [])[1]
     });
     const webSuite = spawnSync(process.execPath, ["--test", "test/hr-monitor-modal-per-user.test.mjs", "test/command-palette-module-functions.test.mjs"], { cwd: WEB, encoding: "utf8" });
@@ -670,7 +670,7 @@ async function main() {
     });
     result.versioned_suites = {
       "apps/api/test/hr-route-physical-deletion.test.js": { pass: 11, fail: 0 },
-      "apps/api/test/hr-route-physical-deletion-contract.test.js": { pass: 7, fail: 0 },
+      "apps/api/test/hr-route-physical-deletion-contract.test.js": { pass: 8, fail: 0 },
       "apps/web/test/hr-monitor-modal-per-user.test.mjs + command-palette-module-functions.test.mjs": { pass: 17, fail: 0 }
     };
 
