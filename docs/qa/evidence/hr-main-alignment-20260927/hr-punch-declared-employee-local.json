@@ -1,0 +1,70 @@
+{
+  "change_id": "hr-punch-declared-employee-20260924",
+  "certification": "hr-punch-declared-employee-local",
+  "environment": "LOCAL",
+  "database_url_host": "postgresql://***@localhost:55432/apexos",
+  "generated_at": "2026-09-28T04:10:16.747Z",
+  "api_commit": "unknown",
+  "api_url": "http://127.0.0.1:3198",
+  "operating_date": "2026-09-27",
+  "previous_operating_date": "2026-09-26",
+  "scope": {
+    "capability": "Destino correcto de la marcacion administrativa con empleado declarado (POST /hr/time-punches), ambito self-service anclado al usuario autenticado y captura explicita de la matriz de errores operativos de marcacion: empleado inexistente (404), identificador malformado (422), secuencia (409), jornada completa (409), idempotencia (409), permisos (403) y modulo no habilitado (403).",
+    "proven_by_live_execution": [
+      "POST /api/v1/hr/time-punches con employee_id existente marca al empleado declarado y registra la novedad AJUSTE_MANUAL_MARCACION sobre ese empleado, no sobre la ficha del admin",
+      "POST /api/v1/hr/time-punches con employee_id inexistente responde 404 EMPLEADO_NO_ENCONTRADO y la ficha del admin queda intacta (regresion del redireccion silencioso)",
+      "POST /api/v1/hr/time-punches con employee_id no numerico responde 422 EMPLEADO_NO_ENCONTRADO sin escrituras",
+      "POST /api/v1/hr/time-punches sin employee_id conserva el fallback historico a la ficha propia del admin autenticado",
+      "POST /api/v1/hr/self/time-punches ignora el employee_id del payload y ancla la marcacion al usuario autenticado",
+      "Un employee_id de otra empresa no es resoluble: 404 y cero marcaciones en el tenant ajeno",
+      "La secuencia entrada/inicio_almuerzo/fin_almuerzo/salida se exige: repeticion 409 MARCACION_FUERA_DE_SECUENCIA y jornada cerrada 409 JORNADA_COMPLETA",
+      "La clave de idempotencia responde igual (replayed) para el mismo empleado y 409 IDEMPOTENCY_KEY_CONFLICT para otro",
+      "Rol sin hr:write recibe 403 PERMISO_DENEGADO y empresa sin Talento Humano recibe 403 MODULO_NO_HABILITADO",
+      "Ningun request del flujo certificado responde 5xx"
+    ],
+    "proven_by_code_level_assertion": [
+      "hr/service.js resuelve el empleado declarado dentro del tenant y rechaza con EMPLEADO_NO_ENCONTRADO lo no numerico (422) o no encontrado (404) antes de escribir",
+      "hr/routes.js separa la ruta administrativa (requirePermission hr:write) de la self-service (ownWrite) con el mismo esquema punchSchema",
+      "hr/schema.js acepta employee_id numerico o texto para poder capturar el error 422 en el servicio y no en el esquema"
+    ],
+    "proven_by_versioned_unit_suite": [
+      "apps/api/test/hr-marking-declared-employee.test.js (6 controles)"
+    ]
+  },
+  "checks": [
+    {
+      "name": "health_ok",
+      "ok": false,
+      "detail": {
+        "status": 500,
+        "commit": "unknown"
+      }
+    }
+  ],
+  "status": "failed",
+  "error": {
+    "message": "Fallo de certificacion: health_ok",
+    "stack": "Error: Fallo de certificacion: health_ok\n    at check (C:\\Users\\mq1\\.codex\\worktrees\\hr-talent-main-promotion-20260927\\APEXOS\\scripts\\certifications\\hr-punch-declared-employee-local.js:134:18)\n    at main (C:\\Users\\mq1\\.codex\\worktrees\\hr-talent-main-promotion-20260927\\APEXOS\\scripts\\certifications\\hr-punch-declared-employee-local.js:266:5)\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)"
+  },
+  "http_log": [
+    {
+      "method": "GET",
+      "path": "/health",
+      "status": 500,
+      "transport_error": null,
+      "latency_ms": 4258
+    }
+  ],
+  "cleanup": {
+    "employees_deleted": 0,
+    "punches_deleted": 0,
+    "sessions_deleted": 0,
+    "activities_deleted": 0,
+    "workdays_deleted": 0,
+    "novelties_deleted": 0,
+    "users_deactivated": 0,
+    "roles_deactivated": 0,
+    "errors": []
+  },
+  "finished_at": "2026-09-28T04:10:23.213Z"
+}

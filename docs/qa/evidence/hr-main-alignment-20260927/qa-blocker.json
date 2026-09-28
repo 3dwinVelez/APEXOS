@@ -10,12 +10,16 @@
     "health": "passed",
     "deployed_commit_match": "passed_for_daafd603827c",
     "authenticated_login": "blocked",
-    "reason": "QA_LOGIN_EMAIL y QA_LOGIN_PASSWORD no estan configurados en los archivos ambientales disponibles."
+    "reason": "La credencial suministrada no autentica en Supabase Auth del ambiente QA."
+  },
+  "local_live_certification": {
+    "status": "blocked",
+    "reason": "PostgreSQL local no responde en localhost:55432 y Docker Desktop no expuso el motor Linux; los certificadores abortaron en health_ok antes de crear fixtures."
   },
   "historical_evidence": {
     "develop_local_certifications": "passed",
     "qa_certification": "failed",
     "failed_check": "qa_novelty_manual_adjustment_recorded"
   },
-  "required_next_step": "Configurar credenciales QA autorizadas, desplegar o identificar el commit candidato exacto en QA y ejecutar la certificacion E2E completa, navegador y regresion transversal antes de main."
+  "required_next_step": "Proveer una cuenta valida del proyecto QA o desplegar el candidato exacto con una identidad de certificacion autorizada; ejecutar E2E completa, navegador y regresion transversal antes de main."
 }

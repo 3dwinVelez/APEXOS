@@ -27,6 +27,8 @@
     "scripts/certifications/run-punch-declared-employee-local.sh",
     "scripts/certifications/run-qa-cert.sh",
     "docs/qa/evidence/hr-main-alignment-20260927/local-validation.json",
+    "docs/qa/evidence/hr-main-alignment-20260927/hr-punch-declared-employee-local.json",
+    "docs/qa/evidence/hr-main-alignment-20260927/hr-route-physical-deletion-local.json",
     "docs/qa/evidence/hr-main-alignment-20260927/security-gate.json",
     "docs/qa/evidence/hr-main-alignment-20260927/qa-blocker.json",
     "docs/qa/evidence/hr-main-alignment-20260927/main-scope-manifest.json"
@@ -51,6 +53,8 @@
     { "status": "A", "file": "scripts/certifications/run-punch-declared-employee-local.sh" },
     { "status": "A", "file": "scripts/certifications/run-qa-cert.sh" },
     { "status": "A", "file": "docs/qa/evidence/hr-main-alignment-20260927/local-validation.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-main-alignment-20260927/hr-punch-declared-employee-local.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-main-alignment-20260927/hr-route-physical-deletion-local.json" },
     { "status": "A", "file": "docs/qa/evidence/hr-main-alignment-20260927/security-gate.json" },
     { "status": "A", "file": "docs/qa/evidence/hr-main-alignment-20260927/qa-blocker.json" },
     { "status": "A", "file": "docs/qa/evidence/hr-main-alignment-20260927/main-scope-manifest.json" }
