@@ -1,0 +1,31 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "service-monitor-date-fixture-20260926",
+  "base_commits": { "develop": "da58ece2b16c5e08438ea5dc5b4982143ea4aea4" },
+  "certified_commit": "57b55ec2c47b400c7f0ed090ace1ddb4c348f2e6",
+  "change_intent": {
+    "summary": "Certificar el rango de fechas con la fecha real de la orden historica controlada en QA.",
+    "modules": ["services", "qa-certification"]
+  },
+  "allowed_paths": [
+    "scripts/certifications/service-monitor-search-completeness-qa.js",
+    "docs/qa/evidence/service-monitor-search-completeness-20260926/preqa-date-fixture-scope-manifest.json"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    { "status": "M", "file": "scripts/certifications/service-monitor-search-completeness-qa.js" },
+    { "status": "A", "file": "docs/qa/evidence/service-monitor-search-completeness-20260926/preqa-date-fixture-scope-manifest.json" }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "filtros_y_rango_de_fecha_programada",
+      "status": "passed",
+      "evidence": ["local-certification.json", "unit-tests.txt"]
+    },
+    {
+      "name": "busqueda_de_orden_historica_sin_truncamiento",
+      "status": "passed",
+      "evidence": ["local-certification.json", "validation-checks.json"]
+    }
+  ]
+}

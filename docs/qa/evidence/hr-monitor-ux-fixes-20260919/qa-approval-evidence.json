@@ -1,0 +1,98 @@
+{
+  "change_id": "hr-monitor-ux-fixes-20260919",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "a45aa6cfe733cdf0a75e1d46ce7b8d95b9e88c1b",
+  "decision": "APTO",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "qa-certification.json",
+        "browser-qa-evidence.md",
+        "qa-01-mallas-lista-kpi.png",
+        "qa-02-monitor-drawer-viewport.png",
+        "qa-03-lightbox-evidencia-ampliada.png",
+        "qa-04-mapa-ruta-entre-marcaciones.png",
+        "qa-05-monitor-historico-scrolltop.png"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "qa-certification.json",
+        "unit-tests.txt"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "preqa-approval-evidence.json",
+        "validation-checks.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "qa-nyvora-hr-monitor.json",
+        "unit-tests.txt"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "qa-nyvora-hr-monitor.json",
+        "qa-certification.json",
+        "browser-qa-evidence.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-monitor-ux-fixes-qa.js",
+    "evidence": [
+      "qa-certification.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../apps/api/scripts/certifications/nyvora-hr-monitor-dynamic.js",
+    "evidence": [
+      "qa-nyvora-hr-monitor.json"
+    ]
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../../apps/api/scripts/certifications/nyvora-hr-monitor-dynamic.js",
+    "evidence": [
+      "qa-nyvora-hr-monitor.json"
+    ]
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "5e73c5e59976ed7d7671e73383f390be2c2c3eb8",
+    "trigger": "data integrity failure, tenant isolation failure, schema mismatch, critical functional regression in the HR monitor, lightbox/drawer/map defect reintroduction, or failed production connectivity smoke"
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "APEXOS QA release gate (autorizado por Edwin, release owner)",
+    "approved_at": "2026-09-19T09:38:00-05:00",
+    "scope": "develop to main for the exact QA-verified frontend build; apps/api unchanged in this scope so the QA API remains at the already-certified commit a45aa6c"
+  },
+  "observations": [
+    "Alcance frontend-only: el diff develop->main no toca apps/api. Por eso el API de QA sigue en a45aa6cfe733 (commit ya certificado y ya presente en produccion via 5e73c5e); c92969e es ancestro de a45aa6c, asi que toda la superficie de backend del monitor (operations-map, batch de evidencias, resumen de rutas) esta desplegada y certificada en QA. La web de QA SI reconstruyo al tip de develop y sirve el CSS corregido.",
+    "Certificacion funcional QA 16/16 contra API+Web desplegados (qa-certification.json), incluido el control web_css_page_enter_transform_none sobre el CSS realmente servido por QA: @keyframes apexPageEnter termina en transform:none.",
+    "Defecto 1 (lightbox no ampliaba): verificado en QA — capa fixed z-index 110 a viewport completo con imagen ampliada a 542x376 (qa-03).",
+    "Defecto 2 (horario antiguo abria fuera de vista): verificado en QA con la pagina en scrollY=898 — el drawer del horario 274 (2026-09-16) abre fixed top=0 height=537 (=viewport) con contenedor interno scrollTop=0; las marcaciones son visibles sin devolver el scroll (qa-05).",
+    "Defecto 3 (monitor ajigantado/mal distribuido): verificado en QA — KPIs en tarjetas, drawer compacto ajustado al viewport con badges y timeline cronologico (qa-01, qa-02).",
+    "Defecto 4 (sin linea entre marcaciones): verificado en QA — polyline stroke #16a34a dasharray 10 8 conectando 4 puntos en orden cronologico, mas el trail de pings GPS #0ea5e9 y la leyenda 'Ruta entre marcaciones' (qa-04).",
+    "NYVORA (empresa modelo) en QA aprobada contra a45aa6c: ruta dinamica 275, before 0 -> after punch_count 4, activity_count 1, evidence_count 1, closed_count 1, event_count 5; usuario de certificacion desactivado al final (qa-nyvora-hr-monitor.json).",
+    "Controles de no regresion QA: RBAC 403 para rol solo marcacion, 400 ruta invalida, aislamiento cross-tenant del batch, y resumen de ruta que cuenta todas las evidencias (>=3). 0 errores de consola en todo el recorrido QA.",
+    "Unit tests 285/285 verdes, lint 0 errores, typecheck y build OK (unit-tests.txt, validation-checks.json).",
+    "Los 4 archivos D del inventario de alcance son contabilidad de produccion exclusiva de main (hr-module-intervention-20260918 y prod-nyvora-hr-monitor.json); el merge union con main como primer padre los preserva en el arbol de main, igual que en el release anterior."
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "environment": "QA",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "web_url": "https://apexos-web-qa-production.up.railway.app",
+  "admin_email": "qa.ux.admin.20260919142355@scj.test",
+  "admin_password": "Qa-Ux-2365e227c2e3#26",
+  "tenant_id": "cbbf3627-4336-4f23-95c6-1077414bcd17",
+  "route_id": 273,
+  "old_route_id": 274,
+  "marking_email": "qa.ux.marks.20260919142355@scj.test",
+  "silent_email": "qa.ux.silent.20260919142355@scj.test",
+  "password": "Qa-Ux-2365e227c2e3#26",
+  "date": "2026-09-19",
+  "old_date": "2026-09-16",
+  "generated_at": "2026-09-19T14:24:37.094Z"
+}

@@ -1,0 +1,110 @@
+{
+  "change_id": "lote3-hr-accounting-numbering-20260921",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "2be1ce5aa0dd725e73a067fa64c89e435406881d",
+  "decision": "APTO",
+  "qa_summary": "Release a produccion del lote 3 de Talento Humano (topes de lectura y senales visibles de truncamiento) y del cierre del incidente de numeracion contable EM, verificado sobre el build QA desplegado (API /health commit 2be1ce5aa0dd). Lote 3 HR: listRoutes acota limit a [50,500] (default 100, 500 con rango), listRouteEventSummaries devuelve un bloque truncation aditivo {truncated,limit:100,returned,hint} y getOperationsMap expone truncation con collections; el cliente web (rutas y mapa) pinta banners ambar role=status via scheduleTruncationNotices para que un dia recortado nunca se muestre como completo. Contabilidad: reserveAccountingDocumentNumber reserva max(configurado, MAX(document_number)+1) bajo candado advisory pg_advisory_xact_lock por tenant:tipo, y normalizeAccountingNumberingRows/mergeNumbering aceptan el formato legado objeto, cerrando el P2002/409 determinista de entradas de mercancia (EM) causado por read-modify-write del accounting_numbering completo. Certificacion LOCAL end-to-end con scripts versionados accounting-numbering-integrity-local.js (16 controles) y hr-monitor-read-truncation-local.js (12 controles). Replica funcional de navegador en QA (Chromium, MCP browser-use): banner ambar de truncamiento EN VIVO en /talento-humano/rutas con datos reales (SCJ QA 109 horarios, resumen recortado a 100), red mostrando GET /hr/routes?limit=500 y /hr/routes/event-summaries 200, paridad de bundle (14 chunks con los 4 literales de truncamiento), y mapa sin regresion ni banner falso. Contrato de truncamiento verificado por HTTP autenticado de solo lectura (event-summaries truncated:true limit:100 returned:100; operations-map truncation presente truncated:false; clamp de limit sin error). NYVORA (empresa modelo) en QA aprobada contra la API desplegada (commit 2be1ce5aa0dd): ruta dinamica 303, before 0 -> after punch_count 4 / activity_count 1 / evidence_count 1 / closed_count 1 / event_count 5; usuario de certificacion desactivado. Fixtures de navegador limpiados sin borrados: admins temporales 515 y 516 desactivados. Regresion local: suites apps/web y apps/api, contratos hr, lint, typecheck y prisma validate capturados en unit-tests.txt y validation-checks.json.",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "browser-qa-evidence.md",
+        "qa-fixture.json",
+        "accounting-numbering-local-certification.json",
+        "hr-monitor-read-truncation-local-certification.json",
+        "validation-checks.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "browser-qa-evidence.md",
+        "qa-fixture.json",
+        "validation-checks.json",
+        "unit-tests.txt"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "qa-fixture.json",
+        "accounting-numbering-local-certification.json",
+        "hr-monitor-read-truncation-local-certification.json",
+        "validation-checks.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "qa-nyvora-hr-monitor.json",
+        "accounting-numbering-local-certification.json",
+        "hr-monitor-read-truncation-local-certification.json",
+        "validation-checks.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "qa-nyvora-hr-monitor.json",
+        "browser-qa-evidence.md",
+        "unit-tests.txt"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/accounting-numbering-integrity-local.js",
+    "evidence": [
+      "accounting-numbering-local-certification.json",
+      "unit-tests.txt",
+      "browser-qa-evidence.md"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-monitor-read-truncation-local.js",
+    "evidence": [
+      "hr-monitor-read-truncation-local-certification.json",
+      "unit-tests.txt",
+      "qa-nyvora-hr-monitor.json",
+      "browser-qa-evidence.md"
+    ]
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../../apps/api/scripts/certifications/nyvora-hr-monitor-dynamic.js",
+    "evidence": [
+      "qa-nyvora-hr-monitor.json"
+    ]
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "fd8f2ec1a33bf1acfcf5751462da9125c0cbd8d5",
+    "trigger": "regresion critica en la lectura del monitor de mallas horarias (listRoutes/event-summaries/operations-map devuelven error o pierden el bloque truncation, banners ambar falsos o ausentes que oculten un dia recortado), regresion en la numeracion contable (nueva colision P2002/409 en entradas de mercancia EM/AJ/AE/AS, o numeros duplicados o saltados tras el candado advisory), error de arranque del servicio API, regresion en la plataforma NYVORA certificada, o fallo del smoke de conectividad productiva tras el despliegue"
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "APEXOS QA release gate (autorizado por Edwin, release owner)",
+    "approved_at": "2026-09-21T11:20:00-05:00",
+    "scope": "develop to main for the exact QA-verified build 2be1ce5aa0dd725e73a067fa64c89e435406881d: lote 3 de Talento Humano (topes de lectura listRoutes/event-summaries/operations-map y senales visibles de truncamiento en rutas y mapa) y cierre del incidente de numeracion contable EM (reserva auto-reparable max(configurado, MAX(document_number)+1) bajo candado advisory y normalizacion del formato legado de accounting_numbering), con sus tests, scripts de certificacion versionados y evidencia local + pre-QA + QA.",
+    "authorization_basis": "Instruccion literal del release owner: 'termina los pendientes con el equipo y alinea todas la ramas en su ultima version funcional y revisada'. La cadena desarrollo -> develop -> main queda autorizada sujeta a las puertas qa:promotion:scope, qa:preqa:evidence y qa:approval:evidence; el release owner ejecuta personalmente las puertas y la promocion."
+  },
+  "observations": [
+    "Nivel de prueba declarado sin sobreafirmar: las certificaciones end-to-end HTTP (accounting-numbering-integrity-local.js 16 controles y hr-monitor-read-truncation-local.js 12 controles) se ejecutaron en LOCAL porque ambos scripts rechazan cualquier api-url que no sea localhost/127.0.0.1. La certificacion en QA es la replica funcional de navegador documentada en browser-qa-evidence.md sobre el bundle realmente desplegado (paridad de 14 chunks con los 4 literales de truncamiento), mas sondas HTTP autenticadas de solo lectura del contrato de truncamiento, mas la certificacion NYVORA HTTP contra la API QA desplegada con CERTIFICATION_EXPECTED_COMMIT=2be1ce5aa0dd.",
+    "El banner ambar de truncamiento se disparo con datos REALES de QA, sin fabricar fixtures: SCJ QA tiene 109 horarios y el resumen de eventos (tope 100) queda truncado, por lo que event-summaries devolvio truncation {truncated:true, limit:100, returned:100} y la pagina /talento-humano/rutas pinto el aviso 'El resumen cubre las 100 rutas mas recientes; acota el rango de fechas en el listado de horarios para revisar rutas antiguas.' en un div role=status ambar. Captura qa-01-banner-truncamiento-rutas.png.",
+    "El mapa (/talento-humano/mapa) renderiza sin regresion y SIN banner ambar porque operations.truncation.truncated=false hoy (2 rutas, bajo los limites de ping/punch/actividad): la senal es condicional y no produce falsos positivos. Captura qa-02-mapa-sin-regresion.png.",
+    "Topes de lectura verificados por HTTP autenticado: GET /hr/routes?limit=9999 no error y acota (clamp [50,500]); GET /hr/routes?limit=500 con rango anual devuelve las 109 rutas (el tope 500 se respeta); el cliente desplegado pide GET /hr/routes?limit=500 (nuevo ROUTES_LIST_LIMIT) y /hr/routes/event-summaries en el refresco de 5s.",
+    "Contabilidad: en QA NO se crearon entradas de mercancia (son escrituras contables dificiles de revertir en el tenant demo compartido). La certificacion autoritativa del incidente EM es LOCAL con el script versionado accounting-numbering-integrity-local.js (simulacion fiel del read-modify-write que revierte next_number, reserva auto-reparable, candado advisory y formato legado) y 6 pruebas unitarias. El tenant SCJ QA no tiene accounting_numbering configurado (el incidente era del tenant demo local), por lo que no hay estado QA que migrar ni limpiar.",
+    "NYVORA en QA aprobada de verdad en esta corrida: ok=true, commit 2be1ce5aa0dd, run_id 20260921105218, ruta dinamica 303, before event_count 0 -> after punch_count 4 / activity_count 1 / evidence_count 1 / closed_count 1 / event_count 5. Conexion via pooler de Supabase QA con DISABLE_REDIS=true. Usuario de certificacion desactivado al terminar (certification_user_deactivated: true).",
+    "Limpieza del fixture QA ejecutada sin borrados: admins temporales 515 (sonda HTTP) y 516 (navegador) -> active=false verificado. La ruta 303 y sus marcaciones NYVORA quedan como artefacto de certificacion, igual que rutas 301/288/300 de releases anteriores. Ningun horario, marcacion ni documento contable preexistente de QA fue modificado.",
+    "Regresion local del candidato funcional: suites apps/web y apps/api, contratos hr, lint, typecheck y prisma validate capturados en unit-tests.txt y resumidos en validation-checks.json. Las fallas de apps/api son el conjunto preexistente ajeno a hr y a contabilidad (offline-bootstrap REDIS_URL, inventory-transfer-product-list-ux, zero-friendly-number-input). Cero regresiones atribuibles al cambio.",
+    "Mecanica del release: el candidato final de la promocion develop -> main es el commit de evidencia cuyo padre es 2be1ce5aa0dd725e73a067fa64c89e435406881d; ese commit solo agrega los 7 archivos de QA de este directorio (browser-qa-evidence.md, qa-fixture.json, qa-nyvora-hr-monitor.json, qa-approval-evidence.json, este scope-manifest-release.json y las capturas qa-01/qa-02), por lo que el inventario exacto del scope-manifest-release.json (28 entradas) los incluye. Las 5 entradas D del diff origin/main..candidato son fantasma (artefactos prod-* que solo existen en main por la convencion forward-only: hr-module-intervention-20260918/prod-*, hr-monitor-silent-failures-20260918/prod-nyvora-hr-monitor.json y hr-phase-b-mallas-cierre-20260921/prod-release-verification.json) y el merge union los preserva intactos en el arbol de main.",
+    "Este release NO incluye migraciones de esquema ni de datos: el cierre contable es logica de aplicacion (reserva bajo candado advisory) y el lote 3 HR es aditivo en lectura. El servicio API de produccion se reconstruira al desplegar pero no hay migracion remota que ejecutar; por tanto no se requiere autorizacion de migrate deploy productivo para este release."
+  ]
+}

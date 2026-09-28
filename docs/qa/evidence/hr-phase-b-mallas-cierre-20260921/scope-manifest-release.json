@@ -1,0 +1,164 @@
+{
+  "change_id": "hr-phase-b-mallas-cierre-20260921",
+  "scope_schema_version": 2,
+  "base_commits": {
+    "main": "462a7ffbf22a6677e7691bb26a276da35dad0f06"
+  },
+  "certified_commit": "6c06412e89ad1dc978316a30d5f359e73d74c824",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "change_intent": {
+    "summary": "Release a produccion de la Fase B de Talento Humano y del cierre diagnostico del 409 MALLA_SOLAPADA. Fase B: (1) marcacion diferida sin senal — la pagina del operario guarda las marcaciones y actividades en una cola offline del dispositivo cuando no hay señal, notifica al usuario que la huella/actividad se notificara apenas recupere senal y las reenvia con evidencia (apps/web/lib/hrOfflineMarking.ts y hrOfflineEvidence.ts nuevos); (2) regla de solo horario del dia — el dia de la marcacion se determina por punched_at y una persona o grupo con varios horarios asignados solo puede marcar contra el horario del dia actual, nunca de otros dias (regla por punched_at en apps/api/src/modules/hr/service.js); (3) novedad GPS_INACTIVO_SIN_SENAL con migracion de datos idempotente 20260921000000 (INSERT ... WHERE NOT EXISTS por tenant, aplicada automaticamente al arranque del servicio). Cierre del 409: el error crudo 'Ya existe una malla superpuesta' que impedia crear horarios en produccion era una regla legitima sin diagnostico; ahora POST /api/v1/hr/routes/prevalidate valida conflictos antes de escribir, GET /api/v1/hr/routes/assignments alimenta el aviso ambar 'Ya tiene malla HH:MM-HH:MM en esta fecha' en el selector de personas, el panel detalla el conflicto por nombre/horario/fecha, el banner pinta en rosa con role=alert, y el manejador de errores de Fastify serializa error.details para todos los 4xx. Incluye tests (hr-date-assignments, hr-deferred-marking-offline, hr-offline-marking, hr-route-write-fallback), scripts de certificacion versionados (hr-offline-deferred-marking-local.js nuevo 35/35, hr-schedule-write-integrity-local.js actualizado 21/21) y evidencia local, pre-QA y QA (replica de navegador sobre el bundle desplegado + NYVORA en QA).",
+    "modules": [
+      "talento-humano",
+      "hr",
+      "mallas-horarias",
+      "marcacion",
+      "frontend",
+      "backend",
+      "qa-certification"
+    ]
+  },
+  "release_mechanics": "Merge normal de develop -> main con main como primer padre. El candidato final de la promocion NO es 6c06412 sino el commit de evidencia inmediatamente siguiente (su padre es 6c06412e89ad1dc978316a30d5f359e73d74c824), que solo agrega los 8 archivos de QA de docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/ (browser-qa-evidence.md, qa-fixture.json, qa-nyvora-hr-monitor.json, qa-approval-evidence.json, este scope-manifest-release.json y las capturas qa-01/qa-02/qa-03); por eso esas 8 entradas A forman parte del inventario exacto y el diff neto origin/main..candidato las contiene. Las 4 entradas D del inventario son fantasma: artefactos de contabilidad de releases productivos anteriores que solo existen en main (docs/qa/evidence/hr-module-intervention-20260918/prod-* y docs/qa/evidence/hr-monitor-silent-failures-20260918/prod-nyvora-hr-monitor.json), nunca presentes en develop por la convencion forward-only; el diff de dos puntos los reporta como eliminaciones pero el merge union los preserva intactos en el arbol de main. No existe ninguna eliminacion real de codigo ni de evidencia en este release. A diferencia del release anterior (frontend-only), este release SI modifica apps/api (HR + errorHandler + migracion de datos): el servicio API de produccion se reconstruira y la migracion idempotente de th_tipos_novedad se aplicara automaticamente al arranque, igual que en QA (verificado: 1 fila GPS_INACTIVO_SIN_SENAL).",
+  "expected_changes": [
+    { "status": "A", "file": "apps/api/prisma/migrations/20260921000000_gps_inactivo_sin_senal_novelty_type/migration.sql" },
+    { "status": "M", "file": "apps/api/server.js" },
+    { "status": "M", "file": "apps/api/src/modules/hr/routes.js" },
+    { "status": "M", "file": "apps/api/src/modules/hr/schema.js" },
+    { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
+    { "status": "A", "file": "apps/api/test/hr-date-assignments.test.js" },
+    { "status": "A", "file": "apps/api/test/hr-deferred-marking-offline.test.js" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/marcacion/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx" },
+    { "status": "M", "file": "apps/web/lib/api.ts" },
+    { "status": "M", "file": "apps/web/lib/gps.ts" },
+    { "status": "A", "file": "apps/web/lib/hrOfflineEvidence.ts" },
+    { "status": "A", "file": "apps/web/lib/hrOfflineMarking.ts" },
+    { "status": "M", "file": "apps/web/package.json" },
+    { "status": "A", "file": "apps/web/test/hr-offline-marking.test.mjs" },
+    { "status": "M", "file": "apps/web/test/hr-route-write-fallback.test.mjs" },
+    { "status": "D", "file": "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression-pre-migration.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-module-intervention-20260918/prod-schema-alignment-20260918.md" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-silent-failures-20260918/prod-nyvora-hr-monitor.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-offline-deferred-marking-20260921/local-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-offline-deferred-marking-20260921/local-fixture.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/browser-qa-evidence.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/preqa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/qa-01-picker-ya-tiene-malla.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/qa-02-guardado-bloqueado-cliente.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/qa-03-control-positivo.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/qa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/qa-fixture.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/qa-nyvora-hr-monitor.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/scope-manifest-release.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/unit-tests.txt" },
+    { "status": "A", "file": "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/validation-checks.json" },
+    { "status": "M", "file": "docs/qa/evidence/hr-schedule-write-integrity-20260920/local-fixture.json" },
+    { "status": "M", "file": "docs/qa/evidence/hr-schedule-write-integrity-20260920/local-simulation-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/mallas-conflict-ux-20260921/browser-blocked-save.png" },
+    { "status": "M", "file": "package.json" },
+    { "status": "A", "file": "scripts/certifications/hr-offline-deferred-marking-local.js" },
+    { "status": "M", "file": "scripts/certifications/hr-schedule-write-integrity-local.js" }
+  ],
+  "allowed_paths": [
+    "apps/api/server.js",
+    "apps/api/src/modules/hr/",
+    "apps/api/prisma/migrations/20260921000000_gps_inactivo_sin_senal_novelty_type/",
+    "apps/api/test/hr-date-assignments.test.js",
+    "apps/api/test/hr-deferred-marking-offline.test.js",
+    "apps/web/app/dashboard/talento-humano/",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/gps.ts",
+    "apps/web/lib/hrOfflineEvidence.ts",
+    "apps/web/lib/hrOfflineMarking.ts",
+    "apps/web/package.json",
+    "apps/web/test/hr-offline-marking.test.mjs",
+    "apps/web/test/hr-route-write-fallback.test.mjs",
+    "package.json",
+    "scripts/certifications/hr-offline-deferred-marking-local.js",
+    "scripts/certifications/hr-schedule-write-integrity-local.js",
+    "docs/qa/evidence/hr-offline-deferred-marking-20260921/",
+    "docs/qa/evidence/mallas-conflict-ux-20260921/",
+    "docs/qa/evidence/hr-schedule-write-integrity-20260920/",
+    "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/",
+    "docs/qa/evidence/hr-module-intervention-20260918/",
+    "docs/qa/evidence/hr-monitor-silent-failures-20260918/"
+  ],
+  "allowed_deletions": [
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression-pre-migration.json",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression.json",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-schema-alignment-20260918.md",
+    "docs/qa/evidence/hr-monitor-silent-failures-20260918/prod-nyvora-hr-monitor.json"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "marcacion_diferida_sin_senal",
+      "status": "passed",
+      "evidence": [
+        "../hr-offline-deferred-marking-20260921/local-certification.json",
+        "../hr-offline-deferred-marking-20260921/local-fixture.json"
+      ]
+    },
+    {
+      "name": "regla_solo_horario_del_dia",
+      "status": "passed",
+      "evidence": [
+        "../hr-offline-deferred-marking-20260921/local-certification.json",
+        "unit-tests.txt"
+      ]
+    },
+    {
+      "name": "novedad_gps_inactivo_sin_senal",
+      "status": "passed",
+      "evidence": [
+        "../hr-offline-deferred-marking-20260921/local-certification.json",
+        "qa-fixture.json"
+      ]
+    },
+    {
+      "name": "cierre_diagnostico_malla_solapada",
+      "status": "passed",
+      "evidence": [
+        "browser-qa-evidence.md",
+        "qa-02-guardado-bloqueado-cliente.png",
+        "../mallas-conflict-ux-20260921/browser-blocked-save.png",
+        "../hr-schedule-write-integrity-20260920/local-simulation-certification.json"
+      ]
+    },
+    {
+      "name": "integridad_escritura_horarios_sin_split_brain",
+      "status": "passed",
+      "evidence": [
+        "browser-qa-evidence.md",
+        "qa-03-control-positivo.png",
+        "../hr-schedule-write-integrity-20260920/local-simulation-certification.json"
+      ]
+    },
+    {
+      "name": "rbac_y_aislamiento_tenant",
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "qa-fixture.json"
+      ]
+    },
+    {
+      "name": "regresion_plataforma",
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "validation-checks.json",
+        "qa-nyvora-hr-monitor.json"
+      ]
+    },
+    {
+      "name": "model-company-nyvora-hr-monitor",
+      "status": "passed",
+      "evidence": [
+        "qa-nyvora-hr-monitor.json"
+      ]
+    }
+  ]
+}

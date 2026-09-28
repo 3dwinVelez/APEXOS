@@ -1,0 +1,58 @@
+{
+  "change_id": "kilometraje-index-alignment-20260919",
+  "environment": "QA",
+  "generated_at": "2026-09-19T18:55:00Z",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "api_commit": "7d6e8d1a3e6e",
+  "subject": "Verificacion de la alineacion del indice th_jornada_kilometrajes_one_active en QA",
+  "index_before": "CREATE UNIQUE INDEX th_jornada_kilometrajes_one_active ON public.th_jornada_kilometrajes USING btree (tenant_id, route_id, employee_id, active) WHERE (active = true)",
+  "index_after": "CREATE UNIQUE INDEX th_jornada_kilometrajes_one_active ON public.th_jornada_kilometrajes USING btree (tenant_id, COALESCE(route_id, '-1'::integer), COALESCE(employee_id, '-1'::integer)) WHERE (active = true)",
+  "matches_canonical_migration": true,
+  "canonical_source": "apps/api/prisma/migrations/20260917120000_hr_workday_novelties_foundation/migration.sql:74",
+  "migration_record": {
+    "migration_name": "20260919130000_align_kilometraje_unique_index_shape",
+    "finished_at": "2026-09-19T18:29:58.867Z",
+    "rolled_back_at": null,
+    "applied_steps_count": 1,
+    "total_migrations_in_qa": 41
+  },
+  "preflight_readonly_before_apply": {
+    "duplicates_under_canonical_key": [],
+    "active_rows": { "total": 5, "route_id_null": 0, "employee_id_null": 0 },
+    "post_apply_recheck": { "duplicates_under_canonical_key": [], "active_rows": { "total": 5, "route_id_null": 0, "employee_id_null": 0 } }
+  },
+  "application_mechanism": {
+    "observed": "El push a develop se registro a las 18:28:57Z y la migracion quedo aplicada en QA a las 18:29:58Z, con /health reportando el commit 7d6e8d1a3e6e. Ningun comando remoto fue ejecutado desde este puesto para aplicarla.",
+    "inference": "El servicio API de QA en Railway aplica las migraciones Prisma pendientes durante su despliegue/arranque. Ese comando de inicio esta configurado en Railway y no esta versionado en el repositorio: apps/api/Dockerfile termina en CMD [\"node\", \"server.js\"], apps/api/package.json no tiene un script de migrate deploy y .github/workflows/release-check.yml solo corre por workflow_dispatch sin ejecutar migraciones.",
+    "governance_note": "Conviene documentar en el repositorio que el despliegue de QA aplica migraciones automaticamente, porque hoy el mecanismo es invisible desde el codigo y una migracion no idempotente se ejecutaria en QA sin control manual."
+  },
+  "functional_revalidation": {
+    "script": "scripts/certifications/hr-markings-medellin-simulation-qa.js",
+    "result": "passed",
+    "controls": 18,
+    "controls_passed": 18,
+    "requests": 64,
+    "punch_requests": 40,
+    "by_status": { "200": 63, "429": 1 },
+    "server_errors": 0,
+    "pg_error_codes": [],
+    "concurrency_wall_ms": 9113,
+    "punch_latency_ms": { "min": 1364, "median": 1660, "max": 2173 },
+    "vehicle_salidas": 4,
+    "vehicle_salida_statuses_all_200": true,
+    "note": "El unico 429 es del paceo de login (10 por minuto), reintentado y resuelto por el propio script; no afecta ninguna marcacion."
+  },
+  "model_company_revalidation": {
+    "script": "apps/api/scripts/certifications/nyvora-hr-monitor-dynamic.js",
+    "company": "NYVORA",
+    "environment": "QA",
+    "result": "ok:true",
+    "commit": "7d6e8d1a3e6e",
+    "certification_user_deactivated": true
+  },
+  "production_status": {
+    "index_definition": "CREATE UNIQUE INDEX th_jornada_kilometrajes_one_active ON public.th_jornada_kilometrajes USING btree (tenant_id, COALESCE(route_id, '-1'::integer), COALESCE(employee_id, '-1'::integer)) WHERE (active = true)",
+    "already_canonical": true,
+    "migration_effect": "no-op: el bloque DO detecta COALESCE en el indexdef vigente y no ejecuta ningun DDL. Solo registraria la migracion en _prisma_migrations para alinear el historial."
+  }
+}

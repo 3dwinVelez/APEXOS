@@ -1,0 +1,104 @@
+{
+  "change_id": "hr-markings-medellin-20260919",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "5607ff62d19e0e7ed361b84e10e595ba8e62c5ee",
+  "decision": "APTO",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "qa-certification.json",
+        "browser-qa-evidence.md",
+        "qa-06-marcacion-bello-a-jornada-cerrada.png",
+        "qa-07-marcacion-bello-a-historial-4-marcas.png",
+        "qa-08-mapa-qa-ruta-282-bello-polilneas.png",
+        "qa-09-mapa-qa-ruta-284-envigado-polilneas.png",
+        "qa-10-monitor-qa-horario-282-cerrado.png"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "qa-certification.json",
+        "browser-qa-evidence.md",
+        "qa-certification-failed-prefix-f04add4.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "qa-fixture.json",
+        "../hr-kilometraje-index-agnostic-20260919/validation-checks.json",
+        "../hr-kilometraje-index-agnostic-20260919/preqa-approval-evidence.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "qa-nyvora-hr-monitor.json",
+        "../hr-kilometraje-index-agnostic-20260919/unit-tests.txt"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "qa-nyvora-hr-monitor.json",
+        "qa-certification.json",
+        "browser-qa-evidence.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-markings-medellin-simulation-qa.js",
+    "evidence": [
+      "qa-certification.json",
+      "qa-fixture.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-markings-medellin-simulation-qa.js",
+    "evidence": [
+      "qa-certification.json",
+      "browser-qa-evidence.md",
+      "../hr-kilometraje-index-agnostic-20260919/unit-tests.txt"
+    ]
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../../apps/api/scripts/certifications/nyvora-hr-monitor-dynamic.js",
+    "evidence": [
+      "qa-nyvora-hr-monitor.json"
+    ]
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "0ea4739d54db7a550e70879857866d3ef2f4e197",
+    "trigger": "data integrity failure, tenant isolation failure, schema mismatch, critical functional regression in markings or the HR monitor, reintroduction of the 42P10/500 on vehicle exit with mileage, or failed production connectivity smoke"
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "APEXOS QA release gate (autorizado por Edwin, release owner)",
+    "approved_at": "2026-09-19T12:55:00-05:00",
+    "scope": "develop to main for the exact QA-verified build: simulacro de marcaciones Medellin (10 marcadores concurrentes, 5 municipios, 4 marcaciones por persona en destinos distintos) mas la correccion FM-01 v2 de la escritura de kilometraje.",
+    "authorization_basis": "Instruccion expresa del usuario: 'lo que encuentres con novedad no esperes al diagnostico, corrige en el camino y actualiza las 3 ramas de ser necesario'. Se corrigieron novedades (FM-01, FM-02, FM-08 y FM-01 v2), por lo que la cadena desarrollo -> develop -> main quedo autorizada sujeta a las puertas qa:promotion:scope, qa:preqa:evidence y qa:approval:evidence."
+  },
+  "observations": [
+    "Defecto bloqueante corregido y revalidado en QA: el cierre de jornada vehicular con kilometraje devolvia 500 ERROR_INTERNO porque th_jornada_kilometrajes_one_active tiene forma distinta por ambiente (columnas planas en QA, expresiones COALESCE en local/produccion) y ningun ON CONFLICT es portable; PostgreSQL respondia 42P10, la transaccion quedaba abortada (25P02) y la marcacion se revertia. La escritura ahora usa lock de asesoria + select + update/insert y no depende del indice.",
+    "Corrida QA previa (API f04add495e52, antes del arreglo): all_exits_accepted en false con 4 salidas vehiculares en 500 y th_jornada_kilometrajes con 1 solo renglon. Se conserva como qa-certification-failed-prefix-f04add4.json para trazabilidad del defecto.",
+    "Corrida QA actual (API 5607ff62d19e): 18/18 controles aprobados, 63 peticiones de negocio todas 200, 0 errores de servidor, 0 codigos PostgreSQL, latencia de marcacion min 1303 ms / mediana 1458 ms / max 2426 ms con 10 marcadores en paralelo (9103 ms de muro). Las unicas respuestas no-2xx del registro son esperadas por diseno: 429 de rate-limit en el login de sonda (reintentado) y 409 MARCACION_FUERA_DE_SECUENCIA del control de secuencia.",
+    "th_jornada_kilometrajes en QA paso de 1 a 5 renglones: 4 activos nuevos (rutas 282 Bello 42.5 km SIMBLL01 y 284 Envigado 38.2 km SIMENV01, dos empleados por ruta), un unico renglon activo por (tenant, ruta, empleado).",
+    "Replica funcional completa desde el navegador en QA: sesion de marcador (horario 282 cerrado, 4 marcas registradas, fin de jornada 16:30 con hora extra) y sesion de administrador (mapa historico con 13 rutas, polilinas de 4 puntos por persona en Bello y Envigado, drawer del monitor ajustado al viewport). 0 mensajes de consola y 82 solicitudes de red todas 200/204.",
+    "NYVORA (empresa modelo) en QA aprobada contra 5607ff62d19e: ruta dinamica 288, before 0 -> after punch_count 4, activity_count 1, evidence_count 1, closed_count 1, event_count 5; usuario de certificacion desactivado al final.",
+    "Alcance de backend: apps/api cambia en este release, por lo que el servicio API de produccion SI requiere reconstruccion. El alcance de frontend (apps/web/lib/api.ts y su prueba) ya estaba desplegado en produccion en el release anterior; el build web productivo se regenerara con el mismo contenido funcional.",
+    "Las 3 fallas de la suite completa de apps/api (inventario, offline-bootstrap, control numerico IVA) son preexistentes y se reproducen identicas en la linea base, documentadas en ../hr-kilometraje-index-agnostic-20260919/unit-tests.txt.",
+    "Pendiente recomendado (no bloqueador, requiere autorizacion expresa): alinear el indice th_jornada_kilometrajes_one_active de QA con la forma canonica COALESCE de la migracion 20260917120000. La correccion entregada es portable y no depende de esa alineacion.",
+    "El fixture del simulacro (admin + 10 marcadores + sonda, corrida 20260919173138) queda activo en QA para inspeccion del release owner; se recomienda desactivarlo tras la aceptacion. Las credenciales son de un fixture QA desechable generado por el script versionado."
+  ]
+}

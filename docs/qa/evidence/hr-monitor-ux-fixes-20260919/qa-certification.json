@@ -1,0 +1,235 @@
+{
+  "change_id": "hr-monitor-ux-fixes-20260919",
+  "environment": "QA",
+  "company": "SCJ",
+  "generated_at": "2026-09-19T14:24:01.602Z",
+  "api_commit": "a45aa6cfe733",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "web_url": "https://apexos-web-qa-production.up.railway.app",
+  "checks": [
+    {
+      "name": "operations_map_route_present",
+      "ok": true,
+      "detail": {
+        "route_id": 273
+      }
+    },
+    {
+      "name": "trail_marks_located",
+      "ok": true,
+      "detail": {
+        "marks": 4,
+        "user_names": [
+          "Operario UX 20260919142355"
+        ]
+      }
+    },
+    {
+      "name": "trail_marks_chronological",
+      "ok": true,
+      "detail": {
+        "punched_at": [
+          "2026-09-19T11:10:00.000Z",
+          "2026-09-19T17:02:00.000Z",
+          "2026-09-19T17:59:00.000Z",
+          "2026-09-19T21:05:00.000Z"
+        ]
+      }
+    },
+    {
+      "name": "trail_marks_distinct_coordinates",
+      "ok": true,
+      "detail": {
+        "distinct": 4,
+        "coordinates": [
+          [
+            4.711,
+            -74.0721
+          ],
+          [
+            4.7148,
+            -74.0691
+          ],
+          [
+            4.7152,
+            -74.0688
+          ],
+          [
+            4.7189,
+            -74.0655
+          ]
+        ]
+      }
+    },
+    {
+      "name": "trail_punch_points_have_coordinates",
+      "ok": true,
+      "detail": {
+        "count": 4
+      }
+    },
+    {
+      "name": "old_date_route_present_with_marks",
+      "ok": true,
+      "detail": {
+        "route_id": 274,
+        "marks": 2,
+        "date": "2026-09-16"
+      }
+    },
+    {
+      "name": "lightbox_multiple_evidence_renders",
+      "ok": true,
+      "detail": {
+        "with_base64": 2,
+        "total": 4
+      }
+    },
+    {
+      "name": "lightbox_activity_evidence_renders",
+      "ok": true,
+      "detail": {
+        "with_base64": 1,
+        "total": 1
+      }
+    },
+    {
+      "name": "evidence_summaries_available",
+      "ok": true,
+      "detail": {
+        "entrada": {
+          "id": 1298,
+          "source": "punch",
+          "file_name": "entrada-20260919142355.png",
+          "mime_type": "image/png",
+          "file_size": 68,
+          "storage_path": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/overtime-extensions/373/1789827859016-entrada-20260919142355.png",
+          "has_base64_data": true,
+          "available": true
+        },
+        "salida": {
+          "id": 1301,
+          "source": "punch",
+          "file_name": "salida-20260919142355.png",
+          "mime_type": "image/png",
+          "file_size": 68,
+          "storage_path": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/overtime-extensions/373/1789827866516-salida-20260919142355.png",
+          "has_base64_data": true,
+          "available": true
+        },
+        "activity": {
+          "id": 88,
+          "source": "activity",
+          "evidence_type": "photo",
+          "file_name": "activity-20260919142355.png",
+          "mime_type": "image/png",
+          "file_size": 68,
+          "storage_path": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/347/users/463/activities/88/1789827864773-activity-20260919142355.png",
+          "has_base64_data": false,
+          "available": true
+        }
+      }
+    },
+    {
+      "name": "monitor_people_include_both_operators",
+      "ok": true,
+      "detail": {
+        "marking": {
+          "online": true,
+          "last_punch_type": "salida",
+          "has_gps": true
+        },
+        "silent": {
+          "online": false,
+          "last_punch_type": "sin_marcar"
+        }
+      }
+    },
+    {
+      "name": "monitor_person_without_marks",
+      "ok": true,
+      "detail": {
+        "last_punch_type": "sin_marcar"
+      }
+    },
+    {
+      "name": "marking_only_role_denied_batch",
+      "ok": true,
+      "detail": {
+        "code": "PERMISO_DENEGADO"
+      }
+    },
+    {
+      "name": "invalid_route_id_controlled",
+      "ok": true,
+      "detail": {
+        "code": "EVIDENCIA_MONITOR_RUTA_INVALIDA"
+      }
+    },
+    {
+      "name": "route_summary_counts_all_evidence",
+      "ok": true,
+      "detail": {
+        "route_id": 273,
+        "evidence_count": 3
+      }
+    },
+    {
+      "name": "cross_tenant_batch_isolated",
+      "ok": true,
+      "detail": {
+        "other_tenant_id": "1afcb48f-39eb-4b59-af90-05e67d54593a",
+        "punch_evidence": 0,
+        "activity_evidence": 0
+      }
+    },
+    {
+      "name": "web_css_page_enter_transform_none",
+      "ok": true,
+      "detail": {
+        "web_url": "https://apexos-web-qa-production.up.railway.app",
+        "css_bytes": 117850
+      }
+    }
+  ],
+  "fixture": {
+    "tenant_id": "cbbf3627-4336-4f23-95c6-1077414bcd17",
+    "route_id": 273,
+    "old_route_id": 274,
+    "marking_user_id": 463,
+    "silent_user_id": 464,
+    "admin_user_id": 465
+  },
+  "observations": {
+    "date": "2026-09-19",
+    "old_date": "2026-09-16",
+    "route": {
+      "id": 273,
+      "start_time": "06:00",
+      "end_time": "18:00",
+      "tolerance_minutes": 15,
+      "employees": [
+        "qa.ux.marks.20260919142355@scj.test",
+        "qa.ux.silent.20260919142355@scj.test"
+      ]
+    },
+    "old_route": {
+      "id": 274,
+      "date": "2026-09-16"
+    },
+    "trail": {
+      "marks": 4,
+      "distinct_coordinates": 4,
+      "chronological": true
+    },
+    "totals": {
+      "routes": 2,
+      "planned_people": 27,
+      "online": 1,
+      "without_gps": 25,
+      "offline": 1
+    },
+    "exclusions": "Rutas sin placa: el flujo de kilometraje de salida (th_jornada_kilometrajes) se excluye por hallazgo preexistente 42P10 en el ON CONFLICT de createPunch, fuera del alcance de este cambio."
+  },
+  "status": "passed"
+}

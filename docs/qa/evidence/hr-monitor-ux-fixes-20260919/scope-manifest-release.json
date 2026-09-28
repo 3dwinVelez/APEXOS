@@ -1,0 +1,92 @@
+{
+  "change_id": "hr-monitor-ux-fixes-release-20260919",
+  "base_commits": {
+    "develop": "5dc8443b1dee4f939396764409da0f4f40266114",
+    "main": "5e73c5e59976ed7d7671e73383f390be2c2c3eb8"
+  },
+  "certified_commit": "ea89a202dcd82d06fbddc1cde5dffb2ae5b90d2a",
+  "scope_schema_version": 2,
+  "change_intent": {
+    "summary": "Liberacion controlada develop -> main de las correcciones UX del monitor de mallas horarias: (1) lightbox de evidencias ampliado mediante createPortal y el arreglo del keyframe apexPageEnter (transform:none) que eliminaba el containing block que rompia los position:fixed; (2) drawer del monitor (incluidos horarios antiguos) anclado al viewport con scroll interno reiniciado al abrir; (3) redistribucion compacta e intuitiva del monitor con tarjetas KPI, badges y timeline cronologico; (4) polyline entre puntos de marcacion en el mapa con coercion numerica de coordenadas, viewBox dinamico y orden cronologico. Adicionalmente alinea dos pruebas obsoletas de erp-visual-normalization. Alcance frontend-only: no toca apps/api, no hay migraciones ni cambios de esquema.",
+    "modules": ["talento-humano", "hr", "web-ux", "qa-certification", "erp-visual-tests"]
+  },
+  "release_mechanics": "Merge normal con main como primer padre (nunca reemplazar el arbol de main por el de develop). Los 4 D del inventario son archivos de contabilidad de produccion exclusivos de main (hr-module-intervention-20260918 y prod-nyvora-hr-monitor.json); el merge union los preserva en el arbol de main, igual que en el release anterior. apps/api no cambia en este alcance, por lo que el API productivo no requiere reconstruccion funcional; solo la web productiva recibe las correcciones UX ya certificadas en QA.",
+  "expected_changes": [
+    { "status": "M", "file": "apps/web/app/globals.css" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/mapa/page.tsx" },
+    { "status": "M", "file": "apps/web/test/erp-visual-normalization.test.mjs" },
+    { "status": "A", "file": "scripts/certifications/hr-monitor-ux-fixes-qa.js" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/01-mallas-lista-kpi.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/02-monitor-drawer-viewport.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/03-lightbox-evidencia-ampliada.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/04-monitor-historico-scrolltop.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/05-mapa-ruta-entre-marcaciones.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/fixture.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/unit-tests.txt" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/validation-checks.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/preqa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-fixture.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-nyvora-hr-monitor.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/browser-qa-evidence.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-01-mallas-lista-kpi.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-02-monitor-drawer-viewport.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-03-lightbox-evidencia-ampliada.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-04-mapa-ruta-entre-marcaciones.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-05-monitor-historico-scrolltop.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/scope-manifest-release.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression-pre-migration.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-module-intervention-20260918/prod-schema-alignment-20260918.md" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-silent-failures-20260918/prod-nyvora-hr-monitor.json" }
+  ],
+  "allowed_paths": [
+    "apps/web/app/globals.css",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "apps/web/app/dashboard/talento-humano/mapa/page.tsx",
+    "apps/web/test/erp-visual-normalization.test.mjs",
+    "scripts/certifications/hr-monitor-ux-fixes-qa.js",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression-pre-migration.json",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression.json",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-schema-alignment-20260918.md",
+    "docs/qa/evidence/hr-monitor-silent-failures-20260918/prod-nyvora-hr-monitor.json"
+  ],
+  "allowed_deletions": [
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression-pre-migration.json",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression.json",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-schema-alignment-20260918.md",
+    "docs/qa/evidence/hr-monitor-silent-failures-20260918/prod-nyvora-hr-monitor.json"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "hr-monitoring-and-route-tracking",
+      "status": "passed",
+      "evidence": ["certification.json", "qa-certification.json", "qa-nyvora-hr-monitor.json", "unit-tests.txt", "browser-qa-evidence.md"]
+    },
+    {
+      "name": "tenant_isolation_and_permissions",
+      "status": "passed",
+      "evidence": ["certification.json", "qa-certification.json"]
+    },
+    {
+      "name": "monitor-ux-defects-fixed",
+      "status": "passed",
+      "evidence": ["validation-checks.json", "browser-qa-evidence.md", "qa-01-mallas-lista-kpi.png", "qa-02-monitor-drawer-viewport.png", "qa-03-lightbox-evidencia-ampliada.png", "qa-04-mapa-ruta-entre-marcaciones.png", "qa-05-monitor-historico-scrolltop.png"]
+    },
+    {
+      "name": "adjacent_platform_regression",
+      "status": "passed",
+      "evidence": ["validation-checks.json", "qa-nyvora-hr-monitor.json", "unit-tests.txt"]
+    },
+    {
+      "name": "dark_and_light_theme_contract",
+      "status": "passed",
+      "evidence": ["validation-checks.json", "01-mallas-lista-kpi.png", "02-monitor-drawer-viewport.png", "qa-02-monitor-drawer-viewport.png"]
+    }
+  ]
+}

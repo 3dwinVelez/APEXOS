@@ -1,0 +1,126 @@
+{
+  "change_id": "lote3-hr-accounting-numbering-20260921",
+  "scope_schema_version": 2,
+  "base_commits": {
+    "main": "fd8f2ec1a33bf1acfcf5751462da9125c0cbd8d5"
+  },
+  "certified_commit": "2be1ce5aa0dd725e73a067fa64c89e435406881d",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "change_intent": {
+    "summary": "Release a produccion del lote 3 de Talento Humano y del cierre del incidente de numeracion contable EM. Lote 3 HR (lectura): (1) listRoutes acota el parametro limit al rango [50,500] con default 100 (500 cuando hay rango de fechas) para que un cliente no pueda pedir ventanas desacotadas; (2) listRouteEventSummaries consulta take=SUMMARY_LIMIT+1 y devuelve un bloque aditivo truncation {truncated, limit:100, returned, hint} sin romper el contrato existente; (3) getOperationsMap expone truncation con collections por coleccion recortada (pings/marcaciones/actividades). Frontend: apps/web/lib/hrScheduleMonitor.ts exporta scheduleTruncationNotices y las paginas talento-humano/rutas y talento-humano/mapa pintan banners ambar role=status cuando alguna lectura viene recortada, de modo que un dia incompleto nunca se presente como completo (ROUTES_LIST_LIMIT=500 en el listado). Contabilidad (escritura): el incidente determinista de entradas de mercancia (EM) con P2002/409 se debia a que otros modulos reescriben el Tenant.config completo desde una instantanea cacheada y revierten accounting_numbering.next_number a un valor viejo; como cnt_cabdoc ya tenia EM-000001..N, la siguiente EM re-reservaba EM-000001 y chocaba con el indice unico. El cierre agrega reserveAccountingDocumentNumber que reserva max(configurado, MAX(document_number)+1) bajo candado advisory pg_advisory_xact_lock por tenant:tipo en los 4 sitios de escritura de cntCabdoc (EM, AJ, AE/AS y documento contable general), y normalizeAccountingNumberingRows/mergeNumbering que aceptan tanto el formato canonico array como el legado objeto. No se toca CxC/CxP (mecanismo distinto, ya con candados). Incluye tests (accounting-numbering.test.js 6 casos, hr-list-truncation.test.js 4 casos, hr-schedule-monitor.test.mjs 14 casos), scripts de certificacion versionados (accounting-numbering-integrity-local.js 16 controles, hr-monitor-read-truncation-local.js 12 controles) y evidencia local, pre-QA y QA (replica de navegador sobre el bundle desplegado con banner ambar de truncamiento en vivo + NYVORA en QA).",
+    "modules": [
+      "talento-humano",
+      "hr",
+      "mallas-horarias",
+      "contabilidad",
+      "frontend",
+      "backend",
+      "qa-certification"
+    ]
+  },
+  "release_mechanics": "Merge normal de develop -> main con main como primer padre. El candidato final de la promocion NO es 2be1ce5 sino el commit de evidencia inmediatamente siguiente (su padre es 2be1ce5aa0dd725e73a067fa64c89e435406881d), que solo agrega los 7 archivos de QA de docs/qa/evidence/lote3-hr-accounting-numbering-20260921/ (browser-qa-evidence.md, qa-fixture.json, qa-nyvora-hr-monitor.json, qa-approval-evidence.json, este scope-manifest-release.json y las capturas qa-01/qa-02); por eso esas 7 entradas A forman parte del inventario exacto y el diff neto origin/main..candidato las contiene. Las 5 entradas D del inventario son fantasma: artefactos de contabilidad de releases productivos anteriores que solo existen en main (docs/qa/evidence/hr-module-intervention-20260918/prod-*, docs/qa/evidence/hr-monitor-silent-failures-20260918/prod-nyvora-hr-monitor.json y docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/prod-release-verification.json), nunca presentes en develop por la convencion forward-only; el diff de dos puntos los reporta como eliminaciones pero el merge union los preserva intactos en el arbol de main. No existe ninguna eliminacion real de codigo ni de evidencia en este release. Este release NO agrega migraciones de esquema ni de datos: el cierre contable es logica de aplicacion (reserva bajo candado advisory) y el lote 3 HR es aditivo en lectura; el servicio API de produccion se reconstruira al desplegar sin migracion remota que ejecutar.",
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/src/modules/accounting/service.js" },
+    { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
+    { "status": "A", "file": "apps/api/test/accounting-numbering.test.js" },
+    { "status": "A", "file": "apps/api/test/hr-list-truncation.test.js" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/mapa/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx" },
+    { "status": "M", "file": "apps/web/lib/hrScheduleMonitor.ts" },
+    { "status": "M", "file": "apps/web/test/hr-schedule-monitor.test.mjs" },
+    { "status": "D", "file": "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression-pre-migration.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-module-intervention-20260918/prod-schema-alignment-20260918.md" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-silent-failures-20260918/prod-nyvora-hr-monitor.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/prod-release-verification.json" },
+    { "status": "A", "file": "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/accounting-numbering-local-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/browser-qa-evidence.md" },
+    { "status": "A", "file": "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/hr-monitor-read-truncation-local-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/preqa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/preqa-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/qa-01-banner-truncamiento-rutas.png" },
+    { "status": "A", "file": "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/qa-02-mapa-sin-regresion.png" },
+    { "status": "A", "file": "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/qa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/qa-fixture.json" },
+    { "status": "A", "file": "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/qa-nyvora-hr-monitor.json" },
+    { "status": "A", "file": "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/scope-manifest-release.json" },
+    { "status": "A", "file": "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/unit-tests.txt" },
+    { "status": "A", "file": "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/validation-checks.json" },
+    { "status": "A", "file": "scripts/certifications/accounting-numbering-integrity-local.js" },
+    { "status": "A", "file": "scripts/certifications/hr-monitor-read-truncation-local.js" }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/accounting/service.js",
+    "apps/api/src/modules/hr/",
+    "apps/api/test/accounting-numbering.test.js",
+    "apps/api/test/hr-list-truncation.test.js",
+    "apps/web/app/dashboard/talento-humano/",
+    "apps/web/lib/hrScheduleMonitor.ts",
+    "apps/web/test/hr-schedule-monitor.test.mjs",
+    "scripts/certifications/accounting-numbering-integrity-local.js",
+    "scripts/certifications/hr-monitor-read-truncation-local.js",
+    "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/",
+    "docs/qa/evidence/hr-module-intervention-20260918/",
+    "docs/qa/evidence/hr-monitor-silent-failures-20260918/",
+    "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/"
+  ],
+  "allowed_deletions": [
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression-pre-migration.json",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression.json",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-schema-alignment-20260918.md",
+    "docs/qa/evidence/hr-monitor-silent-failures-20260918/prod-nyvora-hr-monitor.json",
+    "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/prod-release-verification.json"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "truncamiento_visible_lectura_hr",
+      "status": "passed",
+      "evidence": [
+        "hr-monitor-read-truncation-local-certification.json",
+        "browser-qa-evidence.md",
+        "qa-01-banner-truncamiento-rutas.png"
+      ]
+    },
+    {
+      "name": "topes_lectura_list_routes",
+      "status": "passed",
+      "evidence": [
+        "hr-monitor-read-truncation-local-certification.json",
+        "unit-tests.txt"
+      ]
+    },
+    {
+      "name": "numeracion_contable_atomica_em",
+      "status": "passed",
+      "evidence": [
+        "accounting-numbering-local-certification.json",
+        "unit-tests.txt"
+      ]
+    },
+    {
+      "name": "rbac_y_aislamiento_tenant",
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "qa-fixture.json"
+      ]
+    },
+    {
+      "name": "regresion_plataforma",
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "validation-checks.json",
+        "qa-nyvora-hr-monitor.json"
+      ]
+    },
+    {
+      "name": "model-company-nyvora-hr-monitor",
+      "status": "passed",
+      "evidence": [
+        "qa-nyvora-hr-monitor.json"
+      ]
+    }
+  ]
+}

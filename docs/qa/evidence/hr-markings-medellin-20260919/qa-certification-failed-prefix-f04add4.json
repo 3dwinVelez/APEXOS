@@ -1,0 +1,326 @@
+{
+  "change_id": "hr-markings-medellin-20260919",
+  "environment": "QA",
+  "company": "SCJ",
+  "generated_at": "2026-09-19T17:04:20.487Z",
+  "api_commit": "f04add495e52",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "simulation": {
+    "concurrent_markers": 10,
+    "schedules": 5,
+    "metropolitan_area": "Valle de Aburra (Medellin)"
+  },
+  "checks": [
+    {
+      "name": "health_ok",
+      "ok": true,
+      "detail": {
+        "commit": "f04add495e52"
+      }
+    },
+    {
+      "name": "ten_concurrent_markers_executed",
+      "ok": true,
+      "detail": {
+        "markers": 10
+      }
+    },
+    {
+      "name": "all_entries_accepted",
+      "ok": true,
+      "detail": {
+        "entrada_statuses": [
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200
+        ]
+      }
+    },
+    {
+      "name": "all_lunch_breaks_accepted",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "all_activities_accepted",
+      "ok": true,
+      "detail": {
+        "activity_statuses": [
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200
+        ]
+      }
+    },
+    {
+      "name": "all_exits_accepted",
+      "ok": false,
+      "detail": {
+        "salida_statuses": [
+          {
+            "actor": "qa.med.medellin.A.20260919170415@scj.test/Medellin",
+            "status": 200,
+            "code": null
+          },
+          {
+            "actor": "qa.med.medellin.B.20260919170415@scj.test/Medellin",
+            "status": 200,
+            "code": null
+          },
+          {
+            "actor": "qa.med.bello.A.20260919170415@scj.test/Bello",
+            "status": 500,
+            "code": "ERROR_INTERNO"
+          },
+          {
+            "actor": "qa.med.bello.B.20260919170415@scj.test/Bello",
+            "status": 500,
+            "code": "ERROR_INTERNO"
+          },
+          {
+            "actor": "qa.med.itagui.A.20260919170415@scj.test/Itagui",
+            "status": 200,
+            "code": null
+          },
+          {
+            "actor": "qa.med.itagui.B.20260919170415@scj.test/Itagui",
+            "status": 200,
+            "code": null
+          },
+          {
+            "actor": "qa.med.envigado.A.20260919170415@scj.test/Envigado",
+            "status": 500,
+            "code": "ERROR_INTERNO"
+          },
+          {
+            "actor": "qa.med.envigado.B.20260919170415@scj.test/Envigado",
+            "status": 500,
+            "code": "ERROR_INTERNO"
+          },
+          {
+            "actor": "qa.med.sabaneta.A.20260919170415@scj.test/Sabaneta",
+            "status": 200,
+            "code": null
+          },
+          {
+            "actor": "qa.med.sabaneta.B.20260919170415@scj.test/Sabaneta",
+            "status": 200,
+            "code": null
+          }
+        ]
+      }
+    }
+  ],
+  "fixture": {
+    "tenant_id": "cbbf3627-4336-4f23-95c6-1077414bcd17",
+    "admin_user_id": 468,
+    "routes": [
+      {
+        "id": 276,
+        "vehicle_plate": "",
+        "employees": [
+          "qa.med.medellin.A.20260919170415@scj.test",
+          "qa.med.medellin.B.20260919170415@scj.test"
+        ]
+      },
+      {
+        "id": 277,
+        "vehicle_plate": "SIMBLL01",
+        "employees": [
+          "qa.med.bello.A.20260919170415@scj.test",
+          "qa.med.bello.B.20260919170415@scj.test"
+        ]
+      },
+      {
+        "id": 278,
+        "vehicle_plate": "",
+        "employees": [
+          "qa.med.itagui.A.20260919170415@scj.test",
+          "qa.med.itagui.B.20260919170415@scj.test"
+        ]
+      },
+      {
+        "id": 279,
+        "vehicle_plate": "SIMENV01",
+        "employees": [
+          "qa.med.envigado.A.20260919170415@scj.test",
+          "qa.med.envigado.B.20260919170415@scj.test"
+        ]
+      },
+      {
+        "id": 280,
+        "vehicle_plate": "",
+        "employees": [
+          "qa.med.sabaneta.A.20260919170415@scj.test",
+          "qa.med.sabaneta.B.20260919170415@scj.test"
+        ]
+      }
+    ],
+    "markers": [
+      {
+        "email": "qa.med.medellin.A.20260919170415@scj.test",
+        "municipality": "Medellin",
+        "route_id": 276,
+        "route_type": "administrative"
+      },
+      {
+        "email": "qa.med.medellin.B.20260919170415@scj.test",
+        "municipality": "Medellin",
+        "route_id": 276,
+        "route_type": "administrative"
+      },
+      {
+        "email": "qa.med.bello.A.20260919170415@scj.test",
+        "municipality": "Bello",
+        "route_id": 277,
+        "route_type": "vehicle"
+      },
+      {
+        "email": "qa.med.bello.B.20260919170415@scj.test",
+        "municipality": "Bello",
+        "route_id": 277,
+        "route_type": "vehicle"
+      },
+      {
+        "email": "qa.med.itagui.A.20260919170415@scj.test",
+        "municipality": "Itagui",
+        "route_id": 278,
+        "route_type": "administrative"
+      },
+      {
+        "email": "qa.med.itagui.B.20260919170415@scj.test",
+        "municipality": "Itagui",
+        "route_id": 278,
+        "route_type": "administrative"
+      },
+      {
+        "email": "qa.med.envigado.A.20260919170415@scj.test",
+        "municipality": "Envigado",
+        "route_id": 279,
+        "route_type": "vehicle"
+      },
+      {
+        "email": "qa.med.envigado.B.20260919170415@scj.test",
+        "municipality": "Envigado",
+        "route_id": 279,
+        "route_type": "vehicle"
+      },
+      {
+        "email": "qa.med.sabaneta.A.20260919170415@scj.test",
+        "municipality": "Sabaneta",
+        "route_id": 280,
+        "route_type": "administrative"
+      },
+      {
+        "email": "qa.med.sabaneta.B.20260919170415@scj.test",
+        "municipality": "Sabaneta",
+        "route_id": 280,
+        "route_type": "administrative"
+      }
+    ]
+  },
+  "aggregates": {
+    "total_requests": 64,
+    "punch_requests": 40,
+    "by_status": {
+      "200": 59,
+      "429": 1,
+      "500": 4
+    },
+    "server_errors": 4,
+    "pg_error_codes": [],
+    "concurrency_wall_ms": 8094,
+    "punch_latency_ms": {
+      "min": 1232,
+      "median": 1404,
+      "max": 2004
+    },
+    "vehicle_salida_statuses": [
+      {
+        "actor": "qa.med.bello.A.20260919170415@scj.test/Bello",
+        "status": 500,
+        "code": "ERROR_INTERNO"
+      },
+      {
+        "actor": "qa.med.bello.B.20260919170415@scj.test/Bello",
+        "status": 500,
+        "code": "ERROR_INTERNO"
+      },
+      {
+        "actor": "qa.med.envigado.A.20260919170415@scj.test/Envigado",
+        "status": 500,
+        "code": "ERROR_INTERNO"
+      },
+      {
+        "actor": "qa.med.envigado.B.20260919170415@scj.test/Envigado",
+        "status": 500,
+        "code": "ERROR_INTERNO"
+      }
+    ]
+  },
+  "observations": {},
+  "status": "failed",
+  "error": {
+    "message": "Fallo de certificacion: all_exits_accepted",
+    "payload": null
+  },
+  "request_log_summary": {
+    "total": 64,
+    "by_status": {
+      "200": 59,
+      "429": 1,
+      "500": 4
+    },
+    "failures": [
+      {
+        "actor": "qa.med.sabaneta.B.20260919170415@scj.test/Sabaneta",
+        "step": "login-intento-1",
+        "status": 429,
+        "code": "VALIDACION",
+        "error": "Rate limit exceeded, retry in 17 seconds"
+      },
+      {
+        "actor": "qa.med.bello.B.20260919170415@scj.test/Bello",
+        "step": "salida",
+        "status": 500,
+        "code": "ERROR_INTERNO",
+        "error": "Error interno"
+      },
+      {
+        "actor": "qa.med.envigado.B.20260919170415@scj.test/Envigado",
+        "step": "salida",
+        "status": 500,
+        "code": "ERROR_INTERNO",
+        "error": "Error interno"
+      },
+      {
+        "actor": "qa.med.envigado.A.20260919170415@scj.test/Envigado",
+        "step": "salida",
+        "status": 500,
+        "code": "ERROR_INTERNO",
+        "error": "Error interno"
+      },
+      {
+        "actor": "qa.med.bello.A.20260919170415@scj.test/Bello",
+        "step": "salida",
+        "status": 500,
+        "code": "ERROR_INTERNO",
+        "error": "Error interno"
+      }
+    ]
+  }
+}

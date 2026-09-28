@@ -1,0 +1,110 @@
+{
+  "change_id": "hr-markings-medellin-release-20260919",
+  "base_commits": {
+    "develop": "5607ff62d19e0e7ed361b84e10e595ba8e62c5ee",
+    "main": "0ea4739d54db7a550e70879857866d3ef2f4e197"
+  },
+  "certified_commit": "5607ff62d19e0e7ed361b84e10e595ba8e62c5ee",
+  "scope_schema_version": 2,
+  "change_intent": {
+    "summary": "Liberacion controlada develop -> main del simulacro de rutas y marcaciones del area metropolitana de Medellin y de las correcciones que produjo. (1) FM-01 v2: la escritura de th_jornada_kilometrajes deja de usar ON CONFLICT porque el indice unico parcial th_jornada_kilometrajes_one_active tiene forma distinta por ambiente (columnas planas en QA, expresiones COALESCE en local/produccion); se reemplaza por lock de asesoria por renglon logico + select + update/insert y se elimina el .catch(() => null) que enmascaraba el fallo. Esto resuelve los 500 ERROR_INTERNO al cerrar jornada vehicular con kilometraje (42P10 -> 25P02), que es el bloqueo reportado por los usuarios al marcar. (2) FM-02 y FM-08: politicas de novedades de jornada y clasificacion de errores de API en el cliente web. (3) Nuevo script versionado de certificacion del simulacro (10 marcadores concurrentes, 5 municipios, 2 personas por horario, 4 marcaciones por persona en destinos distintos, horas extras, eventos, idempotencia y control de secuencia). Alcance: apps/api (servicio y politica HR, pruebas), apps/web (clasificacion de errores y su prueba), script de certificacion y evidencia versionada LOCAL y QA. Sin migraciones y sin cambios de esquema.",
+    "modules": ["talento-humano", "hr", "marcaciones", "web-client", "qa-certification"]
+  },
+  "release_mechanics": "Merge normal de develop -> main con main como primer padre (nunca reemplazar el arbol de main por el de develop). Las 4 entradas D del inventario son archivos de contabilidad de produccion exclusivos de main (hr-module-intervention-20260918 y hr-monitor-silent-failures-20260918); el merge union los preserva en el arbol de main, igual que en los dos releases anteriores. A diferencia del release anterior, este alcance SI modifica apps/api, por lo que el servicio API de produccion se reconstruye y debe quedar en el commit liberado.",
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/src/modules/hr/policy.js" },
+    { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
+    { "status": "A", "file": "apps/api/test/hr-marking-kilometraje-conflict.test.js" },
+    { "status": "M", "file": "apps/api/test/hr-workday-novelties-policy.test.js" },
+    { "status": "M", "file": "apps/web/lib/api.ts" },
+    { "status": "A", "file": "apps/web/test/api-error-classification.test.mjs" },
+    { "status": "A", "file": "docs/qa/evidence/hr-kilometraje-index-agnostic-20260919/kilometraje-write-verification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-kilometraje-index-agnostic-20260919/local-fixture.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-kilometraje-index-agnostic-20260919/local-simulation-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-kilometraje-index-agnostic-20260919/preqa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-kilometraje-index-agnostic-20260919/scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-kilometraje-index-agnostic-20260919/unit-tests.txt" },
+    { "status": "A", "file": "docs/qa/evidence/hr-kilometraje-index-agnostic-20260919/validation-checks.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/browser-fixture.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/browser-map-route-253-bello.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/browser-map-route-255-envigado.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/browser-marcacion-bello-a-historial.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/browser-marcacion-bello-a.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/browser-qa-evidence.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/browser-replication-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/preqa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-06-marcacion-bello-a-jornada-cerrada.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-07-marcacion-bello-a-historial-4-marcas.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-08-mapa-qa-ruta-282-bello-polilneas.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-09-mapa-qa-ruta-284-envigado-polilneas.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-10-monitor-qa-horario-282-cerrado.png" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-certification-failed-prefix-f04add4.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-fixture.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-nyvora-hr-monitor.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/scope-manifest-release.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/simulation-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/unit-tests.txt" },
+    { "status": "A", "file": "docs/qa/evidence/hr-markings-medellin-20260919/validation-checks.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression-pre-migration.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-module-intervention-20260918/prod-schema-alignment-20260918.md" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-silent-failures-20260918/prod-nyvora-hr-monitor.json" },
+    { "status": "A", "file": "scripts/certifications/hr-markings-medellin-simulation-qa.js" }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/hr/policy.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-marking-kilometraje-conflict.test.js",
+    "apps/api/test/hr-workday-novelties-policy.test.js",
+    "apps/web/lib/api.ts",
+    "apps/web/test/api-error-classification.test.mjs",
+    "docs/qa/evidence/hr-kilometraje-index-agnostic-20260919/",
+    "docs/qa/evidence/hr-markings-medellin-20260919/",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression-pre-migration.json",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression.json",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-schema-alignment-20260918.md",
+    "docs/qa/evidence/hr-monitor-silent-failures-20260918/prod-nyvora-hr-monitor.json",
+    "scripts/certifications/hr-markings-medellin-simulation-qa.js"
+  ],
+  "allowed_deletions": [
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression-pre-migration.json",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-nyvora-mass-regression.json",
+    "docs/qa/evidence/hr-module-intervention-20260918/prod-schema-alignment-20260918.md",
+    "docs/qa/evidence/hr-monitor-silent-failures-20260918/prod-nyvora-hr-monitor.json"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "hr-marking-vehicle-exit-with-mileage",
+      "status": "passed",
+      "evidence": ["qa-certification.json", "browser-qa-evidence.md", "../hr-kilometraje-index-agnostic-20260919/kilometraje-write-verification.json", "../hr-kilometraje-index-agnostic-20260919/unit-tests.txt"]
+    },
+    {
+      "name": "hr-marking-concurrency-and-idempotency",
+      "status": "passed",
+      "evidence": ["qa-certification.json", "../hr-kilometraje-index-agnostic-20260919/unit-tests.txt"]
+    },
+    {
+      "name": "hr-monitoring-and-route-tracking",
+      "status": "passed",
+      "evidence": ["qa-certification.json", "qa-nyvora-hr-monitor.json", "qa-10-monitor-qa-horario-282-cerrado.png", "qa-08-mapa-qa-ruta-282-bello-polilneas.png"]
+    },
+    {
+      "name": "tenant_isolation_and_permissions",
+      "status": "passed",
+      "evidence": ["qa-certification.json", "simulation-certification.json"]
+    },
+    {
+      "name": "no_silent_failure_on_marking",
+      "status": "passed",
+      "evidence": ["browser-qa-evidence.md", "qa-certification.json", "../hr-kilometraje-index-agnostic-20260919/validation-checks.json"]
+    },
+    {
+      "name": "adjacent_platform_regression",
+      "status": "passed",
+      "evidence": ["qa-nyvora-hr-monitor.json", "../hr-kilometraje-index-agnostic-20260919/unit-tests.txt", "unit-tests.txt"]
+    }
+  ]
+}
