@@ -1,0 +1,24 @@
+{
+  "ok": true,
+  "environment": "QA",
+  "model_company": "NYVORA",
+  "commit": "8483138facc0",
+  "checks": [
+    "session",
+    "services_orders",
+    "services_references",
+    "hr_employees",
+    "inventory_items",
+    "accounting_accounts"
+  ],
+  "unauthorized_blocked": true,
+  "fixture": {
+    "tenant": "NYVORA",
+    "reference": "NYV-QA-EVIDENCE",
+    "authorized_role": true,
+    "limited_role": true,
+    "other_tenant_user": true
+  },
+  "generated_at": "2026-09-28T13:25:00-05:00",
+  "secrets": "redacted"
+}

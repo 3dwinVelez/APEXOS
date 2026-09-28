@@ -1,0 +1,490 @@
+{
+  "change_id": "hr-punch-declared-employee-20260924",
+  "certification": "hr-punch-declared-employee-local",
+  "environment": "LOCAL",
+  "database_url_host": "postgresql://***@localhost:55432/apexos",
+  "generated_at": "2026-09-24T11:05:24.954Z",
+  "api_commit": "unknown",
+  "api_url": "http://127.0.0.1:3198",
+  "operating_date": "2026-09-24",
+  "previous_operating_date": "2026-09-23",
+  "scope": {
+    "capability": "Destino correcto de la marcacion administrativa con empleado declarado (POST /hr/time-punches), ambito self-service anclado al usuario autenticado y captura explicita de la matriz de errores operativos de marcacion: empleado inexistente (404), identificador malformado (422), secuencia (409), jornada completa (409), idempotencia (409), permisos (403) y modulo no habilitado (403).",
+    "proven_by_live_execution": [
+      "POST /api/v1/hr/time-punches con employee_id existente marca al empleado declarado y registra la novedad AJUSTE_MANUAL_MARCACION sobre ese empleado, no sobre la ficha del admin",
+      "POST /api/v1/hr/time-punches con employee_id inexistente responde 404 EMPLEADO_NO_ENCONTRADO y la ficha del admin queda intacta (regresion del redireccion silencioso)",
+      "POST /api/v1/hr/time-punches con employee_id no numerico responde 422 EMPLEADO_NO_ENCONTRADO sin escrituras",
+      "POST /api/v1/hr/time-punches sin employee_id conserva el fallback historico a la ficha propia del admin autenticado",
+      "POST /api/v1/hr/self/time-punches ignora el employee_id del payload y ancla la marcacion al usuario autenticado",
+      "Un employee_id de otra empresa no es resoluble: 404 y cero marcaciones en el tenant ajeno",
+      "La secuencia entrada/inicio_almuerzo/fin_almuerzo/salida se exige: repeticion 409 MARCACION_FUERA_DE_SECUENCIA y jornada cerrada 409 JORNADA_COMPLETA",
+      "La clave de idempotencia responde igual (replayed) para el mismo empleado y 409 IDEMPOTENCY_KEY_CONFLICT para otro",
+      "Rol sin hr:write recibe 403 PERMISO_DENEGADO y empresa sin Talento Humano recibe 403 MODULO_NO_HABILITADO",
+      "Ningun request del flujo certificado responde 5xx"
+    ],
+    "proven_by_code_level_assertion": [
+      "hr/service.js resuelve el empleado declarado dentro del tenant y rechaza con EMPLEADO_NO_ENCONTRADO lo no numerico (422) o no encontrado (404) antes de escribir",
+      "hr/routes.js separa la ruta administrativa (requirePermission hr:write) de la self-service (ownWrite) con el mismo esquema punchSchema",
+      "hr/schema.js acepta employee_id numerico o texto para poder capturar el error 422 en el servicio y no en el esquema"
+    ],
+    "proven_by_versioned_unit_suite": [
+      "apps/api/test/hr-marking-declared-employee.test.js (6 controles)"
+    ]
+  },
+  "checks": [
+    {
+      "name": "health_ok",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "commit": "unknown"
+      }
+    },
+    {
+      "name": "fixture_tenants_resolved",
+      "ok": true,
+      "detail": {
+        "con_hr": {
+          "id": "1dde4f04-b528-4fe2-8a78-1a5e89079e7d",
+          "name": "Puebla Operaciones",
+          "modules": [
+            "m-17",
+            "m-26",
+            "m-14",
+            "m-22"
+          ]
+        },
+        "cross_tenant": {
+          "id": "35e0f621-9fa5-4244-bb17-6883af5d5cc3",
+          "name": "SCJ",
+          "modules": []
+        },
+        "sin_modulo_hr": {
+          "id": "c34729b8-70a7-457b-8d06-30dc1cd2ba69",
+          "name": "Prueba APEX",
+          "modules": [
+            "m-01",
+            "m-03",
+            "m-04",
+            "m-05",
+            "m-07",
+            "m-22"
+          ]
+        }
+      }
+    },
+    {
+      "name": "fixture_roles_created",
+      "ok": true,
+      "detail": {
+        "admin": "QA Marcacion Admin 20260924110524",
+        "operario": "QA Marcacion Operario 20260924110524",
+        "empresa_sin_modulo": "QA Marcacion Sin Modulo 20260924110524"
+      }
+    },
+    {
+      "name": "fixture_users_can_login",
+      "ok": true,
+      "detail": {
+        "logins": 3
+      }
+    },
+    {
+      "name": "fixture_employees_seeded",
+      "ok": true,
+      "detail": {
+        "declarado": {
+          "tenant": "Puebla Operaciones",
+          "id": 91
+        },
+        "cross_tenant": {
+          "tenant": "SCJ",
+          "id": 92
+        }
+      }
+    },
+    {
+      "name": "punch_novelty_lands_on_declared_employee",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "punch_employee_id": 91,
+        "novedad_declarado": 1,
+        "novedad_ficha_admin": 0
+      }
+    },
+    {
+      "name": "punch_lands_on_declared_employee",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "punch_employee_id": 91,
+        "hora": "06:05",
+        "next": "inicio_almuerzo"
+      }
+    },
+    {
+      "name": "punch_rejects_unknown_employee",
+      "ok": true,
+      "detail": {
+        "status": 404,
+        "code": "EMPLEADO_NO_ENCONTRADO",
+        "error": "El empleado 999999999 no existe o no pertenece a tu organizacion.",
+        "marcaciones_ficha_admin_antes": 0,
+        "marcaciones_ficha_admin_despues": 0
+      }
+    },
+    {
+      "name": "punch_rejects_malformed_employee_id",
+      "ok": true,
+      "detail": {
+        "status": 422,
+        "code": "EMPLEADO_NO_ENCONTRADO",
+        "employee_id_enviado": "b0e6c3f2-9d1a-4c8e-8f2a-3c4d5e6f7081",
+        "marcaciones_ficha_admin": 0
+      }
+    },
+    {
+      "name": "punch_fallback_without_employee_id",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "punch_employee_id": 88,
+        "ficha_admin": 88
+      }
+    },
+    {
+      "name": "self_punch_ignores_foreign_employee_id",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "employee_id_enviado": 91,
+        "punch_employee_id": 89,
+        "ficha_operario": 89
+      }
+    },
+    {
+      "name": "cross_tenant_declared_employee_hidden",
+      "ok": true,
+      "detail": {
+        "status": 404,
+        "code": "EMPLEADO_NO_ENCONTRADO",
+        "marcaciones_empleado_ajeno": 0
+      }
+    },
+    {
+      "name": "punch_sequence_error_captured",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "MARCACION_FUERA_DE_SECUENCIA",
+        "error": "La siguiente marcacion permitida es inicio_almuerzo."
+      }
+    },
+    {
+      "name": "jornada_completa_error_captured",
+      "ok": true,
+      "detail": {
+        "inicio_almuerzo": 200,
+        "fin_almuerzo": 200,
+        "salida": 200,
+        "siguiente_marcacion": {
+          "status": 409,
+          "code": "JORNADA_COMPLETA"
+        }
+      }
+    },
+    {
+      "name": "idempotency_replay_and_conflict",
+      "ok": true,
+      "detail": {
+        "primera": 200,
+        "replay": {
+          "status": 200,
+          "replayed": true
+        },
+        "conflicto": {
+          "status": 409,
+          "code": "IDEMPOTENCY_KEY_CONFLICT"
+        }
+      }
+    },
+    {
+      "name": "rbac_gates_on_punch_routes",
+      "ok": true,
+      "detail": {
+        "rol_sin_hr_write": {
+          "status": 403,
+          "code": "PERMISO_DENEGADO"
+        },
+        "empresa_sin_modulo": {
+          "status": 403,
+          "code": "MODULO_NO_HABILITADO"
+        }
+      }
+    },
+    {
+      "name": "code_service_rejects_unresolved_declared_employee",
+      "ok": true,
+      "detail": {
+        "resolucion_declarado": true,
+        "rechazo_numerico": true,
+        "fallback_conservado": true
+      }
+    },
+    {
+      "name": "code_routes_split_admin_and_self_punch",
+      "ok": true,
+      "detail": {
+        "ruta_administrativa": true,
+        "ruta_self_service": true
+      }
+    },
+    {
+      "name": "code_schema_allows_numeric_and_string_employee_id",
+      "ok": true,
+      "detail": {
+        "punchSchema_employee_id_flexible": true
+      }
+    },
+    {
+      "name": "api_unit_suite_passes",
+      "ok": true,
+      "detail": {
+        "exit": 0,
+        "pass": "6",
+        "fail": "0"
+      }
+    },
+    {
+      "name": "no_5xx_during_certification",
+      "ok": true,
+      "detail": {
+        "requests": 21,
+        "errores_servidor": []
+      }
+    }
+  ],
+  "status": "passed",
+  "stale_leftovers_purged": {
+    "employees": 0,
+    "users": 0,
+    "roles": 0,
+    "errors": []
+  },
+  "fixture": {
+    "tenants": {
+      "principal": {
+        "id": "1dde4f04-b528-4fe2-8a78-1a5e89079e7d",
+        "name": "Puebla Operaciones",
+        "modules": [
+          "m-17",
+          "m-26",
+          "m-14",
+          "m-22"
+        ]
+      },
+      "cross": {
+        "id": "35e0f621-9fa5-4244-bb17-6883af5d5cc3",
+        "name": "SCJ"
+      },
+      "sin_modulo": {
+        "id": "c34729b8-70a7-457b-8d06-30dc1cd2ba69",
+        "name": "Prueba APEX",
+        "modules": [
+          "m-01",
+          "m-03",
+          "m-04",
+          "m-05",
+          "m-07",
+          "m-22"
+        ]
+      }
+    },
+    "roles": {
+      "admin": "QA Marcacion Admin 20260924110524",
+      "operario": "QA Marcacion Operario 20260924110524",
+      "sin_modulo": "QA Marcacion Sin Modulo 20260924110524"
+    },
+    "users": {
+      "admin": 69,
+      "operario": 70,
+      "sin_modulo": 71
+    },
+    "empleados": {
+      "declarado": 91,
+      "cross_tenant": 92
+    },
+    "fichas": {
+      "admin": 88,
+      "operario": 89
+    }
+  },
+  "versioned_suites": {
+    "apps/api/test/hr-marking-declared-employee.test.js": {
+      "pass": 6,
+      "fail": 0
+    }
+  },
+  "http_log": [
+    {
+      "method": "GET",
+      "path": "/health",
+      "status": 200,
+      "transport_error": null,
+      "latency_ms": 188
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200,
+      "transport_error": null,
+      "latency_ms": 292
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200,
+      "transport_error": null,
+      "latency_ms": 286
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200,
+      "transport_error": null,
+      "latency_ms": 304
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/time-punches",
+      "status": 200,
+      "transport_error": null,
+      "latency_ms": 72
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/time-punches",
+      "status": 200,
+      "transport_error": null,
+      "latency_ms": 36
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/time-punches",
+      "status": 404,
+      "transport_error": null,
+      "latency_ms": 25
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/time-punches",
+      "status": 422,
+      "transport_error": null,
+      "latency_ms": 21
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/time-punches",
+      "status": 200,
+      "transport_error": null,
+      "latency_ms": 41
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 200,
+      "transport_error": null,
+      "latency_ms": 43
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/time-punches",
+      "status": 404,
+      "transport_error": null,
+      "latency_ms": 21
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/time-punches",
+      "status": 409,
+      "transport_error": null,
+      "latency_ms": 25
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/time-punches",
+      "status": 200,
+      "transport_error": null,
+      "latency_ms": 33
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/time-punches",
+      "status": 200,
+      "transport_error": null,
+      "latency_ms": 32
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/time-punches",
+      "status": 200,
+      "transport_error": null,
+      "latency_ms": 32
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/time-punches",
+      "status": 409,
+      "transport_error": null,
+      "latency_ms": 25
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/time-punches",
+      "status": 200,
+      "transport_error": null,
+      "latency_ms": 36
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/time-punches",
+      "status": 200,
+      "transport_error": null,
+      "latency_ms": 21
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/time-punches",
+      "status": 409,
+      "transport_error": null,
+      "latency_ms": 22
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/time-punches",
+      "status": 403,
+      "transport_error": null,
+      "latency_ms": 10
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/time-punches",
+      "status": 403,
+      "transport_error": null,
+      "latency_ms": 35
+    }
+  ],
+  "cleanup": {
+    "employees_deleted": 5,
+    "punches_deleted": 8,
+    "sessions_deleted": 4,
+    "activities_deleted": 0,
+    "workdays_deleted": 0,
+    "novelties_deleted": 5,
+    "users_deactivated": 3,
+    "roles_deactivated": 3,
+    "errors": []
+  },
+  "finished_at": "2026-09-24T11:05:29.974Z"
+}

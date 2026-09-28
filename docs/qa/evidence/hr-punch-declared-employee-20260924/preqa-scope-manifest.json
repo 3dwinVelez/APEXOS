@@ -1,0 +1,203 @@
+{
+  "change_id": "hr-punch-declared-employee-20260924",
+  "scope_schema_version": 2,
+  "base_commits": {
+    "develop": "78b0e5e9aa6352f1e6041e6faf8ec7231a4122e4"
+  },
+  "certified_commit": "0d8fd2ca8c733cb2802b13bcaf47527ccebfea37",
+  "certified_commit_note": "0d8fd2c contiene exactamente el cambio funcional certificado: la marcacion administrativa (POST /hr/time-punches) con employee_id declarado resuelve el empleado dentro del tenant del solicitante o falla explicitamente (422 EMPLEADO_NO_ENCONTRADO para identificador no numerico, 404 EMPLEADO_NO_ENCONTRADO para inexistente en la organizacion), sin escribir nada; el respaldo a la ficha propia se conserva solo sin employee_id declarado y el ambito self-service (POST /hr/self/time-punches) sigue anclado al usuario autenticado. La certificacion local versionada (21/21 controles en vivo) y las suites (111/111) se ejecutaron sobre ese arbol. Este manifiesto, preqa-approval-evidence.json, unit-tests.txt, validation-checks.json y la certificacion viajan en el commit docs inmediatamente siguiente, que es el candidato de la promocion; 0d8fd2c es su ancestro directo. Las 50 entradas D son fantasma: evidencia QA exclusiva de develop generada en promociones anteriores (nunca presente en desarrollo, convencion forward-only); el diff de dos puntos las reporta como eliminacion pero el merge union las preserva intactas en develop. Estan declaradas una a una en allowed_deletions.",
+  "change_intent": {
+    "summary": "Correccion del destino de la marcacion administrativa en Talento Humano (modulo hr). Antes, un employee_id declarado en POST /hr/time-punches que no resolvia en el tenant del admin redirigia en silencio la marcacion a la ficha propia del admin: la marcacion, la novedad AJUSTE_MANUAL_MARCACION y el route_id quedaban en la ficha equivocada (defecto reproducido y documentado en QA contra 78b0e5e9aa63, ver docs/qa/evidence/hr-route-physical-deletion-20260923/qa-certification-failed-run7-78b0e5e9aa63.json). Ahora el ambito administrativo exige resolver el empleado declarado dentro del tenant: 422 EMPLEADO_NO_ENCONTRADO si el identificador no es numerico, 404 EMPLEADO_NO_ENCONTRADO si no existe en la organizacion, sin escrituras. Sin employee_id declarado se conserva el respaldo historico a la ficha propia y el ambito self-service ignora cualquier employee_id del payload. Ademas extiende la certificacion QA versionada (scripts/certifications/hr-route-physical-deletion-qa.js) para exigir por HTTP estos rechazos contra el candidato desplegado, con su runner run-qa-cert.sh, y agrega la certificacion local versionada de la capacidad (scripts/certifications/hr-punch-declared-employee-local.js + run-punch-declared-employee-local.sh) que captura la matriz completa de errores operativos de marcacion: empleado inexistente 404, identificador malformado 422, secuencia 409 MARCACION_FUERA_DE_SECUENCIA, jornada completa 409 JORNADA_COMPLETA, idempotencia replay 200 y conflicto 409 IDEMPOTENCY_KEY_CONFLICT, permisos 403 PERMISO_DENEGADO, modulo no habilitado 403 MODULO_NO_HABILITADO, aislamiento cross-tenant 404 sin fugas y cero 5xx. Fuera de alcance: cambios de esquema y migraciones (ninguno), apps/web (cero archivos, verificado), QA-FULL y reports/qa (excluidos), .agents/ y .codex-worktrees/ (excluidos).",
+    "modules": [
+      "talento-humano",
+      "hr",
+      "marcaciones",
+      "novedades",
+      "rbac",
+      "auditoria",
+      "qa-certification"
+    ]
+  },
+  "release_mechanics": "Merge normal de desarrollo -> develop con develop como primer padre. Las entradas D del inventario son fantasma (evidencia QA exclusiva de develop de promociones anteriores, nunca presente en desarrollo por la convencion forward-only); el merge las preserva y se verificara con git ls-tree tras el merge. Sin migraciones de esquema en este release. Cambio de API limitado a hr: solo el comportamiento interno de resolucion del empleado declarado en POST /hr/time-punches; no cambia la forma de ningun endpoint, no agrega ni elimina rutas. La certificacion local siembra fixtures (tenants existentes, roles y usuarios temporales, empleados QA-PCH-) en la base local y los purga al terminar (cleanup y stale_leftovers_purged en cero en local-certification.json); no se escribio en QA ni en produccion en este paso.",
+  "allowed_paths": [
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-marking-declared-employee.test.js",
+    "scripts/certifications/hr-punch-declared-employee-local.js",
+    "scripts/certifications/run-punch-declared-employee-local.sh",
+    "scripts/certifications/hr-route-physical-deletion-qa.js",
+    "scripts/certifications/run-qa-cert.sh",
+    "docs/qa/evidence/hr-punch-declared-employee-20260924/",
+    "docs/qa/evidence/hr-route-physical-deletion-20260923/",
+    "docs/qa/evidence/hr-markings-medellin-20260919/",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/",
+    "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/",
+    "docs/qa/evidence/hr-schedule-write-integrity-20260920/",
+    "docs/qa/evidence/kilometraje-index-alignment-20260919/",
+    "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/"
+  ],
+  "allowed_deletions": [
+    "docs/qa/evidence/hr-markings-medellin-20260919/browser-qa-evidence.md",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-06-marcacion-bello-a-jornada-cerrada.png",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-07-marcacion-bello-a-historial-4-marcas.png",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-08-mapa-qa-ruta-282-bello-polilneas.png",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-09-mapa-qa-ruta-284-envigado-polilneas.png",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-10-monitor-qa-horario-282-cerrado.png",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-approval-evidence.json",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-certification-failed-prefix-f04add4.json",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-certification.json",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-fixture.json",
+    "docs/qa/evidence/hr-markings-medellin-20260919/qa-nyvora-hr-monitor.json",
+    "docs/qa/evidence/hr-markings-medellin-20260919/scope-manifest-release.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/browser-qa-evidence.md",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-01-mallas-lista-kpi.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-02-monitor-drawer-viewport.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-03-lightbox-evidencia-ampliada.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-04-mapa-ruta-entre-marcaciones.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-05-monitor-historico-scrolltop.png",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-approval-evidence.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-certification.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-fixture.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-nyvora-hr-monitor.json",
+    "docs/qa/evidence/hr-monitor-ux-fixes-20260919/scope-manifest-release.json",
+    "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/browser-qa-evidence.md",
+    "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/qa-01-picker-ya-tiene-malla.png",
+    "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/qa-02-guardado-bloqueado-cliente.png",
+    "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/qa-03-control-positivo.png",
+    "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/qa-approval-evidence.json",
+    "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/qa-fixture.json",
+    "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/qa-nyvora-hr-monitor.json",
+    "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/scope-manifest-release.json",
+    "docs/qa/evidence/hr-schedule-write-integrity-20260920/browser-qa-evidence.md",
+    "docs/qa/evidence/hr-schedule-write-integrity-20260920/qa-approval-evidence.json",
+    "docs/qa/evidence/hr-schedule-write-integrity-20260920/qa-fixture.json",
+    "docs/qa/evidence/hr-schedule-write-integrity-20260920/qa-nyvora-hr-monitor.json",
+    "docs/qa/evidence/hr-schedule-write-integrity-20260920/scope-manifest-release.json",
+    "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-approval-evidence.json",
+    "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-certification.json",
+    "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-fixture-deactivation.json",
+    "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-fixture.json",
+    "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-index-alignment-verification.json",
+    "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-nyvora-hr-monitor.json",
+    "docs/qa/evidence/kilometraje-index-alignment-20260919/scope-manifest-release.json",
+    "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/browser-qa-evidence.md",
+    "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/qa-01-banner-truncamiento-rutas.png",
+    "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/qa-02-mapa-sin-regresion.png",
+    "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/qa-approval-evidence.json",
+    "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/qa-fixture.json",
+    "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/qa-nyvora-hr-monitor.json",
+    "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/scope-manifest-release.json"
+  ],
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
+    { "status": "A", "file": "apps/api/test/hr-marking-declared-employee.test.js" },
+    { "status": "A", "file": "scripts/certifications/hr-route-physical-deletion-qa.js" },
+    { "status": "A", "file": "scripts/certifications/hr-punch-declared-employee-local.js" },
+    { "status": "A", "file": "scripts/certifications/run-punch-declared-employee-local.sh" },
+    { "status": "A", "file": "scripts/certifications/run-qa-cert.sh" },
+    { "status": "A", "file": "docs/qa/evidence/hr-punch-declared-employee-20260924/local-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-punch-declared-employee-20260924/unit-tests.txt" },
+    { "status": "A", "file": "docs/qa/evidence/hr-punch-declared-employee-20260924/validation-checks.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-punch-declared-employee-20260924/preqa-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-punch-declared-employee-20260924/preqa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-route-physical-deletion-20260923/qa-certification-failed-run7-78b0e5e9aa63.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-route-physical-deletion-20260923/qa-scope-manifest.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-markings-medellin-20260919/browser-qa-evidence.md" },
+    { "status": "D", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-06-marcacion-bello-a-jornada-cerrada.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-07-marcacion-bello-a-historial-4-marcas.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-08-mapa-qa-ruta-282-bello-polilneas.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-09-mapa-qa-ruta-284-envigado-polilneas.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-10-monitor-qa-horario-282-cerrado.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-approval-evidence.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-certification-failed-prefix-f04add4.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-certification.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-fixture.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-markings-medellin-20260919/qa-nyvora-hr-monitor.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-markings-medellin-20260919/scope-manifest-release.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/browser-qa-evidence.md" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-01-mallas-lista-kpi.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-02-monitor-drawer-viewport.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-03-lightbox-evidencia-ampliada.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-04-mapa-ruta-entre-marcaciones.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-05-monitor-historico-scrolltop.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-approval-evidence.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-certification.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-fixture.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/qa-nyvora-hr-monitor.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-monitor-ux-fixes-20260919/scope-manifest-release.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/browser-qa-evidence.md" },
+    { "status": "D", "file": "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/qa-01-picker-ya-tiene-malla.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/qa-02-guardado-bloqueado-cliente.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/qa-03-control-positivo.png" },
+    { "status": "D", "file": "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/qa-approval-evidence.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/qa-fixture.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/qa-nyvora-hr-monitor.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-phase-b-mallas-cierre-20260921/scope-manifest-release.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-schedule-write-integrity-20260920/browser-qa-evidence.md" },
+    { "status": "D", "file": "docs/qa/evidence/hr-schedule-write-integrity-20260920/qa-approval-evidence.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-schedule-write-integrity-20260920/qa-fixture.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-schedule-write-integrity-20260920/qa-nyvora-hr-monitor.json" },
+    { "status": "D", "file": "docs/qa/evidence/hr-schedule-write-integrity-20260920/scope-manifest-release.json" },
+    { "status": "D", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-approval-evidence.json" },
+    { "status": "D", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-certification.json" },
+    { "status": "D", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-fixture-deactivation.json" },
+    { "status": "D", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-fixture.json" },
+    { "status": "D", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-index-alignment-verification.json" },
+    { "status": "D", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/qa-nyvora-hr-monitor.json" },
+    { "status": "D", "file": "docs/qa/evidence/kilometraje-index-alignment-20260919/scope-manifest-release.json" },
+    { "status": "D", "file": "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/browser-qa-evidence.md" },
+    { "status": "D", "file": "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/qa-01-banner-truncamiento-rutas.png" },
+    { "status": "D", "file": "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/qa-02-mapa-sin-regresion.png" },
+    { "status": "D", "file": "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/qa-approval-evidence.json" },
+    { "status": "D", "file": "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/qa-fixture.json" },
+    { "status": "D", "file": "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/qa-nyvora-hr-monitor.json" },
+    { "status": "D", "file": "docs/qa/evidence/lote3-hr-accounting-numbering-20260921/scope-manifest-release.json" }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "destino_correcto_de_la_marcacion_con_empleado_declarado",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json",
+        "unit-tests.txt"
+      ]
+    },
+    {
+      "name": "rechazo_explicito_sin_escrituras_empleado_inexistente_o_malformado",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json",
+        "unit-tests.txt"
+      ]
+    },
+    {
+      "name": "matriz_de_errores_operativos_de_marcacion",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "ambito_self_service_y_respaldo_sin_employee_id",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json",
+        "unit-tests.txt"
+      ]
+    },
+    {
+      "name": "rbac_modulo_y_aislamiento_tenant",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "regresion_plataforma",
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "validation-checks.json"
+      ]
+    }
+  ]
+}

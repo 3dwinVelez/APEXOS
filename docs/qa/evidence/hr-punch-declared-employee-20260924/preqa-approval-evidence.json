@@ -1,0 +1,89 @@
+{
+  "change_id": "hr-punch-declared-employee-20260924",
+  "commit": "0d8fd2ca8c733cb2802b13bcaf47527ccebfea37",
+  "commit_note": "0d8fd2c es el HEAD funcional que contiene exactamente el cambio certificado: la marcacion administrativa con empleado declarado resuelve en el tenant del solicitante o falla explicitamente (422/404 EMPLEADO_NO_ENCONTRADO sin escrituras), conservando el respaldo sin employee_id y el anclaje self-service. Este archivo, preqa-scope-manifest.json, unit-tests.txt, validation-checks.json y la certificacion viajan en el commit docs inmediatamente siguiente, que es el candidato de la promocion; 0d8fd2c es su ancestro directo.",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "validation-checks.json",
+        "unit-tests.txt"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "local-certification.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "validation-checks.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-punch-declared-employee-local.js",
+    "evidence": [
+      "local-certification.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-punch-declared-employee-local.js",
+    "evidence": [
+      "unit-tests.txt",
+      "validation-checks.json",
+      "local-certification.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "APEXOS release owner (Edwin)",
+    "approved_at": "2026-09-24T11:45:00-05:00",
+    "authorization_basis": "Instruccion expresa del release owner durante la fase QA autorizada ('Autorizo QA completo'): 'para la certificacion usa el siguiente usaurio : email: admin@apexos.qa [contrasena en config/qa-cloud.env, gitignored, nunca versionada] garantiza la certificacion ya que la queja constante de los usuarios es que al marcar generan muchos errores entonces debemos garantizar capturar todos esos errores en las marcaciones operativas'. Con esa instruccion se detecto en QA el redireccion silencioso de la marcacion administrativa con empleado declarado (run 7 contra 78b0e5e9aa63, evidencia renombrada qa-certification-failed-run7-78b0e5e9aa63.json), se corrigio en desarrollo y se certifico localmente la matriz completa de errores operativos de marcacion. Esta aprobacion habilita el despliegue del candidato a QA para certificacion funcional (scope promotion_to_develop_for_qa); NO acredita por si sola el funcionamiento en QA y qa_status permanece pending hasta la certificacion funcional en QA con el commit desplegado, requisito de la puerta develop -> main segun docs/CHANGE_APPROVAL_QA_POLICY.md.",
+    "approved_actions": [
+      "commit en desarrollo (0d8fd2c funcional + commit docs de evidencia)",
+      "validacion local con la certificacion versionada 21/21",
+      "conexion autorizada a la base QA de Supabase (jbirkghkekuifgfsgquq) exclusivamente con los scripts versionados para fixtures, certificacion y limpieza selectiva"
+    ],
+    "pending_authorizations": [
+      "push de desarrollo (incluye 8dc82f5, 026c40e, 0d8fd2c y el commit docs) a origin/desarrollo",
+      "promocion desarrollo -> develop (merge) y validacion de alcance contra el target remoto",
+      "redespliegue del candidato en QA (Railway) y reejecucion de la certificacion QA con QA_EXPECTED_COMMIT=<sha desplegado>",
+      "promocion develop -> main: requiere aprobacion funcional explicita de QA segun docs/CHANGE_APPROVAL_QA_POLICY.md; sin ella la puerta queda BLOQUEADA"
+    ]
+  },
+  "observations": [
+    "Certificacion LOCAL unica (21 controles, status=passed) ejecutada por scripts/certifications/hr-punch-declared-employee-local.js (runner: scripts/certifications/run-punch-declared-employee-local.sh): levanta una API Fastify propia en 127.0.0.1:3198 contra el Postgres local (localhost:55432) y ejerce el flujo completo con HTTP autenticado multi-tenant. Cubre: marcacion administrativa con empleado declarado existente (200, marca al empleado 91, novedad AJUSTE_MANUAL_MARCACION sobre el declarado y no sobre la ficha del admin), empleado inexistente (404 EMPLEADO_NO_ENCONTRADO, ficha del admin intacta antes y despues: 0 -> 0, regresion del redireccion silencioso), identificador no numerico UUID (422 EMPLEADO_NO_ENCONTRADO sin escrituras), respaldo sin employee_id (200 sobre la ficha propia), self-service ignorando employee_id ajeno (200 sobre la ficha del operario), empleado cross-tenant (404, cero marcaciones en el tenant ajeno), secuencia (409 MARCACION_FUERA_DE_SECUENCIA), jornada completa (409 JORNADA_COMPLETA tras entrada/inicio_almuerzo/fin_almuerzo/salida), idempotencia (replay 200 replayed=true y conflicto 409 IDEMPOTENCY_KEY_CONFLICT), permisos (403 PERMISO_DENEGADO), modulo (403 MODULO_NO_HABILITADO) y cero 5xx en los 21 requests del flujo.",
+    "La correccion es minimal y no cambia la forma de ningun endpoint: solo la resolucion del empleado declarado dentro del ambito administrativo en apps/api/src/modules/hr/service.js. El esquema punchSchema acepta employee_id numerico o texto para capturar el 422 en el servicio y no en el esquema; las rutas administrativa (requirePermission hr:write) y self-service (ownWrite) siguen separadas.",
+    "Defecto original reproducido y documentado en QA antes del fix: contra el candidato desplegado 78b0e5e9aa63, la marcacion administrativa con employee_id inexistente respondio 200 (redireccion silencioso a la ficha del admin). Evidencia preservada como docs/qa/evidence/hr-route-physical-deletion-20260923/qa-certification-failed-run7-78b0e5e9aa63.json. La certificacion QA debe reejecutarse tras redesplegar el candidato que contiene 0d8fd2c; hasta entonces la puerta develop -> main permanece BLOQUEADA (bloqueo declarado en validation-checks.json).",
+    "Suites: apps/api 111/111 (las 105 del release predecesor + las 6 nuevas de hr-marking-declared-employee), prisma validate exit 0, esquema sin cambios (el diff no toca prisma/schema.prisma ni migraciones). El diff contiene cero archivos de apps/web (verificado: git diff --name-status 3d36ca6..HEAD -- apps/web sin salida), por lo que el estado web certificado en el release predecesor (354/354, typecheck exit 0) rige sin cambios; la suite web no se reejecuta porque no existe delta web que certificar. Capturado en unit-tests.txt y validation-checks.json.",
+    "apps/api no tiene configuracion ESLint (eslint v9 exige eslint.config.js y el repo no lo incluye para la API); el lint del repositorio es web-only. No existe puerta de lint de API que este cambio pueda romper. Declarado como not_applicable en validation-checks.json.",
+    "Fixtures de la certificacion local: roles/usuarios/empleados temporales sobre tenants existentes (Puebla Operaciones, SCJ, Prueba APEX); cleanup verificado y declarado en el JSON (employees_deleted=5, punches_deleted=8, sessions_deleted=4, novelties_deleted=5, users_deactivated=3, roles_deactivated=3, errors=[]; stale_leftovers_purged: 0 empleados, 0 usuarios, 0 roles). No se escribio en QA, produccion ni Supabase remoto en este paso; la conexion QA permanece autorizada solo para los scripts versionados de certificacion.",
+    "api_commit aparece como \"unknown\" en la certificacion porque la API local levantada por el script no recibe la variable de entorno con el SHA; el commit evaluado queda fijado por el campo commit de este manifiesto (0d8fd2c).",
+    "Fuera de alcance en este manifiesto: migraciones de esquema (sin cambios), apps/web (sin archivos en el diff), QA-FULL y reports/qa (excluidos), next-env.d.ts y tsconfig.json (artefactos locales generados), .agents/, .codex-worktrees/, apps/web/AGENTS.md, apps/web/CLAUDE.md, apps/web/.next-qa3101/ (artefactos de entorno). Permanecen sin versionar en el arbol de trabajo.",
+    "Las 50 entradas D del inventario son fantasma (evidencia QA exclusiva de develop por la convencion forward-only); el merge union las preserva intactas en develop y se verificara con git ls-tree tras el merge."
+  ]
+}

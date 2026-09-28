@@ -1,0 +1,89 @@
+{
+  "change_id": "hr-route-physical-deletion-20260923",
+  "commit": "3d36ca6c1494bc7bb555fc0b396fb6d804a7c19f",
+  "commit_note": "3d36ca6 es el HEAD funcional que contiene exactamente el cambio certificado: 5ac971b (feat hr: monitor en ventana emergente, validacion por usuario y borrado fisico controlado bajo permiso delete_physical_records) + 3d36ca6 (feat web: el buscador Ctrl+K cubre todas las funciones de todos los modulos), con su certificacion local versionada (38/38 controles en vivo) y su evidencia. Este archivo, preqa-scope-manifest.json, unit-tests.txt, validation-checks.json y la certificacion viajan en el commit docs inmediatamente siguiente, que es el candidato de la promocion; 3d36ca6 es su ancestro directo.",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "hr-route-physical-deletion-local-certification.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "hr-route-physical-deletion-local-certification.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "validation-checks.json",
+        "unit-tests.txt"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "hr-route-physical-deletion-local-certification.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "unit-tests.txt",
+        "validation-checks.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-route-physical-deletion-local.js",
+    "evidence": [
+      "hr-route-physical-deletion-local-certification.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-route-physical-deletion-local.js",
+    "evidence": [
+      "unit-tests.txt",
+      "validation-checks.json",
+      "hr-route-physical-deletion-local-certification.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "APEXOS release owner (Edwin)",
+    "approved_at": "2026-09-23T11:58:00-05:00",
+    "authorization_basis": "Instruccion expresa del release owner: 'usa todo el equipo para realizar esta intervecion y garantiza que se respeten las politicas que se realicen las pruebas correspondientes y que todas las ramas queden alineadas con esta intervecion develop, main y desarrollo'. Esta aprobacion habilita el despliegue del candidato a QA para certificacion funcional (scope promotion_to_develop_for_qa); NO acredita por si sola el funcionamiento en QA y qa_status permanece pending hasta la certificacion funcional en QA con el commit desplegado, requisito de la puerta develop -> main segun docs/CHANGE_APPROVAL_QA_POLICY.md. La eliminacion fisica controlada se construyo y certifico como capacidad bajo permiso especial en ambiente LOCAL; no se autoriza ni se ejecuta borrado sobre datos de QA ni de produccion en este paso.",
+    "approved_actions": [
+      "commit en desarrollo (5ac971b, 3d36ca6, commit docs de evidencia)",
+      "validacion local con la certificacion versionada 38/38"
+    ],
+    "pending_authorizations": [
+      "push de desarrollo (incluye ca26624, skills) a origin/desarrollo",
+      "promocion desarrollo -> develop (merge) y validacion de alcance contra el target remoto",
+      "certificacion funcional de QA sobre el commit desplegado en QA",
+      "promocion develop -> main: requiere aprobacion funcional explicita de QA segun docs/CHANGE_APPROVAL_QA_POLICY.md; sin ella la puerta queda BLOQUEADA"
+    ]
+  },
+  "observations": [
+    "Certificacion LOCAL unica (38/38 controles, status=passed) ejecutada por scripts/certifications/hr-route-physical-deletion-local.js: levanta una API Fastify propia en 127.0.0.1:3199 contra el Postgres local (localhost:55432) y ejerce el flujo completo con HTTP autenticado multi-tenant. Cubre los tres entregables: (1) borrado fisico controlado — vista previa de impacto (concedida/denegada segun permiso, bloqueo por checklist abierto, cuantificacion, preservacion de traza operativa, snapshot de la malla), borrado con permiso especial, motivo y confirmacion boolean, deteccion de vista previa obsoleta, reconocimiento de traza, aliasing /talento-humano/mallas, aislamiento cross-tenant (404 sin fuga), denegacion por modulo deshabilitado, auditoria con actor y motivo, y persistencia de la traza tras el borrado (route_id sobrevive); (2) monitor como ventana emergente con validacion por usuario; (3) buscador Ctrl+K con funciones de todos los modulos. Ademas verifica por codigo las puertas RBAC (hasPhysicalDeleteGrant, requirePhysicalDeleteGrant, PERMISO_BORRADO_FISICO_DENEGADO), el esquema routeDeleteSchema y la lista PHYSICAL_DELETE_ALLOWED de prisma.js, y corre las suites versionadas del cambio.",
+    "Los 38 controles nombran: health_ok, fixture_tenants_resolved, fixture_superadmin_role_present, fixture_roles_created, fixture_users_can_login, fixture_routes_seeded, preview_reports_special_grant, preview_blocks_open_checklist, preview_quantifies_deletion, preview_preserves_operational_trace, preview_returns_route_snapshot, preview_hides_grant_without_permission, preview_unblocks_after_checklist_closed, delete_requires_special_permission, delete_requires_reason_and_confirmation, delete_detects_stale_preview, delete_requires_trace_acknowledgement, cross_tenant_hidden_as_not_found, cross_tenant_targets_stay_alive, module_gate_blocks_without_hr_module, delete_applies_with_special_permission, deleted_rows_are_gone_and_trace_survives, deleted_route_preview_is_404, deletion_is_audited_with_actor_and_reason, delete_minimal_route_without_acknowledgement, alias_route_serves_impact_preview, superadmin_wildcard_grant_applies, rbac_defines_special_delete_gate, hr_routes_gate_delete_with_special_permission, hr_service_validates_before_physical_delete, route_delete_schema_demands_reason_and_confirmation, prisma_allows_physical_delete_of_route_tree, monitor_is_accessible_modal_with_per_user_validation, delete_ui_reviews_impact_and_confirms_trace, palette_covers_functions_of_all_modules, api_unit_suite_passes, api_contract_suite_passes, web_suites_pass.",
+    "El borrado fisico conserva la traza operativa: la FK route_id de las entidades operativas se preserva (no se borran marcaciones/historial), se elimina la malla y su configuracion dependiente declarada en PHYSICAL_DELETE_ALLOWED (incluida RoutePreoperationalChecklist y sus answers/evidence), y la operacion queda auditada con actor y motivo (accion route.physical_deletion.applied). Fixtures de la certificacion: tenants temporales con permiso/sin permiso/superadmin; cleanup verificado y declarado en el JSON (routes_purged=3, employees_deactivated=5, users_deactivated=4, roles_deactivated=3, errors=[]; stale_leftovers_purged: 0 rutas, 0 usuarios, 0 empleados, 0 roles). No se escribio en QA, produccion ni Supabase remoto.",
+    "Suites: apps/api 105/105 (hr-* + accounting-* + third-party + service-order-number), incluidas las nuevas hr-route-physical-deletion 11/11 y hr-route-physical-deletion-contract 7/7; apps/web suite completa 354/354 (56 archivos), incluidas hr-monitor-modal-per-user 8/8, command-palette-module-functions 9/9 y la preexistente hr-schedule-monitor 14/14; typecheck exit 0; lint de los 5 archivos web intervenidos 0 errores y 0 warnings; prisma validate OK. Capturados en unit-tests.txt y validation-checks.json.",
+    "apps/api no tiene configuracion ESLint (eslint v9 exige eslint.config.js y el repo no lo incluye para la API); el lint del repositorio es web-only. No existe puerta de lint de API que este cambio pueda romper. Declarado como not_applicable en validation-checks.json.",
+    "Los 9 harnesses apps/web/test/certify-*-local.mjs NO forman parte del suite estandar (el glob test/*.test.mjs no los incluye: se llaman certify-*-local.mjs). Son pruebas de navegador en vivo contra el contenedor docker infra-web-1 (http://127.0.0.1:3001), construido antes de esta intervencion y sin bind-mount de fuentes, por lo que sirven un arbol de codigo anterior. Verificado por ejecucion: certify-ui-ux-phase-one-local.mjs falla en la asercion products_datatable (selector [aria-label=\"Tabla de datos\"] en un listado de productos), pantalla que el diff del candidato no toca (0 archivos de productos/compras en el diff). No es regresion de este cambio.",
+    "Evidencia visual: en este entorno el navegador integrado de la sesion reporta viewport=0x0 y visible=false, por lo que no fue posible capturar pantallazos con pixeles. La verificacion de UI es estructural y funcional (DOM y contrato HTTP en vivo, ambos cubiertos por la certificacion 38/38) y no por imagen. Queda pendiente para la fase de QA el recorrido visual con capturas sobre el ambiente desplegado.",
+    "api_commit aparece como \"unknown\" en la certificacion porque la API local levantada por el script no recibe la variable de entorno con el SHA; el commit evaluado queda fijado por el campo commit de este manifiesto (3d36ca6) y por el ancestral documentado en commit_note.",
+    "Fuera de alcance en este manifiesto: migraciones de esquema (sin cambios), QA-FULL y reports/qa (excluidos), next-env.d.ts y tsconfig.json (artefactos locales generados), .agents/, .codex-worktrees/, apps/web/AGENTS.md, apps/web/CLAUDE.md, apps/web/.next-qa3101/ (artefactos de entorno). Permanecen sin versionar en el arbol de trabajo.",
+    "Hallazgo preexistente, ajeno a este cambio y no corregido por politica de alcance (severidad Media, defensa en profundidad): el filtro de tenant del middleware Prisma es fail-open. En apps/api/src/core/prisma.js:74 el guard hace `if (!tenantId || !TENANT_MODELS.has(params.model)) return await next(params);`: el aislamiento depende de que el request haya establecido contexto con prisma.runWithTenant(tenantId, fn). Una operacion Prisma sobre un modelo de TENANT_MODELS ejecutada fuera de ese contexto no recibe predicado de tenant ni lanza error; la consulta procede sin filtrar. El codigo preexiste intacto en este release (el unico cambio de prisma.js es agregar RoutePreoperationalChecklist a PHYSICAL_DELETE_ALLOWED) y en la certificacion los endpoints nuevos devuelven 404 sin fuga cross-tenant, por lo que no se encontro ruta explotable. Recomendacion para la siguiente intervencion de seguridad: hacer el guard fail-closed (lanzar error si se opera un modelo multi-tenant sin contexto) con una via de escape explicita (runWithoutTenant) para los jobs legitimamente globales."
+  ]
+}

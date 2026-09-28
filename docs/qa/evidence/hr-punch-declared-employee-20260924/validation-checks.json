@@ -1,0 +1,76 @@
+{
+  "change_id": "hr-punch-declared-employee-20260924",
+  "environment": "LOCAL",
+  "generated_at": "2026-09-24T11:35:00Z",
+  "branch": "desarrollo",
+  "functional_head_at_generation": "0d8fd2ca8c733cb2802b13bcaf47527ccebfea37",
+  "checks": [
+    {
+      "name": "api_unit_and_contract_suites",
+      "command": "DISABLE_REDIS=true node --test test/hr-*.test.js test/accounting-*.test.js test/third-party-accounting-masters.test.js test/service-order-number-regression.test.js",
+      "cwd": "apps/api",
+      "tests": 111,
+      "pass": 111,
+      "fail": 0,
+      "detail": "las 105 del release predecesor + las 6 nuevas de hr-marking-declared-employee.test.js",
+      "status": "passed"
+    },
+    {
+      "name": "api_change_suite",
+      "command": "DISABLE_REDIS=true node --test test/hr-marking-declared-employee.test.js",
+      "cwd": "apps/api",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "detail": "correccion administrativa con empleado valido marca a ese empleado y genera el ajuste; employee_id inexistente falla 404 sin escribir; employee_id UUID falla 422 sin escribir; ambito self-service ignora employee_id declarado; sin employee_id conserva el respaldo; el servicio declara el rechazo explicito del empleado no resuelto",
+      "status": "passed"
+    },
+    {
+      "name": "hr_punch_declared_employee_local_certification",
+      "command": "bash scripts/certifications/run-punch-declared-employee-local.sh",
+      "controls": 21,
+      "status": "passed",
+      "level": "live (API Fastify propia en 127.0.0.1:3198 + Postgres local 55432, HTTP autenticado multi-tenant) + code-level + suite unitaria",
+      "evidence": "local-certification.json"
+    },
+    {
+      "name": "web_platform",
+      "status": "not_applicable",
+      "note": "El diff de este cambio contiene cero archivos de apps/web (verificado: git diff --name-status 3d36ca6..HEAD -- apps/web sin salida). El estado web certificado en el release predecesor hr-route-physical-deletion-20260923 (suite completa 354/354 en 56 archivos, typecheck exit 0) rige sin cambios para el mismo arbol web."
+    },
+    {
+      "name": "api_lint",
+      "status": "not_applicable",
+      "note": "apps/api no declara configuracion ESLint (eslint v9 exige eslint.config.js; el repo no lo incluye para la API). El lint del repositorio es web-only (raiz: npm --workspace apps/web run lint). No existe puerta de lint de API que este cambio pueda romper."
+    },
+    {
+      "name": "prisma_validate",
+      "command": "DATABASE_URL=<local 55432> npx prisma validate",
+      "cwd": "apps/api",
+      "exit": 0,
+      "status": "passed",
+      "note": "esquema sin cambios en este release (el diff no toca prisma/schema.prisma ni migraciones)"
+    }
+  ],
+  "preexisting_unrelated_failures": [
+    {
+      "suite": "scripts/certifications/run-qa-cert.sh (run 7 contra QA desplegado)",
+      "reason": "Ejecutado contra el candidato desplegado 78b0e5e9aa63 (sin el fix), reprodujo el redireccion silencioso: la marcacion administrativa con empleado declarado inexistente respondio 200 en lugar de 404/422. Es exactamente el defecto que este cambio corrige; la evidencia se preserva renombrada como docs/qa/evidence/hr-route-physical-deletion-20260923/qa-certification-failed-run7-78b0e5e9aa63.json. La certificacion QA debe reejecutarse tras desplegar el candidato nuevo; hasta entonces la puerta develop -> main permanece bloqueada.",
+      "blocking": true,
+      "resolution": "pendiente: redesplegar QA con el candidato que contiene 0d8fd2ca8c733cb2802b13bcaf47527ccebfea37 y reejecutar QA_EXPECTED_COMMIT=<sha> bash scripts/certifications/run-qa-cert.sh"
+    }
+  ],
+  "forbidden_files_excluded_from_commits": [
+    "apps/web/next-env.d.ts",
+    "apps/web/tsconfig.json",
+    ".agents/",
+    ".codex-worktrees/",
+    "apps/web/AGENTS.md",
+    "apps/web/CLAUDE.md",
+    "apps/web/.next-qa3101/",
+    "reports/**",
+    "config/*.env",
+    ".env"
+  ],
+  "status": "passed"
+}

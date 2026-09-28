@@ -1,0 +1,508 @@
+{
+  "change_id": "hr-route-physical-deletion-20260923",
+  "certification": "hr-route-physical-deletion-qa",
+  "environment": "QA",
+  "company": "NYVORA",
+  "mode": "full",
+  "generated_at": "2026-09-24T09:06:27.350Z",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "expected_commit": "78b0e5e9aa6352f1e6041e6faf8ec7231a4122e4",
+  "deployed_commit": "78b0e5e9aa63",
+  "operating_date": "2026-09-24",
+  "checks": [
+    {
+      "name": "qa_health_ok",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "commit": "78b0e5e9aa63",
+        "transport_error": null,
+        "latency_ms": 819
+      }
+    },
+    {
+      "name": "qa_runs_expected_commit",
+      "ok": true,
+      "detail": {
+        "deployed": "78b0e5e9aa63",
+        "expected": "78b0e5e9aa63"
+      }
+    },
+    {
+      "name": "qa_model_company_present",
+      "ok": true,
+      "detail": {
+        "tenant": {
+          "id": "1d162ffd-bd27-4855-8141-b015388265fc",
+          "name": "NYVORA",
+          "modules": [
+            "inventario",
+            "compras",
+            "ventas",
+            "facturacion",
+            "talento_humano",
+            "finanzas",
+            "reportes",
+            "wms",
+            "punto_de_venta",
+            "cartera",
+            "contabilidad",
+            "tesoreria",
+            "costos",
+            "presupuestos",
+            "produccion",
+            "recetas",
+            "calidad",
+            "transporte",
+            "devoluciones",
+            "comercio_exterior",
+            "activos",
+            "proyectos",
+            "configuracion",
+            "planeacion_demanda",
+            "configuracion_inicial",
+            "suscripciones",
+            "servicios",
+            "dashboard",
+            "services",
+            "hr",
+            "inventory",
+            "accounting",
+            "admin",
+            "usuarios",
+            "roles",
+            "m-01",
+            "m-02",
+            "purchases",
+            "m-03",
+            "sales",
+            "m-04",
+            "invoicing",
+            "m-06",
+            "accounts-receivable",
+            "m-07",
+            "m-14",
+            "transport",
+            "m-17",
+            "m-19",
+            "projects",
+            "m-22",
+            "m-26",
+            "ai-core",
+            "brain"
+          ]
+        }
+      }
+    },
+    {
+      "name": "qa_other_tenant_present",
+      "ok": true,
+      "detail": {
+        "tenant": {
+          "id": "fd3e2802-16d9-40ad-8813-c52696f05f5f",
+          "name": "NYVORA QA ISOLATION CONTROL"
+        }
+      }
+    },
+    {
+      "name": "qa_other_tenant_superadmin_role_present",
+      "ok": true,
+      "detail": {
+        "tenant": "NYVORA QA ISOLATION CONTROL",
+        "roles": 18
+      }
+    },
+    {
+      "name": "qa_roles_created",
+      "ok": true,
+      "detail": {
+        "con_permiso_especial": "QA Borrado Malla 20260924090627",
+        "sin_permiso_especial": "QA Operador Malla 20260924090627"
+      }
+    },
+    {
+      "name": "qa_fixture_users_can_login",
+      "ok": true,
+      "detail": {
+        "logins": 3
+      }
+    },
+    {
+      "name": "qa_fixture_routes_seeded",
+      "ok": true,
+      "detail": {
+        "route_a": 330,
+        "route_b": 331,
+        "route_c": 332
+      }
+    },
+    {
+      "name": "qa_monitor_listroutes_includes_route",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "employee_count": 2
+      }
+    },
+    {
+      "name": "qa_monitor_event_summaries_report_events",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "event_count": 3,
+        "evidence_count": 0
+      }
+    },
+    {
+      "name": "qa_monitor_attributes_marks_per_user",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "marks_by_user": [
+          {
+            "user_name": "qa-090627-A-titular@apex.test",
+            "marks": 1
+          },
+          {
+            "user_name": "qa-090627-A-acompanante@apex.test",
+            "marks": 1
+          }
+        ],
+        "punch_points": 2
+      }
+    },
+    {
+      "name": "qa_marker_fichas_present",
+      "ok": true,
+      "detail": {
+        "fichas": {
+          "a": 459,
+          "b": 460,
+          "c": 461,
+          "d": 462
+        }
+      }
+    },
+    {
+      "name": "qa_marker_users_can_login",
+      "ok": true,
+      "detail": {
+        "logins": 4
+      }
+    },
+    {
+      "name": "qa_punch_unauthorized_401",
+      "ok": true,
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "qa_punch_schema_validation_400",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "FST_ERR_VALIDATION"
+      }
+    },
+    {
+      "name": "qa_punch_rbac_blocks_hr_admin_endpoint",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "PERMISO_DENEGADO"
+      }
+    },
+    {
+      "name": "qa_punch_foreign_route_denied_403",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "HORARIO_AJENO_DENEGADO"
+      }
+    },
+    {
+      "name": "qa_punch_inactive_route_rejected_409",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "HORARIO_NO_ACTIVO"
+      }
+    },
+    {
+      "name": "qa_punch_future_timestamp_rejected_409",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "MARCACION_EN_EL_FUTURO"
+      }
+    },
+    {
+      "name": "qa_punch_expired_deferred_rejected_409",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "MARCACION_DIFERIDA_EXPIRADA"
+      }
+    },
+    {
+      "name": "qa_punch_offday_rejected_409",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "HORARIO_FUERA_DEL_DIA"
+      }
+    },
+    {
+      "name": "qa_punch_driver_preop_gate_blocks_entry",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "ok": false,
+        "preoperational_required": true,
+        "route_authorized": false
+      }
+    },
+    {
+      "name": "qa_punch_out_of_sequence_409",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "MARCACION_FUERA_DE_SECUENCIA"
+      }
+    },
+    {
+      "name": "qa_punch_entrada_ok_after_gps_unavailable",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "qa_punch_almuerzo_sequence_ok",
+      "ok": true,
+      "detail": {
+        "inicio": 200,
+        "fin": 200
+      }
+    },
+    {
+      "name": "qa_punch_overtime_requires_justification_422",
+      "ok": true,
+      "detail": {
+        "status": 422,
+        "code": "JUSTIFICACION_HORA_EXTRA_REQUERIDA",
+        "extra_minutes": 248,
+        "expected_extra_minutes": 248
+      }
+    },
+    {
+      "name": "qa_punch_overtime_requires_evidence_422",
+      "ok": true,
+      "detail": {
+        "status": 422,
+        "code": "EVIDENCIA_HORA_EXTRA_REQUERIDA"
+      }
+    },
+    {
+      "name": "qa_punch_overtime_success_reports_minutes",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "minutos_extra": 248,
+        "es_extra": true,
+        "expected_extra_minutes": 248
+      }
+    },
+    {
+      "name": "qa_punch_completed_day_409",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "JORNADA_COMPLETA"
+      }
+    },
+    {
+      "name": "qa_punch_idempotent_first_attempt_ok",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "qa_punch_idempotent_replay_returns_same_punch",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "replayed": true,
+        "first_punch_id": 1515,
+        "replay_punch_id": 1515
+      }
+    },
+    {
+      "name": "qa_punch_almuerzo_b_ok",
+      "ok": true,
+      "detail": {
+        "inicio": 200,
+        "fin": 200
+      }
+    },
+    {
+      "name": "qa_punch_mileage_required_400",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "KILOMETRAJE_REQUERIDO"
+      }
+    },
+    {
+      "name": "qa_punch_mileage_invalid_400",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "KILOMETRAJE_INVALIDO"
+      }
+    },
+    {
+      "name": "qa_punch_unusual_mileage_accepted_with_novelty",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null,
+        "kilometraje_dia": 480
+      }
+    },
+    {
+      "name": "qa_punch_idempotency_conflict_409",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "IDEMPOTENCY_KEY_CONFLICT"
+      }
+    },
+    {
+      "name": "qa_punch_admin_token_available",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "transport_error": null
+      }
+    },
+    {
+      "name": "qa_punch_past_date_records_manual_adjustment",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null,
+        "employee_id": 463
+      }
+    },
+    {
+      "name": "qa_novelty_gps_unavailable_recorded",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "found": 1,
+        "employee_code": "QA-DEL-mc-0924090627"
+      }
+    },
+    {
+      "name": "qa_novelty_unusual_mileage_recorded",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "found": 1,
+        "employee_code": "QA-DEL-mb-0924090627"
+      }
+    },
+    {
+      "name": "qa_novelty_manual_adjustment_recorded",
+      "ok": false,
+      "detail": {
+        "status": 200,
+        "found": 0,
+        "employee_code": "qa-punch-20260924090627-ajuste"
+      }
+    }
+  ],
+  "observations": {
+    "tenants": {
+      "model_company": {
+        "id": "1d162ffd-bd27-4855-8141-b015388265fc",
+        "name": "NYVORA"
+      },
+      "other_tenant": {
+        "id": "fd3e2802-16d9-40ad-8813-c52696f05f5f",
+        "name": "NYVORA QA ISOLATION CONTROL"
+      }
+    },
+    "monitor": {
+      "listroutes_route_found": true,
+      "event_count": 3,
+      "marks_by_user": [
+        {
+          "user_name": "qa-090627-A-titular@apex.test",
+          "marks": 1
+        },
+        {
+          "user_name": "qa-090627-A-acompanante@apex.test",
+          "marks": 1
+        }
+      ],
+      "punch_points": 2
+    }
+  },
+  "coverage_notes": [],
+  "status": "failed",
+  "database_project": "jbirkghkekuifgfsgquq",
+  "stale_leftovers_purged": {
+    "routes": 0,
+    "users": 0,
+    "employees": 0,
+    "roles": 0,
+    "errors": []
+  },
+  "fixture": {
+    "model_company": {
+      "tenant_id": "1d162ffd-bd27-4855-8141-b015388265fc",
+      "role_with_special_permission": "QA Borrado Malla 20260924090627",
+      "role_without_special_permission": "QA Operador Malla 20260924090627",
+      "user_with_permission_id": 543,
+      "user_without_permission_id": 544
+    },
+    "other_tenant": {
+      "tenant_id": "fd3e2802-16d9-40ad-8813-c52696f05f5f",
+      "role": "APEX_ADMIN",
+      "user_id": 545
+    },
+    "operating_date": "2026-09-24",
+    "credentials": "redacted",
+    "routes": {
+      "a_completa": {
+        "route_id": 330,
+        "checklist_con_hijos": 6,
+        "traza_operativa": 6
+      },
+      "b_minima": {
+        "route_id": 331
+      },
+      "c_otro_tenant": {
+        "tenant": "NYVORA QA ISOLATION CONTROL",
+        "route_id": 332
+      }
+    }
+  },
+  "error": {
+    "message": "Fallo de certificacion: qa_novelty_manual_adjustment_recorded"
+  },
+  "cleanup": {
+    "routes_purged": 6,
+    "employees_deactivated": 4,
+    "users_deactivated": 7,
+    "roles_deactivated": 4,
+    "errors": []
+  },
+  "finished_at": "2026-09-24T09:07:48.325Z"
+}

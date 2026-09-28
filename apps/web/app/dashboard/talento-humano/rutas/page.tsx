@@ -6,7 +6,7 @@ import { Badge, Skeleton } from "@/components/ui/feedback";
 import { localCalendarDate, scheduleGpsRequired, scheduleMonitorDate, scheduleSameDayShiftIssue, scheduleTruncationNotices, scheduleTrackingMode } from "@/lib/hrScheduleMonitor";
 import type { ScheduleTruncationSignal } from "@/lib/hrScheduleMonitor";
 import { subscribeHrMonitorRefresh } from "@/lib/hrMonitorRefresh";
-import { AlertTriangle, ArrowLeft, Building2, CalendarDays, Camera, CheckCircle2, CheckSquare2, ChevronLeft, ChevronRight, Clock, Copy, Edit3, Filter, HelpCircle, ImageOff, LogIn, LogOut, MapPin, Navigation, PlayCircle, Plus, RefreshCw, RotateCcw, Save, Search, Square, Timer, Truck, UserPlus, Utensils, UtensilsCrossed, X, ZoomIn } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Building2, CalendarDays, Camera, CheckCircle2, CheckSquare2, ChevronLeft, ChevronRight, Clock, Copy, Edit3, Filter, HelpCircle, ImageOff, LogIn, LogOut, MapPin, Navigation, PlayCircle, Plus, RefreshCw, RotateCcw, Save, Search, ShieldAlert, ShieldCheck, Square, Timer, Trash2, Truck, UserPlus, Utensils, UtensilsCrossed, X, ZoomIn } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
@@ -29,6 +29,19 @@ type MonitorMarksByUser = { user_name: string; marks: MonitorMark[] };
 type RouteMonitor = TimeRoute & RouteEventSummary & { placa?: string; assigned_count?: number; online_count?: number; with_gps_count?: number; punch_points?: PunchPoint[]; activity_points?: ActivityPoint[]; marks_by_user?: MonitorMarksByUser[] };
 type OperationsMap = { date: string; generated_at: string; people: OperatorPoint[]; routes: RouteMonitor[]; truncation?: ScheduleTruncationSignal; totals: { routes: number; planned_people: number; online: number; without_gps: number; offline: number } };
 type MonitorEvidenceBatch = { route_id: number | string; generated_at: string; punch_evidence: Record<string, MonitorEvidence>; activity_evidence: Record<string, MonitorEvidence[]>; counts: { punches: number; punch_evidence: number; activities: number; activity_evidence: number } };
+type RouteDeletionBlocker = { code: string; message: string; detail?: Record<string, unknown> };
+type RouteDeletionImpact = {
+  route_id: number | string;
+  can_delete: boolean;
+  blockers: RouteDeletionBlocker[];
+  will_delete: { checklists: number; checklist_statuses: string[]; checklist_answers: number; checklist_evidence: number; checklist_findings: number; start_authorizations: number; block_events: number; total: number };
+  preserved_trace: { time_punches: number; gps_pings: number; work_sessions: number; work_activities: number; processed_workdays: number; total: number };
+  requires_trace_acknowledgement: boolean;
+  permissions?: { can_physical_delete: boolean };
+  route: { id: number | string; date: string; vehicle_plate?: string | null; status: string; start_time?: string; end_time?: string; tolerance_minutes?: number; employees: string[]; employee_count: number };
+};
+
+const DELETE_REASON_MIN = 12;
 
 const punchNames: Record<string, string> = { entrada: "Entrada", inicio_almuerzo: "Almuerzo", fin_almuerzo: "Retorno", salida: "Cierre" };
 const ROUTES_LIST_LIMIT = 500;
@@ -122,6 +135,10 @@ function punchPunctuality(event: TimelineEvent, route: RouteMonitor) {
   return null;
 }
 
+function personKey(value?: string | null) {
+  return String(value || "").trim().toLowerCase();
+}
+
 function personMonitorMarks(route: RouteMonitor, person: OperatorPoint) {
   const normalized = (value?: string | null) => String(value || "").trim().toLowerCase();
   const names = new Set([normalized(person.user_name), normalized(person.name)].filter(Boolean));
@@ -145,6 +162,10 @@ function safeEvidenceUrl(value?: string | null) {
 
 function routeLabel(route: RouteMonitor) {
   return route.vehicle_plate || route.placa || `Horario ${route.id}`;
+}
+
+function impactRequiresTraceAck(impact: RouteDeletionImpact | null) {
+  return Boolean(impact?.requires_trace_acknowledgement || (impact?.preserved_trace?.total || 0) > 0);
 }
 
 function employeeValue(employee: Employee) {
@@ -399,12 +420,24 @@ export default function RoutesPlanningPage() {
   const [evidenceErrors, setEvidenceErrors] = useState<Record<string, string>>({});
   const [loadingBatch, setLoadingBatch] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [monitorPerson, setMonitorPerson] = useState("");
+  const [monitorKind, setMonitorKind] = useState<"all" | "marca" | "actividad">("all");
   const [mounted, setMounted] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<RouteMonitor | null>(null);
+  const [deleteImpact, setDeleteImpact] = useState<RouteDeletionImpact | null>(null);
+  const [loadingImpact, setLoadingImpact] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleteConfirmed, setDeleteConfirmed] = useState(false);
+  const [deleteTraceAck, setDeleteTraceAck] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const batchLoadedRef = useRef(false);
   const pathname = usePathname();
-  const drawerBodyRef = useRef<HTMLDivElement | null>(null);
+  const monitorBodyRef = useRef<HTMLDivElement | null>(null);
   const peopleScrollRef = useRef<HTMLDivElement | null>(null);
   const timelineScrollRef = useRef<HTMLDivElement | null>(null);
+  const monitorDialogRef = useRef<HTMLElement | null>(null);
+  const lightboxDialogRef = useRef<HTMLDivElement | null>(null);
 
   const loadRoutes = useCallback(async () => {
     let latest: TimeRoute[] | null = null;
@@ -697,6 +730,81 @@ export default function RoutesPlanningPage() {
     }
   }
 
+  // El horario se elimina por completo solo si el rol tiene el permiso especial de borrado
+  // fisico. La vista previa informa el alcance y si el rol puede ejecutarlo; el DELETE lo
+  // vuelve a validar en el servidor, de modo que la pista de interfaz nunca autoriza.
+  async function openDeleteModal(route: RouteMonitor) {
+    setDeleteTarget(route);
+    setDeleteImpact(null);
+    setDeleteReason("");
+    setDeleteConfirmed(false);
+    setDeleteTraceAck(false);
+    setDeleteError("");
+    setLoadingImpact(true);
+    try {
+      const impact = await api<RouteDeletionImpact>(`/api/v1/hr/routes/${encodeURIComponent(String(route.id))}/deletion-impact`, { cache: "no-store" });
+      setDeleteImpact(impact);
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : "No fue posible revisar el horario antes de eliminarlo.");
+    } finally {
+      setLoadingImpact(false);
+    }
+  }
+
+  function closeDeleteModal() {
+    if (deleting) return;
+    setDeleteTarget(null);
+    setDeleteImpact(null);
+    setDeleteError("");
+  }
+
+  async function confirmDeleteRoute() {
+    if (deleting || !deleteTarget) return;
+    if (deleteReason.trim().length < DELETE_REASON_MIN) {
+      setDeleteError(`El motivo del borrado debe tener al menos ${DELETE_REASON_MIN} caracteres.`);
+      return;
+    }
+    if (!deleteConfirmed) {
+      setDeleteError("Confirma que entiendes que el horario se elimina por completo.");
+      return;
+    }
+    if (impactRequiresTraceAck(deleteImpact) && !deleteTraceAck) {
+      setDeleteError("Debes reconocer que la traza operativa se conserva antes de continuar.");
+      return;
+    }
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const result = await api<{ ok: boolean; route_id: number | string; preserved_trace: RouteDeletionImpact["preserved_trace"] }>(
+        `/api/v1/hr/routes/${encodeURIComponent(String(deleteTarget.id))}`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            reason: deleteReason.trim(),
+            confirmed: true,
+            expected_employees: deleteImpact?.route.employee_count,
+            expected_date: deleteImpact?.route.date,
+            acknowledge_trace: deleteTraceAck
+          })
+        }
+      );
+      const preserved = result?.preserved_trace?.total || 0;
+      setMessage(preserved
+        ? `Horario eliminado definitivamente. Se conservaron ${preserved} registro(s) de traza operativa.`
+        : "Horario eliminado definitivamente.");
+      setMessageTone("success");
+      setSelectedRouteId("");
+      setDeleteTarget(null);
+      setDeleteImpact(null);
+      await Promise.all([loadRoutes(), loadEventSummaries(), loadMonitor()]);
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : "No fue posible eliminar el horario.");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   const assignmentByPerson = useMemo(() => {
     const map = new Map<string, DayAssignment>();
     for (const assignment of dayAssignments) {
@@ -739,6 +847,62 @@ export default function RoutesPlanningPage() {
     ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
   }, [selectedRoute]);
 
+  // Cada evento llega etiquetado con su persona: el monitor agrupa y filtra por
+  // usuario para validar sus marcaciones sin mezclarlas con el resto del equipo.
+  const monitorPeople = useMemo(() => {
+    const entries = new Map<string, { key: string; label: string; marcaciones: number; actividades: number; online: boolean }>();
+    function ensure(value?: string | null, online = false) {
+      const key = personKey(value);
+      if (!key) return;
+      const current = entries.get(key);
+      if (current) {
+        if (online) current.online = true;
+        return;
+      }
+      entries.set(key, { key, label: String(value || "").trim(), marcaciones: 0, actividades: 0, online });
+    }
+    for (const person of selectedPeople) ensure(person.name || person.user_name, Boolean(person.online));
+    if (selectedRoute) for (const name of routeEmployeeNames(selectedRoute)) ensure(name);
+    for (const event of selectedTimeline) {
+      ensure(event.user_name);
+      const entry = entries.get(personKey(event.user_name));
+      if (!entry) continue;
+      if (event.kind === "marca") entry.marcaciones += 1;
+      else entry.actividades += 1;
+    }
+    return Array.from(entries.values());
+  }, [selectedPeople, selectedRoute, selectedTimeline]);
+  const monitorPersonKey = personKey(monitorPerson);
+  const monitorPersonRecord = monitorPeople.find((person) => person.key === monitorPersonKey) || null;
+  const monitorPersonIndex = monitorPeople.findIndex((person) => person.key === monitorPersonKey);
+  const personScopedTimeline = useMemo(() => (monitorPersonKey ? selectedTimeline.filter((event) => personKey(event.user_name) === monitorPersonKey) : selectedTimeline), [monitorPersonKey, selectedTimeline]);
+  const visibleTimeline = useMemo(() => (monitorKind === "all" ? personScopedTimeline : personScopedTimeline.filter((event) => event.kind === monitorKind)), [monitorKind, personScopedTimeline]);
+  const monitorMarcaCount = personScopedTimeline.filter((event) => event.kind === "marca").length;
+  const monitorActivityCount = personScopedTimeline.filter((event) => event.kind === "actividad").length;
+  const monitorFilterActive = Boolean(monitorPersonKey) || monitorKind !== "all";
+  const monitorPersonMarks = useMemo(() => {
+    const byType = new Map<string, MonitorMark>();
+    if (!selectedRoute || !monitorPersonKey) return byType;
+    for (const entry of selectedRoute.marks_by_user || []) {
+      if (personKey(entry.user_name) !== monitorPersonKey) continue;
+      for (const mark of entry.marks) if (!byType.has(mark.type)) byType.set(mark.type, mark);
+    }
+    return byType;
+  }, [monitorPersonKey, selectedRoute]);
+
+  function moveMonitorPerson(step: number) {
+    if (!monitorPeople.length) return;
+    const nextIndex = monitorPersonIndex < 0
+      ? (step > 0 ? 0 : monitorPeople.length - 1)
+      : (monitorPersonIndex + step + monitorPeople.length) % monitorPeople.length;
+    setMonitorPerson(monitorPeople[nextIndex].key);
+  }
+
+  function resetMonitorFilters() {
+    setMonitorPerson("");
+    setMonitorKind("all");
+  }
+
   useEffect(() => {
     if (!selectedRoute || batchLoadedRef.current) return;
     batchLoadedRef.current = true;
@@ -747,44 +911,69 @@ export default function RoutesPlanningPage() {
 
   useEffect(() => {
     if (loadingBatch || !selectedRoute) return;
-    for (const event of selectedTimeline) {
+    for (const event of visibleTimeline) {
       const summary = event.evidence?.[0];
       if (summary?.available && summary.id != null && !loadedEvidence[event.id] && !loadingEvidence[event.id] && !evidenceErrors[event.id]) {
         void loadTimelineEvidence(event);
       }
     }
-  }, [evidenceErrors, loadTimelineEvidence, loadedEvidence, loadingBatch, loadingEvidence, selectedRoute, selectedTimeline]);
+  }, [evidenceErrors, loadTimelineEvidence, loadedEvidence, loadingBatch, loadingEvidence, selectedRoute, visibleTimeline]);
 
-  const lightboxItems = useMemo(() => selectedTimeline.flatMap((event) => {
+  const lightboxItems = useMemo(() => visibleTimeline.flatMap((event) => {
     const items = (loadedEvidence[event.id]?.length ? loadedEvidence[event.id] : event.evidence || []) as MonitorEvidence[];
     return items.filter((item) => Boolean(item.base64_data));
-  }), [loadedEvidence, selectedTimeline]);
-  const evidenceCount = useMemo(() => selectedTimeline.reduce((sum, event) => {
+  }), [loadedEvidence, visibleTimeline]);
+  const evidenceCount = useMemo(() => visibleTimeline.reduce((sum, event) => {
     const items = (loadedEvidence[event.id]?.length ? loadedEvidence[event.id] : event.evidence || []) as MonitorEvidence[];
     return sum + items.filter((item) => item.base64_data || safeEvidenceUrl(item.file_url)).length;
-  }, 0), [loadedEvidence, selectedTimeline]);
+  }, 0), [loadedEvidence, visibleTimeline]);
 
   useEffect(() => { setMounted(true); }, []);
 
-  // Al cambiar de horario o de dia el monitor debe volver al inicio: antes el
-  // drawer quedaba scrolled a media pagina y las marcaciones no se veian.
+  // Al cambiar de horario o de dia el monitor debe volver al inicio y sin filtros:
+  // antes el panel quedaba scrolled a media pagina y se mezclaban personas.
   useEffect(() => {
     setLightboxIndex(null);
-    if (drawerBodyRef.current) drawerBodyRef.current.scrollTop = 0;
+    setMonitorPerson("");
+    setMonitorKind("all");
+    if (monitorBodyRef.current) monitorBodyRef.current.scrollTop = 0;
     if (peopleScrollRef.current) peopleScrollRef.current.scrollTop = 0;
     if (timelineScrollRef.current) timelineScrollRef.current.scrollTop = 0;
   }, [monitorDate, selectedRouteId]);
 
   useEffect(() => {
     if (!selectedRoute) return;
+    monitorDialogRef.current?.focus();
+  }, [selectedRoute]);
+
+  useEffect(() => {
+    if (!selectedRoute) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const trapFocus = (event: KeyboardEvent, container: HTMLElement | null) => {
+      if (event.key !== "Tab" || !container) return;
+      const focusable = [...container.querySelectorAll<HTMLElement>('button, a, input, select, textarea, [tabindex]:not([tabindex="-1"])')].filter((element) => !element.hasAttribute("disabled"));
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === container)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
     const onKeyDown = (event: KeyboardEvent) => {
+      // Con la ventana de eliminacion abierta el monitor no debe reaccionar: el modal
+      // superior maneja su propio Escape y su propia trampa de foco.
+      if (deleteTarget) return;
       if (event.key === "Escape") {
         if (lightboxIndex != null) setLightboxIndex(null);
         else setSelectedRouteId("");
         return;
       }
+      trapFocus(event, lightboxIndex != null ? lightboxDialogRef.current : monitorDialogRef.current);
       if (lightboxIndex == null || lightboxItems.length < 2) return;
       if (event.key === "ArrowLeft") setLightboxIndex((current) => (current == null ? current : (current - 1 + lightboxItems.length) % lightboxItems.length));
       if (event.key === "ArrowRight") setLightboxIndex((current) => (current == null ? current : (current + 1) % lightboxItems.length));
@@ -794,7 +983,7 @@ export default function RoutesPlanningPage() {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [lightboxIndex, lightboxItems.length, selectedRoute]);
+  }, [deleteTarget, lightboxIndex, lightboxItems.length, selectedRoute]);
   const routeCoverage = monitorRoutes.length ? Math.round((monitorRoutes.filter((route) => routeEventCount(route) > 0).length / monitorRoutes.length) * 100) : 0;
   const administrativeRoutes = monitorRoutes.filter((route) => !route.vehicle_plate && !route.placa).length;
   const operationalRoutes = monitorRoutes.length - administrativeRoutes;
@@ -818,6 +1007,10 @@ export default function RoutesPlanningPage() {
   }
 
   const onMallasPath = Boolean(pathname?.startsWith("/dashboard/talento-humano/mallas"));
+  const deleteGranted = deleteImpact?.permissions?.can_physical_delete !== false;
+  const deleteAvailable = Boolean(deleteImpact?.can_delete) && deleteGranted;
+  const deleteCounts = deleteImpact?.will_delete;
+  const preservedCounts = deleteImpact?.preserved_trace;
 
   return (
     <div className="space-y-5 pb-20 md:pb-6">
@@ -1047,8 +1240,18 @@ export default function RoutesPlanningPage() {
       ) : null}
 
       {selectedRoute ? createPortal(
-        <div className="fixed inset-0 z-[70] bg-neutral-950/50" onClick={() => setSelectedRouteId("")}>
-          <aside aria-label="Monitor de horario" aria-modal="true" className="ml-auto flex h-full w-full max-w-6xl flex-col overflow-hidden bg-paper shadow-2xl" onClick={(event) => event.stopPropagation()} role="dialog">
+        <div
+          className="fixed inset-0 z-[70] flex items-end bg-neutral-950/55 p-0 md:items-center md:justify-center md:p-6"
+          onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedRouteId(""); }}
+        >
+          <section
+            aria-label="Monitor de horario"
+            aria-modal="true"
+            className="flex max-h-[calc(100dvh-1rem)] w-full max-w-full flex-col overflow-hidden rounded-t-overlay border border-line bg-surface text-content-body shadow-overlay md:max-h-[calc(100dvh-3rem)] md:max-w-6xl md:rounded-overlay"
+            ref={monitorDialogRef}
+            role="dialog"
+            tabIndex={-1}
+          >
             <header className="border-b border-line bg-surface px-4 py-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
@@ -1074,32 +1277,50 @@ export default function RoutesPlanningPage() {
                   </div>
                   <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={() => { loadRoutes(); loadEventSummaries(); loadMonitor(); }} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={15} /> Actualizar</button>
                   <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={() => openEditModal(selectedRoute)} type="button"><Edit3 size={15} /> Editar</button>
+                  <button className="inline-flex h-9 items-center gap-2 rounded-md border border-red-300 bg-paper px-3 text-sm font-semibold text-red-700 hover:bg-red-50 dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/10" onClick={() => void openDeleteModal(selectedRoute)} type="button"><Trash2 size={15} /> Eliminar</button>
                   <Link className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" href="/dashboard/talento-humano/mapa"><Navigation size={15} /> Mapa</Link>
                   <button aria-label="Cerrar monitor" className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-line bg-paper hover:bg-surface-muted" onClick={() => setSelectedRouteId("")} type="button"><X size={17} /></button>
                 </div>
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <Badge className="gap-1.5" tone="neutral"><Clock size={12} /> {selectedTimeline.filter((event) => event.kind === "marca").length} marcaciones</Badge>
-                <Badge className="gap-1.5" tone="info"><PlayCircle size={12} /> {selectedTimeline.filter((event) => event.kind === "actividad").length} actividades</Badge>
+                <Badge className="gap-1.5" tone="neutral"><Clock size={12} /> {monitorMarcaCount} marcaciones</Badge>
+                <Badge className="gap-1.5" tone="info"><PlayCircle size={12} /> {monitorActivityCount} actividades</Badge>
                 <Badge className="gap-1.5" tone="success"><Camera size={12} /> {evidenceCount} evidencias</Badge>
                 <Badge className="gap-1.5" tone={selectedPeople.some((person) => person.online) ? "success" : "neutral"}><Navigation size={12} /> {selectedPeople.filter((person) => person.online).length}/{selectedPeople.length} en vivo</Badge>
+                {monitorFilterActive ? (
+                  <button className="inline-flex items-center gap-1.5 rounded-md border border-apex/40 bg-apex/10 px-2 py-1 text-xs font-semibold text-apex hover:bg-apex/20" onClick={resetMonitorFilters} title="Quitar los filtros del monitor" type="button">
+                    <Filter size={12} />
+                    {monitorPersonRecord ? `Validando: ${monitorPersonRecord.label}${monitorPersonIndex >= 0 ? ` (${monitorPersonIndex + 1} de ${monitorPeople.length})` : ""}` : monitorKind === "marca" ? "Solo marcaciones" : "Solo actividades"}
+                    <X size={12} />
+                  </button>
+                ) : null}
                 {loadingBatch ? <Badge className="gap-1.5" tone="neutral"><RefreshCw className="animate-spin" size={12} /> Cargando evidencias</Badge> : null}
                 {monitorDate !== scheduleMonitorDate(selectedRoute.date) ? <Badge className="gap-1.5" tone="warning"><CalendarDays size={12} /> El horario es del {scheduleMonitorDate(selectedRoute.date)}</Badge> : null}
               </div>
             </header>
-            <div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[320px_1fr] lg:overflow-hidden" ref={drawerBodyRef}>
+            <div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[320px_1fr] lg:overflow-hidden" ref={monitorBodyRef}>
               <section className="border-b border-line p-4 lg:min-h-0 lg:overflow-y-auto lg:border-b-0 lg:border-r" ref={peopleScrollRef}>
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-content-muted">Equipo asignado</h3>
                   <span className="text-xs font-semibold text-content-muted">{selectedPeople.filter((person) => person.online).length}/{selectedPeople.length} en vivo</span>
                 </div>
+                <p className="mt-1 text-xs text-content-muted">Toca una persona para validar solo sus marcaciones y actividades.</p>
                 <div className="mt-3 space-y-2">
                   {(selectedPeople.length ? selectedPeople : routeEmployeeNames(selectedRoute).map((name) => ({ key: String(name), name, user_name: String(name), route_id: selectedRoute.id } as OperatorPoint))).map((person) => {
                     const marks = personMonitorMarks(selectedRoute, person);
                     const status = personStatusBadge(person);
                     const initials = String(person.name || person.user_name).split(/\s+/).filter(Boolean).map((word) => word[0]).slice(0, 2).join("").toUpperCase();
+                    const key = personKey(person.name || person.user_name);
+                    const summary = monitorPeople.find((entry) => entry.key === key) || null;
+                    const active = Boolean(key) && key === monitorPersonKey;
                     return (
-                      <article className="rounded-md border border-line bg-surface p-3" key={person.key}>
+                      <button
+                        aria-pressed={active}
+                        className={`w-full rounded-md border p-3 text-left transition ${active ? "border-apex bg-apex/5 ring-1 ring-apex/30" : "border-line bg-surface hover:border-apex/40 hover:bg-paper"}`}
+                        key={person.key}
+                        onClick={() => setMonitorPerson(active ? "" : key)}
+                        type="button"
+                      >
                         <div className="flex items-start gap-3">
                           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-apex/10 text-sm font-bold text-apex">{initials}</span>
                           <div className="min-w-0 flex-1">
@@ -1126,17 +1347,72 @@ export default function RoutesPlanningPage() {
                             ) : null}
                           </div>
                         </div>
-                      </article>
+                        <p className={`mt-2 text-xs font-semibold ${active ? "text-apex" : "text-content-muted"}`}>
+                          {summary ? `${summary.marcaciones} marcacion(es) · ${summary.actividades} actividad(es)` : "Sin eventos en el dia"}
+                          {active ? " · validando" : ""}
+                        </p>
+                      </button>
                     );
                   })}
                   {!selectedPeople.length ? <p className="rounded-md bg-surface-muted p-3 text-sm text-content-muted">Sin personas asignadas a esta jornada.</p> : null}
                 </div>
               </section>
-              <section className="p-4 lg:min-h-0 lg:overflow-y-auto" ref={timelineScrollRef}>
-                <div className="mb-4">
-                  <h3 className="text-base font-semibold text-content-strong">Trazabilidad cronologica</h3>
-                  <p className="mt-1 text-sm text-content-muted">Marcaciones y actividades con hora, GPS, tolerancia y evidencia fotografica.</p>
+              <section className="flex min-h-0 flex-col p-4 lg:overflow-hidden" ref={timelineScrollRef}>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="text-base font-semibold text-content-strong">{monitorPersonRecord ? `Trazabilidad de ${monitorPersonRecord.label}` : "Trazabilidad cronologica del equipo"}</h3>
+                    <p className="mt-1 text-sm text-content-muted">Marcaciones y actividades con hora, GPS, tolerancia y evidencia fotografica.</p>
+                  </div>
+                  {monitorFilterActive ? (
+                    <button className="inline-flex h-9 shrink-0 items-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={resetMonitorFilters} type="button"><RotateCcw size={15} /> Ver todo el equipo</button>
+                  ) : null}
                 </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2 rounded-md border border-line bg-paper p-2">
+                  <label className="flex min-w-[220px] flex-1 items-center gap-2">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-content-muted">Persona</span>
+                    <select
+                      aria-label="Filtrar eventos por persona"
+                      className="h-9 min-w-0 flex-1 rounded-md border border-line bg-surface px-2 text-sm font-semibold text-content-body"
+                      onChange={(event) => setMonitorPerson(event.target.value)}
+                      value={monitorPersonKey}
+                    >
+                      <option value="">Todo el equipo ({monitorPeople.length})</option>
+                      {monitorPeople.map((person) => <option key={person.key} value={person.key}>{person.label} ({person.marcaciones} marc. · {person.actividades} act.)</option>)}
+                    </select>
+                  </label>
+                  <div className="flex items-center gap-1">
+                    <button aria-label="Persona anterior" className="flex h-9 w-9 items-center justify-center rounded-md border border-line bg-surface text-content-muted hover:bg-surface-muted hover:text-content-strong disabled:opacity-40" disabled={!monitorPeople.length} onClick={() => moveMonitorPerson(-1)} type="button"><ChevronLeft size={15} /></button>
+                    <button aria-label="Persona siguiente" className="flex h-9 w-9 items-center justify-center rounded-md border border-line bg-surface text-content-muted hover:bg-surface-muted hover:text-content-strong disabled:opacity-40" disabled={!monitorPeople.length} onClick={() => moveMonitorPerson(1)} type="button"><ChevronRight size={15} /></button>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {([["all", `Todos (${personScopedTimeline.length})`], ["marca", `Marcaciones (${monitorMarcaCount})`], ["actividad", `Actividades (${monitorActivityCount})`]] as const).map(([kind, label]) => (
+                      <button
+                        aria-pressed={monitorKind === kind}
+                        className={`inline-flex h-9 items-center rounded-md border px-3 text-xs font-semibold ${monitorKind === kind ? "border-apex bg-apex text-white" : "border-line bg-surface text-content-body hover:bg-surface-muted"}`}
+                        key={kind}
+                        onClick={() => setMonitorKind(kind)}
+                        type="button"
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {monitorPersonRecord ? (
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5 rounded-md bg-surface-muted px-2 py-1.5">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-content-muted">{monitorPersonRecord.label} · marcaciones clave</span>
+                    {punchSequence.map((type) => {
+                      const mark = monitorPersonMarks.get(type);
+                      return (
+                        <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${mark ? "bg-success/15 text-content-strong" : "bg-surface text-content-subtle"}`} key={type} title={mark ? `Marcada a las ${formatHour(mark.time)}` : "Pendiente"}>
+                          {mark ? <CheckCircle2 size={10} /> : null}{punchShortNames[type]}
+                        </span>
+                      );
+                    })}
+                    <span className="text-[11px] font-semibold text-content-muted">{Array.from(monitorPersonMarks.keys()).length} de {punchSequence.length} registradas</span>
+                  </div>
+                ) : null}
+                <div className="mt-3 min-h-0 flex-1 lg:overflow-y-auto">
                 {!selectedTimeline.length ? (
                   <div className="flex min-h-[260px] flex-col items-center justify-center rounded-md border border-dashed border-line bg-surface p-6 text-center">
                     <span className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-muted text-content-subtle"><CalendarDays size={22} /></span>
@@ -1148,9 +1424,24 @@ export default function RoutesPlanningPage() {
                       <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={() => changeMonitorDate(1)} type="button">Dia siguiente <ChevronRight size={15} /></button>
                     </div>
                   </div>
+                ) : !visibleTimeline.length ? (
+                  <div className="flex min-h-[220px] flex-col items-center justify-center rounded-md border border-dashed border-line bg-surface p-6 text-center">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-muted text-content-subtle"><Filter size={22} /></span>
+                    <p className="mt-3 text-sm font-semibold text-content-strong">Sin eventos para el filtro actual</p>
+                    <p className="mt-1 max-w-md text-sm text-content-muted">
+                      {monitorPersonRecord
+                        ? `${monitorPersonRecord.label} no registra ${monitorKind === "marca" ? "marcaciones" : monitorKind === "actividad" ? "actividades" : "eventos"} en el dia consultado.`
+                        : `No hay ${monitorKind === "marca" ? "marcaciones" : "actividades"} registradas en el dia consultado.`}
+                    </p>
+                    <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                      <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={resetMonitorFilters} type="button"><RotateCcw size={15} /> Ver todo el equipo</button>
+                      {monitorKind !== "all" ? <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={() => setMonitorKind("all")} type="button">Ver todos los tipos</button> : null}
+                      {monitorPeople.length > 1 ? <button className="inline-flex h-9 items-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white" onClick={() => moveMonitorPerson(1)} type="button">Siguiente persona <ChevronRight size={15} /></button> : null}
+                    </div>
+                  </div>
                 ) : (
                   <ol className="relative space-y-3 before:absolute before:bottom-6 before:left-[21px] before:top-6 before:w-px before:bg-line">
-                    {selectedTimeline.map((event) => {
+                    {visibleTimeline.map((event) => {
                       const punctuality = punchPunctuality(event, selectedRoute);
                       const PunctualityIcon = punctuality?.icon || Clock;
                       const EventIcon = event.kind === "marca" ? punchIconFor(event.type) : PlayCircle;
@@ -1206,15 +1497,16 @@ export default function RoutesPlanningPage() {
                     })}
                   </ol>
                 )}
+                </div>
               </section>
             </div>
-          </aside>
+          </section>
         </div>,
         document.body
       ) : null}
 
       {selectedRoute && lightboxIndex != null && lightboxItems[lightboxIndex] ? createPortal(
-        <div aria-label="Evidencia ampliada" aria-modal="true" className="fixed inset-0 z-[110] flex items-center justify-center bg-neutral-950/85 p-4" onClick={() => setLightboxIndex(null)} role="dialog">
+        <div aria-label="Evidencia ampliada" aria-modal="true" className="fixed inset-0 z-[110] flex items-center justify-center bg-neutral-950/85 p-4" onClick={() => setLightboxIndex(null)} ref={lightboxDialogRef} role="dialog" tabIndex={-1}>
           <div className="w-full max-w-4xl overflow-hidden rounded-md bg-paper shadow-2xl" onClick={(event) => event.stopPropagation()}>
             <div className="flex items-center justify-between gap-3 border-b border-line bg-surface px-3 py-2">
               <p className="truncate text-sm font-semibold text-content-strong">{lightboxItems[lightboxIndex].file_name || "Evidencia fotografica"}</p>
@@ -1235,6 +1527,111 @@ export default function RoutesPlanningPage() {
           </div>
         </div>,
         document.body
+      ) : null}
+
+      {deleteTarget ? (
+        <ModalFrame
+          maxWidth="md:max-w-xl"
+          onClose={closeDeleteModal}
+          title="Eliminar horario definitivamente"
+          footer={
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button className="h-10 rounded-md border border-line bg-paper px-4 text-sm font-semibold hover:bg-surface-muted disabled:opacity-50" disabled={deleting} onClick={closeDeleteModal} type="button">Cancelar</button>
+              <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50" disabled={deleting || loadingImpact || !deleteAvailable} onClick={() => void confirmDeleteRoute()} type="button">
+                {deleting ? <RefreshCw className="animate-spin" size={15} /> : <Trash2 size={15} />}
+                {deleting ? "Eliminando..." : "Eliminar definitivamente"}
+              </button>
+            </div>
+          }
+        >
+          <div className="flex items-start gap-3 rounded-md border border-red-200 bg-red-50 p-3 text-red-900 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-red-600/10"><ShieldAlert size={20} /></span>
+            <div className="min-w-0 text-sm">
+              <p className="font-semibold">El borrado es completo e irreversible.</p>
+              <p className="mt-0.5">Se retiran la malla, su lista de chequeo preoperacional y sus autorizaciones de arranque. Requiere el permiso especial de borrado fisico.</p>
+            </div>
+          </div>
+
+          <div className="mt-3 rounded-md border border-line bg-paper p-3">
+            <p className="text-sm font-semibold text-content-strong">{routeLabel(deleteTarget)}</p>
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-content-muted">
+              <span className="inline-flex items-center gap-1"><CalendarDays size={13} /> {scheduleMonitorDate(deleteTarget.date)}</span>
+              <span className="inline-flex items-center gap-1"><Clock size={13} /> {formatHour(deleteTarget.start_time)} - {formatHour(deleteTarget.end_time)}</span>
+              <span>{deleteImpact?.route.employee_count ?? routeEmployeeValues(deleteTarget).length ?? 0} persona(s) asignada(s)</span>
+            </div>
+          </div>
+
+          {loadingImpact ? (
+            <div className="mt-3 space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-3/4" /></div>
+          ) : null}
+
+          {!deleteGranted && deleteImpact ? (
+            <div className="mt-3 flex items-start gap-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200" role="alert">
+              <ShieldAlert className="mt-0.5 shrink-0" size={18} />
+              <p className="text-sm">Tu rol no tiene el permiso especial de borrado fisico sobre Talento Humano. Solicita la autorizacion a un administrador: la inactivacion del horario sigue disponible para tu rol.</p>
+            </div>
+          ) : null}
+
+          {deleteImpact && !deleteImpact.can_delete ? (
+            <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-3 text-red-900 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200" role="alert">
+              <p className="text-sm font-semibold">El horario no se puede eliminar todavia.</p>
+              <ul className="mt-2 space-y-1 text-sm">
+                {(deleteImpact.blockers || []).map((blocker) => <li key={blocker.code}>{blocker.message}</li>)}
+              </ul>
+            </div>
+          ) : null}
+
+          {deleteImpact ? (
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <div className="rounded-md border border-line p-3">
+                <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-content-muted"><Trash2 size={13} /> Se elimina</p>
+                <ul className="mt-2 space-y-1 text-sm text-content-body">
+                  <li className="flex items-center justify-between gap-2"><span>Bloques de horario</span><span className="font-semibold">{deleteCounts?.checklists ?? 0} chequeo(s)</span></li>
+                  <li className="flex items-center justify-between gap-2"><span>Respuestas y evidencias</span><span className="font-semibold">{(deleteCounts?.checklist_answers ?? 0) + (deleteCounts?.checklist_evidence ?? 0) + (deleteCounts?.checklist_findings ?? 0)}</span></li>
+                  <li className="flex items-center justify-between gap-2"><span>Autorizaciones de arranque</span><span className="font-semibold">{deleteCounts?.start_authorizations ?? 0}</span></li>
+                  <li className="flex items-center justify-between gap-2"><span>Eventos de bloqueo</span><span className="font-semibold">{deleteCounts?.block_events ?? 0}</span></li>
+                </ul>
+              </div>
+              <div className="rounded-md border border-line p-3">
+                <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-content-muted"><ShieldCheck size={13} /> Se conserva</p>
+                <ul className="mt-2 space-y-1 text-sm text-content-body">
+                  <li className="flex items-center justify-between gap-2"><span>Marcaciones</span><span className="font-semibold">{preservedCounts?.time_punches ?? 0}</span></li>
+                  <li className="flex items-center justify-between gap-2"><span>Actividades</span><span className="font-semibold">{preservedCounts?.work_activities ?? 0}</span></li>
+                  <li className="flex items-center justify-between gap-2"><span>Sesiones y GPS</span><span className="font-semibold">{(preservedCounts?.work_sessions ?? 0) + (preservedCounts?.gps_pings ?? 0)}</span></li>
+                  <li className="flex items-center justify-between gap-2"><span>Jornadas procesadas</span><span className="font-semibold">{preservedCounts?.processed_workdays ?? 0}</span></li>
+                </ul>
+              </div>
+            </div>
+          ) : null}
+
+          {deleteImpact ? (
+            <div className="mt-3 space-y-3">
+              <label className="block">
+                <span className="mb-1 block text-sm font-semibold text-content-strong">Motivo del borrado</span>
+                <textarea
+                  className="min-h-[72px] w-full rounded-md border border-line px-3 py-2 text-sm"
+                  maxLength={500}
+                  onChange={(event) => setDeleteReason(event.target.value)}
+                  placeholder="Ej: malla creada por error el 12 de septiembre, reemplazada por el horario 312. Aprobado por coordinacion."
+                  value={deleteReason}
+                />
+                <span className="mt-1 block text-xs text-content-muted">{deleteReason.trim().length}/{DELETE_REASON_MIN} caracteres minimos. Queda en la auditoria con tu usuario.</span>
+              </label>
+              {impactRequiresTraceAck(deleteImpact) ? (
+                <label className="flex items-start gap-2 rounded-md border border-line bg-paper p-3 text-sm">
+                  <input checked={deleteTraceAck} className="mt-0.5 h-4 w-4" onChange={(event) => setDeleteTraceAck(event.target.checked)} type="checkbox" />
+                  <span>Entiendo que las marcaciones, actividades y jornadas ya procesadas se conservan como traza historica del trabajador.</span>
+                </label>
+              ) : null}
+              <label className="flex items-start gap-2 rounded-md border border-line bg-paper p-3 text-sm">
+                <input checked={deleteConfirmed} className="mt-0.5 h-4 w-4" onChange={(event) => setDeleteConfirmed(event.target.checked)} type="checkbox" />
+                <span>Confirmo que quiero eliminar <span className="font-semibold">{routeLabel(deleteTarget)}</span> por completo. Esta accion no se puede deshacer.</span>
+              </label>
+            </div>
+          ) : null}
+
+          {deleteError ? <p className="mt-3 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-900" role="alert">{deleteError}</p> : null}
+        </ModalFrame>
       ) : null}
 
       {mounted ? createPortal(

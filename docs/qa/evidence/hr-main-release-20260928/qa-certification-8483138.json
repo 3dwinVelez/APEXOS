@@ -1,0 +1,933 @@
+{
+  "change_id": "hr-route-physical-deletion-20260923",
+  "certification": "hr-route-physical-deletion-qa",
+  "environment": "QA",
+  "company": "NYVORA",
+  "mode": "full",
+  "generated_at": "2026-09-28T18:19:57.427Z",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "expected_commit": "8483138facc0",
+  "deployed_commit": "8483138facc0",
+  "operating_date": "2026-09-28",
+  "checks": [
+    {
+      "name": "qa_health_ok",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "commit": "8483138facc0",
+        "transport_error": null,
+        "latency_ms": 944
+      }
+    },
+    {
+      "name": "qa_runs_expected_commit",
+      "ok": true,
+      "detail": {
+        "deployed": "8483138facc0",
+        "expected": "8483138facc0"
+      }
+    },
+    {
+      "name": "qa_model_company_present",
+      "ok": true,
+      "detail": {
+        "tenant": {
+          "id": "1d162ffd-bd27-4855-8141-b015388265fc",
+          "name": "NYVORA",
+          "modules": [
+            "inventario",
+            "compras",
+            "ventas",
+            "facturacion",
+            "talento_humano",
+            "finanzas",
+            "reportes",
+            "wms",
+            "punto_de_venta",
+            "cartera",
+            "contabilidad",
+            "tesoreria",
+            "costos",
+            "presupuestos",
+            "produccion",
+            "recetas",
+            "calidad",
+            "transporte",
+            "devoluciones",
+            "comercio_exterior",
+            "activos",
+            "proyectos",
+            "configuracion",
+            "planeacion_demanda",
+            "configuracion_inicial",
+            "suscripciones",
+            "servicios",
+            "apex_heart",
+            "dashboard",
+            "services",
+            "hr",
+            "inventory",
+            "accounting",
+            "admin",
+            "usuarios",
+            "roles"
+          ]
+        }
+      }
+    },
+    {
+      "name": "qa_other_tenant_present",
+      "ok": true,
+      "detail": {
+        "tenant": {
+          "id": "fd3e2802-16d9-40ad-8813-c52696f05f5f",
+          "name": "NYVORA QA ISOLATION CONTROL"
+        }
+      }
+    },
+    {
+      "name": "qa_roles_created",
+      "ok": true,
+      "detail": {
+        "con_permiso_especial": "QA Borrado Malla 20260928181957",
+        "sin_permiso_especial": "QA Operador Malla 20260928181957"
+      }
+    },
+    {
+      "name": "qa_fixture_users_can_login",
+      "ok": true,
+      "detail": {
+        "logins": 3
+      }
+    },
+    {
+      "name": "qa_fixture_routes_seeded",
+      "ok": true,
+      "detail": {
+        "route_a": 365,
+        "route_b": 366,
+        "route_c": 367
+      }
+    },
+    {
+      "name": "qa_monitor_listroutes_includes_route",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "employee_count": 2
+      }
+    },
+    {
+      "name": "qa_monitor_event_summaries_report_events",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "event_count": 3,
+        "evidence_count": 0
+      }
+    },
+    {
+      "name": "qa_monitor_attributes_marks_per_user",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "marks_by_user": [
+          {
+            "user_name": "qa-181957-A-titular@apex.test",
+            "marks": 1
+          },
+          {
+            "user_name": "qa-181957-A-acompanante@apex.test",
+            "marks": 1
+          }
+        ],
+        "punch_points": 2
+      }
+    },
+    {
+      "name": "qa_marker_fichas_present",
+      "ok": true,
+      "detail": {
+        "fichas": {
+          "a": 505,
+          "b": 506,
+          "c": 507,
+          "d": 508
+        }
+      }
+    },
+    {
+      "name": "qa_marker_users_can_login",
+      "ok": true,
+      "detail": {
+        "logins": 4
+      }
+    },
+    {
+      "name": "qa_punch_unauthorized_401",
+      "ok": true,
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "qa_punch_schema_validation_400",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "FST_ERR_VALIDATION"
+      }
+    },
+    {
+      "name": "qa_punch_rbac_blocks_hr_admin_endpoint",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "PERMISO_DENEGADO"
+      }
+    },
+    {
+      "name": "qa_punch_foreign_route_denied_403",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "HORARIO_AJENO_DENEGADO"
+      }
+    },
+    {
+      "name": "qa_punch_inactive_route_rejected_409",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "HORARIO_NO_ACTIVO"
+      }
+    },
+    {
+      "name": "qa_punch_future_timestamp_rejected_409",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "MARCACION_EN_EL_FUTURO"
+      }
+    },
+    {
+      "name": "qa_punch_expired_deferred_rejected_409",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "MARCACION_DIFERIDA_EXPIRADA"
+      }
+    },
+    {
+      "name": "qa_punch_offday_rejected_409",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "HORARIO_FUERA_DEL_DIA"
+      }
+    },
+    {
+      "name": "qa_punch_driver_preop_gate_blocks_entry",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "ok": false,
+        "preoperational_required": true,
+        "route_authorized": false
+      }
+    },
+    {
+      "name": "qa_punch_out_of_sequence_409",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "MARCACION_FUERA_DE_SECUENCIA"
+      }
+    },
+    {
+      "name": "qa_punch_entrada_ok_after_gps_unavailable",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "qa_punch_almuerzo_sequence_ok",
+      "ok": true,
+      "detail": {
+        "inicio": 200,
+        "fin": 200
+      }
+    },
+    {
+      "name": "qa_punch_overtime_requires_justification_422",
+      "ok": true,
+      "detail": {
+        "status": 422,
+        "code": "JUSTIFICACION_HORA_EXTRA_REQUERIDA",
+        "extra_minutes": 803,
+        "expected_extra_minutes": 803
+      }
+    },
+    {
+      "name": "qa_punch_overtime_requires_evidence_422",
+      "ok": true,
+      "detail": {
+        "status": 422,
+        "code": "EVIDENCIA_HORA_EXTRA_REQUERIDA"
+      }
+    },
+    {
+      "name": "qa_punch_overtime_success_reports_minutes",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "minutos_extra": 803,
+        "es_extra": true,
+        "expected_extra_minutes": 803
+      }
+    },
+    {
+      "name": "qa_punch_completed_day_409",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "JORNADA_COMPLETA"
+      }
+    },
+    {
+      "name": "qa_punch_idempotent_first_attempt_ok",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "qa_punch_idempotent_replay_returns_same_punch",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "replayed": true,
+        "first_punch_id": 1585,
+        "replay_punch_id": 1585
+      }
+    },
+    {
+      "name": "qa_punch_almuerzo_b_ok",
+      "ok": true,
+      "detail": {
+        "inicio": 200,
+        "fin": 200
+      }
+    },
+    {
+      "name": "qa_punch_mileage_required_400",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "KILOMETRAJE_REQUERIDO"
+      }
+    },
+    {
+      "name": "qa_punch_mileage_invalid_400",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "KILOMETRAJE_INVALIDO"
+      }
+    },
+    {
+      "name": "qa_punch_unusual_mileage_accepted_with_novelty",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null,
+        "kilometraje_dia": 480
+      }
+    },
+    {
+      "name": "qa_punch_idempotency_conflict_409",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "IDEMPOTENCY_KEY_CONFLICT"
+      }
+    },
+    {
+      "name": "qa_punch_admin_token_available",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "transport_error": null
+      }
+    },
+    {
+      "name": "qa_punch_past_date_records_manual_adjustment",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null,
+        "employee_id": 509
+      }
+    },
+    {
+      "name": "qa_punch_foreign_employee_rejected",
+      "ok": true,
+      "detail": {
+        "status": 404,
+        "code": "EMPLEADO_NO_ENCONTRADO",
+        "admin_tenant_isolation": "el admin de QA pertenece a otro tenant y no puede declarar fichas de NYVORA"
+      }
+    },
+    {
+      "name": "qa_punch_garbage_employee_id_rejected",
+      "ok": true,
+      "detail": {
+        "status": 422,
+        "code": "EMPLEADO_NO_ENCONTRADO"
+      }
+    },
+    {
+      "name": "qa_novelty_gps_unavailable_recorded",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "found": 1,
+        "employee_code": "QA-DEL-mc-0928181957"
+      }
+    },
+    {
+      "name": "qa_novelty_unusual_mileage_recorded",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "found": 1,
+        "employee_code": "QA-DEL-mb-0928181957"
+      }
+    },
+    {
+      "name": "qa_novelty_manual_adjustment_recorded",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "found": 1,
+        "employee_code": "qa-punch-20260928181957-ajuste"
+      }
+    },
+    {
+      "name": "qa_punch_no_silent_failures_row_count",
+      "ok": true,
+      "detail": {
+        "today_status": 200,
+        "today_punches": 8,
+        "yesterday_status": 200,
+        "yesterday_punches": 1
+      }
+    },
+    {
+      "name": "qa_punch_negatives_carry_structured_codes",
+      "ok": true,
+      "detail": {
+        "codes": [
+          {
+            "status": 400,
+            "code": "FST_ERR_VALIDATION"
+          },
+          {
+            "status": 403,
+            "code": "PERMISO_DENEGADO"
+          },
+          {
+            "status": 403,
+            "code": "HORARIO_AJENO_DENEGADO"
+          },
+          {
+            "status": 409,
+            "code": "HORARIO_NO_ACTIVO"
+          },
+          {
+            "status": 409,
+            "code": "MARCACION_EN_EL_FUTURO"
+          },
+          {
+            "status": 409,
+            "code": "MARCACION_DIFERIDA_EXPIRADA"
+          },
+          {
+            "status": 409,
+            "code": "HORARIO_FUERA_DEL_DIA"
+          },
+          {
+            "status": 409,
+            "code": "MARCACION_FUERA_DE_SECUENCIA"
+          },
+          {
+            "status": 422,
+            "code": "JUSTIFICACION_HORA_EXTRA_REQUERIDA"
+          },
+          {
+            "status": 422,
+            "code": "EVIDENCIA_HORA_EXTRA_REQUERIDA"
+          },
+          {
+            "status": 409,
+            "code": "JORNADA_COMPLETA"
+          },
+          {
+            "status": 400,
+            "code": "KILOMETRAJE_REQUERIDO"
+          },
+          {
+            "status": 400,
+            "code": "KILOMETRAJE_INVALIDO"
+          },
+          {
+            "status": 409,
+            "code": "IDEMPOTENCY_KEY_CONFLICT"
+          },
+          {
+            "status": 404,
+            "code": "EMPLEADO_NO_ENCONTRADO"
+          },
+          {
+            "status": 422,
+            "code": "EMPLEADO_NO_ENCONTRADO"
+          }
+        ]
+      }
+    },
+    {
+      "name": "qa_preview_reports_special_grant",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "permissions": {
+          "can_physical_delete": true
+        }
+      }
+    },
+    {
+      "name": "qa_preview_blocks_open_checklist",
+      "ok": true,
+      "detail": {
+        "can_delete": false,
+        "blocker": "ROUTE_DELETE_BLOCKED_OPEN_CHECKLIST"
+      }
+    },
+    {
+      "name": "qa_preview_quantifies_deletion",
+      "ok": true,
+      "detail": {
+        "will_delete": {
+          "checklists": 1,
+          "checklist_statuses": [
+            "en_proceso"
+          ],
+          "checklist_answers": 1,
+          "checklist_evidence": 1,
+          "checklist_findings": 1,
+          "start_authorizations": 1,
+          "block_events": 1,
+          "total": 6
+        }
+      }
+    },
+    {
+      "name": "qa_preview_preserves_operational_trace",
+      "ok": true,
+      "detail": {
+        "preserved_trace": {
+          "time_punches": 2,
+          "gps_pings": 1,
+          "work_sessions": 1,
+          "work_activities": 1,
+          "processed_workdays": 1,
+          "total": 6
+        }
+      }
+    },
+    {
+      "name": "qa_preview_returns_route_snapshot",
+      "ok": true,
+      "detail": {
+        "route": {
+          "id": 365,
+          "date": "2026-09-28",
+          "vehicle_plate": "QAA1957",
+          "status": "active",
+          "start_time": "06:00",
+          "end_time": "16:00",
+          "tolerance_minutes": 15,
+          "employees": [
+            "qa-181957-A-titular@apex.test",
+            "qa-181957-A-acompanante@apex.test"
+          ],
+          "employee_count": 2
+        },
+        "route_id": 365
+      }
+    },
+    {
+      "name": "qa_preview_hides_grant_without_permission",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "permissions": {
+          "can_physical_delete": false
+        }
+      }
+    },
+    {
+      "name": "qa_preview_unblocks_after_checklist_closed",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "can_delete": true,
+        "blockers": 0
+      }
+    },
+    {
+      "name": "qa_delete_requires_special_permission",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "PERMISO_BORRADO_FISICO_DENEGADO"
+      }
+    },
+    {
+      "name": "qa_delete_requires_reason_and_confirmation",
+      "ok": true,
+      "detail": {
+        "sin_motivo": 400,
+        "motivo_corto": 400,
+        "sin_confirmacion": 400
+      }
+    },
+    {
+      "name": "qa_delete_detects_stale_preview",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "ROUTE_DELETE_STALE_PREVIEW"
+      }
+    },
+    {
+      "name": "qa_delete_requires_trace_acknowledgement",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "ROUTE_DELETE_TRACE_NOT_ACKNOWLEDGED"
+      }
+    },
+    {
+      "name": "qa_cross_tenant_hidden_as_not_found",
+      "ok": true,
+      "detail": {
+        "preview_ajena": 404,
+        "delete_ajena": 404,
+        "delete_inversa": 404
+      }
+    },
+    {
+      "name": "qa_cross_tenant_targets_stay_alive",
+      "ok": true,
+      "detail": {
+        "route_b_model_company": 1,
+        "route_c_other_tenant": 1
+      }
+    },
+    {
+      "name": "qa_delete_applies_with_special_permission",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "deleted": {
+          "checklists": 1,
+          "checklist_answers": 1,
+          "checklist_evidence": 1,
+          "checklist_findings": 1,
+          "start_authorizations": 1,
+          "block_events": 1,
+          "total": 6
+        },
+        "preserved_trace": {
+          "time_punches": 2,
+          "gps_pings": 1,
+          "work_sessions": 1,
+          "work_activities": 1,
+          "processed_workdays": 1,
+          "total": 6
+        },
+        "approved_by": {
+          "id": 584,
+          "name": "usuario_sin_nombre",
+          "role": "QA Borrado Malla 20260928181957"
+        }
+      }
+    },
+    {
+      "name": "qa_deleted_rows_are_gone_and_trace_survives",
+      "ok": true,
+      "detail": {
+        "route": 0,
+        "checklists": 0,
+        "start_authorizations": 0,
+        "block_events": 0,
+        "time_punches": 2,
+        "gps_pings": 1,
+        "work_sessions": 1,
+        "work_activities": 1,
+        "processed_workdays": 1,
+        "findings": 0
+      }
+    },
+    {
+      "name": "qa_deleted_route_preview_is_404",
+      "ok": true,
+      "detail": {
+        "status": 404
+      }
+    },
+    {
+      "name": "qa_deletion_is_audited_with_actor_and_reason",
+      "ok": true,
+      "detail": {
+        "audit_id": "4496",
+        "user_id": 584,
+        "module": "hr"
+      }
+    },
+    {
+      "name": "qa_delete_minimal_route_without_acknowledgement",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "deleted": {
+          "checklists": 0,
+          "checklist_answers": 0,
+          "checklist_evidence": 0,
+          "checklist_findings": 0,
+          "start_authorizations": 0,
+          "block_events": 0,
+          "total": 0
+        }
+      }
+    },
+    {
+      "name": "qa_alias_route_serves_impact_preview",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "permissions": {
+          "can_physical_delete": true
+        }
+      }
+    },
+    {
+      "name": "qa_alias_explicit_grant_applies",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "approved_by": {
+          "id": 586,
+          "name": "usuario_sin_nombre",
+          "role": "QA Borrado Malla Otro Tenant 20260928181957"
+        }
+      }
+    }
+  ],
+  "observations": {
+    "tenants": {
+      "model_company": {
+        "id": "1d162ffd-bd27-4855-8141-b015388265fc",
+        "name": "NYVORA"
+      },
+      "other_tenant": {
+        "id": "fd3e2802-16d9-40ad-8813-c52696f05f5f",
+        "name": "NYVORA QA ISOLATION CONTROL"
+      }
+    },
+    "monitor": {
+      "listroutes_route_found": true,
+      "event_count": 3,
+      "marks_by_user": [
+        {
+          "user_name": "qa-181957-A-titular@apex.test",
+          "marks": 1
+        },
+        {
+          "user_name": "qa-181957-A-acompanante@apex.test",
+          "marks": 1
+        }
+      ],
+      "punch_points": 2
+    },
+    "punch_errors": {
+      "marker_users": [
+        587,
+        588,
+        589,
+        590
+      ],
+      "negative_codes": [
+        {
+          "status": 400,
+          "code": "FST_ERR_VALIDATION"
+        },
+        {
+          "status": 403,
+          "code": "PERMISO_DENEGADO"
+        },
+        {
+          "status": 403,
+          "code": "HORARIO_AJENO_DENEGADO"
+        },
+        {
+          "status": 409,
+          "code": "HORARIO_NO_ACTIVO"
+        },
+        {
+          "status": 409,
+          "code": "MARCACION_EN_EL_FUTURO"
+        },
+        {
+          "status": 409,
+          "code": "MARCACION_DIFERIDA_EXPIRADA"
+        },
+        {
+          "status": 409,
+          "code": "HORARIO_FUERA_DEL_DIA"
+        },
+        {
+          "status": 409,
+          "code": "MARCACION_FUERA_DE_SECUENCIA"
+        },
+        {
+          "status": 422,
+          "code": "JUSTIFICACION_HORA_EXTRA_REQUERIDA"
+        },
+        {
+          "status": 422,
+          "code": "EVIDENCIA_HORA_EXTRA_REQUERIDA"
+        },
+        {
+          "status": 409,
+          "code": "JORNADA_COMPLETA"
+        },
+        {
+          "status": 400,
+          "code": "KILOMETRAJE_REQUERIDO"
+        },
+        {
+          "status": 400,
+          "code": "KILOMETRAJE_INVALIDO"
+        },
+        {
+          "status": 409,
+          "code": "IDEMPOTENCY_KEY_CONFLICT"
+        },
+        {
+          "status": 404,
+          "code": "EMPLEADO_NO_ENCONTRADO"
+        },
+        {
+          "status": 422,
+          "code": "EMPLEADO_NO_ENCONTRADO"
+        }
+      ],
+      "preop_gate": {
+        "status": 200,
+        "preoperational_required": true
+      },
+      "today_punches": 8,
+      "yesterday_punches": 1,
+      "overtime_minutes": 803,
+      "novelty_rows": {
+        "gps_inactivo_sin_senal": 1,
+        "kilometraje_inconsistente": 1,
+        "ajuste_manual_marcacion": 1
+      }
+    },
+    "deletion": {
+      "route_id": 365,
+      "deleted": {
+        "checklists": 1,
+        "checklist_answers": 1,
+        "checklist_evidence": 1,
+        "checklist_findings": 1,
+        "start_authorizations": 1,
+        "block_events": 1,
+        "total": 6
+      },
+      "preserved_trace": {
+        "time_punches": 2,
+        "gps_pings": 1,
+        "work_sessions": 1,
+        "work_activities": 1,
+        "processed_workdays": 1,
+        "total": 6
+      },
+      "approved_by": {
+        "id": 584,
+        "name": "usuario_sin_nombre",
+        "role": "QA Borrado Malla 20260928181957"
+      },
+      "audit_id": "4496"
+    }
+  },
+  "coverage_notes": [
+    "La compuerta MODULO_NO_HABILITADO y las aserciones de codigo se certifican en la certificacion local sobre este mismo commit (hr-route-physical-deletion-local.js).",
+    "El buscador Ctrl+K y la ventana emergente del monitor se validan en la sesion de navegador QA registrada en browser-qa-evidence.md."
+  ],
+  "status": "passed",
+  "database_project": "jbirkghkekuifgfsgquq",
+  "stale_leftovers_purged": {
+    "routes": 0,
+    "users": 0,
+    "employees": 0,
+    "roles": 0,
+    "errors": []
+  },
+  "fixture": {
+    "model_company": {
+      "tenant_id": "1d162ffd-bd27-4855-8141-b015388265fc",
+      "role_with_special_permission": "QA Borrado Malla 20260928181957",
+      "role_without_special_permission": "QA Operador Malla 20260928181957",
+      "user_with_permission_id": 584,
+      "user_without_permission_id": 585
+    },
+    "other_tenant": {
+      "tenant_id": "fd3e2802-16d9-40ad-8813-c52696f05f5f",
+      "role": "QA Borrado Malla Otro Tenant 20260928181957",
+      "user_id": 586
+    },
+    "operating_date": "2026-09-28",
+    "credentials": "redacted",
+    "routes": {
+      "a_completa": {
+        "route_id": 365,
+        "checklist_con_hijos": 6,
+        "traza_operativa": 6
+      },
+      "b_minima": {
+        "route_id": 366
+      },
+      "c_otro_tenant": {
+        "tenant": "NYVORA QA ISOLATION CONTROL",
+        "route_id": 367
+      }
+    }
+  },
+  "cleanup": {
+    "routes_purged": 3,
+    "employees_deactivated": 4,
+    "users_deactivated": 7,
+    "roles_deactivated": 5,
+    "errors": []
+  },
+  "finished_at": "2026-09-28T18:23:18.497Z"
+}
+

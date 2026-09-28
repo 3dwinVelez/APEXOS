@@ -1,0 +1,10 @@
+{
+  "change_id": "hr-main-release-20260928",
+  "candidate_base": "182db487a568dd47013781698e3f976c0c3fc92d",
+  "source_commit": "8483138facc02a04d8b2c63a32e4b744608f0829",
+  "command": "node --test apps/api/test/hr-marking-declared-employee.test.js apps/api/test/hr-route-physical-deletion-contract.test.js apps/api/test/hr-route-physical-deletion.test.js apps/web/test/command-palette-module-functions.test.mjs apps/web/test/hr-monitor-modal-per-user.test.mjs",
+  "passed": 42,
+  "failed": 0,
+  "status": "passed",
+  "executed_at": "2026-09-28T13:20:00-05:00"
+}

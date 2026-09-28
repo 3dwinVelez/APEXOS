@@ -1,0 +1,37 @@
+{
+  "change_id": "hr-main-release-20260928",
+  "environment": "QA",
+  "commit": "8483138facc0",
+  "executed_at": "2026-09-28T13:24:00-05:00",
+  "browser": "Codex in-app browser",
+  "account": "admin QA (identifier redacted)",
+  "checks": [
+    {
+      "name": "authenticated_dashboard",
+      "status": "passed",
+      "observed": "Sesion autenticada y dashboard con 28 modulos habilitados."
+    },
+    {
+      "name": "command_palette_hr_search",
+      "status": "passed",
+      "observed": "La busqueda 'horarios' mostro Crear mallas y navego a /dashboard/talento-humano/rutas."
+    },
+    {
+      "name": "hr_routes_list",
+      "status": "passed",
+      "observed": "Listado visible con 2 horarios, filtros, acciones Abrir, Editar y Clonar."
+    },
+    {
+      "name": "schedule_monitor_per_user",
+      "status": "passed",
+      "observed": "Monitor del horario 350 cargo 4 marcaciones, 1 actividad, 2 evidencias y trazabilidad por persona."
+    },
+    {
+      "name": "physical_delete_negative_gate",
+      "status": "passed",
+      "observed": "La vista previa de borrado irreversible se abrio y mantuvo Eliminar definitivamente deshabilitado para la cuenta sin concesion especial; se cerro sin modificar datos."
+    }
+  ],
+  "result": "passed",
+  "data_mutation": "none"
+}

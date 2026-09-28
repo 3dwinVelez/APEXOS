@@ -1,0 +1,86 @@
+{
+  "change_id": "hr-route-physical-deletion-20260923",
+  "certification": "hr-route-physical-deletion-qa-preflight",
+  "environment": "QA",
+  "company": "NYVORA",
+  "mode": "preflight",
+  "generated_at": "2026-09-28T18:19:25.670Z",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "expected_commit": "8483138facc0",
+  "deployed_commit": "8483138facc0",
+  "operating_date": "2026-09-28",
+  "checks": [
+    {
+      "name": "qa_health_ok",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "commit": "8483138facc0",
+        "transport_error": null,
+        "latency_ms": 535
+      }
+    },
+    {
+      "name": "qa_runs_expected_commit",
+      "ok": true,
+      "detail": {
+        "deployed": "8483138facc0",
+        "expected": "8483138facc0"
+      }
+    },
+    {
+      "name": "qa_login_credentials_present",
+      "ok": true,
+      "detail": {
+        "email_provided": true,
+        "password_provided": true
+      }
+    },
+    {
+      "name": "qa_supabase_config_present",
+      "ok": true,
+      "detail": {
+        "url_provided": true,
+        "url_is_qa_project": true,
+        "anon_key_provided": true
+      }
+    },
+    {
+      "name": "qa_admin_login_ok",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "has_access_token": true,
+        "transport_error": null,
+        "latency_ms": 959
+      }
+    },
+    {
+      "name": "qa_session_ok",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "transport_error": null
+      }
+    },
+    {
+      "name": "qa_monitor_endpoints_ok",
+      "ok": true,
+      "detail": {
+        "list_routes": 200,
+        "event_summaries": 200
+      }
+    },
+    {
+      "name": "qa_unauthorized_blocked",
+      "ok": true,
+      "detail": {
+        "status": 401
+      }
+    }
+  ],
+  "observations": {},
+  "coverage_notes": [],
+  "status": "passed"
+}
+
