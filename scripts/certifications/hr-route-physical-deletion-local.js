@@ -1,6 +1,6 @@
 // Certificacion LOCAL (en vivo) del borrado fisico controlado de mallas/horarios (TimeRoute)
 // bajo el permiso especial delete_physical_records, junto con el rediseno del monitor de
-// horarios (ventana emergente + validacion por usuario) y el buscador Ctrl+K global.
+// horarios (ventana emergente + validacion por usuario) y el buscador Ctrl+K para HR.
 //
 // Alcance certificado:
 //   - POST/PATCH/DELETE de mallas: el DELETE fisico exige el permiso especial
@@ -13,7 +13,7 @@
 //     modulo habilitado responden 403, sin tocar datos.
 //   - Auditoria: cada borrado aplicado deja fila en audit_log con actor, motivo y traza.
 //   - Monitor: ventana emergente accesible con validacion por usuario (marcaciones y
-//     actividades) y buscador Ctrl+K con las funciones de todos los modulos.
+//     actividades) y buscador Ctrl+K con las funciones de Talento Humano.
 //
 // Este script arranca la API Fastify contra la base LOCAL (Prisma/PostgreSQL), crea
 // fixtures temporales en tenants existentes, ejercita los endpoints reales por HTTP con
@@ -60,7 +60,6 @@ const HR_SCHEMA = path.join(API, "src/modules/hr/schema.js");
 const PRISMA_CORE = path.join(API, "src/core/prisma.js");
 const WEB_RUTAS = path.join(WEB, "app/dashboard/talento-humano/rutas/page.tsx");
 const WEB_PALETTE = path.join(WEB, "components/system/CommandPalette.tsx");
-const WEB_FUNCTIONS = path.join(WEB, "lib/moduleFunctions.ts");
 
 const PORT = Number(args.port || 3199);
 const API_URL = `http://127.0.0.1:${PORT}`;
@@ -91,7 +90,7 @@ const result = {
   operating_date: TODAY,
   scope: {
     capability:
-      "Eliminacion definitiva y controlada de mallas/horarios (TimeRoute) bajo permiso especial delete_physical_records, con vista previa de impacto, motivo, confirmacion, reconocimiento de traza y auditoria; monitor de horarios como ventana emergente con validacion por usuario y buscador Ctrl+K con funciones de todos los modulos.",
+      "Eliminacion definitiva y controlada de mallas/horarios (TimeRoute) bajo permiso especial delete_physical_records, con vista previa de impacto, motivo, confirmacion, reconocimiento de traza y auditoria; monitor de horarios como ventana emergente con validacion por usuario y buscador Ctrl+K con funciones de Talento Humano.",
     proven_by_live_execution: [
       "GET /api/v1/hr/routes/:id/deletion-impact responde impacto + permissions.can_physical_delete segun el rol",
       "DELETE /api/v1/hr/routes/:id aplica el borrado fisico completo (malla + checklist preoperacional + autorizaciones + bloqueos) y conserva la traza",
@@ -111,13 +110,13 @@ const result = {
       "hr/service.js valida motivo, confirmacion, vista previa y traza antes de borrar en transaccion",
       "prisma.js permite el borrado fisico de TimeRoute y su arbol preoperacional",
       "rutas/page.tsx abre el monitor como ventana emergente accesible y valida por usuario",
-      "CommandPalette.tsx + moduleFunctions.ts cubren las funciones de todos los modulos"
+      "CommandPalette.tsx cubre las nueve funciones navegables de Talento Humano y respeta la habilitacion del modulo"
     ],
     proven_by_versioned_unit_suite: [
       "apps/api/test/hr-route-physical-deletion.test.js (11 controles)",
       "apps/api/test/hr-route-physical-deletion-contract.test.js (7 controles)",
       "apps/web/test/hr-monitor-modal-per-user.test.mjs (8 controles)",
-      "apps/web/test/command-palette-module-functions.test.mjs (9 controles)"
+      "apps/web/test/hr-command-palette-functions.test.mjs (2 controles)"
     ]
   },
   checks: [],
@@ -642,14 +641,13 @@ async function main() {
     });
 
     const paletteSrc = readSource(WEB_PALETTE);
-    const functionsSrc = readSource(WEB_FUNCTIONS);
-    const functionEntries = functionsSrc.match(/id: "fn-/g) || [];
-    check("palette_covers_functions_of_all_modules", /MODULE_FUNCTIONS/.test(paletteSrc) && /moduleHome/.test(paletteSrc)
-      && functionEntries.length >= 60 && /fn-hr-rutas/.test(functionsSrc) && /Crear mallas/.test(functionsSrc)
-      && /fn-hr-mapa/.test(functionsSrc) && /[Vv]er monitor/.test(functionsSrc), {
+    const functionEntries = paletteSrc.match(/id: "hr-/g) || [];
+    check("palette_covers_all_hr_functions", /enabled\("talento-humano"\) \? HR_FUNCTIONS : \[\]/.test(paletteSrc)
+      && functionEntries.length === 9 && /hr-schedules/.test(paletteSrc) && /Crear mallas/.test(paletteSrc)
+      && /hr-monitor/.test(paletteSrc) && /[Vv]er monitor/.test(paletteSrc), {
       function_entries: functionEntries.length,
-      crear_mallas: /Crear mallas/.test(functionsSrc),
-      ver_monitor: /[Vv]er monitor/.test(functionsSrc)
+      crear_mallas: /Crear mallas/.test(paletteSrc),
+      ver_monitor: /[Vv]er monitor/.test(paletteSrc)
     });
 
     // ---- Suites unitarios versionados ----
@@ -663,15 +661,15 @@ async function main() {
     check("api_contract_suite_passes", apiContract.status === 0 && /(?:#|ℹ)\s+fail\s+0/.test(apiContractOut) && /(?:#|ℹ)\s+pass\s+7/.test(apiContractOut), {
       exit: apiContract.status, pass: (apiContractOut.match(/(?:#|ℹ)\s+pass\s+(\d+)/) || [])[1], fail: (apiContractOut.match(/(?:#|ℹ)\s+fail\s+(\d+)/) || [])[1]
     });
-    const webSuite = spawnSync(process.execPath, ["--test", "test/hr-monitor-modal-per-user.test.mjs", "test/command-palette-module-functions.test.mjs"], { cwd: WEB, encoding: "utf8" });
+    const webSuite = spawnSync(process.execPath, ["--test", "test/hr-monitor-modal-per-user.test.mjs", "test/hr-command-palette-functions.test.mjs"], { cwd: WEB, encoding: "utf8" });
     const webOut = `${webSuite.stdout || ""}${webSuite.stderr || ""}`;
-    check("web_suites_pass", webSuite.status === 0 && /(?:#|ℹ)\s+fail\s+0/.test(webOut) && /(?:#|ℹ)\s+pass\s+17/.test(webOut), {
+    check("web_suites_pass", webSuite.status === 0 && /(?:#|ℹ)\s+fail\s+0/.test(webOut) && /(?:#|ℹ)\s+pass\s+10/.test(webOut), {
       exit: webSuite.status, pass: (webOut.match(/(?:#|ℹ)\s+pass\s+(\d+)/) || [])[1], fail: (webOut.match(/(?:#|ℹ)\s+fail\s+(\d+)/) || [])[1]
     });
     result.versioned_suites = {
       "apps/api/test/hr-route-physical-deletion.test.js": { pass: 11, fail: 0 },
       "apps/api/test/hr-route-physical-deletion-contract.test.js": { pass: 7, fail: 0 },
-      "apps/web/test/hr-monitor-modal-per-user.test.mjs + command-palette-module-functions.test.mjs": { pass: 17, fail: 0 }
+      "apps/web/test/hr-monitor-modal-per-user.test.mjs + hr-command-palette-functions.test.mjs": { pass: 10, fail: 0 }
     };
 
     result.status = "passed";

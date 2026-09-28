@@ -1,6 +1,6 @@
 // Certificacion QA (extremo a extremo) del borrado fisico controlado de mallas/horarios
 // (TimeRoute) bajo el permiso especial delete_physical_records, junto con el monitor de
-// horarios en ventana emergente con validacion por usuario y el buscador Ctrl+K global.
+// horarios en ventana emergente con validacion por usuario y el buscador Ctrl+K de HR.
 //
 // Diferencias con la certificacion local:
 //   - Ejercita la API DESPLEGADA en QA por HTTP (QA_API_URL) y exige que el commit
@@ -853,7 +853,7 @@ async function main() {
 
     result.coverage_notes = [
       "La compuerta MODULO_NO_HABILITADO y las aserciones de codigo se certifican en la certificacion local sobre este mismo commit (hr-route-physical-deletion-local.js).",
-      "El buscador Ctrl+K y la ventana emergente del monitor se validan en la sesion de navegador QA registrada en browser-qa-evidence.md."
+      "El buscador Ctrl+K de Talento Humano y la ventana emergente del monitor se validan en la sesion de navegador QA registrada en browser-qa-evidence.md."
     ];
     result.status = "passed";
   } catch (error) {

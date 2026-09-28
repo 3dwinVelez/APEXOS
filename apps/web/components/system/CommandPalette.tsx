@@ -10,6 +10,18 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 type CommandItem = { id: string; label: string; detail: string; href: string; icon: typeof Search; keywords?: string };
 
+const HR_FUNCTIONS: CommandItem[] = [
+  { id: "hr-config", label: "Configurar parametros laborales", detail: "Jornada, recargos y politicas de tiempo", href: "/dashboard/talento-humano/configuracion-laboral", icon: Search, keywords: "talento humano configuracion laboral jornada recargo hora extra politica parametro" },
+  { id: "hr-employees", label: "Gestionar empleados", detail: "Maestro de empleados y su ficha", href: "/dashboard/talento-humano/empleados", icon: Search, keywords: "talento humano empleado maestro ficha nomina contratacion persona" },
+  { id: "hr-entities", label: "Gestionar entidades y afiliaciones", detail: "EPS, ARL, caja y pension", href: "/dashboard/talento-humano/entidades", icon: Search, keywords: "talento humano entidad afiliacion eps arl caja pension seguridad social" },
+  { id: "hr-schedules", label: "Crear mallas", detail: "Programa y asigna mallas y horarios de trabajo", href: "/dashboard/talento-humano/rutas", icon: Search, keywords: "talento humano malla horario turno programacion asignacion empleado crear eliminar borrar" },
+  { id: "hr-monitor", label: "Ver monitor de mallas", detail: "Avance de jornada, marcaciones y actividades por empleado", href: "/dashboard/talento-humano/mapa", icon: Search, keywords: "talento humano malla monitor mapa horario jornada seguimiento avance marcacion actividad empleado" },
+  { id: "hr-time-punch", label: "Registrar marcaciones", detail: "Entrada, salida y ubicacion GPS", href: "/dashboard/talento-humano/marcacion", icon: Search, keywords: "talento humano marcacion marcar reloj entrada salida gps" },
+  { id: "hr-payroll", label: "Gestionar nomina", detail: "Liquidacion de nomina por periodo", href: "/dashboard/talento-humano/nomina", icon: Search, keywords: "talento humano nomina liquidacion pago periodo salario" },
+  { id: "hr-novelties", label: "Gestionar novedades de jornada", detail: "Incapacidades, permisos, faltas y horas extra", href: "/dashboard/talento-humano/novedades", icon: Search, keywords: "talento humano novedad jornada incapacidad permiso falta retraso hora extra" },
+  { id: "hr-reports", label: "Ver reportes de tiempo", detail: "Horas, asistencia y horas extra", href: "/dashboard/talento-humano/reportes", icon: Search, keywords: "talento humano reporte tiempo hora asistencia hora extra jornada" }
+];
+
 export function CommandPalette() {
   const router = useRouter();
   const { t } = useI18n();
@@ -22,8 +34,9 @@ export function CommandPalette() {
   const items = useMemo<CommandItem[]>(() => {
     const enabled = (slug: string) => access.bySlug[slug] === true;
     const actions = OPERATIONAL_ACTIONS.filter((action) => enabled(action.module)).map((action) => ({ id: action.id, label: action.label, detail: action.description, href: action.href, icon: action.icon, keywords: action.keywords }));
+    const hrFunctions = enabled("talento-humano") ? HR_FUNCTIONS : [];
     const modules = MODULES.filter((module) => enabled(module.slug)).map((module) => ({ id: `module-${module.slug}`, label: module.name, detail: module.area, href: `/dashboard/${module.slug}`, icon: module.icon, keywords: `${module.capabilities.join(" ")} ${module.nextActions.join(" ")}` }));
-    return [...actions, ...modules];
+    return [...actions, ...hrFunctions, ...modules];
   }, [access]);
   const visible = useMemo(() => { const term = query.trim().toLocaleLowerCase(); return (term ? items.filter((item) => `${item.label} ${item.detail} ${item.keywords || ""}`.toLocaleLowerCase().includes(term)) : items).slice(0, 10); }, [items, query]);
 
