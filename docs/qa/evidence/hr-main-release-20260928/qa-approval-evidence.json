@@ -1,0 +1,43 @@
+{
+  "change_id": "hr-main-release-20260928",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "8483138facc02a04d8b2c63a32e4b744608f0829",
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["qa-certification-8483138.json", "browser-qa-evidence.json"] },
+    "error": { "status": "passed", "evidence": ["qa-certification-8483138.json", "browser-qa-evidence.json"] },
+    "support_scripts": { "status": "passed", "evidence": ["qa-preflight-8483138.json", "local-targeted-tests.json"] },
+    "regression": { "status": "passed", "evidence": ["qa-certification-8483138.json", "local-targeted-tests.json"] },
+    "platform_regression": { "status": "passed", "evidence": ["platform-regression-8483138.json", "browser-qa-evidence.json"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-route-physical-deletion-qa.js",
+    "evidence": ["qa-certification-8483138.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/platform-regression-qa.js",
+    "evidence": ["platform-regression-8483138.json"]
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../../scripts/certifications/hr-route-physical-deletion-qa.js",
+    "evidence": ["qa-certification-8483138.json"]
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "182db487a568dd47013781698e3f976c0c3fc92d",
+    "trigger": "cualquier falla funcional, de aislamiento tenant, permisos, buscador o regresion HR posterior al despliegue"
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "Solicitante autorizado de APEXOS en tarea Codex",
+    "approved_at": "2026-09-28T13:30:00-05:00",
+    "authorization": "Procede con la rama temporal pero eliminala al terminar"
+  }
+}

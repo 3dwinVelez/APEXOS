@@ -1,0 +1,286 @@
+{
+  "change_id": "hr-main-release-20260928",
+  "scope_schema_version": 2,
+  "base_commits": {
+    "main": "182db487a568dd47013781698e3f976c0c3fc92d",
+    "develop": "8483138facc02a04d8b2c63a32e4b744608f0829"
+  },
+  "certified_commit": "e6ed38eaa0da22157a752a8a6285573ee2810798",
+  "candidate_commit": "e6ed38eaa0da22157a752a8a6285573ee2810798",
+  "change_intent": {
+    "summary": "Reconstruye sobre el main vigente exclusivamente las funciones certificadas de Talento Humano presentes en develop: mallas, monitor por usuario, marcaciones administrativas, borrado fisico controlado y descubrimiento desde el buscador global.",
+    "modules": [
+      "talento-humano",
+      "hr",
+      "rbac",
+      "command-palette",
+      "qa-certification"
+    ]
+  },
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/src/core/prisma.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-physical-deletion-20260923/hr-route-physical-deletion-local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-physical-deletion-20260923/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-physical-deletion-20260923/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-physical-deletion-20260923/qa-certification-failed-run7-78b0e5e9aa63.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-physical-deletion-20260923/qa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-physical-deletion-20260923/unit-tests.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-physical-deletion-20260923/validation-checks.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-punch-declared-employee-20260924/validation-checks.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/preqa-qa-script-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/preqa-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/qa-script-validation.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-punch-declared-employee-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-route-physical-deletion-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-route-physical-deletion-qa.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/run-punch-declared-employee-local.sh"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/run-qa-cert.sh"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/preqa-qa-script-adjustment.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-main-release-20260928/qa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-punch-declared-employee-20260924/unit-tests.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-punch-declared-employee-20260924/preqa-approval-evidence.json"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/middleware/rbac.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-marking-declared-employee.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-route-physical-deletion-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-route-physical-deletion.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-punch-declared-employee-20260924/preqa-scope-manifest.json"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/CommandPalette.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/command-palette-module-functions.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-monitor-modal-per-user.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-main-release-20260928/browser-qa-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-main-release-20260928/local-targeted-tests.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-main-release-20260928/platform-regression-8483138.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-main-release-20260928/qa-certification-8483138.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-main-release-20260928/qa-preflight-8483138.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-punch-declared-employee-20260924/local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/moduleFunctions.ts"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-main-release-20260928/main-scope-manifest.json"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/src/core/prisma.js",
+    "docs/qa/evidence/hr-route-physical-deletion-20260923/hr-route-physical-deletion-local-certification.json",
+    "docs/qa/evidence/hr-route-physical-deletion-20260923/preqa-approval-evidence.json",
+    "docs/qa/evidence/hr-route-physical-deletion-20260923/preqa-scope-manifest.json",
+    "docs/qa/evidence/hr-route-physical-deletion-20260923/qa-certification-failed-run7-78b0e5e9aa63.json",
+    "docs/qa/evidence/hr-route-physical-deletion-20260923/qa-scope-manifest.json",
+    "docs/qa/evidence/hr-route-physical-deletion-20260923/unit-tests.txt",
+    "docs/qa/evidence/hr-route-physical-deletion-20260923/validation-checks.json",
+    "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/local-certification.json",
+    "docs/qa/evidence/hr-punch-declared-employee-20260924/validation-checks.json",
+    "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/preqa-approval-evidence.json",
+    "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/preqa-qa-script-scope.json",
+    "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/preqa-scope-manifest.json",
+    "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/qa-script-validation.json",
+    "scripts/certifications/hr-punch-declared-employee-local.js",
+    "scripts/certifications/hr-route-physical-deletion-local.js",
+    "scripts/certifications/hr-route-physical-deletion-qa.js",
+    "scripts/certifications/run-punch-declared-employee-local.sh",
+    "scripts/certifications/run-qa-cert.sh",
+    "docs/qa/evidence/hr-route-tenant-oracle-fix-20260927/preqa-qa-script-adjustment.json",
+    "docs/qa/evidence/hr-main-release-20260928/qa-approval-evidence.json",
+    "docs/qa/evidence/hr-punch-declared-employee-20260924/unit-tests.txt",
+    "docs/qa/evidence/hr-punch-declared-employee-20260924/preqa-approval-evidence.json",
+    "apps/api/src/middleware/rbac.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-marking-declared-employee.test.js",
+    "apps/api/test/hr-route-physical-deletion-contract.test.js",
+    "apps/api/test/hr-route-physical-deletion.test.js",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "docs/qa/evidence/hr-punch-declared-employee-20260924/preqa-scope-manifest.json",
+    "apps/web/components/system/CommandPalette.tsx",
+    "apps/web/test/command-palette-module-functions.test.mjs",
+    "apps/web/test/hr-monitor-modal-per-user.test.mjs",
+    "docs/qa/evidence/hr-main-release-20260928/browser-qa-evidence.json",
+    "docs/qa/evidence/hr-main-release-20260928/local-targeted-tests.json",
+    "docs/qa/evidence/hr-main-release-20260928/platform-regression-8483138.json",
+    "docs/qa/evidence/hr-main-release-20260928/qa-certification-8483138.json",
+    "docs/qa/evidence/hr-main-release-20260928/qa-preflight-8483138.json",
+    "docs/qa/evidence/hr-punch-declared-employee-20260924/local-certification.json",
+    "apps/web/lib/moduleFunctions.ts",
+    "docs/qa/evidence/hr-main-release-20260928/main-scope-manifest.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "hr_route_monitor_and_per_user_timeline",
+      "status": "passed",
+      "evidence": [
+        "browser-qa-evidence.json",
+        "qa-certification-8483138.json"
+      ]
+    },
+    {
+      "name": "administrative_time_punch_employee_resolution",
+      "status": "passed",
+      "evidence": [
+        "qa-certification-8483138.json"
+      ]
+    },
+    {
+      "name": "physical_delete_permission_and_audit",
+      "status": "passed",
+      "evidence": [
+        "qa-certification-8483138.json"
+      ]
+    },
+    {
+      "name": "cross_tenant_route_concealment",
+      "status": "passed",
+      "evidence": [
+        "qa-certification-8483138.json"
+      ]
+    },
+    {
+      "name": "global_function_search_hr",
+      "status": "passed",
+      "evidence": [
+        "browser-qa-evidence.json",
+        "local-targeted-tests.json"
+      ]
+    },
+    {
+      "name": "platform_regression",
+      "status": "passed",
+      "evidence": [
+        "platform-regression-8483138.json"
+      ]
+    }
+  ]
+}
