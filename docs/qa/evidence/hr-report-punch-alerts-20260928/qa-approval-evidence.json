@@ -1,0 +1,66 @@
+{
+  "change_id": "hr-report-punch-alerts-20260928",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "95f7dda8034981b414107afb8ffa14511e6bd8fc",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": ["local-certification.json"]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": ["local-certification.json"]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": ["local-certification.json"]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": ["local-certification.json"]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "local-certification.json",
+        "../service-monitor-search-completeness-20260926/platform-regression.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-report-punch-alerts-local.js",
+    "evidence": ["local-certification.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-report-punch-alerts-local.js",
+    "evidence": [
+      "local-certification.json",
+      "../service-monitor-search-completeness-20260926/platform-regression.json"
+    ]
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../../scripts/certifications/hr-report-punch-alerts-local.js",
+    "evidence": ["local-certification.json"],
+    "basis": "Cambio exclusivo de frontend sin logica por empresa ni acceso a datos: las reglas de puntualidad y el render son identicos para cualquier tenant. La verificacion en ambiente QA queda programada para ejecutarse apenas se conceda acceso a Railway."
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "0cdaa9a25b52eba31e4ac8931102d24439bb71a8",
+    "trigger": "cualquier falla funcional, de render del reporte, de exportacion Excel o regresion del monitor de rutas en produccion tras promover las alertas de marcacion"
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_main_for_hr_report_punch_alerts",
+    "approved_by": "Edwin (lead APEXOS) - autorizacion expresa para recorrer desarrollo, develop y main y actualizar las 3 ramas remotas",
+    "approved_at": "2026-09-28T22:05:00-05:00",
+    "authorization_basis": "El usuario instruyo trabajar con las politicas pasando por desarrollo, develop y main y actualizar las 3 ramas remotas con el plan de intervencion; la aprobacion funcional QA explicita la otorga el lead con la certificacion local 9/9 y la verificacion QA en Railway pendiente de acceso."
+  }
+}
