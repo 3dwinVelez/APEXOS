@@ -1,0 +1,32 @@
+{
+  "change_id": "hr-report-punch-alerts-20260928",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "4a05a7a269d3356768bb6cf48736b89c49cf4f0a",
+  "qa_status": "pending",
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["local-certification.json"] },
+    "error": { "status": "passed", "evidence": ["local-certification.json"] },
+    "support_scripts": { "status": "passed", "evidence": ["local-certification.json"] },
+    "regression": { "status": "passed", "evidence": ["local-certification.json"] },
+    "platform_regression": { "status": "passed", "evidence": ["local-certification.json"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-report-punch-alerts-local.js",
+    "evidence": ["local-certification.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-report-punch-alerts-local.js",
+    "evidence": ["local-certification.json"]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (lead APEXOS) - autorizacion expresa para recorrer desarrollo, develop y main en la tarea de alertas de marcacion",
+    "approved_at": "2026-09-28T21:45:00-05:00",
+    "main_release": "pending_qa_certification"
+  }
+}

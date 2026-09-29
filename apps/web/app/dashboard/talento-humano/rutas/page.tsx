@@ -6,6 +6,7 @@ import { Badge, Skeleton } from "@/components/ui/feedback";
 import { localCalendarDate, scheduleGpsRequired, scheduleMonitorDate, scheduleSameDayShiftIssue, scheduleTruncationNotices, scheduleTrackingMode } from "@/lib/hrScheduleMonitor";
 import type { ScheduleTruncationSignal } from "@/lib/hrScheduleMonitor";
 import { subscribeHrMonitorRefresh } from "@/lib/hrMonitorRefresh";
+import { punctualityAlert, type PunctualityTone } from "@/lib/punchPunctuality";
 import { AlertTriangle, ArrowLeft, Building2, CalendarDays, Camera, CheckCircle2, CheckSquare2, ChevronLeft, ChevronRight, Clock, Copy, Edit3, Filter, HelpCircle, ImageOff, LogIn, LogOut, MapPin, Navigation, PlayCircle, Plus, RefreshCw, RotateCcw, Save, Search, ShieldAlert, ShieldCheck, Square, Timer, Trash2, Truck, UserPlus, Utensils, UtensilsCrossed, X, ZoomIn } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -105,34 +106,23 @@ function punchIconClassName(type: string) {
   }
 }
 
-function minutesFromTime(value?: string | null) {
-  if (!value) return null;
-  const match = String(value).match(/^(\d{1,2}):(\d{2})/);
-  if (!match) return null;
-  return Number(match[1]) * 60 + Number(match[2]);
+function punctualityIconFor(tone: PunctualityTone) {
+  if (tone === "success") return CheckCircle2;
+  if (tone === "warning") return AlertTriangle;
+  return Clock;
 }
 
 function punchPunctuality(event: TimelineEvent, route: RouteMonitor) {
   if (event.kind !== "marca") return null;
-  const minutes = minutesFromTime(event.time);
-  const tolerance = Math.max(0, Number(route.tolerance_minutes ?? 15));
-  if (event.type === "entrada") {
-    const expected = minutesFromTime(route.start_time);
-    if (minutes == null || expected == null) return null;
-    const diff = minutes - expected;
-    if (diff <= 0) return { label: diff === 0 ? "En punto" : `Anticipado ${Math.abs(diff)} min`, tone: "success" as const, icon: CheckCircle2 };
-    if (diff <= tolerance) return { label: `Dentro de tolerancia (+${diff} min)`, tone: "info" as const, icon: Clock };
-    return { label: `Tarde ${diff} min`, tone: "warning" as const, icon: AlertTriangle };
-  }
-  if (event.type === "salida") {
-    const expected = minutesFromTime(route.end_time);
-    if (minutes == null || expected == null) return null;
-    const diff = expected - minutes;
-    if (diff <= 0) return { label: "Cierre a tiempo", tone: "success" as const, icon: CheckCircle2 };
-    if (diff <= tolerance) return { label: `Cierre anticipado ${diff} min`, tone: "info" as const, icon: Clock };
-    return { label: `Salida temprana ${diff} min`, tone: "warning" as const, icon: AlertTriangle };
-  }
-  return null;
+  const alert = punctualityAlert({
+    type: event.type,
+    time: event.time,
+    startTime: route.start_time,
+    endTime: route.end_time,
+    toleranceMinutes: route.tolerance_minutes
+  });
+  if (!alert) return null;
+  return { ...alert, icon: punctualityIconFor(alert.tone) };
 }
 
 function personKey(value?: string | null) {

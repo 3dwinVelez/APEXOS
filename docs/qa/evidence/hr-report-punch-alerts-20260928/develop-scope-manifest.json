@@ -1,0 +1,51 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-report-punch-alerts-20260928",
+  "base_commit": "c65b314888ffa7eb09c3c4e0fc474f62aa6d96b3",
+  "base_commits": {
+    "develop": "c65b314888ffa7eb09c3c4e0fc474f62aa6d96b3"
+  },
+  "certified_commit": "4a05a7a269d3356768bb6cf48736b89c49cf4f0a",
+  "change_intent": {
+    "summary": "Reflejar en el reporte de jornada de Talento Humano las alertas criticas de marcacion (puntualidad de entrada y cierre) que hoy solo muestra el monitor de rutas, usando una fuente compartida de reglas en apps/web/lib/punchPunctuality.ts.",
+    "modules": ["talento-humano", "qa-evidence"]
+  },
+  "expected_changes": [
+    { "status": "A", "file": "apps/web/lib/punchPunctuality.ts" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx" },
+    { "status": "A", "file": "apps/web/test/hr-report-punch-alerts.test.mjs" },
+    { "status": "A", "file": "scripts/certifications/hr-report-punch-alerts-local.js" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-punch-alerts-20260928/local-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-punch-alerts-20260928/preqa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-punch-alerts-20260928/develop-scope-manifest.json" }
+  ],
+  "allowed_paths": [
+    "apps/web/lib/punchPunctuality.ts",
+    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "apps/web/test/hr-report-punch-alerts.test.mjs",
+    "scripts/certifications/hr-report-punch-alerts-local.js",
+    "docs/qa/evidence/hr-report-punch-alerts-20260928/local-certification.json",
+    "docs/qa/evidence/hr-report-punch-alerts-20260928/preqa-approval-evidence.json",
+    "docs/qa/evidence/hr-report-punch-alerts-20260928/develop-scope-manifest.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "reporte_jornada_con_alertas_de_marcacion",
+      "status": "passed",
+      "evidence": ["local-certification.json"]
+    },
+    {
+      "name": "monitor_rutas_sin_regresion_de_puntualidad",
+      "status": "passed",
+      "evidence": ["local-certification.json"]
+    },
+    {
+      "name": "exportacion_xlsx_del_reporte",
+      "status": "passed",
+      "evidence": ["local-certification.json"]
+    }
+  ]
+}

@@ -1,9 +1,11 @@
 "use client";
 
 import { api } from "@/lib/api";
+import { Badge } from "@/components/ui/feedback";
 import { downloadXlsxWorkbook } from "@/lib/reportExports";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
-import { ArrowLeft, CalendarDays, Download, Eye, Filter, RotateCcw, Search } from "lucide-react";
+import { punctualityAlert, punctualityTypeNames, type PunctualityAlert, type PunctualityTone } from "@/lib/punchPunctuality";
+import { AlertTriangle, ArrowLeft, CalendarDays, CheckCircle2, Clock, Download, Eye, Filter, RotateCcw, Search } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -11,7 +13,8 @@ type Employee = { id: number | string; code: string; user_type?: string; positio
 type Punch = { id: number; user_name: string; type: string; time: string; punched_at: string; date: string; latitude?: number; longitude?: number; accuracy_meters?: number; vehicle_plate: string; route_id?: number; extra_minutes: number; extra_reason?: string; extra_detail?: string };
 type Attendance = { user_name: string; next_type: string | null; punches: Punch[] };
 type WorkActivity = { id: number; employee_id?: number | string; user_id?: string; activity_type_name: string; observation: string; occurred_at: string; latitude: number; longitude: number; accuracy_meters?: number; user_name: string; route_id?: number | string; vehicle_plate?: string; evidence?: Array<{ base64_data?: string; file_name?: string }>; metadata?: { supplied_user_name?: string; employee_code?: string; employee_name?: string; identity_aliases?: string[] } };
-type TimeRoute = { id: number; date: string; vehicle_plate: string; employees: string[]; start_time: string; end_time: string; status: string };
+type TimeRoute = { id: number; date: string; vehicle_plate: string; employees: string[]; start_time: string; end_time: string; status: string; tolerance_minutes?: number };
+type PunchAlert = { type: string; label: string; tone: PunctualityTone };
 type ReportRow = {
   key: string;
   employeeId: string;
@@ -29,9 +32,16 @@ type ReportRow = {
   overtimeMinutes: number;
   overtimeReason: string;
   overtimeDetail: string;
+  punchAlerts: PunchAlert[];
   activities: WorkActivity[];
-  events: Array<{ kind: string; title: string; at: string; gps?: string; detail?: string }>;
+  events: Array<{ kind: string; title: string; at: string; gps?: string; detail?: string; alert?: PunctualityAlert | null }>;
 };
+
+function punctualityIconFor(tone: PunctualityTone) {
+  if (tone === "success") return CheckCircle2;
+  if (tone === "warning") return AlertTriangle;
+  return Clock;
+}
 
 function today() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
@@ -170,9 +180,10 @@ export default function HrReportsPage() {
         return activityAliases.some((alias) => userAliases.has(alias)) || Boolean(activity.route_id && String(activity.route_id) === String(sorted[0]?.route_id));
       });
       const events = [
-        ...sorted.map((punch) => ({ kind: "Marcacion", title: punch.type, at: punch.punched_at, gps: gps(punch), detail: punch.extra_minutes ? `${punch.extra_minutes} min extra` : "" })),
-        ...routeActivities.map((activity) => ({ kind: "Actividad", title: activity.activity_type_name || "Actividad operativa", at: activity.occurred_at, gps: gps(activity), detail: activity.observation || "" }))
+        ...sorted.map((punch) => ({ kind: "Marcacion", title: punch.type, at: punch.punched_at, gps: gps(punch), detail: punch.extra_minutes ? `${punch.extra_minutes} min extra` : "", alert: punctualityAlert({ type: punch.type, time: punch.time, punched_at: punch.punched_at, startTime: route?.start_time, endTime: route?.end_time, toleranceMinutes: route?.tolerance_minutes }) })),
+        ...routeActivities.map((activity) => ({ kind: "Actividad", title: activity.activity_type_name || "Actividad operativa", at: activity.occurred_at, gps: gps(activity), detail: activity.observation || "", alert: null }))
       ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
+      const punchAlerts = events.flatMap((event) => event.kind === "Marcacion" && event.alert ? [{ type: event.title, label: event.alert.label, tone: event.alert.tone }] : []);
       return {
         key,
         employeeId: String(employee?.id || userName),
@@ -190,6 +201,7 @@ export default function HrReportsPage() {
         overtimeMinutes: sorted.reduce((sum, punch) => sum + Number(punch.extra_minutes || 0), 0),
         overtimeReason: sorted.find((punch) => punch.extra_reason)?.extra_reason || "",
         overtimeDetail: sorted.find((punch) => punch.extra_detail)?.extra_detail || "",
+        punchAlerts,
         activities: routeActivities,
         events
       } satisfies ReportRow;
@@ -204,7 +216,7 @@ export default function HrReportsPage() {
     if (journeyFilter === "complete" && (!row.entry || !row.exit)) return false;
     if (journeyFilter === "incomplete" && row.entry && row.exit) return false;
     if (!term) return true;
-    return normalized([row.employeeName, row.document, row.route, row.vehicle, row.role, row.overtimeReason, row.overtimeDetail, ...row.activities.map((activity) => activity.activity_type_name)].join(" ")).includes(term);
+    return normalized([row.employeeName, row.document, row.route, row.vehicle, row.role, row.overtimeReason, row.overtimeDetail, ...row.punchAlerts.map((alert) => alert.label), ...row.activities.map((activity) => activity.activity_type_name)].join(" ")).includes(term);
   }), [appliedRange, employeeFilter, journeyFilter, onlyOvertime, query, rows]);
 
   const activeFilters = [employeeFilter !== "all", onlyOvertime, journeyFilter !== "all", Boolean(query.trim())].filter(Boolean).length;
@@ -254,6 +266,7 @@ export default function HrReportsPage() {
             { indicador: "Horas laboradas", valor: Number(workedHours.toFixed(2)) },
             { indicador: "Horas extra", valor: Number(overtimeHours.toFixed(2)) },
             { indicador: "Jornadas incompletas", valor: filtered.filter((row) => !row.entry || !row.exit).length },
+            { indicador: "Jornadas con alerta critica", valor: filtered.filter((row) => row.punchAlerts.some((alert) => alert.tone === "warning")).length },
             { indicador: "Eventos de trazabilidad", valor: filtered.reduce((sum, row) => sum + row.events.length, 0) }
           ]
         },
@@ -266,6 +279,7 @@ export default function HrReportsPage() {
             { key: "rol", label: "Rol", width: 120 }, { key: "documento", label: "Documento", width: 110 }, { key: "ruta", label: "Ruta", width: 110 },
             { key: "vehiculo", label: "Vehiculo", width: 95 }, { key: "entrada", label: "Entrada", width: 85 }, { key: "almuerzo_inicio", label: "Inicio almuerzo", width: 100 },
             { key: "almuerzo_fin", label: "Fin almuerzo", width: 100 }, { key: "cierre", label: "Cierre", width: 85 },
+            { key: "alerta_entrada", label: "Alerta entrada", width: 150 }, { key: "alerta_cierre", label: "Alerta cierre", width: 150 },
             { key: "horas_laboradas", label: "Horas laboradas", width: 110, numberFormat: "0.00" }, { key: "horas_extra", label: "Horas extra", width: 95, numberFormat: "0.00" },
             { key: "estado", label: "Estado jornada", width: 115 }, { key: "motivo_extra", label: "Motivo extra", width: 180 },
             { key: "justificacion_extra", label: "Justificacion extra", width: 240 }, { key: "actividades", label: "Actividades", width: 90 }, { key: "eventos", label: "Eventos", width: 85 }
@@ -273,6 +287,7 @@ export default function HrReportsPage() {
           rows: filtered.map((row) => ({
             fecha: new Date(`${row.date}T12:00:00-05:00`), empleado: row.employeeName, rol: row.role, documento: row.document, ruta: row.route, vehiculo: row.vehicle,
             entrada: hour(row.entry?.punched_at), almuerzo_inicio: hour(row.lunchStart?.punched_at), almuerzo_fin: hour(row.lunchEnd?.punched_at), cierre: hour(row.exit?.punched_at),
+            alerta_entrada: row.punchAlerts.find((alert) => alert.type === "entrada")?.label || "", alerta_cierre: row.punchAlerts.find((alert) => alert.type === "salida")?.label || "",
             horas_laboradas: Number((row.workedMinutes / 60).toFixed(2)), horas_extra: Number((row.overtimeMinutes / 60).toFixed(2)), estado: row.entry && row.exit ? "Completa" : "Incompleta",
             motivo_extra: row.overtimeReason, justificacion_extra: row.overtimeDetail, actividades: row.activities.length, eventos: row.events.length
           }))
@@ -284,9 +299,10 @@ export default function HrReportsPage() {
           columns: [
             { key: "fecha", label: "Fecha", width: 95, numberFormat: "yyyy-mm-dd" }, { key: "empleado", label: "Empleado", width: 180 }, { key: "ruta", label: "Ruta", width: 110 },
             { key: "tipo", label: "Tipo", width: 100 }, { key: "evento", label: "Evento", width: 160 }, { key: "hora", label: "Hora", width: 85 },
+            { key: "alerta", label: "Alerta marcacion", width: 160 },
             { key: "gps", label: "GPS", width: 150 }, { key: "detalle", label: "Detalle", width: 280 }
           ],
-          rows: filtered.flatMap((row) => row.events.map((event) => ({ fecha: new Date(`${row.date}T12:00:00-05:00`), empleado: row.employeeName, ruta: row.route, tipo: event.kind, evento: event.title, hora: hour(event.at), gps: event.gps || "", detalle: event.detail || "" })))
+          rows: filtered.flatMap((row) => row.events.map((event) => ({ fecha: new Date(`${row.date}T12:00:00-05:00`), empleado: row.employeeName, ruta: row.route, tipo: event.kind, evento: event.title, hora: hour(event.at), alerta: event.alert?.label || "", gps: event.gps || "", detalle: event.detail || "" })))
         }
       ]);
     } catch (error) {
@@ -337,7 +353,7 @@ export default function HrReportsPage() {
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-[1100px] w-full text-left text-sm">
-            <thead className="bg-paper text-xs uppercase text-neutral-500"><tr>{["Fecha", "Empleado", "Rol", "Ruta", "Vehiculo", "Entrada", "Cierre", "Laboradas", "Extra", "Motivo", "Trazabilidad", ""].map((head) => <th className="px-4 py-3" key={head}>{head}</th>)}</tr></thead>
+            <thead className="bg-paper text-xs uppercase text-neutral-500"><tr>{["Fecha", "Empleado", "Rol", "Ruta", "Vehiculo", "Entrada", "Cierre", "Alertas", "Laboradas", "Extra", "Motivo", "Trazabilidad", ""].map((head) => <th className="px-4 py-3" key={head}>{head}</th>)}</tr></thead>
             <tbody className="divide-y divide-line">
               {filtered.map((row) => (
                 <tr className="hover:bg-paper" key={row.key}>
@@ -348,6 +364,16 @@ export default function HrReportsPage() {
                   <td className="px-4 py-3">{row.vehicle}</td>
                   <td className="px-4 py-3">{hour(row.entry?.punched_at)}</td>
                   <td className="px-4 py-3">{hour(row.exit?.punched_at)}</td>
+                  <td className="px-4 py-3">
+                    {row.punchAlerts.length ? (
+                      <div className="flex max-w-[280px] flex-wrap gap-1">
+                        {row.punchAlerts.map((alert) => {
+                          const AlertIcon = punctualityIconFor(alert.tone);
+                          return <Badge key={`${row.key}-${alert.type}`} tone={alert.tone}><AlertIcon size={12} /> {punctualityTypeNames[alert.type] || alert.type}: {alert.label}</Badge>;
+                        })}
+                      </div>
+                    ) : <span className="text-neutral-400">--</span>}
+                  </td>
                   <td className="px-4 py-3 font-semibold">{minutesLabel(row.workedMinutes)}</td>
                   <td className={`px-4 py-3 font-semibold ${row.overtimeMinutes ? "text-amber-700" : ""}`}>{minutesLabel(row.overtimeMinutes)}</td>
                   <td className="max-w-[220px] truncate px-4 py-3">{row.overtimeReason || "--"}</td>
@@ -355,7 +381,7 @@ export default function HrReportsPage() {
                   <td className="px-4 py-3"><button className="inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 font-semibold hover:bg-white" onClick={() => setSelected(row)} type="button"><Eye size={15} /> Ver</button></td>
                 </tr>
               ))}
-              {!filtered.length ? <tr><td className="px-4 py-8 text-center text-neutral-500" colSpan={12}>{loading ? "Cargando..." : "Sin registros para el filtro seleccionado."}</td></tr> : null}
+              {!filtered.length ? <tr><td className="px-4 py-8 text-center text-neutral-500" colSpan={13}>{loading ? "Cargando..." : "Sin registros para el filtro seleccionado."}</td></tr> : null}
             </tbody>
           </table>
         </div>
@@ -376,7 +402,7 @@ export default function HrReportsPage() {
               </div>
               {selected.overtimeMinutes ? <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950"><p className="font-semibold">Justificacion de extension</p><p className="mt-1">Motivo: {selected.overtimeReason || "--"}</p><p className="mt-1">{selected.overtimeDetail || "Sin detalle registrado."}</p></div> : null}
               <div className="mt-4 space-y-2">
-                {selected.events.map((event, index) => <div className="rounded-md border border-line p-3" key={`${event.kind}-${event.at}-${index}`}><div className="flex items-start gap-3"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-apex text-sm font-bold text-white">{index + 1}</span><div><p className="font-semibold">{event.kind}: {event.title}</p><p className="text-sm text-neutral-600">{hour(event.at)} - {event.detail || "Sin observacion"}</p>{event.gps ? <p className="mt-1 text-xs text-neutral-500">GPS {event.gps}</p> : null}</div></div></div>)}
+                {selected.events.map((event, index) => <div className="rounded-md border border-line p-3" key={`${event.kind}-${event.at}-${index}`}><div className="flex items-start gap-3"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-apex text-sm font-bold text-white">{index + 1}</span><div><div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{event.kind}: {punctualityTypeNames[event.title] || event.title}</p>{event.alert ? <Badge tone={event.alert.tone}>{event.alert.label}</Badge> : null}</div><p className="text-sm text-neutral-600">{hour(event.at)} - {event.detail || "Sin observacion"}</p>{event.gps ? <p className="mt-1 text-xs text-neutral-500">GPS {event.gps}</p> : null}</div></div></div>)}
               </div>
             </div>
           </aside>
