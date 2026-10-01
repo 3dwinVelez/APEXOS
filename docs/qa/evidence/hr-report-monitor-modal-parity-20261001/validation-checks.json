@@ -1,0 +1,14 @@
+{
+  "change_id": "hr-report-monitor-modal-parity-20261001",
+  "generated_at": "2026-10-01T23:35:00.000Z",
+  "environment": "LOCAL",
+  "functional_commit": "ac36f3fc14faad55cf23f11c7103803832341e38",
+  "checks": [
+    { "name": "focused_unit_tests", "result": "pass", "detail": "6/6 tests pass" },
+    { "name": "local_certification", "result": "pass", "detail": "10/10 controls pass" },
+    { "name": "web_typecheck", "result": "pass", "detail": "no errors" },
+    { "name": "web_lint", "result": "pass", "detail": "0 errors; 13 pre-existing warnings" }
+  ],
+  "status": "passed"
+}
+

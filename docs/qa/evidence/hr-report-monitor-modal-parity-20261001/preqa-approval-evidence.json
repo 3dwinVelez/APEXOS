@@ -1,0 +1,19 @@
+{
+  "change_id": "hr-report-monitor-modal-parity-20261001",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "ac36f3fc14faad55cf23f11c7103803832341e38",
+  "qa_status": "pending",
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["functional.md", "local-certification.json"] },
+    "error": { "status": "passed", "evidence": ["error.md", "security-review.md"] },
+    "support_scripts": { "status": "passed", "evidence": ["support-scripts.md", "validation-checks.json"] },
+    "regression": { "status": "passed", "evidence": ["regression.md", "local-certification.json"] },
+    "platform_regression": { "status": "passed", "evidence": ["platform-regression.md", "validation-checks.json"] }
+  },
+  "certification": { "status": "passed", "script": "../../../../scripts/certifications/hr-report-punch-alerts-local.js", "evidence": ["local-certification.json"] },
+  "regression_certification": { "status": "passed", "script": "../../../../scripts/certifications/hr-report-punch-alerts-local.js", "evidence": ["local-certification.json"] },
+  "approval": { "status": "approved", "scope": "promotion_to_develop_for_qa", "approved_by": "mq1 via Codex request", "approved_at": "2026-10-01T23:35:00.000Z" }
+}
+
