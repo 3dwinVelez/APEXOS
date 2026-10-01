@@ -1,0 +1,355 @@
+{
+  "change_id": "transport-settlement-packages-20261001",
+  "certification": "transport-settlement-packages-local",
+  "environment": "LOCAL",
+  "database_url_host": "postgresql://***@localhost:55432/apexos",
+  "generated_at": "2026-10-01T15:38:02.787Z",
+  "api_commit": "unknown",
+  "api_url": "http://127.0.0.1:3211",
+  "scope": {
+    "capability": "Liquidacion de Transporte por paquetes (contenedor de periodo + paquete por transportador/tipo) con motor tarifario explicable y versionado, validaciones RB-01..RB-12, ajustes auditados, novedades bloqueantes, workflow de aprobacion con segregacion, contabilizacion idempotente, torre de control, simulador de tarifa y auditoria funcional append-only; extension nativa del modulo Transporte sin duplicar maestros.",
+    "proven_by_live_execution": [
+      "POST /transport/settlement-periods crea el contenedor semanal",
+      "POST /transport/settlement-packages crea el paquete validando transportador habilitado (RB-01)",
+      "POST /transport/settlement-packages/:id/items registra detalles y detecta guia duplicada entre paquetes (RB-03)",
+      "POST /transport/settlement-packages/:id/validate ejecuta RB-01/02/03 y crea novedades",
+      "POST /transport/settlement-packages/:id/precalculate resuelve tarifa vigente/determinista, congela snapshot y traza (RB-04/05/06); sin tarifa genera novedad bloqueante y cae a con_novedad",
+      "POST /transport/settlement-packages/:id/adjustments registra ajuste con before/after y motivo (RB-07)",
+      "POST /transport/settlement-packages/:id/submit exige novedades bloqueantes resueltas (RB-08)",
+      "POST /transport/settlement-packages/:id/decision aprueba con segregacion de funciones (RB-09) y fija approved_total",
+      "POST /transport/settlement-packages/:id/account contabiliza de forma idempotente (RB-10): el reintento no duplica",
+      "Un paquete aprobado no admite edicion del detalle (RB-11) y una version obsoleta produce 409 (RB-12)",
+      "GET /transport/settlement-packages/:id/audit expone la trazabilidad append-only",
+      "GET /transport/settlement-control-tower expone KPIs y aging",
+      "POST /transport/rates/simulate resuelve tarifa sin alterar la liquidacion",
+      "GET anonimo responde 401"
+    ],
+    "proven_by_versioned_unit_suite": [
+      "apps/api/test/transport-settlement-engine.test.js (motor puro: 19 controles)",
+      "apps/web/test/transport-settlement-ui.test.mjs (pagina de liquidaciones)"
+    ]
+  },
+  "checks": [
+    {
+      "name": "health_ok",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "commit": "unknown"
+      }
+    },
+    {
+      "name": "anonymous_blocked_401",
+      "ok": true,
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "admin_login",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "carrier_created",
+      "ok": true,
+      "detail": {
+        "status": 201
+      }
+    },
+    {
+      "name": "rate_card_activated",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "version": 1
+      }
+    },
+    {
+      "name": "settlement_type_created",
+      "ok": true,
+      "detail": {
+        "status": 201
+      }
+    },
+    {
+      "name": "settlement_types_include_reserved",
+      "ok": true,
+      "detail": {
+        "count": 5
+      }
+    },
+    {
+      "name": "period_created",
+      "ok": true,
+      "detail": {
+        "status": 201
+      }
+    },
+    {
+      "name": "package_created_borrador",
+      "ok": true,
+      "detail": {
+        "status": 201
+      }
+    },
+    {
+      "name": "items_added",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "items": 2
+      }
+    },
+    {
+      "name": "second_package_created",
+      "ok": true,
+      "detail": {
+        "status": 201
+      }
+    },
+    {
+      "name": "RB03_duplicate_guide_blocked",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "TMS_SETTLEMENT_DUPLICATE_GUIDE_CROSS_PACKAGE"
+      }
+    },
+    {
+      "name": "validated_to_validando",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "state": "validando"
+      }
+    },
+    {
+      "name": "precalculated_to_preliquidada",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "state": "preliquidada",
+        "calculated_total": 2591600
+      }
+    },
+    {
+      "name": "RB06_rate_snapshot_and_trace",
+      "ok": true,
+      "detail": {
+        "rate_version": 1,
+        "rate_card_id": 1,
+        "has_trace": true
+      }
+    },
+    {
+      "name": "RB04_missing_rate_creates_blocking_issue",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "state": "con_novedad",
+        "issues": [
+          "tarifa_inexistente"
+        ]
+      }
+    },
+    {
+      "name": "RB08_blocking_issue_prevents_submit",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "TMS_SETTLEMENT_BLOCKING_ISSUE_OPEN"
+      }
+    },
+    {
+      "name": "RB07_adjustment_records_before_after",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "before": 1004300,
+        "after": 954300,
+        "adjusted_total": 2541600
+      }
+    },
+    {
+      "name": "RB07_adjustment_requires_reason",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "TMS_SETTLEMENT_ADJUSTMENT_REASON_REQUIRED"
+      }
+    },
+    {
+      "name": "RB12_stale_version_conflict",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "TMS_SETTLEMENT_VERSION_CONFLICT"
+      }
+    },
+    {
+      "name": "submitted_to_en_revision",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "state": "en_revision"
+      }
+    },
+    {
+      "name": "approved_fixes_approved_total",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "approved_total": 2541600
+      }
+    },
+    {
+      "name": "RB11_approved_not_editable",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "TMS_SETTLEMENT_NOT_EDITABLE"
+      }
+    },
+    {
+      "name": "accounted_to_contabilizada",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "state": "contabilizada"
+      }
+    },
+    {
+      "name": "RB10_accounting_idempotent_replay",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "replay": true,
+        "accountings": 1
+      }
+    },
+    {
+      "name": "closed_to_liquidada",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "state": "liquidada"
+      }
+    },
+    {
+      "name": "audit_timeline_append_only",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "events": 9
+      }
+    },
+    {
+      "name": "control_tower_kpis",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "total": 3
+      }
+    },
+    {
+      "name": "rate_simulator_explains",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "amount": 1004300
+      }
+    },
+    {
+      "name": "reinforced_package_created",
+      "ok": true,
+      "detail": {
+        "status": 201
+      }
+    },
+    {
+      "name": "RB02_documentary_block_issue",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "issues": [
+          "documento_vencido"
+        ]
+      }
+    },
+    {
+      "name": "reinforced_precalculated",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "state": "preliquidada"
+      }
+    },
+    {
+      "name": "reinforced_submitted",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "state": "en_revision"
+      }
+    },
+    {
+      "name": "RB09_segregation_blocks_creator_approval",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "TMS_SETTLEMENT_SEGREGATION_VIOLATION"
+      }
+    },
+    {
+      "name": "rejection_requires_comment",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "TMS_SETTLEMENT_REJECTION_REQUIRES_COMMENT"
+      }
+    },
+    {
+      "name": "unit_suite_engine_pass",
+      "ok": true,
+      "detail": {
+        "status": 0,
+        "pass": "19",
+        "fail": "0"
+      }
+    },
+    {
+      "name": "engine_defines_state_machine_and_rbs",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "service_writes_functional_audit",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "routes_guarded_by_rbac",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "schema_has_settlement_models",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "web_page_present",
+      "ok": true,
+      "detail": {
+        "path": "apps\\web\\app\\dashboard\\transporte\\liquidaciones\\page.tsx"
+      }
+    }
+  ],
+  "status": "passed",
+  "checks_passed": 41,
+  "checks_total": 41,
+  "finished_at": "2026-10-01T15:38:23.665Z"
+}

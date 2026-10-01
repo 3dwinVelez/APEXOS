@@ -92,6 +92,7 @@ export const MODULE_FUNCTIONS: ModuleFunction[] = [
   { id: "fn-transp-planeacion", label: "Crear un plan de viaje", description: "Planea rutas y despachos", href: "/dashboard/transporte/planeacion", module: "transporte", keywords: "planeacion plan viaje ruta despacho" },
   { id: "fn-transp-pod", label: "Confirmar entregas (POD)", description: "Evidencia de entrega al cliente", href: "/dashboard/transporte/pod", module: "transporte", keywords: "pod confirmar entrega evidencia firma remision" },
   { id: "fn-transp-tarifas", label: "Gestionar tarifas de transporte", description: "Tarifarios y costos de flete", href: "/dashboard/transporte/tarifas", module: "transporte", keywords: "tarifa tarifario flete costo transporte" },
+  { id: "fn-transp-liquidaciones", label: "Liquidar transporte", description: "Preliquidar, ajustar, aprobar y contabilizar paquetes de flete", href: "/dashboard/transporte/liquidaciones", module: "transporte", keywords: "liquidacion liquidar paquete flete transportador cuenta cobro ajuste aprobacion contabilizar periodo" },
 
   // Ventas
   { id: "fn-ventas-facturas", label: "Consultar facturas de venta", description: "Facturas emitidas a clientes", href: "/dashboard/ventas/facturas", module: "ventas", keywords: "factura venta documento cliente emitida" },
