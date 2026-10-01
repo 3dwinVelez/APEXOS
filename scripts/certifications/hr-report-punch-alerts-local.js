@@ -116,6 +116,13 @@ function main() {
   ].every((pattern) => pattern.test(reportSrc)), { xlsx: true });
 
   check("report_detail_shows_alert_badge", /event\.alert \? <Badge tone=\{event\.alert\.tone\}>\{event\.alert\.label\}<\/Badge> : null/.test(reportSrc), { detail: true });
+  check("report_detail_uses_modern_timeline", [
+    /Trazabilidad cronologica de la jornada/,
+    /selected\.events\.filter\(\(event\) => event\.kind === "Marcacion"\)\.length\} marcaciones/,
+    /MapPin size=\{12\}/,
+    /Sin evidencia fotografica/,
+    /evidenceCount/
+  ].every((pattern) => pattern.test(reportSrc)), { timeline: true });
 
   const routesSrc = readSource(ROUTES_PAGE);
   check("routes_monitor_shares_lib_without_duplication", [
