@@ -99,12 +99,14 @@ function main() {
     /from "@\/lib\/punchPunctuality"/,
     /"Cierre", "Alertas", "Laboradas"/,
     /function PunchAlertStack/,
+    /function reportPunchAlerts/,
     /alerts\.map/,
     /rowKey=\{row\.key\}/,
     /w-\[22rem\]/,
+    /const punchAlerts = reportPunchAlerts\(entry, exit, route\)/,
     /<Badge className="min-h-8 w-full justify-start gap-2 rounded-md px-2.5 py-1.5 text-left leading-4"/,
     /colSpan=\{13\}/
-  ].every((pattern) => pattern.test(reportSrc)), { column: /"Alertas"/.test(reportSrc) });
+  ].every((pattern) => pattern.test(reportSrc)) && !/const punchAlerts = events\.flatMap/.test(reportSrc), { column: /"Alertas"/.test(reportSrc) });
 
   check("report_exports_alerts_in_xlsx", [
     /alerta_entrada: row\.punchAlerts\.find\(\(alert\) => alert\.type === "entrada"\)/,

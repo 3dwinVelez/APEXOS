@@ -35,9 +35,12 @@ test("el reporte de talento humano refleja las alertas por marcacion en tabla, d
   assert.match(page, /from "@\/lib\/punchPunctuality"/);
   assert.match(page, /"Cierre", "Alertas", "Laboradas"/);
   assert.match(page, /function PunchAlertStack/);
+  assert.match(page, /function reportPunchAlerts/);
   assert.match(page, /alerts\.map/);
   assert.match(page, /rowKey=\{row\.key\}/);
   assert.match(page, /w-\[22rem\]/);
+  assert.match(page, /const punchAlerts = reportPunchAlerts\(entry, exit, route\)/);
+  assert.doesNotMatch(page, /const punchAlerts = events\.flatMap/);
   assert.match(page, /alerta_entrada: row\.punchAlerts\.find\(\(alert\) => alert\.type === "entrada"\)/);
   assert.match(page, /alerta_cierre: row\.punchAlerts\.find\(\(alert\) => alert\.type === "salida"\)/);
   assert.match(page, /alerta: event\.alert\?\.label \|\| ""/);

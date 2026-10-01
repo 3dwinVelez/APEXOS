@@ -1,0 +1,108 @@
+{
+  "change_id": "hr-report-alerts-presentation-20261001",
+  "certification": "hr-report-punch-alerts-local",
+  "environment": "LOCAL",
+  "generated_at": "2026-10-01T22:36:14.150Z",
+  "scope": {
+    "capability": "Las alertas criticas de marcacion (tarde, dentro de tolerancia, salida temprana, etc.) calculadas por el monitor de rutas se reflejan por marcacion en el reporte de Talento Humano: columna Alertas, detalle de trazabilidad y exportacion Excel.",
+    "proven_by_versioned_unit_suite": [
+      "apps/web/test/hr-report-punch-alerts.test.mjs (4 controles)",
+      "apps/web/test/hr-reports-xlsx.test.mjs (2 controles)",
+      "apps/web/test/hr-monitor-modal-per-user.test.mjs (8 controles)"
+    ],
+    "proven_by_code_level_assertion": [
+      "lib/punchPunctuality.ts concentra las reglas de puntualidad y los nombres de marcacion",
+      "reportes/page.tsx renderiza la columna Alertas, las insignias del detalle y las columnas alerta_entrada/alerta_cierre/alerta del Excel",
+      "rutas/page.tsx consume el lib compartido sin duplicar la logica de puntualidad"
+    ]
+  },
+  "checks": [
+    {
+      "name": "lib_punchPunctuality_exists",
+      "ok": true,
+      "detail": {
+        "lib": "apps\\web\\lib\\punchPunctuality.ts"
+      }
+    },
+    {
+      "name": "lib_concentrates_punctuality_rules",
+      "ok": true,
+      "detail": {
+        "rules": true
+      }
+    },
+    {
+      "name": "report_renders_alert_column_and_badges",
+      "ok": true,
+      "detail": {
+        "column": true
+      }
+    },
+    {
+      "name": "report_exports_alerts_in_xlsx",
+      "ok": true,
+      "detail": {
+        "xlsx": true
+      }
+    },
+    {
+      "name": "report_detail_shows_alert_badge",
+      "ok": true,
+      "detail": {
+        "detail": true
+      }
+    },
+    {
+      "name": "routes_monitor_shares_lib_without_duplication",
+      "ok": true,
+      "detail": {
+        "shared": true
+      }
+    },
+    {
+      "name": "unit_suite_punch_alerts_passes",
+      "ok": true,
+      "detail": {
+        "exit": 0,
+        "pass": 4,
+        "fail": 0,
+        "expectedPass": 4
+      }
+    },
+    {
+      "name": "unit_suite_reports_xlsx_passes",
+      "ok": true,
+      "detail": {
+        "exit": 0,
+        "pass": 2,
+        "fail": 0,
+        "expectedPass": 2
+      }
+    },
+    {
+      "name": "unit_suite_monitor_modal_passes",
+      "ok": true,
+      "detail": {
+        "exit": 0,
+        "pass": 8,
+        "fail": 0,
+        "expectedPass": 8
+      }
+    }
+  ],
+  "status": "passed",
+  "versioned_suites": {
+    "apps/web/test/hr-report-punch-alerts.test.mjs": {
+      "pass": 4,
+      "fail": 0
+    },
+    "apps/web/test/hr-reports-xlsx.test.mjs": {
+      "pass": 2,
+      "fail": 0
+    },
+    "apps/web/test/hr-monitor-modal-per-user.test.mjs": {
+      "pass": 8,
+      "fail": 0
+    }
+  }
+}

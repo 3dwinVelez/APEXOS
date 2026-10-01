@@ -92,6 +92,14 @@ function gps(point: { latitude?: number; longitude?: number }) {
   return point.latitude != null && point.longitude != null ? `${Number(point.latitude).toFixed(5)}, ${Number(point.longitude).toFixed(5)}` : "";
 }
 
+function reportPunchAlerts(entry: Punch | undefined, exit: Punch | undefined, route: TimeRoute | undefined): PunchAlert[] {
+  return [entry, exit].flatMap((punch) => {
+    if (!punch) return [];
+    const alert = punctualityAlert({ type: punch.type, time: punch.time, punched_at: punch.punched_at, startTime: route?.start_time, endTime: route?.end_time, toleranceMinutes: route?.tolerance_minutes });
+    return alert ? [{ type: punch.type, label: alert.label, tone: alert.tone }] : [];
+  });
+}
+
 function PunchAlertStack({ alerts, rowKey }: { alerts: PunchAlert[]; rowKey: string }) {
   if (!alerts.length) return <span className="text-neutral-400">--</span>;
   return (
@@ -209,7 +217,7 @@ export default function HrReportsPage() {
         ...sorted.map((punch) => ({ kind: "Marcacion", title: punch.type, at: punch.punched_at, gps: gps(punch), detail: punch.extra_minutes ? `${punch.extra_minutes} min extra` : "", alert: punctualityAlert({ type: punch.type, time: punch.time, punched_at: punch.punched_at, startTime: route?.start_time, endTime: route?.end_time, toleranceMinutes: route?.tolerance_minutes }) })),
         ...routeActivities.map((activity) => ({ kind: "Actividad", title: activity.activity_type_name || "Actividad operativa", at: activity.occurred_at, gps: gps(activity), detail: activity.observation || "", alert: null }))
       ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
-      const punchAlerts = events.flatMap((event) => event.kind === "Marcacion" && event.alert ? [{ type: event.title, label: event.alert.label, tone: event.alert.tone }] : []);
+      const punchAlerts = reportPunchAlerts(entry, exit, route);
       return {
         key,
         employeeId: String(employee?.id || userName),
