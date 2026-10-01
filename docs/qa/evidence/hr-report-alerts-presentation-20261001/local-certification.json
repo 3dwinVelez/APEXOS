@@ -1,8 +1,8 @@
 {
-  "change_id": "hr-report-punch-alerts-20260928",
+  "change_id": "hr-report-alerts-presentation-20261001",
   "certification": "hr-report-punch-alerts-local",
   "environment": "LOCAL",
-  "generated_at": "2026-10-01T22:20:59.905Z",
+  "generated_at": "2026-10-01T22:27:44.221Z",
   "scope": {
     "capability": "Las alertas criticas de marcacion (tarde, dentro de tolerancia, salida temprana, etc.) calculadas por el monitor de rutas se reflejan por marcacion en el reporte de Talento Humano: columna Alertas, detalle de trazabilidad y exportacion Excel.",
     "proven_by_versioned_unit_suite": [
