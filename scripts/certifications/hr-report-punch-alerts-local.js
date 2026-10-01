@@ -121,7 +121,12 @@ function main() {
     /selected\.events\.filter\(\(event\) => event\.kind === "Marcacion"\)\.length\} marcaciones/,
     /MapPin size=\{12\}/,
     /Sin evidencia fotografica/,
-    /evidenceCount/
+    /evidenceCount/,
+    /<ol className="mt-4 space-y-3">/,
+    /className="relative pl-14"/,
+    /ring-4 ring-paper/,
+    /\{isMark \? "Marcacion" : "Actividad"\}/,
+    /event\.userName\} · <span className="font-semibold text-content-body">/
   ].every((pattern) => pattern.test(reportSrc)), { timeline: true });
 
   const routesSrc = readSource(ROUTES_PAGE);

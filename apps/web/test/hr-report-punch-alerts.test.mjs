@@ -50,6 +50,11 @@ test("el reporte de talento humano refleja las alertas por marcacion en tabla, d
   assert.match(page, /selected\.events\.filter\(\(event\) => event\.kind === "Marcacion"\)\.length\} marcaciones/);
   assert.match(page, /MapPin size=\{12\}/);
   assert.match(page, /Sin evidencia fotografica/);
+  assert.match(page, /<ol className="mt-4 space-y-3">/);
+  assert.match(page, /className="relative pl-14"/);
+  assert.match(page, /ring-4 ring-paper/);
+  assert.match(page, /\{isMark \? "Marcacion" : "Actividad"\}/);
+  assert.match(page, /event\.userName\} · <span className="font-semibold text-content-body">/);
 });
 
 test("el monitor de rutas y el reporte comparten la misma fuente de puntualidad", () => {

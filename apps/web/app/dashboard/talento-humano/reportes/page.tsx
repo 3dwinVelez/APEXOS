@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/feedback";
 import { downloadXlsxWorkbook } from "@/lib/reportExports";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { punctualityAlert, punctualityTypeNames, type PunctualityAlert, type PunctualityTone } from "@/lib/punchPunctuality";
-import { AlertTriangle, ArrowLeft, CalendarDays, CheckCircle2, ClipboardList, Clock, Download, Eye, Filter, ImageOff, MapPin, RotateCcw, Search } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CalendarDays, CheckCircle2, ClipboardList, Clock, Download, Eye, Filter, ImageOff, LogIn, MapPin, RotateCcw, Search } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -34,7 +34,7 @@ type ReportRow = {
   overtimeDetail: string;
   punchAlerts: PunchAlert[];
   activities: WorkActivity[];
-  events: Array<{ kind: string; title: string; at: string; gps?: string; accuracy?: number; detail?: string; alert?: PunctualityAlert | null; evidenceCount?: number }>;
+  events: Array<{ kind: string; title: string; at: string; userName: string; gps?: string; accuracy?: number; detail?: string; alert?: PunctualityAlert | null; evidenceCount?: number }>;
 };
 
 function punctualityIconFor(tone: PunctualityTone) {
@@ -214,8 +214,8 @@ export default function HrReportsPage() {
         return activityAliases.some((alias) => userAliases.has(alias)) || Boolean(activity.route_id && String(activity.route_id) === String(sorted[0]?.route_id));
       });
       const events = [
-        ...sorted.map((punch) => ({ kind: "Marcacion", title: punch.type, at: punch.punched_at, gps: gps(punch), accuracy: punch.accuracy_meters, detail: punch.extra_minutes ? `${punch.extra_minutes} min extra` : "", alert: punctualityAlert({ type: punch.type, time: punch.time, punched_at: punch.punched_at, startTime: route?.start_time, endTime: route?.end_time, toleranceMinutes: route?.tolerance_minutes }), evidenceCount: 0 })),
-        ...routeActivities.map((activity) => ({ kind: "Actividad", title: activity.activity_type_name || "Actividad operativa", at: activity.occurred_at, gps: gps(activity), accuracy: activity.accuracy_meters, detail: activity.observation || "", alert: null, evidenceCount: activity.evidence?.length || 0 }))
+        ...sorted.map((punch) => ({ kind: "Marcacion", title: punch.type, at: punch.punched_at, userName: punch.user_name || employeeName(employee, userName), gps: gps(punch), accuracy: punch.accuracy_meters, detail: punch.extra_minutes ? `${punch.extra_minutes} min extra` : "", alert: punctualityAlert({ type: punch.type, time: punch.time, punched_at: punch.punched_at, startTime: route?.start_time, endTime: route?.end_time, toleranceMinutes: route?.tolerance_minutes }), evidenceCount: 0 })),
+        ...routeActivities.map((activity) => ({ kind: "Actividad", title: activity.activity_type_name || "Actividad operativa", at: activity.occurred_at, userName: activity.user_name || employeeName(employee, userName), gps: gps(activity), accuracy: activity.accuracy_meters, detail: activity.observation || "", alert: null, evidenceCount: activity.evidence?.length || 0 }))
       ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
       const punchAlerts = reportPunchAlerts(entry, exit, route);
       return {
@@ -438,26 +438,33 @@ export default function HrReportsPage() {
                     <Badge className="gap-1.5" tone={selected.events.some((event) => event.alert?.tone === "warning") ? "warning" : "success"}><AlertTriangle size={12} /> {selected.events.filter((event) => event.alert).length} alertas</Badge>
                   </div>
                 </div>
-                <div className="mt-4 space-y-3">
+                <ol className="mt-4 space-y-3">
                   {selected.events.map((event, index) => {
                     const isMark = event.kind === "Marcacion";
                     return (
-                      <article className="relative rounded-md border border-line bg-white p-4 pl-14 shadow-sm" key={`${event.kind}-${event.at}-${index}`}>
-                        <span className="absolute left-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-apex text-sm font-bold text-white">{index + 1}</span>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-semibold text-content-strong">{punctualityTypeNames[event.title] || event.title}</p>
-                          <Badge tone={isMark ? "neutral" : "info"}>{event.kind}</Badge>
-                          {event.alert ? <Badge tone={event.alert.tone}>{event.alert.label}</Badge> : null}
-                        </div>
-                        <p className="mt-1 text-sm text-neutral-600">{hour(event.at)} - {event.detail || "Sin observacion"}</p>
-                        {event.gps ? <p className="mt-1.5 flex items-center gap-1.5 text-xs text-neutral-500"><MapPin size={12} /> {event.gps}{event.accuracy != null ? ` - precision +/-${Math.round(Number(event.accuracy || 0))} m` : ""}</p> : null}
-                        <div className="mt-3">
-                          {event.evidenceCount ? <Badge tone="success">{event.evidenceCount} evidencia(s)</Badge> : <span className="inline-flex items-center gap-2 rounded-md bg-paper px-3 py-2 text-xs font-semibold text-neutral-500"><ImageOff size={14} /> Sin evidencia fotografica</span>}
-                        </div>
-                      </article>
+                      <li className="relative pl-14" key={`${event.kind}-${event.at}-${index}`}>
+                        <span className="absolute left-0 top-1 flex h-11 w-11 items-center justify-center rounded-full bg-apex text-white ring-4 ring-paper">{isMark ? <LogIn size={18} /> : <ClipboardList size={18} />}</span>
+                        <article className="rounded-md border border-line bg-surface p-3">
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="font-semibold text-content-strong">{punctualityTypeNames[event.title] || event.title}</p>
+                                <Badge tone={isMark ? "neutral" : "info"}>{isMark ? "Marcacion" : "Actividad"}</Badge>
+                                {event.alert ? <Badge tone={event.alert.tone}>{event.alert.label}</Badge> : null}
+                              </div>
+                              <p className="mt-1 text-sm text-content-muted">{event.userName} · <span className="font-semibold text-content-body">{hour(event.at)}</span></p>
+                              {event.detail ? <p className="mt-1.5 text-sm text-content-body">{event.detail}</p> : null}
+                              {event.gps ? <p className="mt-1.5 flex items-center gap-1.5 text-xs text-content-muted"><MapPin size={12} /> {event.gps}{event.accuracy != null ? ` · precision +/-${Math.round(Number(event.accuracy || 0))} m` : ""}</p> : null}
+                            </div>
+                          </div>
+                          <div className="mt-3">
+                            {event.evidenceCount ? <Badge tone="success">{event.evidenceCount} evidencia(s)</Badge> : <p className="inline-flex items-center gap-2 rounded-md bg-surface-muted px-3 py-2 text-xs font-semibold text-content-subtle"><ImageOff size={14} /> Sin evidencia fotografica</p>}
+                          </div>
+                        </article>
+                      </li>
                     );
                   })}
-                </div>
+                </ol>
               </section>
             </div>
           </aside>
