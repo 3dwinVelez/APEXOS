@@ -92,6 +92,32 @@ function gps(point: { latitude?: number; longitude?: number }) {
   return point.latitude != null && point.longitude != null ? `${Number(point.latitude).toFixed(5)}, ${Number(point.longitude).toFixed(5)}` : "";
 }
 
+function PunchAlertStack({ alerts, rowKey }: { alerts: PunchAlert[]; rowKey: string }) {
+  if (!alerts.length) return <span className="text-neutral-400">--</span>;
+  return (
+    <div className="w-[22rem] max-w-[min(22rem,calc(100vw-2rem))] space-y-1.5">
+      <div className="flex items-center justify-between gap-2 text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
+        <span>{alerts.length} alerta{alerts.length === 1 ? "" : "s"}</span>
+        {alerts.some((alert) => alert.tone === "warning") ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-amber-800">Revisar</span> : null}
+      </div>
+      <div className="grid gap-1.5">
+        {alerts.map((alert, index) => {
+          const AlertIcon = punctualityIconFor(alert.tone);
+          return (
+            <Badge className="min-h-8 w-full justify-start gap-2 rounded-md px-2.5 py-1.5 text-left leading-4" key={`${rowKey}-${alert.type}-${index}`} tone={alert.tone}>
+              <AlertIcon className="shrink-0" size={14} />
+              <span className="min-w-0">
+                <span className="font-bold">{punctualityTypeNames[alert.type] || alert.type}:</span>{" "}
+                <span className="font-semibold">{alert.label}</span>
+              </span>
+            </Badge>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function HrReportsPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [punches, setPunches] = useState<Punch[]>([]);
@@ -352,7 +378,7 @@ export default function HrReportsPage() {
           <label className="relative w-full sm:w-96"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} /><input className="h-10 w-full rounded-md border border-line pl-9 pr-3 text-sm" placeholder="Empleado, documento, ruta, vehiculo, rol o actividad" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-[1100px] w-full text-left text-sm">
+          <table className="min-w-[1320px] w-full text-left text-sm">
             <thead className="bg-paper text-xs uppercase text-neutral-500"><tr>{["Fecha", "Empleado", "Rol", "Ruta", "Vehiculo", "Entrada", "Cierre", "Alertas", "Laboradas", "Extra", "Motivo", "Trazabilidad", ""].map((head) => <th className="px-4 py-3" key={head}>{head}</th>)}</tr></thead>
             <tbody className="divide-y divide-line">
               {filtered.map((row) => (
@@ -364,16 +390,7 @@ export default function HrReportsPage() {
                   <td className="px-4 py-3">{row.vehicle}</td>
                   <td className="px-4 py-3">{hour(row.entry?.punched_at)}</td>
                   <td className="px-4 py-3">{hour(row.exit?.punched_at)}</td>
-                  <td className="px-4 py-3">
-                    {row.punchAlerts.length ? (
-                      <div className="flex max-w-[280px] flex-wrap gap-1">
-                        {row.punchAlerts.map((alert) => {
-                          const AlertIcon = punctualityIconFor(alert.tone);
-                          return <Badge key={`${row.key}-${alert.type}`} tone={alert.tone}><AlertIcon size={12} /> {punctualityTypeNames[alert.type] || alert.type}: {alert.label}</Badge>;
-                        })}
-                      </div>
-                    ) : <span className="text-neutral-400">--</span>}
-                  </td>
+                  <td className="px-4 py-3 align-top"><PunchAlertStack alerts={row.punchAlerts} rowKey={row.key} /></td>
                   <td className="px-4 py-3 font-semibold">{minutesLabel(row.workedMinutes)}</td>
                   <td className={`px-4 py-3 font-semibold ${row.overtimeMinutes ? "text-amber-700" : ""}`}>{minutesLabel(row.overtimeMinutes)}</td>
                   <td className="max-w-[220px] truncate px-4 py-3">{row.overtimeReason || "--"}</td>

@@ -98,8 +98,11 @@ function main() {
   check("report_renders_alert_column_and_badges", [
     /from "@\/lib\/punchPunctuality"/,
     /"Cierre", "Alertas", "Laboradas"/,
-    /row\.punchAlerts\.map/,
-    /<Badge key=\{`\$\{row\.key\}-\$\{alert\.type\}`\} tone=\{alert\.tone\}/,
+    /function PunchAlertStack/,
+    /alerts\.map/,
+    /rowKey=\{row\.key\}/,
+    /w-\[22rem\]/,
+    /<Badge className="min-h-8 w-full justify-start gap-2 rounded-md px-2.5 py-1.5 text-left leading-4"/,
     /colSpan=\{13\}/
   ].every((pattern) => pattern.test(reportSrc)), { column: /"Alertas"/.test(reportSrc) });
 
