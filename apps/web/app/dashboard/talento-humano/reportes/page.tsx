@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/feedback";
 import { downloadXlsxWorkbook } from "@/lib/reportExports";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { punctualityAlert, punctualityTypeNames, type PunctualityAlert, type PunctualityTone } from "@/lib/punchPunctuality";
-import { AlertTriangle, ArrowLeft, CalendarDays, CheckCircle2, Clock, Download, Eye, Filter, RotateCcw, Search } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CalendarDays, CheckCircle2, ClipboardList, Clock, Download, Eye, Filter, ImageOff, MapPin, RotateCcw, Search } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -34,7 +34,7 @@ type ReportRow = {
   overtimeDetail: string;
   punchAlerts: PunchAlert[];
   activities: WorkActivity[];
-  events: Array<{ kind: string; title: string; at: string; gps?: string; detail?: string; alert?: PunctualityAlert | null }>;
+  events: Array<{ kind: string; title: string; at: string; gps?: string; accuracy?: number; detail?: string; alert?: PunctualityAlert | null; evidenceCount?: number }>;
 };
 
 function punctualityIconFor(tone: PunctualityTone) {
@@ -214,8 +214,8 @@ export default function HrReportsPage() {
         return activityAliases.some((alias) => userAliases.has(alias)) || Boolean(activity.route_id && String(activity.route_id) === String(sorted[0]?.route_id));
       });
       const events = [
-        ...sorted.map((punch) => ({ kind: "Marcacion", title: punch.type, at: punch.punched_at, gps: gps(punch), detail: punch.extra_minutes ? `${punch.extra_minutes} min extra` : "", alert: punctualityAlert({ type: punch.type, time: punch.time, punched_at: punch.punched_at, startTime: route?.start_time, endTime: route?.end_time, toleranceMinutes: route?.tolerance_minutes }) })),
-        ...routeActivities.map((activity) => ({ kind: "Actividad", title: activity.activity_type_name || "Actividad operativa", at: activity.occurred_at, gps: gps(activity), detail: activity.observation || "", alert: null }))
+        ...sorted.map((punch) => ({ kind: "Marcacion", title: punch.type, at: punch.punched_at, gps: gps(punch), accuracy: punch.accuracy_meters, detail: punch.extra_minutes ? `${punch.extra_minutes} min extra` : "", alert: punctualityAlert({ type: punch.type, time: punch.time, punched_at: punch.punched_at, startTime: route?.start_time, endTime: route?.end_time, toleranceMinutes: route?.tolerance_minutes }), evidenceCount: 0 })),
+        ...routeActivities.map((activity) => ({ kind: "Actividad", title: activity.activity_type_name || "Actividad operativa", at: activity.occurred_at, gps: gps(activity), accuracy: activity.accuracy_meters, detail: activity.observation || "", alert: null, evidenceCount: activity.evidence?.length || 0 }))
       ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
       const punchAlerts = reportPunchAlerts(entry, exit, route);
       return {
@@ -414,7 +414,7 @@ export default function HrReportsPage() {
 
       {selected ? (
         <div className="fixed inset-0 z-50 bg-neutral-950/40">
-          <aside className="ml-auto flex h-full w-full max-w-3xl flex-col bg-white shadow-xl">
+          <aside className="ml-auto flex h-full w-full max-w-4xl flex-col bg-white shadow-xl">
             <header className="flex items-start justify-between gap-3 border-b border-line p-4">
               <div><p className="text-sm font-semibold text-apex">Trazabilidad completa</p><h2 className="text-2xl font-semibold">{selected.employeeName}</h2><p className="text-sm text-neutral-500">{selected.date} - {selected.route} - {selected.vehicle}</p></div>
               <button className="rounded-md border border-line px-3 py-2 text-sm font-semibold" onClick={() => setSelected(null)} type="button">Cerrar</button>
@@ -426,9 +426,39 @@ export default function HrReportsPage() {
                 <Metric label="Eventos" value={selected.events.length} />
               </div>
               {selected.overtimeMinutes ? <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950"><p className="font-semibold">Justificacion de extension</p><p className="mt-1">Motivo: {selected.overtimeReason || "--"}</p><p className="mt-1">{selected.overtimeDetail || "Sin detalle registrado."}</p></div> : null}
-              <div className="mt-4 space-y-2">
-                {selected.events.map((event, index) => <div className="rounded-md border border-line p-3" key={`${event.kind}-${event.at}-${index}`}><div className="flex items-start gap-3"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-apex text-sm font-bold text-white">{index + 1}</span><div><div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{event.kind}: {punctualityTypeNames[event.title] || event.title}</p>{event.alert ? <Badge tone={event.alert.tone}>{event.alert.label}</Badge> : null}</div><p className="text-sm text-neutral-600">{hour(event.at)} - {event.detail || "Sin observacion"}</p>{event.gps ? <p className="mt-1 text-xs text-neutral-500">GPS {event.gps}</p> : null}</div></div></div>)}
-              </div>
+              <section className="mt-4 rounded-md border border-line bg-paper p-3">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-semibold text-content-strong">Trazabilidad cronologica de la jornada</h3>
+                    <p className="mt-1 text-sm text-neutral-600">Marcaciones y actividades con hora, GPS, tolerancia y evidencia.</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge className="gap-1.5" tone="neutral"><Clock size={12} /> {selected.events.filter((event) => event.kind === "Marcacion").length} marcaciones</Badge>
+                    <Badge className="gap-1.5" tone="info"><ClipboardList size={12} /> {selected.events.filter((event) => event.kind === "Actividad").length} actividades</Badge>
+                    <Badge className="gap-1.5" tone={selected.events.some((event) => event.alert?.tone === "warning") ? "warning" : "success"}><AlertTriangle size={12} /> {selected.events.filter((event) => event.alert).length} alertas</Badge>
+                  </div>
+                </div>
+                <div className="mt-4 space-y-3">
+                  {selected.events.map((event, index) => {
+                    const isMark = event.kind === "Marcacion";
+                    return (
+                      <article className="relative rounded-md border border-line bg-white p-4 pl-14 shadow-sm" key={`${event.kind}-${event.at}-${index}`}>
+                        <span className="absolute left-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-apex text-sm font-bold text-white">{index + 1}</span>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-semibold text-content-strong">{punctualityTypeNames[event.title] || event.title}</p>
+                          <Badge tone={isMark ? "neutral" : "info"}>{event.kind}</Badge>
+                          {event.alert ? <Badge tone={event.alert.tone}>{event.alert.label}</Badge> : null}
+                        </div>
+                        <p className="mt-1 text-sm text-neutral-600">{hour(event.at)} - {event.detail || "Sin observacion"}</p>
+                        {event.gps ? <p className="mt-1.5 flex items-center gap-1.5 text-xs text-neutral-500"><MapPin size={12} /> {event.gps}{event.accuracy != null ? ` - precision +/-${Math.round(Number(event.accuracy || 0))} m` : ""}</p> : null}
+                        <div className="mt-3">
+                          {event.evidenceCount ? <Badge tone="success">{event.evidenceCount} evidencia(s)</Badge> : <span className="inline-flex items-center gap-2 rounded-md bg-paper px-3 py-2 text-xs font-semibold text-neutral-500"><ImageOff size={14} /> Sin evidencia fotografica</span>}
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
             </div>
           </aside>
         </div>
