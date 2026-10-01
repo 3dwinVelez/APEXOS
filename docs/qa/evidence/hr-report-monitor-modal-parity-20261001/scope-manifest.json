@@ -1,0 +1,40 @@
+{
+  "change_id": "hr-report-monitor-modal-parity-20261001",
+  "base_commits": {
+    "develop": "759c2329052b4b57b789d9b6f551ad2871993736",
+    "main": "432f65aae7df42efab08e77df477ac4bbd501a9f"
+  },
+  "certified_commit": "ac36f3fc14faad55cf23f11c7103803832341e38",
+  "scope_schema_version": 2,
+  "change_intent": {
+    "summary": "Igualar la ventana emergente del detalle de marcaciones del reporte con la modal actual del monitor.",
+    "modules": ["talento-humano", "hr-reports", "qa-certification"]
+  },
+  "expected_changes": [
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx" },
+    { "status": "M", "file": "apps/web/test/hr-report-punch-alerts.test.mjs" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-monitor-modal-parity-20261001/error.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-monitor-modal-parity-20261001/functional.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-monitor-modal-parity-20261001/local-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-monitor-modal-parity-20261001/platform-regression.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-monitor-modal-parity-20261001/preqa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-monitor-modal-parity-20261001/qa-gate.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-monitor-modal-parity-20261001/regression.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-monitor-modal-parity-20261001/scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-monitor-modal-parity-20261001/security-review.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-monitor-modal-parity-20261001/support-scripts.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-monitor-modal-parity-20261001/validation-checks.json" },
+    { "status": "M", "file": "scripts/certifications/hr-report-punch-alerts-local.js" }
+  ],
+  "allowed_paths": [
+    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+    "apps/web/test/hr-report-punch-alerts.test.mjs",
+    "scripts/certifications/hr-report-punch-alerts-local.js",
+    "docs/qa/evidence/hr-report-monitor-modal-parity-20261001/"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    { "name": "hr_report_monitor_modal_parity", "status": "passed", "evidence": ["functional.md", "local-certification.json", "validation-checks.json"] }
+  ]
+}
+
