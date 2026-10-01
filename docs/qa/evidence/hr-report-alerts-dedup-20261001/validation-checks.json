@@ -1,0 +1,36 @@
+{
+  "change_id": "hr-report-alerts-dedup-20261001",
+  "generated_at": "2026-10-01T22:45:00.000Z",
+  "environment": "LOCAL",
+  "functional_commit": "8aea06378ee69b6ebe25a9a9c7a408650c276e2c",
+  "checks": [
+    {
+      "name": "focused_unit_tests",
+      "command": "node --experimental-strip-types --test test/hr-report-punch-alerts.test.mjs test/hr-reports-xlsx.test.mjs",
+      "result": "pass",
+      "detail": "6/6 tests pass"
+    },
+    {
+      "name": "local_certification",
+      "command": "node scripts/certifications/hr-report-punch-alerts-local.js --output docs/qa/evidence/hr-report-alerts-dedup-20261001/local-certification.json",
+      "result": "pass",
+      "detail": "9/9 controls pass"
+    },
+    {
+      "name": "web_typecheck",
+      "command": "npm run typecheck",
+      "cwd": "apps/web",
+      "result": "pass",
+      "detail": "tsc -p tsconfig.typecheck.json --noEmit without errors"
+    },
+    {
+      "name": "web_lint",
+      "command": "npm run lint",
+      "cwd": "apps/web",
+      "result": "pass",
+      "detail": "0 errors; 13 pre-existing warnings outside the intervention"
+    }
+  ],
+  "status": "passed"
+}
+
