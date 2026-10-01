@@ -1,0 +1,54 @@
+{
+  "change_id": "hr-report-markings-timeline-20261001",
+  "base_commits": {
+    "develop": "b907e602bd19776db03c52162a0a55a3b9c115db",
+    "main": "432f65aae7df42efab08e77df477ac4bbd501a9f"
+  },
+  "certified_commit": "feaa9c5c36a8399c63af32cac253097c9b1e8ec6",
+  "scope_schema_version": 2,
+  "change_intent": {
+    "summary": "Actualizar la vista de marcaciones del reporte de horas de Talento Humano con un timeline profesional alineado al monitor actual, conservando datos y exportacion.",
+    "modules": ["talento-humano", "hr-reports", "qa-certification"]
+  },
+  "expected_changes": [
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx" },
+    { "status": "M", "file": "apps/web/test/hr-report-punch-alerts.test.mjs" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-markings-timeline-20261001/error.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-markings-timeline-20261001/functional.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-markings-timeline-20261001/local-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-markings-timeline-20261001/platform-regression.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-markings-timeline-20261001/preqa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-markings-timeline-20261001/qa-gate.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-markings-timeline-20261001/regression.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-markings-timeline-20261001/scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-markings-timeline-20261001/security-review.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-markings-timeline-20261001/support-scripts.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-markings-timeline-20261001/validation-checks.json" },
+    { "status": "M", "file": "scripts/certifications/hr-report-punch-alerts-local.js" }
+  ],
+  "allowed_paths": [
+    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+    "apps/web/test/hr-report-punch-alerts.test.mjs",
+    "scripts/certifications/hr-report-punch-alerts-local.js",
+    "docs/qa/evidence/hr-report-markings-timeline-20261001/"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "hr_report_markings_timeline",
+      "status": "passed",
+      "evidence": ["functional.md", "local-certification.json", "validation-checks.json"]
+    },
+    {
+      "name": "hr_report_export_and_traceability",
+      "status": "passed",
+      "evidence": ["regression.md", "local-certification.json"]
+    },
+    {
+      "name": "security_review_frontend_only_change",
+      "status": "passed",
+      "evidence": ["security-review.md"]
+    }
+  ]
+}
+
