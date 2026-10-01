@@ -1,0 +1,32 @@
+{
+  "change_id": "hr-report-alerts-dedup-20261001",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "8aea06378ee69b6ebe25a9a9c7a408650c276e2c",
+  "qa_status": "pending",
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["functional.md", "local-certification.json"] },
+    "error": { "status": "passed", "evidence": ["error.md", "security-review.md"] },
+    "support_scripts": { "status": "passed", "evidence": ["support-scripts.md", "validation-checks.json"] },
+    "regression": { "status": "passed", "evidence": ["regression.md", "local-certification.json"] },
+    "platform_regression": { "status": "passed", "evidence": ["platform-regression.md", "validation-checks.json"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-report-punch-alerts-local.js",
+    "evidence": ["local-certification.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-report-punch-alerts-local.js",
+    "evidence": ["local-certification.json"]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "mq1 via Codex request",
+    "approved_at": "2026-10-01T22:45:00.000Z"
+  }
+}
+
