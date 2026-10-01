@@ -1994,6 +1994,201 @@ model TransportSettlementLine {
   @@index([tenant_id, concept])
 }
 
+model TransportSettlementType {
+  id                         Int      @id @default(autoincrement())
+  tenant_id                  String
+  code                       String
+  name                       String
+  description                String?
+  requires_reinforced_approval Boolean @default(false)
+  required_documents         Json     @default("[]")
+  documentary_policy         String   @default("alerta")
+  workflow                   Json     @default("{}")
+  active                     Boolean  @default(true)
+  created_by                 Int?
+  created_at                 DateTime @default(now())
+  updated_at                 DateTime @updatedAt
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, active])
+}
+
+model TransportSettlementPeriod {
+  id         Int                          @id @default(autoincrement())
+  tenant_id  String
+  code       String
+  name       String?
+  start_date DateTime
+  end_date   DateTime
+  status     String                       @default("abierto")
+  created_by Int?
+  created_at DateTime                     @default(now())
+  updated_at DateTime                     @updatedAt
+  packages   TransportSettlementPackage[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, status])
+}
+
+model TransportSettlementPackage {
+  id               Int                           @id @default(autoincrement())
+  tenant_id        String
+  code             String
+  period_id        Int?
+  period           TransportSettlementPeriod?    @relation(fields: [period_id], references: [id], onDelete: SetNull)
+  carrier_id       Int
+  carrier_code     String?
+  carrier_name     String?
+  type_id          Int?
+  type_code        String                        @default("TRANSPORTADOR")
+  status           String                        @default("borrador")
+  currency         String                        @default("COP")
+  responsible_id   Int?
+  observation      String?
+  calculated_total Decimal                       @default(0) @db.Decimal(18, 2)
+  adjusted_total   Decimal                       @default(0) @db.Decimal(18, 2)
+  approved_total   Decimal                       @default(0) @db.Decimal(18, 2)
+  accounted_total  Decimal                       @default(0) @db.Decimal(18, 2)
+  version          Int                           @default(0)
+  metadata         Json                          @default("{}")
+  created_by       Int?
+  approved_by      Int?
+  approved_at      DateTime?
+  created_at       DateTime                      @default(now())
+  updated_at       DateTime                      @updatedAt
+  items            TransportSettlementItem[]
+  adjustments      TransportSettlementAdjustment[]
+  issues           TransportSettlementIssue[]
+  approvals        TransportSettlementApproval[]
+  accountings      TransportSettlementAccounting[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, status])
+  @@index([tenant_id, carrier_id])
+  @@index([tenant_id, period_id])
+}
+
+model TransportSettlementItem {
+  id                Int                        @id @default(autoincrement())
+  tenant_id         String
+  package_id        Int
+  package           TransportSettlementPackage @relation(fields: [package_id], references: [id], onDelete: Cascade)
+  guide_reference   String
+  service           String?
+  route_description String?
+  origin_name       String?
+  destination_name  String?
+  destination_city  String?
+  vehicle_plate     String?
+  vehicle_type      String?
+  service_level     String?
+  service_date      DateTime?
+  base_type         String                     @default("viaje")
+  quantity          Decimal                    @default(1) @db.Decimal(18, 4)
+  unit              String?
+  distance_km       Float                      @default(0)
+  weight_kg         Float                      @default(0)
+  volume_m3         Float                      @default(0)
+  stop_count        Int                        @default(1)
+  reported_value    Decimal?                   @db.Decimal(18, 2)
+  rate_card_id      Int?
+  rate_code         String?
+  rate_version      Int?
+  rate_base         Decimal?                   @db.Decimal(18, 2)
+  rate_unit_value   Decimal?                   @db.Decimal(18, 4)
+  calculation_trace Json                       @default("{}")
+  calculated_amount Decimal                    @default(0) @db.Decimal(18, 2)
+  adjusted_amount   Decimal                    @default(0) @db.Decimal(18, 2)
+  approved_amount   Decimal                    @default(0) @db.Decimal(18, 2)
+  observation       String?
+  metadata          Json                       @default("{}")
+  created_at        DateTime                   @default(now())
+  updated_at        DateTime                   @updatedAt
+  adjustments       TransportSettlementAdjustment[]
+
+  @@unique([tenant_id, package_id, guide_reference])
+  @@index([tenant_id, guide_reference])
+  @@index([tenant_id, package_id])
+}
+
+model TransportSettlementAdjustment {
+  id           Int                        @id @default(autoincrement())
+  tenant_id    String
+  package_id   Int
+  package      TransportSettlementPackage @relation(fields: [package_id], references: [id], onDelete: Cascade)
+  item_id      Int?
+  item         TransportSettlementItem?   @relation(fields: [item_id], references: [id], onDelete: SetNull)
+  before_value Decimal                    @default(0) @db.Decimal(18, 2)
+  delta        Decimal                    @default(0) @db.Decimal(18, 2)
+  after_value  Decimal                    @default(0) @db.Decimal(18, 2)
+  reason       String
+  support      Json                       @default("{}")
+  created_by   Int?
+  created_at   DateTime                   @default(now())
+
+  @@index([tenant_id, package_id])
+  @@index([tenant_id, item_id])
+}
+
+model TransportSettlementIssue {
+  id             Int                        @id @default(autoincrement())
+  tenant_id      String
+  package_id     Int
+  package        TransportSettlementPackage @relation(fields: [package_id], references: [id], onDelete: Cascade)
+  category       String
+  severity       String                     @default("media")
+  blocking       Boolean                    @default(false)
+  blocks         String                     @default("ninguna")
+  description    String
+  responsible_id Int?
+  due_date       DateTime?
+  status         String                     @default("abierta")
+  resolution     String?
+  support        Json                       @default("{}")
+  reopen_count   Int                        @default(0)
+  created_by     Int?
+  resolved_by    Int?
+  resolved_at    DateTime?
+  created_at     DateTime                   @default(now())
+  updated_at     DateTime                   @updatedAt
+
+  @@index([tenant_id, package_id, status])
+}
+
+model TransportSettlementApproval {
+  id          Int                        @id @default(autoincrement())
+  tenant_id   String
+  package_id  Int
+  package     TransportSettlementPackage @relation(fields: [package_id], references: [id], onDelete: Cascade)
+  level       Int                        @default(1)
+  actor_id    Int?
+  actor_role  String?
+  decision    String
+  from_status String
+  to_status   String
+  comment     String?
+  created_at  DateTime                   @default(now())
+
+  @@index([tenant_id, package_id])
+}
+
+model TransportSettlementAccounting {
+  id                Int                        @id @default(autoincrement())
+  tenant_id         String
+  package_id        Int
+  package           TransportSettlementPackage @relation(fields: [package_id], references: [id], onDelete: Restrict)
+  reference         String?
+  accounting_period String?
+  amount            Decimal                    @default(0) @db.Decimal(18, 2)
+  idempotency_key   String
+  payload           Json                       @default("{}")
+  created_by        Int?
+  created_at        DateTime                   @default(now())
+
+  @@unique([tenant_id, idempotency_key])
+  @@index([tenant_id, package_id])
+}
+
 model TimePunch {
   id                Int       @id @default(autoincrement())
   tenant_id         String

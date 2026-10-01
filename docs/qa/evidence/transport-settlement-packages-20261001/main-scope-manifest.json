@@ -1,0 +1,62 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "transport-settlement-packages-20261001",
+  "base_commit": "1dfbf99fb4864ce7bb883aee536d39c89483196f",
+  "base_commits": {
+    "main": "1dfbf99fb4864ce7bb883aee536d39c89483196f"
+  },
+  "certified_commit": "e1e3f2754d0aa3194b8fe72621eb5e4d1b1eac6f",
+  "change_intent": {
+    "summary": "Promover a main la Liquidacion de Transporte por paquetes (extension nativa del modulo Transporte M-14), ya certificada en develop con evidencia local en vivo 41/41: modelo de datos aditivo + migracion, motor tarifario puro con RB-01..RB-12, servicio/rutas/validadores RBAC, torre de control web, simulador de tarifa y auditoria append-only.",
+    "modules": ["transport", "qa-evidence"]
+  },
+  "expected_changes": [
+    { "status": "A", "file": "apps/api/prisma/migrations/20261001120000_transport_settlement_packages/migration.sql" },
+    { "status": "M", "file": "apps/api/prisma/schema.prisma" },
+    { "status": "M", "file": "apps/api/src/core/prisma.js" },
+    { "status": "M", "file": "apps/api/src/modules/transport/routes.js" },
+    { "status": "A", "file": "apps/api/src/modules/transport/settlement-engine.js" },
+    { "status": "A", "file": "apps/api/src/modules/transport/settlement-service.js" },
+    { "status": "M", "file": "apps/api/src/modules/transport/tms-schema.js" },
+    { "status": "A", "file": "apps/api/test/transport-settlement-engine.test.js" },
+    { "status": "A", "file": "apps/web/app/dashboard/transporte/liquidaciones/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/transporte/page.tsx" },
+    { "status": "M", "file": "apps/web/lib/moduleFunctions.ts" },
+    { "status": "A", "file": "apps/web/test/transport-settlement-ui.test.mjs" },
+    { "status": "A", "file": "docs/qa/evidence/transport-settlement-packages-20261001/local-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/transport-settlement-packages-20261001/preqa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/transport-settlement-packages-20261001/develop-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/transport-settlement-packages-20261001/qa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/transport-settlement-packages-20261001/main-scope-manifest.json" },
+    { "status": "A", "file": "scripts/certifications/transport-settlement-packages-local.js" }
+  ],
+  "allowed_paths": [
+    "apps/api/prisma/migrations/20261001120000_transport_settlement_packages/migration.sql",
+    "apps/api/prisma/schema.prisma",
+    "apps/api/src/core/prisma.js",
+    "apps/api/src/modules/transport/routes.js",
+    "apps/api/src/modules/transport/settlement-engine.js",
+    "apps/api/src/modules/transport/settlement-service.js",
+    "apps/api/src/modules/transport/tms-schema.js",
+    "apps/api/test/transport-settlement-engine.test.js",
+    "apps/web/app/dashboard/transporte/liquidaciones/page.tsx",
+    "apps/web/app/dashboard/transporte/page.tsx",
+    "apps/web/lib/moduleFunctions.ts",
+    "apps/web/test/transport-settlement-ui.test.mjs",
+    "docs/qa/evidence/transport-settlement-packages-20261001/local-certification.json",
+    "docs/qa/evidence/transport-settlement-packages-20261001/preqa-approval-evidence.json",
+    "docs/qa/evidence/transport-settlement-packages-20261001/develop-scope-manifest.json",
+    "docs/qa/evidence/transport-settlement-packages-20261001/qa-approval-evidence.json",
+    "docs/qa/evidence/transport-settlement-packages-20261001/main-scope-manifest.json",
+    "scripts/certifications/transport-settlement-packages-local.js"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    { "name": "liquidacion_workflow_maquina_de_estados_completa", "status": "passed", "evidence": ["local-certification.json"] },
+    { "name": "motor_tarifario_determinista_con_snapshot_y_traza", "status": "passed", "evidence": ["local-certification.json"] },
+    { "name": "rbac_y aislamiento_tenant_en_rutas_de_liquidacion", "status": "passed", "evidence": ["local-certification.json"] },
+    { "name": "contabilizacion_idempotente_y_segregacion_de_funciones", "status": "passed", "evidence": ["local-certification.json"] },
+    { "name": "tms_existente_sin_regresion_packing_y_settlement_de_viaje", "status": "passed", "evidence": ["local-certification.json"] },
+    { "name": "migracion_aditiva_sin_alterar_tablas_existentes", "status": "passed", "evidence": ["local-certification.json"] }
+  ]
+}

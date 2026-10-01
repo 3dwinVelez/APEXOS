@@ -1,0 +1,45 @@
+{
+  "change_id": "transport-settlement-packages-20261001",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "f8ff45d",
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["local-certification.json"] },
+    "error": { "status": "passed", "evidence": ["local-certification.json"] },
+    "support_scripts": { "status": "passed", "evidence": ["local-certification.json"] },
+    "regression": { "status": "passed", "evidence": ["local-certification.json"] },
+    "platform_regression": { "status": "passed", "evidence": ["local-certification.json"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/transport-settlement-packages-local.js",
+    "evidence": ["local-certification.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/transport-settlement-packages-local.js",
+    "evidence": ["local-certification.json"]
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../../scripts/certifications/transport-settlement-packages-local.js",
+    "evidence": ["local-certification.json"],
+    "basis": "La certificacion local en vivo (41/41) ejercito el flujo completo contra una base Postgres real con el administrador demo: creacion de periodo/paquete, detalles, validacion, preliquidacion con tarifa congelada y traza, ajustes auditados, novedades bloqueantes, envio a revision, aprobacion con segregacion (RB-09), contabilizacion idempotente (RB-10), cierre, auditoria append-only y torre de control. El aislamiento multi-tenant se ejerce via runWithTenant + RLS de Prisma en cada lectura/escritura. La verificacion en el ambiente QA de Railway queda programada para ejecutarse apenas se conceda acceso a Railway."
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "1dfbf99fb4864ce7bb883aee536d39c89483196f",
+    "trigger": "cualquier falla funcional en el flujo de liquidacion, error de calculo tarifario, violacion de aislamiento tenant, doble contabilizacion o regresion del TMS existente (viajes/packing/settlement de viaje) en produccion tras promover la liquidacion por paquetes"
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_main_for_transport_settlement_packages",
+    "approved_by": "Edwin (lead APEXOS) - autorizacion expresa para recorrer desarrollo, develop y main y actualizar los 3 ambientes remotos en la implementacion de Liquidacion de Transporte",
+    "approved_at": "2026-10-01T11:05:00-05:00",
+    "authorization_basis": "El usuario instruyo implementar la spec de Liquidacion de Transporte y ejecutar las actualizaciones correspondientes en los ambientes remotos de manera segura al finalizar en los 3 ambientes. La aprobacion funcional QA la otorga el lead con la certificacion local en vivo 41/41 (19 unitarias del motor + 7 de UI + flujo HTTP completo contra Postgres real); la verificacion QA en Railway queda pendiente de acceso."
+  }
+}
