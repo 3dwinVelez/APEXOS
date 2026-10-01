@@ -4,7 +4,7 @@ import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { ActionCard } from "@/components/ui/ActionCard";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
-import { Archive, Bell, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Cuboid, FileCheck2, Filter, History, MapPin, Navigation, Paperclip, Plus, RadioTower, ReceiptText, RotateCcw, Route, Save, Search, Settings, Truck, Users, Wrench } from "lucide-react";
+import { Archive, Bell, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Cuboid, FileCheck2, Filter, History, MapPin, Navigation, Paperclip, Plus, RadioTower, ReceiptText, RotateCcw, Route, Save, Search, Settings, Truck, Users, Wallet, Wrench } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
@@ -751,7 +751,14 @@ const transportWorkflows = [
     ]
   },
   {
-    title: "3. Preparar la operación",
+    title: "3. Liquidar el costo",
+    detail: "Cierra el costo real de cada transportador con tarifa congelada, ajustes soportados y aprobación trazable.",
+    actions: [
+      { href: "/dashboard/transporte/liquidaciones", title: "Torre de liquidaciones", detail: "Preliquidar, ajustar, aprobar y contabilizar paquetes por transportador y periodo.", icon: Wallet, primary: true }
+    ]
+  },
+  {
+    title: "4. Preparar la operación",
     detail: "Mantén listos los datos que habilitan la planeación diaria.",
     actions: [
       { href: "/dashboard/transporte/flota", title: "Vehículos y documentos", detail: "Revisar capacidad, vigencias y disponibilidad de la flota.", icon: Truck },

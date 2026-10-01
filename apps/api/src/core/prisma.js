@@ -18,6 +18,8 @@ const TENANT_MODELS = new Set([
   "TransportTmsConfig", "TransportCarrier", "TransportDriver", "TransportOrigin", "TransportDeliveryPoint", "TransportRateCard", "TransportNeed", "TransportNeedLine",
   "TransportTrip", "TransportTripNeed", "TransportStop", "TransportTripEvent", "TransportDeliveryAttempt",
   "TransportPod", "TransportSettlement", "TransportSettlementLine", "TransportGpsPosition", "TransportNotification",
+  "TransportSettlementType", "TransportSettlementPeriod", "TransportSettlementPackage", "TransportSettlementItem",
+  "TransportSettlementAdjustment", "TransportSettlementIssue", "TransportSettlementApproval", "TransportSettlementAccounting",
   "EvidenceUploadAuthorization", "AuthorizationSession",
   "Project", "ProjectCommitment", "ProjectDeliverable", "ProjectRisk", "ProjectResourceAssignment",
   "ProjectComment", "ProjectEvidence", "ProjectAlert", "ProjectLog",
@@ -39,6 +41,7 @@ const SOFT_DELETE = new Set([
   "Location", "Account", "ProjectResourceAssignment", "WorkSchedule",
   "ActivityType", "Vehicle", "VehicleDocument", "ServiceReference",
   "TransportCarrier", "TransportDriver", "TransportOrigin", "TransportDeliveryPoint", "TransportRateCard",
+  "TransportSettlementType",
   "Workflow", "CustomField", "EInvoiceConfig"
 ]);
 
@@ -51,7 +54,7 @@ const PHYSICAL_DELETE_ALLOWED = new Set([
   "ApexHeartAlert", "ApexHeartInventorySnapshot",
   "RoutePreoperationalChecklist", "RoutePreoperationalChecklistAnswer", "RoutePreoperationalChecklistEvidence",
   "RoutePreoperationalFinding", "RouteStartAuthorization", "RouteBlockEvent",
-  "ItemLocation", "ServiceReferencePart", "TimeRoute"
+  "ItemLocation", "ServiceReferencePart", "TimeRoute", "TransportSettlementItem"
 ]);
 
 function currentTenantId() {
