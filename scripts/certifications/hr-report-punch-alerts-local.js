@@ -117,17 +117,21 @@ function main() {
 
   check("report_detail_shows_alert_badge", /event\.alert \? <Badge tone=\{event\.alert\.tone\}>\{event\.alert\.label\}<\/Badge> : null/.test(reportSrc), { detail: true });
   check("report_detail_uses_modern_timeline", [
-    /Trazabilidad cronologica de la jornada/,
+    /Trazabilidad cronologica del equipo/,
     /selected\.events\.filter\(\(event\) => event\.kind === "Marcacion"\)\.length\} marcaciones/,
     /MapPin size=\{12\}/,
     /Sin evidencia fotografica/,
     /evidenceCount/,
-    /<ol className="mt-4 space-y-3">/,
+    /<ol className="space-y-3">/,
     /className="relative pl-14"/,
     /ring-4 ring-paper/,
     /\{isMark \? "Marcacion" : "Actividad"\}/,
-    /event\.userName\} · <span className="font-semibold text-content-body">/
-  ].every((pattern) => pattern.test(reportSrc)), { timeline: true });
+    /event\.userName\} · <span className="font-semibold text-content-body">/,
+    /fixed inset-0 z-50 flex items-end justify-center/,
+    /md:max-w-6xl md:rounded-overlay/,
+    /role="dialog"/,
+    /lg:grid-cols-\[320px_1fr\]/
+  ].every((pattern) => pattern.test(reportSrc)) && !/ml-auto flex h-full/.test(reportSrc), { timeline: true });
 
   const routesSrc = readSource(ROUTES_PAGE);
   check("routes_monitor_shares_lib_without_duplication", [

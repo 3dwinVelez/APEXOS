@@ -413,32 +413,57 @@ export default function HrReportsPage() {
       </section>
 
       {selected ? (
-        <div className="fixed inset-0 z-50 bg-neutral-950/40">
-          <aside className="ml-auto flex h-full w-full max-w-4xl flex-col bg-white shadow-xl">
-            <header className="flex items-start justify-between gap-3 border-b border-line p-4">
-              <div><p className="text-sm font-semibold text-apex">Trazabilidad completa</p><h2 className="text-2xl font-semibold">{selected.employeeName}</h2><p className="text-sm text-neutral-500">{selected.date} - {selected.route} - {selected.vehicle}</p></div>
-              <button className="rounded-md border border-line px-3 py-2 text-sm font-semibold" onClick={() => setSelected(null)} type="button">Cerrar</button>
-            </header>
-            <div className="min-h-0 flex-1 overflow-y-auto p-4">
-              <div className="grid gap-3 sm:grid-cols-3">
-                <Metric label="Horas laboradas" value={minutesLabel(selected.workedMinutes)} />
-                <Metric label="Horas extra" value={minutesLabel(selected.overtimeMinutes)} />
-                <Metric label="Eventos" value={selected.events.length} />
-              </div>
-              {selected.overtimeMinutes ? <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950"><p className="font-semibold">Justificacion de extension</p><p className="mt-1">Motivo: {selected.overtimeReason || "--"}</p><p className="mt-1">{selected.overtimeDetail || "Sin detalle registrado."}</p></div> : null}
-              <section className="mt-4 rounded-md border border-line bg-paper p-3">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <h3 className="font-semibold text-content-strong">Trazabilidad cronologica de la jornada</h3>
-                    <p className="mt-1 text-sm text-neutral-600">Marcaciones y actividades con hora, GPS, tolerancia y evidencia.</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge className="gap-1.5" tone="neutral"><Clock size={12} /> {selected.events.filter((event) => event.kind === "Marcacion").length} marcaciones</Badge>
-                    <Badge className="gap-1.5" tone="info"><ClipboardList size={12} /> {selected.events.filter((event) => event.kind === "Actividad").length} actividades</Badge>
-                    <Badge className="gap-1.5" tone={selected.events.some((event) => event.alert?.tone === "warning") ? "warning" : "success"}><AlertTriangle size={12} /> {selected.events.filter((event) => event.alert).length} alertas</Badge>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-950/40 p-0 md:items-center md:p-6">
+          <section aria-label="Trazabilidad de jornada" aria-modal="true" className="flex max-h-[calc(100dvh-1rem)] w-full max-w-full flex-col overflow-hidden rounded-t-overlay border border-line bg-surface text-content-body shadow-overlay md:max-h-[calc(100dvh-3rem)] md:max-w-6xl md:rounded-overlay" role="dialog" tabIndex={-1}>
+            <header className="border-b border-line bg-surface px-4 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-apex/10 text-apex"><Clock size={20} /></span>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="truncate text-lg font-semibold text-content-strong">{selected.employeeName}</h2>
+                      <Badge tone={selected.entry && selected.exit ? "success" : "warning"}>{selected.entry && selected.exit ? "Jornada completa" : "Jornada incompleta"}</Badge>
+                    </div>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-content-muted">
+                      <span className="inline-flex items-center gap-1"><CalendarDays size={13} /> {selected.date}</span>
+                      <span>{selected.route}</span>
+                      <span>{selected.vehicle}</span>
+                    </div>
                   </div>
                 </div>
-                <ol className="mt-4 space-y-3">
+                <button aria-label="Cerrar trazabilidad" className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={() => setSelected(null)} type="button">Cerrar</button>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Badge className="gap-1.5" tone="neutral"><Clock size={12} /> {selected.events.filter((event) => event.kind === "Marcacion").length} marcaciones</Badge>
+                <Badge className="gap-1.5" tone="info"><ClipboardList size={12} /> {selected.events.filter((event) => event.kind === "Actividad").length} actividades</Badge>
+                <Badge className="gap-1.5" tone={selected.events.some((event) => event.alert?.tone === "warning") ? "warning" : "success"}><AlertTriangle size={12} /> {selected.events.filter((event) => event.alert).length} alertas</Badge>
+              </div>
+            </header>
+            <div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[320px_1fr] lg:overflow-hidden">
+              <section className="border-b border-line p-4 lg:min-h-0 lg:overflow-y-auto lg:border-b-0 lg:border-r">
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-content-muted">Jornada</h3>
+                  <span className="text-xs font-semibold text-content-muted">{selected.events.length} evento(s)</span>
+                </div>
+                <div className="mt-3 space-y-2">
+                  <Metric label="Horas laboradas" value={minutesLabel(selected.workedMinutes)} />
+                  <Metric label="Horas extra" value={minutesLabel(selected.overtimeMinutes)} />
+                  <Metric label="Entrada" value={hour(selected.entry?.punched_at)} />
+                  <Metric label="Cierre" value={hour(selected.exit?.punched_at)} />
+                </div>
+                <p className="mt-3 rounded-md bg-surface-muted p-3 text-xs text-content-muted">Vista consolidada del reporte. Las marcaciones y actividades conservan la misma lectura visual del monitor operativo.</p>
+              </section>
+              <section className="flex min-h-0 flex-col p-4 lg:overflow-hidden">
+              {selected.overtimeMinutes ? <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950"><p className="font-semibold">Justificacion de extension</p><p className="mt-1">Motivo: {selected.overtimeReason || "--"}</p><p className="mt-1">{selected.overtimeDetail || "Sin detalle registrado."}</p></div> : null}
+              <div>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="text-base font-semibold text-content-strong">Trazabilidad cronologica del equipo</h3>
+                    <p className="mt-1 text-sm text-content-muted">Marcaciones y actividades con hora, GPS, tolerancia y evidencia fotografica.</p>
+                  </div>
+                </div>
+                <div className="mt-3 min-h-0 flex-1 lg:overflow-y-auto">
+                <ol className="space-y-3">
                   {selected.events.map((event, index) => {
                     const isMark = event.kind === "Marcacion";
                     return (
@@ -465,9 +490,11 @@ export default function HrReportsPage() {
                     );
                   })}
                 </ol>
+                </div>
+              </div>
               </section>
             </div>
-          </aside>
+          </section>
         </div>
       ) : null}
     </div>

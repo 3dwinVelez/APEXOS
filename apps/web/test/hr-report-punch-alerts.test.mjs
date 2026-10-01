@@ -46,15 +46,20 @@ test("el reporte de talento humano refleja las alertas por marcacion en tabla, d
   assert.match(page, /alerta: event\.alert\?\.label \|\| ""/);
   assert.match(page, /Jornadas con alerta critica/);
   assert.match(page, /event\.alert \? <Badge tone=\{event\.alert\.tone\}/);
-  assert.match(page, /Trazabilidad cronologica de la jornada/);
+  assert.match(page, /Trazabilidad cronologica del equipo/);
   assert.match(page, /selected\.events\.filter\(\(event\) => event\.kind === "Marcacion"\)\.length\} marcaciones/);
   assert.match(page, /MapPin size=\{12\}/);
   assert.match(page, /Sin evidencia fotografica/);
-  assert.match(page, /<ol className="mt-4 space-y-3">/);
+  assert.match(page, /<ol className="space-y-3">/);
   assert.match(page, /className="relative pl-14"/);
   assert.match(page, /ring-4 ring-paper/);
   assert.match(page, /\{isMark \? "Marcacion" : "Actividad"\}/);
   assert.match(page, /event\.userName\} · <span className="font-semibold text-content-body">/);
+  assert.match(page, /fixed inset-0 z-50 flex items-end justify-center/);
+  assert.match(page, /md:max-w-6xl md:rounded-overlay/);
+  assert.match(page, /role="dialog"/);
+  assert.match(page, /lg:grid-cols-\[320px_1fr\]/);
+  assert.doesNotMatch(page, /ml-auto flex h-full/);
 });
 
 test("el monitor de rutas y el reporte comparten la misma fuente de puntualidad", () => {
