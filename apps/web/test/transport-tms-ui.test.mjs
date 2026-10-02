@@ -118,7 +118,10 @@ test("el planeador evalua consolidacion, capacidad, ruta y alternativas", () => 
   assert.match(planning, /\/transport\/planning\/workbench/);
   assert.match(planning, /\/transport\/planning\/evaluate/);
   assert.match(planning, /\/transport\/planning\/commit/);
-  assert.match(planning, /Mapa esquemático del plan/);
+  assert.match(planning, /PlanningRouteMap/);
+  assert.match(planning, /Evaluar escenarios/);
+  assert.match(planning, /Parámetros bloqueados del escenario/);
+  assert.match(planning, /Monitor de escenarios logísticos/);
   assert.match(planning, /Alternativas tarifarias/);
 });
 

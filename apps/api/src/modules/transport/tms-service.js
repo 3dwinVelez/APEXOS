@@ -35,6 +35,7 @@ function atomicMutation(fn) {
 }
 
 const { point, lineString, distance: turfDistance, buffer: turfBuffer, booleanPointInPolygon, pointToLineDistance } = require("@turf/turf");
+const { enrichRouteWithGoogle } = require("./route-intelligence");
 
 
 
@@ -941,6 +942,8 @@ async function evaluatePlan(tenantId, input) {
 
     quotes.forEach((quote, index) => { quote.rank = index + 1; quote.recommended = index === 0; });
 
+    const route_intelligence = await enrichRouteWithGoogle({ legs: route.legs, departureTime: input.planned_departure });
+
     return {
 
       generated_at: new Date().toISOString(), strategy, origin,
@@ -948,6 +951,7 @@ async function evaluatePlan(tenantId, input) {
       ordered_need_ids: route.ordered.map((need) => need.id), route: { ...route, ordered: undefined }, totals,
 
       planned_duration_minutes: durationMinutes, capacity, quotes,
+      route_intelligence,
 
       warnings: [
 

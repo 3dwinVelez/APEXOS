@@ -1474,6 +1474,33 @@ html.dark .platform-alert-close:hover {
   background: rgb(var(--color-apex) / 0.04);
 }
 
+html.dark .transport-planning-modal,
+html.dark .transport-planning-modal .bg-white {
+  background-color: #ffffff !important;
+  color: #17232d !important;
+}
+
+html.dark .transport-planning-modal .bg-paper {
+  background-color: #f5f7f5 !important;
+}
+
+html.dark .transport-planning-modal .text-neutral-500 {
+  color: #66746f !important;
+}
+
+html.dark .transport-planning-modal .text-neutral-600 {
+  color: #4d5b57 !important;
+}
+
+html.dark .transport-planning-modal .bg-amber-50 {
+  background-color: #fff7e6 !important;
+}
+
+html.dark .transport-planning-modal .text-amber-900,
+html.dark .transport-planning-modal .text-amber-700 {
+  color: #8a4b00 !important;
+}
+
 @media (max-width: 767px) {
   .transport-workspace > div > header {
     padding: 0.875rem;
