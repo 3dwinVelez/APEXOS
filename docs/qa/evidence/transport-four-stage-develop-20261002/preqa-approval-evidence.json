@@ -1,0 +1,32 @@
+{
+  "change_id": "transport-four-stage-develop-20261002",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "055f22723e9fb12af9f7e895d69321b17c40bbc9",
+  "qa_status": "pending",
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["summary.json", "four-stage-tms-certification.json", "substantial-data-seed.json"] },
+    "error": { "status": "passed", "evidence": ["summary.json", "qa-gate.md"] },
+    "support_scripts": { "status": "passed", "evidence": ["summary.json", "validation-checks.json"] },
+    "regression": { "status": "passed", "evidence": ["summary.json", "regression.md"] },
+    "platform_regression": { "status": "passed", "evidence": ["summary.json", "platform-regression.md"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/transport-four-stage-functional-local.js",
+    "evidence": ["summary.json", "four-stage-tms-certification.json", "substantial-data-seed.json", "settlement-package-certification.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/transport-four-stage-functional-local.js",
+    "evidence": ["summary.json", "regression.md", "platform-regression.md"]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (lead APEXOS) - autorizacion expresa: ejecutar ambiente local, certificar flujo de Transporte en 4 etapas y llevar solo hasta develop",
+    "approved_at": "2026-10-02T11:55:00-05:00",
+    "main_release": "not_authorized"
+  }
+}
