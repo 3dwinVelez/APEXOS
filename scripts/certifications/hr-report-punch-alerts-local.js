@@ -38,7 +38,7 @@ const REPORT_PAGE = path.join(WEB, "app/dashboard/talento-humano/reportes/page.t
 const ROUTES_PAGE = path.join(WEB, "app/dashboard/talento-humano/rutas/page.tsx");
 
 const result = {
-  change_id: "hr-report-alerts-presentation-20261001",
+  change_id: String(args.changeId || "hr-report-alerts-presentation-20261001"),
   certification: "hr-report-punch-alerts-local",
   environment: "LOCAL",
   generated_at: new Date().toISOString(),
@@ -128,6 +128,9 @@ function main() {
     /\{isMark \? "Marcacion" : "Actividad"\}/,
     /event\.userName\} · <span className="font-semibold text-content-body">/,
     /fixed inset-0 z-50 flex items-end justify-center/,
+    /document\.body\.style\.overflow = "hidden"/,
+    /detailDialogRef\.current\?\.focus\(\)/,
+    /overscroll-contain/,
     /md:max-w-6xl md:rounded-overlay/,
     /role="dialog"/,
     /lg:grid-cols-\[320px_1fr\]/

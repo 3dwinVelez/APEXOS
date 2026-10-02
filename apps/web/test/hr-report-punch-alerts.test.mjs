@@ -56,6 +56,9 @@ test("el reporte de talento humano refleja las alertas por marcacion en tabla, d
   assert.match(page, /\{isMark \? "Marcacion" : "Actividad"\}/);
   assert.match(page, /event\.userName\} · <span className="font-semibold text-content-body">/);
   assert.match(page, /fixed inset-0 z-50 flex items-end justify-center/);
+  assert.match(page, /document\.body\.style\.overflow = "hidden"/);
+  assert.match(page, /detailDialogRef\.current\?\.focus\(\)/);
+  assert.match(page, /overscroll-contain/);
   assert.match(page, /md:max-w-6xl md:rounded-overlay/);
   assert.match(page, /role="dialog"/);
   assert.match(page, /lg:grid-cols-\[320px_1fr\]/);

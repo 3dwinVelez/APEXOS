@@ -7,7 +7,7 @@ import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { punctualityAlert, punctualityTypeNames, type PunctualityAlert, type PunctualityTone } from "@/lib/punchPunctuality";
 import { AlertTriangle, ArrowLeft, CalendarDays, CheckCircle2, ClipboardList, Clock, Download, Eye, Filter, ImageOff, LogIn, MapPin, RotateCcw, Search } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Employee = { id: number | string; code: string; user_type?: string; position: string; department: string; metadata: { name: string; document: string; user_type?: string; identity_aliases?: string[] }; user: { name: string; email?: string } };
 type Punch = { id: number; user_name: string; type: string; time: string; punched_at: string; date: string; latitude?: number; longitude?: number; accuracy_meters?: number; vehicle_plate: string; route_id?: number; extra_minutes: number; extra_reason?: string; extra_detail?: string };
@@ -127,6 +127,7 @@ function PunchAlertStack({ alerts, rowKey }: { alerts: PunchAlert[]; rowKey: str
 }
 
 export default function HrReportsPage() {
+  const detailDialogRef = useRef<HTMLElement | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [punches, setPunches] = useState<Punch[]>([]);
   const [activities, setActivities] = useState<WorkActivity[]>([]);
@@ -172,6 +173,16 @@ export default function HrReportsPage() {
   useEffect(() => {
     load().catch(() => undefined);
   }, [load]);
+
+  useEffect(() => {
+    if (!selected) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.requestAnimationFrame(() => detailDialogRef.current?.focus());
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [selected]);
 
   const rows = useMemo(() => {
     const groups = new Map<string, Punch[]>();
@@ -413,8 +424,8 @@ export default function HrReportsPage() {
       </section>
 
       {selected ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-950/40 p-0 md:items-center md:p-6">
-          <section aria-label="Trazabilidad de jornada" aria-modal="true" className="flex max-h-[calc(100dvh-1rem)] w-full max-w-full flex-col overflow-hidden rounded-t-overlay border border-line bg-surface text-content-body shadow-overlay md:max-h-[calc(100dvh-3rem)] md:max-w-6xl md:rounded-overlay" role="dialog" tabIndex={-1}>
+        <div className="fixed inset-0 z-50 flex items-end justify-center overflow-hidden bg-neutral-950/40 p-0 md:items-center md:p-6">
+          <section aria-label="Trazabilidad de jornada" aria-modal="true" className="flex max-h-[calc(100dvh-1rem)] w-full max-w-full flex-col overflow-hidden overscroll-contain rounded-t-overlay border border-line bg-surface text-content-body shadow-overlay md:max-h-[calc(100dvh-3rem)] md:max-w-6xl md:rounded-overlay" ref={detailDialogRef} role="dialog" tabIndex={-1}>
             <header className="border-b border-line bg-surface px-4 py-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
@@ -439,8 +450,8 @@ export default function HrReportsPage() {
                 <Badge className="gap-1.5" tone={selected.events.some((event) => event.alert?.tone === "warning") ? "warning" : "success"}><AlertTriangle size={12} /> {selected.events.filter((event) => event.alert).length} alertas</Badge>
               </div>
             </header>
-            <div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[320px_1fr] lg:overflow-hidden">
-              <section className="border-b border-line p-4 lg:min-h-0 lg:overflow-y-auto lg:border-b-0 lg:border-r">
+            <div className="grid min-h-0 flex-1 overflow-y-auto overscroll-contain lg:grid-cols-[320px_1fr] lg:overflow-hidden">
+              <section className="border-b border-line p-4 lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:border-b-0 lg:border-r">
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-content-muted">Jornada</h3>
                   <span className="text-xs font-semibold text-content-muted">{selected.events.length} evento(s)</span>
@@ -462,7 +473,7 @@ export default function HrReportsPage() {
                     <p className="mt-1 text-sm text-content-muted">Marcaciones y actividades con hora, GPS, tolerancia y evidencia fotografica.</p>
                   </div>
                 </div>
-                <div className="mt-3 min-h-0 flex-1 lg:overflow-y-auto">
+                <div className="mt-3 min-h-0 flex-1 overscroll-contain lg:overflow-y-auto">
                 <ol className="space-y-3">
                   {selected.events.map((event, index) => {
                     const isMark = event.kind === "Marcacion";
