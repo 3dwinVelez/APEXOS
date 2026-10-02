@@ -1,0 +1,21 @@
+{
+  "change_id": "transport-four-stage-develop-20261002",
+  "certification": "transport-four-stage-functional-local",
+  "environment": "LOCAL_DESARROLLO",
+  "api_url": "http://localhost:3000",
+  "run_id": "20261002151945",
+  "status": "failed",
+  "checks": [
+    {
+      "name": "api_health",
+      "status": "failed",
+      "detail": {
+        "status": 0,
+        "body": {},
+        "transport_error": "fetch failed"
+      }
+    }
+  ],
+  "error": "api_health",
+  "finished_at": "2026-10-02T15:19:45.538Z"
+}

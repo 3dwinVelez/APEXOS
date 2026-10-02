@@ -70,6 +70,7 @@
     "certify:hr-schedule-write-integrity:local": "node scripts/certifications/hr-schedule-write-integrity-local.js --output=docs/qa/evidence/hr-schedule-write-integrity-20260920/local-simulation-certification.json",
     "certify:hr-offline-deferred-marking:local": "node scripts/certifications/hr-offline-deferred-marking-local.js --output=docs/qa/evidence/hr-offline-deferred-marking-20260921/local-certification.json",
     "certify:transport-tms:local": "node scripts/certifications/transport-tms-local.js",
+    "certify:transport-four-stage:local": "node scripts/certifications/transport-four-stage-functional-local.js",
     "certify:admin-role-capabilities:qa": "node scripts/certifications/admin-role-capabilities-qa.js",
     "certify:production:mass:nyvora": "node scripts/certifications/nyvora-production-mass-regression.js",
     "qa:hr-services-stress": "node scripts/qa-hr-services-linear-stress.js",
