@@ -751,14 +751,7 @@ const transportWorkflows = [
     ]
   },
   {
-    title: "3. Liquidar el costo",
-    detail: "Cierra el costo real de cada transportador con tarifa congelada, ajustes soportados y aprobación trazable.",
-    actions: [
-      { href: "/dashboard/transporte/liquidaciones", title: "Torre de liquidaciones", detail: "Preliquidar, ajustar, aprobar y contabilizar paquetes por transportador y periodo.", icon: Wallet, primary: true }
-    ]
-  },
-  {
-    title: "4. Preparar la operación",
+    title: "3. Preparar la operación",
     detail: "Mantén listos los datos que habilitan la planeación diaria.",
     actions: [
       { href: "/dashboard/transporte/flota", title: "Vehículos y documentos", detail: "Revisar capacidad, vigencias y disponibilidad de la flota.", icon: Truck },
@@ -766,6 +759,13 @@ const transportWorkflows = [
       { href: "/dashboard/transporte/maestros", title: "Datos básicos", detail: "Gestionar transportadores, conductores, orígenes y destinos.", icon: Users },
       { href: "/dashboard/transporte/notificaciones", title: "Comunicaciones", detail: "Consultar los avisos registrados por la operación.", icon: Bell },
       { href: "/dashboard/transporte/configuracion", title: "Preferencias de transporte", detail: "Definir parámetros operativos y de comunicación.", icon: Settings }
+    ]
+  },
+  {
+    title: "4. Liquidar el costo",
+    detail: "Cierra el costo real de cada transportador con tarifa congelada, ajustes soportados y aprobación trazable.",
+    actions: [
+      { href: "/dashboard/transporte/liquidaciones", title: "Torre de liquidaciones", detail: "Preliquidar, ajustar, aprobar y contabilizar paquetes por transportador y periodo.", icon: Wallet, primary: true }
     ]
   }
 ] as const;
