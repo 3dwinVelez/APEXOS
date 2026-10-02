@@ -123,6 +123,7 @@ test("el planeador evalua consolidacion, capacidad, ruta y alternativas", () => 
   assert.match(planning, /Parámetros bloqueados del escenario/);
   assert.match(planning, /Monitor de escenarios logísticos/);
   assert.match(planning, /Alternativas tarifarias/);
+  assert.match(planning, /route_variants/);
 });
 
 test("los tarifarios exponen vigencias, versiones y componentes de costo", () => {

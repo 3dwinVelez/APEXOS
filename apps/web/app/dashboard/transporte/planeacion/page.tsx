@@ -16,7 +16,8 @@ type Vehicle = { id: number; plate: string; type?: string; master_status: string
 type Coordinate = { latitude: number; longitude: number };
 type Leg = { sequence: number; from: string; to: string; need_id?: number; distance_km: number; from_coordinate: Coordinate; to_coordinate: Coordinate };
 type Quote = { rate_card_id: number; rate_code: string; rate_version: number; carrier_name: string; currency: string; components: Record<string, number>; total: number; carrier_score: number; rank: number; recommended: boolean; minimum_applied: boolean };
-type RouteIntelligenceRoute = { rank: number; distance_km: number | null; duration_minutes: number | null; static_duration_minutes: number | null; delay_minutes: number | null; traffic_level: "alto" | "medio" | "bajo" | "sin_lectura"; polyline: string | null };
+type RouteTrafficSegment = { start_index: number; end_index: number; speed: string; label: string; severity: "alta" | "media" | "baja" | "sin_lectura" };
+type RouteIntelligenceRoute = { rank: number; distance_km: number | null; duration_minutes: number | null; static_duration_minutes: number | null; delay_minutes: number | null; traffic_level: "alto" | "medio" | "bajo" | "sin_lectura"; traffic_segments?: RouteTrafficSegment[]; pros?: string[]; cons?: string[]; issue_tags?: string[]; polyline: string | null };
 type RouteIntelligence = { provider: "google_routes"; status: "configured" | "not_configured" | "unavailable" | "invalid_coordinates" | "empty"; traffic_available: boolean; routes: RouteIntelligenceRoute[]; message?: string };
 type Plan = { generated_at: string; strategy: string; origin: Origin; ordered_need_ids: number[]; route: { legs: Leg[]; distance_km: number; road_factor: number }; totals: { weight_kg: number; volume_m3: number; pallets: number; stop_count: number; distance_km: number }; planned_duration_minutes: number; capacity: { vehicle_id?: number; plate?: string; feasible: boolean; weight_feasible: boolean; volume_feasible: boolean; weight_capacity_kg: number; volume_capacity_m3: number }; quotes: Quote[]; warnings: string[]; route_intelligence?: RouteIntelligence };
 type Scenario = { id: string; strategy: string; strategyLabel: string; vehicle?: Vehicle; plan: Plan; quote?: Quote; cost: number | null; costPerKm: number | null; score: number; alerts: string[]; benefits: string[]; tradeoffs: string[]; recommended: boolean };
@@ -349,6 +350,8 @@ function PlanResult({ scenarios, selectedScenarioId, selectedQuote, onSelectQuot
       </div>
     </section>
     <RouteProviderNotice scenarios={visibleScenarios} />
+    <RouteMap scenarios={visibleScenarios} selectedScenarioId={selected.id} onSelectScenario={onSelectScenario} />
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-5"><Metric label="Distancia" value={`${selected.plan.totals.distance_km} km`} /><Metric label="ETA estimada" value={`${Math.floor(selected.plan.planned_duration_minutes / 60)}h ${selected.plan.planned_duration_minutes % 60}m`} /><Metric label="Costo" value={selected.cost === null ? "Sin tarifa" : money(selected.cost, selected.quote?.currency)} /><Metric label="Costo/km" value={selected.costPerKm === null ? "Sin tarifa" : money(selected.costPerKm, selected.quote?.currency)} /><Metric label="Tráfico" value={trafficLabel(selected)} good={trafficLabel(selected) === "Bajo"} /></div>
     <section className="rounded-md border border-line bg-white p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div><h3 className="font-semibold">Selecciona vehículo y compara 4 estrategias</h3><p className="mt-1 text-xs text-neutral-500">El mapa recalcula la lectura visual con el vehículo activo; cada tarjeta representa una estrategia operativa.</p></div>
@@ -358,8 +361,6 @@ function PlanResult({ scenarios, selectedScenarioId, selectedQuote, onSelectQuot
         {visibleScenarios.map((scenario, index) => <ScenarioCard index={index + 1} key={scenario.id} scenario={scenario} selected={scenario.id === selected.id} onSelect={() => { onSelectScenario(scenario.id); if (scenario.quote) onSelectQuote(scenario.quote.rate_card_id); }} />)}
       </div>
     </section>
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-5"><Metric label="Distancia" value={`${selected.plan.totals.distance_km} km`} /><Metric label="ETA estimada" value={`${Math.floor(selected.plan.planned_duration_minutes / 60)}h ${selected.plan.planned_duration_minutes % 60}m`} /><Metric label="Costo" value={selected.cost === null ? "Sin tarifa" : money(selected.cost, selected.quote?.currency)} /><Metric label="Costo/km" value={selected.costPerKm === null ? "Sin tarifa" : money(selected.costPerKm, selected.quote?.currency)} /><Metric label="Tráfico" value={trafficLabel(selected)} good={trafficLabel(selected) === "Bajo"} /></div>
-    <RouteMap scenarios={visibleScenarios} selectedScenarioId={selected.id} onSelectScenario={onSelectScenario} />
     <section className="grid gap-3 rounded-md border border-line bg-white p-4 md:grid-cols-2">
       <div><h3 className="font-semibold">Lectura rápida</h3><p className="mt-1 text-sm text-neutral-600">{selected.benefits[0] || "Escenario disponible para comparación."}</p>{selected.alerts[0] ? <p className="mt-1 text-sm text-amber-700">{selected.alerts[0]}</p> : null}</div>
       <div><h3 className="font-semibold">Tarifa</h3><p className="mt-1 text-sm text-neutral-600">{selected.quote ? `${selected.quote.carrier_name} · ${money(selected.quote.total, selected.quote.currency)}` : "Sin tarifa activa para este escenario."}</p></div>
@@ -391,8 +392,19 @@ function RouteMap({ scenarios, selectedScenarioId, onSelectScenario }: { scenari
     alerts: scenario.alerts,
     benefits: scenario.benefits,
     tradeoffs: scenario.tradeoffs,
-    encoded_polyline: scenario.plan.route_intelligence?.routes?.[0]?.polyline || null,
-    encoded_alternates: scenario.plan.route_intelligence?.routes?.slice(1).map((route) => route.polyline).filter((polyline): polyline is string => Boolean(polyline)) || [],
+    route_variants: scenario.plan.route_intelligence?.routes?.map((route) => ({
+      id: `${scenario.id}-route-${route.rank}`,
+      label: route.rank === 1 ? "Ruta recomendada" : `Ruta alterna ${route.rank}`,
+      polyline: route.polyline,
+      distance_km: route.distance_km,
+      duration_min: route.duration_minutes,
+      delay_min: route.delay_minutes,
+      traffic_level: route.traffic_level,
+      traffic_segments: route.traffic_segments || [],
+      pros: route.pros || [],
+      cons: route.cons || [],
+      issue_tags: route.issue_tags || [],
+    })).filter((route) => Boolean(route.polyline)) || [],
   })), [scenarios]);
   return <PlanningRouteMap scenarios={mapScenarios} selectedId={selectedScenarioId} onSelect={onSelectScenario} />;
 }

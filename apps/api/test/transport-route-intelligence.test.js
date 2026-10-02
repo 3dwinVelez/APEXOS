@@ -47,6 +47,7 @@ test("Google Routes se consulta desde backend sin exponer la API key en la respu
     assert.match(options.headers["X-Goog-FieldMask"], /routes\.polyline\.encodedPolyline/);
     const body = JSON.parse(options.body);
     assert.equal(body.routingPreference, "TRAFFIC_AWARE_OPTIMAL");
+    assert.deepEqual(body.extraComputations, ["TRAFFIC_ON_POLYLINE"]);
     assert.equal(body.computeAlternativeRoutes, true);
     return {
       ok: true,
@@ -57,8 +58,11 @@ test("Google Routes se consulta desde backend sin exponer la API key en la respu
             duration: "780s",
             staticDuration: "600s",
             polyline: { encodedPolyline: "_p~iF~ps|U_ulLnnqC_mqNvxq`@" },
-            travelAdvisory: { speedReadingIntervals: [{ speed: "SLOW" }] },
+            travelAdvisory: { speedReadingIntervals: [{ startPolylinePointIndex: 0, endPolylinePointIndex: 2, speed: "SLOW" }] },
           },
+          { distanceMeters: 10400, duration: "900s", staticDuration: "720s", polyline: { encodedPolyline: "_p~iF~ps|U_ulLnnqC_mqNvxq`@" }, travelAdvisory: { speedReadingIntervals: [{ startPolylinePointIndex: 1, endPolylinePointIndex: 3, speed: "TRAFFIC_JAM" }] } },
+          { distanceMeters: 11200, duration: "840s", staticDuration: "820s", polyline: { encodedPolyline: "_p~iF~ps|U_ulLnnqC_mqNvxq`@" }, travelAdvisory: { speedReadingIntervals: [{ startPolylinePointIndex: 0, endPolylinePointIndex: 3, speed: "NORMAL" }] } },
+          { distanceMeters: 12100, duration: "960s", staticDuration: "900s", polyline: { encodedPolyline: "_p~iF~ps|U_ulLnnqC_mqNvxq`@" }, travelAdvisory: { speedReadingIntervals: [] } },
         ],
       }),
     };
@@ -72,6 +76,10 @@ test("Google Routes se consulta desde backend sin exponer la API key en la respu
     assert.equal(result.routes[0].duration_minutes, 13);
     assert.equal(result.routes[0].delay_minutes, 3);
     assert.equal(result.routes[0].traffic_level, "medio");
+    assert.equal(result.routes.length, 4);
+    assert.equal(result.routes[0].traffic_segments[0].label, "Trafico lento");
+    assert.equal(result.routes[1].traffic_level, "alto");
+    assert.ok(result.routes[1].issue_tags.includes("congestion alta"));
     assert.equal(JSON.stringify(result).includes("test-secret-key"), false);
   } finally {
     restoreEnv("GOOGLE_ROUTES_API_KEY", previousKey);
