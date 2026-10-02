@@ -1,0 +1,66 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "transport-four-stage-develop-20261002",
+  "base_commit": "fd8a67e6c207b55f51862f05885c7e7ea20d722e",
+  "base_commits": {
+    "develop": "fd8a67e6c207b55f51862f05885c7e7ea20d722e"
+  },
+  "certified_commit": "055f22723e9fb12af9f7e895d69321b17c40bbc9",
+  "change_intent": {
+    "summary": "Ajustar la vista principal del modulo Transporte para ordenar el flujo operativo en cuatro etapas comprensibles y agregar una certificacion funcional local versionada que puebla datos sustanciales reales, recorre preparacion de pedidos, ejecucion/entrega, preparacion operativa y liquidacion, y conserva evidencia reproducible para la promocion controlada desarrollo -> develop.",
+    "modules": ["transport", "qa-evidence"]
+  },
+  "expected_changes": [
+    { "status": "M", "file": "apps/web/app/dashboard/transporte/page.tsx" },
+    { "status": "A", "file": "docs/qa/evidence/transport-four-stage-develop-20261002/blocked-live-data.md" },
+    { "status": "A", "file": "docs/qa/evidence/transport-four-stage-develop-20261002/develop-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/transport-four-stage-develop-20261002/four-stage-tms-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/transport-four-stage-develop-20261002/functional.md" },
+    { "status": "A", "file": "docs/qa/evidence/transport-four-stage-develop-20261002/live-tms-certification-attempt.json" },
+    { "status": "A", "file": "docs/qa/evidence/transport-four-stage-develop-20261002/platform-regression.md" },
+    { "status": "A", "file": "docs/qa/evidence/transport-four-stage-develop-20261002/preqa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/transport-four-stage-develop-20261002/qa-gate.md" },
+    { "status": "A", "file": "docs/qa/evidence/transport-four-stage-develop-20261002/regression.md" },
+    { "status": "A", "file": "docs/qa/evidence/transport-four-stage-develop-20261002/security-review.md" },
+    { "status": "A", "file": "docs/qa/evidence/transport-four-stage-develop-20261002/settlement-package-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/transport-four-stage-develop-20261002/substantial-data-seed.json" },
+    { "status": "A", "file": "docs/qa/evidence/transport-four-stage-develop-20261002/summary.json" },
+    { "status": "A", "file": "docs/qa/evidence/transport-four-stage-develop-20261002/validation-checks.json" },
+    { "status": "D", "file": "docs/qa/evidence/transport-settlement-packages-20261001/main-scope-manifest.json" },
+    { "status": "D", "file": "docs/qa/evidence/transport-settlement-packages-20261001/qa-approval-evidence.json" },
+    { "status": "M", "file": "package.json" },
+    { "status": "A", "file": "scripts/certifications/transport-four-stage-functional-local.js" }
+  ],
+  "allowed_paths": [
+    "apps/web/app/dashboard/transporte/page.tsx",
+    "docs/qa/evidence/transport-four-stage-develop-20261002/blocked-live-data.md",
+    "docs/qa/evidence/transport-four-stage-develop-20261002/develop-scope-manifest.json",
+    "docs/qa/evidence/transport-four-stage-develop-20261002/four-stage-tms-certification.json",
+    "docs/qa/evidence/transport-four-stage-develop-20261002/functional.md",
+    "docs/qa/evidence/transport-four-stage-develop-20261002/live-tms-certification-attempt.json",
+    "docs/qa/evidence/transport-four-stage-develop-20261002/platform-regression.md",
+    "docs/qa/evidence/transport-four-stage-develop-20261002/preqa-approval-evidence.json",
+    "docs/qa/evidence/transport-four-stage-develop-20261002/qa-gate.md",
+    "docs/qa/evidence/transport-four-stage-develop-20261002/regression.md",
+    "docs/qa/evidence/transport-four-stage-develop-20261002/security-review.md",
+    "docs/qa/evidence/transport-four-stage-develop-20261002/settlement-package-certification.json",
+    "docs/qa/evidence/transport-four-stage-develop-20261002/substantial-data-seed.json",
+    "docs/qa/evidence/transport-four-stage-develop-20261002/summary.json",
+    "docs/qa/evidence/transport-four-stage-develop-20261002/validation-checks.json",
+    "docs/qa/evidence/transport-settlement-packages-20261001/main-scope-manifest.json",
+    "docs/qa/evidence/transport-settlement-packages-20261001/qa-approval-evidence.json",
+    "package.json",
+    "scripts/certifications/transport-four-stage-functional-local.js"
+  ],
+  "allowed_deletions": [
+    "docs/qa/evidence/transport-settlement-packages-20261001/main-scope-manifest.json",
+    "docs/qa/evidence/transport-settlement-packages-20261001/qa-approval-evidence.json"
+  ],
+  "protected_capabilities": [
+    { "name": "flujo_transporte_cuatro_etapas_con_datos_sustanciales", "status": "passed", "evidence": ["summary.json", "four-stage-tms-certification.json", "substantial-data-seed.json"] },
+    { "name": "preparar_pedidos_ejecucion_operacion_y_liquidacion", "status": "passed", "evidence": ["summary.json", "four-stage-tms-certification.json"] },
+    { "name": "contratos_api_transporte_sin_regresion", "status": "passed", "evidence": ["summary.json", "regression.md"] },
+    { "name": "contratos_web_transporte_sin_regresion", "status": "passed", "evidence": ["summary.json", "platform-regression.md"] },
+    { "name": "liquidacion_transporte_y_paquetes_certificada", "status": "passed", "evidence": ["summary.json", "settlement-package-certification.json"] }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "change_id": "transport-four-stage-develop-20261002",
+  "environment": "LOCAL_DESARROLLO",
+  "status": "blocked",
+  "checks": [
+    {
+      "name": "transport_api_domain_tests",
+      "command": "node --test test/transport-tms-foundation.test.js test/transport-settlement-engine.test.js test/transport-packing.test.js",
+      "cwd": "apps/api",
+      "status": "passed",
+      "passed": 44,
+      "failed": 0
+    },
+    {
+      "name": "transport_web_tests",
+      "command": "node --experimental-strip-types --test test/transport-tms-ui.test.mjs test/transport-settlement-ui.test.mjs test/transport-master-access.test.mjs",
+      "cwd": "apps/web",
+      "status": "passed",
+      "passed": 27,
+      "failed": 0
+    },
+    {
+      "name": "prisma_validate",
+      "command": "npm run prisma:validate",
+      "cwd": ".",
+      "status": "passed"
+    },
+    {
+      "name": "web_typecheck",
+      "command": "npm --workspace apps/web run typecheck",
+      "cwd": ".",
+      "status": "passed"
+    },
+    {
+      "name": "live_tms_population",
+      "command": "node scripts/certifications/transport-tms-local.js --api-url http://localhost:3000 --output docs/qa/evidence/transport-four-stage-develop-20261002/live-tms-certification-attempt.json",
+      "cwd": ".",
+      "status": "failed",
+      "reason": "API local unavailable: fetch failed"
+    }
+  ],
+  "promotion": {
+    "target": "develop",
+    "status": "blocked",
+    "reason": "The requested live data population and full four-stage HTTP certification did not run successfully."
+  }
+}
+
