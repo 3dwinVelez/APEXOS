@@ -1,0 +1,28 @@
+{
+  "change_id": "hr-report-modal-scroll-lock-20261001",
+  "commit": "4dc7a889fc381d3c7931bfb42bb8ae104f0b2150",
+  "checks": [
+    {
+      "name": "hr_report_modal_scroll_lock_tests",
+      "command": "node --experimental-strip-types --test test/hr-report-punch-alerts.test.mjs test/hr-reports-xlsx.test.mjs",
+      "cwd": "apps/web",
+      "status": "passed",
+      "passed": 6,
+      "failed": 0
+    },
+    {
+      "name": "hr_report_modal_scroll_lock_certification",
+      "command": "node scripts/certifications/hr-report-punch-alerts-local.js --changeId hr-report-modal-scroll-lock-20261001 --output docs/qa/evidence/hr-report-modal-scroll-lock-20261001/local-certification.json",
+      "cwd": ".",
+      "status": "passed",
+      "controls": 10
+    },
+    {
+      "name": "web_typecheck",
+      "command": "npm run typecheck",
+      "cwd": "apps/web",
+      "status": "passed"
+    }
+  ]
+}
+
