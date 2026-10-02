@@ -1,0 +1,44 @@
+{
+  "change_id": "hr-report-modal-scroll-lock-20261001",
+  "base_commits": {
+    "develop": "5d0753bbb0c7fdd5a12dbe50dd988a503b6823c1",
+    "main": "432f65aae7df42efab08e77df477ac4bbd501a9f"
+  },
+  "certified_commit": "4dc7a889fc381d3c7931bfb42bb8ae104f0b2150",
+  "scope_schema_version": 2,
+  "change_intent": {
+    "summary": "Bloquear el scroll del reporte de fondo y enfocar el modal de trazabilidad HR al abrir, conservando la visual del monitor.",
+    "modules": ["talento-humano", "hr-reports", "qa-certification"]
+  },
+  "expected_changes": [
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx" },
+    { "status": "M", "file": "apps/web/test/hr-report-punch-alerts.test.mjs" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-modal-scroll-lock-20261001/error.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-modal-scroll-lock-20261001/functional.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-modal-scroll-lock-20261001/local-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-modal-scroll-lock-20261001/platform-regression.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-modal-scroll-lock-20261001/preqa-approval-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-modal-scroll-lock-20261001/qa-gate.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-modal-scroll-lock-20261001/regression.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-modal-scroll-lock-20261001/scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-modal-scroll-lock-20261001/security-review.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-modal-scroll-lock-20261001/support-scripts.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-report-modal-scroll-lock-20261001/validation-checks.json" },
+    { "status": "M", "file": "scripts/certifications/hr-report-punch-alerts-local.js" }
+  ],
+  "allowed_paths": [
+    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+    "apps/web/test/hr-report-punch-alerts.test.mjs",
+    "scripts/certifications/hr-report-punch-alerts-local.js",
+    "docs/qa/evidence/hr-report-modal-scroll-lock-20261001/"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "hr_report_modal_scroll_lock",
+      "status": "passed",
+      "evidence": ["functional.md", "local-certification.json", "validation-checks.json"]
+    }
+  ]
+}
+
