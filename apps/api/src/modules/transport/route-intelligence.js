@@ -7,9 +7,24 @@ const GOOGLE_ROUTES_FIELD_MASK = [
   "routes.travelAdvisory.speedReadingIntervals",
   "routes.localizedValues",
 ].join(",");
+const GOOGLE_ROUTES_ENV_VARS = ["GOOGLE_ROUTES_API_KEY", "GOOGLE_MAPS_API_KEY", "GOOGLE_MAPS_ROUTES_API_KEY"];
+const GOOGLE_ROUTES_WAYPOINT_LIMIT = 25;
 
 function routesApiKey() {
   return process.env.GOOGLE_ROUTES_API_KEY || process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_MAPS_ROUTES_API_KEY || "";
+}
+
+function googleRoutesError(status) {
+  if (status === 400) return "Google Routes rechazo la solicitud (400): revisa coordenadas, hora de salida o cantidad de paradas.";
+  if (status === 403) return "Google Routes rechazo la clave (403): confirma que la clave exista, tenga la Routes API habilitada y que sus restricciones permitan este servidor.";
+  if (status === 429) return "Google Routes reporto cuota agotada (429): revisa el presupuesto o el limite de solicitudes de la clave.";
+  return `Google Routes respondio ${status}.`;
+}
+
+function statusForHttpError(status) {
+  if (status === 403) return "invalid_key";
+  if (status === 429) return "quota_exceeded";
+  return "unavailable";
 }
 
 function coordinateFromLegPoint(point) {
@@ -26,6 +41,28 @@ function endpointsFromLegs(legs = []) {
     origin: coordinateFromLegPoint(first?.from_coordinate),
     destination: coordinateFromLegPoint(last?.to_coordinate),
   };
+}
+
+function waypointsFromLegs(legs = []) {
+  const points = [];
+  for (let index = 0; index < legs.length - 1; index += 1) {
+    const point = coordinateFromLegPoint(legs[index]?.to_coordinate);
+    if (point) points.push(point);
+  }
+  return points
+    .filter((point, index) => index === 0 || point.latitude !== points[index - 1].latitude || point.longitude !== points[index - 1].longitude)
+    .slice(0, GOOGLE_ROUTES_WAYPOINT_LIMIT);
+}
+
+function safeDepartureTime(departureTime) {
+  const fallback = () => new Date(Date.now() + 5 * 60 * 1000);
+  const parsed = departureTime ? new Date(departureTime) : null;
+  if (!parsed || Number.isNaN(parsed.getTime())) return fallback();
+  const minTime = Date.now() - 7 * 24 * 3600 * 1000 + 60 * 1000;
+  const maxTime = Date.now() + 100 * 24 * 3600 * 1000 - 60 * 1000;
+  const time = parsed.getTime();
+  if (time < minTime || time > maxTime) return fallback();
+  return parsed;
 }
 
 function secondsFromGoogleDuration(value) {
@@ -119,7 +156,8 @@ async function enrichRouteWithGoogle({ legs, departureTime } = {}) {
     };
   }
 
-  const departure = departureTime ? new Date(departureTime) : new Date(Date.now() + 5 * 60 * 1000);
+  const intermediates = waypointsFromLegs(legs).map((location) => ({ location: { latLng: location } }));
+  const departure = safeDepartureTime(departureTime);
   const body = {
     origin: { location: { latLng: origin } },
     destination: { location: { latLng: destination } },
@@ -129,8 +167,9 @@ async function enrichRouteWithGoogle({ legs, departureTime } = {}) {
     computeAlternativeRoutes: true,
     languageCode: "es-CO",
     units: "METRIC",
-    departureTime: Number.isNaN(departure.getTime()) ? new Date(Date.now() + 5 * 60 * 1000).toISOString() : departure.toISOString(),
+    departureTime: departure.toISOString(),
   };
+  if (intermediates.length) body.intermediates = intermediates;
 
   try {
     const response = await fetch(GOOGLE_ROUTES_ENDPOINT, {
@@ -144,7 +183,13 @@ async function enrichRouteWithGoogle({ legs, departureTime } = {}) {
       signal: AbortSignal.timeout(4500),
     });
     if (!response.ok) {
-      return { provider: "google_routes", status: "unavailable", traffic_available: false, routes: [], message: `Google Routes respondio ${response.status}.` };
+      return {
+        provider: "google_routes",
+        status: statusForHttpError(response.status),
+        traffic_available: false,
+        routes: [],
+        message: googleRoutesError(response.status),
+      };
     }
     const payload = await response.json();
     const routes = (payload.routes || []).slice(0, 4).map(mapGoogleRoute).filter((route) => route.polyline);
@@ -152,6 +197,7 @@ async function enrichRouteWithGoogle({ legs, departureTime } = {}) {
       provider: "google_routes",
       status: routes.length ? "configured" : "empty",
       traffic_available: routes.some((route) => route.traffic_level !== "sin_lectura"),
+      waypoints_used: intermediates.length,
       routes,
       message: routes.length ? "Rutas y trafico calculados con Google Routes desde backend." : "Google Routes no devolvio rutas utilizables.",
     };
@@ -160,4 +206,49 @@ async function enrichRouteWithGoogle({ legs, departureTime } = {}) {
   }
 }
 
-module.exports = { enrichRouteWithGoogle };
+function routeIntelligenceConfig() {
+  const envVar = GOOGLE_ROUTES_ENV_VARS.find((name) => (process.env[name] || "").trim());
+  return {
+    provider: "google_routes",
+    configured: Boolean(envVar),
+    env_var: envVar || null,
+    waypoints_limit: GOOGLE_ROUTES_WAYPOINT_LIMIT,
+    security_notes: [
+      "La clave viaja solo en el header X-Goog-Api-Key del backend y nunca se devuelve al cliente.",
+      "Restringe la clave en Google Cloud a la Routes API y, si es posible, a las IPs del servidor.",
+    ],
+  };
+}
+
+async function connectionStatus({ probe } = {}) {
+  const config = routeIntelligenceConfig();
+  if (!probe) return { ...config, probe: { status: "not_run", message: "Usa ?probe=1 para validar la clave contra Google Routes." } };
+  if (!config.configured) {
+    return { ...config, probe: { status: "not_configured", message: "Define GOOGLE_ROUTES_API_KEY en el .env del backend para habilitar rutas y trafico real." } };
+  }
+  try {
+    const response = await fetch(GOOGLE_ROUTES_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": routesApiKey(),
+        "X-Goog-FieldMask": "routes.distanceMeters",
+      },
+      body: JSON.stringify({
+        origin: { location: { latLng: { latitude: 4.65, longitude: -74.1 } } },
+        destination: { location: { latLng: { latitude: 4.67, longitude: -74.05 } } },
+        travelMode: "DRIVE",
+        routingPreference: "TRAFFIC_AWARE_OPTIMAL",
+      }),
+      signal: AbortSignal.timeout(6000),
+    });
+    if (response.ok) {
+      return { ...config, probe: { status: "ok", message: "Google Routes respondio correctamente: la clave esta habilitada y acepta este servidor." } };
+    }
+    return { ...config, probe: { status: statusForHttpError(response.status), http_status: response.status, message: googleRoutesError(response.status) } };
+  } catch {
+    return { ...config, probe: { status: "unavailable", message: "Google Routes no respondio dentro del tiempo esperado; revisa la salida a internet del servidor." } };
+  }
+}
+
+module.exports = { enrichRouteWithGoogle, connectionStatus, routeIntelligenceConfig, waypointsFromLegs, safeDepartureTime };

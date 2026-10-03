@@ -2,7 +2,7 @@
 
 import { api } from "@/lib/api";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
-import { AlertTriangle, Calculator, CheckCircle2, ClipboardList, RefreshCw, Route, Settings2, Sparkles, Truck, X } from "lucide-react";
+import { AlertTriangle, Calculator, ClipboardList, RefreshCw, Route, Settings2, Sparkles, Truck, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import { FormEvent, ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
@@ -18,7 +18,7 @@ type Leg = { sequence: number; from: string; to: string; need_id?: number; dista
 type Quote = { rate_card_id: number; rate_code: string; rate_version: number; carrier_name: string; currency: string; components: Record<string, number>; total: number; carrier_score: number; rank: number; recommended: boolean; minimum_applied: boolean };
 type RouteTrafficSegment = { start_index: number; end_index: number; speed: string; label: string; severity: "alta" | "media" | "baja" | "sin_lectura" };
 type RouteIntelligenceRoute = { rank: number; distance_km: number | null; duration_minutes: number | null; static_duration_minutes: number | null; delay_minutes: number | null; traffic_level: "alto" | "medio" | "bajo" | "sin_lectura"; traffic_segments?: RouteTrafficSegment[]; pros?: string[]; cons?: string[]; issue_tags?: string[]; polyline: string | null };
-type RouteIntelligence = { provider: "google_routes"; status: "configured" | "not_configured" | "unavailable" | "invalid_coordinates" | "empty"; traffic_available: boolean; routes: RouteIntelligenceRoute[]; message?: string };
+type RouteIntelligence = { provider: "google_routes"; status: "configured" | "not_configured" | "unavailable" | "invalid_coordinates" | "invalid_key" | "quota_exceeded" | "empty"; traffic_available: boolean; routes: RouteIntelligenceRoute[]; message?: string };
 type Plan = { generated_at: string; strategy: string; origin: Origin; ordered_need_ids: number[]; route: { legs: Leg[]; distance_km: number; road_factor: number }; totals: { weight_kg: number; volume_m3: number; pallets: number; stop_count: number; distance_km: number }; planned_duration_minutes: number; capacity: { vehicle_id?: number; plate?: string; feasible: boolean; weight_feasible: boolean; volume_feasible: boolean; weight_capacity_kg: number; volume_capacity_m3: number }; quotes: Quote[]; warnings: string[]; route_intelligence?: RouteIntelligence };
 type Scenario = { id: string; strategy: string; strategyLabel: string; vehicle?: Vehicle; plan: Plan; quote?: Quote; cost: number | null; costPerKm: number | null; score: number; alerts: string[]; benefits: string[]; tradeoffs: string[]; recommended: boolean };
 
@@ -244,6 +244,10 @@ function buildScenario({ vehicle, strategy, plan, shortest, fastest, bestCostPer
     if (googleRoute.delay_minutes && googleRoute.delay_minutes >= 10) alerts.push(`Demora por tráfico aproximada de ${googleRoute.delay_minutes} min.`);
   } else if (routeIntel?.status === "not_configured") {
     tradeoffs.push("Tráfico Google pendiente de configurar en backend.");
+  } else if (routeIntel?.status === "invalid_key") {
+    tradeoffs.push("Clave Google Routes rechazada; revisa habilitación de la API y restricciones de la clave.");
+  } else if (routeIntel?.status === "quota_exceeded") {
+    tradeoffs.push("Cuota de Google Routes agotada; revisa límites o presupuesto de la clave.");
   } else if (routeIntel?.status === "unavailable") {
     tradeoffs.push("Google Routes no respondió; se usa respaldo vial disponible.");
   }
@@ -416,29 +420,6 @@ function stopsFromPlan(plan: Plan): PlanningRouteStop[] {
         ...plan.route.legs.map((leg) => ({ kind: "stop" as const, label: leg.to, latitude: leg.to_coordinate.latitude, longitude: leg.to_coordinate.longitude })),
       ]
     : [{ kind: "origin", label: plan.origin.name, latitude: plan.origin.latitude, longitude: plan.origin.longitude }];
-}
-
-function SequencePanel({ plan }: { plan: Plan }) {
-  return <section className="rounded-md border border-line bg-white p-4"><h3 className="font-semibold">Secuencia propuesta</h3><p className="mt-1 text-xs text-neutral-500">Orden sugerido para reducir reprocesos antes de crear el viaje.</p><div className="mt-3 space-y-2"><div className="flex gap-3 text-sm"><span className="grid h-7 w-7 place-items-center rounded-full bg-apex text-xs font-bold text-white">O</span><div><p className="font-semibold">{plan.origin.name}</p><p className="text-xs text-neutral-500">Origen · {plan.origin.city}</p></div></div>{plan.route.legs.filter((leg) => leg.need_id).map((leg) => <div className="flex gap-3 text-sm" key={`${leg.sequence}-${leg.need_id}`}><span className="grid h-7 w-7 place-items-center rounded-full bg-paper text-xs font-bold text-apex">{leg.sequence}</span><div><p className="font-semibold">{leg.to}</p><p className="text-xs text-neutral-500">{leg.distance_km} km desde {leg.from}</p></div></div>)}</div></section>;
-}
-
-function TariffPanel({ plan, selectedQuote, onSelectQuote }: { plan: Plan; selectedQuote: number | null; onSelectQuote: (id: number) => void }) {
-  return <section className="rounded-md border border-line bg-white p-4"><h3 className="font-semibold">Alternativas tarifarias</h3><div className="mt-3 grid gap-3 lg:grid-cols-2">{plan.quotes.map((quote) => <button className={`rounded-md border p-4 text-left ${selectedQuote === quote.rate_card_id ? "border-apex ring-1 ring-apex" : "border-line"}`} key={quote.rate_card_id} onClick={() => onSelectQuote(quote.rate_card_id)} type="button"><div className="flex justify-between"><span className="text-xs font-semibold uppercase text-apex">Opción {quote.rank}</span>{quote.recommended ? <CheckCircle2 className="text-emerald-600" size={18} /> : null}</div><p className="mt-2 font-semibold">{quote.carrier_name}</p><p className="text-xs text-neutral-500">{quote.rate_code} v{quote.rate_version} · puntaje {quote.carrier_score}</p><p className="mt-3 text-2xl font-semibold">{money(quote.total, quote.currency)}</p><p className="mt-2 text-xs text-neutral-500">Base {money(quote.components.base, quote.currency)} · distancia {money(quote.components.distance, quote.currency)} · combustible {money(quote.components.fuel, quote.currency)}</p>{quote.minimum_applied ? <p className="mt-1 text-xs text-amber-700">Se aplicó cobro mínimo</p> : null}</button>)}{!plan.quotes.length ? <p className="rounded-md bg-paper p-4 text-sm text-neutral-500 lg:col-span-2">No existe una tarifa activa que cubra este escenario.</p> : null}</div></section>;
-}
-
-function ScenarioInsight({ scenario }: { scenario: Scenario }) {
-  const notes = [...scenario.benefits, ...scenario.tradeoffs, ...scenario.alerts];
-  return <section className="rounded-md border border-line bg-white p-4">
-    <h3 className="font-semibold">Lectura operativa del escenario</h3>
-    <p className="mt-1 text-xs text-neutral-500">Estimación local con distancia, duración, tarifa y capacidad. Tráfico/obras reales requieren proveedor conectado desde backend.</p>
-    <div className="mt-3 grid gap-2 sm:grid-cols-3">
-      <MetricCompact label="ETA" value={`${Math.round(scenario.plan.planned_duration_minutes)} min`} />
-      <MetricCompact label="Riesgo vial" value={trafficLabel(scenario)} />
-      <MetricCompact label="Calidad" value={scenario.recommended ? "Óptima" : scenario.alerts.length ? "Revisar" : "Viable"} />
-    </div>
-    <ul className="mt-3 grid gap-2 text-sm text-neutral-600">{(notes.length ? notes : ["Escenario viable sin consideraciones adicionales."]).slice(0, 5).map((note) => <li className="rounded-md bg-paper px-3 py-2" key={note}>{note}</li>)}</ul>
-    <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">Google Maps Routes/Traffic puede conectarse como proveedor seguro del backend para tráfico en vivo, obras y ETA con hora de salida. No se debe exponer una API key en esta pantalla.</p>
-  </section>;
 }
 
 function trafficLabel(scenario: Scenario) {

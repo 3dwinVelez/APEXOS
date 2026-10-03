@@ -6,6 +6,7 @@ const tmsSchemas = require("./tms-schema");
 const tms = require("./tms-service");
 const tmsEvidence = require("./tms-evidence-storage");
 const settlement = require("./settlement-service");
+const { connectionStatus } = require("./route-intelligence");
 
 async function transportRoutes(fastify) {
   fastify.addHook("preHandler", fastify.authenticate);
@@ -68,6 +69,10 @@ async function transportRoutes(fastify) {
   fastify.get("/transport/planning/workbench", { preHandler: requirePermission("transport", "read") }, (request) => tms.getPlanningWorkbench(request.user?.tenant_id));
   fastify.post("/transport/planning/evaluate", { schema: tmsSchemas.planningSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.evaluatePlan(request.user?.tenant_id, request.body));
   fastify.post("/transport/planning/commit", { schema: tmsSchemas.commitPlanningSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.commitPlan(request.user?.tenant_id, request.user, request.body)));
+  fastify.get("/transport/route-intelligence/status", { preHandler: requirePermission("transport", "read") }, async (request) => {
+    const probe = ["1", "true", "yes"].includes(String(request.query?.probe || "").toLowerCase());
+    return connectionStatus({ probe });
+  });
 
   fastify.get("/transport/needs", { preHandler: requirePermission("transport", "read") }, (request) => tms.listNeeds(request.user?.tenant_id, request.query));
   fastify.post("/transport/needs", { schema: tmsSchemas.needSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.createNeed(request.user?.tenant_id, request.user, request.body)));

@@ -122,8 +122,16 @@ test("el planeador evalua consolidacion, capacidad, ruta y alternativas", () => 
   assert.match(planning, /Evaluar escenarios/);
   assert.match(planning, /Parámetros bloqueados del escenario/);
   assert.match(planning, /Monitor de escenarios logísticos/);
-  assert.match(planning, /Alternativas tarifarias/);
+  assert.match(planning, /Selecciona vehículo y compara 4 estrategias/);
+  assert.match(planning, /Sin tarifa activa para este escenario\./);
   assert.match(planning, /route_variants/);
+});
+
+test("el planeador distingue clave invalida y cuota agotada de Google Routes", () => {
+  assert.match(planning, /invalid_key/);
+  assert.match(planning, /quota_exceeded/);
+  assert.match(planning, /Clave Google Routes rechazada/);
+  assert.match(planning, /Cuota de Google Routes agotada/);
 });
 
 test("los tarifarios exponen vigencias, versiones y componentes de costo", () => {
