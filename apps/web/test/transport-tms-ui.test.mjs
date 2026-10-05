@@ -147,8 +147,21 @@ test("el mapa del planeador corrige tooltips duplicados, enriquece etiquetas y g
 });
 
 test("el planeador valida la conexión de Google Routes en vivo desde la pantalla", () => {
-  assert.match(planning, /\/transport\/route-intelligence\/status\?probe=1/);
+  assert.match(planning, /\/api\/v1\/transport\/route-intelligence\/status\?probe=1/);
+  assert.doesNotMatch(planning, /api<\{ probe[^\n]*\(`\/transport\/route-intelligence/);
   assert.match(planning, /Validar conexión/);
+  assert.match(planning, /reinicia el proceso de la API/);
+});
+
+test("el mapa del planeador detecta tramos difíciles reales y compara rutas", () => {
+  assert.match(planningMap, /annotations=speed,distance/);
+  assert.match(planningMap, /difficultSegments/);
+  assert.match(planningMap, /Tramo difícil/);
+  assert.match(planningMap, /Velocidad reducida/);
+  assert.match(planningMap, /Comparación de rutas/);
+  assert.match(planningMap, /Tramos difíciles/);
+  assert.match(planningMap, /Lectura estática de velocidad de vía/);
+  assert.match(planningMap, /tramos difíciles por velocidad de vía/);
 });
 
 test("los tarifarios exponen vigencias, versiones y componentes de costo", () => {

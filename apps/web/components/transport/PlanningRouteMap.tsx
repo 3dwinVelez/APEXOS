@@ -62,7 +62,54 @@ type RenderedRoute = PlanningMapScenario & {
   source: "google" | "osrm" | "planned";
 };
 
-type OsrmRoute = { distance: number; duration: number; geometry?: { coordinates?: number[][] } };
+type OsrmRoute = { distance: number; duration: number; geometry?: { coordinates?: number[][] }; legs?: { annotation?: { speed?: number[]; distance?: number[] } }[] };
+
+function difficultSegments(route: OsrmRoute): RouteTrafficSegment[] {
+  const legs = route.legs || [];
+  const averageSpeed = route.distance / Math.max(route.duration, 1);
+  const speeds = legs.flatMap((leg) => leg.annotation?.speed || []);
+  const distances = legs.flatMap((leg) => leg.annotation?.distance || []);
+  const severityOf = (speed: number): "alta" | "media" | null => {
+    if (speed <= 0) return null;
+    const ratio = speed / Math.max(averageSpeed, 0.5);
+    return ratio < 0.3 || speed < 5.5 ? "alta" : ratio < 0.6 ? "media" : null;
+  };
+  const groups: { start: number; end: number; severity: "alta" | "media"; distance: number }[] = [];
+  let current: { start: number; end: number; severity: "alta" | "media"; distance: number } | null = null;
+  let gap = 0;
+  for (let i = 0; i < speeds.length; i += 1) {
+    const severity = severityOf(speeds[i]);
+    if (severity) {
+      if (current) {
+        for (let g = i - gap; g < i; g += 1) current.distance += distances[g] || 0;
+        current.end = i + 1;
+        current.distance += distances[i] || 0;
+        if (severity === "alta") current.severity = "alta";
+      } else {
+        current = { start: i, end: i + 1, severity, distance: distances[i] || 0 };
+      }
+      gap = 0;
+    } else if (current) {
+      gap += 1;
+      if (gap > 2) {
+        if (current.distance >= 40) groups.push(current);
+        current = null;
+        gap = 0;
+      }
+    }
+  }
+  if (current && current.distance >= 40) groups.push(current);
+  return groups
+    .sort((a, b) => (a.severity === b.severity ? b.distance - a.distance : a.severity === "alta" ? -1 : 1))
+    .slice(0, 8)
+    .map((group) => ({
+      start_index: group.start,
+      end_index: group.end,
+      speed: "STATIC_SLOW",
+      label: `${group.severity === "alta" ? "Tramo difícil" : "Velocidad reducida"} · ${Math.round(group.distance)} m`,
+      severity: group.severity,
+    }));
+}
 
 function haversineKm(a: [number, number], b: [number, number]) {
   const toRad = (degrees: number) => (degrees * Math.PI) / 180;
@@ -94,7 +141,7 @@ function longestLeg(stops: PlanningRouteStop[]) {
 
 async function fetchOsrmRoutes(path: string, { alternatives = false } = {}) {
   try {
-    const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${path}?${alternatives ? "alternatives=true&" : ""}overview=full&geometries=geojson&steps=false`, { signal: AbortSignal.timeout(9000) });
+    const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${path}?${alternatives ? "alternatives=true&" : ""}overview=full&geometries=geojson&steps=false&annotations=speed,distance`, { signal: AbortSignal.timeout(9000) });
     if (!response.ok) return [] as OsrmRoute[];
     const payload = await response.json() as { routes?: OsrmRoute[] };
     const routes: OsrmRoute[] = payload.routes || [];
@@ -107,6 +154,8 @@ async function fetchOsrmRoutes(path: string, { alternatives = false } = {}) {
 function osrmVariantFromRoute(scenario: PlanningMapScenario, route: OsrmRoute, sequence: number): RenderedVariant | null {
   const coordinates = route.geometry?.coordinates;
   if (!coordinates?.length) return null;
+  const segments = difficultSegments(route);
+  const difficultCount = segments.length;
   return {
     id: `${scenario.id}-osrm-${sequence}`,
     label: sequence === 1 ? "Ruta recomendada" : `Ruta alterna ${sequence}`,
@@ -115,10 +164,12 @@ function osrmVariantFromRoute(scenario: PlanningMapScenario, route: OsrmRoute, s
     duration_min: Math.max(1, Math.round(route.duration / 60)),
     delay_min: null,
     traffic_level: "sin_lectura" as const,
-    traffic_segments: [],
+    traffic_segments: segments,
     pros: ["Ruta vial real calculada por OSRM."],
-    cons: ["Sin tráfico, obras o accidentes en vivo desde OSRM."],
-    issue_tags: ["sin tráfico en vivo"],
+    cons: difficultCount
+      ? [`${difficultCount} tramo(s) de velocidad reducida detectados en la vía.`, "Sin obras ni accidentes en vivo desde OSRM."]
+      : ["Sin tramos de velocidad reducida detectados en la vía.", "Sin obras ni accidentes en vivo desde OSRM."],
+    issue_tags: difficultCount ? [`${difficultCount} tramo(s) difícil(es)`, "sin tráfico en vivo"] : ["sin tráfico en vivo"],
   };
 }
 
@@ -138,7 +189,7 @@ async function detourVariantFor(scenario: PlanningMapScenario, main: OsrmRoute, 
   if (!variant) return null;
   variant.delay_min = Math.max(0, Math.round((route.duration - main.duration) / 60));
   variant.pros = ["Corredor vial real alternativo por vía desplazada (OSRM)."];
-  variant.issue_tags = ["corredor desplazado", "sin tráfico en vivo"];
+  variant.issue_tags = ["corredor desplazado", ...(variant.issue_tags || [])];
   return variant;
 }
 
@@ -348,7 +399,7 @@ export default function PlanningRouteMap({ scenarios, selectedId, onSelect }: { 
       if (cancelled) return;
       setRoutes(next);
       setActiveVariantId(next.find((route) => route.id === selected)?.variants[0]?.id || next[0]?.variants[0]?.id || null);
-      setStatus(next.some((route) => route.source === "google") ? "Rutas y alternativas calculadas con Google Routes desde backend." : next.some((route) => route.source === "osrm") ? "Rutas viales reales calculadas con OpenStreetMap/OSRM." : "Proveedor vial no disponible; se muestran rutas planeadas como respaldo.");
+      setStatus(next.some((route) => route.source === "google") ? "Rutas y alternativas calculadas con Google Routes desde backend." : next.some((route) => route.source === "osrm") ? "Rutas viales reales con OpenStreetMap/OSRM, incluidos tramos difíciles por velocidad de vía." : "Proveedor vial no disponible; se muestran rutas planeadas como respaldo.");
     }
     void load();
     return () => { cancelled = true; };
@@ -384,7 +435,7 @@ export default function PlanningRouteMap({ scenarios, selectedId, onSelect }: { 
                   {activeVariant?.id === variant.id ? (variant.traffic_segments || []).filter((segment) => segment.severity !== "sin_lectura").map((segment, segmentIndex) => {
                     const positions = segmentGeometry(variant.geometry, segment);
                     return positions.length > 1 ? <Polyline key={`${variant.id}-traffic-${segmentIndex}`} pathOptions={{ color: trafficColor(segment.severity), opacity: selected === route.id ? 0.9 : 0.35, weight: selected === route.id ? 8 : 5 }} positions={positions} eventHandlers={{ click: () => onSelect?.(route.id) }}>
-                      <Popup><strong>{segment.label}</strong><br />{variant.label}<br />{trafficLabel(variant.traffic_level)}</Popup>
+                      <Popup><strong>{segment.label}</strong><br />{variant.label}<br />{variant.traffic_level === "sin_lectura" ? "Lectura estática de velocidad de vía (OSRM)" : trafficLabel(variant.traffic_level)}</Popup>
                     </Polyline> : null;
                   }) : null}
                   {activeVariant?.id === variant.id ? (variant.traffic_segments || []).filter((segment) => segment.severity !== "sin_lectura" && segment.severity !== "baja").map((segment, segmentIndex) => {
@@ -421,10 +472,42 @@ export default function PlanningRouteMap({ scenarios, selectedId, onSelect }: { 
         <div className="pointer-events-none absolute bottom-5 left-5 z-[460] flex flex-wrap gap-2 rounded-md bg-white/95 p-2 text-[11px] shadow-sm backdrop-blur">
           <span className="font-semibold text-neutral-700">Condiciones:</span>
           <span className="text-emerald-700">verde flujo</span>
-          <span className="text-amber-700">ambar lento/obra posible</span>
-          <span className="text-rose-700">rojo congestion/incidente posible</span>
+          <span className="text-amber-700">ámbar velocidad reducida</span>
+          <span className="text-rose-700">rojo tramo difícil/congestión</span>
         </div>
       </div>
+      {selectedRoute?.variants.length ? <div className="border-t border-line px-4 py-3">
+        <h4 className="text-sm font-semibold">Comparación de rutas</h4>
+        <p className="mt-1 text-xs text-neutral-500">Compara distancia, ETA, demora y tramos difíciles antes de confirmar el viaje. Selecciona una fila para resaltarla en el mapa.</p>
+        <div className="mt-2 overflow-x-auto">
+          <table className="w-full min-w-[640px] text-left text-xs">
+            <thead>
+              <tr className="border-b border-line text-neutral-500">
+                <th className="py-2 pr-3 font-medium">Ruta</th>
+                <th className="py-2 pr-3 font-medium">Distancia</th>
+                <th className="py-2 pr-3 font-medium">ETA</th>
+                <th className="py-2 pr-3 font-medium">Demora</th>
+                <th className="py-2 pr-3 font-medium">Tramos difíciles</th>
+                <th className="py-2 font-medium">Tráfico</th>
+              </tr>
+            </thead>
+            <tbody>
+              {selectedRoute.variants.map((variant, index) => {
+                const difficult = (variant.traffic_segments || []).filter((segment) => segment.severity === "alta" || segment.severity === "media").length;
+                return <tr className={`cursor-pointer border-b border-line/60 ${activeVariant?.id === variant.id ? "bg-paper" : ""}`} key={variant.id} onClick={() => { setActiveVariantId(variant.id); onSelect?.(selectedRoute.id); }}>
+                  <td className="py-2 pr-3"><span className="inline-flex items-center gap-2 font-semibold"><span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />{variant.label}</span></td>
+                  <td className="py-2 pr-3">{variant.distance_km ?? selectedRoute.distance_km} km</td>
+                  <td className="py-2 pr-3">{variant.duration_min ?? selectedRoute.duration_min} min</td>
+                  <td className="py-2 pr-3">{variant.delay_min ? `+${variant.delay_min} min` : "—"}</td>
+                  <td className="py-2 pr-3">{difficult || "—"}</td>
+                  <td className="py-2">{trafficLabel(variant.traffic_level)}</td>
+                </tr>;
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-2 text-[11px] text-neutral-500">Los tramos difíciles provienen de la velocidad real de la vía (OSRM). Obras y accidentes en vivo requieren Google Routes conectado desde el backend.</p>
+      </div> : null}
     </section>
   );
 }

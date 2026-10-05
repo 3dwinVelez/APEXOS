@@ -446,10 +446,13 @@ function RouteProviderNotice({ scenarios }: { scenarios: Scenario[] }) {
     setProbing(true);
     setProbe(null);
     try {
-      const payload = await api<{ probe?: { status: string; message: string } }>(`/transport/route-intelligence/status?probe=1&_=${Date.now()}`);
+      const payload = await api<{ probe?: { status: string; message: string } }>(`/api/v1/transport/route-intelligence/status?probe=1&_=${Date.now()}`);
       setProbe(payload.probe || { status: "unavailable", message: "La API no devolvió resultado de la prueba de conexión." });
-    } catch {
-      setProbe({ status: "unavailable", message: "No se pudo contactar la API para validar la conexión con Google Routes." });
+    } catch (error) {
+      const status = (error as { status?: number }).status;
+      const detail = error instanceof Error ? error.message : "Error desconocido al validar la conexión.";
+      const hint = status === 404 ? " La API local no reconoce el endpoint de diagnóstico: reinicia el proceso de la API para cargar la versión con Google Routes." : status === 403 ? " Tu usuario necesita permiso de lectura del módulo Transporte." : "";
+      setProbe({ status: "unavailable", message: `${detail}.${hint}` });
     } finally {
       setProbing(false);
     }
