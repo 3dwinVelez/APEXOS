@@ -9,6 +9,7 @@ const operation = fs.readFileSync(path.resolve(directory, "../app/dashboard/tran
 const masters = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/maestros/page.tsx"), "utf8");
 const transportLayout = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/layout.tsx"), "utf8");
 const planning = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/planeacion/page.tsx"), "utf8");
+const planningMap = fs.readFileSync(path.resolve(directory, "../components/transport/PlanningRouteMap.tsx"), "utf8");
 const rates = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/tarifas/page.tsx"), "utf8");
 const configuration = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/configuracion/page.tsx"), "utf8");
 const orders = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/ordenes/page.tsx"), "utf8");
@@ -132,6 +133,22 @@ test("el planeador distingue clave invalida y cuota agotada de Google Routes", (
   assert.match(planning, /quota_exceeded/);
   assert.match(planning, /Clave Google Routes rechazada/);
   assert.match(planning, /Cuota de Google Routes agotada/);
+});
+
+test("el mapa del planeador corrige tooltips duplicados, enriquece etiquetas y garantiza alternativas reales", () => {
+  assert.doesNotMatch(planningMap, /permanent sticky/);
+  assert.match(planningMap, /detourViaPoint/);
+  assert.match(planningMap, /osrmVariantsForScenario/);
+  assert.match(planningMap, /complementWithOsrmDetours/);
+  assert.match(planningMap, /Ruta alterna/);
+  assert.match(planningMap, /delay_min/);
+  assert.match(planningMap, /Tráfico/);
+  assert.match(planningMap, /variants\.length < 2/);
+});
+
+test("el planeador valida la conexión de Google Routes en vivo desde la pantalla", () => {
+  assert.match(planning, /\/transport\/route-intelligence\/status\?probe=1/);
+  assert.match(planning, /Validar conexión/);
 });
 
 test("los tarifarios exponen vigencias, versiones y componentes de costo", () => {
