@@ -135,7 +135,7 @@ export default function TransportOrdersPage() {
           const synced = await api<Intake>("/api/v1/transport/orders/sync", { method: "POST" });
           if (active) {
             setIntake(synced);
-            setMessage(synced.created ? `${synced.created} pedidos nuevos llegaron desde APEX OS.` : "Los pedidos de APEX OS ya están al día.");
+            if (synced.created) setMessage(`${synced.created} pedidos nuevos llegaron desde APEX OS.`);
           }
         }
       } catch (error) {
@@ -155,7 +155,7 @@ export default function TransportOrdersPage() {
     try {
       const synced = await api<Intake>("/api/v1/transport/orders/sync", { method: "POST" });
       setIntake(synced);
-      setMessage(synced.created ? `${synced.created} pedidos nuevos recibidos.` : "Todo está sincronizado.");
+      if (synced.created) setMessage(`${synced.created} pedidos nuevos recibidos.`);
       await load();
     } finally {
       setSyncing(false);
@@ -333,28 +333,23 @@ export default function TransportOrdersPage() {
     await load();
   }
   return (
-    <div className="space-y-5">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-wide text-apex">
-          Paso 1 de 6 · Preparar
-        </p>
-        <h1 className="mt-1 text-3xl font-semibold">Preparar pedidos para transporte</h1>
-        <p className="mt-2 text-sm text-neutral-600">
-          Recibe pedidos de los módulos activos o cárgalos con Excel, consolídalos en planes de despacho y déjalos listos para evaluar escenarios en el paso 2.
-        </p>
-      </header>
+    <div className="space-y-4">
+      {intake?.mode === "connected" ? (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm">
+          <span className="inline-flex items-center gap-2 font-semibold text-emerald-800">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            Conexión automática activa
+          </span>
+          <span className="text-neutral-600">{intake.sources.includes("commercial") ? "Gestión Comercial" : "Ventas"}{intake.sources.length > 1 ? " y Ventas envían" : " envía"} pedidos sin digitar.</span>
+          {intake.reviewed !== undefined ? <span className="text-xs text-neutral-500">Revisados {intake.reviewed} · Nuevos {intake.created || 0} · Ya existentes {intake.existing || 0}</span> : null}
+          <button className="ml-auto inline-flex h-8 items-center rounded-md bg-apex px-3 text-xs font-semibold text-white disabled:opacity-60" disabled={!canWrite || syncing} onClick={() => void syncOrders()} type="button">{syncing ? "Sincronizando…" : "Actualizar pedidos"}</button>
+        </div>
+      ) : null}
       {message ? (
         <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm">
           {message}
         </div>
       ) : null}
-      {intake?.mode === "connected" ? <section className="rounded-md border border-emerald-200 bg-emerald-50 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div><p className="text-xs font-semibold uppercase text-emerald-800">Conexión automática activa</p><h2 className="font-semibold">Pedidos de APEX OS</h2><p className="mt-1 text-sm text-neutral-700">{intake.sources.includes("commercial") ? "Gestión Comercial" : "Ventas"}{intake.sources.length > 1 ? " y Ventas envían" : " envía"} sus pedidos a Transporte sin volver a digitarlos.</p></div>
-          <button className="rounded-md bg-apex px-4 py-2 text-sm font-semibold text-white disabled:opacity-60" disabled={!canWrite || syncing} onClick={() => void syncOrders()}>{syncing ? "Sincronizando…" : "Actualizar pedidos"}</button>
-        </div>
-        {intake.reviewed !== undefined ? <p className="mt-3 text-xs text-neutral-600">Revisados: {intake.reviewed} · Nuevos: {intake.created || 0} · Ya existentes: {intake.existing || 0}</p> : null}
-      </section> : null}
       <section className="overflow-hidden rounded-md border border-line bg-white">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line p-4">
           <div className="flex items-center gap-3">

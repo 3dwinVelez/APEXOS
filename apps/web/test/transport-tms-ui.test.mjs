@@ -96,8 +96,14 @@ test("las pantallas críticas explican la tarea y el siguiente paso en lenguaje 
   assert.match(operation, /Prepara el primer pedido para comenzar/);
   assert.match(packing, /Empieza aquí/);
   assert.match(packing, /Todavía no hay una simulación/);
-  assert.match(orders, /Paso 1 de 6 · Preparar/);
   assert.match(orders, /Debes completar/);
+});
+
+test("las ordenes abren con el monitor como protagonista sin encabezado decorativo", () => {
+  assert.doesNotMatch(orders, /<h1/);
+  assert.doesNotMatch(orders, /Paso 1 de 6/);
+  assert.match(orders, /Monitor de pedidos/);
+  assert.match(orders, /Actualizar pedidos/);
 });
 
 test("cubicaje respeta las restricciones visuales del Design System", () => {
