@@ -766,7 +766,7 @@ async function listNeeds(tenantId, query = {}) {
 
     where: { ...(query.status ? { status: query.status } : {}), ...(query.due_from || query.due_to ? { due_at: { ...(query.due_from ? { gte: dateValue(query.due_from, "Desde") } : {}), ...(query.due_to ? { lte: dateValue(query.due_to, "Hasta") } : {}) } } : {}) },
 
-    include: { delivery_point: true, lines: true, trip_links: { include: { trip: true } } }, orderBy: [{ due_at: "asc" }, { priority: "asc" }], take: Math.min(numberValue(query.limit, 100), 200)
+    include: { delivery_point: true, plan: true, lines: true, trip_links: { include: { trip: true } } }, orderBy: [{ due_at: "asc" }, { priority: "asc" }], take: Math.min(numberValue(query.limit, 100), 200)
 
   }));
 
@@ -784,9 +784,19 @@ async function getPlanningWorkbench(tenantId) {
 
     });
 
+    const plans = await prisma.transportPlan.findMany({
+
+      include: { origin: true, needs: { include: { delivery_point: true }, orderBy: [{ due_at: "asc" }, { priority: "asc" }] } },
+
+      orderBy: [{ due_date: "asc" }, { created_at: "desc" }]
+
+    });
+
+    const unassigned = needs.filter((need) => !need.plan_id);
+
     const grouped = new Map();
 
-    for (const need of needs) {
+    for (const need of unassigned) {
 
       const day = need.due_at.toISOString().slice(0, 10);
 
@@ -816,7 +826,255 @@ async function getPlanningWorkbench(tenantId) {
 
     }
 
-    return { pending_needs: needs.length, consolidation_groups: [...grouped.values()] };
+    return {
+
+      pending_needs: unassigned.length, planned_needs: needs.length - unassigned.length,
+
+      plans: plans.map(withPlanTotals), consolidation_groups: [...grouped.values()]
+
+    };
+
+  });
+
+}
+
+
+
+const planInclude = { origin: true, needs: { include: { delivery_point: true }, orderBy: [{ due_at: "asc" }, { priority: "asc" }] } };
+
+
+
+function withPlanTotals(plan) {
+
+  return {
+
+    ...plan,
+
+    need_ids: plan.needs.map((need) => need.id),
+
+    total_weight_kg: plan.needs.reduce((sum, need) => sum + numberValue(need.weight_kg), 0),
+
+    total_volume_m3: plan.needs.reduce((sum, need) => sum + numberValue(need.volume_m3), 0),
+
+    total_pallets: plan.needs.reduce((sum, need) => sum + numberValue(need.pallets), 0),
+
+    stop_count: plan.needs.length
+
+  };
+
+}
+
+
+
+async function nextPlanCode() {
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+
+    const count = await prisma.transportPlan.count();
+
+    const candidate = `PLAN-${String(count + 1 + attempt).padStart(4, "0")}`;
+
+    const existing = await prisma.transportPlan.findFirst({ where: { code: candidate } });
+
+    if (!existing) return candidate;
+
+  }
+
+  return `PLAN-${Date.now().toString(36).toUpperCase()}`;
+
+}
+
+
+
+async function listPlans(tenantId, query = {}) {
+
+  return prisma.runWithTenant(tenantId, async () => {
+
+    const plans = await prisma.transportPlan.findMany({
+
+      where: { ...(query.status ? { status: String(query.status) } : {}) },
+
+      include: planInclude, orderBy: [{ due_date: "asc" }, { created_at: "desc" }], take: Math.min(numberValue(query.limit, 100), 200)
+
+    });
+
+    return plans.map(withPlanTotals);
+
+  });
+
+}
+
+
+
+async function getPlan(tenantId, id) {
+
+  return prisma.runWithTenant(tenantId, async () => withPlanTotals(await prisma.transportPlan.findFirstOrThrow({ where: { id: Number(id) }, include: planInclude })));
+
+}
+
+
+
+async function createPlan(tenantId, user, input) {
+
+  return prisma.runWithTenant(tenantId, async () => {
+
+    const origin = await prisma.transportOrigin.findFirstOrThrow({ where: { id: Number(input.origin_id) } });
+
+    const code = normalizedCode(input.code) || await nextPlanCode();
+
+    const duplicated = await prisma.transportPlan.findFirst({ where: { code } });
+
+    if (duplicated) throw appError(409, "TMS_PLAN_CODE_DUPLICATED", `Ya existe un plan con el codigo ${code}.`);
+
+    const plan = await prisma.transportPlan.create({
+
+      data: {
+
+        code, name: String(input.name || "").trim() || code, origin_id: origin.id,
+
+        service_level: input.service_level || "normal",
+
+        due_date: input.due_date ? dateValue(input.due_date, "Fecha objetivo") : null,
+
+        notes: input.notes || null, created_by: user?.id || null
+
+      }, include: planInclude
+
+    });
+
+    return withPlanTotals(plan);
+
+  });
+
+}
+
+
+
+async function updatePlan(tenantId, id, input) {
+
+  return prisma.runWithTenant(tenantId, async () => {
+
+    const plan = await prisma.transportPlan.findFirstOrThrow({ where: { id: Number(id) } });
+
+    if (plan.status === "confirmado") throw appError(409, "TMS_PLAN_CONFIRMED", "El plan ya fue confirmado en un viaje y no admite cambios.");
+
+    if (input.status && !["borrador", "listo"].includes(input.status)) throw appError(400, "TMS_INVALID_PLAN_STATUS", "El estado del plan solo puede ser borrador o listo; la confirmacion ocurre al crear el viaje.");
+
+    const data = {};
+
+    if (input.name !== undefined) data.name = String(input.name).trim() || plan.name;
+
+    if (input.service_level !== undefined) data.service_level = input.service_level;
+
+    if (input.due_date !== undefined) data.due_date = input.due_date ? dateValue(input.due_date, "Fecha objetivo") : null;
+
+    if (input.notes !== undefined) data.notes = input.notes || null;
+
+    if (input.status !== undefined) data.status = input.status;
+
+    return withPlanTotals(await prisma.transportPlan.update({ where: { id: plan.id }, data, include: planInclude }));
+
+  });
+
+}
+
+
+
+async function deletePlan(tenantId, id) {
+
+  return prisma.runWithTenant(tenantId, async () => {
+
+    const plan = await prisma.transportPlan.findFirstOrThrow({ where: { id: Number(id) }, include: { needs: true } });
+
+    if (plan.status === "confirmado") throw appError(409, "TMS_PLAN_CONFIRMED", "El plan confirmado no puede eliminarse.");
+
+    if (plan.needs.length) throw appError(409, "TMS_PLAN_NOT_EMPTY", "Retira los pedidos del plan antes de eliminarlo.");
+
+    await prisma.transportPlan.delete({ where: { id: plan.id } });
+
+    return { deleted: true, id: plan.id, code: plan.code };
+
+  });
+
+}
+
+
+
+async function addPlanNeeds(tenantId, id, input) {
+
+  return prisma.runWithTenant(tenantId, async () => {
+
+    const plan = await prisma.transportPlan.findFirstOrThrow({ where: { id: Number(id) } });
+
+    if (plan.status === "confirmado") throw appError(409, "TMS_PLAN_CONFIRMED", "El plan ya fue confirmado en un viaje y no admite cambios.");
+
+    const needIds = [...new Set((input.need_ids || []).map(Number))];
+
+    if (!needIds.length) throw appError(400, "TMS_PLAN_NEEDS_REQUIRED", "Selecciona al menos un pedido para agregar al plan.");
+
+    const foundNeeds = await prisma.transportNeed.findMany({ where: { id: { in: needIds } } });
+
+    if (foundNeeds.length !== needIds.length) throw appError(404, "TMS_NEEDS_NOT_FOUND", "Uno o mas pedidos no existen en la empresa activa.");
+
+    const plannedElsewhere = foundNeeds.filter((need) => need.plan_id && need.plan_id !== plan.id);
+
+    if (plannedElsewhere.length) throw appError(409, "TMS_NEED_ALREADY_PLANNED", "Algunos pedidos ya pertenecen a otro plan.", { codes: plannedElsewhere.map((need) => need.code) });
+
+    const notPending = foundNeeds.filter((need) => need.status !== "pendiente");
+
+    if (notPending.length) throw appError(409, "TMS_NEEDS_NOT_PLANNABLE", "Solo se pueden agregar pedidos completos y pendientes.", { codes: notPending.map((need) => need.code) });
+
+    const wrongOrigin = foundNeeds.filter((need) => need.origin_id && need.origin_id !== plan.origin_id);
+
+    if (wrongOrigin.length) throw appError(409, "TMS_INCOMPATIBLE_ORIGIN", "Todos los pedidos deben salir del origen del plan.", { codes: wrongOrigin.map((need) => need.code) });
+
+    await prisma.transportNeed.updateMany({ where: { tenant_id: String(tenantId), id: { in: needIds } }, data: { plan_id: plan.id } });
+
+    return withPlanTotals(await prisma.transportPlan.findFirstOrThrow({ where: { id: plan.id }, include: planInclude }));
+
+  });
+
+}
+
+
+
+async function removePlanNeed(tenantId, id, needId) {
+
+  return prisma.runWithTenant(tenantId, async () => {
+
+    const plan = await prisma.transportPlan.findFirstOrThrow({ where: { id: Number(id) } });
+
+    if (plan.status === "confirmado") throw appError(409, "TMS_PLAN_CONFIRMED", "El plan ya fue confirmado en un viaje y no admite cambios.");
+
+    const need = await prisma.transportNeed.findFirst({ where: { id: Number(needId), plan_id: plan.id } });
+
+    if (!need) throw appError(404, "TMS_NEED_NOT_IN_PLAN", "El pedido no pertenece a este plan.");
+
+    await prisma.transportNeed.updateMany({ where: { tenant_id: String(tenantId), id: need.id }, data: { plan_id: null } });
+
+    return withPlanTotals(await prisma.transportPlan.findFirstOrThrow({ where: { id: plan.id }, include: planInclude }));
+
+  });
+
+}
+
+
+
+async function confirmPlanFromCommit(tenantId, planId, orderedNeedIds) {
+
+  return prisma.runWithTenant(tenantId, async () => {
+
+    const draft = await prisma.transportPlan.findFirstOrThrow({ where: { id: planId }, include: { needs: true } });
+
+    if (draft.status === "confirmado") throw appError(409, "TMS_PLAN_CONFIRMED", "El plan ya fue confirmado en otro viaje.");
+
+    const memberIds = new Set(draft.needs.map((need) => need.id));
+
+    const outsiders = orderedNeedIds.filter((needId) => !memberIds.has(needId));
+
+    if (outsiders.length) throw appError(409, "TMS_PLAN_MISMATCH", "El escenario contiene pedidos que no pertenecen al plan.", { need_ids: outsiders });
+
+    return withPlanTotals(await prisma.transportPlan.update({ where: { id: draft.id }, data: { status: "confirmado" }, include: planInclude }));
 
   });
 
@@ -985,11 +1243,15 @@ async function commitPlan(tenantId, user, input) {
 
       strategy: plan.strategy, rate_card_id: quote.rate_card_id, rate_code: quote.rate_code, rate_version: quote.rate_version,
 
-      quote_breakdown: quote.components, optimized_at: plan.generated_at, route_legs: plan.route.legs
+      quote_breakdown: quote.components, optimized_at: plan.generated_at, route_legs: plan.route.legs,
+
+      ...(input.plan_id ? { plan_id: Number(input.plan_id) } : {})
 
     }
 
   };
+
+  if (input.plan_id) await confirmPlanFromCommit(tenantId, Number(input.plan_id), plan.ordered_need_ids);
 
   const trip = await createTrip(tenantId, user, {
 
@@ -2155,6 +2417,8 @@ module.exports = {
 
   listRateCards, saveRateCard, versionRateCard, activateRateCard, deactivateRateCard, createNeed, listNeeds, getPlanningWorkbench, evaluatePlan, commitPlan,
 
+  listPlans, getPlan, createPlan, updatePlan, deletePlan, addPlanNeeds, removePlanNeed,
+
   createTrip, listTrips, getTrip, assignTrip, transitionTrip, recordTripEvent, registerDeliveryAttempt,
 
   getOrder, updateOrder, cancelOrder, importOrdersCsv, getOrderIntake, syncConnectedOrders, connectedOrderSources, transportIntakeMode, getOrderTracking, getOrderPod, parseCsv, recordGpsBatch, getTripTracking, recordStopVisit, getLiveMonitoring, listNotifications, sendNotification, listPods, getPod, getPodStats, previewSettlement, settlementLines, remainingDeliveryLines, createSettlement, approveSettlement, getControlTower
@@ -2163,4 +2427,4 @@ module.exports = {
 
 
 
-for (const name of ["createNeed", "createTrip", "commitPlan", "assignTrip", "transitionTrip", "registerDeliveryAttempt", "createSettlement", "approveSettlement", "updateOrder", "cancelOrder", "importOrdersCsv", "syncConnectedOrders", "saveTmsConfig", "recordStopVisit"]) module.exports[name] = atomicMutation(module.exports[name]);
+for (const name of ["createNeed", "createTrip", "commitPlan", "assignTrip", "transitionTrip", "registerDeliveryAttempt", "createSettlement", "approveSettlement", "updateOrder", "cancelOrder", "importOrdersCsv", "syncConnectedOrders", "saveTmsConfig", "recordStopVisit", "createPlan", "updatePlan", "deletePlan", "addPlanNeeds", "removePlanNeed"]) module.exports[name] = atomicMutation(module.exports[name]);

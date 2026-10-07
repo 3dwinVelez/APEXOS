@@ -69,6 +69,14 @@ async function transportRoutes(fastify) {
   fastify.get("/transport/planning/workbench", { preHandler: requirePermission("transport", "read") }, (request) => tms.getPlanningWorkbench(request.user?.tenant_id));
   fastify.post("/transport/planning/evaluate", { schema: tmsSchemas.planningSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.evaluatePlan(request.user?.tenant_id, request.body));
   fastify.post("/transport/planning/commit", { schema: tmsSchemas.commitPlanningSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.commitPlan(request.user?.tenant_id, request.user, request.body)));
+
+  fastify.get("/transport/plans", { preHandler: requirePermission("transport", "read") }, (request) => tms.listPlans(request.user?.tenant_id, request.query));
+  fastify.post("/transport/plans", { schema: tmsSchemas.planCreateSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.createPlan(request.user?.tenant_id, request.user, request.body)));
+  fastify.get("/transport/plans/:id", { preHandler: requirePermission("transport", "read") }, (request) => tms.getPlan(request.user?.tenant_id, request.params.id));
+  fastify.put("/transport/plans/:id", { schema: tmsSchemas.planUpdateSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.updatePlan(request.user?.tenant_id, request.params.id, request.body));
+  fastify.delete("/transport/plans/:id", { preHandler: requirePermission("transport", "write") }, (request) => tms.deletePlan(request.user?.tenant_id, request.params.id));
+  fastify.post("/transport/plans/:id/needs", { schema: tmsSchemas.planNeedsSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.addPlanNeeds(request.user?.tenant_id, request.params.id, request.body)));
+  fastify.delete("/transport/plans/:id/needs/:needId", { preHandler: requirePermission("transport", "write") }, (request) => tms.removePlanNeed(request.user?.tenant_id, request.params.id, request.params.needId));
   fastify.get("/transport/route-intelligence/status", { preHandler: requirePermission("transport", "read") }, async (request) => {
     const probe = ["1", "true", "yes"].includes(String(request.query?.probe || "").toLowerCase());
     return connectionStatus({ probe });

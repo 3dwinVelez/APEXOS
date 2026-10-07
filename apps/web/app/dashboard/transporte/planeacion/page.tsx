@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { AlertTriangle, Calculator, ClipboardList, RefreshCw, Route, Settings2, Sparkles, Truck, X } from "lucide-react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { FormEvent, ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import type { PlanningMapScenario, PlanningRouteStop } from "@/components/transport/PlanningRouteMap";
@@ -11,7 +12,9 @@ import type { PlanningMapScenario, PlanningRouteStop } from "@/components/transp
 type Origin = { id: number; code: string; name: string; city: string; latitude: number; longitude: number };
 type Need = { id: number; code: string; due_at: string; weight_kg: number; volume_m3: number; delivery_point: { name: string; city: string } };
 type Group = { key: string; origin_id?: number; origin?: Origin; service_level: string; required_vehicle_type?: string; due_date: string; need_ids: number[]; needs: Need[]; total_weight_kg: number; total_volume_m3: number; total_pallets: number };
-type Workbench = { pending_needs: number; consolidation_groups: Group[] };
+type DispatchPlan = { id: number; code: string; name: string; origin_id: number; origin?: Origin; service_level: string; due_date: string | null; status: string; needs: Need[]; need_ids: number[]; total_weight_kg: number; total_volume_m3: number; total_pallets: number; stop_count: number };
+type EvalTarget = { key: string; kind: "plan" | "group"; plan_id?: number; origin_id?: number; origin?: Origin; service_level: string; due_date?: string | null; need_ids: number[]; needs: Need[]; total_weight_kg: number; total_volume_m3: number; name: string };
+type Workbench = { pending_needs: number; planned_needs: number; plans: DispatchPlan[]; consolidation_groups: Group[] };
 type Vehicle = { id: number; plate: string; type?: string; master_status: string; capacity_value?: number; capacity_unit?: string; volume_available?: number };
 type Coordinate = { latitude: number; longitude: number };
 type Leg = { sequence: number; from: string; to: string; need_id?: number; distance_km: number; from_coordinate: Coordinate; to_coordinate: Coordinate };
@@ -37,10 +40,10 @@ const PlanningRouteMap = dynamic(() => import("@/components/transport/PlanningRo
 });
 
 export default function TransportPlanningPage() {
-  const [workbench, setWorkbench] = useState<Workbench>({ pending_needs: 0, consolidation_groups: [] });
+  const [workbench, setWorkbench] = useState<Workbench>({ pending_needs: 0, planned_needs: 0, plans: [], consolidation_groups: [] });
   const [origins, setOrigins] = useState<Origin[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  const [selection, setSelection] = useState<EvalTarget | null>(null);
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);
   const [selectedQuote, setSelectedQuote] = useState<number | null>(null);
@@ -72,6 +75,19 @@ export default function TransportPlanningPage() {
 
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
+    const planParam = new URLSearchParams(window.location.search).get("plan");
+    if (!planParam || loading) return;
+    const matched = workbench.plans.find((plan) => plan.id === Number(planParam) && plan.status !== "confirmado");
+    window.history.replaceState(null, "", "/dashboard/transporte/planeacion");
+    if (matched) {
+      const target = targetFromPlan(matched);
+      setSelection(target);
+      void evaluateScenarios(target);
+    }
+    // evaluateScenarios se omite a propósito: se dispara una sola vez al llegar el workbench con ?plan=
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workbench, loading]);
+  useEffect(() => {
     if (!scenarios.length) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -83,7 +99,7 @@ export default function TransportPlanningPage() {
     };
   }, [scenarios.length]);
 
-  const selectedSummary = selectedGroup ? `${selectedGroup.needs.length} entregas · ${selectedGroup.total_weight_kg.toLocaleString()} kg · ${selectedGroup.total_volume_m3.toLocaleString()} m³` : "Selecciona una consolidación para comenzar";
+  const selectedSummary = selection ? `${selection.name} · ${selection.needs.length} entregas · ${selection.total_weight_kg.toLocaleString()} kg · ${selection.total_volume_m3.toLocaleString()} m³` : "Selecciona un plan o consolidación para comenzar";
   const selectedScenario = scenarios.find((scenario) => scenario.id === selectedScenarioId) || scenarios.find((scenario) => scenario.recommended) || scenarios[0];
 
   function closeScenarioMonitor() {
@@ -92,12 +108,12 @@ export default function TransportPlanningPage() {
     setSelectedQuote(null);
   }
 
-  async function evaluateScenarios(group?: Group) {
-    const target = group || selectedGroup;
-    if (!target) return;
-    const originId = target.origin_id || target.origin?.id;
+  async function evaluateScenarios(target?: EvalTarget) {
+    const evalTarget = target || selection;
+    if (!evalTarget) return;
+    const originId = evalTarget.origin_id || evalTarget.origin?.id;
     if (!originId) {
-      setError("La consolidación seleccionada no tiene origen válido para evaluar.");
+      setError("El objetivo seleccionado no tiene origen válido para evaluar.");
       return;
     }
     setEvaluating(true);
@@ -109,10 +125,10 @@ export default function TransportPlanningPage() {
           method: "POST",
           body: JSON.stringify({
             origin_id: originId,
-            need_ids: target.need_ids,
+            need_ids: evalTarget.need_ids,
             vehicle_id: vehicle?.id,
             strategy: strategy.value,
-            service_level: target.service_level,
+            service_level: evalTarget.service_level,
             return_to_origin: false,
           }),
         });
@@ -146,7 +162,7 @@ export default function TransportPlanningPage() {
 
   async function commit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!selectedGroup || !selectedScenario || !selectedQuote) return;
+    if (!selection || !selectedScenario || !selectedQuote) return;
     const data = new FormData(event.currentTarget);
     setCommitting(true);
     try {
@@ -155,11 +171,12 @@ export default function TransportPlanningPage() {
         body: JSON.stringify({
           code: data.get("code"),
           origin_id: selectedScenario.plan.origin.id,
-          need_ids: selectedGroup.need_ids,
+          need_ids: selection.need_ids,
+          plan_id: selection.plan_id,
           rate_card_id: selectedQuote,
           vehicle_id: selectedScenario.plan.capacity.vehicle_id || selectedScenario.vehicle?.id,
           strategy: selectedScenario.strategy,
-          service_level: selectedGroup.service_level,
+          service_level: selection.service_level,
           planned_departure: data.get("planned_departure") || undefined,
           planned_arrival: data.get("planned_arrival") || undefined,
           return_to_origin: selectedScenario.plan.route.legs.some((leg) => !leg.need_id),
@@ -167,7 +184,7 @@ export default function TransportPlanningPage() {
       });
       setMessage(`Viaje ${result.trip.code} creado con el escenario recomendado y trazabilidad completa.`);
       closeScenarioMonitor();
-      setSelectedGroup(null);
+      setSelection(null);
       await load();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "No fue posible confirmar el plan.");
@@ -182,8 +199,8 @@ export default function TransportPlanningPage() {
         <div><p className="text-xs font-semibold uppercase tracking-wide text-apex">Decision logistica</p><h1 className="mt-1 text-3xl font-semibold">Planeador de transporte</h1><p className="mt-2 max-w-2xl text-sm text-neutral-600">Consolida demanda pendiente, evalúa escenarios por fila y confirma el viaje con rutas y costos comparables.</p></div>
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <ProcessStep icon={ClipboardList} title="1. Elige demanda" active={!selectedGroup} />
-        <ProcessStep icon={Settings2} title="2. Evalúa escenarios" active={Boolean(selectedGroup && !scenarios.length)} />
+        <ProcessStep icon={ClipboardList} title="1. Elige un plan" active={!selection} />
+        <ProcessStep icon={Settings2} title="2. Evalúa escenarios" active={Boolean(selection && !scenarios.length)} />
         <ProcessStep icon={Calculator} title="3. Revisa y confirma" active={Boolean(scenarios.length)} />
       </div>
     </header>
@@ -194,39 +211,91 @@ export default function TransportPlanningPage() {
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line p-4">
           <div className="flex items-center gap-3">
             <Sparkles className="text-apex" size={20} />
-            <div><h2 className="font-semibold">Monitor de consolidaciones sugeridas</h2><p className="text-xs text-neutral-500">{workbench.pending_needs} necesidades pendientes · usa el botón de cada fila para evaluar</p></div>
+            <div><h2 className="font-semibold">Monitor de planes de despacho</h2><p className="text-xs text-neutral-500">{workbench.planned_needs} pedidos en planes · {workbench.pending_needs} sin asignar · usa el botón de cada fila para evaluar</p></div>
           </div>
           <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold hover:bg-paper disabled:opacity-50" disabled={loading} onClick={() => void load()} type="button"><RefreshCw size={15} />{loading ? "Actualizando..." : "Actualizar demanda"}</button>
         </div>
         <div className="max-h-[520px] overflow-auto p-3">
           <div className="min-w-[1080px] overflow-hidden rounded-md border border-line">
             <div className="grid grid-cols-[64px_1.5fr_0.7fr_0.7fr_0.7fr_0.7fr_auto] gap-3 border-b border-line bg-paper px-3 py-2 text-xs font-semibold uppercase text-neutral-500">
-              <span>#</span><span>Consolidación</span><span>Vence</span><span>Entregas</span><span>Peso</span><span>Volumen</span><span>Acción</span>
+              <span>#</span><span>Plan / consolidación</span><span>Vence</span><span>Entregas</span><span>Peso</span><span>Volumen</span><span>Acción</span>
             </div>
-          {workbench.consolidation_groups.map((group, index) => (
-            <div className={`grid cursor-pointer grid-cols-[64px_1.5fr_0.7fr_0.7fr_0.7fr_0.7fr_auto] items-center gap-3 border-b border-line px-3 py-3 text-left text-sm transition last:border-b-0 hover:bg-paper ${selectedGroup?.key === group.key ? "bg-emerald-50 text-apex" : "bg-white"}`} key={group.key} role="button" tabIndex={0} onClick={() => { setSelectedGroup(group); closeScenarioMonitor(); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedGroup(group); closeScenarioMonitor(); } }}>
-              <span className="grid h-8 w-8 place-items-center rounded-md bg-paper text-sm font-semibold text-apex">{index + 1}</span>
-              <span><span className="block font-semibold text-neutral-900">{group.origin?.name || "Origen por completar"}</span><span className="mt-1 block text-xs text-neutral-600">{group.service_level}</span></span>
+          {workbench.plans.map((dispatchPlan) => {
+            const rowKey = `plan-${dispatchPlan.id}`;
+            const confirmed = dispatchPlan.status === "confirmado";
+            const selectPlan = () => { const target = targetFromPlan(dispatchPlan); setSelection(target); closeScenarioMonitor(); };
+            return (
+            <div className={`grid cursor-pointer grid-cols-[64px_1.5fr_0.7fr_0.7fr_0.7fr_0.7fr_auto] items-center gap-3 border-b border-line px-3 py-3 text-left text-sm transition last:border-b-0 hover:bg-paper ${selection?.key === rowKey ? "bg-emerald-50 text-apex" : "bg-white"}`} key={rowKey} role="button" tabIndex={0} onClick={selectPlan} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectPlan(); } }}>
+              <span className="grid h-8 w-8 place-items-center rounded-md bg-apex/10 text-xs font-semibold text-apex">{dispatchPlan.code}</span>
+              <span><span className="block font-semibold text-neutral-900">{dispatchPlan.name} <span className={`ml-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${dispatchPlan.status === "confirmado" ? "bg-emerald-100 text-emerald-800" : dispatchPlan.status === "listo" ? "bg-apex/10 text-apex" : "bg-paper text-neutral-500"}`}>{dispatchPlan.status}</span></span><span className="mt-1 block text-xs text-neutral-600">{dispatchPlan.origin?.name || "Origen"} · {dispatchPlan.service_level}</span></span>
+              <span>{dispatchPlan.due_date ? new Date(`${dispatchPlan.due_date}T12:00:00`).toLocaleDateString() : "—"}</span>
+              <span>{dispatchPlan.stop_count} entrega(s)</span>
+              <span>{dispatchPlan.total_weight_kg.toLocaleString()} kg</span>
+              <span>{dispatchPlan.total_volume_m3.toLocaleString()} m³</span>
+              <span><button className="inline-flex h-9 items-center gap-1.5 rounded-md bg-apex px-3 text-xs font-semibold text-white disabled:opacity-50" disabled={!canWrite || evaluating || confirmed} onClick={(event) => { event.stopPropagation(); const target = targetFromPlan(dispatchPlan); setSelection(target); void evaluateScenarios(target); }} type="button"><Route size={14} />{evaluating && selection?.key === rowKey ? "Evaluando..." : "Evaluar escenarios"}</button></span>
+            </div>
+          );
+          })}
+          {workbench.consolidation_groups.map((group, index) => {
+            const selectGroup = () => { const target = targetFromGroup(group); setSelection(target); closeScenarioMonitor(); };
+            return (
+            <div className={`grid cursor-pointer grid-cols-[64px_1.5fr_0.7fr_0.7fr_0.7fr_0.7fr_auto] items-center gap-3 border-b border-line px-3 py-3 text-left text-sm transition last:border-b-0 hover:bg-paper ${selection?.key === group.key ? "bg-emerald-50 text-apex" : "bg-white"}`} key={group.key} role="button" tabIndex={0} onClick={selectGroup} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectGroup(); } }}>
+              <span className="grid h-8 w-8 place-items-center rounded-md bg-paper text-sm font-semibold text-neutral-500">{index + 1}</span>
+              <span><span className="block font-semibold text-neutral-900">{group.origin?.name || "Origen por completar"} <span className="ml-1 rounded-md bg-paper px-1.5 py-0.5 text-[10px] font-semibold text-neutral-500">sin asignar</span></span><span className="mt-1 block text-xs text-neutral-600">{group.service_level}</span></span>
               <span>{new Date(`${group.due_date}T12:00:00`).toLocaleDateString()}</span>
               <span>{group.needs.length} entrega(s)</span>
               <span>{group.total_weight_kg.toLocaleString()} kg</span>
               <span>{group.total_volume_m3.toLocaleString()} m³</span>
-              <span><button className="inline-flex h-9 items-center gap-1.5 rounded-md bg-apex px-3 text-xs font-semibold text-white disabled:opacity-50" disabled={!canWrite || evaluating} onClick={(event) => { event.stopPropagation(); setSelectedGroup(group); void evaluateScenarios(group); }} type="button"><Route size={14} />{evaluating && selectedGroup?.key === group.key ? "Evaluando..." : "Evaluar escenarios"}</button></span>
+              <span><button className="inline-flex h-9 items-center gap-1.5 rounded-md border border-apex px-3 text-xs font-semibold text-apex disabled:opacity-50" disabled={!canWrite || evaluating} onClick={(event) => { event.stopPropagation(); const target = targetFromGroup(group); setSelection(target); void evaluateScenarios(target); }} type="button"><Route size={14} />{evaluating && selection?.key === group.key ? "Evaluando..." : "Evaluar escenarios"}</button></span>
             </div>
-          ))}
+          );
+          })}
           </div>
-          {!workbench.consolidation_groups.length ? <p className="rounded-md bg-paper p-4 text-sm text-neutral-500">No hay demanda completa y pendiente para consolidar.</p> : null}
+          {!workbench.plans.length && !workbench.consolidation_groups.length ? <p className="rounded-md bg-paper p-4 text-sm text-neutral-500">No hay planes ni demanda completa y pendiente para consolidar. Crea planes en <Link className="font-semibold text-apex" href="/dashboard/transporte/ordenes">Preparación de pedidos</Link>.</p> : null}
         </div>
       </section>
       <main className="space-y-4">
         <section className="rounded-md border border-line bg-white p-4">
           <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="font-semibold">Parámetros bloqueados del escenario</h2><p className="mt-1 text-xs text-neutral-500">{selectedSummary}</p></div></div>
-          {selectedGroup ? <ScenarioWorkbench group={selectedGroup} origins={origins} vehicles={vehicles} /> : <EmptyPlannerState />}
+          {selection ? <ScenarioWorkbench target={selection} origins={origins} vehicles={vehicles} /> : <EmptyPlannerState />}
         </section>
       </main>
     </div>
     {scenarios.length ? <PlanningModal onClose={closeScenarioMonitor}><PlanResult canWrite={canWrite} committing={committing} scenarios={scenarios} selectedQuote={selectedQuote} selectedScenarioId={selectedScenarioId} onSelectQuote={setSelectedQuote} onSelectScenario={(id) => { const next = scenarios.find((scenario) => scenario.id === id); setSelectedScenarioId(id); setSelectedQuote(next?.quote?.rate_card_id || null); }} onCommit={commit} /></PlanningModal> : null}
   </div>;
+}
+
+function targetFromPlan(dispatchPlan: DispatchPlan): EvalTarget {
+  return {
+    key: `plan-${dispatchPlan.id}`,
+    kind: "plan",
+    plan_id: dispatchPlan.id,
+    origin_id: dispatchPlan.origin_id,
+    origin: dispatchPlan.origin,
+    service_level: dispatchPlan.service_level,
+    due_date: dispatchPlan.due_date,
+    need_ids: dispatchPlan.need_ids,
+    needs: dispatchPlan.needs,
+    total_weight_kg: dispatchPlan.total_weight_kg,
+    total_volume_m3: dispatchPlan.total_volume_m3,
+    name: `${dispatchPlan.name} (${dispatchPlan.code})`,
+  };
+}
+
+function targetFromGroup(group: Group): EvalTarget {
+  return {
+    key: group.key,
+    kind: "group",
+    origin_id: group.origin_id,
+    origin: group.origin,
+    service_level: group.service_level,
+    due_date: group.due_date,
+    need_ids: group.need_ids,
+    needs: group.needs,
+    total_weight_kg: group.total_weight_kg,
+    total_volume_m3: group.total_volume_m3,
+    name: group.origin?.name || "Consolidación sin origen",
+  };
 }
 
 function buildScenario({ vehicle, strategy, plan, shortest, fastest, bestCostPerKm, averageCostPerKm }: { vehicle?: Vehicle; strategy: { value: string; label: string }; plan: Plan; shortest: number; fastest: number; bestCostPerKm: number; averageCostPerKm: number }): Scenario {
@@ -300,13 +369,13 @@ function EmptyPlannerState() {
   return <div className="mt-4 rounded-md border border-dashed border-line p-4"><p className="font-semibold">Selecciona una consolidación</p><p className="mt-1 text-sm text-neutral-600">Elige una fila del monitor para revisar sus parámetros o usa su botón Evaluar escenarios para abrir el monitor directamente.</p></div>;
 }
 
-function ScenarioWorkbench({ group, origins, vehicles }: { group: Group; origins: Origin[]; vehicles: Vehicle[] }) {
-  const origin = origins.find((item) => item.id === (group.origin_id || group.origin?.id)) || group.origin;
+function ScenarioWorkbench({ target, origins, vehicles }: { target: EvalTarget; origins: Origin[]; vehicles: Vehicle[] }) {
+  const origin = origins.find((item) => item.id === (target.origin_id || target.origin?.id)) || target.origin;
   return <div className="mt-4 grid gap-2 md:grid-cols-4">
+    <ReadOnlyParam label={target.kind === "plan" ? "Plan" : "Consolidación"} value={target.name} />
     <ReadOnlyParam label="Origen" value={origin ? `${origin.code} · ${origin.name}` : "Origen pendiente"} />
     <ReadOnlyParam label="Vehículos" value={`${Math.max(vehicles.length, 1)} alternativa(s)`} />
     <ReadOnlyParam label="Estrategias" value={`${STRATEGIES.length} estrategias`} />
-    <ReadOnlyParam label="Retorno" value="Alternativa operativa" />
   </div>;
 }
 

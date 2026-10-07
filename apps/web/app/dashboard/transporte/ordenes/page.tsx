@@ -2,8 +2,8 @@
 
 import { api } from "@/lib/api";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
-import { CheckCircle2, Download, FileSpreadsheet, Upload } from "lucide-react";
-import { ChangeEvent, useCallback, useEffect, useState } from "react";
+import { ArrowRight, CheckCircle2, Download, FileSpreadsheet, Plus, Upload, X } from "lucide-react";
+import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from "react";
 
 type Order = {
   id: number;
@@ -11,13 +11,37 @@ type Order = {
   status: string;
   source_type: string;
   source_reference?: string;
+  origin_id?: number | null;
   origin_name: string;
   due_at: string;
   weight_kg: number;
   volume_m3: number;
   delivery_point?: { name: string; city: string };
+  plan?: { id: number; code: string; name: string } | null;
   validation_errors?: string[];
 };
+
+type Plan = {
+  id: number;
+  code: string;
+  name: string;
+  origin_id: number;
+  origin?: { name: string; city: string };
+  service_level: string;
+  due_date: string | null;
+  status: string;
+  notes?: string | null;
+  needs: Order[];
+  need_ids: number[];
+  total_weight_kg: number;
+  total_volume_m3: number;
+  total_pallets: number;
+  stop_count: number;
+};
+
+type Origin = { id: number; code: string; name: string; city: string };
+
+const planStatusLabels: Record<string, string> = { borrador: "Borrador", listo: "Listo para evaluar", confirmado: "Confirmado en viaje" };
 
 const validationLabels: Record<string, string> = {
   peso_faltante: "peso",
@@ -72,14 +96,22 @@ export default function TransportOrdersPage() {
   const [intake, setIntake] = useState<Intake | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [message, setMessage] = useState("");
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [origins, setOrigins] = useState<Origin[]>([]);
+  const [planBusy, setPlanBusy] = useState(false);
+  const [planForm, setPlanForm] = useState({ name: "", origin_id: "", service_level: "normal", due_date: "" });
+  const [addingNeedId, setAddingNeedId] = useState<number | null>(null);
   const canWrite = hasStoredRolePermission("transport", "write");
   const load = useCallback(async () => {
     try {
-      setOrders(
-        await api<Order[]>(
-          `/api/v1/transport/orders${status ? `?status=${status}` : ""}`,
-        ),
-      );
+      const [orderList, planList, originList] = await Promise.all([
+        api<Order[]>(`/api/v1/transport/orders${status ? `?status=${status}` : ""}`),
+        api<Plan[]>("/api/v1/transport/plans"),
+        api<Origin[]>("/api/v1/transport/origins"),
+      ]);
+      setOrders(orderList);
+      setPlans(planList);
+      setOrigins(originList);
     } catch (error) {
       setMessage(
         error instanceof Error
@@ -125,6 +157,98 @@ export default function TransportOrdersPage() {
     } finally {
       setSyncing(false);
     }
+  }
+
+  async function createPlan(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!planForm.origin_id) {
+      setMessage("Selecciona un origen para el plan.");
+      return;
+    }
+    setPlanBusy(true);
+    try {
+      await api<Plan>("/api/v1/transport/plans", {
+        method: "POST",
+        body: JSON.stringify({
+          name: planForm.name,
+          origin_id: Number(planForm.origin_id),
+          service_level: planForm.service_level || "normal",
+          due_date: planForm.due_date || undefined,
+        }),
+      });
+      setPlanForm({ name: "", origin_id: "", service_level: "normal", due_date: "" });
+      setMessage("Plan creado. Agrega pedidos para completarlo.");
+      await load();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No fue posible crear el plan.");
+    } finally {
+      setPlanBusy(false);
+    }
+  }
+
+  async function addNeedToPlan(planId: number, needId: number) {
+    setAddingNeedId(needId);
+    try {
+      await api<Plan>(`/api/v1/transport/plans/${planId}/needs`, {
+        method: "POST",
+        body: JSON.stringify({ need_ids: [needId] }),
+      });
+      setMessage("Pedido agregado al plan.");
+      await load();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No fue posible agregar el pedido al plan.");
+    } finally {
+      setAddingNeedId(null);
+    }
+  }
+
+  async function removeNeedFromPlan(planId: number, needId: number) {
+    setPlanBusy(true);
+    try {
+      await api(`/api/v1/transport/plans/${planId}/needs/${needId}`, { method: "DELETE" });
+      setMessage("Pedido retirado del plan.");
+      await load();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No fue posible retirar el pedido del plan.");
+    } finally {
+      setPlanBusy(false);
+    }
+  }
+
+  async function setPlanStatus(plan: Plan, nextStatus: "borrador" | "listo") {
+    setPlanBusy(true);
+    try {
+      await api<Plan>(`/api/v1/transport/plans/${plan.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      setMessage(nextStatus === "listo" ? `Plan ${plan.code} listo para evaluar escenarios.` : `Plan ${plan.code} volvió a borrador.`);
+      await load();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No fue posible actualizar el plan.");
+    } finally {
+      setPlanBusy(false);
+    }
+  }
+
+  async function deletePlan(plan: Plan) {
+    if (!window.confirm(`¿Eliminar el plan ${plan.code}? Sus pedidos quedarán sin asignar.`)) return;
+    setPlanBusy(true);
+    try {
+      await api(`/api/v1/transport/plans/${plan.id}`, { method: "DELETE" });
+      setMessage(`Plan ${plan.code} eliminado.`);
+      await load();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No fue posible eliminar el plan.");
+    } finally {
+      setPlanBusy(false);
+    }
+  }
+
+  function compatiblePlans(order: Order) {
+    return plans.filter(
+      (plan) => plan.status !== "confirmado" && (!order.origin_id || plan.origin_id === order.origin_id),
+    );
   }
 
   async function loadExcelFile(event: ChangeEvent<HTMLInputElement>) {
@@ -269,6 +393,21 @@ export default function TransportOrdersPage() {
             <div className="flex items-start justify-between gap-3"><div><p className="font-semibold">{order.code}</p><p className="text-xs text-neutral-500">{order.delivery_point?.name || "Destino por completar"} · {orderSource(order)}</p></div><span className="rounded-md bg-paper px-2 py-1 text-xs font-semibold">{order.status}</span></div>
             <p className="mt-2 text-sm">{order.weight_kg} kg · {order.volume_m3} m³</p>
             <p className="text-xs text-neutral-500">Entrega: {new Date(order.due_at).toLocaleString()}</p>
+            {order.plan ? <p className="mt-2"><span className="rounded-md bg-apex/10 px-2 py-1 text-xs font-semibold text-apex">En {order.plan.code}</span></p> : canWrite && order.status === "pendiente" && compatiblePlans(order).length ? (
+              <select
+                className="mt-2 w-full rounded-md border border-line px-2 py-1 text-xs"
+                disabled={addingNeedId === order.id}
+                onChange={(event) => {
+                  const planId = Number(event.target.value);
+                  if (planId) void addNeedToPlan(planId, order.id);
+                  event.target.value = "";
+                }}
+                value=""
+              >
+                <option value="">Agregar a plan…</option>
+                {compatiblePlans(order).map((plan) => <option key={plan.id} value={plan.id}>{plan.code} · {plan.name}</option>)}
+              </select>
+            ) : null}
             {order.validation_errors?.length ? <p className="mt-2 text-xs font-semibold text-rose-700">Debes completar: {missingData(order)}</p> : null}
           </article>)}
         </div>
@@ -280,6 +419,7 @@ export default function TransportOrdersPage() {
                 <th className="p-3">Destino</th>
                 <th className="p-3">Carga</th>
                 <th className="p-3">Vence</th>
+                <th className="p-3">Plan</th>
                 <th className="p-3">Estado</th>
                 <th />
               </tr>
@@ -304,6 +444,29 @@ export default function TransportOrdersPage() {
                   </td>
                   <td className="p-3">
                     {new Date(order.due_at).toLocaleString()}
+                  </td>
+                  <td className="p-3">
+                    {order.plan ? (
+                      <span className="rounded-md bg-apex/10 px-2 py-1 text-xs font-semibold text-apex">En {order.plan.code}</span>
+                    ) : canWrite && order.status === "pendiente" ? (
+                      <span className="flex items-center gap-1">
+                        <select
+                          className="rounded-md border border-line px-2 py-1 text-xs"
+                          disabled={addingNeedId === order.id}
+                          onChange={(event) => {
+                            const planId = Number(event.target.value);
+                            if (planId) void addNeedToPlan(planId, order.id);
+                            event.target.value = "";
+                          }}
+                          value=""
+                        >
+                          <option value="">Agregar a plan…</option>
+                          {compatiblePlans(order).map((plan) => <option key={plan.id} value={plan.id}>{plan.code} · {plan.name}</option>)}
+                        </select>
+                      </span>
+                    ) : (
+                      <span className="text-xs text-neutral-400">—</span>
+                    )}
                   </td>
                   <td className="p-3">
                     {order.status}
@@ -331,6 +494,87 @@ export default function TransportOrdersPage() {
             </tbody>
           </table>
         </div>
+      </section>
+      <section className="rounded-md border border-line bg-white p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase text-apex">Consolidación de rutas</p>
+            <h2 className="font-semibold">Planes de despacho</h2>
+            <p className="mt-1 text-sm text-neutral-600">Agrupa pedidos en planes; cada plan pasa al paso 2 donde se evalúan sus escenarios de ruta.</p>
+          </div>
+        </div>
+        {canWrite ? (
+          <form className="mt-4 grid gap-3 md:grid-cols-5" onSubmit={(event) => void createPlan(event)}>
+            <input className="rounded-md border border-line px-3 py-2 text-sm" onChange={(event) => setPlanForm((form) => ({ ...form, name: event.target.value }))} placeholder="Nombre del plan (ej. Plan 1)" value={planForm.name} />
+            <select className="rounded-md border border-line px-3 py-2 text-sm" onChange={(event) => setPlanForm((form) => ({ ...form, origin_id: event.target.value }))} value={planForm.origin_id}>
+              <option value="">Origen *</option>
+              {origins.map((origin) => <option key={origin.id} value={origin.id}>{origin.name} ({origin.city})</option>)}
+            </select>
+            <input className="rounded-md border border-line px-3 py-2 text-sm" onChange={(event) => setPlanForm((form) => ({ ...form, service_level: event.target.value }))} placeholder="Servicio (normal)" value={planForm.service_level} />
+            <input className="rounded-md border border-line px-3 py-2 text-sm" onChange={(event) => setPlanForm((form) => ({ ...form, due_date: event.target.value }))} type="date" value={planForm.due_date} />
+            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-60" disabled={planBusy || !planForm.origin_id}>
+              <Plus size={16} /> Crear plan
+            </button>
+          </form>
+        ) : null}
+        {!plans.length ? (
+          <div className="mt-4 rounded-md border border-dashed border-line p-4 text-center">
+            <p className="font-semibold">Todavía no hay planes de despacho</p>
+            <p className="mt-1 text-sm text-neutral-600">Crea el primer plan y agrega los pedidos pendientes que quieras despachar juntos.</p>
+          </div>
+        ) : (
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            {plans.map((plan) => (
+              <article className="rounded-md border border-line p-4" key={plan.id}>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold">{plan.name} <span className="text-xs font-normal text-neutral-500">{plan.code}</span></p>
+                    <p className="text-xs text-neutral-500">{plan.origin?.name || "Origen"} · {plan.origin?.city || ""}{plan.due_date ? ` · Vence ${new Date(plan.due_date).toLocaleDateString()}` : ""}</p>
+                  </div>
+                  <span className={`rounded-md px-2 py-1 text-xs font-semibold ${plan.status === "confirmado" ? "bg-emerald-100 text-emerald-800" : plan.status === "listo" ? "bg-apex/10 text-apex" : "bg-paper text-neutral-600"}`}>{planStatusLabels[plan.status] || plan.status}</span>
+                </div>
+                <p className="mt-2 text-sm text-neutral-600">{plan.stop_count} parada{plan.stop_count === 1 ? "" : "s"} · {plan.total_weight_kg} kg · {plan.total_volume_m3} m³ · {plan.total_pallets} pallet{plan.total_pallets === 1 ? "" : "s"}</p>
+                {plan.needs.length ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {plan.needs.map((need) => (
+                      <span className="inline-flex items-center gap-1 rounded-md bg-paper px-2 py-1 text-xs font-semibold" key={need.id}>
+                        {need.code}
+                        {canWrite && plan.status !== "confirmado" ? (
+                          <button aria-label={`Retirar ${need.code} del plan`} disabled={planBusy} onClick={() => void removeNeedFromPlan(plan.id, need.id)} type="button">
+                            <X size={12} />
+                          </button>
+                        ) : null}
+                      </span>
+                    ))}
+                  </div>
+                ) : <p className="mt-3 text-xs text-neutral-500">Sin pedidos. Agrega pedidos pendientes desde la tabla de abajo.</p>}
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  {plan.status === "listo" ? (
+                    <a className="inline-flex h-9 items-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white" href={`/dashboard/transporte/planeacion?plan=${plan.id}`}>
+                      Evaluar escenarios <ArrowRight size={14} />
+                    </a>
+                  ) : null}
+                  {canWrite && plan.status !== "confirmado" ? (
+                    plan.status === "borrador" ? (
+                      <button className="rounded-md border border-apex px-3 py-2 text-xs font-semibold text-apex disabled:opacity-60" disabled={planBusy || !plan.needs.length} onClick={() => void setPlanStatus(plan, "listo")}>
+                        Marcar listo para evaluar
+                      </button>
+                    ) : (
+                      <button className="rounded-md border border-line px-3 py-2 text-xs font-semibold text-neutral-600 disabled:opacity-60" disabled={planBusy} onClick={() => void setPlanStatus(plan, "borrador")}>
+                        Volver a borrador
+                      </button>
+                    )
+                  ) : null}
+                  {canWrite && plan.status !== "confirmado" ? (
+                    <button className="rounded-md px-3 py-2 text-xs font-semibold text-rose-700 disabled:opacity-60" disabled={planBusy} onClick={() => void deletePlan(plan)}>
+                      Eliminar
+                    </button>
+                  ) : null}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
