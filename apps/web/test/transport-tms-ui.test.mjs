@@ -164,6 +164,20 @@ test("el mapa del planeador detecta tramos difíciles reales y compara rutas", (
   assert.match(planningMap, /tramos difíciles por velocidad de vía/);
 });
 
+test("el mapa del planeador garantiza rutas alternativas dibujadas con ETA propia", () => {
+  assert.match(planningMap, /ensureAlternatives/);
+  assert.match(planningMap, /DETOUR_FACTORS/);
+  assert.match(planningMap, /DETOUR_ATTEMPT_LIMIT/);
+  assert.match(planningMap, /ratio < 1\.01 \|\| ratio > 1\.75/);
+  assert.match(planningMap, /withRouteEstimates/);
+  assert.match(planningMap, /estimateDurationMin/);
+  assert.match(planningMap, /plannedVariant/);
+  assert.match(planningMap, /ETA estimada/);
+  assert.match(planningMap, /Ruta planeada/);
+  assert.match(planningMap, /osrmCache/);
+  assert.doesNotMatch(planningMap, /route\.alternates/);
+});
+
 test("los tarifarios exponen vigencias, versiones y componentes de costo", () => {
   assert.match(rates, /\/transport\/rate-cards/);
   assert.match(rates, /\/versions/);

@@ -54,7 +54,6 @@ type RenderedVariant = PlanningRouteVariant & {
 
 type RenderedRoute = PlanningMapScenario & {
   geometry: [number, number][];
-  alternates: [number, number][][];
   variants: RenderedVariant[];
   real_distance_km?: number;
   real_duration_min?: number;
@@ -139,12 +138,21 @@ function longestLeg(stops: PlanningRouteStop[]) {
   return { index, km };
 }
 
+const osrmCache = new Map<string, OsrmRoute[]>();
+
 async function fetchOsrmRoutes(path: string, { alternatives = false } = {}) {
+  const cacheKey = `${path}|${alternatives ? "alternatives" : "single"}`;
+  const cached = osrmCache.get(cacheKey);
+  if (cached) return cached;
   try {
     const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${path}?${alternatives ? "alternatives=true&" : ""}overview=full&geometries=geojson&steps=false&annotations=speed,distance`, { signal: AbortSignal.timeout(9000) });
     if (!response.ok) return [] as OsrmRoute[];
     const payload = await response.json() as { routes?: OsrmRoute[] };
     const routes: OsrmRoute[] = payload.routes || [];
+    if (routes.length) {
+      if (osrmCache.size > 160) osrmCache.clear();
+      osrmCache.set(cacheKey, routes);
+    }
     return routes;
   } catch {
     return [] as OsrmRoute[];
@@ -173,24 +181,52 @@ function osrmVariantFromRoute(scenario: PlanningMapScenario, route: OsrmRoute, s
   };
 }
 
-async function detourVariantFor(scenario: PlanningMapScenario, main: OsrmRoute, sequence: number, side: 1 | -1): Promise<RenderedVariant | null> {
+function detourOffsetMeters(longestLegKm: number, factor: number) {
+  return Math.min(Math.max(longestLegKm * factor, 650), Math.max(2600, longestLegKm * 120));
+}
+
+async function detourVariantFor(scenario: PlanningMapScenario, main: OsrmRoute, sequence: number, side: 1 | -1, factor: number): Promise<RenderedVariant | null> {
   const { index, km } = longestLeg(scenario.stops);
   if (index < 0 || km < 1) return null;
   const from: [number, number] = [scenario.stops[index].latitude, scenario.stops[index].longitude];
   const to: [number, number] = [scenario.stops[index + 1].latitude, scenario.stops[index + 1].longitude];
-  const via = detourViaPoint(from, to, Math.min(Math.max(km * 380, 650), 2600) * side);
+  const via = detourViaPoint(from, to, detourOffsetMeters(km, factor) * side);
   const waypoints = scenario.stops.map((stop) => `${stop.longitude.toFixed(6)},${stop.latitude.toFixed(6)}`);
   waypoints.splice(index + 1, 0, `${via[1].toFixed(6)},${via[0].toFixed(6)}`);
   const routes = await fetchOsrmRoutes(waypoints.join(";"));
   const route = routes[0];
   if (!route || !route.geometry?.coordinates?.length) return null;
-  if (route.distance < main.distance * 1.04) return null;
+  const ratio = route.distance / Math.max(main.distance, 1);
+  if (ratio < 1.01 || ratio > 1.75) return null;
   const variant = osrmVariantFromRoute(scenario, route, sequence);
   if (!variant) return null;
   variant.delay_min = Math.max(0, Math.round((route.duration - main.duration) / 60));
   variant.pros = ["Corredor vial real alternativo por vía desplazada (OSRM)."];
   variant.issue_tags = ["corredor desplazado", ...(variant.issue_tags || [])];
   return variant;
+}
+
+const DETOUR_FACTORS = [380, 700, 1100];
+const DETOUR_ATTEMPT_LIMIT = 4;
+
+async function ensureAlternatives(scenario: PlanningMapScenario, main: OsrmRoute, initial: RenderedVariant[], target = 3) {
+  const accepted = [...initial];
+  let attempts = 0;
+  const isDuplicate = (candidate: RenderedVariant) => accepted.some((existing) => {
+    const delta = Math.abs((existing.distance_km || 0) - (candidate.distance_km || 0));
+    return delta < Math.max(0.05, (candidate.distance_km || 0) * 0.01);
+  });
+  for (const side of [1, -1] as const) {
+    for (const factor of DETOUR_FACTORS) {
+      if (accepted.length >= target || attempts >= DETOUR_ATTEMPT_LIMIT) return accepted;
+      attempts += 1;
+      const detour = await detourVariantFor(scenario, main, accepted.length + 1, side, factor);
+      if (!detour || isDuplicate(detour)) continue;
+      accepted.push(detour);
+    }
+    if (accepted.length >= target || attempts >= DETOUR_ATTEMPT_LIMIT) return accepted;
+  }
+  return accepted;
 }
 
 async function osrmVariantsForScenario(scenario: PlanningMapScenario): Promise<{ variants: RenderedVariant[]; distance_km: number; duration_min: number } | null> {
@@ -207,13 +243,9 @@ async function osrmVariantsForScenario(scenario: PlanningMapScenario): Promise<{
     variant.delay_min = Math.max(0, Math.round((alternate.duration - main.duration) / 60));
     variants.push(variant);
   }
-  for (const side of [1, -1] as const) {
-    if (variants.length >= 3) break;
-    const detour = await detourVariantFor(scenario, main, variants.length + 1, side);
-    if (detour) variants.push(detour);
-  }
-  if (!variants.length) return null;
-  return { variants, distance_km: Number((main.distance / 1000).toFixed(2)), duration_min: Math.max(1, Math.round(main.duration / 60)) };
+  const completed = await ensureAlternatives(scenario, main, variants);
+  if (!completed.length) return null;
+  return { variants: completed, distance_km: Number((main.distance / 1000).toFixed(2)), duration_min: Math.max(1, Math.round(main.duration / 60)) };
 }
 
 const COLORS = ["#146C63", "#2563eb", "#f59e0b", "#7c3aed", "#dc2626", "#0f766e", "#be123c", "#475569"];
@@ -255,31 +287,61 @@ function decodeGooglePolyline(encoded: string) {
   return coordinates;
 }
 
+function geometryKm(geometry: [number, number][]) {
+  let km = 0;
+  for (let i = 0; i < geometry.length - 1; i += 1) km += haversineKm(geometry[i], geometry[i + 1]);
+  return Number(km.toFixed(2));
+}
+
+function estimateDurationMin(km: number, scenario: PlanningMapScenario) {
+  const kmPerMinute = scenario.distance_km > 0 && scenario.duration_min > 0 ? scenario.distance_km / scenario.duration_min : 0.5;
+  return Math.max(1, Math.round(km / kmPerMinute));
+}
+
+function withRouteEstimates(variant: RenderedVariant, scenario: PlanningMapScenario): RenderedVariant {
+  const distanceKm = variant.distance_km ?? (variant.geometry.length > 1 ? geometryKm(variant.geometry) : scenario.distance_km);
+  const needsEta = variant.duration_min == null;
+  const durationMin = variant.duration_min ?? estimateDurationMin(distanceKm, scenario);
+  return {
+    ...variant,
+    distance_km: distanceKm,
+    duration_min: durationMin,
+    delay_min: variant.delay_min ?? Math.max(0, durationMin - scenario.duration_min),
+    issue_tags: needsEta ? [...(variant.issue_tags || []), "ETA estimada"] : variant.issue_tags,
+  };
+}
+
+function plannedVariant(scenario: PlanningMapScenario): RenderedVariant {
+  return {
+    id: `${scenario.id}-planned`,
+    label: "Ruta planeada",
+    geometry: fallbackGeometry(scenario.stops),
+    distance_km: scenario.distance_km,
+    duration_min: scenario.duration_min,
+    delay_min: 0,
+    traffic_level: "sin_lectura",
+    traffic_segments: [],
+    pros: ["Muestra la secuencia de paradas del plan con su tiempo estimado de viaje."],
+    cons: ["Sin proveedor vial disponible: no hay calles reales ni rutas alternativas."],
+    issue_tags: ["sin proveedor vial", "ETA estimada"],
+  };
+}
+
 async function complementWithOsrmDetours(scenario: PlanningMapScenario, existing: RenderedVariant[]) {
   if (existing.length >= 3) return existing;
-  const routes = await fetchOsrmRoutes(coordinatePath(scenario.stops));
+  const routes = await fetchOsrmRoutes(coordinatePath(scenario.stops), { alternatives: true });
   const main = routes[0];
   if (!main || !main.geometry?.coordinates?.length) return existing;
-  const combined = [...existing];
-  for (const side of [1, -1] as const) {
-    if (combined.length >= 3) break;
-    const detour = await detourVariantFor(scenario, main, combined.length + 1, side);
-    if (!detour) continue;
-    detour.id = `${scenario.id}-detour-${side > 0 ? "n" : "s"}${combined.length}`;
-    detour.label = `Ruta alterna ${combined.length + 1}`;
-    detour.delay_min = Math.max(0, (detour.duration_min ?? 0) - (existing[0]?.duration_min ?? 0));
-    combined.push(detour);
-  }
-  return combined;
+  return ensureAlternatives(scenario, main, existing);
 }
 
 async function fetchRoute(scenario: PlanningMapScenario, index: number): Promise<RenderedRoute> {
-  const fallback: RenderedRoute = { ...scenario, geometry: fallbackGeometry(scenario.stops), alternates: [], variants: [], color: COLORS[index % COLORS.length], source: "planned" };
+  const fallback: RenderedRoute = { ...scenario, geometry: fallbackGeometry(scenario.stops), variants: [], color: COLORS[index % COLORS.length], source: "planned" };
   if (scenario.stops.length < 2) return fallback;
   const googleVariants = (scenario.route_variants || []).flatMap((variant) => {
     if (!variant.polyline) return [];
     const geometry = decodeGooglePolyline(variant.polyline);
-    return geometry.length ? [{ ...variant, geometry }] : [];
+    return geometry.length ? [withRouteEstimates({ ...variant, geometry }, scenario)] : [];
   });
   if (googleVariants.length) {
     const variants = googleVariants.length >= 2 ? googleVariants : await complementWithOsrmDetours(scenario, googleVariants);
@@ -287,17 +349,23 @@ async function fetchRoute(scenario: PlanningMapScenario, index: number): Promise
   }
   if (scenario.encoded_polyline) {
     const geometry = decodeGooglePolyline(scenario.encoded_polyline);
-    const alternates = (scenario.encoded_alternates || []).flatMap((encoded) => {
+    const decodedAlternates = (scenario.encoded_alternates || []).flatMap((encoded) => {
       const decoded = decodeGooglePolyline(encoded);
       return decoded.length ? [decoded] : [];
     });
-    if (geometry.length) return { ...fallback, geometry, alternates, source: "google" };
+    if (geometry.length) {
+      const variants = [
+        withRouteEstimates({ id: `${scenario.id}-google-1`, label: "Ruta recomendada", geometry }, scenario),
+        ...decodedAlternates.map((alternateGeometry, alternateIndex) => withRouteEstimates({ id: `${scenario.id}-google-${alternateIndex + 2}`, label: `Ruta alterna ${alternateIndex + 2}`, geometry: alternateGeometry }, scenario)),
+      ];
+      return { ...fallback, geometry, variants: variants.slice(0, 4), source: "google" };
+    }
   }
   const osrm = await osrmVariantsForScenario(scenario);
   if (osrm) {
     return { ...fallback, geometry: osrm.variants[0].geometry, variants: osrm.variants.slice(0, 4), real_distance_km: osrm.distance_km, real_duration_min: osrm.duration_min, source: "osrm" };
   }
-  return fallback;
+  return { ...fallback, variants: [plannedVariant(scenario)] };
 }
 
 function trafficColor(severity?: RouteTrafficSegment["severity"]) {
@@ -366,7 +434,7 @@ function RoutePopup({ route, scenario }: { route: RenderedVariant; scenario: Pla
 function boundsFor(routes: RenderedRoute[], scenarios: PlanningMapScenario[]) {
   const points = [
     ...scenarios.flatMap((scenario) => scenario.stops.map((stop) => [stop.latitude, stop.longitude] as [number, number])),
-    ...routes.flatMap((route) => [route.geometry, ...route.alternates, ...route.variants.map((variant) => variant.geometry)].flat()),
+    ...routes.flatMap((route) => [route.geometry, ...route.variants.map((variant) => variant.geometry)].flat()),
   ];
   return points.length ? points : [[4.65, -74.1] as [number, number]];
 }
@@ -399,7 +467,7 @@ export default function PlanningRouteMap({ scenarios, selectedId, onSelect }: { 
       if (cancelled) return;
       setRoutes(next);
       setActiveVariantId(next.find((route) => route.id === selected)?.variants[0]?.id || next[0]?.variants[0]?.id || null);
-      setStatus(next.some((route) => route.source === "google") ? "Rutas y alternativas calculadas con Google Routes desde backend." : next.some((route) => route.source === "osrm") ? "Rutas viales reales con OpenStreetMap/OSRM, incluidos tramos difíciles por velocidad de vía." : "Proveedor vial no disponible; se muestran rutas planeadas como respaldo.");
+      setStatus(next.some((route) => route.source === "google") ? "Rutas y alternativas calculadas con Google Routes desde backend." : next.some((route) => route.source === "osrm") ? "Rutas viales reales con OpenStreetMap/OSRM, cada alternativa con su ETA y tramos difíciles por velocidad de vía." : "Proveedor vial no disponible; se dibuja la ruta planeada con su tiempo estimado de viaje.");
     }
     void load();
     return () => { cancelled = true; };
@@ -416,7 +484,10 @@ export default function PlanningRouteMap({ scenarios, selectedId, onSelect }: { 
           <h3 className="font-semibold">Mapa de rutas y alternativas</h3>
           <p className="mt-1 text-xs text-neutral-500">{status}</p>
         </div>
-        <span className="rounded-md bg-paper px-2 py-1 text-xs font-semibold text-apex">{selectedRoute?.variants.length || scenarios.length} ruta(s) reales visibles</span>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <span className="rounded-md bg-paper px-2 py-1 text-xs font-semibold text-apex">{selectedRoute?.variants.length || scenarios.length} ruta(s) con ETA visibles</span>
+          {selectedRoute?.source === "planned" ? <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">Sin proveedor vial</span> : null}
+        </div>
       </div>
       <div className="relative p-3">
         <MapContainer center={[firstStop?.latitude || 4.65, firstStop?.longitude || -74.1]} className="h-[680px] min-h-[520px] w-full rounded-md" scrollWheelZoom zoom={12}>
@@ -447,7 +518,6 @@ export default function PlanningRouteMap({ scenarios, selectedId, onSelect }: { 
                   }) : null}
                 </Fragment>
               ))}
-              {route.alternates.map((alternate, alternateIndex) => <Polyline key={`${route.id}-alt-${alternateIndex}`} pathOptions={{ color: route.color, dashArray: "8 8", opacity: selected === route.id ? 0.35 : 0.12, weight: 3 }} positions={alternate} eventHandlers={{ click: () => onSelect?.(route.id) }} />)}
               {!route.variants.length ? <Polyline pathOptions={{ color: route.color, opacity: selected === route.id ? 0.95 : 0.45, weight: selected === route.id ? 7 : 4 }} positions={route.geometry} eventHandlers={{ click: () => onSelect?.(route.id) }} /> : null}
             </Fragment>
           ))}
@@ -466,7 +536,7 @@ export default function PlanningRouteMap({ scenarios, selectedId, onSelect }: { 
             <span className="mt-1 block text-neutral-600">{variant.duration_min ?? selectedRoute.duration_min} min · {variant.distance_km ?? selectedRoute.distance_km} km{variant.delay_min ? ` · +${variant.delay_min} min` : ""} · {variant.issue_tags?.slice(0, 2).join(" · ")}</span>
           </button>)}
           {selectedRoute.variants.length < 2 ? <div className="pointer-events-auto rounded-md border border-amber-200 bg-amber-50/95 px-3 py-2 text-xs text-amber-900 shadow-sm backdrop-blur">
-            Solo se pudo trazar {selectedRoute.variants.length} ruta vial real para este escenario. Las alternativas se calculan sobre calles reales (OSRM/Google); nunca se dibujan rutas inventadas.
+            Solo se pudo trazar {selectedRoute.variants.length} ruta para este escenario. Las alternativas se calculan sobre calles reales (OSRM/Google) con su propio tiempo estimado; nunca se dibujan rutas inventadas.
           </div> : null}
         </div> : null}
         <div className="pointer-events-none absolute bottom-5 left-5 z-[460] flex flex-wrap gap-2 rounded-md bg-white/95 p-2 text-[11px] shadow-sm backdrop-blur">
