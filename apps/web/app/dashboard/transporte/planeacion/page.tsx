@@ -92,9 +92,10 @@ export default function TransportPlanningPage() {
     setSelectedQuote(null);
   }
 
-  async function evaluateScenarios() {
-    if (!selectedGroup) return;
-    const originId = selectedGroup.origin_id || selectedGroup.origin?.id;
+  async function evaluateScenarios(group?: Group) {
+    const target = group || selectedGroup;
+    if (!target) return;
+    const originId = target.origin_id || target.origin?.id;
     if (!originId) {
       setError("La consolidación seleccionada no tiene origen válido para evaluar.");
       return;
@@ -108,10 +109,10 @@ export default function TransportPlanningPage() {
           method: "POST",
           body: JSON.stringify({
             origin_id: originId,
-            need_ids: selectedGroup.need_ids,
+            need_ids: target.need_ids,
             vehicle_id: vehicle?.id,
             strategy: strategy.value,
-            service_level: selectedGroup.service_level,
+            service_level: target.service_level,
             return_to_origin: false,
           }),
         });
@@ -178,48 +179,51 @@ export default function TransportPlanningPage() {
   return <div className="space-y-5">
     <header className="rounded-md border border-line bg-white p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div><p className="text-xs font-semibold uppercase tracking-wide text-apex">Decision logistica</p><h1 className="mt-1 text-3xl font-semibold">Planeador de transporte</h1><p className="mt-2 max-w-3xl text-sm text-neutral-600">Consolida demanda pendiente, evalúa todos los vehículos y estrategias, compara rutas reales y confirma el viaje sin perder trazabilidad.</p></div>
-        <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold hover:bg-paper disabled:opacity-50" disabled={loading} onClick={() => void load()} type="button"><RefreshCw size={16} />{loading ? "Actualizando..." : "Actualizar demanda"}</button>
+        <div><p className="text-xs font-semibold uppercase tracking-wide text-apex">Decision logistica</p><h1 className="mt-1 text-3xl font-semibold">Planeador de transporte</h1><p className="mt-2 max-w-2xl text-sm text-neutral-600">Consolida demanda pendiente, evalúa escenarios por fila y confirma el viaje con rutas y costos comparables.</p></div>
       </div>
-      <div className="mt-4 grid gap-3 md:grid-cols-3">
-        <ProcessStep icon={ClipboardList} title="1. Elige demanda" text="Selecciona el grupo pendiente que quieres llevar a evaluación." active={!selectedGroup} />
-        <ProcessStep icon={Settings2} title="2. Monitoriza opciones" text="El sistema bloquea parámetros manuales y compara todas las alternativas." active={Boolean(selectedGroup && !scenarios.length)} />
-        <ProcessStep icon={Calculator} title="3. Revisa y confirma" text="El monitor muestra rutas, costos, alertas y la sugerencia óptima." active={Boolean(scenarios.length)} />
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <ProcessStep icon={ClipboardList} title="1. Elige demanda" active={!selectedGroup} />
+        <ProcessStep icon={Settings2} title="2. Evalúa escenarios" active={Boolean(selectedGroup && !scenarios.length)} />
+        <ProcessStep icon={Calculator} title="3. Revisa y confirma" active={Boolean(scenarios.length)} />
       </div>
     </header>
     {message ? <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{message}</p> : null}
     {error ? <p className="rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</p> : null}
     <div className="space-y-4">
-      <main className="space-y-4">
-        <section className="rounded-md border border-line bg-white p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="font-semibold">Parámetros bloqueados del escenario</h2><p className="mt-1 text-xs text-neutral-500">{selectedSummary}</p></div>{selectedGroup ? <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-apex">Listo para evaluar</span> : null}</div>
-          {selectedGroup ? <ScenarioWorkbench group={selectedGroup} origins={origins} vehicles={vehicles} evaluating={evaluating} canWrite={canWrite} onEvaluate={evaluateScenarios} /> : <EmptyPlannerState />}
-        </section>
-      </main>
-      <aside className="rounded-md border border-line bg-white">
-        <div className="border-b border-line p-4">
-          <div className="flex items-center justify-between"><div><h2 className="font-semibold">Monitor de consolidaciones sugeridas</h2><p className="text-xs text-neutral-500">{workbench.pending_needs} necesidades pendientes</p></div><Sparkles className="text-apex" size={20} /></div>
-          <p className="mt-3 rounded-md bg-paper p-3 text-xs text-neutral-600">Cada fila representa demanda lista para comparar contra todos los vehículos, costos, rutas y estrategias. La selección no altera datos; solo prepara el monitor de evaluación.</p>
+      <section className="rounded-md border border-line bg-white">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line p-4">
+          <div className="flex items-center gap-3">
+            <Sparkles className="text-apex" size={20} />
+            <div><h2 className="font-semibold">Monitor de consolidaciones sugeridas</h2><p className="text-xs text-neutral-500">{workbench.pending_needs} necesidades pendientes · usa el botón de cada fila para evaluar</p></div>
+          </div>
+          <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold hover:bg-paper disabled:opacity-50" disabled={loading} onClick={() => void load()} type="button"><RefreshCw size={15} />{loading ? "Actualizando..." : "Actualizar demanda"}</button>
         </div>
-        <div className="max-h-[360px] overflow-auto p-3">
-          <div className="min-w-[980px] overflow-hidden rounded-md border border-line">
-            <div className="grid grid-cols-[64px_1.5fr_0.8fr_0.8fr_0.8fr_0.8fr] gap-3 border-b border-line bg-paper px-3 py-2 text-xs font-semibold uppercase text-neutral-500">
-              <span>#</span><span>Consolidación</span><span>Vence</span><span>Entregas</span><span>Peso</span><span>Volumen</span>
+        <div className="max-h-[520px] overflow-auto p-3">
+          <div className="min-w-[1080px] overflow-hidden rounded-md border border-line">
+            <div className="grid grid-cols-[64px_1.5fr_0.7fr_0.7fr_0.7fr_0.7fr_auto] gap-3 border-b border-line bg-paper px-3 py-2 text-xs font-semibold uppercase text-neutral-500">
+              <span>#</span><span>Consolidación</span><span>Vence</span><span>Entregas</span><span>Peso</span><span>Volumen</span><span>Acción</span>
             </div>
           {workbench.consolidation_groups.map((group, index) => (
-            <button className={`grid w-full grid-cols-[64px_1.5fr_0.8fr_0.8fr_0.8fr_0.8fr] items-center gap-3 border-b border-line px-3 py-3 text-left text-sm transition last:border-b-0 hover:bg-paper ${selectedGroup?.key === group.key ? "bg-emerald-50 text-apex" : "bg-white"}`} key={group.key} onClick={() => { setSelectedGroup(group); closeScenarioMonitor(); }} type="button">
+            <div className={`grid cursor-pointer grid-cols-[64px_1.5fr_0.7fr_0.7fr_0.7fr_0.7fr_auto] items-center gap-3 border-b border-line px-3 py-3 text-left text-sm transition last:border-b-0 hover:bg-paper ${selectedGroup?.key === group.key ? "bg-emerald-50 text-apex" : "bg-white"}`} key={group.key} role="button" tabIndex={0} onClick={() => { setSelectedGroup(group); closeScenarioMonitor(); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedGroup(group); closeScenarioMonitor(); } }}>
               <span className="grid h-8 w-8 place-items-center rounded-md bg-paper text-sm font-semibold text-apex">{index + 1}</span>
               <span><span className="block font-semibold text-neutral-900">{group.origin?.name || "Origen por completar"}</span><span className="mt-1 block text-xs text-neutral-600">{group.service_level}</span></span>
               <span>{new Date(`${group.due_date}T12:00:00`).toLocaleDateString()}</span>
               <span>{group.needs.length} entrega(s)</span>
               <span>{group.total_weight_kg.toLocaleString()} kg</span>
               <span>{group.total_volume_m3.toLocaleString()} m³</span>
-            </button>
+              <span><button className="inline-flex h-9 items-center gap-1.5 rounded-md bg-apex px-3 text-xs font-semibold text-white disabled:opacity-50" disabled={!canWrite || evaluating} onClick={(event) => { event.stopPropagation(); setSelectedGroup(group); void evaluateScenarios(group); }} type="button"><Route size={14} />{evaluating && selectedGroup?.key === group.key ? "Evaluando..." : "Evaluar escenarios"}</button></span>
+            </div>
           ))}
           </div>
           {!workbench.consolidation_groups.length ? <p className="rounded-md bg-paper p-4 text-sm text-neutral-500">No hay demanda completa y pendiente para consolidar.</p> : null}
         </div>
-      </aside>
+      </section>
+      <main className="space-y-4">
+        <section className="rounded-md border border-line bg-white p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="font-semibold">Parámetros bloqueados del escenario</h2><p className="mt-1 text-xs text-neutral-500">{selectedSummary}</p></div></div>
+          {selectedGroup ? <ScenarioWorkbench group={selectedGroup} origins={origins} vehicles={vehicles} /> : <EmptyPlannerState />}
+        </section>
+      </main>
     </div>
     {scenarios.length ? <PlanningModal onClose={closeScenarioMonitor}><PlanResult canWrite={canWrite} committing={committing} scenarios={scenarios} selectedQuote={selectedQuote} selectedScenarioId={selectedScenarioId} onSelectQuote={setSelectedQuote} onSelectScenario={(id) => { const next = scenarios.find((scenario) => scenario.id === id); setSelectedScenarioId(id); setSelectedQuote(next?.quote?.rate_card_id || null); }} onCommit={commit} /></PlanningModal> : null}
   </div>;
@@ -288,42 +292,21 @@ function PlanningModal({ children, onClose }: { children: ReactNode; onClose: ()
   </div>, document.body);
 }
 
-function ProcessStep({ icon: Icon, title, text, active }: { icon: typeof ClipboardList; title: string; text: string; active: boolean }) {
-  return <div className={`flex gap-3 rounded-md border p-3 ${active ? "border-apex bg-emerald-50" : "border-line bg-paper"}`}><span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-white text-apex"><Icon size={18} /></span><div><p className="text-sm font-semibold">{title}</p><p className="mt-1 text-xs text-neutral-600">{text}</p></div></div>;
+function ProcessStep({ icon: Icon, title, active }: { icon: typeof ClipboardList; title: string; active: boolean }) {
+  return <span className={`inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-semibold ${active ? "border-apex bg-emerald-50 text-apex" : "border-line bg-paper text-neutral-500"}`}><Icon size={14} />{title}</span>;
 }
 
 function EmptyPlannerState() {
-  return <div className="mt-4 grid gap-3 md:grid-cols-3"><div className="rounded-md border border-dashed border-line p-4 md:col-span-2"><p className="font-semibold">Selecciona una consolidación</p><p className="mt-1 text-sm text-neutral-600">El monitor necesita una consolidación para comparar vehículos, estrategias, rutas, costos y alertas en una sola evaluación.</p></div><div className="rounded-md bg-paper p-4 text-sm text-neutral-600">La evaluación no crea el viaje todavía. Primero revisa la recomendación óptima y las alternativas descartadas.</div></div>;
+  return <div className="mt-4 rounded-md border border-dashed border-line p-4"><p className="font-semibold">Selecciona una consolidación</p><p className="mt-1 text-sm text-neutral-600">Elige una fila del monitor para revisar sus parámetros o usa su botón Evaluar escenarios para abrir el monitor directamente.</p></div>;
 }
 
-function ScenarioWorkbench({ group, origins, vehicles, evaluating, canWrite, onEvaluate }: { group: Group; origins: Origin[]; vehicles: Vehicle[]; evaluating: boolean; canWrite: boolean; onEvaluate: () => void }) {
+function ScenarioWorkbench({ group, origins, vehicles }: { group: Group; origins: Origin[]; vehicles: Vehicle[] }) {
   const origin = origins.find((item) => item.id === (group.origin_id || group.origin?.id)) || group.origin;
-  const visibleVehicles = vehicles.slice(0, 6);
-  return <div className="mt-4 space-y-4">
-    <div className="rounded-md border border-line bg-white p-3">
-      <div className="grid gap-3 xl:grid-cols-[1fr_auto]">
-        <div className="grid gap-2 md:grid-cols-4">
-          <ReadOnlyParam label="Origen" value={origin ? `${origin.code} · ${origin.name}` : "Origen pendiente"} />
-          <ReadOnlyParam label="Vehículos" value={`${Math.max(vehicles.length, 1)} alternativa(s)`} />
-          <ReadOnlyParam label="Estrategias" value={`${STRATEGIES.length} estrategias`} />
-          <ReadOnlyParam label="Retorno" value="Alternativa operativa" />
-        </div>
-        <button className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-apex px-5 text-sm font-semibold text-white disabled:opacity-50 xl:min-w-[230px]" disabled={!canWrite || evaluating} onClick={onEvaluate} type="button"><Route size={17} />{evaluating ? "Evaluando..." : "Evaluar escenarios"}</button>
-      </div>
-    </div>
-    <section className="rounded-md border border-line bg-white p-5">
-      <div className="grid gap-5 xl:grid-cols-[1fr_0.85fr]">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-apex">Monitor de evaluación</p>
-          <h3 className="mt-1 text-2xl font-semibold">Listo para comparar rutas, costo y servicio</h3>
-          <p className="mt-2 max-w-3xl text-sm text-neutral-600">Al ejecutar, APEXOS abre el monitor con ranking, ruta sugerida, rutas alternas disponibles, alertas de costo, capacidad y ETA estimada. El detalle operativo aparece después de validar.</p>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div><p className="text-xs font-semibold uppercase text-neutral-500">Vehículos incluidos</p><div className="mt-2 flex flex-wrap gap-2">{visibleVehicles.map((vehicle) => <span className="rounded-md bg-paper px-2 py-1 text-xs font-semibold text-neutral-600" key={vehicle.id}>{vehicle.plate}</span>)}{vehicles.length > visibleVehicles.length ? <span className="rounded-md bg-paper px-2 py-1 text-xs font-semibold text-neutral-600">+{vehicles.length - visibleVehicles.length}</span> : null}</div></div>
-          <div><p className="text-xs font-semibold uppercase text-neutral-500">Estrategias incluidas</p><div className="mt-2 flex flex-wrap gap-2">{STRATEGIES.map((strategy) => <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-apex" key={strategy.value}>{strategy.label}</span>)}</div></div>
-        </div>
-      </div>
-    </section>
+  return <div className="mt-4 grid gap-2 md:grid-cols-4">
+    <ReadOnlyParam label="Origen" value={origin ? `${origin.code} · ${origin.name}` : "Origen pendiente"} />
+    <ReadOnlyParam label="Vehículos" value={`${Math.max(vehicles.length, 1)} alternativa(s)`} />
+    <ReadOnlyParam label="Estrategias" value={`${STRATEGIES.length} estrategias`} />
+    <ReadOnlyParam label="Retorno" value="Alternativa operativa" />
   </div>;
 }
 
