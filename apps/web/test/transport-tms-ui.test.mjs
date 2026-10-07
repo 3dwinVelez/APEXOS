@@ -70,7 +70,10 @@ test("las ordenes TMS conectan modulos activos y ofrecen una plantilla Excel gui
   assert.match(orders, /\/transport\/orders\/intake/);
   assert.match(orders, /\/transport\/orders\/sync/);
   assert.match(orders, /Conexión automática activa/);
-  assert.match(orders, /Pedidos externos/);
+  assert.match(orders, /Monitor de pedidos/);
+  assert.match(orders, /ModalFrame/);
+  assert.match(orders, /Subir Excel/);
+  assert.match(orders, /Nuevo plan/);
   assert.match(orders, /Plantilla_Pedidos_Transporte\.xlsx/);
   assert.match(orders, /Descargar plantilla Excel/);
   assert.match(orders, /Seleccionar Excel/);
@@ -104,7 +107,7 @@ test("cubicaje respeta las restricciones visuales del Design System", () => {
 
 test("pedidos adapta la consulta a móvil", () => {
   assert.match(orders, /md:hidden/);
-  assert.match(orders, /hidden overflow-x-auto md:block/);
+  assert.match(orders, /hidden max-h-\[560px\] overflow-auto md:block/);
   assert.match(orders, /md:grid-cols-3/);
 });
 
