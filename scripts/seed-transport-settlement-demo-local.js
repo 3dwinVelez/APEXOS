@@ -74,7 +74,7 @@ async function main() {
     }
     const window2026 = { valid_from: "2026-01-01", valid_to: "2026-12-31", vehicle_type: "camion", service_level: "normal" };
     await ensureRate("DEMO-AND-2026", { name: "Tarifa nacional 2026 · Andinos", carrier_id: carrierA.id, base_rate: 450000, minimum_charge: 520000, price_per_km: 3200, price_per_kg: 45, price_per_m3: 42000, price_per_stop: 38000, fuel_surcharge_pct: 8, tolls_flat: 26000, ...window2026 });
-    await ensureRate("DEMO-CAR-2026", { name: "Tarifa costa 2026 · Caribe Express", carrier_id: carrierB.id, base_rate: 520000, minimum_charge: 610000, price_per_km: 3600, price_per_kg: 50, price_per_m3: 45000, price_per_stop: 42000, fuel_surcharge_pct: 9, tolls_flat: 31000, ...window2026 });
+    await ensureRate("DEMO-CAR-2026", { name: "Tarifa costa 2026 · Caribe Express", carrier_id: carrierB.id, base_rate: 520000, minimum_charge: 610000, price_per_km: 3600, price_per_kg: 50, price_per_m3: 45000, price_per_stop: 42000, fuel_surcharge_pct: 9, tolls_flat: 31000, ...window2026, vehicle_type: "furgon" });
     // La flota propia (DEMO-FLT) queda a proposito sin tarifa: eso produce la novedad tarifa_inexistente.
 
     const typeList = await request("/api/v1/transport/settlement-types", { headers });
